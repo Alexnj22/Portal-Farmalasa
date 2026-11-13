@@ -21,7 +21,8 @@
 // puntos canjeados: `get_ventas_con_puntos`), ordenar por columna y el aviso
 // de los cobros que no son venta de productos (`get_ventas_sin_producto`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -317,7 +318,7 @@ export default function Ventas() {
       <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
         {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>

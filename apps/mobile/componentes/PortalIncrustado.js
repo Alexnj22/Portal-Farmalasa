@@ -2,7 +2,8 @@
 // Es el puente de la estrategia mixta (decisión del usuario, 2026-09-28): todo
 // abre desde el primer día, y las pantallas nativas lo van reemplazando.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import Indicador from './Indicador';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useIsFocused } from 'expo-router';
@@ -72,7 +73,7 @@ export default function PortalIncrustado({ ruta, enPestana = false }) {
       /> : null}
       {cargando ? (
         <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={tema.color.marca} />
+          <Indicador color={tema.color.marca} />
         </View>
       ) : null}
     </View>

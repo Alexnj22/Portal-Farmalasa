@@ -9,7 +9,8 @@
 // producto (un flete, un descuento). Las consultas son las del núcleo
 // (`cargarCompra`), las mismas del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -72,7 +73,7 @@ function Facturas({ busca, dias }) {
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <View style={{ marginHorizontal: 16 }}><Aviso texto="El portal arma la compra desde el documento y dice de dónde salió cada dato. Todavía no registra nada en el sistema: es para revisarla. Lo que queda guardado es cada producto que confirmes." /></View>
-      {filas == null ? <ActivityIndicator /> : !visibles.length ? <Vacio titulo="Sin facturas esperando carga en este período." /> : (
+      {filas == null ? <Indicador /> : !visibles.length ? <Vacio titulo="Sin facturas esperando carga en este período." /> : (
         <View style={{ marginHorizontal: 16 }}>
           <Vidrio radio={20}>
             <View style={{ paddingVertical: 4 }}>

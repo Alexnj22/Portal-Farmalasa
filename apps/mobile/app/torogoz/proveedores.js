@@ -2,7 +2,8 @@
 // («Proveedores»): NIT, plazo, si es relacionada o está inactivo; tocar uno lo
 // edita y «Nuevo proveedor» da el alta. Sólo quien configura.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -42,7 +43,7 @@ export default function ProveedoresTorogoz() {
       }} />
       <MenuDeFiltros grupos={[]} extra={puede ? { icono: 'plus', etiqueta: 'Nuevo proveedor', onPress: () => router.push({ pathname: '/torogoz/proveedor/[id]', params: { id: 'nuevo' } }) } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {lista === null ? <Cargando /> : null}
         {visibles.map((p) => (

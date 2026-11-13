@@ -4,7 +4,8 @@
 // la sugerida por su propio giro (`applyProveedoresCategoriaSugerida`). Las
 // dos anotan en la bitácora. Pide `proveedores.can_edit`.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -111,7 +112,7 @@ export default function ProveedoresEnLote() {
                 <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{sel.size === visibles.length && visibles.length ? 'Quitar todos' : 'Elegir todos'}</Text>
               </Pressable>
             </View>
-            {filas == null ? <ActivityIndicator /> : null}
+            {filas == null ? <Indicador /> : null}
           </View>
         )}
         ListEmptyComponent={filas == null ? null : <Vacio icono="Filtro" titulo="Ningún proveedor con este filtro" />} />

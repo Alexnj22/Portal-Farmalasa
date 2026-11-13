@@ -2,7 +2,8 @@
 // mismo formulario que usa la compra (`FormularioProveedor`). Sólo quien
 // configura la distribuidora.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Indicador from '../../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchProveedores } from '@nucleo/data/distribucionCompras';
@@ -39,7 +40,7 @@ export default function ProveedorTorogoz() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: nuevo ? 'Nuevo proveedor' : inicial?.nombre ?? 'Proveedor' }} />
       {!puede || !inicial ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          {espera ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{espera}</Text> : <ActivityIndicator />}
+          {espera ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{espera}</Text> : <Indicador />}
         </View>
       ) : (
         <Formulario contentContainerStyle={{ paddingHorizontal: 16, gap: 18, paddingBottom: 60 }}>

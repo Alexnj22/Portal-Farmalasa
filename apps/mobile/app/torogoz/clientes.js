@@ -5,7 +5,8 @@
 // vende. La licencia de la SRS es la columna que importa: sin licencia vigente
 // no se le vende. Las reglas salen del núcleo (`distribucionComercial`).
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -128,7 +129,7 @@ export default function ClientesTorogoz() {
       <MenuDeFiltros grupos={grupos} extra={puedeVender && emisor ? { icono: 'plus', etiqueta: 'Nuevo cliente', onPress: () => router.push({ pathname: '/torogoz/cliente/[id]', params: { id: 'nuevo' } }) } : null} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FiltrosActivos grupos={grupos} />

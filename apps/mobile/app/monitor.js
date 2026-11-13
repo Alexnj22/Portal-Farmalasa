@@ -12,7 +12,8 @@
 // cálculo del portal; las marcaciones, de `loadAttendanceLastDays`. Se relee
 // cada 30 segundos mientras la pantalla está a la vista (punto «En vivo»).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -114,7 +115,7 @@ export default function Monitor() {
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarAsistencia?.(2); setAhora(new Date()); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarAsistencia?.(2); setAhora(new Date()); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 20 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: MARCA.verde }} />

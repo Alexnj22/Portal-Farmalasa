@@ -20,7 +20,8 @@
 // (`csvDelBanco`, el MISMO texto que baja el portal; sin la llave de aprobar
 // las cuentas salen como ****).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { File, Paths } from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -265,7 +266,7 @@ export default function Nomina() {
         : puedeEditar ? { icono: 'plus', etiqueta: 'Nueva quincena', onPress: () => router.push('/nomina/periodo') } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
 
         {/* Las quincenas, como la columna «Períodos» del portal: estado y pago. */}

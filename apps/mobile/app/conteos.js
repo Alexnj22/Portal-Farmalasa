@@ -10,7 +10,8 @@
 // quien ve todas, y eliminar un conteo manteniéndolo presionado — con el
 // permiso propio, o mientras no esté finalizado (la base lo vuelve a decidir).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -110,7 +111,7 @@ export default function Conteos() {
       <MenuDeFiltros grupos={grupos} extra={hasPermission('conteo_inventario', 'can_edit') ? { icono: 'plus', etiqueta: 'Nuevo conteo', onPress: () => { Haptics.selectionAsync().catch(() => {}); router.push('/conteo/nuevo'); } } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await fetchConteosInventario(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await fetchConteosInventario(); setRecargando(false); }} />}>
         <FilaDeKpis>
           <Kpi icono="ClipboardCheck" rotulo="Conteos" valor={resumen.total.toLocaleString('es-SV')} apoyo={foco === 'TODOS' ? 'viendo todos' : 'ver todos'}
             color={MARCA.azulClaro} onPress={() => setFoco('TODOS')} />

@@ -11,7 +11,8 @@
 // completadas hoy; `cifrasDeRutas`) y los mismos filtros: estado (por defecto
 // sólo las activas), período de las completadas y conductor.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -109,7 +110,7 @@ export default function RutasDeReparto() {
         headerSearchBarOptions: { placeholder: 'Número o conductor', onChangeText: (e) => setBuscar(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} extra={puedeArmar ? { icono: 'plus', etiqueta: 'Crear ruta', onPress: () => router.push('/pedido/ruta/nueva') } : null} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {rutas ? (
           <>

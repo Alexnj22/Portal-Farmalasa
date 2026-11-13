@@ -8,7 +8,8 @@
 // globo aparece al tocar y acá el cuadro se vacía sin esperar a la red, como en
 // la app de puntos. Con el cuadro vacío, el botón es un micrófono (`Voz.js`).
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as Haptics from 'expo-haptics';
@@ -82,7 +83,7 @@ function RespuestasRapidas({ abierta, textoActual, onCerrar, onElegir }) {
   return (
     <Hoja titulo="Respuestas rápidas" abierta={abierta} onCerrar={onCerrar}>
       <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar respuesta…" />
-      {filas == null ? <ActivityIndicator /> : !visibles.length ? (
+      {filas == null ? <Indicador /> : !visibles.length ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{busca ? 'Sin resultados.' : 'Todavía no hay respuestas. Guarda abajo las que el equipo escribe seguido.'}</Text>
       ) : visibles.map((r) => (
         <Tocable key={r.id} onPress={() => onElegir(r.texto)} onLongPress={() => borrar(r)} accessibilityRole="button" accessibilityHint="Mantén presionado para borrarla"
@@ -114,7 +115,7 @@ function ElegirOferta({ abierta, onCerrar, onElegir }) {
   return (
     <Hoja titulo="Enviar una oferta" abierta={abierta} onCerrar={onCerrar}>
       <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar oferta…" />
-      {ofertas == null ? <ActivityIndicator /> : !visibles.length ? (
+      {ofertas == null ? <Indicador /> : !visibles.length ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin ofertas vigentes. Sólo se pueden enviar las que el cliente ve hoy en la app.</Text>
       ) : visibles.map((o) => (
         <Tocable key={o.id} onPress={() => onElegir({ tipo: 'oferta', id: o.id, titulo: o.titulo })} accessibilityRole="button"

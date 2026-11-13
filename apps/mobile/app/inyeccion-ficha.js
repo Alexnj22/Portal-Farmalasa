@@ -8,7 +8,8 @@
 // cobro sin ficha: un cobro es un cliente. Lo hace `inyeccion_asignar_ficha`,
 // la misma función del portal; queda en la bitácora.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -83,7 +84,7 @@ export default function InyeccionFicha() {
             ) : (
               <Seccion titulo="Cliente" pie="Con su ficha, la aplicación queda en su historial y la ve en su app.">
                 <Campo multiline={false} autoFocus value={texto} onChangeText={setTexto} placeholder="Nombre, DUI o teléfono" accessibilityLabel="Buscar la ficha del cliente" />
-                {buscando ? <ActivityIndicator /> : null}
+                {buscando ? <Indicador /> : null}
                 {!buscando && q.trim().length >= 3 && !resultados.length ? <Vacio enSeccion>Ninguna ficha coincide.</Vacio> : null}
                 {resultados.map((c, i) => (
                   <Pressable key={c.id} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setFicha(c); }}

@@ -9,7 +9,8 @@
 // copiada (del navegador, de WhatsApp…); el recorte cuadrado lo da el editor
 // del sistema al tomar o elegir, y tocar la foto la amplía.
 import { useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Modal, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Modal, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
 import { File, Paths } from 'expo-file-system';
@@ -96,7 +97,7 @@ export default function Foto({ productId, url, puedeCambiar, onCambiada }) {
           {url ? <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : (
             <Text style={{ color: MARCA.gris, fontSize: 14, fontWeight: '600' }}>{puedeCambiar ? 'Agregar foto' : 'Sin foto'}</Text>
           )}
-          {subiendo ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color="#fff" /></View> : null}
+          {subiendo ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' }}><Indicador color="#fff" /></View> : null}
         </View>
       </Pressable>
       {puedeCambiar ? (

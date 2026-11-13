@@ -12,7 +12,8 @@
 // La búsqueda, el parecido y lo que se guarda son del núcleo
 // (`utils/enriquecerSrs`, `data/srs`), lo mismo que el portal.
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { aplicarPrincipiosDeSrs, escanearSinPrincipioEnSrs } from '@nucleo/data/srs';
@@ -111,7 +112,7 @@ export default function EnriquecerSrs() {
 
         {fase === 'buscando' ? (
           <Seccion titulo="Buscando en el SRS">
-            <ActivityIndicator />
+            <Indicador />
             <Text style={{ color: colorSistema.texto, fontSize: 15, textAlign: 'center' }}>{`${avance.hechos} de ${avance.total || '…'} productos`}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>{`${auto.length} se aplican solos · ${revisar.length} para revisar · ${sin.length} sin resultado`}</Text>
             <BotonGrande texto="Detener" borde onPress={() => { cancelar.current = true; }} />

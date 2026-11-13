@@ -11,7 +11,8 @@
 // Un abono que el cliente pagó solo desde su app con tarjeta (Wompi,
 // 2026-10-20) dice «pagado por el cliente en la app» en vez de quién cobró.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import * as Haptics from 'expo-haptics';
 import { guardar } from '../../componentes/comercial/elegido';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -67,7 +68,7 @@ export default function Credito() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Crédito' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Vidrio radio={20}>
           <View style={{ padding: 18, gap: 8 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{p.cliente}</Text>

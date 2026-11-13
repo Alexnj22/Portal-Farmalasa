@@ -10,7 +10,8 @@
 //
 // `AvisoDeUniones`: si esta cuenta se unió a otra, o reunió otras.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchClientesConPuntos, fetchUnionesDeCuenta, fusionarCuentasDePuntos } from '@nucleo/data/puntos';
 import { puntosTexto } from '@nucleo/utils/puntosTexto';
@@ -105,7 +106,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
       {!otra ? (
         <>
           <Campo multiline={false} autoFocus value={busqueda} onChangeText={setBusqueda} placeholder="Nombre, DUI o teléfono de la otra cuenta" accessibilityLabel="Buscar la otra cuenta" />
-          {buscando ? <ActivityIndicator /> : null}
+          {buscando ? <Indicador /> : null}
           {busqueda.trim().length >= 3 && !buscando && !resultados.length ? <Vacio enSeccion>Sin coincidencias.</Vacio> : null}
           {resultados.map((c, i) => (
             <Pressable key={c.customer_id} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setOtra(c); }}
@@ -118,7 +119,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
             </Pressable>
           ))}
         </>
-      ) : !vista ? <ActivityIndicator /> : vista.error ? <Aviso tono="cuidado" texto={vista.error} /> : (
+      ) : !vista ? <Indicador /> : vista.error ? <Aviso tono="cuidado" texto={vista.error} /> : (
         <>
           <View style={{ gap: 2 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700' }}>SE UNE</Text>

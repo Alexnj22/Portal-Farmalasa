@@ -6,7 +6,8 @@
 // La pestaña va en la dirección (`?vista=`), como en el portal; así el
 // «Preventas» del Inicio abre directo en Pendientes.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -117,7 +118,7 @@ export default function TorogozPedidos() {
       <MenuDeFiltros grupos={[]} extra={puedeVender ? { icono: 'plus', etiqueta: 'Nueva venta', onPress: () => router.push('/torogoz/venta') } : null} />
       <FijoArriba><Segmentos opciones={OPCIONES} activa={vista} onCambiar={(x) => { setCuantos(POR_PAGINA); router.setParams({ vista: x }); }} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FilaDeKpis>

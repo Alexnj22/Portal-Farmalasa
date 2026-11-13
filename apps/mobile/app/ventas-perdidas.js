@@ -9,7 +9,8 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { hoySV } from '@nucleo/utils/fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { compartirCsv } from '../componentes/fiscal/csv';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -177,7 +178,7 @@ export default function VentasPerdidas() {
         )}
         contentInsetAdjustmentBehavior="automatic" initialNumToRender={12} windowSize={9}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12 }}>
             <View style={{ marginHorizontal: 16 }}>

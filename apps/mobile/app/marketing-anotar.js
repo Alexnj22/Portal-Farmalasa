@@ -12,7 +12,8 @@
 // (pellizcar sigue acercando). El toque se mide en el espacio de la imagen,
 // no de la pantalla, así que el acercamiento no corre la marca.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
@@ -193,7 +194,7 @@ export default function AnotarDiseno() {
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{AYUDA[herramienta]}</Text>
 
           <View style={{ height: alto0, marginHorizontal: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: colorSistema.separador }}>
-            {!src ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator /></View> : (
+            {!src ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Indicador /></View> : (
               <ScrollView maximumZoomScale={5} minimumZoomScale={1} bouncesZoom centerContent scrollEnabled={!marcando}
                 showsHorizontalScrollIndicator={false} showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ minWidth: ancho0, minHeight: alto0, alignItems: 'center', justifyContent: 'center' }}>
@@ -218,7 +219,7 @@ export default function AnotarDiseno() {
           </View>
 
           <Seccion titulo={`Marcas en este diseño${marcados.length ? ` · ${marcados.length}` : ''}`}>
-            {comentarios == null ? <ActivityIndicator /> : marcados.length ? marcados.map((c, i) => {
+            {comentarios == null ? <Indicador /> : marcados.length ? marcados.map((c, i) => {
               const p = personas[c.autor_id];
               const activa = resaltada === c.numero;
               return (

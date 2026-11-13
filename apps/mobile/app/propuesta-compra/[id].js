@@ -7,7 +7,8 @@
 // en el diccionario (`confirmarProducto`) y ese proveedor no vuelve a preguntar
 // por ese código. No registra la compra: es para revisarla.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { confirmarProducto, fetchPropuesta } from '@nucleo/data/cargarCompra';
@@ -66,7 +67,7 @@ export default function PropuestaDeCompra() {
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[fechaNumerica(fecha, { anio: 'corto', vacio: '' }), total ? formatMoney(Number(total)) : null, resumen ? `${resumen.renglones} renglones` : null].filter(Boolean).join(' · ')}</Text>
         </View>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {!p && !error ? <View style={{ alignItems: 'center', gap: 8, marginTop: 20 }}><ActivityIndicator /><Text style={{ color: colorSistema.texto2 }}>Leyendo el documento y su archivo…</Text></View> : null}
+        {!p && !error ? <View style={{ alignItems: 'center', gap: 8, marginTop: 20 }}><Indicador /><Text style={{ color: colorSistema.texto2 }}>Leyendo el documento y su archivo…</Text></View> : null}
         {p ? (
           <>
             <Seccion titulo="Encabezado">

@@ -17,7 +17,8 @@
 // falla queda «No se envió · Toca para reintentar». Las notas de voz se
 // escuchan dentro del globo con velocidad 1×/1.5×/2× (`Voz.js`).
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -481,7 +482,7 @@ export default function ConversacionDelChat() {
                 )}
                 onEndReached={verAnteriores} onEndReachedThreshold={0.3} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
                 initialNumToRender={20} windowSize={11} contentContainerStyle={{ paddingVertical: 8 }}
-                ListFooterComponent={cargandoAnteriores ? <ActivityIndicator style={{ marginVertical: 12 }} /> : null}
+                ListFooterComponent={cargandoAnteriores ? <Indicador style={{ marginVertical: 12 }} /> : null}
                 ListEmptyComponent={<Text style={{ color: colorSistema.texto2, textAlign: 'center', marginVertical: 24, transform: [{ scaleY: -1 }] }}>Todavía no hay mensajes.</Text>} />
             ) : null}
             {escribeCliente || escribeOtro ? (

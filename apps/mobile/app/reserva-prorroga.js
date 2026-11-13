@@ -10,7 +10,9 @@
 //   · `bandeja`: las pendientes de la red, para autorizar (con los días pedidos
 //     u otros) o negar con el motivo que se le dice al cliente.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -106,10 +108,10 @@ function Bandeja() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Prórrogas por autorizar' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refrescando} onRefresh={async () => { setRefrescando(true); await cargar(); setRefrescando(false); }} />}>
+        refreshControl={<Refrescar refreshing={refrescando} onRefresh={async () => { setRefrescando(true); await cargar(); setRefrescando(false); }} />}>
         {!puede ? <Aviso tono="cuidado" texto="Autorizar prórrogas es de Talento Humano y Supervisión de ventas." />
           : error ? <Aviso tono="cuidado" texto={error} />
-          : lista === null ? <ActivityIndicator />
+          : lista === null ? <Indicador />
           : !lista.length ? <Vacio titulo="No hay prórrogas esperando." detalle="Cuando la sala o un cliente pida una, aparece aquí." />
           : lista.map((p) => (
             <Seccion key={`${p.tipo}:${p.codigo}`} titulo={`${diasTexto(p.dias)} más · ${p.codigo}`}

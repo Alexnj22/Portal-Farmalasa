@@ -5,7 +5,8 @@
 // (`crearEncuesta`, `duplicarEncuesta` + `guardarDiseno`). Al crearla abre su
 // diseño.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { KeyboardAvoidingView, ScrollView } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { crearEncuesta, duplicarEncuesta, fetchEncuestas, guardarDiseno } from '@nucleo/data/encuestasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -49,7 +50,7 @@ export default function NuevaEncuesta() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Seccion titulo="Empezar desde">
-            {plantillas == null ? <ActivityIndicator /> : (
+            {plantillas == null ? <Indicador /> : (
               <Opciones valor={base} onCambiar={setBase}
                 opciones={[{ id: '', label: 'En blanco' }, ...plantillas.map((p) => ({ id: String(p.id), label: p.nombre, detalle: p.objetivo || undefined }))]} />
             )}

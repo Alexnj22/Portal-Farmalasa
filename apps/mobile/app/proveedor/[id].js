@@ -18,7 +18,8 @@
 // vincularla, cambiarla o quitarla (`setProveedorSupplier`, como el portal).
 // Si ese proveedor ya lo tiene otra ficha, el aviso nombra a la otra.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -229,7 +230,7 @@ export default function Proveedor() {
                 {canEdit && vinculando ? (
                   <View style={{ gap: 6 }}>
                     <Campo multiline={false} autoFocus value={qReg} onChangeText={setQReg} placeholder="Buscar proveedor registrado" />
-                    {!registrados.length ? <ActivityIndicator /> : candidatosReg.map((s) => (
+                    {!registrados.length ? <Indicador /> : candidatosReg.map((s) => (
                       <Pressable key={s.id} disabled={ocupado} onPress={() => ponerRegistrado(s.id)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed || ocupado ? 0.6 : 1 })}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{s.nombre}</Text>
                       </Pressable>

@@ -10,7 +10,8 @@
 // Con `paraVenta` (el alta que se abre desde la venta) al guardar vuelve a la
 // venta y el cliente queda elegido (`dejarClienteNuevo`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import Indicador from '../../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -80,7 +81,7 @@ export default function FichaClienteTorogoz() {
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cliente' }} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          {error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error}</Text> : <ActivityIndicator />}
+          {error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error}</Text> : <Indicador />}
         </View>
       </>
     );

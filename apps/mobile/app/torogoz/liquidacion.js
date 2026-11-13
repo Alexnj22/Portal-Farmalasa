@@ -6,7 +6,8 @@
 // `?fecha=`, `?vendedor=` y `?caja=dia` abren exactamente esa vista, como la
 // dirección del portal.
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor } from '@nucleo/data/distribucion';
@@ -46,7 +47,7 @@ export default function CajaYLiquidacion() {
       ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 56 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={refrescar} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={refrescar} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         {vista === 'dia' && puedeConfigurar ? (

@@ -8,7 +8,8 @@
 // El escáner elige solo únicamente si el código da UN producto: con varios,
 // la lista queda cargada y la persona dice cuál.
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { opcionesParaAgregarAlConteo, searchActiveProductsForConteo } from '@nucleo/data/conteoInventario';
@@ -171,7 +172,7 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
             )}
 
             {producto ? (
-              opciones == null ? <ActivityIndicator /> : (
+              opciones == null ? <Indicador /> : (
                 <Seccion titulo={simple ? 'Cómo viene' : pideLote ? 'Presentación, lote y vencimiento' : pideVence ? 'Presentación y vencimiento' : 'Presentación'}>
                   {opciones.presentaciones.length ? (
                     <Fila rotulo="Presentación" valor={presentacion || null}

@@ -17,7 +17,8 @@
 //   · anular la bolsa, con motivo (la única corrección desde que nace sola al
 //     confirmar el corte; queda en la bitácora, no se borra).
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { anularBolsa, anularLaSalidaDeBolsa, fetchEventosDeBolsa, fetchSalidasDeBolsa } from '@nucleo/data/bolsas';
@@ -69,7 +70,7 @@ function Salida({ s, puedeAnular, onAnular, onReimprimir }) {
         {s.foto_url ? (
           <Pressable onPress={ver} accessibilityRole="button"
             style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}26`, opacity: pressed ? 0.7 : 1 })}>
-            {foto === 'cargando' ? <ActivityIndicator /> : <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{foto ? 'Ocultar el comprobante' : 'Ver el comprobante'}</Text>}
+            {foto === 'cargando' ? <Indicador /> : <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{foto ? 'Ocultar el comprobante' : 'Ver el comprobante'}</Text>}
           </Pressable>
         ) : null}
         {foto?.error ? <Aviso tono="freno" texto="No se pudo abrir el comprobante. Vuelve a intentar en un momento." /> : null}

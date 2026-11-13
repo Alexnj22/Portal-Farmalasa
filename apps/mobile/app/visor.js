@@ -11,7 +11,8 @@
 // «Navegador» (arriba a la derecha) queda como salida: para guardar o
 // compartir con los botones del sistema.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as WebBrowser from 'expo-web-browser';
@@ -82,14 +83,14 @@ export default function Visor() {
       }} />
       {!url ? <Aviso tono="freno" texto="No hay documento que abrir." /> : !fuente ? (
         <View style={{ flex: 1, backgroundColor: '#525659', justifyContent: 'center' }}>
-          {fallo ? <Aviso tono="freno" texto="No se pudo bajar el documento. Prueba con «Navegador», arriba." /> : <ActivityIndicator color="#fff" />}
+          {fallo ? <Aviso tono="freno" texto="No se pudo bajar el documento. Prueba con «Navegador», arriba." /> : <Indicador color="#fff" />}
         </View>
       ) : (
         <View style={{ flex: 1, backgroundColor: '#525659' }}>
           <WebView source={fuente} originWhitelist={['*']} style={{ flex: 1, backgroundColor: 'transparent' }}
             onLoadEnd={() => setCargando(false)} onError={() => { setCargando(false); setFallo(true); }}
             allowsInlineMediaPlayback mixedContentMode="always" setSupportMultipleWindows={false} />
-          {cargando ? <ActivityIndicator style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color="#fff" /> : null}
+          {cargando ? <Indicador style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color="#fff" /> : null}
           {fallo ? (
             <View style={{ position: 'absolute', top: 24, left: 16, right: 16 }}>
               <Aviso tono="freno" texto="No se pudo mostrar el documento. Prueba con «Navegador», arriba." />

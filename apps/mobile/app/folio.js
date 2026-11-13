@@ -9,7 +9,8 @@
 // son privados. El total del documento sólo con `bitacoras` can_view, como el
 // portal.
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { ESTADO_RENGLON, fetchFolio } from '@nucleo/data/bitacoras';
@@ -62,7 +63,7 @@ export default function Folio() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: d?.folio_txt ? `Folio ${d.folio_txt}` : 'Folio' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {d === null ? <Cargando /> : error ? <Aviso tono="freno" texto={error} /> : (
           <>
             <View style={{ gap: 6, marginHorizontal: 4 }}>

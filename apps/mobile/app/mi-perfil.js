@@ -9,7 +9,8 @@
 // puede editar fichas, igual que en el portal: ofrecérselo a quien la base va a
 // rechazar no es un permiso de más, es una promesa que no se cumple.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -113,7 +114,7 @@ export default function MiPerfil() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Mi perfil' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Vidrio radio={20}>
           <View style={{ padding: 20, alignItems: 'center', gap: 8 }}>
             <Avatar empleado={emp} tamano={104} />

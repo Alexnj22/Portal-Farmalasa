@@ -5,7 +5,8 @@
 // supervisión o permiso de editar el chat; la policy de la tabla exige ver el
 // chat. Tocar uno abre esa conversación.
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { TOPE_INCUMPLIMIENTOS, fetchIncumplimientosDelChat } from '@nucleo/data/chatClientes';
@@ -39,7 +40,7 @@ export default function Incumplimientos() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Incumplimientos', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Aviso texto={`Clientes que esperaron más de 20 minutos con el chat asignado a alguien que no contestó. Últimos ${DIAS} días.`} />
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {filas == null ? <Cargando /> : null}

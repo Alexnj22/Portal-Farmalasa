@@ -10,7 +10,8 @@
 // del portal, que anotan la bitácora solos. Una respuesta ya capturada también
 // se elimina (`deleteSurveyResponse`, con confirmación), como en el portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -148,7 +149,7 @@ export default function RespuestaInterna() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{encuesta.nombre}</Text>
-          {bloques == null ? <ActivityIndicator /> : (
+          {bloques == null ? <Indicador /> : (
             <>
               <Seccion titulo="Persona">
                 {elegido ? (

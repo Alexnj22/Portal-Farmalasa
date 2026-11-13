@@ -8,7 +8,8 @@
 // Si llegaron renglones por contar, se sigue directo al conteo.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -89,7 +90,7 @@ function LlegoElReenvio() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Llegó el reenvío', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Pedido #${numero} · ${ERP_NAMES[suc] ?? ''}${ciclo ? ` · reenvío ${ciclo.ciclo}` : ''}`}</Text>
-        {row === undefined ? <ActivityIndicator /> : !ciclo ? (
+        {row === undefined ? <Indicador /> : !ciclo ? (
           <Aviso tono="cuidado" texto={reenvioTodaviaEnBodega(row?.reenvios_historial)
             ? 'El reenvío todavía no sale: las cajas siguen en Bodega y se confirman cuando salga su ruta.'
             : 'No hay un reenvío pendiente de confirmar en esta sala.'} />

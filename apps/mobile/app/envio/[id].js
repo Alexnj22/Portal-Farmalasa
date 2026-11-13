@@ -17,7 +17,8 @@
 //                              lo mira cualquiera de las salas.
 // Las fotos del daño (`evidencia_urls`) se ven siempre: viajan con la caja.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -154,7 +155,7 @@ export default function Envio() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>
+          refreshControl={<Refrescar refreshing={false} onRefresh={cargar} />}>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar empleado={quien} tamano={48} />

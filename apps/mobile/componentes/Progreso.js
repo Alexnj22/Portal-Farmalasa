@@ -13,7 +13,8 @@
 // Se monta UNA vez en la raíz, así que funciona desde cualquier pantalla —
 // también cuando la acción viene de una notificación con la app arrancando.
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Text, View } from 'react-native';
+import { Alert, Animated, Text, View } from 'react-native';
+import Indicador from './Indicador';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -88,7 +89,7 @@ export function CapaDeProgreso() {
       <Vidrio radio={26}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, paddingVertical: 12, maxWidth: 340 }}>
           {ultimo.estado === 'trabajando'
-            ? <ActivityIndicator />
+            ? <Indicador />
             : <IconoFijo name={OK} size={22} color={colorSistema.verde} />}
           <View style={{ flexShrink: 1 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>

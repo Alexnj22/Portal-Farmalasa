@@ -15,7 +15,9 @@
 // (P-XXXXXX) se muestra el pedido entero, igual que su tarjeta
 // (`agruparPorPedido`). Lo que se dice sale del núcleo (`reservasDeSala`).
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Linking, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -102,7 +104,7 @@ export default function DetalleDeReserva() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: codigo }} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ gap: 6, marginHorizontal: 4 }}>
           <Pildora texto={estado.label} color={colorDeTono(estado.variant)} />
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>

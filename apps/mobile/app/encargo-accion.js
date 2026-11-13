@@ -17,7 +17,8 @@
 //     (`puede_cambiar_fecha`, `puede_no_entrego`) sólo desde la fecha.
 // El encargo se relee con `fetchEncargos` (la misma lista de la sala).
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { cambiarFechaDeEncargo, fetchEncargos, pasarEncargoASaldo, proveedorNoEntregoEncargo, responderEncargo, vincularProductoDeEncargo } from '@nucleo/data/reservas';
@@ -182,7 +183,7 @@ function EncargoAccion() {
                 </Seccion>
               ) : null}
               <Seccion titulo={`El producto que se creó para «${e.producto}»`}>
-                {ocupado ? <ActivityIndicator /> : (
+                {ocupado ? <Indicador /> : (
                   <BuscadorProducto onElegir={(prod) => hacer(() => vincularProductoDeEncargo(e.id, prod.id), 'Producto vinculado', `${e.codigo} → ${prod.nombre}`)}
                     onCancelar={() => router.back()} />
                 )}

@@ -14,7 +14,8 @@
 // · Solicitudes: las de esa persona con su tipo, estado, nota y respuesta, y
 //   «Nueva solicitud» a su nombre.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -222,7 +223,7 @@ export default function Historial() {
         ]} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); if (seccion === 'solicitudes') await cargarSolicitudes(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); if (seccion === 'solicitudes') await cargarSolicitudes(); setRecargando(false); }} />}>
         {filas == null ? <Cargando /> : null}
 
         {seccion === 'historial' && filas ? (

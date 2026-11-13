@@ -2,7 +2,8 @@
 // fila de `ComprasView`: cada producto con su cantidad, costo unitario y total,
 // y su lote y vencimiento; arriba el subtotal, el IVA y el total.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { fetchPurchaseReceiptItems } from '@nucleo/data/compras';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
@@ -48,7 +49,7 @@ export default function Compra() {
         ) : null}
         {error ? <Aviso tono="freno" texto={error} /> : null}
         <Seccion titulo={items ? `Productos · ${items.length}` : 'Productos'}>
-          {items == null ? <ActivityIndicator /> : items.length ? items.map((it, i) => (
+          {items == null ? <Indicador /> : items.length ? items.map((it, i) => (
             <View key={it.linea_num ?? i} style={{ flexDirection: 'row', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 9 : 0 }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{it.descripcion}</Text>

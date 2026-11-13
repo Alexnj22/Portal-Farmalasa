@@ -9,7 +9,8 @@
 // motivo, la historia del mes, e imprimirlo (el mismo papel del núcleo,
 // `armarHtmlDelMes`, por AirPrint o PDF, anotado como salida de datos).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -139,7 +140,7 @@ export default function CierreDeBitacoras() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cierre de mes', headerLargeTitle: true }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 60, gap: 14 }} keyboardShouldPersistTaps="handled"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           <Seccion titulo={nombreSala || 'Sucursal'}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Flecha texto="‹" onPress={() => setPeriodo((p) => correrPeriodo(p, -1))} />

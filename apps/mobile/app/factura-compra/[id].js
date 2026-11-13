@@ -17,7 +17,9 @@
 // Si el proveedor la invalidó y la anulación vino con su respaldo, «Ver el
 // documento de la anulación» abre ese PDF (`facturas_compra_abrir`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPurchaseDteDocuments, mergePurchaseDteDocuments, setPurchaseDteProveedor } from '@nucleo/data/facturasCompra';
@@ -149,7 +151,7 @@ export default function FacturaCompra() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Factura de compra', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarJson(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarJson(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {!doc && !error ? <Cargando /> : null}
         {doc ? (
@@ -172,7 +174,7 @@ export default function FacturaCompra() {
             {!doc.proveedor_id && puedeVincular ? (vinculando ? (
               <Seccion titulo="Vincular a un proveedor">
                 <Campo multiline={false} autoFocus value={qProv} onChangeText={setQProv} placeholder="Nombre, alias o NIT" />
-                {!maestro.length ? <ActivityIndicator /> : candidatos.map((p) => (
+                {!maestro.length ? <Indicador /> : candidatos.map((p) => (
                   <Pressable key={p.id} onPress={() => vincular(p)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{p.nombre}</Text>
                     {p.nit ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`NIT ${p.nit}`}</Text> : null}
@@ -192,7 +194,7 @@ export default function FacturaCompra() {
                 {adjuntando ? (
                   <View style={{ gap: 6 }}>
                     <Campo multiline={false} autoFocus value={qJson} onChangeText={setQJson} placeholder="Buscar el documento duplicado" />
-                    {delMes == null ? <ActivityIndicator /> : !candidatosJson.length ? (
+                    {delMes == null ? <Indicador /> : !candidatosJson.length ? (
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ningún documento con JSON en el mes.</Text>
                     ) : candidatosJson.map((d) => (
                       <Pressable key={d.id} onPress={() => adjuntar(d)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
@@ -217,7 +219,7 @@ export default function FacturaCompra() {
             {!doc.pdf_path ? <Aviso tono="nota" texto="Esta factura llegó sin PDF." /> : null}
 
             <Seccion titulo={json === undefined ? 'Productos' : `Productos · ${renglones.length}`}>
-              {json === undefined ? <ActivityIndicator /> : !renglones.length ? (
+              {json === undefined ? <Indicador /> : !renglones.length ? (
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{doc.items_text || 'No se pudo leer el detalle del documento.'}</Text>
               ) : renglones.map((r, i) => (
                 <View key={`${r.numero}-${i}`} style={{ flexDirection: 'row', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 9 : 0 }}>

@@ -10,7 +10,8 @@
 // filtra por tipo de documento y por «precio cambió». El cruce sale del núcleo
 // (`lineasDelDrill`), con los niveles que el cargo puede ver.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -109,7 +110,7 @@ export default function ProductoVendido() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Lo que se vendió' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" {...alFinal}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ gap: 4, marginHorizontal: 4 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{nombre}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>

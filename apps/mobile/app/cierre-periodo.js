@@ -13,7 +13,8 @@
 // (`reabrirPeriodoFiscal`). Las dos con `libros_iva` · editar, como el portal;
 // si un período no se puede cerrar, el motivo lo dice el servidor.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -90,7 +91,7 @@ export default function CierrePeriodo() {
       <Stack.Screen options={{ ...BARRA_FIJA, title: 'Cierre de período' }} />
       <FijoArriba><Segmentos activa={declarable ? 'decl' : 'hoy'} onCambiar={(v) => setDeclarable(v === 'decl')} opciones={[{ id: 'hoy', label: 'El que se declara hoy' }, { id: 'decl', label: 'El declarable' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FilaDeKpis>
           <Kpi icono="Lock" rotulo="Cerrados" valor={String(t.cerrados)} color={MARCA.verde} apoyo={`${t.abiertos} sin cerrar`} />
           <Kpi icono="TrendingDown" rotulo="Sin arrastrar" valor={formatMoney(t.perdido)} color={t.perdido > 0 ? MARCA.rojo : MARCA.verde} apoyo={t.perdido > 0 ? 'se pierde si no se cierra' : 'nada'} />

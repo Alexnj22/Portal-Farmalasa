@@ -4,7 +4,8 @@
 // bolsa y su diferencia. Sólo lectura, detrás de `bolsas_ver_montos` como en el
 // portal: «CNT-260826-1 · 43 bolsas» sin montos no contesta nada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -116,7 +117,7 @@ export default function ConteosBolsas() {
       </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ marginHorizontal: 16, gap: 10 }}>
           {lista == null ? <Cargando />
             : !lista.length ? <Vacio titulo="Sin conteos en estas fechas." />

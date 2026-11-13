@@ -9,7 +9,8 @@
 // son del núcleo (`solicitudesDatos`), lo mismo del portal. El borrador usa la
 // MISMA clave que el portal: transcribir una hoja lleva más que la sesión.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -200,7 +201,7 @@ function Cuerpo({ solicitud }) {
         {!resuelta ? (
           <Seccion titulo="Buscar a la persona en el portal">
             <Campo multiline={false} value={termino} onChangeText={setTermino} placeholder="DUI, teléfono o nombre" />
-            {buscando ? <ActivityIndicator /> : null}
+            {buscando ? <Indicador /> : null}
             {candidatos.slice(0, 12).map((c, i) => (
               <Pressable key={`${c.origen}-${i}`} onPress={() => { Haptics.selectionAsync().catch(() => {}); setF((p) => llenarConPersona(p, c)); setCandidatos([]); }}
                 style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador })}>

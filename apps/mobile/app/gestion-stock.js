@@ -13,7 +13,8 @@
 //
 // Agrupar, sugerir y validar salen del núcleo (`gestionDeStock`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -455,7 +456,7 @@ export default function GestionStock() {
       <FijoArriba><Segmentos activa={pestana} onCambiar={(v) => { setExportar(null); setPestana(v); }} opciones={[{ id: 'parados', label: 'Sin venta' }, { id: 'sin_minmax', label: 'Sin Min/Max' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         <FiltrosActivos grupos={grupos} />
         {pestana === 'parados'
           ? <SinVenta key={`p${sala}-${llave}`} sala={sala} busqueda={texto.trim()} filtro={filtroParados} puedeArmar={puedeArmar}

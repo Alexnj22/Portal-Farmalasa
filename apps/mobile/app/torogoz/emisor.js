@@ -9,7 +9,8 @@
 // aparte, porque desde ahí cada documento es fiscal. Las reglas y la fila que
 // se guarda salen del núcleo (`distribucionComercial`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -46,7 +47,7 @@ function PuntosDeVenta({ emisorId, oficina }) {
         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'], minWidth: 52 }}>{oficina}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Oficina</Text>
       </View>
-      {puntos === null && emisorId ? <ActivityIndicator /> : null}
+      {puntos === null && emisorId ? <Indicador /> : null}
       {(puntos ?? []).map((p) => (
         <View key={p.codigo} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'], minWidth: 52 }}>{p.codigo}</Text>
@@ -126,7 +127,7 @@ export default function EmisorTorogoz() {
     return (
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Empresa' }} />
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator /></View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Indicador /></View>
       </>
     );
   }

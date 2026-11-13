@@ -7,7 +7,8 @@
 // Cada sección es su propia pantalla (`/torogoz/<seccion>`), igual que la
 // dirección del portal, así un enlace de un aviso abre la misma.
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -100,7 +101,7 @@ export default function Torogoz() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Torogoz', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal automatico />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>La distribuidora: ventas en ruta, facturación y bodega.</Text>

@@ -11,7 +11,9 @@
 // arriba el estado de la farmacia, el promedio de calificaciones y los
 // accesos a Incumplimientos y Ajustes del chat (`componentes/chat/Encabezado`).
 import { memo, useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
+import Indicador from '../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -161,7 +163,7 @@ export default function ChatClientes() {
         {...scroll}
         contentInsetAdjustmentBehavior="automatic" initialNumToRender={12} windowSize={9} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 8 }}>
             <Encabezado estado={estadoFarmacia} veIncumplimientos={veIncumplimientos} puedeEditar={puedeResponder} />
@@ -169,7 +171,7 @@ export default function ChatClientes() {
             {!conversaciones && !error ? <Cargando /> : null}
           </View>
         )}
-        ListFooterComponent={cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
+        ListFooterComponent={cargandoMas ? <Indicador style={{ marginVertical: 16 }} /> : null}
         ListEmptyComponent={error ? <ErrorConReintento mensaje={error} onReintentar={cargar} /> : !conversaciones ? null : (
           <Vacio icono={busqueda ? 'Search' : 'MessageSquare'}
             titulo={busqueda ? 'Sin resultados' : preferentes === 'si' && etiqueta === 'todas' ? 'Sin clientes preferentes' : etiqueta !== 'todas' ? `Nadie con «${ETIQUETAS[etiqueta].label}»` : `Sin conversaciones: ${FILTROS[filtro]?.label.toLowerCase() ?? ''}`}

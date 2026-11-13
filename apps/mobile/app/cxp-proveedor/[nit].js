@@ -12,7 +12,8 @@
 // El reparto a medio armar se guarda solo (`useBorrador`, por NIT), igual que
 // en el portal: la sesión se cierra sola y repartir un pago son minutos.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -122,7 +123,7 @@ export default function ProveedorPorPagar() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error ? <Aviso tono="freno" texto={error} /> : null}
           {docs == null ? <Cargando /> : (
             <>

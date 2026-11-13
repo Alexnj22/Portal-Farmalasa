@@ -7,7 +7,8 @@
 // «Iniciar ruta» (el rastreo por GPS) NO está: la app todavía no tiene el
 // permiso de ubicación.
 import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchVendedores } from '@nucleo/data/distribucion';
@@ -58,7 +59,7 @@ export default function TorogozRutas() {
         <Segmentos opciones={vistas} activa={vista} onCambiar={(v) => router.setParams({ rutas: v })} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => setVuelta((v) => v + 1)} />}>
+        refreshControl={<Refrescar refreshing={false} onRefresh={() => setVuelta((v) => v + 1)} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FiltrosActivos grupos={grupos} />

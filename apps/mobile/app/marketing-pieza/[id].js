@@ -16,7 +16,8 @@
 // mientras nadie haya respondido. Tocar un diseño abre el anotador
 // (`marketing-anotar`): marcar un punto, una zona o a lápiz sobre él.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -262,7 +263,7 @@ export default function PiezaDeMarketing() {
           </Seccion>
 
           <Seccion titulo="Comentarios">
-            {comentarios == null ? <ActivityIndicator /> : comentarios.length ? comentarios.map((c, i) => (
+            {comentarios == null ? <Indicador /> : comentarios.length ? comentarios.map((c, i) => (
               <View key={c.id} style={{ gap: 3, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: c.resuelto ? 0.6 : 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <View style={{ flex: 1 }}><Quien id={c.autor_id} personas={personas} /></View>

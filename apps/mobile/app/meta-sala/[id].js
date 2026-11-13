@@ -3,7 +3,8 @@
 // o el termómetro con lo que falta por día), el ranking de sus vendedores y de
 // dónde sale su meta. Todo de lectura.
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchMesEnCurso, fetchMetasRows } from '@nucleo/data/metas';
@@ -38,7 +39,7 @@ export default function MetaSala() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: sala?.name ?? 'Sala', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>{ymLabel(ym)}</Text>
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {mes === undefined && !error ? <Cargando /> : null}

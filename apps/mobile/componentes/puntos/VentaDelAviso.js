@@ -5,7 +5,8 @@
 // (`puntos_panel_avisos`); los productos se piden con el MISMO lector que usa
 // Ventas (`fetchInvoiceItemsForInvoice`).
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { fetchInvoiceItemsForInvoice } from '@nucleo/data/ventas';
 import { avisoDePuntos } from '@nucleo/utils/puntosTexto';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
@@ -73,7 +74,7 @@ export default function VentaDelAviso({ aviso }) {
         ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin vendedor en la factura</Text>}
       </View>
       <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>Productos</Text>
-      {items == null ? <ActivityIndicator />
+      {items == null ? <Indicador />
         : fallo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>No se pudieron cargar los productos.</Text>
           : !productos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Esta venta no tiene el detalle de productos.</Text>
             : productos.map((it, i) => (

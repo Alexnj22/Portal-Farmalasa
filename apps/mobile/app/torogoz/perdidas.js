@@ -5,7 +5,8 @@
 // desde acá (el + de arriba, con la hoja `VentaPerdida`). El estado va en la
 // dirección (`?estado=`), como en el portal.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor, fetchVentasPerdidas, mensajeDeDistribucion, resolverVentaPerdida } from '@nucleo/data/distribucion';
@@ -92,7 +93,7 @@ export default function VentasPerdidas() {
       <MenuDeFiltros grupos={[]} extra={extra} />
       <FijoArriba><Segmentos opciones={OPCIONES} activa={vista} onCambiar={(v) => router.setParams({ estado: v })} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>

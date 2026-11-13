@@ -14,7 +14,8 @@
 // la sesión se cierra por inactividad y diez renglones son varios minutos.
 // Editando no: la fila de la base es la verdad.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -131,7 +132,7 @@ function Buscador({ placeholder, buscar, render, onElegir }) {
   return (
     <View style={{ gap: 6 }}>
       <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder={placeholder} autoCorrect={false} />
-      {res.cargando ? <ActivityIndicator /> : null}
+      {res.cargando ? <Indicador /> : null}
       {res.parecidos && res.filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin coincidencia exacta: se muestran los parecidos.</Text> : null}
       {res.filas.slice(0, 8).map((f, i) => (
         <Tocable key={f.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(f); setTexto(''); }}

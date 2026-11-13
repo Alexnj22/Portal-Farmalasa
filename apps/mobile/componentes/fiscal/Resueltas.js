@@ -7,7 +7,8 @@
 //     «Solventado internamente» de las que se excluyeron del barrido —nunca se
 //     le mandaron a Hacienda, a propósito—.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import {
   fetchConfirmedMhInvoices, fetchExcluidasDelBarrido, fetchInvoiceResolutionsHistorial, fetchInvoicesByIds,
 } from '@nucleo/data/facturacion';
@@ -74,7 +75,7 @@ export default function Resueltas({ cola, sala, nombreSala, verMontos, recarga }
         </Text>
       </Tocable>
       {abierto ? (
-        filas == null ? <ActivityIndicator /> : (
+        filas == null ? <Indicador /> : (
           <>
             {error ? <Text style={{ color: MARCA.rojo, fontSize: 13 }}>{error}</Text> : null}
             {visibles.map((r) => {

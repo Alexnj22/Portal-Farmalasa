@@ -10,7 +10,8 @@
 // Todo el dinero, sólo con `compras_ver_montos`. Vincular un proveedor sigue
 // en el portal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPurchaseReceiptsPage, fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount } from '@nucleo/data/compras';
@@ -110,7 +111,7 @@ export default function Compras() {
       ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setPagina(0); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setPagina(0); await cargar(); setRecargando(false); }} />}>
         {!tab ? <Text style={{ marginHorizontal: 20, color: colorSistema.texto2, fontSize: 15 }}>No tienes acceso a ninguna pestaña de Compras.</Text> : null}
         {tab === 'productos' ? <ProductosComprados busqueda={busqueda} verMontos={verMontos} /> : null}
         {tab === 'facturas' ? (<>

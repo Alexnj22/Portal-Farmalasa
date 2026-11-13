@@ -9,7 +9,8 @@
 // Revocar exige editar sucursales (`branches`), igual que el botón del portal
 // en la ficha de la sucursal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -96,7 +97,7 @@ export default function Kioscos() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Kioscos', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 4 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800', flex: 1 }} numberOfLines={1}>{b?.name ?? 'Sucursal'}</Text>
           {lista ? <Pildora texto={`${cupo.rotulo} activos`} color={cupo.activos ? MARCA.verde : colorSistema.texto2} /> : null}

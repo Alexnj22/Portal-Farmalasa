@@ -7,7 +7,8 @@
 // Es de sólo lectura, igual que allá: `presentaciones` la escribe el sync de
 // productos y un nombre editado acá volvería solo a su valor original.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPresentacionesMaestro, fetchProductosPorPresentacion } from '@nucleo/data/presentaciones';
@@ -31,7 +32,7 @@ function Productos({ tipo }) {
     Promise.resolve(fetchProductosPorPresentacion(tipo)).then(({ data }) => setLista(data ?? [])).catch(() => setLista([]));
   }, [tipo]);
   const coinciden = useMemo(() => (q.trim() ? (lista ?? []).filter((p) => tokenMatch(q, p.nombre, p.laboratorio, p.codigo_barras)) : (lista ?? [])), [lista, q]);
-  if (!lista) return <ActivityIndicator style={{ marginVertical: 10 }} />;
+  if (!lista) return <Indicador style={{ marginVertical: 10 }} />;
   return (
     <View style={{ gap: 6, paddingTop: 8 }}>
       {lista.length > 8 ? <Campo multiline={false} value={q} onChangeText={setQ} placeholder="Buscar en estos productos" /> : null}
@@ -85,7 +86,7 @@ export default function Presentaciones() {
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${resumen.total} presentaciones · ${resumen.repetidas} repetidas · ${resumen.vario} con factor variable`}</Text>
-        {filas == null ? <ActivityIndicator /> : visibles.map((r) => (
+        {filas == null ? <Indicador /> : visibles.map((r) => (
           <View key={r.tipo} style={{ marginHorizontal: 16 }}>
             <Vidrio radio={20} interactivo>
               <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierta === r.tipo ? null : r.tipo); }} style={{ padding: 14, gap: 4 }}>

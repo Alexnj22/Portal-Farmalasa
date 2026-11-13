@@ -11,7 +11,8 @@
 // decidirlos uno por uno; «cumplen», «con (4)/(5)» y «ver los no aprobados»
 // son filtros. Quién decidió va con su foto y nombre corto.
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ESTADOS, ORIGENES, PRECIOS, RANGOS, fetchHistorialMayoristas, fetchMayoristas } from '@nucleo/data/mayoristas';
@@ -179,7 +180,7 @@ export default function Mayoristas() {
         {...scroll}
         contentInsetAdjustmentBehavior="automatic" initialNumToRender={12} windowSize={9} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12 }}>
             <FiltrosActivos grupos={grupos} />

@@ -3,7 +3,8 @@
 // del bucket privado, así que se firman al mostrarlas (`getSignedFileUrl`),
 // igual que `EvidenciaFotos` del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, Text, View } from 'react-native';
+import { Image, Modal, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { colorSistema } from '../Formulario';
 import { FONDO_CONTROL } from '../inicio/marca';
@@ -30,7 +31,7 @@ export default function Evidencia({ urls, titulo = 'Foto del daño' }) {
           </Pressable>
         ) : (
           <View key={i} style={{ width: 84, height: 84, borderRadius: 12, backgroundColor: FONDO_CONTROL, alignItems: 'center', justifyContent: 'center' }}>
-            {firmadas ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin foto</Text> : <ActivityIndicator />}
+            {firmadas ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin foto</Text> : <Indicador />}
           </View>
         )))}
       </View>

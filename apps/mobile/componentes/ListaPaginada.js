@@ -23,7 +23,9 @@
 //     cabecera={<Segmentos …/>}
 //     vacio="Sin registros en este período" />
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Text, View, useWindowDimensions } from 'react-native';
+import Refrescar from './Refrescar';
+import Indicador from './Indicador';
 import { colorSistema } from './Formulario';
 import { BotonGrande, Cargando, Vacio } from './formulario/Piezas';
 
@@ -104,7 +106,7 @@ export default function ListaPaginada({
     finally { setMasCargando(false); }
   };
 
-  const pie = masCargando ? <ActivityIndicator style={{ marginVertical: 16 }} />
+  const pie = masCargando ? <Indicador style={{ marginVertical: 16 }} />
     : error && estado === 'listo' ? <ErrorConReintento mensaje={error} onReintentar={siguiente} />
       : <View style={{ height: 48 }} />;
 
@@ -134,7 +136,7 @@ export default function ListaPaginada({
       maxToRenderPerBatch={12}
       windowSize={9}
       removeClippedSubviews
-      refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await desdeCero(); setRecargando(false); }} />}
+      refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await desdeCero(); setRecargando(false); }} />}
     />
   );
 }

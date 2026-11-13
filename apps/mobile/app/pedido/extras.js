@@ -8,7 +8,8 @@
 // propuesta en curso, la cantidad es la que aceptó la otra parte: se muestra,
 // no se toca. Las opciones y la lista salen del núcleo (`extrasDeRecepcion`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPedidoItemsAll } from '@nucleo/data/pedidos';
@@ -133,7 +134,7 @@ function ExtrasDelPedido() {
         <Aviso texto="Lo que llegó y no venía en el pedido. Queda como diferencia y se resuelve con Bodega." />
         <Seccion titulo="Agregar un producto">
           <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Busca el producto" />
-          {buscando ? <ActivityIndicator /> : resultados.map((p) => (
+          {buscando ? <Indicador /> : resultados.map((p) => (
             <Pressable key={p.id} disabled={ocupado} onPress={() => agregar(p)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
               <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{p.nombre}</Text>
             </Pressable>

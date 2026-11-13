@@ -14,7 +14,8 @@
 // las fichas que se congelaron o que parecen repetidas, con «Marcar revisado».
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -243,7 +244,7 @@ export default function Clientes() {
       ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={pestana === 'lista' ? grupos : []} />
         {pestana === 'revisar' ? <PorRevisar /> : null}
         {pestana === 'lista' && stats && !busqueda ? (

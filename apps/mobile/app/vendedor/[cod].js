@@ -4,7 +4,8 @@
 // que la suya, con cuánto en cada una. El agrupado sale del núcleo
 // (`ventasDiariasDelVendedor`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchVendedorPorDia } from '@nucleo/data/ventas';
@@ -49,7 +50,7 @@ export default function Vendedor() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas por día' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 20 }}>
           <Avatar empleado={emp ?? { name: nombre }} tamano={64} />
           <View style={{ flex: 1 }}>

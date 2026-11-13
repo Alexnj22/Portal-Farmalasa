@@ -13,7 +13,8 @@
 // Como el portal, se filtra además por estado y por período (la fecha en que
 // se recibió, o se imprimió si todavía no llegó): `filtrarSolicitudes`.
 import { useCallback, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -114,7 +115,7 @@ export default function SolicitudesDatos() {
       </FijoArriba>
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vencidas || apremian ? (

@@ -17,7 +17,8 @@
 // se rehace sólo cuando entran comentarios nuevos), las rondas de la encuesta,
 // y los accesos a Ajustes (`ajustes`) y al Avance con sus enlaces (`avance`).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas, guardarResumen,
@@ -263,7 +264,7 @@ export default function EncuestaCliente() {
                         </View>
                       </Vidrio>
                     ) : null}
-                    {comentarios == null ? <ActivityIndicator /> : comentarios.length ? comentarios.slice(0, 100).map((c, i) => (
+                    {comentarios == null ? <Indicador /> : comentarios.length ? comentarios.slice(0, 100).map((c, i) => (
                       <Vidrio key={c.id ?? i} radio={16}>
                         <View style={{ padding: 12, gap: 4 }}>
                           <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{c.texto ?? ''}</Text>

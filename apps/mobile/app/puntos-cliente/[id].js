@@ -18,7 +18,9 @@
 // ajusta y se une desde esa. Lo que se puede canjear va separado del
 // historial: «ganados en total» no es saldo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -143,7 +145,7 @@ export default function PuntosCliente() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Puntos', headerLargeTitle: false }} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {!d && !error ? <Cargando /> : null}
         {d ? (
@@ -180,7 +182,7 @@ export default function PuntosCliente() {
             <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
             {aviso ? <VentaDelAviso aviso={aviso} /> : null}
             {errorExp ? <Aviso tono="freno" texto={errorExp} /> : null}
-            {como && !exp && !errorExp ? <ActivityIndicator /> : null}
+            {como && !exp && !errorExp ? <Indicador /> : null}
             {exp ? <Expediente exp={exp} /> : null}
             <Grilla celdas={[
               // Historial, no saldo (2026-10-15 en el portal): sin dólares en lo

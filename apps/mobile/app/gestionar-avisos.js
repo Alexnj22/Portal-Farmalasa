@@ -13,7 +13,8 @@
 // el portal. A quién le llega, la lectura y la sección
 // salen del núcleo (`avisosInternos`).
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -281,7 +282,7 @@ export default function GestionarAvisos() {
         ItemSeparatorComponent={Separador}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         initialNumToRender={8} windowSize={7} removeClippedSubviews
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
         ListEmptyComponent={<Vacio>Sin avisos en esta sección</Vacio>}
         renderItem={({ item: a }) => {
           const urgente = a.priority === 'URGENT' && seccion !== 'SCHEDULED';

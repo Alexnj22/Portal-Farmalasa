@@ -9,7 +9,8 @@
 // día con el selector del sistema; la bitácora de mañana no existe, así que no
 // se avanza de hoy.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -183,7 +184,7 @@ export default function Bitacoras() {
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={cargando && !!dia} onRefresh={cargar} />}>
+        refreshControl={<Refrescar refreshing={cargando && !!dia} onRefresh={cargar} />}>
         <FiltrosActivos grupos={grupos} />
         {nombreSala ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 4 }}>{nombreSala}</Text> : null}
 

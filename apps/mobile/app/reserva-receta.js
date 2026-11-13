@@ -8,7 +8,8 @@
 //
 // Params: `id` de la reserva; `sala` (o vacío con `todas=1`) para releerla.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Dimensions, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { codigoDeReserva, decidirReceta, fetchReservasDeSucursal } from '@nucleo/data/reservas';
@@ -121,7 +122,7 @@ function RevisarReceta() {
               </View>
               <View style={{ borderRadius: 14, overflow: 'hidden', backgroundColor: colorSistema.separador, maxHeight: Dimensions.get('window').height * 0.6 }}>
                 {!reserva.receta_ruta ? <Text style={{ padding: 16, color: colorSistema.texto2 }}>El cliente todavía no subió la foto.</Text>
-                  : !url ? <ActivityIndicator style={{ margin: 32 }} /> : (
+                  : !url ? <Indicador style={{ margin: 32 }} /> : (
                     <ScrollView nestedScrollEnabled maximumZoomScale={4} minimumZoomScale={1} bouncesZoom>
                       <ScrollView horizontal nestedScrollEnabled>
                         <Image source={{ uri: url }} style={{ width: anchoFoto, height: altoFoto }} resizeMode="contain"

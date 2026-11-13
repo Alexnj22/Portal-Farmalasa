@@ -27,7 +27,8 @@
 // `data/envios`) y el alcance es el mismo: con «todas las salas» se ven todas;
 // si no, la mía más las que estoy cubriendo ahora.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -342,7 +343,7 @@ export default function Traslados() {
       <FijoArriba><Segmentos opciones={opciones} activa={vista} onCambiar={setVista} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={filtrosDeVista} />
 
         {vista === 'piden' ? (

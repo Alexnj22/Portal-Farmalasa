@@ -8,7 +8,8 @@
 // Qué entra a la galería, el texto y los archivos vigentes salen del núcleo
 // (`marketing`), lo mismo del portal. Se filtra por formato y por marca (`esDeMarca`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Modal, RefreshControl, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Modal, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { useEnTramos } from '../componentes/alFinal';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -101,7 +102,7 @@ export default function Galeria() {
       <MenuDeFiltros grupos={grupos} />
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {piezas == null ? <Cargando /> : (

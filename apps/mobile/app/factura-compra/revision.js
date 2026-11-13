@@ -14,7 +14,9 @@
 // un toque — como el portal, que empareja directo sin pasar por «confirmado
 // sin JSON». Necesita, como allá, el permiso de abrir el documento.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -53,7 +55,7 @@ function ElegirDocumento({ documentos, sugerido, onElegir, onCancelar }) {
   return (
     <View style={{ gap: 6 }}>
       <Campo multiline={false} value={q} onChangeText={setQ} placeholder="Proveedor o código de generación" autoFocus />
-      {documentos.length === 0 ? <ActivityIndicator /> : lista.map((d) => (
+      {documentos.length === 0 ? <Indicador /> : lista.map((d) => (
         <Pressable key={d.id} onPress={() => onElegir(d)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${d.supplier_nombre || d.emisor_nombre || '—'} · ${formatMoney(d.monto_total)}`}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${fechaNumerica(d.fecha_emision, { anio: 'corto' })} · ${d.codigo_generacion ?? 'sin código'}`}</Text>
@@ -106,10 +108,10 @@ export default function RevisionDeFacturas() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Revisión', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Correo, asunto o archivo', onChangeText: (e) => setBusca(e.nativeEvent.text) } }} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }} keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {puede ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Buscar correos nuevos" borde onPress={buscarCorreos} /></View> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{filas == null ? 'Cargando…' : `${visibles.length} pendiente${visibles.length === 1 ? '' : 's'} de revisión`}</Text>
-        {filas == null ? <ActivityIndicator /> : !visibles.length ? <Vacio titulo="Sin pendientes de revisión." /> : visibles.map((r) => {
+        {filas == null ? <Indicador /> : !visibles.length ? <Vacio titulo="Sin pendientes de revisión." /> : visibles.map((r) => {
           const [rot, color] = TIPO[r.kind] ?? ['JSON inválido', MARCA.ambar];
           const sugerido = r.ai_suggested?.invalida_codigo_generacion ?? r.ai_suggested?.detected_codigo_generacion ?? null;
           const esta = abierta?.id === r.id ? abierta : null;

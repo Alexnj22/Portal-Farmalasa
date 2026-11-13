@@ -14,7 +14,8 @@
 // La existencia se relee AL ABRIR, no al apretar: el número de la casilla tiene
 // que ser el de ahora.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -190,7 +191,7 @@ export default function Traslado() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>
+          refreshControl={<Refrescar refreshing={false} onRefresh={cargar} />}>
 
           {/* Quién pide, de dónde a dónde, y cuándo. */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

@@ -5,7 +5,8 @@
 // app (pedido del usuario del 2026-10-01: «si usamos canónico y vidrio, ¿por
 // qué poner sólidos?»).
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
@@ -43,7 +44,7 @@ function Buscador({ onElegir, enLaSolicitud, onRevisar }) {
       {enLaSolicitud ? <BotonGrande texto={`En la solicitud · ${enLaSolicitud} — revisar y enviar`} borde onPress={onRevisar} /> : null}
       <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Busca el producto o su principio activo" autoFocus autoCorrect={false} returnKeyType="search" />
       {corto ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Escribe al menos ${MIN_LETRAS_BUSQUEDA} letras.`}</Text> : null}
-      {estado.cargando ? <ActivityIndicator /> : null}
+      {estado.cargando ? <Indicador /> : null}
       {estado.error ? <Aviso tono="freno" texto="No se pudo buscar. Intenta de nuevo." /> : null}
       {!estado.cargando && aplicado.length >= MIN_LETRAS_BUSQUEDA && !estado.productos.length && !estado.error
         ? <Vacio titulo="Ninguna sala tiene un producto con ese nombre." /> : null}
@@ -124,7 +125,7 @@ export default function PedirTraslado() {
           </Seccion>
 
           <Seccion titulo="De qué sala">
-            {!donde.length ? <ActivityIndicator /> : (
+            {!donde.length ? <Indicador /> : (
               <Opciones valor={String(origenId)} onCambiar={setOrigenId}
                 opciones={donde.map((d) => ({ id: claveOrigen(d), label: `${d.sala} — ${d.unidades}`, detalle: esAntibiotico && d.vence ? `Vence ${fmtVence(d.vence)}` : null }))} />
             )}

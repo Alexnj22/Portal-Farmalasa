@@ -12,7 +12,8 @@
 // El monto no se escribe: lo calcula el núcleo (`cuentaDelCobro`) y el servidor
 // lo vuelve a calcular. La clave de envío evita cobrar dos veces.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -270,7 +271,7 @@ export default function AplicacionInyeccion() {
               modo === 'COMPRADA' ? (
                 <>
                   <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Cliente, factura o inyección" />
-                  {ventas == null ? <ActivityIndicator /> : !ventas.length ? <Vacio titulo="Sin ventas con inyección por cobrar." detalle="Una venta recién hecha tarda hasta un minuto en llegar." />
+                  {ventas == null ? <Indicador /> : !ventas.length ? <Vacio titulo="Sin ventas con inyección por cobrar." detalle="Una venta recién hecha tarda hasta un minuto en llegar." />
                     : ventas.map((v) => <Venta key={v.id} v={v} activa={false} onElegir={() => elegirVenta(v)} />)}
                 </>
               ) : (
@@ -397,7 +398,7 @@ export default function AplicacionInyeccion() {
             {modo === 'CANJEAR' ? (
               <>
                 <Campo multiline={false} value={textoPend} onChangeText={setTextoPend} placeholder="Cliente, factura o inyección" />
-                {pendientes == null ? <ActivityIndicator /> : !grupos.length ? <Vacio titulo="Sin aplicaciones pagadas por aplicar." /> : grupos.map(({ clave: k, muestra: p, ids }) => (
+                {pendientes == null ? <Indicador /> : !grupos.length ? <Vacio titulo="Sin aplicaciones pagadas por aplicar." /> : grupos.map(({ clave: k, muestra: p, ids }) => (
                   <Seccion key={k} titulo={`${p.producto}${p.dosis_ml != null ? ` · ${fmtMl(p.dosis_ml)} ml` : ''}`}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                       {[p.cliente, p.correlativo ? `Factura ${factura(p.correlativo)}` : null, p.venta_sala || p.sala, p.mezclada ? 'mezclada' : null, `${ids.length} por aplicar`].filter(Boolean).join(' · ')}

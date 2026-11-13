@@ -4,7 +4,8 @@
 // estable, Y moderada, Z errática). Tocar una celda abre la revisión de la
 // sala filtrada por esa clase. El conteo es del núcleo (`matrizAbcXyz`).
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchAnalisisDeStock } from '@nucleo/data/stockParams';
@@ -37,7 +38,7 @@ export default function MatrizAbcXyz() {
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}>
         <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800', marginHorizontal: 4 }}>{ERP_NAMES[Number(sala)] ?? ''}</Text>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {!m ? <ActivityIndicator /> : (
+        {!m ? <Indicador /> : (
           <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 8 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>

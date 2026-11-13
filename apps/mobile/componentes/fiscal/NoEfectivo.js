@@ -14,7 +14,8 @@
 // nota y el comprobante adjunto (se abre firmado al momento), con los filtros
 // por forma de pago y por sala.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Platform, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Haptics from 'expo-haptics';
@@ -227,7 +228,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
                 ) : null}
               </View>
               {confTipo || confSala ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${confirmadosFiltrados.length} de ${historial.length}`}</Text> : null}
-              {facturasConf == null ? <ActivityIndicator /> : confVisibles.map((h) => {
+              {facturasConf == null ? <Indicador /> : confVisibles.map((h) => {
                 const f = facturasConf[h.invoice_id];
                 const t = String(h.tipo_pago || '').toLowerCase();
                 return (

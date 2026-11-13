@@ -9,7 +9,8 @@
 // Si la promoción baja el precio en la venta, al agregar o quitar se pregunta
 // si el descuento también cambia. Las mismas funciones del portal.
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { volver } from '../../componentes/volver';
 import * as Haptics from 'expo-haptics';
@@ -229,7 +230,7 @@ export default function EditarPromocionProducto() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: promo?.nombre || 'Editar promoción', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error ? <Aviso tono="freno" texto={error} /> : null}
           {!promo && !error ? <Cargando /> : null}
           {conDescuento ? <Aviso texto="Esta promoción también baja el precio en la venta." /> : null}

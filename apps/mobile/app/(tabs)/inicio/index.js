@@ -16,7 +16,8 @@
 // Inicio», que se abre al final) no salen: es la misma preferencia
 // (`user_dashboard_prefs.widgets`).
 import { useCallback, useMemo, useState } from 'react';
-import { LayoutAnimation, Pressable, RefreshControl, ScrollView, Text } from 'react-native';
+import { LayoutAnimation, Pressable, ScrollView, Text } from 'react-native';
+import Refrescar from '../../../componentes/Refrescar';
 import { router, useFocusEffect } from 'expo-router';
 import { leer, guardar } from '@plataforma/almacen';
 import { fetchUserDashboardPrefs } from '@nucleo/data/dashboard';
@@ -108,7 +109,7 @@ export default function Inicio() {
     <ScrollView style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
-      refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
+      refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
       <FranjaDelPortal />
       <Encabezado sala={nombreSala} saludo={saludo(user)} />
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}

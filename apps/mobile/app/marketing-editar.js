@@ -10,7 +10,8 @@
 import { volver } from '../componentes/volver';
 import { leer } from '../componentes/comercial/elegido';
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import Interruptor from '../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -171,7 +172,7 @@ export default function EditarPiezaDeMarketing() {
             {pieza ? <Fila titulo="Estado" valor={ESTADOS_PIEZA.find((e) => e.value === form.estado)?.label || form.estado} onPress={() => elegir('Estado', estados, set('estado'))} /> : null}
           </Seccion>
           <Seccion titulo="Marca">
-            {marcasActivas.length ? <Chips opciones={marcasActivas} elegidas={form.marcas} onAlternar={(id) => alternar('marcas', id)} /> : <ActivityIndicator />}
+            {marcasActivas.length ? <Chips opciones={marcasActivas} elegidas={form.marcas} onAlternar={(id) => alternar('marcas', id)} /> : <Indicador />}
           </Seccion>
           <Seccion titulo="Redes">
             <Chips opciones={redes} elegidas={form.redes} onAlternar={(id) => alternar('redes', id)} />

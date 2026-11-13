@@ -4,7 +4,8 @@
 // `orphan_objects` editar). Mismas pestañas, mismos estados y la misma
 // escritura con su bitácora (`data/orphanObjects`).
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -73,7 +74,7 @@ export default function ObjetosHuerfanos() {
         <Segmentos opciones={PESTANAS_HUERFANOS.map((t) => ({ id: t.key, label: t.label }))} activa={pestana} onCambiar={setPestana} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ marginHorizontal: 16 }}>
           <Aviso texto="Candidatos a código muerto (componentes, funciones o procesos sin quien los use). No se detectan solos: cada fila se agrega cuando se confirma un caso real; aquí sólo se marca su estado." />
         </View>

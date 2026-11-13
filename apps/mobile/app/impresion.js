@@ -11,7 +11,8 @@
 // Lo que sólo existe en un navegador —el envío directo a la ticketera de la
 // computadora y el sistema Linux/Windows de esa caja— queda en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -144,7 +145,7 @@ export default function Impresion() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Prueba de impresión', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 16 }} keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Seccion titulo="El rollo" pie="Es un ajuste de este teléfono: el ancho del papel con el que se arma lo que imprime.">
           <Opciones opciones={ANCHOS_ROLLO.map((a) => ({ id: String(a.mm), label: `${a.mm} mm` }))} valor={String(ancho)} onCambiar={cambiarAncho} />
         </Seccion>

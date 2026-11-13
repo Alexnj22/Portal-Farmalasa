@@ -9,7 +9,8 @@
 // `cotizaciones_descargar`; es una salida de datos y se anota (`registrarEgreso`).
 // «Anular» —con `cotizaciones` editar y la cotización activa— pide confirmación.
 import { useCallback, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -115,7 +116,7 @@ export default function Cotizacion() {
         ) : null}
         {error ? <Aviso tono="freno" texto={error} /> : null}
         <Seccion titulo={items ? `Productos · ${items.length}` : 'Productos'} pie={esCCF ? 'Desglose de CCF por línea: precios sin IVA y el IVA de cada renglón.' : null}>
-          {items == null ? <ActivityIndicator /> : items.map((it, i) => {
+          {items == null ? <Indicador /> : items.map((it, i) => {
             const d = esCCF ? desgloseConIva(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1)) : null;
             return (
               <View key={it.id ?? i} style={{ gap: 4, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 9 : 0 }}>

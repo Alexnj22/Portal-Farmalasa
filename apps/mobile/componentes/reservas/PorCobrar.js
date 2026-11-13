@@ -4,7 +4,8 @@
 // forma de pago, o se le manda al cliente un enlace de pago. La lista y el
 // `apartado` que viaja a `operar-caja` salen del núcleo (`porCobrarDeSala`).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Share, Text, View } from 'react-native';
+import { Alert, Pressable, Share, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, fetchReservasDeSucursal, mensajeDeEnlaceDePago } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
@@ -89,7 +90,7 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
       ]);
   };
 
-  if (filas == null) return <ActivityIndicator />;
+  if (filas == null) return <Indicador />;
   if (!filas.length) return <Aviso texto="No hay encargos confirmados ni reservas con saldo en esta sala." />;
   return (
     <>

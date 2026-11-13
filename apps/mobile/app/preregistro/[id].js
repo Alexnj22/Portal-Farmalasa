@@ -4,7 +4,8 @@
 // Eliminar (2026-10-22, «descartar» en la base) libera el documento: es el caso
 // de soporte de alguien que pre-registró el DUI de otra persona con su teléfono.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { buscarFichasPorDocumento, resolverPreregistro } from '@nucleo/data/ofertasClientes';
@@ -58,7 +59,7 @@ export default function Preregistro() {
           <Dato rotulo="Fecha" valor={fechaTexto(pre.created_at, { day: 'numeric', month: 'long' })} />
         </Seccion>
         <Seccion titulo="Fichas con ese documento">
-          {fichas == null ? <ActivityIndicator /> : fichas.length ? fichas.map((c, i) => (
+          {fichas == null ? <Indicador /> : fichas.length ? fichas.map((c, i) => (
             <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>{c.name}</Text>

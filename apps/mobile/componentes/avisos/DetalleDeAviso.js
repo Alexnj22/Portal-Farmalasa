@@ -15,7 +15,8 @@
 // componente se monta al abrir y se desmonta al cerrar: no viaja por cada
 // fila de la lista.
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, Text, View } from 'react-native';
+import { Image, Modal, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
 import { adaptarMinMax } from '@nucleo/store/slices/requestsSlice';
@@ -130,7 +131,7 @@ function Fotos({ urls, titulo = 'Evidencia' }) {
           </Pressable>
         ) : (
           <View key={i} style={{ width: 76, height: 76, borderRadius: 12, backgroundColor: FONDO, alignItems: 'center', justifyContent: 'center' }}>
-            {firmadas ? <Tenue>Sin foto</Tenue> : <ActivityIndicator />}
+            {firmadas ? <Tenue>Sin foto</Tenue> : <Indicador />}
           </View>
         )))}
       </View>
@@ -354,7 +355,7 @@ function LaVenta({ meta, empleados }) {
         {filas.length > 0 ? (
           <Tenue>{`${filas.length} ${filas.length === 1 ? 'renglón' : 'renglones'}${unidades > 0 ? ` · ${cifra(unidades)} ${unidades === 1 ? 'unidad' : 'unidades'}` : ''}`}</Tenue>
         ) : null}
-        {cargando ? <ActivityIndicator style={{ marginVertical: 6 }} /> : filas.length === 0 ? (
+        {cargando ? <Indicador style={{ marginVertical: 6 }} /> : filas.length === 0 ? (
           <Tenue>No hay detalle de productos guardado para esta venta.</Tenue>
         ) : filas.map((it, i) => {
           const resta = restar && !it.descripcion;
@@ -713,7 +714,7 @@ export default function DetalleDeAviso({ n, suelto = false }) {
   }, [fila, esMinMax, empleados, porId, personasDeSolicitudes]);
 
   if (error) return <Text style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '700', paddingVertical: 6 }}>{error}</Text>;
-  if (!req) return <ActivityIndicator style={{ marginVertical: 10 }} />;
+  if (!req) return <Indicador style={{ marginVertical: 10 }} />;
 
   const meta = (typeof req.metadata === 'object' && req.metadata) ? req.metadata : {};
   const motivoRechazo = motivoDeRechazo(req);

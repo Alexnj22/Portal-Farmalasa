@@ -12,7 +12,8 @@
 // Todas las cuentas y la forma de lo que se guarda salen del núcleo
 // (`distribucionCompras`, `distribucionComercial`), las mismas del portal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Text, View } from 'react-native';
+import { Alert, Modal, Text, View } from 'react-native';
+import Indicador from '../../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
@@ -255,7 +256,7 @@ export default function CompraTorogoz() {
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Compra' }} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          {error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error}</Text> : <ActivityIndicator />}
+          {error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error}</Text> : <Indicador />}
         </View>
       </>
     );

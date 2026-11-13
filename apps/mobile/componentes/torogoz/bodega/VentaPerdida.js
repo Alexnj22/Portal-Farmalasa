@@ -10,7 +10,8 @@
 // La usan Ventas perdidas y la venta en ruta. Escribe con la misma función
 // del portal (`anotarVentaPerdida`) y la misma línea de bitácora.
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../Indicador';
 import * as Haptics from 'expo-haptics';
 import { buscarEnSrs } from '@nucleo/data/srs';
 import { anotarVentaPerdida, mensajeDeDistribucion } from '@nucleo/data/distribucion';
@@ -119,7 +120,7 @@ export default function VentaPerdida({ visible = true, emisorId, cliente = null,
                 <Seccion titulo="Buscar en el registro de la SRS">
                   <Campo multiline={false} value={q} autoFocus autoCorrect={false} placeholder="Nombre comercial o principio activo"
                     onChangeText={(t) => { setQ(t); setElegido(null); }} />
-                  {buscando ? <ActivityIndicator /> : null}
+                  {buscando ? <Indicador /> : null}
                   {errorSrs ? <Aviso tono="cuidado" texto={errorSrs} /> : null}
                   {q.trim().length < 3 ? <Aviso texto="Escribe al menos tres letras." /> : null}
                   {resultados && q.trim().length >= 3 && resultados.length === 0 && !buscando ? (

@@ -5,7 +5,8 @@
 // historial y no se deshace desde acá: la base firma con la sesión de quien
 // asigna (`puntos_panel_asignar`).
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { asignarCuentaAnterior, fetchFichasCandidatas, QUE_HACER_POR_MOTIVO } from '@nucleo/data/puntos';
@@ -76,7 +77,7 @@ export default function AsignarCuenta() {
           {QUE_HACER_POR_MOTIVO[cuenta.motivo] ? <Aviso texto={QUE_HACER_POR_MOTIVO[cuenta.motivo]} /> : null}
           <Seccion titulo="¿A qué ficha van estos puntos?">
             <Campo multiline={false} value={termino} onChangeText={setTermino} placeholder="Buscar ficha por nombre, DUI o teléfono…" />
-            {buscando ? <ActivityIndicator /> : !fichas.length ? (
+            {buscando ? <Indicador /> : !fichas.length ? (
               <Aviso texto={termino.trim() ? 'Ninguna ficha coincide.' : 'No hay fichas con el mismo teléfono ni un nombre parecido. Busca la ficha arriba.'} />
             ) : fichas.map((f) => {
               const activa = f.id === elegida;

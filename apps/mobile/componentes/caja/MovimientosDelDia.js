@@ -8,7 +8,8 @@
 // si alguien pidió corregirlo y en qué quedó, y se abre para ver el detalle y
 // la boleta. Pedir una corrección sigue en el portal: acá se LEE.
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { lineasDelDia, netoDelTramo, ORIGEN_DEL_MONTO, ROTULO_DE_ORIGEN, tituloDeCorreccion } from '@nucleo/utils/cajaDelDia';
 import { repartirPorCorte } from '@nucleo/utils/cortesDiagnostico';
@@ -142,7 +143,7 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
           {l.foto ? (
             <Pressable onPress={verBoleta} accessibilityRole="button"
               style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}26`, opacity: pressed ? 0.7 : 1 })}>
-              {foto === 'cargando' ? <ActivityIndicator /> : <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{foto ? 'Ocultar la boleta' : 'Ver la boleta'}</Text>}
+              {foto === 'cargando' ? <Indicador /> : <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{foto ? 'Ocultar la boleta' : 'Ver la boleta'}</Text>}
             </Pressable>
           ) : null}
           {foto?.error ? <Aviso tono="freno" texto="No se pudo abrir la boleta. Vuelve a intentarlo." /> : null}

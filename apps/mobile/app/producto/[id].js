@@ -16,7 +16,8 @@
 // ve en la app de clientes) pide `productos_tab_catalogo`, el mismo permiso que
 // abre el catálogo del portal donde se edita.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -169,7 +170,7 @@ export default function Producto() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: '' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Foto productId={productId} url={ficha?.foto_url} puedeCambiar={puedeEditar && !!ficha} onCambiada={(u) => setFicha((f) => ({ ...f, foto_url: u }))} />
         <View style={{ gap: 6 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 24, fontWeight: '800', letterSpacing: -0.3 }}>{titulo}</Text>

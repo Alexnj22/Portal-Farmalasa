@@ -10,9 +10,11 @@
 // En vez de bifurcar setenta llamadas, esto le da a Android las dos funciones
 // con la MISMA firma, dibujadas por <HojasAndroid /> (montado una vez en la
 // raíz). En iOS no se toca nada: `instalarHojasAndroid` no hace nada.
-import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActionSheetIOS, Alert, Platform, useColorScheme } from 'react-native';
 import HojaDeOpciones from './HojaDeOpciones';
+import DialogoAndroid from './DialogoAndroid';
+import { usePaleta } from '../tema/material';
 
 let mostrar = null;          // lo registra el host montado
 const cola = [];             // lo que se pidió antes de que el host montara
@@ -44,23 +46,33 @@ export function instalarHojasAndroid() {
       : botones?.length ? botones : [{ text: 'Aceptar' }];
     pedir({ tipo: 'texto', titulo, mensaje, botones: lista, valor: String(valor ?? ''), secreto: tipo === 'secure-text', teclado });
   };
+  // Alert.alert(titulo, mensaje, botones, { cancelable, onDismiss }): el
+  // diálogo de Material 3 (DialogoAndroid.android.js) en vez del viejo de la
+  // plataforma, con la misma firma. React Native en Android no deja cerrarlo
+  // tocando afuera salvo `cancelable: true`; se respeta.
+  Alert.alert = (titulo, mensaje, botones, opciones) => {
+    pedir({ tipo: 'aviso', titulo, mensaje, botones: botones?.length ? botones : [{ text: 'Aceptar' }],
+      cancelable: !!opciones?.cancelable, alDescartar: opciones?.onDismiss });
+  };
 }
 
 export default function HojasAndroid() {
   const [hoja, setHoja] = useState(null);
-  const [texto, setTexto] = useState('');
+  const texto = useRef('');
   const oscuro = useColorScheme() === 'dark';
+  const paleta = usePaleta();
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
-    mostrar = (h) => { setTexto(h.valor ?? ''); setHoja(h); };
+    mostrar = (h) => { texto.current = h.valor ?? ''; setHoja(h); };
     if (cola.length) mostrar(cola.shift());
     return () => { mostrar = null; };
   }, []);
   if (Platform.OS !== 'android' || !hoja) return null;
 
-  const fondo = oscuro ? '#2B2930' : '#F7F2FA'; // surfaceContainerHigh de Material 3
-  const tinta = oscuro ? '#FFFFFF' : '#000000';
-  const tenue = oscuro ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
+  // La paleta del sistema en vivo (tema/material.js); sin ella, los tonos base de Material 3.
+  const fondo = paleta?.surfaceContainerLow ?? (oscuro ? '#2B2930' : '#F7F2FA');
+  const tinta = paleta?.onSurface ?? (oscuro ? '#FFFFFF' : '#000000');
+  const tenue = paleta?.onSurfaceVariant ?? (oscuro ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)');
   const cerrar = (despues) => {
     setHoja(null);
     // La siguiente de la cola, y la acción DESPUÉS de cerrar: si abre otra hoja
@@ -69,50 +81,14 @@ export default function HojasAndroid() {
   };
   const cancelar = () => {
     if (hoja.tipo === 'opciones') cerrar(() => hoja.alElegir(null));
+    else if (hoja.tipo === 'aviso') cerrar(() => hoja.alDescartar?.());
     else { const b = hoja.botones.find((x) => x.style === 'cancel'); cerrar(() => b?.onPress?.()); }
   };
 
   // Las opciones: la hoja inferior de Material 3 (`HojaDeOpciones.android.js`).
-  if (hoja.tipo === 'opciones') return <HojaDeOpciones hoja={hoja} fondo={fondo} tinta={tinta} tenue={tenue} cerrar={cerrar} cancelar={cancelar} />;
+  if (hoja.tipo === 'opciones') return <HojaDeOpciones hoja={hoja} fondo={fondo} tinta={tinta} tenue={tenue} cerrar={cerrar} cancelar={cancelar} error={paleta?.error} />;
 
-  return (
-    <Modal transparent visible animationType="fade" onRequestClose={cancelar} statusBarTranslucent>
-      <Pressable onPress={cancelar} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: hoja.tipo === 'opciones' ? 'flex-end' : 'center', padding: 16 }}>
-        <Pressable onPress={() => {}} style={{ backgroundColor: fondo, borderRadius: 28, paddingVertical: 16, maxHeight: '80%' }}>
-          {hoja.titulo ? <Text style={{ color: tinta, fontSize: 18, fontWeight: '700', paddingHorizontal: 20, paddingTop: 8 }}>{hoja.titulo}</Text> : null}
-          {hoja.mensaje ? <Text style={{ color: tenue, fontSize: 14, paddingHorizontal: 20, paddingTop: 6 }}>{hoja.mensaje}</Text> : null}
-          {hoja.tipo === 'opciones' ? (
-            <ScrollView style={{ marginTop: 8 }}>
-              {hoja.opciones.filter((o) => !o.cancelar).map((o) => (
-                <Pressable key={o.i} disabled={o.apagado} onPress={() => cerrar(() => hoja.alElegir(o.i))} accessibilityRole="button"
-                  style={({ pressed }) => ({ minHeight: 52, justifyContent: 'center', paddingHorizontal: 20, opacity: o.apagado ? 0.4 : 1, backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
-                  <Text style={{ fontSize: 16, color: o.destructivo ? '#FF3B30' : tinta }}>{o.texto}</Text>
-                </Pressable>
-              ))}
-              {hoja.opciones.some((o) => o.cancelar) ? (
-                <Pressable onPress={cancelar} accessibilityRole="button"
-                  style={({ pressed }) => ({ minHeight: 52, justifyContent: 'center', paddingHorizontal: 20, backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: tenue }}>{hoja.opciones.find((o) => o.cancelar).texto}</Text>
-                </Pressable>
-              ) : null}
-            </ScrollView>
-          ) : (
-            <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}>
-              <TextInput value={texto} onChangeText={setTexto} autoFocus secureTextEntry={hoja.secreto} keyboardType={hoja.teclado}
-                multiline={!hoja.secreto} placeholderTextColor={tenue}
-                style={{ minHeight: 56, maxHeight: 140, borderRadius: 4, borderWidth: 1, borderColor: tenue, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: tinta }} />
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-                {hoja.botones.map((b, i) => (
-                  <Pressable key={i} accessibilityRole="button" onPress={() => cerrar(() => b.onPress?.(texto))}
-                    style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 12, backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
-                    <Text style={{ fontSize: 16, fontWeight: b.style === 'cancel' ? '500' : '700', color: b.style === 'destructive' ? '#FF3B30' : b.style === 'cancel' ? tenue : '#8E1F8F' }}>{b.text}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          )}
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
+  // Avisos y «escribe el motivo»: el diálogo de Material 3.
+  return <DialogoAndroid hoja={{ ...hoja, texto: () => texto.current }} cerrar={cerrar} cancelar={cancelar}
+    alEscribir={(t) => { texto.current = t; }} />;
 }

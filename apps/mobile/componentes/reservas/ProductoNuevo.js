@@ -4,7 +4,8 @@
 // no en el SRS— y Bodega responde precio y fecha, o que no se puede con motivo.
 // Si al escribir el nombre aparece en el catálogo, se ofrece usar ése.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { buscarEnSrs } from '@nucleo/data/srs';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
@@ -84,7 +85,7 @@ export default function ProductoNuevo({ nombre, srs, noAparece, onNombre, onSrs,
         </View>
       ) : noAparece ? (
         <Aviso tono="cuidado" texto="No aparece en el SRS: Bodega lo revisa antes de responder." />
-      ) : buscando ? <ActivityIndicator /> : resultados ? (
+      ) : buscando ? <Indicador /> : resultados ? (
         <View>
           {!resultados.length ? <Aviso texto="El SRS no tiene nada con ese nombre." /> : null}
           {resultados.map((r, i) => (

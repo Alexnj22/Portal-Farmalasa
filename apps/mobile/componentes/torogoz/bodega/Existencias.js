@@ -5,7 +5,8 @@
 // el núcleo (`existenciasPorProducto`) la suma por producto y sala. Sólo
 // lectura. La abren Inventario y la venta en ruta.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../Indicador';
 import { buscarInventarioGlobalV2 } from '@nucleo/data/inventory';
 import { ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { existenciasPorProducto } from '@nucleo/utils/distribucionBodega';
@@ -52,7 +53,7 @@ export default function Existencias({ visible = true, terminoInicial = '', onCer
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <Campo multiline={false} value={termino} autoFocus autoCorrect={false} placeholder="Producto (nombre o código)" onChangeText={setTermino}
             clearButtonMode="while-editing" />
-          {cargando ? <ActivityIndicator /> : null}
+          {cargando ? <Indicador /> : null}
           {error ? <Aviso tono="freno" texto={error} /> : null}
           {corto ? <Aviso texto="Escribe al menos dos letras." /> : null}
           {filas && !corto && !cargando && productos.length === 0 ? <Aviso texto="Ninguna sucursal tiene ese producto." /> : null}

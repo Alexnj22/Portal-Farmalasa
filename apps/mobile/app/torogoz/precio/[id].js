@@ -8,7 +8,8 @@
 // (`leerFormularioDePrecio`), las mismas del portal. Bajo el costo AVISA y no
 // bloquea: una liquidación de vencimiento puede ser justo lo que se quiere.
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
+import Indicador from '../../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -116,7 +117,7 @@ export default function PrecioTorogoz() {
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Precio' }} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          {error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error}</Text> : <ActivityIndicator />}
+          {error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error}</Text> : <Indicador />}
         </View>
       </>
     );
@@ -174,7 +175,7 @@ export default function PrecioTorogoz() {
               <>
                 <Campo multiline={false} value={texto} onChangeText={setTexto} autoCorrect={false} autoFocus
                   placeholder="Nombre, principio activo o código de barras" />
-                {buscando ? <ActivityIndicator /> : null}
+                {buscando ? <Indicador /> : null}
                 {!buscando && buscado.trim().length >= 2 && !opciones.length ? <Vacio enSeccion>Nada con ese texto.</Vacio> : null}
                 {buscado.trim().length < 2 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Escribe al menos dos letras.</Text> : null}
                 {opciones.map((p, i) => (

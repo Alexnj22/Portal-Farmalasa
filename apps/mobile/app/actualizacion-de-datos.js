@@ -10,7 +10,8 @@
 //
 // Rótulos, alcance y el estado por dominio salen del núcleo (`data/syncHealth`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { alcanceDeCorrida, estadoPorDominio, fetchSyncHealthRecent, ROTULO_DE_DOMINIO, SYNC_HEALTH_DOMAINS } from '@nucleo/data/syncHealth';
@@ -50,7 +51,7 @@ export default function ActualizacionDeDatos() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Actualización de datos', headerLargeTitle: true }} />
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {filas == null ? <Cargando /> : (
           <>

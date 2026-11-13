@@ -3,7 +3,8 @@
 // factor que corresponde a cómo cerró el último. Se pide al abrirla
 // (`explicar_meta_propuesta`), no antes: casi nadie la abre.
 import { useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { explicarMetaPropuesta } from '@nucleo/data/metas';
 import { ymLabelCorto } from '@nucleo/utils/metasUtils';
@@ -55,7 +56,7 @@ export default function Explicacion({ branchId, yearMonth, montoPropuesto }) {
           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>De dónde sale la meta</Text>
           <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{abierto ? 'Ocultar' : 'Ver'}</Text>
         </Tocable>
-        {abierto && cargando ? <ActivityIndicator /> : null}
+        {abierto && cargando ? <Indicador /> : null}
         {abierto && error ? nota('No se pudo traer el detalle del cálculo.') : null}
         {abierto && d ? (
           <View style={{ gap: 12 }}>

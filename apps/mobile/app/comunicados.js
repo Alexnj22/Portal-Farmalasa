@@ -15,7 +15,8 @@
 // Ojo: la pestaña «Avisos» de la app son las NOTIFICACIONES; esto es otra cosa
 // (en el portal, `/mis-avisos`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -181,7 +182,7 @@ export default function Comunicados() {
         ItemSeparatorComponent={Separador}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         initialNumToRender={8} windowSize={7} removeClippedSubviews
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12, marginBottom: 12 }}>
             <FiltrosActivos grupos={gruposDeLeidos} />

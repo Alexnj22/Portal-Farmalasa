@@ -12,7 +12,8 @@
 // El agrupado, los títulos y las preguntas salen del núcleo
 // (`deducibilidadPorRegla`), las escrituras también (`proveedores`).
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -199,7 +200,7 @@ export default function DeducibilidadDeProveedores() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Deducibilidad', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas == null ? <Cargando /> : !filas.length ? (
           <View style={{ marginHorizontal: 16 }}><Aviso texto="Todo clasificado: cada proveedor tiene su deducibilidad confirmada. El libro de compras ya puede usarlas." /></View>

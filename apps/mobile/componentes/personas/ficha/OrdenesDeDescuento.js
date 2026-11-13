@@ -20,7 +20,8 @@
 //  · la bitácora (`ORDEN_DESCUENTO_CREAR/EDITAR/BORRAR`) y el borrador del
 //    editor (la sesión de sala se cierra sola y esto se teclea mirando el papel).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../Indicador';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { BANCOS } from '@nucleo/constants/bancos';
@@ -204,7 +205,7 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
             {imagenes.length ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Enlace texto={leyendo ? 'Leyendo…' : 'Leer los datos del documento'} onPress={leer} deshabilitado={leyendo || guardando} />
-                {leyendo ? <ActivityIndicator /> : null}
+                {leyendo ? <Indicador /> : null}
               </View>
             ) : null}
             {(f.archivos || []).length ? (
@@ -296,7 +297,7 @@ export default function OrdenesDeDescuento({ empleado, puedeEditar }) {
       <Seccion titulo="Órdenes de descuento"
         pie={`Préstamos que la empresa descuenta de planilla y paga al banco.${vigentes.length ? ` ${vigentes.length} vigente${vigentes.length === 1 ? '' : 's'} · ${dinero(cuotaMensual)} al mes.` : ''}`}>
         {error ? <Nota tono="freno" texto={error} /> : null}
-        {ordenes === null ? <ActivityIndicator /> : !ordenes.length ? <Nota texto="Sin órdenes de descuento." /> : ordenes.map((o, i) => (
+        {ordenes === null ? <Indicador /> : !ordenes.length ? <Nota texto="Sin órdenes de descuento." /> : ordenes.map((o, i) => (
           <Orden key={o.id} o={o} primero={!i} puedeEditar={puedeEditar} onEditar={() => setEditando({ ...VACIA, ...o })} onBorrar={() => borrar(o)} />
         ))}
         {puedeEditar ? <Enlace texto="Agregar orden" onPress={() => setEditando({ ...VACIA })} /> : null}

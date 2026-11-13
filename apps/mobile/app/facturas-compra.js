@@ -15,7 +15,8 @@
 // «Detectar código» y «Adjuntar JSON» de un documento «Sin JSON», y «Ver el
 // documento de la anulación» de uno invalidado, viven en su ficha.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { compartirZipDeFacturas } from '../componentes/compras/zipDeFacturas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -127,7 +128,7 @@ export default function FacturasCompra() {
       <MenuDeFiltros grupos={grupos} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <PasoDeMes mes={mes} onCambiar={setMes} />
         <FiltrosActivos grupos={grupos} />
         {verRevision ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Revisión y correos" borde onPress={() => router.push('/factura-compra/revision')} /></View> : null}

@@ -5,7 +5,8 @@
 // movimiento. Se escribe con la caja en la mano y la sesión se cierra sola: lo
 // escrito se guarda como borrador.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { fetchCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { entradaDeLote } from '@nucleo/data/distribucionInventario';
@@ -90,7 +91,7 @@ export default function EntradaDeLote() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Seccion titulo="Producto">
-          {catalogo == null ? <ActivityIndicator /> : producto ? (
+          {catalogo == null ? <Indicador /> : producto ? (
             <Pressable onPress={() => poner('productoId')('')} style={{ minHeight: 44, justifyContent: 'center' }} accessibilityRole="button">
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{producto.nombre}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Tocar para cambiar</Text>

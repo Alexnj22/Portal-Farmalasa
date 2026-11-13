@@ -7,7 +7,8 @@
 // `cerrarFaltante`); lo que se cerró así sin recibirse lo marca
 // `falta_ingresar` y se ingresa con su propio botón.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack, useFocusEffect } from 'expo-router';
 import { cerrarFaltante, fetchFaltantes, ingresarAparecido, RESPONSABLES_DE_FALTANTE } from '@nucleo/data/faltantes';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -172,7 +173,7 @@ export default function Faltantes() {
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {lista == null ? null : visibles.length ? visibles.map((f) => <Faltante key={f.id} f={f} onHecho={cargar} supervisa={supervisa} />) : (
           <Vacio titulo={vista === 'abiertos' ? 'No hay faltantes sin resolver.' : 'Todavía no hay faltantes resueltos.'} />

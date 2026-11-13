@@ -18,7 +18,8 @@
 // de después de las 6:00 p. m., que no se envían a Hacienda
 // (`componentes/fiscal/CofNocheSinEnvio`), con su CSV.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import DetalleDeLibro from '../componentes/fiscal/DetalleDeLibro';
@@ -128,7 +129,7 @@ export default function LibrosIva() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libros de IVA', headerLargeTitle: true }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <PasoDeMes mes={mes} onCambiar={setMes} />
         {puedeExportar ? (

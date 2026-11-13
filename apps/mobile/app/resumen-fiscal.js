@@ -6,7 +6,8 @@
 // Los montos los calcula el servidor; el orden y el signo de cada renglón
 // salen del núcleo (`resumenFiscal`), lo mismo del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -56,7 +57,7 @@ export default function ResumenFiscal() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Resumen fiscal', headerLargeTitle: true }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <PasoDeMes mes={mes} onCambiar={setMes} />
         <View style={{ marginHorizontal: 16 }}>

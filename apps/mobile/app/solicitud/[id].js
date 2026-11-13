@@ -22,7 +22,8 @@
 // (`utils/accionesDeAviso`), qué es un parcial y qué índices viajan
 // (`utils/decisionDeSolicitud`) y la decisión misma (`decidirSolicitud`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -201,7 +202,7 @@ export default function Solicitud() {
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setVuelta((v) => v + 1); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setVuelta((v) => v + 1); setRecargando(false); }} />}>
         {fila === undefined ? (
           <Cargando />
         ) : !req ? (

@@ -11,7 +11,8 @@
 // deducibilidad por regla es `proveedores-fiscal` y la categoría en lote,
 // `proveedores-lote`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchProveedorCategorias, fetchProveedoresMaestro } from '@nucleo/data/proveedores';
@@ -104,7 +105,7 @@ export default function Proveedores() {
       <MenuDeFiltros grupos={grupos} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Revisar la deducibilidad por regla" borde onPress={() => router.push('/proveedores-fiscal')} /></View>
         <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Categoría en lote" borde onPress={() => router.push('/proveedores-lote')} /></View>

@@ -19,7 +19,8 @@
 // mantenimiento lo respeta solo: `hasPermission` apaga la escritura mientras el
 // módulo está tomado por otra persona.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -516,7 +517,7 @@ export default function MinMaxSala() {
         <FlatList data={visibles} keyExtractor={(r) => String(r.erp_product_id)} ListHeaderComponent={encabezado}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={20} windowSize={9}
           contentContainerStyle={{ paddingBottom: 48 }}
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
           ListEmptyComponent={<Vacio icono="Filtro" titulo="Ningún producto con este filtro" />}
           renderItem={({ item: r }) => (
             <Fila r={r} esBodega={esBodega}

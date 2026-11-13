@@ -12,7 +12,8 @@
 // `componentes/encuestas/Formulario` (una pregunta por pantalla). «Modo
 // tablet» abre la encuesta pública de la sala a pantalla completa.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
@@ -171,7 +172,7 @@ export default function EncuestasAplicar() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Aplicar encuesta', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {encuestas == null ? <Cargando /> : null}
 

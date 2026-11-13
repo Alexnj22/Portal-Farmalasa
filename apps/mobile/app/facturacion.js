@@ -38,7 +38,8 @@
 // los días que quedan salen del núcleo (`colasDeFacturacion`). Los montos,
 // sólo con `facturacion_ver_montos`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { Stack } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -245,7 +246,7 @@ export default function Facturacion() {
       <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargaHija((x) => x + 1); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargaHija((x) => x + 1); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {!colas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu cargo no tiene ninguna cola de Facturación." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}

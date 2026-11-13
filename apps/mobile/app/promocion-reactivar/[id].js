@@ -20,7 +20,8 @@
 // No reactiva nada: la fecha es la de la promoción y sólo se mueven sus
 // descuentos hasta ahí. Es el `modo="descuento"` de `ReactivarPromocionModal`.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -139,7 +140,7 @@ export default function ReactivarPromocion() {
             {fin && !fechaValida ? <Aviso tono="freno" texto="Tiene que ser hoy o una fecha posterior." /> : null}
           </Seccion>
         )}
-        {descuentos == null ? <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><ActivityIndicator /><Text style={{ color: colorSistema.texto2 }}>Leyendo el descuento de esta promoción…</Text></View> : null}
+        {descuentos == null ? <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><Indicador /><Text style={{ color: colorSistema.texto2 }}>Leyendo el descuento de esta promoción…</Text></View> : null}
         {falloDescuentos ? <Aviso tono="cuidado" texto={`${falloDescuentos} ${soloDescuento ? 'Revisa' : 'Después de reactivarla, revisa'} su fecha en la pestaña Descuentos.`} /> : null}
         {hayDescuentos && !pendientes.length ? (
           <Seccion titulo="Descuento en la venta">

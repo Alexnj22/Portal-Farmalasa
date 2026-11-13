@@ -10,7 +10,8 @@
 //
 // En iPhone devuelve `true` de una: su animación no compite así.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import Indicador from './Indicador';
 import { useNavigation } from 'expo-router';
 
 const ANDROID = Platform.OS === 'android';
@@ -35,7 +36,7 @@ export function TrasLaTransicion({ children }) {
   if (listo) return children;
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingTop: 48 }}>
-      <ActivityIndicator />
+      <Indicador />
     </View>
   );
 }

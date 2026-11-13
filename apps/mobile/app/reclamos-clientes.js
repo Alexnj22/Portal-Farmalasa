@@ -9,7 +9,8 @@
 // quien llama (`reclamo_registrar`), así que una sala sólo registra en la suya.
 // Todo sale del núcleo (`data/reclamos`), lo mismo del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -121,7 +122,7 @@ export default function ReclamosClientes() {
         </FijoArriba>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
           {vencidos ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${vencidos === 1 ? 'Un reclamo pasó' : `${vencidos} reclamos pasaron`} de los diez días hábiles sin respuesta.`} /></View> : null}
 

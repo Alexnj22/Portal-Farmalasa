@@ -10,7 +10,9 @@
 // ruta o anula desde aquí (`AccionesDeBodega`), y las diferencias se deciden
 // en su propio renglón (`DecisionDiferencia`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -147,7 +149,7 @@ function DetalleDePedido() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo, headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {!row ? (
           <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Este pedido ya no está en el tablero de esta sala." /></View>
@@ -215,7 +217,7 @@ function DetalleDePedido() {
             ) : null}
 
             <Bloque titulo="Productos">
-              {items == null ? <ActivityIndicator /> : <Renglones items={items} />}
+              {items == null ? <Indicador /> : <Renglones items={items} />}
             </Bloque>
           </>
         )}

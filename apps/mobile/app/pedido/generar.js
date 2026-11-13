@@ -18,7 +18,8 @@
 // Bodega»: lo que piden las salas y Bodega no tiene para despachar.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -236,7 +237,7 @@ export default function GenerarPedido() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Generar pedido', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {stats == null ? <Cargando /> : (
           <>
             {errorTablero ? <Aviso tono="freno" texto={`No se pudo leer cómo están las sucursales: ${errorTablero}`} /> : null}

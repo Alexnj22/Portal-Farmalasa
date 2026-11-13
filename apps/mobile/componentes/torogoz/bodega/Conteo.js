@@ -10,7 +10,8 @@
 // Bajas: se piden acá (`PedirBaja`) y las aprueba quien administra; recién
 // aprobadas salen del lote. Las funciones son las del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
+import Indicador from '../../Indicador';
 import { useFocusEffect } from 'expo-router';
 import {
   anularConteo, cerrarConteo, contar, fetchBajas, fetchCatalogo, fetchConteo, fetchConteos, iniciarConteo, mensajeDeDistribucion, resolverBaja,
@@ -267,7 +268,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
                 <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>Rechazar</Text>
               </Pressable>
               <Pressable disabled={!!ocupado} onPress={() => aprobarBaja(b)} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 22, backgroundColor: MARCA.rojo, alignItems: 'center', justifyContent: 'center', opacity: pressed || ocupado ? 0.6 : 1 })}>
-                {ocupado === `res-${b.id}` ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Aprobar baja</Text>}
+                {ocupado === `res-${b.id}` ? <Indicador color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Aprobar baja</Text>}
               </Pressable>
             </View>
           ) : null}

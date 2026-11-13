@@ -30,7 +30,8 @@
 //      — o que no se pudo medir, que también frena.
 // El servidor los vuelve a aplicar (`hacer-corte-caja` / `operar-caja`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -327,7 +328,7 @@ export default function Efectivo() {
       <MenuDeFiltros grupos={grupos} extra={accion === 'operar' && estado && !estado.error ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
         {puedeVerCortes ? <View style={{ marginHorizontal: 16 }}><Secciones /></View> : null}
         {!sala ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu usuario no tiene una sala con caja." /></View> : null}
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 20 }}>{nombre}</Text> : null}

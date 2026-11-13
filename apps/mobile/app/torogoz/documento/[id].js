@@ -16,7 +16,8 @@
 // hablan a Hacienda DE VERDAD: el entorno de pruebas no tiene esas funciones y
 // no se pueden probar ahí. Cada una pide confirmar.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -188,7 +189,7 @@ export default function Documento() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: d ? (TIPO_DOCUMENTO[d.tipo]?.largo ?? 'Documento') : 'Documento' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 16, gap: 16, paddingBottom: 56 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {d === undefined ? <Cargando /> : null}
         {d ? (

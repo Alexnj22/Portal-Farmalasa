@@ -23,7 +23,8 @@
 // (`cortesDiagnostico`), las mismas funciones del portal.
 import usePantallaDespierta from '../../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -218,7 +219,7 @@ export default function Corte() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
 
           <Vidrio radio={20} tinte={!noEsConteo && !descartado && sev !== 'ok' ? (sev === 'falta' ? 'rgba(240,68,56,0.10)' : 'rgba(247,144,9,0.10)') : undefined}>
             <View style={{ padding: 18, gap: 10 }}>

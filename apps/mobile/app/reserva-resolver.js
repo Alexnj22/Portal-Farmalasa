@@ -18,7 +18,8 @@
 // de sala (reglamento, cláusula 3.6), pagada en caja o en línea: se le llama
 // al cliente antes y la app le avisa lo que quedó.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -156,7 +157,7 @@ function PedirAOtraSala({ r, falta, ocupado, hacer }) {
   useEffect(() => { if (elegido) setOrigenId(`${elegido.erp_sucursal_id}`); }, [elegido, setOrigenId]);
   const lista = Boolean(elegido && h.lineaLista && String(h.origenId) === String(elegido.erp_sucursal_id));
 
-  if (!h.donde.length) return <ActivityIndicator />;
+  if (!h.donde.length) return <Indicador />;
   if (!candidatos.length) return <Aviso texto={`Ninguna otra sala tiene ${necesita} unidades. Encárgalo a Bodega.`} />;
   return (
     <>
@@ -233,7 +234,7 @@ function LoDecideElCliente({ r, ocupado, hacer }) {
           ) : (
             <>
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} onPress={() => setBuscando(true)}>{`${alt.nombre} · cambiar`}</Text>
-              {precios == null ? <ActivityIndicator /> : (
+              {precios == null ? <Indicador /> : (
                 <Opciones valor={pres} onCambiar={setPres}
                   opciones={precios.map((p) => ({ id: `${p.factor}|${p.precio}`, label: `${p.tipo} · ${formatMoney(p.precio)}` }))} />
               )}

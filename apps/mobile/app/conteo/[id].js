@@ -18,7 +18,8 @@
 // recuento» del supervisor —a ciegas, sobre lo que tiene diferencia, en orden
 // de estante—; y la hoja compacta entre los papeles.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, AppState, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import * as Haptics from 'expo-haptics';
@@ -563,7 +564,7 @@ export default function Conteo() {
                   </Pressable>
                   {abiertoAqui ? (
                     <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
-                      {!items[p.erp_product_id] ? <ActivityIndicator style={{ marginVertical: 10 }} />
+                      {!items[p.erp_product_id] ? <Indicador style={{ marginVertical: 10 }} />
                         : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} aCiegas={recuento} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
                           // En un conteo que ajusta, el lote de un renglón del sistema no se
                           // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.

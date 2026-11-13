@@ -1,5 +1,5 @@
-import { ActivityIndicator } from 'react-native';
+import Indicador from '../Indicador';
 
 export default function Cargando() {
-  return <ActivityIndicator style={{ marginTop: 32 }} />;
+  return <Indicador style={{ marginTop: 32 }} />;
 }

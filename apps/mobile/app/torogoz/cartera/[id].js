@@ -18,7 +18,8 @@
 // ⚠ «Cobrar» y «Anular cobro» mueven DINERO de verdad (la cartera y la caja del
 // vendedor). En el entorno de pruebas no se cobra: ahí sólo se mira.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../../componentes/Refrescar';
 import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -209,7 +210,7 @@ export default function CuentaDelCliente() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 56 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           <Vidrio radio={20}>
             <View style={{ padding: 18, gap: 6 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{p.nombre}</Text>

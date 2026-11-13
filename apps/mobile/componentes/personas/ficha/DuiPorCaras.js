@@ -23,7 +23,8 @@
 // se junta en `form._cambiosDelDui`: al guardar, el store lo deja en su propio
 // asiento de bitácora (`DATOS_DEL_DUI_ACTUALIZADOS`).
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Indicador from '../../Indicador';
 import { leerDui } from '@nucleo/data/ia';
 import { aplicarDuiLeido, avisoDeCaras, juntarCambiosDelDui } from '@nucleo/utils/duiLeido';
 import { carasConElVencimientoDelDui, documentoReemplazado, parcheDeArchivoNuevo } from '@nucleo/utils/documentosDelExpediente';
@@ -48,7 +49,7 @@ function Casilla({ rotulo, doc, ocupado, onSubir }) {
         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{rotulo}</Text>
         <Text style={{ color: doc?.url ? MARCA.verde : MARCA.ambar, fontSize: 13 }}>{doc?.url ? 'Cargado' : 'Pendiente'}</Text>
       </View>
-      {ocupado ? <ActivityIndicator /> : null}
+      {ocupado ? <Indicador /> : null}
       {doc?.url ? <Enlace texto="Ver" onPress={abrir} /> : null}
       <Enlace texto={doc?.url ? 'Cambiar' : 'Subir'} onPress={onSubir} deshabilitado={ocupado} />
     </View>
@@ -158,7 +159,7 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
         </>
       )}
       {leyendo ? (
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><ActivityIndicator /><Nota texto="Leyendo el documento…" /></View>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><Indicador /><Nota texto="Leyendo el documento…" /></View>
       ) : null}
       {falloLectura && !leyendo ? <Nota tono="cuidado" texto={falloLectura} /> : null}
       {caras && !leyendo && !falloLectura ? <Nota tono={caras.grave ? 'cuidado' : null} texto={caras.texto} /> : null}

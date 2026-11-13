@@ -4,7 +4,8 @@
 // (núcleo), que agrega el cambio al historial en vez de pisarlo.
 import { volver } from '../../componentes/volver';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPedidoSucursalStatus } from '@nucleo/data/pedidos';
@@ -72,7 +73,7 @@ function ProgramarEntrega() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: pss?.entrega_programada_at ? 'Mover la entrega' : 'Programar entrega', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Pedido #${numero} · ${ERP_NAMES[Number(sucId)] ?? ''}`}</Text>
-        {pss == null ? <ActivityIndicator /> : (
+        {pss == null ? <Indicador /> : (
           <>
             <Seccion titulo="Cuándo llega a la sala">
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

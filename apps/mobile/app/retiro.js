@@ -15,7 +15,8 @@
 //
 // Los permisos los decide la base; la bitácora la escribe la capa de datos.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { cargarBulto, cerrarRetiro, DIAS_PARA_ALARMA, fetchPendientesEnSala, fetchRetiroAbierto, firmarEntregaConCarne, soltarBulto } from '@nucleo/data/retiros';
@@ -148,7 +149,7 @@ export default function Retiro() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Llevar productos', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         {salaActual ? <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>{`Estás en ${salaActual.nombre || nombre(salaActual.id)}`}</Text> : null}
         <BotonGrande texto="Escanear el ticket de un paquete" color={MARCA.azul} onPress={() => { setError(null); setEscaneando('ticket'); }} />
         {aviso ? <Aviso tono="nota" texto={aviso} /> : null}

@@ -2,7 +2,8 @@
 // Rutas, sola, para entrar desde Inventario (en el portal es la cuarta
 // pestaña de Inventario, `?inventario=camiones`).
 import { useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -16,7 +17,7 @@ export default function TorogozCamiones() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Camiones', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => setVuelta((v) => v + 1)} />}>
+        refreshControl={<Refrescar refreshing={false} onRefresh={() => setVuelta((v) => v + 1)} />}>
         <Camiones key={vuelta} puedeConfigurar={puedeConfigurar} />
       </ScrollView>
     </>

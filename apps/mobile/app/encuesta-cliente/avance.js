@@ -8,7 +8,8 @@
 // portal). El afiche con el QR —el mismo papel del portal, armado por el núcleo
 // (`utils/aficheQr`)— se imprime, se comparte en PDF o se guarda desde acá.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, ScrollView, Share, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -124,7 +125,7 @@ export default function AvanceEncuesta() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Avance' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {!encuesta || !avance ? (error ? null : <Cargando />) : !['publicada', 'cerrada'].includes(encuesta.estado) ? (
           <View style={{ marginHorizontal: 16 }}><Aviso texto="El avance y los enlaces aparecen cuando la encuesta se publica." /></View>

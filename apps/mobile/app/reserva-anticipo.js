@@ -21,7 +21,8 @@
 // a Bodega como consulta, con el SRS y una foto. Todo sale con su papel.
 // Guarda borrador.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Share, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -319,7 +320,7 @@ function Nuevo({ sala, nombreSala, user }) {
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{producto.nombre}</Text>
               <Enlace texto={soloEncargo || enPedido ? 'Quitar' : 'Cambiar'} onPress={() => { limpiarProducto(); if (!soloEncargo && !enPedido) setBuscandoProducto(true); }} />
             </View>
-            {presentaciones == null ? <ActivityIndicator /> : !presentaciones.length ? <Aviso tono="cuidado" texto="Ese producto no tiene precio." /> : (
+            {presentaciones == null ? <Indicador /> : !presentaciones.length ? <Aviso tono="cuidado" texto="Ese producto no tiene precio." /> : (
               presentaciones.length > 1 ? (
                 <Opciones opciones={presentaciones.map((p) => ({ id: clavePresentacion(p), label: `${p.tipo} · ${formatMoney(p.precio)}` }))} valor={pres} onCambiar={setPres} />
               ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${presentaciones[0].tipo} · ${formatMoney(presentaciones[0].precio)}`}</Text>
@@ -340,7 +341,7 @@ function Nuevo({ sala, nombreSala, user }) {
         )}
       </Seccion>
 
-      {!sinCatalogo && producto && elegida && cant > 0 && !opciones ? <ActivityIndicator /> : null}
+      {!sinCatalogo && producto && elegida && cant > 0 && !opciones ? <Indicador /> : null}
       {!sinCatalogo && producto && elegida && opciones ? (
         <Seccion titulo={modo === 'reserva' ? 'Disponibilidad' : 'Cómo llega'}>
           {vienen.length ? <YaVieneEnCamino vienen={vienen} factor={elegida.factor} cantidad={cant} elegidos={elegidosIds} onCambiar={setVienenElegidos} /> : null}

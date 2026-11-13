@@ -14,7 +14,9 @@
 // semestral (decidir por quien ya no trabaja, aprobar, reabrir) y los Gastos
 // por recuperar (agregar en `meta-gasto`, quitar con motivo).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -153,7 +155,7 @@ function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
       {esActual ? (
         <View style={{ gap: 10, marginTop: 6 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800', marginHorizontal: 20 }}>{`Cómo va ${ymLabel(ym).toLowerCase()}`}</Text>
-          {mes === undefined ? <ActivityIndicator /> : mes ? (
+          {mes === undefined ? <Indicador /> : mes ? (
             <View style={{ marginHorizontal: 16, gap: 10 }}>
               <GraficaDelMes data={mes} />
               <Ranking data={mes} />
@@ -220,7 +222,7 @@ export default function Metas() {
       <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         <FiltrosActivos grupos={grupos} />
         {pestana === 'tablero' ? (
           <Tablero key={llave} ym={ym} setYm={setYm} sala={sala === 'todas' ? null : sala} todas={todas} user={user} salaNombre={salaNombre} />

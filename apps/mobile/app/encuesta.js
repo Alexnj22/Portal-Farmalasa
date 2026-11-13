@@ -12,7 +12,8 @@
 // cada uno se puede rehacer. Generar sólo lo hace quien ve todas las salas:
 // el resumen es de la encuesta entera y no puede salir de una sola sala.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -282,7 +283,7 @@ export default function Encuesta() {
                       <View style={{ padding: 12, gap: 8 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Resumen IA · ${seg.label}`}</Text>
-                          {generando[seg.key] ? <ActivityIndicator /> : todas && texto ? (
+                          {generando[seg.key] ? <Indicador /> : todas && texto ? (
                             <Pressable hitSlop={8} onPress={() => resumir(seg)} style={{ minHeight: 44, justifyContent: 'center' }}>
                               <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>Rehacer</Text>
                             </Pressable>

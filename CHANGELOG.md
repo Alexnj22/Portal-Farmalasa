@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1521.0 — App Android: diálogos, indicador de carga y jalar para actualizar de Material 3
+
+App del personal, Android — primera parte de «TODO debe ser material nuevo en android» (usuario, 2026-11-13). Todo desde un solo lugar, sin tocar la lógica de las pantallas:
+
+- **Diálogos de Material 3** en vez del AlertDialog viejo de la plataforma: `Alert.alert` (203 archivos) y `Alert.prompt` (el «escribe el motivo», que antes era un Modal hecho a mano) los dibuja ahora el AlertDialog de Compose (`componentes/DialogoAndroid.android.js`), con esquinas de 28, título grande, botones a la derecha (apilados si son más de dos) y los colores del sistema leídos en vivo. Misma firma: se instala en `HojasAndroid.js`, como ya se hacía con la hoja de opciones. Se respeta `cancelable`.
+- **Indicador de carga de Material 3 Expressive** (la forma que se transforma mientras gira) en vez del círculo viejo: `componentes/Indicador` reemplaza a `ActivityIndicator` en 103 archivos. En iPhone sigue siendo el nativo de iOS.
+- **Jalar para actualizar** con los colores de Material 3 (indicador primario sobre el contenedor tonal): `componentes/Refrescar` reemplaza a `RefreshControl` en 124 archivos. En iPhone, el nativo.
+- La hoja de opciones de Android también toma los colores del sistema en vivo.
+- Desarrollo: React Native en Android pide el paquete con `lazy=true` fijo al recargar y eso rompía las pantallas que cargan parte del núcleo después («Unable to resolve module …requestsAcciones», Solicitudes cargando sin fin en el emulador). `metro.config.js` lo cambia a `lazy=false` en el servidor de desarrollo. No afecta lo publicado.
+- Verificado en el emulador: aviso de dos botones, de tres opciones (se cierra con atrás), indicador en sus tres tamaños, jalar para actualizar. La huella nativa de iOS y de Android no cambia: llega por aire.
+
 ## v2.1520.5 — Bitácoras: respaldo completo, rastro de cambios, humedad obligatoria y aviso de termómetro
 
 Bitácoras SRS, fase 1 — lo que la auditoría del 13-nov encontró roto o sin rastro (migración `20261113161226`).

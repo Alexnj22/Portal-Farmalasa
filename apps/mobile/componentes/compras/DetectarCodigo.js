@@ -13,7 +13,8 @@
 // igual que allá. Si el correo ya trajo el código detectado por el servidor
 // (`ai_suggested.detected_codigo_generacion`), no se baja el PDF: sólo se busca.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { unzlibSync, inflateSync } from 'fflate';
 import { findPurchaseDteDocumentByCodigo } from '@nucleo/data/facturasCompra';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
@@ -143,7 +144,7 @@ export default function DetectarCodigo({ pdfPath, detectado = null, revisado = f
   );
 
   if (estado === 'quieto') return enlace('Detectar código', detectar);
-  if (estado === 'buscando') return <View style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 6 }}><ActivityIndicator /><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Analizando el PDF…</Text></View>;
+  if (estado === 'buscando') return <View style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 6 }}><Indicador /><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Analizando el PDF…</Text></View>;
   if (estado === 'sin_codigo') return enlace('Sin código en el PDF · reintentar', detectar, colorSistema.texto2);
   if (estado === 'error') return enlace(`Error al detectar · reintentar`, detectar, MARCA.rojo);
   if (estado === 'no_registrado') return <Text selectable style={{ color: colorSistema.texto2, fontSize: 13, paddingVertical: 8 }}>{`Código sin registrar: ${res.codigo}`}</Text>;

@@ -10,7 +10,8 @@
 // ubicado. La segunda pestaña es la política de vencimiento
 // (`componentes/fiscal/PoliticaVencimiento`), editable como en el portal.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -161,7 +162,7 @@ export default function Laboratorios() {
         renderItem={({ item: l }) => <TarjetaLab l={l} d={ubic[l.id]?.[sala]} cubiertas={salasCubiertas(l.id)} totalSalas={salas.length} onAbrir={abrir} columnas={columnas} />}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={12} windowSize={9}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 10 }}>
             {pestana === 'vencimiento' ? <PoliticaVencimiento texto={texto} canEdit={hasPermission('laboratorios', 'can_edit')} /> : null}

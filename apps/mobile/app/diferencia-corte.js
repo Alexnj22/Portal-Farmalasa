@@ -15,7 +15,8 @@
 // el aviso y la impresora del teléfono. Las cuentas, `cuentaDeResolucion`.
 // Es una reposición voluntaria: nunca se descuenta del salario.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -310,7 +311,7 @@ export default function DiferenciaCorte() {
                   ) : null}
                   {via === 'REPONE' ? (
                     <Seccion titulo="Responsables" pie={cuenta.restan === 0 ? 'Suma exacto.' : `${cuenta.restan > 0 ? 'Faltan' : 'Sobran'} ${formatMoney(Math.abs(cuenta.restan) / 100)} para llegar a ${formatMoney(pendiente)}.`}>
-                      {candidatos.length === 0 ? <ActivityIndicator /> : candidatos.map((c) => {
+                      {candidatos.length === 0 ? <Indicador /> : candidatos.map((c) => {
                         const marcada = marcadas.includes(c.id);
                         return (
                           <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}>

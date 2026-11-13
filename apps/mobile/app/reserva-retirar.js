@@ -9,7 +9,8 @@
 //     falta se cobra en Cuentas por cobrar.
 // Sin nada pagado se entrega y se factura como cualquier venta.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text } from 'react-native';
+import { Alert, Pressable, ScrollView, Text } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { anotarSalida } from '@nucleo/data/bolsas';
@@ -109,7 +110,7 @@ function RetirarApartado() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: v?.codigo ? `Retirar ${v.codigo}` : 'Retirar' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
-        {error ? <Aviso tono="freno" texto={error} /> : !v ? <ActivityIndicator /> : (
+        {error ? <Aviso tono="freno" texto={error} /> : !v ? <Indicador /> : (
           <>
             <Seccion titulo={v.cliente ?? 'Cliente'} pie={v.producto}>
               <Dato rotulo="Total" valor={formatMoney(Number(v.total))} />

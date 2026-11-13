@@ -9,7 +9,8 @@
 // con `resultadoDeSrs`). Tocar un resultado lo copia como principio.
 import { volver } from '../../componentes/volver';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPrincipiosDeProducto, guardarPrincipiosActivos } from '@nucleo/data/productos';
@@ -50,7 +51,7 @@ function BuscadorSrs({ inicial, onUsar }) {
           <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Buscar «${q.trim()}»`}</Text>
         </Pressable>
       ) : null}
-      {cargando ? <ActivityIndicator /> : null}
+      {cargando ? <Indicador /> : null}
       {error ? <Aviso tono="freno" texto={error} /> : null}
       {res && !res.filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Sin resultados para «${q.trim()}».`}</Text> : null}
       {res?.filas.map((crudo, i) => {

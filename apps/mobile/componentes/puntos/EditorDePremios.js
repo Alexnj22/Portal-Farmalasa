@@ -6,7 +6,8 @@
 // no cobra porcentajes. La forma de cada fila la dicta el núcleo
 // (`filaDePremio` / `premiosLimpios`), la misma que valida la base.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { fetchPromocionales } from '@nucleo/data/puntos';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
 import { CUPO_POR, TIPOS_DE_PREMIO, filaDePremio, probabilidadDePremio } from '@nucleo/utils/nivelesDePuntos';
@@ -49,7 +50,7 @@ function FilaDeProducto({ p, poner, puedeEditar }) {
         ) : null}
       </View>
       <Rotulo>Presentación</Rotulo>
-      {presentaciones == null && p.product_id ? <ActivityIndicator /> : opciones.length ? (
+      {presentaciones == null && p.product_id ? <Indicador /> : opciones.length ? (
         puedeEditar
           ? <Opciones opciones={opciones} valor={p.presentacion_tipo && p.factor ? `${p.presentacion_tipo}|${p.factor}` : ''}
             onCambiar={(v) => { const [t, f] = String(v).split('|'); poner({ presentacion_tipo: t, factor: Number(f) }); }} />
@@ -110,7 +111,7 @@ export default function EditorDePremios({ premios, alCambiar, puedeEditar }) {
             {p.tipo === 'promocional' ? (
               <>
                 <Rotulo>Regalo</Rotulo>
-                {promos == null ? <ActivityIndicator /> : !promos.length
+                {promos == null ? <Indicador /> : !promos.length
                   ? <Aviso tono="cuidado" texto="No hay regalos en el catálogo: créalos en la pestaña Premios." />
                   : puedeEditar ? (
                     <Opciones opciones={promos.map((x) => ({ id: x.id, label: x.nombre }))} valor={p.promocional_id ?? ''}

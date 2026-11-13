@@ -4,7 +4,8 @@
 // (`fetchBranchInvoicesRecent`, `searchBranchInvoices`) y el mismo ámbito
 // (`ambitoDeFacturas`). Con alcance «todas», la sala se elige en el menú.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -96,7 +97,7 @@ export default function Facturas() {
       {todas ? <MenuDeFiltros grupos={grupos} /> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40, gap: 10 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {todas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 32 }}>{nombre(sala)} · este mes</Text> : null}
         {filas === null ? <Cargando /> : null}
         {(filas || []).map((f) => <Fila key={f.id} f={f} onPress={() => abrir(f)} />)}

@@ -9,7 +9,8 @@
 // termómetro y su calibración, y agregar un área. Las reglas y la escritura
 // son las del núcleo (`data/bitacoras`, `configuracionDeBitacoras`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import Interruptor from '../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -278,7 +279,7 @@ export default function ConfiguracionDeBitacoras() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Configuración', headerLargeTitle: true }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 60, gap: 14 }} keyboardShouldPersistTaps="handled"
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{`${nombreSala}: apaga el área que esta sucursal no tenga; deja de contar como faltante al cerrar el mes.`}</Text>
           {areas == null ? <Cargando /> : error ? (
             <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={textoDelError(error)} /></View>

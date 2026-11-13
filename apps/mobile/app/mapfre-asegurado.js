@@ -12,7 +12,8 @@
 //   · cómo pagó: efectivo, tarjeta o transferencia, con la foto del comprobante.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -131,7 +132,7 @@ export default function MapfreAsegurado() {
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           <Seccion titulo="La factura de Mapfre" pie="Lo que paga el asegurado sale del descuento de la factura.">
             {error ? <Aviso tono="freno" texto={error} /> : null}
-            {facturas == null ? <ActivityIndicator /> : facturas.length === 0 ? (
+            {facturas == null ? <Indicador /> : facturas.length === 0 ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
                 No hay facturas de Mapfre por cobrar en esta sala. Una venta recién hecha tarda hasta un minuto en llegar.
               </Text>

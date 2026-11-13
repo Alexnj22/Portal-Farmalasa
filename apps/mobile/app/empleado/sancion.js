@@ -12,7 +12,8 @@
 // núcleo (`sancion`). El borrador se guarda solo (`sancion:<id>`, la misma
 // clave del portal).
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -123,13 +124,13 @@ export default function Sancion() {
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
           <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{`${shortEmployeeName(emp)} · ${emp.role || 'Sin cargo'}${sala ? ` · ${sala}` : ''}`}</Text>
           <Seccion titulo="Falta cometida">
-            {faltas == null ? <ActivityIndicator /> : (
+            {faltas == null ? <Indicador /> : (
               <Opciones valor={f.falta} onCambiar={(v) => { pon({ falta: v }); setPeldano(null); setEscalera(null); }}
                 opciones={faltas.map((x) => ({ id: x.clave, label: x.nombre, detalle: x.articulo || null }))} />
             )}
           </Seccion>
 
-          {cargando ? <ActivityIndicator /> : null}
+          {cargando ? <Indicador /> : null}
           {escalera && !cargando ? (
             <>
               <Aviso tono={escalera.faltas_en_60_dias > 0 ? 'cuidado' : 'nota'} texto={motivoDeLaPropuesta(escalera, corta)} />

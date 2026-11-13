@@ -5,7 +5,7 @@ import { Host, LazyColumn, ListItem, ModalBottomSheet, Text as TextoCompose } fr
 import { clickable, padding } from '@expo/ui/jetpack-compose/modifiers';
 import { SEMILLA } from '../tema/material';
 
-export default function HojaDeOpciones({ hoja, fondo, tinta, tenue, cerrar, cancelar }) {
+export default function HojaDeOpciones({ hoja, fondo, tinta, tenue, cerrar, cancelar, error = '#B3261E' }) {
   const visibles = hoja.opciones.filter((o) => !o.cancelar);
   return (
     <Host seedColor={SEMILLA} style={{ position: 'absolute', width: 1, height: 1 }}>
@@ -18,7 +18,7 @@ export default function HojaDeOpciones({ hoja, fondo, tinta, tenue, cerrar, canc
               <ListItem key={o.i} colors={{ containerColor: fondo }}
                 modifiers={o.apagado ? [] : [clickable(() => cerrar(() => hoja.alElegir(o.i)))]}>
                 <ListItem.HeadlineContent>
-                  <TextoCompose color={o.apagado ? tenue : o.destructivo ? '#B3261E' : tinta} style={{ fontSize: 16 }}>{o.texto}</TextoCompose>
+                  <TextoCompose color={o.apagado ? tenue : o.destructivo ? error : tinta} style={{ fontSize: 16 }}>{o.texto}</TextoCompose>
                 </ListItem.HeadlineContent>
               </ListItem>
             )),

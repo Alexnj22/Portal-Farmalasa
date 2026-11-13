@@ -17,7 +17,8 @@
 // cliente: compartir el PDF y el JSON o mandarlo por correo
 // (`DocumentoParaCliente`).
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchCualesVanBajoReceta, fetchInvoiceById, fetchInvoiceChangelog, fetchInvoiceItemsForInvoice, fetchProductPreciosActivos } from '@nucleo/data/ventas';
@@ -98,7 +99,7 @@ export default function Venta() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: v?.tipo_documento ? `${v.tipo_documento} ${v.correlativo ?? ''}`.trim() : 'Venta' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {v ? (
           <>
             <Vidrio radio={20}>

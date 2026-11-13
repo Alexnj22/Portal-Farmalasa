@@ -3,7 +3,8 @@
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Animated, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Animated, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import Indicador from '../Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { BARRA_NATIVA } from '../PilaDePestana';
 import * as Haptics from 'expo-haptics';

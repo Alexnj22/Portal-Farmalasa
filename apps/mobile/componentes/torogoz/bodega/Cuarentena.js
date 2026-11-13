@@ -3,7 +3,8 @@
 // existencia hasta que alguien decida: reingresar (la base exige que el lote no
 // esté vencido), devolver al proveedor o destruir. Decide quien administra.
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../Indicador';
 import { resolverCuarentena, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { ACCIONES_CUARENTENA } from '@nucleo/utils/distribucionBodega';
 import { fechaNumerica } from '@nucleo/utils/fecha';
@@ -75,7 +76,7 @@ export default function Cuarentena({ filas, puedeResolver, onCerrar, onCambio })
                         <Pressable key={a.estado} disabled={!!ocupado} onPress={() => resolver(q, a)} accessibilityRole="button"
                           style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5,
                             borderColor: COLOR[a.estado], opacity: ocupado && !esta ? 0.4 : pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                          {esta ? <ActivityIndicator /> : <Text style={{ color: COLOR[a.estado], fontSize: 14, fontWeight: '700' }}>{a.label}</Text>}
+                          {esta ? <Indicador /> : <Text style={{ color: COLOR[a.estado], fontSize: 14, fontWeight: '700' }}>{a.label}</Text>}
                         </Pressable>
                       );
                     })}

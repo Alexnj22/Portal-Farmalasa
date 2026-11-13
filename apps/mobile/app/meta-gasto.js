@@ -8,7 +8,8 @@
 // escribe, igual que en el portal (son varias filas y la sesión de sala se
 // cierra a los 5 minutos).
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -170,7 +171,7 @@ export default function MetaGasto() {
 
           {listoParaPreview ? (
             <Seccion titulo="Cómo se suma a las metas">
-              {cargando || !preview ? <ActivityIndicator /> : (preview.cuotas || []).map((c) => (
+              {cargando || !preview ? <Indicador /> : (preview.cuotas || []).map((c) => (
                 <View key={`${c.branch_id}-${c.year_month}`} style={{ flexDirection: 'row', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`${ymLabelCorto(c.year_month)} · ${c.sala}`}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${formatMoney(c.monto_gasto)} → `}<Text style={{ color: MARCA.azulClaro, fontWeight: '700' }}>{formatMoney(c.monto_venta)}</Text></Text>

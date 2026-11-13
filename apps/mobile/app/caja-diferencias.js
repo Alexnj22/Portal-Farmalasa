@@ -12,7 +12,8 @@
 // El buscador de la barra (como el portal) busca por sala, fecha, monto, quién
 // responde y la causa anotada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -101,7 +102,7 @@ export default function CajaDiferencias() {
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {puedeAnotar && porAnotar.length ? (
           <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/asentar-diferencias'); }} style={({ pressed }) => ({ marginHorizontal: 16, opacity: pressed ? 0.55 : 1 })}>

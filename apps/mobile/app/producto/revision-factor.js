@@ -15,7 +15,8 @@
 // Los textos salen del núcleo (`causaDeCorreccion`, `textoDelSospechoso`,
 // `minmaxDelCambio`): dicen lo mismo que el portal.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -132,7 +133,7 @@ export default function RevisionDeFactor() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Revisión de factor' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {datos === null ? <Cargando /> : (
           <>

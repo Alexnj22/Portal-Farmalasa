@@ -10,7 +10,8 @@
 // lista del sistema (SwiftUI) no deja poner vidrio detrás de sus filas, por eso
 // se arma a mano con el mismo vidrio del resto de la app.
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -142,7 +143,7 @@ export default function Menu() {
     {busqueda}
     <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingVertical: 8, paddingBottom: 32, gap: 22 }}
-      refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await refreshPermissions?.(user); setRecargando(false); }} />}>
+      refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await refreshPermissions?.(user); setRecargando(false); }} />}>
       <FranjaDelPortal />
       {frecuentes.length >= 2 ? (
         <View style={{ gap: 7, marginHorizontal: 16 }}>

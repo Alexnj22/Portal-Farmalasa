@@ -15,7 +15,9 @@
 // El cálculo es el del núcleo (`afluencia`), el mismo del portal, y la
 // lectura pagina: «1 año» son ~5,000 filas por sala.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
+import Indicador from '../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -168,7 +170,7 @@ export default function MonitorDeVentas() {
       ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 8, paddingBottom: 40, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
 
         <View style={{ paddingHorizontal: 20 }}>
@@ -183,7 +185,7 @@ export default function MonitorDeVentas() {
                 Tickets por hora · {deQue}
               </Text>
               {filas == null ? (
-                <View style={{ height: 230, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator /></View>
+                <View style={{ height: 230, alignItems: 'center', justifyContent: 'center' }}><Indicador /></View>
               ) : !r?.fechas ? (
                 <View style={{ height: 120, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{error ?? 'No hay ventas registradas en este período.'}</Text>

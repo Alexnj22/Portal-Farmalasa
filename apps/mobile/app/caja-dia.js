@@ -8,7 +8,8 @@
 // diferencia» abre `diferencia-corte`: causa con comprobante, responsables y
 // sus abonos, igual que la ficha del corte del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -49,7 +50,7 @@ export default function CajaDia() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'El día' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto="No se pudo leer el día." /> : null}
         {cargando && !dia ? <Cargando /> : null}
         {!cargando && !dia && !error ? <Vacio titulo="Este día ya no tiene diferencias en esta vista." /> : null}

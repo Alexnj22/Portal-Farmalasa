@@ -18,7 +18,9 @@
 // laboratorio, producto, unidades o —con todas las salas— sucursal, en los dos
 // sentidos.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
+import Indicador from '../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -130,7 +132,7 @@ function Tarjeta({ g, conSala, vencidas }) {
           </View>
           {abierta ? (
             <View style={{ gap: 10, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-              {lotes == null ? <ActivityIndicator /> : lotes.error ? <Aviso tono="freno" texto="No se pudieron cargar los lotes." /> : (
+              {lotes == null ? <Indicador /> : lotes.error ? <Aviso tono="freno" texto="No se pudieron cargar los lotes." /> : (
                 <>
                   <Lotes titulo={`LOTES EN ${String(ERP_NAMES[g.erp_sucursal_id] ?? 'LA SALA').toUpperCase()}`} filas={lotes.regulares} />
                   <Lotes titulo="EN EL ÁREA DE VENCIDOS" filas={lotes.vencidos} color={MARCA.rojo} />
@@ -284,7 +286,7 @@ export default function Inventario() {
       </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={recargar} />}>
         <FiltrosActivos grupos={grupos} />
         {cifras ? (
           <>

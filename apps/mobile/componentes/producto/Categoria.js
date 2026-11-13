@@ -3,7 +3,8 @@
 // lista escrita a mano), con buscador, «Sin categoría» y crear una nueva. Al
 // elegir se guarda en el acto, como el autoguardado del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchProductCategories } from '@nucleo/data/inventarioTab';
 import { insertProductCategory, updateProductCategoria } from '@nucleo/data/productos';
@@ -57,7 +58,7 @@ export default function Categoria({ productId, actual, onCerrar, onGuardada }) {
         <EncabezadoDeHoja titulo="Categoría" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
           <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Buscar categoría" autoCorrect={false} />
-          {lista == null || guardando ? <ActivityIndicator /> : (
+          {lista == null || guardando ? <Indicador /> : (
             <Opciones valor={actual || ''} onCambiar={(v) => guardar(v)}
               opciones={[{ id: '', label: 'Sin categoría' }, ...visibles.map((c) => ({ id: c, label: c }))]} />
           )}

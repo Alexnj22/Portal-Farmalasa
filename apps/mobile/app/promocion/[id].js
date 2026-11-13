@@ -11,7 +11,8 @@
 // Arriba, lo que se puede hacer desde donde se la mira: volver a borrador /
 // activar y duplicar, con las mismas funciones y confirmaciones del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -154,7 +155,7 @@ export default function Promocion() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: esLab ? 'Promoción de laboratorio' : 'Seguimiento', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setVuelta((n) => n + 1); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setVuelta((n) => n + 1); await cargar(); setRecargando(false); }} />}>
         {p ? (
           <View style={{ gap: 6, marginHorizontal: 4 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{p.nombre}</Text>

@@ -20,7 +20,8 @@
 // dos ámbitos del portal son dos módulos con dos permisos, así que cada
 // solicitud se juzga con las reglas del SUYO (`esOperativa`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, SectionList, Text, View } from 'react-native';
+import { Pressable, SectionList, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -353,7 +354,7 @@ export default function Solicitudes() {
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ paddingTop: 12, gap: 12, paddingBottom: 6 }}>
             {estado !== 'PENDING' ? <PasoDeSemana semana={semana} onCambiar={setSemana} /> : null}

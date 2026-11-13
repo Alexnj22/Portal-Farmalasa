@@ -8,7 +8,8 @@
 // (`previewMuestraCiclica`): se sortea en el servidor, así que es indicativa
 // del reparto, no de los productos exactos.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -148,7 +149,7 @@ export default function NuevoConteo() {
           {alcance === 'CICLICO' ? (
             <Seccion titulo="Tamaño de la muestra">
               <Campo multiline={false} keyboardType="number-pad" value={tamano} onChangeText={setTamano} placeholder={String(TAMANO_CICLICO_DEFAULT)} />
-              {cargandoVista ? <ActivityIndicator /> : vista?.muestra ? (
+              {cargandoVista ? <Indicador /> : vista?.muestra ? (
                 <View style={{ gap: 4 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
                     {SEGMENTO_DE_MUESTRA_ORDEN.filter((k) => vista.muestra[k] != null).map((k) => `${SEGMENTO_DE_MUESTRA_LABEL[k]}: ${vista.muestra[k]}`).join(' · ') || 'Sin productos para la muestra.'}

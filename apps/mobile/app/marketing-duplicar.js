@@ -5,7 +5,8 @@
 // llamada del portal (`duplicarPiezas`). Una sola pieza se duplica desde su
 // detalle (`marketing-pieza/[id]`).
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { duplicarPiezas, fetchMes, fetchPiezas } from '@nucleo/data/marketing';
@@ -63,7 +64,7 @@ export default function DuplicarPiezas() {
         <View style={{ marginHorizontal: 16 }}>
           <Aviso texto={`${modo === 'semana' ? 'El primer lunes cae en el primer lunes, el segundo viernes en el segundo viernes…' : 'El 10 cae en el 10; si el mes no tiene ese día, en el último.'} Las copias quedan pendientes, sin diseños ni pauta.`} />
         </View>
-        {piezas == null ? <ActivityIndicator /> : (
+        {piezas == null ? <Indicador /> : (
           <View style={{ marginHorizontal: 16 }}>
             <Seccion titulo="Qué piezas">
               <Tocable onPress={() => setElegidas(new Set(todas ? [] : piezas.map((p) => p.id)))} style={{ minHeight: 40, justifyContent: 'center' }}>

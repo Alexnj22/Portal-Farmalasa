@@ -16,7 +16,8 @@
 // `sucursal/documento`, y los pagos de cada servicio se registran en
 // `sucursal/pago` — todo con permiso de editar sucursales.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { abrirEnPestanaNueva } from '../../plataforma/descargas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -250,7 +251,7 @@ function Gastos({ b, puedeEditar }) {
           color={v?.isUp ? MARCA.ambar : MARCA.verde} apoyo={v ? `más caro: ${v.highestService}` : null} />
       </FilaDeKpis>
       <Seccion titulo="Tendencia de gastos · 6 meses">
-        {historial == null ? <ActivityIndicator /> : historial.length ? (
+        {historial == null ? <Indicador /> : historial.length ? (
           <Grafica datos={historial.map((m) => ({ etiqueta: m.name, total: m.total }))}
             series={[{ clave: 'total', rotulo: 'Pagado', color: MARCA.azulClaro, tipo: 'barra' }]}
             formato={(x) => formatMoney(x)} formatoEje={(x) => (x >= 1000 ? `$${(x / 1000).toFixed(1)}k` : `$${Math.round(x)}`)}

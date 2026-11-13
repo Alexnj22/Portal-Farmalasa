@@ -12,7 +12,8 @@
 // Tocar un producto abre su regla (`pedido/regla/[id]`); editar pide
 // `pedidos_tab_reglas` con permiso de edición.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchActiveProductsCount, fetchAllDispatchRules, fetchLaboratorios, fetchNewProductsThisMonth, fetchProductsWithLabPage } from '@nucleo/data/dispatchRules';
@@ -169,7 +170,7 @@ export default function ReglasDeDespacho() {
                   </Pressable>
                 );
               })}
-              {cargando ? <ActivityIndicator style={{ marginVertical: 14 }} /> : !datos.filas.length ? (
+              {cargando ? <Indicador style={{ marginVertical: 14 }} /> : !datos.filas.length ? (
                 <Text style={{ color: colorSistema.texto2, textAlign: 'center', padding: 20, fontSize: 15 }}>Ningún producto con estos filtros.</Text>
               ) : null}
             </View>

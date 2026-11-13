@@ -2,7 +2,8 @@
 // portal: busca por nombre con la regla del portal (`buscarProductos` de
 // `cargarCompra`) y muestra el código de barras para distinguir parecidos.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { buscarProductos } from '@nucleo/data/cargarCompra';
 import { colorSistema } from '../Formulario';
 import { Campo } from '../formulario/Piezas';
@@ -27,7 +28,7 @@ export default function BuscadorProducto({ onElegir, onCancelar }) {
     <View style={{ gap: 6, paddingTop: 6 }}>
       <Campo multiline={false} autoFocus value={q} onChangeText={setQ} placeholder="Buscar el producto por nombre…" />
       {parecidos && res.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`No hay uno exacto para «${q}»: estos se parecen.`}</Text> : null}
-      {buscando ? <ActivityIndicator /> : res.map((p) => (
+      {buscando ? <Indicador /> : res.map((p) => (
         <Pressable key={p.id} onPress={() => onElegir(p)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
           <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{p.nombre}</Text>
           {p.codigo_barras ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.codigo_barras}</Text> : null}

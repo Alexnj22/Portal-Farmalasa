@@ -17,7 +17,8 @@
 // despacho de la sala (lo que SALIÓ).
 import { volver } from '../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -212,7 +213,7 @@ function FinalizarPedido() {
           <View style={{ marginHorizontal: 16, gap: 10 }}>
             {calculandoHojas || !errorHojas ? (
               <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
-                <ActivityIndicator />
+                <Indicador />
                 <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Calculando las hojas del papel…</Text>
               </View>
             ) : (

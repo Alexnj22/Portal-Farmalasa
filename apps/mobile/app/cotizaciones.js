@@ -7,7 +7,8 @@
 // las activas). Anular, editar y compartir el PDF viven en el detalle; crear,
 // en `cotizacion/nueva`, con las mismas reglas del portal (núcleo `cotizacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -79,7 +80,7 @@ export default function Cotizaciones() {
       </FijoArriba>
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {filas ? (
           <>
             <FilaDeKpis>

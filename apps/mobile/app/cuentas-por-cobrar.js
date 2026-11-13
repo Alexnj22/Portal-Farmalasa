@@ -17,7 +17,8 @@
 // Con saldo / Por vencer / Vencidos / Todos en el segmentado (`VER_CARTERA`);
 // sala, vendedor y orden (`ORDEN_CARTERA`) en el menú; de 50 en 50.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { AppState, Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -206,7 +207,7 @@ export default function CuentasPorCobrar() {
       </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {creditos ? (
           <FilaDeKpis>

@@ -8,7 +8,8 @@
 // vendedor van en la dirección (como en el portal) y valen para todo: tocar
 // una ruta en la dona o un vendedor en su ranking filtra; otra vez, suelta.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { fetchTablero, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { PERIODOS, rangoDe, rotuloTipoCliente } from '@nucleo/utils/distribucionComun';
@@ -104,7 +105,7 @@ export default function TorogozInicio() {
         <Segmentos opciones={OPCIONES_PERIODO} activa={periodo} onCambiar={(v) => router.setParams({ periodo: v })} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FiltrosActivos grupos={grupos} />

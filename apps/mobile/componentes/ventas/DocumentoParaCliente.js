@@ -13,7 +13,8 @@
 // Vive donde la sala mira una venta: la ficha de Ventas y la factura elegida
 // en «Modificar facturación», igual que en el portal.
 import { useState } from 'react';
-import { ActivityIndicator, Share, Text, View } from 'react-native';
+import { Share, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { File, Paths } from 'expo-file-system';
 import { zipSync } from 'fflate';
 import * as Haptics from 'expo-haptics';
@@ -103,7 +104,7 @@ export default function DocumentoParaCliente({ invoiceId }) {
         )}
         {trabajando ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <ActivityIndicator size="small" />
+            <Indicador size="small" />
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>Puede tardar hasta un minuto si hay que enviarlo a Hacienda.</Text>
           </View>
         ) : null}

@@ -11,7 +11,8 @@
 // `product-photos/<id>.jpg`. La cola, la toma y el guardado son del núcleo
 // (`@nucleo/data/fotosProductos`), los mismos del portal.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../componentes/Indicador';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
@@ -356,7 +357,7 @@ function SugerenciasSrs({ producto, onUsar, autoAplicar }) {
 
   return (
     <Seccion titulo="Registro sanitario" pie={estado.error ? 'No se pudo consultar el registro.' : !estado.cargando && !estado.lista.length ? 'Sin coincidencias con principio activo: escríbelo del empaque.' : null}>
-      {estado.cargando ? <ActivityIndicator style={{ marginVertical: 8 }} /> : estado.lista.map(({ srs, score }, i) => {
+      {estado.cargando ? <Indicador style={{ marginVertical: 8 }} /> : estado.lista.map(({ srs, score }, i) => {
         const r = resultadoDeSrs(srs);
         const titulo = principiosDeSrs(srs).map((p) => [normalizarPrincipio(p.nombre), normalizarConcentracion(p.concentracion)].filter(Boolean).join(' ')).join(' + ');
         return (

@@ -4,7 +4,8 @@
 // categoría no: `products` no la tiene. Usa `fetchProductosParaPromocion`, la
 // misma consulta del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchLaboratoriosConProductos, fetchProductosParaPromocion } from '@nucleo/data/promociones';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
@@ -74,7 +75,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, ocupado =
         </Pressable>
       )}
       {error ? <Aviso tono="freno" texto={error} /> : null}
-      {lista === undefined ? <ActivityIndicator /> : null}
+      {lista === undefined ? <Indicador /> : null}
       {Array.isArray(lista) ? (
         lista.length ? (
           <View>

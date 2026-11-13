@@ -2,7 +2,8 @@
 // píldora de las tarjetas, el enlace de texto, el color de cada tono del
 // núcleo, elegir la ficha del cliente y confirmar su teléfono.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Indicador from '../Indicador';
 import { buscarClientes, mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
 import { telefonoDeFicha } from '@nucleo/utils/apartar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -76,7 +77,7 @@ export function ElegirCliente({ cliente, onElegir }) {
   return (
     <>
       <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Cliente: nombre, DUI o teléfono" autoCorrect={false} />
-      {buscando ? <ActivityIndicator /> : resultados.map((c) => (
+      {buscando ? <Indicador /> : resultados.map((c) => (
         <Pressable key={c.id} onPress={() => onElegir(c)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(c.name)}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[c.dui, c.phone].filter(Boolean).join(' · ') || 'Sin documento'}</Text>

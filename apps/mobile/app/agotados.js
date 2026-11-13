@@ -9,7 +9,8 @@
 // que la sala YA decidió tener y no tiene. Con alcance de una sala manda la
 // suya. Tocar un producto abre su Mín·Máx.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -104,7 +105,7 @@ export default function Agotados() {
         renderItem={({ item }) => <Fila f={item} diasFoto={diasFoto} columnas={columnas} />}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={12} windowSize={9}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 48 }}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 20 }}>{`${ERP_NAMES[erp]} · lo que no hay y sí se vende`}</Text>

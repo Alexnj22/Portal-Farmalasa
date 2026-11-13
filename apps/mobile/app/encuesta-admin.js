@@ -21,7 +21,9 @@
 // nombre. La tarjeta trae la descripción, el año y, en las de clima, el atajo
 // «Ver análisis».
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
+import Indicador from '../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { guardarEncuestaInterna } from '../componentes/encuestas/interna';
@@ -112,7 +114,7 @@ function Detalle({ encuesta, puedeEditar }) {
     });
   }, [encuesta.id]);
   const inv = useMemo(() => indicesInvertidos(d?.preguntas), [d]);
-  if (!d) return <ActivityIndicator style={{ marginVertical: 12 }} />;
+  if (!d) return <Indicador style={{ marginVertical: 12 }} />;
   const todos = d.bloques.flatMap((b) => b.indices || []);
   const personas = d.filas.map((r) => ({ r, s: puntajeDePersona(r.responses || [], todos, inv) }))
     .sort((a, b) => (a.s ?? 999) - (b.s ?? 999));
@@ -218,7 +220,7 @@ export default function EncuestaAdmin() {
         <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'activa', label: 'Activas' }, { id: 'cerrada', label: 'Cerradas' }, { id: 'borrador', label: 'Borrador' }]} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {encuestas == null ? <Cargando /> : visibles.map((e) => {
           const abiertaEsta = abierta === e.id;
           return (

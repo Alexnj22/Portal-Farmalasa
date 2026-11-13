@@ -13,7 +13,9 @@
 // del aviso (Condiciones §6) y hasta entonces se pueden cancelar. Quién decidió
 // y quién propuso, con foto y nombre corto.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../../componentes/Refrescar';
+import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -125,7 +127,7 @@ export default function Mayorista() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
-          refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+          refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error && !cliente ? <ErrorConReintento mensaje={error} onReintentar={cargar} /> : null}
           {!cliente && !error ? <Cargando /> : null}
           {cliente ? (
@@ -166,7 +168,7 @@ export default function Mayorista() {
               </View>
 
               <Seccion titulo="Compras por mes">
-                {!d ? <ActivityIndicator /> : meses.length ? meses.map((m, i) => (
+                {!d ? <Indicador /> : meses.length ? meses.map((m, i) => (
                   <View key={m.mes} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 14, width: 110 }}>{fechaTexto(m.mes, { month: 'long', year: 'numeric' })}</Text>
                     <View style={{ flex: 1, alignItems: 'flex-end' }}>

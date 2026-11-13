@@ -25,7 +25,8 @@
 // oculta en la base TODO lo de la persona hasta el corte capturado al tocar
 // —no sólo lo cargado—, con la misma ventana de «Deshacer» que uno suelto.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, LayoutAnimation, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, LayoutAnimation, Platform, ScrollView, Text, View } from 'react-native';
+import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -243,7 +244,7 @@ export default function Notificaciones() {
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: aviso ? 96 : 24, gap: 8 }}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
           <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />

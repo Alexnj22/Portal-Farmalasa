@@ -13,7 +13,8 @@
 // Cada grupo respeta el permiso de su módulo: buscar no puede ser una puerta
 // trasera a lo que el menú no muestra.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Indicador from '../../../componentes/Indicador';
 import { Stack, router } from 'expo-router';
 import { Host, Icon } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -138,7 +139,7 @@ export default function Buscar() {
         ) : null}
 
         {veProductos && q.length >= MIN_LETRAS_BUSQUEDA ? (
-          productos.cargando && !productos.lista.length ? <ActivityIndicator /> : productos.lista.length ? (
+          productos.cargando && !productos.lista.length ? <Indicador /> : productos.lista.length ? (
             <Grupo titulo="Productos" pie={productos.total > productos.lista.length ? `Se muestran ${productos.lista.length} de ${productos.total}. Escribe más para afinar.` : null}>
               {productos.lista.map((p, i) => (
                 <View key={p.erp_product_id ?? p.descripcion}>

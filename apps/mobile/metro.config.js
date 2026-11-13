@@ -85,4 +85,16 @@ config.resolver.resolveRequest = (contexto, nombre, plataforma) => {
 // viaja como ARCHIVO, no como código: se carga en un WebView sólo al imprimir.
 config.resolver.assetExts = [...config.resolver.assetExts, 'html'];
 
+// Y la variable no alcanza en Android: React Native arma él mismo la dirección
+// del paquete al recargar (DevServerHelper.kt) con `lazy=true` fijo, sin
+// preguntarle al manifiesto. Se le quita acá, en el servidor de desarrollo.
+const reescribir = config.server?.rewriteRequestUrl;
+config.server = {
+  ...config.server,
+  rewriteRequestUrl: (url) => {
+    const u = reescribir ? reescribir(url) : url;
+    return u.includes('lazy=true') ? u.replace('lazy=true', 'lazy=false') : u;
+  },
+};
+
 module.exports = config;

@@ -9,6 +9,7 @@ import PeriodStepper from '../components/common/PeriodStepper';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Notice from '../components/common/Notice';
+import SegmentedControl from '../components/common/SegmentedControl';
 import { SkeletonText } from '../components/common/StateViews';
 import TabHoy from './bitacoras/TabHoy';
 /* La pestaña de entrada («Hoy») viaja con la vista; las demás se bajan al
@@ -77,6 +78,15 @@ const METRICAS_LOTES = [
 const primerDiaDelMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
 
 
+// Los grupos de la barra. Cada sección sigue siendo una pestaña en la dirección.
+const GRUPOS = [
+    { key: 'g-diario',  label: 'Registro diario', icon: Thermometer, secciones: ['hoy'] },
+    { key: 'g-receta',  label: 'Bajo receta',     icon: BookOpen,    secciones: ['libro', 'revision'] },
+    { key: 'g-antib',   label: 'Antibióticos',    icon: Pill,        secciones: ['antibioticos', 'lotes'] },
+    { key: 'g-regente', label: 'Regencia',        icon: Award,       secciones: ['regencia', 'cierre'] },
+    { key: 'g-config',  label: 'Configuración',   icon: Settings2,   secciones: ['config'] },
+];
+
 export default function BitacorasView() {
     const { user, hasPermission, getScope } = useAuth();
     const branches = useStaff((s) => s.branches) || VACIO;
@@ -118,16 +128,31 @@ export default function BitacorasView() {
     const [fecha, setFecha] = useState(hoySV);
     const tabs = useMemo(() => ([
         { key: 'hoy', label: 'Registro diario', icon: Thermometer },
-        ...(verLibro ? [{ key: 'libro', label: 'Bajo receta', icon: BookOpen }] : []),
-        ...(verAntibioticos ? [{ key: 'antibioticos', label: 'Antibióticos', icon: Pill }] : []),
-        ...(verAntibioticos ? [{ key: 'lotes', label: 'Registro por lote', icon: Layers }] : []),
+        ...(verLibro ? [{ key: 'libro', label: 'Libro', icon: BookOpen }] : []),
+        ...(verAntibioticos ? [{ key: 'antibioticos', label: 'Listado', icon: Pill }] : []),
+        ...(verAntibioticos ? [{ key: 'lotes', label: 'Por lote', icon: Layers }] : []),
         ...(verRevisionLotes ? [{ key: 'revision', label: 'Lotes por revisar', icon: PackageSearch }] : []),
         ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
-        ...(verRegencia ? [{ key: 'regencia', label: 'Regencia', icon: Award }] : []),
+        ...(verRegencia ? [{ key: 'regencia', label: 'Visitas', icon: Award }] : []),
         ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
     ]), [verLibro, verAntibioticos, verRevisionLotes, verCierre, verRegencia, puedeConfigurar]);
 
     const [tab, setTab] = usePestanaEnUrl(tabs, 'hoy');
+    // Ocho pestañas no entraban en la barra (usuario, 2026-11-13: «se ve fatal,
+    // ¿por qué hay tanto?»). La barra muestra CINCO grupos y, dentro de uno con
+    // más de una sección, un selector chico elige cuál. La dirección sigue
+    // nombrando la sección (`?tab=lotes`), así que los enlaces viejos y los
+    // avisos que apuntan a una sección siguen llegando a ella.
+    const grupos = useMemo(() => GRUPOS
+        .map(g => ({ ...g, secciones: g.secciones.filter(k => tabs.some(t => t.key === k)) }))
+        .filter(g => g.secciones.length > 0), [tabs]);
+    const grupo = grupos.find(g => g.secciones.includes(tab)) || grupos[0];
+    const tabsDeGrupo = useMemo(() => grupos.map(({ key, label, icon }) => ({ key, label, icon })), [grupos]);
+    const alElegirGrupo = (key) => {
+        const g = grupos.find(x => x.key === key);
+        if (g && !g.secciones.includes(tab)) setTab(g.secciones[0]);
+    };
+    const seccionesDelGrupo = (grupo?.secciones || []).map(k => ({ value: k, label: tabs.find(t => t.key === k)?.label || k }));
     const [busqueda, setBusqueda] = useState('');
     // Cuál de los dos libros se está mirando. El de antibióticos es el que
     // trae escrito un inspector, así que es el valor por defecto.
@@ -273,9 +298,9 @@ export default function BitacorasView() {
 
     const filtersContent = (
         <ViewTabBar
-            tabs={tabs}
-            activeTab={tab}
-            onTabChange={setTab}
+            tabs={tabsDeGrupo}
+            activeTab={grupo?.key}
+            onTabChange={alElegirGrupo}
             searchValue={busqueda}
             onSearchChange={setBusqueda}
             placeholder={enAntibioticos ? 'Buscar molécula o producto…' : enLotes ? 'Buscar producto o lote…' : 'Buscar por folio, medicamento, lote, paciente o médico…'}
@@ -288,6 +313,9 @@ export default function BitacorasView() {
     return (
         <GlassViewLayout icon={Thermometer} title="Bitácoras" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-6">
+                {seccionesDelGrupo.length > 1 && (
+                    <SegmentedControl options={seccionesDelGrupo} value={tab} onChange={setTab} label="Sección" />
+                )}
 
                 {/* El carril y la píldora comparten UNA fila (§17.0): las dos
                     mitades —`lg:flex-row` acá y `flex-1` en el carril— son

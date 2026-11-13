@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1521.4 — Bitácoras: cinco pestañas en vez de ocho
+
+El usuario: «se ve fatal, ¿por qué hay tanto?». Ocho pestañas no entraban en la barra.
+
+- Quedan cinco: Registro diario · Bajo receta (Libro / Lotes por revisar) · Antibióticos (Listado / Por lote) · Regencia (Visitas / Cierre de mes) · Configuración. Dentro de un grupo con dos secciones, un selector chico arriba elige cuál.
+- La dirección sigue nombrando la sección (`?tab=revision`, `?tab=lotes`…): los avisos y enlaces viejos llegan igual.
+
 ## v2.1521.3 — Bitácoras: arranca en una sala que la lleva y los avisos de antibióticos en uno
 
 El usuario: «esta vista es un desorden, todas las pestañas».

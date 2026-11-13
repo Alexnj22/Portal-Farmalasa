@@ -13,6 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import ConAurora from './ConAurora';
 import BotonCampana from './BotonCampana';
 import { colorSistema } from './Formulario';
+import { useRedibujarConPaleta } from '../tema/material';
 import { FotoDeCuenta } from './inicio/Encabezado';
 
 // En iOS 26 el sistema ya pone su «borde suave» al desplazar (scroll edge
@@ -107,6 +108,7 @@ function fotoEnEncabezado(user) {
 // `fija`: la pestaña tiene secciones fijas arriba (Inicio, la pestaña rápida).
 export default function PilaDePestana({ titulo, sinBarra = false, conMarca = true, fija = false }) {
   const { user } = useAuth();
+  const redibujar = useRedibujarConPaleta();
   const marca = !conMarca ? {} : {
     headerTitle: () => <LogoEncabezado />,
     headerTitleAlign: 'center',
@@ -116,7 +118,7 @@ export default function PilaDePestana({ titulo, sinBarra = false, conMarca = tru
   return (
     <ConAurora>
     <RaizFija.Provider value={fija}>
-    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? { ...BARRA_NATIVA, ...(Platform.OS === 'ios' ? OPACA : {}) } : BARRA_NATIVA),
+    <Stack screenLayout={redibujar} screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? { ...BARRA_NATIVA, ...(Platform.OS === 'ios' ? OPACA : {}) } : BARRA_NATIVA),
       // Android: la barra superior en la superficie de la paleta del sistema,
       // igual que la de las pantallas que se abren encima (app/_layout.js).
       ...(Platform.OS === 'android' ? { headerStyle: { backgroundColor: colorSistema.fondo }, headerShadowVisible: false, headerTintColor: colorSistema.texto } : {}) }}>

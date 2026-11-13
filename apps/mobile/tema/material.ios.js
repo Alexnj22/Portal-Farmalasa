@@ -5,3 +5,4 @@ export const useVersionDePaleta = create(() => ({ v: 0 }));
 export function paletaDe() { return null; }
 export function refrescarPaleta() { return false; }
 export function usePaleta() { return null; }
+export function useRedibujarConPaleta() { return undefined; }

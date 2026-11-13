@@ -27,7 +27,7 @@ import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
 import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 import { vigilarActualizacionesPorAire } from '../plataforma/actualizacionAire';
 import { PILA_RAIZ } from '../componentes/PilaDePestana';
-import { refrescarPaleta, useVersionDePaleta } from '../tema/material';
+import { refrescarPaleta, useRedibujarConPaleta, useVersionDePaleta } from '../tema/material';
 
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
@@ -103,6 +103,7 @@ export default function Raiz() {
   // que vuelve a dibujar todas las pantallas con los colores nuevos — el mismo
   // camino por el que ya se aplicaba el cambio de claro a oscuro.
   const version = useVersionDePaleta((s) => s.v);
+  const redibujar = useRedibujarConPaleta(['(tabs)']);
   useEffect(() => {
     if (!ANDROID) return undefined;
     // Se relee también un poco después: Android termina de aplicar los
@@ -131,6 +132,7 @@ export default function Raiz() {
           <GuardiaDeSesion />
           <StatusBar style="auto" />
           <Stack
+            screenLayout={redibujar}
             screenOptions={{
               // Android: la barra superior de Material con la paleta del sistema
               // (fondo de superficie, íconos en el color del texto).

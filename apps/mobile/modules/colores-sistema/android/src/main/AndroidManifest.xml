@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- En su PROPIO proceso: ahí nunca se carga el WebView, así que siempre
+         ve los colores vigentes del sistema (ver ColoresSistemaModule.kt). -->
+    <provider
+      android:name="lat.farmasalud.colores.ProveedorDeColores"
+      android:authorities="${applicationId}.colores-sistema"
+      android:process=":colores"
+      android:exported="false" />
+  </application>
+</manifest>

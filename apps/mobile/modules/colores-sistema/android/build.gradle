@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+
+group = 'lat.farmasalud.colores'
+version = '1.0.0'
+
+android {
+  namespace "lat.farmasalud.colores"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // La misma versión que trae @expo/ui: una sola copia de Material 3.
+  implementation "androidx.compose.material3:material3-android:1.5.0-alpha17"
+  implementation 'androidx.compose.ui:ui-graphics-android:1.10.6'
+}

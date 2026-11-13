@@ -14,9 +14,11 @@
 //
 // `SEMILLA` queda en undefined a propósito: si algún día se quiere la paleta
 // fija de la marca, se pone aquí un color y todos los Host y piezas la siguen.
+import { Fragment, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { create } from 'zustand';
 import { getMaterialColors } from '@expo/ui/jetpack-compose';
+import { paletaDelSistema } from '../modules/colores-sistema';
 
 export const SEMILLA = undefined;
 
@@ -29,7 +31,12 @@ export const useVersionDePaleta = create(() => ({ v: 0 }));
 export function paletaDe(oscuro) {
   const k = oscuro ? 'dark' : 'light';
   if (!cache[k]) {
-    try { cache[k] = getMaterialColors({ scheme: k, ...(SEMILLA ? { seedColor: SEMILLA } : {}) }); } catch { cache[k] = null; }
+    // Sin semilla: la del sistema VIGENTE, leída en el proceso aparte del
+    // módulo `colores-sistema` (la de @expo/ui se queda con la del arranque:
+    // ver ese módulo). En un binario sin el módulo, la de @expo/ui.
+    const delSistema = SEMILLA ? null : paletaDelSistema(oscuro);
+    if (delSistema) cache[k] = delSistema;
+    else { try { cache[k] = getMaterialColors({ scheme: k, ...(SEMILLA ? { seedColor: SEMILLA } : {}) }); } catch { cache[k] = null; } }
   }
   return cache[k];
 }
@@ -48,4 +55,33 @@ export function refrescarPaleta() {
 export function usePaleta() {
   useVersionDePaleta((s) => s.v);
   return paletaDe(useColorScheme() === 'dark');
+}
+
+// Para el `screenLayout` de una pila: cuando la paleta cambia, cada pantalla
+// abierta se vuelve a montar y toma los colores nuevos. Hace falta porque
+// `colorSistema` se lee al dibujar y una pantalla que no se vuelve a dibujar
+// se queda con los del arranque (enlaces, textos). Se monta de nuevo la
+// PANTALLA, no la pila: el historial y la pantalla en la que se estaba se
+// conservan. `excepto`: rutas que son otra pila (las pestañas), que se
+// redibujan por su cuenta.
+//
+// La pantalla vieja se quita UN cuadro antes de poner la nueva: React
+// Navigation borra las opciones de la barra (título, botones) al desmontar la
+// vieja, y si las dos pasan en el mismo cambio, el borrado llega DESPUÉS de
+// que la nueva puso las suyas (medido: «Personal» quedaba sin título ni
+// botones). Se devuelve siempre (también antes del primer cambio), para que la
+// envoltura ya esté puesta y el primer cambio pase por el mismo camino.
+function Redibujo({ v, children }) {
+  const [montada, setMontada] = useState(v);
+  useEffect(() => {
+    if (montada === v) return undefined;
+    const t = requestAnimationFrame(() => setMontada(v));
+    return () => cancelAnimationFrame(t);
+  }, [v, montada]);
+  return montada === v ? <Fragment key={montada}>{children}</Fragment> : null;
+}
+
+export function useRedibujarConPaleta(excepto = []) {
+  const v = useVersionDePaleta((s) => s.v);
+  return ({ route, children }) => (excepto.includes(route?.name) ? children : <Redibujo v={v}>{children}</Redibujo>);
 }

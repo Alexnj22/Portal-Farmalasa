@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1520.3 — App Android: toma el color nuevo del sistema sin cerrar la app
+
+App del personal, Android — toma el color nuevo del sistema (Material You) **sin cerrar la app** (usuario: «si cambio el tema en android, al volver a la app no se cambia? debo cerrar y volver a entrar»).
+
+- **La causa (medida en el emulador):** en Android, un proceso que cargó el WebView deja de recibir los colores nuevos del sistema. Con una app nativa mínima, sin WebView el color cambia en vivo y con WebView no. React Native carga el WebView en todo proceso: lo pide para las cookies de cada petición y del canal en vivo, antes de que arranque la app. Google Fotos sí cambia porque no lo carga.
+- **El arreglo:** un módulo nativo propio, sólo de Android (`modules/colores-sistema`), lee la paleta en un proceso APARTE (`:colores`, un ContentProvider) donde el WebView no se carga nunca. La app se la pide al volver al frente. Sigue funcionando después de abrir el portal incrustado.
+- **Las pantallas abiertas se vuelven a montar** cuando la paleta cambia (`screenLayout` de las pilas), así toman el color nuevo también los enlaces y textos. Se conserva la pantalla y el historial; la vieja se quita un cuadro antes de poner la nueva, porque si no React Navigation borraba el título y los botones de la barra.
+- **iPhone sin cambios:** la huella nativa de iOS es la misma (`0ea50bee…`), así que sigue recibiendo por aire con la versión de la App Store. Android necesita su binario nuevo (pista interna).
+- Pendiente aparte (ya pasaba): al pasar de oscuro a claro con la app abierta, la lupa de búsqueda de la barra queda blanca hasta reabrir.
+
 ## v2.1520.2 — Anular vuelve a pedir caja abierta; fuera los restos de Facturas de mi sala
 
 - **Anular vuelve a pedir una caja abierta.** El freno de `validar_solicitud_facturacion()` (v2.750.2, migración `20260825031643`) se había perdido el 26-ago, cuando `20260826222947` reescribió la función desde una versión anterior. Desde entonces la base aceptaba pedir una anulación con la caja cerrada; sólo la frenaban la pantalla y la función que la aplica al aprobar. Repuesto sobre la definición VIVA (conserva «no pasar a crédito»), migración `20261113152208`. Probado en pruebas: caja abierta pasa, cerrada frena, cambio de vendedor pasa.

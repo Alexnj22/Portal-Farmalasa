@@ -9,8 +9,8 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import {
-    DECISIONES_ENVIO, MOTIVOS_RECHAZO_ENVIO, cancelarEnvio, decidirEnvio, despacharEnvio,
-    recibirDevolucion,
+    DECISIONES_ENVIO, MOTIVOS_RECHAZO_ENVIO, MOTIVO_CANCELAR_SIN_VENCE, cancelarEnvio, decidirEnvio,
+    despacharEnvio, explicarSinVence, recibirDevolucion, renglonSinVence,
 } from '@nucleo/data/envios';
 import { imprimirTicketDeEnvio } from '@nucleo/utils/imprimirTraslado';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -468,9 +468,13 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
 }
 
 /* ─── Lo que armaste y todavía no salió ───────────────────────────────────── */
-export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
+export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, ahora = null }) {
     const { user } = useAuth();
     const faltan = (envio.lineas ?? []).filter(l => l.estado === 'por_enviar' || l.estado === 'error');
+    /* Lo que no sale reenviando (ver `renglonSinVence`): para esos, el botón de
+     * reenviar no sirve y la salida es armar de nuevo. */
+    const sinVence = faltan.filter(renglonSinVence);
+    const reenviables = faltan.length - sinVence.length;
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
     const [cancelando, setCancelando] = useState(false);
@@ -533,16 +537,34 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
         onHecho?.();
     };
 
+    /* Cancelar con el motivo ya escrito y abrir el armado: es lo único que
+     * resuelve un renglón sin vencimiento. */
+    const cancelarYArmar = async () => {
+        setEnviando(true);
+        setError('');
+        const r = await cancelarEnvio(envio.id, MOTIVO_CANCELAR_SIN_VENCE);
+        setEnviando(false);
+        if (!r.ok) { setError(r.error ?? 'No se pudo cancelar.'); return; }
+        onHecho?.();
+        onArmarDeNuevo?.();
+    };
+
     return (
         <Tarjeta>
             <Cabecera envio={envio} tono="warning" ahora={ahora} />
             <ListaRenglones lineas={envio.lineas ?? []} conEstado />
             {/* Lo que el sistema contestó cuando no salió. Es lo que dice si hay
                 que ir a mirar el estante o si alcanza con volver a apretar. */}
-            {faltan.filter(l => l.error).map(l => (
+            {faltan.filter(l => l.error && !renglonSinVence(l)).map(l => (
                 <p key={l.posicion} className="text-caption text-danger-text font-semibold leading-snug">
                     {l.descripcion}: {l.error}
                 </p>
+            ))}
+            {sinVence.map(l => (
+                <Notice key={l.posicion} variant="warning">
+                    {explicarSinVence(l)}
+                    {!nadaSalio && ' Lo demás de este envío ya salió, así que éste va en un envío nuevo.'}
+                </Notice>
             ))}
             {error && <Notice variant="danger">{error}</Notice>}
 
@@ -583,11 +605,30 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
                             Cancelar
                         </Button>
                     )}
-                    <Button size="sm" tone="success" soft icon={Send} loading={enviando}
-                        className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
-                        onClick={reintentar} disabled={enviando}>
-                        {enviando ? 'Enviando…' : `Volver a enviar ${faltan.length === 1 ? 'el producto' : `los ${faltan.length}`}`}
-                    </Button>
+                    {/* Sólo se ofrece reenviar lo que reenviar puede sacar. */}
+                    {reenviables > 0 && (
+                        <Button size="sm" tone="success" soft icon={Send} loading={enviando}
+                            className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
+                            onClick={reintentar} disabled={enviando}>
+                            {enviando ? 'Enviando…'
+                                : sinVence.length ? `Enviar ${reenviables === 1 ? 'el otro producto' : `los otros ${reenviables}`}`
+                                : `Volver a enviar ${reenviables === 1 ? 'el producto' : `los ${reenviables}`}`}
+                        </Button>
+                    )}
+                    {sinVence.length > 0 && reenviables === 0 && nadaSalio && (
+                        <Button size="sm" tone="success" soft icon={Send} loading={enviando}
+                            className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
+                            onClick={cancelarYArmar} disabled={enviando}>
+                            {enviando ? 'Cancelando…' : 'Cancelar y armar de nuevo'}
+                        </Button>
+                    )}
+                    {sinVence.length > 0 && !nadaSalio && onArmarDeNuevo && (
+                        <Button size="sm" tone="success" soft icon={Send}
+                            className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
+                            onClick={onArmarDeNuevo} disabled={enviando}>
+                            Armar un envío nuevo
+                        </Button>
+                    )}
                 </Pie>
             )}
         </Tarjeta>

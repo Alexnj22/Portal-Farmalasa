@@ -24,7 +24,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion, TOPE_ENVIOS_CERRADOS } from '@nucleo/data/envios';
+import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, explicarSinVence, MOTIVO_CANCELAR_SIN_VENCE, renglonSinVence, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion, TOPE_ENVIOS_CERRADOS } from '@nucleo/data/envios';
 import { buscadorDePersonas, desdeHace } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -140,6 +140,19 @@ export default function Envio() {
   };
 
   const salioAlgo = lineas.some((l) => l.enviado_at);
+  // Lo que no sale reenviando (ver `renglonSinVence`): la salida es armar de nuevo.
+  const faltanDespachar = lineas.filter((l) => l.estado === 'por_enviar' || l.estado === 'error');
+  const sinVence = faltanDespachar.filter(renglonSinVence);
+  const reenviables = faltanDespachar.length - sinVence.length;
+  const cancelarYArmar = async () => {
+    setOcupado(true); trabajando('Cancelando…');
+    const r = await cancelarEnvio(envio.id, MOTIVO_CANCELAR_SIN_VENCE);
+    setOcupado(false);
+    if (!r?.ok) { fallo('No se pudo cancelar', r?.error ?? 'Inténtalo de nuevo.'); return; }
+    usePorDecidir.getState().quitar(`envio:${envio.id}`);
+    listo('Envío cancelado', 'Ármalo de nuevo con el vencimiento que trae la caja.');
+    router.replace('/enviar-producto');
+  };
   // El ticket de la bolsa, el mismo papel del portal, a la caja de quien lo pide.
   const imprimir = async () => {
     const papel = ticketDeEnvioParaImprimir({ envio, quien: user?.name ?? user?.nombre ?? null });
@@ -237,7 +250,7 @@ export default function Envio() {
                       placeholder="¿Qué pasó? (opcional)" />
                   ) : null}
                   {l.motivo_rechazo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{l.motivo_rechazo}{l.nota_rechazo ? `: ${l.nota_rechazo}` : ''}</Text> : null}
-                  {l.error ? <Text style={{ color: MARCA.rojo, fontSize: 13 }}>{l.error}</Text> : null}
+                  {l.error ? <Text style={{ color: MARCA.rojo, fontSize: 13 }}>{renglonSinVence(l) ? explicarSinVence(l) : l.error}</Text> : null}
                 </View>
               </Vidrio>
             );
@@ -261,7 +274,15 @@ export default function Envio() {
 
           {momento === 'por_despachar' ? (
             <View style={{ gap: 12 }}>
-              <BotonGrande texto="Volver a intentar el envío" color={MARCA.azul} deshabilitado={ocupado} onPress={reintentar} />
+              {reenviables > 0 ? (
+                <BotonGrande texto={sinVence.length ? 'Enviar los otros productos' : 'Volver a intentar el envío'} color={MARCA.azul} deshabilitado={ocupado} onPress={reintentar} />
+              ) : null}
+              {sinVence.length > 0 && reenviables === 0 && !salioAlgo ? (
+                <BotonGrande texto="Cancelar y armar de nuevo" color={MARCA.azul} deshabilitado={ocupado} onPress={cancelarYArmar} />
+              ) : null}
+              {sinVence.length > 0 && salioAlgo ? (
+                <BotonGrande texto="Armar un envío nuevo" color={MARCA.azul} deshabilitado={ocupado} onPress={() => router.push('/enviar-producto')} />
+              ) : null}
               {!salioAlgo ? (
                 <>
                   <Campo value={motivoCancelar} onChangeText={setMotivoCancelar} placeholder="Para cancelar: ¿por qué? (obligatorio)" />

@@ -675,7 +675,8 @@ export default function TrasladosView() {
                                     para dos renglones de texto. */}
                                 <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                                     {porMomento[clave].map(e => (
-                                        <Fila key={e.id} envio={e} onHecho={cargar} ahora={ahora} />
+                                        <Fila key={e.id} envio={e} onHecho={cargar} ahora={ahora}
+                                            onArmarDeNuevo={() => setAbrirEnvio(true)} />
                                     ))}
                                 </div>
                             </div>

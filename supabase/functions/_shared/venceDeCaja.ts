@@ -54,6 +54,8 @@ export function venceParaMover(
   const propio = String(venceExistencia ?? "").trim();
   const tiene = propio !== "" && !/^0{4}|^null$/i.test(propio);
   if (!perecedero || tiene) return { vence: venceExistencia || "" };
+  // Estos dos textos los reconoce la pantalla (`renglonSinVence` en
+  // src/data/envios.js) para ofrecer «armar de nuevo» en vez de reenviar.
   if (!escrito) {
     return {
       error: `${nombre} no tiene vencimiento registrado. `

@@ -404,6 +404,29 @@ export const noAparecioEnvio = (requestId, { faltante_id, responsable, responsab
  * En cuanto un renglón salió, esto rebota: el producto está fuera de la sala y
  * lo que corresponde es que la otra lo conteste o lo devuelva.
  */
+/**
+ * El renglón que NO sale volviendo a enviar (2026-11-13): un perecedero sin
+ * fecha en la sala, armado sin el vencimiento de la caja —o con uno que ya
+ * pasó—. El reenvío manda el MISMO renglón guardado, así que choca con lo mismo
+ * cada vez: ofrecerlo es prometer algo que no va a pasar. La salida es cancelar
+ * y armarlo de nuevo, que ahora pide la fecha.
+ *
+ * Se reconoce por el texto que escribe `venceParaMover`
+ * (`supabase/functions/_shared/venceDeCaja.ts`): si cambia allá, cambia acá.
+ */
+export const renglonSinVence = (linea) =>
+    linea?.estado === 'error'
+    && /no tiene vencimiento registrado|el vencimiento escrito \(/.test(String(linea?.error ?? ''));
+
+/** Lo que se le explica a la sala por ese renglón: qué pasó y qué hacer. */
+export const explicarSinVence = (linea) =>
+    `${linea?.descripcion ?? 'Este producto'} no puede salir: se armó sin la fecha de vencimiento `
+    + 'de la caja, y en tu sala no tiene una registrada. Volver a enviarlo no lo arregla. '
+    + 'Cancela este envío y ármalo de nuevo: ahora te pide el vencimiento que trae la caja.';
+
+/** El motivo que queda escrito al cancelar por eso. */
+export const MOTIVO_CANCELAR_SIN_VENCE = 'Se armó sin el vencimiento de la caja; se arma de nuevo.';
+
 export async function cancelarEnvio(requestId, motivo) {
     const { error } = await supabase.rpc('cancelar_envio', {
         p_request_id: requestId,

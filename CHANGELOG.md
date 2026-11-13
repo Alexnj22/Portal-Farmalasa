@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.7 — Un envío sin vencimiento ya no ofrece reenviar: explica y arma de nuevo
+
+Un envío armado antes de que se pidiera el vencimiento de la caja (v2.1525.0) queda en «Sin salir de tu sala» con un perecedero sin fecha, y «Volver a enviar» fallaba siempre: reenvía el mismo renglón guardado. Caso real: KISS CHOCOLATE, avería de Salud 4 a Bodega, armado a las 3:30 p. m., 4 minutos antes de publicarse la pantalla nueva.
+
+- La tarjeta (portal y app) explica qué pasó y qué hacer, en vez del error crudo.
+- Si todo lo que falta es eso, el botón es **«Cancelar y armar de nuevo»**: cancela con el motivo escrito y abre Enviar producto, que ahora pide la fecha. Si hay otros renglones que sí pueden salir, se ofrece enviar ésos; si algo ya salió, «Armar un envío nuevo».
+- Una sola regla en el núcleo: `renglonSinVence` (`src/data/envios.js`), que reconoce los textos de `venceParaMover`.
+
 ## v2.1527.6 — App: descargar el paquete de una factura de compra y descartar y recalcular Mín·Máx
 
 En la app del personal:

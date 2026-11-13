@@ -338,7 +338,8 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     <Suspense fallback={null}>
                         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                             {porMomento.por_despachar.map(e => (
-                                <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} ahora={ahora} />
+                                <FilaEnvioPorDespachar key={e.id} envio={e} onHecho={onCambio} ahora={ahora}
+                                    onArmarDeNuevo={() => setAbrirEnvio(true)} />
                             ))}
                         </div>
                     </Suspense>

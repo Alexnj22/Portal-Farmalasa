@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.19 — Recibir un traslado tiene candado: dos personas a la vez ya no lo cargan dos veces
+
+- **`aplicar-traslado-inventario` (recibir)**: toma `metadata.recibiendo_at/by` antes de la primera llamada al sistema, igual que despachar (caduca a los 3 min). Antes, dos «ya llegó» simultáneos leían los dos «pendiente» y los dos enviaban la recepción: el `is: null` de `erp_recibido` evitaba la segunda anotación, no la segunda carga. Las salidas sin recibir (anulado, sin líneas, rechazo) sueltan el candado; recibir lo suelta al anotar. Hallado en la auditoría de traslados del 2026-11-12.
+- **Datos**: se cerró el recorrido de prueba del 25-ago (su única bolsa ya estaba entregada, sin firmas). `retiro_cargar` reutiliza el recorrido abierto de la persona, así que su próxima carga se le habría sumado.
+
 ## v2.1513.18 — Reservas: sin anticipo también se pide a otra sala
 
 - Al apartar sin anticipo un producto que no hay en la sala, ahora se puede pedir a Bodega u otra sala: la reserva nace en camino, el traslado se pide amarrado a ella y queda lista sola al llegar. Sigue a responsabilidad de quien la aparta (lo reportó Salud 3: el botón quedaba gris).

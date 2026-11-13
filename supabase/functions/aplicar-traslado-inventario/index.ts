@@ -460,6 +460,51 @@ Deno.serve(async (req) => {
         });
       };
 
+      /* ── El candado de RECIBIR (2026-11-12) ────────────────────────────
+       *
+       * Despachar lo tenía desde el principio; recibir no. La pregunta al
+       * sistema de más abajo («¿sigue esperando entrar?») frena el SEGUNDO
+       * clic, pero no dos clics a la vez: dos personas de la sala que aprietan
+       * «ya llegó» en el mismo segundo leen las dos «pendiente» y las dos
+       * envían la recepción — el producto podía entrar dos veces. El
+       * `is: null` de `marcarRecibido` evitaba la segunda ANOTACIÓN, no la
+       * segunda carga. Hallado en la auditoría de traslados del 2026-11-12.
+       *
+       * Mismo diseño que el de despachar: se toma justo antes de la primera
+       * llamada al sistema (una validación que falla no deja nada trabado), y
+       * caduca a los 3 minutos — más que lo que vive una invocación, así que
+       * una que muera a mitad se destraba sola. `meta` sigue siendo la foto SIN
+       * candado: toda escritura que parte de ella lo suelta (`marcarRecibido`
+       * incluida), y las que deben conservarlo parten de `metaConCandado`. */
+      const tomadoAt = new Date();
+      const caducoRec = new Date(tomadoAt.getTime() - 3 * 60_000).toISOString();
+      const metaConCandado = { ...meta, recibiendo_at: tomadoAt.toISOString(), recibiendo_by: quien.id };
+      const { data: tomadaRec, error: errTomadaRec } = await admin
+        .from("approval_requests")
+        .update({ metadata: metaConCandado })
+        .eq("id", sol.id)
+        .is("metadata->erp_recibido", null)
+        .or(`metadata->>recibiendo_at.is.null,metadata->>recibiendo_at.lt.${caducoRec}`)
+        .select("id")
+        .maybeSingle();
+      // Una escritura caída no es «alguien más lo está recibiendo».
+      if (errTomadaRec)
+        return json({ ok: false, error: "No se pudo apartar el traslado. Vuelve a intentar." }, 503);
+      if (!tomadaRec)
+        return json({
+          ok: false, codigo: "YA_EN_CURSO",
+          error: "Alguien más de tu sala está recibiendo este traslado en este momento.",
+        }, 409);
+      // Salidas SIN recibir: se suelta en vez de esperar a que caduque. Conserva
+      // la marca de destrabe si quedó algo pendiente (`conMarca`).
+      const soltarCandado = async () => {
+        const { error: e } = await admin.from("approval_requests")
+          .update({ metadata: conMarca(meta) })
+          .eq("id", sol.id)
+          .is("metadata->erp_recibido", null);
+        if (e) console.error("[aplicar-traslado-inventario] soltar el candado de recibir:", e.message);
+      };
+
       const cookie = await sesionEn(erpDestino);
 
       // Productos que una llamada MUERTA dejó sin control de lote (ver los
@@ -489,12 +534,14 @@ Deno.serve(async (req) => {
        * siempre. Una guarda que corta con lo que no sabe deja de recibir por
        * culpa de una consulta secundaria. */
       const antesDeRecibir = await estadoDeRecepcion(cookie, idTraslado);
-      if (antesDeRecibir === "anulado")
+      if (antesDeRecibir === "anulado") {
+        await soltarCandado();
         return json({
           ok: false, codigo: "TRASLADO_ANULADO",
           error: `El traslado ${idTraslado} está anulado en el sistema: el producto no entró a tu sala. `
                + `Pídelo de nuevo.`,
         }, 409);
+      }
       if (antesDeRecibir === "recibido")
         return await marcarRecibido({
           at: new Date().toISOString(), by: quien.id, by_name: quien.name,
@@ -525,11 +572,13 @@ Deno.serve(async (req) => {
       // Con líneas o sin ellas, acá ya se sabe que el traslado está esperando
       // entrar —se preguntó más arriba—, así que quedarse sin filas es que la
       // pantalla no se pudo leer, no que el traslado ya no esté.
-      if (filas.length === 0)
+      if (filas.length === 0) {
+        await soltarCandado();
         return json({
           ok: false, codigo: "TRASLADO_SIN_LINEAS",
           error: `El traslado ${idTraslado} no muestra líneas para recibir.`,
         }, 409);
+      }
 
       /* ── Lo que esta recepción le cambie a las fichas, para devolverlo ──
        * Ver `_shared/erp-destrabe.ts`. Antes de tocar una ficha se anota en
@@ -539,7 +588,7 @@ Deno.serve(async (req) => {
       const nombres = new Map<number, string>();
       const hayTiempoParaDestrabar = () => Date.now() - arranque < PRESUPUESTO - MARGEN_DESTRABE_MS;
       const anotarMarca = async () => !(await admin.from("approval_requests")
-        .update({ metadata: { ...meta, destrabe: { ...destrabe, at: new Date().toISOString() } } })
+        .update({ metadata: { ...metaConCandado, destrabe: { ...destrabe, at: new Date().toISOString() } } })
         .eq("id", sol.id)).error;
       // Con esto puesto no se envía nada: se va al camino del fallo, que
       // devuelve las fichas antes de contestar.
@@ -723,12 +772,9 @@ Deno.serve(async (req) => {
         ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
         ...(presentacionDestrabada.length ? { presentacion_destrabada: presentacionDestrabada } : {}),
       };
-      // Para la salida SIN recibir: la marca queda sólo si hay algo pendiente.
-      const cerrarMarcaSinRecibir = async () => {
-        if (!hayDestrabe(destrabe)) return;
-        const { error: e } = await admin.from("approval_requests").update({ metadata: conMarca(meta) }).eq("id", sol.id);
-        if (e) console.error(`[aplicar-traslado-inventario] ${idTraslado}: no se pudo actualizar la marca de destrabe: ${e.message}`);
-      };
+      // Para la salida SIN recibir: suelta el candado; la marca de destrabe
+      // queda sólo si hay algo pendiente (`conMarca`).
+      const cerrarMarcaSinRecibir = soltarCandado;
       /* ── Un «no» del sistema no siempre significa que no entró ────────────
        *
        * Es la otra mitad de lo mismo: el 2026-08-17 hubo DIEZ respuestas 502 de

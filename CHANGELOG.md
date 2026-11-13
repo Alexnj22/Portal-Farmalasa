@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1517.1 — App: la burbuja del chat en todas las vistas, más chica y desplazable
+
+App del personal (iPhone y Android) — la burbuja del chat con clientes (pedido del usuario: «si un cliente escribe no me doy cuenta si estoy en otra vista… que no interfiera»):
+
+- Aparece en **todas las vistas**, no sólo en las pestañas (no sale dentro del chat ni con el teclado abierto).
+- Siempre a la **derecha**. Se **desliza en vertical, en un tramo corto** (hasta 240 pt sobre su lugar), para destapar un dato o un botón que quedó detrás; recuerda la altura en el teléfono.
+- **Más chica** (48) y, sin mensajes esperando, se achica y se aclara; cuando llega uno vuelve a su tamaño, late y muestra el número.
+- Deja aire sobre la barra de abajo (en Android quedaba pegada).
+
 ## v2.1517.0 — Las bolsas de traslado viajan con la ruta de reparto
 
 Punto 6 de traslados (decisión del usuario, 2026-11-12). En la ruta del pedido

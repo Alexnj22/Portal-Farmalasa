@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1521.2 — Personal: el cargo secundario ya no puede repetir el principal
+
+Una ficha tenía el mismo cargo como principal y secundario (Referente de Farmacovigilancia en los dos): el formulario ofrecía el principal también en la lista del secundario.
+
+- Ficha y recontratación: la lista del secundario ya no ofrece el principal; si el principal pasa a ser el que estaba de secundario, el secundario se vacía. En la ficha el secundario ahora se puede quitar (antes no tenía «limpiar»).
+- Base: CHECK `employees_cargo_secundario_distinto` (migración `20261113163624`). Juan Antonio Díaz queda Regente (principal) y Referente de Farmacovigilancia (secundario), como pidió el usuario.
+
 ## v2.1521.1 — Inyecciones: el libro completo que pide el CSSP, con la firma del paciente
 
 El libro de inyectables, completo (lo pide el CSSP por tener inyectorio). Migración `20261113162101`.

@@ -808,6 +808,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             setFormData(prev => ({ ...prev, municipality: value, distrito: '' }));
             return;
         }
+        // El cargo secundario nunca es el mismo que el principal (2026-11-13:
+        // una ficha quedó con Referente de Farmacovigilancia en los dos). Si el
+        // principal pasa a ser el que estaba de secundario, el secundario se
+        // vacía; la lista del secundario ya no ofrece el principal.
+        if (name === 'role_id' && String(value ?? '') !== '' && String(value) === String(formData?.secondary_role_id ?? '')) {
+            setFormData(prev => ({ ...prev, role_id: value, secondary_role_id: '' }));
+            return;
+        }
         if (name === 'department' && value !== formData?.department) {
             setFormData(prev => ({ ...prev, department: value, municipality: '', distrito: '' }));
             return;
@@ -4353,7 +4361,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         <div className="relative z-base">
                                             <label className={rotuloCampo('text-content-3')}>Cargo Secundario (Apoyo)</label>
-                                            <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
+                                            <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val || '')} options={roleOpts.filter((o) => String(o.value) !== String(formData.role_id ?? ''))} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
                                     </>
                                 )}

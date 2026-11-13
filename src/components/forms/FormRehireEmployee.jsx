@@ -125,7 +125,9 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className={rotuloCampo('text-content-3')}>
                             Cargo Principal {reqBadge}
                         </label>
-                        <LiquidSelect invalid={!formData.rehire_role_id} value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
+                        <LiquidSelect invalid={!formData.rehire_role_id} value={formData.rehire_role_id || ''} onChange={v => setFormData(prev => ({ ...prev, rehire_role_id: v,
+                            // El secundario nunca repite el principal.
+                            rehire_secondary_role_id: String(prev.rehire_secondary_role_id ?? '') === String(v ?? '') ? '' : prev.rehire_secondary_role_id }))}
                             options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalProps} />
                     </div>
 
@@ -133,7 +135,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     <div>
                         <label className={rotuloCampo('text-content-3')}>Cargo Secundario (Apoyo)</label>
                         <LiquidSelect value={formData.rehire_secondary_role_id || ''} onChange={v => set('rehire_secondary_role_id', v)}
-                            options={roleOpts} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
+                            options={roleOpts.filter((o) => String(o.value) !== String(formData.rehire_role_id ?? ''))} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
                     </div>
 
                     {/* Horas semanales */}

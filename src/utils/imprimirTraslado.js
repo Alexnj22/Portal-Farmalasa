@@ -262,7 +262,7 @@ export function datosDelTicketDeEnvio(envio, { quien = null } = {}) {
 export async function imprimirTicketDeEnvio({ envio, sala, quien = null }) {
     const datos = datosDelTicketDeEnvio(envio, { quien });
     if (!datos.codigo) {
-        return { ok: false, detalle: 'Esta bolsa no tiene número: se recibe buscándola en la lista.' };
+        return { ok: false, detalle: 'Este paquete no tiene número: se recibe buscándolo en la lista.' };
     }
     return imprimirTicketDeTraslado({ sala, ...datos });
 }

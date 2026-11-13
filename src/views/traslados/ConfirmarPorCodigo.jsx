@@ -198,7 +198,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
             closeOnEsc={!ocupado} surface={null} ariaLabel="Recibir traslado escaneando el ticket">
             <CuerpoDialogo
                 titulo="Recibir traslado"
-                subtitulo="Pasa el lector por el código del ticket de la bolsa"
+                subtitulo="Pasa el lector por el código del ticket del paquete"
                 icono={ScanLine}
                 anchoEscritorio="max-w-lg"
                 pie={<>
@@ -234,7 +234,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                             {listo.faltaron
                                 ? ` Quedó anotado que faltaron ${listo.faltaron} ${listo.faltaron === 1 ? 'producto' : 'productos'};`
                                   + ` ya le avisamos a ${listo.origen ?? 'la otra sala'}.`
-                                : ' Escanea la siguiente bolsa cuando quieras.'}
+                                : ' Escanea el siguiente paquete cuando quieras.'}
                             {listo.sobraron
                                 ? ` Lo que vino de más ya está en tu inventario y se le avisó a ${listo.origen ?? 'la otra sala'}.`
                                 : ''}
@@ -291,7 +291,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                                 {hallado.envio_bolsa.origen_branch_name ?? 'La otra sala'}
                                 {' → '}{hallado.envio_bolsa.branch_name ?? 'esta sala'}
                             </p>
-                            <Notice variant="success">Esta bolsa ya se contestó.</Notice>
+                            <Notice variant="success">Este paquete ya se contestó.</Notice>
                             <ul className="flex flex-col gap-1">
                                 {(hallado.envio_bolsa.lineas ?? []).map(l => (
                                     <li key={l.posicion} className="flex justify-between gap-3 text-body-sm">
@@ -314,19 +314,19 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                     {ajena && (
                         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
                             <p className="text-body-sm font-bold text-content-1">
-                                Esta bolsa es para {ajena.destino ?? 'otra sala'}, no para ustedes
+                                Este paquete es para {ajena.destino ?? 'otra sala'}, no para ustedes
                             </p>
                             <p className="text-micro text-content-3">
                                 Ticket {ajena.codigo} · sale de {ajena.origen ?? 'otra sala'}
                             </p>
                             {ajena.ya_reportada_aqui ? (
                                 <Notice variant="success">
-                                    Ya quedó anotado que está aquí. Bodega y quien la entregó ya saben; la próxima ruta que pase la lleva a {ajena.destino ?? 'su sala'}.
+                                    Ya quedó anotado que está aquí. Bodega y quien lo entregó ya saben; la próxima ruta que pase lo lleva a {ajena.destino ?? 'su sala'}.
                                 </Notice>
                             ) : (
                                 <>
                                     <p className="text-body-sm text-content-2">
-                                        Si la dejaron aquí, repórtenlo: avisamos a Bodega y a quien la entregó, y la próxima ruta que pase la lleva a su sala.
+                                        Si lo dejaron aquí, repórtenlo: avisamos a Bodega y a quien lo entregó, y la próxima ruta que pase lo lleva a su sala.
                                     </p>
                                     <Button variant="secondary" disabled={ocupado} loading={ocupado} onClick={reportarAjena}>
                                         Llegó aquí por error
@@ -338,7 +338,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
 
                     {!ajena && hallado?.es_un_envio && !hallado.envio_bolsa && (
                         <Notice variant="danger">
-                            Ese ticket es de una bolsa que no puedes ver: es de otras salas.
+                            Ese ticket es de un paquete que no puedes ver: es de otras salas.
                         </Notice>
                     )}
 
@@ -368,8 +368,8 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                             </ul>
                             {hallado.ya_recibido && (
                                 <Notice variant="success">
-                                    Esta bolsa ya se había confirmado
-                                    {hallado.recibio ? `, la recibió ${hallado.recibio}` : ''}
+                                    Este paquete ya se había confirmado
+                                    {hallado.recibio ? `, lo recibió ${hallado.recibio}` : ''}
                                     {hallado.recibido_at ? ` ${fmtCuando(hallado.recibido_at)}` : ''}.
                                 </Notice>
                             )}
@@ -415,7 +415,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                 <Suspense fallback={null}>
                     <LectorDeCodigo
                         abierto
-                        titulo="Escanear el ticket de la bolsa"
+                        titulo="Escanear el ticket del paquete"
                         onCerrar={() => setConCamara(false)}
                         onLeer={(v) => { setConCamara(false); buscar(v); }}
                     />

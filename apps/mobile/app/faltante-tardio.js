@@ -57,7 +57,7 @@ export default function FaltanteTardio() {
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', marginHorizontal: 4 }}>
                 {`${t.origen ?? t.envio_bolsa?.origen_branch_name ?? '—'} → ${t.destino ?? t.envio_bolsa?.branch_name ?? '—'}`}
               </Text>
-              <Aviso tono="nota" texto={`Esta bolsa ya se recibió${t.recibio ? ` (la recibió ${t.recibio})` : ''}.`} />
+              <Aviso tono="nota" texto={`Este paquete ya se recibió${t.recibio ? ` (lo recibió ${t.recibio})` : ''}.`} />
               {!puede ? <Aviso tono="freno" texto={`Pasaron más de ${HORAS_PARA_DECLARAR_TARDE} horas: ya no se puede anotar lo que faltó.`} /> : (
                 <>
                   <Seccion titulo="¿Qué no venía?">

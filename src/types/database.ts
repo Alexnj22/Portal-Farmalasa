@@ -28114,6 +28114,8 @@ export type Database = {
           familia: string
           id: string
           origen_branch_id: number | null
+          recibio_firma_at: string | null
+          recibio_firma_por: string | null
           recogida_at: string
           recogida_lat: number | null
           recogida_lng: number | null
@@ -28136,6 +28138,8 @@ export type Database = {
           familia: string
           id?: string
           origen_branch_id?: number | null
+          recibio_firma_at?: string | null
+          recibio_firma_por?: string | null
           recogida_at?: string
           recogida_lat?: number | null
           recogida_lng?: number | null
@@ -28158,6 +28162,8 @@ export type Database = {
           familia?: string
           id?: string
           origen_branch_id?: number | null
+          recibio_firma_at?: string | null
+          recibio_firma_por?: string | null
           recogida_at?: string
           recogida_lat?: number | null
           recogida_lng?: number | null
@@ -28178,6 +28184,20 @@ export type Database = {
           {
             foreignKeyName: "ruta_bolsas_entregada_por_fkey"
             columns: ["entregada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_recibio_firma_por_fkey"
+            columns: ["recibio_firma_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_recibio_firma_por_fkey"
+            columns: ["recibio_firma_por"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -28336,6 +28356,8 @@ export type Database = {
           entregado_lng: number | null
           entregado_por: string | null
           erp_sucursal_id: number
+          firma_sala_at: string | null
+          firma_sala_por: string | null
           id: string
           orden_entrega: number
           pedido_id: string
@@ -28354,6 +28376,8 @@ export type Database = {
           entregado_lng?: number | null
           entregado_por?: string | null
           erp_sucursal_id: number
+          firma_sala_at?: string | null
+          firma_sala_por?: string | null
           id?: string
           orden_entrega?: number
           pedido_id: string
@@ -28372,6 +28396,8 @@ export type Database = {
           entregado_lng?: number | null
           entregado_por?: string | null
           erp_sucursal_id?: number
+          firma_sala_at?: string | null
+          firma_sala_por?: string | null
           id?: string
           orden_entrega?: number
           pedido_id?: string
@@ -28379,6 +28405,20 @@ export type Database = {
           ruta_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ruta_pedidos_firma_sala_por_fkey"
+            columns: ["firma_sala_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_pedidos_firma_sala_por_fkey"
+            columns: ["firma_sala_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ruta_pedidos_pedido_id_fkey"
             columns: ["pedido_id"]
@@ -31808,6 +31848,7 @@ export type Database = {
           unidades: number
         }[]
       }
+      _carne_a_empleado: { Args: { p_valor: string }; Returns: Json }
       _destinatarios_bodega_y: { Args: { p_extra: string }; Returns: string[] }
       _docs_sin_numero_control: {
         Args: { p_alcance?: string }
@@ -39550,6 +39591,11 @@ export type Database = {
         Args: { p_id: string; p_lat?: number; p_lng?: number }
         Returns: Json
       }
+      ruta_firma_sala_carne: {
+        Args: { p_stop_id: string; p_valor: string }
+        Returns: Json
+      }
+      ruta_firma_sala_exigida: { Args: never; Returns: boolean }
       ruta_parada_no_entregada: {
         Args: {
           p_motivo: string

@@ -23,7 +23,7 @@ export async function fetchBolsasDeRuta(rutaId) {
         console.error('rutaBolsas: ruta_bolsas failed:', error.message);
         return { ...vacio, error };
     }
-    if (!data?.ok) return { ...vacio, error: { message: data?.error ?? 'No se pudieron leer las bolsas.' } };
+    if (!data?.ok) return { ...vacio, error: { message: data?.error ?? 'No se pudieron leer los paquetes.' } };
     return { llevas: data.llevas ?? [], sugeridas: data.sugeridas ?? [], error: null };
 }
 
@@ -75,5 +75,30 @@ export async function reportarBolsaPorError(codigo, branchId = null) {
     const { data, error } = await supabase.rpc('bolsa_llego_por_error', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
     if (error) return { ok: false, error: error.message };
     if (data?.ok && !data.ya) anotar('BOLSA_LLEGO_POR_ERROR', null, { codigo: String(codigo ?? ''), destino: data.destino, sala: branchId });
+    return data ?? { ok: false, error: 'Sin respuesta.' };
+}
+
+// ─── La firma de la sala en una parada (punto 6, parte 2) ──────────────────
+//
+// El conductor le pide el carné a quien recibe y lo escanea en su teléfono,
+// ANTES de marcar la parada entregada. Opcional mientras
+// `security_config('ruta_firma_sala')` no diga `exigir` (decisión del usuario,
+// 2026-11-13: «opcional por ahora, anotada para convertirse en obligatorio»).
+
+/** ¿Hoy es obligatoria la firma? Si no se puede leer, se asume que no. */
+export async function fetchFirmaSalaExigida() {
+    const { data, error } = await supabase.rpc('ruta_firma_sala_exigida');
+    if (error) {
+        console.error('rutaBolsas: ruta_firma_sala_exigida failed:', error.message);
+        return false;
+    }
+    return data === true;
+}
+
+/** Firma de la sala con su carné. `{ ok, quien, sala, paquetes }`; nunca lanza. */
+export async function firmarParadaConCarne(parada, codigo) {
+    const { data, error } = await supabase.rpc('ruta_firma_sala_carne', { p_stop_id: parada.id, p_valor: String(codigo ?? '').trim() });
+    if (error) return { ok: false, error: 'No se pudo confirmar el carné.' };
+    if (data?.ok && !data.ya) anotar('RUTA_FIRMA_SALA', parada.ruta_id ?? null, { parada: parada.id, sucursal_id: parada.erp_sucursal_id, quien: data.quien, paquetes: data.paquetes, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
 }

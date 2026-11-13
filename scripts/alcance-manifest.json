@@ -994,6 +994,19 @@
     "consulta_existencia_contadores": {
       "guarda": "solo-servidor",
       "motivo": "Interna: EXECUTE sólo para service_role; arma la lista de avisos."
+    },
+    "_sala_que_reporta": {
+      "guarda": "alcance"
+    },
+    "bolsa_ajena": {
+      "guarda": "alcance",
+      "delega": "_sala_que_reporta",
+      "motivo": "La sala que reporta sale de `_sala_que_reporta`: la del empleado, o la que pide si puede obrar por ella (`puede_entregar_de`). Devuelve sólo nombres de salas de un paquete en camino."
+    },
+    "bolsa_llego_por_error": {
+      "guarda": "alcance",
+      "delega": "_sala_que_reporta",
+      "motivo": "La sala que reporta sale de `_sala_que_reporta`: la del empleado, o la que pide si puede obrar por ella (`puede_entregar_de`). Devuelve sólo nombres de salas de un paquete en camino."
     }
   },
   "buckets_abiertos": {

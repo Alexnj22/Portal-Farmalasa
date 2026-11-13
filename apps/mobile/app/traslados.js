@@ -178,12 +178,12 @@ export default function Traslados() {
     const { bolsa } = await fetchBolsaAjena(codigo);
     if (!bolsa || bolsa.es_para_esta_sala) return false;
     setEscaneando(false); setAviso(null);
-    const titulo = `Esta bolsa es para ${bolsa.destino ?? 'otra sala'}`;
+    const titulo = `Este paquete es para ${bolsa.destino ?? 'otra sala'}`;
     if (bolsa.ya_reportada_aqui) {
-      Alert.alert(titulo, `Ya quedó anotado que está aquí. La próxima ruta que pase la lleva a ${bolsa.destino ?? 'su sala'}.`);
+      Alert.alert(titulo, `Ya quedó anotado que está aquí. La próxima ruta que pase lo lleva a ${bolsa.destino ?? 'su sala'}.`);
       return true;
     }
-    Alert.alert(titulo, `Ticket ${bolsa.codigo}, sale de ${bolsa.origen ?? 'otra sala'}. Si la dejaron aquí, repórtalo: avisamos a Bodega y a quien la entregó, y la próxima ruta que pase la lleva a su sala.`, [
+    Alert.alert(titulo, `Ticket ${bolsa.codigo}, sale de ${bolsa.origen ?? 'otra sala'}. Si lo dejaron aquí, repórtalo: avisamos a Bodega y a quien lo entregó, y la próxima ruta que pase lo lleva a su sala.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Llegó aquí por error', onPress: async () => {
         const r = await reportarBolsaPorError(codigo);
@@ -433,7 +433,7 @@ export default function Traslados() {
         ) : null}
       </ScrollView>
 
-      <Escaner visible={escaneando} titulo="Recibir una caja" ayuda="Apunta al código del ticket pegado a la bolsa"
+      <Escaner visible={escaneando} titulo="Recibir una caja" ayuda="Apunta al código del ticket pegado al paquete"
         onCodigo={alEscanear} onCerrar={() => { setEscaneando(false); setAviso(null); }}
         pie={aviso ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{aviso.texto}</Text> : null} />
     </>

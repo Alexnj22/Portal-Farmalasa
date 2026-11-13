@@ -6349,6 +6349,126 @@
   "zero_out_product_all_branches": {
    "area": "minmax",
    "por": "código"
+  },
+  "_avisar_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_bolsa_por_codigo": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_bolsas_por_llevar": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_carne_a_empleado": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_destinatarios_bodega_y": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_ruta_puede_operar": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_sala_que_reporta": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "avisar_bolsas_entregadas_sin_recibir": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "avisar_paquete_en_camino": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "bolsa_ajena": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "bolsa_llego_por_error": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_bolsas": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_entregar_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_recoger_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_soltar_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_firma_sala_carne": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_firma_sala_exigida": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_pedidos_exige_firma_sala": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "auth_supervisa_faltantes": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "avisar_faltante_resuelto": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "avisar_sobrante": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "declarar_sobrantes": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_entregar_bolsas_de_parada": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "tomar_ajuste_faltante": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   }
  }
 }

@@ -286,7 +286,7 @@ const RUTAS_SELECT = `
     ruta_pedidos (
       id, pedido_id, erp_sucursal_id, orden_entrega,
       distancia_desde_anterior_m, duracion_desde_anterior_min,
-      entregado_at, entregado_por, confirmado_suc_at, discrepancia
+      entregado_at, entregado_por, confirmado_suc_at, discrepancia, firma_sala_at
     )
 `;
 export async function fetchRutasConParadas() {

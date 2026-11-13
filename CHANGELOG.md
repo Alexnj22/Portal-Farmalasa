@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1519.0 — Traslados: «paquete» en vez de «bolsa», y la sala firma con carné lo que le deja la ruta
+
+Traslados, punto 6 parte 2 y un cambio de nombre pedido por el usuario.
+
+- **«Paquete», no «bolsa»**: «cuando dices bolsa, siento que se puede mal interpretar con bolsa de dinero». Todo lo que ve el personal en traslados, envíos, faltantes, el recorrido y la ruta de reparto —pantallas del portal y de la app, errores y avisos de 13 funciones de la base— dice ahora «paquete». Las bolsas de efectivo de Caja no se tocan, ni los identificadores (`ruta_bolsas`, `codigo_bolsa`). Migración `20261113141759`, que reescribe sólo esas frases sobre la definición viva de cada función.
+- **Firma de la sala con carné** (app, ruta de reparto): al tocar «Entregué», el conductor elige «Firma con carné» (escanea el carné de quien recibe; tiene que ser de esa sala y no el suyo) o «Entregué sin firma». Queda en la parada (`ruta_pedidos.firma_sala_por/at`) y en cada paquete que se deja ahí (`ruta_bolsas.recibio_firma_*`). La parada muestra «Firmó la sala».
+- **Opcional por ahora, lista para ser obligatoria**: la fila `security_config('ruta_firma_sala')` nace en `observar`. Pasarla a `exigir` quita «sin firma» de la app y el trigger `ruta_pedidos_exige_firma_sala` rechaza entregar una parada sin firma. Sin migración.
+- **«Tu paquete viene en camino»**: cuando el conductor recoge un paquete, la gente de la sala destino recibe un aviso con quién lo lleva y de dónde sale.
+- Migración `20261113141648_ruta_firma_de_la_sala_y_paquete_en_camino`.
+
 ## v2.1518.1 — App: sin el error «Unable to resolve module» al abrir la app de pruebas
 
 App del personal — sólo desarrollo: al abrir la app de pruebas salía siempre «Unable to resolve module ./src/store/slices/practicantesSlice» (y detrás, «Can't perform a React state update…»). Metro pedía cada `import()` del núcleo como paquete aparte por una dirección relativa a `apps/mobile` (`/../../src/…`), que se colapsa a `/src/…`. `metro.config.js` apaga esa carga diferida en desarrollo (`EXPO_NO_METRO_LAZY`). En los teléfonos no pasaba: el paquete por aire lleva todo adentro.

@@ -88,7 +88,7 @@ export async function cargarBulto(requestId, entregoId = null, contexto = {}) {
     });
     if (error) {
         console.error('retiros: retiro_cargar failed:', error.message);
-        return { ok: false, error: 'No se pudo cargar esa bolsa.' };
+        return { ok: false, error: 'No se pudo cargar ese paquete.' };
     }
     if (data?.ok) {
         anotar('CARGAR_BULTO', idDe(requestId), {
@@ -163,7 +163,7 @@ export async function soltarBulto(requestId, contexto = {}) {
     const { data, error } = await supabase.rpc('retiro_soltar', { p_request_id: requestId });
     if (error) {
         console.error('retiros: retiro_soltar failed:', error.message);
-        return { ok: false, error: 'No se pudo soltar esa bolsa.' };
+        return { ok: false, error: 'No se pudo soltar ese paquete.' };
     }
     // La fila se borra: esta anotación es el ÚNICO rastro de que existió.
     if (data?.ok) anotar('SOLTAR_BULTO', idDe(requestId), { ...contexto });

@@ -102,10 +102,10 @@ export default function Retiro() {
         setError(traslado?.es_de_un_pedido ? 'Ese ticket es de un pedido de Bodega, no de un traslado entre salas.' : 'No encontramos ese ticket. Puede que el código no se haya leído bien.');
         return false;
       }
-      if (traslado.ya_recibido) { setError(`Esa bolsa ya se recibió${traslado.recibio ? `, la recibió ${traslado.recibio}` : ''}.`); return false; }
+      if (traslado.ya_recibido) { setError(`Ese paquete ya se recibió${traslado.recibio ? `, lo recibió ${traslado.recibio}` : ''}.`); return false; }
       const r = await cargarBulto(traslado.id, null, { origen: traslado.origen ?? null, destino: traslado.destino ?? null, desde: 'app' });
-      if (!r?.ok) { setError(r?.error ?? 'No se pudo cargar esa bolsa.'); return false; }
-      setAviso(r.falta_firma ? `Cargada. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.` : r.entrego ? `Cargada · te la entrega ${r.entrego}.` : 'Cargada.');
+      if (!r?.ok) { setError(r?.error ?? 'No se pudo cargar ese paquete.'); return false; }
+      setAviso(r.falta_firma ? `Cargado. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.` : r.entrego ? `Cargado · te lo entrega ${r.entrego}.` : 'Cargado.');
       const origenId = r.origen_branch_id ?? null;
       setSalaActual(origenId ? { id: origenId, nombre: traslado.origen } : null);
       await recargar(origenId);
@@ -121,7 +121,7 @@ export default function Retiro() {
     const r = await firmarEntregaConCarne(codigo, { retiroId: retiro?.retiro_id, desde: 'app' });
     if (!r?.ok) { setError(r?.error ?? 'No se pudo registrar la firma.'); return false; }
     const n = Number(r.firmadas ?? 0);
-    setAviso(n > 0 ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'bolsa' : 'bolsas'}.` : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
+    setAviso(n > 0 ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'paquete' : 'paquetes'}.` : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
     setEscaneando(null);
     await recargar();
     return true;
@@ -131,11 +131,11 @@ export default function Retiro() {
     const r = await reimprimirTicket(b, salaActual?.id).catch((e) => ({ ok: false, detalle: mensajeAmigable(e) }));
     if (r?.ok) listo('Ticket enviado', r.detalle ?? 'Se mandó a la caja de la sala.'); else fallo('No se imprimió', r?.detalle ?? '');
   };
-  const soltar = (b) => Alert.alert('¿Soltar esta bolsa?', `${b.origen} → ${b.destino}. Deja de estar a tu cargo.`, [
+  const soltar = (b) => Alert.alert('¿Soltar este paquete?', `${b.origen} → ${b.destino}. Deja de estar a tu cargo.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Soltar', style: 'destructive', onPress: async () => {
       const r = await soltarBulto(b.request_id, { sala: salaActual?.nombre ?? null, desde: 'app' });
-      if (!r?.ok) fallo('No se pudo soltar', r?.error); else { listo('Bolsa soltada', `${b.origen} → ${b.destino}`); recargar(); }
+      if (!r?.ok) fallo('No se pudo soltar', r?.error); else { listo('Paquete soltado', `${b.origen} → ${b.destino}`); recargar(); }
     } },
   ]);
 
@@ -150,13 +150,13 @@ export default function Retiro() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         {salaActual ? <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>{`Estás en ${salaActual.nombre || nombre(salaActual.id)}`}</Text> : null}
-        <BotonGrande texto="Escanear el ticket de una bolsa" color={MARCA.azul} onPress={() => { setError(null); setEscaneando('ticket'); }} />
+        <BotonGrande texto="Escanear el ticket de un paquete" color={MARCA.azul} onPress={() => { setError(null); setEscaneando('ticket'); }} />
         {aviso ? <Aviso tono="nota" texto={aviso} /> : null}
         {error ? <Aviso tono="freno" texto={error} /> : null}
 
         {sinFirma.length ? (
           <Seccion titulo="Falta la firma de quien entrega">
-            {sinFirma.map((s) => <Text key={s.branch_id} style={{ color: colorSistema.texto, fontSize: 15 }}>{`${s.sala} · ${s.bolsas} bolsa${Number(s.bolsas) === 1 ? '' : 's'}`}</Text>)}
+            {sinFirma.map((s) => <Text key={s.branch_id} style={{ color: colorSistema.texto, fontSize: 15 }}>{`${s.sala} · ${s.bolsas} paquete${Number(s.bolsas) === 1 ? '' : 's'}`}</Text>)}
             <BotonGrande texto="Firmar con el carné" borde color={MARCA.ambar} onPress={() => { setError(null); setEscaneando('carne'); }} />
           </Seccion>
         ) : null}
@@ -185,7 +185,7 @@ export default function Retiro() {
           }} />
         ) : null}
       </ScrollView>
-      <Escaner visible={escaneando === 'ticket'} titulo="Cargar una bolsa" ayuda="Apunta al código del ticket pegado a la bolsa"
+      <Escaner visible={escaneando === 'ticket'} titulo="Cargar un paquete" ayuda="Apunta al código del ticket pegado al paquete"
         onCodigo={escanear} onCerrar={() => setEscaneando(null)}
         pie={aviso || error ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{error || aviso}</Text> : null} />
       <Escaner visible={escaneando === 'carne'} titulo="Firma de quien entrega" ayuda="Apunta al código del carné"

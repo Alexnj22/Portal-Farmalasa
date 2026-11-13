@@ -40,7 +40,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
  */
 const TEXTOS = {
     faltante: {
-        abrir: 'Faltó algo en la bolsa',
+        abrir: 'Faltó algo en el paquete',
         titulo: 'Qué faltó',
         ayuda: (origen) => `Escribe cuántos NO venían. El traslado entra igual —el producto ya está a nombre de tu sala— y queda anotado para que ${origen} lo busque hoy.`,
         campo: 'falto',

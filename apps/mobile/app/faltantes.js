@@ -86,7 +86,7 @@ function Faltante({ f, onHecho, supervisa }) {
             <Text style={{ color: MARCA.rojo, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{`−${f.cantidad}`}</Text>
           </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-            {`${f.origen_branch_name ?? '—'} → ${f.destino_branch_name ?? '—'}${f.codigo_bolsa ? ` · bolsa ${f.codigo_bolsa}` : ''}${f.declarado_at ? ` · ${fechaTexto(String(f.declarado_at).slice(0, 10), { day: 'numeric', month: 'short' })}` : ''}${f.declarado_por_nombre ? ` · ${f.declarado_por_nombre}` : ''}`}
+            {`${f.origen_branch_name ?? '—'} → ${f.destino_branch_name ?? '—'}${f.codigo_bolsa ? ` · paquete ${f.codigo_bolsa}` : ''}${f.declarado_at ? ` · ${fechaTexto(String(f.declarado_at).slice(0, 10), { day: 'numeric', month: 'short' })}` : ''}${f.declarado_por_nombre ? ` · ${f.declarado_por_nombre}` : ''}`}
           </Text>
           {f.nota ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{f.nota}</Text> : null}
           {!abierto ? <Pildora texto={`${rotulo}${f.resuelto_por_nombre ? ` · ${f.resuelto_por_nombre}` : ''}`} color={color} /> : null}

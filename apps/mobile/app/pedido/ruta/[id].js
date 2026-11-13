@@ -36,6 +36,9 @@ import { Aviso, BotonGrande, Seccion } from '../../../componentes/formulario/Pie
 import { Esqueleto } from '../../../componentes/inicio/Widget';
 import Vidrio from '../../../componentes/Vidrio';
 import BolsasDeLaRuta from '../../../componentes/ruta/BolsasDeLaRuta';
+import Escaner from '../../../componentes/Escaner';
+import { fetchFirmaSalaExigida, firmarParadaConCarne } from '@nucleo/data/rutaBolsas';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
 
@@ -72,6 +75,13 @@ export default function RutaDeReparto() {
   const [ocupado, setOcupado] = useState(null);
   const [encimaLista, setEncima] = useState([]);  // bolsas de traslado sin entregar
   const encima = encimaLista.length;
+  // La firma de la sala con su carné (punto 6, parte 2): opcional mientras la
+  // fila de seguridad no diga `exigir`. `firmando` es la parada cuyo carné se
+  // está escaneando; al firmar se marca entregada.
+  const [firmaExigida, setFirmaExigida] = useState(false);
+  const [firmando, setFirmando] = useState(null);
+  const [avisoFirma, setAvisoFirma] = useState(null);
+  useEffect(() => { fetchFirmaSalaExigida().then(setFirmaExigida); }, []);
   const mapa = useRef(null);
   const ultima = useRef(null);
 
@@ -199,13 +209,53 @@ export default function RutaDeReparto() {
     const aqui = encimaLista.filter((b) => Number(b.destino_erp) === Number(p.erp_sucursal_id));
     const siguen = encimaLista.filter((b) => Number(b.destino_erp) !== Number(p.erp_sucursal_id));
     return [
-      aqui.length ? `\n\nSe quedan aquí ${aqui.length === 1 ? 'esta bolsa' : `estas ${aqui.length} bolsas`}:\n${aqui.map(fila).join('\n')}` : '\n\nNinguna de las bolsas que llevas es para esta sala.',
-      siguen.length ? `\n\nSiguen contigo (no las dejes aquí):\n${siguen.map(fila).join('\n')}` : '',
+      aqui.length ? `\n\nSe quedan aquí ${aqui.length === 1 ? 'este paquete' : `estos ${aqui.length} paquetes`}:\n${aqui.map(fila).join('\n')}` : '\n\nNinguno de los paquetes que llevas es para esta sala.',
+      siguen.length ? `\n\nSiguen contigo (no los dejes aquí):\n${siguen.map(fila).join('\n')}` : '',
     ].join('');
   };
-  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, `${conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.'}${textoBolsas(p)}`,
-    conductor ? 'Entregué' : 'Marcar entregada',
-    () => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }, ultima.current), 'Parada entregada');
+  const marcarEntregada = (p) => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }, ultima.current);
+  const entregar = (p) => {
+    const mensaje = `${conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.'}${textoBolsas(p)}`
+      + (firmaExigida ? '\n\nPide el carné a quien recibe: sin su firma no se puede entregar.' : '\n\nSi puedes, pide el carné a quien recibe para que quede su firma.');
+    const conCarne = { text: 'Firma con carné', onPress: () => { setAvisoFirma(null); setFirmando(p); } };
+    const sinFirma = { text: conductor ? 'Entregué sin firma' : 'Marcar sin firma', onPress: async () => {
+      setOcupado('Entregar');
+      trabajando('Entregando…');
+      try {
+        const { error: e } = await marcarEntregada(p);
+        if (e) throw e;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        listo('Parada entregada');
+        await cargar();
+      } catch (e) { fallo('No se pudo entregar', e?.falta ? MSG_FUNCION_DE_RUTA_FALTA : mensajeAmigable(e)); }
+      finally { setOcupado(null); }
+    } };
+    Alert.alert(`Entregar en ${p.suc_name}`, mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      ...(firmaExigida ? [] : [sinFirma]),
+      conCarne,
+    ]);
+  };
+  // El carné leído: primero la firma, después la entrega. Si el carné no sirve
+  // (de otra sala, el propio), el escáner sigue abierto para el siguiente.
+  const alLeerCarne = async (codigo) => {
+    const p = firmando;
+    if (!p) return true;
+    const r = await firmarParadaConCarne(p, codigo);
+    if (!r?.ok) { setAvisoFirma(r?.error ?? 'No se pudo confirmar el carné.'); return false; }
+    setFirmando(null);
+    setOcupado('Entregar');
+    trabajando('Entregando…');
+    try {
+      const { error: e } = await marcarEntregada(p);
+      if (e) throw e;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      listo('Parada entregada', `Firmó ${shortEmployeeName(r.quien)}`);
+      await cargar();
+    } catch (e) { fallo('Firmó, pero no se pudo marcar entregada', e?.falta ? MSG_FUNCION_DE_RUTA_FALTA : mensajeAmigable(e)); }
+    finally { setOcupado(null); }
+    return true;
+  };
   // Las dos salidas con motivo: el motivo es obligatorio (queda anotado).
   const conMotivo = (titulo, mensaje, boton, accion, exito) => {
     Alert.prompt(titulo, mensaje, [
@@ -246,7 +296,7 @@ export default function RutaDeReparto() {
       }
       return r;
     }, 'Ruta iniciada');
-  const volver = () => hacer('Volver a base', `${conductor ? 'Se cierra la ruta: no quedan paradas pendientes. Se deja de anotar tu ubicación.' : 'Se cierra la ruta: no quedan paradas pendientes.'}${encima ? ` Ojo: llevas ${encima} bolsa${encima === 1 ? '' : 's'} sin entregar; siguen a tu nombre hasta que la entregues o la sueltes.` : ''}`, 'Cerrar ruta',
+  const volver = () => hacer('Volver a base', `${conductor ? 'Se cierra la ruta: no quedan paradas pendientes. Se deja de anotar tu ubicación.' : 'Se cierra la ruta: no quedan paradas pendientes.'}${encima ? ` Ojo: llevas ${encima} paquete${encima === 1 ? '' : 's'} sin entregar; siguen a tu nombre hasta que los entregues o los sueltes.` : ''}`, 'Cerrar ruta',
     async () => {
       const r = await completarRuta(ruta.id, { desde: 'app' });
       if (!r?.error && conductor) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
@@ -320,6 +370,7 @@ export default function RutaDeReparto() {
                         p.entregado_at ? `Entregado ${hora12(p.entregado_at)}` : null].filter(Boolean).join(' · ')}
                     </Text>
                     {!p.entregado_at && p.no_entregado_at ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>No entregada</Text> : null}
+                    {p.firma_sala_at ? <Text style={{ color: MARCA.verde, fontSize: 12, fontWeight: '700' }}>{`Firmó la sala · ${hora12(p.firma_sala_at)}`}</Text> : null}
                   </View>
                   {(conductor || canEdit) && !deSala && !p.entregado_at && !p.no_entregado_at && ruta.status === 'en_ruta' ? (
                     <View style={{ gap: 6, alignItems: 'flex-end' }}>
@@ -345,6 +396,10 @@ export default function RutaDeReparto() {
               <BolsasDeLaRuta ruta={ruta} paradas={paradas} coords={coords} puedeOperar={conductor || gestiona}
                 posicion={() => ultima.current} onEncima={setEncima} />
             ) : null}
+            <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.suc_name ?? 'la sala'}`}
+              ayuda="Apunta al código del carné de quien recibe" onCodigo={alLeerCarne}
+              onCerrar={() => { setFirmando(null); setAvisoFirma(null); }}
+              pie={avisoFirma ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoFirma}</Text> : null} />
 
             {!deSala ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>

@@ -141,7 +141,7 @@ export default function Envio() {
   // El ticket de la bolsa, el mismo papel del portal, a la caja de quien lo pide.
   const imprimir = async () => {
     const papel = ticketDeEnvioParaImprimir({ envio, quien: user?.name ?? user?.nombre ?? null });
-    if (!papel) { fallo('Sin ticket', 'Esta bolsa no tiene número: se recibe buscándola en la lista.'); return; }
+    if (!papel) { fallo('Sin ticket', 'Este paquete no tiene número: se recibe buscándolo en la lista.'); return; }
     trabajando('Mandando a imprimir…');
     const r = await imprimirEnLaSala(papel.ticket, salaDelUsuario(user) ?? null, papel.titulo);
     if (r.ok) listo('Ticket', r.detalle); else fallo('No se pudo imprimir', r.detalle);

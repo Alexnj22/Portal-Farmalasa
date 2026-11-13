@@ -83,7 +83,7 @@ export async function enviarTraslado(d) {
   }
   // El ticket de la bolsa lo imprime la computadora de la sala: desde acá no hay
   // impresora. Decisión del usuario del 2026-09-30.
-  listo('Traslado enviado', 'El ticket de la bolsa se imprime desde la tarjeta del traslado en la sala.');
+  listo('Traslado enviado', 'El ticket del paquete se imprime desde la tarjeta del traslado en la sala.');
   return true;
 }
 

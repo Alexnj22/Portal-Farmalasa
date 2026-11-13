@@ -129,7 +129,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                 return;
             }
             if (traslado.ya_recibido) {
-                setError(`Esa bolsa ya se recibió${traslado.recibio ? `, la recibió ${traslado.recibio}` : ''}.`);
+                setError(`Ese paquete ya se recibió${traslado.recibio ? `, lo recibió ${traslado.recibio}` : ''}.`);
                 return;
             }
 
@@ -137,7 +137,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                 origen: traslado.origen ?? null, destino: traslado.destino ?? null,
             });
             if (!r?.ok) {
-                setError(r?.error ?? 'No se pudo cargar esa bolsa.');
+                setError(r?.error ?? 'No se pudo cargar ese paquete.');
                 return;
             }
             // La bolsa YA está cargada. Si le falta firma se dice, no se traba:
@@ -145,9 +145,9 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             // pueda. Si en cambio se heredó una firma dada antes, se nombra a
             // quien entrega — que es la confirmación de que ese paso ya se dio.
             if (r.falta_firma) {
-                setAviso(`Cargada. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.`);
+                setAviso(`Cargado. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.`);
             } else if (r.entrego) {
-                setAviso(`Cargada · te la entrega ${r.entrego}.`);
+                setAviso(`Cargado · te lo entrega ${r.entrego}.`);
             }
 
             /* De dónde salió ES dónde estamos parados.
@@ -204,7 +204,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             setModoFirma(false);
             const n = Number(r.firmadas ?? 0);
             setAviso(n > 0
-                ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'bolsa' : 'bolsas'}.`
+                ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'paquete' : 'paquetes'}.`
                 : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
             await recargar(salaActual?.id ?? miBranch ?? null);
             onCambio?.();
@@ -300,7 +300,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
         setOcupado(true); setError('');
         const r = await soltarBulto(requestId, { sala: salaActual?.nombre ?? null });
         setOcupado(false);
-        if (!r?.ok) { setError(r?.error ?? 'No se pudo soltar esa bolsa.'); return; }
+        if (!r?.ok) { setError(r?.error ?? 'No se pudo soltar ese paquete.'); return; }
         await recargar(salaActual?.id ?? null);
         onCambio?.();
     };
@@ -314,7 +314,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                 titulo="Llevar productos"
                 subtitulo={salaActual?.nombre
                     ? `Estás en ${salaActual.nombre} · pasa el lector por cada ticket`
-                    : 'Pasa el lector por el ticket de cada bolsa que cargues'}
+                    : 'Pasa el lector por el ticket de cada paquete que cargues'}
                 icono={Truck}
                 anchoEscritorio="max-w-2xl"
                 pie={<>
@@ -396,7 +396,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                 <p className="text-body-sm text-content-2 flex-1 min-w-[11rem]">
                                     {teclas > 0 ? 'Leyendo…'
                                         : ocupado ? 'Buscando el ticket…'
-                                            : 'Esperando el ticket de la próxima bolsa'}
+                                            : 'Esperando el ticket del próximo paquete'}
                                 </p>
                                 {/* Los dos botones envuelven JUNTOS: sueltos en
                                     el mismo `flex-wrap`, en 390px uno se queda
@@ -494,7 +494,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                     {/* El manifiesto */}
                     {!cargando && bultos.length === 0 && (
                         <EmptyState icon={Truck} title="Todavía no llevas nada"
-                            subtitle="Escanea el ticket de la primera bolsa y el recorrido arranca solo." />
+                            subtitle="Escanea el ticket del primer paquete y el recorrido arranca solo." />
                     )}
 
                     {bultos.length > 0 && (
@@ -543,7 +543,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                     <LectorDeCodigo abierto
                         titulo={camara === 'carne'
                             ? 'Escanear el carné de quien entrega'
-                            : 'Escanear el ticket de la bolsa'}
+                            : 'Escanear el ticket del paquete'}
                         onCerrar={() => setCamara(null)}
                         onLeer={(v) => {
                             const modo = camara;

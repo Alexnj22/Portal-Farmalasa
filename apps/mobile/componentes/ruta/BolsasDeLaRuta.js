@@ -67,7 +67,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
 
   const cargar = useCallback(async () => {
     const r = await fetchBolsasDeRuta(ruta?.id);
-    if (r.error) { setError(r.error.message ?? 'No se pudieron leer las bolsas.'); return; }
+    if (r.error) { setError(r.error.message ?? 'No se pudieron leer los paquetes.'); return; }
     setError('');
     setDatos({ llevas: r.llevas, sugeridas: r.sugeridas });
   }, [ruta?.id]);
@@ -83,9 +83,9 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
   const escanear = async (codigo) => {
     setAviso(null);
     const r = await recogerBolsa(ruta.id, codigo, posicion?.());
-    if (!r?.ok) { setAviso({ error: true, texto: r?.error ?? 'No se pudo recoger esa bolsa.' }); return false; }
+    if (!r?.ok) { setAviso({ error: true, texto: r?.error ?? 'No se pudo recoger ese paquete.' }); return false; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setAviso({ texto: `Recogida: ${r.origen ?? '¿?'} → ${r.destino ?? '¿?'}${r.en_ruta ? '' : ' (no es parada de esta ruta)'}` });
+    setAviso({ texto: `Recogido: ${r.origen ?? '¿?'} → ${r.destino ?? '¿?'}${r.en_ruta ? '' : ' (no es parada de esta ruta)'}` });
     await cargar();
     return false;   // el escáner sigue abierto para la siguiente
   };
@@ -110,37 +110,37 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
     <View style={{ marginHorizontal: 16, gap: 14 }}>
       {error ? <Aviso tono="cuidado" texto={error} /> : null}
 
-      <Seccion titulo={`Bolsas que llevas · ${encima.length}`}
-        pie={encima.length ? 'Al entregar una parada se entregan solas las bolsas para esa sala.' : null}>
+      <Seccion titulo={`Paquetes que llevas · ${encima.length}`}
+        pie={encima.length ? 'Al entregar una parada se entregan solos los paquetes para esa sala.' : null}>
         {!datos.llevas.length ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-            {activa ? 'Ninguna. Escanea el ticket de una bolsa para llevarla con la ruta.' : 'Esta ruta no llevó bolsas.'}
+            {activa ? 'Ninguno. Escanea el ticket de un paquete para llevarlo con la ruta.' : 'Esta ruta no llevó paquetes.'}
           </Text>
         ) : [...encima, ...entregadas].map((b, i) => (
           <Fila key={b.id} primero={i === 0}
             titulo={`${b.origen ?? '¿?'} → ${b.destino ?? '¿?'}`}
-            detalle={[b.codigo ? `Ticket ${b.codigo}` : null, `recogida ${hora12(b.recogida_at)}`,
-              b.entregada_at ? `entregada ${hora12(b.entregada_at)}` : null].filter(Boolean).join(' · ')}
-            etiqueta={b.entregada_at ? 'Entregada' : b.en_ruta ? null : 'Su sala no es parada de esta ruta'}
+            detalle={[b.codigo ? `Ticket ${b.codigo}` : null, `recogido ${hora12(b.recogida_at)}`,
+              b.entregada_at ? `entregado ${hora12(b.entregada_at)}` : null].filter(Boolean).join(' · ')}
+            etiqueta={b.entregada_at ? 'Entregado' : b.en_ruta ? null : 'Su sala no es parada de esta ruta'}
             tonoEtiqueta={b.entregada_at ? MARCA.verde : MARCA.ambar}
             acciones={!b.entregada_at && puedeOperar && activa ? [
               !b.en_ruta ? <Accion key="e" texto="Entregué" color={MARCA.verde} deshabilitado={ocupado}
-                onPress={() => hacer(`Entregar en ${b.destino}`, 'Queda que la dejaste ahí, con la hora y tu ubicación. La sala la recibe después en el portal.',
-                  'Entregué', () => entregarBolsa(b, posicion?.()), 'Bolsa entregada')} /> : null,
+                onPress={() => hacer(`Entregar en ${b.destino}`, 'Queda que lo dejaste ahí, con la hora y tu ubicación. La sala lo recibe después en el portal.',
+                  'Entregué', () => entregarBolsa(b, posicion?.()), 'Paquete entregado')} /> : null,
               <Accion key="s" texto="Soltar" color={MARCA.rojo} deshabilitado={ocupado}
-                onPress={() => hacer('Soltar la bolsa', 'Úsalo si la recogiste por error o la dejaste donde estaba. Queda anotado que la tuviste.',
-                  'Soltar', () => soltarBolsa(b), 'Bolsa soltada')} />,
+                onPress={() => hacer('Soltar el paquete', 'Úsalo si lo recogiste por error o lo dejaste donde estaba. Queda anotado que lo tuviste.',
+                  'Soltar', () => soltarBolsa(b), 'Paquete soltado')} />,
             ].filter(Boolean) : null} />
         ))}
       </Seccion>
 
       {puedeOperar && activa ? (
-        <BotonGrande texto="Escanear bolsa" color={MARCA.azul} deshabilitado={ocupado} onPress={() => { setAviso(null); setEscaneando(true); }} />
+        <BotonGrande texto="Escanear paquete" color={MARCA.azul} deshabilitado={ocupado} onPress={() => { setAviso(null); setEscaneando(true); }} />
       ) : null}
 
       {activa && sugeridas.length ? (
         <Seccion titulo={`De paso, lleva también · ${sugeridas.length}`}
-          pie="Bolsas despachadas que van a una sala de tu ruta. Recogerlas es opcional.">
+          pie="Paquetes despachados que van a una sala de tu ruta. Recogerlos es opcional.">
           {sugeridas.map((s, i) => (
             <Fila key={s.request_id} primero={i === 0}
               titulo={`${s.origen ?? '¿?'} → ${s.destino ?? '¿?'}`}
@@ -152,7 +152,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
         </Seccion>
       ) : null}
 
-      <Escaner visible={escaneando} titulo="Recoger una bolsa" ayuda="Apunta al código del ticket pegado a la bolsa"
+      <Escaner visible={escaneando} titulo="Recoger un paquete" ayuda="Apunta al código del ticket pegado al paquete"
         onCodigo={escanear} onCerrar={() => setEscaneando(false)}
         pie={aviso ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{aviso.texto}</Text> : null} />
     </View>

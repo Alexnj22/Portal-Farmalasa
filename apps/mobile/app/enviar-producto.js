@@ -251,7 +251,7 @@ export default function EnviarProducto() {
       else if (fallos) fallo('Salió una parte', `${enviadas} renglón(es) salieron y ${fallos} no. Revisa el envío en Traslados → Envíos.`);
       else if (papel && !papel.ok) fallo('Producto en camino, pero el ticket no salió', papel.detalle);
       else if (minMaxFallo) fallo('Producto en camino', avisoMinMax);
-      else listo('Producto en camino', [`A ${ERP_NAMES[destino]} · pega el ticket en la bolsa`, avisoMinMax].filter(Boolean).join('\n'));
+      else listo('Producto en camino', [`A ${ERP_NAMES[destino]} · pega el ticket en el paquete`, avisoMinMax].filter(Boolean).join('\n'));
       router.back();
     } catch (e) {
       fallo('No se pudo enviar', e?.message);

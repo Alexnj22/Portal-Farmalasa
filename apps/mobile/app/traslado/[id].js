@@ -133,7 +133,7 @@ export default function Traslado() {
       if (otra?.status !== 'APPROVED') { fallo('No se pudo enviar', r?.error ?? 'Inténtalo de nuevo.'); return; }
     }
     usePorDecidir.getState().quitar(fila.id);
-    listo(recortado ? 'Enviado lo que hay' : 'Traslado enviado', 'El ticket de la bolsa se imprime en la computadora de la sala.');
+    listo(recortado ? 'Enviado lo que hay' : 'Traslado enviado', 'El ticket del paquete se imprime en la computadora de la sala.');
     router.back();
   };
 

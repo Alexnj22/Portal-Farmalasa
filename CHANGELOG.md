@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1517.2 — App: la burbuja del chat vuelve a su lugar, se estira con los mensajes y se anima
+
+App del personal (iPhone y Android) — la burbuja del chat, segunda vuelta con lo que pidió el usuario («que por defecto tenga su posición, que se note que es el chat, que si lo muevo al tiempo vuelva… fluido y muy animado»):
+
+- **Tiene su lugar**: abajo a la derecha, siempre. Se desliza en vertical un tramo corto para destapar algo y **vuelve sola** a los 3,5 s o al cambiar de pantalla, con un resorte. Ya no se guarda una posición.
+- **Se nota que es el chat**: tamaño completo (54), y con mensajes esperando **se estira** mostrando «N sin responder» unos segundos —al llegar un mensaje y al cambiar de pantalla— y luego queda el número.
+- **Animada**: entra con resorte, se encoge al tocarla y rebota al soltar, late cuando sube el número, y al arrastrar tiene resistencia en los topes. En iPhone la entrada es deslizándose (el Liquid Glass no se dibuja si nace en escala 0 o con la opacidad animada).
+
+Android: la paleta del sistema se relee al volver a la app. El cambio de claro a oscuro ya se aplicaba en vivo; el de los colores del sistema todavía necesita reabrir la app, porque la ventana de Android no recibe los colores nuevos mientras está abierta (se corrige con el próximo binario).
+
 ## v2.1517.1 — App: la burbuja del chat en todas las vistas, más chica y desplazable
 
 App del personal (iPhone y Android) — la burbuja del chat con clientes (pedido del usuario: «si un cliente escribe no me doy cuenta si estoy en otra vista… que no interfiera»):

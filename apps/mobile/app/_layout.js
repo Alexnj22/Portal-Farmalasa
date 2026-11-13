@@ -3,9 +3,9 @@
 // inactividad y el candado de módulos se deciden con el mismo código.
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, useColorScheme, View } from 'react-native';
+import { AppState, Platform, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useNotificationsChannel } from '@nucleo/hooks/useNotificationsChannel';
@@ -27,6 +27,7 @@ import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
 import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 import { vigilarActualizacionesPorAire } from '../plataforma/actualizacionAire';
 import { PILA_RAIZ } from '../componentes/PilaDePestana';
+import { refrescarPaleta, useVersionDePaleta } from '../tema/material';
 
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
@@ -97,8 +98,30 @@ export default function Raiz() {
   // tener que cerrarla dos veces (ver plataforma/actualizacionAire).
   useEffect(() => vigilarActualizacionesPorAire(), []);
   const oscuro = useColorScheme() === 'dark';
+  // Android: al volver a la app se relee la paleta del sistema (Material You);
+  // si cambió, sube la versión y el tema de navegación se renueva, que es lo
+  // que vuelve a dibujar todas las pantallas con los colores nuevos — el mismo
+  // camino por el que ya se aplicaba el cambio de claro a oscuro.
+  const version = useVersionDePaleta((s) => s.v);
+  useEffect(() => {
+    if (!ANDROID) return undefined;
+    // Se relee también un poco después: Android termina de aplicar los
+    // colores nuevos a la ventana un instante después de volver.
+    let t = [];
+    const sub = AppState.addEventListener('change', (e) => {
+      if (e !== 'active') return;
+      refrescarPaleta();
+      t.forEach(clearTimeout);
+      t = [400, 1500].map((ms) => setTimeout(refrescarPaleta, ms));
+    });
+    return () => { sub.remove(); t.forEach(clearTimeout); };
+  }, []);
+  const temaNav = useMemo(() => {
+    const base = oscuro ? OSCURO : CLARO;
+    return version ? { ...base, colors: { ...base.colors } } : base;
+  }, [oscuro, version]);
   return (
-    <ThemeProvider value={oscuro ? OSCURO : CLARO}>
+    <ThemeProvider value={temaNav}>
     <SafeAreaProvider>
       {/* Cada toque cuenta como actividad: es lo que en la web hacen el mouse
           y el teclado, y lo que mantiene viva la sesión. */}

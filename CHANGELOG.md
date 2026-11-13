@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1523.1 — App: tarjetas del mismo alto, el chat no tapa el buscador y ficha del cliente rediseñada
+
+App del personal — tres cosas que reportó el usuario (2026-11-13):
+
+- **Tarjetas de cifras del mismo alto** («se ve feo que sean de distinto tamaño, más cuando están a la par»). `Kpi` estiraba el `Pressable` de la fila pero no la tarjeta de adentro: la que traía barra o apoyo quedaba más alta. Ahora la tarjeta y su interior llevan `flex: 1`. Vale para Inicio y para las ~40 pantallas que usan `Kpi`.
+- **iPhone: la burbuja del chat tapaba el buscador.** iOS 26 pone el buscador de la barra (`headerSearchBarOptions`) abajo, en el mismo rincón. Cada pantalla avisa si tiene buscador mientras está enfocada (`useBuscadorAbajo`, en `tema/material.ios.js`, que intercepta `setOptions` desde el `screenLayout`) y la burbuja sube 62 pt. En Android el buscador va arriba y no cambia nada.
+- **Ficha del cliente en el chat, rediseñada** («mejóralo a que se vea más bonito»): tarjeta de contacto con Llamar y WhatsApp como botones con ícono, las dos cifras (puntos, compra de 12 meses con la última fecha) como las tarjetas de Inicio, compras con el día como hoja de calendario y el detalle en un recuadro que se abre animado, reservas y tratamientos con su ícono y separadores, y un aviso «En N días» cuando a un tratamiento le falta una semana o menos.
+- Verificado en el simulador de iPhone y el emulador Android. Huellas nativas iguales: llega por aire.
+
 ## v2.1523.0 — Bitácoras: toda la red de un vistazo, filtros en la píldora, avisos limpios y cierre con resumen
 
 Pedido del usuario punto por punto (2026-11-13).

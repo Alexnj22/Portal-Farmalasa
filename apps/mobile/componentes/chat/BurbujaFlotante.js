@@ -32,7 +32,7 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
-import { usePaleta } from '../../tema/material';
+import { useBuscadorAbajo, usePaleta } from '../../tema/material';
 
 const ANDROID = Platform.OS === 'android';
 const TAMANO = 54;
@@ -40,6 +40,9 @@ const MARGEN = 16;
 // Alto de la barra de pestañas encima del área segura (la flotante de iOS 26
 // y la de Material) más aire.
 const ALTO_PESTANAS = (ANDROID ? 80 : 64) + 14;
+// iOS 26: el buscador de la barra va abajo (≈ 48 de alto + su margen); con
+// él en pantalla, la burbuja se pone encima en vez de taparlo.
+const ALTO_BUSCADOR = 62;
 // Cuánto puede subir sobre su lugar.
 const RECORRIDO = 220;
 // Cuánto se queda donde la dejaron antes de volver.
@@ -73,7 +76,8 @@ function BurbujaFlotante() {
   const enPestanas = segmentos[0] === '(tabs)';
   const enElChat = segmentos.some((s) => String(s).startsWith('chat-clientes'));
   const visible = puede && !teclado && !enElChat && segmentos[0] !== 'entrar';
-  const abajo = bottom + (enPestanas ? ALTO_PESTANAS : MARGEN);
+  const conBuscador = useBuscadorAbajo((s) => Object.keys(s.claves).length > 0);
+  const abajo = bottom + (enPestanas ? ALTO_PESTANAS : MARGEN) + (conBuscador ? ALTO_BUSCADOR : 0);
 
   // Valores animados: desplazamiento vertical (0 = su lugar, negativo = más
   // arriba), entrada, latido, apretado — nativos. El ancho del rótulo, JS.

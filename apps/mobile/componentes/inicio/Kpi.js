@@ -23,8 +23,10 @@ export default function Kpi({ icono, rotulo, valor, apoyo, color, pide = false, 
       android_ripple={ANDROID && onPress ? { color: 'rgba(127,127,127,0.20)', foreground: true } : undefined}
       onPress={onPress ? () => { Haptics.selectionAsync().catch(() => {}); onPress(); } : undefined}>
       {({ pressed }) => (
-        <Vidrio radio={20} interactivo={!!onPress} style={ANDROID ? undefined : { transform: [{ scale: pressed ? 0.97 : 1 }] }}>
-          <View style={{ padding: 14, gap: 4, minHeight: 112 }}>
+        // `flex: 1` en la tarjeta y en su interior: las dos de una fila miden lo
+        // mismo aunque una traiga barra o apoyo y la otra no.
+        <Vidrio radio={20} interactivo={!!onPress} style={ANDROID ? { flex: 1 } : { flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] }}>
+          <View style={{ flex: 1, padding: 14, gap: 4, minHeight: 112 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
                 <IconoFijo name={iconoDe(icono)} size={14} color={color} />

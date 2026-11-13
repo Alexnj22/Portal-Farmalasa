@@ -128,3 +128,6 @@ export function useRedibujarConPaleta(excepto = []) {
     return excepto.includes(route?.name) ? children : <Redibujo v={v}>{children}</Redibujo>;
   };
 }
+
+// Sólo iOS lleva el buscador abajo (ver material.ios.js); en Android va arriba.
+export const useBuscadorAbajo = create(() => ({ claves: {} }));

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.4 — Sucursales en la app: reporte PDF, CSV y resumen con IA del historial
+
+En la app del personal, el **Historial** de una sucursal tiene lo mismo que el portal:
+
+- **Reporte PDF** (imprimir, compartir o guardar) y **Datos CSV** de lo que se está viendo, con el mismo papel y las mismas columnas. Sólo con el permiso de descargar sucursales, y queda anotado como salida de datos.
+- **Resumen con IA** de los registros más recientes.
+
+El papel y el CSV del historial se mudaron al núcleo (`historialDeSucursal`), junto con quién hizo cada registro.
+
 ## v2.1527.3 — Compras: un renglón con varios lotes se parte en uno por lote
 
 Cuando una línea de la factura sale de dos lotes, Santa Lucía deja el lote en

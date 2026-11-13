@@ -29,11 +29,13 @@ import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, horarioDeHoy, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { SIN_DATO, documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
 import { gastosPorMes, serviciosDeSucursal, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
-import { DIMENSIONES_DEL_HISTORIAL, dimensionDelRegistro, historialConApertura, lecturaDelRegistro, rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
+import { DIMENSIONES_DEL_HISTORIAL, csvDelHistorial, dimensionDelRegistro, historialConApertura, lecturaDelRegistro, papelDelHistorial, rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
+import { analizarHistorial } from '@nucleo/data/ia';
+import { registrarEgreso } from '@nucleo/data/egreso';
 import { CATEGORIAS_DOCUMENTO } from '@nucleo/data/constants';
 import { formatTime12h } from '@nucleo/utils/helpers';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { cupoDeKioscos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 import { hora12 } from '@nucleo/utils/hora';
@@ -54,6 +56,8 @@ import Grafica from '../../componentes/metas/Graficas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { MARCA } from '../../componentes/inicio/marca';
 import AccionesDelDocumento from '../../componentes/sucursal/AccionesDelDocumento';
+import { ofrecerPapel } from '../../componentes/pdf';
+import { compartirCsv } from '../../componentes/fiscal/csv';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
@@ -300,6 +304,35 @@ function Historial({ b, empleados }) {
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const todos = useMemo(() => historialConApertura(lista, b.opening_date || b.openingDate), [lista, b]);
   const visibles = dim === 'ALL' ? todos : todos.filter((i) => dimensionDelRegistro(i) === dim);
+  const puedeDescargar = useAuth().hasPermission('branches_descargar');
+  const [resumen, setResumen] = useState(null);
+  const [pensando, setPensando] = useState(false);
+  const filtrado = dim !== 'ALL';
+  // Reporte (imprimir / PDF) y CSV, como el portal: lo que se está viendo.
+  // Las dos son salidas de datos y se anotan.
+  const reporte = () => ofrecerPapel({
+    html: papelDelHistorial({ sucursal: b.name, lista: visibles, empleados, emitido: fechaTexto(hoySV()) }),
+    nombre: `Historial ${b.name}`, titulo: 'Reporte del historial',
+    alTerminar: (via) => registrarEgreso('branches', { formato: 'pdf', filas: visibles.length, detalle: { reporte: 'historial_de_sucursal', sucursal: b.id, filtrado, via: `app-${via}` } }),
+    alFallar: (e) => fallo('No se pudo generar', mensajeAmigable(e)),
+  });
+  const csv = () => {
+    const { headers, rows } = csvDelHistorial(visibles, empleados);
+    compartirCsv({ headers, rows, nombre: `Historial_${b.name}`, modulo: 'branches', detalle: { sucursal: b.id, filtrado } })
+      .catch((e) => fallo('No se pudo exportar', mensajeAmigable(e)));
+  };
+  // Resumen gerencial con IA: los 150 registros más recientes de lo que se ve.
+  const resumir = async () => {
+    setPensando(true);
+    try {
+      const datos = visibles.slice(0, 150).map((i) => ({ fecha: fechaTexto(i.sortDate), accion: rotuloDelRegistro(i), detalle: lecturaDelRegistro(i).titulo, usuario: i.user_name || i.actor_name || 'Sistema' }));
+      const { data, error: e } = await analizarHistorial({ branchName: b.name || 'la sucursal', historyData: JSON.stringify(datos) });
+      if (e || !data?.success) throw e || new Error('Fallo en la generación del resumen.');
+      setResumen(data.aiSummary);
+    } catch {
+      setResumen('No se pudo analizar el historial. Revisa la conexión e intenta de nuevo.');
+    } finally { setPensando(false); }
+  };
   if (lista == null) return <Cargando />;
   if (error && !lista.length) return <Aviso texto={error} tono="freno" />;
   const filtrosDeHistorial = [{ id: 'dim', titulo: 'Tema', activa: dim, porDefecto: 'ALL', onCambiar: (v) => { setDim(v); setCuantos(40); },
@@ -308,6 +341,19 @@ function Historial({ b, empleados }) {
     <>
       <MenuDeFiltros grupos={filtrosDeHistorial} />
       <FiltrosActivos grupos={filtrosDeHistorial} />
+      {visibles.length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <Boton texto={pensando ? 'Analizando…' : 'Resumen con IA'} color={MARCA.violetaClaro} onPress={() => { if (!pensando) resumir(); }} />
+          {puedeDescargar ? <Boton texto="Reporte PDF" onPress={reporte} /> : null}
+          {puedeDescargar ? <Boton texto="Datos CSV" onPress={csv} /> : null}
+        </View>
+      ) : null}
+      {pensando ? <Seccion titulo="Resumen con IA"><Indicador /></Seccion> : resumen ? (
+        <Seccion titulo="Resumen con IA">
+          <Text selectable style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{String(resumen).replace(/[*#]+/g, '')}</Text>
+          <Boton texto="Cerrar resumen" onPress={() => setResumen(null)} />
+        </Seccion>
+      ) : null}
       {visibles.slice(0, cuantos).map((item, i) => {
         const l = lecturaDelRegistro(item);
         const persona = l.actor ? (porId.get(String(l.actor.id)) ?? porNombre.get(String(l.actor.name).toLowerCase()) ?? { name: l.actor.name }) : null;

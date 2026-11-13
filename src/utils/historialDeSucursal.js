@@ -5,6 +5,8 @@
  * mudó para que la ficha de la app lo cuente igual.
  */
 import { formatMoney } from './formatNumber';
+import { hora12 } from './hora';
+import { fechaNumerica } from './fecha';
 
 const detallesDe = (item) => {
     if (typeof item?.details !== 'string') return item?.details || {};
@@ -98,4 +100,67 @@ export function historialConApertura(historial, fechaApertura) {
         lista.push({ id: 'synthetic-opening', isSynthetic: true, sortDate: new Date(f), action: 'APERTURA_OFICIAL', name: 'Inauguración de la sucursal', actor_name: 'SISTEMA' });
     }
     return lista.sort((a, b) => b.sortDate - a.sortDate);
+}
+
+
+const NOMBRES_DE_SISTEMA = ['SISTEMA', 'ADMIN', 'ADMINISTRADOR'];
+
+/**
+ * Quién hizo un registro, contra la lista de empleados: primero por id (la
+ * FICHA, lo único que no cambia), después por correo y al final por nombre.
+ * `nombre` es null en un documento versionado sin autor.
+ */
+export function actorDelRegistro(item, empleados) {
+    if (item?.isSynthetic) return { sistema: true, emp: null, nombre: 'Sistema' };
+    const lista = empleados || [];
+    const crudo = String(item?.user_name || item?.actor_name || '').trim();
+    const emp = (item?.user_id != null && item.user_id !== '' && lista.find((e) => String(e.id) === String(item.user_id)))
+        || (item?.user_email && lista.find((e) => e.email && e.email === item.user_email))
+        || (crudo && lista.find((e) => e.name && e.name.toLowerCase() === crudo.toLowerCase()))
+        || null;
+    if (emp) return { sistema: false, emp, nombre: emp.name };
+    if (crudo && !NOMBRES_DE_SISTEMA.includes(crudo.toUpperCase())) return { sistema: false, emp: null, nombre: crudo };
+    if (item?.user_email) return { sistema: false, emp: null, nombre: item.user_email };
+    if (item?.isDoc) return { sistema: false, emp: null, nombre: null };
+    return { sistema: true, emp: null, nombre: 'Sistema' };
+}
+
+
+/** Encabezado y filas del CSV del historial: las mismas columnas del portal. */
+export function csvDelHistorial(lista, empleados) {
+    const headers = ['Fecha', 'Hora', 'Acción', 'Descripción', 'Realizado por'];
+    const rows = (lista || []).map((item) => {
+        const d = item.sortDate instanceof Date ? item.sortDate : new Date(item.sortDate);
+        const l = lecturaDelRegistro(item);
+        return [
+            fechaNumerica(d),
+            item.isSynthetic ? 'N/A' : hora12(d),
+            rotuloDelRegistro(item),
+            l.nuevo ? `${l.titulo} (${l.nuevo})` : l.titulo,
+            actorDelRegistro(item, empleados).nombre || 'No registrado',
+        ];
+    });
+    return { headers, rows };
+}
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/** El reporte impreso del historial (HTML de papel: negro sobre blanco). */
+export function papelDelHistorial({ sucursal, lista, empleados, emitido }) {
+    const filas = (lista || []).map((item) => {
+        const d = item.sortDate instanceof Date ? item.sortDate : new Date(item.sortDate);
+        const l = lecturaDelRegistro(item);
+        const quien = actorDelRegistro(item, empleados).nombre || (item.isDoc ? 'Documento' : 'Sistema');
+        return `<tr><td>${esc(fechaNumerica(d))}</td><td class="acc">${esc(rotuloDelRegistro(item))}</td><td>${esc(l.nuevo ? `${l.titulo} (${l.nuevo})` : l.titulo)}</td><td>${esc(quien)}</td></tr>`;
+    }).join('');
+    return `<!doctype html><html><head><meta charset="utf-8"><style>
+@page{margin:10mm}body{font-family:-apple-system,Helvetica,Arial,sans-serif;color:#000;margin:0}
+.cab{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #000;padding-bottom:8px;margin-bottom:12px}
+h1{font-size:20px;margin:0;text-transform:uppercase}h2{font-size:13px;margin:2px 0 0;text-transform:uppercase;letter-spacing:1px}
+.em{text-align:right;font-size:11px}table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;text-transform:uppercase;font-size:10px;border-bottom:1px solid #000;padding:5px 4px}
+td{border-bottom:1px solid #ccc;padding:6px 4px;vertical-align:top}tr{break-inside:avoid}.acc{text-transform:uppercase;font-size:10px;font-weight:700}
+</style></head><body><div class="cab"><div><h1>Historial operativo</h1><h2>Sucursal: ${esc(sucursal || 'No especificada')}</h2></div>
+<div class="em">Fecha de emisión<br><b>${esc(emitido || '')}</b></div></div>
+<table><thead><tr><th style="width:80px">Fecha</th><th style="width:130px">Acción</th><th>Descripción del evento</th><th style="width:150px">Realizado por</th></tr></thead><tbody>${filas}</tbody></table></body></html>`;
 }

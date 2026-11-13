@@ -11,6 +11,7 @@
 // ahí la `firma`, que `cargar-compra-erp` compara antes de armar.
 
 import { nombreLimpio } from "./loteVencimiento.ts";
+import { expandirLotes } from "./lotesEnRenglon.ts";
 
 export type ParteRegla = { product_id: number; unidades: number; porcentaje: number };
 export type ReglaParticion = { llave: string; document_id: number | null; partes: ParteRegla[] };
@@ -68,15 +69,23 @@ export function expandirRenglones(
   return { items: salida, firma: aplicadas.join(";") };
 }
 
-/** Lee las reglas del proveedor y expande. Sin reglas, devuelve lo mismo. */
+/** Une dos firmas sin dejar un `;` colgando. */
+const unirFirmas = (a: string, b: string) => [a, b].filter(Boolean).join("|");
+
+/** Parte por lote (lo que dice el propio documento), lee las reglas del
+ *  proveedor y expande. Sin nada que partir, devuelve lo mismo. */
 export async function aplicarParticiones(
-  admin: any, items: any[], emisorNit: string, documentId: number | null,
+  admin: any, crudos: any[], emisorNit: string, documentId: number | null,
 ): Promise<{ items: any[]; firma: string }> {
+  // Primero los lotes: sale del texto de la factura, así que es igual en las
+  // dos funciones. Entra en la firma para que una pantalla abierta ANTES de
+  // partirse no mande decisiones corridas de posición.
+  const { items, firma: firmaLotes } = expandirLotes(crudos);
   const { data, error } = await admin.from("compra_renglon_particion")
     .select("llave, document_id, partes").eq("emisor_nit", emisorNit);
   if (error) throw error;
   const reglas = (data ?? []) as ReglaParticion[];
-  if (!reglas.length) return { items, firma: "" };
+  if (!reglas.length) return { items, firma: firmaLotes };
   const hayPorNombre = reglas.some((r) => r.llave.startsWith("#"));
   const llaves = await Promise.all(items.map(async (it) => {
     const codigo = String(it?.codigo ?? "").trim();
@@ -88,5 +97,6 @@ export async function aplicarParticiones(
     if (e) throw e;
     return (k ?? null) as string | null;
   }));
-  return expandirRenglones(items, llaves, reglas, documentId);
+  const r = expandirRenglones(items, llaves, reglas, documentId);
+  return { items: r.items, firma: unirFirmas(firmaLotes, r.firma) };
 }

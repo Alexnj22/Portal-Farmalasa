@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.3 — Compras: un renglón con varios lotes se parte en uno por lote
+
+Cuando una línea de la factura sale de dos lotes, Santa Lucía deja el lote en
+`+` y mete la tabla «LOTE VENCIMIENTO CANTIDAD» en la descripción (CONCOR 5 MG
+del 12-nov: 1 caja M55492 06/2028 + 6 cajas M60396 05/2028). La carga armaba
+un solo renglón de 7 cajas sin lote y no se podía mandar.
+
+- Ahora el renglón se parte en uno por lote, con el mismo costo y el monto,
+  descuento e IVA repartidos por cantidad (el total del documento no cambia).
+- Si las cantidades de la tabla no suman lo facturado, no se parte y sigue el
+  aviso de siempre.
+- Una pantalla abierta antes de partirse no puede mandar decisiones corridas:
+  la carga pide volver a abrir la factura.
+
 ## v2.1527.2 — App: el envío sugerido pide el lote o el vencimiento de la caja
 
 - **Envío sugerido (app, desde Gestión de stock)**: los renglones precargados que salen sin lote asignado (regulado) o sin vencimiento (perecedero) muestran el campo de la caja en la lista, y el envío no sale hasta llenarlo. Antes entraban directo, sin pasar por el compositor que lo pedía.

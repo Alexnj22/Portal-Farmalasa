@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, type PermisoModulo } from "../_shared/security.ts";
+import { descontarYCerrar, soltarAjuste, tomarAjusteFaltante } from "../_shared/faltante-ajuste.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 
 // Aplica el traslado entre salas que la sala de ORIGEN confirmó. Quinta pieza de
@@ -214,7 +215,8 @@ Deno.serve(async (req) => {
     // `lotes_elegidos` (2026-11-05): el lote que quien despacha eligió EN LUGAR
     // del que pidió la solicitud, porque el pedido no está. `[{ posicion, lote,
     // vence }]`, un lote por renglón.
-    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico, lotes_elegidos, en_unidades } =
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico, lotes_elegidos, en_unidades,
+            faltante_id, responsable, responsable_employee_id, nota } =
       await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
@@ -232,7 +234,12 @@ Deno.serve(async (req) => {
     // consulta caída contestaba «No tienes permiso para confirmar traslados» a
     // quien sí puede, y esa persona se queda esperando un permiso en vez de
     // reintentar.
-    const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_approve");
+    // «No apareció» (2026-11-12) no pasa por este permiso: lo decide la base
+    // con la sesión de quien llama (`tomar_ajuste_faltante`, sólo supervisión).
+    const esNoAparecido = accion === "no_aparecio";
+    const permiso: PermisoModulo = esNoAparecido
+      ? { puede: true, alcanceTodo: false, emp: null, roto: null }
+      : await permisoDeModulo(admin, quien.id, "traslados", "can_approve");
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede)
       return json({ ok: false, error: "No tienes permiso para confirmar traslados." }, 403);
@@ -314,6 +321,39 @@ Deno.serve(async (req) => {
     const origenVencidos = meta.origen_vencidos === true;
     const ubicOrigen  = ubicacionDe(porSucursal.get(erpOrigen), origenVencidos);
     const ubicDestino = ubicacionDe(porSucursal.get(erpDestino), false);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // NO APARECIÓ · supervisión cierra un faltante y se descuenta (2026-11-12)
+    // ══════════════════════════════════════════════════════════════════════
+    // Ver `_shared/faltante-ajuste.ts`. La recepción entró completa, así que lo
+    // que no venía en la caja está en el inventario de la sala que recibió: se
+    // descuenta de ahí, de su estante de trabajo (adonde entró).
+    if (esNoAparecido) {
+      const t = await tomarAjusteFaltante(req, { faltante_id, responsable, responsable_employee_id, nota });
+      if (!t.ok) return json({ ok: false, codigo: t.codigo, error: t.error }, t.status);
+      const f = t.faltante;
+      if (f.request_id !== sol.id || f.familia !== "solicitud") {
+        await soltarAjuste(admin, f, t.actor);
+        return json({ ok: false, error: "Ese faltante no es de esta solicitud." }, 404);
+      }
+      if (!meta.erp_recibido) {
+        await soltarAjuste(admin, f, t.actor);
+        return json({ ok: false, codigo: "SIN_RECIBIR", error: "El traslado todavía no se recibió: no hay nada que descontar." }, 409);
+      }
+      if (!ubicDestino) {
+        await soltarAjuste(admin, f, t.actor);
+        return json({ ok: false, error: `No se conoce la ubicación de la sala que recibió (${erpDestino}).` }, 422);
+      }
+      const item = lineas[f.posicion] as Linea | undefined;
+      const r = await descontarYCerrar({
+        admin, f, actor: t.actor, actorNombre: quien.name,
+        erpSucursal: erpDestino, erpUbicacion: ubicDestino,
+        factor: Number(item?.factor ?? 0),
+        presentacion: String(item?.presentacion_tipo ?? f.presentacion_tipo ?? ""),
+        referencia: `TRASLADO ${meta.erp_traslado?.id_traslado ?? String(sol.id).slice(0, 8)}`,
+      });
+      return json(r.body, r.status);
+    }
 
     // ══════════════════════════════════════════════════════════════════════
     // PASO 2 · RECIBIR (en destino)

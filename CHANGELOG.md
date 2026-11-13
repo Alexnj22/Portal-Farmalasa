@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1514.0 — Faltantes: «No apareció» lo cierra supervisión, dice a cargo de quién y se descuenta
+
+Decisiones del usuario tras la auditoría de traslados del 2026-11-12 (puntos 2, 3 y 4).
+
+- **«No apareció» sólo lo cierra supervisión**, eligiendo a cargo de quién queda (la sala que envió, la que recibió o una persona) y escribiendo qué se averiguó. Antes era una nota y el producto que no venía en la caja se quedaba en el inventario de la sala que recibió.
+- **El sistema lo descuenta** de la sala que recibió (descarte con el concepto «FALTANTE NO APARECIO - … - A CARGO DE … - AUT …»). En un envío «no llegó», primero recibe el movimiento que seguía en tránsito, así ya no queda colgado en la caja. Lo hacen `aplicar-traslado-inventario` (solicitudes) y `enviar-producto-erp` (envíos) con la acción `no_aparecio`, y el código compartido vive en `_shared/faltante-ajuste.ts`.
+- **Quién puede lo decide la base**: `tomar_ajuste_faltante` se llama con la sesión de la persona (supervisión = `auth_supervisa_faltantes`), valida y aparta el faltante con un candado de 3 min. Si la caja contesta algo ilegible, queda `ajuste.incierto` y no se deja reintentar hasta revisar el kardex, para no descontar dos veces.
+- **«Apareció» lo sigue cerrando la sala**, y ahora avisa a la sala de origen (Bodega cuando sale de ahí) y a supervisión (`avisar_faltante_resuelto`, una sola vez por faltante). El aviso «faltó» se apaga con su desenlace.
+- La pantalla (web y app) solo ofrece «No apareció» a supervisión. Antes de apretar dice qué se va a descontar y de dónde, y en lo cerrado muestra «A cargo de …».
+- Probado en el entorno de pruebas con `execute_sql`: rechazos (sin responsable, persona sin elegir, sin nota), candado, «apareció» bloqueado mientras supervisión cierra, aviso y deduplicación. La parte de la caja (recibir y descontar) no se puede probar ahí, porque no hay caja.
+
 ## v2.1513.19 — Recibir un traslado tiene candado: dos personas a la vez ya no lo cargan dos veces
 
 - **`aplicar-traslado-inventario` (recibir)**: toma `metadata.recibiendo_at/by` antes de la primera llamada al sistema, igual que despachar (caduca a los 3 min). Antes, dos «ya llegó» simultáneos leían los dos «pendiente» y los dos enviaban la recepción: el `is: null` de `erp_recibido` evitaba la segunda anotación, no la segunda carga. Las salidas sin recibir (anulado, sin líneas, rechazo) sueltan el candado; recibir lo suelta al anotar. Hallado en la auditoría de traslados del 2026-11-12.

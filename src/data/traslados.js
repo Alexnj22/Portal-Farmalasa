@@ -411,6 +411,14 @@ export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, 
  * en esta sala. Antes no había dónde decirlo y el hueco quedaba invisible hasta
  * que alguien lo tropezara en un conteo.
  */
+/**
+ * Cierra «no apareció» un faltante de la solicitud (sólo supervisión, lo decide
+ * la base): se descuenta de la sala que recibió, a cargo de quien se eligió. Lo
+ * llama `cerrarFaltante`.
+ */
+export const noAparecioSolicitud = (requestId, { faltante_id, responsable, responsable_employee_id, nota }) =>
+    invocar({ request_id: requestId, accion: 'no_aparecio', faltante_id, responsable, responsable_employee_id, nota });
+
 export const recibirTraslado = (requestId, faltantes = []) =>
     invocar({
         request_id: requestId,

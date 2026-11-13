@@ -36,6 +36,7 @@ import { textoBuscable } from '@nucleo/utils/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '@nucleo/data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo/data/envios';
 import { fetchFaltantes } from '@nucleo/data/faltantes';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 /* Los repartos que salen de una compra traen la capa de datos de «Cargar
  * compra» (~4 kB). Se bajan al pintarse, después de la lista propia de
  * traslados, para no cargarlos antes que ella (2026-11-06, gate:bundle). */
@@ -190,6 +191,8 @@ export default function TrasladosView() {
      * `recortarEnviosCerrados`): se dice en pantalla en vez de callarlo. */
     const [enviosIncompletos, setEnviosIncompletos] = useState(false);
     const [faltantes,    setFaltantes]    = useState(null);
+    /* Si quien mira puede cerrar «No apareció» (lo contesta la base). */
+    const [supervisaFaltantes, setSupervisaFaltantes] = useState(false);
     const [abrirEnvio,   setAbrirEnvio]   = useState(false);
     /* El diálogo que confirma una llegada escaneando el ticket de la bolsa. */
     const [abrirEscaneo, setAbrirEscaneo] = useState(false);
@@ -223,6 +226,13 @@ export default function TrasladosView() {
     }, [employees, personasDeSolicitudes]);
 
     // El nombre suelto, para el buscador y los `title`. La FOTO va por
+    /* A quién se le puede cargar un faltante que no apareció: el personal
+     * activo, con foto y nombre corto (el selector las pinta con `persona`). */
+    const personasActivas = useMemo(() => (employees ?? [])
+        .filter(e => e.status === 'ACTIVO')
+        .map(e => ({ value: e.id, label: shortEmployeeName(e.name), persona: e }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es')), [employees]);
+
     // `personaPor` + `ChipPersona`, que es el canónico.
     const nombrePor = useCallback((id) => personaPor(id)?.name ?? (id ? 'Alguien' : null), [personaPor]);
 
@@ -263,6 +273,7 @@ export default function TrasladosView() {
         setPorRecibir(b.filas);
         setEnvios(d.envios);
         setFaltantes(g2.faltantes);
+        setSupervisaFaltantes(g2.supervisa === true);
 
         /* El estado de los grupos se pide DESPUÉS y sólo por los que aparecen:
          * es un dato de adorno para las que no tienen hermanas. Si falla, las
@@ -592,6 +603,8 @@ export default function TrasladosView() {
                             faltantes={faltantesVistos}
                             onHecho={cargar}
                             personaPor={personaPor}
+                            supervisa={supervisaFaltantes}
+                            personas={personasActivas}
                             vacio={busqueda.trim() ? (
                                 <EmptyState
                                     icon={PackageX}

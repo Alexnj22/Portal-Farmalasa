@@ -1246,6 +1246,57 @@ export type Database = {
           },
         ]
       }
+      app_cliente_codigos_entrada: {
+        Row: {
+          al_verificar: Json | null
+          codigo_hash: string
+          created_at: string
+          customer_id: number
+          dispositivo_id: string
+          id: string
+          intentos: number
+          usado_at: string | null
+          vence_at: string
+        }
+        Insert: {
+          al_verificar?: Json | null
+          codigo_hash: string
+          created_at?: string
+          customer_id: number
+          dispositivo_id: string
+          id?: string
+          intentos?: number
+          usado_at?: string | null
+          vence_at: string
+        }
+        Update: {
+          al_verificar?: Json | null
+          codigo_hash?: string
+          created_at?: string
+          customer_id?: number
+          dispositivo_id?: string
+          id?: string
+          intentos?: number
+          usado_at?: string | null
+          vence_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_codigos_entrada_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_codigos_entrada_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       app_cliente_correo_envios: {
         Row: {
           cantidad: number
@@ -1335,6 +1386,54 @@ export type Database = {
           },
           {
             foreignKeyName: "app_cliente_correos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
+      app_cliente_dispositivos: {
+        Row: {
+          created_at: string
+          customer_id: number
+          dispositivo_id: string
+          id: number
+          modelo: string | null
+          plataforma: string | null
+          ultimo_uso_at: string
+          verificado_por: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          dispositivo_id: string
+          id?: never
+          modelo?: string | null
+          plataforma?: string | null
+          ultimo_uso_at?: string
+          verificado_por?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          dispositivo_id?: string
+          id?: never
+          modelo?: string | null
+          plataforma?: string | null
+          ultimo_uso_at?: string
+          verificado_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_dispositivos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_dispositivos_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
@@ -3946,6 +4045,9 @@ export type Database = {
       }
       bolsa_faltante: {
         Row: {
+          ajuste: Json | null
+          ajuste_en_curso_at: string | null
+          ajuste_en_curso_por: string | null
           cantidad: number
           created_at: string
           declarado_at: string
@@ -3963,11 +4065,16 @@ export type Database = {
           recordado_dias: number
           request_id: string
           resolucion: string | null
+          responsable: string | null
+          responsable_employee_id: string | null
           resuelto_at: string | null
           resuelto_por: string | null
           updated_at: string
         }
         Insert: {
+          ajuste?: Json | null
+          ajuste_en_curso_at?: string | null
+          ajuste_en_curso_por?: string | null
           cantidad: number
           created_at?: string
           declarado_at?: string
@@ -3985,11 +4092,16 @@ export type Database = {
           recordado_dias?: number
           request_id: string
           resolucion?: string | null
+          responsable?: string | null
+          responsable_employee_id?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
           updated_at?: string
         }
         Update: {
+          ajuste?: Json | null
+          ajuste_en_curso_at?: string | null
+          ajuste_en_curso_por?: string | null
           cantidad?: number
           created_at?: string
           declarado_at?: string
@@ -4007,11 +4119,27 @@ export type Database = {
           recordado_dias?: number
           request_id?: string
           resolucion?: string | null
+          responsable?: string | null
+          responsable_employee_id?: string | null
           resuelto_at?: string | null
           resuelto_por?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bolsa_faltante_ajuste_en_curso_por_fkey"
+            columns: ["ajuste_en_curso_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolsa_faltante_ajuste_en_curso_por_fkey"
+            columns: ["ajuste_en_curso_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bolsa_faltante_declarado_por_fkey"
             columns: ["declarado_por"]
@@ -4045,6 +4173,20 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolsa_faltante_responsable_employee_id_fkey"
+            columns: ["responsable_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolsa_faltante_responsable_employee_id_fkey"
+            columns: ["responsable_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -31976,6 +32118,15 @@ export type Database = {
         Returns: string
       }
       app_cliente_buscar_productos: { Args: { p_q: string }; Returns: Json }
+      app_cliente_codigo_intento: {
+        Args: { p_dispositivo: string; p_id: string }
+        Returns: {
+          al_verificar: Json
+          codigo_hash: string
+          customer_id: number
+          intentos: number
+        }[]
+      }
       app_cliente_compras: { Args: { p_customer_id: number }; Returns: Json }
       app_cliente_correo_envios_purgar: { Args: never; Returns: number }
       app_cliente_existencias: {
@@ -32193,6 +32344,7 @@ export type Database = {
       auth_module_scope: { Args: { p_module_key: string }; Returns: string }
       auth_no_bloqueado: { Args: never; Returns: boolean }
       auth_rango: { Args: never; Returns: number }
+      auth_supervisa_faltantes: { Args: never; Returns: boolean }
       auth_ve_costos: { Args: never; Returns: boolean }
       auth_yo: { Args: never; Returns: Json }
       avisar_a_empleados: {
@@ -32251,10 +32403,17 @@ export type Database = {
       avisar_estados_de_venta_desconocidos: { Args: never; Returns: number }
       avisar_factores_sospechosos: { Args: never; Returns: number }
       avisar_facturas_de_sala: { Args: never; Returns: number }
-      avisar_facturas_descuadradas: { Args: never; Returns: number }
+      avisar_facturas_descuadradas: {
+        Args: { p_dias?: number }
+        Returns: number
+      }
       avisar_falla_del_consejo: {
         Args: { p_detalle?: string }
         Returns: boolean
+      }
+      avisar_faltante_resuelto: {
+        Args: { p_actor: string; p_id: string }
+        Returns: number
       }
       avisar_faltantes: {
         Args: { p_actor: string; p_ids: string[]; p_request_id: string }
@@ -39468,6 +39627,15 @@ export type Database = {
       toggle_producto_oculto_ventas: {
         Args: { p_erp_product_id: number; p_oculto: boolean }
         Returns: undefined
+      }
+      tomar_ajuste_faltante: {
+        Args: {
+          p_id: string
+          p_nota?: string
+          p_responsable: string
+          p_responsable_emp?: string
+        }
+        Returns: Json
       }
       tomar_despacho_envio: {
         Args: { p_actor: string; p_request_id: string }

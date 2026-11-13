@@ -1,14 +1,18 @@
 // Faltantes de bolsa, NATIVO — la pestaña Faltantes de Traslados en el portal
 // (`FilasFaltante.jsx`): lo que no llegó en una bolsa y todavía no se aclara.
-// Se cierra con «Apareció» o «No apareció» (`cerrarFaltante`); «No apareció»
-// exige la nota de qué se hizo. Si alguien ya lo había cerrado, se dice.
+// Se cierra con «Apareció» (la sala) o «No apareció» (SÓLO supervisión, desde
+// el 2026-11-12: dice a cargo de quién queda y el sistema lo descuenta de la
+// sala que recibió). Si alguien ya lo había cerrado, se dice.
 // «Apareció» en un envío marcado «no llegó» RECIBE el movimiento (lo resuelve
 // `cerrarFaltante`); lo que se cerró así sin recibirse lo marca
 // `falta_ingresar` y se ingresa con su propio botón.
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
-import { cerrarFaltante, fetchFaltantes, ingresarAparecido } from '@nucleo/data/faltantes';
+import { cerrarFaltante, fetchFaltantes, ingresarAparecido, RESPONSABLES_DE_FALTANTE } from '@nucleo/data/faltantes';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { filtrar } from '@nucleo/utils/busqueda';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -22,16 +26,48 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 const ESTADO = { abierto: ['Sin resolver', MARCA.rojo], aparecio: ['Apareció', MARCA.verde], no_aparecio: ['No apareció', MARCA.ambar] };
 
-function Faltante({ f, onHecho }) {
+// A quién se le carga: búsqueda corta sobre el personal activo. Seis
+// resultados alcanzan — se escribe el nombre, no se recorre la lista.
+function ElegirPersona({ elegida, onElegir }) {
+  const empleados = useStaffStore((s) => s.employees);
+  const [q, setQ] = useState('');
+  const activos = useMemo(() => (empleados || []).filter((e) => e.status === 'ACTIVO'), [empleados]);
+  const vistos = q.trim() ? filtrar(q, activos, (e) => [e.name]).resultados.slice(0, 6) : [];
+  const actual = activos.find((e) => e.id === elegida);
+  if (actual) {
+    return (
+      <Pressable onPress={() => onElegir('')} style={{ minHeight: 44, justifyContent: 'center' }}>
+        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>
+          {`${shortEmployeeName(actual.name)} · cambiar`}
+        </Text>
+      </Pressable>
+    );
+  }
+  return (
+    <View style={{ gap: 4 }}>
+      <Campo value={q} onChangeText={setQ} placeholder="¿Quién? Escribe el nombre" />
+      {vistos.map((e) => (
+        <Pressable key={e.id} onPress={() => { onElegir(e.id); setQ(''); }} style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ color: colorSistema.acento, fontSize: 15 }}>{shortEmployeeName(e.name)}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function Faltante({ f, onHecho, supervisa }) {
   const [cerrando, setCerrando] = useState(false);
   const [nota, setNota] = useState('');
+  const [responsable, setResponsable] = useState('origen');
+  const [persona, setPersona] = useState('');
   const abierto = f.estado === 'abierto';
   const [rotulo, color] = ESTADO[f.estado] ?? [f.estado, MARCA.azulClaro];
   const cerrar = async (estado) => {
-    trabajando('Cerrando el faltante…');
-    const r = await cerrarFaltante(f.id, estado, nota);
+    trabajando(estado === 'aparecio' ? 'Cerrando el faltante…' : 'Descontando…');
+    const r = await cerrarFaltante(f.id, estado, nota,
+      estado === 'no_aparecio' ? { responsable, responsable_employee_id: responsable === 'persona' ? persona : null } : null);
     if (!r.ok) { fallo('No se pudo cerrar', r.error); if (r.codigo === 'YA_CERRADO') onHecho(); return; }
-    listo(estado === 'aparecio' ? 'Apareció' : 'Cerrado como no apareció', f.descripcion);
+    listo(estado === 'aparecio' ? 'Apareció' : 'Cerrado y descontado', f.descripcion);
     onHecho();
   };
   const ingresar = async () => {
@@ -55,6 +91,16 @@ function Faltante({ f, onHecho }) {
           {f.nota ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{f.nota}</Text> : null}
           {!abierto ? <Pildora texto={`${rotulo}${f.resuelto_por_nombre ? ` · ${f.resuelto_por_nombre}` : ''}`} color={color} /> : null}
           {f.resolucion ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Se resolvió: ${f.resolucion}`}</Text> : null}
+          {f.estado === 'no_aparecio' && f.responsable_nombre ? (
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>
+              {`A cargo de ${f.responsable === 'persona' ? shortEmployeeName(f.responsable_nombre) : f.responsable_nombre}`}
+            </Text>
+          ) : null}
+          {abierto && f.incierto ? (
+            <Aviso tono="freno" texto={`El descuento anterior quedó sin confirmar. Antes de volver a cerrarlo hay que revisar el movimiento de ${f.destino_branch_name ?? 'la sala'}.`} />
+          ) : abierto && f.ajuste_error ? (
+            <Aviso tono="freno" texto={`El último intento de cerrarlo no pasó: ${f.ajuste_error}`} />
+          ) : null}
           {!abierto && f.falta_ingresar ? (
             <View style={{ gap: 8 }}>
               <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>
@@ -63,16 +109,34 @@ function Faltante({ f, onHecho }) {
               <BotonGrande texto="Ingresar a inventario" color={MARCA.verde} onPress={ingresar} />
             </View>
           ) : null}
-          {abierto && !cerrando ? (
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1 }}><BotonGrande texto="Apareció" color={MARCA.verde} onPress={() => cerrar('aparecio')} /></View>
-              <View style={{ flex: 1 }}><BotonGrande texto="No apareció" borde color={MARCA.ambar} onPress={() => setCerrando(true)} /></View>
+          {abierto && !cerrando && f.en_curso ? (
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Supervisión lo está cerrando…</Text>
+          ) : null}
+          {abierto && !cerrando && !f.en_curso ? (
+            <View style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}><BotonGrande texto="Apareció" color={MARCA.verde} onPress={() => cerrar('aparecio')} /></View>
+                {supervisa ? (
+                  <View style={{ flex: 1 }}><BotonGrande texto="No apareció" borde color={MARCA.ambar} deshabilitado={f.incierto} onPress={() => setCerrando(true)} /></View>
+                ) : null}
+              </View>
+              {!supervisa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si no aparece, lo cierra supervisión.</Text> : null}
             </View>
           ) : null}
           {abierto && cerrando ? (
             <View style={{ gap: 8 }}>
-              <Campo value={nota} onChangeText={setNota} placeholder="¿Qué se hizo? Ej.: se descontó, se repuso…" />
-              <BotonGrande texto="Cerrar como no apareció" color={MARCA.ambar} deshabilitado={!nota.trim()} onPress={() => cerrar('no_aparecio')} />
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>¿A cargo de quién queda?</Text>
+              {/* Tres botones y no `Segmentos`: es una elección del formulario,
+                  no las secciones de la pantalla (esas van en FijoArriba). */}
+              {RESPONSABLES_DE_FALTANTE.map((r) => (
+                <BotonGrande key={r.valor} texto={r.rotulo} color={MARCA.azulClaro} borde={responsable !== r.valor}
+                  onPress={() => { setResponsable(r.valor); if (r.valor !== 'persona') setPersona(''); }} />
+              ))}
+              {responsable === 'persona' ? <ElegirPersona elegida={persona} onElegir={setPersona} /> : null}
+              <Campo value={nota} onChangeText={setNota} placeholder="¿Qué se averiguó? Ej.: no estaba en ninguna sala" />
+              <Aviso tono="cuidado" texto={`Se descontará ${f.cantidad} de ${f.descripcion ?? 'este producto'} del inventario de ${f.destino_branch_name ?? 'la sala que recibió'}${f.en_transito ? ', después de recibir lo que quedó en camino' : ''}.`} />
+              <BotonGrande texto="Cerrar y descontar" color={MARCA.ambar}
+                deshabilitado={!nota.trim() || (responsable === 'persona' && !persona)} onPress={() => cerrar('no_aparecio')} />
               <Pressable onPress={() => setCerrando(false)} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center' }}>
                 <Text style={{ color: colorSistema.acento, fontSize: 15 }}>Cancelar</Text>
               </Pressable>
@@ -86,13 +150,15 @@ function Faltante({ f, onHecho }) {
 
 export default function Faltantes() {
   const [lista, setLista] = useState(null);
+  const [supervisa, setSupervisa] = useState(false);
   const [error, setError] = useState(null);
   const [vista, setVista] = useState('abiertos');
   const [recargando, setRecargando] = useState(false);
   const cargar = useCallback(async () => {
-    const { faltantes, error: e } = await fetchFaltantes();
+    const { faltantes, error: e, supervisa: s } = await fetchFaltantes();
     setError(e ? 'No se pudieron cargar los faltantes.' : null);
     setLista(faltantes || []);
+    setSupervisa(s === true);
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const abiertos = (lista || []).filter((f) => f.estado === 'abierto');
@@ -108,7 +174,7 @@ export default function Faltantes() {
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {lista == null ? null : visibles.length ? visibles.map((f) => <Faltante key={f.id} f={f} onHecho={cargar} />) : (
+        {lista == null ? null : visibles.length ? visibles.map((f) => <Faltante key={f.id} f={f} onHecho={cargar} supervisa={supervisa} />) : (
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 60, fontSize: 15 }}>
             {vista === 'abiertos' ? 'No hay faltantes sin resolver.' : 'Todavía no hay faltantes resueltos.'}
           </Text>

@@ -30,6 +30,7 @@ import {
   TRASLADO,
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { anotarAjuste, descontarYCerrar, soltarAjuste, tomarAjusteFaltante } from "../_shared/faltante-ajuste.ts";
 import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
 import {
   type Trabas, devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
@@ -247,10 +248,12 @@ Deno.serve(async (req) => {
       decisiones = null,
       nota = "",
       faltante_id = null,
+      responsable = null,
+      responsable_employee_id = null,
     } = await req.json().catch(() => ({}));
 
     if (!request_id) return json({ ok: false, error: "Falta el envío." }, 400);
-    if (!["despachar", "decidir", "recibir_devolucion", "recibir_aparecido"].includes(String(accion)))
+    if (!["despachar", "decidir", "recibir_devolucion", "recibir_aparecido", "no_aparecio"].includes(String(accion)))
       return json({ ok: false, error: `Acción desconocida: ${accion}` }, 400);
 
     const admin = createClient(
@@ -289,10 +292,15 @@ Deno.serve(async (req) => {
      * es recibir en la sala de destino, o sea el mismo acto que decidir. */
     const deDestino = accion === "decidir" || accion === "recibir_aparecido";
     const accionPermiso = deDestino ? "can_approve" : "can_edit";
+    // «No apareció» (2026-11-12) no pasa por este permiso: lo decide la base con
+    // la sesión de quien llama (`tomar_ajuste_faltante`, sólo supervisión).
+    const esNoAparecido = accion === "no_aparecio";
     const permiso = porCron
       // El cron ya está autorizado por su secreto, y la persona que firma es la
       // que armó el envío: su permiso se cobró cuando lo creó.
       ? { puede: true, alcanceTodo: true, emp: null, roto: null }
+      : esNoAparecido
+      ? { puede: true, alcanceTodo: false, emp: null, roto: null }
       : await permisoDeModulo(admin, quien!.id, "traslados", accionPermiso);
     if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede)
@@ -426,6 +434,85 @@ Deno.serve(async (req) => {
     // el resto del archivo no distingue quién llamó.
     const actor = quien!;
     const yo = conSala({ ...(emp ?? {}), name: actor.name }, codigoDeBranch(emp?.branch_id));
+
+    // ══════════════════════════════════════════════════════════════════════
+    // NO APARECIÓ · supervisión cierra un faltante del envío (2026-11-12)
+    // ══════════════════════════════════════════════════════════════════════
+    // Ver `_shared/faltante-ajuste.ts`. Un renglón «no llegó» dejó su
+    // movimiento en tránsito: colgado en la caja, fuera del inventario de las
+    // dos salas. Se RECIBE en destino —mismo camino que «apareció»— y después
+    // se descuenta de ahí, a cargo de quien decidió supervisión. Si el renglón
+    // ya estaba recibido (un reintento, o un faltante declarado tarde sobre lo
+    // aceptado), sólo se descuenta.
+    if (esNoAparecido) {
+      const t = await tomarAjusteFaltante(req, { faltante_id, responsable, responsable_employee_id, nota });
+      if (!t.ok) return json({ ok: false, codigo: t.codigo, error: t.error }, t.status);
+      const f = t.faltante;
+      const soltarCon = async (status: number, error: string, extra: Record<string, unknown> = {}) => {
+        await soltarAjuste(admin, f, t.actor, extra);
+        return json({ ok: false, error }, status);
+      };
+      if (f.request_id !== sol.id || f.familia !== "envio") return await soltarCon(404, "Ese faltante no es de este envío.");
+      if (!ubicDestino) return await soltarCon(422, `No se conoce la ubicación de la sala que recibe (${erpDestino}).`);
+      const l = lineas.find((x) => x.posicion === f.posicion);
+      if (!l) return await soltarCon(422, `No hay un producto en la posición ${f.posicion}.`);
+      const nombre = l.descripcion ?? String(l.erp_product_id);
+
+      if (l.estado === "no_llego") {
+        const idIda = String(l.id_traslado ?? "");
+        if (!idIda)
+          return await soltarCon(422,
+            `${nombre} salió sin número de movimiento: hay que buscar «${claveDe(sol.id, l.posicion)}» `
+            + `en el sistema y recibirlo a mano antes de cerrarlo.`);
+
+        // Mismo candado que decidir y «apareció»: recibir dos veces el mismo
+        // movimiento carga el producto dos veces.
+        const { data: tomado, error: candadoErr } = await admin
+          .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "decidiendo" });
+        if (candadoErr) return await soltarCon(503, "No se pudo tomar el envío para recibirlo.");
+        if (tomado !== true) return await soltarCon(409, "Alguien más de la sala está contestando este envío en este momento.");
+        try {
+          const cookie = await sesionEn(erpDestino);
+          await devolverFichasHuerfanas(admin, "envio_linea", cookie);
+          const entrada = await recibirIda(
+            cookie, lectorDeRecepcion(cookie), idIda, nombre,
+            armarConcepto(`${claveDe(sol.id, l.posicion)} REC ${yo}`).concepto,
+            ubicDestino, trabasDe(admin, l, hayTiempoParaDestrabar),
+          );
+          if (!entrada.ok)
+            return await soltarCon(502, `No se pudo recibir ${nombre} para descontarlo: ${entrada.error}`,
+              { ultimo_error: entrada.error, ultimo_error_at: new Date().toISOString() });
+          await anotarAjuste(admin, f, { recibido: { at: new Date().toISOString(), id_traslado: idIda, ya: entrada.ya } });
+          await anotar(
+            admin.from("envio_linea").update({
+              estado: "aceptada",
+              recibido_at: new Date().toISOString(),
+              motivo_rechazo: null,
+              aviso: "No llegó y no apareció: se recibió para descontarlo (lo decidió supervisión).",
+              decidido_por: actor.id, decidido_at: new Date().toISOString(),
+              error: null,
+              updated_at: new Date().toISOString(),
+            }).eq("id", l.id).eq("estado", "no_llego"),
+            `el ingreso de ${nombre}`,
+          );
+        } finally {
+          await anotar(
+            admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "decidiendo" }),
+            "la salida del envío",
+          );
+        }
+      } else if (l.estado !== "aceptada") {
+        return await soltarCon(409, `${nombre} está «${l.estado}»: no hay nada que descontar.`);
+      }
+
+      const r = await descontarYCerrar({
+        admin, f, actor: t.actor, actorNombre: actor.name,
+        erpSucursal: erpDestino, erpUbicacion: ubicDestino,
+        factor: Number(l.factor), presentacion: String(l.presentacion_tipo ?? ""),
+        referencia: `ENVIO ${String(meta.codigo_bolsa ?? "") || claveDe(sol.id, l.posicion)}`,
+      });
+      return json(r.body, r.status);
+    }
 
     // ══════════════════════════════════════════════════════════════════════
     // DESPACHAR · en la sala que envía
@@ -1328,14 +1415,22 @@ Deno.serve(async (req) => {
       if (!l) return json({ ok: false, error: `No hay un producto en la posición ${bf.posicion}.` }, 422);
       const nombre = l.descripcion ?? String(l.erp_product_id);
 
-      const cerrarElFaltante = () => anotar(
-        admin.from("bolsa_faltante").update({
-          estado: "aparecio",
-          resuelto_por: actor.id,
-          resuelto_at: new Date().toISOString(),
-        }).eq("id", bf.id).eq("estado", "abierto"),
-        `el cierre del faltante de ${nombre}`,
-      );
+      // Y a supervisión se le avisa que apareció (decisión del 2026-11-12); la
+      // sala que envió recibe el suyo de `resolver_envio_aparecido`.
+      const cerrarElFaltante = async () => {
+        await anotar(
+          admin.from("bolsa_faltante").update({
+            estado: "aparecio",
+            resuelto_por: actor.id,
+            resuelto_at: new Date().toISOString(),
+          }).eq("id", bf.id).eq("estado", "abierto"),
+          `el cierre del faltante de ${nombre}`,
+        );
+        await anotar(
+          admin.rpc("avisar_faltante_resuelto", { p_id: bf.id, p_actor: actor.id }),
+          "el aviso de que apareció",
+        );
+      };
 
       /* Cuando entra el ÚLTIMO renglón que estaba en «no llegó», la bolsa pasa
        * a aprobada y la sala que envió recibe un aviso propio («apareció lo que

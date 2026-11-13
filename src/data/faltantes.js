@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
-import { recibirAparecido } from './envios';
+import { recibirAparecido, noAparecioEnvio } from './envios';
+import { noAparecioSolicitud } from './traslados';
 
 // Lo que no llegó en la bolsa.
 //
@@ -28,8 +29,15 @@ import { recibirAparecido } from './envios';
  * mismo que decide qué traslados se ven.
  */
 export async function fetchFaltantes() {
-    const { data, error } = await supabase.rpc('get_faltantes_de_bolsa');
-    return { faltantes: data ?? [], error };
+    // `supervisa`: si quien mira puede cerrar «No apareció». Lo contesta la
+    // base con la misma vara que usa al cerrar (`auth_supervisa_faltantes`):
+    // la pantalla no repite la regla. Si no se pudo preguntar, `false` — el
+    // botón no se ofrece y la base igual se negaría.
+    const [lista, sup] = await Promise.all([
+        supabase.rpc('get_faltantes_de_bolsa'),
+        supabase.rpc('auth_supervisa_faltantes'),
+    ]);
+    return { faltantes: lista.data ?? [], error: lista.error, supervisa: sup.data === true };
 }
 
 /**
@@ -100,6 +108,17 @@ export function renglonesDeLaBolsa(t) {
  * y por eso **exige que se escriba qué se hizo**: es el renglón que alguien va
  * a tener que leer dentro de un mes.
  */
+/**
+ * A cargo de quién queda un faltante que no apareció (2026-11-12). Lo elige
+ * supervisión caso por caso; el descuento va SIEMPRE a la sala que recibió,
+ * que es donde quedó el producto en el papel.
+ */
+export const RESPONSABLES_DE_FALTANTE = [
+    { valor: 'origen',  rotulo: 'La sala que envió' },
+    { valor: 'destino', rotulo: 'La sala que recibió' },
+    { valor: 'persona', rotulo: 'Una persona' },
+];
+
 export const CIERRES_DE_FALTANTE = [
     { valor: 'aparecio',    rotulo: 'Apareció' },
     { valor: 'no_aparecio', rotulo: 'No apareció' },
@@ -119,7 +138,7 @@ export const CIERRES_DE_FALTANTE = [
  * sólo si el sistema lo recibió. Así la web y la app hacen lo mismo con el
  * mismo botón.
  */
-export async function cerrarFaltante(id, estado, nota = '') {
+export async function cerrarFaltante(id, estado, nota = '', decision = null) {
     const { data: crudo, error } = await supabase.rpc('cerrar_faltante', {
         p_id: id,
         p_estado: estado,
@@ -128,6 +147,23 @@ export async function cerrarFaltante(id, estado, nota = '') {
     if (error) return { ok: false, error: error.message };
     const data = /** @type {{ ok?: boolean, codigo?: string, request_id?: string } | null} */ (crudo);
     if (data?.codigo === 'RECIBIR_EN_CAJA') return ingresarAparecido({ id, request_id: data.request_id });
+    // «No apareció»: la base dijo que quien llama es supervisión y adónde ir.
+    // Descontar habla con la caja, así que lo hace la función de esa familia.
+    if (data?.codigo === 'AJUSTAR_EN_CAJA') {
+        const cuerpo = {
+            faltante_id: id,
+            responsable: decision?.responsable ?? null,
+            responsable_employee_id: decision?.responsable_employee_id ?? null,
+            nota: nota?.trim() || null,
+        };
+        const r = data.familia === 'envio'
+            ? await noAparecioEnvio(data.request_id, cuerpo)
+            : await noAparecioSolicitud(data.request_id, cuerpo);
+        return r?.ok ? { ok: true, error: null } : { ok: false, error: r?.error ?? 'No se pudo cerrar.', codigo: r?.codigo };
+    }
+    if (data?.codigo === 'YA_EN_CURSO') {
+        return { ok: false, error: 'Supervisión lo está cerrando en este momento.', codigo: 'YA_EN_CURSO' };
+    }
     // `YA_CERRADO` no es un fallo del portal: alguien más lo cerró entre que se
     // pintó la lista y se apretó el botón. Se dice como lo que es.
     if (data?.codigo === 'YA_CERRADO') {

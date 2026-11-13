@@ -346,6 +346,14 @@ export const recibirAparecido = (requestId, faltanteId) =>
     invocar({ request_id: requestId, accion: 'recibir_aparecido', faltante_id: faltanteId });
 
 /**
+ * Cierra «no apareció» un faltante del envío (sólo supervisión, lo decide la
+ * base): si el renglón seguía en tránsito se recibe, y se descuenta de la sala
+ * que recibió a cargo de quien se eligió. Lo llama `cerrarFaltante`.
+ */
+export const noAparecioEnvio = (requestId, { faltante_id, responsable, responsable_employee_id, nota }) =>
+    invocar({ request_id: requestId, accion: 'no_aparecio', faltante_id, responsable, responsable_employee_id, nota });
+
+/**
  * Cancela un envío que TODAVÍA NO SALIÓ.
  *
  * No pasa por la Edge Function porque no hay nada que mover: es una fila que se

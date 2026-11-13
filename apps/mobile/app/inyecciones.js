@@ -18,17 +18,17 @@
 // sale del núcleo (`inyeccionesPendientes`, `inyeccionesPorCobrar`,
 // `inyeccionesAjustes`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { aplicarPendientes, buscarBitacoraDeAplicaciones, fetchAplicacionesPendientes } from '@nucleo/data/inyecciones';
+import { aplicarPendientes, buscarBitacoraDeAplicaciones, confirmarAplicaciones, fetchAplicacionesPendientes, fetchLibroDeInyectables, fetchPorConfirmar } from '@nucleo/data/inyecciones';
 import {
   CABECERA_CSV_BITACORA, CAMPOS_DE_BUSQUEDA_BITACORA, ESTADOS_BITACORA, agregarFiltroDeBitacora, diasDesde, filasCsvBitacora, filtrosEfectivosDeBitacora,
-  gruposDePendientes, idsElegidos, quitarFiltroDeBitacora, resumenDePendientes, rotuloDeFiltroDeBitacora,
+  gruposDePendientes, idsElegidos, libroIncompleto, venceDeAmpolla, quitarFiltroDeBitacora, resumenDePendientes, rotuloDeFiltroDeBitacora,
 } from '@nucleo/utils/inyeccionesPendientes';
 import { fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
@@ -46,7 +46,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
-import { FONDO_CONTROL, MARCA } from '../componentes/inicio/marca';
+import { FONDO_CONTROL, MARCA, tintaSobre } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Fecha from '../componentes/formulario/Fecha';
@@ -211,6 +211,14 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
   const filtros = useMemo(() => filtrosEfectivosDeBitacora(fijados, busqueda), [fijados, busqueda]);
   const { hasPermission } = useAuth();
   const puedeAsignarFicha = hasPermission('inyecciones_dosis');
+  // Enfermería confirma AQUÍ, como en el portal (2026-11-13, nativo): lo
+  // aplicado en su sala que todavía puede confirmar —hasta el final del día
+  // siguiente—, «La apliqué yo» por fila o todas de una vez.
+  const puedeConfirmar = hasPermission('inyecciones_confirmar', 'can_edit');
+  const puedeCompletarLibro = hasPermission('inyecciones', 'can_edit') || puedeConfirmar;
+  const [porConfirmar, setPorConfirmar] = useState(null);
+  const [confirmando, setConfirmando] = useState(false);
+  const [libro, setLibro] = useState({});
   // Al volver de asignar la ficha se relee (no en la primera vez: ya cargó).
   const [vuelta, setVuelta] = useState(0);
   const primera = useRef(true);
@@ -228,8 +236,43 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
       .catch((e) => { if (vivo) { setRes({ filas: [], total: 0, aplicadas: 0, monto: 0, total_filtrado: 0 }); setError(mensajeAmigable(e, 'No se pudo cargar la bitácora')); } });
     return () => { vivo = false; };
   }, [pedir]);
+  useEffect(() => {
+    if (!puedeConfirmar) return undefined;
+    let vivo = true;
+    fetchPorConfirmar({ sala: sala || null })
+      .then((d) => { if (vivo) setPorConfirmar(d); })
+      .catch((e) => { if (vivo) { setPorConfirmar([]); setError(mensajeAmigable(e, 'No se pudo cargar lo que falta confirmar')); } });
+    return () => { vivo = false; };
+  }, [puedeConfirmar, sala, vuelta]);
   const filas = res?.filas || null;
   const visibles = filas || [];
+  // El libro de inyectables de las filas que se ven: vía, sitio, médico, firma.
+  const idsAplicadas = visibles.filter((f) => f.estado === 'APLICADA').map((f) => f.id).join(',');
+  useEffect(() => {
+    if (!idsAplicadas) { setLibro({}); return undefined; }
+    let vivo = true;
+    fetchLibroDeInyectables(idsAplicadas.split(','))
+      .then((d) => { if (vivo) setLibro(d); })
+      .catch((e) => { if (vivo) setError(mensajeAmigable(e, 'No se pudo cargar el libro de inyectables')); });
+    return () => { vivo = false; };
+  }, [idsAplicadas, vuelta]);
+  const confirmar = (ids) => {
+    if (confirmando || !ids.length) return;
+    Alert.alert(ids.length === 1 ? 'Confirmar la aplicación' : `Confirmar ${ids.length} aplicaciones`,
+      'Confirma sólo las que aplicaste tú: quedan en la bitácora de enfermería a tu nombre.', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Confirmar', onPress: async () => {
+          setConfirmando(true);
+          try {
+            // La bitácora la anota la base (`inyeccion_confirmar_enfermeria`).
+            const n = await confirmarAplicaciones(ids);
+            listo('Confirmadas', `${n ?? ids.length} aplicaci${(n ?? ids.length) === 1 ? 'ón' : 'ones'}`);
+            setVuelta((v) => v + 1);
+          } catch (e) { fallo('No se pudo confirmar', mensajeAmigable(e)); } finally { setConfirmando(false); }
+        } },
+      ]);
+  };
+  const nPorConfirmar = porConfirmar?.length ?? 0;
   const totalFiltrado = res?.total_filtrado ?? 0;
   const verMas = async () => {
     setMas(true);
@@ -245,7 +288,9 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
   const descargar = async () => {
     try {
       const d = await buscarBitacoraDeAplicaciones({ sala: sala || null, desde, hasta, filtros, estado, limite: 5000, offset: 0 });
-      await compartirCsv({ headers: CABECERA_CSV_BITACORA, rows: filasCsvBitacora(d.filas), nombre: `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}`, modulo: 'inyecciones' });
+      // Con los datos del libro de inyectables, como el CSV del portal.
+      const datosLibro = await fetchLibroDeInyectables((d.filas || []).filter((f) => f.estado === 'APLICADA').map((f) => f.id));
+      await compartirCsv({ headers: CABECERA_CSV_BITACORA, rows: filasCsvBitacora(d.filas, datosLibro), nombre: `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}`, modulo: 'inyecciones' });
     } catch (e) { fallo('No se pudo compartir', e?.message || ''); }
   };
   return (
@@ -301,6 +346,13 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
           pide={estado === 'PENDIENTE'} onPress={() => alternar('PENDIENTE')} />
       </FilaDeKpis>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
+      {puedeConfirmar && nPorConfirmar > 0 ? (
+        <View style={{ marginHorizontal: 16, gap: 8 }}>
+          <Aviso tono="cuidado" texto={`${nPorConfirmar === 1 ? 'Una aplicación espera' : `${nPorConfirmar} aplicaciones esperan`} tu confirmación. Confirma sólo las que aplicaste tú: lo que no confirmes hasta el final del día siguiente no entra a la bitácora.`} />
+          <BotonGrande texto={confirmando ? 'Confirmando…' : nPorConfirmar === 1 ? 'Confirmar' : `Confirmar las ${nPorConfirmar}`} color={MARCA.verde}
+            deshabilitado={confirmando} onPress={() => confirmar(porConfirmar.map((f) => f.id))} />
+        </View>
+      ) : null}
       {filas ? (
         <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center' }}>
           <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
@@ -335,6 +387,40 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
               <Persona nombre={f.cobrada_por} id={f.cobrada_por_id} rol="Cobró" />
               {f.vendedor && f.vendedor_id !== f.cobrada_por_id ? <Persona nombre={f.vendedor} id={f.vendedor_id} rol="Vendió" /> : null}
               {f.estado === 'APLICADA' ? <Persona nombre={f.aplicada_por} id={f.aplicada_por_id} rol={`Aplicó${f.aplicada_en ? ` en ${f.aplicada_en}` : ''} ·`} /> : null}
+              {f.estado === 'APLICADA' ? (
+                <>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                    {f.lote ? `Lote ${f.lote}${f.vence ? ` · vence ${venceDeAmpolla(f.vence)}` : ''}` : 'Sin lote registrado'}
+                  </Text>
+                  {libro[f.id] ? (
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                      {[libro[f.id].via, libro[f.id].sitio, libro[f.id].medico, libro[f.id].reaccion, libro[f.id].firmado ? 'firmó' : null].filter(Boolean).join(' · ')}
+                    </Text>
+                  ) : null}
+                  {f.enfermeria === 'POR_CONFIRMAR' || f.enfermeria === 'NO' || (f.enfermeria !== 'NO' && libroIncompleto(libro[f.id], f)) ? (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {f.enfermeria === 'POR_CONFIRMAR' ? <Pildora texto="Falta que la confirme enfermería" color={MARCA.ambar} /> : null}
+                      {f.enfermeria === 'NO' ? <Pildora texto="Sin enfermería · no va en la bitácora" color={MARCA.gris} /> : null}
+                      {f.enfermeria !== 'NO' && libroIncompleto(libro[f.id], f) ? <Pildora texto="Falta completar el libro" color={MARCA.ambar} /> : null}
+                    </View>
+                  ) : null}
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                    {f.enfermeria === 'POR_CONFIRMAR' && puedeConfirmar ? (
+                      <Tocable accessibilityRole="button" disabled={confirmando} onPress={() => confirmar([f.id])}
+                        style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: MARCA.verde }}>
+                        <Text style={{ color: tintaSobre(MARCA.verde), fontSize: 14, fontWeight: '700' }}>La apliqué yo</Text>
+                      </Tocable>
+                    ) : null}
+                    {puedeCompletarLibro && f.enfermeria !== 'NO' ? (
+                      <Tocable accessibilityRole="button"
+                        onPress={() => { Haptics.selectionAsync().catch(() => {}); dejar('libro-inyeccion', { fila: f, libro: libro[f.id] ?? null }); router.push('/libro-inyeccion'); }}
+                        style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${MARCA.azul}2E` }}>
+                        <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{libroIncompleto(libro[f.id], f) ? 'Completar libro' : 'Datos del libro'}</Text>
+                      </Tocable>
+                    ) : null}
+                  </View>
+                </>
+              ) : null}
               {f.sin_ficha && puedeAsignarFicha ? (
                 <Tocable accessibilityRole="button" hitSlop={6}
                   onPress={() => { Haptics.selectionAsync().catch(() => {}); dejar('inyeccion-ficha', f); router.push('/inyeccion-ficha'); }}

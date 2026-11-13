@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.6 — App: confirmar aplicaciones y libro de inyectables con firma, nativos
+
+- **Inyecciones → Bitácora** en la app: enfermería confirma desde el teléfono las aplicaciones que hizo («La apliqué yo», o todas de una vez), igual que en la web.
+- **Libro de inyectables** en la app: documento y edad del paciente, médico, lote, vencimiento, dosis, vía, sitio, reacción y la firma del paciente con el dedo. Lo que falta lo dice antes de guardar, y lo escrito se guarda como borrador. La fila muestra lo anotado y si el paciente firmó; el CSV lleva los datos del libro.
+
 ## v2.1524.5 — Enviar producto: el mismo producto dos veces ya no reserva el mismo lote
 
 - **Enviar producto**: si se agrega dos veces el mismo producto al mismo envío, el segundo renglón toma los lotes que quedan después del primero. Si lo que queda no tiene lote asignado, pide el lote y el vencimiento de la caja antes de dejarlo agregar. Antes los dos renglones reservaban el mismo lote, el segundo salía sin lote y fallaba al despachar (TOTALVIT C, de Bodega a Salud 2).

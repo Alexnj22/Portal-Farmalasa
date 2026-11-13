@@ -9,13 +9,12 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { supabase } from '@nucleo/supabaseClient';
-import { despacharTraslado, rechazarTraslado, MOTIVOS_RECHAZO } from '@nucleo/data/traslados';
+import { rechazarTraslado, MOTIVOS_RECHAZO } from '@nucleo/data/traslados';
 import { cargarFilaDeAviso, paraDecidir } from '@nucleo/data/solicitudDeAviso';
 import { decidirSolicitud } from '@nucleo/hooks/useDecidirSolicitud';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { router } from 'expo-router';
 import { abrirRuta, abrirSolicitud } from '../pantallas';
-import { fetchApprovalRequestById } from '@nucleo/data/requests';
 import { fallo, listo, listoODecirAviso, trabajando } from './Progreso';
 
 let tokenActual = null;
@@ -70,22 +69,6 @@ export async function soltarAvisos() {
 // Qué se está decidiendo, para la capa de progreso: la línea de contexto de la
 // tarjeta («Anular en La Popular»), si vino.
 const deQue = (d) => d?.tarjeta?.contexto ? ` · ${d.tarjeta.contexto}` : '';
-
-/** Enviar todo el traslado. Devuelve `true` si salió. */
-export async function enviarTraslado(d) {
-  if (d.prueba) { listo('Prueba', 'Así se vería: traslado enviado. No se envió nada.'); return false; }
-  trabajando(`Enviando traslado${deQue(d)}…`);
-  const r = await despacharTraslado(d.solicitud);
-  if (!r?.ok) {
-    // ¿Entró igual y se perdió la respuesta? Se relee antes de decir que no.
-    const { data: fila } = await fetchApprovalRequestById(d.solicitud).catch(() => ({ data: null }));
-    if (fila?.status !== 'APPROVED') { fallo('No se pudo enviar', r?.error ?? 'Inténtalo desde el traslado.'); return false; }
-  }
-  // El ticket de la bolsa lo imprime la computadora de la sala: desde acá no hay
-  // impresora. Decisión del usuario del 2026-09-30.
-  listo('Traslado enviado', 'El ticket del paquete se imprime desde la tarjeta del traslado en la sala.');
-  return true;
-}
 
 // El motivo sale de la MISMA lista cerrada que valida la base
 // (`validar_rechazo_traslado`); «Otro» exige escribir cuál.

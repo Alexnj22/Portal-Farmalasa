@@ -96,15 +96,22 @@ export default function EnviarProducto() {
     let vivo = true;
     const productos = (sugerido.productos ?? []).slice(0, TOPE_RENGLONES_ENVIO);
     const ids = productos.map((p) => Number(p.erp_product_id));
-    Promise.all([fetchExistenciasDeProductos(Number(sugerido.origenErp), ids), fetchPresentaciones(ids)])
-      .then(([filas, pres]) => {
+    Promise.all([fetchExistenciasDeProductos(Number(sugerido.origenErp), ids), fetchPresentaciones(ids), fetchExigenciasDe(ids)])
+      .then(([filas, pres, exigencias]) => {
         if (!vivo) return;
         if (pres.error) throw pres.error;
         const { listos, fuera } = renglonesDeEnvioSugerido(productos, filas, pres.porProducto);
-        setRenglones(listos.map((r) => ({
-          erp_product_id: r.erp_product_id, descripcion: r.descripcion, presentacion_tipo: r.presentacion_tipo,
-          factor: r.factor, cantidad: r.cantidad, unidades: r.unidades, lotes: r.lotes,
-        })));
+        // Lo que sale sin lote o sin fecha pide el de la caja (2026-11-13): el
+        // renglón precargado lo marca y la lista muestra el campo.
+        setRenglones(listos.map((r) => {
+          const pide = faltaDeLaCaja(exigencias.get(Number(r.erp_product_id)),
+            (r.lotes ?? []).map((l) => ({ ...l, toma: l.unidades }))).pide;
+          return {
+            erp_product_id: r.erp_product_id, descripcion: r.descripcion, presentacion_tipo: r.presentacion_tipo,
+            factor: r.factor, cantidad: r.cantidad, unidades: r.unidades, lotes: r.lotes,
+            ...(pide ? { pideCaja: pide, caja: LOTE_DE_CAJA_VACIO } : {}),
+          };
+        }));
         setSinArmar(fuera);
         setDestino(Number(sugerido.destino));
         setMotivo(sugerido.motivo ?? null);
@@ -204,6 +211,22 @@ export default function EnviarProducto() {
     setProducto(null); setTexto(''); setCantidad('1'); setCaja(LOTE_DE_CAJA_VACIO);
   };
 
+  // La caja escrita en un renglón ya en la lista (el precargado del sugerido):
+  // se copia a los lotes que salen sin lote o sin fecha.
+  const cajaDeRenglon = (i, valor) => setRenglones((rs) => rs.map((r, j) => {
+    if (j !== i) return r;
+    const sinDato = (l) => (r.pideCaja === 'lote' ? (esLoteGenerico(l.lote) || !l.lote) : !String(l.vence || '').trim());
+    return {
+      ...r, caja: valor,
+      lotes: (r.lotes ?? []).map((l) => {
+        if (!sinDato(l)) return l;
+        const { caja: _vieja, ...resto } = l;
+        return valor?.envio ? { ...resto, caja: valor.envio } : resto;
+      }),
+    };
+  }));
+  const sinCaja = renglones.filter((r) => r.pideCaja && !r.caja?.envio);
+
   const origenEsBodega = Number(origenErp) === ERP_BODEGA;
   const destinoEsBodega = Number(destino) === ERP_BODEGA;
   const motivos = destino != null ? motivosEnvioPorDireccion(origenEsBodega, destinoEsBodega) : [];
@@ -220,6 +243,7 @@ export default function EnviarProducto() {
   const sueltos = freno ? renglones.filter((r) => despacho.has(Number(r.erp_product_id)) && !renglonCompleto(r, despacho.get(Number(r.erp_product_id)))) : [];
 
   const falta = !renglones.length ? 'Agrega al menos un producto.'
+    : sinCaja.length ? `Falta lo que trae la caja de ${sinCaja.map((r) => r.descripcion).join(', ')}.`
     : destino == null ? 'Elige a qué sala va.'
       : !motivo ? 'Elige el motivo.'
         : envioNecesitaFoto(motivo) && !fotos.length ? `«${motivo}» lleva foto.`
@@ -320,6 +344,12 @@ export default function EnviarProducto() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{r.descripcion}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${r.cantidad} ${r.presentacion_tipo} · ${r.unidades} u.`}</Text>
+                  {r.pideCaja ? (
+                    <View style={{ marginTop: 6 }}>
+                      <LoteDeLaCaja erpProductId={r.erp_product_id} producto={r.descripcion}
+                        valor={r.caja} onChange={(v) => cajaDeRenglon(i, v)} soloVence={r.pideCaja === 'vence'} />
+                    </View>
+                  ) : null}
                 </View>
                 <Pressable hitSlop={8} onPress={() => setRenglones((rs) => rs.filter((_, j) => j !== i))} style={{ minHeight: 44, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar</Text>

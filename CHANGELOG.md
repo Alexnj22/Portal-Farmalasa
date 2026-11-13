@@ -30,6 +30,10 @@ Decisión del usuario (2026-11-13): todo movimiento sin lote o sin vencimiento l
 - **El vencimiento de una carga se pide como mes y año** (web y app): viaja como el día 1.
 - Web (`WidgetInventoryMovement`) y app (`nueva/ajuste`), con la regla en `cajaQuePide`/`lotesParaDescargar` (`utils/ajusteInventario`).
 
+## v2.1525.2 — Envío a otra sala: quien está de apoyo manda desde la sala del apoyo
+
+- **Enviar a otra sala**: quien está de apoyo en otra sala ya puede mandar producto de esa sala. Antes la pantalla le mostraba el producto de la sala del apoyo, pero al transferir respondía «Sólo se puede enviar producto desde tu propia sala» porque se miraba la sala de su ficha.
+
 ## v2.1525.1 — Traslados: el despacho pide el vencimiento que falta
 
 - **Traslados solicitados (portal)**: al despachar, un perecedero sin control de lote cuya existencia no tiene vencimiento pide el que trae la caja, y ese vencimiento viaja a la sala que recibe. El lote de la caja para lo regulado sin lote ya se pedía.

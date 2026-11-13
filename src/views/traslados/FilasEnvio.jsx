@@ -265,7 +265,13 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         pendientes.map(l => [l.posicion, { que: DECISIONES_ENVIO.aceptar }]),
     ));
 
-    const completa = pendientes.every(l => {
+    /* Se confirma LO DECIDIDO, no la caja entera (2026-11-13). Una sala con
+     * un producto equivocado tenía que decidir los seis para poder devolver
+     * uno. La función ya decide por posición y deja el envío pendiente
+     * mientras quede algo en `enviada`: lo que no se marca se contesta
+     * después, en esta misma tarjeta. */
+    const decididasL = pendientes.filter(l => decision[l.posicion]?.que);
+    const valida = l => {
         const d = decision[l.posicion];
         if (!d?.que) return false;
         // Devolver exige motivo de la lista; «Otro» exige además que se escriba
@@ -277,7 +283,8 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         // «No llegó» no pide motivo de la lista: los seis hablan de un producto
         // que SÍ llegó. La nota es opcional y es para decir qué se vio.
         return true;
-    });
+    };
+    const completa = decididasL.length > 0 && decididasL.every(valida);
 
     const confirmar = async () => {
         if (!completa || enviando) return;
@@ -285,7 +292,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         setError('');
         const r = await decidirEnvio(
             envio.id,
-            pendientes.map(l => ({
+            decididasL.map(l => ({
                 i: l.posicion,
                 decision: decision[l.posicion].que,
                 motivo: decision[l.posicion].motivo ?? '',
@@ -293,7 +300,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
             })),
             '',
             // Lo que vino DE MÁS (2026-11-12), sólo sobre lo que se queda.
-            pendientes
+            decididasL
                 .filter(l => decision[l.posicion].que === DECISIONES_ENVIO.aceptar && Number(decision[l.posicion].demas) > 0)
                 .map(l => ({ posicion: l.posicion, cantidad: Number(decision[l.posicion].demas) })),
         );
@@ -313,7 +320,8 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         onHecho?.();
     };
 
-    const decididas = pendientes.filter(l => decision[l.posicion]?.que).length;
+    const decididas = decididasL.length;
+    const parcial = decididas > 0 && decididas < pendientes.length;
     const origen = envio.origen_branch_name ?? 'la otra sala';
 
     return (
@@ -425,6 +433,12 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                         <b className="text-warning-text">No llegó</b> queda anotado y {origen} lo busca.
                     </span>
                 </li>
+                {parcial && (
+                    <li className="flex items-start gap-1.5">
+                        <Info size={12} strokeWidth={2.5} className="shrink-0 mt-px text-content-3" />
+                        <span>Se confirma sólo lo que marcaste. Lo demás queda pendiente aquí.</span>
+                    </li>
+                )}
             </ul>
 
             {error && <Notice variant="danger">{error}</Notice>}
@@ -446,7 +460,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                 <Button size="sm" tone="success" soft icon={Check} loading={enviando}
                     className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
                     onClick={confirmar} disabled={!completa || enviando}>
-                    {enviando ? 'Guardando…' : 'Confirmar'}
+                    {enviando ? 'Guardando…' : parcial ? `Confirmar ${decididas}` : 'Confirmar'}
                 </Button>
             </Pie>
         </Tarjeta>

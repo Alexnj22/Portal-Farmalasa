@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.0 — Al recibir un envío se confirma sólo lo decidido
+
+- **Traslados → envíos por recibir**: «Confirmar» ya no exige decidir todos los
+  productos de la caja. Se puede devolver uno (o marcarlo como «No llegó») y
+  dejar el resto pendiente en la misma tarjeta. El botón dice cuántos se
+  confirman y un aviso recuerda que lo demás queda pendiente. La función ya
+  decidía por posición y dejaba el envío abierto mientras quedara algo sin
+  decidir; sólo la pantalla lo impedía.
+
 ## v2.1523.1 — App: tarjetas del mismo alto, el chat no tapa el buscador y ficha del cliente rediseñada
 
 App del personal — tres cosas que reportó el usuario (2026-11-13):

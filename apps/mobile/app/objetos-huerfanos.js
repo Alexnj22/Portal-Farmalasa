@@ -22,7 +22,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 
-const COLOR = { candidate: MARCA.ambar, confirmed_orphan: MARCA.rojo, false_positive: colorSistema.texto2, resolved: MARCA.verde };
+const COLOR = { candidate: MARCA.ambar, confirmed_orphan: MARCA.rojo, get false_positive() { return colorSistema.texto2; }, resolved: MARCA.verde };
 const OPCIONES = Object.entries(ESTADOS_HUERFANO);
 
 export default function ObjetosHuerfanos() {

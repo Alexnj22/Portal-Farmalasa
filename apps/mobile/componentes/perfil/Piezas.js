@@ -91,7 +91,7 @@ export function ExpedienteEnLinea({ empleado }) {
   );
 }
 
-const COLOR_EVENTO = { VACATION: MARCA.verde, PERMIT: MARCA.verde, DISABILITY: MARCA.rojo, SHIFT_CHANGE: MARCA.violeta, SALARY: MARCA.violeta, TRANSFER: MARCA.azulClaro, HIRING: MARCA.verde };
+const COLOR_EVENTO = { VACATION: MARCA.verde, PERMIT: MARCA.verde, DISABILITY: MARCA.rojo, SHIFT_CHANGE: MARCA.violeta, SALARY: MARCA.violeta, get TRANSFER() { return MARCA.azulClaro; }, HIRING: MARCA.verde };
 
 /** El historial con buscar, tipo y desde/hasta; cada evento con sus detalles. */
 export function Historial({ historial }) {

@@ -10,13 +10,13 @@ import { MARCA } from '../inicio/marca';
 // Los rótulos del portal, en los colores de la marca.
 export const ESTADO_DIF = {
   sin_resolver: ['Sin resolver', MARCA.rojo], por_confirmar: ['Falta confirmar el corte', MARCA.ambar],
-  con_saldo: ['Por cobrar', MARCA.ambar], por_registrar: ['Por anotar', MARCA.azulClaro],
-  acumulado: ['Acumulado', MARCA.azulClaro], resuelto: ['Resuelto', MARCA.verde],
+  con_saldo: ['Por cobrar', MARCA.ambar], get por_registrar() { return ['Por anotar', MARCA.azulClaro]; },
+  get acumulado() { return ['Acumulado', MARCA.azulClaro]; }, resuelto: ['Resuelto', MARCA.verde],
 };
 export const TRAMOS_DIF = {
-  falta: [['abonado', 'Abonado', MARCA.verde], ['explicado', 'Con causa', MARCA.azulClaro], ['porCobrar', 'Por cobrar', MARCA.ambar],
-    ['porConfirmar', 'Por confirmar', MARCA.violeta], ['sinResolver', 'Sin resolver', MARCA.rojo]],
-  sobra: [['explicado', 'Con causa', MARCA.azulClaro], ['acumulado', 'Acumulado', MARCA.ambar], ['porConfirmar', 'Por confirmar', MARCA.violeta]],
+  get falta() { return [['abonado', 'Abonado', MARCA.verde], ['explicado', 'Con causa', MARCA.azulClaro], ['porCobrar', 'Por cobrar', MARCA.ambar],
+    ['porConfirmar', 'Por confirmar', MARCA.violeta], ['sinResolver', 'Sin resolver', MARCA.rojo]]; },
+  get sobra() { return [['explicado', 'Con causa', MARCA.azulClaro], ['acumulado', 'Acumulado', MARCA.ambar], ['porConfirmar', 'Por confirmar', MARCA.violeta]]; },
 };
 export const montoDelDia = (d, signo) => (signo === 'sobra' ? Number(d.sobrante || 0) : Math.abs(Number(d.faltante || 0)));
 

@@ -19,7 +19,7 @@ import { Grilla, Pildora } from '../avisos/Piezas';
 import Avatar from '../Avatar';
 import { MARCA } from '../inicio/marca';
 
-const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
+const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, get info() { return MARCA.azulClaro; } };
 
 export default function VentaDelAviso({ aviso }) {
   const [items, setItems] = useState(null);

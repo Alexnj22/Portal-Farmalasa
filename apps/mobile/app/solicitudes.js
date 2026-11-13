@@ -79,7 +79,7 @@ const PILDORA = {
   REJECTED: { texto: 'Rechazada', color: MARCA.rojo },
   CANCELLED: { texto: 'Cancelada', color: MARCA.gris },
 };
-const DECIDIR = { texto: 'Te toca decidir', color: MARCA.azulClaro };
+const DECIDIR = { texto: 'Te toca decidir', get color() { return MARCA.azulClaro; } };
 const ESTADOS = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 
 /* La tarjeta: quién la mandó (su cara) y el estado; el tipo y la sala; lo que

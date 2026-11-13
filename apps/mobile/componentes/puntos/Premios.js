@@ -37,7 +37,7 @@ import { guardar as dejar } from '../comercial/elegido';
 import { entregarPremioPorCodigo } from './entregarPremio';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const COLOR = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde, neutral: MARCA.gris };
+const COLOR = { get info() { return MARCA.azulClaro; }, warning: MARCA.ambar, success: MARCA.verde, neutral: MARCA.gris };
 const fechaCorta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 
 const Titulo = ({ children }) => (

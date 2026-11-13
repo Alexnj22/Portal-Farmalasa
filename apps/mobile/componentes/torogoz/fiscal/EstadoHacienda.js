@@ -18,7 +18,7 @@ const NIVEL = {
   ok: { icono: 'ShieldCheck', color: MARCA.verde },
   pendiente: { icono: 'Clock', color: MARCA.ambar },
   error: { icono: 'AlertTriangle', color: MARCA.rojo },
-  info: { icono: 'Info', color: MARCA.azulClaro },
+  get info() { return { icono: 'Info', color: MARCA.azulClaro }; },
 };
 
 const BOTON = {

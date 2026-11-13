@@ -25,7 +25,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 
-const COLOR = { warning: MARCA.ambar, success: MARCA.verde, neutral: colorSistema.texto2, danger: MARCA.rojo };
+const COLOR = { warning: MARCA.ambar, success: MARCA.verde, get neutral() { return colorSistema.texto2; }, danger: MARCA.rojo };
 const fmtFecha = (f) => (f ? fechaTexto(f, { day: '2-digit', month: 'long', year: 'numeric' }) : '—');
 const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 const MOTIVO_ANULADA = {

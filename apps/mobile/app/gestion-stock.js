@@ -52,7 +52,7 @@ import { compartirCsv } from '../componentes/fiscal/csv';
 import { dejarEnvioSugerido } from '../componentes/inventario/envioSugerido';
 
 const VISIBLES = 8;
-const COLOR_NIVEL = { agregar: MARCA.verde, evaluar: MARCA.ambar, encargo: MARCA.violeta, mayorista: MARCA.azulClaro, omitir: colorSistema.texto2 };
+const COLOR_NIVEL = { agregar: MARCA.verde, evaluar: MARCA.ambar, encargo: MARCA.violeta, get mayorista() { return MARCA.azulClaro; }, get omitir() { return colorSistema.texto2; } };
 const corta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short', year: 'numeric' }) : null);
 const n = (x) => Number(x || 0).toLocaleString('es-SV');
 

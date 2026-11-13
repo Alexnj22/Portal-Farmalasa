@@ -46,9 +46,9 @@ import { MAYUSCULAS } from '../tema/mayusculas';
 // Un día de calendario (`issue_date`) se lee tal cual; un instante (`created_at`)
 // en la hora de El Salvador — cortarlo a 10 caracteres daba el día UTC.
 const fecha = (f) => (f ? fechaTexto(String(f).length > 10 ? f : String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : null);
-const ICONO_TIPO = { DISABILITY: ['Stethoscope', MARCA.rojo], CERTIFICATE: ['FileCheck', MARCA.azulClaro], VACATION: ['Palmtree', MARCA.verde],
-  PERMIT: ['FileText', MARCA.ambar], SHIFT_CHANGE: ['RefreshCw', MARCA.violeta], EXPEDIENTE: ['FolderOpen', MARCA.azul] };
-const COLOR_ESTADO = { EN_EXPEDIENTE: MARCA.azul, APPROVED: MARCA.verde, PENDING: MARCA.ambar, REJECTED: MARCA.rojo, CANCELLED: colorSistema.texto2 };
+const ICONO_TIPO = { DISABILITY: ['Stethoscope', MARCA.rojo], get CERTIFICATE() { return ['FileCheck', MARCA.azulClaro]; }, VACATION: ['Palmtree', MARCA.verde],
+  PERMIT: ['FileText', MARCA.ambar], SHIFT_CHANGE: ['RefreshCw', MARCA.violeta], get EXPEDIENTE() { return ['FolderOpen', MARCA.azul]; } };
+const COLOR_ESTADO = { get EN_EXPEDIENTE() { return MARCA.azul; }, APPROVED: MARCA.verde, PENDING: MARCA.ambar, REJECTED: MARCA.rojo, get CANCELLED() { return colorSistema.texto2; } };
 const COLOR_VENCE = { danger: MARCA.rojo, warning: MARCA.ambar };
 
 // El período elegido como [desde, hasta] (AAAA-MM-DD, '' = sin tope).

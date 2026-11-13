@@ -27,7 +27,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
 const COLUMNAS = 'min_units, max_units, manual_min, manual_max, manual_at, manual_por, manual_motivo, manual_nota, manual_cliente_unidades, manual_cliente_dias, ajuste_solicitud_id';
-const TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, neutral: colorSistema.texto2 };
+const TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, get neutral() { return colorSistema.texto2; } };
 const igual = (a, b) => a && b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
 
 // Busca una ficha por cualquiera de sus claves (id, nombre, usuario o correo):

@@ -153,7 +153,7 @@ export function PuestoVacante({ cargo }) {
   );
 }
 
-const ESTADO_PRACTICANTE = { ACTIVO: ['Activo', MARCA.verde], FINALIZADO: ['Finalizado', colorSistema.texto2], CANCELADO: ['Cancelado', MARCA.rojo] };
+const ESTADO_PRACTICANTE = { ACTIVO: ['Activo', MARCA.verde], get FINALIZADO() { return ['Finalizado', colorSistema.texto2]; }, CANCELADO: ['Cancelado', MARCA.rojo] };
 const dma = (d) => { if (!d) return '—'; const [y, m, dd] = String(d).split('-'); return `${dd}/${m}/${y}`; };
 
 /** Un practicante: horas sociales, sin planilla ni expediente (otra tabla). */

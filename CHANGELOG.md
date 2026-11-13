@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1522.2 — App: los colores guardados al abrir ya cambian con el modo y con el sistema
+
+App del personal — colores que se quedaban fijos desde que se abría la app. Lo destapó el barrido en modo oscuro de la segunda parte de Material 3: en Monitor, «Libre hoy» quedaba casi invisible al pasar de claro a oscuro.
+
+- La causa: unas 90 tablas de colores escritas a nivel de módulo (`const COLOR = { finished: MARCA.azulClaro, pending: colorSistema.texto2 }`) leían el color UNA vez, al cargar el archivo. `MARCA.azulClaro` y `colorSistema.*` cambian con el modo y, en Android, con el color del sistema; la copia guardada no.
+- El arreglo: esas claves son ahora getters (`get finished() { return MARCA.azulClaro; }`), con un script que sólo toca valores que leen un color vivo (69 + 22 claves). Las tres listas (`ABC`, `COLORES` del Menú, `MEDALLA`) pasaron a funciones; `COLOR_MAX` y `COLOR_ACUMULADO`, a objetos con getter (`COLOR.max`, `COLOR_PUNTOS.acumulado`), y `GRIS` se reemplazó por su valor.
+- Verificado en el emulador: Monitor de claro a oscuro, y otras 12 pantallas que cambiaron, sin errores. Huellas nativas iguales: llega por aire.
+
 ## v2.1522.1 — Bitácoras: la sección y el mes van en la píldora de filtros
 
 El usuario: «esto no es canónico, deben estar en el filterpill. mejora los filterpill».

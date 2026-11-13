@@ -65,7 +65,7 @@ const DIAS = [{ id: 1, corto: 'Lu', largo: 'Lunes' }, { id: 2, corto: 'Ma', larg
 const offset = (id) => (id === 0 ? 6 : id - 1);
 const corta = (h) => (hora12(h) || '').replace(':00', '').replace(/\s?a\.\s?m\./, 'a').replace(/\s?p\.\s?m\./, 'p');
 const rango = (r) => `${corta(r.inicio)} – ${corta(r.fin)}`;
-const COLOR_CONFLICTO = { Vacaciones: MARCA.verde, Incapacidad: MARCA.rojo, Permiso: MARCA.violetaClaro, Asueto: MARCA.azulClaro };
+const COLOR_CONFLICTO = { Vacaciones: MARCA.verde, Incapacidad: MARCA.rojo, Permiso: MARCA.violetaClaro, get Asueto() { return MARCA.azulClaro; } };
 const hace90 = () => sumarDias(hoySV(), -90);
 
 export default function Horarios() {

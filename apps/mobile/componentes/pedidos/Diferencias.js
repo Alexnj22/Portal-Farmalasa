@@ -24,7 +24,7 @@ import Avatar from '../Avatar';
 import DecisionDiferencia from './DecisionDiferencia';
 import CierreDeDiferencias from './CierreDeDiferencias';
 
-const COLOR_TIPO = { danger: MARCA.rojo, success: MARCA.verde, warning: MARCA.ambar, neutral: colorSistema.texto2 };
+const COLOR_TIPO = { danger: MARCA.rojo, success: MARCA.verde, warning: MARCA.ambar, get neutral() { return colorSistema.texto2; } };
 
 function Cifra({ rotulo, valor, color }) {
   return (

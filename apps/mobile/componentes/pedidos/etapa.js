@@ -7,8 +7,8 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 
 export const ETAPA = {
-  sin_iniciar: ['En cola', colorSistema.texto2], preparando: ['Preparando', MARCA.azulClaro], pausado: ['En pausa', MARCA.ambar],
-  preparado: ['Listo para salir', MARCA.azulClaro], transito: ['En camino', MARCA.azulClaro], contando: ['Por contar', MARCA.ambar], erp: ['Recibido', MARCA.verde],
+  get sin_iniciar() { return ['En cola', colorSistema.texto2]; }, get preparando() { return ['Preparando', MARCA.azulClaro]; }, pausado: ['En pausa', MARCA.ambar],
+  get preparado() { return ['Listo para salir', MARCA.azulClaro]; }, get transito() { return ['En camino', MARCA.azulClaro]; }, contando: ['Por contar', MARCA.ambar], erp: ['Recibido', MARCA.verde],
 };
 
 export const PASOS = [

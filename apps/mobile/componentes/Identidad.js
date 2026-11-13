@@ -21,7 +21,7 @@ import { MAYUSCULAS } from '../tema/mayusculas';
 
 const campo = {
   minHeight: 46, paddingHorizontal: 12, borderRadius: 12, fontSize: 16,
-  color: colorSistema.texto, backgroundColor: FONDO_CONTROL,
+  get color() { return colorSistema.texto; }, backgroundColor: FONDO_CONTROL,
 };
 
 export default function Identidad({ identidad, onIdentidad, titulo = 'Escanea el carné de quien recibe' }) {

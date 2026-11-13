@@ -24,7 +24,7 @@ import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const TONO = { warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde, card: colorSistema.texto2 };
+const TONO = { warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde, get card() { return colorSistema.texto2; } };
 
 function Ficha({ rotulo, persona, sala, vacio, cuando, apunte, tono = 'card', primero }) {
   const color = TONO[tono];

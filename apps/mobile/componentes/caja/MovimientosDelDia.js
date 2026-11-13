@@ -33,7 +33,7 @@ const CLASE = {
   entra: { icono: 'DollarSign', color: MARCA.verde },
   sale: { icono: 'ArrowLeftRight', color: MARCA.ambar },
   bolsa: { icono: 'Package', color: MARCA.ambar },
-  cobro: { icono: 'Wallet', color: MARCA.azulClaro },
+  get cobro() { return { icono: 'Wallet', color: MARCA.azulClaro }; },
 };
 
 function Firma({ persona, rotulo, cuando }) {

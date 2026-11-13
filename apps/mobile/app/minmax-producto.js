@@ -45,7 +45,7 @@ import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Pi
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
-import { BarraDeExistencia, COLOR_MAX, COLOR_MIN, Cobertura } from '../componentes/minmax/Barras';
+import { BarraDeExistencia, COLOR as COLOR_BARRAS, COLOR_MIN, Cobertura } from '../componentes/minmax/Barras';
 import { LotesPorVencer, UltimasCompras, UltimasVentas } from '../componentes/minmax/Detalle';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -53,7 +53,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 // de su estado.
 const COLOR_ALERTA = {
   out_of_stock: MARCA.rojo, below_min: MARCA.ambar, approaching: MARCA.amarillo, ok: MARCA.verde,
-  overstocked: MARCA.azulClaro, dead_stock: colorSistema.texto2, no_data: colorSistema.texto2,
+  get overstocked() { return MARCA.azulClaro; }, get dead_stock() { return colorSistema.texto2; }, get no_data() { return colorSistema.texto2; },
 };
 const COLUMNAS = 'abc_class, demand_variability, daily_velocity, velocity_30d, draft_abc_class, draft_status, draft_min, draft_max, min_units, max_units, manual_min, manual_max, calc_min, calc_max, is_hidden';
 
@@ -98,7 +98,7 @@ function Historial({ producto, sucursal }) {
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontVariant: ['tabular-nums'] }}>
         <Text style={{ color: COLOR_MIN, fontWeight: '800' }}>{formatQty(h.min_units ?? 0)}</Text>
         {'  ·  '}
-        <Text style={{ color: COLOR_MAX, fontWeight: '800' }}>{formatQty(h.max_units ?? 0)}</Text>
+        <Text style={{ color: COLOR_BARRAS.max, fontWeight: '800' }}>{formatQty(h.max_units ?? 0)}</Text>
       </Text>
       <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{`${Number(h.daily_velocity || 0).toFixed(1)}/día`}</Text>
       {h.abc_class ? <Pildora texto={`${h.abc_class}${h.demand_variability ?? ''}`} color={MARCA.violetaClaro} /> : null}
@@ -187,7 +187,7 @@ function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, on
                     <Campo multiline={false} value={min} onChangeText={(v) => setMin(v.replace(/\D/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 22, fontWeight: '800' }} />
                   </View>
                   <View style={{ flex: 1, gap: 4 }}>
-                    <Text style={{ color: COLOR_MAX, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>MAX</Text>
+                    <Text style={{ color: COLOR_BARRAS.max, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>MAX</Text>
                     <Campo multiline={false} value={max} onChangeText={(v) => setMax(v.replace(/\D/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 22, fontWeight: '800' }} />
                   </View>
                 </View>

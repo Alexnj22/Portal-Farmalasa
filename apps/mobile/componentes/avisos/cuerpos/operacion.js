@@ -29,7 +29,7 @@ import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 // ── Los tonos del portal (`tonos(isDark)`) en la paleta de la app ──────────
 const TONO = {
-  verde: MARCA.verde, naranja: MARCA.ambar, rojo: MARCA.rojo, azul: MARCA.azulClaro, gris: colorSistema.texto2,
+  verde: MARCA.verde, naranja: MARCA.ambar, rojo: MARCA.rojo, get azul() { return MARCA.azulClaro; }, get gris() { return colorSistema.texto2; },
 };
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];

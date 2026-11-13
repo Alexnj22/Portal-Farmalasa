@@ -20,7 +20,8 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
 const XYZ = [['X', 'estable'], ['Y', 'moderada'], ['Z', 'errática']];
-const ABC = [['A', MARCA.verde], ['B', MARCA.azulClaro], ['C', MARCA.ambar]];
+// Función: los colores se leen al dibujar (en Android siguen al sistema).
+const ABC = () => [['A', MARCA.verde], ['B', MARCA.azulClaro], ['C', MARCA.ambar]];
 
 export default function MatrizAbcXyz() {
   const { sala } = useLocalSearchParams();
@@ -51,7 +52,7 @@ export default function MatrizAbcXyz() {
                   </View>
                 ))}
               </View>
-              {ABC.map(([a, color]) => (
+              {ABC().map(([a, color]) => (
                 <View key={a} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                   <Text style={{ width: 36, color, fontSize: 18, fontWeight: '800', textAlign: 'center' }}>{a}</Text>
                   {XYZ.map(([x]) => {

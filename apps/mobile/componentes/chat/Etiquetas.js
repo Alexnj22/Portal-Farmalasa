@@ -36,8 +36,8 @@ const ANDROID = Platform.OS === 'android';
 // El color de cada variante del catálogo (el núcleo da la variante del portal:
 // `danger`, `warning`, `chart-N`), en los de la marca.
 const COLOR_DE_VARIANTE = {
-  danger: MARCA.rojo, warning: MARCA.ambar, 'chart-1': MARCA.azul, 'chart-3': '#981D97', 'chart-4': MARCA.verde,
-  'chart-6': MARCA.violeta, 'chart-8': MARCA.azulClaro, 'chart-9': '#0BA5EC',
+  danger: MARCA.rojo, warning: MARCA.ambar, get 'chart-1'() { return MARCA.azul; }, 'chart-3': '#981D97', 'chart-4': MARCA.verde,
+  'chart-6': MARCA.violeta, get 'chart-8'() { return MARCA.azulClaro; }, 'chart-9': '#0BA5EC',
 };
 const colorDe = (e) => COLOR_DE_VARIANTE[e.variant] ?? MARCA.azul;
 // Las etiquetas como objetos `{ clave, rotulo, variant }`, en el orden del catálogo.

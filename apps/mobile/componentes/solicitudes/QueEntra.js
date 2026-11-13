@@ -22,7 +22,7 @@ import Vidrio from '../Vidrio';
 import { ICONO } from './iconos';
 import IconoFijo from '../IconoFijo';
 
-const TONO = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
+const TONO = { danger: MARCA.rojo, warning: MARCA.ambar, get info() { return MARCA.azulClaro; } };
 const toque = () => Haptics.selectionAsync().catch(() => {});
 
 function Paso({ icono, onPress, deshabilitado, etiqueta }) {

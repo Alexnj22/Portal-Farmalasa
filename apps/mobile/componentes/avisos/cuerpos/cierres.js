@@ -196,13 +196,14 @@ function CuerpoDeCierreDeMeta({ d }) {
 
 // ── El cierre de mes de la empresa ───────────────────────────────────────────
 
-const MEDALLA = [MARCA.ambar, colorSistema.texto, colorSistema.texto2];
+// Función: los colores se leen al dibujar (cambian con el modo).
+const MEDALLA = () => [MARCA.ambar, colorSistema.texto, colorSistema.texto2];
 
 function FilaDelPodio({ v, i }) {
   const emp = usePersona(v.employeeId, v.nombre, null) ?? { name: v.nombre };
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Text style={{ width: 22, color: MEDALLA[i] ?? colorSistema.texto2, fontSize: 13, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{`${i + 1}º`}</Text>
+      <Text style={{ width: 22, color: MEDALLA()[i] ?? colorSistema.texto2, fontSize: 13, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{`${i + 1}º`}</Text>
       <Avatar empleado={emp} tamano={28} />
       <View style={{ flex: 1 }}>
         <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '800' }}>{shortEmployeeName(emp)}</Text>

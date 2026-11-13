@@ -21,7 +21,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 
-const COLOR_ABCD = { A: MARCA.verde, B: MARCA.azulClaro, C: MARCA.ambar, D: MARCA.rojo };
+const COLOR_ABCD = { A: MARCA.verde, get B() { return MARCA.azulClaro; }, C: MARCA.ambar, D: MARCA.rojo };
 const redondo = (v) => (v == null ? '—' : String(Math.round(v)));
 const colorDe = (v) => (v == null ? colorSistema.texto2 : colorDeVariante(nivelDePuntaje(v).severidad));
 // El rótulo de un bloque en el eje: corto, para que quepan todos.

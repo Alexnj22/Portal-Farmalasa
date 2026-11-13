@@ -39,7 +39,7 @@ import { colorDeVariante } from '../componentes/colorDeVariante';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { MAYUSCULAS } from '../tema/mayusculas';
 
-const COLOR_OPCION = { A: MARCA.verde, B: MARCA.azulClaro, C: MARCA.ambar, D: MARCA.rojo };
+const COLOR_OPCION = { A: MARCA.verde, get B() { return MARCA.azulClaro; }, C: MARCA.ambar, D: MARCA.rojo };
 
 function Barra({ pct, color }) {
   return (

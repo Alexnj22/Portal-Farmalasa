@@ -15,8 +15,8 @@ import IconoFijo from '../IconoFijo';
 
 // Las variantes del portal, en los colores de la app.
 export const COLOR = {
-  info: MARCA.azulClaro, success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, neutral: MARCA.gris,
-  'chart-1': MARCA.azul, 'chart-4': '#B7791F', 'chart-6': MARCA.violeta, 'chart-9': '#981D97',
+  get info() { return MARCA.azulClaro; }, success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, neutral: MARCA.gris,
+  get 'chart-1'() { return MARCA.azul; }, 'chart-4': '#B7791F', 'chart-6': MARCA.violeta, 'chart-9': '#981D97',
 };
 export const colorDe = (variant) => COLOR[variant] ?? COLOR.neutral;
 

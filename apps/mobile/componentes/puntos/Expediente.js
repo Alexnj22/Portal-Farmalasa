@@ -19,7 +19,7 @@ import { Seccion } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 
-const COLOR_TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro, neutral: MARCA.gris };
+const COLOR_TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, get info() { return MARCA.azulClaro; }, neutral: MARCA.gris };
 
 function Renglon({ titulo, detalle, cifra, pildora, primero }) {
   return (

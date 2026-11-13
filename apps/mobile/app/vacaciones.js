@@ -41,8 +41,8 @@ import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { MAYUSCULAS } from '../tema/mayusculas';
 
-const COLOR_PLAN = { DRAFT: colorSistema.texto2, PRE_APPROVED: MARCA.azulClaro, CHANGE_REQUESTED: MARCA.ambar, APPROVED: MARCA.verde,
-  PLANNED: MARCA.azulClaro, CONFIRMED: MARCA.verde, TAKEN: colorSistema.texto2, CANCELLED: MARCA.rojo };
+const COLOR_PLAN = { get DRAFT() { return colorSistema.texto2; }, get PRE_APPROVED() { return MARCA.azulClaro; }, CHANGE_REQUESTED: MARCA.ambar, APPROVED: MARCA.verde,
+  get PLANNED() { return MARCA.azulClaro; }, CONFIRMED: MARCA.verde, get TAKEN() { return colorSistema.texto2; }, CANCELLED: MARCA.rojo };
 const corta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
 
 export default function Vacaciones() {

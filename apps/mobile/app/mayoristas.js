@@ -38,7 +38,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { recordarMayorista } from '../componentes/mayoristas/elegido';
 import Avatar from '../componentes/Avatar';
 
-const COLOR_ESTADO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro, neutral: MARCA.gris };
+const COLOR_ESTADO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, get info() { return MARCA.azulClaro; }, neutral: MARCA.gris };
 const corta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
 
 const FilaCliente = memo(function FilaCliente({ f, tab, columnas }) {

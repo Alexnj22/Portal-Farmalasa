@@ -36,7 +36,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 
-const COLOR = { warning: MARCA.ambar, success: MARCA.verde, neutral: colorSistema.texto2 };
+const COLOR = { warning: MARCA.ambar, success: MARCA.verde, get neutral() { return colorSistema.texto2; } };
 const forma = (v) => FORMAS_DE_PAGO.find((f) => f.value === v)?.label ?? v ?? '—';
 
 export default function CuentasPorPagar() {

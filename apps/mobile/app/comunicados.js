@@ -41,7 +41,7 @@ import { MARCA } from '../componentes/inicio/marca';
 
 const PESTANAS = [{ id: 'UNREAD', label: 'Sin leer' }, { id: 'READ', label: 'Leídos' }];
 const corta = (d) => (d ? fechaTexto(d, { weekday: 'short', day: '2-digit', month: 'short' }) : null);
-const DESTINO_COLOR = { GLOBAL: MARCA.azulClaro, BRANCH: MARCA.verde, ROLE: MARCA.violetaClaro };
+const DESTINO_COLOR = { get GLOBAL() { return MARCA.azulClaro; }, BRANCH: MARCA.verde, ROLE: MARCA.violetaClaro };
 
 function DetalleDeSolicitud({ meta }) {
   if (!meta?.requestType) return null;

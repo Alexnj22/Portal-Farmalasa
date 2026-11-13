@@ -46,7 +46,7 @@ import { guardarProveedores, proveedorGuardado } from '../../componentes/compras
 import { fallo, listo } from '../../componentes/Progreso';
 
 const fecha = (d) => (d ? fechaTexto(d, { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
-const COLOR_ESTADO = { pendiente: MARCA.ambar, propuesta: MARCA.azulClaro, confirmada: MARCA.verde };
+const COLOR_ESTADO = { pendiente: MARCA.ambar, get propuesta() { return MARCA.azulClaro; }, confirmada: MARCA.verde };
 
 function Contacto({ icono, texto, onPress }) {
   return (

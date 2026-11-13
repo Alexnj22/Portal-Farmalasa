@@ -19,7 +19,7 @@ import { MARCA } from '../../inicio/marca';
 import { fallo, listo } from '../../Progreso';
 import { PETROLEO, confirmar } from './piezas';
 
-const COLOR = { reingresada: PETROLEO, devuelta_proveedor: MARCA.azulClaro, destruida: MARCA.rojo };
+const COLOR = { reingresada: PETROLEO, get devuelta_proveedor() { return MARCA.azulClaro; }, destruida: MARCA.rojo };
 
 export default function Cuarentena({ filas, puedeResolver, onCerrar, onCambio }) {
   const [nota, setNota] = useState({});

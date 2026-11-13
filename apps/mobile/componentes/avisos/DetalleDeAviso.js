@@ -42,7 +42,6 @@ import { MARCA } from '../inicio/marca';
 import { Advertencia, FONDO, Fichas, Pildora, Rotulo } from './Piezas';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const GRIS = colorSistema.texto2;
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const fmtDate = (iso) => (!iso ? '—' : fechaTexto(iso, { day: '2-digit', month: 'short' }));
 const cifra = (v) => (v != null && Number.isFinite(Number(v)) ? Number(v).toLocaleString('es-SV') : '—');
@@ -60,7 +59,7 @@ const Suelto = createContext(false);
 
 function Caja({ rotulo, color, children, tinte }) {
   const suelto = useContext(Suelto);
-  const rot = rotulo ? <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text> : null;
+  const rot = rotulo ? <Text style={{ color: color ?? colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text> : null;
   if (suelto) {
     return (
       <Vidrio radio={20} tinte={tinte ? `${tinte}1A` : undefined}>
@@ -87,7 +86,7 @@ function Mitad({ children }) {
 const Fuerte = ({ children, color, tamano = 14 }) => (
   <Text style={{ color: color ?? colorSistema.texto, fontSize: tamano, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{children}</Text>
 );
-const Tenue = ({ children }) => <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>{children}</Text>;
+const Tenue = ({ children }) => <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{children}</Text>;
 
 /** Una persona con su cara (la foto puede venir sin firmar: se firma acá). */
 function Persona({ persona, foto, nombre, vacio = 'Sin asignar', tamano = 28 }) {
@@ -195,7 +194,7 @@ function LineasMovimiento({ meta, signo }) {
               {motivoRechazo ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'No salió' : 'No entró'} — ${motivoRechazo}`}</Text> : null}
               {recortada && !motivoRechazo ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'Salieron' : 'Entraron'} ${actual} de las ${pedida} que se pidieron`}</Text> : null}
             </View>
-            <Pildora texto={motivoRechazo ? '—' : `${signo}${actual}`} color={signo === '+' ? MARCA.verde : GRIS} />
+            <Pildora texto={motivoRechazo ? '—' : `${signo}${actual}`} color={signo === '+' ? MARCA.verde : colorSistema.texto2} />
           </View>
         );
       })}
@@ -261,7 +260,7 @@ function ContextoMinMax({ meta, rechazada }) {
       )) : null}
       {lista.length > 1 ? (
         <Caja rotulo="Presentaciones">
-          <Fichas textos={lista.map((pr) => `${pr.tipo} ×${cifra(pr.factor)}`)} color={GRIS} />
+          <Fichas textos={lista.map((pr) => `${pr.tipo} ×${cifra(pr.factor)}`)} color={colorSistema.texto2} />
         </Caja>
       ) : null}
       {noAlcanza ? (
@@ -365,7 +364,7 @@ function LaVenta({ meta, empleados }) {
           const detalle = [it.presentacion, it.lote && `lote ${it.lote}`, vence && `vence ${vence}`].filter(Boolean).join(' · ');
           return (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 7, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-              <Text style={{ color: GRIS, fontSize: 12, fontWeight: '700', width: 18 }}>{i + 1}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', width: 18 }}>{i + 1}</Text>
               <View style={{ flex: 1, gap: 1 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '700' }}>{it.descripcion || (resta ? 'Ajuste sobre la venta' : 'Sin descripción')}</Text>
                 {detalle ? <Tenue>{detalle}</Tenue> : null}
@@ -379,7 +378,7 @@ function LaVenta({ meta, empleados }) {
         })}
         {venta ? (
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingTop: 8, marginTop: 2, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-            <Text style={{ flex: 1, color: GRIS, fontSize: 12, fontWeight: '600' }}>
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>
               {`Gravado ${formatMoney(venta.subtotal || 0)} · IVA ${formatMoney(venta.iva || 0)}${Number(venta.retencion || 0) > 0 ? ` · Retención ${formatMoney(venta.retencion)}` : ''}`}
             </Text>
             <Fuerte tamano={15}>{formatMoney(total || 0)}</Fuerte>
@@ -749,7 +748,7 @@ export default function DetalleDeAviso({ n, suelto = false }) {
                 <View style={{ flex: 1, gap: 1 }}>
                   <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '800' }}>{quien ? `${shortEmployeeName(quien)}${quien.role ? ` · ${quien.role}` : ''}` : `Nivel ${ap.level}`}</Text>
                   <Tenue>{fmtFechaHora(ap.approvedAt)}</Tenue>
-                  {ap.approverNote ? <Text style={{ color: GRIS, fontSize: 12, fontStyle: 'italic' }}>{`“${ap.approverNote}”`}</Text> : null}
+                  {ap.approverNote ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontStyle: 'italic' }}>{`“${ap.approverNote}”`}</Text> : null}
                 </View>
               </View>
             );

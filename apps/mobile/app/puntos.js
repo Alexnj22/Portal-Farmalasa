@@ -56,9 +56,9 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import Resumen, { COLOR_ACUMULADO, COLOR_CANJEADO } from '../componentes/puntos/Resumen';
+import Resumen, { COLOR_PUNTOS, COLOR_CANJEADO } from '../componentes/puntos/Resumen';
 
-const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
+const COLOR = { danger: MARCA.rojo, warning: MARCA.ambar, get info() { return MARCA.azulClaro; } };
 
 const abrirEscaneado = (c, modo) => router.push({
   pathname: '/puntos-cliente/[id]', params: { id: String(c.customer_id), nombre: c.nombre, como: modo },

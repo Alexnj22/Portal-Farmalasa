@@ -12,7 +12,7 @@ import Vidrio from '../Vidrio';
 import Subfiltro from '../Subfiltro';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-export const COLOR_DE_NIVEL = { critica: MARCA.rojo, pico: MARCA.ambar, normal: MARCA.azulClaro, muerta: 'rgba(127,127,127,0.45)' };
+export const COLOR_DE_NIVEL = { critica: MARCA.rojo, pico: MARCA.ambar, get normal() { return MARCA.azulClaro; }, muerta: 'rgba(127,127,127,0.45)' };
 const LEYENDA = [['critica', 'Crítica'], ['pico', 'Pico'], ['normal', 'Normal'], ['muerta', 'Baja']];
 const ALTO = 120;
 

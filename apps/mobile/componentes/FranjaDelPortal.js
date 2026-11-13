@@ -22,7 +22,7 @@ const APARIENCIA = {
   obra: { fondo: '#F2A93B', texto: '#2B1C02', icono: 'AlertTriangle' },
   aviso: { fondo: MARCA.ambar, texto: '#FFFFFF', icono: 'AlertTriangle' },
   problema: { fondo: MARCA.rojo, texto: '#FFFFFF', icono: 'AlertTriangle' },
-  info: { fondo: MARCA.azul, texto: '#FFFFFF', icono: 'Bell' },
+  get info() { return { fondo: MARCA.azul, texto: '#FFFFFF', icono: 'Bell' }; },
   bien: { fondo: MARCA.verde, texto: '#FFFFFF', icono: 'Bell' },
 };
 

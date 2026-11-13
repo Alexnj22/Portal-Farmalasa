@@ -3,7 +3,7 @@
 import { MARCA } from '../inicio/marca';
 
 export const COLOR_DE_ACENTO = {
-  magenta: '#B83DB7', verde: '#8EC30F', azul: MARCA.azulClaro,
+  magenta: '#B83DB7', verde: '#8EC30F', get azul() { return MARCA.azulClaro; },
   naranja: MARCA.ambar, rojo: MARCA.rojo, violeta: MARCA.violetaClaro,
 };
 export const colorDeAcento = (a) => COLOR_DE_ACENTO[a] ?? COLOR_DE_ACENTO.magenta;

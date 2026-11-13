@@ -37,7 +37,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando, cerrarProgreso } from '../../componentes/Progreso';
 import DetectarCodigo from '../../componentes/compras/DetectarCodigo';
 
-const TIPO = { orphan_pdf: ['PDF sin JSON', MARCA.azulClaro], invalidacion_pendiente: ['Invalidación pendiente', MARCA.violetaClaro], orphan_zip: ['ZIP sin abrir', MARCA.ambar] };
+const TIPO = { get orphan_pdf() { return ['PDF sin JSON', MARCA.azulClaro]; }, invalidacion_pendiente: ['Invalidación pendiente', MARCA.violetaClaro], orphan_zip: ['ZIP sin abrir', MARCA.ambar] };
 const CLASIFICAR = [{ id: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' }, { id: 'otro', label: 'Otro documento relacionado — sólo vincula' }];
 const isoHaceDias = (d) => { const x = new Date(); x.setDate(x.getDate() - d); return x.toISOString().slice(0, 10); };
 

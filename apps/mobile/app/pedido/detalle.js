@@ -43,7 +43,7 @@ import RevisionMinMax from '../../componentes/pedidos/RevisionMinMax';
 import { fetchDevolucionesDePedido } from '@nucleo/data/devoluciones';
 import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 
-const COLOR_ESTADO = { confirmado: MARCA.azulClaro, enviado: MARCA.violetaClaro, parcial: MARCA.ambar, completado: MARCA.verde, anulado: MARCA.rojo };
+const COLOR_ESTADO = { get confirmado() { return MARCA.azulClaro; }, enviado: MARCA.violetaClaro, parcial: MARCA.ambar, completado: MARCA.verde, anulado: MARCA.rojo };
 
 function Bloque({ titulo, children }) {
   return (

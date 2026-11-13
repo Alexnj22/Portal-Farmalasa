@@ -34,7 +34,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { Contadores, Encabezado, Marcas, PildoraDeCargo } from '../componentes/personas/Piezas';
 import { Vacio } from '../componentes/formulario/Piezas';
 
-const COLOR = { working: MARCA.verde, pause: MARCA.ambar, pending: colorSistema.texto2, finished: MARCA.azulClaro };
+const COLOR = { working: MARCA.verde, pause: MARCA.ambar, get pending() { return colorSistema.texto2; }, get finished() { return MARCA.azulClaro; } };
 const columnaDe = (estado) => COLUMNAS_DE_ASISTENCIA.find((c) => c.estados.includes(estado))?.id ?? 'pending';
 const PAUSA = new Set(['LUNCH', 'LACTATION', 'BUSINESS_OUT']);
 

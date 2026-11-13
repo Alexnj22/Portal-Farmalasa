@@ -61,9 +61,9 @@ import { cerrarProgreso, fallo, listo, trabajando } from '../componentes/Progres
 
 const COLOR_ALERTA = {
   out_of_stock: MARCA.rojo, below_min: MARCA.rojo, approaching: MARCA.ambar, ok: MARCA.verde,
-  overstocked: MARCA.violetaClaro, dead_stock: colorSistema.texto2, no_data: colorSistema.texto2,
+  overstocked: MARCA.violetaClaro, get dead_stock() { return colorSistema.texto2; }, get no_data() { return colorSistema.texto2; },
 };
-const COLOR_AJUSTE = { a_mano: colorSistema.texto2, en_conflicto: MARCA.ambar, volvio_a_moverse: MARCA.violetaClaro, respetado: MARCA.verde };
+const COLOR_AJUSTE = { get a_mano() { return colorSistema.texto2; }, en_conflicto: MARCA.ambar, volvio_a_moverse: MARCA.violetaClaro, respetado: MARCA.verde };
 const ETIQUETA_AJUSTE = Object.fromEntries(ESTADOS_DE_AJUSTE.map((a) => [a.key, a.label]));
 
 function Fila({ r, esBodega, onAbrir, onMantener }) {

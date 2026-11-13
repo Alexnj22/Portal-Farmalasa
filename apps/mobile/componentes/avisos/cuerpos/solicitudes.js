@@ -31,7 +31,6 @@ import { MAYUSCULAS } from '../../../tema/mayusculas';
 // Lo que se ve de los productos de una solicitud antes de «Ver los N productos».
 export const PRODUCTOS_VISIBLES = 3;
 
-const GRIS = colorSistema.texto2;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -61,7 +60,7 @@ const yMas = (n, sufijo = '') => `y ${n === 1 ? '1 producto más' : `${n} produc
 function Bloque({ rotulo, color, children }) {
   return (
     <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 9, gap: 3 }}>
-      <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text>
+      <Text style={{ color: color ?? colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text>
       {typeof children === 'string'
         ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{children}</Text>
         : children}
@@ -85,7 +84,7 @@ function FilaDeProducto({ nombre, primero, children, derecha }) {
 /** El pie de una lista: «y 3 productos más». */
 function PieDeLista({ texto }) {
   return (
-    <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600', paddingVertical: 7, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>{texto}</Text>
+    <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', paddingVertical: 7, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>{texto}</Text>
   );
 }
 
@@ -94,7 +93,7 @@ function CifraEnLinea({ valor, rotulo, color }) {
   return (
     <Text>
       <Text style={{ color: color ?? colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{valor}</Text>
-      <Text style={{ color: GRIS, fontSize: 13, fontWeight: '600' }}>{` ${rotulo}`}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{` ${rotulo}`}</Text>
     </Text>
   );
 }
@@ -114,16 +113,16 @@ function Barrita({ pct, color = MARCA.azulClaro, alto = 4 }) {
 // pone la tarjeta general, debajo.
 const TIPO_DE_SOLICITUD = {
   ANNULMENT_REQUEST: { color: MARCA.rojo, icono: 'Ban' },
-  PAYMENT_CHANGE_REQUEST: { color: MARCA.azulClaro, icono: 'CreditCard' },
-  VENDOR_CHANGE_REQUEST: { color: MARCA.azulClaro, icono: 'User' },
-  CLIENT_CHANGE_REQUEST: { color: MARCA.azulClaro, icono: 'Users' },
+  get PAYMENT_CHANGE_REQUEST() { return { color: MARCA.azulClaro, icono: 'CreditCard' }; },
+  get VENDOR_CHANGE_REQUEST() { return { color: MARCA.azulClaro, icono: 'User' }; },
+  get CLIENT_CHANGE_REQUEST() { return { color: MARCA.azulClaro, icono: 'Users' }; },
   CAJA_MOVIMIENTO_CHANGE: { color: MARCA.ambar, icono: 'Wallet' },
   CAJA_INGRESO_AUTORIZACION: { color: MARCA.ambar, icono: 'Wallet' },
   ABONO_CREDITO_CHANGE: { color: MARCA.ambar, icono: 'HandCoins' },
   ABONO_APROBACION: { color: MARCA.verde, icono: 'HandCoins' },
-  DIST_DESCUENTO: { color: MARCA.azulClaro, icono: 'Percent' },
-  INVENTORY_TRANSFER_REQUEST: { color: MARCA.azulClaro, icono: 'ArrowLeftRight' },
-  INVENTORY_TRANSFER_PUSH: { color: MARCA.azulClaro, icono: 'Package' },
+  get DIST_DESCUENTO() { return { color: MARCA.azulClaro, icono: 'Percent' }; },
+  get INVENTORY_TRANSFER_REQUEST() { return { color: MARCA.azulClaro, icono: 'ArrowLeftRight' }; },
+  get INVENTORY_TRANSFER_PUSH() { return { color: MARCA.azulClaro, icono: 'Package' }; },
   INVENTORY_LOAD_REQUEST: { color: MARCA.verde, icono: 'PackagePlus' },
   INVENTORY_DISCARD_REQUEST: { color: MARCA.rojo, icono: 'Trash2' },
 };
@@ -144,9 +143,9 @@ function ProductosDeTraslado({ productos, mas, sala, expandida }) {
             {p.existencia != null ? (
               // «Hay 52 en Salud 3» y no «Hay en Salud 3 52»: pegados, se leía «353».
               <Text style={{ fontSize: 13 }}>
-                <Text style={{ color: GRIS, fontWeight: '600' }}>Hay </Text>
+                <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}>Hay </Text>
                 <Text style={{ color: colorSistema.texto, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{unidades(p.existencia)}</Text>
-                {sala ? <Text style={{ color: GRIS, fontWeight: '600' }}>{` en ${sala}`}</Text> : null}
+                {sala ? <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}>{` en ${sala}`}</Text> : null}
               </Text>
             ) : null}
           </View>
@@ -225,7 +224,7 @@ const deRespuesta = (e) => RESPUESTA[e] ?? RESPUESTA.ENVIA;
 
 /** Cuánto sale de cada producto, en su color: entero verde, una parte naranja, nada rojo. */
 function pildoraDeRespuesta(d, p) {
-  if (d.estado === 'NO') return p.pedida != null ? <Pildora texto={`Pediste ${unidades(p.pedida)}`} color={GRIS} /> : null;
+  if (d.estado === 'NO') return p.pedida != null ? <Pildora texto={`Pediste ${unidades(p.pedida)}`} color={colorSistema.texto2} /> : null;
   const se = (x) => (x === 1 ? 'Se envía' : 'Se envían');
   if (p.enviada === 0) return <Pildora texto="No se envía" color={MARCA.rojo} />;
   if (p.enviada != null && p.pedida != null && p.enviada < p.pedida) {
@@ -287,7 +286,7 @@ function CuerpoDeRespuesta({ d }) {
             <FilaDeProducto key={`${p.nombre}-${i}`} nombre={p.nombre} primero={!i}>
               {p.motivo ? (
                 <Text style={{ fontSize: 12 }}>
-                  <Text style={{ color: GRIS, fontWeight: '800', textTransform: MAYUSCULAS }}>Por qué lo devuelve </Text>
+                  <Text style={{ color: colorSistema.texto2, fontWeight: '800', textTransform: MAYUSCULAS }}>Por qué lo devuelve </Text>
                   <Text style={{ color: colorSistema.texto, fontWeight: '600' }}>{enOracion(p.motivo)}</Text>
                 </Text>
               ) : null}
@@ -335,7 +334,7 @@ function CuerpoDeDecision({ d }) {
         <Bloque rotulo="Producto">
           <Text style={{ fontSize: 14 }}>
             <Text style={{ color: colorSistema.texto, fontWeight: '800' }}>{d.producto}</Text>
-            {d.sala ? <Text style={{ color: GRIS, fontWeight: '600' }}>{` · ${d.sala}`}</Text> : null}
+            {d.sala ? <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}>{` · ${d.sala}`}</Text> : null}
           </Text>
         </Bloque>
       ) : null}
@@ -358,7 +357,7 @@ function CuerpoDeDecision({ d }) {
 // que quedó, y quién movió el paso. Contestarla (las acciones) la pone la
 // tarjeta general.
 const DIFERENCIA = {
-  propuesta: { color: MARCA.azulClaro, persona: 'La propone', salida: 'Propone' },
+  get propuesta() { return { color: MARCA.azulClaro, persona: 'La propone', salida: 'Propone' }; },
   contrapropuesta: { color: MARCA.ambar, persona: 'La propone', salida: 'Bodega propone' },
   escalada: { color: MARCA.rojo, persona: 'La rechazó', salida: 'Se había propuesto' },
   acordada: { color: MARCA.verde, persona: 'La aceptó', salida: 'Quedó en' },
@@ -394,9 +393,9 @@ function CuerpoDeDiferencia({ d }) {
           <View style={{ gap: 4 }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800' }}>{d.salida}</Text>
-              {d.corto ? <Pildora texto={d.corto} color={GRIS} /> : null}
+              {d.corto ? <Pildora texto={d.corto} color={colorSistema.texto2} /> : null}
             </View>
-            {d.ayuda && d.estado !== 'confirmada' ? <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>{d.ayuda}</Text> : null}
+            {d.ayuda && d.estado !== 'confirmada' ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{d.ayuda}</Text> : null}
           </View>
         </Bloque>
       ) : null}
@@ -447,7 +446,7 @@ function CuerpoDeHacienda({ d }) {
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800' }}>{f.cliente ?? 'Sin nombre'}</Text>
-                  <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>{[f.sala, f.doc, fechaCorta(f.fecha)].filter(Boolean).join('   ')}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{[f.sala, f.doc, fechaCorta(f.fecha)].filter(Boolean).join('   ')}</Text>
                 </View>
                 {f.monto != null ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(f.monto)}</Text> : null}
               </View>
@@ -481,7 +480,7 @@ function ladoDePromo(d) {
   if (d.tipo === 'lote') return <Insignia icono="Package" color={MARCA.ambar} />;
   if (d.tipo === 'resumen') return <Insignia icono="Percent" color={MARCA.azulClaro} />;
   if (d.tipo === 'mes') return <Insignia icono="CalendarDays" color={MARCA.azulClaro} />;
-  return <Insignia icono="Percent" color={GRIS} />;
+  return <Insignia icono="Percent" color={colorSistema.texto2} />;
 }
 
 function CuerpoDePromo({ d }) {
@@ -499,10 +498,10 @@ function CuerpoDePromo({ d }) {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800' }}>{pr.nombre}</Text>
                   <Text style={{ fontSize: 12, fontWeight: '600' }}>
-                    {pr.productos != null ? <Text style={{ color: GRIS }}>{pr.productos === 1 ? '1 producto' : `${pr.productos} productos`}</Text> : null}
-                    {pr.productos != null && dias != null ? <Text style={{ color: GRIS }}>{'   '}</Text> : null}
+                    {pr.productos != null ? <Text style={{ color: colorSistema.texto2 }}>{pr.productos === 1 ? '1 producto' : `${pr.productos} productos`}</Text> : null}
+                    {pr.productos != null && dias != null ? <Text style={{ color: colorSistema.texto2 }}>{'   '}</Text> : null}
                     {dias != null ? (
-                      <Text style={{ color: dias <= 3 ? MARCA.ambar : GRIS }}>
+                      <Text style={{ color: dias <= 3 ? MARCA.ambar : colorSistema.texto2 }}>
                         {dias <= 0 ? 'termina hoy' : dias === 1 ? 'queda 1 día' : `quedan ${dias} días`}
                       </Text>
                     ) : null}
@@ -510,7 +509,7 @@ function CuerpoDePromo({ d }) {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{unidades(pr.vendido)}</Text>
-                  <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>vendidas</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>vendidas</Text>
                 </View>
               </View>
               {pr.salas.length > 0 ? (
@@ -518,8 +517,8 @@ function CuerpoDePromo({ d }) {
                   {pr.salas.map((sa) => (
                     <View key={sa.sala} style={{ width: '30%', minWidth: 80, flexGrow: 1, gap: 3 }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 4 }}>
-                        <Text style={{ flexShrink: 1, color: GRIS, fontSize: 12, fontWeight: '600' }}>{sa.sala}</Text>
-                        <Text style={{ color: sa.vendido === 0 ? GRIS : colorSistema.texto, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{unidades(sa.vendido)}</Text>
+                        <Text style={{ flexShrink: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{sa.sala}</Text>
+                        <Text style={{ color: sa.vendido === 0 ? colorSistema.texto2 : colorSistema.texto, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{unidades(sa.vendido)}</Text>
                       </View>
                       <Barrita pct={Math.round((sa.vendido / tope) * 100)} />
                     </View>
@@ -547,14 +546,14 @@ function CuerpoDePromo({ d }) {
         <Caja>
           <View style={{ paddingVertical: 8, gap: 2 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{d.producto}</Text>
-            {d.nombre ? <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>{d.nombre}</Text> : null}
+            {d.nombre ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{d.nombre}</Text> : null}
           </View>
         </Caja>
         {pct != null ? (
           <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 9, gap: 6 }}>
             <Text style={{ fontSize: 14 }}>
               <Text style={{ color, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{d.vendido ?? 0}</Text>
-              <Text style={{ color: GRIS, fontWeight: '600' }}>{` de ${d.asignado} vendidas${d.sala ? ` en ${d.sala}` : ''}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}>{` de ${d.asignado} vendidas${d.sala ? ` en ${d.sala}` : ''}`}</Text>
             </Text>
             <Barrita pct={pct} color={color} alto={6} />
           </View>
@@ -578,7 +577,7 @@ function CuerpoDePromo({ d }) {
             {d.salas.map((s, i) => (
               <View key={s.sala} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{s.sala}</Text>
-                {s.nivel ? <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>{`Nivel ${s.nivel}`}</Text> : null}
+                {s.nivel ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{`Nivel ${s.nivel}`}</Text> : null}
                 {s.costo != null ? <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(s.costo)}</Text> : null}
               </View>
             ))}
@@ -615,7 +614,7 @@ function CuerpoDeMetasPorAprobar({ d }) {
         {totalCambio ? (
           <Text style={{ fontSize: 12 }}>
             <Text style={{ color: colorSistema.texto, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{totalCambio}</Text>
-            <Text style={{ color: GRIS, fontWeight: '600' }}> contra el mes anterior</Text>
+            <Text style={{ color: colorSistema.texto2, fontWeight: '600' }}> contra el mes anterior</Text>
           </Text>
         ) : null}
       </View>
@@ -625,7 +624,7 @@ function CuerpoDeMetasPorAprobar({ d }) {
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{s.sala}</Text>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(s.meta)}</Text>
-              {cambio(s.meta, s.anterior) ? <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{cambio(s.meta, s.anterior)}</Text> : null}
+              {cambio(s.meta, s.anterior) ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{cambio(s.meta, s.anterior)}</Text> : null}
             </View>
           </View>
         ))}
@@ -667,10 +666,10 @@ function CuerpoDeProductosSinVenta({ d }) {
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{`${bodega ? '▣ ' : '→ '}${x.sala}`}</Text>
                 <Text style={{ fontSize: 12 }}>
                   <Text style={{ color: colorSistema.texto, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{x.productos}</Text>
-                  {x.costo != null ? <Text style={{ color: GRIS, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{`  ${formatMoney(x.costo)}`}</Text> : null}
+                  {x.costo != null ? <Text style={{ color: colorSistema.texto2, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{`  ${formatMoney(x.costo)}`}</Text> : null}
                 </Text>
               </View>
-              <Barrita pct={Math.round((x.productos / tope) * 100)} color={bodega ? GRIS : MARCA.azulClaro} />
+              <Barrita pct={Math.round((x.productos / tope) * 100)} color={bodega ? colorSistema.texto2 : MARCA.azulClaro} />
             </View>
           );
         })}
@@ -683,7 +682,7 @@ function CuerpoDeProductosSinVenta({ d }) {
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{e.producto}</Text>
                 {e.costo != null ? <Text style={{ color: colorSistema.texto, fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(e.costo)}</Text> : null}
               </View>
-              <Text style={{ color: GRIS, fontSize: 12, fontWeight: '600' }}>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>
                 {`${unidades(e.existencia)} ${Number(e.existencia) === 1 ? 'unidad' : 'unidades'}`}
                 {e.desde ? ` · desde el ${fechaCorta(e.desde)} (${porQueDesde(e)})` : ''}
                 {e.destino ? <Text style={{ color: MARCA.azulClaro }}>{` · → ${e.destino}`}</Text> : null}

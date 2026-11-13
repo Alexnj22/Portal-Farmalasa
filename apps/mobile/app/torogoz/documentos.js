@@ -45,7 +45,7 @@ import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const POR_PAGINA = 50;
-const COLOR_NIVEL = { ok: MARCA.verde, pendiente: MARCA.ambar, error: MARCA.rojo, info: colorSistema.texto2 };
+const COLOR_NIVEL = { ok: MARCA.verde, pendiente: MARCA.ambar, error: MARCA.rojo, get info() { return colorSistema.texto2; } };
 
 function Documento({ d }) {
   const f = filaDeHacienda(d, ESTADO_DOCUMENTO);

@@ -21,7 +21,7 @@ import { FONDO, Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
 
-const COLOR = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, 'chart-1': MARCA.azulClaro, 'chart-9': MARCA.violetaClaro, neutral: colorSistema.texto2 };
+const COLOR = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, get 'chart-1'() { return MARCA.azulClaro; }, 'chart-9': MARCA.violetaClaro, get neutral() { return colorSistema.texto2; } };
 
 export default function Historial({ item, simple = false, onCerrar }) {
   const fetchConteoItemHistory = useStaffStore((s) => s.fetchConteoItemHistory);

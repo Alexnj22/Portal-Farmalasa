@@ -11,7 +11,8 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 
 export const COLOR_MIN = MARCA.violetaClaro;
-export const COLOR_MAX = MARCA.azulClaro;
+// Getter: el color se lee al dibujar (en Android sigue al sistema).
+export const COLOR = { get max() { return MARCA.azulClaro; } };
 
 function Relleno({ pct, color }) {
   const ancho = useRef(new Animated.Value(0)).current;
@@ -36,7 +37,7 @@ export function BarraDeExistencia({ existencia, min, max, alto = 8 }) {
         <Relleno pct={pct(c)} color={color} />
       </View>
       {mn > 0 ? <View style={{ position: 'absolute', left: `${pct(mn)}%`, top: 0, bottom: 0, width: 2.5, borderRadius: 2, backgroundColor: COLOR_MIN }} /> : null}
-      {mx > 0 ? <View style={{ position: 'absolute', left: `${pct(mx)}%`, top: 0, bottom: 0, width: 2.5, borderRadius: 2, backgroundColor: COLOR_MAX }} /> : null}
+      {mx > 0 ? <View style={{ position: 'absolute', left: `${pct(mx)}%`, top: 0, bottom: 0, width: 2.5, borderRadius: 2, backgroundColor: COLOR.max }} /> : null}
     </View>
   );
 }

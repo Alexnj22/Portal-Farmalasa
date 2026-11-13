@@ -46,12 +46,12 @@ import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { MAYUSCULAS } from '../tema/mayusculas';
 
-const COLOR_ESTADO = { activa: MARCA.verde, cerrada: MARCA.azulClaro, borrador: colorSistema.texto2, archivada: colorSistema.texto2 };
+const COLOR_ESTADO = { activa: MARCA.verde, get cerrada() { return MARCA.azulClaro; }, get borrador() { return colorSistema.texto2; }, get archivada() { return colorSistema.texto2; } };
 const puntos = (s) => (s == null ? '—' : String(s));
 const colorDe = (s) => (s == null ? colorSistema.texto2 : colorDeVariante(nivelDePuntaje(s).severidad));
 
 const LETRAS = ['A', 'B', 'C', 'D'];
-const COLOR_LETRA = { A: MARCA.verde, B: MARCA.azulClaro, C: MARCA.ambar, D: MARCA.rojo };
+const COLOR_LETRA = { A: MARCA.verde, get B() { return MARCA.azulClaro; }, C: MARCA.ambar, D: MARCA.rojo };
 
 // Lo que contestó una persona, pregunta por pregunta (la fila abierta del portal).
 function RespuestasDePersona({ r, bloques, preguntas, inv }) {

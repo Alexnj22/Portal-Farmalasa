@@ -38,7 +38,7 @@ import VistaPapel from '../componentes/torogoz/fiscal/VistaPapel';
 import { MAYUSCULAS } from '../tema/mayusculas';
 
 const VACIO = [];
-const TONO = { neutro: colorSistema.texto2, bien: MARCA.verde, mal: MARCA.rojo };
+const TONO = { get neutro() { return colorSistema.texto2; }, bien: MARCA.verde, mal: MARCA.rojo };
 const desde = () => `App en ${Platform.OS === 'ios' ? 'iPhone o iPad' : 'Android'}`;
 
 function Enlace({ texto, color = MARCA.azulClaro, onPress, deshabilitado }) {

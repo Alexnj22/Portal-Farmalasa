@@ -29,7 +29,8 @@ import { MARCA } from '../inicio/marca';
 import Grafica from '../metas/Graficas';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-export const COLOR_ACUMULADO = MARCA.azulClaro;
+// Getter: el color se lee al dibujar (en Android sigue al sistema).
+export const COLOR_PUNTOS = { get acumulado() { return MARCA.azulClaro; } };
 export const COLOR_CANJEADO = MARCA.ambar;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const etiquetaDia = (iso) => { const [, m, d] = String(iso).slice(0, 10).split('-').map(Number); return `${d} ${MESES[m - 1]}`; };
@@ -132,7 +133,7 @@ export default function Resumen({ onIrA }) {
         <Titulo>Últimos 30 días</Titulo>
         <Grafica alto={170}
           datos={d.serie.map((x) => ({ etiqueta: etiquetaDia(x.fecha), titulo: fechaTexto(x.fecha, { weekday: 'long', day: 'numeric', month: 'long' }), acumulado: Number(x.acumulado) || 0, canjeado: Number(x.canjeado) || 0 }))}
-          series={[{ clave: 'acumulado', rotulo: 'Acumulados', color: COLOR_ACUMULADO, tipo: 'area' }, { clave: 'canjeado', rotulo: 'Canjeados', color: COLOR_CANJEADO, tipo: 'linea' }]}
+          series={[{ clave: 'acumulado', rotulo: 'Acumulados', color: COLOR_PUNTOS.acumulado, tipo: 'area' }, { clave: 'canjeado', rotulo: 'Canjeados', color: COLOR_CANJEADO, tipo: 'linea' }]}
           formato={(v) => ambos(v)} formatoEje={ejeDe(unidad)}
           resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Desliza el dedo sobre la gráfica para ver cada día.</Text>} />
       </Panel>
@@ -147,7 +148,7 @@ export default function Resumen({ onIrA }) {
               </Text>
             </View>
             <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.13)' }}>
-              <View style={{ height: 6, borderRadius: 3, width: `${((Number(s.acumulado) || 0) / topeSala) * 100}%`, backgroundColor: COLOR_ACUMULADO }} />
+              <View style={{ height: 6, borderRadius: 3, width: `${((Number(s.acumulado) || 0) / topeSala) * 100}%`, backgroundColor: COLOR_PUNTOS.acumulado }} />
             </View>
             <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.13)' }}>
               <View style={{ height: 6, borderRadius: 3, width: `${((Number(s.canjeado) || 0) / topeSala) * 100}%`, backgroundColor: COLOR_CANJEADO }} />
@@ -162,7 +163,7 @@ export default function Resumen({ onIrA }) {
             <Text style={{ width: 22, textAlign: 'right', color: colorSistema.texto2, fontSize: 13, fontWeight: '800' }}>{i + 1}</Text>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{c.nombre}</Text>
-              <View style={{ height: 5, borderRadius: 3, width: `${((Number(c.saldo) || 0) / topeTop) * 100}%`, backgroundColor: COLOR_ACUMULADO }} />
+              <View style={{ height: 5, borderRadius: 3, width: `${((Number(c.saldo) || 0) / topeTop) * 100}%`, backgroundColor: COLOR_PUNTOS.acumulado }} />
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{puntosTexto(c.saldo)}</Text>
@@ -177,7 +178,7 @@ export default function Resumen({ onIrA }) {
         {(t.vencimientos || []).length ? (
           <Grafica alto={160}
             datos={venc.map((v) => ({ etiqueta: etiquetaMes(v.clave), titulo: etiquetaMes(v.clave), puntos: v.puntos, clientes: v.clientes }))}
-            series={[{ clave: 'puntos', rotulo: 'Vencen', color: COLOR_ACUMULADO, tipo: 'barra' }]}
+            series={[{ clave: 'puntos', rotulo: 'Vencen', color: COLOR_PUNTOS.acumulado, tipo: 'barra' }]}
             formato={(v) => (Number(v) > 0 ? ambos(v) : 'Nada vence')} formatoEje={ejeDe(unidad)}
             detalle={(f) => (f.puntos > 0 ? `de ${puntosTexto(f.clientes)} clientes` : null)} />
         ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin puntos por vencer</Text>}

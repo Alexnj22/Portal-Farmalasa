@@ -16,7 +16,7 @@ import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
 
 const fecha = (d) => (d ? fechaTexto(d, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
-const COLOR_CLASIF = { Nuevo: MARCA.verde, Reentrada: MARCA.violetaClaro, Regular: MARCA.azulClaro };
+const COLOR_CLASIF = { Nuevo: MARCA.verde, Reentrada: MARCA.violetaClaro, get Regular() { return MARCA.azulClaro; } };
 
 function VerMas({ total, visibles, abierto, onCambiar, unidad }) {
   if (total <= visibles) return null;

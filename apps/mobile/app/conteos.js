@@ -44,7 +44,7 @@ function difTexto(r, c) {
   return `${Number(n) ? ` · ${n} ${prod ? 'producto(s) ' : ''}con diferencia` : ''}${Number(lote) ? ` · ${lote} cambio(s) de lote` : ''}`;
 }
 
-const COLOR = { BORRADOR: colorSistema.texto2, EN_PROGRESO: MARCA.ambar, FINALIZADO: MARCA.azulClaro, CERRADO: MARCA.verde };
+const COLOR = { get BORRADOR() { return colorSistema.texto2; }, EN_PROGRESO: MARCA.ambar, get FINALIZADO() { return MARCA.azulClaro; }, CERRADO: MARCA.verde };
 
 export default function Conteos() {
   const { user, getScope, hasPermission } = useAuth();

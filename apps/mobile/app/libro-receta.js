@@ -38,7 +38,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { compartirCsv } from '../componentes/fiscal/csv';
 import { fallo } from '../componentes/Progreso';
 
-const COLOR = { warning: MARCA.ambar, success: MARCA.verde, neutral: colorSistema.texto2, danger: MARCA.rojo };
+const COLOR = { warning: MARCA.ambar, success: MARCA.verde, get neutral() { return colorSistema.texto2; }, danger: MARCA.rojo };
 
 export default function LibroReceta() {
   const { sala: salaParam } = useLocalSearchParams();

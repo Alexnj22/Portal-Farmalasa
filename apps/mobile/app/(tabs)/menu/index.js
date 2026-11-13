@@ -40,7 +40,8 @@ const EN_LA_BARRA = new Set(['overview', 'emp_profile', 'emp_documents', 'reques
 
 // Un color por grupo, como los íconos de Ajustes: ayuda a encontrar la zona
 // del menú sin leer. Son los de la marca y los de gráficas del portal.
-const COLORES = [MARCA.azul, MARCA.verde, MARCA.ambar, MARCA.violeta, MARCA.rosa, '#0BA5EC', MARCA.rojo, '#8EC30F', '#981D97'];
+// Función: los colores se leen al dibujar (en Android siguen al sistema).
+const COLORES = () => [MARCA.azul, MARCA.verde, MARCA.ambar, MARCA.violeta, MARCA.rosa, '#0BA5EC', MARCA.rojo, '#8EC30F', '#981D97'];
 
 // El petróleo de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
 const COLOR_TOROGOZ = PETROLEO;
@@ -99,7 +100,7 @@ export default function Menu() {
 
   const todos = useMemo(() => {
     const lista = [];
-    bloques.forEach((b, i) => b.modulos.forEach((m) => { lista.push({ m, grupo: b.titulo, color: COLORES[i % COLORES.length] }); }));
+    bloques.forEach((b, i) => b.modulos.forEach((m) => { lista.push({ m, grupo: b.titulo, color: COLORES()[i % COLORES().length] }); }));
     if (torogoz) lista.push({ m: torogoz, grupo: 'Distribuidora', color: COLOR_TOROGOZ });
     return lista;
   }, [bloques, torogoz?.key]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -164,7 +165,7 @@ export default function Menu() {
           ) : null}
           <Vidrio radio={20}>
             <View style={{ paddingVertical: 2 }}>
-              {b.modulos.map((m, j) => <Renglon key={m.key} m={m} primero={!j} color={COLORES[i % COLORES.length]} onAbrir={alAbrir} />)}
+              {b.modulos.map((m, j) => <Renglon key={m.key} m={m} primero={!j} color={COLORES()[i % COLORES().length]} onAbrir={alAbrir} />)}
             </View>
           </Vidrio>
         </View>

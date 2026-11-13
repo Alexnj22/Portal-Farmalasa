@@ -33,7 +33,7 @@ import { ICONO } from './iconos';
 import IconoFijo from '../IconoFijo';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const TONO = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde };
+const TONO = { get info() { return MARCA.azulClaro; }, warning: MARCA.ambar, success: MARCA.verde };
 
 function Bloque({ rotulo, children, color }) {
   return (

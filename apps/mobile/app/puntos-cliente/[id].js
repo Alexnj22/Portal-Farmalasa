@@ -41,7 +41,7 @@ import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import Grafica, { BarraDePartes } from '../../componentes/metas/Graficas';
-import { COLOR_ACUMULADO, COLOR_CANJEADO, ejeDe, etiquetaMes } from '../../componentes/puntos/Resumen';
+import { COLOR_PUNTOS, COLOR_CANJEADO, ejeDe, etiquetaMes } from '../../componentes/puntos/Resumen';
 import CodigoDeAcceso from '../../componentes/puntos/CodigoDeAcceso';
 import AjustarPuntos from '../../componentes/puntos/AjustarPuntos';
 import UnirCuentas, { AvisoDeUniones, useUnionesDeCuenta } from '../../componentes/puntos/UnirCuentas';
@@ -52,7 +52,7 @@ import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
 const MINIMO = 100;
-const COLOR_PARTE = { saldo: COLOR_ACUMULADO, canjeado: COLOR_CANJEADO, vencido: MARCA.gris, anulado: MARCA.rojo };
+const COLOR_PARTE = { get saldo() { return COLOR_PUNTOS.acumulado; }, canjeado: COLOR_CANJEADO, vencido: MARCA.gris, anulado: MARCA.rojo };
 const NOMBRE_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const mesLargo = (clave) => { const [a, m] = clave.split('-').map(Number); return `${NOMBRE_MES[m - 1]} ${a}`; };
 
@@ -201,7 +201,7 @@ export default function PuntosCliente() {
                   <Subfiltro activa={unidad} onCambiar={setUnidad} opciones={[{ id: 'puntos', label: 'Puntos' }, { id: 'dolares', label: 'Dólares' }]} />
                   <Grafica alto={150} activo={indiceMes >= 0 ? indiceMes : null}
                     datos={meses.map((m) => ({ etiqueta: etiquetaMes(m.mes), titulo: mesLargo(m.mes), mes: m.mes, acumulado: m.acumulado, canjeado: m.canjeado, saldo: m.saldo }))}
-                    series={[{ clave: 'acumulado', rotulo: 'Acumulados', color: COLOR_ACUMULADO, tipo: 'barra' }, { clave: 'canjeado', rotulo: 'Canjeados', color: COLOR_CANJEADO, tipo: 'barra' }]}
+                    series={[{ clave: 'acumulado', rotulo: 'Acumulados', color: COLOR_PUNTOS.acumulado, tipo: 'barra' }, { clave: 'canjeado', rotulo: 'Canjeados', color: COLOR_CANJEADO, tipo: 'barra' }]}
                     formato={(v) => (unidad === 'dolares' ? dolaresDePuntos(v) : `${puntosTexto(v)} pts`)} formatoEje={ejeDe(unidad)}
                     detalle={(f) => `Quedaron ${puntosTexto(f.saldo)} pts`}
                     onTocar={(i) => { Haptics.selectionAsync().catch(() => {}); const m = meses[i]?.mes; setMesElegido((x) => (x === m ? null : m)); setMostrar(30); }}

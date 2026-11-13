@@ -11,7 +11,7 @@ import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const COLOR_DE_TONO = { success: MARCA.verde, warning: MARCA.ambar, info: MARCA.azulClaro };
+const COLOR_DE_TONO = { success: MARCA.verde, warning: MARCA.ambar, get info() { return MARCA.azulClaro; } };
 export const colorDeAvance = (pct) => COLOR_DE_TONO[tonoDeAvance(pct)];
 
 export function Icono({ nombre, color = colorSistema.texto2, tamano = 15 }) {

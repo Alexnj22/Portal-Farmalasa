@@ -47,7 +47,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
-const COLOR_URGENCIA = { high: MARCA.rojo, mid: MARCA.ambar, low: MARCA.verde, none: colorSistema.texto2 };
+const COLOR_URGENCIA = { high: MARCA.rojo, mid: MARCA.ambar, low: MARCA.verde, get none() { return colorSistema.texto2; } };
 const COLOR_ULTIMO = { bien: MARCA.verde, cuidado: MARCA.ambar, tarde: MARCA.rojo };
 const ORDENES_SIN_BODEGA = [
   { id: 'total_necesidad:desc', label: 'Lo que más se necesita' },

@@ -22,7 +22,7 @@ import { MAYUSCULAS } from '../tema/mayusculas';
 
 // Dónde abre cada familia. `null` = todavía en el portal.
 const NATIVA = { facturacion: '/nueva/facturas', traslado: '/pedir-traslado', inventario: '/nueva/ajuste', minmax: '/nueva/minmax' };
-const COLOR = { inventario: MARCA.ambar, facturacion: MARCA.rojo, minmax: MARCA.azulClaro, traslado: MARCA.verde };
+const COLOR = { inventario: MARCA.ambar, facturacion: MARCA.rojo, get minmax() { return MARCA.azulClaro; }, traslado: MARCA.verde };
 const PERSONALES = ['VACATION', 'PERMIT', 'DISABILITY', 'SHIFT_CHANGE', 'OVERTIME', 'ADVANCE', 'CERTIFICATE'];
 
 function Opcion({ icono, color, titulo, detalle, enPortal, onPress, primero }) {

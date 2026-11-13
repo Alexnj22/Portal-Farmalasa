@@ -42,7 +42,7 @@ import { usePorDecidir } from '../../componentes/porDecidir';
 import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
 
 const ESTADO = {
-  por_enviar: ['Sin salir', MARCA.ambar], error: ['No salió', MARCA.rojo], enviada: ['En camino', MARCA.azulClaro],
+  por_enviar: ['Sin salir', MARCA.ambar], error: ['No salió', MARCA.rojo], get enviada() { return ['En camino', MARCA.azulClaro]; },
   aceptada: ['Aceptado', MARCA.verde], devuelta: ['Devuelto', MARCA.rojo], devuelta_recibida: ['Devolución recibida', MARCA.gris],
   no_llego: ['No llegó', MARCA.rojo],
 };

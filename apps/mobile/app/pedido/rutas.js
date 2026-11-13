@@ -34,7 +34,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const COLOR_ESTADO = { warning: MARCA.ambar, 'chart-9': MARCA.azulClaro, success: MARCA.verde, danger: MARCA.rojo };
+const COLOR_ESTADO = { warning: MARCA.ambar, get 'chart-9'() { return MARCA.azulClaro; }, success: MARCA.verde, danger: MARCA.rojo };
 
 function TarjetaRuta({ ruta, yo }) {
   const paradas = ordenarParadas(ruta);

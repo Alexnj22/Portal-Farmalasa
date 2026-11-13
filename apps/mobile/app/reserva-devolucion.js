@@ -19,10 +19,10 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 const MODOS = {
-  pedir: {
+  get pedir() { return {
     titulo: 'Pedir en efectivo', rotulo: 'Por qué lo quiere en efectivo', boton: 'Pedir a administración', color: MARCA.azulClaro,
     pie: 'Administración lo autoriza. Cuando lo autorice, aparece en Reservas para entregarlo con un vale de caja.',
-  },
+  }; },
   autorizar: {
     titulo: 'Autorizar devolución', rotulo: 'Motivo de la devolución', boton: 'Autorizar', color: MARCA.verde,
     pie: 'La sala lo entrega con un vale de su caja. El saldo deja de poder usarse en caja.',

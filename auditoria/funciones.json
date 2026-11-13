@@ -2921,6 +2921,10 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "quitar_renglones_sin_salir": {
+   "area": "traslados",
+   "por": "código"
+  },
   "regencia_anular_visita": {
    "area": "bitacoras",
    "por": "código"

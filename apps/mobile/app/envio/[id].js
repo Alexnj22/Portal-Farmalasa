@@ -24,7 +24,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cancelarEnvio, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, explicarSinVence, MOTIVO_CANCELAR_SIN_VENCE, renglonSinVence, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion, TOPE_ENVIOS_CERRADOS } from '@nucleo/data/envios';
+import { cancelarEnvio, quitarRenglonesSinSalir, DECISIONES_ENVIO, decidirEnvio, despacharEnvio, explicarSinVence, MOTIVO_CANCELAR_SIN_VENCE, renglonSinVence, fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio, MOTIVOS_RECHAZO_ENVIO, recibirDevolucion, TOPE_ENVIOS_CERRADOS } from '@nucleo/data/envios';
 import { buscadorDePersonas, desdeHace } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -44,7 +44,7 @@ import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulari
 const ESTADO = {
   por_enviar: ['Sin salir', MARCA.ambar], error: ['No salió', MARCA.rojo], get enviada() { return ['En camino', MARCA.azulClaro]; },
   aceptada: ['Aceptado', MARCA.verde], devuelta: ['Devuelto', MARCA.rojo], devuelta_recibida: ['Devolución recibida', MARCA.gris],
-  no_llego: ['No llegó', MARCA.rojo],
+  no_llego: ['No llegó', MARCA.rojo], cancelada: ['Se quitó', MARCA.gris],
 };
 // Cerrado, lo mira cualquiera de las salas: el desenlace va en tercera persona
 // (el portal hace lo mismo en `HistorialTraslados`).
@@ -151,6 +151,15 @@ export default function Envio() {
     if (!r?.ok) { fallo('No se pudo cancelar', r?.error ?? 'Inténtalo de nuevo.'); return; }
     usePorDecidir.getState().quitar(`envio:${envio.id}`);
     listo('Envío cancelado', 'Ármalo de nuevo con el vencimiento que trae la caja.');
+    router.replace('/enviar-producto');
+  };
+  // Lo demás ya salió: no se cancela el envío, se le quita lo que quedó.
+  const quitarYArmar = async () => {
+    setOcupado(true); trabajando('Quitando…');
+    const r = await quitarRenglonesSinSalir(envio.id, MOTIVO_CANCELAR_SIN_VENCE);
+    setOcupado(false);
+    if (!r?.ok) { fallo('No se pudo quitar', r?.error ?? 'Inténtalo de nuevo.'); return; }
+    listo('Producto quitado', 'Ármalo de nuevo con el lote y el vencimiento que trae la caja.');
     router.replace('/enviar-producto');
   };
   // El ticket de la bolsa, el mismo papel del portal, a la caja de quien lo pide.
@@ -280,8 +289,8 @@ export default function Envio() {
               {sinVence.length > 0 && reenviables === 0 && !salioAlgo ? (
                 <BotonGrande texto="Cancelar y armar de nuevo" color={MARCA.azul} deshabilitado={ocupado} onPress={cancelarYArmar} />
               ) : null}
-              {sinVence.length > 0 && salioAlgo ? (
-                <BotonGrande texto="Armar un envío nuevo" color={MARCA.azul} deshabilitado={ocupado} onPress={() => router.push('/enviar-producto')} />
+              {sinVence.length > 0 && reenviables === 0 && salioAlgo ? (
+                <BotonGrande texto="Quitar y armar de nuevo" color={MARCA.azul} deshabilitado={ocupado} onPress={quitarYArmar} />
               ) : null}
               {!salioAlgo ? (
                 <>

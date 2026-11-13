@@ -26750,7 +26750,7 @@ export type Database = {
       }
       purchase_dte_documents: {
         Row: {
-          account_id: number | null
+          account_id: number
           codigo_generacion: string | null
           corrige_purchase_receipt_id: number | null
           created_at: string
@@ -26781,7 +26781,7 @@ export type Database = {
           total_iva: number | null
         }
         Insert: {
-          account_id?: number | null
+          account_id: number
           codigo_generacion?: string | null
           corrige_purchase_receipt_id?: number | null
           created_at?: string
@@ -26812,7 +26812,7 @@ export type Database = {
           total_iva?: number | null
         }
         Update: {
-          account_id?: number | null
+          account_id?: number
           codigo_generacion?: string | null
           corrige_purchase_receipt_id?: number | null
           created_at?: string
@@ -38676,6 +38676,10 @@ export type Database = {
         Returns: undefined
       }
       quitar_renglon: { Args: { p_renglon_id: number }; Returns: Json }
+      quitar_renglones_sin_salir: {
+        Args: { p_motivo: string; p_request_id: string }
+        Returns: number
+      }
       rango_de_empleado: { Args: { p_employee_id: string }; Returns: number }
       reabrir_corte_caja: {
         Args: { p_id: number; p_motivo: string }

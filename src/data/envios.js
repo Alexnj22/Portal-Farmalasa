@@ -416,16 +416,30 @@ export const noAparecioEnvio = (requestId, { faltante_id, responsable, responsab
  */
 export const renglonSinVence = (linea) =>
     linea?.estado === 'error'
-    && /no tiene vencimiento registrado|el vencimiento escrito \(/.test(String(linea?.error ?? ''));
+    && /no tiene vencimiento registrado|el vencimiento escrito \(|no tienen lote asignado/.test(String(linea?.error ?? ''));
 
 /** Lo que se le explica a la sala por ese renglón: qué pasó y qué hacer. */
 export const explicarSinVence = (linea) =>
-    `${linea?.descripcion ?? 'Este producto'} no puede salir: se armó sin la fecha de vencimiento `
-    + 'de la caja, y en tu sala no tiene una registrada. Volver a enviarlo no lo arregla. '
-    + 'Cancela este envío y ármalo de nuevo: ahora te pide el vencimiento que trae la caja.';
+    `${linea?.descripcion ?? 'Este producto'} no puede salir: se armó sin el lote o el vencimiento `
+    + 'de la caja, y en tu sala no tiene uno registrado. Volver a enviarlo no lo arregla: '
+    + 'hay que armarlo de nuevo, y ahora te pide el lote y el vencimiento que trae la caja.';
 
 /** El motivo que queda escrito al cancelar por eso. */
-export const MOTIVO_CANCELAR_SIN_VENCE = 'Se armó sin el vencimiento de la caja; se arma de nuevo.';
+export const MOTIVO_CANCELAR_SIN_VENCE = 'Se armó sin el lote o el vencimiento de la caja; se arma de nuevo.';
+
+/**
+ * Quitar del envío lo que no salió cuando lo demás SÍ salió (2026-11-13).
+ * `cancelarEnvio` sólo sirve si no salió nada; sin esto, un renglón sin lote
+ * en un envío que salió a medias no tenía cómo cerrarse y la tarjeta quedaba
+ * en «sin salir de tu sala» para siempre. El renglón pasa a `cancelada`.
+ */
+export async function quitarRenglonesSinSalir(requestId, motivo) {
+    const { data, error } = await supabase.rpc('quitar_renglones_sin_salir', {
+        p_request_id: requestId,
+        p_motivo: motivo,
+    });
+    return { ok: !error, quitados: data ?? 0, error: error?.message ?? null };
+}
 
 export async function cancelarEnvio(requestId, motivo) {
     const { error } = await supabase.rpc('cancelar_envio', {

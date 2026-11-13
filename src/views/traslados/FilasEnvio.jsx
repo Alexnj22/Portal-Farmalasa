@@ -10,7 +10,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import {
     DECISIONES_ENVIO, MOTIVOS_RECHAZO_ENVIO, MOTIVO_CANCELAR_SIN_VENCE, cancelarEnvio, decidirEnvio,
-    despacharEnvio, explicarSinVence, recibirDevolucion, renglonSinVence,
+    despacharEnvio, explicarSinVence, quitarRenglonesSinSalir, recibirDevolucion, renglonSinVence,
 } from '@nucleo/data/envios';
 import { imprimirTicketDeEnvio } from '@nucleo/utils/imprimirTraslado';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -43,13 +43,15 @@ const ESTADO_ROTULO = {
     // Salió del estante y nunca apareció en la caja. No es «se la quedaron» ni
     // «te la devuelven»: es el hueco que hasta hoy no tenía dónde decirse.
     no_llego: 'no llegó',
+    // Se quitó del envío antes de salir: lo demás ya había salido.
+    cancelada: 'se quitó',
 };
 
 /* El color de cada estado en su `Badge`. Habla del renglón, no del envío: en
  * una misma caja puede haber uno que se quedaron y otro que vuelve. */
 const ESTADO_VARIANTE = {
     por_enviar: 'neutral', error: 'danger', enviada: 'info', aceptada: 'success',
-    devuelta: 'danger', devuelta_recibida: 'neutral', no_llego: 'warning',
+    devuelta: 'danger', devuelta_recibida: 'neutral', no_llego: 'warning', cancelada: 'neutral',
 };
 
 /**
@@ -549,6 +551,18 @@ export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, a
         onArmarDeNuevo?.();
     };
 
+    /* Lo mismo cuando lo demás YA salió: no se puede cancelar el envío, pero
+     * sí quitarle lo que quedó en la sala, para que la tarjeta se cierre. */
+    const quitarYArmar = async () => {
+        setEnviando(true);
+        setError('');
+        const r = await quitarRenglonesSinSalir(envio.id, MOTIVO_CANCELAR_SIN_VENCE);
+        setEnviando(false);
+        if (!r.ok) { setError(r.error ?? 'No se pudo quitar.'); return; }
+        onHecho?.();
+        onArmarDeNuevo?.();
+    };
+
     return (
         <Tarjeta>
             <Cabecera envio={envio} tono="warning" ahora={ahora} />
@@ -563,7 +577,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, a
             {sinVence.map(l => (
                 <Notice key={l.posicion} variant="warning">
                     {explicarSinVence(l)}
-                    {!nadaSalio && ' Lo demás de este envío ya salió, así que éste va en un envío nuevo.'}
+                    {!nadaSalio && ' Lo demás de este envío ya salió: se quita de aquí y va en un envío nuevo.'}
                 </Notice>
             ))}
             {error && <Notice variant="danger">{error}</Notice>}
@@ -622,11 +636,11 @@ export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, a
                             {enviando ? 'Cancelando…' : 'Cancelar y armar de nuevo'}
                         </Button>
                     )}
-                    {sinVence.length > 0 && !nadaSalio && onArmarDeNuevo && (
-                        <Button size="sm" tone="success" soft icon={Send}
+                    {sinVence.length > 0 && reenviables === 0 && !nadaSalio && (
+                        <Button size="sm" tone="success" soft icon={Send} loading={enviando}
                             className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
-                            onClick={onArmarDeNuevo} disabled={enviando}>
-                            Armar un envío nuevo
+                            onClick={quitarYArmar} disabled={enviando}>
+                            {enviando ? 'Quitando…' : 'Quitar y armar de nuevo'}
                         </Button>
                     )}
                 </Pie>

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1528.2 — Envíos: el renglón sin lote en un envío que salió a medias se quita y se arma de nuevo
+
+- Un producto que no salió porque se armó **sin lote** («no tienen lote asignado») ya no ofrece «Volver a enviar»: reenviar manda el mismo renglón y choca igual. Se explica qué pasó.
+- Si lo demás del envío ya salió, el botón es **Quitar y armar de nuevo**: el renglón pasa a «se quitó» (estado nuevo `cancelada`, función `quitar_renglones_sin_salir`) y la tarjeta deja de quedar en «sin salir de tu sala» para siempre. Antes no había forma de cerrarla.
+- Un envío cancelado ya no aparece como pendiente: pasa al historial (`get_envios_vivos` / `get_envios_historial`).
+- Igual en la app del personal.
+
 ## v2.1528.1 — App: textos que mandaban al portal o a la computadora
 
 En la app del personal, tres avisos mandaban a hacer algo «desde el portal» o «desde la computadora» cuando ya se puede (o no hace falta):

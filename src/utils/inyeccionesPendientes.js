@@ -63,7 +63,9 @@ const facturaBitacora = (c) => String(c || '').replace(/^0+/, '');
 export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'LOTE', 'VENCE', 'PRECIO', 'COBRADA POR', 'VENDIO',
     'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN',
     // El libro de inyectables (2026-11-11): lo que completa quien aplicó.
-    'DOCUMENTO', 'MEDICO', 'JVPM', 'VIA', 'SITIO', 'OBSERVACIONES'];
+    'DOCUMENTO', 'MEDICO', 'JVPM', 'VIA', 'SITIO', 'OBSERVACIONES',
+    // Lo que sumó el 13-nov (CSSP, inyectorio).
+    'EDAD', 'REACCION', 'FIRMO'];
 
 /** Las vías de aplicación que acepta el libro (las valida `inyeccion_libro_guardar`). */
 export const VIAS_DE_APLICACION = Object.freeze([
@@ -73,8 +75,36 @@ export const VIAS_DE_APLICACION = Object.freeze([
     { value: 'ID', label: 'Intradérmica' },
 ]);
 
+/** Lo que se anota como reacción observada. «Sin reacción» también es una respuesta. */
+export const REACCIONES_DEL_LIBRO = Object.freeze([
+    { value: 'Sin reacción', label: 'Sin reacción' },
+    { value: 'Dolor o enrojecimiento en el sitio', label: 'Dolor o enrojecimiento en el sitio' },
+    { value: 'Mareo o desmayo', label: 'Mareo o desmayo' },
+    { value: 'Alergia (ronchas, picazón, hinchazón)', label: 'Alergia (ronchas, picazón, hinchazón)' },
+    { value: 'Otra reacción', label: 'Otra reacción' },
+]);
+
+/**
+ * Lo que le falta al renglón del libro para estar completo (2026-11-13): lo
+ * mismo que exige `inyeccion_libro_guardar`. Lote, vencimiento y dosis cuentan
+ * si los trae la aplicación (`fila`) o el formulario (`l`). Devuelve rótulos.
+ */
+export function faltaDelLibro(l, fila = {}) {
+    const vacio = (v) => v === null || v === undefined || String(v).trim() === '';
+    const falta = [];
+    if (vacio(l?.documento)) falta.push('documento');
+    if (vacio(l?.edad)) falta.push('edad');
+    if (vacio(l?.via)) falta.push('vía');
+    if (vacio(l?.sitio)) falta.push('sitio');
+    if (vacio(l?.reaccion)) falta.push('reacción');
+    if (vacio(fila?.lote) && vacio(l?.lote)) falta.push('lote');
+    if (vacio(fila?.vence) && vacio(l?.vence)) falta.push('vencimiento');
+    if (vacio(fila?.dosis_ml) && vacio(l?.dosis_ml)) falta.push('dosis');
+    return falta;
+}
+
 /** ¿Le falta al renglón lo que pide el libro? (sin datos no hay renglón completo). */
-export const libroIncompleto = (l) => !l || !l.documento || !l.via;
+export const libroIncompleto = (l, fila) => !l || faltaDelLibro(l, fila).length > 0;
 
 /** El vencimiento de la ampolla como viene impreso: «05/2027». */
 export const venceDeAmpolla = (v) => (v ? `${String(v).slice(5, 7)}/${String(v).slice(0, 4)}` : '');
@@ -88,6 +118,7 @@ export function filasCsvBitacora(filas, libro = {}) {
         f.aplicada_en || '',
         libro[f.id]?.documento || '', libro[f.id]?.medico || '', libro[f.id]?.junta_medico || '',
         libro[f.id]?.via || '', libro[f.id]?.sitio || '', libro[f.id]?.observaciones || '',
+        libro[f.id]?.edad ?? '', libro[f.id]?.reaccion || '', libro[f.id] ? (libro[f.id].firmado ? 'SI' : 'NO') : '',
     ]);
 }
 

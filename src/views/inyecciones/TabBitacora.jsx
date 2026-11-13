@@ -339,13 +339,13 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                         detalle={`${horaDe(f.aplicada_at)}${f.aplicada_en && f.aplicada_en !== f.sala ? ` · en ${f.aplicada_en}` : ''}`} />
                                     {libro[f.id] && (
                                         <p className="text-caption text-content-3">
-                                            {[libro[f.id].via, libro[f.id].sitio, libro[f.id].medico].filter(Boolean).join(' · ')}
+                                            {[libro[f.id].via, libro[f.id].sitio, libro[f.id].medico, libro[f.id].reaccion, libro[f.id].firmado ? 'firmó' : null].filter(Boolean).join(' · ')}
                                         </p>
                                     )}
-                                    {f.enfermeria !== 'NO' && libroIncompleto(libro[f.id]) && <Badge variant="warning" size="sm">Falta completar el libro</Badge>}
+                                    {f.enfermeria !== 'NO' && libroIncompleto(libro[f.id], f) && <Badge variant="warning" size="sm">Falta completar el libro</Badge>}
                                     {puedeCompletarLibro && f.enfermeria !== 'NO' && (
                                         <Button variant="ghost" size="xs" icon={BookOpen} onClick={() => setCompletando(f)}>
-                                            {libroIncompleto(libro[f.id]) ? 'Completar libro' : 'Datos del libro'}
+                                            {libroIncompleto(libro[f.id], f) ? 'Completar libro' : 'Datos del libro'}
                                         </Button>
                                     )}
                                 </div>

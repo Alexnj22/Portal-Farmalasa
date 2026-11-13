@@ -18181,10 +18181,14 @@ export type Database = {
         Row: {
           created_at: string
           documento: string | null
+          edad: number | null
+          firma_png: string | null
+          firmado_at: string | null
           inyeccion_id: number
           junta_medico: string | null
           medico: string | null
           observaciones: string | null
+          reaccion: string | null
           registrado_por: string | null
           sitio: string | null
           updated_at: string
@@ -18193,10 +18197,14 @@ export type Database = {
         Insert: {
           created_at?: string
           documento?: string | null
+          edad?: number | null
+          firma_png?: string | null
+          firmado_at?: string | null
           inyeccion_id: number
           junta_medico?: string | null
           medico?: string | null
           observaciones?: string | null
+          reaccion?: string | null
           registrado_por?: string | null
           sitio?: string | null
           updated_at?: string
@@ -18205,10 +18213,14 @@ export type Database = {
         Update: {
           created_at?: string
           documento?: string | null
+          edad?: number | null
+          firma_png?: string | null
+          firmado_at?: string | null
           inyeccion_id?: number
           junta_medico?: string | null
           medico?: string | null
           observaciones?: string | null
+          reaccion?: string | null
           registrado_por?: string | null
           sitio?: string | null
           updated_at?: string
@@ -32732,6 +32744,7 @@ export type Database = {
       backfill_daily_stats_chunk: { Args: never; Returns: string }
       backup_dump_table: { Args: { p_table: string }; Returns: Json }
       bitacora_ahora_sv: { Args: never; Returns: string }
+      bitacora_avisar_anomalias: { Args: never; Returns: Json }
       bitacora_estado_franja: {
         Args: {
           p_desde: string
@@ -37132,6 +37145,7 @@ export type Database = {
         Returns: undefined
       }
       inyeccion_libro_de: { Args: { p_ids: number[] }; Returns: Json }
+      inyeccion_libro_firma: { Args: { p_id: number }; Returns: string }
       inyeccion_libro_guardar: {
         Args: { p_datos: Json; p_inyeccion_id: number }
         Returns: Json

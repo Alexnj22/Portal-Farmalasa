@@ -6499,6 +6499,11 @@
    "area": "bitacoras",
    "por": "manual",
    "manual": true
+  },
+  "inyeccion_libro_firma": {
+   "area": "bitacoras",
+   "por": "manual",
+   "manual": true
   }
  }
 }

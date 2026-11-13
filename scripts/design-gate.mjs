@@ -504,6 +504,7 @@ const EXCEPTIONS = {
   // `carril-pildora`: excepción MEDIDA, ver la nota junto a ClientesView.
   'src/views/productos/TabCatalogo.jsx': ['carril-pildora'],
   'src/plataforma/imagenes.js': ['hex'],
+  'src/plataforma/firmaComoImagen.js': ['hex'],  // la firma guardada es tinta negra: papel, no pantalla
   // ── D2.2, cierre (2026-07-27) ──────────────────────────────────────────
   // Los 20 `zIndex:` que quedaban son tooltips y popovers PORTALEADOS: se
   // renderizan en document.body y calculan su top/left contra el elemento que

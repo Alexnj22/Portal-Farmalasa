@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1521.1 — Inyecciones: el libro completo que pide el CSSP, con la firma del paciente
+
+El libro de inyectables, completo (lo pide el CSSP por tener inyectorio). Migración `20261113162101`.
+
+- **Obligatorios** para completar el renglón: documento y **edad** del paciente, vía, **sitio**, **reacción observada** («Sin reacción» es una respuesta) y de la ampolla **lote, vencimiento y dosis**. Si la aplicación ya trae lote/vence/dosis se muestran; si no, el libro los pide y los guarda en la aplicación (sin pisar lo que ya había).
+- **Firma del paciente en pantalla** (`FirmaEnPantalla`), opcional: se guarda como tinta negra sobre transparente, y guardar de nuevo sin firmar no borra la firma anterior.
+- El subtítulo dice si el medicamento se compró aquí o lo trajo el paciente. El CSV suma EDAD, REACCION y FIRMO.
+- Sin formato oficial publicado: los campos salen de lo que llevan otras farmacias y de lo que exige la receta (consulta pendiente a la JVPE).
 ## v2.1521.0 — App Android: diálogos, indicador de carga y jalar para actualizar de Material 3
 
 App del personal, Android — primera parte de «TODO debe ser material nuevo en android» (usuario, 2026-11-13). Todo desde un solo lugar, sin tocar la lógica de las pantallas:

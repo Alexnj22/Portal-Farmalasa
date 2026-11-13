@@ -1,5 +1,5 @@
 // Promociones, NATIVO — `PromocionesView` con sus pestañas: Activas,
-// Descuentos, Excedentes, Pagos e Histórico. El seguimiento de cada promoción
+// Descuentos, Rebajas, Excedentes, Pagos e Histórico. El seguimiento de cada promoción
 // (lo vendido contra el lote, «quién vendió», la matriz de laboratorio) se abre
 // tocando su tarjeta (`promocion/[id]`).
 //
@@ -45,7 +45,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { Icono, TresDatos } from '../componentes/promociones/Piezas';
 import { alternarPromocion, duplicarConPreguntas } from '../componentes/promociones/acciones';
-import { DescargarCsv, Descuentos, Excedentes, Pagos } from '../componentes/promociones/Listas';
+import { DescargarCsv, Descuentos, Excedentes, Pagos, Rebajas } from '../componentes/promociones/Listas';
 import { guardarPromocion } from '../componentes/promociones/elegida';
 import AvisoDescuentoPorMover from '../componentes/promociones/AvisoDescuentoPorMover';
 
@@ -112,6 +112,8 @@ export default function Promociones() {
   const [fDescSala, setFDescSala] = useState('todas');
   const [fDescEstado, setFDescEstado] = useState('todos');
   const [alcanceTodo, setAlcanceTodo] = useState(false);
+  // Rebajas: la sala (el mes y qué se mira van dentro de la pestaña).
+  const [fRebSala, setFRebSala] = useState('todas');
   const [recargando, setRecargando] = useState(false);
   const [vuelta, setVuelta] = useState(0); // remonta las pestañas hijas al deslizar
 
@@ -148,6 +150,8 @@ export default function Promociones() {
       { id: 'destado', titulo: 'Estado', activa: fDescEstado, porDefecto: 'todos', onCambiar: setFDescEstado,
         opciones: [{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Descontando' }, { id: 'programados', label: 'Programados' }, { id: 'terminados', label: 'Terminados' }] },
     ] : []),
+    ...(pestana === 'rebajas' ? [{ id: 'rsala', titulo: 'Sucursal', activa: fRebSala, porDefecto: 'todas', onCambiar: setFRebSala,
+      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...SALAS_VENTA.map((id) => (branches || []).find((b) => Number(b.id) === id)).filter(Boolean).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(pestana === 'pagos' ? [{ id: 'pagos', titulo: 'Pagos', activa: fPagos, porDefecto: 'pendientes', onCambiar: setFPagos,
       opciones: [{ id: 'pendientes', label: 'Sólo con algo por pagar' }, { id: 'todas', label: 'Todas' }] }] : []),
   ];
@@ -188,7 +192,7 @@ export default function Promociones() {
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[
-          { id: 'activas', label: 'Activas' }, { id: 'descuentos', label: 'Descuentos' },
+          { id: 'activas', label: 'Activas' }, { id: 'descuentos', label: 'Descuentos' }, { id: 'rebajas', label: 'Rebajas' },
           { id: 'excedentes', label: 'Excedentes' }, { id: 'pagos', label: 'Pagos' }, { id: 'historico', label: 'Histórico' },
         ]} />
       </FijoArriba>
@@ -240,6 +244,7 @@ export default function Promociones() {
 
         {pestana === 'descuentos' ? <Descuentos key={`d${vuelta}`} busqueda={q} salaDe={salaDe}
           sala={fDescSala === 'todas' ? '' : fDescSala} estado={fDescEstado === 'todos' ? '' : fDescEstado} onAlcance={setAlcanceTodo} puedeEditar={puedeEditar} puedeApp={hasPermission('ofertas_clientes', 'can_edit')} /> : null}
+        {pestana === 'rebajas' ? <Rebajas key={`r${vuelta}`} busqueda={q} salaDe={salaDe} sala={fRebSala === 'todas' ? '' : fRebSala} /> : null}
         {pestana === 'excedentes' ? <Excedentes key={`e${vuelta}`} busqueda={q} puedeAprobar={puedeAprobar} /> : null}
         {pestana === 'pagos' ? <Pagos key={`p${vuelta}`} busqueda={q} soloPendientes={fPagos === 'pendientes'} /> : null}
 

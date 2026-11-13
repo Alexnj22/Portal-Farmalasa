@@ -509,6 +509,12 @@ export function momentoDelEnvio(envio, miBranch) {
      * que está pendiente, sea de quien sea. */
     const ajeno = !soyOrigen && !soyDestino;
 
+    /* La sala que recibe decide lo que YA salió aunque otro renglón del mismo
+     * envío haya fallado (2026-11-13). Antes un solo renglón en `error` volvía
+     * todo el envío «preparando» —momento que ninguna pantalla pinta—, y Salud 2
+     * no veía 12 productos despachados por Bodega porque uno salió sin lote.
+     * El servidor ya lo permitía: `decidir` salta lo que no está `enviada`. */
+    if (soyDestino && !soyOrigen && hay('enviada')) return 'por_decidir';
     if (hay('por_enviar') || hay('error')) return (soyOrigen || ajeno) ? 'por_despachar' : 'preparando';
     if (hay('devuelta'))                   return (soyOrigen || ajeno) ? 'por_recibir_devolucion' : 'devuelto';
     if (hay('enviada'))                    return soyOrigen ? 'en_camino' : 'por_decidir';

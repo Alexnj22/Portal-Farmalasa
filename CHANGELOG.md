@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.4 — Un envío con un producto fallido ya no se esconde a la sala que lo recibe
+
+- **Traslados → Envíos**: si un producto de un envío no pudo salir (por ejemplo, sin lote), la sala que recibe igual ve el envío en «Por decidir» y decide los que sí salieron. Antes el envío entero desaparecía de su pantalla: Salud 2 no veía 12 productos que Bodega ya le había mandado porque uno salió sin lote. Vale para la web, el tablero y la app.
+
 ## v2.1524.3 — App: solicitudes de datos completas y motivo de otros descuentos, nativos
 
 Sigue «dejemos TODO completamente nativo» en la app del personal (por aire, sin binario).

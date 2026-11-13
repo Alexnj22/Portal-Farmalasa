@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.3 — App: solicitudes de datos completas y motivo de otros descuentos, nativos
+
+Sigue «dejemos TODO completamente nativo» en la app del personal (por aire, sin binario).
+
+- **Solicitudes de datos**: la sección «Trámite» (prorrogar, prevenir, «La completó», archivar tras los diez días, negar con su causal del Art. 22) y el aviso a terceros (anotar a quién y «Ya se avisó»). En una solicitud resuelta que pide cancelación, «Anonimizar los datos del cliente» con lo que se borra, se resguarda y se conserva, la confirmación escrita, reintentar archivos y consultar el resguardo con motivo. Dos pestañas nuevas: **Incidentes** (registro del Art. 25 con el plazo de 72 horas y sus tres notificaciones, y cerrarlo) y **Anonimizados** (resguardo y reactivar datos).
+- **Arreglo**: guardar una solicitud prevenida la devolvía a «recibida» y se perdía la prevención; ahora conserva su estado, como en el portal.
+- **Nómina**: «Otros descuentos» exige su motivo (y el detalle si es «otro»), igual que en el portal.
+
 ## v2.1524.2 — App: tipo de persona y observación del cliente en Puntos
 
 App del personal — primera tanda de «dejemos TODO completamente nativo» (usuario, 2026-11-13). Puntos, en la cuenta de un cliente (`componentes/puntos/FichaDePuntos.js`, gemelos de `ClientePuntosModal.jsx`):

@@ -18,13 +18,13 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { calcPayrollEntry } from '@nucleo/store/slices/payrollSlice';
 import { fetchOvertimeBankRows } from '@nucleo/data/payroll';
-import { CAMPOS_EDITABLES_DE_PLANILLA, saldoDeBancoDeHoras } from '@nucleo/utils/planilla';
+import { CAMPOS_EDITABLES_DE_PLANILLA, CONCEPTOS_DE_OTROS_DESCUENTOS, problemaDeOtrosDescuentos, saldoDeBancoDeHoras } from '@nucleo/utils/planilla';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion, PantallaSinDato } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, PantallaSinDato } from '../../../componentes/formulario/Piezas';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo } from '../../../componentes/Progreso';
 
@@ -58,7 +58,8 @@ export default function EditarFila() {
   const inicial = () => {
     const b = loadDraft(clave);
     if (b) return b;
-    const f = { days_worked: String(fila?.days_worked ?? 15), viaticos_detail: fila?.viaticos_detail || '', motivo: '', dPay: '', dComp: '', nPay: '', nComp: '' };
+    const f = { days_worked: String(fila?.days_worked ?? 15), viaticos_detail: fila?.viaticos_detail || '', motivo: '',
+      other_discounts_concepto: fila?.other_discounts_concepto || '', other_discounts_detalle: fila?.other_discounts_detalle || '', dPay: '', dComp: '', nPay: '', nComp: '' };
     for (const c of CAMPOS_EDITABLES_DE_PLANILLA) f[c.key] = String(fila?.[c.key] ?? 0);
     return f;
   };
@@ -88,8 +89,15 @@ export default function EditarFila() {
   datos.extra_hours_nocturnal = r2(datos.extra_hours_nocturnal + nPay);
   datos.days_worked = num(f.days_worked);
   datos.viaticos_detail = f.viaticos_detail;
+  // «Otros descuentos» lleva su motivo (como el portal): sin él podía entrar
+  // un faltante de caja, que el Código de Trabajo no deja descontar. Guardar
+  // lo frena en el store y en la base; antes la app no lo mandaba y fallaba.
+  const conOtros = datos.other_discounts > 0;
+  datos.other_discounts_concepto = conOtros ? (f.other_discounts_concepto || null) : null;
+  datos.other_discounts_detalle = conOtros && f.other_discounts_concepto === 'otro' ? String(f.other_discounts_detalle ?? '').trim() : null;
+  const faltaMotivoDescuento = problemaDeOtrosDescuentos(datos.other_discounts, datos.other_discounts_concepto, datos.other_discounts_detalle);
   const vista = calcPayrollEntry(emp, datos.days_worked, datos);
-  const valido = f.motivo.trim().length >= 3 && datos.days_worked >= 0 && datos.days_worked <= 16 && !dError && !nError;
+  const valido = !faltaMotivoDescuento && f.motivo.trim().length >= 3 && datos.days_worked >= 0 && datos.days_worked <= 16 && !dError && !nError;
 
   const guardar = () => Alert.alert('Guardar la fila',
     `${shortEmployeeName(emp)}: el líquido pasa de ${formatMoney(fila.net_pay)} a ${formatMoney(vista.net_pay)}. El motivo queda en el historial de la fila.`, [
@@ -158,6 +166,17 @@ export default function EditarFila() {
               {g === 'ingresos' ? <Campo value={f.viaticos_detail} onChangeText={cambiar('viaticos_detail')} placeholder="Concepto de los viáticos" /> : null}
             </Seccion>
           ))}
+
+          {conOtros ? (
+            <Seccion titulo="Motivo de otros descuentos" pie="Un faltante de caja no se puede descontar por aquí.">
+              <Opciones opciones={CONCEPTOS_DE_OTROS_DESCUENTOS.map((c) => ({ id: c.value, label: c.label }))}
+                valor={f.other_discounts_concepto} onCambiar={cambiar('other_discounts_concepto')} />
+              {f.other_discounts_concepto === 'otro' ? (
+                <Campo value={f.other_discounts_detalle ?? ''} onChangeText={cambiar('other_discounts_detalle')} placeholder="De qué es. Ej.: cuota de uniforme acordada por escrito" />
+              ) : null}
+              {faltaMotivoDescuento ? <Aviso tono="cuidado" texto={faltaMotivoDescuento} /> : null}
+            </Seccion>
+          ) : null}
 
           <Seccion titulo="Así queda">
             <Dato primero rotulo="Subtotal A" valor={formatMoney(vista.subtotal_a)} />

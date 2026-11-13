@@ -35,6 +35,8 @@ import Hora from '../../componentes/personas/Hora';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../../componentes/pdf';
+import TramiteDeLey from '../../componentes/datos/TramiteDeLey';
+import AnonimizarCliente from '../../componentes/datos/Anonimizar';
 
 // El acuse es un instante; en pantalla se elige como día y hora de la sala.
 const diaDe = (iso) => (iso ? diaSV(iso) : hoySV());
@@ -194,7 +196,7 @@ function Cuerpo({ solicitud }) {
   return (
     <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
         {plazo ? <Aviso tono={plazo.vencida ? 'freno' : plazo.apremia ? 'cuidado' : 'nota'}
           texto={plazo.vencida ? `El plazo venció hace ${Math.abs(plazo.restan)} días hábiles.` : `Quedan ${plazo.restan} días hábiles (vence el ${fechaTexto(plazo.vence, { day: 'numeric', month: 'long' })}).`} /> : null}
         {resuelta ? <Aviso texto={`Resuelta el ${fechaTexto(solicitud.resuelta_at, { day: 'numeric', month: 'long', year: 'numeric' })}. Ya no se edita.`} /> : null}
@@ -287,7 +289,22 @@ function Cuerpo({ solicitud }) {
           )}
         </Seccion>
 
+        {!resuelta && solicitud.recibida_at ? (
+          <Seccion titulo="Trámite">
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Prórroga, prevención, negativa y aviso a terceros: cada paso queda registrado con lo que se le comunicó.</Text>
+            <TramiteDeLey solicitud={solicitud} onCambio={() => { clearDraft(borrador); router.back(); }} />
+          </Seccion>
+        ) : null}
+
+        {resuelta && !solicitud.negada && (solicitud.derechos ?? []).includes('cancelacion') ? (
+          <Seccion titulo="Anonimizar los datos del cliente">
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ejecuta la cancelación resuelta: la ficha queda sin datos que identifiquen a la persona, en el portal y en la caja. Lo que exige otra ley se conserva.</Text>
+            <AnonimizarCliente solicitud={solicitud} />
+          </Seccion>
+        ) : null}
+
         <Seccion titulo="Resolución">
+          {solicitud.negada && solicitud.motivo_negativa ? <Aviso tono="cuidado" texto={`Negada — ${solicitud.motivo_negativa}`} /> : null}
           <Rotulo texto="Qué se resolvió y con qué fundamento" />
           <Campo editable={!resuelta} value={f.resolucion} onChangeText={set('resolucion')} style={{ minHeight: 90 }} />
           <Rotulo texto="Notas internas (opcional)" />
@@ -299,7 +316,7 @@ function Cuerpo({ solicitud }) {
             <Text style={{ color: faltan.length ? colorSistema.texto2 : MARCA.verde, fontSize: 13, textAlign: 'center' }}>
               {faltan.length ? `Falta ${faltan.join(', ')}.` : 'Listo para registrar.'}
             </Text>
-            <BotonGrande texto={guardando ? 'Guardando…' : 'Registrar (en trámite)'} borde onPress={() => guardar('RECIBIDA')} deshabilitado={guardando || faltan.length > 0} />
+            <BotonGrande texto={guardando ? 'Guardando…' : 'Registrar (en trámite)'} borde onPress={() => guardar(solicitud.estado === 'PREVENIDA' ? 'PREVENIDA' : 'RECIBIDA')} deshabilitado={guardando || faltan.length > 0} />
             <BotonGrande texto="Dar por resuelta" color={MARCA.verde} onPress={() => guardar('RESUELTA')} deshabilitado={guardando || faltan.length > 0 || !f.resolucion?.trim()} />
           </>
         ) : null}

@@ -36,6 +36,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../componentes/pdf';
 import Tocable from '../componentes/Tocable';
+import { Anonimizados, Incidentes } from '../componentes/datos/Pestanas';
 
 const ROTULO = Object.fromEntries(DERECHOS.map((d) => [d.clave, d.rotulo]));
 // Un instante (timestamptz o Date): `fechaTexto` lo lleva al día de El Salvador.
@@ -111,11 +112,12 @@ export default function SolicitudesDatos() {
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'plus', etiqueta: 'Nueva solicitud', onPress: nueva }} />
       <FijoArriba>
-        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tramite', label: 'En trámite' }, { id: 'resueltas', label: 'Resueltas' }, { id: 'todas', label: 'Todas' }]} />
+        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tramite', label: 'En trámite' }, { id: 'resueltas', label: 'Resueltas' }, { id: 'todas', label: 'Todas' }, { id: 'incidentes', label: 'Incidentes' }, { id: 'anonimizados', label: 'Anonimizados' }]} />
       </FijoArriba>
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {pestana === 'incidentes' ? <Incidentes /> : pestana === 'anonimizados' ? <Anonimizados /> : (<>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vencidas || apremian ? (
@@ -166,6 +168,7 @@ export default function SolicitudesDatos() {
           );
         })}
         {filas && !visibles.length ? <Vacio>{texto.trim() ? 'Sin coincidencias' : 'Sin solicitudes aquí'}</Vacio> : null}
+        </>)}
       </ScrollView>
     </>
   );

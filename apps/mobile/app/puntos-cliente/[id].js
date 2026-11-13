@@ -47,6 +47,7 @@ import AjustarPuntos from '../../componentes/puntos/AjustarPuntos';
 import UnirCuentas, { AvisoDeUniones, useUnionesDeCuenta } from '../../componentes/puntos/UnirCuentas';
 import VentaDelAviso from '../../componentes/puntos/VentaDelAviso';
 import Expediente from '../../componentes/puntos/Expediente';
+import { ObservacionDelCliente, TipoDePersona } from '../../componentes/puntos/FichaDePuntos';
 import { anotar } from '@nucleo/data/audit';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
@@ -182,6 +183,13 @@ export default function PuntosCliente() {
               </View>
             </Vidrio>
             <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
+            {d?.cliente?.id != null ? (
+              <>
+                <ObservacionDelCliente customerId={d.cliente.id} nombre={d.cliente.nombre || ''} salas={d.salas}
+                  puedeCerrar={hasPermission('puntos_ajustar', 'can_view')} version={d} onHecho={cargar} />
+                <TipoDePersona customerId={d.cliente.id} nombre={d.cliente.nombre || ''} puedeCambiar={hasPermission('puntos_ajustar', 'can_view')} />
+              </>
+            ) : null}
             {aviso ? <VentaDelAviso aviso={aviso} /> : null}
             {errorExp ? <Aviso tono="freno" texto={errorExp} /> : null}
             {como && !exp && !errorExp ? <Indicador /> : null}

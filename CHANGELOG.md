@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.2 — App: tipo de persona y observación del cliente en Puntos
+
+App del personal — primera tanda de «dejemos TODO completamente nativo» (usuario, 2026-11-13). Puntos, en la cuenta de un cliente (`componentes/puntos/FichaDePuntos.js`, gemelos de `ClientePuntosModal.jsx`):
+
+- **Tipo de persona** (Reglamento v2, cláusula 2.2: desde el 15 de noviembre sólo la persona natural acumula): el aviso de «falta decidir» para los nombres de negocio y los dos botones para decidirlo, con la misma RPC (`cliente_tipo_persona_guardar`).
+- **En observación** (cláusula 8.2): las compras anuladas después de canjear, y «Cerrar observación» con la nota de qué se revisó (`puntos_observacion_cerrar`).
+- Los decide quien puede ajustar puntos (`puntos_ajustar`), igual que el portal. Botones propios y no el segmentado de SwiftUI, que dentro de una lista que se desplaza no sigue a su vista en iOS.
+
 ## v2.1524.1 — App: la burbuja del chat ya no asoma y se mueve fluida; Mi perfil y Notificaciones
 
 App del personal (usuario, 2026-11-13: «de un solo corriges este error de la burbuja del chat. y mejora la fluidez de cómo se mueve la burbuja, se siente trabada»):

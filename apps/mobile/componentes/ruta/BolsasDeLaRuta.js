@@ -14,7 +14,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { entregarBolsa, fetchBolsasDeRuta, recogerBolsa, soltarBolsa } from '@nucleo/data/rutaBolsas';
+import { entregarBolsa, entregarBolsaConCarne, fetchBolsasDeRuta, recogerBolsa, soltarBolsa } from '@nucleo/data/rutaBolsas';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { bolsasEncima, minutosDeDesvio, ordenarSugeridas, rotuloDeSugerida } from '@nucleo/utils/bolsasDeRuta';
 import { hora12 } from '@nucleo/utils/hora';
 import { colorSistema } from '../Formulario';
@@ -56,13 +57,17 @@ function Accion({ texto, color, onPress, deshabilitado }) {
  * @param puedeOperar el conductor, o quien gestiona rutas
  * @param posicion    `() => { lat, lng } | null` — la última del GPS
  * @param onEncima    avisa cuáles lleva encima (para «Entregué» y «Volver a base»)
+ * @param firmaExigida la firma de la sala es obligatoria (`security_config`)
  */
-export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, posicion, onEncima }) {
+export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, posicion, onEncima, firmaExigida = false }) {
   const [datos, setDatos] = useState({ llevas: [], sugeridas: [] });
   const [error, setError] = useState('');
   const [escaneando, setEscaneando] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+  // El paquete suelto cuyo carné de quien recibe se está escaneando.
+  const [firmando, setFirmando] = useState(null);
+  const [avisoFirma, setAvisoFirma] = useState(null);
   const activa = ruta?.status === 'pendiente' || ruta?.status === 'en_ruta';
 
   const cargar = useCallback(async () => {
@@ -104,6 +109,36 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
     } },
   ]);
 
+  // Paquete suelto (su sala no es parada): «Entregué» ofrece la firma con
+  // carné de alguien de la sala destino, igual que la parada.
+  const entregarSuelto = (b) => Alert.alert(`Entregar en ${b.destino}`,
+    'Queda que lo dejaste ahí, con la hora y tu ubicación. La sala lo recibe después en el portal.'
+      + (firmaExigida ? '\n\nPide el carné a quien recibe: sin su firma no se puede entregar.' : '\n\nSi puedes, pide el carné a quien recibe para que quede su firma.'), [
+      { text: 'Cancelar', style: 'cancel' },
+      ...(firmaExigida ? [] : [{ text: 'Entregué sin firma', onPress: async () => {
+        setOcupado(true);
+        try {
+          const r = await entregarBolsa(b, posicion?.());
+          if (!r?.ok) throw new Error(r?.error ?? 'No se pudo.');
+          listo('Paquete entregado');
+          await cargar();
+        } catch (e) { fallo('No se pudo entregar', e?.message); }
+        finally { setOcupado(false); }
+      } }]),
+      { text: 'Firma con carné', onPress: () => { setAvisoFirma(null); setFirmando(b); } },
+    ]);
+  const alLeerCarne = async (codigo) => {
+    const b = firmando;
+    if (!b) return true;
+    const r = await entregarBolsaConCarne(b, codigo, posicion?.());
+    if (!r?.ok) { setAvisoFirma(r?.error ?? 'No se pudo confirmar el carné.'); return false; }
+    setFirmando(null);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    listo('Paquete entregado', `Firmó ${shortEmployeeName(r.quien)}`);
+    await cargar();
+    return true;
+  };
+
   if (!activa && !datos.llevas.length) return null;
 
   return (
@@ -121,12 +156,11 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
             titulo={`${b.origen ?? '¿?'} → ${b.destino ?? '¿?'}`}
             detalle={[b.codigo ? `Ticket ${b.codigo}` : null, `recogido ${hora12(b.recogida_at)}`,
               b.entregada_at ? `entregado ${hora12(b.entregada_at)}` : null].filter(Boolean).join(' · ')}
-            etiqueta={b.entregada_at ? 'Entregado' : b.en_ruta ? null : 'Su sala no es parada de esta ruta'}
+            etiqueta={b.entregada_at ? (b.recibio_firma_at ? 'Entregado · firmó la sala' : 'Entregado') : b.en_ruta ? null : 'Su sala no es parada de esta ruta'}
             tonoEtiqueta={b.entregada_at ? MARCA.verde : MARCA.ambar}
             acciones={!b.entregada_at && puedeOperar && activa ? [
               !b.en_ruta ? <Accion key="e" texto="Entregué" color={MARCA.verde} deshabilitado={ocupado}
-                onPress={() => hacer(`Entregar en ${b.destino}`, 'Queda que lo dejaste ahí, con la hora y tu ubicación. La sala lo recibe después en el portal.',
-                  'Entregué', () => entregarBolsa(b, posicion?.()), 'Paquete entregado')} /> : null,
+                onPress={() => entregarSuelto(b)} /> : null,
               <Accion key="s" texto="Soltar" color={MARCA.rojo} deshabilitado={ocupado}
                 onPress={() => hacer('Soltar el paquete', 'Úsalo si lo recogiste por error o lo dejaste donde estaba. Queda anotado que lo tuviste.',
                   'Soltar', () => soltarBolsa(b), 'Paquete soltado')} />,
@@ -152,6 +186,10 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
         </Seccion>
       ) : null}
 
+      <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.destino ?? 'la sala'}`}
+        ayuda="Apunta al código del carné de quien recibe" onCodigo={alLeerCarne}
+        onCerrar={() => { setFirmando(null); setAvisoFirma(null); }}
+        pie={avisoFirma ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoFirma}</Text> : null} />
       <Escaner visible={escaneando} titulo="Recoger un paquete" ayuda="Apunta al código del ticket pegado al paquete"
         onCodigo={escanear} onCerrar={() => setEscaneando(false)}
         pie={aviso ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{aviso.texto}</Text> : null} />

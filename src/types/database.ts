@@ -39591,6 +39591,10 @@ export type Database = {
         Args: { p_id: string; p_lat?: number; p_lng?: number }
         Returns: Json
       }
+      ruta_entregar_bolsa_con_carne: {
+        Args: { p_id: string; p_lat?: number; p_lng?: number; p_valor: string }
+        Returns: Json
+      }
       ruta_firma_sala_carne: {
         Args: { p_stop_id: string; p_valor: string }
         Returns: Json

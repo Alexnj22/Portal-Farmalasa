@@ -102,3 +102,11 @@ export async function firmarParadaConCarne(parada, codigo) {
     if (data?.ok && !data.ya) anotar('RUTA_FIRMA_SALA', parada.ruta_id ?? null, { parada: parada.id, sucursal_id: parada.erp_sucursal_id, quien: data.quien, paquetes: data.paquetes, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
 }
+
+/** Entregar un paquete suelto con la firma (carné) de alguien de su sala destino. Nunca lanza. */
+export async function entregarBolsaConCarne(bolsa, codigo, pos = null) {
+    const { data, error } = await supabase.rpc('ruta_entregar_bolsa_con_carne', { p_id: bolsa.id, p_valor: String(codigo ?? '').trim(), ...posicion(pos) });
+    if (error) return { ok: false, error: 'No se pudo confirmar el carné.' };
+    if (data?.ok) anotar('RUTA_BOLSA_ENTREGADA', bolsa.request_id, { codigo: bolsa.codigo, destino: bolsa.destino, firma: data.quien, desde: 'app' });
+    return data ?? { ok: false, error: 'Sin respuesta.' };
+}

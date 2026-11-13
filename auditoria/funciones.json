@@ -6469,6 +6469,31 @@
    "area": "traslados",
    "por": "manual",
    "manual": true
+  },
+  "auth_yo": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
+  "auth_yo_olvidar": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
+  "app_cliente_codigo_intento": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "app_tratamiento_buscar": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_entregar_bolsa_con_carne": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   }
  }
 }

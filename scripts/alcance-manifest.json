@@ -621,7 +621,9 @@
       "guarda": "alcance"
     },
     "cumplimiento_guardar": {
-      "guarda": "alcance"
+      "guarda": "alcance",
+      "delega": "cumplimiento_puede_escribir",
+      "motivo": "Revisado 2026-11-13: compara la sala llamando a `cumplimiento_puede_escribir(p_tipo, p_branch_id)` (alcance ALL o la sala propia) antes de insertar o editar, y al editar exige que el registro sea de esa misma sala."
     },
     "cumplimiento_lista": {
       "guarda": "alcance"
@@ -1007,6 +1009,13 @@
       "guarda": "alcance",
       "delega": "_sala_que_reporta",
       "motivo": "La sala que reporta sale de `_sala_que_reporta`: la del empleado, o la que pide si puede obrar por ella (`puede_entregar_de`). Devuelve sólo nombres de salas de un paquete en camino."
+    },
+    "inyeccion_al_alcance": {
+      "guarda": "alcance"
+    },
+    "elegir_sala_activa": {
+      "guarda": "sin-sala",
+      "motivo": "Revisado 2026-11-13: sólo cambia la sala ACTIVA de quien llama, y únicamente a una de las que tiene asignadas en `employee_branches` (si no, SALA_NO_CUBIERTA). No lee ni escribe datos de ninguna sala."
     }
   },
   "buckets_abiertos": {

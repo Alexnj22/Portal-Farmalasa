@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1520.0 — Traslados: la firma con carné también en el paquete suelto
+
+- **Firma con carné en el paquete suelto** (app, ruta de reparto): el paquete que va a una sala que no es parada de la ruta ahora ofrece, al tocar «Entregué», «Firma con carné» (alguien de la sala DESTINO, nunca el conductor) o «Entregué sin firma». Nueva `ruta_entregar_bolsa_con_carne`; el paquete muestra «Entregado · firmó la sala». Con `security_config('ruta_firma_sala')` en `exigir`, `ruta_entregar_bolsa` sin firma también se niega, igual que la parada. Migraciones `20261113144048` y `20261113144151`. Probado en el entorno de pruebas: carné ajeno rechazado, carné correcto entrega y firma, sin firma bloqueado con `exigir` y permitido con `observar`.
+- **Revisión del alcance por sucursal**: `cumplimiento_guardar`, `inyeccion_al_alcance` y `elegir_sala_activa` revisadas a mano y declaradas (todas comparan la sala; ninguna era un hueco). Cuatro funciones sin área (`auth_yo`, `auth_yo_olvidar` y dos de la app de clientes) asignadas. `gate:alcance` y `gate:auditoria` en verde.
+
 ## v2.1519.0 — Traslados: «paquete» en vez de «bolsa», y la sala firma con carné lo que le deja la ruta
 
 Traslados, punto 6 parte 2 y un cambio de nombre pedido por el usuario.

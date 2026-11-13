@@ -394,7 +394,7 @@ export default function RutaDeReparto() {
 
             {!deSala ? (
               <BolsasDeLaRuta ruta={ruta} paradas={paradas} coords={coords} puedeOperar={conductor || gestiona}
-                posicion={() => ultima.current} onEncima={setEncima} />
+                posicion={() => ultima.current} onEncima={setEncima} firmaExigida={firmaExigida} />
             ) : null}
             <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.suc_name ?? 'la sala'}`}
               ayuda="Apunta al código del carné de quien recibe" onCodigo={alLeerCarne}

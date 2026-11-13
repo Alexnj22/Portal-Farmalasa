@@ -15,7 +15,7 @@
 // `SEMILLA` queda en undefined a propósito: si algún día se quiere la paleta
 // fija de la marca, se pone aquí un color y todos los Host y piezas la siguen.
 import { Fragment, useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { Appearance, useColorScheme } from 'react-native';
 import { create } from 'zustand';
 import { getMaterialColors } from '@expo/ui/jetpack-compose';
 import { paletaDelSistema } from '../modules/colores-sistema';
@@ -81,7 +81,50 @@ function Redibujo({ v, children }) {
   return montada === v ? <Fragment key={montada}>{children}</Fragment> : null;
 }
 
+// La lupa y la ✕ del buscador de la barra son piezas nativas que toman su
+// color del tema con que ARRANCÓ la actividad: al pasar de oscuro a claro con
+// la app abierta quedaban blancas sobre la barra clara. Las 77 pantallas con
+// buscador ponen sus opciones con `setOptions`; en vez de tocarlas una por
+// una, se intercepta acá el `setOptions` de cada pantalla y se le agrega el
+// color (`headerIconColor`), salvo que la pantalla ya traiga uno.
+//
+// Al cambiar de claro a oscuro NO se vuelve a montar la pantalla: la lupa
+// nativa es la misma de antes y un buscador montado de nuevo no se la vuelve a
+// pintar (react-native-screens sólo la colorea al crearla o al actualizar el
+// MISMO buscador). Se le reenvían sus últimas opciones con el color nuevo.
+const conBuscador = new Set();
+function conColorDeIconos(opciones) {
+  const busca = opciones?.headerSearchBarOptions;
+  if (!busca) return opciones;
+  if (busca.__colorPropio) { const { __colorPropio, ...propio } = busca; return { ...opciones, headerSearchBarOptions: propio }; }
+  const color = paletaDe(Appearance.getColorScheme() === 'dark')?.onSurface;
+  return color ? { ...opciones, headerSearchBarOptions: { ...busca, headerIconColor: color } } : opciones;
+}
+function interceptarOpciones(navigation) {
+  if (!navigation || navigation.__conColorDeIconos) return;
+  const original = navigation.setOptions;
+  navigation.setOptions = (opciones) => {
+    if (opciones?.headerSearchBarOptions) {
+      // La pantalla que trae su propio color lo conserva.
+      if (opciones.headerSearchBarOptions.headerIconColor) opciones = { ...opciones, headerSearchBarOptions: { ...opciones.headerSearchBarOptions, __colorPropio: true } };
+      navigation.__ultimas = opciones;
+      conBuscador.add(navigation);
+    }
+    return original(conColorDeIconos(opciones));
+  };
+  navigation.__reenviar = () => { if (navigation.__ultimas) original(conColorDeIconos(navigation.__ultimas)); };
+  navigation.__conColorDeIconos = true;
+}
+Appearance.addChangeListener(() => {
+  for (const nav of conBuscador) {
+    try { nav.__reenviar(); } catch { conBuscador.delete(nav); }
+  }
+});
+
 export function useRedibujarConPaleta(excepto = []) {
   const v = useVersionDePaleta((s) => s.v);
-  return ({ route, children }) => (excepto.includes(route?.name) ? children : <Redibujo v={v}>{children}</Redibujo>);
+  return ({ route, navigation, children }) => {
+    interceptarOpciones(navigation);
+    return excepto.includes(route?.name) ? children : <Redibujo v={v}>{children}</Redibujo>;
+  };
 }

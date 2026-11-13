@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1520.4 — App Android: la lupa del buscador toma el color al cambiar claro/oscuro
+
+App del personal, Android — la lupa (y la ✕) del buscador de la barra ya no queda blanca sobre la barra clara al pasar de oscuro a claro con la app abierta.
+
+- Es una pieza nativa que tomaba su color del tema con que arrancó la app. Ahora cada pantalla con buscador recibe el color de la paleta (`headerIconColor`), puesto en un solo sitio (`tema/material.js`, interceptando `setOptions`) en vez de en las 77 pantallas; la que trae su propio color lo conserva.
+- Al cambiar el modo se le reenvían a cada buscador sus últimas opciones con el color nuevo (react-native-screens sólo repinta el MISMO buscador, no uno montado de nuevo).
+- Verificado en el emulador: oscuro → claro → oscuro, con título y botones de la barra intactos. iPhone sin cambios.
+
 ## v2.1520.3 — App Android: toma el color nuevo del sistema sin cerrar la app
 
 App del personal, Android — toma el color nuevo del sistema (Material You) **sin cerrar la app** (usuario: «si cambio el tema en android, al volver a la app no se cambia? debo cerrar y volver a entrar»).

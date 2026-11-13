@@ -2,7 +2,7 @@
 // pestañas (el portal abierto desde el Menú, las pantallas nativas). Pedido del
 // usuario del 2026-09-30: «el header solo tiene el botón atrás… ni las
 // notificaciones». Lleva a la pestaña Avisos y muestra cuántas faltan leer.
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Host, Icon } from '@expo/ui';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -10,6 +10,8 @@ import { useTema } from '../tema/tema';
 import { iconoDe } from '../tema/iconos';
 import { usePorDecidir } from './porDecidir';
 import IconoFijo from './IconoFijo';
+
+const ANDROID = Platform.OS === 'android';
 
 export default function BotonCampana() {
   const tema = useTema();
@@ -22,11 +24,15 @@ export default function BotonCampana() {
     // de ella, así que la barra centraba sólo la campana y el conjunto se veía
     // corrido a la derecha (usuario, 2026-11-12). Con el relleno, lo que se
     // centra es campana + globo.
-    <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10} style={{ paddingRight: sinLeer ? 8 : 0 }}
+    // En Android la barra RECORTA lo que sale de la caja de cada botón: el globo
+    // a -4 quedaba mocho arriba y a la derecha (usuario, 2026-11-12). Ahí la
+    // caja lleva el aire arriba también y el globo va dentro.
+    <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10}
+      style={ANDROID ? { paddingTop: 6, paddingRight: 8, paddingBottom: 6 } : { paddingRight: sinLeer ? 8 : 0 }}
       accessibilityRole="button" accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}>
       <IconoFijo name={iconoDe('Bell')} size={22} color={tema.color.texto} />
       {sinLeer ? (
-        <View style={{ position: 'absolute', top: -4, right: 0, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: tema.color.peligro, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ position: 'absolute', top: ANDROID ? 1 : -4, right: 0, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: tema.color.peligro, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{sinLeer > 99 ? '99+' : sinLeer}</Text>
         </View>
       ) : null}

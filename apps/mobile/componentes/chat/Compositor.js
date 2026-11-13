@@ -50,7 +50,7 @@ function BotonIcono({ icono, etiqueta, onPress, color = colorSistema.texto2 }) {
 
 function Hoja({ titulo, abierta, onCerrar, children }) {
   return (
-    <Modal visible={abierta} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={abierta} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={titulo} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>

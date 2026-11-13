@@ -109,7 +109,7 @@ function EditarCandado({ k, lock, onCerrar, onGuardar }) {
   const [horas, setHoras] = useState(lock ? horasDelCandado(lock) : '4');
   if (!k) return null;
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={info(k).label} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">

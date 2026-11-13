@@ -59,7 +59,7 @@ function Resumen({ flujo, confirmando, onVolver, onConfirmar }) {
   const resumen = resumenPorSala(flujo.rows);
   const tot = resumen.reduce((a, s) => ({ renglones: a.renglones + s.renglones, unidades: a.unidades + s.unidades }), { renglones: 0, unidades: 0 });
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={confirmando ? () => {} : onVolver}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={confirmando ? () => {} : onVolver}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Revisa antes de confirmar"
           subtitulo={`${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades${flujo.global ? ' · distribución global' : ''}`}

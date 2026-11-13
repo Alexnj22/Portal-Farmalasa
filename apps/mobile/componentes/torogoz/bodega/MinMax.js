@@ -40,7 +40,7 @@ export default function MinMax({ producto, onCerrar, onGuardado }) {
   };
 
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={guardando ? undefined : onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={producto.nombre} onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>

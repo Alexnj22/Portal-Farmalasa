@@ -142,7 +142,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
   };
 
   return (
-    <Modal visible={!!bolsa} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={!!bolsa} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       {bolsa ? (
         <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
           <EncabezadoDeHoja titulo={bolsa.folio} subtitulo={`${sala} · corte del ${fechaNumerica(bolsa.fecha, { vacio: '' })} ${hora12(bolsa.hora)}`} onCerrar={onCerrar} />

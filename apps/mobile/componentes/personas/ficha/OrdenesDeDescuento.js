@@ -182,7 +182,7 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
   }, [f.banco]);
 
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => !guardando && cancelar()}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => !guardando && cancelar()}>
       <ConAurora>
         <EncabezadoDeHoja titulo={f.id ? 'Editar orden de descuento' : 'Nueva orden de descuento'} onCerrar={cancelar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"

@@ -57,7 +57,7 @@ function EditarContacto({ emp, abierto, onCerrar }) {
     }
   };
   return (
-    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
       <EncabezadoDeHoja titulo="Editar contacto" onCerrar={onCerrar} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

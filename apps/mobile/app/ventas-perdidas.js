@@ -53,7 +53,7 @@ function Reportar({ abierto, onCerrar, onListo }) {
     } finally { setEnviando(false); }
   };
   return (
-    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
       <EncabezadoDeHoja titulo="Reportar una venta perdida" onCerrar={onCerrar} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

@@ -18,7 +18,7 @@ import { PETROLEO } from './Piezas';
 /** El marco de una hoja: título, «Cerrar» y el contenido. */
 export function Hoja({ visible = true, titulo, subtitulo, onCerrar, cerrarTexto = 'Cerrar', bloqueada = false, children }) {
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={bloqueada ? undefined : onCerrar}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={bloqueada ? undefined : onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={titulo} subtitulo={subtitulo} onCerrar={onCerrar} atras={cerrarTexto === 'Volver'} ocupado={bloqueada} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

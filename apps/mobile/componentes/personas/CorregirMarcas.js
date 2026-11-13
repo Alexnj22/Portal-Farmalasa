@@ -56,7 +56,7 @@ export default function CorregirMarcas({ objetivo, usuario, onCerrar }) {
   };
 
   return (
-    <Modal visible={!!objetivo} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => onCerrar(false)}>
+    <Modal visible={!!objetivo} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => onCerrar(false)}>
       {objetivo ? (
         <ConAurora>
           <EncabezadoDeHoja titulo="Corrección de marcaje"

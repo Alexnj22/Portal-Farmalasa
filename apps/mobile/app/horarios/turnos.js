@@ -183,7 +183,7 @@ export default function Turnos() {
         {puedeEditar && grupos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center', marginHorizontal: 24 }}>Mantén presionado un turno para duplicarlo, archivarlo o reactivarlo.</Text> : null}
       </ScrollView>
 
-      <Modal visible={!!form} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setForm(null)}>
+      <Modal visible={!!form} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => setForm(null)}>
         {form ? (
           <ConAurora>
             <EncabezadoDeHoja titulo={form.grupo ? 'Editar turno' : 'Nuevo turno'} onCerrar={() => setForm(null)} />

@@ -97,7 +97,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando
   const alternarPersona = (id) => setPersonas((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   return (
-    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={e0 ? 'Editar aviso' : 'Nuevo aviso'} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -176,7 +176,7 @@ function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar, onEditar }) {
   const pendientes = a.audience.filter((e) => !a.readSet.has(String(e.id)));
   const fecha = a.createdAt || a.created_at || a.date;
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Aviso" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }}>

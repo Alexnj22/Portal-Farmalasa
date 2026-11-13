@@ -99,7 +99,7 @@ export default function VentaPerdida({ visible = true, emisorId, cliente = null,
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={guardando ? undefined : onCerrar}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={`Venta perdida${cliente?.nombre ? ` · ${cliente.nombre}` : ''}`} onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>

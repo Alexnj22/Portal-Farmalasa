@@ -46,7 +46,7 @@ export default function Existencias({ visible = true, terminoInicial = '', onCer
   const corto = termino.trim().length < 2;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Existencias en las sucursales" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">

@@ -112,7 +112,7 @@ export default function Feriados() {
         {puedeEditar && porMes.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionado un feriado para quitarlo.</Text> : null}
       </ScrollView>
 
-      <Modal visible={!!form} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setForm(null)}>
+      <Modal visible={!!form} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => setForm(null)}>
         {form ? (
           <ConAurora>
             <EncabezadoDeHoja titulo="Nuevo feriado" onCerrar={() => setForm(null)} />

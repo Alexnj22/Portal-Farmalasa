@@ -245,7 +245,7 @@ function Ajuste({ fila, sala, puedePedir, puedeAplicar, descartado, onCerrar, on
     onHecho(fila.erp_product_id, r.aplicado ? 'aplicado' : 'pedido');
   };
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={fila.product_name} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

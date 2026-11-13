@@ -79,7 +79,7 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
   };
 
   return (
-    <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={esLote ? 'Corregir lote' : 'Recontar'}
           subtitulo={[item?.product_nombre, item?.presentacion, item?.lote ? `lote ${item.lote}` : null].filter(Boolean).join(' · ')}

@@ -60,7 +60,7 @@ export default function PedirBaja({ lotes, puedeConfigurar, onCerrar, onGuardado
   };
 
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={guardando ? undefined : onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Pedir una baja" onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>

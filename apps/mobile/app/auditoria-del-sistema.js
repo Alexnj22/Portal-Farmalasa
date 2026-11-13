@@ -60,7 +60,7 @@ function Ficha({ l, quien, onCerrar }) {
   if (!l) return null;
   const detalles = l.details && Object.keys(l.details).length ? JSON.stringify(l.details, null, 2) : null;
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Registro" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }}>

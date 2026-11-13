@@ -16,10 +16,12 @@ export function saludo(user) {
 
 // La foto canónica (2026-11-06): con su aro, la torta el día del cumpleaños
 // y su medalla, igual que en el portal.
-export function FotoDeCuenta({ user, tamano = 36 }) {
+// `marcasDentro`: en la barra de Android lo que sale de la caja de la foto se
+// recorta (el «!» quedaba mocho), así que ahí las marcas van dentro.
+export function FotoDeCuenta({ user, tamano = 36, marcasDentro = false }) {
   return (
     <Pressable onPress={() => router.navigate('/yo')} accessibilityRole="button" accessibilityLabel="Mi cuenta" hitSlop={6}>
-      <Avatar empleado={user} tamano={tamano} />
+      <Avatar empleado={user} tamano={tamano} marcasDentro={marcasDentro} />
     </Pressable>
   );
 }

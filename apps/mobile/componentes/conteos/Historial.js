@@ -38,7 +38,7 @@ export default function Historial({ item, simple = false, onCerrar }) {
   }, [item, fetchConteoItemHistory]);
 
   return (
-    <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={item?.product_nombre} subtitulo={`Historial · ${simple ? (item?.presentacion || 'sin presentación') : (item?.lote ? `lote ${item.lote}` : 'sin lote')}`} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>

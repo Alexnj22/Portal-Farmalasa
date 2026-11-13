@@ -98,7 +98,7 @@ export function ElegirLargo({ rotulo, requerido, valor, opciones, onCambiar, vac
         <HojaDeEleccion titulo={rotulo ?? 'Elegir'} valor={String(valor ?? '')} onCerrar={() => setAbierta(false)} onElegir={onCambiar} maximo={MAX_VISIBLES}
           opciones={[...(vacio != null ? [{ id: '', label: vacio }] : []), ...opciones.map((o) => ({ id: String(o.id), label: o.label, detalle: o.detalle }))]} />
       ) : abierta ? (
-        <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAbierta(false)}>
+        <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => setAbierta(false)}>
           <ConAurora>
             <EncabezadoDeHoja titulo={rotulo ?? 'Elegir'} onCerrar={() => setAbierta(false)} />
             {opciones.length > 8 ? (

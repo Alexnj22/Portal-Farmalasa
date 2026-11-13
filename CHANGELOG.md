@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1515.1 — App: las hojas se cierran deslizando sin quedar en blanco; marcas de la barra enteras en Android
+
+App del personal:
+
+- **Cerrar una hoja deslizando (iPhone)**: las 34 hojas se ponían en blanco al deslizarlas hacia abajo y recién después se cerraban. Con React Native 0.86 una hoja sin `allowSwipeDismissal` no se deja cerrar con el gesto: iOS sólo avisa del intento, la pantalla vaciaba el contenido y la cerraba con su propia animación. Ahora todas llevan `allowSwipeDismissal` y se cierran con el gesto del sistema, con el contenido visible hasta el final.
+- **Barra superior en Android**: el globo de la campana y el «!» de la foto salían recortados arriba y a la derecha (la barra de Android recorta lo que sale de la caja de cada botón). La campana lleva el globo dentro de su caja y la foto de la barra pone sus marcas pegadas al borde (`marcasDentro` en `Avatar`).
+- **Horarios**: la semana de una persona mostraba la foto suelta debajo del nombre, agrandando la hoja; se quitó (el nombre ya está en el encabezado).
+
 ## v2.1515.0 — Traslados: lo que vino de más se declara al recibir y pasa solo de una sala a otra
 
 Decisión del usuario tras la auditoría de traslados del 2026-11-12, punto 5.

@@ -54,7 +54,7 @@ function Editar({ lab, sala, nombreSala, inicial, onCerrar, onGuardado }) {
     onGuardado(lab.id, fila);
   };
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={lab.nombre} subtitulo={`Ubicación en ${nombreSala}`} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

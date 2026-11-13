@@ -86,7 +86,10 @@ function Medalla({ tam, tramo, anios }) {
   );
 }
 
-function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
+// `marcasDentro`: las marcas pegadas al borde en vez de 4 pt afuera. Para la
+// barra de Android, que recorta lo que sale de la caja de la foto (2026-11-12).
+function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true, marcasDentro = false }) {
+  const af = marcasDentro ? 0 : -4;
   const px = tamanoDeAvatar(tamano);
   const g = geometriaDeAvatar(px);
   const t = tokens.temas[useColorScheme() === 'dark' ? 'solid-dark' : 'solid'];
@@ -160,7 +163,7 @@ function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
 
       {/* El estado: el ícono cuando ya está, «−N» mientras falta. */}
       {g.conChip && estado && (estado.faltan > 0 || icono) ? (
-        <Marca tam={g.tamChip} fondo={chip} style={{ bottom: -4, right: -4 }}>
+        <Marca tam={g.tamChip} fondo={chip} style={{ bottom: af, right: af }}>
           {estado.faltan > 0 ? (
             <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: Math.round(g.tamChip * 0.5), fontVariant: ['tabular-nums'] }}>−{estado.faltan}</Text>
           ) : (
@@ -171,13 +174,13 @@ function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
 
       {/* La torta: blanca con la torta rosa, en los dos temas. */}
       {deCumple ? (
-        <Marca tam={tamCumple} fondo="#fff" style={{ top: -4, left: -4 }}>
+        <Marca tam={tamCumple} fondo="#fff" style={{ top: af, left: af }}>
           <IconoFijo name={iconoDe('Cake')} size={Math.round(tamCumple * 0.58)} color={t['chart-6-solid']} />
         </Marca>
       ) : null}
 
       {pendientes.length > 0 && !g.firma ? (
-        <Marca tam={g.tamPendiente} fondo={t['warning-solid']} style={{ top: -4, right: -4 }}>
+        <Marca tam={g.tamPendiente} fondo={t['warning-solid']} style={{ top: af, right: af }}>
           <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: Math.round(g.tamPendiente * 0.62) }}>!</Text>
         </Marca>
       ) : null}

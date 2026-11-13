@@ -45,7 +45,7 @@ export default function Cuarentena({ filas, puedeResolver, onCerrar, onCambio })
 
   const visibles = filas.filter((q) => !hechas.has(q.id));
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={ocupado ? undefined : onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={ocupado ? undefined : onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo="En cuarentena" onCerrar={onCerrar} ocupado={!!ocupado} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>

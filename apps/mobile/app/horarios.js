@@ -439,7 +439,7 @@ export default function Horarios() {
       </ScrollView>
 
       {/* La semana de una persona, legible: un renglón por día. */}
-      <Modal visible={!!hoja || !!editando} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { if (editando) setEditando(null); else setHoja(null); }}>
+      <Modal visible={!!hoja || !!editando} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => { if (editando) setEditando(null); else setHoja(null); }}>
         {editando ? (
           <ConAurora>
             <EncabezadoDeHoja titulo={shortEmployeeName(editando.persona)}
@@ -466,10 +466,9 @@ export default function Horarios() {
             <EncabezadoDeHoja titulo={shortEmployeeName(hoja)}
               subtitulo={`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${HORAS_SEMANA_DIURNA}`}
               onCerrar={() => setHoja(null)} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20 }}>
-              <Avatar empleado={hoja} tamano={48} />
-              {puedeEditar ? <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>Toca un día para cambiarlo.</Text> : null}
-            </View>
+            {/* Sin foto suelta debajo del nombre (usuario, 2026-11-12): el nombre ya
+                está en el encabezado y la foto sola agrandaba la hoja por nada. */}
+            {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Toca un día para cambiarlo.</Text> : null}
             <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
               {DIAS.map((d) => {
                 const f = sumarDias(lunes, offset(d.id));
@@ -502,7 +501,7 @@ export default function Horarios() {
       </Modal>
 
       {/* Agregar a alguien de otra sala: se elige y se le edita el día. */}
-      <Modal visible={eligiendo} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEligiendo(false)}>
+      <Modal visible={eligiendo} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => setEligiendo(false)}>
         <ConAurora>
           <EncabezadoDeHoja titulo={`Viene a cubrir a ${nombreSala(sala)}`} onCerrar={() => setEligiendo(false)} />
           <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar persona" autoCorrect={false} style={{ marginHorizontal: 16 }} />

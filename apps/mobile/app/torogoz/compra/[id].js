@@ -64,7 +64,7 @@ function CampoMonto({ rotulo, valor, onCambiar, esperado, editable }) {
 /** Una hoja del sistema con su título y «Cerrar». */
 function Hoja({ titulo, onCerrar, children }) {
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={titulo} onCerrar={onCerrar} />
         <Formulario contentContainerStyle={{ paddingHorizontal: 16, gap: 16, paddingBottom: 60 }}>

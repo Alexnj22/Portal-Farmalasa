@@ -64,7 +64,7 @@ function Ficha({ p, onCerrar, puedeCerrar, puedeBloquear, onCerrarConexion, onRe
   ]);
 
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={shortEmployeeName({ name: p.empleado || p.cuenta })} subtitulo={[p.cargo, p.cuenta].filter(Boolean).join(' · ')} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">

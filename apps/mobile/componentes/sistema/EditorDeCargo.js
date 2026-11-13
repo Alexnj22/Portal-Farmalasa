@@ -87,7 +87,7 @@ export default function EditorDeCargo({ abierto, cargo, onCerrar }) {
   };
 
   return (
-    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={cargo ? 'Editar cargo' : 'Nuevo cargo'} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">

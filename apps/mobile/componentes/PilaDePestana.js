@@ -93,7 +93,9 @@ function fotoEnEncabezado(user) {
   const foto = <FotoDeCuenta user={user} tamano={34} />;
   return Platform.OS === 'ios'
     ? { unstable_headerLeftItems: () => [{ type: 'custom', element: foto, hidesSharedBackground: true }] }
-    : { headerLeft: () => foto };
+    // Android recorta lo que sale de la caja de la foto: las marcas (pendiente,
+    // cumpleaños) iban a -4 del borde y quedaban mochas.
+    : { headerLeft: () => <FotoDeCuenta user={user} tamano={34} marcasDentro /> };
 }
 
 // `conMarca={false}`: la pestaña rápida. Muestra una pantalla de módulo que

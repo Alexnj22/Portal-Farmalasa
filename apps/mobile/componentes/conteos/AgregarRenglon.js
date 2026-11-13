@@ -134,7 +134,7 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Agregar un renglón" onCerrar={onCerrar} />
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>

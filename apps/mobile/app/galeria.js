@@ -40,7 +40,7 @@ function Detalle({ pieza, firmadas, onCerrar }) {
     } catch (e) { fallo('No se pudo compartir', e?.message || ''); }
   };
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={pieza.titulo} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 48 }}>

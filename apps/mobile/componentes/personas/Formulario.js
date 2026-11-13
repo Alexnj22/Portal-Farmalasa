@@ -65,7 +65,7 @@ export function Elegir({ rotulo, requerido, valor, opciones, onCambiar, vacio = 
         <HojaDeEleccion titulo={rotulo} valor={String(valor ?? '')} onCerrar={() => setAbierta(false)} onElegir={onCambiar}
           opciones={[...(vacio != null ? [{ id: '', label: vacio }] : []), ...opciones.map((o) => ({ id: String(o.id), label: o.label, detalle: o.detalle }))]} />
       ) : abierta ? (
-        <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAbierta(false)}>
+        <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => setAbierta(false)}>
           <ConAurora>
             <EncabezadoDeHoja titulo={rotulo} onCerrar={() => setAbierta(false)} />
             <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">

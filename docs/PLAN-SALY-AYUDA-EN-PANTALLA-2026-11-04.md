@@ -1,5 +1,7 @@
 # Saly, ayuda en pantalla — definición (2026-11-04)
 
+**Estado (2026-11-13):** construida y en prueba sólo con una persona (`SOLO_PARA`). Cubre Cortes, Mi caja y Encuestas; falta Mín·Máx y pedidos (eran «primero»), abrir a todo el personal, la vista de administración del registro, tapar teléfonos/correos/salarios en el servidor (hoy sólo DUI y NIT) y la app del personal. Uso real: 2 preguntas (última 4-nov).
+
 Decidido con el usuario en tres rondas de preguntas. Lo que no está acá no se
 decidió: preguntar antes de inventarlo.
 

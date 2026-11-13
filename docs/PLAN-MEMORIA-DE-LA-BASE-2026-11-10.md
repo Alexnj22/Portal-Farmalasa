@@ -1,5 +1,7 @@
 # Plan — la base sin swap, sin subir de plan (2026-11-10)
 
+**Estado (2026-11-13):** fases 0, 1a, 2a y **2b** aplicadas (`shared_buffers` = 384MB; la base se reinició el 2026-11-10 20:48 UTC; acierto de caché 99.58%). Falta: anotar swap/commitment del panel tras la 2b y la revisión de 24 h; fase 3 sólo si el swap sigue >300 MB.
+
 **Objetivo.** Que la base deje de congelarse y de reiniciarse **sin subir el
 servidor** (Small, 2 GB) y **sin que cambie nada de lo que se ve o se hace**. Cada
 cambio se prueba primero en el entorno de pruebas, se compara su resultado contra

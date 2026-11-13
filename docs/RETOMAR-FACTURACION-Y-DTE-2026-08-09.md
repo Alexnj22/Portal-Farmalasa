@@ -1,5 +1,7 @@
 # Facturación y envío a Hacienda — estado al 2026-08-09
 
+**Estado (2026-11-13):** circuito vivo, 0 rechazos vigentes, 0 fallos desde el 9-nov. La segunda vuelta corrió en un caso real (v2.1312.1, 20-oct). Sigue abierto (g): «recibido con observaciones» no avisa (100 en 30 días); (b)–(f) siguen como decisiones o seguimiento.
+
 Continúa y **reemplaza** a `RETOMAR-FICHAS-Y-DTE-2026-08-07.md`, que quedó
 desactualizado en sus dos puntos principales. Todo lo de abajo está en
 producción y verificado corriéndolo.

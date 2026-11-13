@@ -7,7 +7,7 @@ import { anotar } from './audit';
 // **Nada de esto escribe en el sistema de origen.** La pantalla arma la compra
 // y la muestra, y `simularCarga` arma el formulario exacto que se mandaría y lo
 // revisa — sólo leyendo del otro lado. `enviarCarga` manda la revisada; la
-// función la tiene detrás de un interruptor (docs/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md).
+// función la tiene detrás de un interruptor (docs/planes-cerrados/PLAN-CARGAR-COMPRAS-EN-BODEGA-2026-10-29.md).
 //
 // La propuesta la calcula la edge function `leer-dte-json`, que es la única que
 // puede leer el JSON y el PDF del bucket privado. Se la invoca con la sesión de

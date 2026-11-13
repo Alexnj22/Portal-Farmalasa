@@ -1,5 +1,7 @@
 # Cargar compras desde el portal, en Bodega, con reparto a las salas — auditoría (2026-10-29)
 
+**Estado (2026-11-13): CERRADO.** Pasos 1–7 en producción (v2.1376–v2.1398); 104 compras verificadas 29-oct→12-nov y 6 repartos. Sin estrenar en prod: carga en papel (0), pedido de vence (0), consumo real (0). Externos: La Constancia sin DTE, Agua Fría sin ligar (`supplier_id` NULL), IVA de consumo a confirmar con el contador.
+
 Pedido del usuario: «las facturas de bebidas (pepsi, constancia, sarita,
 nevería, agua, etc.) se carguen en bodega, pero en la carga se seleccione a qué
 sucursal pertenece, así el traslado se hace de un solo… que se pueda splitear…

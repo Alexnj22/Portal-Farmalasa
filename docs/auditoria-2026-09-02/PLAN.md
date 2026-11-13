@@ -1,5 +1,7 @@
 # Auditoría total del portal — plan de ejecución (2026-09-02)
 
+**Estado (2026-11-13):** no se corrió ningún lote. Las listas de `lotes/` son del 2026-09-02: regenerarlas antes de empezar (el árbol cambió ~700 versiones).
+
 **Para quien lo corre (Opus):** este archivo es el tablero. Se lee entero UNA vez, se
 ejecuta lote por lote, y la bitácora del §6 se actualiza al cerrar cada lote. Todo lo
 que hace falta está en esta carpeta; no depende de ninguna sesión anterior.

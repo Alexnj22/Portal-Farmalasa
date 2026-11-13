@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1520.1 — Planes al día: estado medido el 13-nov y compras a cerrados
+
+Sólo documentación. Repaso de los planes abiertos contra producción y el repo (2026-11-13), con una línea «Estado» arriba de cada uno: memoria de la base (la fase 2b ya estaba aplicada y no constaba), núcleo portable, Saly (en prueba con una persona, faltan Mín·Máx y pedidos), facturación y DTE, y la auditoría por lotes (ningún lote corrido). El plan de cargar compras en Bodega pasa a `docs/planes-cerrados/`: los pasos 1–7 están en producción y 104 compras verificadas.
+
 ## v2.1520.0 — Traslados: la firma con carné también en el paquete suelto
 
 - **Firma con carné en el paquete suelto** (app, ruta de reparto): el paquete que va a una sala que no es parada de la ruta ahora ofrece, al tocar «Entregué», «Firma con carné» (alguien de la sala DESTINO, nunca el conductor) o «Entregué sin firma». Nueva `ruta_entregar_bolsa_con_carne`; el paquete muestra «Entregado · firmó la sala». Con `security_config('ruta_firma_sala')` en `exigir`, `ruta_entregar_bolsa` sin firma también se niega, igual que la parada. Migraciones `20261113144048` y `20261113144151`. Probado en el entorno de pruebas: carné ajeno rechazado, carné correcto entrega y firma, sin firma bloqueado con `exigir` y permitido con `observar`.

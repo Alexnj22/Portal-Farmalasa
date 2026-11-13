@@ -1,5 +1,7 @@
 # Plan — un núcleo que no conoce al navegador (2026-09-24)
 
+**Estado (2026-11-13):** sin cambios desde el 28-oct. Abierto: F7 paso 2 (pospuesto por el usuario) y un resto de F8 paso 3: 53 copias de `branchId ?? branch_id` sin pasar a `utils/salaDelUsuario.js`.
+
 **Estado (2026-10-28):** F0 a F6, U1 y U2 **cerradas** · F7 paso 1 hecho; **paso 2 (mudar el núcleo a `packages/core`) pospuesto por el usuario** · **F8 cerrada**: la paridad de la app quedó completa (`docs/planes-cerrados/AUDITORIA-PARIDAD-APP-2026-10-15.md`). Lo único abierto de este plan es el paso 2 de F7.
 
 ### Bitácora

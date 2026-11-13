@@ -242,6 +242,9 @@ export default function MinMaxSala() {
       const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: sala });
       if (e) throw e;
       const salto = motivoDeSaltoDelCalculo(res);
+      // Con borradores sin revisar la base no recalcula: como el portal, se
+      // ofrece descartarlos y recalcular en un solo paso.
+      if (salto && res?.reason === 'branch_has_pending_drafts') { cerrarProgreso(); ofrecerDescartarYRecalcular(); return; }
       if (salto) { fallo(ERP_NAMES[sala], salto); return; }
       listo(ERP_NAMES[sala], `${(res?.rows ?? 0).toLocaleString()} borradores generados`);
       await cargar();
@@ -249,6 +252,22 @@ export default function MinMaxSala() {
     } catch (e) {
       fallo(ERP_NAMES[sala], /timeout|canceling statement/i.test(e?.message ?? '') ? 'El cálculo tardó demasiado. Intenta de nuevo en un momento.' : mensajeAmigable(e));
     } finally { setOcupado(false); }
+  };
+  const ofrecerDescartarYRecalcular = () => {
+    const n = aDescartar?.borradores ?? 0;
+    Alert.alert(n ? `${ERP_NAMES[sala]} tiene ${n} borrador${n === 1 ? '' : 'es'} sin revisar` : `${ERP_NAMES[sala]} tiene borradores sin revisar`,
+      'Para recalcular hay que descartarlos primero: volverán al MIN·MAX publicado y el cálculo nuevo generará los suyos. No se puede deshacer.',
+      [{ text: 'Cancelar', style: 'cancel' }, { text: 'Descartar y recalcular', style: 'destructive', onPress: descartarYRecalcular }]);
+  };
+  // Dos llamadas, como el portal: el descarte es el mismo de «Descartar todo»,
+  // con su bitácora (motivo: recalcular).
+  const descartarYRecalcular = async () => {
+    setOcupado(true);
+    trabajando('Descartando borradores…');
+    const { data: count, error: e } = await descartarBorradoresDeMinMax({ p_erp_sucursal_id: sala });
+    if (e) { setOcupado(false); fallo('No se pudo descartar', mensajeAmigable(e)); return; }
+    anotar('MINMAX_DISCARD_ALL', { count, motivo: 'recalcular' });
+    await recalcular();
   };
   // Todas las salas, de a una: el recorrido es el del núcleo, el mismo del portal.
   const recalcularTodas = async () => {

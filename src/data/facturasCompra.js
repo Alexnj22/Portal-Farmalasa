@@ -181,15 +181,31 @@ export async function downloadPurchaseDtePackage(row) {
     // visor del documento y el widget de la sala, y antes sólo la primera
     // dejaba rastro.
     const { downloadZip } = await getZip();
+    const { baseName, entradas } = await archivosDelPaqueteDeCompra(row);
+    triggerDownload(await downloadZip(entradas.map((e) => ({ name: e.name, input: e.bytes }))).blob(), `${baseName}.zip`);
+    anotarPaqueteDeCompra(row, entradas.length);
+}
+
+/**
+ * Los archivos del paquete de UN documento, sin armar el ZIP: el portal lo
+ * comprime con client-zip y la app con fflate. Lanza si no se pudo bajar
+ * ninguno.
+ * @returns {Promise<{ baseName: string, entradas: Array<{ name: string, bytes: Uint8Array }> }>}
+ */
+export async function archivosDelPaqueteDeCompra(row) {
     const baseName = row.codigo_generacion || `doc-${row.id}`;
     const entradas = [];
+    const bajar = async (path) => {
+        const url = await getSignedFileUrl(path);
+        if (!url) return null;
+        const res = await fetch(url);
+        return res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
+    };
 
     for (const [ext, path] of [['json', row.json_path], ['pdf', row.pdf_path]]) {
         if (!path) continue;
-        const url = await getSignedFileUrl(path);
-        if (!url) continue;
-        const res = await fetch(url);
-        if (res.ok) entradas.push({ name: `${baseName}.${ext}`, input: await res.blob() });
+        const bytes = await bajar(path);
+        if (bytes) entradas.push({ name: `${baseName}.${ext}`, bytes });
     }
 
     // Si está anulado, el paquete lleva la prueba de que lo está: el PDF con el
@@ -204,12 +220,10 @@ export async function downloadPurchaseDtePackage(row) {
         try {
             for (const r of await fetchPurchaseDteReviewSources(row.id)) {
                 if (!r?.file_path) continue;
-                const url = await getSignedFileUrl(r.file_path);
-                if (!url) continue;
-                const res = await fetch(url);
-                if (!res.ok) continue;
+                const bytes = await bajar(r.file_path);
+                if (!bytes) continue;
                 const ext = String(r.filename || '').toLowerCase().endsWith('.json') ? 'json' : 'pdf';
-                entradas.push({ name: `${baseName}-anulacion.${ext}`, input: await res.blob() });
+                entradas.push({ name: `${baseName}-anulacion.${ext}`, bytes });
             }
         } catch (e) {
             console.error('facturasCompra.js: respaldo de anulación —', e);
@@ -217,10 +231,14 @@ export async function downloadPurchaseDtePackage(row) {
     }
 
     if (entradas.length === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
+    return { baseName, entradas };
+}
 
-    triggerDownload(await downloadZip(entradas).blob(), `${baseName}.zip`);
-    registrarEgreso('dte_compra', { formato: 'zip', filas: entradas.length, detalle: { documento: baseName } });
-    anotar('FACTURAS_COMPRA_DESCARGA_PAQUETE', row.id ?? null, { codigo_generacion: row.codigo_generacion ?? null });
+/** El paquete de un documento salió (descargado o compartido): egreso y bitácora. */
+export function anotarPaqueteDeCompra(row, archivos, detalle = {}) {
+    const baseName = row.codigo_generacion || `doc-${row.id}`;
+    registrarEgreso('dte_compra', { formato: 'zip', filas: archivos, detalle: { documento: baseName, ...detalle } });
+    anotar('FACTURAS_COMPRA_DESCARGA_PAQUETE', row.id ?? null, { codigo_generacion: row.codigo_generacion ?? null, ...detalle });
 }
 
 // ── Descarga masiva ────────────────────────────────────────────────────────

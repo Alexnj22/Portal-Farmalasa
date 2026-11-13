@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.6 — App: descargar el paquete de una factura de compra y descartar y recalcular Mín·Máx
+
+En la app del personal:
+
+- **Facturas de compra**: la ficha de un documento tiene **«Descargar paquete (ZIP)»**, como el portal: el JSON y el PDF —y, si está anulado, la prueba de la anulación— a la hoja de compartir. Sólo con el permiso de descargar facturas de compra, y queda anotado como salida de datos. En el núcleo, bajar los archivos del paquete (`archivosDelPaqueteDeCompra`) quedó separado de armar el ZIP, así el portal y la app usan el mismo camino.
+- **Mín·Máx**: si la sala tiene borradores sin revisar, «Recalcular la sala» ya no se queda en un aviso: ofrece **«Descartar y recalcular»** en un solo paso, con la misma bitácora que «Descartar todo».
+
 ## v2.1527.5 — Compras: el sello de Hacienda se lee también del PDF
 
 Guardado, Santa Lucía, Interamericana y otros proveedores mandan el documento

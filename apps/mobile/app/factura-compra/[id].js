@@ -38,6 +38,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
+import { compartirPaqueteDeCompra } from '../../componentes/compras/zipDeFacturas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { documentoGuardado, guardarDocumentos } from '../../componentes/compras/documentos';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -59,6 +60,14 @@ export default function FacturaCompra() {
   const { hasPermission } = useAuth();
   const puedeVincular = hasPermission('facturas_compra', 'can_edit');
   const puedeAbrir = hasPermission('facturas_compra_abrir');
+  const puedeDescargar = hasPermission('facturas_compra_descargar');
+  const [bajando, setBajando] = useState(false);
+  // El paquete del documento (JSON + PDF, y la prueba de anulación), como
+  // «Descargar» del portal: a la hoja de compartir.
+  const descargar = async () => {
+    setBajando(true);
+    try { await compartirPaqueteDeCompra(doc); } catch (e) { Alert.alert('No se pudo descargar', mensajeAmigable(e)); } finally { setBajando(false); }
+  };
   const [adjuntando, setAdjuntando] = useState(false);
   const [delMes, setDelMes] = useState(null);
   const [qJson, setQJson] = useState('');
@@ -217,6 +226,9 @@ export default function FacturaCompra() {
               {doc.pdf_path ? <View style={{ flex: 1 }}><BotonGrande texto="Ver el PDF" color={MARCA.azul} onPress={() => abrir(doc.pdf_path)} /></View> : null}
               {doc.json_path ? <View style={{ flex: 1 }}><BotonGrande texto="Ver el JSON" borde color={MARCA.azulClaro} onPress={() => abrir(doc.json_path)} /></View> : null}
             </View>
+            {puedeDescargar && (doc.pdf_path || doc.json_path) ? (
+              <BotonGrande texto={bajando ? 'Preparando…' : 'Descargar paquete (ZIP)'} borde color={MARCA.verde} deshabilitado={bajando} onPress={descargar} />
+            ) : null}
             {!doc.pdf_path ? <Aviso tono="nota" texto="Esta factura llegó sin PDF." /> : null}
 
             <Seccion titulo={json === undefined ? 'Productos' : `Productos · ${renglones.length}`}>

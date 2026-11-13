@@ -29,6 +29,18 @@ Decisión del usuario (2026-11-13): todo movimiento sin lote lo pide; los pedido
 - La base lo guarda en el renglón (`pedido_items.caja_devolucion`, por `decidir_diferencia_pedido(…, p_caja)`) y lo copia a la devolución (`pedido_devolucion.caja`). `devolver-pedido-erp` se lo asigna a esas unidades en la sala (`asignarLoteAGenerico`) y las devuelve con ese lote; marca `caja.asignado` para no repetirlo en un reintento.
 - `solicitar_devolucion_pedido` (circuito anterior, sin uso) también acepta `p_caja`.
 
+## v2.1526.2 — Envío a otra sala: estricto para quien está de apoyo
+
+- **Enviar a otra sala**: el día que alguien está de apoyo, sólo puede mandar producto de la sala del apoyo — ni de la sala de respaldo ni de otra aunque su cargo cubra todas. El día que no tiene apoyo, manda desde su sala de siempre.
+
+## v2.1526.1 — Promociones en la app: crear el descuento, quién paga, reparto y Rebajas
+
+En la app del personal, Promociones hace lo mismo que en el portal:
+
+- **Crear el descuento** de una promoción que todavía no baja el precio (una duplicada, por ejemplo): porcentaje o monto por unidad, la fecha de fin si ningún producto la tiene y, con varias salas, todas o una. Si el servidor avisa (bajo el costo, otro descuento encima), se ofrece «de todos modos».
+- Por producto: **si paga bono, quién lo cancela** (la empresa o un proveedor) y **el reparto del lote por sala**, guardados junto con el lote y la presentación, como en el portal (el reparto sólo viaja si se tocó).
+- Pestaña **Rebajas**: lo que de verdad se rebajó en las ventas del mes, de campaña o a mano, con quién vendió, el mes y la sucursal elegibles y el mismo CSV del portal.
+
 ## v2.1526.0 — Descartes piden el lote y el vencimiento de la caja
 
 Decisión del usuario (2026-11-13): todo movimiento sin lote o sin vencimiento lo pide.

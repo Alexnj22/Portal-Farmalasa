@@ -1,6 +1,6 @@
 // Las pestañas secundarias de Promociones en la app — Descuentos, Excedentes y
-// Pagos —, con los mismos datos que el portal (`TabDescuentos`, `TabExcedentes`,
-// `TabPagos`). Un descuento se corrige, se borra o se lleva a la app de
+// Pagos, Rebajas —, con los mismos datos que el portal (`TabDescuentos`, `TabExcedentes`,
+// `TabPagos`, `TabRebajas`). Un descuento se corrige, se borra o se lleva a la app de
 // clientes; Pagos se mira; un excedente se aprueba o se niega
 // con `decidirExcedente`, la misma llamada del portal (negar exige el motivo,
 // como lo exige la base).
@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { borrarDescuento, fetchDescuentos, fotoParaApp } from '@nucleo/data/descuentos';
+import { borrarDescuento, fetchDescuentos, fetchRebajasEnVentas, fotoParaApp } from '@nucleo/data/descuentos';
 import { fetchOfertaDeDescuento } from '@nucleo/data/ofertasClientes';
 import { decidirExcedente, fetchExcedentes } from '@nucleo/data/promociones';
 import { fetchPagosBonoProducto } from '@nucleo/data/bonosProducto';
@@ -17,10 +17,10 @@ import {
   mensajeDeCarga, ofertaDesdeDescuento, pagoBonoPendiente,
 } from '@nucleo/utils/promocionesUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { comoDescuenta } from '@nucleo/utils/rebajasVenta';
+import { comoDescuenta, csvRebajas } from '@nucleo/utils/rebajasVenta';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { hoySV } from '@nucleo/utils/fecha';
+import { correrMes, etiquetaMes, fechaTexto, hoySV, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { Aviso, Cargando } from '../formulario/Piezas';
@@ -33,6 +33,7 @@ import { guardar } from '../comercial/elegido';
 import { guardarOferta } from '../ofertas/acentos';
 import { fallo, listo } from '../Progreso';
 import Tocable from '../Tocable';
+import Subfiltro from '../Subfiltro';
 import { compartirCsv } from '../fiscal/csv';
 import { Vacio as VacioBase } from '../formulario/Piezas';
 import { MAYUSCULAS } from '../../tema/mayusculas';
@@ -285,6 +286,110 @@ export function Pagos({ busqueda, soloPendientes }) {
         </Tarjeta>
       ))}
       {!promos.length && !error ? <Vacio texto={busqueda ? 'Ningún pago con esa búsqueda' : soloPendientes ? 'Sin pagos pendientes' : 'Sin promociones con bono terminadas'} /> : null}
+    </>
+  );
+}
+
+// ── Rebajas: lo que de verdad se rebajó en las ventas ───────────────────────
+// Como `TabRebajas` del portal (`rebajas_en_ventas`): es de campaña si ese día,
+// en esa sala, el producto tenía un descuento vigente y la rebaja es justo la
+// del descuento; lo demás es un precio cambiado al vender. Las tarjetas eligen
+// qué se mira; el mes se mueve con ‹ ›; el CSV es el mismo del portal.
+function porQueNoEsDeCampana(r) {
+  const c = `«${r.campana_cercana}»`;
+  if (r.cercana_motivo === 'fuera_de_fecha') return `Es la rebaja de ${c}, que terminó el ${fechaTexto(r.cercana_fin)}`;
+  if (r.cercana_motivo === 'otra_sala') return `Es la rebaja de ${c}, que no vale en esta sucursal`;
+  return `Tenía ${c}, pero la rebaja no es la de ese descuento`;
+}
+
+export function Rebajas({ busqueda, sala = '', salaDe }) {
+  const mesDeHoy = mesSV();
+  const [periodo, setPeriodo] = useState(mesDeHoy);
+  const [vista, setVista] = useState('campana');
+  const [carga, setCarga] = useState({ clave: null, datos: null, error: null });
+  const clave = `${periodo}|${sala}`;
+  useEffect(() => {
+    let vivo = true;
+    const [desde, hasta] = rangoDelMes(periodo);
+    fetchRebajasEnVentas({ desde, hasta, branchId: sala || null })
+      .then((d) => { if (vivo) setCarga({ clave, datos: d, error: null }); })
+      .catch((e) => { if (vivo) setCarga({ clave, datos: null, error: mensajeDeCarga(e, 'No se pudieron revisar las rebajas. Vuelve a intentar en un momento.') }); });
+    return () => { vivo = false; };
+  }, [periodo, sala, clave]);
+  const listo_ = carga.clave === clave;
+  const datos = listo_ ? carga.datos : null;
+  const q = (busqueda || '').trim();
+  const campanas = useMemo(() => (datos?.porCampana ?? []).filter((c) => !q || tokenMatch(q, c.descripcion)), [datos, q]);
+  const aMano = useMemo(() => (datos?.aMano ?? []).filter((r) => !q || tokenMatch(q, r.producto, r.vendedor, r.correlativo, r.cliente)), [datos, q]);
+  const nombreSala = (id) => salaDe(id) ?? '';
+  const lista = vista === 'campana' ? campanas : aMano;
+
+  return (
+    <>
+      <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Tocable onPress={() => setPeriodo((p) => correrMes(p, -1))} hitSlop={8} accessibilityLabel="Mes anterior" style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 22 }}>‹</Text>
+        </Tocable>
+        <Tocable onPress={() => setPeriodo(mesDeHoy)} style={{ flex: 1, alignItems: 'center', minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>{etiquetaMes(periodo)}</Text>
+          {periodo !== mesDeHoy ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca para volver a este mes</Text> : null}
+        </Tocable>
+        <Tocable onPress={() => setPeriodo((p) => correrMes(p, 1))} disabled={periodo >= mesDeHoy} hitSlop={8} accessibilityLabel="Mes siguiente"
+          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: periodo >= mesDeHoy ? 0.3 : 1 }}>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 22 }}>›</Text>
+        </Tocable>
+      </View>
+      {!listo_ ? <Cargando /> : carga.error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={carga.error} /></View> : (
+        <>
+          <FilaDeKpis>
+            <Kpi icono="Percent" rotulo="De campaña" valor={fmtMoneda(datos.resumen.campana.monto)} color={MARCA.verde}
+              apoyo={`${datos.resumen.campana.renglones} ${datos.resumen.campana.renglones === 1 ? 'venta' : 'ventas'}`} onPress={() => setVista('campana')} />
+            <Kpi icono="PenLine" rotulo="A mano" valor={fmtMoneda(datos.resumen.a_mano.monto)} color={datos.resumen.a_mano.renglones > 0 ? MARCA.ambar : colorSistema.texto2}
+              apoyo={`${datos.resumen.a_mano.renglones} ${datos.resumen.a_mano.renglones === 1 ? 'venta' : 'ventas'}`} pide={datos.resumen.a_mano.renglones > 0} onPress={() => setVista('a_mano')} />
+          </FilaDeKpis>
+          <Subfiltro activa={vista} onCambiar={setVista} opciones={[{ id: 'campana', label: 'De campaña' }, { id: 'a_mano', label: 'A mano' }]} />
+          <Text style={{ marginHorizontal: 20, color: colorSistema.texto2, fontSize: 12 }}>
+            Es de campaña cuando ese día el producto tenía un descuento vigente en la sala y la rebaja es exactamente la del descuento. Lo demás es un precio cambiado al vender.
+          </Text>
+          {lista.length ? (
+            <DescargarCsv cuenta={vista === 'campana' ? `${campanas.length} campaña${campanas.length === 1 ? '' : 's'}` : `${aMano.length} rebaja${aMano.length === 1 ? '' : 's'} a mano`}
+              csv={() => csvRebajas(vista, { porCampana: campanas, aMano }, periodo, nombreSala)} />
+          ) : null}
+          {vista === 'campana' ? campanas.map((c) => (
+            <Tarjeta key={c.id}>
+              <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{c.descripcion}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+                <Pildora texto={comoDescuenta(c)} color={MARCA.azulClaro} />
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fechaTexto(c.inicio)} – ${fechaTexto(c.fin)}`}</Text>
+                {c.borrada ? <Pildora texto="Ya no existe" color={colorSistema.texto2} /> : null}
+              </View>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                {`${c.renglones} ${c.renglones === 1 ? 'venta' : 'ventas'} · ${fmtUnidades(Number(c.unidades))} u. · cobrado ${fmtMoneda(c.cobrado)}`}
+              </Text>
+              <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{`Rebajado ${fmtMoneda(c.rebajado)}`}</Text>
+            </Tarjeta>
+          )) : aMano.slice(0, 200).map((r) => (
+            <Tarjeta key={r.id}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{r.producto}</Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ color: MARCA.ambar, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{`−${fmtMoneda(r.rebaja)}`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${r.porcentaje} %`}</Text>
+                </View>
+              </View>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fechaTexto(r.fecha)} · ${r.correlativo} · ${Number(r.cantidad)} ${r.presentacion || ''}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                {[r.vendedor ? shortEmployeeName({ name: r.vendedor }) : 'Sin ficha', nombreSala(r.branch_id), `${fmtMoneda(r.precio)} → ${fmtMoneda(r.cobrado)}`].filter(Boolean).join(' · ')}
+              </Text>
+              {r.campana_cercana ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{porQueNoEsDeCampana(r)}</Text> : null}
+            </Tarjeta>
+          ))}
+          {vista === 'a_mano' && aMano.length > 200 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>{`Se muestran 200 de ${aMano.length}: el CSV las trae todas.`}</Text> : null}
+          {!lista.length ? (
+            <Vacio texto={q ? `Nada coincide con «${q}»` : vista === 'campana' ? 'En este mes no se vendió nada con un descuento de campaña' : 'En este mes todas las rebajas fueron de una campaña'} />
+          ) : null}
+        </>
+      )}
     </>
   );
 }

@@ -1162,7 +1162,7 @@ export const AREAS = [
                'scrape-erp-proveedores', 'backfill-proveedores-dte', 'export-purchase-dte-manifest',
                'export-purchase-dte-zip', 'analyze-document', 'leer-boleta', 'erp-csv-probe'],
         crons: ['sync-purchases-10min', 'compra-soltar-trabados', 'purge-compra-carga-simulada', 'sync-purchase-emails-daily', 'check-purchases-reconciliation-daily',
-                'purchases-fastbackfill-semanal', 'verificar-facturas-reclamadas-2h',
+                'purchases-fastbackfill-semanal',
                 'avisar-facturas-de-sala-0830-sv'],
         docs: ['docs/CONTABILIDAD.md',
                'docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md'],

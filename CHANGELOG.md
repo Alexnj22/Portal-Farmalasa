@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1520.2 — Anular vuelve a pedir caja abierta; fuera los restos de Facturas de mi sala
+
+- **Anular vuelve a pedir una caja abierta.** El freno de `validar_solicitud_facturacion()` (v2.750.2, migración `20260825031643`) se había perdido el 26-ago, cuando `20260826222947` reescribió la función desde una versión anterior. Desde entonces la base aceptaba pedir una anulación con la caja cerrada; sólo la frenaban la pantalla y la función que la aplica al aprobar. Repuesto sobre la definición VIVA (conserva «no pasar a crédito»), migración `20261113152208`. Probado en pruebas: caja abierta pasa, cerrada frena, cambio de vendedor pasa.
+- **Fuera los restos de «Facturas de mi sala»** (quitada de la pantalla en v2.1432.0): se apaga el cron `verificar-facturas-reclamadas-2h` (corría cada 2 h sobre 0 reservas) y se borran sus 25 permisos huérfanos. Las tablas se quedan como historia. Migración `20261113152642`.
+
 ## v2.1520.1 — Planes al día: estado medido el 13-nov y compras a cerrados
 
 Sólo documentación. Repaso de los planes abiertos contra producción y el repo (2026-11-13), con una línea «Estado» arriba de cada uno: memoria de la base (la fase 2b ya estaba aplicada y no constaba), núcleo portable, Saly (en prueba con una persona, faltan Mín·Máx y pedidos), facturación y DTE, y la auditoría por lotes (ningún lote corrido). El plan de cargar compras en Bodega pasa a `docs/planes-cerrados/`: los pasos 1–7 están en producción y 104 compras verificadas.

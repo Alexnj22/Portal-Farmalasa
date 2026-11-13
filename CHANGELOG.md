@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1518.1 — App: sin el error «Unable to resolve module» al abrir la app de pruebas
+
+App del personal — sólo desarrollo: al abrir la app de pruebas salía siempre «Unable to resolve module ./src/store/slices/practicantesSlice» (y detrás, «Can't perform a React state update…»). Metro pedía cada `import()` del núcleo como paquete aparte por una dirección relativa a `apps/mobile` (`/../../src/…`), que se colapsa a `/src/…`. `metro.config.js` apaga esa carga diferida en desarrollo (`EXPO_NO_METRO_LAZY`). En los teléfonos no pasaba: el paquete por aire lleva todo adentro.
+
+Investigado y descartado: que Android tome los colores nuevos del sistema sin cerrar la app. Ni releer la paleta, ni un módulo nativo con un contexto nuevo, ni dejar que Android rehaga la actividad lo consiguen en el emulador: el proceso sigue leyendo los colores viejos hasta reabrirlo, y rehacer la actividad dejaba la app cargando. Se queda como está (claro/oscuro sí cambia en vivo).
+
 ## v2.1518.0 — La bolsa que llega a la sala equivocada y la que nadie recibe
 
 Traslados, sobre la ruta de reparto de v2.1517.0. Decisión del usuario: «el aviso va a bodega y a quien entregó».

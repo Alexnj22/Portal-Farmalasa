@@ -11,6 +11,16 @@
 // React los hooks revientan («Invalid hook call») y el mensaje no nombra la
 // causa. Por eso todo paquete que el núcleo use va en el package.json de la app.
 const { getDefaultConfig } = require('expo/metro-config');
+
+// Sin carga diferida en desarrollo. Con ella, Metro pide cada `import()` del
+// núcleo como un paquete aparte por una dirección relativa a ESTA carpeta:
+// `/../../src/store/slices/practicantesSlice…`, que la dirección colapsa a
+// `/src/…` y Metro no encuentra («Unable to resolve module
+// ./src/store/slices/practicantesSlice», cada vez que se abre la app en el
+// emulador o el teléfono de pruebas). En producción no pasa: el paquete por
+// aire lleva todo adentro. El CLI de Expo lee esta variable al servir el
+// manifiesto, en el mismo proceso que carga este archivo.
+process.env.EXPO_NO_METRO_LAZY = process.env.EXPO_NO_METRO_LAZY || '1';
 const path = require('path');
 
 const app = __dirname;

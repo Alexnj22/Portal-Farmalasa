@@ -68,6 +68,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/laboratorios': true, // dónde está cada laboratorio en la sala, y corregirlo; la política de vencimiento
   '/cuentas-por-pagar': true, // lo que se debe por proveedor, registrar un pago y aprobar/anular
   '/metas': true, // el tablero del mes por sala, bono, confirmación e histórico
+  '/cumplimiento': true, // tablero, vencimientos, registros (crear, cerrar, anular, imprimir el papel) y acreditaciones
   '/inyecciones': true, // pendientes (marcar aplicadas) y bitácora; por cobrar y ajustes: portal
   '/facturas-compra': true, // los documentos del mes; la ficha con productos y PDF (revisión y vincular: portal)
   '/corte-z': true, // el Gran Z mensual con su cotejo y el PDF

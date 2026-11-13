@@ -14,7 +14,7 @@ import {
     avisarRetiroATodas, cerrarRegistroDeCumplimiento, guardarRegistroDeCumplimiento, mensajeDeCumplimiento,
 } from '@nucleo/data/cumplimiento';
 import {
-    TIPOS, camposAlCerrar, camposAlCrear, faltantes, listaDe, nombreDelSemestre, puntuarLista, semestresRecientes,
+    TIPOS, camposAlCerrar, camposAlCrear, datosIniciales, datosParaGuardar, faltantes, listaDe, nombreDelSemestre, puntuarLista, semestresRecientes,
 } from '@nucleo/utils/cumplimiento';
 import { hoySV } from '@nucleo/utils/fecha';
 import { loadDraft, saveDraft, clearDraft } from '@nucleo/utils/draftUtils';
@@ -39,16 +39,6 @@ const RESPUESTAS = [
     { value: 'na', label: 'No aplica' },
 ];
 
-function inicial(tipo, registro) {
-    const datos = {};
-    for (const c of TIPOS[tipo]?.campos || []) {
-        if (c.tipo === 'fijo') datos[c.key] = c.valor;
-        else if (c.tipo === 'checklist') datos[c.key] = {};
-        else if (c.tipo === 'personas' || c.tipo === 'lista') datos[c.key] = [];
-    }
-    return { ...datos, ...(registro?.datos || {}) };
-}
-
 export default function RegistroModal({ tipo, modo = 'crear', registro = null, branchId, sala, aTodas = false, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
     const employees = useStaff((s) => s.employees) || VACIO;
@@ -58,7 +48,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
     const claveBorrador = `cumplimiento:${tipo}:${modo}:${registro?.id ?? branchId ?? 'todas'}`;
 
     const [fecha, setFecha] = useState(() => loadDraft(claveBorrador)?.fecha || registro?.fecha || hoySV());
-    const [datos, setDatos] = useState(() => loadDraft(claveBorrador)?.datos || (cerrando ? {} : inicial(tipo, registro)));
+    const [datos, setDatos] = useState(() => loadDraft(claveBorrador)?.datos || (cerrando ? {} : datosIniciales(tipo, registro)));
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
 
@@ -81,8 +71,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
     const guardar = async () => {
         setGuardando(true);
         setError(null);
-        const limpio = Object.fromEntries(Object.entries(datos).filter(([, v]) => v !== '' && v !== undefined));
-        if (puntaje) limpio.resultado = { porcentaje: puntaje.porcentaje, aprueba: puntaje.aprueba, fallas: puntaje.fallas };
+        const limpio = datosParaGuardar(tipo, datos);
         let r;
         if (cerrando) r = await cerrarRegistroDeCumplimiento(registro.id, limpio);
         else if (aTodas) r = await avisarRetiroATodas(fecha, limpio);

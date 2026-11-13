@@ -9,7 +9,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import {
     anularRegistroDeCumplimiento, fetchRegistrosDeCumplimiento, mensajeDeCumplimiento,
 } from '@nucleo/data/cumplimiento';
-import { TIPOS, camposAlCerrar, estadoDelPlazo, nombreDelSemestre } from '@nucleo/utils/cumplimiento';
+import { TIPOS, camposAlCerrar, estadoDelPlazo, resumenDelRegistro } from '@nucleo/utils/cumplimiento';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { registrarEgreso } from '@nucleo/data/egreso';
@@ -27,21 +27,6 @@ import RegistroModal from './RegistroModal';
  * para crear hay que elegir una sala — salvo el retiro, que se puede avisar a
  * todas de una vez (`retiroATodas`).
  */
-
-const resumenDe = (r) => {
-    const d = r.datos || {};
-    switch (r.tipo) {
-        case 'farmacovigilancia': return [d.producto, d.reaccion].filter(Boolean).join(' · ');
-        case 'reporte_cero': return `Sin reacciones adversas · ${nombreDelSemestre(d.periodo)}`;
-        case 'vencido': return [d.producto, d.lote && `lote ${d.lote}`, d.cantidad && `${d.cantidad} u.`].filter(Boolean).join(' · ');
-        case 'destruccion': return [`${(d.productos || []).length} producto(s)`, d.gestora].filter(Boolean).join(' · ');
-        case 'retiro': return [d.producto, d.lote && `lote ${d.lote}`, d.alerta].filter(Boolean).join(' · ');
-        case 'autoinspeccion':
-        case 'a_la_vista': return d.resultado ? `${d.resultado.porcentaje} % · ${d.resultado.aprueba ? 'Aprueba' : 'No aprueba'}` : '';
-        case 'capacitacion': return [d.tema, `${(d.asistentes || []).length} asistentes`].filter(Boolean).join(' · ');
-        default: return '';
-    }
-};
 
 export default function TabRegistros({ tipos, branchId, sala, puedeEditar, retiroATodas = false, aviso = null, vacio }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -135,7 +120,7 @@ export default function TabRegistros({ tipos, branchId, sala, puedeEditar, retir
                                         <Badge variant={plazo.tono} uppercase={false}>{plazo.texto}</Badge>
                                         {!branchId && <span className="text-body-sm text-content-3">{r.sala}</span>}
                                     </div>
-                                    <p className="text-body-sm text-content-2 mt-0.5">{resumenDe(r)}</p>
+                                    <p className="text-body-sm text-content-2 mt-0.5">{resumenDelRegistro(r)}</p>
                                     <p className="text-caption text-content-3 mt-1">
                                         {fechaTexto(r.fecha, { day: '2-digit', month: 'short', year: 'numeric' })}
                                         {r.registrado_por_nombre && ` · anotó ${shortEmployeeName({ name: r.registrado_por_nombre })}`}

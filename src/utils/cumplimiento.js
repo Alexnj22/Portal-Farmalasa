@@ -338,3 +338,99 @@ export function tonoDeVencimiento(dias) {
     if (dias <= 60) return 'info';
     return 'success';
 }
+
+// ── Lo que se muestra en la lista y en el tablero ────────────────────────
+// Vivían en las pestañas del portal; se mudaron (2026-11-13) para que la app
+// las cuente igual.
+
+/** Una línea con lo esencial de un registro. */
+export function resumenDelRegistro(r) {
+    const d = r?.datos || {};
+    switch (r?.tipo) {
+        case 'farmacovigilancia': return [d.producto, d.reaccion].filter(Boolean).join(' · ');
+        case 'reporte_cero': return `Sin reacciones adversas · ${nombreDelSemestre(d.periodo)}`;
+        case 'vencido': return [d.producto, d.lote && `lote ${d.lote}`, d.cantidad && `${d.cantidad} u.`].filter(Boolean).join(' · ');
+        case 'destruccion': return [`${(d.productos || []).length} producto(s)`, d.gestora].filter(Boolean).join(' · ');
+        case 'retiro': return [d.producto, d.lote && `lote ${d.lote}`, d.alerta].filter(Boolean).join(' · ');
+        case 'autoinspeccion':
+        case 'a_la_vista': return d.resultado ? `${d.resultado.porcentaje} % · ${d.resultado.aprueba ? 'Aprueba' : 'No aprueba'}` : '';
+        case 'capacitacion': return [d.tema, `${(d.asistentes || []).length} asistentes`].filter(Boolean).join(' · ');
+        default: return '';
+    }
+}
+
+/**
+ * Lo que le falta a una sala del tablero (`cumplimiento_resumen`), en palabras
+ * de la sala: `[{ tono: 'danger'|'warning'|'info', texto, tab }]`. `tab` es la
+ * pestaña donde se resuelve.
+ */
+export function pendientesDeSala(s, hoyIso, fechaTexto = (f) => f) {
+    const r = [];
+    const farmacia = s.tipo_sala === 'FARMACIA';
+    if (s.fv_vencidas > 0) r.push({ tono: 'danger', texto: `${s.fv_vencidas} reacción(es) adversa(s) sin notificar fuera de plazo`, tab: 'farmacovigilancia' });
+    else if (s.fv_abiertas > 0) r.push({ tono: 'warning', texto: `${s.fv_abiertas} reacción(es) adversa(s) por notificar`, tab: 'farmacovigilancia' });
+    if (farmacia && !s.fv_semestre_cubierto) r.push({ tono: 'warning', texto: `Falta el reporte de farmacovigilancia de ${nombreDelSemestre(s.fv_semestre).toLowerCase()}`, tab: 'farmacovigilancia' });
+    if (s.vencidos_por_destruir > 0) r.push({ tono: 'info', texto: `${s.vencidos_por_destruir} producto(s) de baja esperando destrucción`, tab: 'vencidos' });
+    if (s.retiros_abiertos > 0) r.push({ tono: 'danger', texto: `${s.retiros_abiertos} retiro(s) de lote sin atender`, tab: 'retiros' });
+    const dAuto = s.ultima_autoinspeccion ? -diasHasta(s.ultima_autoinspeccion, hoyIso) : null;
+    if (dAuto === null) r.push({ tono: 'warning', texto: 'Nunca se ha hecho la autoinspección', tab: 'autoinspeccion' });
+    else if (dAuto > 365) r.push({ tono: 'warning', texto: `La última autoinspección fue el ${fechaTexto(s.ultima_autoinspeccion)} (toca una por año)`, tab: 'autoinspeccion' });
+    if (farmacia && !s.ultima_revision_a_la_vista) r.push({ tono: 'info', texto: 'Falta revisar lo que debe estar a la vista', tab: 'autoinspeccion' });
+    if (s.capacitaciones_del_anio === 0) r.push({ tono: 'warning', texto: 'Sin capacitaciones anotadas este año', tab: 'capacitacion' });
+    if (s.dependientes_sin_acreditacion > 0) r.push({ tono: 'danger', texto: `${s.dependientes_sin_acreditacion} persona(s) de mostrador sin acreditación`, tab: 'dependientes' });
+    return r;
+}
+
+/**
+ * Las pestañas de registros: qué tipos lleva cada una, qué botón crea cada
+ * tipo, el aviso de la norma y el texto cuando está vacía.
+ */
+export const REGISTROS_DE_CUMPLIMIENTO = Object.freeze({
+    farmacovigilancia: {
+        tipos: [{ tipo: 'farmacovigilancia', boton: 'Sospecha de reacción adversa', principal: true }, { tipo: 'reporte_cero', boton: 'Reporte cero del semestre' }],
+        aviso: 'Toda sospecha se notifica al Centro Nacional de Farmacovigilancia: 30 días si no es grave, 15 si es grave y 72 horas si fue mortal o puso en riesgo la vida. Si en el semestre no hubo ninguna, se envía el reporte cero.',
+        vacio: { titulo: 'Sin sospechas anotadas', subtitulo: 'Si un cliente cuenta una reacción a un medicamento, se anota aquí el mismo día.' },
+    },
+    vencidos: {
+        tipos: [{ tipo: 'vencido', boton: 'Dar de baja un producto', principal: true }, { tipo: 'destruccion', boton: 'Acta de destrucción' }],
+        aviso: 'Lo vencido o dañado sale del área de venta, se separa en el área rotulada de no aptos y se anota. Para destruirlo se avisa a la SRS 72 horas antes y lo retira una gestora autorizada por el MARN, que entrega su certificado.',
+        vacio: { titulo: 'Sin bajas anotadas' },
+    },
+    retiros: {
+        tipos: [{ tipo: 'retiro', boton: 'Anotar retiro en esta sala', principal: true }],
+        aviso: 'Cuando la SRS o un laboratorio ordena retirar un lote, cada sala dice cuántas unidades tenía, las separa y anota a quién las devolvió.',
+        vacio: { titulo: 'Sin retiros de lote' },
+    },
+    autoinspeccion: {
+        tipos: [{ tipo: 'autoinspeccion', boton: 'Hacer autoinspección', principal: true }, { tipo: 'a_la_vista', boton: 'Revisar lo que debe estar a la vista' }],
+        aviso: 'Una autoinspección al año con la guía de la SRS, con su informe y su plan de acción. Un punto crítico sin cumplir basta para no aprobar.',
+        vacio: { titulo: 'Sin autoinspecciones', subtitulo: 'La norma pide una al año en cada sala.' },
+    },
+    capacitacion: {
+        tipos: [{ tipo: 'capacitacion', boton: 'Anotar capacitación', principal: true }],
+        aviso: 'El personal recibe capacitación según un programa anual; cada una se registra con su tema, quién la dio, quiénes asistieron y cómo se evaluó.',
+        vacio: { titulo: 'Sin capacitaciones anotadas' },
+    },
+});
+
+/** Los datos listos para guardar: sin vacíos y con el resultado de la lista. */
+export function datosParaGuardar(tipo, datos) {
+    const limpio = Object.fromEntries(Object.entries(datos || {}).filter(([, v]) => v !== '' && v !== undefined));
+    const lista = listaDe(tipo);
+    if (lista.length) {
+        const p = puntuarLista(lista, limpio.respuestas);
+        limpio.resultado = { porcentaje: p.porcentaje, aprueba: p.aprueba, fallas: p.fallas };
+    }
+    return limpio;
+}
+
+/** Los datos con que nace un formulario de alta (o los del registro a corregir). */
+export function datosIniciales(tipo, registro) {
+    const datos = {};
+    for (const c of TIPOS[tipo]?.campos || []) {
+        if (c.tipo === 'fijo') datos[c.key] = c.valor;
+        else if (c.tipo === 'checklist') datos[c.key] = {};
+        else if (c.tipo === 'personas' || c.tipo === 'lista') datos[c.key] = [];
+    }
+    return { ...datos, ...(registro?.datos || {}) };
+}

@@ -5,7 +5,7 @@ import Notice from '../../components/common/Notice';
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { fetchResumenDeCumplimiento, mensajeDeCumplimiento } from '@nucleo/data/cumplimiento';
-import { diasHasta, nombreDelSemestre } from '@nucleo/utils/cumplimiento';
+import { pendientesDeSala } from '@nucleo/utils/cumplimiento';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 /*
@@ -13,23 +13,6 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
  * Cada renglón dice qué falta en palabras de la sala; tocarlo lleva a la
  * pestaña donde se resuelve. Los números salen de `cumplimiento_resumen`.
  */
-
-function renglonesDe(s, hoy) {
-    const r = [];
-    const farmacia = s.tipo_sala === 'FARMACIA';
-    if (s.fv_vencidas > 0) r.push({ tono: 'danger', texto: `${s.fv_vencidas} reacción(es) adversa(s) sin notificar fuera de plazo`, tab: 'farmacovigilancia' });
-    else if (s.fv_abiertas > 0) r.push({ tono: 'warning', texto: `${s.fv_abiertas} reacción(es) adversa(s) por notificar`, tab: 'farmacovigilancia' });
-    if (farmacia && !s.fv_semestre_cubierto) r.push({ tono: 'warning', texto: `Falta el reporte de farmacovigilancia de ${nombreDelSemestre(s.fv_semestre).toLowerCase()}`, tab: 'farmacovigilancia' });
-    if (s.vencidos_por_destruir > 0) r.push({ tono: 'info', texto: `${s.vencidos_por_destruir} producto(s) de baja esperando destrucción`, tab: 'vencidos' });
-    if (s.retiros_abiertos > 0) r.push({ tono: 'danger', texto: `${s.retiros_abiertos} retiro(s) de lote sin atender`, tab: 'retiros' });
-    const dAuto = s.ultima_autoinspeccion ? -diasHasta(s.ultima_autoinspeccion, hoy) : null;
-    if (dAuto === null) r.push({ tono: 'warning', texto: 'Nunca se ha hecho la autoinspección', tab: 'autoinspeccion' });
-    else if (dAuto > 365) r.push({ tono: 'warning', texto: `La última autoinspección fue el ${fechaTexto(s.ultima_autoinspeccion)} (toca una por año)`, tab: 'autoinspeccion' });
-    if (farmacia && !s.ultima_revision_a_la_vista) r.push({ tono: 'info', texto: 'Falta revisar lo que debe estar a la vista', tab: 'autoinspeccion' });
-    if (s.capacitaciones_del_anio === 0) r.push({ tono: 'warning', texto: 'Sin capacitaciones anotadas este año', tab: 'capacitacion' });
-    if (s.dependientes_sin_acreditacion > 0) r.push({ tono: 'danger', texto: `${s.dependientes_sin_acreditacion} persona(s) de mostrador sin acreditación`, tab: 'dependientes' });
-    return r;
-}
 
 export default function TabResumen({ onIr, pestanas }) {
     const [salas, setSalas] = useState(null);
@@ -53,7 +36,7 @@ export default function TabResumen({ onIr, pestanas }) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {salas.map((s) => {
-                const renglones = renglonesDe(s, hoy).filter((x) => pestanas.has(x.tab));
+                const renglones = pendientesDeSala(s, hoy, fechaTexto).filter((x) => pestanas.has(x.tab));
                 return (
                     <div key={s.branch_id} data-surface="card" className="p-4 space-y-2">
                         <div className="flex items-center justify-between gap-2">

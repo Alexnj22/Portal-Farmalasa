@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1528.0 — Cumplimiento sanitario nativo en la app
+
+**Cumplimiento sanitario** ya es una pantalla nativa de la app del personal (antes se abría el portal adentro):
+
+- **Resumen**: por sala, qué está al día y qué no. Tocar un pendiente lleva a donde se resuelve.
+- **Fechas**: los vencimientos del expediente (permisos, credenciales, contratos, extintores), ordenados por mes.
+- **Registros**: farmacovigilancia y reporte cero, bajas y actas de destrucción, retiros de lote (también «a todas las salas»), autoinspección y revisión de lo que debe estar a la vista (con su lista de verificación y su puntaje), y capacitaciones con sus asistentes. Se crean, se corrigen mientras están abiertos, se cierran, se anulan con motivo y se **imprimen** o comparten en PDF con el mismo papel del portal. Lo escrito se guarda como borrador.
+- **Acreditación**: quién atiende el mostrador y si tiene su acreditación.
+
+Mismos permisos que en el portal. Lo que comparten portal y app (el resumen de cada registro, los pendientes por sala, las pestañas y cómo se guardan los datos) se mudó al núcleo (`src/utils/cumplimiento.js`).
+
 ## v2.1527.8 — Compras: el sello del PDF se lee al cargar, no en un repaso de todo
 
 Corrige cómo se hizo la v2.1527.5. Ya no se repasan todas las facturas

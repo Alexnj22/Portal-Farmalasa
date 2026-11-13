@@ -11,6 +11,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { salasDeBitacora } from '@nucleo/utils/rondaDeBitacora';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
+import { REGISTROS_DE_CUMPLIMIENTO } from '@nucleo/utils/cumplimiento';
 import TabResumen from './cumplimiento/TabResumen';
 
 const TabRegistros = lazy(() => import('./cumplimiento/TabRegistros'));
@@ -33,33 +34,7 @@ const TabDependientes = lazy(() => import('./cumplimiento/TabDependientes'));
 
 const VACIO = [];
 
-const REGISTROS = {
-    farmacovigilancia: {
-        tipos: [{ tipo: 'farmacovigilancia', boton: 'Sospecha de reacción adversa', principal: true }, { tipo: 'reporte_cero', boton: 'Reporte cero del semestre' }],
-        aviso: 'Toda sospecha se notifica al Centro Nacional de Farmacovigilancia: 30 días si no es grave, 15 si es grave y 72 horas si fue mortal o puso en riesgo la vida. Si en el semestre no hubo ninguna, se envía el reporte cero.',
-        vacio: { titulo: 'Sin sospechas anotadas', subtitulo: 'Si un cliente cuenta una reacción a un medicamento, se anota aquí el mismo día.' },
-    },
-    vencidos: {
-        tipos: [{ tipo: 'vencido', boton: 'Dar de baja un producto', principal: true }, { tipo: 'destruccion', boton: 'Acta de destrucción' }],
-        aviso: 'Lo vencido o dañado sale del área de venta, se separa en el área rotulada de no aptos y se anota. Para destruirlo se avisa a la SRS 72 horas antes y lo retira una gestora autorizada por el MARN, que entrega su certificado.',
-        vacio: { titulo: 'Sin bajas anotadas' },
-    },
-    retiros: {
-        tipos: [{ tipo: 'retiro', boton: 'Anotar retiro en esta sala', principal: true }],
-        aviso: 'Cuando la SRS o un laboratorio ordena retirar un lote, cada sala dice cuántas unidades tenía, las separa y anota a quién las devolvió.',
-        vacio: { titulo: 'Sin retiros de lote' },
-    },
-    autoinspeccion: {
-        tipos: [{ tipo: 'autoinspeccion', boton: 'Hacer autoinspección', principal: true }, { tipo: 'a_la_vista', boton: 'Revisar lo que debe estar a la vista' }],
-        aviso: 'Una autoinspección al año con la guía de la SRS, con su informe y su plan de acción. Un punto crítico sin cumplir basta para no aprobar.',
-        vacio: { titulo: 'Sin autoinspecciones', subtitulo: 'La norma pide una al año en cada sala.' },
-    },
-    capacitacion: {
-        tipos: [{ tipo: 'capacitacion', boton: 'Anotar capacitación', principal: true }],
-        aviso: 'El personal recibe capacitación según un programa anual; cada una se registra con su tema, quién la dio, quiénes asistieron y cómo se evaluó.',
-        vacio: { titulo: 'Sin capacitaciones anotadas' },
-    },
-};
+const REGISTROS = REGISTROS_DE_CUMPLIMIENTO;
 
 export default function CumplimientoView() {
     const { user, hasPermission, getScope } = useAuth();

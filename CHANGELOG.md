@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.7 — App: lote y vencimiento reales en un conteo que ajusta, nativo
+
+- **Conteos** en la app: en un conteo que ajusta el inventario, cada renglón del sistema tiene «Anotar lote» (o «Lote y vence» si ya trae uno), igual que en la web. Se anotan los lotes impresos en las cajas con su mes y año de vencimiento y cuántas hay —varios de una vez con «Otro lote»—, y el renglón queda con lo que no trae lote impreso, que se calcula solo. Antes en la app sólo se podía poner la cantidad.
+
 ## v2.1524.6 — App: confirmar aplicaciones y libro de inyectables con firma, nativos
 
 - **Inyecciones → Bitácora** en la app: enfermería confirma desde el teléfono las aplicaciones que hizo («La apliqué yo», o todas de una vez), igual que en la web.

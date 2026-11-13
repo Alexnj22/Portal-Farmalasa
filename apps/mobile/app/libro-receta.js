@@ -44,7 +44,7 @@ export default function LibroReceta() {
   const sucursales = useStaffStore((s) => s.branches);
   const sala = String(salaParam || salaDelUsuario(user) || '');
   const nombre = (sucursales || []).find((b) => String(b.id) === sala)?.name ?? '';
-  const puedeCompletar = hasPermission('bitacoras', 'can_edit');
+  const puedeCompletar = hasPermission('bitacoras_tab_libro', 'can_edit');
   const [mes, setMes] = useState(hoySV().slice(0, 7));
   const [vista, setVista] = useState('pendiente');
   const [filas, setFilas] = useState(null);

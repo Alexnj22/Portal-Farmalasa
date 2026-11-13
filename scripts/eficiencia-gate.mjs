@@ -630,6 +630,13 @@ const CRONS = [
           + 'mismo aviso es la forma más rápida de enseñar a ignorar la campana.',
   },
   {
+    job: 'bitacora-anomalias-diario', slug: null, cadencia: '10 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'No llama a ninguna función: una consulta a la base y, si hay algo, un aviso. Una vez '
+          + 'al día (09:10 SV) mira dos cosas que una lectura sola no muestra: la misma temperatura '
+          + '7 veces seguidas y el refrigerador sin calibración vigente. Antiduplicado por semana.',
+  },
+  {
     job: 'avisar-envios-sin-decidir', slug: null, cadencia: '0 15 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'No llama a ninguna función: es una consulta y un aviso. Le recuerda a la sala de '

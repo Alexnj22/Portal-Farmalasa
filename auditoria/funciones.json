@@ -6494,6 +6494,11 @@
    "area": "traslados",
    "por": "manual",
    "manual": true
+  },
+  "bitacora_avisar_anomalias": {
+   "area": "bitacoras",
+   "por": "manual",
+   "manual": true
   }
  }
 }

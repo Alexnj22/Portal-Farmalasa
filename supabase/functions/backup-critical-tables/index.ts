@@ -54,6 +54,13 @@ const TABLES = [
   // inyectables, y se anota a mano: no se reconstruye de ningún otro sistema.
   // Faltaba acá desde que existe (auditoría del 2026-10-28).
   "inyeccion_aplicaciones",
+  // El libro de inyectables lo pide el CSSP por tener inyectorio; lo demás
+  // nació después del 3-sep y faltaba (auditoría del 2026-11-13): cumplimiento
+  // (farmacovigilancia, bajas, capacitación), visitas del regente (RTS 6.1.3),
+  // revisión de lotes del libro y el listado AWaRe (RTS 6.1.15). Misma lista
+  // que `backup_dump_table` (migración 20261113161226).
+  "inyeccion_libro", "cumplimiento_registros", "regencia_visitas",
+  "libro_lote_revisiones", "antibioticos_aware", "antibioticos_producto",
 ];
 
 const RETENTION_DAYS = 60;

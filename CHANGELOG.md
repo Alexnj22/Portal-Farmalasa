@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1520.5 — Bitácoras: respaldo completo, rastro de cambios, humedad obligatoria y aviso de termómetro
+
+Bitácoras SRS, fase 1 — lo que la auditoría del 13-nov encontró roto o sin rastro (migración `20261113161226`).
+
+- **Respaldo semanal**: entran el libro de inyectables, cumplimiento, visitas del regente, revisión de lotes del libro y el listado AWaRe (seis tablas que faltaban). Lista de `backup_dump_table` y de `backup-critical-tables` (v31) juntas.
+- **Rastro**: el libro de inyectables y la configuración de las áreas (rangos, calibración) guardan la fila anterior en cada cambio, por el mismo `bitacora_auditar` de las demás bitácoras.
+- **Humedad obligatoria** al anotar en un área que la mide. Al corregir puede quedar vacía con motivo (la salida honesta para una humedad imposible ya guardada).
+- **Aviso diario** (`bitacora-anomalias-diario`, 09:10 SV): la misma temperatura 7 lecturas seguidas, y el refrigerador sin calibración vigente o por vencer en 30 días (Guía SRS 2.32). Una vez por semana por cosa.
+- App: «Completar» del libro bajo receta se decide con `bitacoras_tab_libro`, el mismo permiso que exige la base.
+
 ## v2.1520.4 — App Android: la lupa del buscador toma el color al cambiar claro/oscuro
 
 App del personal, Android — la lupa (y la ✕) del buscador de la barra ya no queda blanca sobre la barra clara al pasar de oscuro a claro con la app abierta.

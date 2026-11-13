@@ -4,6 +4,7 @@ import JSZip from "npm:jszip@3.10.1";
 import { getCorsHeaders, checkCronSecret, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { extractProveedorFromDte } from "../_shared/proveedorFromDte.ts";
 import { extractRelatedDocRef, resolveRelatedDocId } from "../_shared/dteRelatedDoc.ts";
+import { selloValido, selloEnTextoDelPdf, type SelloDelPdf } from "../_shared/selloDeCompra.ts";
 
 // Sincroniza facturas de compra (DTE JSON + PDF) desde las bandejas Gmail
 // conectadas → Storage privado (purchase-dte) + purchase_dte_documents.
@@ -628,6 +629,21 @@ const ANULADO_RE = new RegExp(ANULADO_FRAG, 'i');
 // matchea un documento guardado. Un asunto que dice «anulado» sin un código
 // que resuelva no invalida nada.
 const ASUNTO_ANULACION_RE = /(anulad[oa]|anulaci[oó]n|invalidad[oa]|invalidaci[oó]n|cancelaci[oó]n|cancelad[oa])/i;
+
+// El sello impreso en el PDF. Un PDF escaneado (sin capa de texto) o roto da
+// `sin-sello`: no hay nada que leer, y no bloquea el resto del documento.
+async function selloDelPdf(pdfBytes: Uint8Array, fecEmi: string | null): Promise<SelloDelPdf> {
+  try {
+    const doc = await getDocumentProxy(pdfBytes);
+    try {
+      const { text } = await extractText(doc, { mergePages: true });
+      const anio = fecEmi ? Number(String(fecEmi).slice(0, 4)) : null;
+      return selloEnTextoDelPdf(text, anio);
+    } finally { await doc.destroy().catch(() => {}); }
+  } catch {
+    return { sello: null, motivo: 'sin-sello' };
+  }
+}
 
 async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codigo: string | null; isNoticeOrRelatedDoc: boolean; isAnulado: boolean }> {
   try {
@@ -1309,12 +1325,20 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           warnings.push(`DTE ${codigoGeneracion}: no se pudo subir respaldo .orig.json — ${origUpErr.message}`);
         }
 
+        // El sello: del sobre del JSON; si no lo trae, del texto del PDF
+        // (Guardado, Santa Lucía y otros sólo lo imprimen — ver
+        // `selloEnTextoDelPdf`). Sin sello la compra no se puede cargar.
+        let selloDelDocumento: string | null = selloRecibido;
         if (pdfPart && pdfPath) {
           const pdfBytes = await resolveAttachmentBytes(accessToken, id, pdfPart);
           const { error: pdfUpErr } = await supabase.storage.from(BUCKET)
             .upload(pdfPath, pdfBytes, { contentType: 'application/pdf', upsert: false });
           if (pdfUpErr && !String(pdfUpErr.message).toLowerCase().includes('already exists')) {
             throw new Error(`upload pdf ${pdfPath}: ${pdfUpErr.message}`);
+          }
+          if (!selloValido(selloDelDocumento)) {
+            const delPdf = await selloDelPdf(pdfBytes, fecEmi);
+            if (delPdf.sello) selloDelDocumento = delPdf.sello;
           }
         }
 
@@ -1334,7 +1358,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           total_iva:            extractTotalIva(json),
           json_path:           publicUrl(jsonPath),
           orig_json_path:      origUpErr && !String(origUpErr.message).toLowerCase().includes('already exists') ? null : publicUrl(origJsonPath),
-          sello_recibido:      selloRecibido,
+          sello_recibido:      selloDelDocumento,
           pdf_path:             pdfPath ? publicUrl(pdfPath) : null,
           account_id:          account.id,
           from_email:          fromEmail,
@@ -1725,7 +1749,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false, backfill_total_iva = false, backfill_orig_json = false, after_id = 0, limit: p_limit = null } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false, backfill_total_iva = false, backfill_orig_json = false, backfill_sellos_pdf = false, ver_texto = false, after_id = 0, limit: p_limit = null } = body;
 
     // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
     // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
@@ -2030,6 +2054,87 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         backfill_orig_json: true, checked, recovered, sinAdjunto,
         nextAfterId: lastId, hasMore: cutOff, errors: errors.slice(0, 50),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // 2026-11-13: el sello de los documentos YA guardados cuyo JSON no lo
+    // traía y cuyo PDF sí lo imprime (ver `selloEnTextoDelPdf`). Pagina por
+    // id (`after_id`), baja el PDF de Storage (no necesita Gmail) y escribe
+    // SÓLO donde el sello sigue vacío — la guarda va en el mismo UPDATE, así
+    // que no pisa un sello que haya llegado entre la lectura y la escritura.
+    // `dry_run` no escribe; `ver_texto` devuelve el texto alrededor del sello
+    // para mirarlo a ojo.
+    if (backfill_sellos_pdf === true) {
+      const CHUNK = 50;
+      // Tope por llamada: cada PDF pasa por pdf.js y el worker tiene memoria
+      // contada (400 de una vez → 546 WORKER_RESOURCE_LIMIT, medido).
+      const tope = Math.min(p_limit ? Number(p_limit) : 120, 120);
+      let checked = 0, conSello = 0, escritos = 0, lastId = Number(after_id) || 0;
+      const porMotivo: Record<string, number> = {};
+      const resultados: unknown[] = [];
+      const errors: string[] = [];
+      const startTime = Date.now();
+      let cutOff = false;
+      const marker = `/storage/v1/object/public/${BUCKET}/`;
+
+      outer: for (;;) {
+        const { data: docs, error: dErr } = await admin
+          .from('purchase_dte_documents')
+          .select('id, codigo_generacion, numero_control, emisor_nombre, fecha_emision, pdf_path')
+          .is('sello_recibido', null)
+          .not('pdf_path', 'is', null)
+          .eq('invalidado', false)
+          .gt('id', lastId)
+          .order('id', { ascending: true })
+          .limit(CHUNK);
+        if (dErr) throw new Error(`purchase_dte_documents: ${dErr.message}`);
+        if (!docs || docs.length === 0) break;
+        for (const d of docs) {
+          if (checked >= tope) { cutOff = true; break outer; }
+          if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break outer; }
+          checked++; lastId = d.id;
+          try {
+            const idx = String(d.pdf_path).indexOf(marker);
+            if (idx === -1) { errors.push(`doc ${d.id}: pdf_path con formato inesperado`); continue; }
+            const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(String(d.pdf_path).slice(idx + marker.length));
+            if (dlErr) { errors.push(`doc ${d.id}: download — ${dlErr.message}`); continue; }
+            const bytes = new Uint8Array(await fileData.arrayBuffer());
+            let texto = '';
+            try {
+              const pdf = await getDocumentProxy(bytes);
+              try { texto = (await extractText(pdf, { mergePages: true })).text ?? ''; }
+              finally { await pdf.destroy().catch(() => {}); }   // sin esto la memoria se acumula y el worker muere (546)
+            } catch { texto = ''; }
+            const anio = d.fecha_emision ? Number(String(d.fecha_emision).slice(0, 4)) : null;
+            const r = selloEnTextoDelPdf(texto, anio);
+            const motivo = texto ? r.motivo : 'pdf-sin-texto';
+            porMotivo[motivo] = (porMotivo[motivo] ?? 0) + 1;
+            let escrito = false;
+            if (r.sello) {
+              conSello++;
+              if (!dry_run) {
+                const { data: up, error: upErr } = await admin.from('purchase_dte_documents')
+                  .update({ sello_recibido: r.sello }).eq('id', d.id).is('sello_recibido', null).select('id');
+                if (upErr) { errors.push(`doc ${d.id}: update — ${upErr.message}`); }
+                else if (up && up.length > 0) { escritos++; escrito = true; }
+              }
+            }
+            const fila: Record<string, unknown> = { id: d.id, numero_control: d.numero_control, emisor: d.emisor_nombre, sello: r.sello, motivo, escrito };
+            if (ver_texto) {
+              const i = texto.search(/sello\s*(?:de\s*)?recepci/i);
+              fila.texto = i >= 0 ? texto.slice(Math.max(0, i - 80), i + 260) : texto.slice(0, 300);
+            }
+            resultados.push(fila);
+          } catch (e) {
+            errors.push(`doc ${d.id}: ${(e as Error).message}`);
+          }
+        }
+        if (docs.length < CHUNK) break;
+      }
+
+      return new Response(JSON.stringify({
+        backfill_sellos_pdf: true, dry_run, checked, conSello, escritos, porMotivo,
+        nextAfterId: lastId, hasMore: cutOff, errors: errors.slice(0, 50), resultados,
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

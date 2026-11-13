@@ -157,3 +157,56 @@ export function sellosDeLasCompras(
   }
   return out;
 }
+
+// ── El sello impreso en el PDF (2026-11-13) ──────────────────────────────────
+//
+// Hay proveedores que mandan el JSON del DTE SIN el sello de recepción y sólo
+// lo imprimen en la representación gráfica. Guardado los manda todos así
+// (ago–nov 2026: 22 de 23 sin sello en la base), y también Santa Lucía,
+// Interamericana y otros. Sin sello, `cargar-compra-erp` no deja cargar la
+// compra («se podrá cargar cuando llegue») — y por el JSON no iba a llegar
+// nunca. El papel lo trae: «SELLO DE RECEPCIÓN 2026…LNMF».
+//
+// El sello de Hacienda empieza por el año de recepción y son 40 caracteres
+// alfanuméricos (`selloValido`). En el texto que devuelve unpdf la etiqueta y
+// el valor no siempre quedan juntos (en el PDF de Guardado las etiquetas son
+// una columna y los valores otra), así que no se busca «lo que sigue a la
+// etiqueta» sino los tokens con forma de sello en TODO el texto:
+//
+//   · uno solo distinto → ése;
+//   · varios → el más cercano a la etiqueta «sello de recepción», y si no hay
+//     etiqueta, ninguno (un sello equivocado es peor que ninguno: ver arriba).
+//
+// El token se exige AISLADO — sin letra ni dígito pegado a los costados —
+// para que un pedazo de una cadena más larga (la firma, un hash del QR) no
+// pase por sello. Y el año tiene que estar a ±1 del de emisión cuando se
+// conoce: una factura emitida en diciembre se recibe a veces en enero.
+const SELLO_EN_TEXTO_RE = /(?<![0-9A-Za-z])(20\d{2}[0-9A-Z]{36})(?![0-9A-Za-z])/g;
+const ETIQUETA_SELLO_RE = /sello\s*(?:de\s*)?recepci[oó]n/gi;
+
+export type SelloDelPdf = { sello: string | null; motivo: 'uno' | 'junto-a-la-etiqueta' | 'sin-sello' | 'varios-sin-etiqueta' };
+
+export function selloEnTextoDelPdf(texto: string | null | undefined, anioEmision?: number | null): SelloDelPdf {
+  const t = texto ?? '';
+  const encontrados: { sello: string; pos: number }[] = [];
+  for (const m of t.matchAll(SELLO_EN_TEXTO_RE)) {
+    const anio = Number(m[1].slice(0, 4));
+    if (anioEmision && Math.abs(anio - anioEmision) > 1) continue;
+    encontrados.push({ sello: m[1], pos: m.index ?? 0 });
+  }
+  const distintos = [...new Set(encontrados.map(e => e.sello))];
+  if (distintos.length === 0) return { sello: null, motivo: 'sin-sello' };
+  if (distintos.length === 1) return { sello: distintos[0], motivo: 'uno' };
+
+  const etiquetas = [...t.matchAll(ETIQUETA_SELLO_RE)].map(m => (m.index ?? 0) + m[0].length);
+  if (etiquetas.length === 0) return { sello: null, motivo: 'varios-sin-etiqueta' };
+  let mejor: { sello: string; dist: number } | null = null;
+  let empate = false;
+  for (const e of encontrados) {
+    const dist = Math.min(...etiquetas.map(p => Math.abs(e.pos - p)));
+    if (!mejor || dist < mejor.dist) { mejor = { sello: e.sello, dist }; empate = false; }
+    else if (dist === mejor.dist && e.sello !== mejor.sello) empate = true;
+  }
+  if (!mejor || empate) return { sello: null, motivo: 'varios-sin-etiqueta' };
+  return { sello: mejor.sello, motivo: 'junto-a-la-etiqueta' };
+}

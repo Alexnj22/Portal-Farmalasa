@@ -733,7 +733,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         <Dato titulo="Proveedor"        valor={p.encabezado.proveedor} />
                         <Dato titulo="Número"           valor={p.documento.codigo_generacion} mono />
                         <Dato titulo="Fecha de la factura" valor={fmtFecha(p.documento.fecha)} nota="con ésta entra a Bodega" />
-                        <Dato titulo="Sello de Hacienda" valor={p.documento.sello ? 'Sí' : 'No lo trae'} />
+                        <Dato titulo="Sello de Hacienda" valor={(revision?.sello || p.documento.sello) ? 'Sí' : 'No lo trae'} />
                     </div>
 
                     {/* Una sola barra: qué se mira a la izquierda; cómo se carga a

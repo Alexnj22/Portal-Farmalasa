@@ -37,7 +37,7 @@ import {
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
-import { selloValido } from "../_shared/selloDeCompra.ts";
+import { selloValido, selloEnTextoDelPdf } from "../_shared/selloDeCompra.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import {
   devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
@@ -2280,6 +2280,36 @@ async function pausa(admin: any): Promise<string | null> {
   return u?.pausada ? `Las escrituras al sistema están pausadas${u.motivo ? `: ${u.motivo}` : "."}` : null;
 }
 
+// El sello impreso en el PDF de un documento ya guardado. pdf.js se carga
+// diferido: sólo hace falta para los proveedores que no mandan el sello en el
+// JSON. Un PDF escaneado (sin texto) o que no se puede leer da null — la compra
+// queda frenada con su aviso, igual que antes; nunca se adivina.
+let unpdfPromise: Promise<typeof import("npm:unpdf@1.6.2")> | null = null;
+async function selloDelPdfGuardado(admin: any, d: { id: number; pdf_path: string; fecha_emision?: string | null }): Promise<string | null> {
+  const path = pathDeStorage(d.pdf_path);
+  if (!path) return null;
+  const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
+  if (eB || !blob) { console.warn(`sello del PDF ${d.id}: no se pudo bajar — ${eB?.message}`); return null; }
+  let texto = "";
+  try {
+    if (!unpdfPromise) unpdfPromise = import("npm:unpdf@1.6.2").catch((e) => { unpdfPromise = null; throw e; });
+    const { getDocumentProxy, extractText } = await unpdfPromise;
+    const pdf = await getDocumentProxy(new Uint8Array(await blob.arrayBuffer()));
+    try { texto = (await extractText(pdf, { mergePages: true })).text ?? ""; }
+    finally { await pdf.destroy().catch(() => {}); }
+  } catch (e) {
+    console.warn(`sello del PDF ${d.id}: no se pudo leer — ${(e as Error).message}`);
+    return null;
+  }
+  const anio = d.fecha_emision ? Number(String(d.fecha_emision).slice(0, 4)) : null;
+  const { sello } = selloEnTextoDelPdf(texto, anio);
+  if (!sello) return null;
+  const { error: eU } = await admin.from("purchase_dte_documents")
+    .update({ sello_recibido: sello }).eq("id", d.id).is("sello_recibido", null);
+  if (eU) console.warn(`sello del PDF ${d.id}: no se pudo guardar — ${eU.message}`);   // el sello leído vale igual para esta carga
+  return sello;
+}
+
 Deno.serve(async (req: Request) => {
   const cors = { ...getCorsHeaders(req), "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -2380,7 +2410,7 @@ Deno.serve(async (req: Request) => {
       ({ d, dte } = dteDeManual(m));
     } else {
       const { data: dd, error: eD } = await admin.from("purchase_dte_documents")
-        .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, sello_recibido, invalidado")
+        .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, pdf_path, sello_recibido, invalidado")
         .eq("id", documentId).maybeSingle();
       if (eD) throw eD;
       if (!dd) return responder({ error: "Ese documento no existe." }, 404);
@@ -2449,7 +2479,15 @@ Deno.serve(async (req: Request) => {
     // llegó sin sello. Ya registrada, la compra no deja corregirlo:
     // «Actualizar compra» sólo cambia la clasificación fiscal (leído el
     // 2026-11-09). Así que un DTE sin sello válido NO se carga hasta que llegue.
-    const sello = manual ? null : (selloValido(d.sello_recibido) ?? selloDelArchivo);
+    let sello = manual ? null : (selloValido(d.sello_recibido) ?? selloDelArchivo);
+    // Guardado, Santa Lucía y otros mandan el JSON sin el sello y sólo lo
+    // imprimen en el PDF (2026-11-13). Se lee recién acá, al abrir la compra
+    // para cargarla — no en un barrido de todo lo guardado: sólo se baja el PDF
+    // de la factura que alguien va a cargar. Lo leído se guarda en el documento
+    // (sólo si sigue vacío) para no volver a leerlo en la próxima revisión.
+    if (!manual && !sello && d.pdf_path) {
+      sello = await selloDelPdfGuardado(admin, d);
+    }
     if (!manual && !sello) {
       problemas.push({ renglon: null, texto: "El documento no trae el sello de recepción de Hacienda: se podrá cargar cuando llegue." });
     }
@@ -2781,6 +2819,9 @@ Deno.serve(async (req: Request) => {
       total_documento: totalDoc, total_armado: Number(tot.total),
       diferencia: totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100,
       percepcion_proveedor: tasa, renglones: detalle, erroneos, reparto,
+      // El sello con que se va a cargar: puede haberse leído recién del PDF, y la
+      // cabecera del documento (que sale de leer-dte-json, antes) no lo sabe.
+      sello,
     };
     if (enviar) return responder(await enviarCompra(admin, {
       cookie, documentId, manualId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,

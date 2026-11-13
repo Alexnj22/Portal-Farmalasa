@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.8 — Compras: el sello del PDF se lee al cargar, no en un repaso de todo
+
+Corrige cómo se hizo la v2.1527.5. Ya no se repasan todas las facturas
+guardadas buscando el sello en su PDF. Se lee sólo cuando alguien abre una
+factura para cargarla, y queda guardado para la próxima vez.
+
+- Al abrir una factura en Cargar compra, si el documento no trae el sello, se
+  lee del PDF de esa factura.
+- La cabecera muestra «Sello de Hacienda: Sí» en cuanto lo encuentra, también
+  la primera vez que se abre.
+- Lo que llega nuevo por correo se sigue leyendo al recibirlo: ahí el PDF ya se
+  baja para guardarlo, no es una descarga extra.
+
 ## v2.1527.7 — Un envío sin vencimiento ya no ofrece reenviar: explica y arma de nuevo
 
 Un envío armado antes de que se pidiera el vencimiento de la caja (v2.1525.0) queda en «Sin salir de tu sala» con un perecedero sin fecha, y «Volver a enviar» fallaba siempre: reenvía el mismo renglón guardado. Caso real: KISS CHOCOLATE, avería de Salud 4 a Bodega, armado a las 3:30 p. m., 4 minutos antes de publicarse la pantalla nueva.

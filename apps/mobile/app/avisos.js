@@ -247,7 +247,9 @@ export default function Notificaciones() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+        {/* Envuelve y reparte: con los cuatro, en un iPhone no cabían en una
+            fila con hueco fijo y se cortaban en los bordes. */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, rowGap: 4 }}>
           <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />
           <Enlace texto="Comunicados" onPress={() => abrirRuta('/mis-avisos')} />
           {/* Antes iba arriba a la derecha; ese lugar es ahora de la campana, en todas las pestañas (2026-11-11). */}

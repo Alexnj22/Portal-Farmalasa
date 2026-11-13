@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.1 — App: la burbuja del chat ya no asoma y se mueve fluida; Mi perfil y Notificaciones
+
+App del personal (usuario, 2026-11-13: «de un solo corriges este error de la burbuja del chat. y mejora la fluidez de cómo se mueve la burbuja, se siente trabada»):
+
+- **La burbuja asomaba debajo del buscador en el Chat con clientes (iPhone).** Al ocultarse en iOS baja en vez de desvanecerse (el Liquid Glass no admite opacidad animada), y bajaba 140 pt fijos; desde que sube 62 pt encima del buscador (v2.1523.1) eso ya no alcanzaba para salir de la pantalla. Ahora baja lo que mide su lugar más ella misma.
+- **Arrastre fluido**: la posición se lee sincrónica (el callback de `stopAnimation` llegaba tarde y el primer tramo saltaba), el gesto se toma en la fase de captura y no se suelta (la lista de atrás ya no se lo roba), al soltar sigue la inercia del dedo y asienta con un resorte por rigidez, y al tomarla se agranda un poco. Verificado en el simulador con un gesto real (idb).
+- **Notificaciones (iPhone)**: la fila «Historial · Comunicados · Leer todas · Borrar todas» se cortaba en los bordes; ahora envuelve.
+- **Mi perfil**: mientras cargaba la ficha la barra mostraba el nombre de la ruta; ahora dice «Mi perfil».
+- Barrido completo del iPhone (141 pantallas, claro y oscuro): sin pantallas en blanco ni rotas.
+
 ## v2.1524.0 — Al recibir un envío se confirma sólo lo decidido
 
 - **Traslados → envíos por recibir**: «Confirmar» ya no exige decidir todos los

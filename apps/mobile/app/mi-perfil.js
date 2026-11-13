@@ -108,7 +108,8 @@ export default function MiPerfil() {
   const semana = useMemo(() => semanaDelPerfil(emp?.weeklySchedule, turnos || [], hoy), [emp, turnos, hoy]);
   const vacaciones = proximasVacaciones(planes, hoy);
   const cumple = cumpleEn(emp?.birth_date, hoy);
-  if (!emp) return null;
+  // Sin ficha todavía: al menos el título (si no, la barra muestra el nombre de la ruta).
+  if (!emp) return <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Mi perfil' }} />;
   const cargos = [emp.role, emp.secondary_role].filter((r) => r && isNaN(Number(r)));
 
   return (

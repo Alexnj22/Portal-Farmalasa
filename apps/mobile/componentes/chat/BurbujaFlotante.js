@@ -90,7 +90,7 @@ function BurbujaFlotante() {
 
   const aSuLugar = () => {
     clearTimeout(volver.current);
-    Animated.spring(dy, { toValue: 0, useNativeDriver: true, speed: 14, bounciness: 10 }).start();
+    Animated.spring(dy, { toValue: 0, useNativeDriver: true, stiffness: 220, damping: 20, mass: 0.9 }).start();
   };
 
   // Entra con resorte cada vez que aparece; sale encogiéndose.
@@ -135,30 +135,58 @@ function BurbujaFlotante() {
   }, []);
   useEffect(() => () => clearTimeout(volver.current), []);
 
-  // Sigue al dedo en vertical; pasado el tope, con resistencia.
+  // Sigue al dedo en vertical; pasado el tope, con resistencia. Para que no
+  // se sienta trabada (usuario, 2026-11-13):
+  //   · la posición actual se lleva sincrónica (`actual`), no con el callback
+  //     de `stopAnimation`, que llega tarde y hacía saltar el primer tramo;
+  //   · se toma el gesto en la fase de CAPTURA y no se suelta: la lista de
+  //     atrás ya no se lo roba a mitad de camino;
+  //   · al soltar sigue la inercia del dedo (proyecta con la velocidad) y
+  //     asienta con un resorte por rigidez, que no rebota de más;
+  //   · al tomarla se agranda un poco: se nota que está «en la mano».
   const tope = Math.min(RECORRIDO, Math.max(0, H - abajo - TAMANO - 140));
+  const topeRef = useRef(tope);
+  topeRef.current = tope;
+  const actual = useRef(0);
+  useEffect(() => {
+    const id = dy.addListener(({ value }) => { actual.current = value; });
+    return () => dy.removeListener(id);
+  }, [dy]);
   const base = useRef(0);
-  const arrastre = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-    onPanResponderGrant: () => {
-      clearTimeout(volver.current);
-      dy.stopAnimation((v) => { base.current = v; });
-      Haptics.selectionAsync().catch(() => {});
-    },
-    onPanResponderMove: (_, g) => {
-      let v = base.current + g.dy;
-      if (v > 0) v = v * 0.25;                          // abajo de su lugar: resistencia
-      if (v < -tope) v = -tope + (v + tope) * 0.25;     // arriba del tope: resistencia
-      dy.setValue(v);
-    },
-    onPanResponderRelease: (_, g) => {
-      const v = Math.max(-tope, Math.min(0, base.current + g.dy));
-      Animated.spring(dy, { toValue: v, useNativeDriver: true, speed: 16, bounciness: 6 }).start();
-      clearTimeout(volver.current);
-      volver.current = setTimeout(aSuLugar, VUELVE_EN);
-    },
-    onPanResponderTerminate: () => aSuLugar(),
-  }), [dy, tope]); // eslint-disable-line react-hooks/exhaustive-deps
+  const arrastre = useMemo(() => {
+    const quiere = (_, g) => Math.abs(g.dy) > 3 && Math.abs(g.dy) > Math.abs(g.dx);
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: quiere,
+      onMoveShouldSetPanResponderCapture: quiere,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderGrant: () => {
+        clearTimeout(volver.current);
+        dy.stopAnimation();
+        base.current = actual.current;
+        Animated.spring(apretado, { toValue: 1.08, useNativeDriver: true, stiffness: 420, damping: 26 }).start();
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      },
+      onPanResponderMove: (_, g) => {
+        const t = topeRef.current;
+        let v = base.current + g.dy;
+        if (v > 0) v = v * 0.3;                         // abajo de su lugar: resistencia
+        if (v < -t) v = -t + (v + t) * 0.3;             // arriba del tope: resistencia
+        dy.setValue(v);
+      },
+      onPanResponderRelease: (_, g) => {
+        const t = topeRef.current;
+        const destino = Math.max(-t, Math.min(0, base.current + g.dy + g.vy * 140));
+        Animated.spring(apretado, { toValue: 1, useNativeDriver: true, stiffness: 320, damping: 18 }).start();
+        Animated.spring(dy, { toValue: destino, velocity: g.vy, useNativeDriver: true, stiffness: 240, damping: 24, mass: 0.9 }).start();
+        clearTimeout(volver.current);
+        if (destino < 0) volver.current = setTimeout(aSuLugar, VUELVE_EN);
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(apretado, { toValue: 1, useNativeDriver: true, stiffness: 320, damping: 18 }).start();
+        aSuLugar();
+      },
+    });
+  }, [dy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!puede) return null;
 
@@ -185,10 +213,11 @@ function BurbujaFlotante() {
       // contenedor le anima la opacidad (la burbuja quedaba invisible).
       style={{ position: 'absolute', right: MARGEN, bottom: abajo, ...(ANDROID ? { opacity: entrada } : {}),
         // iOS tampoco puede nacer con escala 0 (el vidrio no se arma): ahí
-        // entra subiendo desde abajo.
+        // entra subiendo desde abajo, y al ocultarse baja hasta salir de la
+        // pantalla (con 140 fijo, encima del buscador se quedaba asomando).
         transform: ANDROID
           ? [{ translateY: dy }, { scale: Animated.multiply(Animated.multiply(entrada, latido), apretado) }]
-          : [{ translateY: Animated.add(dy, entrada.interpolate({ inputRange: [0, 1], outputRange: [140, 0] })) }, { scale: Animated.multiply(latido, apretado) }] }}>
+          : [{ translateY: Animated.add(dy, entrada.interpolate({ inputRange: [0, 1], outputRange: [abajo + TAMANO + 40, 0] })) }, { scale: Animated.multiply(latido, apretado) }] }}>
       <Pressable onPress={abrir} accessibilityRole="button" accessibilityLabel={etiqueta} accessibilityHint="Desliza arriba o abajo para moverla"
         onPressIn={() => Animated.spring(apretado, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 0 }).start()}
         onPressOut={() => Animated.spring(apretado, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 14 }).start()}

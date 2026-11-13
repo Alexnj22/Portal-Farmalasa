@@ -10,8 +10,7 @@ import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { anularVisitaDeRegencia, fetchRegenciaDeSala, mensajeDeRegencia, rotuloDeActividad } from '@nucleo/data/regencia';
-import { correrPeriodo, periodoDe } from '@nucleo/data/bitacoras';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { nombreDelPeriodo } from '@nucleo/utils/cierreDeBitacoras';
 import { rango12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -32,11 +31,10 @@ import RegistrarVisitaModal from './RegistrarVisitaModal';
  * (Sucursales → la sala → Expediente); aquí se leen.
  */
 
-export default function TabRegencia({ branchId }) {
+export default function TabRegencia({ branchId, periodo }) {
     const { hasPermission } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const puedeAdministrar = hasPermission('bitacoras_tab_regencia', 'can_edit');
-    const [periodo, setPeriodo] = useState(() => periodoDe());
     const [regencia, setRegencia] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -132,12 +130,7 @@ export default function TabRegencia({ branchId }) {
 
             <div data-surface="card" className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <PeriodStepper unit="mes"
-                        onPrev={() => setPeriodo((p) => correrPeriodo(p, -1))}
-                        onNext={() => setPeriodo((p) => correrPeriodo(p, 1))}
-                        nextDisabled={periodo >= periodoDe(hoySV())}>
-                        <span className="text-body-sm font-bold text-content-2">{nombreDelPeriodo(periodo)}</span>
-                    </PeriodStepper>
+                    <p className="text-body-sm font-bold text-content-2">{nombreDelPeriodo(periodo)}</p>
                     <div className="flex flex-wrap gap-2">
                         <Button variant="secondary" size="sm" icon={Printer} onClick={() => imprimir('rotulo')} disabled={!regencia.regente}>
                             Rótulo de entrada

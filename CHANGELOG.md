@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1522.1 — Bitácoras: la sección y el mes van en la píldora de filtros
+
+El usuario: «esto no es canónico, deben estar en el filterpill. mejora los filterpill».
+
+- El selector de sección (Libro / Lotes por revisar, Listado / Por lote, Visitas / Cierre de mes) pasa a ser la primera ranura de la píldora, no un control suelto arriba.
+- Cada pestaña muestra sólo el tiempo que la describe: día en el registro diario; MES en el libro (antes mostraba un día aunque el libro se lee por mes), los lotes, el cierre y la regencia — el cierre y la regencia ya no tienen un segundo paso de mes adentro. Nada en la cola de revisión ni en la configuración.
+- Antibióticos ahora tiene píldora (sin sucursal: el listado es de toda la red).
+
 ## v2.1522.0 — App Android: campos, títulos, elecciones, onda al tocar y color del sistema en toda la app
 
 App del personal, Android — segunda parte de «TODO debe ser material nuevo en android» (usuario, 2026-11-13). Barrido de las 141 pantallas en el emulador, en claro y oscuro, y cambios desde las piezas comunes:

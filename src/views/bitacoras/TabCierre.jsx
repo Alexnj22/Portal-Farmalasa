@@ -8,7 +8,7 @@ import PeriodStepper from '../../components/common/PeriodStepper';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { cerrarMes, correrPeriodo, fetchCierres, fetchCuadreAntibioticos, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '@nucleo/data/bitacoras';
+import { cerrarMes, fetchCierres, fetchCuadreAntibioticos, fetchLibroPendientes, fetchMesImpreso, fetchResumenMes, periodoDe, reabrirMes } from '@nucleo/data/bitacoras';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { cumplimiento, nombreDelPeriodo, puedeFirmarElCierre, rotularCumplimiento, tonoDelCumplimiento } from '@nucleo/utils/cierreDeBitacoras';
@@ -133,15 +133,13 @@ function CuadreAntibioticos({ cuadre, cargando, error, onVerHoja }) {
     );
 }
 
-export default function TabCierre({ branchId, fechaVista }) {
+export default function TabCierre({ branchId, periodo }) {
     const { hasPermission } = useAuth();
     const puedeFirmar = hasPermission('bitacoras_cerrar_mes', 'can_edit');
     const puedeImprimir = hasPermission('bitacoras_descargar', 'can_view');
 
-    // Arranca en el mes ANTERIOR al de la fecha que se está mirando: el mes en
-    // curso no se puede cerrar todavía, así que abrir ahí mostraría siempre un
-    // botón que no se puede apretar.
-    const [periodo, setPeriodo] = useState(() => correrPeriodo(periodoDe(fechaVista), -1));
+    // El mes lo elige la píldora de la vista (arranca en el ANTERIOR: el mes en
+    // curso todavía no se puede cerrar).
     const [resumen, setResumen] = useState(null);
     const [cierres, setCierres] = useState([]);
     // Cuántos renglones del libro esperan su receta. Cerrar el mes les cierra la
@@ -277,15 +275,7 @@ export default function TabCierre({ branchId, fechaVista }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <PeriodStepper
-                    unit="mes"
-                    onPrev={() => setPeriodo(p => correrPeriodo(p, -1))}
-                    onNext={() => setPeriodo(p => correrPeriodo(p, 1))}
-                    nextDisabled={periodo >= periodoDe(hoySV())}
-                >
-                    <span className="text-body-sm font-bold text-content-2">{nombreMes(periodo)}</span>
-                </PeriodStepper>
+            <div className="flex flex-wrap items-center justify-end gap-3">
 
                 <div className="flex items-center gap-2">
                     {cerrado

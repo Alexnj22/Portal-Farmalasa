@@ -9,7 +9,6 @@ import PeriodStepper from '../components/common/PeriodStepper';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Notice from '../components/common/Notice';
-import SegmentedControl from '../components/common/SegmentedControl';
 import { SkeletonText } from '../components/common/StateViews';
 import TabHoy from './bitacoras/TabHoy';
 /* La pestaña de entrada («Hoy») viaja con la vista; las demás se bajan al
@@ -75,7 +74,6 @@ const METRICAS_LOTES = [
     { clave: 'sin_base',   label: 'Sin saldo inicial', icon: HelpCircle,    iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
 ];
 
-const primerDiaDelMes = (fecha) => `${String(fecha).slice(0, 7)}-01`;
 
 
 // Los grupos de la barra. Cada sección sigue siendo una pestaña en la dirección.
@@ -126,6 +124,12 @@ export default function BitacorasView() {
         if (opciones.length && !opciones.some(o => o.value === String(sala))) setSala(opciones[0].value);
     }, [arranqueResuelto, alcanceTodas, branches, sala]);
     const [fecha, setFecha] = useState(hoySV);
+    // Libro, cierre y regencia también se leen por MES, y su mes vive en la
+    // píldora como el de los lotes — no en un segundo paso de mes dentro de la
+    // pestaña. El cierre arranca en el mes ANTERIOR: el en curso no se cierra.
+    const [periodoLibro, setPeriodoLibro] = useState(() => periodoDe(hoySV()));
+    const [periodoCierre, setPeriodoCierre] = useState(() => correrPeriodo(periodoDe(hoySV()), -1));
+    const [periodoRegencia, setPeriodoRegencia] = useState(() => periodoDe(hoySV()));
     const tabs = useMemo(() => ([
         { key: 'hoy', label: 'Registro diario', icon: Thermometer },
         ...(verLibro ? [{ key: 'libro', label: 'Libro', icon: BookOpen }] : []),
@@ -226,13 +230,13 @@ export default function BitacorasView() {
         if (!sala || !verLibro) { setLibro(VACIO); return; }
         setCargandoLibro(true);
         const { renglones, error } = await fetchLibro(sala, {
-            desde: primerDiaDelMes(fecha),
-            hasta: ultimoDiaDelMes(fecha),
+            desde: `${periodoLibro}-01`,
+            hasta: ultimoDiaDelMes(`${periodoLibro}-01`),
         });
         setLibro(renglones);
         setErrorLibro(error);
         setCargandoLibro(false);
-    }, [sala, fecha, verLibro]);
+    }, [sala, periodoLibro, verLibro]);
 
     // El libro se pide al ENTRAR a su pestaña, no al montar la vista: son ~100
     // renglones que la mayoría de las visitas no mira.
@@ -309,13 +313,20 @@ export default function BitacorasView() {
     );
 
     const esHoy = fecha === hoySV();
+    // El mes de la pestaña, si se lee por mes: valor, cómo cambiarlo y a cuál
+    // vuelve al limpiar.
+    const mesAnterior = correrPeriodo(mesDeHoy, -1);
+    const mes = enLotes ? { valor: periodoLotes, set: setPeriodoLotes, base: mesDeHoy }
+        : enLibro ? { valor: periodoLibro, set: setPeriodoLibro, base: mesDeHoy }
+        : tab === 'cierre' ? { valor: periodoCierre, set: setPeriodoCierre, base: mesAnterior }
+        : tab === 'regencia' ? { valor: periodoRegencia, set: setPeriodoRegencia, base: mesDeHoy }
+        : null;
+    // El listado de antibióticos es de toda la red: la sucursal no lo recorta.
+    const verSala = !enAntibioticos;
 
     return (
         <GlassViewLayout icon={Thermometer} title="Bitácoras" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-6">
-                {seccionesDelGrupo.length > 1 && (
-                    <SegmentedControl options={seccionesDelGrupo} value={tab} onChange={setTab} label="Sección" />
-                )}
 
                 {/* El carril y la píldora comparten UNA fila (§17.0): las dos
                     mitades —`lg:flex-row` acá y `flex-1` en el carril— son
@@ -347,25 +358,41 @@ export default function BitacorasView() {
                         </CarrilCards>
                     ) : <div className="flex-1" />}
 
-                    {/* Orden canónico de las ranuras: ámbito → entidad → tiempo
-                        → estado (§17). Acá son dos: la sala y la fecha. */}
-                    {!enAntibioticos && <div className="flex justify-end min-w-0">
+                    {/* Orden canónico de las ranuras: sección → ámbito → entidad →
+                        tiempo (§17). La sección (dentro de un grupo con dos) va
+                        en la píldora y no suelta arriba del contenido (usuario,
+                        2026-11-13: «esto no es canónico, deben estar en el
+                        filterpill»). Cada pestaña muestra SÓLO el tiempo que
+                        la describe: día en el registro diario; mes en el libro,
+                        los lotes, el cierre y la regencia; nada en la cola de
+                        revisión, el listado ni la configuración. */}
+                    <div className="flex justify-end min-w-0">
                         <FilterBar
                             onClear={() => {
-                                setFecha(hoySV()); setPeriodoLotes(mesDeHoy); setFiltroLotes('todos');
-                                if (alcanceTodas) setSala(miSala ?? '');
+                                if (mes) mes.set(mes.base);
+                                if (tab === 'hoy') setFecha(hoySV());
+                                setFiltroLotes('todos');
+                                if (verSala && alcanceTodas) setSala(miSala ?? '');
                             }}
                             activeCount={[
-                                enRevision ? false : enLotes ? periodoLotes !== mesDeHoy : !esHoy,
+                                mes ? mes.valor !== mes.base : tab === 'hoy' && !esHoy,
                                 enLotes && filtroLotes !== 'todos',
-                                alcanceTodas && String(sala) !== String(miSala ?? ''),
+                                enLibro && claseLibro !== CLASE_ANTIBIOTICO,
+                                verSala && alcanceTodas && String(sala) !== String(miSala ?? ''),
                             ].filter(Boolean).length}
                             acciones={enLotes ? [{
                                 key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true, principal: false,
                                 onClick: descargarLotes, disabled: !cuentaLotes.todos || cargandoLotes,
                             }] : []}
                         >
-                            {alcanceTodas && (
+                            {seccionesDelGrupo.length > 1 && (
+                                <FilterBar.Section label="sección">
+                                    <FilterBar.Opciones value={tab} onChange={setTab}
+                                        options={seccionesDelGrupo} label="Sección" />
+                                </FilterBar.Section>
+                            )}
+
+                            {verSala && alcanceTodas && (
                                 <FilterBar.Section active={String(sala) !== String(miSala ?? '')}
                                     onClear={() => setSala(miSala ?? '')} label="sucursal">
                                     <FilterBar.Sucursal value={String(sala || '')}
@@ -373,13 +400,9 @@ export default function BitacorasView() {
                                 </FilterBar.Section>
                             )}
 
-                            {/* Cuál de los dos libros. Es un RECORTE y no una
-                                sección: mismas filas, mismo trabajo, mismo
-                                público — la diferencia es de qué registro son.
-                                Con dos opciones, `Opciones` se pinta como
-                                control segmentado y las dos se ven a la vez,
-                                que es lo que evita que el segundo libro se
-                                olvide por no estar mirándolo. */}
+                            {/* Cuál de los dos libros: un RECORTE (mismas filas,
+                                mismo trabajo), no una sección. Los dos a la vista
+                                para que el segundo no se olvide. */}
                             {enLibro && (
                                 <FilterBar.Section
                                     active={claseLibro !== CLASE_ANTIBIOTICO}
@@ -398,28 +421,24 @@ export default function BitacorasView() {
                                 </FilterBar.Section>
                             )}
 
-                            {/* La fecha es la ranura que hace las veces de
-                                historial. `nextDisabled` en hoy: la bitácora de
-                                mañana no existe — y ofrecerla invitaría a
-                                anotar una lectura que todavía no se tomó. */}
-                            {/* El registro por lote se lee por MES. */}
-                            {enLotes && (
-                                <FilterBar.Section active={periodoLotes !== mesDeHoy}
-                                    onClear={() => setPeriodoLotes(mesDeHoy)} label="mes">
+                            {mes && (
+                                <FilterBar.Section active={mes.valor !== mes.base}
+                                    onClear={() => mes.set(mes.base)} label="mes">
                                     <PeriodStepper
                                         unit="mes"
-                                        onPrev={() => setPeriodoLotes(p => correrPeriodo(p, -1))}
-                                        onNext={() => setPeriodoLotes(p => correrPeriodo(p, 1))}
-                                        nextDisabled={periodoLotes >= mesDeHoy}
-                                        isCurrent={periodoLotes === mesDeHoy}
-                                        onReset={() => setPeriodoLotes(mesDeHoy)}
-                                        resetLabel="Este mes"
-                                        label={nombreDelPeriodo(periodoLotes)}
+                                        onPrev={() => mes.set(correrPeriodo(mes.valor, -1))}
+                                        onNext={() => mes.set(correrPeriodo(mes.valor, 1))}
+                                        nextDisabled={mes.valor >= mesDeHoy}
+                                        isCurrent={mes.valor === mesDeHoy}
+                                        onReset={() => mes.set(mes.base)}
+                                        resetLabel={mes.base === mesDeHoy ? 'Este mes' : 'Mes pasado'}
+                                        label={nombreDelPeriodo(mes.valor)}
                                     />
                                 </FilterBar.Section>
                             )}
 
-                            {!enLotes && !enRevision && <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
+                            {/* `nextDisabled` en hoy: la bitácora de mañana no existe. */}
+                            {tab === 'hoy' && <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
                                 <PeriodStepper
                                     unit="día"
                                     onPrev={() => setFecha(f => sumarDias(f, -1))}
@@ -432,7 +451,7 @@ export default function BitacorasView() {
                                 </PeriodStepper>
                             </FilterBar.Section>}
                         </FilterBar>
-                    </div>}
+                    </div>
                 </div>
 
                 <Suspense fallback={<SkeletonText lines={4} className="w-full" />}>
@@ -457,14 +476,14 @@ export default function BitacorasView() {
                 ) : tab === 'libro' ? (
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
                         branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro}
-                        puedeCompletar={puedeCompletarLibro} clase={claseLibro} periodo={periodoDe(fecha)} />
+                        puedeCompletar={puedeCompletarLibro} clase={claseLibro} periodo={periodoLibro} />
                 ) : enLotes ? (
                     <TabRegistroLote registro={registroLotes} cargando={cargandoLotes} error={errorLotes}
                         filtro={filtroLotes} busqueda={busqueda} />
                 ) : tab === 'cierre' ? (
-                    <TabCierre branchId={sala} fechaVista={fecha} />
+                    <TabCierre branchId={sala} periodo={periodoCierre} />
                 ) : tab === 'regencia' ? (
-                    <TabRegencia branchId={sala} />
+                    <TabRegencia branchId={sala} periodo={periodoRegencia} />
                 ) : (
                     <TabConfiguracion branchId={sala} sucursalNombre={nombreSala}
                         puedeEditar={puedeConfigurar} onCambio={cargarDia} />

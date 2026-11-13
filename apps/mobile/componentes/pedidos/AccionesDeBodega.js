@@ -7,7 +7,8 @@
 //   · programar la entrega y armar la ruta cuando ya está listo
 //   · reenviar lo que no llegó (`pedido/reenviar`)
 //   · reintentar el ingreso al inventario de lo que la sala contó y no entró
-//   · anular el pedido entero (`anulacionDelPedido`)
+//   · anular el pedido entero (`anulacionDelPedido`), o sólo esta sala mientras
+//     Bodega no la empezó y el pedido tiene otras (`puedeAnularLaSala`)
 //
 // Las escrituras son las del núcleo (`accionesDePedido`, `accionesDeBodega`),
 // las mismas del portal.
@@ -17,14 +18,15 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { anularPedidoConMotivo, etapaDePedido } from '@nucleo/data/accionesDePedido';
+import { anularPedidoConMotivo, anularSalaDelPedido, etapaDePedido } from '@nucleo/data/accionesDePedido';
 import { reintentarIngreso } from '@nucleo/data/accionesDeBodega';
 import {
   fetchActiveRutas, fetchApoyoForPedido, fetchEmployeeByKioskPin, fetchPedidoItemsAll,
   fetchResumenIngresoPedidos, upsertPedidoApoyo,
 } from '@nucleo/data/pedidos';
-import { anulacionDelPedido, claveParada, faltantesDeLaSala, puedeDespacharse, puedePrepararse } from '@nucleo/utils/tableroDePedidos';
+import { anulacionDelPedido, puedeAnularLaSala, claveParada, faltantesDeLaSala, puedeDespacharse, puedePrepararse } from '@nucleo/utils/tableroDePedidos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { ERP_NAMES } from '@nucleo/constants/erp';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -45,6 +47,8 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
   const [apoyo, setApoyo] = useState([]);
   const [avisoApoyo, setAvisoApoyo] = useState(null);
   const anular = anulacionDelPedido(row, etapas);
+  const anularSala = puedeAnularLaSala(row, etapas);
+  const nombreDeLaSala = ERP_NAMES[row.erp_sucursal_id] ?? `Sala ${row.erp_sucursal_id}`;
   const params = { pedidoId: String(row.pedido_id), sucId: String(row.erp_sucursal_id), numero: String(row.numero ?? '') };
   const faltan = faltantesDeLaSala(row);
   const puedePapel = hasPermission('pedidos_descargar');
@@ -89,6 +93,29 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
     } finally {
       setOcupado(false);
     }
+  };
+  // Sólo la parte de esta sala; las demás siguen. Pide motivo siempre (la base lo exige).
+  const hacerAnularSala = async (motivo) => {
+    setOcupado(true);
+    try {
+      const r = await anularSalaDelPedido({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, motivo });
+      useStaffStore.getState().appendAuditLog?.('PEDIDO_SALA_ANULADA', row.pedido_id, {
+        numero: row.numero, sala: nombreDeLaSala, erp_sucursal_id: row.erp_sucursal_id, motivo,
+        renglones: r.renglones, pedido_anulado: r.pedido_anulado, desde: 'app',
+      });
+      listo(`${nombreDeLaSala} quitada del pedido #${row.numero}`, r.pedido_anulado ? 'Era la última sala: el pedido quedó anulado.' : 'Las demás salas siguen igual.');
+      onCambio?.();
+    } catch (e) {
+      fallo('No se pudo anular', mensajeAmigable(e));
+    } finally {
+      setOcupado(false);
+    }
+  };
+  const pedirAnularSala = () => {
+    Alert.prompt(`Anular ${nombreDeLaSala}`, `Se quita ${nombreDeLaSala} del pedido #${row.numero}; las demás salas siguen. No se deshace.\n\nEscribe el motivo.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Anular', style: 'destructive', onPress: (m) => { if (String(m ?? '').trim()) hacerAnularSala(String(m).trim()); else fallo('Falta el motivo', 'Escríbelo para poder anular.'); } },
+    ], 'plain-text');
   };
   const pedirAnular = () => {
     const texto = `Se anula el pedido #${row.numero} completo, en todas sus salas. No se deshace.`;
@@ -187,7 +214,8 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
   if (puedePapel) botones.push(<BotonGrande key="pdf" texto="Hoja de despacho" borde deshabilitado={ocupado} onPress={elegirPapel} />);
   if (faltan.hay && !faltan.enCamino && !enRuta) botones.push(<BotonGrande key="ree" texto="Reenviar lo que no llegó" color={MARCA.rojo} deshabilitado={ocupado} onPress={() => router.push({ pathname: '/pedido/reenviar', params })} />);
   if (ingreso?.sin_ingresar > 0) botones.push(<BotonGrande key="ing" texto={`Reintentar ingreso (${ingreso.sin_ingresar})`} color={MARCA.rojo} borde deshabilitado={ocupado} onPress={pedirReintento} />);
-  if (anular.puede) botones.push(<BotonGrande key="anu" texto="Anular pedido" color={MARCA.rojo} borde deshabilitado={ocupado} onPress={pedirAnular} />);
+  if (anular.puede) botones.push(<BotonGrande key="anu" texto={anularSala ? 'Anular todo el pedido' : 'Anular pedido'} color={MARCA.rojo} borde deshabilitado={ocupado} onPress={pedirAnular} />);
+  if (anularSala) botones.push(<BotonGrande key="anus" texto={`Anular ${nombreDeLaSala}`} color={MARCA.rojo} borde deshabilitado={ocupado} onPress={pedirAnularSala} />);
   if (!botones.length) return null;
 
   return (

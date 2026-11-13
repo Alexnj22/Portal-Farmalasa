@@ -8,6 +8,10 @@
 // la escritura también (`guardarReglaDeDespacho`). En el portal se guarda al
 // tocar; acá se arma la regla y se guarda con un botón, porque en el teléfono
 // un toque por error no puede cambiar lo que despacha Bodega.
+//
+// Si la base le quitó la regla porque su presentación cambió, se dice qué había
+// (`textoDePendiente`) y se pide la decisión: elegir la nueva, o «Dejar sin
+// regla» (`resolverPendienteSinRegla`).
 import { volver } from '../../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
@@ -16,7 +20,7 @@ import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchProductPresentacionesForDispatch, fetchReglaDeProducto, guardarReglaDeDespacho } from '@nucleo/data/dispatchRules';
+import { fetchProductPresentacionesForDispatch, fetchReglaDeProducto, fetchReglasPendientes, guardarReglaDeDespacho, resolverPendienteSinRegla, textoDePendiente } from '@nucleo/data/dispatchRules';
 import { ETIQUETAS_DE_DESPACHO, MULTIPLOS, NECESIDAD_EJEMPLO, calcularDespacho, presentacionesOfrecidas, valoresDeRegla } from '@nucleo/utils/reglasDeDespacho';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
@@ -46,6 +50,7 @@ export default function ReglaDeProducto() {
   const [vals, setVals] = useState(null);
   const [otro, setOtro] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [pendiente, setPendiente] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +58,7 @@ export default function ReglaDeProducto() {
         const r = await fetchReglaDeProducto(productId);
         setRegla(r);
         setVals(valoresDeRegla(r));
+        fetchReglasPendientes().then((l) => setPendiente(l.find((x) => Number(x.erp_product_id) === productId) ?? null)).catch(() => {});
         const { data } = await fetchProductPresentacionesForDispatch(productId, r?.dispatch_id_presentacion);
         setPresentaciones(presentacionesOfrecidas(data ?? [], r?.dispatch_id_presentacion ?? null));
       } catch (e) {
@@ -92,6 +98,19 @@ export default function ReglaDeProducto() {
       setGuardando(false);
     }
   };
+  const dejarSinRegla = () => Alert.alert('Dejar sin regla', 'El producto sale sin regla de despacho y el aviso se cierra.', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Dejar sin regla', onPress: async () => {
+      setGuardando(true);
+      try {
+        await resolverPendienteSinRegla(productId);
+        setPendiente(null);
+        listo('Queda sin regla', String(nombre ?? ''));
+      } catch (e) {
+        fallo('No se pudo', mensajeAmigable(e));
+      } finally { setGuardando(false); }
+    } },
+  ]);
   const confirmar = () => Alert.alert(vals.dispatch_id_presentacion ? 'Guardar la regla' : 'Quitar la regla',
     vals.dispatch_id_presentacion
       ? `${tipo}${multiplo > 1 ? ` ×${multiplo}` : ''}${vals.dispatch_label ? ` · en el papel como ${vals.dispatch_label}` : ''}${vals.caja_especial ? ' · caja especial' : ''}. Los próximos pedidos salen así.`
@@ -107,6 +126,12 @@ export default function ReglaDeProducto() {
           {lab ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{lab}</Text> : null}
         </View>
         {!puede ? <Aviso texto="Puedes ver la regla; cambiarla pide permiso de edición en Reglas." /> : null}
+        {pendiente ? (
+          <View style={{ gap: 8 }}>
+            <Aviso tono="cuidado" texto={`Regla por corregir. ${textoDePendiente(pendiente)} Se quitó para que el pedido no salga con un tamaño que ya no existe: elige la presentación de despacho de nuevo.`} />
+            {puede ? <BotonGrande texto="Dejar sin regla" borde deshabilitado={guardando} onPress={dejarSinRegla} /> : null}
+          </View>
+        ) : null}
         <Seccion titulo="Presentación de despacho">
           {!presentaciones.length ? <Aviso tono="cuidado" texto="Sin presentaciones en catálogo: no se puede asignar regla de despacho." /> : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

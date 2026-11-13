@@ -9,6 +9,10 @@
 // ordena la base; estado y regla, sobre lo ya cargado (igual que allá, que los
 // ordena sobre la página visible).
 //
+// Las reglas que la base quitó porque su presentación se apagó o cambió de
+// factor salen «Por corregir» (`fetchReglasPendientes`), con su cuenta y su
+// filtro, como en el portal.
+//
 // Tocar un producto abre su regla (`pedido/regla/[id]`); editar pide
 // `pedidos_tab_reglas` con permiso de edición.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -17,7 +21,7 @@ import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchActiveProductsCount, fetchAllDispatchRules, fetchLaboratorios, fetchNewProductsThisMonth, fetchProductsWithLabPage } from '@nucleo/data/dispatchRules';
+import { fetchActiveProductsCount, fetchAllDispatchRules, fetchLaboratorios, fetchNewProductsThisMonth, fetchProductsWithLabPage, fetchReglasPendientes } from '@nucleo/data/dispatchRules';
 import { rotuloDeRegla } from '@nucleo/utils/reglasDeDespacho';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
@@ -38,16 +42,16 @@ const ORDENES = [
   { id: 'despacho:asc', label: 'Regla de despacho, A → Z' }, { id: 'despacho:desc', label: 'Regla de despacho, Z → A' },
 ];
 
-function Cuenta({ rotulo, valor, color }) {
+function Cuenta({ rotulo, valor, color, onPress }) {
   return (
-    <View style={{ flex: 1 }}>
+    <Pressable style={{ flex: 1 }} disabled={!onPress} onPress={onPress}>
       <Vidrio radio={20}>
         <View style={{ padding: 12, gap: 2 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{rotulo}</Text>
           <Text style={{ color: color ?? colorSistema.texto, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{valor ?? '—'}</Text>
         </View>
       </Vidrio>
-    </View>
+    </Pressable>
   );
 }
 
@@ -62,6 +66,7 @@ export default function ReglasDeDespacho() {
   const [labs, setLabs] = useState(null);
   const [ocultos, setOcultos] = useState(null);
   const [reglas, setReglas] = useState(null);
+  const [pendientes, setPendientes] = useState({});
   const [cuentas, setCuentas] = useState({ total: null, nuevos: null, idsNuevos: new Set() });
   const [pagina, setPagina] = useState(1);
   const [datos, setDatos] = useState({ filas: [], total: 0 });
@@ -82,7 +87,10 @@ export default function ReglasDeDespacho() {
     try {
       const ahora = new Date();
       const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString();
-      const [todas, total, mes] = await Promise.all([fetchAllDispatchRules(), fetchActiveProductsCount(), fetchNewProductsThisMonth(inicioMes)]);
+      // Si los pendientes fallan, la pantalla sigue con las reglas (igual que el portal).
+      const [todas, total, mes, pend] = await Promise.all([fetchAllDispatchRules(), fetchActiveProductsCount(), fetchNewProductsThisMonth(inicioMes),
+        fetchReglasPendientes().catch(() => [])]);
+      setPendientes(Object.fromEntries(pend.map((x) => [x.erp_product_id, x])));
       const mapa = {};
       for (const r of todas ?? []) mapa[r.erp_product_id] = { ...r, dispatch_tipo: r.presentaciones?.tipo ?? null };
       setReglas(mapa);
@@ -96,6 +104,7 @@ export default function ReglasDeDespacho() {
   useEffect(() => { setPagina(1); }, [busqueda, conRegla, nuevos, lab, orden]);
 
   const idsConRegla = useMemo(() => Object.keys(reglas ?? {}).map(Number), [reglas]);
+  const idsPendientes = useMemo(() => Object.keys(pendientes).map(Number), [pendientes]);
   const cargar = useCallback(async () => {
     if (reglas == null || ocultos == null) return;
     const yo = ++pedido.current;
@@ -105,7 +114,7 @@ export default function ReglasDeDespacho() {
         offset: (pagina - 1) * POR_PAGINA, pageSize: POR_PAGINA, hiddenLabs: ocultos, labId: lab === 'todos' ? null : Number(lab),
         // estado y despacho no son columnas de la base: ahí manda el laboratorio.
         sortKey: campo === 'estado' || campo === 'despacho' ? 'laboratorio_nombre' : campo, ascending: dir !== 'desc', term: busqueda.length >= 2 ? busqueda : '',
-        ruleFilter: conRegla, ruleIds: idsConRegla, soloNuevos: nuevos === 'si', newIds: cuentas.idsNuevos,
+        ruleFilter: conRegla, ruleIds: idsConRegla, pendIds: idsPendientes, soloNuevos: nuevos === 'si', newIds: cuentas.idsNuevos,
       });
       if (yo !== pedido.current) return;
       if (e) throw e;
@@ -116,7 +125,7 @@ export default function ReglasDeDespacho() {
     } finally {
       if (yo === pedido.current) setCargando(false);
     }
-  }, [reglas, ocultos, pagina, lab, busqueda, conRegla, idsConRegla, nuevos, cuentas.idsNuevos, campo, dir]);
+  }, [reglas, ocultos, pagina, lab, busqueda, conRegla, idsConRegla, idsPendientes, nuevos, cuentas.idsNuevos, campo, dir]);
   const filas = useMemo(() => {
     if (campo !== 'estado' && campo !== 'despacho') return datos.filas;
     const asc = dir !== 'desc';
@@ -131,7 +140,8 @@ export default function ReglasDeDespacho() {
   const conCuenta = idsConRegla.length;
   const grupos = [
     { id: 'regla', titulo: 'Regla', activa: conRegla, porDefecto: '', onCambiar: setConRegla,
-      opciones: [{ id: '', label: 'Todos' }, { id: 'con', label: 'Con regla' }, { id: 'sin', label: 'Sin regla' }] },
+      opciones: [{ id: '', label: 'Todos' }, { id: 'con', label: 'Con regla' }, { id: 'sin', label: 'Sin regla' },
+        ...(idsPendientes.length ? [{ id: 'pendiente', label: `Por corregir (${idsPendientes.length})` }] : [])] },
     { id: 'nuevos', titulo: 'Nuevos', activa: nuevos, porDefecto: 'no', onCambiar: setNuevos,
       opciones: [{ id: 'no', label: 'Todos los productos' }, { id: 'si', label: `Sólo los nuevos de ${fechaTexto(hoySV(), { month: 'long' })}` }] },
     { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
@@ -150,6 +160,12 @@ export default function ReglasDeDespacho() {
           <Cuenta rotulo="Sin regla" valor={cuentas.total != null ? Math.max(0, cuentas.total - conCuenta) : null} color={MARCA.ambar} />
           <Cuenta rotulo="Nuevos del mes" valor={cuentas.nuevos} />
         </View>
+        {idsPendientes.length ? (
+          <View style={{ marginHorizontal: 16 }}>
+            <Cuenta rotulo={conRegla === 'pendiente' ? 'Por corregir · viendo sólo esas' : 'Por corregir · toca para verlas'} valor={idsPendientes.length} color={MARCA.ambar}
+              onPress={() => setConRegla((f) => (f === 'pendiente' ? '' : 'pendiente'))} />
+          </View>
+        ) : null}
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         <View style={{ marginHorizontal: 16 }}>
@@ -167,7 +183,7 @@ export default function ReglasDeDespacho() {
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[p.laboratorio_nombre, cuentas.idsNuevos.has(p.id) ? 'nuevo' : null, regla?.notes].filter(Boolean).join(' · ')}</Text>
                     </View>
                     {p.es_antibiotico ? <Pildora texto="Bajo Receta" color={MARCA.ambar} /> : null}
-                    <Pildora texto={rot ?? 'Sin regla'} color={rot ? MARCA.violetaClaro : colorSistema.texto2} />
+                    {pendientes[p.id] ? <Pildora texto="Por corregir" color={MARCA.ambar} /> : <Pildora texto={rot ?? 'Sin regla'} color={rot ? MARCA.violetaClaro : colorSistema.texto2} />}
                   </Pressable>
                 );
               })}

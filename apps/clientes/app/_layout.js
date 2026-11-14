@@ -1,7 +1,7 @@
 // La raíz: el fondo de la marca, la sesión desde el llavero y la guardia que
 // manda a la bienvenida a quien no tiene sesión.
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, useColorScheme } from 'react-native';
+import { AppState, Image, Platform, Pressable, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -348,6 +348,29 @@ function Raiz() {
         headerBackButtonDisplayMode: 'minimal',
         headerTitleStyle: { color: colorSistema.texto },
         contentStyle: { backgroundColor: 'transparent' },
+        // Web (app.farmasalud.lat, 2026-11-14): la barra de la pila en el
+        // navegador es la de react-navigation, que por defecto es la de
+        // Android (flecha ← y título a la izquierda). Acá va como en iPhone:
+        // título centrado y el chevrón ‹ (la imagen la tiñe el magenta).
+        ...(WEB ? {
+          headerTitleAlign: 'center',
+          headerTitleStyle: { color: colorSistema.texto, fontSize: 17, fontWeight: '600' },
+          // Volver SIEMPRE tiene adónde: en el navegador se puede abrir
+          // /compras directo (un enlace, recargar la página) y la pila
+          // empieza ahí, sin nada detrás. Sin esto la pantalla quedaba sin
+          // botón de volver y sin pestañas. Ahí vuelve al inicio (`/`, y la
+          // guardia decide si son las pestañas o la bienvenida).
+          headerLeft: ({ tintColor, canGoBack }) => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Volver"
+              onPress={() => (canGoBack ? router.back() : router.replace('/'))}
+              hitSlop={8}
+              style={({ pressed }) => ({ paddingHorizontal: 8, paddingVertical: 6, opacity: pressed ? 0.5 : 1, cursor: 'pointer' })}>
+              <Image source={require('../assets/chevron-atras.png')} tintColor={tintColor} style={{ width: 24, height: 24 }} resizeMode="contain" />
+            </Pressable>
+          ),
+        } : null),
       };
   return (
     <ThemeProvider value={ANDROID ? (oscuro ? OSCURO_ANDROID : CLARO_ANDROID) : (oscuro ? OSCURO : CLARO)}>

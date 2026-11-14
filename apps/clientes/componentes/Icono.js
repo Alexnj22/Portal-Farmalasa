@@ -207,5 +207,23 @@ export default function Icono({ sf, respaldo = '•', tam = 22, color }) {
   if (SymbolView && MATERIAL[sf]) {
     return <SymbolView name={{ android: MATERIAL[sf] }} size={tam} tintColor={color} fallback={textoDeRespaldo} />;
   }
+  // Web (app.farmasalud.lat, 2026-11-14): la MISMA tabla de Material, dibujada
+  // con la fuente de Material Symbols (la carga public/index.html). Sin esto
+  // el navegador mostraba el respaldo de texto, y la mitad de los respaldos
+  // está vacía: quedaban cuadros huecos donde el teléfono muestra el ícono.
+  // `.fill` del nombre SF → el eje FILL de la fuente, como en iPhone.
+  if (Platform.OS === 'web' && MATERIAL[sf]) {
+    return (
+      <Text
+        aria-hidden
+        style={{
+          fontFamily: 'Material Symbols Rounded', fontSize: tam, lineHeight: tam, width: tam, height: tam,
+          color, textAlign: 'center', userSelect: 'none',
+          fontVariationSettings: `'FILL' ${/\.fill\b/.test(sf) ? 1 : 0}, 'wght' 500`,
+        }}>
+        {MATERIAL[sf]}
+      </Text>
+    );
+  }
   return textoDeRespaldo;
 }

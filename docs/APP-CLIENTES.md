@@ -450,6 +450,28 @@ existe en el teléfono (avisos, subir fotos, Wallet, cámara) ya tenía su rama
 - `/mis-puntos` y `/o/<id>` del portal siguen siendo los destinos de los QR y
   los enlaces (abren la app si está instalada).
 
+Lo que en la web NO sale solo y se resolvió (auditoría del 2026-11-14, pantalla
+por pantalla con una sesión real):
+
+- **Pestañas**: `NativeTabs` en web es una fila de texto ARRIBA (y «Cuenta» se
+  salía). `app/(tabs)/_layout.web.js` es la barra de abajo del iPhone, con las
+  mismas cinco pestañas: al cambiar una en `_layout.js`, cambiarla ahí.
+- **Íconos**: `Icono.js` en web dibuja la tabla de Material con la fuente
+  Material Symbols (la carga `public/index.html`).
+- **Skia** (tarjeta, minerales, logo en relieve, juegos): necesita CanvasKit
+  cargado ANTES de evaluar las pantallas. Por eso `main` es `./entrada`:
+  `entrada.js` (teléfono) es el `expo-router/entry` de siempre y
+  `entrada.web.js` carga `/canvaskit.wasm` primero. La huella nativa no
+  cambió (medido con `createFingerprintAsync`, iOS y Android).
+- **Logo en relieve**: en CanvasKit el muestreo con mipmaps devolvía un
+  sombreador nulo y tumbaba el Inicio; en web va cúbico.
+- **Barra de las pantallas internas**: en web era la de Android; va centrada
+  con el chevrón ‹, y volver lleva al inicio cuando la pantalla se abrió
+  directo por enlace (no hay nada detrás en la pila).
+- Queda: tarjetas con un botón adentro de otro botón (`+` del catálogo,
+  «Leído» de la frase) dan aviso de HTML inválido en desarrollo; funcionan
+  bien (el de adentro no dispara el de afuera).
+
 ## Pruebas
 
 Nuevas el 2026-10-24: `reservasDatos`, `chatHilo`, `chatClientesDatos`,

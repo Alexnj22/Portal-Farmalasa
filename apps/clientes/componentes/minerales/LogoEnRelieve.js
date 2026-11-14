@@ -7,7 +7,7 @@
 //
 // Si el shader no compila o la imagen no carga, queda el logo plano.
 import { memo } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { Canvas, Fill, FilterMode, ImageShader, MipmapMode, Shader, Skia, useImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 
@@ -72,7 +72,14 @@ const FUENTE = require('../../assets/icono.png');
 // contorno salía escalonado —y el bisel, que se calcula del contorno, también—.
 // Con mipmaps lee del nivel de 256 px, ya filtrado: bordes limpios. Los niveles
 // se arman una vez por imagen; cada cuadro cuesta lo mismo.
-const MUESTREO = { filter: FilterMode.Linear, mipmap: MipmapMode.Linear };
+// En la web (CanvasKit) esta versión de Skia arma el sombreador de imagen
+// pasándole el filtro y el mipmap como si fueran los coeficientes de un
+// filtro cúbico, y con (1, 1) CanvasKit devuelve un sombreador NULO: el Inicio
+// lanzaba «reading 'Fd'» y no pintaba. Ahí se pide el cúbico directamente
+// (Mitchell, 1/3·1/3), que además suaviza el achicado (2026-11-14).
+const MUESTREO = Platform.OS === 'web'
+  ? { B: 1 / 3, C: 1 / 3 }
+  : { filter: FilterMode.Linear, mipmap: MipmapMode.Linear };
 
 function LogoEnRelieve({ tam, x, y, estilo = 'material' }) {
   const img = useImage(FUENTE);

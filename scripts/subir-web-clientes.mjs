@@ -19,7 +19,7 @@
 // PRODUCCIÓN), como en subir-ios.mjs — no del .env local, que puede apuntar al
 // entorno de pruebas.
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const PROYECTO = 'prj_Xmquqo1g1WOVCDWbuzYl1YzUKhYY'; // puntos-salud-web
@@ -35,6 +35,11 @@ if (!env.EXPO_PUBLIC_SUPABASE_URL?.includes('sacecdkdmsdvgqnrsett')) {
   process.exit(1);
 }
 
+// El motor de Skia para la web (entrada.web.js lo pide en `/canvaskit.wasm`).
+// Se copia de node_modules en cada compilación para que siempre sea el de la
+// versión instalada de canvaskit-wasm, la misma que trae el .js que lo carga.
+copyFileSync(join(app, 'node_modules/canvaskit-wasm/bin/full/canvaskit.wasm'), join(app, 'public/canvaskit.wasm'));
+
 execSync(`npx expo export --platform web --clear --output-dir ${salida}`, {
   cwd: app, stdio: 'inherit', env: { ...process.env, ...env, NODE_ENV: 'production' },
 });
@@ -45,10 +50,11 @@ execSync(`npx expo export --platform web --clear --output-dir ${salida}`, {
 // al recargar.
 writeFileSync(join(salida, 'vercel.json'), JSON.stringify({
   cleanUrls: false,
-  rewrites: [{ source: '/((?!_expo/|assets/).*)', destination: '/index.html' }],
+  rewrites: [{ source: '/((?!_expo/|assets/|canvaskit\\.wasm).*)', destination: '/index.html' }],
   headers: [
     { source: '/_expo/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
     { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+    { source: '/canvaskit.wasm', headers: [{ key: 'Cache-Control', value: 'public, max-age=604800' }] },
     { source: '/index.html', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
   ],
 }, null, 2));

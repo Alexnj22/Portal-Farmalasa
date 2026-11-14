@@ -1,7 +1,7 @@
 {
   "name": "farmalasa-clientes",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "main": "./entrada",
   "private": true,
   "scripts": {
     "start": "expo start",

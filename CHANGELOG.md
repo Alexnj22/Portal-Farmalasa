@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.2 — Puntos Salud en el navegador igual que la app: barra de abajo, íconos, tarjeta y volver
+
+En app.farmasalud.lat el menú salía arriba como una fila de texto y «Cuenta» no cabía. Ahora es la barra de abajo de la app, con íconos y el número del carrito. También salen los íconos (antes había cuadros vacíos), la tarjeta con sus minerales y el logo en relieve, y los juegos de Bienestar. Las pantallas internas llevan la barra de arriba como en iPhone, y «volver» siempre lleva a algún lado, aunque la pantalla se haya abierto desde un enlace.
+
 ## v2.1537.1 — Pedidos: un producto con la regla de despacho pendiente frena el pedido
 
 Cuando la presentación de una regla de despacho se apaga o cambia de factor, la regla se quita y queda pendiente en Pedidos → Reglas. Mientras estaba pendiente, el producto salía en el pedido en su presentación suelta: el pedido #236 (30/oct) mandó «4 PAR» de GUANTE TALLA S NIPRO, que se despacha por CAJA X 50 PARES, 43 minutos antes de que se resolviera la regla. Ahora, al calcular el pedido (portal y app), si algún producto tiene la regla pendiente, el pedido no se genera y el aviso nombra los productos y dice que hay que resolverlos en Pedidos → Reglas.

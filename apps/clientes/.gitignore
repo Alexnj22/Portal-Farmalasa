@@ -13,3 +13,7 @@ android/
 # regla `android/`. Su `build/` sí se ignora.
 !modules/*/android/
 modules/*/android/build/
+
+# El motor de Skia para la web: lo copia scripts/subir-web-clientes.mjs desde
+# node_modules (8 MB, no va al repo).
+public/canvaskit.wasm

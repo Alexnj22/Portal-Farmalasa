@@ -1225,6 +1225,8 @@ export const AREAS = [
             'src/data/cumplimiento.js', 'src/utils/cumplimiento.js', 'src/utils/papelDeCumplimiento.js',
             // Datos de mercado de la SRS (2026-11-14).
             'src/data/datosMercadoSrs.js',
+            // El emparejador que propone la pareja de cada producto (2026-11-14).
+            'scripts/srs/', 'tests/unit/emparejarMercado.test.js',
         ],
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas', 'libro_lote_revisiones',

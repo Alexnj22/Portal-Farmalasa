@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1530.1 — Datos de mercado de la SRS: emparejador nuevo
+
+- Las parejas propuestas de **Cumplimiento → Datos de mercado** se rehicieron. Las de confianza alta tenían mal el empaque en ~16 % de los casos (RINOKEM PLUS X 100 → la caja de 30) o la variante (COLBER AMLO → COLBER, EXFORGE 10/320 → 5/320). Ahora cada pareja exige que coincidan marca sin variantes de más, concentración, empaque y forma; con un choque, la confianza es baja. Resultado: 1,426 alta (0 con empaque distinto de 899 que se pueden medir), 549 media, 625 baja, 667 sin pareja (casi todo lo que no es medicamento). Ninguna muestra médica gana.
+- El emparejador queda en el repositorio (`scripts/srs/emparejar-datos-mercado.mjs`, lógica en `scripts/srs/emparejarMercado.mjs`, pruebas en `tests/unit/emparejarMercado.test.js`) para repetirlo cada año; nunca pisa lo que una persona confirmó.
+- `srs-datos-mercado`: acción `lista` (secreto de carga) sobre la función nueva `srs_mercado_por_emparejar()` (migración `20261114144755`, sólo service_role).
+
 ## v2.1530.0 — Cumplimiento: el resumen va por obligación y se anota desde ahí
 
 - **Resumen**: ya no es una tarjeta por sala repitiendo lo mismo siete veces. Va por obligación («Autoinspección del año — falta en todas las salas»), de lo más urgente a lo menos, con las salas donde falta. Tocar una sala abre el formulario ya con esa sala (y el reporte cero, con el semestre que falta); lo que no se resuelve anotando lleva a su pestaña filtrada. Arriba, las salas con cuánto le falta a cada una (tocar filtra) y abajo lo que ya está al día en toda la red.

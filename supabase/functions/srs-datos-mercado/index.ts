@@ -14,6 +14,8 @@ import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmploy
 //                    cuenta de la empresa, para elegir la pareja de un
 //                    producto en Cumplimiento → Datos de mercado. Permiso:
 //                    `cumplimiento_tab_datos_mercado` can_view.
+//   accion "lista"   (herramienta manual, secreto propio) — los productos que
+//                    falta emparejar (`srs_mercado_por_emparejar`).
 //   accion "cargar"  (herramienta manual, secreto propio) — deja en la base
 //                    las parejas que propuso el emparejador
 //                    (`srs_mercado_cargar_propuestas`, que nunca pisa lo que ya
@@ -125,11 +127,21 @@ Deno.serve(async (req) => {
     const accion = String(body.accion ?? "");
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    if (accion === "cargar") {
+    if (accion === "lista" || accion === "cargar") {
       const esperado = await secreto(admin, "srs_carga_secreto");
       if (!esperado || req.headers.get("x-carga-secreto") !== esperado) {
         return responder({ ok: false, error: "No autorizado." }, 401);
       }
+    }
+
+    // Lo que el emparejador tiene que emparejar (todo lo que nadie decidió).
+    if (accion === "lista") {
+      const { data, error } = await admin.rpc("srs_mercado_por_emparejar");
+      if (error) return responder({ ok: false, error: error.message }, 500);
+      return responder({ ok: true, productos: data ?? [] });
+    }
+
+    if (accion === "cargar") {
       const filas = Array.isArray(body.filas) ? body.filas : [];
       if (!filas.length || filas.length > 5000) return responder({ ok: false, error: "Sin filas." }, 400);
       let escritas = 0;

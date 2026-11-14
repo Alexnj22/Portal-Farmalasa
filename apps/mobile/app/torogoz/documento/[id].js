@@ -119,7 +119,7 @@ export default function Documento() {
   useEffect(() => {
     if (p.imprimir !== '1' || !ticket || yaImprimio.current) return;
     yaImprimio.current = true;
-    imprimirTicket(ticket).then(() => anotar('DISTRIBUCION_TICKET_IMPRESO', { ok: true })).catch(() => {});
+    imprimirTicket(ticket).then((salio) => { if (salio) anotar('DISTRIBUCION_TICKET_IMPRESO', { ok: true }); }).catch(() => {});
   }, [p.imprimir, ticket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nombre = d ? `${TIPO_DOCUMENTO[d.tipo]?.largo ?? 'Documento'} ${String(d.numero_control).slice(-6)} ${d.dist_clientes?.nombre ?? ''}` : '';
@@ -175,7 +175,7 @@ export default function Documento() {
   const papeles = () => elegir('Papeles del documento', [
     { texto: 'Compartir el documento (PDF)', accion: () => compartirDocumento(d).catch((e) => fallo('No se pudo armar el PDF', e?.message ?? '')) },
     { texto: 'Imprimir el documento', accion: () => imprimirDocumentoCarta(d).catch((e) => fallo('No se pudo imprimir', e?.message ?? '')) },
-    { texto: 'Imprimir el ticket', accion: () => imprimirTicket(ticket).then(() => anotar('DISTRIBUCION_TICKET_IMPRESO', { ok: true })).catch((e) => fallo('No se pudo imprimir', e?.message ?? '')) },
+    { texto: 'Imprimir el ticket', accion: () => imprimirTicket(ticket).then((salio) => { if (salio) anotar('DISTRIBUCION_TICKET_IMPRESO', { ok: true }); }).catch((e) => fallo('No se pudo imprimir', e?.message ?? '')) },
     { texto: 'Compartir el ticket', accion: () => compartirTicket(ticket, `Ticket ${nombre}`).catch((e) => fallo('No se pudo compartir', e?.message ?? '')) },
     { texto: 'Archivo JSON', accion: () => compartirJson(d).catch((e) => fallo('No se pudo compartir', e?.message ?? '')) },
     ...(d.estado === 'sellado' ? [{ texto: 'Ver en Hacienda', accion: () => WebBrowser.openBrowserAsync(urlConsultaPublica(d)).catch(() => {}) }] : []),

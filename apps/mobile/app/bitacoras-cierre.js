@@ -132,7 +132,7 @@ export default function CierreDeBitacoras() {
     // texto, igual que el portal cuando el logo no llega.
     const html = armarHtmlDelMes(mes, null);
     try {
-      const salio = comoPdf ? await compartirPdf({ html, nombre: `Bitácoras ${mes?.sucursal || nombreSala} ${nombreMes}` }) : (await imprimirPapel(html), true);
+      const salio = comoPdf ? await compartirPdf({ html, nombre: `Bitácoras ${mes?.sucursal || nombreSala} ${nombreMes}` }) : await imprimirPapel(html);
       if (salio) registrarEgreso('bitacoras', { formato: 'pdf', filas: mes?.areas?.length ?? null, detalle: { periodo, branch_id: sala, sucursal: mes?.sucursal ?? null, via: 'app' } });
     } catch (e) { fallo('No se imprimió', e?.message || ''); }
   };

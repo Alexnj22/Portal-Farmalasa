@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1533.1 — App: cancelar una impresión ya no muestra error
+
+En la app del personal, cerrar el diálogo de impresión sin imprimir mostraba «No se pudo preparar el papel», como si algo hubiera fallado. Pasaba en todos los papeles: acta y carta de terminación, boletas, cotizaciones, nómina, bitácoras, formularios de datos personales y documentos fiscales. Ahora cancelar no muestra nada, y la salida del dato sólo se anota cuando de verdad se mandó a imprimir.
+
 ## v2.1533.0 — Resumen de la mañana para administración y avisos que no se repiten si no cambiaron
 
 - **Un solo aviso a las 8:45 a. m. en lugar de cinco.** Créditos vencidos de la red, salas sin conteo de antibióticos, la factura que no entró a Hacienda, clientes con los puntos partidos y fichas sin número interno llegaban sueltos entre las 8:00 y las 8:40 a Supervisión. Ahora cada uno deja un renglón y `armar_resumen_manana()` (8:45, reintento 9:15) manda «Resumen de la mañana» con un renglón por tema; cada renglón de la tarjeta lleva a su pantalla. Con un solo tema sale el aviso de siempre. Lo que llega después de las 8:45 sale suelto. La apertura de caja sigue suelta, y jefes, dependientes y regentes reciben lo suyo igual que antes. Migración `20261114152645`, `avisar-creditos-vencidos` desplegada.

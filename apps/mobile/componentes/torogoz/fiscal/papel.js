@@ -38,13 +38,14 @@ export async function compartirDocumento(dte) {
 }
 
 export async function imprimirDocumentoCarta(dte) {
-  await imprimirPapel(htmlDelDocumento(dte));
+  if (!(await imprimirPapel(htmlDelDocumento(dte)))) return false;
   registrarEgreso('distribucion', { formato: 'impresion', filas: 1, detalle: { dte_id: dte.id, numero_control: dte.numero_control, via: 'app' } });
+  return true;
 }
 
 /** El ticket: a la impresora (AirPrint) o compartido como PDF. */
 export async function imprimirTicket(ticket) {
-  await imprimirPapel(await htmlDelTicket(ticket));
+  return imprimirPapel(await htmlDelTicket(ticket));
 }
 export async function compartirTicket(ticket, nombre) {
   return compartirPdf({ html: await htmlDelTicket(ticket), nombre });

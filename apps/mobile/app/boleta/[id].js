@@ -63,7 +63,7 @@ export default function Boleta() {
     }
   };
   const imprimir = async () => {
-    try { await imprimirPapel(papel()); anotar('impresion'); }
+    try { if (await imprimirPapel(papel())) anotar('impresion'); }
     catch (err) { fallo('No se pudo imprimir', err?.message || ''); }
   };
   const menu = () => {

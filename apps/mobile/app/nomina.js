@@ -227,7 +227,7 @@ export default function Nomina() {
       async (i) => {
         try {
           if (i === 0) { if (await compartirPdf({ html: html(), nombre })) anotar('pdf'); }
-          else if (i === 1) { await imprimirPapel(html()); anotar('impresion'); }
+          else if (i === 1) { if (await imprimirPapel(html())) anotar('impresion'); }
         } catch (e) { fallo('No se pudo armar el papel', e?.message || ''); }
       },
     );

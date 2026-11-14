@@ -167,7 +167,7 @@ function Cuerpo({ solicitud }) {
     const anotar = (formato) => useStaffStore.getState().appendAuditLog?.('ENTREGAR_DATOS_SOLICITUD', String(solicitud.id), { folio: solicitud.folio_txt, formato });
     hoja('La respuesta', [{ value: 'imprimir', label: 'Imprimir' }, { value: 'pdf', label: 'Compartir en PDF' }], async (v) => {
       try {
-        if (v === 'imprimir') { await imprimirPapel(html); anotar('papel'); }
+        if (v === 'imprimir') { if (await imprimirPapel(html)) anotar('papel'); }
         else if (await compartirPdf({ html, nombre: `Respuesta ${solicitud.folio_txt}` })) anotar('pdf');
       } catch (e) {
         fallo('No se pudo preparar la respuesta', mensajeAmigable(e));

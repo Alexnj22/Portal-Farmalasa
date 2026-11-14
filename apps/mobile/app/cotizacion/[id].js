@@ -68,7 +68,7 @@ export default function Cotizacion() {
     finally { setOcupado(false); }
   };
   const imprimir = async () => {
-    try { await imprimirPapel(papel()); anotar('impresion'); }
+    try { if (await imprimirPapel(papel())) anotar('impresion'); }
     catch (e) { fallo('No se pudo imprimir', e?.message || ''); }
   };
   const menu = () => {

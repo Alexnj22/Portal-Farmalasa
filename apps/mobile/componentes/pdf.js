@@ -26,9 +26,23 @@ export async function compartirPdf({ html, nombre }) {
   return r.action === Share.sharedAction;
 }
 
-/** AirPrint con el mismo papel. Lanza si la persona no pudo imprimir. */
-export function imprimirPapel(html) {
-  return Print.printAsync({ html });
+/** ¿El error es sólo que la persona cerró el diálogo de impresión? */
+export const seCanceloLaImpresion = (e) => /did not complete|cancel/i.test(String(e?.message || e || ''));
+
+/**
+ * AirPrint con el mismo papel. `true` si se mandó a imprimir; `false` si la
+ * persona cerró el diálogo (expo-print lo reporta como error
+ * «PrintIncompleteException», y se mostraba «No se pudo preparar el papel»).
+ * Lanza sólo si de verdad falló.
+ */
+export async function imprimirPapel(html) {
+  try {
+    await Print.printAsync({ html });
+    return true;
+  } catch (e) {
+    if (seCanceloLaImpresion(e)) return false;
+    throw e;
+  }
 }
 
 /**
@@ -55,7 +69,7 @@ export function ofrecerPapel({ html, nombre, titulo = 'El papel', alTerminar, al
   const opciones = ['Imprimir', 'Compartir PDF', 'Guardar', 'Cancelar'];
   const hacer = async (i) => {
     try {
-      if (i === 0) { await imprimirPapel(html); alTerminar?.('imprimir'); }
+      if (i === 0 && await imprimirPapel(html)) alTerminar?.('imprimir');
       if (i === 1 && await compartirPdf({ html, nombre })) alTerminar?.('compartir');
       if (i === 2 && await guardarPdf({ html, nombre })) alTerminar?.('guardar');
     } catch (e) { alFallar?.(e); }
@@ -86,8 +100,11 @@ export function ofrecerArchivosPdf({ archivos, titulo = 'El papel', mensaje, nom
   const hacer = async (i) => {
     try {
       if (i === 0) {
-        for (const a of lista) await Print.printAsync({ uri: a.uri });
-        alTerminar?.('imprimir');
+        let salio = false;
+        for (const a of lista) {
+          try { await Print.printAsync({ uri: a.uri }); salio = true; } catch (e) { if (!seCanceloLaImpresion(e)) throw e; }
+        }
+        if (salio) alTerminar?.('imprimir');
       }
       if (i === 1) {
         let uri = lista[0].uri;

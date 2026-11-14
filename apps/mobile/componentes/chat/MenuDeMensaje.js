@@ -84,7 +84,7 @@ export default function MenuDeMensaje({ mensaje, delEquipo, mia, puedeResponder,
                     accessibilityState={{ selected: e === mia }}
                     android_ripple={ANDROID ? { color: 'rgba(127,127,127,0.25)', borderless: true, radius: 22 } : undefined}
                     style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: e === mia ? 'rgba(59,130,246,0.28)' : 'transparent', transform: [{ scale: pressed ? 1.25 : 1 }] })}>
+                      backgroundColor: e === mia ? `${MARCA.azulClaro}47` : 'transparent', transform: [{ scale: pressed ? 1.25 : 1 }] })}>
                     <Text style={{ fontSize: 26 }}>{e}</Text>
                   </Pressable>
                 ))}

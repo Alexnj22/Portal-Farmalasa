@@ -177,7 +177,7 @@ function Dependientes({ sala, recarga }) {
     });
     return () => { vivo = false; };
   }, [sala, recarga]);
-  if (!sala) return <View style={{ marginHorizontal: 16 }}><Aviso texto="Elige una sala en el filtro para ver a su personal de mostrador." /></View>;
+  if (!sala) return <Vacio titulo="Elige una sala" detalle="En el filtro de arriba, para ver a su personal de mostrador." icono="Filtro" />;
   if (error) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
   if (!personas) return <Cargando />;
   if (!personas.length) return <Vacio titulo="Sin personal de mostrador en esta sala" />;

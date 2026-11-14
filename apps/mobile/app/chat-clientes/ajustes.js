@@ -67,7 +67,7 @@ function Editor({ campo, valor, onCambio, estado, deshabilitado }) {
           {MARCADORES_DEL_CHAT.map((m) => (
             <Tocable key={m.clave} accessibilityRole="button" accessibilityHint={m.ayuda} disabled={valor.length + m.clave.length > LARGO_MAXIMO_MENSAJE}
               onPress={() => insertar(m.clave)}
-              style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: 'rgba(0,82,204,0.14)' }}>
+              style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: `${MARCA.azul}24` }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{`${m.rotulo} ${m.clave}`}</Text>
             </Tocable>
           ))}

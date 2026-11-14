@@ -258,7 +258,7 @@ export default function GenerarPedido() {
                 const urg = urgenciaDeSala(st);
                 return (
                   <Pressable key={id} disabled={sin} onPress={() => alternar(id)} style={({ pressed }) => ({ width: '48%', opacity: sin ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                    <Vidrio radio={20} interactivo={!sin} tinte={on ? 'rgba(0,82,204,0.35)' : undefined}>
+                    <Vidrio radio={20} interactivo={!sin} tinte={on ? `${MARCA.azul}59` : undefined}>
                       <View style={{ padding: 12, gap: 4 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{ERP_NAMES[id]}</Text>

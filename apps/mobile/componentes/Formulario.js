@@ -15,6 +15,7 @@ import { Appearance, Platform, PlatformColor, ScrollView, Text, TextInput, View 
 import { paletaDe } from '../tema/material';
 import Vidrio from './Vidrio';
 import { MAYUSCULAS } from '../tema/mayusculas';
+import { MARCA } from './inicio/marca';
 
 const ios = Platform.OS === 'ios';
 // Fuera de iPhone, cada color se lee como GETTER y devuelve el del modo ACTUAL
@@ -45,7 +46,6 @@ const COLORES = {
 };
 export const colorSistema = {
   separadorClaro: 'rgba(127,127,127,0.25)',   // para SVG, que no lee colores del sistema
-  acentoTinte: 'rgba(0,82,204,0.12)',
 };
 // Android: fondo, tarjetas, texto, separador y acento salen de la paleta del
 // sistema (Material You, tema/material.js); rojo, verde y naranja son
@@ -60,6 +60,9 @@ const deAndroid = (k, claro, noche) => () => {
 for (const [k, [nativo, claro, noche]] of Object.entries(COLORES)) {
   Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? () => PlatformColor(nativo) : deAndroid(k, claro, noche) });
 }
+// El tinte del acento sobre vidrio: el azul de la marca en iPhone y el primario
+// del sistema en Android (se lee al pintar, así sigue al color nuevo).
+Object.defineProperty(colorSistema, 'acentoTinte', { enumerable: true, get: () => `${MARCA.azul}1F` });
 
 export function Formulario({ children, contentContainerStyle, ...props }) {
   return (

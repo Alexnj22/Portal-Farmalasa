@@ -79,7 +79,7 @@ export function Tendencia({ ctx }) {
               <View key={d} style={{ flex: 1, alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
                 <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{cuentas[i] || ''}</Text>
                 <View style={{ width: '100%', height: Math.max(3, (cuentas[i] / max) * 72), borderRadius: 6,
-                  backgroundColor: esHoy ? MARCA.azul : 'rgba(59,130,246,0.45)' }} />
+                  backgroundColor: esHoy ? MARCA.azul : `${MARCA.azulClaro}73` }} />
                 <Text style={{ color: esHoy ? colorSistema.texto : colorSistema.texto2, fontSize: 12, fontWeight: esHoy ? '800' : '500' }}>
                   {DIAS[new Date(`${d}T12:00:00`).getDay()]}
                 </Text>

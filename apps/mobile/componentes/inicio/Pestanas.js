@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import FichasAndroid from './FichasAndroid';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
+import { MARCA } from './marca';
 
 export default function Pestanas({ opciones, activa, onCambiar }) {
   if (opciones.length < 2) return null;
@@ -17,7 +18,7 @@ export default function Pestanas({ opciones, activa, onCambiar }) {
         const esta = o.id === activa;
         return (
           <Pressable key={o.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(o.id); }}>
-            <Vidrio radio={18} interactivo tinte={esta ? 'rgba(0,82,204,0.35)' : undefined}>
+            <Vidrio radio={18} interactivo tinte={esta ? `${MARCA.azul}59` : undefined}>
               <Text style={{ paddingHorizontal: 16, paddingVertical: 8, fontSize: 15, fontWeight: esta ? '700' : '500',
                 color: esta ? colorSistema.texto : colorSistema.texto2 }}>{o.label}</Text>
             </Vidrio>

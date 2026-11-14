@@ -46,7 +46,7 @@ export function ResumenDeCalificaciones() {
 function Acceso({ texto, ruta }) {
   return (
     <Tocable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(ruta); }}
-      style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: 'rgba(0,82,204,0.14)' }}>
+      style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: `${MARCA.azul}24` }}>
       <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
     </Tocable>
   );

@@ -22,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import Vidrio from './Vidrio';
 import { colorSistema } from './Formulario';
+import { MARCA } from './inicio/marca';
 import FiltrosAndroid from './FiltrosAndroid';
 
 const esIOS = Platform.OS === 'ios';
@@ -78,7 +79,7 @@ export function FiltrosActivos({ grupos }) {
         <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={`Quitar filtro ${g.titulo}`}
           onPress={() => { Haptics.selectionAsync().catch(() => {}); g.onCambiar(g.porDefecto); }}
           style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-          <Vidrio radio={16} interactivo tinte="rgba(0,82,204,0.30)">
+          <Vidrio radio={16} interactivo tinte={`${MARCA.azul}4C`}>
             <Text style={{ paddingHorizontal: 12, paddingVertical: 6, fontSize: 14, fontWeight: '600', color: colorSistema.texto }}>
               {g.opciones.find((o) => o.id === g.activa)?.label ?? g.activa}  ✕
             </Text>

@@ -224,7 +224,7 @@ function BurbujaFlotante() {
         android_ripple={ANDROID ? { color: 'rgba(127,127,127,0.24)', borderless: false, foreground: true } : undefined}
         style={ANDROID ? { borderRadius: 18, overflow: 'hidden', elevation: 6, backgroundColor: paleta?.primaryContainer ?? MARCA.azul } : undefined}>
         {ANDROID ? contenido : (
-          <Vidrio radio={TAMANO / 2} interactivo tinte="rgba(0,82,204,0.88)">{contenido}</Vidrio>
+          <Vidrio radio={TAMANO / 2} interactivo tinte={`${MARCA.azul}E0`}>{contenido}</Vidrio>
         )}
       </Pressable>
       <Numero n={sinLeer} visible={!rotulo} />

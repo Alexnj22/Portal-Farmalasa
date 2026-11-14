@@ -96,7 +96,7 @@ export const ClienteAvatar = memo(function ClienteAvatar({ cliente, fotoUrl, tam
   const foto = fotoUrl
     ? <Image source={{ uri: fotoUrl }} style={{ width: cara, height: cara, borderRadius: cara / 2 }} accessibilityIgnoresInvertColors />
     : (
-      <View style={{ width: cara, height: cara, borderRadius: cara / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,82,204,0.14)' }}>
+      <View style={{ width: cara, height: cara, borderRadius: cara / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: `${MARCA.azul}24` }}>
         <Text style={{ color: MARCA.azulClaro, fontSize: cara * 0.38, fontWeight: '900' }}>{inicialesDeCliente(cliente)}</Text>
       </View>
     );

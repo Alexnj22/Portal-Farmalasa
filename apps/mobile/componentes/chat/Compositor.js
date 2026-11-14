@@ -215,7 +215,7 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
           ) : null}
           {adjunto ? (
             <Pressable onPress={() => setAdjunto(null)} accessibilityLabel="Quitar el adjunto"
-              style={{ paddingHorizontal: 12, minHeight: 36, borderRadius: 18, justifyContent: 'center', backgroundColor: 'rgba(0,82,204,0.14)' }}>
+              style={{ paddingHorizontal: 12, minHeight: 36, borderRadius: 18, justifyContent: 'center', backgroundColor: `${MARCA.azul}24` }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>
                 {`${adjunto.tipo === 'producto' ? `📦 ${adjunto.nombre}${adjunto.precio != null ? ` · ${formatMoney(adjunto.precio)}` : ''}` : `🏷 ${adjunto.titulo}`}  ×`}
               </Text>

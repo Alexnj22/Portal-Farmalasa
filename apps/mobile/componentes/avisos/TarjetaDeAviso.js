@@ -149,7 +149,7 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }}
       style={({ pressed }) => ({ marginHorizontal: margen, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-      <Vidrio radio={20} interactivo tinte={sinLeer ? 'rgba(59,130,246,0.10)' : undefined}>
+      <Vidrio radio={20} interactivo tinte={sinLeer ? `${MARCA.azulClaro}1A` : undefined}>
         <View style={{ padding: 12, gap: 8 }}>
           {t?.encabezado ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{t.encabezado}</Text> : null}
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>

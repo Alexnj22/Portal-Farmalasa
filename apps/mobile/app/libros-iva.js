@@ -161,7 +161,7 @@ export default function LibrosIva() {
                 <View key={l.k} style={{ gap: 10 }}>
                 <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(open ? null : l.k); }}
                   style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                  <Vidrio radio={20} interactivo tinte={open ? 'rgba(59,130,246,0.14)' : undefined}>
+                  <Vidrio radio={20} interactivo tinte={open ? `${MARCA.azulClaro}24` : undefined}>
                     <View style={{ padding: 12, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{l.t}</Text>

@@ -52,7 +52,7 @@ function Contacto({ icono, texto, onPress }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
       style={({ pressed }) => ({ flex: 1, minHeight: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 4,
-        backgroundColor: 'rgba(59,130,246,0.18)', opacity: pressed ? 0.7 : 1 })}>
+        backgroundColor: `${MARCA.azulClaro}2E`, opacity: pressed ? 0.7 : 1 })}>
       <Text style={{ fontSize: 20 }}>{icono}</Text>
       <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
     </Pressable>

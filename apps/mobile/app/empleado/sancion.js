@@ -142,7 +142,7 @@ export default function Sancion() {
                   return (
                     <Pressable key={p.n} disabled={p.noElegible || guardando} onPress={() => elegir(p.n)} accessibilityRole="button"
                       style={({ pressed }) => ({ opacity: p.noElegible ? 0.5 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                      <Vidrio radio={16} tinte={elegido ? 'rgba(59,130,246,0.25)' : undefined}>
+                      <Vidrio radio={16} tinte={elegido ? `${MARCA.azulClaro}40` : undefined}>
                         <View style={{ padding: 12, gap: 4 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700', flex: 1 }}>{`${p.n}. ${p.nombre}`}</Text>

@@ -99,7 +99,7 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
   };
   return (
     <Pressable onPress={abrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={20} interactivo tinte={destacada ? 'rgba(0,82,204,0.16)' : undefined}>
+      <Vidrio radio={20} interactivo tinte={destacada ? `${MARCA.azul}29` : undefined}>
         <View style={{ padding: 14, gap: 8, opacity: inactiva ? 0.6 : 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar empleado={emp} tamano={destacada ? 64 : 48} />

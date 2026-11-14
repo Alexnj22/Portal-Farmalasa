@@ -130,7 +130,7 @@ export function Ranking({ data, limite }) {
           const persona = porId.get(String(v.employee_id)) ?? { id: v.employee_id, name: v.nombre };
           const tono = top ? MARCA.azulClaro : bajo ? MARCA.rojo : colorSistema.texto2;
           return (
-            <View key={`${v.employee_id}-${v.sala}`} style={{ flexDirection: 'row', gap: 10, alignItems: 'center', paddingVertical: 6, paddingHorizontal: 6, borderRadius: 14, backgroundColor: top ? 'rgba(59,130,246,0.10)' : bajo ? 'rgba(240,68,56,0.07)' : 'transparent' }}>
+            <View key={`${v.employee_id}-${v.sala}`} style={{ flexDirection: 'row', gap: 10, alignItems: 'center', paddingVertical: 6, paddingHorizontal: 6, borderRadius: 14, backgroundColor: top ? `${MARCA.azulClaro}1A` : bajo ? 'rgba(240,68,56,0.07)' : 'transparent' }}>
               <Text style={{ width: 24, textAlign: 'center', color: tono, fontSize: 13, fontWeight: '800' }}>{`${i + 1}º`}</Text>
               <Avatar empleado={persona} tamano={36} />
               <View style={{ flex: 1, gap: 3 }}>

@@ -277,7 +277,7 @@ export default function Horarios() {
             const esHoy = f === hoy;
             return (
               <Pressable key={d.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setDia(d.id); }} style={{ flex: 1 }}>
-                <Vidrio radio={14} interactivo tinte={activo ? 'rgba(0,82,204,0.55)' : undefined}>
+                <Vidrio radio={14} interactivo tinte={activo ? `${MARCA.azul}8C` : undefined}>
                   <View style={{ alignItems: 'center', paddingVertical: 8, gap: 2 }}>
                     <Text style={{ color: activo ? '#fff' : colorSistema.texto2, fontSize: 11, fontWeight: '700' }}>{d.corto}</Text>
                     <Text style={{ color: activo ? '#fff' : esHoy ? MARCA.azulClaro : colorSistema.texto, fontSize: 17, fontWeight: '800' }}>{Number(f.slice(8))}</Text>
@@ -378,7 +378,7 @@ export default function Horarios() {
               <>
                 <Encabezado>{`Vienen a cubrir · ${cubren.length}`}</Encabezado>
                 <View style={{ marginHorizontal: 16 }}>
-                  <Vidrio radio={20} tinte="rgba(59,130,246,0.12)">
+                  <Vidrio radio={20} tinte={`${MARCA.azulClaro}1F`}>
                     <View style={{ padding: 14, gap: 10 }}>
                       {cubren.map(({ e, r }) => (
                         <Pressable key={e.id} disabled={!puedeEditar}
@@ -451,7 +451,7 @@ export default function Horarios() {
               <View style={{ flexDirection: 'row', gap: 5, marginHorizontal: 16 }}>
                 {DIAS.map((d) => (
                   <Pressable key={d.id} onPress={() => setEditando((x) => ({ ...x, dia: d.id, actual: coberturaDe(x.persona.id, d.id) }))} style={{ flex: 1 }}>
-                    <Vidrio radio={12} interactivo tinte={d.id === editando.dia ? 'rgba(0,82,204,0.55)' : undefined}>
+                    <Vidrio radio={12} interactivo tinte={d.id === editando.dia ? `${MARCA.azul}8C` : undefined}>
                       <Text style={{ textAlign: 'center', paddingVertical: 8, color: d.id === editando.dia ? '#fff' : colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{d.corto}</Text>
                     </Vidrio>
                   </Pressable>
@@ -480,7 +480,7 @@ export default function Horarios() {
                   <Pressable key={d.id} disabled={!puedeEditar}
                     onPress={() => { Haptics.selectionAsync().catch(() => {}); setEditando({ tipo: 'persona', persona: hoja, dia: d.id, actual: rosterDe(hoja.id)[String(d.id)] }); }}
                     style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                  <Vidrio radio={16} interactivo={puedeEditar} tinte={d.id === dia ? 'rgba(0,82,204,0.25)' : undefined}>
+                  <Vidrio radio={16} interactivo={puedeEditar} tinte={d.id === dia ? `${MARCA.azul}40` : undefined}>
                     <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       <View style={{ width: 92 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{d.largo}</Text>

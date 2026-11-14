@@ -280,7 +280,7 @@ export default function Nomina() {
               return (
                 <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setPeriodoId(p.id); }}
                   style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                  <Vidrio radio={16} interactivo tinte={activo ? 'rgba(0,82,204,0.35)' : undefined}>
+                  <Vidrio radio={16} interactivo tinte={activo ? `${MARCA.azul}59` : undefined}>
                     <View style={{ padding: 12, width: 190, gap: 4 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{p.name || rotuloDePeriodo(p.start_date, p.end_date)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.pay_date ? `Pago: ${fechaTexto(p.pay_date, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Sin fecha de pago'}</Text>

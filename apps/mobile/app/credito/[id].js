@@ -138,7 +138,7 @@ export default function Credito() {
                       guardar('abono-a-corregir', { abono: a, credito: { branch_id: Number(p.sala), credito: p.credito, cliente: p.cliente } });
                       router.push('/credito/corregir');
                     }}
-                    style={({ pressed }) => ({ minHeight: 32, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: 'rgba(59,130,246,0.18)', opacity: pressed ? 0.7 : 1 })}>
+                    style={({ pressed }) => ({ minHeight: 32, paddingHorizontal: 12, borderRadius: 999, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E`, opacity: pressed ? 0.7 : 1 })}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700' }}>Corregir</Text>
                   </Pressable>
                 ) : null}

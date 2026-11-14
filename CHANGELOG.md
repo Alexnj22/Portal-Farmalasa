@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1534.5 — App Android: el azul de la marca sigue al color del sistema en todas las pantallas
+
+En Android la app toma el color del sistema (Material You), pero 25 lugares tenían el azul de la marca escrito a mano y seguían azules con cualquier tema: el chip del filtro activo, el día elegido en Horarios y en el editor de turnos, la sala elegida al generar un pedido, la pestaña activa del Inicio y de Nómina, la burbuja y los botones del chat, la tarjeta de aviso sin leer, entre otros. Ahora todos salen del color del tema. En iPhone no cambia nada.
+
+Además, en Cumplimiento → Acreditación, sin sala elegida se veía un texto suelto; ahora es el estado vacío de siempre, «Elige una sala».
+
 ## v2.1534.4 — Baja: cada artículo pregunta ¿lo devolvió? — Devolvió, No devolvió o No tenía
 
 - En el cierre de la baja, cada artículo ahora se pregunta («¿Devolvió el uniforme?») y se responde **Devolvió**, **No devolvió** o **No tenía**. «Pendiente» no dejaba claro si no lo devolvió o si nunca se le entregó. El resumen dice «No devolvió: uniforme». También en la app.

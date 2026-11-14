@@ -136,7 +136,7 @@ export default function EditorDeDia({ fecha, dia, actual, turnos, sala, onGuarda
               const si = dias.includes(d.id);
               return (
                 <Pressable key={d.id} onPress={() => alternar(d.id)} accessibilityRole="button" accessibilityLabel={d.largo} accessibilityState={{ selected: si }} style={{ flex: 1 }}>
-                  <Vidrio radio={12} interactivo tinte={si ? 'rgba(0,82,204,0.55)' : undefined}>
+                  <Vidrio radio={12} interactivo tinte={si ? `${MARCA.azul}8C` : undefined}>
                     <Text style={{ textAlign: 'center', paddingVertical: 11, color: si ? '#fff' : colorSistema.texto2, fontSize: 14, fontWeight: '700' }}>{d.corto}</Text>
                   </Vidrio>
                 </Pressable>

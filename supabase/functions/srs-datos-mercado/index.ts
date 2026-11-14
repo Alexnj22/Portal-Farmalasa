@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DATOS DE MERCADO DE LA SRS (2026-11-14).
@@ -21,7 +21,10 @@ import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_
 //                    Authorization (pasa el JWT del gateway) y el secreto
 //                    `SRS_CARGA_SECRETO` en `x-carga-secreto`.
 //
-// La cuenta de la SRS vive en los secretos SRS_DM_USUARIO / SRS_DM_CLAVE. El
+// La cuenta de la SRS y el secreto de carga se leen de la bóveda
+// (`srs_mercado_secretos()`, sólo service_role: srs_dm_usuario, srs_dm_clave,
+// srs_carga_secreto); si existen como variables de entorno con el nombre en
+// mayúsculas, mandan ésas. El
 // sitio de la SRS bloquea navegadores automáticos (un firewall devuelve
 // «Web Page Blocked») pero acepta el formulario simple: por eso se entra con
 // el mismo POST que hace su página de inicio de sesión.
@@ -33,6 +36,20 @@ import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_
 const BASE = "https://datosmercado.srs.gob.sv/";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 const PLAZO_MS = 30_000;
+
+type Admin = ClienteAdmin;
+let secretosCache: Record<string, string> | null = null;
+
+async function secreto(admin: Admin, nombre: string): Promise<string | undefined> {
+  const env = Deno.env.get(nombre.toUpperCase());
+  if (env) return env;
+  if (!secretosCache) {
+    const { data, error } = await admin.rpc("srs_mercado_secretos");
+    if (error) throw new Error("No se pudo leer la configuración de la SRS.");
+    secretosCache = (data ?? {}) as Record<string, string>;
+  }
+  return secretosCache[nombre] || undefined;
+}
 
 const json = (b: unknown, s = 200, h: HeadersInit = {}) =>
   new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", ...h } });
@@ -60,9 +77,9 @@ async function pedir(ruta: string, init: RequestInit = {}): Promise<Response> {
   return res;
 }
 
-async function entrar(): Promise<void> {
-  const usuario = Deno.env.get("SRS_DM_USUARIO");
-  const clave = Deno.env.get("SRS_DM_CLAVE");
+async function entrar(admin: Admin): Promise<void> {
+  const usuario = await secreto(admin, "srs_dm_usuario");
+  const clave = await secreto(admin, "srs_dm_clave");
   if (!usuario || !clave) throw new Error("Falta la cuenta de la SRS en la configuración del servidor.");
   galletas = {};
   await (await pedir("login.php")).text();
@@ -83,9 +100,9 @@ type ProductoSrs = {
   presentacion: string; laboratorio: string; ingresado: string | null;
 };
 
-async function buscarEnCatalogo(q: string): Promise<ProductoSrs[]> {
+async function buscarEnCatalogo(admin: Admin, q: string): Promise<ProductoSrs[]> {
   for (let intento = 0; intento < 2; intento++) {
-    if (!Object.keys(galletas).length) await entrar();
+    if (!Object.keys(galletas).length) await entrar(admin);
     const res = await pedir("data_listaproductosfiltro.php?query=" + encodeURIComponent(q), {
       headers: { "X-Requested-With": "XMLHttpRequest" },
     });
@@ -109,8 +126,8 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     if (accion === "cargar") {
-      const secreto = Deno.env.get("SRS_CARGA_SECRETO");
-      if (!secreto || req.headers.get("x-carga-secreto") !== secreto) {
+      const esperado = await secreto(admin, "srs_carga_secreto");
+      if (!esperado || req.headers.get("x-carga-secreto") !== esperado) {
         return responder({ ok: false, error: "No autorizado." }, 401);
       }
       const filas = Array.isArray(body.filas) ? body.filas : [];
@@ -135,7 +152,7 @@ Deno.serve(async (req) => {
       if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
       if (!permiso.puede) return responder({ ok: false, error: "No tienes permiso para ver los datos de mercado." }, 403);
 
-      const productos = await buscarEnCatalogo(q);
+      const productos = await buscarEnCatalogo(admin, q);
       return responder({ ok: true, productos });
     }
 

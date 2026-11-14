@@ -300,12 +300,12 @@ function ElegirProductoSrs({ fila, onClose, onElegir }) {
     );
 
     return (
+        // Cabecera, cuerpo y pie del canónico: el cuerpo es el que scrollea
+        // (con un <div> suelto la lista larga del buscador quedaba cortada).
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Elegir producto de la SRS">
-            <div className="p-5 space-y-4">
-                <div>
-                    <p className="text-caption text-content-3">Producto del portal</p>
-                    <p className="text-body font-bold text-content break-words">{fila.nombre}</p>
-                </div>
+            <LiquidModal.Header icono={Search} tono="brand" titulo={fila.nombre}
+                subtitulo="Producto del portal" onClose={onClose} />
+            <LiquidModal.Body className="space-y-4">
                 {alternativas.length > 0 && (
                     <div>
                         <p className="text-caption font-bold text-content-2">Otras opciones que encontró el emparejador</p>
@@ -324,10 +324,10 @@ function ElegirProductoSrs({ fila, onClose, onElegir }) {
                         ? <p className="text-body-sm text-content-3">Sin resultados. Prueba con menos palabras.</p>
                         : <ul className="divide-y divide-divider">{resultados.map(opcion)}</ul>)}
                 </div>
-                <div className="flex justify-end">
-                    <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-                </div>
-            </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+            </LiquidModal.Footer>
         </LiquidModal>
     );
 }

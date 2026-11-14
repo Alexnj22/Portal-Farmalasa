@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1534.1 — Datos de mercado: la ventana de elegir producto ya se desplaza
+
+- En **Cumplimiento → Datos de mercado**, la ventana «Elegir otro» no se podía desplazar: con muchos resultados del catálogo de la SRS, los de abajo y el botón Cerrar quedaban fuera de la pantalla. Ahora tiene cabecera y pie fijos y la lista se desplaza en el medio.
+
 ## v2.1534.0 — Cumplimiento: el resumen nuevo — cómo va la red, qué toca hacer y el mapa
 
 - **Cómo va la red**: un anillo con el % de obligaciones cumplidas en todas las salas, y tres cifras: urgentes (con plazo legal corriendo), por anotar y salas al día.

@@ -47,7 +47,6 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import * as WebBrowser from 'expo-web-browser';
 import { Boton, Cargando, Pantalla, PantallaLista, RADIO, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
 import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Icono from '../componentes/Icono';
@@ -56,7 +55,7 @@ import ProrrogaHoja from '../componentes/ProrrogaHoja';
 import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
-import { usePagoEnLinea } from '../lib/pagoEnLinea';
+import { abrirPago, usePagoEnLinea } from '../lib/pagoEnLinea';
 import { diaDelPlazo, dolares, fecha, quedaDelPlazo } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
@@ -266,7 +265,7 @@ export default function Reservas() {
       const res = await pedir('pagar_encargo', { id: e.id });
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
       try {
-        await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas'));
+        await sinBloquear(() => abrirPago(res.url, 'puntossalud://reservas'));
       } catch {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;
@@ -485,7 +484,7 @@ export default function Reservas() {
       if (res?.sinConfirmar) { avisoSinConfirmar(); await cargar(); return; }
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); return; }
       try {
-        await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://reservas'));
+        await sinBloquear(() => abrirPago(res.url, 'puntossalud://reservas'));
       } catch {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;

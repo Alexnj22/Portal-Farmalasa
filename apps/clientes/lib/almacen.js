@@ -6,7 +6,14 @@
 //
 // Nunca lanza: leer devuelve null si no hay nada (o no se puede leer), y
 // guardar falla en silencio — es comodidad, no un dato que se pueda perder.
+import { Platform } from 'react-native';
 import * as FS from 'expo-file-system/legacy';
+
+// En el NAVEGADOR no hay carpeta (`documentDirectory` es null): el carrito se
+// vaciaba al recargar y las historias salían siempre sin ver. Ahí va a
+// localStorage, con el mismo prefijo por clave (2026-11-14).
+const WEB = Platform.OS === 'web';
+const claveWeb = (clave) => `almacen:${clave}`;
 
 const DIR = FS.documentDirectory ? `${FS.documentDirectory}almacen/` : null;
 
@@ -25,6 +32,7 @@ const ruta = (clave) => `${DIR}${String(clave).replace(/[^A-Za-z0-9_-]/g, '_')}.
 
 /** El valor guardado bajo `clave`, ya interpretado, o null si no hay. */
 export async function leer(clave) {
+  if (WEB) { try { return JSON.parse(localStorage.getItem(claveWeb(clave))) ?? null; } catch { return null; } }
   if (!DIR) return null;
   try {
     return JSON.parse(await FS.readAsStringAsync(ruta(clave))) ?? null;
@@ -37,6 +45,10 @@ const fila = new Map();
 
 /** Guarda `valor` como JSON bajo `clave`; con `valor == null`, lo borra. */
 export async function guardar(clave, valor) {
+  if (WEB) {
+    try { if (valor == null) localStorage.removeItem(claveWeb(clave)); else localStorage.setItem(claveWeb(clave), JSON.stringify(valor)); } catch { /* sin espacio */ }
+    return;
+  }
   if (!DIR) return;
   const texto = valor == null ? null : JSON.stringify(valor);
   const antes = fila.get(clave) ?? Promise.resolve();

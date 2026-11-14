@@ -17,7 +17,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, PlatformColor, Text, TextInput, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
-import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
@@ -33,7 +32,7 @@ import CodigoReserva from '../../../componentes/CodigoReserva';
 import { useCarrito, MAX_UNIDADES } from '../../../lib/carrito';
 import { useCuenta } from '../../../lib/cuenta';
 import { useConCodigo, useSesion } from '../../../lib/sesion';
-import { usePagoEnLinea } from '../../../lib/pagoEnLinea';
+import { abrirPago, usePagoEnLinea } from '../../../lib/pagoEnLinea';
 import { dolares } from '../../../lib/formato';
 import { nombreProducto } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
@@ -260,7 +259,7 @@ function Carrito() {
       // Pagar en línea: la hoja de n1co; el pago lo confirma el servidor.
       if (conCobro) {
         try {
-          await sinBloquear(() => WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas'));
+          await sinBloquear(() => abrirPago(r.pago.url, 'puntossalud://reservas'));
         } catch { /* la hoja no abrió: queda pendiente y se paga desde Mis reservas */ }
         for (let i = 0; i < 4; i++) {
           const mr = await pedir('mis_reservas');

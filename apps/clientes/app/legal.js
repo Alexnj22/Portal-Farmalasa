@@ -26,7 +26,9 @@ export default function Legal() {
   const d = DOCUMENTOS[doc] ?? DOCUMENTOS.reglamento;
   const [error, setError] = useState(false);
   const fondo = t.oscuro ? '#121016' : '#FFFFFF';
-  if (Platform.OS === 'android') {
+  // Web (2026-11-14): tampoco hay vista web ahí (react-native-webview pintaba
+  // «does not support this platform» en rojo); va el mismo texto que Android.
+  if (Platform.OS !== 'ios') {
     return (
       <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
         <Stack.Screen options={{ title: d.titulo }} />

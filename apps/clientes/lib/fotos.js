@@ -35,7 +35,6 @@ export function preguntarOrigen(titulo = 'Agregar foto', mensaje) {
  * `null` si la persona canceló, o `{ error }` con una frase.
  */
 export async function elegirFoto(origen) {
-  if (Platform.OS === 'web') return { error: 'Las fotos se suben desde el teléfono.' };
   // La cámara, la galería y sus permisos sacan a la app del primer plano: con
   // el bloqueo encendido, eso no es «irse» (lib/bloqueo, 2026-10-14).
   return sinBloquear(() => elegirFotoSinBloqueo(origen));
@@ -43,10 +42,13 @@ export async function elegirFoto(origen) {
 
 async function elegirFotoSinBloqueo(origen) {
   try {
-    if (origen === 'camara') {
+    // En el NAVEGADOR (2026-11-14) el selector es el del propio navegador
+    // (`<input type=file>`, con la cámara en el teléfono): no hay permisos que
+    // pedir antes, y pedirlos ahí abría la cámara en vivo sin motivo.
+    if (Platform.OS !== 'web' && origen === 'camara') {
       const p = await ImagePicker.requestCameraPermissionsAsync();
       if (!p.granted) return { error: 'Permite el uso de la cámara en los ajustes del teléfono.' };
-    } else {
+    } else if (Platform.OS !== 'web') {
       const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!p.granted && p.accessPrivileges !== 'limited') return { error: 'Permite el acceso a tus fotos en los ajustes del teléfono.' };
     }
@@ -75,11 +77,12 @@ async function achicar(a) {
  * Devuelve `[]` si se canceló, o `{ error }`.
  */
 export async function elegirFotos(max = 6) {
-  if (Platform.OS === 'web') return { error: 'Las fotos se suben desde el teléfono.' };
   return sinBloquear(async () => {
     try {
-      const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!p.granted && p.accessPrivileges !== 'limited') return { error: 'Permite el acceso a tus fotos en los ajustes del teléfono.' };
+      if (Platform.OS !== 'web') {
+        const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!p.granted && p.accessPrivileges !== 'limited') return { error: 'Permite el acceso a tus fotos en los ajustes del teléfono.' };
+      }
       const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, exif: false,
         allowsMultipleSelection: true, selectionLimit: max, orderedSelection: true });
       if (r.canceled || !r.assets?.length) return [];
@@ -114,7 +117,7 @@ export async function subirFoto(pedir, accionUrl, datos, uri, tipo = 'image/jpeg
     let reloj = null;
     const tope = new Promise((_, mal) => { reloj = setTimeout(() => mal(new Error('tope')), TOPE_SUBIDA); });
     const s = await Promise.race([
-      FS.uploadAsync(r.url, uri, {
+      Platform.OS === 'web' ? subirEnWeb(r.url, uri, tipo) : FS.uploadAsync(r.url, uri, {
         httpMethod: 'PUT',
         uploadType: FS.FileSystemUploadType.BINARY_CONTENT,
         headers: { 'Content-Type': tipo },
@@ -126,6 +129,15 @@ export async function subirFoto(pedir, accionUrl, datos, uri, tipo = 'image/jpeg
   } catch {
     return { ok: false, mensaje: 'La foto no se pudo subir. Revisa tu conexión e intenta de nuevo.' };
   }
+}
+
+// En el NAVEGADOR no hay `uploadAsync` (expo-file-system no existe ahí): la
+// foto o el PDF es un `blob:`/`data:` que se lee y se sube con `fetch`, a la
+// misma URL firmada y con el mismo PUT.
+async function subirEnWeb(url, uri, tipo) {
+  const cuerpo = await (await fetch(uri)).blob();
+  const res = await fetch(url, { method: 'PUT', headers: { 'Content-Type': tipo }, body: cuerpo });
+  return { status: res.status };
 }
 
 /** La receta de una reserva (o de todo su pedido): subir y confirmar. */

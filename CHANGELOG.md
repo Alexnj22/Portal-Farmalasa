@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.6 — Puntos Salud web: menús, fotos, facturas, pago, reglamento y lo que se recuerda
+
+En app.farmasalud.lat, la revisión completa contra la app:
+
+- **Menús de opciones**: el «…» de Facturas, el «+» del chat, cambiar la foto de perfil, «Apartarlo en una sucursal», «Ya no lo tomo» y el menú de la bandeja no hacían nada. Ahora sale la hoja de opciones como en el iPhone, y «Otro motivo» pide escribir el motivo.
+- **Fotos**: ya se puede subir la receta de una reserva, una foto o un PDF en el chat y la foto de perfil (antes decía «Las fotos se suben desde el teléfono»).
+- **Facturas**: «Ver PDF» abre el documento en otra pestaña, y descargar (una, varias en .zip o el archivo para Hacienda) baja el archivo.
+- **Pago en línea**: si el navegador bloquea la ventana del cobro, se ofrece «Ir a pagar» en vez de fallar en silencio.
+- **Reglamento y Aviso de privacidad** se leen dentro de la app (antes, un error en rojo), y la web pide aceptarlos como la app.
+- **Lo que se recuerda al recargar**: el carrito, que este navegador ya pasó el código de WhatsApp, los términos de la reserva, los récords de los juegos y lo visto.
+- **Compartir**: donde el navegador no tiene «Compartir», el texto se copia y se avisa.
+- La burbuja del chat aparece también en la web.
+
 ## v2.1537.5 — Puntos Salud web: confirmaciones, deslizar para refrescar y sin el aviso rojo de avisos
 
 En app.farmasalud.lat:

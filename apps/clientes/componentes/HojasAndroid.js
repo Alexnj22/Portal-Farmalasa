@@ -25,7 +25,8 @@ function pedir(hoja) {
 }
 
 export function instalarHojasAndroid() {
-  if (Platform.OS !== 'android' || ActionSheetIOS.__hojasAndroid) return;
+  // Web (2026-11-14): lo mismo — ni la hoja ni el prompt existen en el navegador.
+  if ((Platform.OS !== 'android' && Platform.OS !== 'web') || !ActionSheetIOS || ActionSheetIOS.__hojasAndroid) return;
   ActionSheetIOS.showActionSheetWithOptions = (opciones, alElegir) => {
     const destructivos = [].concat(opciones.destructiveButtonIndex ?? []);
     pedir({
@@ -54,12 +55,12 @@ export default function HojasAndroid() {
   const [texto, setTexto] = useState('');
   const t = useTema();
   useEffect(() => {
-    if (Platform.OS !== 'android') return undefined;
+    if (Platform.OS !== 'android' && Platform.OS !== 'web') return undefined;
     mostrar = (h) => { setTexto(h.valor ?? ''); setHoja(h); };
     if (cola.length) mostrar(cola.shift());
     return () => { mostrar = null; };
   }, []);
-  if (Platform.OS !== 'android' || !hoja) return null;
+  if ((Platform.OS !== 'android' && Platform.OS !== 'web') || !hoja) return null;
 
   // surfaceContainerHigh de Material 3 (2026-10-13, como la app del personal).
   // Desde el 2026-11-04 sale de `colorSistema` (antes, hex a mano aquí): la

@@ -61,3 +61,10 @@ scripts/.eficiencia-gate-estado.json
 # sola, y sobre un documento que el regente firma eso es peor que no tenerla:
 # nadie sabría cuál de las dos versiones se firmó.
 docs/legal/procedimientos/*.pdf
+
+# El motor de Skia de la app de clientes en la web: lo copia
+# scripts/subir-web-clientes.mjs desde node_modules (8 MB, no va al repo). Va
+# AQUÍ y no en apps/clientes/.gitignore: ese archivo entra en la huella de la
+# app (runtimeVersion «fingerprint») y tocarlo corta las actualizaciones por
+# aire a las apps ya instaladas.
+apps/clientes/public/canvaskit.wasm

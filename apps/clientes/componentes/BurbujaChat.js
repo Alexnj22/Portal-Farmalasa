@@ -57,6 +57,9 @@ const VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvail
 // la flotante de iOS 26) y la de Material en Android (80 dp), más un respiro
 // (en Android, los 16 dp de margen del FAB).
 const SOBRE_PESTANAS = Platform.OS === 'ios' ? 62 : 96;
+// Lo que la burbuja sube sobre la barra de pestañas. En la web la barra es la
+// de (tabs)/_layout.web.js: ~70 pt sobre el borde de abajo.
+const SOBRE = Platform.OS === 'web' ? 70 : SOBRE_PESTANAS - 16;
 const VERDE = '#34C759';
 const PressableAnimado = Animated.createAnimatedComponent(Pressable);
 
@@ -80,7 +83,8 @@ export default function BurbujaChat() {
   // Con la sesión de CÓDIGO no hay chat (2026-10-19): pide DUI y teléfono.
   // (También la que simula el modo de prueba, 2026-10-20.)
   const conCodigo = useConCodigo();
-  const visible = Platform.OS !== 'web' && !!token && !bloqueada && conFicha && !oculta && resumen?.alcance !== 'codigo' && !conCodigo;
+  // También en la web (2026-11-14): sin ella, el chat sólo se encontraba en Cuenta.
+  const visible = !!token && !bloqueada && conFicha && !oculta && resumen?.alcance !== 'codigo' && !conCodigo;
   const sinLeer = Number(resumen?.chat?.sin_leer ?? resumen?.chat_sin_leer) || 0;
   // `null`: el servidor todavía no lo dice (una versión anterior) — sin punto.
   const abierta = typeof resumen?.chat?.abierta === 'boolean' ? resumen.chat.abierta : null;
@@ -137,9 +141,9 @@ export default function BurbujaChat() {
   // avisos»): la burbuja sube por encima de él, con la misma curva, y vuelve
   // a bajar cuando se va (`lib/espacioAbajo`).
   const ocupado = useEspacioAbajo(alturaOcupada);
-  const sobre = useSharedValue(enPestanas ? SOBRE_PESTANAS - 16 : 0);
+  const sobre = useSharedValue(enPestanas ? SOBRE : 0);
   useEffect(() => {
-    const base = enPestanas ? SOBRE_PESTANAS - 16 : 0;
+    const base = enPestanas ? SOBRE : 0;
     const destino = ocupado > 0 ? Math.max(base, ocupado + 12 - (ins.bottom + 16)) : base;
     sobre.value = reducir ? destino : withTiming(destino, { duration: ANDROID ? 300 : 380, easing: Easing.bezier(0.2, 0.9, 0.25, 1) });
   }, [enPestanas, reducir, sobre, ocupado, ins.bottom]);

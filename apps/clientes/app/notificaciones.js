@@ -233,7 +233,6 @@ export default function Notificaciones() {
     if (sinLeer.length) opciones.push({ texto: 'Marcar todo como leído', alElegir: marcarTodo });
     opciones.push({ texto: 'Borradas recientemente', alElegir: verBorradas });
     if (visibles.length) opciones.push({ texto: 'Limpiar', destructivo: true, alElegir: limpiarTodo });
-    if (Platform.OS === 'web') { verBorradas(); return; }
     hojaDeOpciones({ titulo: 'Notificaciones', opciones });
   }, [sinLeer.length, visibles.length, marcarTodo, verBorradas, limpiarTodo]);
 

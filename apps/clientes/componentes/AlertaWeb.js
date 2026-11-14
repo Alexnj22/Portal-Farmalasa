@@ -39,8 +39,9 @@ export default function AlertaWeb() {
 
   const tocar = (b) => {
     sacar();
-    // Como en el teléfono: la alerta se cierra y DESPUÉS corre la acción.
-    if (b?.onPress) setTimeout(() => b.onPress(), 0);
+    // Dentro del mismo toque, no en un `setTimeout`: si la acción abre una
+    // pestaña (el pago), el navegador sólo la deja abrir durante el toque.
+    b?.onPress?.();
   };
   const cancelar = () => {
     const c = actual?.botones.find((b) => b.style === 'cancel');

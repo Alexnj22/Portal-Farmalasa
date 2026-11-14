@@ -14,7 +14,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Share, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import * as WebBrowser from 'expo-web-browser';
 import { sinBloquear } from '../lib/bloqueo';
 import { useFocusEffect } from 'expo-router';
 import { Cargando, Pantalla, Seccion, Tarjeta, Texto, Vacio } from '../componentes/ui';
@@ -23,7 +22,7 @@ import { colorSistema } from '../componentes/sistema';
 import Presionable from '../componentes/Presionable';
 import Icono from '../componentes/Icono';
 import { useSesion } from '../lib/sesion';
-import { usePagoEnLinea } from '../lib/pagoEnLinea';
+import { abrirPago, usePagoEnLinea } from '../lib/pagoEnLinea';
 import { dolares, fecha } from '../lib/formato';
 import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
@@ -88,7 +87,7 @@ export default function Creditos() {
         : await pedir('pagar_creditos', { ids: lista.map((c) => c.id) });
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); await cargar(); return; }
       try {
-        await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://creditos'));
+        await sinBloquear(() => abrirPago(res.url, 'puntossalud://creditos'));
       } catch {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;

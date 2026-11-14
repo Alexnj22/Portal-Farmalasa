@@ -80,6 +80,19 @@ const tipoDe = (f) => TIPO[f.tipo] ?? TIPO.consumidor_final;
 const nombreArchivo = (f) => `${tipoDe(f).archivo}-${String(f.numero ?? f.fecha ?? f.id).replace(/[^A-Za-z0-9-]/g, '')}`;
 const enIphone = Platform.OS === 'ios';
 const enAndroid = Platform.OS === 'android';
+// En el NAVEGADOR (app.farmasalud.lat, 2026-11-14) no hay expo-file-system ni
+// WebView: «Ver PDF» lo abre en una pestaña, y descargar baja el archivo con
+// el navegador (un `blob:` y un enlace `download`). Antes las dos cosas
+// mostraban el error crudo de expo-file-system.
+const enWeb = Platform.OS === 'web';
+function descargarEnWeb(uri, nombreCompleto) {
+  const a = document.createElement('a');
+  a.href = uri; a.download = nombreCompleto; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+const bytesDe = async (uri) => (enWeb
+  ? new Uint8Array(await (await fetch(uri)).arrayBuffer())
+  : base64ABytes(await FS.readAsStringAsync(uri, { encoding: FS.EncodingType.Base64 })));
 const TOPE_SELECCION = 30; // el mismo tope que `facturas_enviar`
 const MIME = { pdf: 'application/pdf', json: 'application/json', zip: 'application/zip' };
 // La dirección firmada que trae `mis_facturas` vale 24 h (2026-10-14). Se usa
@@ -110,6 +123,7 @@ async function guardarEnAndroid(uri, nombre, ext) {
 // archivos en Android, `Sharing.shareAsync` sí (la hoja del sistema con el
 // tipo de archivo). La carpeta queda para cuando la persona elige guardar.
 async function entregar(uri, nombre, ext, { guardar = false } = {}) {
+  if (enWeb) { descargarEnWeb(uri, `${nombre}.${ext}`); return true; }
   if (enAndroid) {
     const puede = !guardar && Sharing && (await Sharing.isAvailableAsync().catch(() => false));
     if (!puede) return guardarEnAndroid(uri, nombre, ext);
@@ -184,6 +198,13 @@ export default function Facturas() {
     return r.url;
   };
   const bajar = async (f, formato, nombre = nombreArchivo(f)) => {
+    if (enWeb) {
+      const lista = formato === 'pdf' ? f.pdf : f.json;
+      let res = await fetch(lista ?? await pedirUrl(f, formato));
+      if (!res.ok && lista) res = await fetch(await pedirUrl(f, formato));
+      if (!res.ok) throw new Error('El documento todavía no está disponible. Intenta más tarde.');
+      return URL.createObjectURL(await res.blob());
+    }
     const destino = `${FS.cacheDirectory}${nombre}.${formato}`;
     const lista0 = formato === 'pdf' ? f.pdf : f.json;
     let r = await FS.downloadAsync(lista0 ?? await pedirUrl(f, formato), destino);
@@ -206,6 +227,20 @@ export default function Facturas() {
     Haptics.selectionAsync().catch(() => {});
     const turno = ++turnoVisor.current;
     const poner = (x) => { if (turnoVisor.current === turno) setVisor({ f, ...x }); };
+    if (enWeb) {
+      // La pestaña se abre YA, dentro del toque: abierta después de esperar al
+      // servidor, Safari la bloquea como ventana emergente.
+      const pestana = window.open('', '_blank');
+      try {
+        const fresca = d?.recibidas && Date.now() - d.recibidas < VIGENCIA_LISTA_MS;
+        const url = f.pdf && fresca ? f.pdf : await pedirUrl(f, 'pdf');
+        if (pestana) pestana.location.href = url; else window.location.href = url;
+      } catch (e) {
+        pestana?.close();
+        Alert.alert('No se pudo abrir', mensajeDeError(e));
+      }
+      return;
+    }
     poner({ cargando: true });
     try {
       // iPhone: la vista web muestra el PDF con su dirección. La de la lista
@@ -265,15 +300,18 @@ export default function Facturas() {
       const n = listos.length;
       const archivos = [];
       for (const x of listos) {
-        const b64 = await FS.readAsStringAsync(x.uri, { encoding: FS.EncodingType.Base64 });
-        archivos.push({ nombre: `${x.nombre}.${x.ext}`, bytes: base64ABytes(b64) });
+        archivos.push({ nombre: `${x.nombre}.${x.ext}`, bytes: await bytesDe(x.uri) });
         avisar('armando', (archivos.length / n) * docs.length * 0.5);
         await cederHilo();
       }
       const zip = await armarZipCediendo(archivos, (hechos) => avisar('armando', (0.5 + (hechos / n) * 0.5) * docs.length));
-      const destino = `${FS.cacheDirectory}${nombreZip}.zip`;
-      await FS.writeAsStringAsync(destino, await bytesABase64Cediendo(zip), { encoding: FS.EncodingType.Base64 });
-      await entregar(destino, nombreZip, 'zip', { guardar });
+      if (enWeb) {
+        await entregar(URL.createObjectURL(new Blob([zip], { type: 'application/zip' })), nombreZip, 'zip');
+      } else {
+        const destino = `${FS.cacheDirectory}${nombreZip}.zip`;
+        await FS.writeAsStringAsync(destino, await bytesABase64Cediendo(zip), { encoding: FS.EncodingType.Base64 });
+        await entregar(destino, nombreZip, 'zip', { guardar });
+      }
     }
     if (faltan) Alert.alert('Faltó algún documento', `${faltan === 1 ? 'Un archivo no estaba' : `${faltan} archivos no estaban`} disponible todavía. Intenta con ${faltan === 1 ? 'ése' : 'ésos'} más tarde.`);
   };

@@ -16,7 +16,10 @@
 // otra sesión (otra cuenta en el mismo teléfono, o se volvió a entrar) o una
 // versión nueva. Si no se puede saber —sin conexión, un servidor viejo— no se
 // molesta a nadie.
-import { Platform } from 'react-native';
+//
+// También en el NAVEGADOR (2026-11-14): antes la web nunca pedía aceptar, ni
+// la primera vez ni con una versión nueva. El llavero allá es localStorage
+// (entrada.web.js) y el servidor sigue siendo el que manda.
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { llamar } from './api';
@@ -24,7 +27,6 @@ import { plataforma, useSesion } from './sesion';
 import { versionInstalada } from './novedades';
 
 const CLAVE = 'puntos_salud_documentos_aceptados';
-const WEB = Platform.OS === 'web';
 
 /** `pendiente`: hay que pedir la aceptación (la raíz abre /guia?solo=reglas). */
 export const useAceptacion = create((set) => ({
@@ -55,12 +57,10 @@ export async function documentosVigentes() {
 }
 
 async function leerLocal() {
-  if (WEB) return null;
   try { return JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null'); } catch { return null; }
 }
 
 async function guardarLocal(vigentes) {
-  if (WEB) return;
   const token = useSesion.getState().token;
   await SecureStore.setItemAsync(CLAVE, JSON.stringify({ ...vigentes, sesion: huella(token) })).catch(() => {});
 }
@@ -85,7 +85,6 @@ export async function ultimaAceptacion() {
  * la aceptación. Nunca lanza.
  */
 export async function revisarAceptacion() {
-  if (WEB) return false;
   try {
     const vigentes = await documentosVigentes();
     if (!vigentes) return false; // sin forma de saberlo: no se molesta

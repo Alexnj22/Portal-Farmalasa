@@ -2,7 +2,7 @@
 // enlace. Con la foto, Instagram ofrece «Historias»; WhatsApp y Facebook la
 // mandan con el texto. El enlace (/o/<id>) abre la oferta en la app o, sin la
 // app, una página con la oferta. Lo usan la tarjeta de la lista y el detalle.
-import { Share } from 'react-native';
+import { Platform, Share } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as FS from 'expo-file-system/legacy';
 import { sinBloquear } from './bloqueo';
@@ -17,7 +17,8 @@ export async function compartirOferta(oferta) {
   const mensaje = `${oferta.titulo}${oferta.etiqueta ? ` (${oferta.etiqueta})` : ''} en Farmacia Salud. Mírala en la app Puntos Salud: ${enlace}`;
   try {
     let url;
-    if (oferta.imagen) {
+    // En el navegador no hay archivos que bajar: va el texto con el enlace.
+    if (oferta.imagen && Platform.OS !== 'web') {
       const destino = `${FS.cacheDirectory}oferta-${String(oferta.id).replace(/[^\w-]/g, '')}.jpg`;
       url = (await FS.downloadAsync(oferta.imagen, destino)).uri;
     }

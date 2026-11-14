@@ -107,12 +107,8 @@ export function EncabezadoSeccion({ titulo, primera }) {
   );
 }
 
-// «¿Seguro?» nativo; en la vista previa web `Alert` con botones no hace nada.
+// «¿Seguro?» nativo (en la web, la alerta de componentes/AlertaWeb).
 export function confirmar(titulo, mensaje, boton, alAceptar, destructivo = true) {
-  if (Platform.OS === 'web') {
-    if (typeof globalThis.confirm === 'function' && globalThis.confirm(`${titulo}\n\n${mensaje}`)) alAceptar();
-    return;
-  }
   Alert.alert(titulo, mensaje, [
     { text: 'Cancelar', style: 'cancel' },
     { text: boton, style: destructivo ? 'destructive' : 'default', onPress: alAceptar },
@@ -121,7 +117,6 @@ export function confirmar(titulo, mensaje, boton, alAceptar, destructivo = true)
 
 /** La hoja de opciones del sistema (en Android la dibuja componentes/HojasAndroid). */
 export function hojaDeOpciones({ titulo, opciones }) {
-  if (Platform.OS === 'web') return; // en la vista previa web, las acciones van por el deslizamiento
   const lista = [...opciones.map((o) => o.texto), 'Cancelar'];
   const destructivos = opciones.map((o, i) => (o.destructivo ? i : -1)).filter((i) => i >= 0);
   ActionSheetIOS.showActionSheetWithOptions({

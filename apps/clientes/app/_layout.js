@@ -216,7 +216,14 @@ function Presentacion() {
   // El token con el que arrancó la app (undefined = todavía no se leyó el llavero).
   const inicial = useRef(undefined);
   useEffect(() => {
-    if (WEB || !lista) return;
+    if (!lista) return;
+    // Web: sin la guía de bienvenida (es de la app), pero las reglas y la
+    // privacidad sí se piden — al abrir con sesión y al entrar (2026-11-14).
+    if (WEB) {
+      if (token && inicial.current !== token) revisarAceptacion();
+      inicial.current = token;
+      return;
+    }
     if (inicial.current === undefined) {
       inicial.current = token;
       revisarAlAbrir(!!token);

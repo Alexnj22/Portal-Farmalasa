@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1531.0 — Bajas: la liquidación sigue la ley, el abandono se puede registrar y la baja es nativa en la app
+
+Talento Humano no pudo dar de baja a dos personas que dejaron de llegar sin firmar nada. El formulario las frenaba por tres cosas:
+
+- **El abandono exigía un respaldo que no existe.** Quien no vuelve no firma nada, y el formulario no dejaba guardar sin el «acta de inasistencias», así que la persona seguía activa y con acceso. Ahora, en el abandono, el respaldo es opcional al registrar. El portal y la app **arman el acta de inasistencias y la carta de terminación** con lo llenado («Imprimir acta y carta»): la carta la firma el patrono y se entrega o se envía a su domicilio (Art. 55 CT). Queda como pendiente en el cierre: «Carta de terminación firmada… entregada o enviada».
+- **Faltar sábado y lunes con el domingo libre no contaba como dos días seguidos.** La ley habla de días LABORALES consecutivos (Art. 50, causal 12). Se agrega «Su día de descanso semanal»: si entre dos faltas sólo está ese día, cuentan como seguidas.
+- **Sin observaciones, el botón quedaba apagado sin decir por qué.** Ahora dice «Escribe las observaciones o la justificación».
+
+La **liquidación estimada** se revisó contra el Código de Trabajo y la ley de renuncia voluntaria (su texto queda en `docs/legal/normativa/laboral/`):
+
+- Despido con causa justa o abandono: sin vacaciones ni aguinaldo proporcionales (Arts. 187 y 202), y se aclara que la vacación de un año ya cumplido y no gozada sí se paga.
+- Renuncia: vacaciones y aguinaldo proporcionales siempre (Art. 9 LRPERV). Con preaviso menor de 15 días, la prestación por renuncia queda «a revisar» (Art. 2).
+- Despido en los primeros 30 días: la indemnización queda «a revisar» por el período de prueba (Art. 28).
+- **Quincena 25**: rubro nuevo, 50% del salario proporcional desde el 15 de enero (hasta $1,500), «a revisar» y fuera del total hasta tener el instructivo oficial.
+
+**La baja ya es nativa en la app del personal**: motivo, fechas, hoja de renuncia, fuero, causal, día de descanso, ausencias, intento de contacto, liquidación, cierre y el acta y la carta, con las mismas reglas del portal. Antes la app mandaba a hacerla en el portal.
+
 ## v2.1530.1 — Datos de mercado de la SRS: emparejador nuevo
 
 - Las parejas propuestas de **Cumplimiento → Datos de mercado** se rehicieron. Las de confianza alta tenían mal el empaque en ~16 % de los casos (RINOKEM PLUS X 100 → la caja de 30) o la variante (COLBER AMLO → COLBER, EXFORGE 10/320 → 5/320). Ahora cada pareja exige que coincidan marca sin variantes de más, concentración, empaque y forma; con un choque, la confianza es baja. Resultado: 1,426 alta (0 con empaque distinto de 899 que se pueden medir), 549 media, 625 baja, 667 sin pareja (casi todo lo que no es medicamento). Ninguna muestra médica gana.

@@ -6,7 +6,7 @@
 // `registerEmployeeEvent` / `editEmployeeEvent` del store.
 import { EVENT_TYPES } from '../data/constants';
 import { buscarCargo } from './roles';
-import { problemaDeBaja } from './bajaLegal';
+import { problemaDeBaja, respaldoDeBajaObligatorio } from './bajaLegal';
 
 /** Las acciones que se ofrecen: los turnos van por Horarios y las sanciones por su propio diálogo. */
 export const opcionesDeNovedad = () => Object.keys(EVENT_TYPES)
@@ -110,8 +110,10 @@ export const TIPOS_PROGRAMABLES = ['PROMOTION', 'TRANSFER', 'SALARY', 'CODE_CHAN
 export const estaDadoDeBaja = (empleado) =>
     String(empleado?.status || '').toUpperCase() === 'INACTIVO' || empleado?.effectiveStatus === 'Inactivo';
 
-/** ¿Este archivo es obligatorio? (la boleta de la incapacidad y el finiquito). */
-export const respaldoObligatorio = (type) => type === 'DISABILITY' || type === 'TERMINATION';
+/** ¿Este archivo es obligatorio? (la boleta de la incapacidad y el respaldo de
+ *  la baja; en el abandono no: lo firma el patrono después, ver `bajaLegal`). */
+export const respaldoObligatorio = (type, formData = {}) =>
+    type === 'DISABILITY' || (type === 'TERMINATION' && respaldoDeBajaObligatorio(formData?.terminationReason));
 
 /**
  * ¿Se puede guardar? `{ ok, motivo }` — `motivo` sólo cuando hay algo que
@@ -148,7 +150,9 @@ export function validarNovedad({ formData = {}, empleado, empleados = [], roles 
     }
     if (r.esCodigo && !formData.newCode) return { ok: false, motivo: null };
     if (r.esCodigo && formData.hasConflict) return { ok: false, motivo: 'El código ya está en uso por otro empleado.' };
-    if (!formData.note || !formData.note.trim()) return { ok: false, motivo: null };
+    // Se decía en silencio: el botón quedaba apagado sin explicar por qué, y
+    // con todo lo demás lleno nadie adivinaba que faltaban las observaciones.
+    if (!formData.note || !formData.note.trim()) return { ok: false, motivo: 'Escribe las observaciones o la justificación.' };
     return { ok: true, motivo: null };
 }
 

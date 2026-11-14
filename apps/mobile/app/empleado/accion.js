@@ -2,7 +2,7 @@
 // portal (`FormNovedad` dentro de `UnifiedModal`): traslado, cambio de cargo
 // (con o sin cambio de sala), ajuste salarial, vacaciones, incapacidad,
 // permiso por días sueltos, apoyo temporal por tramos, cambio de código,
-// inducción, baja y recontratación. Mismos campos, mismos avisos (plaza
+// inducción, baja (con lo legal: `componentes/personal/BajaLegal`) y recontratación. Mismos campos, mismos avisos (plaza
 // ocupada, asueto, los días que dicta la ley, acción programada a futuro,
 // desvinculación) y las MISMAS reglas: viven en el núcleo
 // (`novedadDePersonal`), y el pin del carné nuevo también (`pinDeKiosco`).
@@ -19,7 +19,7 @@ import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { DISABILITY_TYPES, EVENT_TYPES, TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
+import { DISABILITY_TYPES, EVENT_TYPES, opcionesDeCatalogo } from '@nucleo/data/constants';
 import { codigoDeCarneLibre } from '@nucleo/data/employees';
 import {
   TIPOS_PROGRAMABLES, antiguedad, asuetoDelDia, avisoDeDiasDeLey, diaDeRegreso, diasDelPeriodo, finPorDias, finPorLey,
@@ -40,6 +40,7 @@ import { elegirArchivo } from '../../componentes/sucursal/elegirArchivo';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { volver } from '../../componentes/volver';
+import BajaLegal from '../../componentes/personal/BajaLegal';
 
 const larga = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 
@@ -112,7 +113,7 @@ export default function AccionDePersonal() {
   const asueto = asuetoDelDia(f.date, asuetos || []);
   // Al corregir, la marca de edición para que una baja ya aplicada no se frene como «ya salió».
   const { ok, motivo } = validarNovedad({ formData: eventoAEditar ? { ...f, _editingEventId: eventoAEditar.id } : f, empleado: emp, empleados: empleados || [], roles: roles || [], asuetos: asuetos || [] });
-  const faltaRespaldo = respaldoObligatorio(f.type) && !archivo && !eventoAEditar;
+  const faltaRespaldo = respaldoObligatorio(f.type, f) && !archivo && !eventoAEditar;
   const otrasSalas = (sucursales || []).filter((b) => String(b.id) !== String(emp.branchId || emp.branch_id));
   const cargos = [...(roles || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'))
     .filter((c) => !buscaCargo.trim() || tokenMatch(buscaCargo.trim(), c.name));
@@ -277,13 +278,7 @@ export default function AccionDePersonal() {
                 </Seccion>
               ) : null}
 
-              {r.esBaja ? (
-                <Seccion titulo="Motivo legal de la baja">
-                  <Opciones valor={f.terminationReason} onCambiar={(v) => pon({ terminationReason: v })}
-                    opciones={opcionesDeCatalogo(TERMINATION_REASONS).map((o) => ({ id: o.value, label: o.label }))} />
-                  <Fila rotulo="¿Entregó y firmó el finiquito?"><Interruptor value={!!f.hasFiniquito} onValueChange={(v) => pon({ hasFiniquito: v })} /></Fila>
-                </Seccion>
-              ) : null}
+              {r.esBaja ? <BajaLegal f={f} pon={pon} emp={emp} /> : null}
 
               {r.esCodigo ? (
                 <Seccion titulo="Código del carné" pie={f.newKioskPin ? 'El carné de plástico nuevo se imprime desde una computadora con la impresora de etiquetas.' : null}>
@@ -314,7 +309,7 @@ export default function AccionDePersonal() {
               </Seccion>
 
               {eventoAEditar ? null : (
-                <Seccion titulo={`Respaldo ${respaldoObligatorio(f.type) ? '(obligatorio)' : '(opcional)'}`}
+                <Seccion titulo={`Respaldo ${respaldoObligatorio(f.type, f) ? '(obligatorio)' : '(opcional)'}`}
                   pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'La carta de renuncia, la de despido o el finiquito' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
                   <Fila rotulo={archivo ? archivo.name : 'Sin archivo'}>
                     <Pressable hitSlop={8} onPress={adjuntar} style={{ minHeight: 44, justifyContent: 'center' }}>
@@ -324,13 +319,10 @@ export default function AccionDePersonal() {
                 </Seccion>
               )}
 
-              {/* La baja pide la hoja de renuncia, la causal, las ausencias, el fuero y la
-                  liquidación (2026-11-11): eso se llena en el portal, no acá. */}
-              {r.esBaja && !eventoAEditar ? <Aviso tono="freno" texto="La baja se registra desde el portal: pide los datos legales del motivo (hoja de renuncia, causal, ausencias) y calcula la liquidación." />
-                : motivo ? <Aviso tono="freno" texto={motivo} /> : null}
+              {motivo ? <Aviso tono="freno" texto={motivo} /> : null}
               {faltaRespaldo ? <Aviso tono="cuidado" texto="Falta adjuntar el respaldo." /> : null}
               <BotonGrande texto={enviando ? 'Guardando…' : eventoAEditar ? 'Guardar los cambios' : 'Registrar la acción'}
-                color={r.esBaja ? MARCA.rojo : MARCA.azul} deshabilitado={!ok || faltaRespaldo || enviando || (r.esBaja && !eventoAEditar)} onPress={guardar} />
+                color={r.esBaja ? MARCA.rojo : MARCA.azul} deshabilitado={!ok || faltaRespaldo || enviando} onPress={guardar} />
             </>
           ) : null}
         </ScrollView>

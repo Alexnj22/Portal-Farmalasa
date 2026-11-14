@@ -6,8 +6,11 @@
 // abandono, ni cuánto se debía pagar. Ante un reclamo en el Ministerio de
 // Trabajo, el portal no tenía con qué responder.
 //
-// Fuentes: Código de Trabajo (CT) y la Ley Reguladora de la Prestación
-// Económica por Renuncia Voluntaria (LRPERV), y el Reglamento Interno de la
+// Fuentes: Código de Trabajo (CT, `docs/legal/normativa/laboral/codigo_de_trabajo_2025-08.txt`),
+// la Ley Reguladora de la Prestación Económica por Renuncia Voluntaria
+// (LRPERV, `docs/legal/normativa/laboral/ley_renuncia_voluntaria_2013.txt`), la
+// Quincena 25 (D. L. 499 e instructivo MTPS 01/2026, leído en prensa: sin el
+// texto oficial, va `revisar`), y el Reglamento Interno de la
 // empresa (`docs/legal/empresa/reglamento_interno_de_trabajo.txt`), cuyo
 // Art. 84 repite las 20 causales del Art. 50 CT y cuyo Art. 58 repite el fuero
 // de maternidad del Art. 113 CT.
@@ -19,6 +22,11 @@
 // Lógica pura: la usan la web (FormNovedad) y las pruebas.
 
 const DIA = 86400000;
+
+/** El salario mínimo de comercio y servicios vigente desde el 1 de junio de
+ *  2025 (Decreto Ejecutivo de ese año, +12%). Valor inicial EDITABLE: se guarda
+ *  con la baja el número que se usó. */
+export const SALARIO_MINIMO_INICIAL = 408.8;
 
 /** 'AAAA-MM-DD' → fecha UTC a mediodía, o null. */
 function fecha(v) {
@@ -57,8 +65,11 @@ export const DOCUMENTO_DE_BAJA = {
     RENUNCIA: 'la hoja oficial de renuncia firmada (formulario del Ministerio de Trabajo o del juzgado)',
     DESPIDO_SIN_RESPONSABILIDAD: 'la carta de despido con la causal y los hechos, firmada',
     DESPIDO_CON_RESPONSABILIDAD: 'la carta de despido firmada o el finiquito',
-    ABANDONO: 'el acta o constancia de las inasistencias',
+    ABANDONO: 'el acta de inasistencias y la carta de terminación firmadas por el patrono (el portal las arma: «Imprimir acta y carta»). Si todavía no están firmadas, la baja se registra igual y queda pendiente en el cierre',
 };
+
+/** Días de la semana, para el día de descanso (0 = domingo, como `Date.getUTCDay`). */
+export const DIAS_DE_LA_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 /** Lo que queda por hacer después de la baja. No frena el registro: se anota. */
 export const PENDIENTES_DE_BAJA = [
@@ -66,12 +77,39 @@ export const PENDIENTES_DE_BAJA = [
     { clave: 'entregoActivos', texto: 'Devolvió carné, uniforme, llaves y equipo' },
     { clave: 'avisoIsssAfp', texto: 'Aviso de retiro presentado al ISSS y a la AFP' },
     { clave: 'constanciaEntregada', texto: 'Constancia de trabajo entregada' },
+    // Art. 55 CT: el despido comunicado por otra persona y sin escrito firmado
+    // por el patrono no termina el contrato. Quien no vuelve no firma nada: lo
+    // que vale es la carta del patrono, entregada o enviada a su domicilio.
+    { clave: 'cartaEntregada', texto: 'Carta de terminación firmada por el patrono, entregada o enviada a su domicilio (Art. 55 CT)',
+        motivos: ['DESPIDO_SIN_RESPONSABILIDAD', 'ABANDONO'] },
 ];
 
-/** ¿Los días de ausencia configuran la causal 12 (o el abandono)? */
-export function ausenciasConfiguranCausal(fechas = []) {
+/** Los pendientes que aplican a ese motivo. */
+export const pendientesDeBaja = (motivo) => PENDIENTES_DE_BAJA.filter((p) => !p.motivos || p.motivos.includes(motivo));
+
+/**
+ * ¿El respaldo es obligatorio para registrar la baja? En el abandono NO: quien
+ * no vuelve no firma nada, y el acta y la carta las firma el patrono después
+ * (queda pendiente en el cierre). Exigirlo antes dejaba a la persona activa
+ * —con acceso al sistema— hasta que alguien escaneara un papel (2026-11-14:
+ * Talento Humano no pudo dar de baja a dos personas).
+ */
+export const respaldoDeBajaObligatorio = (motivo) => motivo !== 'ABANDONO';
+
+/**
+ * ¿Los días de ausencia configuran la causal 12 (o el abandono)? La ley dice
+ * «dos días LABORALES completos y consecutivos»: si entre dos faltas sólo
+ * queda su día de descanso semanal (sábado y lunes con el domingo libre), son
+ * consecutivas. Sin día de descanso dicho, sólo cuentan días seguidos.
+ */
+export function ausenciasConfiguranCausal(fechas = [], diaDeDescanso = null) {
     const lista = [...new Set((fechas || []).filter((f) => fecha(f)))].sort();
-    for (let i = 1; i < lista.length; i++) if (dias(lista[i - 1], lista[i]) === 1) return true;
+    const descanso = diaDeDescanso === null || diaDeDescanso === undefined || diaDeDescanso === '' ? null : Number(diaDeDescanso);
+    for (let i = 1; i < lista.length; i++) {
+        const n = dias(lista[i - 1], lista[i]);
+        if (n === 1) return true;
+        if (n === 2 && descanso !== null && new Date(fecha(lista[i - 1]).getTime() + DIA).getUTCDay() === descanso) return true;
+    }
     const porMes = {};
     for (const f of lista) porMes[f.slice(0, 7)] = (porMes[f.slice(0, 7)] || 0) + 1;
     return Object.values(porMes).some((n) => n >= 3);
@@ -129,16 +167,22 @@ export function problemaDeBaja(d = {}, empleado = {}) {
         if (causal === 1 && ingreso && d.date && dias(ingreso, d.date) > 30) {
             return 'La causal 1 sólo vale dentro de los primeros 30 días de trabajo.';
         }
-        if (causal === 12 && !ausenciasConfiguranCausal(d.diasDeAusencia)) {
-            return 'Para la causal 12 marca las ausencias: 2 días seguidos, o 3 en un mismo mes.';
+        if (causal === 12 && !ausenciasConfiguranCausal(d.diasDeAusencia, d.diaDeDescanso)) {
+            return 'Para la causal 12 marca las ausencias: 2 días laborales seguidos (si en medio está su día de descanso, dilo arriba), o 3 en un mismo mes.';
         }
     }
 
     if (motivo === 'ABANDONO') {
-        if (!ausenciasConfiguranCausal(d.diasDeAusencia)) return 'Marca los días que faltó: 2 días seguidos, o 3 en un mismo mes.';
+        if (!ausenciasConfiguranCausal(d.diasDeAusencia, d.diaDeDescanso)) return 'Marca los días que faltó: 2 días laborales seguidos (si en medio está su día de descanso, dilo arriba), o 3 en un mismo mes.';
         if (String(d.intentoDeContacto || '').trim().length < 10) return 'Anota cómo se le intentó contactar (llamadas, mensajes, visita) y cuándo.';
     }
     return null;
+}
+
+/** Días entre la renuncia presentada y la fecha de baja, o null si falta una. */
+export function diasDePreaviso(d = {}) {
+    if (d?.terminationReason !== 'RENUNCIA' || !fecha(d.renunciaPresentada) || !fecha(d.date)) return null;
+    return dias(d.renunciaPresentada, d.date);
 }
 
 /** Avisos que no frenan, pero que quien registra tiene que ver. */
@@ -167,10 +211,10 @@ export function diasDeAguinaldo(anios) {
 /**
  * La liquidación estimada.
  *
- * @param {{ motivo: string, salarioMensual: number, ingreso: string, baja: string, salarioMinimoMensual: number }} p
+ * @param {{ motivo: string, salarioMensual: number, ingreso: string, baja: string, salarioMinimoMensual: number, preavisoDias?: number|null }} p
  * @returns {{ rubros: Array<{ clave: string, texto: string, monto: number, aplica: true|false|'revisar', base: string }>, total: number, aniosDeServicio: number } | null}
  */
-export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, salarioMinimoMensual }) {
+export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, salarioMinimoMensual, preavisoDias = null }) {
     const sm = Number(salarioMensual);
     const min = Number(salarioMinimoMensual);
     if (!(sm > 0) || !fecha(ingreso) || !fecha(baja) || !(min > 0) || dias(ingreso, baja) < 0) return null;
@@ -183,7 +227,11 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
 
     const despidoInjusto = motivo === 'DESPIDO_CON_RESPONSABILIDAD';
     const renuncia = motivo === 'RENUNCIA';
-    const proporcionales = despidoInjusto || renuncia ? true : 'revisar';
+    // Con responsabilidad del patrono (Arts. 187 y 202 CT) o por renuncia
+    // (Art. 9 LRPERV) los proporcionales se pagan. Con causa justa o abandono,
+    // NO: sólo la vacación de un año ya cumplido que no se gozó (Art. 187, parte
+    // final) y el aguinaldo de un 12 de diciembre ya pasado que no se pagó.
+    const conProporcionales = despidoInjusto || renuncia;
 
     // Vacaciones: 15 días + 30% (Art. 177), proporcionales al año de servicio en curso.
     const diasDelAnioEnCurso = diasServicio - aniosCompletos * 365;
@@ -198,28 +246,54 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
     const aguinaldo = diasDeAguinaldo(anios) * diario * (Math.min(diasAguinaldo, 365) / 365);
 
     const rubros = [
-        { clave: 'vacaciones', texto: 'Vacaciones proporcionales', monto: redondear(vacaciones), aplica: proporcionales,
-            base: `15 días + 30% × ${diasDelAnioEnCurso} de 365 días del año de servicio en curso` },
-        { clave: 'aguinaldo', texto: 'Aguinaldo proporcional', monto: redondear(aguinaldo), aplica: proporcionales,
-            base: `${diasDeAguinaldo(anios)} días × ${diasAguinaldo} de 365 días desde el 12 de diciembre` },
+        { clave: 'vacaciones', texto: 'Vacaciones proporcionales', monto: conProporcionales ? redondear(vacaciones) : 0, aplica: conProporcionales,
+            base: conProporcionales
+                ? `15 días + 30% × ${diasDelAnioEnCurso} de 365 días del año de servicio en curso`
+                : 'Con causa justa no se pagan (Art. 187 CT). Si tiene un año cumplido y no gozó esa vacación, ésa sí se paga.' },
+        { clave: 'aguinaldo', texto: 'Aguinaldo proporcional', monto: conProporcionales ? redondear(aguinaldo) : 0, aplica: conProporcionales,
+            base: conProporcionales
+                ? `${diasDeAguinaldo(anios)} días × ${diasAguinaldo} de 365 días desde el 12 de diciembre`
+                : 'Con causa justa no se paga (Art. 202 CT). El de un 12 de diciembre ya pasado, si no se pagó, sí.' },
     ];
+
+    // Quincena 25: 50% del salario nominal (sólo hasta $1,500), proporcional a
+    // los días desde el último 15 de enero (o desde el ingreso). En el sector
+    // privado es obligatoria desde enero de 2027; la prensa dice que lo
+    // acumulado va en la liquidación. Sin el instructivo oficial: `revisar`.
+    if (sm <= 1500) {
+        let inicioQ = `${b.getUTCFullYear()}-01-15`;
+        if (baja < inicioQ) inicioQ = `${b.getUTCFullYear() - 1}-01-15`;
+        const desdeQ = ingreso > inicioQ ? ingreso : inicioQ;
+        const diasQ = Math.min(365, Math.max(0, dias(desdeQ, baja) + 1));
+        rubros.push({ clave: 'quincena25', texto: 'Quincena 25 proporcional', monto: redondear(sm * 0.5 * (diasQ / 365)), aplica: 'revisar',
+            base: `50% del salario × ${diasQ} de 365 días desde el 15 de enero. Obligatoria desde 2027: confirmar con el contador si va en esta liquidación.` });
+    }
 
     if (despidoInjusto) {
         // Art. 58 CT: 30 días por año (y la fracción), con el salario diario
         // topado en 4 mínimos diarios; nunca menos de 15 días de salario.
+        // En los 30 días de prueba (Art. 28 CT, si el contrato lo estipula)
+        // cualquiera de las partes termina sin causa y sin indemnización.
         const tope = Math.min(diario, 4 * minDiario);
         const monto = Math.max(30 * tope * anios, 15 * diario);
-        rubros.push({ clave: 'indemnizacion', texto: 'Indemnización por despido (Art. 58 CT)', monto: redondear(monto), aplica: true,
-            base: `30 días × ${anios.toFixed(2)} años, salario diario topado en 4 mínimos; mínimo 15 días` });
+        const enPrueba = diasServicio <= 30;
+        rubros.push({ clave: 'indemnizacion', texto: 'Indemnización por despido (Art. 58 CT)', monto: redondear(monto), aplica: enPrueba ? 'revisar' : true,
+            base: enPrueba
+                ? 'Está en sus primeros 30 días: si el contrato estipula período de prueba, no hay indemnización (Art. 28 CT).'
+                : `30 días × ${anios.toFixed(2)} años, salario diario topado en 4 mínimos; mínimo 15 días` });
     }
     if (renuncia) {
-        // LRPERV: desde 2 años, 15 días por año de servicio, salario diario
-        // topado en 2 mínimos diarios.
+        // LRPERV Art. 5 y 8: desde 2 años de servicio continuo, 15 días por año
+        // de servicio, salario diario topado en 2 mínimos diarios. Art. 2: sin
+        // el preaviso por escrito (15 días; 30 en jefaturas) no hay derecho.
         const tope = Math.min(diario, 2 * minDiario);
-        const aplica = aniosCompletos >= 2;
-        rubros.push({ clave: 'prestacionRenuncia', texto: 'Prestación por renuncia voluntaria', monto: aplica ? redondear(15 * tope * aniosCompletos) : 0,
-            aplica: aplica ? true : false,
-            base: aplica ? `15 días × ${aniosCompletos} años completos, salario diario topado en 2 mínimos` : 'Requiere 2 años de servicio' });
+        const conAnios = aniosCompletos >= 2;
+        const sinPreaviso = preavisoDias != null && preavisoDias < 15;
+        rubros.push({ clave: 'prestacionRenuncia', texto: 'Prestación por renuncia voluntaria', monto: conAnios ? redondear(15 * tope * aniosCompletos) : 0,
+            aplica: !conAnios ? false : sinPreaviso ? 'revisar' : true,
+            base: !conAnios ? 'Requiere 2 años de servicio continuo (Art. 5 LRPERV)'
+                : sinPreaviso ? `Preaviso de ${preavisoDias} días: la ley pide 15 (30 en jefaturas) para tener derecho (Art. 2 LRPERV).`
+                    : `15 días × ${aniosCompletos} años completos, salario diario topado en 2 mínimos (Art. 8 LRPERV)` });
     }
 
     const total = redondear(rubros.filter((r) => r.aplica === true).reduce((s, r) => s + r.monto, 0));

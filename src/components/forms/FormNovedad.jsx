@@ -136,7 +136,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         // El respaldo decía «(Obligatorio)» y se podía guardar sin él: la app
         // ya lo exigía y la web no (2026-11-11). Al corregir una novedad no se
         // pide de nuevo: el archivo ya está en el historial.
-        const faltaRespaldo = ok && respaldoObligatorio(formData?.type) && !formData?.file && !formData?._editingEventId;
+        const faltaRespaldo = ok && respaldoObligatorio(formData?.type, formData) && !formData?.file && !formData?._editingEventId;
         onValidationChange(ok && !faltaRespaldo, faltaRespaldo ? 'Falta adjuntar el respaldo.' : motivo);
     }, [formData, activeEmployee, employees, roles, holidays, onValidationChange]);
     const actionOptions = useMemo(() => opcionesDeNovedad(), []);
@@ -602,7 +602,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         son props, y el aviso de error se muestra en la fila en vez
                         de abrir un modal encima del formulario. */}
                     <FileField
-                        label={`Soporte Digital ${isDisability || isTermination ? '(Obligatorio)' : '(Opcional)'}`}
+                        label={`Soporte Digital ${respaldoObligatorio(formData?.type, formData) ? '(Obligatorio)' : '(Opcional)'}`}
                         accept=".pdf,image/jpeg,image/png,image/webp"
                         maxSizeMB={10}
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}

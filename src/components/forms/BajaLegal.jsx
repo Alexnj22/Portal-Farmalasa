@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarDays, FileText, Scale, UserMinus, XCircle, Calculator, ClipboardCheck } from 'lucide-react';
+import { AlertTriangle, CalendarDays, FileText, Scale, UserMinus, XCircle, Calculator, ClipboardCheck, Printer } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalTextarea from '../common/PortalTextarea';
@@ -9,17 +9,17 @@ import Badge from '../common/Badge';
 import Button from '../common/Button';
 import { TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
 import {
-    CAUSALES_ART_50, DOCUMENTO_DE_BAJA, PENDIENTES_DE_BAJA, avisosDeBaja, liquidacionEstimada,
+    CAUSALES_ART_50, DOCUMENTO_DE_BAJA, DIAS_DE_LA_SEMANA, SALARIO_MINIMO_INICIAL, avisosDeBaja, pendientesDeBaja, diasDePreaviso, liquidacionEstimada,
 } from '@nucleo/utils/bajaLegal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { registrarEgreso } from '@nucleo/data/egreso';
+import { abrirVentanaDeImpresion, escribirEImprimir, VENTANA_BLOQUEADA } from '../../plataforma/ventanaDeImpresion';
 import { formatDate } from '@nucleo/utils/helpers';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
-/* El salario mínimo de comercio y servicios vigente desde el 1 de junio de 2025
- * (Decreto Ejecutivo de ese año, +12%). Va como valor inicial EDITABLE y se
- * guarda con la baja: si cambia, quien registra lo corrige y la liquidación
- * queda calculada con el número que se usó. */
-const MINIMO_INICIAL = 408.8;
+// El salario mínimo inicial (editable) vive en el núcleo: lo usa también la app.
+const MINIMO_INICIAL = SALARIO_MINIMO_INICIAL;
 
 const FUERO = [
     { value: 'NO', label: 'No' },
@@ -35,6 +35,8 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
     const motivo = formData?.terminationReason || '';
     const poner = (campo, valor) => setFormData((prev) => ({ ...prev, [campo]: valor }));
     const [claveAusencia, setClaveAusencia] = useState(0);
+    const [errorPapel, setErrorPapel] = useState(null);
+    const sucursales = useStaffStore((s) => s.branches);
 
     const esRenuncia = motivo === 'RENUNCIA';
     const esSinResp = motivo === 'DESPIDO_SIN_RESPONSABILIDAD';
@@ -52,9 +54,10 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
     const acordadoTexto = formData?.montoAcordado ?? '';
     const acordado = Number(String(acordadoTexto).replace(',', '.'));
 
+    const preavisoDias = diasDePreaviso(formData);
     const liquidacion = useMemo(() => liquidacionEstimada({
-        motivo, salarioMensual: salario, ingreso, baja: formData?.date, salarioMinimoMensual: minimo,
-    }), [motivo, salario, ingreso, formData?.date, minimo]);
+        motivo, salarioMensual: salario, ingreso, baja: formData?.date, salarioMinimoMensual: minimo, preavisoDias,
+    }), [motivo, salario, ingreso, formData?.date, minimo, preavisoDias]);
 
     // La estimación se guarda con la baja: es lo que se le dijo a quien
     // registró, con el mínimo que se usó. Sólo se escribe si cambió.
@@ -64,6 +67,25 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
             setFormData((prev) => ({ ...prev, liquidacionEstimada: nueva, salarioMinimoUsado: minimoTexto }));
         }
     }, [liquidacion]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // El acta de inasistencias y la carta del patrono (Art. 55 CT): se imprimen
+    // con lo llenado, se firman y se suben después (`papelDeBaja`).
+    const imprimirActaYCarta = async () => {
+        setErrorPapel(null);
+        const win = abrirVentanaDeImpresion({ ancho: 1000, alto: 800 });
+        if (!win) { setErrorPapel(VENTANA_BLOQUEADA); return; }
+        const papel = await import('@nucleo/utils/papelDeBaja').catch(() => null);
+        if (!papel) {
+            try { win.close(); } catch { /* ya no está */ }
+            setErrorPapel('No se pudo preparar la impresión. Revisa tu conexión y vuelve a intentar.');
+            return;
+        }
+        const sucursal = (sucursales || []).find((b) => String(b.id) === String(empleado?.branchId ?? empleado?.branch_id))?.name;
+        const res = escribirEImprimir(win, papel.htmlDeActaYCarta({ empleado, sucursal, cargo: empleado?.role, formData }));
+        if (!res.ok) { setErrorPapel(res.motivo); return; }
+        registrarEgreso('personal', { formato: 'pdf', filas: 1, detalle: { papel: 'acta_y_carta_de_terminacion', employee_id: empleado?.id } });
+    };
+    const conActa = motivo === 'ABANDONO' || esSinResp;
 
     const avisos = avisosDeBaja(formData, empleado);
     const causales = CAUSALES_ART_50.map((c) => ({ value: String(c.n), label: `${c.n}. ${c.texto}` }));
@@ -135,6 +157,17 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                     )}
 
                     {pideAusencias && (
+                        <div>
+                            <label className={rotuloCampo()}>Su día de descanso semanal</label>
+                            <LiquidSelect value={formData?.diaDeDescanso != null ? String(formData.diaDeDescanso) : ''} clearable
+                                onChange={(v) => poner('diaDeDescanso', v === '' || v == null ? null : Number(v))}
+                                options={DIAS_DE_LA_SEMANA.map((d, i) => ({ value: String(i), label: d }))}
+                                placeholder="Opcional" icon={CalendarDays} menuPosition="fixed" />
+                            <p className="text-caption text-content-3 mt-1">Si falta el sábado y el lunes y el domingo es su descanso, son dos días laborales seguidos.</p>
+                        </div>
+                    )}
+
+                    {pideAusencias && (
                         <div className="space-y-2">
                             <label className={rotuloCampo()}>Días que faltó sin permiso</label>
                             <div className="h-[40px]">
@@ -166,6 +199,15 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                     <p className="text-caption text-content-2">
                         <b>Respaldo que se adjunta abajo:</b> {DOCUMENTO_DE_BAJA[motivo]}.
                     </p>
+                    {conActa && (
+                        <div className="space-y-1">
+                            <Button variant="secondary" size="sm" icon={Printer} onClick={imprimirActaYCarta}>Imprimir acta y carta</Button>
+                            <p className="text-caption text-content-3">
+                                La persona no tiene que firmar: la carta la firma el patrono o su representante, y se entrega o se envía a su domicilio (Art. 55 CT).
+                            </p>
+                            {errorPapel && <p className="text-caption text-warning-text">{errorPapel}</p>}
+                        </div>
+                    )}
 
                     {avisos.map((a) => (
                         <div key={a} className="flex gap-2 items-start text-caption text-warning-text">
@@ -237,7 +279,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             <ClipboardCheck size={16} className="text-content-2" />
                             <span className="text-label font-black uppercase tracking-widest text-content-2">Cierre (se puede completar después)</span>
                         </div>
-                        {PENDIENTES_DE_BAJA.map((p) => (
+                        {pendientesDeBaja(motivo).map((p) => (
                             <Checkbox key={p.clave} size="sm" checked={!!formData?.[p.clave]} onChange={(v) => poner(p.clave, v)}
                                 label={<span className="text-body-sm text-content-2">{p.texto}</span>} />
                         ))}

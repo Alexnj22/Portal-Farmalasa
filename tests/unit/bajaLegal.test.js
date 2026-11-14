@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-    problemaDeBaja, avisosDeBaja, liquidacionEstimada, ausenciasConfiguranCausal, diasDeAguinaldo, CAUSALES_ART_50,
+    problemaDeBaja, avisosDeBaja, liquidacionEstimada, ausenciasConfiguranCausal, respaldoDeBajaObligatorio, pendientesDeBaja, diasDeAguinaldo, CAUSALES_ART_50,
 } from '@nucleo/utils/bajaLegal';
 import { validarNovedad } from '@nucleo/utils/novedadDePersonal';
+import { htmlDeActaYCarta } from '@nucleo/utils/papelDeBaja';
 
 const emp = { id: 1, status: 'ACTIVO', hire_date: '2020-03-01' };
 const comun = { type: 'TERMINATION', date: '2026-11-30', ultimoDiaLaborado: '2026-11-30', note: 'x' };
@@ -40,6 +41,24 @@ describe('abandono', () => {
     it('completo pasa', () => expect(problemaDeBaja(ab, emp)).toBeNull());
     it('sin intento de contacto no pasa', () => expect(problemaDeBaja({ ...ab, intentoDeContacto: '' }, emp)).toMatch(/contactar/));
     it('2 sueltas no alcanzan', () => expect(ausenciasConfiguranCausal(['2026-11-03', '2026-11-10'])).toBe(false));
+    it('sábado y lunes con el domingo de descanso son consecutivos', () => {
+        expect(ausenciasConfiguranCausal(['2026-10-31', '2026-11-02'])).toBe(false);
+        expect(ausenciasConfiguranCausal(['2026-10-31', '2026-11-02'], 0)).toBe(true);
+        expect(ausenciasConfiguranCausal(['2026-10-31', '2026-11-02'], 3)).toBe(false);
+    });
+    it('el abandono no exige el respaldo para registrar (quien no vuelve no firma)', () => {
+        expect(respaldoDeBajaObligatorio('ABANDONO')).toBe(false);
+        expect(respaldoDeBajaObligatorio('RENUNCIA')).toBe(true);
+        expect(pendientesDeBaja('ABANDONO').some((p) => p.clave === 'cartaEntregada')).toBe(true);
+        expect(pendientesDeBaja('RENUNCIA').some((p) => p.clave === 'cartaEntregada')).toBe(false);
+    });
+    it('acta y carta: las ausencias, la causal 12 y el patrono', () => {
+        const html = htmlDeActaYCarta({ empleado: { name: 'ANA PÉREZ' }, sucursal: 'Salud 5', formData: { terminationReason: 'ABANDONO', date: '2026-11-13', diasDeAusencia: ['2026-10-27', '2026-10-28'], ultimoDiaLaborado: '2026-10-25' } });
+        expect(html).toMatch(/Acta de inasistencias/);
+        expect(html).toMatch(/causal 12/);
+        expect(html).toMatch(/27 de octubre de 2026/);
+        expect(html).toMatch(/ALEMÁN/);
+    });
     it('2 seguidas o 3 en el mes sí', () => {
         expect(ausenciasConfiguranCausal(['2026-11-03', '2026-11-04'])).toBe(true);
         expect(ausenciasConfiguranCausal(['2026-11-01', '2026-11-15', '2026-11-28'])).toBe(true);
@@ -63,7 +82,7 @@ describe('liquidación estimada', () => {
         const ind = l.rubros.find((r) => r.clave === 'indemnizacion');
         // 600/30 = 20 diarios < 4 × 13.63 → sin tope; 30 × 20 × años
         expect(ind.monto).toBeCloseTo(30 * 20 * l.aniosDeServicio, -1);
-        expect(l.rubros.every((r) => r.aplica === true)).toBe(true);
+        expect(l.rubros.filter((r) => r.clave !== 'quincena25').every((r) => r.aplica === true)).toBe(true);
         expect(l.total).toBeGreaterThan(ind.monto);
     });
     it('renuncia: prestación desde 2 años, salario topado en 2 mínimos', () => {
@@ -75,10 +94,31 @@ describe('liquidación estimada', () => {
         const l = liquidacionEstimada({ ...base, ingreso: '2025-06-01', motivo: 'RENUNCIA' });
         expect(l.rubros.find((r) => r.clave === 'prestacionRenuncia')).toMatchObject({ monto: 0, aplica: false });
     });
-    it('despido justificado: proporcionales a revisar, fuera del total', () => {
+    it('despido justificado: sin proporcionales (Arts. 187 y 202 CT)', () => {
         const l = liquidacionEstimada({ ...base, motivo: 'DESPIDO_SIN_RESPONSABILIDAD' });
-        expect(l.rubros.every((r) => r.aplica === 'revisar')).toBe(true);
+        expect(l.rubros.find((r) => r.clave === 'vacaciones')).toMatchObject({ aplica: false, monto: 0 });
+        expect(l.rubros.find((r) => r.clave === 'aguinaldo')).toMatchObject({ aplica: false, monto: 0 });
         expect(l.total).toBe(0);
+    });
+    it('renuncia con menos de 2 años: vacaciones y aguinaldo proporcionales sí (Art. 9 LRPERV)', () => {
+        const l = liquidacionEstimada({ ...base, ingreso: '2025-06-01', motivo: 'RENUNCIA' });
+        expect(l.rubros.find((r) => r.clave === 'vacaciones').aplica).toBe(true);
+        expect(l.total).toBeGreaterThan(0);
+    });
+    it('renuncia sin preaviso: la prestación queda a revisar (Art. 2 LRPERV)', () => {
+        const l = liquidacionEstimada({ ...base, motivo: 'RENUNCIA', preavisoDias: 3 });
+        expect(l.rubros.find((r) => r.clave === 'prestacionRenuncia').aplica).toBe('revisar');
+    });
+    it('despido en los primeros 30 días: indemnización a revisar (Art. 28 CT)', () => {
+        const l = liquidacionEstimada({ ...base, ingreso: '2026-11-10', motivo: 'DESPIDO_CON_RESPONSABILIDAD' });
+        expect(l.rubros.find((r) => r.clave === 'indemnizacion').aplica).toBe('revisar');
+    });
+    it('quincena 25: 50% proporcional desde el 15 de enero, fuera del total', () => {
+        const l = liquidacionEstimada({ ...base, motivo: 'RENUNCIA' });
+        const q = l.rubros.find((r) => r.clave === 'quincena25');
+        expect(q.aplica).toBe('revisar');
+        expect(q.monto).toBeCloseTo(300 * (320 / 365), 1);
+        expect(liquidacionEstimada({ ...base, salarioMensual: 2000, motivo: 'RENUNCIA' }).rubros.some((r) => r.clave === 'quincena25')).toBe(false);
     });
     it('sin salario no calcula', () => expect(liquidacionEstimada({ ...base, salarioMensual: null, motivo: 'RENUNCIA' })).toBeNull());
     it('días de aguinaldo por antigüedad', () => {

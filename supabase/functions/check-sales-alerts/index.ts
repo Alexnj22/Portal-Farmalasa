@@ -135,9 +135,11 @@ serve(async (req) => {
             alertType: 'ccf_repaso',
             alertKey:  row.alert_key,
             branchId:  row.branch_id,
-            title: `${row.branch_name} · ${m === 'fin_de_mes'
-              ? 'Último día del mes: CCF sin corregir'
-              : 'Cierre del día: CCF sin corregir'}`,
+            // El repaso REEMPLAZA al aviso que ya tenía esta factura (ver
+            // `avisar_ccf`): el título nombra el CCF para que se lea solo.
+            title: `${row.branch_name} · CCF N.º ${numeroLegible(row.correlativo)} ${m === 'fin_de_mes'
+              ? 'sigue sin corregir (último día del mes)'
+              : 'sigue sin corregir'}`,
             message: `El CCF N.º ${numeroLegible(row.correlativo)} del ${row.fecha} sigue con: ${(row.problemas ?? []).join(' · ')}.`,
             urgent: m === 'fin_de_mes',
             extra: { tipo: m === 'fin_de_mes' ? 'fin_de_mes' : 'cierre_dia', sala: row.branch_name,
@@ -207,20 +209,37 @@ serve(async (req) => {
       // Un aviso que sólo vive en un push es un aviso que desaparece sin dejar
       // huella. `notify_employees` crea la notificación en la campana Y manda
       // el push, así que la del portal queda aunque el push falle.
-      const { error: notifErr } = await supabase.rpc('notify_employees', {
-        p_recipients: supervisorIds,
-        p_type: 'SALES_ALERT',
-        p_title: alert.title,
-        p_body: alert.message,
-        p_link: '/facturacion',
-        p_metadata: {
-          alert_type: alert.alertType, alert_key: alert.alertKey, urgent: alert.urgent,
-          ...alert.extra,
-          ...(facturas.get(`${alert.branchId}|${alert.correlativo}`) ?? {}),
-        },
-        p_push: true,
-        p_branch_id: alert.branchId,
-      });
+      const metadata = {
+        alert_type: alert.alertType, alert_key: alert.alertKey, urgent: alert.urgent,
+        ...alert.extra,
+        ...(facturas.get(`${alert.branchId}|${alert.correlativo}`) ?? {}),
+      };
+      // ── Un CCF = un aviso (2026-11-14) ──────────────────────────────────
+      // El inmediato y el repaso de la noche hablaban de la MISMA factura con
+      // dos avisos. `avisar_ccf` retira el anterior de esa factura y deja uno
+      // solo arriba, sin leer y con push. Las ventas seguidas sin sello no son
+      // de una factura y siguen por el camino de siempre.
+      const { error: notifErr } = alert.alertType.startsWith('ccf')
+        ? await supabase.rpc('avisar_ccf', {
+            p_recipients: supervisorIds,
+            p_branch_id: alert.branchId,
+            p_correlativo: alert.correlativo,
+            p_title: alert.title,
+            p_body: alert.message,
+            p_link: '/facturacion',
+            p_metadata: metadata,
+            p_push: true,
+          })
+        : await supabase.rpc('notify_employees', {
+            p_recipients: supervisorIds,
+            p_type: 'SALES_ALERT',
+            p_title: alert.title,
+            p_body: alert.message,
+            p_link: '/facturacion',
+            p_metadata: metadata,
+            p_push: true,
+            p_branch_id: alert.branchId,
+          });
 
       if (notifErr) {
         // ── El log va DESPUÉS, y sólo si se avisó (2026-08-09) ──────────────

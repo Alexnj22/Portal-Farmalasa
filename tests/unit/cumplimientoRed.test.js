@@ -49,3 +49,28 @@ describe('pendientesDeLaRed', () => {
         }
     });
 });
+
+describe('mapaDeLaRed', () => {
+    it('cruza cada obligación con cada sala y cuenta lo que aplica', async () => {
+        const { mapaDeLaRed } = await import('@nucleo/utils/cumplimiento');
+        const bodega = sala(9, 'Bodega', { tipo_sala: 'BODEGA' });
+        const m = mapaDeLaRed([sala(1, 'A', { fv_abiertas: 1 }), bodega], HOY);
+        const a = m.salas[0].celdas;
+        expect(a.reacciones).toMatchObject({ estado: 'falta', tono: 'warning', detalle: '1' });
+        expect(a.capacitacion.estado).toBe('ok');
+        expect(m.salas[1].celdas.fv_semestre.estado).toBe('na');   // la bodega no reporta farmacovigilancia
+        expect(m.salas[1].celdas.a_la_vista.estado).toBe('na');
+        // 8 filas en la farmacia + 6 en la bodega
+        expect(m.aplicables).toBe(14);
+        expect(m.cumplidas + m.urgentes + m.pendientes).toBe(m.aplicables);
+        expect(m.salasAlDia).toBe(0);
+    });
+
+    it('la fila de reacciones toma la fuera de plazo como urgente', async () => {
+        const { mapaDeLaRed } = await import('@nucleo/utils/cumplimiento');
+        const m = mapaDeLaRed([sala(1, 'A', { fv_vencidas: 2, fv_semestre_cubierto: true, ultima_autoinspeccion: '2026-05-01' })], HOY);
+        expect(m.salas[0].celdas.reacciones).toMatchObject({ estado: 'falta', tono: 'danger' });
+        expect(m.urgentes).toBe(1);
+        expect(m.pct).toBe(Math.round((m.cumplidas / m.aplicables) * 100));
+    });
+});

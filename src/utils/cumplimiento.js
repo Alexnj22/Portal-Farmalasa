@@ -440,6 +440,74 @@ export function pendientesDeLaRed(salas, hoyIso, fechaTexto = (f) => f, temas = 
 }
 
 /**
+ * Las filas del mapa de la red (2026-11-14): una por obligación, con a qué
+ * salas aplica, por qué la pide la norma y qué la resuelve. «Reacciones
+ * adversas» junta las dos claves de farmacovigilancia (fuera de plazo y por
+ * notificar): para el mapa es una sola casilla por sala.
+ */
+export const FILAS_DEL_MAPA = Object.freeze([
+    { clave: 'reacciones', claves: ['fv_fuera_de_plazo', 'fv_por_notificar'], titulo: 'Reacciones adversas', icono: 'AlertOctagon', tab: 'farmacovigilancia', aplica: 'todas',
+      porQue: 'Cada sospecha se notifica al Centro Nacional de Farmacovigilancia dentro de su plazo.' },
+    { clave: 'retiros', claves: ['retiros'], titulo: 'Retiros de lote', icono: 'Undo2', tab: 'retiros', aplica: 'todas',
+      porQue: 'Un lote retirado se separa y se devuelve; cada sala anota lo que tenía.' },
+    { clave: 'acreditacion', claves: ['acreditacion'], titulo: 'Acreditación del mostrador', icono: 'BadgeCheck', tab: 'dependientes', aplica: 'todas',
+      porQue: 'Quien despacha necesita su acreditación de dependiente vigente.' },
+    { clave: 'fv_semestre', claves: ['fv_semestre'], titulo: 'Reporte semestral', icono: 'FileCheck2', tab: 'farmacovigilancia', aplica: 'farmacias', crea: 'reporte_cero',
+      porQue: 'Cada semestre se reporta, aunque no haya habido ninguna reacción (reporte cero).' },
+    { clave: 'autoinspeccion', claves: ['autoinspeccion'], titulo: 'Autoinspección', icono: 'ClipboardCheck', tab: 'autoinspeccion', aplica: 'todas', crea: 'autoinspeccion',
+      porQue: 'Una al año en cada sala, con la guía de la SRS y su plan de acción.' },
+    { clave: 'capacitacion', claves: ['capacitacion'], titulo: 'Capacitación', icono: 'GraduationCap', tab: 'capacitacion', aplica: 'todas', crea: 'capacitacion',
+      porQue: 'El personal se capacita según un programa anual, y cada sesión se registra.' },
+    { clave: 'a_la_vista', claves: ['a_la_vista'], titulo: 'A la vista del público', icono: 'Eye', tab: 'autoinspeccion', aplica: 'farmacias', crea: 'a_la_vista',
+      porQue: 'Permisos, regente y horarios tienen que estar a la vista; se revisa con su lista.' },
+    { clave: 'destruir', claves: ['destruir'], titulo: 'Bajas por destruir', icono: 'PackageX', tab: 'vencidos', aplica: 'todas', crea: 'destruccion',
+      porQue: 'Lo dado de baja se destruye con aviso a la SRS y una gestora autorizada.' },
+]);
+
+/**
+ * El mapa de la red: cada obligación contra cada sala.
+ * `{ filas, salas: [{ branch_id, sala, celdas: { [clave]: { estado: 'ok'|'falta'|'na', tono, detalle, texto } }, faltan, tono }],
+ *    cumplidas, aplicables, pct, urgentes, pendientes, salasAlDia }`.
+ * `temas` (opcional) deja sólo las filas cuya pestaña la persona puede ver.
+ */
+export function mapaDeLaRed(salas, hoyIso, fechaTexto = (f) => f, temas = null) {
+    const filas = FILAS_DEL_MAPA.filter((f) => !temas || temas.has(f.tab));
+    const peso = { danger: 0, warning: 1, info: 2 };
+    let cumplidas = 0;
+    let aplicables = 0;
+    let urgentes = 0;
+    let pendientes = 0;
+    const lista = (salas || []).map((s) => {
+        const p = pendientesDeSala(s, hoyIso, fechaTexto);
+        const farmacia = s.tipo_sala === 'FARMACIA';
+        const celdas = {};
+        let tonoSala = null;
+        let faltan = 0;
+        for (const f of filas) {
+            if (f.aplica === 'farmacias' && !farmacia) { celdas[f.clave] = { estado: 'na' }; continue; }
+            aplicables += 1;
+            const x = p.find((y) => f.claves.includes(y.clave));
+            if (!x) { cumplidas += 1; celdas[f.clave] = { estado: 'ok' }; continue; }
+            faltan += 1;
+            if (x.tono === 'danger') urgentes += 1; else pendientes += 1;
+            if (tonoSala === null || peso[x.tono] < peso[tonoSala]) tonoSala = x.tono;
+            celdas[f.clave] = { estado: 'falta', tono: x.tono, detalle: x.detalle, texto: x.texto, crea: x.crea || null, semestre: x.semestre || null };
+        }
+        return { branch_id: s.branch_id, sala: s.sala, celdas, faltan, tono: tonoSala || 'success' };
+    });
+    return {
+        filas,
+        salas: lista,
+        cumplidas,
+        aplicables,
+        pct: aplicables ? Math.round((cumplidas / aplicables) * 100) : 100,
+        urgentes,
+        pendientes,
+        salasAlDia: lista.filter((s) => s.faltan === 0).length,
+    };
+}
+
+/**
  * Las pestañas de registros: qué tipos lleva cada una, qué botón crea cada
  * tipo, el aviso de la norma y el texto cuando está vacía.
  */

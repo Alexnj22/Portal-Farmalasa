@@ -24,21 +24,29 @@ export function hastaDeLaSuspension(peldano, fecha, dias) {
 }
 
 /**
- * ¿Se puede guardar? El peldaño 4 exige 2 a 30 días y la autorización de
+ * Lo que impide guardar, con el campo al que lleva el aviso del pie
+ * (2026-11-14), o null. El peldaño 4 exige 2 a 30 días y la autorización de
  * Inspección de Trabajo; toda suspensión exige decir si lleva descuento de
  * sueldo (`conDescuento` true/false), porque la planilla no la descuenta ni la
  * paga sin esa decisión (el dueño, 2026-10-22).
  */
-export function sancionCompleta({ falta, peldano, fecha, dias, autorizacion, conDescuento }) {
-    if (!falta || !peldano || !fecha) return false;
-    if (esSuspension(peldano) && conDescuento !== true && conDescuento !== false) return false;
+export function faltaEnSancion({ falta, peldano, fecha, dias, autorizacion, conDescuento }) {
+    if (!falta) return { texto: 'Elige la falta cometida.', campo: 'falta' };
+    if (!peldano) return { texto: 'Elige la sanción.', campo: 'peldano' };
+    if (!fecha) return { texto: 'Falta la fecha.', campo: 'fecha' };
+    if (esSuspension(peldano) && conDescuento !== true && conDescuento !== false) {
+        return { texto: 'Decide si la suspensión se descuenta del sueldo.', campo: 'descuento' };
+    }
     if (peldano === 4) {
         const n = Number(dias);
-        if (!Number.isFinite(n) || n < 2 || n > 30) return false;
-        if (!String(autorizacion || '').trim()) return false;
+        if (!Number.isFinite(n) || n < 2 || n > 30) return { texto: 'La suspensión va de 2 a 30 días.', campo: 'dias' };
+        if (!String(autorizacion || '').trim()) return { texto: 'Falta la autorización de Inspección de Trabajo.', campo: 'autorizacion' };
     }
-    return true;
+    return null;
 }
+
+/** ¿Se puede guardar? (lo que falta, en `faltaEnSancion`). */
+export const sancionCompleta = (d) => faltaEnSancion(d) === null;
 
 /** El código que va impreso en la constancia: `S-AAAA-XXXXXX`. */
 export const codigoDeSancion = (eventoId, fecha) => (eventoId

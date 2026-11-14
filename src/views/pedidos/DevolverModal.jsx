@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { Undo2, Check } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
@@ -53,8 +55,13 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
     const pideFoto = motivo === 'danado';
     const cant = Number(cantidad);
 
-    const puede = (soloEvidencia || (cant > 0 && cant <= max))
-        && (!pideFoto || fotos.length > 0) && !saving;
+    // Lo que falta, con su campo: el botón ya no se apaga sin decir por qué
+    // (2026-11-14). `puede` sale de acá.
+    const queFalta = !soloEvidencia && !(cant > 0) ? { texto: 'Escribe cuántas devuelves.', campo: 'cantidad' }
+        : !soloEvidencia && cant > max ? { texto: `Se puede devolver hasta ${max}.`, campo: 'cantidad' }
+        : pideFoto && fotos.length === 0 ? { texto: 'Falta la foto del daño.', campo: 'foto' }
+        : null;
+    const puede = !queFalta && !saving;
 
     const cambiarMotivo = (m) => {
         setMotivo(m);
@@ -112,7 +119,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
                 {!soloEvidencia && (
                 <div className="space-y-1">
                     <PortalInput
-                        label="Cuántas" type="number" alto tono="chart-4"
+                        label="Cuántas" name="cantidad" type="number" alto tono="chart-4"
                         value={cantidad}
                         onChange={e => { setCantidad(e.target.value); setError(''); }}
                         placeholder="0"
@@ -128,7 +135,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
 
                 {/* ── Foto ── */}
                 {(viaja || soloEvidencia) && (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2" data-campo="foto">
                         <div className="flex items-baseline gap-2 px-1">
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest">
                                 {pideFoto ? 'Foto del daño' : 'Foto (opcional)'}
@@ -164,6 +171,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
             </div>
 
             <LiquidModal.Footer>
+                {queFalta && !saving ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : <span aria-hidden />}
                 <div className="flex gap-2">
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                     <Button tone="chart-4" icon={Check} disabled={!puede}

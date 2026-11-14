@@ -18,6 +18,8 @@
  * que se vea dónde termina la escalera, y no se puede elegir: es una baja, con
  * su liquidación y su causal del Art. 50.
  */
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ShieldAlert, AlertTriangle, Info } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
@@ -33,7 +35,7 @@ import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
-import { esSuspension as suspende, diasAlElegir, hastaDeLaSuspension, sancionCompleta, codigoDeSancion, motivoDeLaPropuesta } from '@nucleo/utils/sancion';
+import { esSuspension as suspende, diasAlElegir, hastaDeLaSuspension, sancionCompleta, faltaEnSancion, codigoDeSancion, motivoDeLaPropuesta } from '@nucleo/utils/sancion';
 import { LoadingState } from '../common/StateViews';
 
 const fmtFecha = (iso) => {
@@ -127,6 +129,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
     const esSuspension = suspende(peldano);
     const hastaISO = useMemo(() => hastaDeLaSuspension(peldano, fecha, dias), [peldano, fecha, dias]);
     const conDescuento = descuento === 'CON' ? true : descuento === 'SIN' ? false : null;
+    const queFalta = faltaEnSancion({ falta, peldano, fecha, dias, autorizacion, conDescuento });
     const puedeGuardar = useMemo(() => !guardando && !yaEscrita.current && sancionCompleta({ falta, peldano, fecha, dias, autorizacion, conDescuento }),
         [falta, peldano, fecha, dias, autorizacion, conDescuento, guardando]);
     const guardar = useCallback(async () => {
@@ -226,6 +229,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
 
             <LiquidModal.Body className="space-y-5">
 
+                <div data-campo="falta">
                 <LiquidSelect
                     label="Falta cometida"
                     value={falta}
@@ -235,6 +239,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                     disabled={guardando}
                     clearable={false}
                 />
+                </div>
 
                 {cargando && (
                     <LoadingState variant="inline" label="Revisando los antecedentes…" />
@@ -248,7 +253,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                             {motivoDeLaPropuesta(escalera, fmtFecha)}
                         </Notice>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2" data-campo="peldano">
                             <p className="text-caption uppercase tracking-widest text-content-3 font-black">Sanción</p>
                             {PELDANOS.map(p => {
                                 const elegido   = peldano === p.n;
@@ -311,6 +316,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 </div>
 
                 {esSuspension && (
+                    <div data-campo="descuento">
                     <LiquidSelect
                         label="¿Se descuenta del sueldo?"
                         value={descuento}
@@ -323,6 +329,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                         disabled={guardando}
                         clearable={false}
                     />
+                    </div>
                 )}
 
                 {peldano === 4 && (
@@ -357,6 +364,8 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             </LiquidModal.Body>
 
             <LiquidModal.Footer className="gap-3">
+                {/* Antes el botón sólo se apagaba (2026-11-14). */}
+                {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" onClick={guardar} loading={guardando} disabled={!puedeGuardar}>
                     {guardando ? 'Guardando…' : 'Registrar sanción'}

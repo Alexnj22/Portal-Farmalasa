@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1535.2 — Sanción y Devolver pedido dicen qué falta y llevan al campo
+
+- **Registrar una sanción** y **Devolver a bodega** apagaban el botón sin decir por qué. Ahora el pie dice qué falta (la falta, la sanción, la fecha, si se descuenta, los días, la autorización; la cantidad o la foto del daño) y lleva al campo.
+
 ## v2.1535.1 — El aviso de lo que falta lleva al campo en Enviar producto, Salida y Entrega de bolsas, Apartar e Inyectables
 
 Segunda tanda del aviso «por qué no se puede guardar»: se ve completo (antes algunos se cortaban o iban en letra gris) y, si se sabe el campo, un toque lleva hasta él.

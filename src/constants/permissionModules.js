@@ -449,6 +449,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'cumplimiento_tab_autoinspeccion',    label: 'Autoinspección', tipo: 'tab' },
                 { key: 'cumplimiento_tab_capacitacion',      label: 'Capacitación', tipo: 'tab' },
                 { key: 'cumplimiento_tab_dependientes',      label: 'Acreditaciones', tipo: 'tab' },
+                { key: 'cumplimiento_tab_datos_mercado',     label: 'Datos de mercado (SRS)', tipo: 'tab' },
             ]},
             // Vecino de las bitácoras: los dos son registros que una autoridad
             // puede venir a pedir, y en los dos lo que se enseña no es el dato

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 import {
-    AlertOctagon, BadgeCheck, CalendarClock, ClipboardCheck, GraduationCap, LayoutGrid, PackageX, ShieldCheck, Undo2,
+    AlertOctagon, BadgeCheck, CalendarClock, ClipboardCheck, GraduationCap, LayoutGrid, PackageX, ShieldCheck, Store, Undo2,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -17,6 +17,7 @@ import TabResumen from './cumplimiento/TabResumen';
 const TabRegistros = lazy(() => import('./cumplimiento/TabRegistros'));
 const TabVencimientos = lazy(() => import('./cumplimiento/TabVencimientos'));
 const TabDependientes = lazy(() => import('./cumplimiento/TabDependientes'));
+const TabDatosMercado = lazy(() => import('./cumplimiento/TabDatosMercado'));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Cumplimiento sanitario (2026-11-11, auditoría de sucursales).
@@ -55,6 +56,7 @@ export default function CumplimientoView() {
         ver('autoinspeccion') && { key: 'autoinspeccion', label: 'Autoinspección', icon: ClipboardCheck },
         ver('capacitacion') && { key: 'capacitacion', label: 'Capacitación', icon: GraduationCap },
         ver('dependientes') && { key: 'dependientes', label: 'Acreditaciones', icon: BadgeCheck },
+        ver('datos_mercado') && { key: 'datos_mercado', label: 'Datos de mercado', icon: Store },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `ver` sale de hasPermission
     ].filter(Boolean)), [hasPermission]);
     const pestanas = useMemo(() => new Set(tabs.map((t) => t.key)), [tabs]);
@@ -70,7 +72,7 @@ export default function CumplimientoView() {
     return (
         <GlassViewLayout icon={ShieldCheck} title="Cumplimiento sanitario" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 space-y-6">
-                {alcanceTodas && tab !== 'resumen' && (
+                {alcanceTodas && tab !== 'resumen' && tab !== 'datos_mercado' && (
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={() => setSala('')} activeCount={sala ? 1 : 0}>
                             <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
@@ -85,6 +87,8 @@ export default function CumplimientoView() {
                         <TabResumen pestanas={pestanas} onIr={(t, b) => { if (alcanceTodas) setSala(String(b)); setTab(t); }} />
                     ) : tab === 'vencimientos' ? (
                         <TabVencimientos branches={branches} branchId={salaOVacio} />
+                    ) : tab === 'datos_mercado' ? (
+                        <TabDatosMercado puedeEditar={hasPermission('cumplimiento_tab_datos_mercado', 'can_edit')} />
                     ) : tab === 'dependientes' ? (
                         <TabDependientes branchId={salaOVacio} />
                     ) : def ? (

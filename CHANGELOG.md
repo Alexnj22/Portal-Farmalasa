@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1529.0 — Datos de mercado de la SRS
+
+- Pestaña nueva en **Cumplimiento sanitario → Datos de mercado**: cada producto con existencia junto al producto del catálogo de la Superintendencia que le corresponde, para la Captura General de Datos de Mercado (existencias y precio de venta por farmacia, cada año).
+- Las parejas vienen propuestas con su confianza (alta, media, baja, sin pareja). Se confirman una por una o todas las de confianza alta de una vez; se elige otra opción o se busca en el catálogo de la SRS desde la misma pantalla; lo que no es medicamento se marca como tal. Todo se puede deshacer.
+- Lo confirmado queda guardado para los años siguientes (`srs_mercado_productos`); una nueva propuesta automática nunca pisa lo que ya decidió una persona.
+- La búsqueda en el catálogo va por la función `srs-datos-mercado`, con la cuenta de la empresa guardada en la bóveda.
+- Permiso `cumplimiento_tab_datos_mercado`: Gerente General, Administrador y Supervisor/a de Ventas.
+
 ## v2.1528.2 — Envíos: el renglón sin lote en un envío que salió a medias se quita y se arma de nuevo
 
 - Un producto que no salió porque se armó **sin lote** («no tienen lote asignado») ya no ofrece «Volver a enviar»: reenviar manda el mismo renglón y choca igual. Se explica qué pasó.

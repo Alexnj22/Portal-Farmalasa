@@ -429,6 +429,27 @@ inyección pagada hace 3 días sin aplicar, saldo a favor que vence en 7 días y
 el día que vence, y crédito vencido (cada 7 días como máximo, sin montos porque
 se lee en la pantalla bloqueada).
 
+## En el navegador: app.farmasalud.lat (2026-11-14)
+
+La misma app, compilada para web con `expo export --platform web`: se ve igual
+que en iPhone y Android porque es el mismo código, no una copia. Lo que sólo
+existe en el teléfono (avisos, subir fotos, Wallet, cámara) ya tenía su rama
+`Platform.OS === 'web'`; la sesión cae a `localStorage` (`lib/sesion.js`).
+
+- Publicar: `npm run app:web` (`scripts/subir-web-clientes.mjs`). Compila en
+  esta Mac con las variables del perfil `clientes` de `eas.json` y sube el
+  resultado estático al proyecto de Vercel `puntos-salud-web` — no al del
+  portal. `-- --ver` sólo compila a `apps/clientes/dist`.
+- Un cambio en `apps/clientes` NO llega solo a la web: igual que las tiendas,
+  hay que volver a correr el script.
+- `apps/clientes/public/` es la página que envuelve a la app (español, fondo
+  del arranque, manifiesto e ícono para «Agregar a inicio»). Sólo la usa la web.
+- `app-clientes` ya respondía CORS `*`: la web habla con la misma puerta.
+- DNS: el dominio lo maneja Spaceship; `app` apunta a Vercel con
+  `A app 76.76.21.21`.
+- `/mis-puntos` y `/o/<id>` del portal siguen siendo los destinos de los QR y
+  los enlaces (abren la app si está instalada).
+
 ## Pruebas
 
 Nuevas el 2026-10-24: `reservasDatos`, `chatHilo`, `chatClientesDatos`,

@@ -1,0 +1,13 @@
+{
+  "name": "Puntos Salud",
+  "short_name": "Puntos Salud",
+  "lang": "es",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A090E",
+  "theme_color": "#0A090E",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icono-512.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
+}

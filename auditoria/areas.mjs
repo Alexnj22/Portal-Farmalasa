@@ -842,6 +842,8 @@ export const AREAS = [
         rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes', '/reservas', '/reclamos-clientes'],
         archivos: [
             'apps/clientes/',
+            // La misma app publicada en el navegador (app.farmasalud.lat, 2026-11-14).
+            'scripts/subir-web-clientes.mjs',
             'src/views/ofertas-clientes/',
             // El chat con los clientes de la app y la revisión de recetas (2026-10-12).
             'src/views/chat-clientes/',

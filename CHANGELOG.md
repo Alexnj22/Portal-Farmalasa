@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1536.2 — Puntos Salud también en el navegador: app.farmasalud.lat
+
+La app de clientes se puede usar desde cualquier navegador en app.farmasalud.lat, igual que en iPhone y Android (es la misma app). Se publica con `npm run app:web`; se puede agregar a la pantalla de inicio.
+
 ## v2.1536.1 — Cobrar desde la tarjeta muestra sólo ese encargo
 
 Al apretar «Cobrar» en la tarjeta de un encargo, «Por cobrar» mostraba la lista entera de la sala (con dos encargos parecía que se cobraban los dos). Ahora muestra sólo ese encargo, con «Ver el otro / los otros N por cobrar» debajo.

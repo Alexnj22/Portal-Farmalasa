@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!-- La página que envuelve a Puntos Salud en el navegador (app.farmasalud.lat,
+     scripts/subir-web-clientes.mjs). Expo la usa en lugar de la suya: en
+     español, con el fondo del arranque de la app para que no destelle blanco,
+     y con manifiesto e ícono para que «Agregar a inicio» la abra como app. -->
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <title>Puntos Salud</title>
+    <meta name="description" content="Tus puntos, ofertas, reservas, facturas y el chat con Farmacias Salud." />
+    <meta name="theme-color" content="#F5F4F8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0A090E" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Puntos Salud" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <style id="expo-reset">
+      html, body { height: 100%; background: #F5F4F8; }
+      @media (prefers-color-scheme: dark) { html, body { background: #0A090E; } }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+    </style>
+  </head>
+  <body>
+    <noscript>Para usar Puntos Salud hay que activar JavaScript.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

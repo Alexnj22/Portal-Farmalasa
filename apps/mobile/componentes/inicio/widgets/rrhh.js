@@ -97,7 +97,7 @@ const ESTADOS = [
   { id: 'WORKING', rotulo: 'En labores', color: MARCA.verde },
   { id: 'LUNCH', rotulo: 'Almuerzo', color: MARCA.ambar },
   { id: 'LACTATION', rotulo: 'Lactancia', color: MARCA.rosa },
-  { id: 'BUSINESS', rotulo: 'Gestión externa', color: MARCA.azul },
+  { id: 'BUSINESS', rotulo: 'Gestión externa', get color() { return MARCA.azul; } },
   { id: 'OUT', rotulo: 'Salió', color: MARCA.gris },
   { id: 'ABSENT', rotulo: 'Sin marcar', color: MARCA.rojo },
 ];

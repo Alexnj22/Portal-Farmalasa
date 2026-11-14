@@ -105,7 +105,7 @@ const ACCIONES = [
   { tipo: 'VACATION', rotulo: 'Vacaciones', icono: 'Calendar', color: MARCA.verde },
   { tipo: 'DISABILITY', rotulo: 'Incapacidad', icono: 'HeartPulse', color: '#F472B6' },
   { tipo: 'PERMIT', rotulo: 'Permiso', icono: 'ClipboardList', color: MARCA.ambar },
-  { tipo: 'TRANSFER', rotulo: 'Traslado', icono: 'ArrowRightLeft', color: MARCA.azulClaro },
+  { tipo: 'TRANSFER', rotulo: 'Traslado', icono: 'ArrowRightLeft', get color() { return MARCA.azulClaro; } },
   { tipo: 'SUPPORT', rotulo: 'Apoyo temporal', icono: 'Building2', color: '#E879F9' },
   { tipo: 'PROMOTION', rotulo: 'Cambio de cargo', icono: 'TrendingUp', color: MARCA.violetaClaro },
   { tipo: 'SALARY', rotulo: 'Ajuste salarial', icono: 'DollarSign', color: MARCA.verde },

@@ -33,9 +33,9 @@ const larga = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: '
 // web): con una sola casilla no había respuesta para «devolvió todo menos el
 // uniforme» (2026-11-14).
 const DEVOLUCION = [
-  { id: 'SI', label: 'Devolvió', color: colorSistema.verde },
-  { id: 'NO', label: 'No devolvió', color: colorSistema.naranja },
-  { id: 'NA', label: 'No tenía', color: colorSistema.texto2 },
+  { id: 'SI', label: 'Devolvió', get color() { return colorSistema.verde; } },
+  { id: 'NO', label: 'No devolvió', get color() { return colorSistema.naranja; } },
+  { id: 'NA', label: 'No tenía', get color() { return colorSistema.texto2; } },
 ];
 function Devolucion({ valor, onCambiar }) {
   return (

@@ -91,6 +91,7 @@
     "gate:seguridad": "node scripts/seguridad-gate.mjs",
     "gate:app-nativa": "node scripts/app-nativa-gate.mjs",
     "gate:app-secciones": "node scripts/app-secciones-gate.mjs",
+    "gate:app-colores": "node scripts/app-colores-gate.mjs",
     "tipos:base": "bash -c 'd=$(mktemp -d) && (cd $d && supabase gen types typescript --project-id sacecdkdmsdvgqnrsett --schema public) > src/types/database.ts'",
     "publicar": "node scripts/publicar.mjs",
     "main:al-dia": "node scripts/main-al-dia.mjs"

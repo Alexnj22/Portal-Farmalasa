@@ -21,7 +21,7 @@ import Vidrio from '../Vidrio';
 
 const RANGOS = [{ id: '7', label: '7 días' }, { id: '30', label: '30 días' }, { id: '90', label: '90 días' }];
 const TRAMOS = [
-  { k: 'prep', rotulo: 'Preparación', color: MARCA.azulClaro },
+  { k: 'prep', rotulo: 'Preparación', get color() { return MARCA.azulClaro; } },
   { k: 'pausado', rotulo: 'Pausa', color: MARCA.ambar },
   { k: 'transito', rotulo: 'Tránsito', color: MARCA.violetaClaro },
   { k: 'recuento', rotulo: 'Recuento', color: MARCA.verde },

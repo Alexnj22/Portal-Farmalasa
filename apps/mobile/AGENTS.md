@@ -45,6 +45,10 @@ Expo o de React Native:
   `Interruptor.android.js`…). Al cambiar un componente, revisar si tiene gemelos.
 - **Colores** sólo de `tema/tema.js`, que lee `src/constants/tokens.json` del
   portal. No se escribe un color a mano.
+  El azul de la marca es `MARCA.azul`/`MARCA.azulClaro` y en Android es el
+  color del SISTEMA: se lee al pintar (`${MARCA.azul}4D` para una opacidad),
+  nunca `'rgba(0,82,204,…)'` ni en un objeto de nivel de módulo sin getter.
+  Lo vigila `npm run gate:app-colores` (pre-commit).
 - **Nativo**: `ios/` y `android/` se generan (no están en el repo); lo nativo se
   configura en `app.json`/`app.config.js`, `plugins/` y `targets/` (widgets y
   extensiones de iOS con `@bacons/apple-targets`). Nunca editar `ios/` ni

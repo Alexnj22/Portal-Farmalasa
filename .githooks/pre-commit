@@ -256,6 +256,13 @@ if git diff --cached --name-only | grep -qE '^apps/mobile/(app|componentes)/'; t
   node scripts/app-secciones-gate.mjs --hook || exit 1
 fi
 
+# app-colores-gate: el azul de la marca y los colores del sistema se leen al
+# pintar —nunca escritos a mano ni congelados al cargar el módulo—, para que en
+# Android sigan al color del sistema (2026-11-14: 35 sitios no lo seguían).
+if git diff --cached --name-only | grep -qE '^apps/mobile/(app|componentes)/'; then
+  node scripts/app-colores-gate.mjs --hook || exit 1
+fi
+
 # nucleo-alias: lo que cruza el borde del núcleo va por `@nucleo/…` (desde las
 # pantallas) o `@plataforma/…` (desde el núcleo), nunca por ruta relativa — así
 # mudar el núcleo a `packages/core` (F7) no toca ninguna pantalla. Local y en

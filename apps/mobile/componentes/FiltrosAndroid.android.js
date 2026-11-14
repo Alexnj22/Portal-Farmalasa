@@ -21,6 +21,7 @@ import { colorSistema } from './Formulario';
 import { iconoDe } from '../tema/iconos';
 import { MARCA } from './inicio/marca';
 import { SEMILLA } from '../tema/material';
+import useCerrarAlSalir from './useCerrarAlSalir';
 
 // El botón extra trae su ícono de iPhone (SF Symbol); éste es su par de Material.
 const DE_SF = { banknote: 'Banknote', eye: 'Eye', 'eye.slash': 'EyeOff', 'square.and.arrow.up': 'Share', plus: 'Plus', paperplane: 'Send', printer: 'Printer', 'ellipsis.circle': 'MoreVertical' };
@@ -36,6 +37,7 @@ function BotonDeBarra({ icono, etiqueta, onPress }) {
 }
 
 function HojaDeFiltros({ grupos, onCerrar }) {
+  useCerrarAlSalir(onCerrar);
   const elegir = (g, o) => { Haptics.selectionAsync().catch(() => {}); g.onCambiar(o.id); };
   return (
     <Host seedColor={SEMILLA} style={{ position: 'absolute', width: 1, height: 1 }}>

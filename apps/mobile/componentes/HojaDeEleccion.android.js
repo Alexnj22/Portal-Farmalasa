@@ -14,6 +14,7 @@ import { clickable, fillMaxWidth, padding } from '@expo/ui/jetpack-compose/modif
 import { colorSistema } from './Formulario';
 import { MARCA } from './inicio/marca';
 import { SEMILLA } from '../tema/material';
+import useCerrarAlSalir from './useCerrarAlSalir';
 
 /**
  * @param {{ titulo: string, opciones: {id: string, label: string, detalle?: string}[], valor: string,
@@ -23,6 +24,7 @@ import { SEMILLA } from '../tema/material';
  */
 export default function HojaDeEleccion({ titulo, opciones, valor, onElegir, onCerrar, maximo = 200, accion = null }) {
   const [texto, setTexto] = useState('');
+  useCerrarAlSalir(onCerrar);
   const visibles = useMemo(
     () => opciones.filter((o) => !texto.trim() || tokenMatch(texto, o.label, o.detalle || '')),
     [opciones, texto],

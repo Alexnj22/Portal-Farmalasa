@@ -24,7 +24,7 @@ import { MAYUSCULAS } from '../../../tema/mayusculas';
 const AJUSTES = [
   { permiso: 'dash_annulment_req', ruta: '/nueva/facturas', icono: 'Receipt', titulo: 'Anular o cambiar una factura', detalle: 'Anulación, forma de pago, datos del cliente', color: MARCA.rojo },
   { permiso: 'dash_inv_movement', ruta: '/nueva/ajuste', icono: 'PackageMinus', titulo: 'Ajuste de inventario', detalle: 'Vencidos, dañados, faltantes o sobrantes', color: MARCA.ambar },
-  { permiso: 'dash_minmax_req', ruta: '/nueva/minmax', icono: 'BarChart2', titulo: 'Ajuste de Mín·Máx', detalle: 'Cambiar el par de un producto en la sala', color: MARCA.azul },
+  { permiso: 'dash_minmax_req', ruta: '/nueva/minmax', icono: 'BarChart2', titulo: 'Ajuste de Mín·Máx', detalle: 'Cambiar el par de un producto en la sala', get color() { return MARCA.azul; } },
 ];
 export const PERMISOS_DE_AJUSTE = AJUSTES.map((a) => a.permiso);
 

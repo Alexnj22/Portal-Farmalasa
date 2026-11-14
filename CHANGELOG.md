@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1534.6 — App: un control que no deja escribir el azul a mano ni congelar colores; la hoja de filtros se cierra al cambiar de pantalla
+
+- **Control nuevo `gate:app-colores`** (en el pre-commit al tocar la app): frena el azul de la marca escrito a mano y los colores leídos una sola vez al cargar una pantalla. En Android la app usa el color del sistema, y esas dos formas lo ignoraban sin que nada avisara. La regla estaba escrita, pero nada la vigilaba.
+- Al estrenarlo encontró **10 colores congelados más**: Cumplimiento, Efectivo, la ficha del empleado, Traslados, los atajos de Operación y de RRHH, las métricas de Pedidos y la baja. Ahora siguen al tema y al color del sistema.
+- **En Android, una hoja abierta (filtros o elegir de una lista) se cierra sola si la app cambia de pantalla.** Antes se quedaba flotando encima de la pantalla nueva.
+
 ## v2.1534.5 — App Android: el azul de la marca sigue al color del sistema en todas las pantallas
 
 En Android la app toma el color del sistema (Material You), pero 25 lugares tenían el azul de la marca escrito a mano y seguían azules con cualquier tema: el chip del filtro activo, el día elegido en Horarios y en el editor de turnos, la sala elegida al generar un pedido, la pestaña activa del Inicio y de Nómina, la burbuja y los botones del chat, la tarjeta de aviso sin leer, entre otros. Ahora todos salen del color del tema. En iPhone no cambia nada.

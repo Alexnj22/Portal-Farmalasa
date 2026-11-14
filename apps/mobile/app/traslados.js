@@ -61,7 +61,7 @@ import { MAYUSCULAS } from '../tema/mayusculas';
 const HORAS_EN_CAMINO_ALERTA = 24;
 
 const SECCIONES_ENVIO = [
-  { id: 'por_decidir', titulo: 'Te enviaron', color: MARCA.azulClaro },
+  { id: 'por_decidir', titulo: 'Te enviaron', get color() { return MARCA.azulClaro; } },
   { id: 'por_despachar', titulo: 'Sin salir de tu sala', color: MARCA.ambar },
   { id: 'por_recibir_devolucion', titulo: 'Te devuelven', color: MARCA.rojo },
   { id: 'en_camino', titulo: 'Enviaste', color: MARCA.verde },

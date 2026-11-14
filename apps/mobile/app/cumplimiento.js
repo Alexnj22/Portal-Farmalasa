@@ -58,7 +58,7 @@ import { ofrecerPapel } from '../componentes/pdf';
 import { guardar as dejar } from '../componentes/comercial/elegido';
 
 const VACIO = [];
-const TONO = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro, success: MARCA.verde, neutral: MARCA.gris };
+const TONO = { danger: MARCA.rojo, warning: MARCA.ambar, get info() { return MARCA.azulClaro; }, success: MARCA.verde, neutral: MARCA.gris };
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const TEMAS = [
   { id: 'farmacovigilancia', label: 'Farmacovigilancia' },

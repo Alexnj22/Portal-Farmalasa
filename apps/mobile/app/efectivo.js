@@ -70,7 +70,7 @@ import MovimientosDelDia from '../componentes/caja/MovimientosDelDia';
 // Las otras tres pestañas de Efectivo del portal, para quien puede MIRAR la
 // caja (`cortes_caja`): los cortes, los días con diferencia y los movimientos.
 const SECCIONES = [
-  { ruta: '/cortes', titulo: 'Cortes', icono: 'Calculator', color: MARCA.azul },
+  { ruta: '/cortes', titulo: 'Cortes', icono: 'Calculator', get color() { return MARCA.azul; } },
   { ruta: '/caja-diferencias', titulo: 'Diferencias', icono: 'HandCoins', color: MARCA.ambar },
   { ruta: '/caja-movimientos', titulo: 'Movimientos', icono: 'ArrowLeftRight', color: MARCA.violeta },
 ];

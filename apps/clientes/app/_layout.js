@@ -101,12 +101,11 @@ function usarFondoDelDocumento(base) {
   useEffect(() => {
     if (!WEB || typeof document === 'undefined') return;
     document.documentElement.style.backgroundColor = base;
-    document.body.style.backgroundColor = base;
     const vp = document.querySelector('meta[name=viewport]');
     if (vp && !vp.content.includes('viewport-fit')) vp.content += ', viewport-fit=cover';
-    let tema = document.querySelector('meta[name=theme-color]');
-    if (!tema) { tema = document.createElement('meta'); tema.name = 'theme-color'; document.head.appendChild(tema); }
-    tema.content = base;
+    // Sin theme-color ni fondo en el body (2026-11-14): Safari pintaba sus
+    // barras con ese color liso. Ahora dibuja la página debajo (lib/documentoWeb).
+    document.querySelector('meta[name=theme-color]')?.remove();
   }, [base]);
 }
 

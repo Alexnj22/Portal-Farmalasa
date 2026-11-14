@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.9 — Puntos Salud web: pantalla completa en Safari del iPhone
+
+- En Safari del iPhone, Puntos Salud ya llena la pantalla: el fondo llega debajo de la hora y de la barra de Safari, sin las dos franjas negras. El menú de abajo queda fijo, justo encima de la barra de Safari.
+- Cómo: con la página quieta arriba del todo, Safari pinta esas zonas de un color liso; con la página desplazada, dibuja la página debajo. La página queda desplazada y la app fija encima (`apps/clientes/lib/documentoWeb.js`). Sólo en el iPhone y fuera de la app agregada a inicio; en la computadora no cambia nada.
+
 ## v2.1537.8 — Puntos Salud web: avisos en el navegador y márgenes del encabezado
 
 - **Avisos en la web**: Puntos Salud en el navegador ya puede recibir avisos (ofertas, reservas, chat), igual que la app. En Cuenta → «Avisos en este dispositivo». En el iPhone, Apple sólo los permite cuando Puntos Salud está en la pantalla de inicio (Compartir → «Agregar a inicio»); ahí además se abre en pantalla completa. Mientras no esté agregada, Cuenta explica cómo hacerlo en vez de mostrar un error.

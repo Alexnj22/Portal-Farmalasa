@@ -46,6 +46,16 @@
       }
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
+      /* Safari del iPhone (lib/documentoWeb.js): la página queda desplazada y
+         la app fija encima, para que Safari dibuje la aurora debajo de sus
+         barras en lugar de dos franjas lisas. */
+      html.anclado { scrollbar-width: none; overscroll-behavior: none; }
+      html.anclado body { overflow: visible; min-height: calc(100lvh + 160px); }
+      html.anclado #root {
+        position: fixed; top: 0; left: 0; right: 0; height: 100lvh;
+        box-sizing: border-box; padding-bottom: var(--bajo-safari, 0px);
+      }
+      html.anclado #root * { overscroll-behavior: contain; }
     </style>
   </head>
   <body>

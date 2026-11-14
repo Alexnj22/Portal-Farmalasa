@@ -21,6 +21,7 @@ import { App } from 'expo-router/build/qualified-entry';
 import { renderRootComponent } from 'expo-router/build/renderRootComponent';
 import { LoadSkiaWeb } from '@shopify/react-native-skia/lib/module/web';
 import { instalarAlertaWeb } from './componentes/AlertaWeb';
+import { anclarDocumento } from './lib/documentoWeb';
 import ExpoSecureStore from 'expo-secure-store/build/ExpoSecureStore';
 
 // expo-secure-store no tiene nada en la web (su módulo es `{}`): cada lectura
@@ -41,6 +42,7 @@ Object.assign(ExpoSecureStore, {
 
 // `Alert.alert` no hace nada en el navegador: se reemplaza antes de pintar.
 instalarAlertaWeb();
+anclarDocumento();
 
 // `ActionSheetIOS` no existe en react-native-web: `import { ActionSheetIOS }
 // from 'react-native'` daba `undefined` y cada `showActionSheetWithOptions`

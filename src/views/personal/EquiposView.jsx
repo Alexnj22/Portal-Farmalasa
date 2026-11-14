@@ -90,6 +90,7 @@ const VISTAS = [
   { value: 'todos',        label: 'Todos' },
   { value: 'activos',      label: 'Activos' },
   { value: 'ausentes',     label: 'Ausentes' },
+  { value: 'bajas',        label: 'De baja' },
   { value: 'practicantes', label: 'Practicantes' },
   { value: 'externos',     label: 'Externos y sistema' },
 ];
@@ -252,7 +253,7 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
             renuncia de un despido, y es lo primero que se pregunta al buscarla. */}
         {inactiva && baja && (
           <Badge variant="danger" size="sm" icon={UserMinus} uppercase={false} data-baja={baja.motivo || ''}
-            className="max-w-full overflow-hidden text-ellipsis" title={TERMINATION_REASONS[baja.motivo]?.label}>
+            className="max-w-full whitespace-normal py-1 leading-snug" title={TERMINATION_REASONS[baja.motivo]?.label}>
             {MOTIVO_CORTO[baja.motivo] || 'Baja'}{baja.fecha ? ` · ${formatDate(baja.fecha)}` : ''}
           </Badge>
         )}
@@ -674,7 +675,7 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
         </>
       )}
 
-      {/* Quien ya no trabaja acá —sólo sale en «Todos» y «Ausentes», que es
+      {/* Quien ya no trabaja acá —sólo sale en la vista «De baja», que es
           donde se lo busca para reincorporarlo—. Va al final y aparte: dentro
           del reparto podía quedar como JEFATURA de la sala y contaba en su
           pulso. */}
@@ -813,10 +814,13 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       // persona NO está —de vacaciones, incapacitada, o dada de baja—, y `null`
       // cuando está. Escribir «activos» como «no inactivo Y sin ausencia» era
       // decir dos veces lo mismo y abrir la puerta a que las dos listas se
-      // separaran. «Ausentes» incluye a quien ya no trabaja acá a propósito:
-      // es la vista donde se lo va a buscar para reincorporarlo.
+      // separaran.
       // «No está hoy» es «hay estado y no es la cuenta regresiva» — la misma
       // pregunta que `estaAusenteHoy`, con el estado que también ve el aro.
+      // Quien ya no trabaja acá sólo sale en «De baja» (2026-11-14, lo pidió
+      // el usuario): en «Todos» y «Ausentes» llenaba cada sala de renuncias y
+      // despidos que nadie estaba buscando.
+      .filter(e => esExternos || (vista === 'bajas') === esDeBaja(e))
       .filter(e => {
         if (vista !== 'activos' && vista !== 'ausentes') return true;
         const est = estadoDe(e);
@@ -1163,7 +1167,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
         {!cargando && !hayAlgo && !errorDePracticantes && (
           <EmptyState
             icon={esPracticantes ? GraduationCap : Search}
-            title={esPracticantes ? 'Sin practicantes' : esExternos ? 'Sin cuentas externas' : 'Sin personal'}
+            title={esPracticantes ? 'Sin practicantes' : esExternos ? 'Sin cuentas externas' : vista === 'bajas' ? 'Nadie de baja' : 'Sin personal'}
             subtitle={busqueda
               ? 'Prueba con otro nombre o cargo.'
               : 'Ajusta el filtro de sucursal o cambia de vista.'}

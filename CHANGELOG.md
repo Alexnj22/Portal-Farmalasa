@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1531.3 — Personal: las bajas sólo en «De baja»; el motivo de baja ya no se corta
+
+En Personal → Equipos, quien renunció o fue despedido ya no aparece en «Todos» ni en «Ausentes»: está en la vista nueva **De baja**, que es donde se lo busca para reincorporarlo. Y la etiqueta del motivo de baja («Despido con indemnización · 31/08/2026») baja de línea en vez de cortarse.
+
 ## v2.1531.2 — Baja: qué es tener fuero, bien dicho
 
 En la baja, «¿Tiene fuero?» ahora explica qué es y dura lo que dice la ley: la embarazada está protegida desde el embarazo **hasta 6 meses después del descanso postnatal** (Art. 113 CT; antes decía sólo «postnatal»), quien tiene una incapacidad vigente, y los directivos de un sindicato durante su cargo y un año después (Art. 248 CT). En el portal y en la app.

@@ -8,7 +8,9 @@ name: Consumo de Vercel
 #   rojo             → la corrida FALLA y GitHub manda el correo
 # El detalle de cada día queda en el resumen de la corrida.
 #
-# Usa los secretos VERCEL_TOKEN y VERCEL_TEAM_ID (los mismos de entorno-pruebas).
+# Secretos: VERCEL_CONSUMO_TOKEN (token propio, creado el 2026-11-14: el
+# VERCEL_TOKEN de entorno-pruebas da «User not found» en las consultas de
+# facturación) y VERCEL_TEAM_ID.
 
 on:
   schedule:
@@ -28,5 +30,5 @@ jobs:
       - run: npm install -g vercel@65.16.0
       - run: node scripts/vercel-consumo.mjs
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_CONSUMO_TOKEN || secrets.VERCEL_TOKEN }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}

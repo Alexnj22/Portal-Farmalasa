@@ -14,6 +14,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { LoadingState } from './common/StateViews';
 import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
 import { irAlCampo } from '../plataforma/irAlCampo';
+import AvisoDeFalta from './common/AvisoDeFalta';
 import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { CATEGORIAS_DOCUMENTO } from './common/catalogos/constantes';
@@ -174,6 +175,23 @@ const getEmployeeValidationError = (formData, type) => {
     return null;
 };
 
+// El campo del error de arriba, en el mismo orden (2026-11-14): el aviso del
+// pie lleva hasta él. `null` si el error no tiene un control (la pasantía).
+const campoDelErrorDeEmpleado = (formData, type) => {
+    if (type !== 'newEmployee' && type !== 'editEmployee') return null;
+    if (!formData?.first_names?.trim()) return 'first_names';
+    if (!formData?.last_names?.trim()) return 'last_names';
+    if (!formData?.code?.trim()) return 'code';
+    if (type === 'newEmployee') {
+        if (!formData?.dui?.trim() && !formData?.alt_identity_document?.trim()) return formData?.alt_identity_document !== undefined ? 'alt_identity_document' : 'dui';
+    }
+    if (formData?.contract_type === 'TEMPORAL') {
+        if (!formData?.contract_temporal_legal_basis) return 'contract_type';
+        if (!formData?.contract_temporal_reason?.trim()) return 'contract_temporal_reason';
+    }
+    return null;
+};
+
 // El practicante (2026-11-03): su ficha es la de empleado, y además la
 // pasantía tiene que estar completa —institución, tutor, fechas, convenio—
 // porque sin eso no se puede escribir su fila de `practicantes`.
@@ -311,6 +329,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     // El campo al que pertenece ese motivo (sólo las novedades lo dicen): el
     // aviso del pie se vuelve un botón que lleva hasta él (2026-11-14).
     const [campoNoGuardable, setCampoNoGuardable] = useState(null);
+    // La ficha del empleado tiene cuatro pestañas: el campo puede estar en
+    // otra, así que el formulario da su propio navegador (cambia de pestaña).
+    const [irAlCampoDelForm, setIrAlCampoDelForm] = useState(null);
     const [empActiveTab, setEmpActiveTab] = useState('personal');
     const scrollRef = useRef(null);
 
@@ -320,6 +341,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         setIsFormValid(true);
         setMotivoNoGuardable(null);
         setCampoNoGuardable(null);
+        setIrAlCampoDelForm(null);
         setEmpActiveTab('personal');
     }, [type, isOpen]);
 
@@ -1129,8 +1151,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
                                 
-                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={(ok, motivo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); }} />}
-                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={(ok, motivo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); }} />}
+                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={(ok, motivo, campo, ir) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); setCampoNoGuardable(campo ?? null); setIrAlCampoDelForm(() => ir || null); }} />}
+                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={(ok, motivo, campo, ir) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); setCampoNoGuardable(campo ?? null); setIrAlCampoDelForm(() => ir || null); }} />}
                                 
                                 {(type === "newBranch" || type === "editBranch") && <FormSucursal formData={formData} setFormData={setFormData} section="general" />}
                                 {type === "editBranchHorarios" && <FormSucursal formData={formData} setFormData={setFormData} section="horarios" />}
@@ -1188,6 +1210,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const empSaveTitle = empError
                         || motivoNoGuardable
                         || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
+                    // A dónde lleva el aviso: el campo del error que se está mostrando.
+                    const empCampo = empError ? campoDelErrorDeEmpleado(formData, type) : (motivoNoGuardable ? campoNoGuardable : null);
+                    const irAlEmpCampo = empCampo && irAlCampoDelForm ? () => irAlCampoDelForm(empCampo) : null;
                     if (isEmpForm) {
                         return (
                             <LiquidModal.Footer>
@@ -1208,9 +1233,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                         <Button variant="secondary" disabled={isSaving} onClick={onClose}>Cancelar</Button>
                                     </span>
                                     {empSaveDisabled && !isSaving && empSaveTitle && (
-                                        <p className="hidden sm:block min-w-0 max-w-[26rem] text-label font-medium text-warning-text leading-snug">
-                                            {empSaveTitle}
-                                        </p>
+                                        <AvisoDeFalta motivo={empSaveTitle} onIr={irAlEmpCampo} className="max-w-[26rem]" />
                                     )}
                                 </div>
 
@@ -1250,16 +1273,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 puede ser legal —la hoja de renuncia vencida, la causal
                                 que falta— y sin esto el botón sólo aparecía apagado
                                 (2026-11-11). Igual que en la ficha del empleado. */}
-                            {!isFormValid && !isSaving && motivoNoGuardable && (campoNoGuardable ? (
-                                <Button variant="ghost" size="sm" icon={AlertCircle} aria-live="polite"
-                                    className="min-w-0 flex-1 justify-start h-auto py-1.5 text-left whitespace-normal text-warning-text hover:text-warning-text"
-                                    title="Ir a ese campo"
-                                    onClick={() => irAlCampo(campoNoGuardable, document.getElementById('unified-modal-form') || document)}>
-                                    <span className="min-w-0 text-label font-semibold leading-snug">{motivoNoGuardable} <span className="underline underline-offset-2 whitespace-nowrap">Ir al campo</span></span>
-                                </Button>
-                            ) : (
-                                <p className="min-w-0 flex-1 text-label font-medium text-warning-text leading-snug" role="status">{motivoNoGuardable}</p>
-                            ))}
+                            {!isFormValid && !isSaving && (
+                                <AvisoDeFalta motivo={motivoNoGuardable}
+                                    onIr={campoNoGuardable ? () => irAlCampo(campoNoGuardable, document.getElementById('unified-modal-form') || document) : null} />
+                            )}
                             <Button type="submit" form="unified-modal-form" size="lg" title={motivoNoGuardable || undefined}
                         disabled={isSaving || !isFormValid} loading={isSaving} icon={Save}>
                         {isSaving ? 'Guardando' : 'Guardar'}

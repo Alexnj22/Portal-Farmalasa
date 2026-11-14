@@ -134,7 +134,7 @@ describe('ultimaBajaPorPersona', () => {
             { id: 2, employee_id: 7, date: '2026-11-30', motivo: 'ABANDONO', estado: 'CANCELLED', sucursal: '4' },
             { id: 3, employee_id: 7, date: '2026-10-01', motivo: 'DESPIDO_SIN_RESPONSABILIDAD', sucursal: '2', cargo: null },
         ]);
-        expect(m.get('7')).toEqual({ id: 3, motivo: 'DESPIDO_SIN_RESPONSABILIDAD', fecha: '2026-10-01', sucursalId: 2, cargoId: null });
+        expect(m.get('7')).toMatchObject({ id: 3, motivo: 'DESPIDO_SIN_RESPONSABILIDAD', fecha: '2026-10-01', sucursalId: 2, cargoId: null });
     });
 });
 
@@ -160,5 +160,15 @@ describe('lo que falta y la devolución por artículo (2026-11-14)', () => {
     it('una baja vieja con la casilla única marcada se lee como todo devuelto', async () => {
         const { estadoDeActivos } = await import('@nucleo/utils/bajaLegal');
         expect(estadoDeActivos({ entregoActivos: true }).completo).toBe(true);
+    });
+});
+
+describe('cierre pendiente de una baja registrada', () => {
+    it('dice lo que falta, en orden, y nada si está todo', async () => {
+        const { cierrePendienteDeBaja } = await import('@nucleo/utils/bajaLegal');
+        const r = cierrePendienteDeBaja({ motivo: 'RENUNCIA', hasFiniquito: true, activosDevueltos: { carne: 'SI', uniforme: 'NO', llaves: 'NA', equipo: 'SI' }, avisoIsssAfp: true });
+        expect(r.map((x) => x.texto)).toEqual(['No devolvió: uniforme', 'Constancia de trabajo']);
+        expect(cierrePendienteDeBaja({ motivo: 'RENUNCIA', hasFiniquito: 'true', entregoActivos: true, avisoIsssAfp: true, constanciaEntregada: true })).toEqual([]);
+        expect(cierrePendienteDeBaja({ motivo: 'ABANDONO' }).map((x) => x.clave)).toEqual(['hasFiniquito', 'activosDevueltos', 'avisoIsssAfp', 'constanciaEntregada', 'cartaEntregada']);
     });
 });

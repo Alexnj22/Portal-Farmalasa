@@ -4,7 +4,7 @@ import Button from '../components/common/Button';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Badge from '../components/common/Badge';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
     Pencil, Mail, Phone, Shield,
@@ -174,6 +174,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     // con el id sintético de antes «Editar», «Cancelar» y «Adjuntar» no
     // encontraban la fila.
     const timeline = useMemo(() => historialDeFicha(timelineData, emp?.history || []), [timelineData, emp]);
+
+    // `?corregir=<evento>`: llega desde «Bajas con el cierre pendiente» de
+    // Personal y abre la corrección de esa novedad (2026-11-14). Una sola vez:
+    // el parámetro se quita al abrir. Espera al historial, que llega después
+    // de la ficha (y con él, la ficha ya es la activa del modal).
+    const [params, setParams] = useSearchParams();
+    const corregir = params.get('corregir');
+    useEffect(() => {
+        if (!corregir || !timeline.length || typeof openModal !== 'function') return;
+        const ev = timeline.find(e => String(e.eventoId) === String(corregir));
+        setParams(p => { const q = new URLSearchParams(p); q.delete('corregir'); return q; }, { replace: true });
+        if (ev && eventoVigente(ev) && canEdit) openModal('newEvent', datosParaCorregir(ev, emp.id));
+    }, [corregir, timeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const ausenciasData = useMemo(() => {
         const mes = `${ausenciasCalMonth.getFullYear()}-${String(ausenciasCalMonth.getMonth() + 1).padStart(2, '0')}`;

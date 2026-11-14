@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
-  Pencil, Trash2, RefreshCw, ShieldCheck, UserMinus, CalendarDays, AlertTriangle, ChevronRight, KeyRound, IdCard,
+  Pencil, Trash2, RefreshCw, ShieldCheck, UserMinus, CalendarDays, AlertTriangle, ChevronRight, KeyRound, IdCard, ClipboardCheck,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -40,6 +40,7 @@ import { fetchCredenciales, fetchUltimasBajas } from '@nucleo/data/employees';
 import { ultimaBajaPorPersona } from '@nucleo/utils/bajaLegal';
 import { TERMINATION_REASONS } from '@nucleo/data/constants';
 import { formatDate } from '@nucleo/utils/helpers';
+import { hoySV } from '@nucleo/utils/fecha';
 import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
@@ -255,6 +256,13 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
           <Badge variant="danger" size="sm" icon={UserMinus} uppercase={false} data-baja={baja.motivo || ''}
             className="max-w-full whitespace-normal py-1 leading-snug" title={TERMINATION_REASONS[baja.motivo]?.label}>
             {MOTIVO_CORTO[baja.motivo] || 'Baja'}{baja.fecha ? ` · ${formatDate(baja.fecha)}` : ''}
+          </Badge>
+        )}
+        {/* Lo que quedó sin cerrar de la baja (finiquito, devolución…). */}
+        {inactiva && baja?.cierrePendiente?.length > 0 && (
+          <Badge variant="warning" size="sm" icon={ClipboardCheck} uppercase={false}
+            title={baja.cierrePendiente.map(p => p.texto).join(' · ')}>
+            Cierre: {baja.cierrePendiente.length} pendiente{baja.cierrePendiente.length === 1 ? '' : 's'}
           </Badge>
         )}
 
@@ -695,6 +703,70 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
   );
 }
 
+// ── Bajas con el cierre pendiente (2026-11-14) ──────────────────────────────
+// El cierre de una baja (finiquito, devolución de lo entregado, aviso al ISSS
+// y la AFP, constancia, carta) no frena el registro: se puede completar
+// después. Pero «después» no tenía dónde verse, y lo pendiente quedaba
+// guardado sin que nadie lo volviera a mirar. «Completar» abre la ficha con la
+// corrección de la baja ya abierta (`?corregir=<evento>`).
+const DIA_MS = 86400000;
+const diasDesde = (fecha) => {
+  if (!fecha) return null;
+  const n = Math.round((Date.parse(`${hoySV()}T12:00:00Z`) - Date.parse(`${String(fecha).slice(0, 10)}T12:00:00Z`)) / DIA_MS);
+  return Number.isFinite(n) ? n : null;
+};
+
+function CierresPendientes({ filas, canEdit, onCompletar }) {
+  const [abierto, setAbierto] = useState(false);
+  if (!filas.length) return null;
+  const visibles = abierto ? filas : filas.slice(0, 3);
+  return (
+    <div data-surface="card" data-tono="warning" className="space-y-3 p-4">
+      <div className="flex items-center gap-3">
+        <IconoEnCaja tono="warning"><ClipboardCheck size={18} /></IconoEnCaja>
+        <div className="min-w-0 flex-1">
+          <p className="text-body font-black text-content">
+            {filas.length === 1 ? '1 baja con el cierre pendiente' : `${filas.length} bajas con el cierre pendiente`}
+          </p>
+          <p className="text-caption text-content-3">Lo que falta para cerrar la salida de cada persona.</p>
+        </div>
+      </div>
+      <ul className="divide-y divide-border-card">
+        {visibles.map(({ emp, baja }) => {
+          const dias = diasDesde(baja.fecha);
+          return (
+            <li key={emp.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <AvatarConEstado emp={emp} px={36} mostrarChip={false} />
+                <div className="min-w-0">
+                  <p className="truncate text-body-sm font-bold text-content">{shortEmployeeName(emp)}</p>
+                  <p className="text-caption text-content-3">
+                    {MOTIVO_CORTO[baja.motivo] || 'Baja'}
+                    {dias != null ? ` · ${dias === 0 ? 'hoy' : dias === 1 ? 'hace 1 día' : `hace ${dias} días`}` : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 sm:max-w-[55%] sm:justify-end">
+                {baja.cierrePendiente.map(p => (
+                  <Badge key={p.clave} variant="warning" size="sm" uppercase={false}>{p.texto}</Badge>
+                ))}
+              </div>
+              {canEdit && (
+                <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onCompletar(emp, baja)}>Completar</Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {filas.length > 3 && (
+        <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => setAbierto(v => !v)}>
+          {abierto ? 'Ver menos' : `Ver las ${filas.length}`}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch, setSelectedBranch, openModal }) {
   const navigate = useNavigate();
   const employees = useStaff(s => s.employees);
@@ -792,6 +864,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     return () => { vivo = false; };
   }, [hayBajas, employees]);
   const bajaDe = useCallback(emp => (esDeBaja(emp) ? bajasPorPersona.get(String(emp.id)) || null : null), [bajasPorPersona]);
+  const cierresPendientes = useMemo(() => enAlcance.filter(esDeBaja)
+    .map(emp => ({ emp, baja: bajaDe(emp) }))
+    .filter(x => x.baja?.cierrePendiente?.length)
+    .sort((a, b) => String(a.baja.fecha).localeCompare(String(b.baja.fecha))), [enAlcance, bajaDe]);
   // La sala en la que se la muestra: la suya, o —si está de baja— la última que tuvo.
   const salaDe = useCallback(emp => (esDeBaja(emp)
     ? (bajaDe(emp)?.sucursalId || 0)
@@ -1146,6 +1222,11 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
             </FilterBar.Section>
           </FilterBar>
         </div>
+
+        {!cargando && (vista === 'todos' || vista === 'bajas') && (
+          <CierresPendientes filas={cierresPendientes} canEdit={canEdit}
+            onCompletar={(emp, baja) => navigate(`/personal/empleado/${emp.id}?corregir=${encodeURIComponent(baja.id)}`)} />
+        )}
 
         {cargando && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

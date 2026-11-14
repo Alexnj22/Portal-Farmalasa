@@ -404,7 +404,43 @@ export function ultimaBajaPorPersona(filas) {
             fecha: f.date,
             sucursalId: f.sucursal ? Number(f.sucursal) : null,
             cargoId: f.cargo ? Number(f.cargo) : null,
+            cierrePendiente: cierrePendienteDeBaja(f),
         });
     }
     return porPersona;
 }
+
+/** El nombre corto de cada pendiente, para una pastilla. */
+const TEXTO_CORTO_DE_CIERRE = {
+    avisoIsssAfp: 'Aviso al ISSS y la AFP',
+    constanciaEntregada: 'Constancia de trabajo',
+    cartaEntregada: 'Carta de terminación',
+};
+
+/**
+ * Lo que quedó sin cerrar de una baja ya registrada: `[{ clave, texto }]`,
+ * vacío si está todo. El cierre no frena el registro, así que sin esto lo
+ * pendiente (el finiquito, el uniforme que no devolvió) quedaba guardado y
+ * nadie lo volvía a mirar (2026-11-14).
+ *
+ * `baja` trae el motivo y las claves del cierre tal como están en `metadata`
+ * (las filas de `fetchUltimasBajas`, o el formulario).
+ */
+export function cierrePendienteDeBaja(baja = {}) {
+    if (!baja?.motivo && !baja?.terminationReason) return [];
+    const motivo = baja.motivo || baja.terminationReason;
+    const verdad = (v) => v === true || v === 'true';
+    const faltan = [];
+    if (!verdad(baja.hasFiniquito)) faltan.push({ clave: 'hasFiniquito', texto: 'Finiquito' });
+    const activos = estadoDeActivos({ activosDevueltos: baja.activosDevueltos || undefined, entregoActivos: verdad(baja.entregoActivos) });
+    if (activos.pendientes.length) {
+        faltan.push({ clave: 'activosDevueltos', texto: `No devolvió: ${activos.pendientes.map((a) => a.pregunta.replace(/^(el|la|los|las) /, '')).join(', ')}` });
+    } else if (!activos.completo) {
+        faltan.push({ clave: 'activosDevueltos', texto: 'Devolución sin anotar' });
+    }
+    for (const p of pendientesDeBaja(motivo)) {
+        if (p.clave !== 'hasFiniquito' && !verdad(baja[p.clave])) faltan.push({ clave: p.clave, texto: TEXTO_CORTO_DE_CIERRE[p.clave] || p.texto });
+    }
+    return faltan;
+}
+

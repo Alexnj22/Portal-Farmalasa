@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1535.0 — Personal: bajas con el cierre pendiente, y el aviso de lo que falta lleva al campo
+
+- **Bajas con el cierre pendiente.** En Personal (vista Todos o Bajas) aparece una tarjeta con cada persona de baja a la que le falta algo del cierre: finiquito, lo que no devolvió («No devolvió: uniforme»), aviso al ISSS y la AFP, constancia o carta. Dice hace cuántos días salió, y **Completar** abre su ficha con la corrección de la baja ya abierta. La tarjeta de la persona también lo marca («Cierre: 2 pendientes»).
+- **El aviso del pie lleva al campo, en más formularios.** Un solo componente para decir por qué no se puede guardar: se ve también en el teléfono y, si se sabe el campo, lo toca y lleva hasta él.
+  - **Ficha del empleado:** cada freno (nombre, DUI, teléfono, correo, salario, contrato a plazo, ISSS, NUP…) lleva a su campo y cambia de pestaña si hace falta. En el teléfono el motivo antes no se veía.
+  - **Libro bajo receta (completar renglón):** «Falta médico, copia» se ve en el teléfono y lleva al primer bloque que falta.
+  - **Novedades:** pasan al mismo componente.
+
 ## v2.1534.6 — App: un control que no deja escribir el azul a mano ni congelar colores; la hoja de filtros se cierra al cambiar de pantalla
 
 - **Control nuevo `gate:app-colores`** (en el pre-commit al tocar la app): frena el azul de la marca escrito a mano y los colores leídos una sola vez al cargar una pantalla. En Android la app usa el color del sistema, y esas dos formas lo ignoraban sin que nada avisara. La regla estaba escrita, pero nada la vigilaba.

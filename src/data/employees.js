@@ -364,7 +364,12 @@ export async function traerLoQueFaltaDeLaFicha(id) {
  */
 export async function fetchUltimasBajas() {
     const filas = await fetchAllRows(() => supabase.from('employee_events')
-        .select('id, employee_id, date, motivo:metadata->>terminationReason, estado:metadata->>status, sucursal:metadata->previousValues->>branch_id, cargo:metadata->previousValues->>role_id')
+        // El cierre (finiquito, devolución, ISSS/AFP, constancia, carta) para
+        // el aviso «bajas con el cierre pendiente» (2026-11-14). Sólo las
+        // claves, no el `metadata` entero: lleva la liquidación y las notas.
+        .select('id, employee_id, date, motivo:metadata->>terminationReason, estado:metadata->>status, sucursal:metadata->previousValues->>branch_id, cargo:metadata->previousValues->>role_id, '
+            + 'hasFiniquito:metadata->hasFiniquito, entregoActivos:metadata->entregoActivos, activosDevueltos:metadata->activosDevueltos, '
+            + 'avisoIsssAfp:metadata->avisoIsssAfp, constanciaEntregada:metadata->constanciaEntregada, cartaEntregada:metadata->cartaEntregada')
         .eq('type', 'TERMINATION').order('id'));
     return filas || [];
 }

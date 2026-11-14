@@ -1,3 +1,5 @@
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, BadgeCheck, Check, Search, Stethoscope, User, X } from 'lucide-react';
 import Badge from '../common/Badge';
@@ -97,8 +99,9 @@ const Rotulo = ({ texto, ayuda, children }) => (
  * Es una fila con una regla arriba, no una tarjeta: adentro de un modal, una
  * tarjeta es una tarjeta dentro de otra.
  */
-const Seccion = ({ n, titulo, listo, children }) => (
-    <section className="space-y-2.5">
+// `campo`: el `data-campo` al que llevan el aviso del pie y el riel (irAlCampo).
+const Seccion = ({ n, titulo, listo, campo, children }) => (
+    <section className="space-y-2.5" data-campo={campo}>
         <div className="flex items-center gap-2">
             <span aria-hidden className={`flex items-center justify-center w-5 h-5 shrink-0 rounded-full text-label font-black tabular-nums transition-colors duration-[var(--dur-fast)] ${
                 listo ? 'bg-success/15 text-success-text' : 'bg-surface-card text-content-3 border border-border-card'}`}>
@@ -517,7 +520,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 )}
 
                 {/* ── 1 · Paciente ────────────────────────────────────────── */}
-                <Seccion n={1} titulo="Quién se lo lleva" listo={requisitos[0].ok}>
+                <Seccion n={1} campo="paciente" titulo="Quién se lo lleva" listo={requisitos[0].ok}>
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <PortalInput
                             label="Paciente" name="paciente" icon={User} required colSpan={2}
@@ -544,7 +547,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     controles de búsqueda abiertos después de encontrar al
                     médico es dejar en pantalla un trabajo que ya se hizo, y en
                     un formulario largo eso cuesta el doble: ocupa y confunde. */}
-                <Seccion n={2} titulo="Quién la recetó" listo={requisitos[1].ok}>
+                <Seccion n={2} campo="medico" titulo="Quién la recetó" listo={requisitos[1].ok}>
                     {medico ? (
                         /* El médico resuelto es un VALOR, no una alerta. Estaba
                            pintado con un `Notice` verde, que es el mismo envase
@@ -686,7 +689,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     papel es esta entrega. Al principio del formulario
                     interrumpía antes de que se supiera de qué se estaba
                     hablando. */}
-                <Seccion n={3} titulo="Qué dice la receta" listo={requisitos[2].ok}>
+                <Seccion n={3} campo="cantidad" titulo="Qué dice la receta" listo={requisitos[2].ok}>
                     <div className="space-y-3">
                         {compatibles.length > 0 && (
                             <Rotulo texto="¿Es de una receta que ya existe?"
@@ -746,7 +749,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                 </Seccion>
 
                 {/* ── 4 · La copia ─────────────────────────────────────────── */}
-                <Seccion n={4} titulo="La copia de la receta" listo={requisitos[3].ok}>
+                <Seccion n={4} campo="foto" titulo="La copia de la receta" listo={requisitos[3].ok}>
                     <FileField
                         /* Sin el editor de `FileField`: esta pantalla abre el suyo, con
                         el tipo de papel que sabe que va a recibir. Que lo abriera
@@ -797,11 +800,13 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
             <LiquidModal.Footer>
                 {/* Lo que falta, dicho en palabras. Un contador «3 de 4» obliga a
                     volver a buscar cuál es el que falta. */}
-                <p className="mr-auto text-label text-content-3 hidden sm:block">
-                    {listos === requisitos.length
-                        ? 'Todo listo'
-                        : `Falta ${requisitos.filter(r => !r.ok).map(r => r.label.toLowerCase()).join(', ')}`}
-                </p>
+                {/* Se ve también en el teléfono (antes `hidden sm:block`), y lleva
+                    al primer requisito que falta (2026-11-14). */}
+                {listos === requisitos.length
+                    ? <p className="mr-auto text-label text-content-3">Todo listo</p>
+                    : <AvisoDeFalta className="mr-auto"
+                        motivo={`Falta ${requisitos.filter(r => !r.ok).map(r => r.label.toLowerCase()).join(', ')}.`}
+                        onIr={() => irAlCampo(requisitos.find(r => !r.ok).clave)} />}
                 <Button variant="ghost" onClick={() => onCerrar(false)} disabled={guardando}>
                     Cancelar
                 </Button>

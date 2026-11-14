@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import LiquidAvatar from '../common/LiquidAvatar';
 import useBorrador from '@nucleo/hooks/useBorrador';
 
@@ -346,7 +346,9 @@ const PESTANA_DE_CAMPO = {
     role_id: 'laboral', contract_type: 'laboral', hire_date: 'laboral',
     branch_id: 'laboral', base_salary: 'laboral', periodo_pago: 'laboral',
     contrato_lugar_celebracion: 'laboral', contrato_fecha_celebracion: 'laboral',
-    contract_end_date: 'laboral',
+    contract_end_date: 'laboral', weekly_contracted_hours: 'laboral', contract_temporal_reason: 'laboral',
+    phone: 'personal', email: 'personal', emergency_contact_phone: 'personal',
+    isss_number: 'personal', afp_number: 'personal',
     code: 'nomina',
     doc_dui: 'documentos', doc_identidad: 'documentos', examen_medico: 'documentos',
 };
@@ -2255,81 +2257,85 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * viaja hasta el botón.
      *
      * `null` = se puede guardar. */
-    const motivoNoGuardable = useMemo(() => {
+    // Cada freno dice su motivo y el CAMPO al que pertenece (2026-11-14): el
+    // aviso del pie lleva hasta él, pestaña incluida (`irAlCampo`). `null` en
+    // el campo = no hay un control al que llevar.
+    const frenoDeGuardado = useMemo(() => {
+        const falta = (texto, campo) => ({ texto, campo });
         // Guardar con una subida a medias la perdía: la entrada todavía no
         // tiene url, el alta la descarta, y el archivo queda huérfano en
         // Storage cuando la subida termina sobre un formulario ya cerrado.
-        if (Object.values(analyzingDocs).some(Boolean)) return 'Espera a que termine de subir el documento.';
+        if (Object.values(analyzingDocs).some(Boolean)) return falta('Espera a que termine de subir el documento.', null);
         // Enlazar sin los datos protegidos de la ficha escribía el sueldo, la
         // cuenta y el ISSS en blanco y un código aleatorio encima de los de la
         // persona. Hasta que lleguen, no se guarda.
         if (formData?.enlazar_con_id && String(formData._fichaCargada) !== String(formData.enlazar_con_id)) {
-            return String(formData._fichaFallo) === String(formData.enlazar_con_id)
+            return falta(String(formData._fichaFallo) === String(formData.enlazar_con_id)
                 ? 'No se pudieron leer el sueldo, la cuenta y el código de la ficha que enlazas. Quítala y vuelve a elegirla.'
-                : 'Cargando los datos de la ficha que enlazas…';
+                : 'Cargando los datos de la ficha que enlazas…', null);
         }
         // Lo único imprescindible: sin nombre no hay a quién nombrar la ficha.
-        if (!formData?.first_names?.trim()) return 'Falta el nombre.';
-        if (firstNamesInvalid) return 'El nombre sólo puede llevar letras.';
-        if (!formData?.last_names?.trim()) return 'Faltan los apellidos.';
-        if (lastNamesInvalid) return 'Los apellidos sólo pueden llevar letras.';
+        if (!formData?.first_names?.trim()) return falta('Falta el nombre.', 'first_names');
+        if (firstNamesInvalid) return falta('El nombre sólo puede llevar letras.', 'first_names');
+        if (!formData?.last_names?.trim()) return falta('Faltan los apellidos.', 'last_names');
+        if (lastNamesInvalid) return falta('Los apellidos sólo pueden llevar letras.', 'last_names');
 
         // ── De acá abajo, TODO es «si está, que esté bien» ──────────────────
         // Ninguna condición exige presencia: cada una se dispara sólo cuando
         // el campo tiene contenido y el contenido no cuadra.
-        if (!isMinor && isDuiDuplicate) return 'Ese DUI ya está registrado en otra ficha.';
-        if (!isMinor && (isDuiInvalid || isDuiIncomplete)) return 'El DUI no está completo o su dígito verificador no cuadra.';
-        if (birthDateInvalid) return 'La fecha de nacimiento no es válida.';
+        if (!isMinor && isDuiDuplicate) return falta('Ese DUI ya está registrado en otra ficha.', 'dui');
+        if (!isMinor && (isDuiInvalid || isDuiIncomplete)) return falta('El DUI no está completo o su dígito verificador no cuadra.', 'dui');
+        if (birthDateInvalid) return falta('La fecha de nacimiento no es válida.', 'birth_date');
 
         // Un departamento sin municipio es una dirección a medias que después
         // no se puede resolver: o los dos, o ninguno. Y como el departamento lo
         // puede haber puesto el portal al leer el DUI, el motivo tiene que
         // nombrar el municipio — que es lo que falta y lo que nadie tocó.
         if (formData?.department && !formData?.municipality) {
-            return `Elegiste el departamento de ${formData.department}: falta el municipio. Una dirección a medias no se puede resolver después.`;
+            return falta(`Elegiste el departamento de ${formData.department}: falta el municipio. Una dirección a medias no se puede resolver después.`, 'municipality');
         }
         for (const addr of (formData?.extra_addresses || [])) {
-            if (addr.department && !addr.municipality) return 'Una dirección alterna tiene departamento pero no municipio.';
+            if (addr.department && !addr.municipality) return falta('Una dirección alterna tiene departamento pero no municipio.', null);
         }
 
-        if (phoneHasError) return 'El teléfono no tiene forma de número salvadoreño.';
+        if (phoneHasError) return falta('El teléfono no tiene forma de número salvadoreño.', 'phone');
         // Faltaba: el campo se pintaba en rojo y el botón dejaba guardar, y el
         // error recién lo lanzaba el store con el modal ya «guardando».
-        if (emergPhoneHasError) return 'El teléfono de emergencia no tiene forma de número salvadoreño.';
+        if (emergPhoneHasError) return falta('El teléfono de emergencia no tiene forma de número salvadoreño.', 'emergency_contact_phone');
         for (const ph of (formData?.extra_phones || [])) {
             const dLen = digitsLen(ph);
-            if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return 'Un teléfono adicional no tiene forma de número salvadoreño.';
+            if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return falta('Un teléfono adicional no tiene forma de número salvadoreño.', null);
         }
-        if (emailInvalid) return 'El correo no tiene forma de correo.';
+        if (emailInvalid) return falta('El correo no tiene forma de correo.', 'email');
         for (const em of (formData?.extra_emails || [])) {
-            if (!!em && em.trim() !== '' && !isValidEmail(em.trim())) return 'Un correo adicional no tiene forma de correo.';
+            if (!!em && em.trim() !== '' && !isValidEmail(em.trim())) return falta('Un correo adicional no tiene forma de correo.', null);
         }
 
         // «Otra…» sin especificar no es un dato: es el placeholder del catálogo
         // guardado como si fuera una respuesta.
-        if (formData?.education_specialty === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la especialidad: escribe cuál.';
-        if (formData?.profession === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la profesión: escribe cuál.';
-        if (formData?.has_maestria && formData?.maestria_title === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la maestría: escribe cuál.';
-        if (studyEndInPast || maestriaStudyEndInPast) return 'Los estudios en curso terminan en una fecha que ya pasó.';
+        if (formData?.education_specialty === OTRA_ESPECIALIDAD) return falta('Elegiste «Otra…» en la especialidad: escribe cuál.', null);
+        if (formData?.profession === OTRA_ESPECIALIDAD) return falta('Elegiste «Otra…» en la profesión: escribe cuál.', 'profession');
+        if (formData?.has_maestria && formData?.maestria_title === OTRA_ESPECIALIDAD) return falta('Elegiste «Otra…» en la maestría: escribe cuál.', null);
+        if (studyEndInPast || maestriaStudyEndInPast) return falta('Los estudios en curso terminan en una fecha que ya pasó.', null);
 
         for (const dep of (formData?.economic_dependents || [])) {
-            if (isDependentAgeInvalid(dep)) return 'La edad de una persona a cargo está fuera de rango.';
+            if (isDependentAgeInvalid(dep)) return falta('La edad de una persona a cargo está fuera de rango.', null);
         }
 
-        if (formData?.has_disability && formData?.disability_type === OTRA_ESPECIALIDAD) return 'Elegiste «Otra…» en la discapacidad: escribe cuál.';
+        if (formData?.has_disability && formData?.disability_type === OTRA_ESPECIALIDAD) return falta('Elegiste «Otra…» en la discapacidad: escribe cuál.', null);
 
-        if (salaryInvalid) return 'El salario no es un monto válido.';
-        if (hoursInvalid) return 'Las horas semanales no son válidas.';
-        if (contractDatesInvalid) return 'Las fechas del contrato no son coherentes.';
+        if (salaryInvalid) return falta('El salario no es un monto válido.', 'base_salary');
+        if (hoursInvalid) return falta('Las horas semanales no son válidas.', 'weekly_contracted_hours');
+        if (contractDatesInvalid) return falta('Las fechas del contrato no son coherentes.', 'hire_date');
         // El plazo sin base legal ni motivo escrito SÍ bloquea, y es la única
         // ausencia que lo hace: el Art. 25 presume indefinido un contrato a
         // plazo sin justificar, así que guardarlo así no deja «un dato
         // pendiente» — deja un contrato que dice algo que la ley no reconoce.
-        if (temporalBasisMissing) return 'Un contrato a plazo necesita su base legal (Art. 25).';
-        if (temporalReasonMissing) return 'Un contrato a plazo necesita su motivo concreto escrito (Art. 25).';
+        if (temporalBasisMissing) return falta('Un contrato a plazo necesita su base legal (Art. 25).', 'contract_type');
+        if (temporalReasonMissing) return falta('Un contrato a plazo necesita su motivo concreto escrito (Art. 25).', 'contract_temporal_reason');
 
-        if (isssIncomplete) return 'El número de ISSS debe tener 9 dígitos.';
-        if (afpIncomplete) return nupRevisado.motivo || 'El NUP de la AFP no es válido.';
+        if (isssIncomplete) return falta('El número de ISSS debe tener 9 dígitos.', 'isss_number');
+        if (afpIncomplete) return falta(nupRevisado.motivo || 'El NUP de la AFP no es válido.', 'afp_number');
 
         return null;
     }, [formData, firstNamesInvalid, lastNamesInvalid, isMinor,
@@ -2339,11 +2345,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         temporalBasisMissing, temporalReasonMissing, isssIncomplete, afpIncomplete, nupRevisado.motivo,
         analyzingDocs]);
 
+    const motivoNoGuardable = frenoDeGuardado?.texto ?? null;
+    const campoNoGuardable = frenoDeGuardado?.campo ?? null;
     const isFormFullyValid = motivoNoGuardable === null;
 
+    // `irAlCampo` cambia en cada render; el pie recibe una función estable.
+    const irAlCampoRef = useRef(null);
+    irAlCampoRef.current = irAlCampo;
+    const irDesdeElPie = useCallback((campo) => irAlCampoRef.current?.(campo), []);
+
     useEffect(() => {
-        onValidationChange?.(isFormFullyValid, motivoNoGuardable);
-    }, [isFormFullyValid, motivoNoGuardable, onValidationChange]);
+        onValidationChange?.(isFormFullyValid, motivoNoGuardable, campoNoGuardable, irDesdeElPie);
+    }, [isFormFullyValid, motivoNoGuardable, campoNoGuardable, irDesdeElPie, onValidationChange]);
 
     // Nombre a mostrar para el tipo de documento elegido en Personal — si el
     // valor no matchea ninguna opción del catálogo, es el texto libre de

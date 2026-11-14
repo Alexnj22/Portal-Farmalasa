@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1530.0 — Cumplimiento: el resumen va por obligación y se anota desde ahí
+
+- **Resumen**: ya no es una tarjeta por sala repitiendo lo mismo siete veces. Va por obligación («Autoinspección del año — falta en todas las salas»), de lo más urgente a lo menos, con las salas donde falta. Tocar una sala abre el formulario ya con esa sala (y el reporte cero, con el semestre que falta); lo que no se resuelve anotando lleva a su pestaña filtrada. Arriba, las salas con cuánto le falta a cada una (tocar filtra) y abajo lo que ya está al día en toda la red.
+- **Anotar sin filtrar antes**: quien ve toda la red elige la sala en el mismo formulario; antes el botón quedaba apagado.
+- **Acreditaciones**: sin sala elegida muestra todas las salas, con lo que falta primero; antes decía «elige una sala» y no mostraba nada.
+- Al abrir un formulario, el calendario ya no se despliega solo encima de los campos.
+- El punto de «falta revisar lo que debe estar a la vista» no se veía (color inexistente).
+- Actualización de la app por aire: si la subida de un archivo grande se corta, se reintenta con curl (el paquete de Android fallaba tres veces seguidas).
+
 ## v2.1529.0 — Datos de mercado de la SRS
 
 - Pestaña nueva en **Cumplimiento sanitario → Datos de mercado**: cada producto con existencia junto al producto del catálogo de la Superintendencia que le corresponde, para la Captura General de Datos de Mercado (existencias y precio de venta por farmacia, cada año).

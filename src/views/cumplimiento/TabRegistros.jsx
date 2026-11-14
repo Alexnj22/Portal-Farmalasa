@@ -23,9 +23,9 @@ import RegistroModal from './RegistroModal';
  * destrucción realizada, el retiro devuelto), anular con motivo e imprimir el
  * papel que se firma. La base decide el permiso; acá sólo se esconde el botón.
  *
- * `branchId` null = toda la red (sólo con alcance de todas): se lista, pero
- * para crear hay que elegir una sala — salvo el retiro, que se puede avisar a
- * todas de una vez (`retiroATodas`).
+ * `branchId` null = toda la red (sólo con alcance de todas): se lista, y al
+ * anotar la sala se elige en el formulario — salvo el retiro, que también se
+ * puede avisar a todas de una vez (`retiroATodas`).
  */
 
 export default function TabRegistros({ tipos, branchId, sala, puedeEditar, retiroATodas = false, aviso = null, vacio }) {
@@ -89,15 +89,11 @@ export default function TabRegistros({ tipos, branchId, sala, puedeEditar, retir
                     )}
                     {tipos.map((t) => (
                         <Button key={t.tipo} variant={t.principal ? 'primary' : 'secondary'} size="sm" icon={Plus}
-                            disabled={!branchId} title={branchId ? undefined : 'Elige una sala para anotar'}
                             onClick={() => setModal({ tipo: t.tipo, modo: 'crear' })}>
                             {t.boton}
                         </Button>
                     ))}
                 </div>
-            )}
-            {puedeEditar && !branchId && (
-                <p className="text-caption text-content-3 text-right">Para anotar, elige una sala en el filtro.</p>
             )}
             {error && <Notice variant="danger">{error}</Notice>}
 

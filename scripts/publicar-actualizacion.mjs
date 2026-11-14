@@ -25,7 +25,7 @@
 // fila en `app_actualizaciones` que sirve la función `app-actualizaciones`.
 // Se publica desde código COMMITEADO: la fila guarda el commit, para saber qué
 // tiene cada teléfono.
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -105,10 +105,30 @@ async function ultimaHuella(plataforma) {
   return (await r.json())[0] ?? null;
 }
 
-async function subir(path, buf) {
-  const r = await fetch(`${URL_BASE}/storage/v1/object/${BUCKET}/${path}`, {
-    method: 'POST', body: buf, headers: cab({ 'Content-Type': 'application/octet-stream', 'x-upsert': 'true' }),
-  });
+// El `fetch` de Node corta a veces un cuerpo grande a mitad de camino
+// («write EPIPE» / «other side closed», 2026-11-14: el paquete de Android, 15
+// MB, falló tres veces seguidas; el mismo archivo con curl entró al primer
+// intento). Si `fetch` se cae por la red —no por una respuesta del servidor—,
+// se sube el mismo archivo con curl.
+async function subir(path, buf, archivoLocal) {
+  const url = `${URL_BASE}/storage/v1/object/${BUCKET}/${path}`;
+  const headers = cab({ 'Content-Type': 'application/octet-stream', 'x-upsert': 'true' });
+  let r;
+  try {
+    r = await fetch(url, { method: 'POST', body: buf, headers });
+  } catch (e) {
+    if (!archivoLocal) throw e;
+    console.warn(`  · ${path}: fetch se cortó (${e.cause?.code || e.message}); se sube con curl`);
+    // Las cabeceras van por stdin (`-H @-`), no en la línea de comandos: si
+    // curl falla, el error de execFileSync imprime el comando entero, y con él
+    // la llave del servidor.
+    const r2 = spawnSync('curl', ['-sS', '--retry', '3', '-o', '/dev/null', '-w', '%{http_code}', '-X', 'POST', url,
+      '-H', '@-', '--data-binary', `@${archivoLocal}`],
+      { input: Object.entries(headers).map(([k, v]) => `${k}: ${v}`).join('\n'), encoding: 'utf8' });
+    const codigo = String(r2.stdout || '').trim();
+    if (r2.status !== 0 || !codigo.startsWith('2')) throw new Error(`subir ${path} con curl: ${codigo || '-'} ${String(r2.stderr || '').trim()}`);
+    return;
+  }
   if (!r.ok) throw new Error(`subir ${path}: ${r.status} ${await r.text()}`);
 }
 
@@ -167,7 +187,7 @@ try {
       const key = createHash('md5').update(buf).digest('hex');
       const hash = createHash('sha256').update(buf).digest('base64url');
       const path = `${APP}/${key}`;
-      await subir(path, buf);
+      await subir(path, buf, join(salida, rel));
       return { path, hash, key, contentType, fileExtension };
     };
     const launchAsset = await archivo(fm.bundle, 'application/javascript', '.bundle');

@@ -19,6 +19,7 @@ import {
 import { hoySV } from '@nucleo/utils/fecha';
 import { loadDraft, saveDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { salasDeBitacora } from '@nucleo/utils/rondaDeBitacora';
 
 /*
  * Un formulario para todos los registros de cumplimiento (2026-11-11). Los
@@ -30,6 +31,10 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
  * agregan a lo que ya tenía). Un retiro de lote puede anotarse una vez para
  * todas las salas (`aTodas`). Lo escrito se guarda como borrador: la sesión se
  * cierra sola por inactividad.
+ *
+ * Sin sala (quien ve toda la red y no filtró una), la sala se elige acá
+ * mismo (2026-11-14): antes el botón quedaba apagado con «elige una sala en
+ * el filtro», un paso de más que nadie adivinaba.
  */
 
 const VACIO = [];
@@ -39,31 +44,37 @@ const RESPUESTAS = [
     { value: 'na', label: 'No aplica' },
 ];
 
-export default function RegistroModal({ tipo, modo = 'crear', registro = null, branchId, sala, aTodas = false, onClose, onHecho }) {
+export default function RegistroModal({ tipo, modo = 'crear', registro = null, branchId, sala, aTodas = false, inicial = null, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
     const employees = useStaff((s) => s.employees) || VACIO;
+    const branches = useStaff((s) => s.branches) || VACIO;
     const def = TIPOS[tipo];
     const cerrando = modo === 'cerrar';
     const campos = cerrando ? camposAlCerrar(tipo) : camposAlCrear(tipo);
     const claveBorrador = `cumplimiento:${tipo}:${modo}:${registro?.id ?? branchId ?? 'todas'}`;
 
     const [fecha, setFecha] = useState(() => loadDraft(claveBorrador)?.fecha || registro?.fecha || hoySV());
-    const [datos, setDatos] = useState(() => loadDraft(claveBorrador)?.datos || (cerrando ? {} : datosIniciales(tipo, registro)));
+    const [datos, setDatos] = useState(() => loadDraft(claveBorrador)?.datos || (cerrando ? {} : { ...datosIniciales(tipo, registro), ...(registro ? {} : inicial || {}) }));
     const [guardando, setGuardando] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => { saveDraft(claveBorrador, { fecha, datos }); }, [claveBorrador, fecha, datos]);
 
+    const opcionesSala = useMemo(() => salasDeBitacora(branches), [branches]);
+    const eligeSala = !branchId && !aTodas && !cerrando && !registro;
+    const [salaId, setSalaId] = useState(branchId ? String(branchId) : '');
+    const nombreSala = sala || opcionesSala.find((o) => o.value === salaId)?.label || '';
+
     const poner = (k, v) => setDatos((d) => ({ ...d, [k]: v }));
-    const falta = faltantes(tipo, datos, campos);
+    const falta = [...(eligeSala && !salaId ? ['Sala'] : []), ...faltantes(tipo, datos, campos)];
 
     // Para la capacitación: el personal activo de la sala (o de toda la red si
     // se anota para administración).
     const personal = useMemo(() => employees
         .filter((e) => e.status !== 'INACTIVO' && e.status !== 'LIQUIDADO')
-        .filter((e) => !branchId || String(e.branchId ?? e.branch_id ?? '') === String(branchId))
+        .filter((e) => !salaId || String(e.branchId ?? e.branch_id ?? '') === salaId)
         .map((e) => ({ value: e.id, label: shortEmployeeName(e) }))
-        .sort((a, b) => a.label.localeCompare(b.label)), [employees, branchId]);
+        .sort((a, b) => a.label.localeCompare(b.label)), [employees, salaId]);
 
     const lista = listaDe(tipo);
     const puntaje = lista.length ? puntuarLista(lista, datos.respuestas) : null;
@@ -75,12 +86,12 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
         let r;
         if (cerrando) r = await cerrarRegistroDeCumplimiento(registro.id, limpio);
         else if (aTodas) r = await avisarRetiroATodas(fecha, limpio);
-        else r = await guardarRegistroDeCumplimiento({ id: registro?.id, branchId, tipo, fecha, datos: limpio });
+        else r = await guardarRegistroDeCumplimiento({ id: registro?.id, branchId: salaId, tipo, fecha, datos: limpio });
         setGuardando(false);
         if (r.error) { setError(mensajeDeCumplimiento(r.error)); return; }
         clearDraft(claveBorrador);
         showToast(cerrando ? 'Registro cerrado' : 'Registro guardado',
-            aTodas ? `Llegó a ${r.salas} salas` : sala, 'success');
+            aTodas ? `Llegó a ${r.salas} salas` : nombreSala, 'success');
         onHecho?.();
     };
 
@@ -194,11 +205,21 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth={lista.length ? 'max-w-2xl' : 'max-w-lg'} ariaLabel={titulo}>
-            <LiquidModal.Header titulo={titulo} subtitulo={aTodas ? 'Para todas las salas y la bodega' : sala}
+            <LiquidModal.Header titulo={titulo} subtitulo={aTodas ? 'Para todas las salas y la bodega' : nombreSala || undefined}
                 onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body className="space-y-4">
-                {!cerrando && (
+                {eligeSala && (
                     <div>
+                        <p className="text-caption font-bold text-content-3 mb-1">Sala</p>
+                        <LiquidSelect value={salaId} onChange={(x) => setSalaId(x ? String(x) : '')} options={opcionesSala}
+                            placeholder="¿De qué sala?" clearable={false} />
+                    </div>
+                )}
+                {/* La fecha nace con hoy: no es el campo por donde se empieza. Sin
+                    `data-sin-foco-inicial`, el foco al abrir caía en ella y el
+                    calendario se desplegaba encima del formulario. */}
+                {!cerrando && (
+                    <div data-sin-foco-inicial>
                         <p className="text-caption font-bold text-content-3 mb-1">{tipo === 'destruccion' ? 'Fecha prevista de la destrucción' : 'Fecha'}</p>
                         <LiquidDatePicker value={fecha} onChange={setFecha} max={tipo === 'destruccion' ? undefined : hoySV()} />
                     </div>

@@ -361,24 +361,82 @@ export function resumenDelRegistro(r) {
 
 /**
  * Lo que le falta a una sala del tablero (`cumplimiento_resumen`), en palabras
- * de la sala: `[{ tono: 'danger'|'warning'|'info', texto, tab }]`. `tab` es la
- * pestaña donde se resuelve.
+ * de la sala: `[{ clave, tono: 'danger'|'warning'|'info', texto, detalle, tab, crea }]`.
+ * `tab` es la pestaña donde se resuelve; `crea`, el registro que lo resuelve
+ * de una vez (si lo hay); `detalle`, lo mismo dicho corto para ir junto al
+ * nombre de la sala; `clave`, la obligación (para juntar las salas).
  */
 export function pendientesDeSala(s, hoyIso, fechaTexto = (f) => f) {
     const r = [];
     const farmacia = s.tipo_sala === 'FARMACIA';
-    if (s.fv_vencidas > 0) r.push({ tono: 'danger', texto: `${s.fv_vencidas} reacción(es) adversa(s) sin notificar fuera de plazo`, tab: 'farmacovigilancia' });
-    else if (s.fv_abiertas > 0) r.push({ tono: 'warning', texto: `${s.fv_abiertas} reacción(es) adversa(s) por notificar`, tab: 'farmacovigilancia' });
-    if (farmacia && !s.fv_semestre_cubierto) r.push({ tono: 'warning', texto: `Falta el reporte de farmacovigilancia de ${nombreDelSemestre(s.fv_semestre).toLowerCase()}`, tab: 'farmacovigilancia' });
-    if (s.vencidos_por_destruir > 0) r.push({ tono: 'info', texto: `${s.vencidos_por_destruir} producto(s) de baja esperando destrucción`, tab: 'vencidos' });
-    if (s.retiros_abiertos > 0) r.push({ tono: 'danger', texto: `${s.retiros_abiertos} retiro(s) de lote sin atender`, tab: 'retiros' });
+    if (s.fv_vencidas > 0) r.push({ clave: 'fv_fuera_de_plazo', tono: 'danger', texto: `${s.fv_vencidas} reacción(es) adversa(s) sin notificar fuera de plazo`, detalle: `${s.fv_vencidas}`, tab: 'farmacovigilancia' });
+    else if (s.fv_abiertas > 0) r.push({ clave: 'fv_por_notificar', tono: 'warning', texto: `${s.fv_abiertas} reacción(es) adversa(s) por notificar`, detalle: `${s.fv_abiertas}`, tab: 'farmacovigilancia' });
+    if (farmacia && !s.fv_semestre_cubierto) r.push({ clave: 'fv_semestre', tono: 'warning', texto: `Falta el reporte de farmacovigilancia de ${nombreDelSemestre(s.fv_semestre).toLowerCase()}`, detalle: '', tab: 'farmacovigilancia', crea: 'reporte_cero', semestre: s.fv_semestre });
+    if (s.retiros_abiertos > 0) r.push({ clave: 'retiros', tono: 'danger', texto: `${s.retiros_abiertos} retiro(s) de lote sin atender`, detalle: `${s.retiros_abiertos}`, tab: 'retiros' });
+    if (s.dependientes_sin_acreditacion > 0) r.push({ clave: 'acreditacion', tono: 'danger', texto: `${s.dependientes_sin_acreditacion} persona(s) de mostrador sin acreditación`, detalle: `${s.dependientes_sin_acreditacion}`, tab: 'dependientes' });
     const dAuto = s.ultima_autoinspeccion ? -diasHasta(s.ultima_autoinspeccion, hoyIso) : null;
-    if (dAuto === null) r.push({ tono: 'warning', texto: 'Nunca se ha hecho la autoinspección', tab: 'autoinspeccion' });
-    else if (dAuto > 365) r.push({ tono: 'warning', texto: `La última autoinspección fue el ${fechaTexto(s.ultima_autoinspeccion)} (toca una por año)`, tab: 'autoinspeccion' });
-    if (farmacia && !s.ultima_revision_a_la_vista) r.push({ tono: 'info', texto: 'Falta revisar lo que debe estar a la vista', tab: 'autoinspeccion' });
-    if (s.capacitaciones_del_anio === 0) r.push({ tono: 'warning', texto: 'Sin capacitaciones anotadas este año', tab: 'capacitacion' });
-    if (s.dependientes_sin_acreditacion > 0) r.push({ tono: 'danger', texto: `${s.dependientes_sin_acreditacion} persona(s) de mostrador sin acreditación`, tab: 'dependientes' });
+    if (dAuto === null) r.push({ clave: 'autoinspeccion', tono: 'warning', texto: 'Nunca se ha hecho la autoinspección', detalle: 'nunca', tab: 'autoinspeccion', crea: 'autoinspeccion' });
+    else if (dAuto > 365) r.push({ clave: 'autoinspeccion', tono: 'warning', texto: `La última autoinspección fue el ${fechaTexto(s.ultima_autoinspeccion)} (toca una por año)`, detalle: `última ${fechaTexto(s.ultima_autoinspeccion)}`, tab: 'autoinspeccion', crea: 'autoinspeccion' });
+    if (farmacia && !s.ultima_revision_a_la_vista) r.push({ clave: 'a_la_vista', tono: 'info', texto: 'Falta revisar lo que debe estar a la vista', detalle: '', tab: 'autoinspeccion', crea: 'a_la_vista' });
+    if (s.capacitaciones_del_anio === 0) r.push({ clave: 'capacitacion', tono: 'warning', texto: 'Sin capacitaciones anotadas este año', detalle: '', tab: 'capacitacion', crea: 'capacitacion' });
+    if (s.vencidos_por_destruir > 0) r.push({ clave: 'destruir', tono: 'info', texto: `${s.vencidos_por_destruir} producto(s) de baja esperando destrucción`, detalle: `${s.vencidos_por_destruir}`, tab: 'vencidos', crea: 'destruccion' });
     return r;
+}
+
+/**
+ * Cada obligación del tablero de la red: el título cuando falta en alguna
+ * sala y cómo se dice cuando está al día en todas. El orden es el de la
+ * urgencia (lo que tiene plazo legal corriendo, primero).
+ */
+export const OBLIGACIONES = Object.freeze([
+    { clave: 'fv_fuera_de_plazo', titulo: 'Reacciones adversas sin notificar, fuera de plazo', alDia: null },
+    { clave: 'retiros', titulo: 'Retiros de lote sin atender', alDia: 'Retiros de lote atendidos' },
+    { clave: 'acreditacion', titulo: 'Personal de mostrador sin acreditación', alDia: 'Mostrador acreditado' },
+    { clave: 'fv_por_notificar', titulo: 'Reacciones adversas por notificar', alDia: 'Reacciones adversas notificadas' },
+    { clave: 'fv_semestre', titulo: 'Reporte de farmacovigilancia del semestre', alDia: 'Reporte de farmacovigilancia del semestre' },
+    { clave: 'autoinspeccion', titulo: 'Autoinspección del año', alDia: 'Autoinspección del año' },
+    { clave: 'capacitacion', titulo: 'Capacitación de este año', alDia: 'Capacitación de este año' },
+    { clave: 'a_la_vista', titulo: 'Revisión de lo que debe estar a la vista', alDia: 'Lo que debe estar a la vista' },
+    { clave: 'destruir', titulo: 'Bajas esperando destrucción', alDia: null },
+]);
+
+/**
+ * El tablero de la red: lo que falta juntado por obligación, con las salas
+ * donde falta. Siete tarjetas que repiten el mismo renglón no dicen nada; una
+ * línea «falta en estas salas» dice qué hacer y dónde.
+ * Devuelve `{ grupos: [{ clave, titulo, tono, tab, crea, salas: [{ branch_id, sala, detalle, tono }] }], alDia: [texto], totalSalas }`.
+ * `temas` (opcional) deja sólo las pestañas que la persona puede ver.
+ */
+export function pendientesDeLaRed(salas, hoyIso, fechaTexto = (f) => f, temas = null) {
+    const porClave = new Map();
+    for (const s of salas || []) {
+        for (const p of pendientesDeSala(s, hoyIso, fechaTexto)) {
+            if (temas && !temas.has(p.tab)) continue;
+            if (!porClave.has(p.clave)) porClave.set(p.clave, { ...p, salas: [] });
+            porClave.get(p.clave).salas.push({ branch_id: s.branch_id, sala: s.sala, detalle: p.detalle, tono: p.tono });
+        }
+    }
+    const peso = { danger: 0, warning: 1, info: 2 };
+    const grupos = [];
+    const alDia = [];
+    for (const o of OBLIGACIONES) {
+        const g = porClave.get(o.clave);
+        if (g) {
+            const tono = g.salas.reduce((t, x) => (peso[x.tono] < peso[t] ? x.tono : t), 'info');
+            const titulo = o.clave === 'fv_semestre' && g.semestre
+                ? `Reporte de farmacovigilancia de ${nombreDelSemestre(g.semestre).toLowerCase()}` : o.titulo;
+            grupos.push({ clave: o.clave, titulo, tono, tab: g.tab, crea: g.crea || null, semestre: g.semestre || null, salas: g.salas });
+        } else if (o.alDia) {
+            alDia.push(o.alDia);
+        }
+    }
+    // «Por notificar» al día no se dice si hay reacciones fuera de plazo.
+    const conFuera = grupos.some((g) => g.clave === 'fv_fuera_de_plazo');
+    return {
+        grupos: grupos.sort((a, b) => peso[a.tono] - peso[b.tono]),
+        alDia: conFuera ? alDia.filter((t) => t !== 'Reacciones adversas notificadas') : alDia,
+        totalSalas: (salas || []).length,
+    };
 }
 
 /**

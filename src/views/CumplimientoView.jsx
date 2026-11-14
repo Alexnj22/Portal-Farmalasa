@@ -84,13 +84,14 @@ export default function CumplimientoView() {
 
                 <Suspense fallback={<SkeletonText lines={4} className="w-full" />}>
                     {tab === 'resumen' ? (
-                        <TabResumen pestanas={pestanas} onIr={(t, b) => { if (alcanceTodas) setSala(String(b)); setTab(t); }} />
+                        <TabResumen pestanas={pestanas} puedeAnotar={editar}
+                            onIr={(t, b) => { if (alcanceTodas) setSala(b ? String(b) : ''); setTab(t); }} />
                     ) : tab === 'vencimientos' ? (
                         <TabVencimientos branches={branches} branchId={salaOVacio} />
                     ) : tab === 'datos_mercado' ? (
                         <TabDatosMercado puedeEditar={hasPermission('cumplimiento_tab_datos_mercado', 'can_edit')} />
                     ) : tab === 'dependientes' ? (
-                        <TabDependientes branchId={salaOVacio} />
+                        <TabDependientes branchId={salaOVacio} salas={salaOptions} />
                     ) : def ? (
                         <TabRegistros key={tab} tipos={def.tipos} aviso={def.aviso} vacio={def.vacio}
                             branchId={salaOVacio} sala={nombreSala} puedeEditar={editar(tab)}

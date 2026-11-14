@@ -82,4 +82,15 @@ describe('decidir', () => {
         expect(r.confianza).toBe('sin_pareja');
         expect(r.crp).toBeNull();
     });
+    it('las dudosas no son «alta»: sin empaque, sin concentración en la SRS, variante sólo en la SRS', () => {
+        expect(decidir({ product_id: 1, nombre: 'HELIOCARE 360 OIL FREE BEIGE' }, [
+            fila('H-1', 'HELIOCARE CAPSULAS ORAL', 'CAJA X 1 BOTE X 60 CAPSULAS'),
+        ]).confianza).toBe('media');
+        expect(decidir({ product_id: 1, nombre: 'FARCOLIT 40 MG. X 100 TAB.' }, [
+            fila('F-1', 'FARCOLIT COMPRIMIDOS', 'CAJA DISPENSADORA X 10 BLISTERES X 10 COMPRIMIDOS'),
+        ]).confianza).toBe('media');
+        expect(decidir({ product_id: 1, nombre: 'DICLO K 12.5 MG X 5 SUPOSITORIOS' }, [
+            fila('D-1', 'DICLO K SUPOSITORIOS PEDIATRICOS', 'CAJA X 5 SUPOSITORIO'),
+        ]).confianza).toBe('media');
+    });
 });

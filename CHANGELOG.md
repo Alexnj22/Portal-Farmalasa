@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1533.5 — Datos de mercado: las dudosas ya no son confianza alta
+
+- En **Cumplimiento → Datos de mercado**, 65 parejas pasaron de confianza alta a media para que «Confirmar las N» confirme sólo las que coinciden en todo. Una pareja no es «alta» si el nombre del portal no dice el empaque (HELIOCARE 360 protector solar → HELIOCARE cápsulas), si el portal dice la concentración y la SRS no la escribe (FARCOLIT 40 MG → «FARCOLIT COMPRIMIDOS») o si la SRS tiene una variante que el portal no dice (pediátrico, adultos y niños, forte…). Ninguna pareja cambió de producto; las confirmadas no se tocaron.
+
 ## v2.1533.4 — Encargos: «Ya no lo quiere» cancela un encargo sin pagar
 
 Un encargo que el cliente todavía no pagó sólo lo podía cancelar él desde su app. Si no tenía la app, o avisaba por teléfono, el encargo se quedaba abierto para siempre en Reservas. Ahora la sala del retiro, Bodega o administración lo cancelan con **«Ya no lo quiere»**, escribiendo el motivo. No se cobra ni se devuelve nada, y al cliente le llega el aviso si tiene la app. Si ya pagó, si hay un cobro en caja o un pago en línea en curso, no deja cancelarlo: lo pagado sigue yendo por «Pasar a saldo a favor». Queda en la bitácora. Migración `20261114154410` (`encargo_cancelar_sin_pago`).

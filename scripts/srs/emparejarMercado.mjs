@@ -68,6 +68,7 @@ const VARIANTES = new Set([
     'FLASH', 'RAPID', 'RAPIDO', 'TRIO', 'TRI', 'BI', 'COMPLEX', 'COMPLEJO', 'ACTIVE', 'ADVANCE', 'CAFEINA',
 ]);
 const UNIDAD_FUERZA = '(MG|MCG|G|GR|UI|%|MEQ)';
+const VARIANTE_EN_SRS = /^(PEDIATRIC\w*|INFANTIL\w*|NINOS|ADULTOS?|FORTE|PLUS|DUO|HCT|XR|XL|RETARD|MAX|EXTRA|JUNIOR)$/;
 
 function fuerzasDe(texto) {
     // «5/6.25 MG», «400MG», «120 MG/5 ML», «850/2» (grupo con barra sin unidad).
@@ -340,7 +341,17 @@ export function decidir(producto, filasCatalogo) {
         const empate = segundo && !segundo.choques.length && segundo.puntos >= mejor.puntos - 2;
         // Sin dato de empaque en el portal: sólo es «alta» si la marca tiene una sola presentación posible.
         const unica = juicios.filter(j => !j.choques.length).length === 1;
-        if ((fuerzaOk || unica) && (empaqueOk || unica) && !empate && !mejor.avisos.length) confianza = 'alta';
+        // Tres dudas que impiden «alta» aunque no haya choque (revisión del
+        // 2026-11-14: HELIOCARE protector solar → HELIOCARE cápsulas; FARCOLIT
+        // 40 MG → «FARCOLIT COMPRIMIDOS» sin concentración):
+        //   · el portal no dice el empaque (ni unidades ni volumen);
+        //   · el portal dice la concentración y la SRS no la escribe;
+        //   · la SRS tiene una palabra de variante que el portal no dice.
+        const sinEmpaque = portal.unidades == null && !portal.volumen;
+        const sinConcentracionSrs = portal.fuerzas.size > 0 && mejor.s.fuerzas.size === 0;
+        const varianteSoloSrs = [...mejor.s.palabrasNombre].some(w => VARIANTE_EN_SRS.test(w) && !portal.nombre.includes(w.slice(0, 6)));
+        const dudosa = sinEmpaque || sinConcentracionSrs || varianteSoloSrs;
+        if ((fuerzaOk || unica) && (empaqueOk || unica) && !empate && !mejor.avisos.length && !dudosa) confianza = 'alta';
         else confianza = 'media';
     }
     return {

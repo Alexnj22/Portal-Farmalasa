@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.5 — Puntos Salud web: confirmaciones, deslizar para refrescar y sin el aviso rojo de avisos
+
+En app.farmasalud.lat:
+
+- Las confirmaciones y los mensajes de error ya aparecen. En el navegador no salía ninguno: «Quitar de mi lista» en Mis tratamientos no hacía nada porque su confirmación nunca se mostraba. Ahora salen como la alerta del iPhone.
+- Deslizar hacia abajo para actualizar funciona en todas las listas.
+- Ya no aparece el aviso rojo «Los avisos sólo funcionan en un teléfono». En la web no se ofrece activar avisos al teléfono (llegan con la app), y la campana sigue mostrando los avisos.
+
 ## v2.1537.4 — Mis tratamientos: agregar un medicamento ya no falla
 
 En la app de clientes (teléfono y web), agregar un medicamento a «Mis tratamientos» respondía «No se pudo agregar» cuando la duración quedaba fuera de 7 a 120 días, aunque la app deja poner de 1 a 365. La base ahora acepta el mismo rango que la app.

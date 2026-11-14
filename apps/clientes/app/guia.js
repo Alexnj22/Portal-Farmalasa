@@ -601,6 +601,11 @@ function Permisos({ resumen }) {
   };
   const rotuloBio = biometria === 'Face ID' || biometria === 'Touch ID' ? biometria
     : biometria === 'huella' ? 'la huella' : biometria === 'reconocimiento facial' ? 'el reconocimiento facial' : 'el bloqueo biométrico';
+  // En el navegador no hay avisos al teléfono ni biometría: el botón sólo
+  // daba un error rojo («sólo funcionan en un teléfono», desde un teléfono).
+  if (Platform.OS === 'web') {
+    return <Texto nivel={3} estilo={{ textAlign: 'center', fontSize: 14 }}>Los avisos al teléfono llegan con la app Puntos Salud. Aquí los verás en la campana del Inicio.</Texto>;
+  }
   return (
     <>
       {avisos === 'listo' ? <Hecho texto="Avisos activados" />

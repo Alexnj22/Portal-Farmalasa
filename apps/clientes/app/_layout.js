@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BARRA_DE_JUEGO } from '../componentes/juegos/Escena';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
+import AlertaWeb from '../componentes/AlertaWeb';
 import { useAppActiva } from '../lib/visible';
 import { BARRA_NATIVA, barraAndroid } from '../componentes/PilaDePestana';
 import * as SystemUI from 'expo-system-ui';
@@ -439,6 +440,8 @@ function Raiz() {
             <Stack.Screen name="guia" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false, ...MODAL_ANDROID }} />
           </Stack>
           <AvisoSinConexion />
+          {/* Web: `Alert.alert` no existe en el navegador (componentes/AlertaWeb). */}
+          {WEB ? <AlertaWeb /> : null}
           {/* La burbuja del chat (2026-10-12): encima de las pantallas y debajo
               de los avisos y del bloqueo. Dónde se esconde: componentes/BurbujaChat. */}
           <BurbujaChat />

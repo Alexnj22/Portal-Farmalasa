@@ -476,9 +476,14 @@ export default function Cuenta() {
       ) : null}
 
       {!conCodigo || resumen?.acepta_avisos === true ? (
-      <Grupo titulo="Notificaciones" pie="Ofertas nuevas, puntos por vencer y tus reservas. Las promociones son las ofertas personalizadas que te mandamos.">
+      <Grupo titulo="Notificaciones" pie={Platform.OS === 'web'
+        ? 'Los avisos al teléfono llegan con la app Puntos Salud. Aquí los ves en la campana.'
+        : 'Ofertas nuevas, puntos por vencer y tus reservas. Las promociones son las ofertas personalizadas que te mandamos.'}>
         {/* Con el código, los avisos sólo se pueden apagar: hablan de reservas, chat y facturas. */}
-        {!conCodigo || resumen?.acepta_avisos === true ? (
+        {/* En el navegador no hay avisos al teléfono (lib/avisos): el interruptor
+            no se muestra —tocarlo daba un error rojo, y apagarlo desde aquí
+            apagaría los del teléfono—. La campana sí funciona. */}
+        {Platform.OS !== 'web' && (!conCodigo || resumen?.acepta_avisos === true) ? (
           <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
             alCambiar={avisos} color={t.color.magenta} />
         ) : null}

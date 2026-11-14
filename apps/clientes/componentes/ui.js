@@ -14,6 +14,7 @@ import BotonNativo from './BotonNativo';
 import Icono from './Icono';
 import Vidrio, { SinVidrio } from './Vidrio';
 import { ContextoDesplazamiento, crearDesplazamiento } from '../lib/desplazamiento';
+import { useTirarParaRefrescar } from './TirarParaRefrescar';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 
@@ -86,13 +87,15 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
   const desp = useRef(null);
   if (!desp.current) desp.current = crearDesplazamiento();
   const d = desp.current;
+  // Web: deslizar para refrescar (RefreshControl no existe en el navegador).
+  const tirar = useTirarParaRefrescar({ alRefrescar, refrescando, refExterno: refLista, arriba: sinBarra ? ins.top + 60 : 8 + bajoBarra });
   useEffect(() => () => d.soltarTodo(), [d]);
   return (
     <ContextoDesplazamiento.Provider value={d}>
     <SinVidrio.Provider value={sinVidrio}>
     <ConTeclado>
     <ScrollView
-      ref={refLista}
+      ref={tirar.ref}
       contentInsetAdjustmentBehavior={fijo ? 'never' : 'automatic'}
       // Con `bajoBarra`, el margen es explícito y el reposo es «menos la
       // barra», que es justo donde iOS lo lleva al volver a tocar la pestaña:
@@ -133,6 +136,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     </ConTeclado>
     {/* Lo que flota sobre la lista (un aviso con «Deshacer»), fuera del desplazamiento. */}
     {encima}
+    {tirar.indicador}
     {sinBarra && velo ? (
       Platform.OS === 'ios'
         ? <BlurView pointerEvents="none" intensity={60} tint="systemChromeMaterial" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ins.top }} />
@@ -163,12 +167,14 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
   const desp = useRef(null);
   if (!desp.current) desp.current = crearDesplazamiento();
   const d = desp.current;
+  const tirar = useTirarParaRefrescar({ alRefrescar, refrescando });
   useEffect(() => () => d.soltarTodo(), [d]);
   return (
     <ContextoDesplazamiento.Provider value={d}>
     <SinVidrio.Provider value={sinVidrio}>
     <ConTeclado>
     <FlatList
+      ref={tirar.ref}
       data={datos}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
@@ -192,6 +198,7 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
         colors={[t.color.magenta]} progressBackgroundColor={ANDROID ? colorSistema.superficieAlta : undefined} /> : undefined}
     />
     </ConTeclado>
+    {tirar.indicador}
     </SinVidrio.Provider>
     </ContextoDesplazamiento.Provider>
   );

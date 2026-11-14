@@ -12,6 +12,7 @@
 // `olvidar(ids)` acá, para que la lista local no lo siga tapando.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, Text, View } from 'react-native';
+import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { LinearTransition } from 'react-native-reanimated';
@@ -56,6 +57,8 @@ export default function NotificacionesBorradas() {
   }, [pedir]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
+  // Web: deslizar para refrescar (RefreshControl no existe en el navegador).
+  const tirar = useTirarParaRefrescar({ alRefrescar: refrescar, refrescando });
 
   const lista = useMemo(() => {
     const vistos = new Set();
@@ -142,6 +145,7 @@ export default function NotificacionesBorradas() {
     <>
       {barra}
       <Animated.FlatList
+        ref={tirar.ref}
         data={filas}
         keyExtractor={(f) => f.clave}
         contentInsetAdjustmentBehavior="automatic"
@@ -169,6 +173,7 @@ export default function NotificacionesBorradas() {
               )} />
           ))}
       />
+      {tirar.indicador}
       {pie}
     </>
   );

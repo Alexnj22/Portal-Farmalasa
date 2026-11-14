@@ -21,6 +21,7 @@
 //     30 días desde «Borradas recientemente» (app/notificaciones-borradas.js).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, Text, View } from 'react-native';
+import { useTirarParaRefrescar } from '../componentes/TirarParaRefrescar';
 import Presionable from '../componentes/Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
@@ -103,6 +104,8 @@ export default function Notificaciones() {
   // porque el envío marca la fila como enviada un instante después del push.
   useEffect(() => alLlegarAviso(() => { setTimeout(() => { cargar(); }, 1500); }), [cargar]);
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
+  // Web: deslizar para refrescar (RefreshControl no existe en el navegador).
+  const tirar = useTirarParaRefrescar({ alRefrescar: refrescar, refrescando });
 
   const visibles = useMemo(
     () => (d?.ok && ocultas ? (d.avisos ?? []).filter((a) => !ocultas.has(Number(a.id)) && !enEspera.has(a.id)) : []),
@@ -312,6 +315,7 @@ export default function Notificaciones() {
     <>
       {barra}
       <Animated.FlatList
+        ref={tirar.ref}
         data={filas}
         keyExtractor={(f) => f.clave}
         contentInsetAdjustmentBehavior="automatic"
@@ -354,6 +358,7 @@ export default function Notificaciones() {
               alAbrir={abrir} alAlternarLeido={alternarLeido} alBorrar={borrarUna} />
           ))}
       />
+      {tirar.indicador}
       {avisoDeshacer}
     </>
   );

@@ -15,6 +15,7 @@
 // de limpio y se desplaza fluido.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useTirarParaRefrescar } from '../../../componentes/TirarParaRefrescar';
 import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
 import VolverConGesto from '../../../componentes/VolverConGesto';
 import Presionable from '../../../componentes/Presionable';
@@ -176,6 +177,8 @@ export default function Catalogo() {
   // Deslizar hacia abajo vuelve a empezar (2026-10-12): si la primera carga
   // fallaba no había forma de reintentar.
   const refrescar = async () => { setRefrescando(true); await cargar(0); setRefrescando(false); };
+  // Web: deslizar para refrescar (RefreshControl no existe en el navegador).
+  const tirar = useTirarParaRefrescar({ alRefrescar: refrescar, refrescando, refExterno: listaRef, arriba: 72 });
 
   // El encabezado en piezas memorizadas (2026-10-15): cada tecla cambia
   // `texto` y redibuja la pantalla; sólo las categorías dependen de él (su
@@ -289,7 +292,7 @@ export default function Catalogo() {
         ),
       }} />
       <Animated.FlatList
-        ref={listaRef}
+        ref={tirar.ref}
         onScroll={alDesplazar}
         scrollEventThrottle={16}
         // Cambiar `numColumns` exige montar la lista de nuevo.
@@ -325,6 +328,7 @@ export default function Catalogo() {
                 : lista.length > 12 ? <VerMas texto="Volver arriba" sf="arrow.up" alTocar={arriba} />
                   : null}
       />
+      {tirar.indicador}
       <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, alignItems: 'center', zIndex: 10 }, estiloBuscador]}>
         <Buscador valor={valorBuscador} alCambiar={setTexto} />
       </Animated.View>

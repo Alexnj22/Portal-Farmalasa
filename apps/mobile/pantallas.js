@@ -24,7 +24,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
-  '/pedidos': true,       // la sala (llegada y conteo) y Bodega (preparar, despachar, rutas, anular una sala); generar pedidos abre el portal
+  '/pedidos': true,       // la sala (llegada y conteo) y Bodega (generar, preparar, despachar, rutas, anular una sala)
   '/clientes': true,      // la lista y la ficha (ver y editar); las fichas las da de alta el punto de venta
   '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala es `minmax-sala`
   '/caja': '/efectivo',     // Efectivo: hoy, y desde ahí cortes, diferencias y movimientos
@@ -37,7 +37,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/facturacion': true, // las colas: sin sello de Hacienda, observaciones y anuladas
   '/resumen-fiscal': true, // el movimiento de IVA del mes, renglón por renglón
   '/cierre-periodo': true, // la cadena del remanente; cerrar y reabrir
-  '/libro-compras-completo': true, // qué se compró y qué es declarable; el CSV en el portal
+  '/libro-compras-completo': true, // qué se compró y qué es declarable, con su CSV
   '/libros-iva': true, // cada libro del mes, su detalle y las descargas
   '/cargos': true, // el organigrama como lista, y editar
   '/permisos': true, // qué puede cada cargo, módulo por módulo, y cambiarlos
@@ -58,13 +58,13 @@ export const PANTALLAS_DE_LA_APP = {
   '/torogoz': true, // la distribuidora: su menú y sus secciones (`/torogoz/<seccion>`)
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
   '/nomina': true, // la quincena por sala y la boleta de cada persona
-  '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal
+  '/auditoria-de-tiempos': true, // día y quincena: marcas, faltas, tardanza; corregir, revisar, aprobar, cerrar y turnos extra
   '/monitor': true, // quién trabaja, está en pausa o no ha marcado, ahora; y quién llegó tarde
   '/promociones': true, // vigentes, el detalle con lo vendido por sala, el descuento, quién paga, el reparto y Rebajas
-  '/cotizaciones': true, // la lista y el detalle con sus totales; crear, editar e imprimir: portal
-  '/compras': true, // las compras del mes y su detalle con lote y vencimiento; resumen por producto: portal
+  '/cotizaciones': true, // la lista y el detalle; crear, editar e imprimir
+  '/compras': true, // las compras del mes, su detalle con lote y vencimiento, y por producto
   '/sucursales': true, // por tipo: abierta ahora, horario, gente y alertas; la ficha, editar, expediente e historial
-  '/proveedores': true, // el directorio y la ficha (con lo que se le debe); clasificar: portal
+  '/proveedores': true, // el directorio, la ficha (con lo que se le debe) y clasificar
   '/laboratorios': true, // dónde está cada laboratorio en la sala, y corregirlo; la política de vencimiento
   '/cuentas-por-pagar': true, // lo que se debe por proveedor, registrar un pago y aprobar/anular
   '/metas': true, // el tablero del mes por sala, bono, confirmación e histórico
@@ -79,8 +79,8 @@ export const PANTALLAS_DE_LA_APP = {
   '/conteo-inventario': '/conteos', // contar en el teléfono, con lote y vencimiento reales
   '/productos': true,      // el catálogo para consultar; la ficha trae existencias y precios
   '/fotos-productos': true, // la cola para completar foto y principio activo, con la cámara
-  '/vacaciones': true,     // el plan del año mes por mes; asignar y aprobar siguen en el portal
-  '/horarios': true,       // la semana de la sala día por día; editar la grilla sigue en el portal
+  '/vacaciones': true,     // el plan del año mes por mes; asignar y aprobar
+  '/horarios': true,       // la semana de la sala día por día, y editarla
   '/mis-documentos': true, // el expediente propio y los papeles de las solicitudes
   '/mi-perfil': true,      // la ficha propia: datos, horario, vacaciones, historial y editar contacto
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa

@@ -117,6 +117,9 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // 2026-10-28: la vigilancia de seguridad (un control que cambió, una cuenta
     // sin uso o sin dueño, una entrada de noche). Va a gerencia y TH.
     SEGURIDAD_VIGILANCIA: 'ShieldAlert',
+    // 2026-11-14: el resumen de la mañana de administración (varios temas en
+    // un aviso). `ClipboardList`: es una lista de pendientes.
+    RESUMEN_MANANA: 'ClipboardList',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

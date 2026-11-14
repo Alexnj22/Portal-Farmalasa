@@ -27,6 +27,7 @@ import { datosDeCierreDeMeta, datosDeCierreDeEmpresa, datosDeCierreDelDia } from
 import { datosDeFaltanteDeCaja, datosDeDiferenciasPendientes } from '@nucleo/utils/faltanteDeCaja';
 import { datosDeAperturasDeLaManana } from '@nucleo/utils/aperturasDeLaManana';
 import { datosDeCreditosVencidos } from '@nucleo/utils/creditosVencidos';
+import { datosDeResumenDeLaManana } from '@nucleo/utils/resumenDeLaManana';
 import {
     datosDeCorteNuevo, datosDeBitacoraPorVencer, datosDeTrasladosPorRespaldo, TRASLADOS_VISIBLES,
     datosDeMinmaxPendiente, datosDeBolsaNoCuadra, datosDeDeposito,
@@ -223,6 +224,9 @@ const TarjetaDeAviso = ({
     const metasAprob = datosDeMetasPorAprobar(n);
     const reinicio   = datosDeReinicio(n);
     const sinVenta   = datosDeProductosSinVenta(n);
+    /* El resumen de la mañana de administración: varios temas en un aviso,
+       cada uno con su enlace — ver `resumenDeLaManana`. */
+    const resumen    = datosDeResumenDeLaManana(n);
     // Las tarjetas que ya muestran a la persona con su cara: la fila general
     // de «quién y qué sala» la repetiría.
     const conPersona = solicitud || respuesta || decision || diferencia;
@@ -231,7 +235,7 @@ const TarjetaDeAviso = ({
     const salaEnTitulo = difPend;
     const conTarjeta = difPend || creditos || corteNuevo || bitacora || traslados || minmaxPend || bolsa || deposito
         || alertaCcf || factSala || cortesPend || pedidoAv || solicitud || respuesta || decision || diferencia
-        || conteo || hacienda || promo || metasAprob || reinicio || sinVenta;
+        || conteo || hacienda || promo || metasAprob || reinicio || sinVenta || resumen;
 
     const corte = acciones?.corteDe?.(n) ?? null;
     const decidible = Boolean(acciones?.puedeDecidir?.(n));
@@ -423,6 +427,11 @@ const TarjetaDeAviso = ({
                     )}
                     {reinicio && <CuerpoDeReinicio datos={reinicio} claseTenue={cx.rowBody} />}
                     {sinVenta && <CuerpoDeProductosSinVenta datos={sinVenta} claseTenue={cx.rowBody} isDark={isDark} />}
+                    {resumen && (
+                        <p className={`text-body-sm font-medium leading-snug mt-0.5 ${cx.rowBody}`}>
+                            {resumen.renglones.length} temas para revisar
+                        </p>
+                    )}
                     {empresa && (
                         <CuerpoDeCierreDeEmpresa datos={empresa} claseTenue={cx.rowBody}
                             isDark={isDark} buscarEmpleado={buscarEmpleado} />
@@ -484,6 +493,34 @@ const TarjetaDeAviso = ({
                     </div>
                 </div>
             </button>
+
+            {/* ── Los temas del resumen de la mañana ─────────────────────────
+                Van FUERA de la cara de la tarjeta porque cada uno es un botón
+                que lleva a su pantalla, y un botón dentro de otro no es HTML
+                válido. Tocar uno abre su enlace como si fuera el aviso suelto. */}
+            {resumen && (
+                <ul className="relative px-3.5 pb-3 -mt-1 flex flex-col gap-1">
+                    {resumen.renglones.map((r) => (
+                        <li key={r.clave}>
+                            <button
+                                type="button"
+                                data-interactive
+                                disabled={!r.link}
+                                onClick={(e) => { e.stopPropagation(); if (r.link) onAbrir?.({ ...n, link: r.link }); }}
+                                className={`w-full min-h-[var(--tap-min)] flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-transform active:scale-[0.97] ${cx.headerBorder}`}
+                            >
+                                <span className="flex-1 min-w-0">
+                                    <span className={`block text-body-sm font-semibold leading-snug ${cx.rowTitleRead}`}>{r.titulo}</span>
+                                    {r.cuerpo && (
+                                        <span className={`block text-caption font-medium leading-snug line-clamp-2 ${cx.rowBody}`}>{r.cuerpo}</span>
+                                    )}
+                                </span>
+                                {r.link && <ArrowRight size={14} strokeWidth={2.5} className={`shrink-0 ${cx.rowTime}`} />}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
 
             {/* ── «Ver detalle», un control de verdad ────────────────────────
                 Era una palabra DENTRO del botón grande de la tarjeta, así que no

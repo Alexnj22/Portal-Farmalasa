@@ -150,11 +150,16 @@ Deno.serve(async (req) => {
         const orden = [...grupos.values()].sort((a, b) => b.total - a.total);
         const n = orden.reduce((s, g) => s + g.n, 0);
         const total = orden.reduce((s, g) => s + g.total, 0);
-        const { error: e6 } = await supabase.rpc('notify_employees', {
+        // Al resumen de la mañana de administración (2026-11-14): antes de las
+        // 08:45 queda como renglón y sale junto con lo demás; después, suelto.
+        // Con un solo renglón en el resumen sale igual que siempre.
+        const { error: e6 } = await supabase.rpc('resumen_manana_agregar', {
           p_recipients: (sups ?? []).map((x) => String(x.id)),
-          p_type: 'CREDITO_VENCIDO',
-          p_title: `${n === 1 ? 'Un crédito vencido' : `${n} créditos vencidos`} · ${money(total)}`,
-          p_body: orden.map((g) => `${g.sala}: ${g.n} (${money(g.total)})`).join(' · '),
+          p_tema: 'creditos',
+          p_orden: 20,
+          p_tipo: 'CREDITO_VENCIDO',
+          p_titulo: `${n === 1 ? 'Un crédito vencido' : `${n} créditos vencidos`} · ${money(total)}`,
+          p_cuerpo: orden.map((g) => `${g.sala}: ${g.n} (${money(g.total)})`).join(' · '),
           p_link: '/cuentas-por-cobrar?ver=VENCIDOS',
           p_metadata: {
             check_key: claveResumen, creditos: n, total,

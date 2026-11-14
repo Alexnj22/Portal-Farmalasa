@@ -6523,6 +6523,31 @@
    "area": "encuestas-clientes",
    "por": "manual",
    "manual": true
+  },
+  "aviso_cambio_o_semanal": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
+  "aviso_valor_olvidar": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
+  "resumen_manana_paso_la_hora": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
+  "resumen_manana_agregar": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
+  "armar_resumen_manana": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
   }
  }
 }

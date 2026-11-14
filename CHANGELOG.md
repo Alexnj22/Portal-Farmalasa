@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1533.0 — Resumen de la mañana para administración y avisos que no se repiten si no cambiaron
+
+- **Un solo aviso a las 8:45 a. m. en lugar de cinco.** Créditos vencidos de la red, salas sin conteo de antibióticos, la factura que no entró a Hacienda, clientes con los puntos partidos y fichas sin número interno llegaban sueltos entre las 8:00 y las 8:40 a Supervisión. Ahora cada uno deja un renglón y `armar_resumen_manana()` (8:45, reintento 9:15) manda «Resumen de la mañana» con un renglón por tema; cada renglón de la tarjeta lleva a su pantalla. Con un solo tema sale el aviso de siempre. Lo que llega después de las 8:45 sale suelto. La apertura de caja sigue suelta, y jefes, dependientes y regentes reciben lo suyo igual que antes. Migración `20261114152645`, `avisar-creditos-vencidos` desplegada.
+- **Lo que no cambió no se repite.** Antibióticos sin conteo, puntos partidos, fichas sin número y puntos en otra ficha se avisan cuando cambia el número (o las salas), o una vez por semana si sigue igual (`aviso_cambio_o_semanal`).
+- **Por qué el de antibióticos salía todos los días:** la marca de «ya avisado» se tomaba del `RETURNING` del INSERT, y el trigger `avisos_horario` difiere el aviso devolviendo NULL — la marca nunca se escribía. Ahora se marca sobre los destinatarios calculados; también arregla la repetición para la gente de cada sala.
+
 ## v2.1532.0 — Encuestas: el aviso de cliente insatisfecho sale de la satisfacción, y las escalas se ven iguales
 
 - **El aviso «Cliente insatisfecho» mira la satisfacción, no la recomendación.** Antes salía con recomendación ≤ 6 y mostraba la sugerencia como si fuera la queja: un cliente con satisfacción 10, recomendación 3 y «Lo ve bien» llegaba como «insatisfecho 3/10». Y de los 8 clientes con satisfacción 3–5, sólo uno había avisado. Ahora: satisfacción ≤ 3 de 10 → aviso al momento; 4–5 → un solo aviso a las 9:50 p. m. con los del día. El aviso rotula las tres notas (Satisfacción · Recomendación · Confianza) y el comentario como «Sugiere: …». Una encuesta sin pregunta de satisfacción usa la recomendación y lo dice («no recomendaría»). Migración `20261114152309`, cron `encuestas-quejas-del-dia`.

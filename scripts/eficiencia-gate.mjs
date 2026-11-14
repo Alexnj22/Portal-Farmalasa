@@ -747,6 +747,19 @@ const CRONS = [
           + 'ráfaga no avisó al momento). Un SELECT de las respuestas del día (decenas). Sólo la base propia.',
   },
   {
+    job: 'resumen-manana-0845-sv', slug: null, cadencia: '45 14 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Resumen de la mañana de administración (2026-11-14): SQL puro. A las 08:45 SV junta en '
+          + 'UN aviso por persona los renglones que dejaron los avisos de la mañana (créditos, '
+          + 'antibióticos, Hacienda, clientes). Lee una tabla de decenas de filas. Sólo la base propia.',
+  },
+  {
+    job: 'resumen-manana-reintento-0915-sv', slug: null, cadencia: '15 15 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Reintento del resumen de la mañana a las 09:15 SV: idempotente, sólo manda lo que la '
+          + 'corrida de las 08:45 no llegó a mandar. Normalmente no encuentra nada. SQL puro.',
+  },
+  {
     job: 'encuestas-cerrar-vencidas', slug: null, cadencia: '10 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: a las 00:10 SV cierra las encuestas a clientes publicadas cuya fecha de '

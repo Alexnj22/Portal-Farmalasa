@@ -36,6 +36,26 @@ describe('abonoDeCredito', () => {
         expect(estadoDelCobro({ forma: APROBACION, reparto: { 1: '5' }, creditos: [A], motivo: 'ISSS' }).listo).toBe(false);
         expect(estadoDelCobro({ forma: APROBACION, reparto: { 1: '5' }, creditos: [A], motivo: 'ISSS agosto' }).listo).toBe(true);
     });
+    it('dice qué falta, a qué campo lleva, y nunca contradice a `listo` (2026-11-14)', () => {
+        const base = { forma: 'Transferencia', montoDoc: '25', reparto: { 1: '20', 2: '5' }, creditos: [A, B], hayArchivo: true, lectura: { veredicto: 'OK' } };
+        const casos = [
+            [{ ...base, hayArchivo: false, lectura: null }, 'abono-comprobante'],
+            [{ ...base, lectura: null }, 'abono-comprobante'],
+            [{ ...base, lectura: { veredicto: 'ILEGIBLE' } }, 'abono-comprobante'],
+            [{ ...base, montoDoc: '' }, 'abono-monto-doc'],
+            [{ ...base, reparto: { 1: '20' } }, 'abona-1'],
+            [{ ...base, reparto: { 1: '25' } }, 'abona-1'],
+            [{ forma: 'Efectivo', reparto: { 1: '' }, creditos: [A] }, 'abona-1'],
+            [{ forma: APROBACION, reparto: { 1: '5' }, creditos: [A], motivo: 'x' }, 'abono-motivo'],
+            [base, null],
+        ];
+        for (const [entrada, campo] of casos) {
+            const e = estadoDelCobro(entrada);
+            expect(e.falta?.campo ?? null).toBe(campo);
+            expect(e.listo).toBe(!e.falta);
+        }
+        expect(estadoDelCobro({ ...base, reparto: { 1: '20' } }).falta.texto).toBe('Faltan $5.00 por aplicar.');
+    });
     it('aplicaciones: sólo las que llevan algo', () => {
         expect(aplicacionesDelPago([A, B], { 1: '20', 2: '' })).toEqual([{ credito: 'C1', monto: 20 }]);
     });

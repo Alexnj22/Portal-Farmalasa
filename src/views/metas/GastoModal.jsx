@@ -15,6 +15,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { MESES_PARA_RECUPERAR, mesesParaArrancarGasto, metasQueReabreElGasto, salasDelGasto, ymHoySV, ymLabelCorto, ymSumar } from '@nucleo/utils/metasUtils';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import PieDeModal from '../../components/common/PieDeModal';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 
 // Hasta 24 meses, los meses para arrancar, las salas válidas y qué metas
@@ -114,7 +117,21 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
         [salaOptions, filas],
     );
 
-    const valido = concepto.trim() && salasValidas.length > 0 && !!ym && Number(meses) > 0;
+    // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
+    // mismas cuatro condiciones que apagaban el botón.
+    const queFalta = useMemo(() => {
+        if (!concepto.trim()) return { texto: 'Escribe qué gasto es.', campo: 'concepto' };
+        if (salasValidas.length === 0) {
+            const i = Math.max(0, filas.findIndex((f) => !Number(f.branchId) || !(parseFloat(String(f.monto).replace(/,/g, '')) > 0)));
+            return Number(filas[i]?.branchId)
+                ? { texto: 'Escribe cuánto le toca a la sala.', campo: `monto-${i}` }
+                : { texto: 'Elige al menos una sala y cuánto le toca.', campo: `sala-${i}` };
+        }
+        if (!ym) return { texto: 'Elige desde qué mes.', campo: 'mes-gasto' };
+        if (!(Number(meses) > 0)) return { texto: 'Elige en cuántos meses se recupera.', campo: 'meses-gasto' };
+        return null;
+    }, [concepto, salasValidas, filas, ym, meses]);
+    const valido = !queFalta;
 
     const guardar = async () => {
         if (!valido || saving) return;
@@ -158,11 +175,11 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
+                    <div data-campo="mes-gasto">
                         <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Desde qué mes</p>
                         <LiquidSelect value={ym} onChange={setYm} options={mesOptions} placeholder="Mes" />
                     </div>
-                    <div>
+                    <div data-campo="meses-gasto">
                         <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Se recupera en</p>
                         <LiquidSelect value={meses} onChange={setMeses} options={MESES_OPCIONES} placeholder="¿En cuántos meses?" />
                     </div>
@@ -175,7 +192,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                     <div className="space-y-2">
                         {filas.map((f, i) => (
                             <div key={i} className="flex items-end gap-2">
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0" data-campo={`sala-${i}`}>
                                     <LiquidSelect
                                         value={f.branchId}
                                         onChange={(v) => setFila(i, { branchId: v })}
@@ -265,12 +282,12 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                 />
             </div>
 
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !saving ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" size="lg" disabled={saving} onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" size="lg" disabled={!valido || saving} onClick={guardar}>
                     {saving ? 'Guardando…' : 'Guardar gasto'}
                 </Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

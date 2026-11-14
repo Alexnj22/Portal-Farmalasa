@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { avisosDelPedido, claveOrigen } from '@nucleo/utils/pedirTraslado';
+import { avisosDelPedido, claveOrigen, faltaParaEnviar } from '@nucleo/utils/pedirTraslado';
 
 const sala = { sala: 'Bodega', unidades: 100, minimo: 109, erp_sucursal_id: 6 };
 const base = { pres: { tipo: 'BLISTER', factor: 1 }, cantidad: '1', sala, unidades: 1, opcionesPres: [{}], descartados: new Set() };
@@ -42,5 +42,21 @@ describe('el mínimo de envío de Bodega', () => {
     });
     it('calla cuando se pide lo suficiente', () => {
         expect(avisosDelPedido({ ...base, minimoBodega, bajoMinimoBodega: false }).minimoBodega).toBeNull();
+    });
+});
+
+// Lo que falta para mandar: UNO, en orden, y con dónde se arregla (2026-11-14).
+describe('faltaParaEnviar', () => {
+    const r = { item: { descripcion: 'AMOXI' }, clave: '6' };
+    const listo = { aEnviar: [r], aMedias: false, yaEstaEnLaLista: false, conProblema: [], causa: 'Se acabó', producto: { descripcion: 'AMOXI' } };
+    it('nada que falte → null (puedeEnviar)', () => {
+        expect(faltaParaEnviar(listo)).toBeNull();
+    });
+    it('en orden: a medias, repetido, vacío, con problema, para qué', () => {
+        expect(faltaParaEnviar({ ...listo, aMedias: true, causa: '' }).pestana).toBe('agregar');
+        expect(faltaParaEnviar({ ...listo, yaEstaEnLaLista: true }).pestana).toBe('lista');
+        expect(faltaParaEnviar({ ...listo, aEnviar: [] }).texto).toMatch(/al menos un producto/);
+        expect(faltaParaEnviar({ ...listo, conProblema: [r], causa: '' }).campo).toBe('renglonConProblema');
+        expect(faltaParaEnviar({ ...listo, causa: '  ' })).toMatchObject({ campo: 'causa', texto: 'Escribe para qué se pide.' });
     });
 });

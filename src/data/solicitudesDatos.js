@@ -520,18 +520,25 @@ export function erroresDeForma(f) {
  * quién pide, qué pide, cuándo se recibió y con qué documento se comprobó que
  * es quien dice — más que lo escrito tenga forma.
  */
-export function faltaParaRecibir(f) {
+export function faltaParaRecibirConCampo(f) {
     const { malDui, malTel, malCorreo, malIdent } = erroresDeForma(f);
+    // Cada falta con el campo del formulario donde se arregla (su `name` o su
+    // `data-campo`), para que el aviso lleve hasta el primero (2026-11-14).
     const faltan = [];
-    if (!f.recibida_at)                 faltan.push('la fecha del acuse');
-    if (!f.solicitante_nombre?.trim())  faltan.push('el nombre');
-    if (!(f.derechos?.length))          faltan.push('qué solicita');
-    if (!f.identidad_numero?.trim())    faltan.push('el número del documento cotejado');
-    if (malDui)    faltan.push('un DUI válido');
-    if (malIdent)  faltan.push('un DUI cotejado válido');
-    if (malTel)    faltan.push('un teléfono de ocho dígitos');
-    if (malCorreo) faltan.push('un correo con forma de correo');
+    if (!f.recibida_at)                 faltan.push({ texto: 'la fecha del acuse', campo: 'recibida_at' });
+    if (!f.solicitante_nombre?.trim())  faltan.push({ texto: 'el nombre', campo: 'solicitante_nombre' });
+    if (!(f.derechos?.length))          faltan.push({ texto: 'qué solicita', campo: 'derechos' });
+    if (!f.identidad_numero?.trim())    faltan.push({ texto: 'el número del documento cotejado', campo: 'identidad_numero' });
+    if (malDui)    faltan.push({ texto: 'un DUI válido', campo: 'solicitante_numero' });
+    if (malIdent)  faltan.push({ texto: 'un DUI cotejado válido', campo: 'identidad_numero' });
+    if (malTel)    faltan.push({ texto: 'un teléfono de ocho dígitos', campo: 'solicitante_telefono' });
+    if (malCorreo) faltan.push({ texto: 'un correo con forma de correo', campo: 'solicitante_correo' });
     return faltan;
+}
+
+/** Lo mismo, sólo los textos (la app del teléfono y las pruebas lo leen así). */
+export function faltaParaRecibir(f) {
+    return faltaParaRecibirConCampo(f).map((x) => x.texto);
 }
 
 /** Lo que se escribe en la fila al guardar (`RECIBIDA`) o al resolver (`RESUELTA`). */

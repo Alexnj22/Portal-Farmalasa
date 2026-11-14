@@ -64,3 +64,12 @@ describe('rotuloDeAjuste en lo contado', () => {
             .toBe('+1 frasco · lote 251011 (vence 10/2027)');
     });
 });
+
+describe('planDeLotesReales · el campo que falta (2026-11-14)', () => {
+    it('cada error dice en qué campo se arregla', () => {
+        expect(planDeLotesReales({ item: sinLote, sinLote: '', lotes: [{ lote: 'A1', vence: '2028-01-01', cantidad: 4 }], regla: regulado }).campo).toBe('sinLote');
+        expect(planDeLotesReales({ item: sinLote, lotes: [{ lote: 'A1', vence: '2028-01-01', cantidad: 1 }, { lote: '', vence: '2028-01-01', cantidad: 1 }], regla: regulado }).campo).toBe('lote-1');
+        expect(planDeLotesReales({ item: sinLote, lotes: [{ lote: 'A1', vence: null, cantidad: 5 }], regla: regulado }).campo).toBe('vence-0');
+        expect(planDeLotesReales({ item: sinLote, lotes: [{ lote: 'A1', vence: '2028-01-01', cantidad: '' }], regla: regulado }).campo).toBe('cantidad-0');
+    });
+});

@@ -12,7 +12,7 @@ import {
     autocalificacion, conteoDeOpciones, filasPorSucursal, idsDelAlcance, leerAutocalificacion, pendientesDelAlcance,
 } from '@nucleo/utils/climaLaboral';
 import {
-    camposDeSolicitud, comoPersona, faltaParaRecibir, formularioDeSolicitud, llenarConPersona, terminoDeBusqueda,
+    camposDeSolicitud, comoPersona, faltaParaRecibir, faltaParaRecibirConCampo, formularioDeSolicitud, llenarConPersona, terminoDeBusqueda,
 } from '@nucleo/data/solicitudesDatos';
 
 describe('sucursal', () => {
@@ -131,6 +131,8 @@ describe('solicitud de datos', () => {
     it('no se registra sin acuse, nombre, derechos y documento; resolver sella la hora', () => {
         expect(faltaParaRecibir(formularioDeSolicitud(null))).toEqual(
             ['la fecha del acuse', 'el nombre', 'qué solicita', 'el número del documento cotejado']);
+        expect(faltaParaRecibirConCampo(formularioDeSolicitud(null)).map((x) => x.campo)).toEqual(
+            ['recibida_at', 'solicitante_nombre', 'derechos', 'identidad_numero']);
         const f = { ...formularioDeSolicitud(null), recibida_at: '2026-10-01T15:00:00.000Z', solicitante_nombre: ' Ana ', resolucion: 'Se entregó' };
         const c = camposDeSolicitud(f, 'RESUELTA', new Date('2026-10-07T12:00:00Z'));
         expect(c).toMatchObject({ estado: 'RESUELTA', solicitante_nombre: 'Ana', resolucion: 'Se entregó', resuelta_at: '2026-10-07T12:00:00.000Z' });

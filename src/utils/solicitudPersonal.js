@@ -91,50 +91,69 @@ export const choqueEnRango = (incapacidades, desde, hasta) =>
     incapacidades.find((d) => desde < d.endDate && hasta > d.startDate) ?? null;
 
 /**
- * El motivo por el que la solicitud NO se puede enviar, o `null` si se puede.
- * Los mismos textos que mostraba el portal.
+ * Lo que falta para poder enviar la solicitud, con el campo al que pertenece:
+ * `{ texto, campo }`, o `null` si se puede (2026-11-14). `campo` es una clave
+ * del formulario —`empleado`, `nota`, `periodo`, `permiso`, `companero`,
+ * `fecha`, `monto`, `constancia`, `horas`, `inicio`, `dias`— o `null` cuando
+ * no hay campo que lo arregle (la antigüedad, unas vacaciones ya aprobadas).
+ * La pantalla la usa para decirlo al lado del botón y llevar hasta el campo.
  *
  * @param {object} ctx — empleadoId, tipo, payload, nota, antiguedad,
  *   vacacionAprobada, incapacidades, companeroOcupado, anioActual
  */
-export function motivoParaNoEnviar({
+export function faltaParaEnviar({
     empleadoId, tipo, payload = {}, nota = '', antiguedad, vacacionAprobada = false,
     incapacidades = [], companeroOcupado = null, anioActual = new Date().getFullYear(),
 }) {
-    if (!empleadoId) return 'Elige a nombre de quién va la solicitud.';
-    if (!String(nota).trim()) return 'El motivo es obligatorio.';
+    const f = (texto, campo = null) => ({ texto, campo });
+    if (!empleadoId) return f('Elige a nombre de quién va la solicitud.', 'empleado');
+    if (!String(nota).trim()) return f('El motivo es obligatorio.', 'nota');
 
     if (tipo === 'VACATION') {
-        if (!payload.startDate || !payload.endDate) return 'Selecciona el período de vacaciones.';
-        if (!antiguedad?.habilitado) return 'Todavía no se cumple 1 año en la empresa para pedir vacaciones.';
-        if (vacacionAprobada) return 'Ya hay vacaciones aprobadas para este período.';
-        if (payload.startDate.slice(0, 4) < String(anioActual)) return 'No se pueden elegir fechas de años anteriores.';
-        if (payload.endDate < payload.startDate) return 'El último día no puede ser antes del primero.';
+        if (!payload.startDate || !payload.endDate) return f('Selecciona el período de vacaciones.', 'periodo');
+        if (!antiguedad?.habilitado) return f('Todavía no se cumple 1 año en la empresa para pedir vacaciones.');
+        if (vacacionAprobada) return f('Ya hay vacaciones aprobadas para este período.');
+        if (payload.startDate.slice(0, 4) < String(anioActual)) return f('No se pueden elegir fechas de años anteriores.', 'periodo');
+        if (payload.endDate < payload.startDate) return f('El último día no puede ser antes del primero.', 'periodo');
     }
     if (tipo === 'PERMIT') {
-        if (!(payload.permissionDates || []).length) return 'Selecciona al menos un día de permiso.';
+        if (!(payload.permissionDates || []).length) return f('Selecciona al menos un día de permiso.', 'permiso');
         const chocado = payload.permissionDates.find((d) => choqueEnDia(incapacidades, d));
-        if (chocado) return `El día ${fmtCorto(chocado)} cae dentro de una incapacidad vigente (${periodoDe(choqueEnDia(incapacidades, chocado))}).`;
+        if (chocado) return f(`El día ${fmtCorto(chocado)} cae dentro de una incapacidad vigente (${periodoDe(choqueEnDia(incapacidades, chocado))}).`, 'permiso');
     }
     if (tipo === 'SHIFT_CHANGE') {
-        if (!payload.targetEmployeeId || !payload.date) return 'Selecciona el compañero y la fecha del cambio.';
+        if (!payload.targetEmployeeId || !payload.date) {
+            return f('Selecciona el compañero y la fecha del cambio.', !payload.targetEmployeeId ? 'companero' : 'fecha');
+        }
         const propio = choqueEnDia(incapacidades, payload.date);
-        if (propio) return `Hay una incapacidad del ${periodoDe(propio)} — no se puede cambiar turno esa fecha.`;
-        if (companeroOcupado) return `El compañero está ${companeroOcupado.motivo} en esa fecha.`;
+        if (propio) return f(`Hay una incapacidad del ${periodoDe(propio)} — no se puede cambiar turno esa fecha.`, 'fecha');
+        if (companeroOcupado) return f(`El compañero está ${companeroOcupado.motivo} en esa fecha.`, 'companero');
     }
-    if (tipo === 'ADVANCE' && (!payload.amount || Number(payload.amount) <= 0)) return 'Ingresa el monto del anticipo.';
-    if (tipo === 'CERTIFICATE' && !payload.certificateType) return 'Selecciona el tipo de constancia.';
+    if (tipo === 'ADVANCE' && (!payload.amount || Number(payload.amount) <= 0)) return f('Ingresa el monto del anticipo.', 'monto');
+    if (tipo === 'CERTIFICATE' && !payload.certificateType) return f('Selecciona el tipo de constancia.', 'constancia');
     if (tipo === 'OVERTIME') {
-        if (!payload.date) return 'Selecciona la fecha de las horas extra.';
-        if (!payload.hours || Number(payload.hours) <= 0) return 'Ingresa cuántas horas.';
+        if (!payload.date) return f('Selecciona la fecha de las horas extra.', 'fecha');
+        if (!payload.hours || Number(payload.hours) <= 0) return f('Ingresa cuántas horas.', 'horas');
     }
     if (tipo === 'DISABILITY') {
         const fin = finDeIncapacidad(payload.startDate, payload.days);
-        if (!payload.startDate || !fin) return 'Ingresa la fecha de inicio y la cantidad de días.';
+        if (!payload.startDate || !fin) return f('Ingresa la fecha de inicio y la cantidad de días.', !payload.startDate ? 'inicio' : 'dias');
         const solape = choqueEnRango(incapacidades, payload.startDate, fin);
-        if (solape) return `Ya hay una incapacidad aprobada del ${periodoDe(solape)} — esas fechas se solapan.`;
+        if (solape) return f(`Ya hay una incapacidad aprobada del ${periodoDe(solape)} — esas fechas se solapan.`, 'inicio');
     }
     return null;
+}
+
+/**
+ * El motivo por el que la solicitud NO se puede enviar, o `null` si se puede.
+ * Los mismos textos que mostraba el portal (y que muestra la app). Es el
+ * texto de `faltaParaEnviar`.
+ *
+ * @param {object} ctx — empleadoId, tipo, payload, nota, antiguedad,
+ *   vacacionAprobada, incapacidades, companeroOcupado, anioActual
+ */
+export function motivoParaNoEnviar(ctx) {
+    return faltaParaEnviar(ctx)?.texto ?? null;
 }
 
 /** El compañero no puede cambiar turno el día que está de permiso, vacaciones o incapacidad. */

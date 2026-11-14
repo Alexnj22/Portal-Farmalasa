@@ -13,6 +13,8 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { fetchDevolucionDisponible, emitirNotaCredito, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { totalDevolucion, DESTINOS_DEVOLUCION } from './devolucion';
 import { LoadingState } from '../../components/common/StateViews';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 // Devolución parcial de un Crédito Fiscal: el cliente regresa parte de lo que
 // compró y sale una Nota de Crédito por eso (borrador 0017).
@@ -46,7 +48,15 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
         ...it, pide: unidades[it.clave] ?? '', destino: destino[it.clave] ?? 'reingreso',
     })), [items, unidades, destino]);
     const { total, renglones, errores } = useMemo(() => totalDevolucion(pedidos), [pedidos]);
-    const listo = datos?.puede && renglones.length > 0 && !errores.length && motivo.trim() !== '' && !emitiendo;
+    // Lo que falta para emitir y el campo donde se arregla (2026-11-14). Las
+    // mismas condiciones que apagaban el botón; la cantidad que se pasa va
+    // primero porque ese renglón no cuenta como devuelto.
+    const queFalta = !datos?.puede ? null
+        : errores.length ? { texto: 'Hay una cantidad que pasa de lo que queda por devolver.', campo: `dev-${errores[0]}` }
+        : renglones.length === 0 ? { texto: 'Escribe cuántas unidades devuelve.', campo: `dev-${(pedidos.find(it => it.disponibles > 0) ?? pedidos[0])?.clave}` }
+        : motivo.trim() === '' ? { texto: 'Escribe por qué devuelve.', campo: 'motivo-devolucion' }
+        : null;
+    const listo = datos?.puede && !queFalta && !emitiendo;
 
     const emitir = async () => {
         setEmitiendo(true);
@@ -126,7 +136,8 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
-                <div className="flex items-center justify-end gap-2 w-full">
+                <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+                    {queFalta && !emitiendo && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                     <Button variant="ghost" onClick={onClose} disabled={emitiendo}>Cancelar</Button>
                     {datos?.puede && (
                         <Button variant="primary" icon={emitiendo ? Loader2 : FileMinus} disabled={!listo} onClick={emitir}>Emitir nota de crédito</Button>

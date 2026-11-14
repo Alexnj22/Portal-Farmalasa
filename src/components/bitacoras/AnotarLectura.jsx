@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { AlertTriangle, Droplets, Thermometer } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -53,6 +55,12 @@ export default function AnotarLectura({ area, franja, lectura, fecha, valores, o
     const faltaAccion = fueraDeRango && !accion.trim();
     const faltaMotivo = corrigiendo && !motivo.trim();
     const sinTemp     = tempNum === null || Number.isNaN(tempNum);
+    // Lo que falta, en el mismo orden que apaga el botón, con su campo
+    // (2026-11-14): el pie lo dice y un toque lleva hasta él.
+    const queFalta = sinTemp ? { texto: 'Escribe la temperatura.', campo: 'temperatura' }
+        : faltaAccion ? { texto: 'Anota qué se hizo: está fuera de rango.', campo: 'accion' }
+        : faltaMotivo ? { texto: 'Escribe el motivo de la corrección.', campo: 'motivo' }
+        : null;
 
     const guardar = useCallback(async () => {
         setError(null);
@@ -162,11 +170,14 @@ export default function AnotarLectura({ area, franja, lectura, fecha, valores, o
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {queFalta && !guardando && (
+                    <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+                )}
                 <Button variant="ghost" onClick={() => onCerrar(false)} disabled={guardando}>
                     Cancelar
                 </Button>
                 <Button variant="primary" onClick={guardar} loading={guardando}
-                    disabled={sinTemp || faltaAccion || faltaMotivo}>
+                    disabled={Boolean(queFalta)}>
                     {corrigiendo ? 'Guardar la corrección' : 'Anotar'}
                 </Button>
             </LiquidModal.Footer>

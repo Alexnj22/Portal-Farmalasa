@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { CalendarPlus, CheckCircle2, XCircle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import FilaConAcciones from './FilaConAcciones';
@@ -37,7 +40,11 @@ export function PedirProrroga({ tipo, ids, titulo, vence, onCerrar, onListo }) {
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
     const n = Number(dias);
-    const valido = Number.isInteger(n) && n >= 1 && n <= 365 && motivo.trim().length >= 3;
+    // Lo que falta, en orden y con su campo (2026-11-14); `valido` es que no falte nada.
+    const queFalta = !(Number.isInteger(n) && n >= 1 && n <= 365)
+        ? { texto: 'Pon los días que necesita (de 1 a 365).', campo: 'prorrogaDias' }
+        : motivo.trim().length < 3 ? { texto: 'Escribe el motivo.', campo: 'prorrogaMotivo' } : null;
+    const valido = queFalta === null;
     const pedir = async () => {
         setEnviando(true);
         try {
@@ -59,17 +66,18 @@ export function PedirProrroga({ tipo, ids, titulo, vence, onCerrar, onListo }) {
                         {vence ? `Hoy puede retirar hasta el ${dia(vence)}. ` : ''}
                         Se pide una sola vez: la autoriza Talento Humano o Supervisión de ventas, y al cliente le llega el aviso.
                     </p>
-                    <PortalInput label="Días que necesita" name="dias" inputMode="numeric" maskType="PERCENT" autoFocus
+                    <PortalInput label="Días que necesita" name="prorrogaDias" inputMode="numeric" maskType="PERCENT" autoFocus
                         value={dias} onChange={(e) => setDias(e.target.value)} placeholder="Ej. 15"
                         helperText={n >= 1 && vence ? `Quedaría hasta el ${dia(new Date(new Date(vence).getTime() + n * 86400000))}.` : undefined} />
-                    <PortalTextarea label="Motivo" name="motivo" rows={3} maxLength={300} value={motivo}
+                    <PortalTextarea label="Motivo" name="prorrogaMotivo" rows={3} maxLength={300} value={motivo}
                         onChange={(e) => setMotivo(e.target.value)} placeholder="Por qué el cliente no puede venir en el plazo" />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
                 <Button icon={CalendarPlus} loading={enviando} disabled={!valido} onClick={pedir}>Pedir prórroga</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }
@@ -147,7 +155,10 @@ function DecidirProrroga({ p, onCerrar, onListo }) {
     const [nota, setNota] = useState('');
     const [enviando, setEnviando] = useState(false);
     const n = Number(dias);
-    const valido = p.autorizar ? Number.isInteger(n) && n >= 1 && n <= 365 : nota.trim().length >= 3;
+    const queFalta = p.autorizar
+        ? (Number.isInteger(n) && n >= 1 && n <= 365 ? null : { texto: 'Pon los días que se autorizan (de 1 a 365).', campo: 'prorrogaDiasAutorizados' })
+        : (nota.trim().length >= 3 ? null : { texto: 'Escribe el motivo para el cliente.', campo: 'prorrogaNota' });
+    const valido = queFalta === null;
     const decidir = async () => {
         setEnviando(true);
         try {
@@ -174,18 +185,19 @@ function DecidirProrroga({ p, onCerrar, onListo }) {
                         {p.vence ? ` Hoy vence el ${dia(p.vence)}.` : ''}
                     </p>
                     {p.autorizar && (
-                        <PortalInput label="Días que se autorizan" name="dias" inputMode="numeric" maskType="PERCENT"
+                        <PortalInput label="Días que se autorizan" name="prorrogaDiasAutorizados" inputMode="numeric" maskType="PERCENT"
                             value={dias} onChange={(e) => setDias(e.target.value)}
                             helperText={n >= 1 && p.vence ? `Quedaría hasta el ${dia(new Date(new Date(`${p.vence}T12:00:00`).getTime() + n * 86400000))}.` : undefined} />
                     )}
-                    <PortalTextarea label={p.autorizar ? 'Nota (opcional)' : 'Motivo (se le dice al cliente)'} name="nota" rows={3}
+                    <PortalTextarea label={p.autorizar ? 'Nota (opcional)' : 'Motivo (se le dice al cliente)'} name="prorrogaNota" rows={3}
                         maxLength={300} value={nota} onChange={(e) => setNota(e.target.value)} />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
                 <Button loading={enviando} disabled={!valido} onClick={decidir}>{p.autorizar ? 'Autorizar' : 'No autorizar'}</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

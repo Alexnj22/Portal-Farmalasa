@@ -116,15 +116,25 @@ export function mensajeDePublicacion(res, dejadasAparte = 0) {
 // teléfono: los mismos frenos que aplica el CHECK de la base, dichos antes de
 // que la base los rechace — un error de guardado no explica qué falta.
 
-/** Qué le falta al motivo para poder guardarse, o `null` si está completo. */
-export function faltaEnMotivoDeAjuste({ motivo, nota = '', unidades = '', dias = '' }) {
+/**
+ * Qué le falta al motivo para poder guardarse y en qué campo (`{ texto, campo }`),
+ * o `null` si está completo. El campo es el `name` del control en el portal, para
+ * que el aviso lleve hasta él (2026-11-14).
+ */
+export function faltaEnMotivoDeAjusteConCampo({ motivo, nota = '', unidades = '', dias = '' }) {
     if (!motivo) return null;
-    if (motivo === 'otro' && !String(nota).trim()) return 'Escribe qué pasa con este producto.';
+    if (motivo === 'otro' && !String(nota).trim()) return { texto: 'Escribe qué pasa con este producto.', campo: 'manual_nota' };
     if (motivo === 'cliente_fijo' && !(parseInt(unidades, 10) > 0 && parseInt(dias, 10) > 0)) {
-        return 'Faltan las unidades y cada cuántos días las compra.';
+        return {
+            texto: 'Faltan las unidades y cada cuántos días las compra.',
+            campo: parseInt(unidades, 10) > 0 ? 'manual_cliente_dias' : 'manual_cliente_unidades',
+        };
     }
     return null;
 }
+
+/** Qué le falta al motivo para poder guardarse, o `null` si está completo (sólo el texto). */
+export const faltaEnMotivoDeAjuste = (d) => faltaEnMotivoDeAjusteConCampo(d)?.texto ?? null;
 
 /** Lo que se escribe en `product_stock_params` al guardar el motivo. */
 export function patchDeMotivoDeAjuste({ motivo, nota = '', unidades = '', dias = '' }) {

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, Plus, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
+import PieDeModal from '../common/PieDeModal';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Button from '../common/Button';
 import PortalInput from '../common/PortalInput';
 import CampoMesAnio from '../common/CampoMesAnio';
@@ -71,6 +74,28 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [datos]);
 
+    /* Lo que falta, con el campo donde se arregla (2026-11-14). Mismas dos
+     * reglas que `loteIncompleto` y `faltaVence`, en ese orden, dichas para el
+     * PRIMER grupo que las incumple. */
+    const queFalta = (() => {
+        const iLote = grupos.findIndex(g => g.nuevo && conAlgo(g)
+            && (!String(g.lote ?? '').trim() || !venceDelMes(g.vence)));
+        if (iLote >= 0) {
+            return !String(grupos[iLote].lote ?? '').trim()
+                ? { texto: 'Escribe el número del lote nuevo.', campo: `lote-${iLote}` }
+                : { texto: 'Pon el vencimiento del lote nuevo.', campo: `vence-${iLote}` };
+        }
+        if (datos?.perecedero) {
+            const iVence = grupos.findIndex(g => conAlgo(g) && !venceDelMes(g.vence));
+            if (iVence >= 0) {
+                const g = grupos[iVence];
+                const hayCampo = g.nuevo || pidenVence.has(iVence) || !datos.regulado;
+                return { texto: 'Pon el vencimiento de lo que contaste.', campo: hayCampo ? `vence-${iVence}` : null };
+            }
+        }
+        return null;
+    })();
+
     const enviar = async () => {
         const conteo = grupos.flatMap(g => (datos.presentaciones ?? []).map(p => ({
             tipo: p.tipo, factor: p.factor,
@@ -131,7 +156,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                                     <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
                                         <PortalInput label="Lote" name={`lote-${i}`} value={g.lote ?? ''}
                                             onChange={(e) => cambiar(i, { lote: e.target.value })} />
-                                        <div className="space-y-1">
+                                        <div className="space-y-1" data-campo={`vence-${i}`}>
                                             <p className="text-label font-bold text-content-3">Vence</p>
                                             <CampoMesAnio value={g.vence ?? ''} onChange={(v) => cambiar(i, { vence: v })} />
                                         </div>
@@ -145,8 +170,10 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                                     </p>
                                 ))}
                                 {datos.perecedero && !g.nuevo && (pidenVence.has(i) || !datos.regulado) && (
-                                    <CampoMesAnio label="Vence (mes y año)" value={g.vence ?? ''}
-                                        onChange={(v) => cambiar(i, { vence: v })} />
+                                    <div data-campo={`vence-${i}`}>
+                                        <CampoMesAnio label="Vence (mes y año)" value={g.vence ?? ''}
+                                            onChange={(v) => cambiar(i, { vence: v })} />
+                                    </div>
                                 )}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {(datos.presentaciones ?? []).map(p => (
@@ -170,19 +197,21 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                     </>
                 )}
             </LiquidModal.Body>
-            <LiquidModal.Footer>
-                {resultado ? (
+            {resultado ? (
+                <LiquidModal.Footer>
                     <Button variant="primary" onClick={onCerrar}>Listo</Button>
-                ) : (
-                    <>
-                        <Button variant="ghost" onClick={onCerrar} disabled={enviando}>Cancelar</Button>
-                        <Button variant="primary" icon={CheckCircle2} loading={enviando}
-                            disabled={!datos || loteIncompleto || faltaVence} onClick={enviar}>
-                            {ronda === 2 ? 'Enviar reconteo' : 'Enviar conteo'}
-                        </Button>
-                    </>
-                )}
-            </LiquidModal.Footer>
+                </LiquidModal.Footer>
+            ) : (
+                <PieDeModal izquierda={datos && queFalta && !enviando
+                    ? <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />
+                    : null}>
+                    <Button variant="ghost" onClick={onCerrar} disabled={enviando}>Cancelar</Button>
+                    <Button variant="primary" icon={CheckCircle2} loading={enviando}
+                        disabled={!datos || loteIncompleto || faltaVence} onClick={enviar}>
+                        {ronda === 2 ? 'Enviar reconteo' : 'Enviar conteo'}
+                    </Button>
+                </PieDeModal>
+            )}
         </LiquidModal>
     );
 }

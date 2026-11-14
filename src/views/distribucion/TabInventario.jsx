@@ -8,6 +8,8 @@ import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
@@ -88,7 +90,12 @@ function EntradaModal({ emisorId, onClose, onGuardado }) {
     }, [catalogo, texto]);
 
     const cant = leerEntero(unidades);
-    const listo = !!productoId && lote.trim() !== '' && cant !== null && cant > 0 && !guardando;
+    // Lo que falta, en orden y con su campo (2026-11-14); `listo` es que no falte nada.
+    const queFalta = !productoId ? { texto: 'Elige el producto.', campo: 'productoEntrada' }
+        : lote.trim() === '' ? { texto: 'Escribe el lote.', campo: 'loteEntrada' }
+        : !(cant !== null && cant > 0) ? { texto: 'Escribe cuántas unidades entran.', campo: 'unidadesEntrada' }
+        : null;
+    const listo = queFalta === null && !guardando;
 
     const guardar = async () => {
         setGuardando(true);
@@ -117,17 +124,19 @@ function EntradaModal({ emisorId, onClose, onGuardado }) {
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
                     <PortalInput label="Buscar producto" name="buscar" value={texto} onChange={(e) => setTexto(e.target.value)}
                         placeholder="Nombre del producto" />
-                    <LiquidSelect value={productoId} placeholder={opciones.length ? 'Elegir producto…' : 'Ningún producto del catálogo coincide'}
-                        options={opciones} onChange={setProductoId} disabled={!opciones.length} />
+                    <div data-campo="productoEntrada">
+                        <LiquidSelect value={productoId} placeholder={opciones.length ? 'Elegir producto…' : 'Ningún producto del catálogo coincide'}
+                            options={opciones} onChange={setProductoId} disabled={!opciones.length} />
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <PortalInput label="Lote" name="lote" value={lote} onChange={(e) => setLote(e.target.value.toUpperCase())}
+                        <PortalInput label="Lote" name="loteEntrada" value={lote} onChange={(e) => setLote(e.target.value.toUpperCase())}
                             placeholder="Como viene en la caja" />
                         <div>
                             <span className="text-caption font-bold text-content-2 block mb-1.5">Vence</span>
                             <LiquidDatePicker value={vence} onChange={(v) => setVence(v || '')} />
                         </div>
                     </div>
-                    <PortalInput label="Unidades" name="unidades" inputMode="numeric" value={unidades}
+                    <PortalInput label="Unidades" name="unidadesEntrada" inputMode="numeric" value={unidades}
                         onChange={(e) => setUnidades(e.target.value)} hasError={unidades !== '' && (cant === null || cant <= 0)}
                         errorMessage="Escribe un número entero de unidades"
                         helperText="En unidades sueltas: una caja de 24 son 24." />
@@ -137,6 +146,9 @@ function EntradaModal({ emisorId, onClose, onGuardado }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <div className="flex items-center justify-end gap-2 w-full">
+                    {queFalta && !guardando && (
+                        <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+                    )}
                     <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                     <Button variant="primary" icon={guardando ? Loader2 : Save} disabled={!listo} onClick={guardar}>Registrar entrada</Button>
                 </div>
@@ -163,7 +175,14 @@ function LoteModal({ lote, puedeAjustar, onClose, onGuardado }) {
 
     const cant = leerEntero(existencia);
     const cambia = cant !== null && (cant !== lote.existencia || (vence || null) !== (lote.vence ?? null));
-    const listo = puedeAjustar && cambia && motivo.trim() !== '' && !guardando;
+    // Lo que falta, en orden y con su campo (2026-11-14). Sin permiso no hay
+    // botón de guardar, así que tampoco aviso.
+    const queFalta = !puedeAjustar ? null
+        : cant === null ? { texto: 'Escribe la existencia contada.', campo: 'existenciaLote' }
+        : !cambia ? { texto: 'Cambia la existencia o el vencimiento.', campo: 'existenciaLote' }
+        : motivo.trim() === '' ? { texto: 'Escribe el motivo del ajuste.', campo: 'motivoAjusteLote' }
+        : null;
+    const listo = puedeAjustar && queFalta === null && !guardando;
 
     const guardar = async () => {
         setGuardando(true);
@@ -191,7 +210,7 @@ function LoteModal({ lote, puedeAjustar, onClose, onGuardado }) {
                     {puedeAjustar && (
                         <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <PortalInput label="Existencia contada" name="existencia" inputMode="numeric" value={existencia}
+                                <PortalInput label="Existencia contada" name="existenciaLote" inputMode="numeric" value={existencia}
                                     onChange={(e) => setExistencia(e.target.value)} hasError={cant === null}
                                     errorMessage="Escribe un número entero" helperText={`Hoy dice ${lote.existencia}`} />
                                 <div>
@@ -199,7 +218,7 @@ function LoteModal({ lote, puedeAjustar, onClose, onGuardado }) {
                                     <LiquidDatePicker value={vence} onChange={(v) => setVence(v || '')} />
                                 </div>
                             </div>
-                            <PortalTextarea label="Motivo del ajuste" name="motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)}
+                            <PortalTextarea label="Motivo del ajuste" name="motivoAjusteLote" value={motivo} onChange={(e) => setMotivo(e.target.value)}
                                 placeholder="Conteo físico, producto dañado, fecha mal capturada…" rows={2} />
                         </div>
                     )}
@@ -242,6 +261,9 @@ function LoteModal({ lote, puedeAjustar, onClose, onGuardado }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <div className="flex items-center justify-end gap-2 w-full">
+                    {queFalta && !guardando && (
+                        <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+                    )}
                     <Button variant="ghost" onClick={onClose} disabled={guardando}>{puedeAjustar ? 'Cancelar' : 'Cerrar'}</Button>
                     {puedeAjustar && (
                         <Button variant="primary" icon={guardando ? Loader2 : Save} disabled={!listo} onClick={guardar}>Guardar ajuste</Button>

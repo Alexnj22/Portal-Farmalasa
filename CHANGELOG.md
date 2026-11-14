@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1536.0 — Todos los modales dicen qué falta y llevan al campo
+
+Tercera tanda, la grande: unos 60 diálogos que apagaban el botón de guardar sin decir por qué (o lo decían lejos, en gris) ahora lo dicen al pie, junto al botón, y un toque lleva al campo que falta. Ningún botón cambió cuándo se habilita.
+- **Caja:** entrada y salida de efectivo de Mi caja (también el paso de identificar), Abono, Mapfre, Aplicación de inyecciones, Reenviar ingreso, Bonos por pagar, Depósito al banco, Entrega de caja, y en Cuentas por cobrar recibir el pago y pedir corrección.
+- **Inventario y traslados:** Pedir traslado, confirmar o rechazar un traslado, Encargos (confirmar, rechazar, a saldo, cancelar, cambiar fecha, prórroga, registrar llamada), Nuevo conteo, Contar existencia, Consulta de existencia, Lote real del renglón, inventario de Distribución.
+- **Personal y bitácoras:** el día del horario, Solicitud de personal (el motivo se ve antes de enviar), Lectura, Limpieza, Ronda, Lotes por revisar, Registro de cumplimiento, Seguro de vida (póliza y pago), Elegir tu nombre.
+- **Lo demás:** Venta perdida, Puntos, Premios, Motivo de ajuste, Partir renglón, Solicitudes de datos, Incidentes, Cartera y clientes de distribución, Devoluciones, Metas y gastos, Promociones, Reclamos, Visitas, Marketing, Encuestas, y Ofertas (historias, banners, frases, ofertas, envío).
+- Donde el pie sólo tenía Cancelar y Guardar en las puntas, los dos botones quedan juntos a la derecha y el aviso a la izquierda.
+
 ## v2.1535.2 — Sanción y Devolver pedido dicen qué falta y llevan al campo
 
 - **Registrar una sanción** y **Devolver a bodega** apagaban el botón sin decir por qué. Ahora el pie dice qué falta (la falta, la sanción, la fecha, si se descuenta, los días, la autorización; la cantidad o la foto del daño) y lleva al campo.

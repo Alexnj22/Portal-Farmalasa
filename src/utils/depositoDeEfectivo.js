@@ -56,6 +56,20 @@ export function faltasDelDeposito({ nMonto, nEfectivo, nAporte, banco, entregado
     };
 }
 
+/**
+ * El PRIMER motivo por el que no se puede cerrar, `{ texto, campo }` o null
+ * (2026-11-14) — el aviso del pie del portal lo dice y lleva al campo
+ * (`campo` = el `data-campo`/`name` del formulario). Las mismas cuatro
+ * condiciones que apagan el botón, en el orden en que aparecen en pantalla.
+ */
+export function queFaltaDelDeposito({ noAlcanza, faltaBanco, faltaQuien, faltaNota }) {
+    if (noAlcanza) return { texto: 'No alcanza: baja lo que va al banco o en efectivo.', campo: 'dep-monto' };
+    if (faltaBanco) return { texto: 'Elige a qué banco va.', campo: 'banco' };
+    if (faltaQuien) return { texto: 'Elige a quién se le entrega el efectivo.', campo: 'entregadoA' };
+    if (faltaNota) return { texto: 'Escribe de dónde salió lo que entra de afuera.', campo: 'dep-aporte-nota' };
+    return null;
+}
+
 /** Los días que cubre un depósito, dicho corto («17 ago» o «17 ago → 19 ago»). */
 export function rangoDeDiasDelDeposito(d, corta) {
     if (!d?.dia_desde) return '—';

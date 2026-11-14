@@ -3,6 +3,9 @@ import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Layers, Hash, Printer, Radio, Wrench, Eye } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
+import PieDeModal from '../common/PieDeModal';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidSelect from '../common/LiquidSelect';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -170,7 +173,16 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const institucionMissing = scopeType === 'LABORATORIO' && !laboratorioId;
     const manualMissing = scopeType === 'MANUAL' && manualSelected.length === 0;
     const tamanoMissing = scopeType === 'CICLICO' && (!Number.isInteger(tamanoNum) || tamanoNum < 1);
-    const isValid = branchId && scopeType && !institucionMissing && !manualMissing && !tamanoMissing;
+    // Lo que falta, en orden y con su campo (2026-11-14); `isValid` es que no
+    // falte nada. El permiso no es un campo: se dice igual, sin a dónde ir.
+    const faltaConteo = !branchId ? { texto: 'Elige la sucursal.', campo: 'sucursalConteo' }
+        : !scopeType ? { texto: 'Elige el alcance del conteo.', campo: null }
+        : institucionMissing ? { texto: 'Elige el laboratorio.', campo: 'laboratorioConteo' }
+        : manualMissing ? { texto: 'Agrega al menos un producto.', campo: 'productosConteo' }
+        : tamanoMissing ? { texto: 'Pon cuántos productos entran en la muestra.', campo: 'tamanoConteo' }
+        : null;
+    const isValid = faltaConteo === null;
+    const porQueApagado = faltaConteo ?? (!canEdit ? { texto: 'No tienes permiso para iniciar conteos.', campo: null } : null);
 
     const handleCreate = async () => {
         if (!isValid) return;
@@ -224,7 +236,9 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
                     <div className={islandClass}>
                         <label className={fieldLabel}><span>Sucursal</span>{!branchId && reqBadge}</label>
-                        <LiquidSelect invalid={!branchId} value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
+                        <div data-campo="sucursalConteo">
+                            <LiquidSelect invalid={!branchId} value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
+                        </div>
 
                         {/* Sin wrapper de grilla: SegmentedControl en `layout="block"`
                             YA arma su propia grilla. Envolverlo en un
@@ -246,6 +260,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                     <div className="w-28 shrink-0">
                                         <label className={fieldLabel}><span>Cantidad</span>{tamanoMissing && reqBadge}</label>
                                         <PortalInput
+                                            name="tamanoConteo"
                                             aria-label="Cantidad de productos de la muestra"
                                             type="number"
                                             min="1"
@@ -311,14 +326,14 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         )}
 
                         {scopeType === 'LABORATORIO' && (
-                            <div className="mt-4">
+                            <div className="mt-4" data-campo="laboratorioConteo">
                                 <label className={fieldLabel}><span>Laboratorio</span>{institucionMissing && reqBadge}</label>
                                 <LiquidSelect invalid={institucionMissing} value={laboratorioId} onChange={setLaboratorioId} options={laboratorioOpts} placeholder="Seleccionar laboratorio..." icon={FlaskConical} clearable={false} />
                             </div>
                         )}
 
                         {scopeType === 'MANUAL' && (
-                            <div className="mt-4">
+                            <div className="mt-4" data-campo="productosConteo">
                                 <label className={fieldLabel}><span>Productos a incluir</span>{manualMissing && reqBadge}</label>
                                 <LiquidSelect value={null} onChange={(val) => {
                                     const found = manualResults.find((p) => String(p.id) === val);
@@ -430,13 +445,15 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 </div>
             </div>
 
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={porQueApagado && !saving
+                ? <AvisoDeFalta motivo={porQueApagado.texto} onIr={porQueApagado.campo ? () => irAlCampo(porQueApagado.campo) : null} />
+                : null}>
                 <Button variant="secondary" size="lg" disabled={saving} onClick={onClose}>Cancelar</Button>
                 <Button size="lg" onClick={handleCreate} icon={Check}
                     disabled={saving || !isValid || !canEdit} loading={saving}>
                     {saving ? 'Generando snapshot…' : 'Iniciar Conteo'}
                 </Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

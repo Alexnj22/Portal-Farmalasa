@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, ShieldCheck } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -16,6 +17,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /**
  * El pago del asegurado de Mapfre (2026-10-19).
@@ -60,7 +62,14 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
     const monto = elegida ? Number(elegida.asegurado) : null;
     const estadoPago = estadoDeFormaDePago(pago, monto);
     const porCobrar = (facturas || []).filter((f) => f.estado === 'POR_COBRAR').length;
-    const valido = !!elegida && elegida.estado === 'POR_COBRAR' && !!asegurado && estadoPago.valido;
+    // Qué falta para cobrar, en el mismo orden que antes apagaba el botón, y a
+    // qué campo lleva el aviso del pie (2026-11-14).
+    const queFalta = !elegida ? { texto: 'Elige la factura de Mapfre.', campo: 'factura' }
+        : elegida.estado !== 'POR_COBRAR' ? { texto: 'Esa factura ya tiene el pago anotado.', campo: 'factura' }
+        : !asegurado ? { texto: 'Elige al asegurado.', campo: 'asegurado' }
+        : !estadoPago.valido ? { texto: estadoPago.falta, campo: estadoPago.campo }
+        : null;
+    const valido = !queFalta;
 
     const showToast = useToastStore((s) => s.showToast);
     const cuerpo = useRef(null);
@@ -88,7 +97,7 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
                 onClose={enviando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
+                    <div data-campo="factura" className="flex items-center gap-2">
                         <SearchInput value={texto} onChange={setTexto} placeholder="Factura o producto" className="flex-1" />
                         <Button variant="ghost" size="sm" icon={RefreshCw} iconOnly title="Actualizar la lista"
                             onClick={() => setVuelta((v) => v + 1)} />
@@ -140,7 +149,7 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
 
                     {elegida && (
                         <>
-                            <div>
+                            <div data-campo="asegurado">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Asegurado</p>
                                 <BuscarFicha ficha={asegurado} onElegir={setAsegurado} rotulo="Asegurado"
                                     ayuda="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes." />
@@ -151,6 +160,7 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
+                {queFalta && !enviando && <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />}
                 <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
                 <Button variant="primary" loading={enviando} disabled={ocupado || !valido} onClick={cobrar}>
                     {enviando ? 'Cobrando…' : `Cobrar ${monto != null ? formatMoney(monto) : ''}`}

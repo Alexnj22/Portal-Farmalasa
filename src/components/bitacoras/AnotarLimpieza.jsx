@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { AlertTriangle, Sparkles, XCircle } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -46,6 +48,10 @@ export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'r
     const [error, setError] = useState(null);
 
     const faltaMotivo = (corrigiendo || quitando) && !motivo.trim();
+    // Lo que falta, al lado del botón y con su campo (2026-11-14).
+    const queFalta = faltaMotivo
+        ? { texto: quitando ? 'Escribe por qué la quitas.' : 'Escribe el motivo de la corrección.', campo: 'motivo' }
+        : null;
 
     const guardar = useCallback(async () => {
         setError(null);
@@ -129,6 +135,9 @@ export default function AnotarLimpieza({ area, turno, fecha, registro, modo = 'r
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {queFalta && !guardando && (
+                    <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+                )}
                 <Button variant="ghost" onClick={() => onCerrar(false)} disabled={guardando}>
                     Cancelar
                 </Button>

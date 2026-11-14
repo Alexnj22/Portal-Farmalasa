@@ -6,6 +6,9 @@ import FilaConAcciones from './FilaConAcciones';
 import TarjetaCompacta from './TarjetaCompacta';
 import Encabezado from './EncabezadoDeLista';
 import LiquidModal from '../../components/common/LiquidModal';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -356,7 +359,12 @@ function Confirmar({ encargo, enviando = false, onClose, onConfirmar }) {
     const [fecha, setFecha] = useState(sumarDias(hoySV(), 3));
     const [nota, setNota] = useState('');
     const p = Number(precio);
-    const valido = p > 0 && fecha && fecha >= hoySV();
+    // Lo que falta, en orden y con su campo (2026-11-14); `valido` es que no falte nada.
+    const queFalta = !(p > 0) ? { texto: 'Pon el precio por unidad.', campo: 'precioEncargo' }
+        : !fecha ? { texto: 'Elige cuándo llega.', campo: 'fechaLlegaEncargo' }
+        : fecha < hoySV() ? { texto: 'La fecha no puede ser anterior a hoy.', campo: 'fechaLlegaEncargo' }
+        : null;
+    const valido = queFalta === null;
     // Política del plan: un producto raro, caro y no devolvible necesita el visto bueno del gerente.
     const riesgo = encargoConRiesgo(encargo);
     return (
@@ -372,19 +380,20 @@ function Confirmar({ encargo, enviando = false, onClose, onConfirmar }) {
                             Si es caro, confírmalo con el gerente antes de aceptar.
                         </Notice>
                     )}
-                    <PortalInput label="Precio por unidad ($)" type="text" maskType="DECIMAL" inputMode="decimal" value={precio} onChange={(e) => setPrecio(e.target.value)}
+                    <PortalInput label="Precio por unidad ($)" name="precioEncargo" type="text" maskType="DECIMAL" inputMode="decimal" value={precio} onChange={(e) => setPrecio(e.target.value)}
                         helperText={p > 0 ? `El cliente paga ${formatMoney(p * encargo.cantidad)} por adelantado (100 %).` : undefined} />
-                    <div>
+                    <div data-campo="fechaLlegaEncargo">
                         <span className="block text-label font-semibold text-content-2 mb-1">Llega aproximadamente</span>
                         <LiquidDatePicker value={fecha} onChange={setFecha} />
                     </div>
                     <PortalTextarea label="Nota para el cliente (opcional)" rows={2} value={nota} maxLength={300} onChange={(e) => setNota(e.target.value)} />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={Check} loading={enviando} disabled={!valido || enviando} onClick={() => onConfirmar({ precio: p, fecha, nota: nota.trim() || null })}>Confirmar y avisar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }
@@ -394,17 +403,19 @@ function Rechazar({ encargo, enviando = false, onClose, onRechazar }) {
     const [nota, setNota] = useState('');
     // Un producto que no tenemos se rechaza con motivo: es lo que se le dice al cliente.
     const exigeMotivo = !!encargo.producto_nuevo;
+    const queFalta = exigeMotivo && !nota.trim() ? { texto: 'Escribe el motivo para el cliente.', campo: 'motivoRechazoEncargo' } : null;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel={ROT.rechazar}>
             <LiquidModal.Header titulo={titulo} onClose={onClose} />
             <LiquidModal.Body>
-                <PortalTextarea label="Motivo para el cliente" rows={3} value={nota} maxLength={300} onChange={(e) => setNota(e.target.value)}
+                <PortalTextarea label="Motivo para el cliente" name="motivoRechazoEncargo" rows={3} value={nota} maxLength={300} onChange={(e) => setNota(e.target.value)}
                     placeholder="Ej. El proveedor no lo tiene; te recomendamos …" />
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
-                <Button variant="destructive" icon={X} loading={enviando} disabled={(exigeMotivo && !nota.trim()) || enviando} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
-            </LiquidModal.Footer>
+                <Button variant="destructive" icon={X} loading={enviando} disabled={queFalta !== null || enviando} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
+            </PieDeModal>
         </LiquidModal>
     );
 }
@@ -421,16 +432,17 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
                     Lo pagado ({formatMoney(encargo.anticipo)}) queda a favor del cliente por {vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sala.
                     El producto queda para la venta. No se deshace.
                 </Notice>
-                <PortalTextarea label="Motivo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
+                <PortalTextarea label="Motivo" name="motivoASaldo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
                     placeholder="Ej. Se le llamó dos veces y no contestó / dijo que ya no lo necesita" />
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={motivo.trim().length < 3 && !enviando
+                ? <AvisoDeFalta motivo="Escribe el motivo." onIr={() => irAlCampo('motivoASaldo')} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button variant="primary" icon={Wallet} loading={enviando} disabled={motivo.trim().length < 3}
                     onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } catch (err) {
                         showToast('No se pudo pasar a saldo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
                     } finally { setEnviando(false); } }}>{ROT.saldo}</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }
@@ -450,15 +462,16 @@ function CancelarSinPago({ encargo, onClose, onConfirmar }) {
                         Todavía no lo pagó, así que no se le cobra ni se le devuelve nada, y no se le pide al proveedor.
                         Si tiene la app, le llega el aviso. No se deshace: si después lo quiere, lo encarga de nuevo.
                     </Notice>
-                    <PortalTextarea label="Motivo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
+                    <PortalTextarea label="Motivo" name="motivoCancelarEncargo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
                         placeholder="Ej. Llamó y dijo que ya lo consiguió / el precio le pareció alto" />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={motivo.trim().length < 3 && !enviando
+                ? <AvisoDeFalta motivo="Escribe el motivo." onIr={() => irAlCampo('motivoCancelarEncargo')} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button variant="destructive" icon={Ban} loading={enviando} disabled={motivo.trim().length < 3}
                     onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } catch (err) { showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error'); } finally { setEnviando(false); } }}>Cancelar el encargo</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

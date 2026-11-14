@@ -244,7 +244,8 @@ describe('el último producto no se pierde', () => {
         await ponerCausa('Se acabaron en sala');
 
         expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
-        expect(screen.getByText(/Te falta terminar AMOXICILINA 500/)).toBeTruthy();
+        // Lo dice el pie, al lado del botón (2026-11-14), y lleva a la pestaña.
+        expect(screen.getByText(/Termina AMOXICILINA 500/)).toBeTruthy();
     });
 });
 
@@ -446,10 +447,10 @@ describe('pedir un solo producto', () => {
         await abrir();
         await ponerCantidad(3);
         expect(screen.getByRole('button', { name: /^Solicitar/ })).toBeDisabled();
-        expect(screen.getByText(/Falta decir para qué se pide/)).toBeTruthy();
+        expect(screen.getByText(/Escribe para qué se pide/)).toBeTruthy();
 
         await ponerCausa('Se acabaron en sala');
-        expect(screen.queryByText(/Falta decir para qué se pide/)).toBeNull();
+        expect(screen.queryByText(/Escribe para qué se pide/)).toBeNull();
         expect(screen.getByRole('button', { name: /^Solicitar/ })).not.toBeDisabled();
     });
 

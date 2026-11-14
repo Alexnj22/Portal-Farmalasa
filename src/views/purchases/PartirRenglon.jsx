@@ -12,6 +12,8 @@ import PortalInput from '../../components/common/PortalInput';
 import { guardarParticion } from '@nucleo/data/cargarCompra';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { BuscadorProducto } from './CargarCompraPiezas';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /** El costo repartido según las unidades; el último se queda con el redondeo. */
 const parejo = (filas) => {
@@ -49,12 +51,21 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
     });
     const suma = Math.round(filas.reduce((a, f) => a + (Number(f.porcentaje) || 0), 0) * 100) / 100;
     const ids = filas.map(f => f.producto?.id).filter(Boolean);
-    const problema = filas.some(f => !f.producto) ? 'Elige el producto de cada parte.'
-        : new Set(ids).size !== ids.length ? 'El mismo producto está dos veces: súmalo en una sola parte.'
-        : filas.some(f => !Number.isInteger(Number(f.unidades)) || Number(f.unidades) < 1) ? 'Las unidades tienen que ser números enteros.'
-        : filas.length === 1 && Number(filas[0].unidades) < 2 ? 'Con un solo producto de 1 unidad no hay nada que partir.'
-        : filas.some(f => !(Number(f.porcentaje) > 0)) ? 'Cada parte tiene que llevar algo del costo.'
-        : suma !== 100 ? `El costo tiene que sumar 100 % y va en ${suma} %.` : null;
+    // Lo que falta y en qué parte (2026-11-14): el aviso del pie lleva hasta ella.
+    const enParte = (k, que) => (k < 0 ? null : `parte-${k}${que ? `-${que}` : ''}`);
+    const repetida = filas.findIndex((f, k) => f.producto && filas.findIndex(x => x.producto?.id === f.producto.id) !== k);
+    const queFalta = filas.some(f => !f.producto)
+            ? { texto: 'Elige el producto de cada parte.', campo: enParte(filas.findIndex(f => !f.producto)) }
+        : new Set(ids).size !== ids.length
+            ? { texto: 'El mismo producto está dos veces: súmalo en una sola parte.', campo: enParte(repetida) }
+        : filas.some(f => !Number.isInteger(Number(f.unidades)) || Number(f.unidades) < 1)
+            ? { texto: 'Las unidades tienen que ser números enteros.', campo: enParte(filas.findIndex(f => !Number.isInteger(Number(f.unidades)) || Number(f.unidades) < 1), 'unidades') }
+        : filas.length === 1 && Number(filas[0].unidades) < 2
+            ? { texto: 'Con un solo producto de 1 unidad no hay nada que partir.', campo: enParte(0, 'unidades') }
+        : filas.some(f => !(Number(f.porcentaje) > 0))
+            ? { texto: 'Cada parte tiene que llevar algo del costo.', campo: enParte(filas.findIndex(f => !(Number(f.porcentaje) > 0)), 'porcentaje') }
+        : suma !== 100 ? { texto: `El costo tiene que sumar 100 % y va en ${suma} %.`, campo: enParte(0, 'porcentaje') } : null;
+    const problema = queFalta?.texto ?? null;
 
     const guardar = async (partes) => {
         setGuardando(true); setError('');
@@ -82,7 +93,7 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
                         const entran = facturadas * (Number(f.unidades) || 0);
                         const costo = entran > 0 ? cobrado * (Number(f.porcentaje) || 0) / 100 / entran : 0;
                         return (
-                            <div key={k} data-surface="card" className="p-3">
+                            <div key={k} data-surface="card" className="p-3" data-campo={`parte-${k}`}>
                                 <div className="flex items-center gap-2">
                                     <p className={`flex-1 min-w-0 text-body font-black ${f.producto ? 'text-content' : 'text-content-3'}`}>
                                         {f.producto?.nombre ?? 'Sin producto'}
@@ -100,9 +111,9 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
                                         onElegir={(p) => { poner(k, { producto: { id: p.id, nombre: p.nombre } }); setBuscando(null); }} />
                                 )}
                                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
-                                    <PortalInput compact labelDenso label="Unidades por cada una" inputMode="numeric" value={f.unidades}
+                                    <PortalInput compact labelDenso label="Unidades por cada una" name={`parte-${k}-unidades`} inputMode="numeric" value={f.unidades}
                                         onChange={e => poner(k, { unidades: e.target.value.replace(/[^\d]/g, '') })} />
-                                    <PortalInput compact labelDenso label="% del costo" inputMode="decimal" value={f.porcentaje}
+                                    <PortalInput compact labelDenso label="% del costo" name={`parte-${k}-porcentaje`} inputMode="decimal" value={f.porcentaje}
                                         onChange={e => { setAMano(true); setFilas(l => l.map((x, j) => (j === k ? { ...x, porcentaje: e.target.value.replace(/[^\d.]/g, '') } : x))); }} />
                                     <p className="col-span-2 sm:col-span-1 text-caption text-content-2 tabular-nums">
                                         Entran <b>{entran}</b> a {formatMoney(costo)}
@@ -125,7 +136,6 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
                         <Checkbox size="sm" label="Recordar para las próximas facturas de este producto" checked={recordar} onChange={() => setRecordar(r => !r)} />
                     </div>
                 )}
-                {problema && <p className="mt-3 text-caption font-bold text-warning-text">{problema}</p>}
                 {error && <Notice variant="danger" className="mt-3">{error}</Notice>}
             </LiquidModal.Body>
             <LiquidModal.Footer>
@@ -133,6 +143,7 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
                     {yaPartido && (
                         <Button variant="ghost" loading={guardando} onClick={() => guardar([])}>Dejar entero</Button>
                     )}
+                    {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />}
                     <div className="ml-auto flex items-center gap-2">
                         <Button variant="ghost" disabled={guardando} onClick={onCerrar}>Cancelar</Button>
                         <Button loading={guardando} disabled={!!problema} onClick={confirmarPartes}>Guardar</Button>

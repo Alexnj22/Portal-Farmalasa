@@ -6,11 +6,14 @@ import { esLoteGenerico, rotuloDeLote } from '@nucleo/utils/unidadesInventario';
 import { ArrowLeft, ArrowLeftRight, Check, Pencil, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
+import PieDeModal from '../../components/common/PieDeModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Notice from '../../components/common/Notice';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 // Pedirle un producto a otra sala.
 //
@@ -77,7 +80,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         esAntibiotico, avisoVence,
         descartados, setDescartados, lotesDeSala, reparto, hayLotes,
         lineaLista, lineaActual, yaEstaEnLaLista, salasDestino,
-        puedeEnviar, faltaElParaQue,
+        puedeEnviar, faltaEnvio,
         renglones, causa, setCausa, agregar, quitarDelStore, editarRenglon, limpiarStore,
         enviar, enviando, listo, error, resumen,
     } = usePedirTraslado({ productoInicial, alCerrar: onClose, alTerminar: onListo });
@@ -110,6 +113,22 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
     };
 
     const quitar = (i) => { quitarDelStore(i); setEditando(null); };
+
+    /* ── Por qué «Solicitar» está apagado, al lado del botón ────────────────
+     * Lo dice `faltaParaEnviar` (núcleo), una razón a la vez. Si se arregla en
+     * la otra mitad, primero se cambia de pestaña y después se busca el campo.
+     * Sólo cuando el botón está a la vista: en «Agregar» sin el atajo, el pie no
+     * lleva Solicitar y los avisos del cuerpo dicen lo que hay que saber. */
+    const muestraSolicitar = Boolean(producto || renglones.length > 0) && (pestana === 'lista' || soloUno);
+    const irAFalta = (f) => {
+        if (f.pestana && f.pestana !== pestana) {
+            setPestana(f.pestana);
+            if (f.campo) setTimeout(() => irAlCampo(f.campo), 50);
+            return;
+        }
+        if (f.campo) irAlCampo(f.campo);
+    };
+    const avisoFalta = muestraSolicitar && faltaEnvio && !enviando ? faltaEnvio : null;
 
 
     /* `max-w-lg` y no `max-w-md`: desde el atajo del producto suelto el pie lleva
@@ -197,7 +216,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                     if (r.clave !== clave) return null;
                                     const abierta = editando === i || Boolean(r.problema);
                                     return (
-                                        <div key={i} data-surface="card" className="px-3 py-2.5">
+                                        <div key={i} data-surface="card" className="px-3 py-2.5"
+                                            data-campo={r.problema ? 'renglonConProblema' : undefined}>
                                             <div className="flex items-start gap-2">
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-body-sm font-black text-content truncate">
@@ -511,6 +531,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     el botón que lo necesita. */}
                 {!listo && !soloUno && pestana === 'lista' && renglones.length > 0 && (
                     <PortalTextarea
+                        name="causa"
                         value={causa}
                         onChange={e => setCausa(e.target.value)}
                         rows={2}
@@ -518,23 +539,16 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     />
                 )}
 
-                {!listo && !soloUno && pestana === 'lista' && faltaElParaQue && (
-                    <p className="text-micro font-semibold text-warning-text px-1 leading-snug">
-                        Falta decir para qué se pide: es lo único que queda escrito en el
-                        movimiento de las dos salas.
-                    </p>
-                )}
-
                 {!listo && (
                     <>
                         {/* Un producto a medias no se pierde en silencio: se
                             dice cuál es y el botón no deja mandar hasta que se
                             complete o se suelte. */}
-                        <AvisoPedido aviso={avisos.aMedias} />
+                        {!muestraSolicitar && <AvisoPedido aviso={avisos.aMedias} />}
 
                         {/* El mismo producto al mismo estante dos veces es una
                             sola línea con la cantidad sumada, no dos pedidos. */}
-                        <AvisoPedido aviso={avisos.repetido} />
+                        {!muestraSolicitar && <AvisoPedido aviso={avisos.repetido} />}
 
                         {/* Un renglón marcado en rojo tiene que frenar el envío
                             desde la otra pestaña también, o el botón se apaga sin
@@ -545,6 +559,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             nota de arriba: acompaña al botón que manda. */}
                         {soloUno && (
                             <PortalTextarea
+                                name="causa"
                                 value={causa}
                                 onChange={e => setCausa(e.target.value)}
                                 rows={2}
@@ -552,7 +567,9 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             />
                         )}
 
-                        <AvisoPedido aviso={avisos.paraQue} />
+                        {/* Con Solicitar a la vista, lo que falta lo dice el pie
+                            (y lleva al campo); acá queda para cuando no lo está. */}
+                        {!muestraSolicitar && <AvisoPedido aviso={avisos.paraQue} />}
 
                         {error && <Notice variant="danger">{error}</Notice>}
                     </>
@@ -563,7 +580,10 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 pie sería un botón apagado sin ninguna pista de qué lo enciende.
                 La salida en ese paso es la X del encabezado. */}
             {!listo && (producto || renglones.length > 0) && (
-                <LiquidModal.Footer>
+                <PieDeModal izquierda={avisoFalta
+                    ? <AvisoDeFalta motivo={avisoFalta.texto}
+                        onIr={avisoFalta.campo || (avisoFalta.pestana && avisoFalta.pestana !== pestana) ? () => irAFalta(avisoFalta) : null} />
+                    : null}>
                     {/* Con algo armado, cerrar y DESCARTAR son dos cosas
                         distintas: la equis del encabezado sale un momento —es
                         cómo se va a buscar el siguiente producto— y esto tira lo
@@ -612,7 +632,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                 : salasDestino > 1 ? `Solicitar a ${salasDestino} salas` : 'Solicitar'}
                         </Button>
                     )}
-                </LiquidModal.Footer>
+                </PieDeModal>
             )}
         </LiquidModal>
     );

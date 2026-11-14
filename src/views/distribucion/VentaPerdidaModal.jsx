@@ -10,6 +10,8 @@ import { anotarVentaPerdida, mensajeDeDistribucion } from '@nucleo/data/distribu
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { leerMonto } from './comun';
 import { medicamentoDeSrs } from '@nucleo/utils/distribucionBodega';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 // «Venta perdida»: lo que un cliente pidió y no se le pudo vender. Pedido del
 // usuario (2026-09-29), como el botón de la caja: «si ingreso un producto y no
@@ -68,8 +70,13 @@ export default function VentaPerdidaModal({ emisorId, cliente, pedidoId = null, 
 
     const n = leerMonto(cant);
     const nombreFinal = desdeCatalogo ? producto.nombre : tipo === 'medicamento' ? elegido?.nombre : nombreInsumo.trim();
-    const falta = !nombreFinal ? (tipo === 'medicamento' && !desdeCatalogo ? 'Elige el medicamento de la lista.' : 'Escribe el nombre del insumo.')
-        : !(n > 0) ? 'La cantidad tiene que ser mayor que cero.' : null;
+    // Lo que falta y en qué campo (2026-11-14): el aviso del pie lleva hasta él.
+    const queFalta = !nombreFinal
+        ? (tipo === 'medicamento' && !desdeCatalogo
+            ? { texto: 'Elige el medicamento de la lista.', campo: 'buscar-srs' }
+            : { texto: 'Escribe el nombre del insumo.', campo: 'nombre-insumo' })
+        : !(n > 0) ? { texto: 'La cantidad tiene que ser mayor que cero.', campo: 'cantidad-perdida' } : null;
+    const falta = queFalta?.texto ?? null;
 
     const guardar = async () => {
         if (falta || guardando) return;
@@ -165,7 +172,7 @@ export default function VentaPerdidaModal({ emisorId, cliente, pedidoId = null, 
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full">
-                    {falta && <p className="mr-auto text-caption text-content-3">{falta}</p>}
+                    {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                     <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                     <Button variant="primary" icon={guardando ? Loader2 : PackageX} disabled={!!falta || guardando} onClick={guardar} data-guardar-perdida>
                         Anotar venta perdida

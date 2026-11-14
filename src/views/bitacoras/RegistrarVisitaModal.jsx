@@ -9,6 +9,8 @@ import Notice from '../../components/common/Notice';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { ACTIVIDADES_DE_REGENCIA, mensajeDeRegencia, registrarVisitaDeRegencia } from '@nucleo/data/regencia';
 import { hoySV } from '@nucleo/utils/fecha';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /*
  * Anotar una visita del regente (2026-11-10). Lo que pide la norma: fecha,
@@ -29,7 +31,15 @@ export default function RegistrarVisitaModal({ branchId, sala, regente, enSuNomb
     const [error, setError] = useState(null);
 
     const alternar = (v) => setActividades((a) => (a.includes(v) ? a.filter((x) => x !== v) : [...a, v]));
-    const listo = fecha && entrada && salida && salida > entrada && actividades.length > 0;
+    // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
+    // mismas condiciones que apagaban el botón.
+    const queFalta = !fecha ? { texto: 'Elige la fecha.', campo: 'fecha-visita' }
+        : !entrada ? { texto: 'Elige la hora de entrada.', campo: 'entrada-visita' }
+        : !salida ? { texto: 'Elige la hora de salida.', campo: 'salida-visita' }
+        : !(salida > entrada) ? { texto: 'La salida tiene que ser después de la entrada.', campo: 'salida-visita' }
+        : actividades.length === 0 ? { texto: 'Marca al menos una actividad realizada.', campo: 'actividades-visita' }
+        : null;
+    const listo = !queFalta;
 
     const guardar = async () => {
         setGuardando(true);
@@ -47,16 +57,16 @@ export default function RegistrarVisitaModal({ branchId, sala, regente, enSuNomb
                 subtitulo={`${sala}${regente ? ` · ${regente}` : ''}${enSuNombre ? ' (en su nombre)' : ''}`}
                 onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body className="space-y-4">
-                <div>
+                <div data-campo="fecha-visita">
                     <p className="text-caption font-bold text-content-3 mb-1">Fecha</p>
                     <LiquidDatePicker value={fecha} onChange={setFecha} max={hoySV()} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                    <div data-campo="entrada-visita">
                         <p className="text-caption font-bold text-content-3 mb-1">Entrada</p>
                         <TimePicker12 value={entrada} onChange={setEntrada} />
                     </div>
-                    <div>
+                    <div data-campo="salida-visita">
                         <p className="text-caption font-bold text-content-3 mb-1">Salida</p>
                         <TimePicker12 value={salida} onChange={setSalida} defaultMeridiem="PM" />
                     </div>
@@ -64,7 +74,7 @@ export default function RegistrarVisitaModal({ branchId, sala, regente, enSuNomb
                 {entrada && salida && salida <= entrada && (
                     <Notice variant="warning">La salida tiene que ser después de la entrada.</Notice>
                 )}
-                <div>
+                <div data-campo="actividades-visita">
                     <p className="text-caption font-bold text-content-3 mb-2">Actividades realizadas</p>
                     <div className="flex flex-wrap gap-2">
                         {ACTIVIDADES_DE_REGENCIA.map((a) => {
@@ -84,7 +94,7 @@ export default function RegistrarVisitaModal({ branchId, sala, regente, enSuNomb
                     onChange={(e) => setNotas(e.target.value)} />
                 {error && <Notice variant="danger">{error}</Notice>}
             </LiquidModal.Body>
-            <PieDeModal>
+            <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" loading={guardando} disabled={!listo} onClick={guardar}>Anotar visita</Button>
             </PieDeModal>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { contadoDeBolsas, faltasDelDeposito, repartoDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
+import { contadoDeBolsas, faltasDelDeposito, queFaltaDelDeposito, repartoDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
 
 describe('repartoDelDeposito', () => {
     it('todo al banco deja remanente cero', () => {
@@ -36,6 +36,13 @@ describe('faltasDelDeposito y contadoDeBolsas', () => {
             .toEqual({ faltaNota: false, faltaBanco: true, faltaQuien: false });
         expect(faltasDelDeposito({ nMonto: 0, nEfectivo: 5, nAporte: 3, banco: '', entregadoA: '', aporteNota: ' ' }))
             .toEqual({ faltaNota: true, faltaBanco: false, faltaQuien: true });
+    });
+    it('dice el primer motivo y a qué campo lleva (aviso del pie, 2026-11-14)', () => {
+        expect(queFaltaDelDeposito({})).toBe(null);
+        expect(queFaltaDelDeposito({ noAlcanza: true, faltaBanco: true }).campo).toBe('dep-monto');
+        expect(queFaltaDelDeposito({ faltaBanco: true, faltaQuien: true }).campo).toBe('banco');
+        expect(queFaltaDelDeposito({ faltaQuien: true, faltaNota: true }).campo).toBe('entregadoA');
+        expect(queFaltaDelDeposito({ faltaNota: true }).campo).toBe('dep-aporte-nota');
     });
     it('suma lo contado', () => {
         expect(contadoDeBolsas([{ contado: '10.5' }, { contado: 2 }, {}])).toBe(12.5);

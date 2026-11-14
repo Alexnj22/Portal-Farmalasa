@@ -249,14 +249,27 @@ export const detalleDelPremio = (p) => `${p.codigo} · ${p.tipo === 'producto' ?
 
 export const TITULO_DIALOGO_REGALO = { nuevo: 'Nuevo regalo', editar: 'Editar regalo', entrada: 'Entrada o ajuste', enviar: 'Enviar a una sucursal' };
 
-/** Qué le falta al formulario de un regalo promocional para guardarse, o null. */
-export function faltaEnRegalo(modo, f) {
+/**
+ * Qué le falta al formulario de un regalo promocional para guardarse, y en qué
+ * campo (`{ texto, campo }`), o null. El campo es la clave que el diálogo pone
+ * en `data-campo`/`name` para que el aviso lleve hasta él (2026-11-14).
+ */
+export function faltaEnRegaloConCampo(modo, f) {
     const n = Number(f.cantidad);
-    if (modo === 'nuevo' || modo === 'editar') return String(f.nombre ?? '').trim().length < 2 ? 'Escribe el nombre.' : null;
-    if (modo === 'entrada') {
-        return !f.sala ? 'Elige la sucursal.' : !Number.isInteger(n) || n === 0 ? 'Escribe la cantidad (negativa para restar).'
-            : n < 0 && String(f.nota ?? '').trim().length < 3 ? 'Para restar, di por qué.' : null;
+    if (modo === 'nuevo' || modo === 'editar') {
+        return String(f.nombre ?? '').trim().length < 2 ? { texto: 'Escribe el nombre.', campo: 'nombre' } : null;
     }
-    return !f.sala || !f.hacia ? 'Elige de dónde y a dónde.' : String(f.sala) === String(f.hacia) ? 'Tienen que ser sucursales distintas.'
-        : !Number.isInteger(n) || n <= 0 ? 'Escribe cuántos se mandan.' : null;
+    if (modo === 'entrada') {
+        if (!f.sala) return { texto: 'Elige la sucursal.', campo: 'sala' };
+        if (!Number.isInteger(n) || n === 0) return { texto: 'Escribe la cantidad (negativa para restar).', campo: 'cantidad' };
+        if (n < 0 && String(f.nota ?? '').trim().length < 3) return { texto: 'Para restar, di por qué.', campo: 'nota' };
+        return null;
+    }
+    if (!f.sala || !f.hacia) return { texto: 'Elige de dónde y a dónde.', campo: !f.sala ? 'sala' : 'hacia' };
+    if (String(f.sala) === String(f.hacia)) return { texto: 'Tienen que ser sucursales distintas.', campo: 'hacia' };
+    if (!Number.isInteger(n) || n <= 0) return { texto: 'Escribe cuántos se mandan.', campo: 'cantidad' };
+    return null;
 }
+
+/** Qué le falta al formulario de un regalo promocional para guardarse, o null (sólo el texto). */
+export const faltaEnRegalo = (modo, f) => faltaEnRegaloConCampo(modo, f)?.texto ?? null;

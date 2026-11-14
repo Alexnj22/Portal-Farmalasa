@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Check, PackageSearch, Pencil, Plus, Undo2, X } from 'lucide-react';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Checkbox from '../../components/common/Checkbox';
@@ -247,9 +249,25 @@ function CorregirLote({ revision, onCerrar }) {
     // Mismo juez que la base (`libro_lote_motivo`): un lote por fila.
     const fundido = (l) => /_/.test(l) || /\d{5,}\s*[-/, ]\s*\d{5,}/.test(l) || l.trim().toUpperCase() === 'GENERICO';
     const algunaVencida = partes.some(p => vencidoAlVender(p.vence, revision.fecha));
-    const completas = partes.every(p => p.lote.trim() && p.vence && Number(p.cantidad) > 0 && !fundido(p.lote));
     const cuadra = Math.abs(suma - cantidad) < 1e-9;
-    const puedeGuardar = !guardando && completas && cuadra && (algunaVencida === vendidoVencido);
+    // Lo que falta, en el orden de las condiciones del botón y con el campo
+    // al que lleva (2026-11-14). Las filas se recorren una por una (antes era
+    // un `every`) para poder decir CUÁL fila y qué le falta.
+    const queFalta = (() => {
+        for (let k = 0; k < partes.length; k++) {
+            const p = partes[k];
+            const deCual = partes.length > 1 ? ` (lote ${k + 1})` : '';
+            if (!p.lote.trim()) return { texto: `Escribe el lote${deCual}.`, campo: `lote-${k}` };
+            if (fundido(p.lote)) return { texto: `Escribe un solo lote por fila${deCual}.`, campo: `lote-${k}` };
+            if (!p.vence) return { texto: `Elige el vencimiento${deCual}.`, campo: `vence-${k}` };
+            if (!(Number(p.cantidad) > 0)) return { texto: `Escribe la cantidad${deCual}.`, campo: `cantidad-${k}` };
+        }
+        if (!cuadra) return { texto: `Las cantidades suman ${num(suma)} y se entregaron ${num(cantidad)}.`, campo: `cantidad-${partes.length - 1}` };
+        if (algunaVencida && !vendidoVencido) return { texto: 'Revisa el vencimiento o marca que se entregó vencido.', campo: 'vendidoVencido' };
+        if (!algunaVencida && vendidoVencido) return { texto: 'Desmarca «Sí, se entregó vencido»: ningún vencimiento es anterior a la venta.', campo: 'vendidoVencido' };
+        return null;
+    })();
+    const puedeGuardar = !guardando && !queFalta;
 
     const guardar = async () => {
         setGuardando(true); setError(null);
@@ -296,7 +314,7 @@ function CorregirLote({ revision, onCerrar }) {
                             placeholder="Como dice la caja" inputClassName="tabular-nums"
                             hasError={Boolean(p.lote) && fundido(p.lote)}
                             helperText={p.lote && fundido(p.lote) ? 'Un lote por fila' : undefined} />
-                        <label className="block">
+                        <label className="block" data-campo={`vence-${k}`}>
                             <span className="block text-label font-black uppercase tracking-widest text-content-3 mb-1.5">Vence</span>
                             <LiquidDatePicker value={p.vence} onChange={(v) => cambiar(k, 'vence', v || '')} />
                         </label>
@@ -328,7 +346,7 @@ function CorregirLote({ revision, onCerrar }) {
                         <span className="block mt-0.5 font-normal text-content-2">
                             Revisa la fecha. Si de verdad se entregó vencido, márcalo: queda anotado en el libro y le llega al regente.
                         </span>
-                        <Checkbox className="mt-1" checked={vendidoVencido} onChange={setVendidoVencido}
+                        <Checkbox className="mt-1" name="vendidoVencido" checked={vendidoVencido} onChange={setVendidoVencido}
                             label="Sí, se entregó vencido" />
                     </Notice>
                 )}
@@ -341,6 +359,9 @@ function CorregirLote({ revision, onCerrar }) {
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {queFalta && !guardando && (
+                    <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+                )}
                 <Button variant="ghost" onClick={() => onCerrar(false)} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" icon={Check} onClick={guardar} loading={guardando} disabled={!puedeGuardar}>
                     Guardar el lote

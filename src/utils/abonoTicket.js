@@ -266,15 +266,26 @@ export function totalDelApartado(renglones) {
     return suma;
 }
 
-/** Lo que se puede guardar: cliente (3+ letras), algún producto con nombre, un monto > 0 y no más que el total. */
+/**
+ * Lo que se puede guardar: cliente (3+ letras), algún producto con nombre, un monto > 0 y no más que el total.
+ *
+ * `falta` (2026-11-14): el PRIMER motivo por el que no se puede, `{ texto, campo }`
+ * o null — `campo` es el `data-campo`/`name` del formulario al que lleva el aviso
+ * del pie ('cliente' | 'producto' | 'abonado'). `valido` sale de ahí.
+ */
 export function estadoDelApartado({ cliente, renglones, abonado }) {
     const total = totalDelApartado(renglones);
     const monto = Number(abonado);
     const conNombre = (renglones || []).filter((r) => String(r.nombre ?? '').trim().length > 1);
     const excede = total != null && Number.isFinite(monto) && monto > total;
     const saldo = total == null ? null : Math.max(0, total - (Number.isFinite(monto) ? monto : 0));
-    const valido = String(cliente ?? '').trim().length >= 3 && conNombre.length > 0 && Number.isFinite(monto) && monto > 0 && !excede;
-    return { total, monto, saldo, excede, valido, conNombre };
+    const falta = String(cliente ?? '').trim().length < 3 ? { texto: 'Escribe el nombre del cliente.', campo: 'cliente' }
+        : conNombre.length === 0 ? { texto: 'Escribe qué producto se aparta.', campo: 'producto' }
+        : !(Number.isFinite(monto) && monto > 0) ? { texto: 'Escribe cuánto abona.', campo: 'abonado' }
+        : excede ? { texto: 'El abono no puede pasar del total.', campo: 'abonado' }
+        : null;
+    const valido = !falta;
+    return { total, monto, saldo, excede, valido, conNombre, falta };
 }
 
 /** Los renglones como viajan a `anotarAbono`. */

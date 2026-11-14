@@ -6,6 +6,8 @@ import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, ChevronDown, Clock, DoorOpen, Landmark, Lock, Paperclip, PencilLine, PlayCircle, Printer, RefreshCw, Scale, ShieldCheck, ShoppingBag, Wallet,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
+import AvisoDeFalta from '../components/common/AvisoDeFalta';
+import { irAlCampo } from '../plataforma/irAlCampo';
 import Button from '../components/common/Button';
 import CarrilCards from '../components/common/CarrilCards';
 import FilterBar from '../components/common/FilterBar';
@@ -2694,21 +2696,33 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     // En efectivo y sin foto, un tipo que la pide como prueba se anota igual y
     // queda pendiente de autorización. Lo que no es efectivo ya tiene lo suyo.
     const efectivoSinComprobante = !!tipo?.sin_comprobante_autoriza && !noEfectivo && !foto;
-    const valido = !!tipo
-        && Number(monto) > 0
-        && (!exigeDetalle || concepto.trim().length > 2)
-        && (!esOtro || detalleSuficiente(concepto))
-        && !avisoOtro
-        && (!efectivoSinComprobante || motivoSinFoto.trim().length >= 5)
-        && (noEfectivo || !tipo.pide_boleta || boleta.trim().length > 0)
-        && (noEfectivo || tipo.foto !== 'OBLIGATORIA' || !!foto)
-        && (!tipo.pide_persona || identifica || recibe.trim().length > 1)
-        && estadoPago.valido;
-
     // La foto sólo manda la vuelta del cuadro cuando el tipo la pide. Con
     // `foto: 'NO'` —la aplicación, la glucosa— los campos salen directo: pedir
     // una boleta que no existe es lo que hacía que se escribiera a mano.
     const pedirDatos = tipo && (noEfectivo || tipo.foto === 'NO' || !!foto || aMano);
+
+    /* Qué falta para anotar, en el orden del formulario, y a qué campo lleva el
+     * aviso del pie (2026-11-14). Son las MISMAS diez condiciones que antes
+     * formaban `valido` —un AND, así que el orden sólo elige el texto— y
+     * `valido` sale de acá. Mientras los campos de datos no están a la vista
+     * (falta la foto y no se eligió escribirlo a mano) el aviso lleva a la foto,
+     * que es lo que los hace aparecer. */
+    const faltaDato = (texto, campo) => (pedirDatos ? { texto, campo }
+        : { texto: `Sube la ${tipo?.codigo === 'PAGO_PROVEEDOR' ? 'foto o el PDF de la factura' : 'foto de la boleta'} o escríbelo a mano.`, campo: 'movFoto' });
+    const faltaEnDatos = !tipo ? { texto: entra ? 'Elige qué entra.' : 'Elige qué sale.', campo: 'movTipo' }
+        : !estadoPago.valido ? { texto: estadoPago.falta, campo: estadoPago.campo }
+        : !(noEfectivo || tipo.foto !== 'OBLIGATORIA' || !!foto)
+            ? { texto: tipo?.codigo === 'PAGO_PROVEEDOR' ? 'Falta la foto o el PDF de la factura.' : 'Falta la foto de la boleta.', campo: 'movFoto' }
+        : !(Number(monto) > 0) ? faltaDato('Escribe el monto.', 'movMonto')
+        : !(noEfectivo || !tipo.pide_boleta || boleta.trim().length > 0) ? faltaDato('Escribe el número de boleta.', 'movBoleta')
+        : exigeDetalle && concepto.trim().length <= 2 ? faltaDato('Escribe el detalle.', 'movDetalle')
+        : avisoOtro ? faltaDato(avisoOtro, 'movDetalle')
+        : esOtro && !detalleSuficiente(concepto) ? faltaDato('En «Otro» escribe de qué fue, con detalle.', 'movDetalle')
+        : efectivoSinComprobante && motivoSinFoto.trim().length < 5 ? faltaDato('Escribe por qué no hay comprobante.', 'movMotivo')
+        : tipo.pide_persona && !identifica && recibe.trim().length <= 1
+            ? faltaDato(entra ? 'Escribe de quién es.' : 'Escribe quién recibe.', 'movRecibe')
+        : null;
+    const valido = !faltaEnDatos;
 
     /* Un tipo con comprobante NO se llena acá: cambia de diálogo.
      *
@@ -2764,6 +2778,16 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
     // Sólo el efectivo: tarjeta y transferencia tienen su propio comprobante.
     const frenoMonto = foto && !noEfectivo
         ? frenoDelMonto({ lectura, monto, intentos: intentosSinComprobar, unaSolaVez, cotejado })
+        : null;
+    // Lo que dice el pie de cada paso: lo mismo que apaga su botón (2026-11-14).
+    const queFaltaEnDatos = leyendo ? { texto: 'Espera: se está leyendo la foto.', campo: null }
+        : faltaEnDatos
+        ?? (!noEfectivo && problemaDeLaBoleta?.bloquea
+            ? { texto: problemaDeLaBoleta.texto, campo: pedirDatos && tipo?.pide_boleta ? 'movBoleta' : null } : null)
+        ?? (frenoMonto?.bloquea ? { texto: frenoMonto.texto, campo: 'movFoto' } : null);
+    const queFaltaEnIdentidad = !persona || !vale ? { texto: 'Identifica a quien se lleva el efectivo.', campo: 'identidad' }
+        : problemaDeLaBoleta?.bloquea ? { texto: problemaDeLaBoleta.texto, campo: null }
+        : frenoMonto?.bloquea ? { texto: frenoMonto.texto, campo: null }
         : null;
 
     /* El pago a un proveedor no trae boleta de POS: trae una factura, una
@@ -2922,6 +2946,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             <Marco abierto={abierto} onClose={enviando ? undefined : onClose} titulo="Quién se lleva el efectivo"
                 bajada={`${formatMoney(Number(monto) || 0)} · ${tipo?.etiqueta || ''}${concepto.trim() ? ` · ${concepto.trim()}` : ''}`}
                 pie={<>
+                    {queFaltaEnIdentidad && !enviando && <AvisoDeFalta motivo={queFaltaEnIdentidad.texto} onIr={queFaltaEnIdentidad.campo ? () => irAlCampo(queFaltaEnIdentidad.campo) : null} />}
                     <Button variant="ghost" onClick={() => setPaso('DATOS')} disabled={enviando}>Atrás</Button>
                     <Button variant="primary" loading={enviando}
                         disabled={ocupado || !persona || !vale || !!problemaDeLaBoleta?.bloquea || !!frenoMonto?.bloquea}
@@ -2930,13 +2955,15 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     </Button>
                 </>}
             >
-                <IdentidadDeQuienRetira
-                    activo={!!abierto && !ocupado}
-                    persona={persona}
-                    onIdentificada={({ persona: p, vale: v }) => { setPersona(p); setVale(v); }}
-                    onOlvidar={() => { setPersona(null); setVale(null); }}
-                    bloqueado={ocupado}
-                />
+                <div data-campo="identidad">
+                    <IdentidadDeQuienRetira
+                        activo={!!abierto && !ocupado}
+                        persona={persona}
+                        onIdentificada={({ persona: p, vale: v }) => { setPersona(p); setVale(v); }}
+                        onOlvidar={() => { setPersona(null); setVale(null); }}
+                        bloqueado={ocupado}
+                    />
+                </div>
             </Marco>
         );
     }
@@ -2950,6 +2977,8 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     : 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.')
                 : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}
             pie={<>
+                {/* Lo que falta, al lado del botón, y lleva al campo (2026-11-14). */}
+                {queFaltaEnDatos && !enviando && <AvisoDeFalta motivo={queFaltaEnDatos.texto} onIr={queFaltaEnDatos.campo ? () => irAlCampo(queFaltaEnDatos.campo) : null} />}
                 {/* Cancelar se apaga mientras se envía: el movimiento ya salió
                     de acá y cerrar no lo deshace — sólo esconde en qué quedó. */}
                 <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
@@ -2974,9 +3003,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 es un filtro — es una elección obligatoria, y «Todos» no es un
                 tipo de movimiento: no significa nada y deja el formulario sin
                 el único dato que decide qué se pregunta. */}
-            <LiquidSelect label={entra ? 'Qué entra' : 'Qué sale'} value={codigo}
-                onChange={elegirTipo} options={delSentido.map((t) => ({ value: t.codigo, label: t.etiqueta }))}
-                clearable={false} placeholder="Elige de qué se trata" />
+            <div data-campo="movTipo">
+                <LiquidSelect label={entra ? 'Qué entra' : 'Qué sale'} value={codigo}
+                    onChange={elegirTipo} options={delSentido.map((t) => ({ value: t.codigo, label: t.etiqueta }))}
+                    clearable={false} placeholder="Elige de qué se trata" />
+            </div>
             {tipo?.leyenda && <p className="text-caption text-content-2">{tipo.leyenda}</p>}
 
             {conFormaDePago && (
@@ -2990,9 +3021,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                 pasara por el aro de «no tengo boleta» seiscientas veces. */}
             {tipo && tipo.foto !== 'NO' && !noEfectivo && (
                 <>
-                    <FileField label={`${deProveedor ? 'Foto o PDF de la factura' : 'Foto de la boleta'}${tipo.foto === 'OBLIGATORIA' ? ' (obligatoria)' : ''}`}
-                        accept={deProveedor ? 'image/*,.pdf' : 'image/*'} value={foto}
-                        onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
+                    <div data-campo="movFoto">
+                        <FileField label={`${deProveedor ? 'Foto o PDF de la factura' : 'Foto de la boleta'}${tipo.foto === 'OBLIGATORIA' ? ' (obligatoria)' : ''}`}
+                            accept={deProveedor ? 'image/*,.pdf' : 'image/*'} value={foto}
+                            onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
+                    </div>
                     {aviso && <p className="text-caption text-content-2">{aviso}</p>}
                     {frenoMonto && !leyendo && (
                         <Notice variant="warning" compact icon={AlertTriangle}>
@@ -3042,17 +3075,17 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
 
             {pedirDatos && (
                 <>
-                    <PortalInput label={noEfectivo ? 'Cuánto es de este ingreso' : 'Monto'} inputMode="decimal"
+                    <PortalInput name="movMonto" label={noEfectivo ? 'Cuánto es de este ingreso' : 'Monto'} inputMode="decimal"
                         value={monto} readOnly={!noEfectivo && cerrado('monto')}
                         onChange={(e) => setMonto(e.target.value)} placeholder="0.00" />
                     {tipo.pide_boleta && !noEfectivo && (
-                        <PortalInput label="Número de boleta" value={boleta} readOnly={cerrado('boleta')}
+                        <PortalInput name="movBoleta" label="Número de boleta" value={boleta} readOnly={cerrado('boleta')}
                             onChange={(e) => setBoleta(e.target.value)} placeholder="000375" />
                     )}
                     {/* «Detalle» y no «Concepto»: el concepto ya lo dice el
                         tipo. Acá va lo que el tipo no puede saber — qué se
                         aplicó, de qué era el recibo. */}
-                    <PortalInput label={exigeDetalle ? 'Detalle' : 'Detalle (opcional)'}
+                    <PortalInput name="movDetalle" label={exigeDetalle ? 'Detalle' : 'Detalle (opcional)'}
                         value={concepto} maxLength={50} readOnly={cerrado('concepto')}
                         onChange={(e) => setConcepto(e.target.value)}
                         placeholder={PISTA_DE_DETALLE[tipo.codigo] || (entra ? 'de qué se trata' : 'en qué se gastó')} />
@@ -3065,7 +3098,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                             <Notice variant="warning" compact>
                                 Sin foto del comprobante, este movimiento queda pendiente de autorización.
                             </Notice>
-                            <PortalInput label="Por qué no hay comprobante" value={motivoSinFoto} maxLength={200}
+                            <PortalInput name="movMotivo" label="Por qué no hay comprobante" value={motivoSinFoto} maxLength={200}
                                 onChange={(e) => setMotivoSinFoto(e.target.value)}
                                 placeholder="Ej.: el cliente no trajo recibo" />
                         </>
@@ -3075,7 +3108,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                         la misma pregunta —la mitad de ellas mal—. Se pide en el
                         paso siguiente, con la pantalla limpia. */}
                     {tipo.pide_persona && !identifica && (
-                        <PortalInput label={entra ? 'De quién' : 'Quién recibe'} value={recibe} maxLength={60}
+                        <PortalInput name="movRecibe" label={entra ? 'De quién' : 'Quién recibe'} value={recibe} maxLength={60}
                             onChange={(e) => setRecibe(e.target.value)}
                             placeholder={entra ? 'nombre del cliente' : 'nombre de quien se lleva el efectivo'} />
                     )}

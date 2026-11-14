@@ -6,7 +6,7 @@ import {
     dolaresDePremio, numeroONulo, premioTexto, premiosTexto, diferenciasDeConfig, sujetoDelHistorial,
     esperadoDelRaspable, parteEnRegalos, costoDelRaspableTexto, probabilidadDePremio,
     filaDePremio, premiosLimpios, premiosCanonicos, formDeNivel, cambiosDeNivel, cambiosDeRango, formDeRango,
-    dondeSeRetiraElPremio, detalleDelPremio, faltaEnRegalo, cupoTexto, vigenciaDelReglamentoTexto, usoDelTopeTexto,
+    dondeSeRetiraElPremio, detalleDelPremio, faltaEnRegalo, faltaEnRegaloConCampo, cupoTexto, vigenciaDelReglamentoTexto, usoDelTopeTexto,
 } from '@nucleo/utils/nivelesDePuntos';
 import {
     leerEntradaDeTarjeta, marcasDelCliente, estadoDeLaApp, pendientesDelCliente,
@@ -214,6 +214,8 @@ describe('nivelesDePuntos — premios por entregar y regalos', () => {
         expect(faltaEnRegalo('enviar', { sala: 1, hacia: '1', cantidad: '2' })).toBe('Tienen que ser sucursales distintas.');
         expect(faltaEnRegalo('enviar', { sala: 1, hacia: 2, cantidad: '-1' })).toBe('Escribe cuántos se mandan.');
         expect(faltaEnRegalo('enviar', { sala: 1, hacia: 2, cantidad: '2' })).toBeNull();
+        expect(faltaEnRegaloConCampo('enviar', { sala: 1, cantidad: '2' })?.campo).toBe('hacia');
+        expect(faltaEnRegaloConCampo('entrada', { sala: 1, cantidad: '-2', nota: 'x' })?.campo).toBe('nota');
     });
 });
 

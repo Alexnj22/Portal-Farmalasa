@@ -14,7 +14,10 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
 import FormatoImagen from './FormatoImagen';
-import { DESTINOS_DE_LA_APP, bannerValido, estadoDeOferta, filaDeBanner } from '@nucleo/utils/ofertasClientes';
+import { DESTINOS_DE_LA_APP, faltaEnBanner, estadoDeOferta, filaDeBanner } from '@nucleo/utils/ofertasClientes';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -178,7 +181,9 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
             .catch((err) => console.error('BannerModal: no se pudieron cargar las ofertas', err));
     }, []);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
-    const valido = bannerValido(f, archivo || banner.imagen_path);
+    // Lo que falta y su campo (2026-11-14); el botón se apaga con lo mismo.
+    const queFalta = faltaEnBanner(f, archivo || banner.imagen_path);
+    const valido = !queFalta;
 
     const guardar = async () => {
         setGuardando(true);
@@ -200,8 +205,10 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
             <LiquidModal.Header titulo={nuevo ? 'Nuevo banner' : 'Editar banner'} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
-                    <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                        hint={banner.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Horizontal, 1200 × 500 px'} />
+                    <div data-campo="imagen">
+                        <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
+                            hint={banner.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Horizontal, 1200 × 500 px'} />
+                    </div>
                     <FormatoImagen tipo="banner" archivo={archivo} />
                     <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={60}
                         onChange={(e) => cambiar('titulo')(e.target.value)} placeholder="Ej. Semana del bebé"
@@ -226,11 +233,11 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
                         )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        <div>
+                        <div data-campo="inicio">
                             <span className="block text-label font-semibold text-content-2 mb-1">Desde</span>
                             <LiquidDatePicker value={f.inicio} onChange={cambiar('inicio')} />
                         </div>
-                        <div>
+                        <div data-campo="fin">
                             <span className="block text-label font-semibold text-content-2 mb-1">Hasta</span>
                             <LiquidDatePicker value={f.fin} onChange={cambiar('fin')} />
                         </div>
@@ -245,10 +252,10 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
                     </label>
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={GalleryHorizontal} loading={guardando} disabled={!valido} onClick={guardar}>Guardar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

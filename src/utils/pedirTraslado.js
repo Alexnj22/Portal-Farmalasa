@@ -36,6 +36,30 @@ export function diasHasta(d) {
 const u = (n) => (Number(n) === 1 ? 'unidad' : 'unidades');
 
 /**
+ * Lo que le falta a la solicitud para poder salir, UNO y en orden (2026-11-14).
+ * `null` = se puede mandar; `puedeEnviar` del hook es exactamente eso.
+ *
+ * `campo` es dónde se arregla: `causa` (el «para qué»), `renglonConProblema`
+ * (la tarjeta en rojo de «En la solicitud»), o null. `pestana` dice en cuál de
+ * las dos mitades vive, para que la pantalla cambie antes de buscarlo.
+ */
+export function faltaParaEnviar({ aEnviar = [], aMedias, yaEstaEnLaLista, conProblema = [], causa, producto }) {
+    if (aMedias) {
+        return { texto: `Termina ${producto?.descripcion ?? 'el producto'} o déjalo fuera.`, campo: null, pestana: 'agregar' };
+    }
+    if (yaEstaEnLaLista) {
+        return { texto: `${producto?.descripcion ?? 'Ese producto'} ya está en la lista: quítalo y agrégalo con la cantidad total.`, campo: null, pestana: 'lista' };
+    }
+    if (aEnviar.length === 0) return { texto: 'Agrega al menos un producto.', campo: null, pestana: null };
+    if (conProblema.length) {
+        const cual = conProblema.length === 1 ? conProblema[0].item?.descripcion : `${conProblema.length} productos`;
+        return { texto: `Corrige ${cual} en «En la solicitud».`, campo: 'renglonConProblema', pestana: 'lista' };
+    }
+    if (!String(causa ?? '').trim()) return { texto: 'Escribe para qué se pide.', campo: 'causa', pestana: null };
+    return null;
+}
+
+/**
  * Los avisos del formulario de pedir, cada uno en su ranura — el TEXTO y el
  * tono salen de acá para que la web y la app digan exactamente lo mismo.
  * `null` en una ranura = no hay nada que decir ahí. `tono`: danger frena,

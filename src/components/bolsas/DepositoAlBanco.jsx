@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Banknote, Building2, HandCoins, Landmark } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
@@ -10,7 +11,8 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { contadoDeBolsas, faltasDelDeposito, repartoDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
+import { contadoDeBolsas, faltasDelDeposito, queFaltaDelDeposito, repartoDelDeposito } from '@nucleo/utils/depositoDeEfectivo';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /**
  * Lo que sigue después de confirmar el conteo: cuánto se lleva al banco.
@@ -133,6 +135,8 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
     const { faltaNota, faltaBanco, faltaQuien } = faltasDelDeposito({
         nMonto, nEfectivo, nAporte, banco, entregadoA, aporteNota,
     });
+    // Lo que el pie dice que falta y a qué campo lleva (2026-11-14).
+    const queFalta = queFaltaDelDeposito({ noAlcanza, faltaBanco, faltaQuien, faltaNota });
 
     const cerrar = useCallback(async () => {
         setError(null);
@@ -235,7 +239,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         y el servidor lo exige igual: un depósito sin banco no se
                         puede cuadrar contra ningún estado de cuenta, que es lo
                         único para lo que ese registro existe. */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5" data-campo="banco">
                         <label className={rotuloCampo('text-content-2')}>
                             A qué banco
                         </label>
@@ -272,7 +276,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                         Se puede elegir con el monto en CERO a propósito — es la
                         bolsa cuyo efectivo se retiró en la sala antes de llegar:
                         no hay nada que mover y sí hay a quién nombrar. */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5" data-campo="entregadoA">
                         <label className={rotuloCampo('text-content-2')}>
                             A quién se le entrega
                         </label>
@@ -407,6 +411,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                 {/* Se puede cerrar con TODO en cero: es la bolsa cuyo efectivo
                     se retiró en la sala antes de llegar a administración, y hay
@@ -415,7 +420,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                     dónde va. El servidor pone las mismas reglas. */}
                 <Button variant="primary" loading={guardando}
                     icon={nEfectivo > 0 && nMonto <= 0 ? HandCoins : Landmark}
-                    disabled={noAlcanza || faltaNota || faltaBanco || faltaQuien}
+                    disabled={!!queFalta}
                     onClick={cerrar}>
                     Cerrar el efectivo
                 </Button>

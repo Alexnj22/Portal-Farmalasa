@@ -7,7 +7,7 @@ import {
 import {
     cierreDelDiaListo, cuentaDelCierre, cuentaDelDia, formasDeLaLiquidacion, movimientoListo, resumenDelCamion, rotuloDiferencia,
 } from '@nucleo/utils/distribucionCaja';
-import { cambioDelCobro, clientesDeLaCartera, problemaDelCobro, repartoDelCobro } from '@nucleo/utils/distribucionCartera';
+import { cambioDelCobro, clientesDeLaCartera, problemaDelCobro, problemaDelCobroConCampo, repartoDelCobro } from '@nucleo/utils/distribucionCartera';
 import { leerMonto } from '@nucleo/utils/distribucionComun';
 
 // Las reglas de Facturación, Cobros y Caja que comparten el portal y la app
@@ -88,6 +88,10 @@ describe('Cobros', () => {
         expect(problemaDelCobro({ ...base, montoFinal: 9 })).toBe(`El cliente debe ${formatMoney(8)}: no se puede cobrar más.`);
         expect(problemaDelCobro({ ...base, forma: '05' })).toMatch(/llevan su número/);
         expect(problemaDelCobro({ ...base, cambio: cambioDelCobro('01', 4, 5) })).toBe('Lo entregado no alcanza.');
+        expect(problemaDelCobroConCampo({ ...base, forma: '05' })?.campo).toBe('referencia-cobro');
+        expect(problemaDelCobroConCampo({ ...base, montoFinal: 9 })?.campo).toBe('monto-cobro');
+        expect(problemaDelCobroConCampo({ ...base, aMano: true, reparto: [{ cxc_id: 7, monto: 4, saldo: 3 }] })?.campo).toBe('abono-7');
+        expect(problemaDelCobroConCampo({ ...base, puedeCobrar: false })).toEqual({ texto: 'No tienes permiso para cobrar.', campo: null });
     });
     it('filtra la cartera', () => {
         const cl = [{ id: 1, vencido: 0, saldo: 5, limite_credito: 10, dias_atraso: 0 }, { id: 2, vencido: 3, saldo: 20, limite_credito: 10, dias_atraso: 45 }];

@@ -12,6 +12,8 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 // ═══════════════════════════════════════════════════════════════════════════
 // Entrega a domicilio de la app (2026-10-07): si se ofrece, cuánto cuesta y
 // desde qué monto es gratis. La app lo lee al abrir el carrito; el servidor
@@ -33,7 +35,14 @@ export default function EnvioPanel({ puedeEditar, showToast }) {
 
     if (!cfg) return <SkeletonText lines={2} />;
     const costo = Number(cfg.costo);
-    const valido = cfg.costo !== '' && costo >= 0 && (cfg.gratisDesde === '' || Number(cfg.gratisDesde) > 0);
+    // Lo que falta y su campo (2026-11-14): las mismas condiciones que apagaban
+    // «Guardar». Con la entrega apagada los campos no se ven: no hay a dónde llevar.
+    const queFalta = !(cfg.costo !== '' && costo >= 0)
+            ? { texto: 'Escribe el costo del envío (puede ser 0).', campo: cfg.activo ? 'envio-costo' : null }
+        : !(cfg.gratisDesde === '' || Number(cfg.gratisDesde) > 0)
+            ? { texto: '«Gratis desde» tiene que ser mayor que cero, o déjalo vacío.', campo: cfg.activo ? 'envio-gratis-desde' : null }
+        : null;
+    const valido = !queFalta;
 
     const guardar = async () => {
         setGuardando(true);
@@ -59,9 +68,9 @@ export default function EnvioPanel({ puedeEditar, showToast }) {
             </div>
             {cfg.activo && (
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <PortalInput label="Costo del envío ($)" type="text" inputMode="decimal" maskType="DECIMAL" value={cfg.costo} readOnly={!puedeEditar}
+                    <PortalInput label="Costo del envío ($)" name="envio-costo" type="text" inputMode="decimal" maskType="DECIMAL" value={cfg.costo} readOnly={!puedeEditar}
                         onChange={(e) => setCfg((x) => ({ ...x, costo: e.target.value }))} />
-                    <PortalInput label="Gratis desde ($, opcional)" type="text" inputMode="decimal" maskType="DECIMAL" value={cfg.gratisDesde} readOnly={!puedeEditar}
+                    <PortalInput label="Gratis desde ($, opcional)" name="envio-gratis-desde" type="text" inputMode="decimal" maskType="DECIMAL" value={cfg.gratisDesde} readOnly={!puedeEditar}
                         onChange={(e) => setCfg((x) => ({ ...x, gratisDesde: e.target.value }))} />
                     <div className="sm:col-span-2">
                         <PortalTextarea label="Nota que ve el cliente" rows={2} maxLength={200} value={cfg.nota} readOnly={!puedeEditar}
@@ -70,7 +79,8 @@ export default function EnvioPanel({ puedeEditar, showToast }) {
                 </div>
             )}
             {puedeEditar && (
-                <div className="flex justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />}
                     <Button size="sm" disabled={!valido} loading={guardando} onClick={guardar}>Guardar</Button>
                 </div>
             )}

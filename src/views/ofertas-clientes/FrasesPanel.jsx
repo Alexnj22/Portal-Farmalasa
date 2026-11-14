@@ -11,7 +11,10 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
-import { CATEGORIAS_DE_FRASE, FRASE_MAX, diaDeFrase, estadosDeFrases, filaDeFrase, fraseDeUnDia, fraseValida } from '@nucleo/utils/ofertasClientes';
+import { CATEGORIAS_DE_FRASE, FRASE_MAX, diaDeFrase, estadosDeFrases, filaDeFrase, fraseDeUnDia, faltaEnFrase } from '@nucleo/utils/ofertasClientes';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, sumarDias } from '@nucleo/utils/fecha';
@@ -173,7 +176,9 @@ function FraseModal({ frase, frases, hoy, onClose, onGuardada, onError }) {
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
     // Una sola por día: se avisa antes de que la base la rechace.
     const choca = f.programada && (frases ?? []).find((x) => x.id !== frase.id && x.activa && x.fecha === f.fecha);
-    const valido = fraseValida(f) && !choca;
+    // Lo que falta y su campo (2026-11-14); el botón se apaga con lo mismo.
+    const queFalta = faltaEnFrase(f) ?? (choca ? { texto: 'Ese día ya tiene frase: elige otro día.', campo: 'fecha' } : null);
+    const valido = !queFalta;
     const largo = f.texto.trim().length;
 
     const guardar = async () => {
@@ -196,7 +201,7 @@ function FraseModal({ frase, frases, hoy, onClose, onGuardada, onError }) {
                     <PortalTextarea label="Frase" name="texto" rows={3} value={f.texto} maxLength={FRASE_MAX}
                         onChange={(e) => cambiar('texto')(e.target.value)} placeholder="Ej. Un paso pequeño también es avanzar."
                         helperText={`${largo} de ${FRASE_MAX} letras. Corta se lee mejor: lo ideal es menos de 90. Sin autor, y los consejos de salud, generales (nada de dosis).`} />
-                    <div>
+                    <div data-campo="categoria">
                         <span className="block text-label font-semibold text-content-2 mb-1">Tipo</span>
                         <p className="text-micro text-content-3 mb-2">Cambia el color de la tarjeta en la app.</p>
                         <SegmentedControl label="Tipo" value={f.categoria} onChange={cambiar('categoria')} options={CATEGORIAS_DE_FRASE} />
@@ -210,7 +215,7 @@ function FraseModal({ frase, frases, hoy, onClose, onGuardada, onError }) {
                             <SegmentedControl label="Cuándo sale" value={f.programada ? 'dia' : 'cola'}
                                 onChange={(v) => cambiar('programada')(v === 'dia')} options={CUANDO} />
                             {f.programada && (
-                                <div className="mt-3 space-y-2">
+                                <div className="mt-3 space-y-2" data-campo="fecha">
                                     <span className="flex items-center gap-1.5 text-label font-semibold text-content-2"><CalendarDays size={14} /> Día</span>
                                     <LiquidDatePicker value={f.fecha} onChange={cambiar('fecha')} />
                                     {choca && <Notice variant="warning">Ese día ya tiene frase: «{choca.texto}». Elige otro día o pausa aquélla.</Notice>}
@@ -228,10 +233,10 @@ function FraseModal({ frase, frases, hoy, onClose, onGuardada, onError }) {
                     )}
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={Quote} loading={guardando} disabled={!valido} onClick={guardar}>Guardar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

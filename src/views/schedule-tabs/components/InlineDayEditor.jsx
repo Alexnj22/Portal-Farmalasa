@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import Button from '../../../components/common/Button';
+import AvisoDeFalta from '../../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../../plataforma/irAlCampo';
 import Checkbox from '../../../components/common/Checkbox';
 import { createPortal } from 'react-dom';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -234,7 +236,13 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         ];
     }, [filteredShifts, branchLimits]);
 
-    const isSaveDisabled = shiftId === 'NO_SHIFTS' || (!shiftId && !customStart) || reparos.length > 0;
+    // Lo que falta, en el orden de las condiciones del botón y con su campo
+    // (2026-11-14). Antes «no elegiste turno» apagaba el botón sin decir nada.
+    const queFalta = shiftId === 'NO_SHIFTS' ? { texto: 'Ningún turno cabe este día: elige «Libre / descanso».', campo: 'turno' }
+        : (!shiftId && !customStart) ? { texto: 'Elige un turno.', campo: 'turno' }
+        : reparos.length > 0 ? { texto: reparos[0], campo: 'horas' }
+        : null;
+    const isSaveDisabled = Boolean(queFalta);
 
     const encabezado = (
         <div className="flex items-center gap-2.5 min-w-0">
@@ -262,7 +270,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
     const cuerpo = (
         <>
-                <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast">
+                <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast" data-campo="turno">
                     <div className={`group/select hover:shadow-md transition-shadow duration-[var(--dur-slow)] rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger/45 shadow-[var(--shadow-glow-danger-md)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
@@ -300,7 +308,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div data-surface="card" data-tono={reparos.length > 0 ? 'danger' : undefined}
+                        <div data-surface="card" data-tono={reparos.length > 0 ? 'danger' : undefined} data-campo="horas"
                     className="flex flex-col gap-3 p-3 relative z-base animate-in zoom-in-95 duration-[var(--dur-base)]">
                             
                             <div className="flex items-center justify-between border-b border-divider pb-2">
@@ -382,10 +390,15 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     );
 
 
+    // El editor es angosto y el botón ocupa todo el ancho: el aviso va
+    // encima, pegado a él.
     const pieDeGuardar = (
-        <Button size="lg" onClick={handleSave} disabled={isSaveDisabled} className="w-full">
-            {shiftId === 'OFF' ? 'Asignar descanso' : 'Guardar cambios'}
-        </Button>
+        <div className="flex flex-col gap-2">
+            {queFalta && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
+            <Button size="lg" onClick={handleSave} disabled={isSaveDisabled} className="w-full">
+                {shiftId === 'OFF' ? 'Asignar descanso' : 'Guardar cambios'}
+            </Button>
+        </div>
     );
 
     /* En el teléfono NO es un popover.

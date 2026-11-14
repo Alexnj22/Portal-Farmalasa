@@ -34,6 +34,8 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import PortalInput from '../../components/common/PortalInput';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { LoadingState } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -500,9 +502,12 @@ function AjustarPuntos({ customerId, nombre, saldo, onCerrar, onHecho }) {
 
     const n = Number(cantidad) || 0;
     const quitaDeMas = sentido === 'quitar' && n > saldo;
-    const falta = !n ? 'Escribe cuántos puntos.' : !motivo ? 'Elige el motivo.'
-        : motivo === 'Otro' && !nota.trim() ? 'Con «Otro», escribe el detalle.'
-        : quitaDeMas ? `Tiene ${pts(saldo)} puntos; no se le pueden quitar ${pts(n)}.` : null;
+    // Lo que falta y en qué campo (2026-11-14): el aviso lleva hasta él.
+    const queFalta = !n ? { texto: 'Escribe cuántos puntos.', campo: 'puntos_ajuste' }
+        : !motivo ? { texto: 'Elige el motivo.', campo: 'motivo_ajuste' }
+        : motivo === 'Otro' && !nota.trim() ? { texto: 'Con «Otro», escribe el detalle.', campo: 'nota_ajuste' }
+        : quitaDeMas ? { texto: `Tiene ${pts(saldo)} puntos; no se le pueden quitar ${pts(n)}.`, campo: 'puntos_ajuste' } : null;
+    const falta = queFalta?.texto ?? null;
 
     const guardar = async () => {
         if (falta) return;
@@ -532,7 +537,7 @@ function AjustarPuntos({ customerId, nombre, saldo, onCerrar, onHecho }) {
                     placeholder="50"
                     onChange={(e) => setCantidad(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     helperText={n ? `Equivalen a ${dolares(n)}` : undefined} />
-                <div className="flex flex-col gap-1.5 min-w-0">
+                <div className="flex flex-col gap-1.5 min-w-0" data-campo="motivo_ajuste">
                     {/* El mismo rótulo que «Puntos» y «Detalle» (`PortalInput`). */}
                     <span className={rotuloCampo()}>Motivo</span>
                     <LiquidSelect value={motivo} onChange={setMotivo} options={MOTIVOS_DE_AJUSTE}
@@ -543,9 +548,11 @@ function AjustarPuntos({ customerId, nombre, saldo, onCerrar, onHecho }) {
                 placeholder={motivo === 'Otro' ? 'Obligatorio con «Otro»' : 'Opcional: ticket, promoción, quién lo pidió'}
                 onChange={(e) => setNota(e.target.value.slice(0, 200))} />
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className={`text-caption ${falta ? 'text-content-3' : 'text-content-2'}`}>
-                    {falta ?? `${sentido === 'dar' ? 'Se le darán' : 'Se le quitarán'} ${pts(n)} puntos (${dolares(n)}). Quedará con ${pts(sentido === 'dar' ? saldo + n : saldo - n)}.`}
-                </p>
+                {queFalta ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : (
+                    <p className="text-caption text-content-2">
+                        {`${sentido === 'dar' ? 'Se le darán' : 'Se le quitarán'} ${pts(n)} puntos (${dolares(n)}). Quedará con ${pts(sentido === 'dar' ? saldo + n : saldo - n)}.`}
+                    </p>
+                )}
                 <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={onCerrar} disabled={guardando}>Cancelar</Button>
                     <Button variant="primary" size="sm" onClick={guardar} disabled={!!falta || guardando} loading={guardando}>
@@ -627,7 +634,8 @@ function ObservacionDelCliente({ customerId, nombre, sala, puedeCerrar, version,
                         <PortalInput label="Qué se revisó" name="nota_observacion" value={nota}
                             placeholder="Ej.: se habló con el cliente, la anulación fue un error de caja"
                             onChange={(e) => setNota(e.target.value.slice(0, 200))} />
-                        <div className="flex justify-end gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            {!nota.trim() && <AvisoDeFalta motivo="Escribe qué se revisó." onIr={() => irAlCampo('nota_observacion')} />}
                             <Button variant="ghost" size="sm" onClick={() => { setCerrando(false); setNota(''); }} disabled={guardando}>Cancelar</Button>
                             <Button variant="primary" size="sm" onClick={cerrar} disabled={!nota.trim() || guardando} loading={guardando}>
                                 Cerrar observación

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    antiguedadDe, choqueEnRango, companeroNoDisponible, diasDe, finDeIncapacidad, incapacidadesVigentes, motivoParaNoEnviar,
+    antiguedadDe, choqueEnRango, companeroNoDisponible, diasDe, faltaParaEnviar, finDeIncapacidad, incapacidadesVigentes, motivoParaNoEnviar,
 } from '@nucleo/utils/solicitudPersonal';
 
 const base = { empleadoId: '1', nota: 'motivo', antiguedad: { habilitado: true }, anioActual: 2026 };
@@ -31,5 +31,17 @@ describe('solicitudPersonal', () => {
     it('el compañero de vacaciones no puede cambiar turno', () => {
         expect(companeroNoDisponible([{ type: 'VACATION', date: '2026-10-01', metadata: { endDate: '2026-10-10' } }], '2026-10-04'))
             .toEqual({ motivo: 'de vacaciones' });
+    });
+    it('dice qué campo falta, en el mismo orden que el motivo', () => {
+        expect(faltaParaEnviar({ ...base, empleadoId: '', tipo: 'ADVANCE' })?.campo).toBe('empleado');
+        expect(faltaParaEnviar({ ...base, nota: '', tipo: 'ADVANCE' })?.campo).toBe('nota');
+        expect(faltaParaEnviar({ ...base, tipo: 'ADVANCE', payload: {} })?.campo).toBe('monto');
+        expect(faltaParaEnviar({ ...base, tipo: 'SHIFT_CHANGE', payload: { date: '2026-10-03' } })?.campo).toBe('companero');
+        expect(faltaParaEnviar({ ...base, tipo: 'SHIFT_CHANGE', payload: { targetEmployeeId: '2' } })?.campo).toBe('fecha');
+        expect(faltaParaEnviar({ ...base, tipo: 'DISABILITY', payload: { startDate: '2026-10-03' } })?.campo).toBe('dias');
+        // Sin campo que lo arregle: la antigüedad.
+        expect(faltaParaEnviar({ ...base, tipo: 'VACATION', antiguedad: { habilitado: false }, payload: { startDate: '2026-11-01', endDate: '2026-11-15' } }))
+            .toEqual({ texto: motivoParaNoEnviar({ ...base, tipo: 'VACATION', antiguedad: { habilitado: false }, payload: { startDate: '2026-11-01', endDate: '2026-11-15' } }), campo: null });
+        expect(faltaParaEnviar({ ...base, tipo: 'ADVANCE', payload: { amount: 10 } })).toBeNull();
     });
 });

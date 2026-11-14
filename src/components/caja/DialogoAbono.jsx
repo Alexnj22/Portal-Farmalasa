@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Search, Trash2, User } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
@@ -14,6 +15,7 @@ import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
@@ -95,7 +97,10 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
     // El total («por definir» = null), el saldo y qué falta para guardar salen
     // del núcleo (`estadoDelApartado`): la app pide el abono con la misma regla.
     // El saldo nunca queda negativo: un monto mayor que el total se frena (`excede`).
-    const { total, monto, saldo, excede, valido, conNombre } = estadoDelApartado({ cliente, renglones, abonado });
+    const { total, monto, saldo, excede, valido, conNombre, falta } = estadoDelApartado({ cliente, renglones, abonado });
+    // Lo que el pie dice que falta, y a qué campo lleva (2026-11-14). La sala
+    // va después: el botón también se apaga sin ella.
+    const queFalta = falta ?? (!sala ? { texto: 'Falta la sala de esta caja.', campo: null } : null);
 
     /* El día se calcula UNA vez, al abrir, y no en cada render: el reloj no es
      * una función pura, y con el diálogo abierto pasada la medianoche el
@@ -217,7 +222,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                 </div>
 
                 <div className="space-y-3">
-                    <PortalInput label="Nombre del cliente" value={cliente} maxLength={60} icon={User}
+                    <PortalInput name="cliente" label="Nombre del cliente" value={cliente} maxLength={60} icon={User}
                         onChange={(e) => setCliente(e.target.value)} placeholder="como aparece en su documento" />
                     {/* El teléfono va impreso porque es con lo que la sala avisa
                         cuando el encargo llega. Sin él, el comprobante sirve para
@@ -226,7 +231,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                         onChange={(e) => setTelefono(e.target.value)} placeholder="7712-4408" />
                 </div>
 
-                <div className="space-y-2">
+                <div data-campo="producto" className="space-y-2">
                     <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                         Qué se aparta
                     </h4>
@@ -289,7 +294,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                 </div>
 
                 <div className="space-y-2">
-                    <PortalInput label="Cuánto abona" inputMode="decimal" maskType="DECIMAL" prefix="$"
+                    <PortalInput name="abonado" label="Cuánto abona" inputMode="decimal" maskType="DECIMAL" prefix="$"
                         value={abonado}
                         onChange={(e) => setAbonado(hastaElTope(e.target.value, total).valor)}
                         helperText={total != null ? `Hasta ${formatMoney(total)}.` : undefined}
@@ -338,6 +343,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                 </div>
 
                 <div className="flex justify-end gap-2">
+                    {queFalta && !enviando && <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />}
                     <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
                     {/* `loading` y no sólo `disabled`: un botón gris y mudo se
                         lee como «no funcionó», y ahí es cuando alguien vuelve a

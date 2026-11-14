@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Syringe } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
@@ -33,6 +34,7 @@ import BuscarFicha from './BuscarFicha';
 import FormaDePago from './FormaDePago';
 import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /**
  * Cobrar la aplicación de una inyección — y llevar el control de lo pagado.
@@ -115,7 +117,7 @@ const esNombre = (t) => !/^\s*DTE-/i.test(t) && /[a-zñáéíóú]/i.test(t);
  * su vencimiento. Escribir uno nuevo sigue
  * abierto: la caja tiene la ampolla en la mano y es la que manda.
  */
-function LoteDeAmpolla({ titulo, producto, valor, onChange }) {
+function LoteDeAmpolla({ titulo, producto, valor, onChange, campo }) {
     const motivo = motivoDelLote(valor);
     const tocado = Boolean(valor.lote || valor.vence);
     const [conocidos, setConocidos] = useState([]);
@@ -141,7 +143,7 @@ function LoteDeAmpolla({ titulo, producto, valor, onChange }) {
     };
     const mesAnio = (v) => { const [a, m] = String(v).split('-'); return `${m}/${a}`; };
     return (
-        <div className="space-y-2">
+        <div className="space-y-2" data-campo={campo}>
             {titulo && <p className="text-body-sm font-semibold text-content-2">{titulo}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <CampoLote value={valor.lote} conocidos={conocidos} onChange={escribirLote}
@@ -304,7 +306,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
     // La cuenta (origen, precio, total —mezcladas: una por vez—, monto, cuántas
     // quedan pagadas sin aplicar y si se puede cobrar) es la del núcleo. Lo que
     // queda sin aplicar necesita a nombre de quién: «que haya un control».
-    const { origen, precio, faltaDosis, faltaFicha, total, monto, ahora, quedan, valido } = cuentaDelCobro({
+    const { origen, precio, faltaDosis, faltaFicha, total, monto, ahora, quedan, valido, falta } = cuentaDelCobro({
         modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida, lotes,
     });
     // Los renglones elegidos cuya factura no dice qué ampolla es.
@@ -312,6 +314,11 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
         .map((i) => renglonDe(i.linea_num)).filter(Boolean), [items, renglonDe]);
 
     const estadoPago = estadoDeFormaDePago(pago, monto);
+    // Lo que el pie dice que falta y a qué campo lleva (2026-11-14): primero la
+    // cuenta, después el comprobante — el mismo orden en que se apaga el botón.
+    const queFalta = modo === 'CANJEAR'
+        ? (idsACanjear.length === 0 ? { texto: 'Elige cuántas se aplican ahora.', campo: 'canje' } : null)
+        : falta ?? (!estadoPago.valido ? { texto: estadoPago.falta, campo: estadoPago.campo } : null);
 
     const cuerpoDeCobrar = useRef(null);
     cuerpoDeCobrar.current = async () => {
@@ -442,7 +449,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 {errorPrecios && <Notice variant="danger">{errorPrecios}</Notice>}
 
                 {(modo === 'COMPRADA' || modo === 'OTRA') && (
-                    <div className="space-y-3">
+                    <div className="space-y-3" data-campo="venta">
                         {/* Con la venta elegida, la lista se recoge a esa sola venta: las
                             demás ya no sirven y empujaban «Cuántas se pagan» fuera de la
                             vista. «Cambiar venta» la vuelve a abrir. */}
@@ -532,7 +539,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         )}
 
                         {venta && (
-                            <div data-surface="card" className="rounded-xl p-3 space-y-2">
+                            <div data-surface="card" data-campo="cuantas" className="rounded-xl p-3 space-y-2">
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2">
                                     Cuántas se pagan
                                 </h4>
@@ -633,7 +640,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                             La factura no dice qué ampolla es: escribe el lote y el vencimiento impresos en ella.
                                         </p>
                                         {renglonesSinLote.map((r) => (
-                                            <LoteDeAmpolla key={r.linea_num} titulo={r.descripcion} producto={r.descripcion}
+                                            <LoteDeAmpolla key={r.linea_num} campo={`lote-${r.linea_num}`} titulo={r.descripcion} producto={r.descripcion}
                                                 valor={lotes[r.linea_num] || LOTE_VACIO}
                                                 onChange={(v) => setLotes((x) => ({ ...x, [r.linea_num]: v }))} />
                                         ))}
@@ -646,17 +653,19 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
 
                 {modo === 'TRAIDA' && (
                     <div className="space-y-3">
-                        <PortalInput label="Qué inyección" value={producto} maxLength={40} icon={Syringe}
+                        <PortalInput name="producto" label="Qué inyección" value={producto} maxLength={40} icon={Syringe}
                             onChange={(e) => setProducto(e.target.value)} placeholder="Neurobion 25000" />
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-body-sm text-content-2">Cuántas aplicaciones se pagan</span>
                             <Contador etiqueta="aplicaciones" valor={cantidad} min={1} max={10} onChange={setCantidad} />
                         </div>
-                        <LoteDeAmpolla producto={producto} valor={loteTraida} onChange={setLoteTraida} />
+                        <LoteDeAmpolla campo="lote" producto={producto} valor={loteTraida} onChange={setLoteTraida} />
                         {/* Obligatoria (2026-10-28): una traída sin ficha quedaba «sin
                             nombre» en la bitácora. Si no tiene, se crea acá. */}
-                        <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }}
-                            crear ayuda={AYUDA_FICHA_TRAIDA} />
+                        <div data-campo="ficha">
+                            <BuscarFicha ficha={ficha} onElegir={(c) => { setFicha(c); if (c) setANombreDe(c.name); }}
+                                crear ayuda={AYUDA_FICHA_TRAIDA} />
+                        </div>
                         {faltaFicha && <p className="text-caption text-warning">Falta el cliente.</p>}
                     </div>
                 )}
@@ -677,7 +686,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 )}
 
                 {modo !== 'CANJEAR' && total > 0 && quedan > 0 && (
-                    <PortalInput label="A nombre de" value={aNombreDe} maxLength={80}
+                    <PortalInput name="aNombreDe" label="A nombre de" value={aNombreDe} maxLength={80}
                         onChange={(e) => setANombreDe(e.target.value)}
                         placeholder="nombre del cliente, para cuando vuelva"
                         helperText={aNombreDe.trim().length < 3 ? 'Obligatorio cuando queda alguna pendiente.' : undefined} />
@@ -697,7 +706,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                 )}
 
                 {modo === 'CANJEAR' && (
-                    <div className="space-y-3">
+                    <div className="space-y-3" data-campo="canje">
                         <SearchInput value={textoPend} onChange={setTextoPend} placeholder="Cliente, factura o inyección" />
                         {pendientes == null ? <LoadingState /> : pendientes.length === 0 ? (
                             <p className="text-body-sm text-content-3">
@@ -755,6 +764,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
 
             </LiquidModal.Body>
             <LiquidModal.Footer>
+                {queFalta && !enviando && <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />}
                 <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
                 {pie}
             </LiquidModal.Footer>

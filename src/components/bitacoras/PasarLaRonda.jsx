@@ -1,6 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Clock, MessageSquarePlus, Snowflake, Sparkles, Store, Thermometer, Toilet, Warehouse, LayoutPanelTop } from 'lucide-react';
 import Badge from '../common/Badge';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import LiquidModal from '../common/LiquidModal';
@@ -221,6 +223,29 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
     // evita mandar una vuelta entera para que vuelva con un renglón caído.
     const incompletos = useMemo(() => lecturasSinAccion(pendientes, valores), [pendientes, valores]);
 
+    // Lo que falta, en el orden que apaga el botón, y el campo al que lleva
+    // (2026-11-14): sin nada anotado, al primer renglón; con una lectura fuera
+    // de rango sin acción, a la acción de la PRIMERA.
+    const queFalta = useMemo(() => {
+        if (!items.length) {
+            const primero = pendientes[0];
+            return {
+                texto: 'Anota al menos una lectura o una limpieza.',
+                campo: !primero ? null : primero.tipo === 'lectura' ? `temp-${primero.clave}` : `limpieza-${primero.clave}`,
+            };
+        }
+        if (incompletos.length > 0) {
+            const [primera] = incompletos;
+            const otras = incompletos.length - 1;
+            return {
+                texto: `Anota qué se hizo en ${primera.area.nombre}: está fuera de rango.`
+                    + (otras > 0 ? ` Y ${otras} más.` : ''),
+                campo: `accion-${primera.clave}`,
+            };
+        }
+        return null;
+    }, [items, incompletos, pendientes]);
+
     const guardar = useCallback(async () => {
         setError(null);
         setGuardando(true);
@@ -315,11 +340,15 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {queFalta && !guardando && (
+                    <AvisoDeFalta motivo={queFalta.texto}
+                        onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />
+                )}
                 <Button variant="ghost" onClick={cerrar} disabled={guardando}>
                     {huboCambio ? 'Listo' : 'Cancelar'}
                 </Button>
                 <Button variant="primary" icon={Check} onClick={guardar} loading={guardando}
-                    disabled={!items.length || incompletos.length > 0}>
+                    disabled={Boolean(queFalta)}>
                     {items.length ? `Anotar ${items.length}` : 'Anotar'}
                 </Button>
             </LiquidModal.Footer>

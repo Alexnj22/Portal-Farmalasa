@@ -29,6 +29,9 @@ import {
 } from '@nucleo/data/solicitudesDatos';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import PieDeModal from '../../components/common/PieDeModal';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 const COLUMNAS = [
     { key: 'detectado', label: 'Detectado' },
     { key: 'que', label: 'Qué pasó' },
@@ -155,8 +158,19 @@ function Ficha({ inc, onClose, onGuardado }) {
         } finally { setGuardando(false); }
     };
 
-    const listo = !!f.detectado_at && !!f.naturaleza.trim() && !!f.datos_comprometidos.trim();
+    // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
+    // mismas tres condiciones que apagaban «Guardar».
+    const queFalta = !f.detectado_at ? { texto: 'Falta cuándo se detectó.', campo: 'detectado_at' }
+        : !f.naturaleza.trim() ? { texto: 'Escribe qué pasó y por qué.', campo: 'naturaleza' }
+        : !f.datos_comprometidos.trim() ? { texto: 'Escribe qué datos se comprometieron.', campo: 'datos_comprometidos' }
+        : null;
+    const listo = !queFalta;
     const plazo = plazoDeIncidente({ ...inc, ...Object.fromEntries(CAMPOS_FECHA.map((k) => [k, deInput(f[k])])) });
+    // «Cerrar el incidente» pide además las tres notificaciones.
+    const avisoDelPie = cerrado || guardando ? null
+        : queFalta ?? (!nuevo && plazo && !plazo.completo
+            ? { texto: `Para cerrarlo, anota cuándo se notificó a: ${plazo.faltan.map((x) => x.rotulo).join(', ')}.`, campo: plazo.faltan[0].campo }
+            : null);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Incidente de seguridad de datos">
@@ -171,13 +185,13 @@ function Ficha({ inc, onClose, onGuardado }) {
                         </Notice>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <PortalInput label="Cuándo se detectó" type="datetime-local" value={f.detectado_at}
+                        <PortalInput label="Cuándo se detectó" name="detectado_at" type="datetime-local" value={f.detectado_at}
                             onChange={set('detectado_at')} readOnly={cerrado} />
                         <PortalInput label="Cuándo ocurrió (si se sabe)" type="datetime-local" value={f.ocurrido_at}
                             onChange={set('ocurrido_at')} readOnly={cerrado} />
                     </div>
-                    <PortalTextarea label="Qué pasó y por qué" rows={3} value={f.naturaleza} onChange={set('naturaleza')} readOnly={cerrado} />
-                    <PortalTextarea label="Qué datos se comprometieron" rows={2} value={f.datos_comprometidos} onChange={set('datos_comprometidos')} readOnly={cerrado} />
+                    <PortalTextarea label="Qué pasó y por qué" name="naturaleza" rows={3} value={f.naturaleza} onChange={set('naturaleza')} readOnly={cerrado} />
+                    <PortalTextarea label="Qué datos se comprometieron" name="datos_comprometidos" rows={2} value={f.datos_comprometidos} onChange={set('datos_comprometidos')} readOnly={cerrado} />
                     <PortalTextarea label="A quiénes afecta (cuántas personas, quiénes)" rows={2} value={f.afectados} onChange={set('afectados')} readOnly={cerrado} />
                     <PortalTextarea label="Medidas inmediatas" rows={2} value={f.medidas_inmediatas} onChange={set('medidas_inmediatas')} readOnly={cerrado} />
                     <PortalTextarea label="Recomendaciones a las personas afectadas" rows={2} value={f.recomendaciones} onChange={set('recomendaciones')} readOnly={cerrado} />
@@ -186,7 +200,7 @@ function Ficha({ inc, onClose, onGuardado }) {
                         <TituloDeSeccion nivel="seccion">Notificaciones</TituloDeSeccion>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {NOTIFICACIONES_DE_INCIDENTE.map((n) => (
-                                <PortalInput key={n.campo} label={n.rotulo} type="datetime-local" value={f[n.campo]}
+                                <PortalInput key={n.campo} name={n.campo} label={n.rotulo} type="datetime-local" value={f[n.campo]}
                                     onChange={set(n.campo)} readOnly={cerrado} />
                             ))}
                         </div>
@@ -196,7 +210,7 @@ function Ficha({ inc, onClose, onGuardado }) {
                     <PortalTextarea label="Notas internas" rows={2} value={f.notas} onChange={set('notas')} readOnly={cerrado} />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={avisoDelPie ? <AvisoDeFalta motivo={avisoDelPie.texto} onIr={() => irAlCampo(avisoDelPie.campo)} /> : null}>
                 <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                 {!cerrado && !nuevo && (
                     <Button variant="secondary" loading={guardando} disabled={!listo || !plazo?.completo}
@@ -208,7 +222,7 @@ function Ficha({ inc, onClose, onGuardado }) {
                         {nuevo ? 'Registrar' : 'Guardar'}
                     </Button>
                 )}
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

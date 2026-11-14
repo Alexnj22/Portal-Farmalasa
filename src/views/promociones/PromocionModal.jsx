@@ -7,6 +7,8 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Button from '../../components/common/Button';
 import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
@@ -285,8 +287,15 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const problemasDesc = problemasDelDescuentoDeLaPromocion(renglones, desc,
         { alcanceTodo, salas, marcadas: general.salas });
     const problemasPromo = creada ? [] : problemasDeLaPromocion(renglones);
-    const listo = nombre.trim() && renglones.length > 0 && !hayEditando
-        && problemasDesc.length === 0 && problemasPromo.length === 0;
+    // Lo que falta, en orden, y dónde se arregla (2026-11-14). Las mismas
+    // cinco condiciones que apagaban los botones de guardar.
+    const queFalta = hayEditando ? { texto: 'Termina el producto abierto para poder guardar.', campo: 'producto-abierto' }
+        : !nombre.trim() ? { texto: 'Escribe el nombre de la promoción.', campo: 'nombre' }
+        : renglones.length === 0 ? { texto: 'Agrega al menos un producto.', campo: 'agregar-productos' }
+        : problemasPromo.length > 0 ? { texto: problemasPromo[0], campo: 'problemas-promocion' }
+        : problemasDesc.length > 0 ? { texto: problemasDesc[0], campo: 'descuento-promocion' }
+        : null;
+    const listo = !queFalta;
 
     /* ── PRODUCTOS QUE NACEN VENCIDOS ──────────────────────────────────────
      *
@@ -337,13 +346,15 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     />
 
                     {/* ── 2 · Además, ¿baja el precio? ────────────────────── */}
-                    <DescuentoEnVentas
-                        renglones={renglones}
-                        salas={salas}
-                        valor={desc}
-                        onCambiar={cambiarDesc}
-                        salasDeLaPromocion={general.salas}
-                    />
+                    <div data-campo="descuento-promocion">
+                        <DescuentoEnVentas
+                            renglones={renglones}
+                            salas={salas}
+                            valor={desc}
+                            onCambiar={cambiarDesc}
+                            salasDeLaPromocion={general.salas}
+                        />
+                    </div>
 
                     {/* ── 3 · Los productos ──────────────────────────────── */}
                     <div className="space-y-2">
@@ -398,16 +409,17 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                                         onQuitar={() => quitar(i)}
                                     />
                                 ) : (
-                                    <RenglonEditor
-                                        key={r.erp_product_id}
-                                        r={r}
-                                        salas={salas}
-                                        proveedores={proveedores}
-                                        onCambiar={(c, v) => cambiar(i, c, v)}
-                                        onReparto={(s, v) => cambiarReparto(i, s, v)}
-                                        onQuitar={() => quitar(i)}
-                                        onListo={() => cambiar(i, 'confirmado', true)}
-                                    />
+                                    <div key={r.erp_product_id} data-campo="producto-abierto">
+                                        <RenglonEditor
+                                            r={r}
+                                            salas={salas}
+                                            proveedores={proveedores}
+                                            onCambiar={(c, v) => cambiar(i, c, v)}
+                                            onReparto={(s, v) => cambiarReparto(i, s, v)}
+                                            onQuitar={() => quitar(i)}
+                                            onListo={() => cambiar(i, 'confirmado', true)}
+                                        />
+                                    </div>
                                 )))}
                             </GrupoDeLaboratorio>
                         ))}
@@ -420,11 +432,13 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                             reportó como «me ocultaba todo y salía vacío». Hoy
                             los productos nacen confirmados, así que el motivo de
                             esconderlo ya no aplica; lo que queda es el aviso. */}
-                        <AgregarProductos
-                            yaElegidos={renglones.map((r) => r.erp_product_id)}
-                            laboratorios={laboratorios}
-                            onAgregar={agregar}
-                        />
+                        <div data-campo="agregar-productos">
+                            <AgregarProductos
+                                yaElegidos={renglones.map((r) => r.erp_product_id)}
+                                laboratorios={laboratorios}
+                                onAgregar={agregar}
+                            />
+                        </div>
                         {hayEditando && (
                             <p className="text-caption text-warning-text">
                                 Hay un producto abierto: termínalo antes de guardar la promoción.
@@ -473,7 +487,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     )}
 
                     {problemasPromo.length > 0 && !hayEditando && (
-                        <Notice variant="warning" icon={AlertTriangle}>
+                        <Notice variant="warning" icon={AlertTriangle} data-campo="problemas-promocion">
                             <span className="font-semibold">Falta corregir antes de guardar:</span>
                             <ul className="list-disc pl-4 mt-1 space-y-0.5">
                                 {problemasPromo.slice(0, 6).map((t) => <li key={t}>{t}</li>)}
@@ -485,14 +499,13 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 </div>
             </LiquidModal.Body>
 
-            <PieDeModal izquierda={(
+            <PieDeModal izquierda={queFalta && !guardando && !(creada && !descPendiente) ? (
+                <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+            ) : (
                 <span className="text-caption text-content-3">
-                    {hayEditando
-                        ? 'Termina el producto para poder guardar.'
-                        : (problemasPromo[0] || problemasDesc[0]
-                            || (creada
-                                ? (descPendiente ? 'La promoción ya quedó: falta el descuento.' : 'La promoción ya quedó creada.')
-                                : 'En borrador no cuenta ventas hasta activarla.'))}
+                    {creada
+                        ? (descPendiente ? 'La promoción ya quedó: falta el descuento.' : 'La promoción ya quedó creada.')
+                        : 'En borrador no cuenta ventas hasta activarla.'}
                 </span>
             )}>
                 {/* Con la promoción ya creada, cerrar también recarga la lista:

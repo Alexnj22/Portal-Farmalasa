@@ -14,6 +14,7 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import TablePagination from '../components/common/TablePagination';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import AvisoDeBorrador from '../components/common/AvisoDeBorrador';
+import AvisoDeFalta from '../components/common/AvisoDeFalta';
 import FileField from '../components/common/FileField';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -21,6 +22,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { usePaginaEnUrl } from '../plataforma/usePaginaEnUrl';
+import { irAlCampo } from '../plataforma/irAlCampo';
 import {
     DIAS_DE_PLAZO, edadDelCredito, fetchCreditoDetalle, fetchCreditos, fetchCreditosDelCliente,
     fetchHistorialDelOrigen, fetchPosProveedores, fetchUltimaLectura, leerPagoDeCredito,
@@ -1227,7 +1229,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const puedeRepartir = forma !== 'Efectivo' && otros.length > 0;
     // La regla entera del cobro —papel, aprobación, cuadre, excesos, listo— es
     // `estadoDelCobro` (núcleo): la app cobra con la misma.
-    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo } = estadoDelCobro({
+    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo, falta } = estadoDelCobro({
         forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
     });
 
@@ -1373,10 +1375,14 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             propio campo llamando a `onChange(null)`, así que
                             tampoco hacía falta un `onClear` que no existe.
                             Y acepta PDF: es lo que la app del banco descarga. */}
-                        <FileField label={`Comprobante (${forma.toLowerCase()})`}
-                            accept="image/*,application/pdf" file={archivo}
-                            hint="Una foto o el PDF del banco"
-                            onChange={leer} />
+                        {/* `data-campo`/`name`: el aviso del pie lleva hasta
+                            el campo que falta (estadoDelCobro → falta.campo). */}
+                        <div data-campo="abono-comprobante">
+                            <FileField label={`Comprobante (${forma.toLowerCase()})`}
+                                accept="image/*,application/pdf" file={archivo}
+                                hint="Una foto o el PDF del banco"
+                                onChange={leer} />
+                        </div>
 
                         {leyendo && <LoadingState label="Leyendo el comprobante" />}
 
@@ -1432,7 +1438,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                         {/* El motivo es lo que quien aprueba va a leer, así que es
                             obligatorio. Con las otras formas el comprobante habla
                             solo; acá no hay comprobante que hable. */}
-                        <PortalTextarea label="Motivo" value={motivo} rows={2}
+                        <PortalTextarea name="abono-motivo" label="Motivo" value={motivo} rows={2}
                             placeholder="ISSS, planilla de agosto"
                             onChange={(e) => setMotivo(e.target.value)} />
                     </div>
@@ -1444,7 +1450,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                     <>
                         {conPapel && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <PortalInput label="Monto del comprobante" inputMode="decimal"
+                                <PortalInput name="abono-monto-doc" label="Monto del comprobante" inputMode="decimal"
                                     value={montoDoc} onChange={(e) => escribirMonto(e.target.value)}
                                     helperText={rotuloDelTope} />
                                 <PortalInput label="Fecha del comprobante" type="date"
@@ -1587,7 +1593,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                             alineación. */}
                                         <span className="shrink-0 self-end sm:self-auto flex items-end gap-1.5">
                                             <span className="w-24">
-                                                <PortalInput label="Abona" labelDenso inputMode="decimal" placeholder="0.00"
+                                                <PortalInput name={`abona-${h.id}`} label="Abona" labelDenso inputMode="decimal" placeholder="0.00"
                                                     value={reparto[h.id] ?? ''}
                                                     onChange={(e) => setReparto((r) => (
                                                         { ...r, [h.id]: hastaElTope(e.target.value, debe).valor }))} />
@@ -1664,6 +1670,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                 )}
 
                 <div className="flex justify-end gap-2">
+                    {falta && !ocupado && <AvisoDeFalta motivo={falta.texto} onIr={falta.campo ? () => irAlCampo(falta.campo) : null} />}
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                     {/* El rótulo dice lo que el botón HACE. «Cobrar» sobre un
                         cobro que queda esperando firma le haría decir a quien
@@ -1719,9 +1726,16 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
     }, [formaNueva, abono.monto, showToast]);
 
     const bloqueado = lectura && lectura.veredicto !== 'OK';
-    const valido = motivo.trim().length >= 5 && !bloqueado
-        && (que !== 'MONTO' || Number(montoNuevo) > 0)
-        && (!conPapel || (archivo && lectura));
+    // Qué falta para pedir, en el orden del formulario, y a qué campo lleva el
+    // aviso del pie (2026-11-14). Las mismas condiciones que antes formaban
+    // `valido` (un AND: el orden sólo elige el texto).
+    const queFalta = que === 'MONTO' && !(Number(montoNuevo) > 0) ? { texto: 'Escribe el monto correcto.', campo: 'correccion-monto' }
+        : conPapel && !archivo ? { texto: 'Sube el comprobante.', campo: 'correccion-comprobante' }
+        : conPapel && !lectura ? { texto: 'Falta que se lea el comprobante.', campo: 'correccion-comprobante' }
+        : bloqueado ? { texto: MOTIVO_DEL_FRENO[lectura.veredicto] || 'El comprobante no se pudo dar por bueno.', campo: conPapel ? 'correccion-comprobante' : null }
+        : motivo.trim().length < 5 ? { texto: 'Escribe por qué hay que corregirlo.', campo: 'correccion-motivo' }
+        : null;
+    const valido = !queFalta;
 
     const pedir = useCallback(async () => {
         setOcupado(true);
@@ -1772,7 +1786,7 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
                     ]} />
 
                 {que === 'MONTO' && (
-                    <PortalInput label="Monto correcto" inputMode="decimal" value={montoNuevo}
+                    <PortalInput name="correccion-monto" label="Monto correcto" inputMode="decimal" value={montoNuevo}
                         onChange={(e) => setMontoNuevo(e.target.value)} />
                 )}
 
@@ -1783,9 +1797,11 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
                             options={FORMAS.map((f) => ({ value: f, label: f }))} clearable={false} />
                         {conPapel && (
                             <>
-                                <FileField label="Comprobante" accept="image/*,application/pdf"
-                                    file={archivo} hint="Una foto o el PDF del banco"
-                                    onChange={leer} />
+                                <div data-campo="correccion-comprobante">
+                                    <FileField label="Comprobante" accept="image/*,application/pdf"
+                                        file={archivo} hint="Una foto o el PDF del banco"
+                                        onChange={leer} />
+                                </div>
                                 {leyendo && <LoadingState label="Leyendo el comprobante" />}
                                 {bloqueado && (
                                     <Notice variant="danger" icon={AlertTriangle}>
@@ -1801,11 +1817,12 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
                     </>
                 )}
 
-                <PortalTextarea label="Por qué" value={motivo} rows={3}
+                <PortalTextarea name="correccion-motivo" label="Por qué" value={motivo} rows={3}
                     placeholder="Qué pasó, en una frase"
                     onChange={(e) => setMotivo(e.target.value)} />
 
                 <div className="flex justify-end gap-2">
+                    {queFalta && !ocupado && <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />}
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                     <Button variant="primary" disabled={ocupado || !valido} onClick={pedir}>
                         Pedir

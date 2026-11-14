@@ -16,6 +16,8 @@ import { guardarCliente, mensajeDeDistribucion, fetchRutas } from '@nucleo/data/
 import { Route } from 'lucide-react';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { DOC_IDENTIDAD, TIPO_CLIENTE, cargarActividades, soloVentaLibre } from './comun';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 // La ficha de un cliente de ruta.
 //
@@ -57,6 +59,13 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
     const contribuyente = !!f.nrc.trim();
     const errores = useMemo(() => erroresDeCliente(f), [f]);
     const hayErrores = Object.keys(errores).length > 0;
+    // El primer error (el mismo que ya decía el pie) y su campo: la clave del
+    // error es el `name` del control, salvo la dirección, que son varios
+    // (2026-11-14).
+    const primerError = Object.keys(errores)[0];
+    const campoDelError = primerError === 'direccion'
+        ? (f.municipio && f.distrito ? 'complemento' : 'direccion')
+        : primerError;
 
     const guardar = async () => {
         setGuardando(true);
@@ -126,7 +135,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                                     onChange={(v) => set('gran_contribuyente', v)}
                                     label="Gran contribuyente (nos retiene el 1%)" />
                             </div>
-                            <div className="sm:col-span-2">
+                            <div className="sm:col-span-2" data-campo="cod_actividad">
                                 <span className={rotuloCampo()}>Actividad económica</span>
                                 <LiquidSelect value={f.cod_actividad}
                                     onChange={(v) => { const a = actividades.find(x => x.value === v); setF(p => ({ ...p, cod_actividad: v || '', desc_actividad: a?.desc ?? '' })); }}
@@ -137,7 +146,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                         </div>
                     </div>
 
-                    <div>
+                    <div data-campo="direccion">
                         <p className="text-body-sm font-bold text-content mb-2">Dirección</p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <LiquidSelect value={f.departamento} placeholder="Departamento" options={departamentosMH()} disabled={ro}
@@ -189,9 +198,13 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
 
             <LiquidModal.Footer>
                 <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-                    <p className="text-caption text-content-3 min-w-0 flex-1">
-                        {hayErrores ? Object.values(errores)[0] : 'Listo para guardar.'}
-                    </p>
+                    {hayErrores && !ro && !guardando ? (
+                        <AvisoDeFalta motivo={errores[primerError]} onIr={() => irAlCampo(campoDelError)} />
+                    ) : (
+                        <p className="text-caption text-content-3 min-w-0 flex-1">
+                            {hayErrores ? errores[primerError] : 'Listo para guardar.'}
+                        </p>
+                    )}
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" onClick={onClose} disabled={guardando}>{ro ? 'Cerrar' : 'Cancelar'}</Button>
                         {!ro && (

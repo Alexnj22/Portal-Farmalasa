@@ -179,12 +179,30 @@ export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, 
     const monto = precio != null ? Math.round(precio * total * 100) / 100 : null;
     const ahora = Math.min(aplicarAhora, total);
     const quedan = total - ahora;
-    const valido = precio != null && total > 0 && !!sala && !faltaLote && (
-        origen === 'COMPRADA' ? !!venta && (items || []).length > 0 && !faltaDosis
-            : String(producto || '').trim().length > 2 && !!ficha?.id
-    ) && (quedan === 0 || String(aNombreDe || '').trim().length >= 3);
     const faltaFicha = origen === 'TRAIDA' && !ficha?.id;
-    return { origen, precio, faltaDosis, faltaFicha, faltaLote, total, monto, ahora, quedan, valido };
+    // `falta` (2026-11-14): el PRIMER motivo por el que no se puede cobrar, en el
+    // orden del formulario, `{ texto, campo }` o null. `campo` es el
+    // `data-campo`/`name` al que lleva el aviso del pie. Cubre las mismas
+    // condiciones que antes formaban `valido` (un AND, así que el orden no
+    // cambia el resultado), y `valido` sale de acá.
+    const loteQueFalta = () => {
+        if (origen === 'TRAIDA') return { texto: motivoDelLote(loteTraida), campo: 'lote' };
+        const i = (items || []).find((x) => 'lote' in x && motivoDelLote({ ...x, parecido: lotes[x.linea_num]?.parecido }) !== null);
+        return { texto: motivoDelLote({ ...i, parecido: lotes[i.linea_num]?.parecido }), campo: `lote-${i.linea_num}` };
+    };
+    const falta = precio == null ? { texto: 'Faltan los precios de la aplicación.', campo: null }
+        : !sala ? { texto: 'Falta la sala de esta caja.', campo: null }
+        : origen === 'COMPRADA' && !venta ? { texto: 'Elige la venta.', campo: 'venta' }
+        : origen === 'COMPRADA' && !(items || []).length ? { texto: 'Elige cuántas se pagan.', campo: 'cuantas' }
+        : origen === 'COMPRADA' && faltaDosis ? { texto: 'Elige cuánto se pone.', campo: 'cuantas' }
+        : origen === 'TRAIDA' && String(producto || '').trim().length <= 2 ? { texto: 'Escribe qué inyección es.', campo: 'producto' }
+        : !(total > 0) ? { texto: 'Elige cuántas se pagan.', campo: origen === 'COMPRADA' ? 'cuantas' : null }
+        : faltaLote ? loteQueFalta()
+        : faltaFicha ? { texto: 'Elige al cliente.', campo: 'ficha' }
+        : quedan !== 0 && String(aNombreDe || '').trim().length < 3 ? { texto: 'Escribe a nombre de quién quedan las pendientes.', campo: 'aNombreDe' }
+        : null;
+    const valido = !falta;
+    return { origen, precio, faltaDosis, faltaFicha, faltaLote, total, monto, ahora, quedan, valido, falta };
 }
 
 /** Lo que se manda a `anotarIngreso` como `aplicacion`. */

@@ -3,6 +3,8 @@ import { UserRound } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import SegmentedControl from '../common/SegmentedControl';
 import Button from '../common/Button';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { gruposDeNombre } from '@nucleo/utils/nameUtils';
 import { elegirNombreEnElPortal } from '@nucleo/data/employeeSelfService';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -54,6 +56,14 @@ function Dialogo({ empleado, onClose, obligatorio }) {
         onClose?.();
     };
 
+    // Lo que falta, al lado del botón (2026-11-14). Una ficha sin nombres no
+    // tiene nada que elegir acá: no hay campo al que llevar.
+    const queFalta = !nombre
+        ? (nombres.length ? { texto: 'Elige tu nombre.', campo: 'nombre' } : { texto: 'Tu ficha no tiene nombre: pide que la completen en Talento Humano.', campo: null })
+        : !apellido
+            ? (apellidos.length ? { texto: 'Elige tu apellido.', campo: 'apellido' } : { texto: 'Tu ficha no tiene apellido: pide que la completen en Talento Humano.', campo: null })
+            : null;
+
     const opciones = (lista) => lista.map(x => ({ value: x, label: x }));
     const columnas = (lista) => (lista.length >= 3 ? 3 : 2);
 
@@ -67,14 +77,14 @@ function Dialogo({ empleado, onClose, obligatorio }) {
             <LiquidModal.Body>
                 <div className="flex flex-col gap-5">
                     {nombres.length > 1 && (
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2" data-campo="nombre">
                             <p className="text-label font-bold text-content-2">Tu nombre</p>
                             <SegmentedControl layout="block" columns={columnas(nombres)} label="Tu nombre"
                                 options={opciones(nombres)} value={nombre} onChange={setNombre} />
                         </div>
                     )}
                     {apellidos.length > 1 && (
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2" data-campo="apellido">
                             <p className="text-label font-bold text-content-2">Tu apellido</p>
                             <SegmentedControl layout="block" columns={columnas(apellidos)} label="Tu apellido"
                                 options={opciones(apellidos)} value={apellido} onChange={setApellido} />
@@ -90,8 +100,11 @@ function Dialogo({ empleado, onClose, obligatorio }) {
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
+                {queFalta && !guardando && (
+                    <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />
+                )}
                 {obligatorio ? <span aria-hidden /> : <Button variant="secondary" onClick={onClose}>Cancelar</Button>}
-                <Button onClick={guardar} loading={guardando} disabled={!nombre || !apellido}>Guardar</Button>
+                <Button onClick={guardar} loading={guardando} disabled={Boolean(queFalta)}>Guardar</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

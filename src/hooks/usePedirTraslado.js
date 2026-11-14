@@ -8,7 +8,7 @@ import { fetchMinimoDeDespacho } from '../data/dispatchRules';
 import { lotesEnUnidades, repartirPedido } from '../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../utils/presentacion';
 import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH, ERP_BODEGA } from '../constants/erp';
-import { avisosDelPedido, claveOrigen, diasHasta, fmtVence } from '../utils/pedirTraslado';
+import { avisosDelPedido, claveOrigen, diasHasta, faltaParaEnviar, fmtVence } from '../utils/pedirTraslado';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Pedir un producto a otra sala — el estado y las reglas, sin pantalla.
@@ -467,8 +467,10 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
      * rojo y dejar mandar sería un rojo decorativo. */
     const conProblema = renglones.filter(r => r.problema);
 
-    const puedeEnviar = aEnviar.length > 0 && !aMedias && !yaEstaEnLaLista
-        && conProblema.length === 0 && causa.trim().length > 0;
+    // Lo que falta, en orden y con su campo (`faltaParaEnviar`); el botón se
+    // enciende exactamente cuando no falta nada.
+    const faltaEnvio = faltaParaEnviar({ aEnviar, aMedias, yaEstaEnLaLista, conProblema, causa, producto });
+    const puedeEnviar = faltaEnvio === null;
 
 
     /* Por qué el botón de mandar está apagado.
@@ -667,7 +669,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
         esAntibiotico, avisoVence,
         descartados, setDescartados, lotesDeSala, lotesVivos, reparto, faltan, hayLotes,
         lineaLista, lineaActual, yaEstaEnLaLista, aMedias, aEnviar, salasDestino, conProblema,
-        puedeEnviar, faltaElParaQue,
+        puedeEnviar, faltaEnvio, faltaElParaQue,
         renglones, causa, setCausa, agregar, quitarDelStore, editarRenglon, limpiarStore,
         enviar, enviarSoloEsta, enviando, listo, error, setError, resumen,
     };

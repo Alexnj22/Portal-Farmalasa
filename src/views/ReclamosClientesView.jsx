@@ -24,6 +24,9 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import PortalInput from '../components/common/PortalInput';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SegmentedControl from '../components/common/SegmentedControl';
+import PieDeModal from '../components/common/PieDeModal';
+import AvisoDeFalta from '../components/common/AvisoDeFalta';
+import { irAlCampo } from '../plataforma/irAlCampo';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import PersonaConFoto from '../components/caja/PersonaConFoto';
 import usePestanaEnUrl from '../plataforma/usePestanaEnUrl';
@@ -161,6 +164,13 @@ function Registrar({ deTodaLaRed, salaPropia, onClose, onListo }) {
     const [ocupado, setOcupado] = useState(false);
     // Las salas salen de la tabla, con el nombre de la fila (regla del catálogo).
     const opcionesSala = useMemo(() => (branches ?? []).map((b) => ({ value: b.id, label: b.name })), [branches]);
+    // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
+    // mismas tres condiciones que apagaban «Registrar».
+    const queFalta = !sala
+        ? (deTodaLaRed ? { texto: 'Elige la sala donde se presenta.', campo: 'sala-reclamo' } : { texto: 'No tienes una sala asignada para registrarlo.', campo: null })
+        : !nombre.trim() ? { texto: 'Escribe el nombre de quien reclama.', campo: 'nombre-reclamo' }
+        : !tema.trim() ? { texto: 'Escribe de qué se trata.', campo: 'tema-reclamo' }
+        : null;
 
     const guardar = async () => {
         setOcupado(true);
@@ -180,22 +190,22 @@ function Registrar({ deTodaLaRed, salaPropia, onClose, onListo }) {
                 <div className="flex flex-col gap-4">
                     <SegmentedControl label="Sobre qué es" value={programa} onChange={setPrograma} options={PROGRAMAS} />
                     {deTodaLaRed ? (
-                        <div>
+                        <div data-campo="sala-reclamo">
                             <span className="text-caption font-bold text-content-2 block mb-1.5">Sala donde se presenta</span>
                             <LiquidSelect value={sala} onChange={setSala} options={opcionesSala} placeholder="¿En qué sala?" />
                         </div>
                     ) : null}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <PortalInput label="Nombre de quien reclama" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                        <PortalInput label="Nombre de quien reclama" name="nombre-reclamo" value={nombre} onChange={(e) => setNombre(e.target.value)} />
                         <PortalInput label="Teléfono" maskType="PHONE" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
                     </div>
-                    <PortalTextarea label="De qué se trata" rows={4} maxLength={1000} value={tema} onChange={(e) => setTema(e.target.value)} />
+                    <PortalTextarea label="De qué se trata" name="tema-reclamo" rows={4} maxLength={1000} value={tema} onChange={(e) => setTema(e.target.value)} />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !ocupado ? <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} /> : null}>
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                <Button icon={Check} loading={ocupado} disabled={!sala || !nombre.trim() || !tema.trim()} onClick={guardar}>Registrar</Button>
-            </LiquidModal.Footer>
+                <Button icon={Check} loading={ocupado} disabled={!!queFalta} onClick={guardar}>Registrar</Button>
+            </PieDeModal>
         </LiquidModal>
     );
 }
@@ -243,7 +253,7 @@ function Detalle({ r, puedeResponder, onClose, onListo }) {
                                     Vence el {dia(r.vence)}.
                                 </Notice>
                             )}
-                            <PortalTextarea label="Respuesta que se le dio" rows={4} maxLength={2000}
+                            <PortalTextarea label="Respuesta que se le dio" name="respuesta-reclamo" rows={4} maxLength={2000}
                                 value={respuesta} onChange={(e) => setRespuesta(e.target.value)} />
                             <SegmentedControl label="Por dónde se le respondió" value={via} onChange={setVia} options={VIAS} />
                         </section>
@@ -252,12 +262,13 @@ function Detalle({ r, puedeResponder, onClose, onListo }) {
                     )}
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={!r.respondido_at && puedeResponder && !respuesta.trim() && !ocupado
+                ? <AvisoDeFalta motivo="Escribe la respuesta que se le dio." onIr={() => irAlCampo('respuesta-reclamo')} /> : null}>
                 <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                 {!r.respondido_at && puedeResponder && (
                     <Button icon={Check} loading={ocupado} disabled={!respuesta.trim()} onClick={guardar}>Guardar la respuesta</Button>
                 )}
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

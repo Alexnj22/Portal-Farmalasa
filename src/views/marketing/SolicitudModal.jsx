@@ -12,6 +12,8 @@ import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Campo from '../promociones/Campo';
 import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -49,7 +51,13 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
     // (el selector deja crear uno libre).
     const opcionesTamano = [...new Set([...tamanosDe(form.formato), ...(form.tamano ? [form.tamano] : [])])]
         .map((t) => ({ value: t, label: t }));
-    const falta = !form.titulo.trim() || (impreso && (!form.formato || !form.tamano?.trim()));
+    // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
+    // mismas condiciones que apagaban «Enviar».
+    const queFalta = !form.titulo.trim() ? { texto: 'Escribe qué necesitas.', campo: 'titulo' }
+        : impreso && !form.formato ? { texto: 'Elige qué se imprime.', campo: 'formato' }
+        : impreso && !form.tamano?.trim() ? { texto: 'Elige o escribe el tamaño.', campo: 'tamano' }
+        : null;
+    const falta = !!queFalta;
 
     const enviar = async () => {
         if (falta) return;
@@ -102,17 +110,21 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                                 <LiquidSelect value={form.marca_id} onChange={set('marca_id')} placeholder="Marca"
                                     options={marcas.filter((m) => m.activo).map((m) => ({ value: m.id, label: m.nombre }))} />
                             </Campo>
-                            <Campo rotulo="Formato" falta={impreso}>
-                                <LiquidSelect value={form.formato} placeholder={impreso ? 'Qué se imprime' : 'Cualquiera'}
-                                    onChange={(v) => setForm((f) => ({ ...f, formato: v, tamano: '' }))}
-                                    options={(impreso ? FORMATOS_IMPRESOS : FORMATOS).map((f) => ({ value: f.value, label: f.label }))} />
-                            </Campo>
-                            {impreso && (
-                                <Campo rotulo="Tamaño" falta>
-                                    <LiquidSelect value={form.tamano} onChange={set('tamano')} options={opcionesTamano}
-                                        placeholder={form.formato ? 'Elige o escribe uno' : 'Primero el formato'}
-                                        disabled={!form.formato} creatable onCreateOption={(t) => setForm((f) => ({ ...f, tamano: t }))} />
+                            <div className="min-w-0" data-campo="formato">
+                                <Campo rotulo="Formato" falta={impreso}>
+                                    <LiquidSelect value={form.formato} placeholder={impreso ? 'Qué se imprime' : 'Cualquiera'}
+                                        onChange={(v) => setForm((f) => ({ ...f, formato: v, tamano: '' }))}
+                                        options={(impreso ? FORMATOS_IMPRESOS : FORMATOS).map((f) => ({ value: f.value, label: f.label }))} />
                                 </Campo>
+                            </div>
+                            {impreso && (
+                                <div className="min-w-0" data-campo="tamano">
+                                    <Campo rotulo="Tamaño" falta>
+                                        <LiquidSelect value={form.tamano} onChange={set('tamano')} options={opcionesTamano}
+                                            placeholder={form.formato ? 'Elige o escribe uno' : 'Primero el formato'}
+                                            disabled={!form.formato} creatable onCreateOption={(t) => setForm((f) => ({ ...f, tamano: t }))} />
+                                    </Campo>
+                                </div>
                             )}
                             <Campo rotulo="Para cuándo">
                                 <LiquidDatePicker value={form.fecha_deseada} onChange={set('fecha_deseada')} min={hoySV()} />
@@ -124,10 +136,10 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                         </Campo>
                     </div>
                 </LiquidModal.Body>
-                <LiquidModal.Footer>
+                <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                     <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                     <Button icon={Send} loading={guardando} disabled={falta} onClick={enviar}>Enviar</Button>
-                </LiquidModal.Footer>
+                </PieDeModal>
             </LiquidModal>
         );
     }

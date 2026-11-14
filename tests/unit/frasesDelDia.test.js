@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diaDeFrase, estadosDeFrases, filaDeFrase, fraseDeUnDia, fraseValida } from '@nucleo/utils/ofertasClientes';
+import { diaDeFrase, estadosDeFrases, faltaEnFrase, filaDeFrase, fraseDeUnDia, fraseValida } from '@nucleo/utils/ofertasClientes';
 
 const HOY = '2026-11-03';
 
@@ -13,6 +13,9 @@ describe('frases del día', () => {
     it('valida largo, categoría y fecha si se programa', () => {
         expect(fraseValida({ texto: 'Hola', categoria: 'animo' })).toBe(false);
         expect(fraseValida({ texto: 'Hoy es un buen día.', categoria: 'animo' })).toBe(true);
+        expect(faltaEnFrase({ texto: 'Hola', categoria: 'animo' })?.campo).toBe('texto');
+        expect(faltaEnFrase({ texto: 'Hoy es un buen día.', categoria: 'x' })?.campo).toBe('categoria');
+        expect(faltaEnFrase({ texto: 'Hoy es un buen día.', categoria: 'animo', programada: true, fecha: '' })?.campo).toBe('fecha');
         expect(fraseValida({ texto: 'Hoy es un buen día.', categoria: 'otra' })).toBe(false);
         expect(fraseValida({ texto: 'Hoy es un buen día.', categoria: 'salud', programada: true, fecha: '' })).toBe(false);
         expect(filaDeFrase({ texto: '  Hola mundo ', categoria: 'calma', programada: false, fecha: '2026-11-05' }))

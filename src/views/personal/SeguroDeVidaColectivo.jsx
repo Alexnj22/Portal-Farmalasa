@@ -25,6 +25,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ShieldCheck, X, Check, UserCheck, UserPlus, AlertTriangle, FileText, FileWarning, Save, Pencil, Plus } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import PortalInput from '../../components/common/PortalInput';
@@ -299,6 +301,10 @@ function Poliza({ poliza, canEdit, onGuardada }) {
     };
     const sumaMala = !(Number(f.suma_asegurada) > 0);
     const tasaMala = !(Number(f.tasa_por_millar) > 0);
+    // Lo que falta, al lado del botón y con su campo (2026-11-14).
+    const queFalta = sumaMala ? { texto: 'Escribe la suma asegurada: tiene que ser mayor a 0.', campo: 'suma_asegurada' }
+        : tasaMala ? { texto: 'Escribe la tasa: tiene que ser mayor a 0.', campo: 'tasa_por_millar' }
+        : null;
 
     return (
         <section className="flex flex-col gap-2">
@@ -312,10 +318,10 @@ function Poliza({ poliza, canEdit, onGuardada }) {
                         onChange={e => set('aseguradora', e.target.value)} />
                     <PortalInput label="Número de póliza" value={f.numero_poliza || ''} readOnly={!canEdit}
                         placeholder="Opcional" onChange={e => set('numero_poliza', e.target.value)} />
-                    <PortalInput label="Suma asegurada por persona" prefix="$" inputMode="decimal" maskType="DECIMAL"
+                    <PortalInput label="Suma asegurada por persona" name="suma_asegurada" prefix="$" inputMode="decimal" maskType="DECIMAL"
                         value={f.suma_asegurada ?? ''} readOnly={!canEdit} hasError={sumaMala} errorMessage="Mayor a 0"
                         onChange={e => set('suma_asegurada', e.target.value)} />
-                    <PortalInput label="Tasa (por millar, anual)" inputMode="decimal" maskType="DECIMAL"
+                    <PortalInput label="Tasa (por millar, anual)" name="tasa_por_millar" inputMode="decimal" maskType="DECIMAL"
                         value={f.tasa_por_millar ?? ''} readOnly={!canEdit} hasError={tasaMala} errorMessage="Mayor a 0"
                         onChange={e => set('tasa_por_millar', e.target.value)} />
                     <PortalInput label="Prima por persona" prefix="$" inputMode="decimal" maskType="DECIMAL"
@@ -329,10 +335,15 @@ function Poliza({ poliza, canEdit, onGuardada }) {
                     onChange={subir} busy={subiendo} disabled={!canEdit} />
                 {fallo && <Notice variant="danger" compact>{fallo}</Notice>}
                 {canEdit && (
-                    <Button size="sm" variant="primary" icon={Save} className="self-end"
-                        onClick={guardar} loading={guardando} disabled={guardando || subiendo || sumaMala || tasaMala}>
-                        Guardar póliza
-                    </Button>
+                    <div className="flex items-start justify-end gap-2">
+                        {queFalta && !guardando && (
+                            <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />
+                        )}
+                        <Button size="sm" variant="primary" icon={Save} className="shrink-0"
+                            onClick={guardar} loading={guardando} disabled={guardando || subiendo || Boolean(queFalta)}>
+                            Guardar póliza
+                        </Button>
+                    </div>
                 )}
             </div>
         </section>
@@ -402,6 +413,13 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
     // Sin nadie en la lista no hay estimado: «$0.00 (estimado)» se leía como dato.
     const estimado = filas.length && primaPago !== '' && Number.isFinite(Number(primaPago)) ? Number(primaPago) * filas.length : null;
 
+    // Lo que falta, al lado del botón y con su campo (2026-11-14): sin nadie
+    // en el listado, a agregar a alguien a mano o, si no queda nadie por
+    // agregar, a subir el listado.
+    const queFaltaPago = !leyendo && filas.length === 0
+        ? { texto: 'Sube el listado o agrega al menos a una persona.', campo: faltan.length > 0 ? 'agregar' : 'listado' }
+        : null;
+
     const guardar = async () => {
         setGuardando(true); setFallo(null);
         try {
@@ -432,9 +450,11 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
                 </p>
             </div>
 
-            <FileField label="Listado de la aseguradora" accept=".pdf,image/*"
-                file={archivo} url={comprobante.url} name={comprobante.nombre}
-                onChange={leerListado} busy={leyendo} busyLabel="Leyendo el listado…" />
+            <div data-campo="listado">
+                <FileField label="Listado de la aseguradora" accept=".pdf,image/*"
+                    file={archivo} url={comprobante.url} name={comprobante.nombre}
+                    onChange={leerListado} busy={leyendo} busyLabel="Leyendo el listado…" />
+            </div>
             {aviso && <Notice variant="info" compact>{aviso}</Notice>}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -491,9 +511,11 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
             </div>
 
             {faltan.length > 0 && (
-                <LiquidSelect value="" onChange={agregar}
-                    options={faltan.map(x => ({ value: x.id, label: x.name }))}
-                    placeholder={`Agregar a alguien que no salió en la lectura (${faltan.length} sin listar)`} icon={UserPlus} />
+                <div data-campo="agregar">
+                    <LiquidSelect value="" onChange={agregar}
+                        options={faltan.map(x => ({ value: x.id, label: x.name }))}
+                        placeholder={`Agregar a alguien que no salió en la lectura (${faltan.length} sin listar)`} icon={UserPlus} />
+                </div>
             )}
 
             {fallo && (
@@ -503,6 +525,9 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
             )}
 
             <div className="flex flex-wrap justify-end gap-2 pt-1">
+                {queFaltaPago && !guardando && (
+                    <AvisoDeFalta motivo={queFaltaPago.texto} onIr={() => irAlCampo(queFaltaPago.campo)} />
+                )}
                 <Button variant="ghost" size="sm" onClick={() => { clearDraft(claveBorrador); onCancelar(); }} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" size="sm" icon={Check} onClick={guardar}
                     loading={guardando} disabled={guardando || leyendo || filas.length === 0}>

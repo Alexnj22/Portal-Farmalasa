@@ -10,6 +10,9 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import FileField from '../../components/common/FileField';
 import Switch from '../../components/common/Switch';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { guardarOferta, subirImagen } from '@nucleo/data/ofertasClientes';
@@ -47,8 +50,16 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
     }));
     const productos = Array.isArray(oferta.productos) ? oferta.productos : [];
 
-    const valido = f.titulo.trim().length >= 3 && f.inicio && f.fin && f.fin >= f.inicio
-        && (!deDescuento || productos.length > 0);
+    // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
+    // mismas condiciones que apagaban «Guardar»; en una oferta de descuento
+    // las fechas vienen del descuento y no hay campo al que llevar.
+    const queFalta = f.titulo.trim().length < 3 ? { texto: 'Escribe un título de al menos 3 letras.', campo: 'titulo' }
+        : !f.inicio ? { texto: 'Elige desde cuándo vale.', campo: deDescuento ? null : 'inicio' }
+        : !f.fin ? { texto: 'Elige hasta cuándo vale.', campo: deDescuento ? null : 'fin' }
+        : !(f.fin >= f.inicio) ? { texto: 'La fecha final es anterior a la inicial.', campo: deDescuento ? null : 'fin' }
+        : deDescuento && productos.length === 0 ? { texto: 'Este descuento no tiene productos que se puedan anunciar.', campo: null }
+        : null;
+    const valido = !queFalta;
 
     const guardar = async () => {
         setGuardando(true);
@@ -132,11 +143,11 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                     ) : (
                         <>
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
+                                <div data-campo="inicio">
                                     <span className="block text-label font-semibold text-content-2 mb-1">Desde</span>
                                     <LiquidDatePicker value={f.inicio} onChange={cambiar('inicio')} />
                                 </div>
-                                <div>
+                                <div data-campo="fin">
                                     <span className="block text-label font-semibold text-content-2 mb-1">Hasta</span>
                                     <LiquidDatePicker value={f.fin} onChange={cambiar('fin')} />
                                 </div>
@@ -192,10 +203,10 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                     </label>
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={Tag} loading={guardando} disabled={!valido} onClick={guardar}>Guardar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

@@ -20,7 +20,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ticketDeRecibo, ticketDeEstadoDeCuenta } from '@nucleo/utils/distribucionDocumento';
 import { fetchEstadoCuenta, cobrar, anularRecibo, aplicarSaldoAFavor, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { FORMA_PAGO, leerMonto } from './comun';
-import { repartoDelCobro, problemaDelCobro, cambioDelCobro, saldoAFavor, usoDelSaldoAFavor } from './cartera';
+import { repartoDelCobro, problemaDelCobroConCampo, cambioDelCobro, saldoAFavor, usoDelSaldoAFavor } from './cartera';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { MARCA_PAPEL } from './marca';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
@@ -105,8 +107,15 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
 
     // Lo que impide cobrar, dicho antes de apretar.
     // Lo que impide cobrar, dicho antes de apretar (la misma regla que la app).
-    const problema = problemaDelCobro({ puedeCobrar, montoFinal, saldo, aMano, reparto, forma, referencia, cambio });
+    const problemaConCampo = problemaDelCobroConCampo({ puedeCobrar, montoFinal, saldo, aMano, reparto, forma, referencia, cambio });
+    const problema = problemaConCampo?.texto ?? null;
     const listo = montoFinal > 0 && !problema && !cobrando;
+    // Sin monto el botón también se apaga: se dice, y lleva al campo (2026-11-14).
+    const faltaEnCobro = problemaConCampo ?? (!(montoFinal > 0)
+        ? (aMano
+            ? { texto: 'Escribe cuánto se abona a cada cuenta.', campo: abiertas[0] ? `abono-${abiertas[0].id}` : null }
+            : { texto: 'Escribe el monto.', campo: 'monto-cobro' })
+        : null);
 
     const hacerCobro = async () => {
         if (!listo) return;
@@ -268,7 +277,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                 {puedeCobrar && abiertas.length > 0 ? (<>
                                     <p className="text-caption text-content-3">Se puede usar como pago parcial de una cuenta, entero o por partes, hasta lo que deba esa cuenta.</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <div className="flex flex-col gap-1.5">
+                                        <div className="flex flex-col gap-1.5" data-campo="cuenta-saldo-a-favor">
                                             <span className={rotuloCampo()}>Cuenta</span>
                                             <LiquidSelect value={cuentaFavor?.id ?? null} clearable={false} ariaLabel="Cuenta a la que va el saldo a favor"
                                                 options={abiertas.map(x => ({ value: x.id, label: `${x.numero_control} · debe ${formatMoney(x.saldo)}` }))}
@@ -281,7 +290,10 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                         <PortalInput label="Nota (opcional)" name="nota-saldo-a-favor" value={favorNota} onChange={(e) => setFavorNota(e.target.value)} />
                                     </div>
                                     <div className="flex flex-wrap items-center justify-end gap-3">
-                                        {usoFavor.problema && favorMonto && <Notice variant="danger">{usoFavor.problema}</Notice>}
+                                        {usoFavor.problema && !aplicando && (
+                                            <AvisoDeFalta motivo={usoFavor.problema}
+                                                onIr={!cuentaFavor ? () => irAlCampo('cuenta-saldo-a-favor') : usoFavor.tope > 0 ? () => irAlCampo('monto-saldo-a-favor') : null} />
+                                        )}
                                         <Button variant="secondary" icon={aplicando ? Loader2 : PiggyBank} disabled={!!usoFavor.problema || aplicando} onClick={usarSaldoAFavor} data-usar-saldo-a-favor>
                                             {usoFavor.monto > 0 ? `Usar ${formatMoney(usoFavor.monto)}` : 'Usar'}
                                         </Button>
@@ -336,7 +348,9 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <Interruptor checked={imprimir} onChange={setImprimir} label="Imprimir el recibo" />
                                     <div className="flex items-center gap-3 ml-auto">
-                                        {problema && <Notice variant="danger">{problema}</Notice>}
+                                        {faltaEnCobro && !cobrando && (
+                                            <AvisoDeFalta motivo={faltaEnCobro.texto} onIr={faltaEnCobro.campo ? () => irAlCampo(faltaEnCobro.campo) : null} />
+                                        )}
                                         <Button variant="primary" icon={cobrando ? Loader2 : HandCoins} disabled={!listo} onClick={hacerCobro} data-cobrar-cartera>
                                             {montoFinal > 0 ? `Cobrar ${formatMoney(montoFinal)}` : 'Cobrar'}
                                         </Button>

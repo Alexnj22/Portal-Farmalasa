@@ -12,7 +12,10 @@ import Switch from '../../components/common/Switch';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
-import { DESTINOS_DE_LA_APP, estadoDeHistoria, filaDeHistoria, historiaValida, venceHistoria } from '@nucleo/utils/ofertasClientes';
+import { DESTINOS_DE_LA_APP, estadoDeHistoria, filaDeHistoria, faltaEnHistoria, venceHistoria } from '@nucleo/utils/ofertasClientes';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -194,7 +197,9 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const [guardando, setGuardando] = useState(false);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
     useEffect(() => { saveDraft(claveBorrador, f); }, [claveBorrador, f]);
-    const valido = historiaValida(f, archivo || historia.imagen_path);
+    // Lo que falta y su campo (2026-11-14); el botón se apaga con lo mismo.
+    const queFalta = faltaEnHistoria(f, archivo || historia.imagen_path);
+    const valido = !queFalta;
 
     const guardar = async () => {
         setGuardando(true);
@@ -215,8 +220,10 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
             <LiquidModal.Header titulo={nueva ? 'Nueva historia' : 'Editar historia'} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
-                    <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                        hint={historia.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Vertical, 1080 × 1920 px'} />
+                    <div data-campo="imagen">
+                        <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
+                            hint={historia.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Vertical, 1080 × 1920 px'} />
+                    </div>
                     <FormatoImagen tipo="historia" archivo={archivo} />
                     <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={60}
                         onChange={(e) => cambiar('titulo')(e.target.value)} placeholder="Ej. Semana del bebé" />
@@ -249,10 +256,10 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
                     </label>
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={CircleDashed} loading={guardando} disabled={!valido} onClick={guardar}>Guardar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

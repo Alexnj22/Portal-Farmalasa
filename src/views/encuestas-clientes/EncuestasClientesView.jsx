@@ -15,6 +15,9 @@ import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import usePestanaEnUrl from '../../plataforma/usePestanaEnUrl';
@@ -276,6 +279,8 @@ function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError, onAviso })
     };
 
     const valido = nombre.trim() || base;
+    // En blanco pide el nombre; desde una plantilla, no (2026-11-14).
+    const queFalta = valido ? null : { texto: 'Escribe el nombre, o elige una plantilla para empezar.', campo: 'nombre' };
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Nueva encuesta">
@@ -297,10 +302,10 @@ function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError, onAviso })
                     </div>
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !creando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 <Button icon={Plus} loading={creando} disabled={!valido} onClick={crear}>Crear</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

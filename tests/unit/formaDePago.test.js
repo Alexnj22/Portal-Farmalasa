@@ -49,6 +49,15 @@ describe('estadoDeFormaDePago', () => {
         const e = estadoDeFormaDePago({ ...FORMA_DE_PAGO_INICIAL, forma: 'TRANSFERENCIA' }, 5);
         expect(e.falta).toMatch(/transferencia/);
     });
+    it('dice en qué campo se arregla lo que falta (aviso del pie, 2026-11-14)', () => {
+        expect(estadoDeFormaDePago(FORMA_DE_PAGO_INICIAL, 5).campo).toBe(null);
+        expect(estadoDeFormaDePago(tarjeta(), 5).campo).toBe('pagoFoto');
+        expect(estadoDeFormaDePago(tarjeta({ foto: {} }), 1).campo).toBe('pagoTotal');
+        expect(estadoDeFormaDePago(tarjeta({ foto: {}, comprobanteTotal: '6.25' }), 1).campo).toBe('pagoNumero');
+        expect(estadoDeFormaDePago(tarjeta({ sinComprobante: true }), 5).campo).toBe('pagoMotivo');
+        expect(estadoDeFormaDePago(tarjeta({ foto: {}, comprobanteTotal: '10', numero: '777' }), 12).campo).toBe('pagoTotal');
+        expect(estadoDeFormaDePago(tarjeta({ foto: {}, comprobanteTotal: '16', numero: '777' }), 1).campo).toBe(null);
+    });
 });
 
 describe('datosDeFormaDePago', () => {

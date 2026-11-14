@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    DESTINOS_DE_LA_APP, bannerValido, filaDeBanner, filaDeHistoria, historiaValida,
+    DESTINOS_DE_LA_APP, bannerValido, filaDeBanner, filaDeHistoria, historiaValida, faltaEnBanner, faltaEnHistoria,
 } from '@nucleo/utils/ofertasClientes';
 import { pilaDelCliente, reservasPendientes, reservasPorCodigo, resumenDelPedido } from '@nucleo/utils/reservasDeSala';
 
@@ -9,6 +9,15 @@ describe('historias de la app de clientes', () => {
         expect(historiaValida({ titulo: 'Bebé' }, 'ruta.jpg')).toBe(true);
         expect(historiaValida({ titulo: 'Be' }, 'ruta.jpg')).toBe(false);
         expect(historiaValida({ titulo: 'Bebé' }, null)).toBe(false);
+    });
+
+    it('dice qué falta y en qué campo (historia y banner)', () => {
+        expect(faltaEnHistoria({ titulo: 'Bebé' }, null)?.campo).toBe('imagen');
+        expect(faltaEnHistoria({ titulo: 'Be' }, 'x')?.campo).toBe('titulo');
+        expect(faltaEnHistoria({ titulo: 'Bebé' }, 'x')).toBeNull();
+        expect(faltaEnBanner({ titulo: 'Bebé', inicio: '2026-10-01' }, 'x')?.campo).toBe('fin');
+        expect(faltaEnBanner({ titulo: 'Bebé', inicio: '2026-10-05', fin: '2026-10-01' }, 'x')?.campo).toBe('fin');
+        expect(faltaEnBanner({ titulo: 'Bebé', fin: '2026-10-01' }, 'x')?.campo).toBe('inicio');
     });
     it('el botón sale de la lista cerrada; uno desconocido queda sin botón', () => {
         const f = { titulo: ' Semana ', rotulo: '', texto: '', enlace: '/ofertas', publicada: true, oferta_id: '' };

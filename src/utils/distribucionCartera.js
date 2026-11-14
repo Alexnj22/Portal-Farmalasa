@@ -51,13 +51,25 @@ export const VISTAS_CARTERA = [
  *           reparto: {monto:number, saldo:number}[], forma: string, referencia: string,
  *           cambio: number|null }} p
  */
-export function problemaDelCobro({ puedeCobrar, montoFinal, saldo, aMano, reparto, forma, referencia, cambio }) {
-    if (!puedeCobrar) return 'No tienes permiso para cobrar.';
+export function problemaDelCobro(p) {
+    return problemaDelCobroConCampo(p)?.texto ?? null;
+}
+
+/**
+ * Lo mismo, con el campo de la ficha del portal donde se arregla
+ * (`{ texto, campo }`; `campo` es el `name` del control, o null si no hay
+ * campo). El aviso del portal lleva hasta él (2026-11-14).
+ */
+export function problemaDelCobroConCampo({ puedeCobrar, montoFinal, saldo, aMano, reparto, forma, referencia, cambio }) {
+    if (!puedeCobrar) return { texto: 'No tienes permiso para cobrar.', campo: null };
     if (!(montoFinal > 0)) return null;
-    if (c(montoFinal) > c(saldo)) return `El cliente debe ${formatMoney(saldo)}: no se puede cobrar más.`;
-    if (aMano && (reparto ?? []).some(r => c(r.monto) > c(r.saldo))) return 'A una cuenta se le abona más de lo que debe.';
-    if (['04', '05'].includes(forma) && !String(referencia ?? '').trim()) return 'Un cheque o una transferencia llevan su número.';
-    if (cambio != null && cambio < 0) return 'Lo entregado no alcanza.';
+    const pasada = aMano ? (reparto ?? []).find(r => c(r.monto) > c(r.saldo)) : null;
+    if (c(montoFinal) > c(saldo)) {
+        return { texto: `El cliente debe ${formatMoney(saldo)}: no se puede cobrar más.`, campo: aMano ? (pasada ? `abono-${pasada.cxc_id}` : null) : 'monto-cobro' };
+    }
+    if (pasada) return { texto: 'A una cuenta se le abona más de lo que debe.', campo: `abono-${pasada.cxc_id}` };
+    if (['04', '05'].includes(forma) && !String(referencia ?? '').trim()) return { texto: 'Un cheque o una transferencia llevan su número.', campo: 'referencia-cobro' };
+    if (cambio != null && cambio < 0) return { texto: 'Lo entregado no alcanza.', campo: 'recibido-cobro' };
     return null;
 }
 

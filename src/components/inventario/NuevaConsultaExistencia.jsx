@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Send, ScanSearch } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
+import PieDeModal from '../common/PieDeModal';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import PortalTextarea from '../common/PortalTextarea';
@@ -41,6 +44,10 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
         return sig;
     });
     const todas = salas.length > 0 && salas.every(s => elegidas.has(s.erp_sucursal_id));
+    // Lo que falta, en orden y con su campo (2026-11-14): el botón se apaga por esto.
+    const queFalta = !producto ? { texto: 'Elige el producto.', campo: 'productoAContar' }
+        : elegidas.size === 0 ? { texto: 'Elige al menos una sala.', campo: 'salasAContar' }
+        : null;
 
     const enviar = async () => {
         setEnviando(true);
@@ -74,12 +81,12 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
                         )}
                     </div>
                 ) : (
-                    <div className="h-72 flex flex-col">
+                    <div className="h-72 flex flex-col" data-campo="productoAContar">
                         <BuscadorDeProducto placeholder="¿Qué producto?" onElegir={setProducto} />
                     </div>
                 )}
 
-                <div className="space-y-1">
+                <div className="space-y-1" data-campo="salasAContar">
                     <div className="flex items-center justify-between gap-2">
                         <p className="text-label font-black uppercase tracking-widest text-content-3">Salas</p>
                         <Button variant="ghost" size="sm" disabled={!salas.length}
@@ -106,13 +113,14 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
                     aprueba inventario, y el resumen le llega a Talento Humano y a Supervisión.
                 </Notice>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="ghost" onClick={onCerrar} disabled={enviando}>Cancelar</Button>
                 <Button variant="primary" icon={Send} loading={enviando}
-                    disabled={!producto || elegidas.size === 0} onClick={enviar}>
+                    disabled={queFalta !== null} onClick={enviar}>
                     Pedir conteo
                 </Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

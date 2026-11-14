@@ -4,6 +4,9 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { registrarAvisoDeReserva } from '@nucleo/data/reservas';
@@ -91,7 +94,10 @@ export function RegistrarLlamada({ reserva = null, encargo = null, titulo, telef
     const [enviando, setEnviando] = useState(false);
     const enPersona = medio === 'en_persona';
     const exigeRespuesta = enPersona || contesto === 'si';
-    const falta = exigeRespuesta && respuesta.trim().length < 3;
+    // Lo que falta, con su campo (2026-11-14): el botón se apaga por esto mismo.
+    const queFalta = exigeRespuesta && respuesta.trim().length < 3
+        ? { texto: 'Escribe qué respondió el cliente.', campo: 'respuestaAviso' } : null;
+    const falta = queFalta !== null;
     const guardar = async () => {
         setEnviando(true);
         try {
@@ -124,15 +130,16 @@ export function RegistrarLlamada({ reserva = null, encargo = null, titulo, telef
                         <SegmentedControl label="¿Contestó?" value={contesto} onChange={setContesto} layout="block" columns={2}
                             options={[{ value: 'si', label: 'Contestó' }, { value: 'no', label: 'No contestó' }]} />
                     )}
-                    <PortalTextarea label={exigeRespuesta ? 'Qué respondió' : 'Nota (opcional)'} rows={3} maxLength={300}
+                    <PortalTextarea name="respuestaAviso" label={exigeRespuesta ? 'Qué respondió' : 'Nota (opcional)'} rows={3} maxLength={300}
                         value={respuesta} onChange={(e) => setRespuesta(e.target.value)}
                         placeholder={enPersona ? 'Ej. Estaba en la sala; paga el viernes' : contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó; se vuelve a llamar mañana'} />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button icon={enPersona ? UserCheck : PhoneCall} loading={enviando} disabled={falta} onClick={guardar}>Anotar aviso</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

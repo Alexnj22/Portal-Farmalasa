@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -20,7 +22,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
     CERT_TYPES, antiguedadDe, choqueEnDia as choqueEnDiaDe, choqueEnRango as choqueEnRangoDe,
-    companeroNoDisponible, diasDe, finDeIncapacidad, incapacidadesVigentes, motivoParaNoEnviar, periodoDe,
+    companeroNoDisponible, diasDe, faltaParaEnviar, finDeIncapacidad, incapacidadesVigentes, periodoDe,
 } from '@nucleo/utils/solicitudPersonal';
 import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import { fetchEmployeeEventsByTypes } from '@nucleo/data/employeeSelfService';
@@ -247,6 +249,25 @@ export default function ModalNuevaPersonal({
         return false;
     }, [tipo, payload, choqueEnDia, solapeISSS]);
 
+    // ── Lo que falta, ANTES de tocar Enviar (2026-11-14) ─────────────────────
+    // Las reglas viven en el núcleo (`faltaParaEnviar`, la misma de la app).
+    // Antes el motivo salía recién después de un envío fallido, en un aviso
+    // arriba del cuerpo; ahora va al lado del botón y lleva al campo. Los
+    // campos `monto`/`horas`/`dias` ya tenían su `name` propio.
+    const queFalta = useMemo(() => {
+        const f = faltaParaEnviar({
+            empleadoId, tipo, payload, nota, antiguedad,
+            vacacionAprobada: !!vacacionExistente.aprobada,
+            incapacidades, companeroOcupado,
+        });
+        if (!f) return null;
+        const enPantalla = { monto: 'sol-monto', horas: 'sol-horas', dias: 'sol-dias' }[f.campo] ?? f.campo;
+        // Un campo que no está dibujado no es a donde llevar.
+        const sinCampo = (f.campo === 'empleado' && !puedeElegirEmpleado)
+            || (f.campo === 'periodo' && (!antiguedad?.habilitado || vacacionExistente.aprobada));
+        return { texto: f.texto, campo: sinCampo ? null : enPantalla };
+    }, [empleadoId, tipo, payload, nota, antiguedad, vacacionExistente, incapacidades, companeroOcupado, puedeElegirEmpleado]);
+
     // ── El resumen del encabezado ────────────────────────────────────────────
     // Lo que se va a mandar, en una línea, siempre a la vista. No es adorno: el
     // cuerpo scrollea y las fechas quedan arriba, así que al llegar al botón de
@@ -316,13 +337,13 @@ export default function ModalNuevaPersonal({
         setError('');
 
         // Las reglas viven en el núcleo (`utils/solicitudPersonal`): la app
-        // pregunta lo mismo y no puede dejar pedir lo que acá se frena.
-        const motivo = motivoParaNoEnviar({
-            empleadoId, tipo, payload, nota, antiguedad,
-            vacacionAprobada: !!vacacionExistente.aprobada,
-            incapacidades, companeroOcupado,
-        });
-        if (motivo) { setError(motivo); return; }
+        // pregunta lo mismo y no puede dejar pedir lo que acá se frena. El
+        // motivo ya está escrito al lado del botón: tocarlo lleva al campo.
+        if (queFalta) {
+            if (queFalta.campo) irAlCampo(queFalta.campo);
+            else setError(queFalta.texto);
+            return;
+        }
 
         setEnviando(true);
 
@@ -400,7 +421,7 @@ export default function ModalNuevaPersonal({
 
                     {!vacacionExistente.aprobada && antiguedad?.habilitado && (
                         <>
-                            <div>
+                            <div data-campo="periodo">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className={rotuloCampo('text-content-3')}>
                                         Período de Vacaciones
@@ -443,7 +464,7 @@ export default function ModalNuevaPersonal({
                             </div>
                         </div>
                     )}
-                    <div>
+                    <div data-campo="permiso">
                         <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
                             Días de Permiso
                             {dias.length > 0 && <span className="text-content-3 normal-case tracking-normal font-bold">· {dias.length}</span>}</span></label>
@@ -469,7 +490,7 @@ export default function ModalNuevaPersonal({
             const hayTurnos = payload.targetEmployeeId && payload.date;
             return (
                 <div className="space-y-3">
-                    <div>
+                    <div data-campo="companero">
                         <label className={rotuloCampo('text-content-3')}>
                             Compañero de intercambio
                         </label>
@@ -485,7 +506,7 @@ export default function ModalNuevaPersonal({
                             </p>
                         )}
                     </div>
-                    <div>
+                    <div data-campo="fecha">
                         <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><CalendarDays size={11} strokeWidth={2.5} className="text-chart-9" />
                             Fecha del cambio</span></label>
                         <LiquidDatePicker value={payload.date || ''}
@@ -543,7 +564,7 @@ export default function ModalNuevaPersonal({
 
         if (tipo === 'CERTIFICATE') {
             return (
-                <div>
+                <div data-campo="constancia">
                     <label className={rotuloCampo('text-content-3')}>
                         Tipo de Constancia
                     </label>
@@ -568,7 +589,7 @@ export default function ModalNuevaPersonal({
         if (tipo === 'OVERTIME') {
             return (
                 <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div data-campo="fecha">
                         <label className={rotuloCampo('text-content-3')}>
                             Fecha
                         </label>
@@ -590,7 +611,7 @@ export default function ModalNuevaPersonal({
             return (
                 <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
-                        <div>
+                        <div data-campo="inicio">
                             <label className={rotuloCampo('text-content-3')}>
                                 Primer día
                             </label>
@@ -660,7 +681,7 @@ export default function ModalNuevaPersonal({
                 icono={ClipboardList} tono="neutral" compacto
                 onClose={() => !enviando && onClose?.()}>
                 {puedeElegirEmpleado && (
-                    <div>
+                    <div data-campo="empleado">
                         <LiquidSelect
                             value={empleadoId}
                             onChange={v => { setEmpleadoId(v ?? ''); setPayload({}); setError(''); }}
@@ -724,7 +745,7 @@ export default function ModalNuevaPersonal({
 
                 {detalle()}
 
-                <div>
+                <div data-campo="nota">
                     <label className={rotuloCampo('text-content-3')}>
                         Motivo / Descripción <span className="text-danger">*</span>
                     </label>
@@ -739,6 +760,9 @@ export default function ModalNuevaPersonal({
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
+                {queFalta && !enviando && (
+                    <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />
+                )}
                 <Button variant="secondary" disabled={enviando} onClick={() => onClose?.()}>Cancelar</Button>
                 <Button icon={Send} loading={enviando}
                     disabled={enviando || bloqueadoPorIncapacidad || !empleadoId}

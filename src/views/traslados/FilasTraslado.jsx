@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ArrowLeftRight, CalendarClock, Hash, PackageCheck, Printer, Truck } from 'lucide-react';
 import { Trayecto, PildoraEspera } from './PiezasTraslado';
 import Button from '../../components/common/Button';
@@ -28,6 +28,8 @@ import ElegirLoteDeEnvio from './ElegirLoteDeEnvio';
 import CajaEnUnidades from './CajaEnUnidades';
 import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva, venceMasCortoQueLoPedido } from '@nucleo/utils/loteDeEnvio';
 import Notice from '../../components/common/Notice';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
@@ -388,7 +390,6 @@ export function DecisionTraslado({ fila, onHecho }) {
         };
     }).filter(Boolean);
     const conEleccion = new Map(lineasLote.filter(x => x.abierto && x.valor).map(x => [x.pos, x]));
-    const lotesElegidosOk = lineasLote.every(x => !x.abierto || x.valor);
     // ¿Lo elegido vence antes que lo pedido? Se avisa ANTES de apretar.
     const hoy = hoySV();
     const venceDeEleccion = (x) => (x.valor?.sinAsignar ? loteCaja[x.pos]?.envio?.vence : x.valor?.vence);
@@ -418,8 +419,6 @@ export function DecisionTraslado({ fila, onHecho }) {
         return { posicion, producto: it?.descripcion ?? `Producto ${erp}`, erp,
             unidades: (Number(it?.cantidad) || 0) * (Number(it?.factor) || 1) };
     }).filter(Boolean)).filter(x => sinDatos || !recortado || aceptadas.some(a => a.i === x.posicion));
-    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.envio) && lotesElegidosOk
-        && pidenVence.every(x => venceCaja[x.posicion]?.envio);
 
     // A quién más pedirle: la cuenta vive en `utils/decisionTraslado`.
     const sugerencia = sugerenciaDeRechazo(lineas, items);
@@ -542,16 +541,43 @@ export function DecisionTraslado({ fila, onHecho }) {
     // motivo vacío con otro nombre. Las dos cosas las rechaza la base igual —se
     // avisan acá para no gastar el viaje— y las dos son la misma regla: quien
     // rechaza tiene que decir por qué.
-    const puedeRechazar = Boolean(motivo) && (motivo !== 'Otro' || texto.trim().length > 0);
+    const faltaParaRechazar = !motivo ? { texto: 'Elige el motivo.', campo: 'motivoRechazo' }
+        : motivo === 'Otro' && !texto.trim() ? { texto: 'Escribe el motivo.', campo: 'textoRechazo' }
+        : null;
+    const puedeRechazar = faltaParaRechazar === null;
 
     // Y la misma regla del otro lado: mandar de menos también hay que explicarlo.
     // El servidor lo exige igual; acá se avisa para no gastar el viaje.
-    const puedeConfirmar = lotesCompletos && !esperandoRespuesta
-        && cajaEnUnidades.every(c => aceptaUnidades.has(c.posicion))
-        && (sinDatos || (hayQueMandar && (!recortado || porQue.trim().length > 0)));
+    //
+    // Lo que falta, UNO y en orden, con el campo donde se arregla (2026-11-14):
+    // el botón se enciende exactamente cuando esto da null. Es la misma cuenta
+    // que antes era un `&&` de cinco condiciones —`lotesCompletos` son las tres
+    // primeras—, partida para poder decir cuál.
+    const faltaParaConfirmar = (() => {
+        const sinCaja = pidenLote.find(x => !loteCaja[x.posicion]?.envio);
+        if (sinCaja) return { texto: `Copia el lote y el vencimiento de la caja de ${sinCaja.producto}.`, campo: `loteCaja-${sinCaja.posicion}` };
+        const sinElegir = lineasLote.find(x => x.abierto && !x.valor);
+        if (sinElegir) return { texto: `Elige el lote que sale de ${sinElegir.producto}.`, campo: `loteSale-${sinElegir.pos}` };
+        const sinVence = pidenVence.find(x => !venceCaja[x.posicion]?.envio);
+        if (sinVence) return { texto: `Copia el vencimiento de la caja de ${sinVence.producto}.`, campo: `venceCaja-${sinVence.posicion}` };
+        if (esperandoRespuesta) return { texto: `Espera la respuesta de ${salaQuePide} o cambia el lote.`, campo: null };
+        const sinAceptar = cajaEnUnidades.find(c => !aceptaUnidades.has(c.posicion));
+        if (sinAceptar) return { texto: `Decide si ${sinAceptar.producto ?? 'el producto'} sale en unidades.`, campo: `cajaUnidades-${sinAceptar.posicion}` };
+        if (!sinDatos) {
+            if (!hayQueMandar) return { texto: 'Pon cuántos envías de al menos un producto.', campo: nadaEnFisico ? null : 'cuantosEnvias' };
+            if (recortado && !porQue.trim()) return { texto: 'Escribe por qué no sale todo.', campo: 'porQueNoSaleTodo' };
+        }
+        return null;
+    })();
+    const puedeConfirmar = faltaParaConfirmar === null;
+
+    /* La tarjeta se repite en una lista (Solicitudes, la campana): el campo se
+     * busca dentro de ESTA, no en todo el documento. */
+    const raizRef = useRef(null);
+    const irA = (campo) => (campo ? () => irAlCampo(campo, raizRef.current ?? undefined) : null);
 
     return (
-        <div className="flex flex-col gap-2">
+        <div ref={raizRef} className="flex flex-col gap-2">
             {/* Por qué te aparece un traslado de una sala que no es la tuya.
                 Sin esta línea, quien lo ve tiene que adivinar si es un error.
 
@@ -598,7 +624,8 @@ export function DecisionTraslado({ fila, onHecho }) {
                         const factor = Number(items[l.idx]?.factor) || 1;
                         const queda  = (l.unidades ?? 0) - sale * factor;
                         return (
-                            <li key={l.idx} className="flex items-center gap-2">
+                            <li key={l.idx} className="flex items-center gap-2"
+                                data-campo={l.idx === lineas[0]?.idx ? 'cuantosEnvias' : undefined}>
                                 {/* La casilla va PRIMERO para que el renglón se
                                     lea como una frase: «[2] de 3 UNIDAD ·
                                     alcanza para 2». Con el número a la derecha
@@ -679,26 +706,29 @@ export function DecisionTraslado({ fila, onHecho }) {
 
             {/* ── La caja que sale en unidades ─────────────────────────────── */}
             {modo !== 'rechazo' && cajaEnUnidades.map(c => (
-                <CajaEnUnidades key={c.posicion} linea={c} aceptada={aceptaUnidades.has(c.posicion)}
-                    onAceptar={(si) => setAceptaUnidades(prev => {
-                        const n = new Set(prev);
-                        if (si) n.add(c.posicion); else n.delete(c.posicion);
-                        return n;
-                    })} />
+                <div key={c.posicion} data-campo={`cajaUnidades-${c.posicion}`}>
+                    <CajaEnUnidades linea={c} aceptada={aceptaUnidades.has(c.posicion)}
+                        onAceptar={(si) => setAceptaUnidades(prev => {
+                            const n = new Set(prev);
+                            if (si) n.add(c.posicion); else n.delete(c.posicion);
+                            return n;
+                        })} />
+                </div>
             ))}
 
             {/* ── El lote que sale, cuando el pedido no está o se cambia ──── */}
             {modo !== 'rechazo' && lineasLote.filter(x => x.abierto).map(x => (
-                <ElegirLoteDeEnvio
-                    key={x.pos}
-                    producto={lineasLote.length > 1 || items.length > 1 ? x.producto : null}
-                    pedidos={x.pedidosNo} opciones={x.opciones} valor={x.valor}
-                    onElegir={v => setEleccion(e => ({ ...e, [x.pos]: v }))}
-                    onCerrar={x.pedidosNo.length ? null : () => {
-                        setCambiando(c => { const n = new Set(c); n.delete(x.pos); return n; });
-                        setEleccion(e => { const n = { ...e }; delete n[x.pos]; return n; });
-                    }}
-                />
+                <div key={x.pos} data-campo={`loteSale-${x.pos}`}>
+                    <ElegirLoteDeEnvio
+                        producto={lineasLote.length > 1 || items.length > 1 ? x.producto : null}
+                        pedidos={x.pedidosNo} opciones={x.opciones} valor={x.valor}
+                        onElegir={v => setEleccion(e => ({ ...e, [x.pos]: v }))}
+                        onCerrar={x.pedidosNo.length ? null : () => {
+                            setCambiando(c => { const n = new Set(c); n.delete(x.pos); return n; });
+                            setEleccion(e => { const n = { ...e }; delete n[x.pos]; return n; });
+                        }}
+                    />
+                </div>
             ))}
 
             {/* ── Sin lote asignado: el lote lo dice la caja ──────────────────
@@ -712,7 +742,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                             : 'Estos productos no tienen lote asignado. Copia el lote y el vencimiento de cada caja:'}
                     </p>
                     {pidenLote.map(x => (
-                        <div key={x.posicion} className="flex flex-col gap-1">
+                        <div key={x.posicion} className="flex flex-col gap-1" data-campo={`loteCaja-${x.posicion}`}>
                             <p className="text-micro font-semibold text-content leading-snug">
                                 {x.producto}
                                 <span className="text-content-3"> · {x.unidades} {x.unidades === 1 ? 'unidad' : 'unidades'}</span>
@@ -739,7 +769,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                             : 'Estos productos no tienen vencimiento registrado. Copia el de cada caja:'}
                     </p>
                     {pidenVence.map(x => (
-                        <div key={x.posicion} className="flex flex-col gap-1">
+                        <div key={x.posicion} className="flex flex-col gap-1" data-campo={`venceCaja-${x.posicion}`}>
                             <p className="text-micro font-semibold text-content leading-snug">
                                 {x.producto}
                                 <span className="text-content-3"> · {x.unidades} {x.unidades === 1 ? 'unidad' : 'unidades'}</span>
@@ -758,6 +788,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                 a quien pidió junto con la caja incompleta. */}
             {recortado && (
                 <PortalTextarea
+                    name="porQueNoSaleTodo"
                     value={porQue}
                     onChange={e => setPorQue(e.target.value)}
                     rows={2}
@@ -768,16 +799,23 @@ export function DecisionTraslado({ fila, onHecho }) {
             {error && <Notice variant="danger">{error}</Notice>}
 
             {modo !== 'rechazo' ? (
-                <div className="flex gap-2">
-                    <Button size="sm" loading={ocupado} disabled={!puedeConfirmar} onClick={confirmar}>
-                        {ocupado ? 'Enviando...' : recortado ? 'Enviar lo que hay' : 'Confirmar y enviar'}
-                    </Button>
-                    <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo('rechazo')}>
-                        No puedo
-                    </Button>
+                <div className="flex flex-col gap-1">
+                    <div className="flex gap-2">
+                        <Button size="sm" loading={ocupado} disabled={!puedeConfirmar} onClick={confirmar}>
+                            {ocupado ? 'Enviando...' : recortado ? 'Enviar lo que hay' : 'Confirmar y enviar'}
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo('rechazo')}>
+                            No puedo
+                        </Button>
+                    </div>
+                    {/* Por qué «Confirmar» está apagado, y un toque lleva al campo. */}
+                    {!ocupado && faltaParaConfirmar && (
+                        <AvisoDeFalta motivo={faltaParaConfirmar.texto} onIr={irA(faltaParaConfirmar.campo)} />
+                    )}
                 </div>
             ) : (
                 <div className="flex flex-col gap-2">
+                    <div data-campo="motivoRechazo">
                     <LiquidSelect
                         value={motivo}
                         onChange={v => setMotivo(v ?? null)}
@@ -785,6 +823,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                         placeholder="Motivo..."
                         clearable={false}
                     />
+                    </div>
                     {/* La sugerencia se muestra acá y además viaja en el aviso:
                         quien pidió no tiene por qué volver a buscar dónde hay. */}
                     {sugerencia && (
@@ -793,6 +832,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                         </p>
                     )}
                     <PortalTextarea
+                        name="textoRechazo"
                         value={texto}
                         onChange={e => setTexto(e.target.value)}
                         rows={2}
@@ -810,6 +850,9 @@ export function DecisionTraslado({ fila, onHecho }) {
                             </Button>
                         )}
                     </div>
+                    {!ocupado && faltaParaRechazar && (
+                        <AvisoDeFalta motivo={faltaParaRechazar.texto} onIr={irA(faltaParaRechazar.campo)} />
+                    )}
                 </div>
             )}
         </div>

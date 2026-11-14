@@ -70,8 +70,19 @@ export const DESTINOS_DE_LA_APP = [
     { valor: '/torre', rotulo: 'Bienestar · Torre', boton: 'Jugar a la torre' },
 ];
 
+/**
+ * Lo que le falta a una historia para guardarse y en qué campo (`{ texto, campo }`),
+ * o null. El campo es la clave del formulario del portal (`name`/`data-campo`)
+ * para que el aviso lleve hasta él (2026-11-14).
+ */
+export function faltaEnHistoria(f, tieneImagen) {
+    if (!tieneImagen) return { texto: 'Sube la imagen.', campo: 'imagen' };
+    if (String(f.titulo ?? '').trim().length < 3) return { texto: 'Escribe un título de al menos 3 letras.', campo: 'titulo' };
+    return null;
+}
+
 /** Una historia se puede guardar con título de 3 letras y una imagen (nueva o la que ya tenía). */
-export const historiaValida = (f, tieneImagen) => String(f.titulo ?? '').trim().length >= 3 && !!tieneImagen;
+export const historiaValida = (f, tieneImagen) => faltaEnHistoria(f, tieneImagen) === null;
 
 /** La fila de `app_historias` que se guarda. Duran 24 h desde que se publican; `inicio`/`fin` sólo cumplen con la tabla. */
 export function filaDeHistoria(f, imagen_path, hoy, manana) {
@@ -83,9 +94,18 @@ export function filaDeHistoria(f, imagen_path, hoy, manana) {
     };
 }
 
+/** Lo que le falta a un banner (`{ texto, campo }`) o null, en el orden del formulario. */
+export function faltaEnBanner(f, tieneImagen) {
+    if (!tieneImagen) return { texto: 'Sube la imagen.', campo: 'imagen' };
+    if (String(f.titulo ?? '').trim().length < 3) return { texto: 'Escribe un título de al menos 3 letras.', campo: 'titulo' };
+    if (!f.inicio) return { texto: 'Elige desde cuándo se ve.', campo: 'inicio' };
+    if (!f.fin) return { texto: 'Elige hasta cuándo se ve.', campo: 'fin' };
+    if (f.fin < f.inicio) return { texto: 'La fecha final es antes que la inicial.', campo: 'fin' };
+    return null;
+}
+
 /** Un banner: título, fechas en orden y una imagen. */
-export const bannerValido = (f, tieneImagen) => String(f.titulo ?? '').trim().length >= 3
-    && !!f.inicio && !!f.fin && f.fin >= f.inicio && !!tieneImagen;
+export const bannerValido = (f, tieneImagen) => faltaEnBanner(f, tieneImagen) === null;
 
 /** La fila de `app_banners`: con oferta, abre la oferta; si no, la pantalla elegida. */
 export function filaDeBanner(f, imagen_path) {
@@ -160,11 +180,17 @@ export function diaDeFrase(ahora = Date.now()) {
     return new Date(ahora - (6 + 8) * 3_600_000).toISOString().slice(0, 10);
 }
 
-export const fraseValida = (f) => {
+/** Lo que le falta a una frase (`{ texto, campo }`) o null. */
+export function faltaEnFrase(f) {
     const n = String(f?.texto ?? '').trim().length;
-    return n >= 5 && n <= FRASE_MAX && CATEGORIAS_DE_FRASE.some((c) => c.value === f.categoria)
-        && (!f.programada || /^\d{4}-\d{2}-\d{2}$/.test(String(f.fecha ?? '')));
-};
+    if (n < 5) return { texto: 'Escribe la frase (al menos 5 letras).', campo: 'texto' };
+    if (n > FRASE_MAX) return { texto: `La frase pasa de ${FRASE_MAX} letras.`, campo: 'texto' };
+    if (!CATEGORIAS_DE_FRASE.some((c) => c.value === f.categoria)) return { texto: 'Elige el tipo.', campo: 'categoria' };
+    if (f.programada && !/^\d{4}-\d{2}-\d{2}$/.test(String(f.fecha ?? ''))) return { texto: 'Elige el día en que sale.', campo: 'fecha' };
+    return null;
+}
+
+export const fraseValida = (f) => faltaEnFrase(f) === null;
 
 /** Lo que se guarda: sin fecha entra a la cola. */
 export const filaDeFrase = (f) => ({

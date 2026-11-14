@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Button from '../common/Button';
 import FileField from '../common/FileField';
 import LiquidModal from '../common/LiquidModal';
@@ -9,6 +10,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { nombreDelComprobante } from '@nucleo/utils/formaDePago';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /**
  * Volver a pedir la autorización de un ingreso con tarjeta o transferencia que
@@ -25,7 +27,12 @@ export default function DialogoReenviarIngreso({ movimiento, sala, userId, onClo
     const [nota, setNota] = useState('');
     const [enviando, setEnviando] = useState(false);
     const papel = nombreDelComprobante(movimiento?.forma_pago);
-    const valido = !!foto || nota.trim().length >= 5;
+    // Basta una de las dos; el aviso lleva a la explicación, que siempre se
+    // puede escribir (2026-11-14).
+    const queFalta = !!foto || nota.trim().length >= 5 ? null
+        : nota.trim() ? { texto: 'Explica un poco más qué cambió.', campo: 'nota' }
+        : { texto: `Sube una foto nueva del ${papel} o explica qué cambió.`, campo: 'nota' };
+    const valido = !queFalta;
 
     const enviar = async () => {
         if (enviando) return;
@@ -57,11 +64,12 @@ export default function DialogoReenviarIngreso({ movimiento, sala, userId, onClo
                     </Notice>
                 )}
                 <FileField label={`Foto del ${papel} (si ya la tienes)`} accept="image/*" value={foto} onChange={setFoto} />
-                <PortalTextarea label="Qué cambió" rows={3} value={nota} onChange={(e) => setNota(e.target.value)}
+                <PortalTextarea name="nota" label="Qué cambió" rows={3} value={nota} onChange={(e) => setNota(e.target.value)}
                     placeholder="el cliente mandó la captura de la transferencia" />
             </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
+                {queFalta && !enviando && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                 <Button variant="ghost" onClick={onClose} disabled={enviando}>Cancelar</Button>
                 <Button variant="primary" loading={enviando} disabled={!valido} onClick={enviar}>
                     {enviando ? 'Enviando…' : 'Reenviar'}

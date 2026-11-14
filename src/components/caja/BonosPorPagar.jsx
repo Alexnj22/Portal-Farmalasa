@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Gift, AlertTriangle, Warehouse } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
@@ -11,6 +12,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
@@ -160,6 +162,10 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado, onSinConfirmar, o
     // El vendedor cobra EN PERSONA: si se identifica otro, no se paga. La base
     // lo rechaza igual; decirlo acá evita llegar al rechazo.
     const otraPersona = !esBodega && persona && persona.id !== item.employee_id;
+    // Qué falta para pagar y a qué campo lleva el aviso del pie (2026-11-14).
+    const queFalta = !persona || !vale ? { texto: 'Identifica a quien recibe el bono.', campo: 'identidad' }
+        : otraPersona ? { texto: `Lo tiene que recibir ${nombre}.`, campo: 'identidad' }
+        : null;
 
     const alIdentificar = useCallback(({ persona: p, vale: v }) => { setPersona(p); setVale(v); }, []);
     const olvidar = useCallback(() => { setPersona(null); setVale(null); }, []);
@@ -212,15 +218,17 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado, onSinConfirmar, o
                     </p>
                 </div>
 
-                <IdentidadDeQuienRetira
-                    activo={!guardando}
-                    persona={persona}
-                    onIdentificada={alIdentificar}
-                    onOlvidar={olvidar}
-                    bloqueado={guardando}
-                    rotulo="Recibe el bono"
-                    sujeto={esBodega ? 'quien recibe el bono de bodega' : nombre}
-                />
+                <div data-campo="identidad">
+                    <IdentidadDeQuienRetira
+                        activo={!guardando}
+                        persona={persona}
+                        onIdentificada={alIdentificar}
+                        onOlvidar={olvidar}
+                        bloqueado={guardando}
+                        rotulo="Recibe el bono"
+                        sujeto={esBodega ? 'quien recibe el bono de bodega' : nombre}
+                    />
+                </div>
 
                 {montoNuevo != null && (
                     <Notice variant="warning" icon={AlertTriangle}>
@@ -237,9 +245,10 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado, onSinConfirmar, o
                 )}
 
                 <div className="flex justify-end gap-2">
+                    {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                     <Button variant="secondary" onClick={onClose} disabled={guardando}>Volver</Button>
                     <Button onClick={pagar} loading={guardando}
-                        disabled={!persona || !vale || otraPersona}>
+                        disabled={!!queFalta}>
                         Pagar {formatMoney(monto)}
                     </Button>
                 </div>
@@ -285,6 +294,7 @@ function DialogoSinConfirmar({ item, onClose, onResuelto }) {
                     </p>
                 </div>
                 <PortalTextarea
+                    name="nota"
                     label="Qué viste en la caja"
                     value={nota}
                     onChange={(e) => setNota(e.target.value)}
@@ -292,6 +302,7 @@ function DialogoSinConfirmar({ item, onClose, onResuelto }) {
                     readOnly={guardando}
                 />
                 <div className="flex flex-wrap justify-end gap-2">
+                    {!nota.trim() && !guardando && <AvisoDeFalta motivo="Escribe qué viste en la caja." onIr={() => irAlCampo('nota')} />}
                     <Button variant="secondary" onClick={onClose} disabled={guardando}>Volver</Button>
                     <Button variant="secondary" onClick={() => resolver(false)} disabled={guardando || !nota.trim()}>
                         No salió

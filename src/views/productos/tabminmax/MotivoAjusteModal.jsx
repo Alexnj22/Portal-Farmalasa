@@ -8,7 +8,9 @@ import PortalInput from '../../../components/common/PortalInput';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { MOTIVO_AJUSTE, ERP_NAMES } from './constants';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { faltaEnMotivoDeAjuste, patchDeMotivoDeAjuste } from '@nucleo/utils/revisionDeSala';
+import { faltaEnMotivoDeAjusteConCampo, patchDeMotivoDeAjuste } from '@nucleo/utils/revisionDeSala';
+import AvisoDeFalta from '../../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../../plataforma/irAlCampo';
 
 /**
  * Por qué este MIN·MAX está puesto a mano.
@@ -39,7 +41,8 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
 
     // Los mismos frenos que aplica el CHECK de la base, dichos antes de que la
     // base los rechace (núcleo: los mismos que usa la app del teléfono).
-    const falta = faltaEnMotivoDeAjuste({ motivo, nota, unidades, dias });
+    const queFalta = faltaEnMotivoDeAjusteConCampo({ motivo, nota, unidades, dias });
+    const falta = queFalta?.texto ?? null;
 
     const opciones = [
         { value: '', label: 'Sin motivo — se revisa a mano' },
@@ -113,7 +116,9 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
                         />
                     )}
 
-                    {falta && <p className="text-body-sm text-warning-text">{falta}</p>}
+                    {/* Justo encima del pie: el pie de `CuerpoDialogo` reparte el ancho
+                        entre sus botones y no tiene lugar para un texto (2026-11-14). */}
+                    {queFalta && !guardando && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
 
                     {row._manual_por && (
                         <p className="text-body-sm text-content-3">

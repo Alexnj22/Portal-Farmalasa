@@ -303,7 +303,8 @@ const claveDeLote = (lote, vence) => `${esLoteGenerico(lote) ? '' : String(lote)
  * El renglón original queda con lo que le tocó (0 si nada): para uno «sin lote»
  * es `sinLote`, lo que de verdad no trae lote impreso.
  *
- * Devuelve `{ error }` con el texto para la persona, o
+ * Devuelve `{ error, campo }` con el texto para la persona y dónde se arregla
+ * (`sinLote`, `lote-<i>`, `vence-<i>`, `cantidad-<i>`; 2026-11-14), o
  * `{ original, aHermanos: [{ id, cantidad }], nuevos: [{ lote, vence, cantidad }] }`.
  */
 export function planDeLotesReales({ item, lotes = [], sinLote = 0, hermanos = [], regla = { pideLote: true, pideVence: true } }) {
@@ -317,7 +318,7 @@ export function planDeLotesReales({ item, lotes = [], sinLote = 0, hermanos = []
     let enOriginal = 0;
     if (original) {
         const resto = entero(sinLote);
-        if (resto == null) return { error: 'Escribe cuántas no traen lote impreso (0 si ninguna).' };
+        if (resto == null) return { error: 'Escribe cuántas no traen lote impreso (0 si ninguna).', campo: 'sinLote' };
         enOriginal = resto;
     }
     const vistos = new Set();
@@ -328,11 +329,11 @@ export function planDeLotesReales({ item, lotes = [], sinLote = 0, hermanos = []
         const lote = String(l?.lote ?? '').trim().toUpperCase();
         const vence = l?.vence || null;
         const cant = entero(l?.cantidad);
-        if (regla.pideLote && (!lote || esLoteGenerico(lote))) return { error: `Escribe el lote impreso en la caja${n}.` };
-        if (regla.pideVence && !vence) return { error: `Pon el mes y año de vencimiento${n}.` };
-        if (cant == null) return { error: `Escribe cuántas hay${n} (0 o más).` };
+        if (regla.pideLote && (!lote || esLoteGenerico(lote))) return { error: `Escribe el lote impreso en la caja${n}.`, campo: `lote-${i}` };
+        if (regla.pideVence && !vence) return { error: `Pon el mes y año de vencimiento${n}.`, campo: `vence-${i}` };
+        if (cant == null) return { error: `Escribe cuántas hay${n} (0 o más).`, campo: `cantidad-${i}` };
         const clave = claveDeLote(regla.pideLote ? lote : null, vence);
-        if (vistos.has(clave)) return { error: `Ese lote y vencimiento está dos veces${n}.` };
+        if (vistos.has(clave)) return { error: `Ese lote y vencimiento está dos veces${n}.`, campo: regla.pideLote ? `lote-${i}` : `vence-${i}` };
         vistos.add(clave);
         if (clave === claveOriginal) { enOriginal += cant; continue; }
         const hermano = hermanos.find((h) => h.id !== item?.id && !h.is_vencidos

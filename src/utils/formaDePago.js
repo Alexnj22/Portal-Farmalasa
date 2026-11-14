@@ -68,12 +68,15 @@ export const nombreDelNumero = (forma) => (forma === 'TARJETA' ? 'número del vo
  *   pideAutorizacion  sin comprobante, o sin su total/número: queda esperando autorización
  *   resto           lo que el voucher cubre además de este ingreso (> 0 = una venta con tarjeta)
  *   falta           qué impide anotarlo, en palabras de la sala (o null)
+ *   campo           el campo de `FormaDePago` donde se arregla `falta` (o null):
+ *                   'pagoFoto' | 'pagoTotal' | 'pagoNumero' | 'pagoMotivo'. Lo
+ *                   usa el aviso del pie para llevar hasta él (irAlCampo).
  */
 export function estadoDeFormaDePago(v, monto) {
     const p = v ?? FORMA_DE_PAGO_INICIAL;
     const noEfectivo = p.forma !== 'EFECTIVO';
     const cobro = aNumero(monto);
-    if (!noEfectivo) return { valido: true, noEfectivo: false, pideAutorizacion: false, resto: 0, falta: null };
+    if (!noEfectivo) return { valido: true, noEfectivo: false, pideAutorizacion: false, resto: 0, falta: null, campo: null };
 
     const papel = nombreDelComprobante(p.forma);
     const conFoto = !!p.foto;
@@ -83,14 +86,22 @@ export function estadoDeFormaDePago(v, monto) {
     const resto = total != null && cobro != null ? Math.round((total - cobro) * 100) / 100 : 0;
 
     let falta = null;
-    if (!conFoto && !p.sinComprobante) falta = `Sube la foto del ${papel}.`;
-    else if (sinDatos && !p.sinDatos) falta = `Escribe el total y el ${nombreDelNumero(p.forma)}.`;
+    let campo = null;
+    if (!conFoto && !p.sinComprobante) { falta = `Sube la foto del ${papel}.`; campo = 'pagoFoto'; }
+    else if (sinDatos && !p.sinDatos) {
+        falta = `Escribe el total y el ${nombreDelNumero(p.forma)}.`;
+        campo = total == null ? 'pagoTotal' : 'pagoNumero';
+    }
     else if (pideAutorizacion && String(p.motivo ?? '').trim().length < 5) {
         falta = conFoto ? `Explica por qué no hay total o ${nombreDelNumero(p.forma)}.` : `Explica por qué no hay ${papel}.`;
+        campo = 'pagoMotivo';
     }
-    else if (total != null && cobro != null && resto < -0.004) falta = `El cobro no puede pasar del total del ${papel} (${total.toFixed(2)}).`;
+    else if (total != null && cobro != null && resto < -0.004) {
+        falta = `El cobro no puede pasar del total del ${papel} (${total.toFixed(2)}).`;
+        campo = 'pagoTotal';
+    }
 
-    return { valido: !falta, noEfectivo, pideAutorizacion, resto: resto > 0.004 ? resto : 0, falta };
+    return { valido: !falta, noEfectivo, pideAutorizacion, resto: resto > 0.004 ? resto : 0, falta, campo };
 }
 
 /** Los campos que viajan a `anotarIngreso`, con la URL de la foto ya subida. */

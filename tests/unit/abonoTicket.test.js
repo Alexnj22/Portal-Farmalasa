@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { construirComprobanteDeAbono, vencimientoDeReserva, CONDICIONES_DEL_PAPEL } from '@nucleo/utils/abonoTicket';
+import { construirComprobanteDeAbono, estadoDelApartado, vencimientoDeReserva, CONDICIONES_DEL_PAPEL } from '@nucleo/utils/abonoTicket';
 import { textoParaElRollo } from '@nucleo/utils/ticketPrint';
 
 /**
@@ -90,5 +90,21 @@ describe('comprobante de abono', () => {
         // oeste. Acá el día que vence es el que dice el papel.
         expect(vencimientoDeReserva('2026-09-01')).toBe('2026-09-08');
         expect(vencimientoDeReserva('2026-12-28')).toBe('2027-01-04');
+    });
+});
+
+describe('estadoDelApartado · qué falta (aviso del pie, 2026-11-14)', () => {
+    const prod = (o = {}) => ({ nombre: 'Insulina', cantidad: '1', precio: '10', ...o });
+    it('dice el primer motivo, en el orden de siempre, y a qué campo lleva', () => {
+        expect(estadoDelApartado({ cliente: 'An', renglones: [prod()], abonado: '5' }).falta?.campo).toBe('cliente');
+        expect(estadoDelApartado({ cliente: 'Ana', renglones: [prod({ nombre: '' })], abonado: '5' }).falta?.campo).toBe('producto');
+        expect(estadoDelApartado({ cliente: 'Ana', renglones: [prod()], abonado: '' }).falta?.campo).toBe('abonado');
+        const e = estadoDelApartado({ cliente: 'Ana', renglones: [prod()], abonado: '12' });
+        expect(e).toMatchObject({ excede: true, valido: false });
+        expect(e.falta.texto).toMatch(/total/);
+    });
+    it('sin falta, es válido', () => {
+        const e = estadoDelApartado({ cliente: 'Ana', renglones: [prod({ precio: '' })], abonado: '5' });
+        expect(e).toMatchObject({ valido: true, falta: null, total: null });
     });
 });

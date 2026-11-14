@@ -35,7 +35,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
 import EntregarPremioEscaneado from './EntregarPremioEscaneado';
 import {
-    ESTADO_DE_PREMIO, TITULO_DIALOGO_REGALO, detalleDelPremio, dondeSeRetiraElPremio, faltaEnRegalo,
+    ESTADO_DE_PREMIO, TITULO_DIALOGO_REGALO, detalleDelPremio, dondeSeRetiraElPremio, faltaEnRegaloConCampo,
 } from '@nucleo/utils/nivelesDePuntos';
 import {
     ajustarPromocional, enviarPromocional, fetchPremiosPorEntregar, fetchPromocionales,
@@ -43,14 +43,17 @@ import {
 } from '@nucleo/data/puntos';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import PieDeModal from '../../components/common/PieDeModal';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 const fechaCorta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 
 // El estado, dónde se retira y qué le falta a un regalo: núcleo (`nivelesDePuntos`), lo mismo en la app.
 const ESTADO = ESTADO_DE_PREMIO;
 
 /** El rótulo de un campo que no lo trae (LiquidSelect), con la letra de PortalInput. */
-const Campo = ({ rotulo, children }) => (
-    <div className="flex flex-col gap-1.5 min-w-0">
+const Campo = ({ rotulo, campo, children }) => (
+    <div className="flex flex-col gap-1.5 min-w-0" data-campo={campo}>
         <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">{rotulo}</span>
         {children}
     </div>
@@ -305,7 +308,8 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = ''
     const cerrar = () => { clearDraft(llave); onClose(); };
     const n = Number(f.cantidad);
 
-    const falta = faltaEnRegalo(modo, f);
+    const queFalta = faltaEnRegaloConCampo(modo, f);
+    const falta = queFalta?.texto ?? null;
 
     const guardar = async () => {
         setGuardando(true);
@@ -339,7 +343,7 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = ''
                 <div className="flex flex-col gap-3">
                     {(modo === 'nuevo' || modo === 'editar') && (
                         <>
-                            <PortalInput label="Nombre" value={f.nombre} maxLength={80} onChange={(e) => poner('nombre', e.target.value)} placeholder="Termo Salud" />
+                            <PortalInput label="Nombre" name="nombre" value={f.nombre} maxLength={80} onChange={(e) => poner('nombre', e.target.value)} placeholder="Termo Salud" />
                             <PortalInput label="Descripción (opcional)" value={f.descripcion} onChange={(e) => poner('descripcion', e.target.value)} />
                             <PortalInput label="Costo de uno (opcional)" prefix="$" inputMode="decimal" value={f.costo}
                                 onChange={(e) => poner('costo', e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.00" />
@@ -351,39 +355,38 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = ''
                     )}
                     {modo === 'entrada' && (
                         <>
-                            <Campo rotulo="Sucursal">
+                            <Campo rotulo="Sucursal" campo="sala">
                                 <LiquidSelect options={opcionesSala} value={f.sala} onChange={(v) => poner('sala', v)} clearable={false} placeholder="¿Dónde?" />
                             </Campo>
-                            <PortalInput label="Cantidad" type="number" value={f.cantidad} onChange={(e) => poner('cantidad', e.target.value)}
+                            <PortalInput label="Cantidad" name="cantidad" type="number" value={f.cantidad} onChange={(e) => poner('cantidad', e.target.value)}
                                 placeholder="10, o −2 para restar" />
-                            <PortalInput label={n < 0 ? 'Por qué se resta' : 'Nota (opcional)'} value={f.nota} onChange={(e) => poner('nota', e.target.value)} />
+                            <PortalInput label={n < 0 ? 'Por qué se resta' : 'Nota (opcional)'} name="nota" value={f.nota} onChange={(e) => poner('nota', e.target.value)} />
                         </>
                     )}
                     {modo === 'enviar' && (
                         <>
                             <div className="grid grid-cols-2 gap-3">
-                                <Campo rotulo="Desde">
+                                <Campo rotulo="Desde" campo="sala">
                                     <LiquidSelect options={opcionesSala} value={f.sala} onChange={(v) => poner('sala', v)} clearable={false} placeholder="¿De dónde?" />
                                 </Campo>
-                                <Campo rotulo="Hacia">
+                                <Campo rotulo="Hacia" campo="hacia">
                                     <LiquidSelect options={opcionesSala} value={f.hacia} onChange={(v) => poner('hacia', v)} clearable={false} placeholder="¿A dónde?" />
                                 </Campo>
                             </div>
-                            <PortalInput label="Cantidad" type="number" value={f.cantidad} onChange={(e) => poner('cantidad', e.target.value)} />
+                            <PortalInput label="Cantidad" name="cantidad" type="number" value={f.cantidad} onChange={(e) => poner('cantidad', e.target.value)} />
                             <p className="text-caption text-content-3">
                                 {promo?.existencias?.[f.sala] != null ? `Hay ${promo.existencias[f.sala]} en el origen.` : 'En el origen no hay existencias anotadas.'}
                             </p>
                         </>
                     )}
-                    {falta && <p className="text-caption text-content-3">{falta}</p>}
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !guardando ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="ghost" onClick={cerrar} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" loading={guardando} disabled={!!falta} onClick={guardar}>
                     {modo === 'enviar' ? 'Enviar' : 'Guardar'}
                 </Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

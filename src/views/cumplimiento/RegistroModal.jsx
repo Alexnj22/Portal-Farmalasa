@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import LiquidModal from '../../components/common/LiquidModal';
 import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import Button from '../../components/common/Button';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -79,6 +81,31 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
     const lista = listaDe(tipo);
     const puntaje = lista.length ? puntuarLista(lista, datos.respuestas) : null;
 
+    // Lo que falta, al lado del botón, y el campo al que lleva (2026-11-14):
+    // el primero de la lista; en una lista de verificación, la primera
+    // pregunta sin responder. Mismo orden y mismas condiciones que el botón.
+    const primeraSinResponder = (respuestas) => lista.flatMap((s) => s.items).find((it) => !respuestas?.[it.id]);
+    const campoDe = (c) => {
+        if (c.tipo !== 'checklist') return c.key;
+        const it = primeraSinResponder(datos[c.key]);
+        return it ? `resp-${it.id}` : c.key;
+    };
+    const queFalta = (() => {
+        if (falta.length > 0) {
+            const primero = eligeSala && !salaId ? 'sala'
+                : campoDe(campos.find((c) => faltantes(tipo, datos, [c]).length > 0));
+            return { texto: `Falta: ${falta.join(', ')}.`, campo: primero };
+        }
+        if (puntaje && puntaje.sinResponder > 0) {
+            const it = primeraSinResponder(datos.respuestas);
+            return {
+                texto: `Faltan ${puntaje.sinResponder} por responder.`,
+                campo: it ? `resp-${it.id}` : null,
+            };
+        }
+        return null;
+    })();
+
     const guardar = async () => {
         setGuardando(true);
         setError(null);
@@ -102,15 +129,15 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
             case 'fijo':
                 return null;
             case 'area':
-                return <PortalTextarea key={c.key} label={etiqueta} value={v || ''} rows={3} maxLength={1500}
+                return <PortalTextarea key={c.key} name={c.key} label={etiqueta} value={v || ''} rows={3} maxLength={1500}
                     helperText={c.ayuda} onChange={(e) => poner(c.key, e.target.value)} />;
             case 'lista':
-                return <PortalTextarea key={c.key} label={etiqueta} rows={5} maxLength={4000} helperText={c.ayuda}
+                return <PortalTextarea key={c.key} name={c.key} label={etiqueta} rows={5} maxLength={4000} helperText={c.ayuda}
                     value={(v || []).join('\n')}
                     onChange={(e) => poner(c.key, e.target.value.split('\n').map((x) => x.trimStart()).filter((x, i, a) => x || i < a.length - 1))} />;
             case 'fecha':
                 return (
-                    <div key={c.key}>
+                    <div key={c.key} data-campo={c.key}>
                         <p className="text-caption font-bold text-content-3 mb-1">{etiqueta}</p>
                         <LiquidDatePicker value={v || ''} onChange={(x) => poner(c.key, x)} max={hoySV()} />
                         {c.ayuda && <p className="text-caption text-content-3 mt-1">{c.ayuda}</p>}
@@ -118,7 +145,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                 );
             case 'opciones':
                 return (
-                    <div key={c.key}>
+                    <div key={c.key} data-campo={c.key}>
                         <p className="text-caption font-bold text-content-3 mb-1">{etiqueta}</p>
                         <LiquidSelect value={v || ''} onChange={(x) => poner(c.key, x || '')} options={c.opciones}
                             placeholder={c.label} clearable={false} />
@@ -126,7 +153,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                 );
             case 'semestre':
                 return (
-                    <div key={c.key}>
+                    <div key={c.key} data-campo={c.key}>
                         <p className="text-caption font-bold text-content-3 mb-1">{etiqueta}</p>
                         <LiquidSelect value={v || ''} onChange={(x) => poner(c.key, x || '')} clearable={false}
                             placeholder="¿Qué semestre?"
@@ -135,7 +162,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                 );
             case 'personas':
                 return (
-                    <div key={c.key}>
+                    <div key={c.key} data-campo={c.key}>
                         <p className="text-caption font-bold text-content-3 mb-2">{etiqueta} · {(v || []).length}</p>
                         <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto">
                             {personal.map((p) => {
@@ -158,13 +185,13 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                 );
             case 'checklist':
                 return (
-                    <div key={c.key} className="space-y-4">
+                    <div key={c.key} data-campo={c.key} className="space-y-4">
                         {lista.map((s) => (
                             <div key={s.seccion}>
                                 <p className="text-body-sm font-bold text-content mb-2">{s.seccion}</p>
                                 <ul className="space-y-2">
                                     {s.items.map((it) => (
-                                        <li key={it.id} className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                                        <li key={it.id} data-campo={`resp-${it.id}`} className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
                                             <span className="text-body-sm text-content-2 flex-1">
                                                 {it.texto}
                                                 {it.peso === 'C' && <Badge variant="danger" uppercase={false} className="ml-2">Crítico</Badge>}
@@ -191,10 +218,10 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                     </div>
                 );
             case 'numero':
-                return <PortalInput key={c.key} label={c.label} type="number" required={c.requerido} helperText={c.ayuda}
+                return <PortalInput key={c.key} name={c.key} label={c.label} type="number" required={c.requerido} helperText={c.ayuda}
                     value={v ?? ''} onChange={(e) => poner(c.key, e.target.value === '' ? '' : Number(e.target.value))} />;
             default:
-                return <PortalInput key={c.key} label={c.label} required={c.requerido} helperText={c.ayuda}
+                return <PortalInput key={c.key} name={c.key} label={c.label} required={c.requerido} helperText={c.ayuda}
                     value={v || ''} onChange={(e) => poner(c.key, e.target.value)} />;
         }
     };
@@ -209,7 +236,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                 onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body className="space-y-4">
                 {eligeSala && (
-                    <div>
+                    <div data-campo="sala">
                         <p className="text-caption font-bold text-content-3 mb-1">Sala</p>
                         <LiquidSelect value={salaId} onChange={(x) => setSalaId(x ? String(x) : '')} options={opcionesSala}
                             placeholder="¿De qué sala?" clearable={false} />
@@ -234,11 +261,12 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                 )}
                 {error && <Notice variant="danger">{error}</Notice>}
             </LiquidModal.Body>
-            <PieDeModal>
-                {falta.length > 0 && <p className="text-caption text-content-3 mr-auto">Falta: {falta.join(', ')}</p>}
+            <PieDeModal izquierda={queFalta && !guardando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={queFalta.campo ? () => irAlCampo(queFalta.campo) : null} />
+                : null}>
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" loading={guardando}
-                    disabled={falta.length > 0 || (puntaje && puntaje.sinResponder > 0)} onClick={guardar}>
+                    disabled={Boolean(queFalta)} onClick={guardar}>
                     {cerrando ? 'Guardar y cerrar' : 'Guardar'}
                 </Button>
             </PieDeModal>

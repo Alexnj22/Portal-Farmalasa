@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { CalendarClock, PackageX, Wallet } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
+import PieDeModal from '../../components/common/PieDeModal';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import Notice from '../../components/common/Notice';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -31,7 +34,12 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
     const showToast = useToastStore((s) => s.showToast);
-    const valida = fecha && fecha >= hoySV() && fecha !== encargo.fecha_estimada;
+    // Lo que falta, en orden y con su campo (2026-11-14); `valida` es que no falte nada.
+    const queFalta = !fecha ? { texto: 'Elige la nueva fecha.', campo: 'fechaNuevaEncargo' }
+        : fecha < hoySV() ? { texto: 'La fecha no puede ser anterior a hoy.', campo: 'fechaNuevaEncargo' }
+        : fecha === encargo.fecha_estimada ? { texto: 'Elige una fecha distinta de la que ya tiene.', campo: 'fechaNuevaEncargo' }
+        : null;
+    const valida = queFalta === null;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Cambiar la fecha del encargo">
             <LiquidModal.Header titulo={`Nueva fecha para ${encargo.codigo}`}
@@ -39,7 +47,7 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
                 onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
-                    <div>
+                    <div data-campo="fechaNuevaEncargo">
                         <span className="block text-label font-semibold text-content-2 mb-1">Llega aproximadamente</span>
                         <LiquidDatePicker value={fecha} onChange={setFecha} />
                     </div>
@@ -47,11 +55,12 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
                         placeholder="Ej. El proveedor atrasó el envío" />
                 </div>
             </LiquidModal.Body>
-            <LiquidModal.Footer>
+            <PieDeModal izquierda={queFalta && !enviando
+                ? <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} /> : null}>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button icon={CalendarClock} loading={enviando} disabled={!valida}
                     onClick={async () => { setEnviando(true); try { await onGuardar(fecha, motivo.trim() || null); } catch (err) { avisarFallo(showToast, err); } finally { setEnviando(false); } }}>Cambiar y avisar</Button>
-            </LiquidModal.Footer>
+            </PieDeModal>
         </LiquidModal>
     );
 }

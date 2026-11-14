@@ -83,18 +83,22 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                 <>
                     {!v.sinComprobante && (
                         <>
-                            <FileField label={`Foto del ${papel}`} accept="image/*" value={v.foto}
-                                onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
+                            {/* `data-campo`/`name`: el aviso del pie lleva hasta el
+                                campo que falta (estadoDeFormaDePago → campo). */}
+                            <div data-campo="pagoFoto">
+                                <FileField label={`Foto del ${papel}`} accept="image/*" value={v.foto}
+                                    onChange={alElegirFoto} hint={leyendo ? 'Leyendo la foto…' : undefined} />
+                            </div>
                             {aviso && <p className="text-caption text-content-2">{aviso}</p>}
                         </>
                     )}
 
                     {v.foto && (
                         <div className="grid grid-cols-2 gap-3">
-                            <PortalInput label={`Total del ${papel}`} inputMode="decimal" prefix="$"
+                            <PortalInput name="pagoTotal" label={`Total del ${papel}`} inputMode="decimal" prefix="$"
                                 value={v.comprobanteTotal} onChange={(e) => poner({ comprobanteTotal: e.target.value })}
                                 placeholder="0.00" />
-                            <PortalInput label={v.forma === 'TARJETA' ? 'Número del voucher' : 'Referencia'}
+                            <PortalInput name="pagoNumero" label={v.forma === 'TARJETA' ? 'Número del voucher' : 'Referencia'}
                                 value={v.numero} maxLength={40} onChange={(e) => poner({ numero: e.target.value })} />
                         </div>
                     )}
@@ -115,7 +119,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                                 Sin el total y el {nombreDelNumero(v.forma)}, el ingreso se anota pero
                                 queda <b>pendiente de autorización</b>. Lo revisa Supervisión o Talento Humano.
                             </Notice>
-                            <PortalTextarea label={`Por qué no hay total o ${nombreDelNumero(v.forma)}`} rows={2}
+                            <PortalTextarea name="pagoMotivo" label={`Por qué no hay total o ${nombreDelNumero(v.forma)}`} rows={2}
                                 value={v.motivo} onChange={(e) => poner({ motivo: e.target.value })}
                                 placeholder="el voucher salió borroso y no se lee el número" />
                             <button type="button" onClick={() => poner({ sinDatos: false, motivo: '' })}
@@ -150,7 +154,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                                 Sin el {papel}, el ingreso se anota pero queda <b>pendiente de autorización</b>.
                                 Lo revisa Supervisión o Talento Humano.
                             </Notice>
-                            <PortalTextarea label={`Por qué no hay ${papel}`} rows={2} value={v.motivo}
+                            <PortalTextarea name="pagoMotivo" label={`Por qué no hay ${papel}`} rows={2} value={v.motivo}
                                 onChange={(e) => poner({ motivo: e.target.value })}
                                 placeholder="el cliente pagó por transferencia y no mandó la captura" />
                             <button type="button" onClick={() => poner({ sinComprobante: false, motivo: '' })}

@@ -1,11 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import { HandCoins, Info } from 'lucide-react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import Button from '../common/Button';
 import IdentidadDeQuienRetira from '../bolsas/IdentidadDeQuienRetira';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalTextarea from '../common/PortalTextarea';
 import { hora12 } from '@nucleo/utils/hora';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 
 /**
  * «¿Quién recibe la caja?» — el paso que convierte confirmar un corte en una
@@ -70,6 +72,11 @@ export default function EntregaDeCaja({
     const olvidar = useCallback(() => { setPersona(null); setVale(null); }, []);
 
     const hora = hora12(corte?.hora);
+    // Qué falta para confirmar y a qué campo lleva (2026-11-14). Este diálogo
+    // no tiene pie: el aviso va justo encima del botón que apaga.
+    const queFalta = !saltando
+        ? (!persona || !vale ? { texto: 'Identifica a quien recibe la caja.', campo: 'identidad' } : null)
+        : (!motivo.trim() ? { texto: 'Escribe por qué no hay quien reciba.', campo: 'motivo-sin-entrega' } : null);
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-md"
@@ -89,17 +96,20 @@ export default function EntregaDeCaja({
 
                 {!saltando ? (
                     <>
-                        <IdentidadDeQuienRetira
-                            activo={!ocupado}
-                            persona={persona}
-                            onIdentificada={alIdentificar}
-                            onOlvidar={olvidar}
-                            rotulo="Recibe la caja"
-                            sujeto="quien recibe la caja"
-                            bloqueado={ocupado}
-                        />
+                        <div data-campo="identidad">
+                            <IdentidadDeQuienRetira
+                                activo={!ocupado}
+                                persona={persona}
+                                onIdentificada={alIdentificar}
+                                onOlvidar={olvidar}
+                                rotulo="Recibe la caja"
+                                sujeto="quien recibe la caja"
+                                bloqueado={ocupado}
+                            />
+                        </div>
+                        {queFalta && !ocupado && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                         <Button variant="primary" size="md" icon={HandCoins} className="w-full"
-                            loading={ocupado} disabled={!persona || !vale}
+                            loading={ocupado} disabled={!!queFalta}
                             onClick={() => onEntregar?.({ persona, vale })}>
                             Confirmar y entregar la caja
                         </Button>
@@ -120,8 +130,9 @@ export default function EntregaDeCaja({
                             placeholder="Ej.: quedó sola en la sala"
                             rows={3}
                         />
+                        {queFalta && !ocupado && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}
                         <Button variant="primary" size="md" className="w-full"
-                            loading={ocupado} disabled={!motivo.trim()}
+                            loading={ocupado} disabled={!!queFalta}
                             onClick={() => onSinEntrega?.(motivo.trim())}>
                             Confirmar sin entrega
                         </Button>

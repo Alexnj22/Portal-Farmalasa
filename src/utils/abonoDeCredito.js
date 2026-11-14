@@ -7,6 +7,8 @@
  * y no tiene vuelta atrás, así que dos reglas distintas no son una opción.
  */
 
+import { formatMoney } from './formatNumber';
+
 /** Pedir aprobación no es una forma de pago: el cobro se guarda y no se aplica hasta que alguien firme. */
 export const APROBACION = 'APROBACION';
 
@@ -91,7 +93,30 @@ export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], l
             ? { faltan: totalPago - sumaRepartida }
             : { sobran: sumaRepartida - totalPago })
         : null;
-    return { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, seExcedeAlguno, listo, descuadre };
+    /* `falta` (2026-11-14): el PRIMER motivo por el que no se puede cobrar, en
+     * el orden del formulario, `{ texto, campo }` o null. `campo` es el
+     * `data-campo`/`name` del diálogo del portal al que lleva el aviso del pie:
+     * 'abono-comprobante' | 'abono-motivo' | 'abono-monto-doc' | `abona-<id>`.
+     * Son las mismas condiciones que `listo` (un AND: el orden sólo elige el
+     * texto), y debe valer `listo === !falta`. */
+    const abona = (h) => (h ? `abona-${h.id}` : null);
+    const excedido = creditos.find((h) => (Number(reparto[h.id]) || 0) > (Number(h.saldo) || 0) + 0.004);
+    const falta = conPapel && !hayArchivo ? { texto: 'Sube el comprobante.', campo: 'abono-comprobante' }
+        : conPapel && !lectura ? { texto: 'Falta que se lea el comprobante.', campo: 'abono-comprobante' }
+        : bloqueado ? { texto: MOTIVO_DEL_FRENO[lectura.veredicto] || 'El comprobante no se pudo dar por bueno.', campo: 'abono-comprobante' }
+        : pideAprobacion && String(motivo).trim().length < 5 ? { texto: 'Escribe el motivo.', campo: 'abono-motivo' }
+        : !(Number.isFinite(totalPago) && totalPago > 0)
+            ? (conPapel ? { texto: 'Escribe el monto del comprobante.', campo: 'abono-monto-doc' }
+                : { texto: 'Escribe cuánto se le abona.', campo: abona(creditos[0]) })
+        : excedido ? { texto: 'El abono pasa de lo que debe ese crédito.', campo: abona(excedido) }
+        : !cuadra ? {
+            texto: sumaRepartida < totalPago
+                ? `Faltan ${formatMoney(totalPago - sumaRepartida)} por aplicar.`
+                : `Sobran ${formatMoney(sumaRepartida - totalPago)} sobre el comprobante.`,
+            campo: abona(creditos[0]),
+        }
+        : null;
+    return { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, seExcedeAlguno, listo, descuadre, falta };
 }
 
 /** Lo que se le manda a la caja: crédito por crédito, sólo los que llevan algo. */

@@ -34,6 +34,21 @@ describe('cobro de aplicación', () => {
         expect(aplicacionDelCobro({ ...c, items: [], producto: ' Neurobion ', cantidad: 2, aNombreDe: '', ficha: { id: 7, name: 'Ana' }, loteTraida }))
             .toEqual({ origen: 'TRAIDA', producto: 'Neurobion', cantidad: 2, lote: 'AB12', vence: '2099-05', aplicar_ahora: 2, cliente: 'Ana', customer_id: 7 });
     });
+    it('dice qué falta y a qué campo lleva (aviso del pie, 2026-11-14)', () => {
+        const base = { modo: 'TRAIDA', precios, items: [], mezcla: false, veces: 0, cantidad: 2, aplicarAhora: 2, aNombreDe: '', venta: null, producto: 'Neurobion', sala: 1 };
+        const loteTraida = { lote: 'AB12', vence: '05/2099' };
+        const ficha = { id: 7, name: 'Ana' };
+        expect(cuentaDelCobro({ ...base, producto: 'N', ficha, loteTraida }).falta?.campo).toBe('producto');
+        expect(cuentaDelCobro({ ...base, ficha }).falta).toMatchObject({ campo: 'lote', texto: expect.stringMatching(/lote/) });
+        expect(cuentaDelCobro({ ...base, loteTraida }).falta?.campo).toBe('ficha');
+        expect(cuentaDelCobro({ ...base, ficha, loteTraida, aplicarAhora: 1 }).falta?.campo).toBe('aNombreDe');
+        expect(cuentaDelCobro({ ...base, ficha, loteTraida }).falta).toBe(null);
+        const compra = { modo: 'COMPRADA', precios, items: [], mezcla: false, veces: 0, cantidad: 1, aplicarAhora: 1, aNombreDe: '', venta: null, producto: '', sala: 3 };
+        expect(cuentaDelCobro(compra).falta?.campo).toBe('venta');
+        expect(cuentaDelCobro({ ...compra, venta: { id: 9 } }).falta?.campo).toBe('cuantas');
+        expect(cuentaDelCobro({ ...compra, venta: { id: 9 }, items: [{ linea_num: 4, cantidad: 1, lote: '', vence: null }] }).falta?.campo).toBe('lote-4');
+        expect(cuentaDelCobro({ ...compra, precios: null }).falta?.campo).toBe(null);
+    });
     it('agrupa las pendientes por cobro, producto y dosis', () => {
         const g = gruposDePendientes([{ id: 1, cobro_id: 5, producto: 'A' }, { id: 2, cobro_id: 5, producto: 'A' }, { id: 3, cobro_id: 6, producto: 'A' }]);
         expect(g.map((x) => x.ids)).toEqual([[1, 2], [3]]);

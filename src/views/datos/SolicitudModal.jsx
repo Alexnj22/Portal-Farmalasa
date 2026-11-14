@@ -28,7 +28,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import {
     DERECHOS, guardarSolicitud, plazoDe, buscarPersona, resumenDeCliente, VIAS_DE_RESPUESTA, DOCUMENTOS_DE_IDENTIDAD,
-    ORIGEN_DE_PERSONA, formularioDeSolicitud, erroresDeForma, faltaParaRecibir as faltaParaRecibirDe, camposDeSolicitud,
+    ORIGEN_DE_PERSONA, formularioDeSolicitud, erroresDeForma, faltaParaRecibirConCampo, camposDeSolicitud,
     terminoDeBusqueda, comoPersona as comoPersonaDe, llenarConPersona,
 } from '@nucleo/data/solicitudesDatos';
 import { papelDeRespuesta, filasParaPortabilidad } from '@nucleo/utils/respuestaDeDatos';
@@ -41,6 +41,8 @@ import TramiteDeLey from './TramiteDeLey';
 import AnonimizarCliente from './AnonimizarCliente';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 const paraInput = (iso) => {
     if (!iso) return '';
     const d = new Date(iso);
@@ -201,7 +203,8 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
     // Lo que hace falta para que la fila deje de ser una hoja impresa y pase a
     // ser una solicitud en trámite: quién pide, qué pide, cuándo se recibió y
     // con qué documento se comprobó que es quien dice.
-    const faltaParaRecibir = useMemo(() => faltaParaRecibirDe(f), [f]);
+    const faltasParaRecibir = useMemo(() => faltaParaRecibirConCampo(f), [f]);
+    const faltaParaRecibir = useMemo(() => faltasParaRecibir.map((x) => x.texto), [faltasParaRecibir]);
 
     const guardar = useCallback(async (estado) => {
         if (!solicitud) return;
@@ -406,7 +409,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                     </Seccion>
 
                     <Seccion titulo="Qué solicita">
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-1.5" data-campo="derechos">
                             {DERECHOS.map((d) => (
                                 <label key={d.clave}
                                     className="flex items-start gap-2.5 min-h-[var(--tap-min)] cursor-pointer">
@@ -482,13 +485,19 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
 
             <LiquidModal.Footer>
                 <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-                    <p className="text-caption text-content-3 min-w-0 flex-1">
-                        {resuelta
-                            ? `Resuelta el ${fechaTexto(solicitud.resuelta_at)}`
-                            : faltaParaRecibir.length
-                                ? `Falta ${faltaParaRecibir.join(', ')}.`
-                                : 'Listo para registrar.'}
-                    </p>
+                    {/* Lo que falta lleva al primer campo (2026-11-14). «Dar por resuelta»
+                        pide además la resolución: dicho acá, no sólo apagado. */}
+                    {!resuelta && faltaParaRecibir.length ? (
+                        <AvisoDeFalta motivo={`Falta ${faltaParaRecibir.join(', ')}.`}
+                            onIr={() => irAlCampo(faltasParaRecibir[0].campo)} />
+                    ) : !resuelta && !f.resolucion?.trim() ? (
+                        <AvisoDeFalta motivo="Listo para registrar. Para darla por resuelta, escribe qué se resolvió."
+                            onIr={() => irAlCampo('resolucion')} />
+                    ) : (
+                        <p className="text-caption text-content-3 min-w-0 flex-1">
+                            {resuelta ? `Resuelta el ${fechaTexto(solicitud.resuelta_at)}` : 'Listo para registrar.'}
+                        </p>
+                    )}
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                         {!resuelta && (

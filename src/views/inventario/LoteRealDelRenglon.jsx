@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidModal from '../../components/common/LiquidModal';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import PortalInput from '../../components/common/PortalInput';
@@ -40,6 +42,8 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
     const [lotes, setLotes] = useState([loteVacio()]);
     const [sinLoteEscrito, setSinLoteEscrito] = useState(null);
     const [saving, setSaving] = useState(false);
+    // El campo que falta se busca dentro de ESTE formulario (2026-11-14).
+    const formRef = useRef(null);
 
     const sinLote = esLoteGenerico(item?.lote);
     // Lo que había en el renglón: lo contado, o lo que dice el sistema.
@@ -107,7 +111,7 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />
             </div>
-            <form className="px-6 py-5 flex flex-col gap-3 relative z-base" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
+            <form ref={formRef} className="px-6 py-5 flex flex-col gap-3 relative z-base" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
                 <p className="text-label text-content-3">
                     {sinLote
                         ? 'Anota cada lote impreso en las cajas, con su vencimiento y cuántas hay. Si hay más de uno, toca «Otro lote».'
@@ -117,7 +121,7 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                     <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end p-3 rounded-2xl border border-border-card">
                         <div className="grid grid-cols-2 gap-2 min-w-0">
                             {regla.pideLote && (
-                                <div className="col-span-2">
+                                <div className="col-span-2" data-campo={`lote-${i}`}>
                                     <Campo label={lotes.length > 1 ? `Lote ${i + 1}` : 'Lote'}>
                                         <PortalInput aria-label={`Lote ${i + 1}`} type="text" value={l.lote} placeholder="Ej. 260412"
                                             onChange={(e) => cambiar(i, 'lote', e.target.value)} inputClassName="text-body-xl uppercase" />
@@ -125,10 +129,12 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                                 </div>
                             )}
                             {regla.pideVence && (
-                                <CampoMesAnio label="Vence (mes/año)" value={l.vence} onChange={(v) => cambiar(i, 'vence', v)} compact />
+                                <div data-campo={`vence-${i}`} className="min-w-0">
+                                    <CampoMesAnio label="Vence (mes/año)" value={l.vence} onChange={(v) => cambiar(i, 'vence', v)} compact />
+                                </div>
                             )}
                             <Campo label={`Cantidad (${unidad.nombre})`}>
-                                <PortalInput aria-label={`Cantidad del lote ${i + 1}`} type="number" inputMode="numeric" min="0"
+                                <PortalInput name={`cantidad-${i}`} aria-label={`Cantidad del lote ${i + 1}`} type="number" inputMode="numeric" min="0"
                                     value={l.cantidad} onChange={(e) => cambiar(i, 'cantidad', e.target.value)} inputClassName="text-body-xl tabular-nums" />
                             </Campo>
                         </div>
@@ -140,7 +146,7 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                 <Button variant="secondary" size="sm" icon={Plus} onClick={() => setLotes((prev) => [...prev, loteVacio()])}>Otro lote</Button>
                 {sinLote && (
                     <Campo label={`Sin lote impreso (${unidad.nombre})`}>
-                        <PortalInput aria-label="Sin lote impreso" type="number" inputMode="numeric" min="0"
+                        <PortalInput name="sinLote" aria-label="Sin lote impreso" type="number" inputMode="numeric" min="0"
                             value={sinLoteValor} onChange={(e) => setSinLoteEscrito(e.target.value)} inputClassName="text-body-xl tabular-nums" />
                     </Campo>
                 )}
@@ -152,7 +158,12 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                 <Button type="submit" tone="chart-9" icon={CheckCircle2} loading={saving} disabled={saving || !!plan.error}>
                     {plan.nuevos?.length || plan.aHermanos?.length ? 'Guardar lotes' : 'Confirmar'}
                 </Button>
-                {plan.error && <p className="text-caption text-content-3">{plan.error}</p>}
+                {/* Lo que falta, y un toque lleva al campo (antes era un texto
+                    gris suelto, sin a dónde ir). */}
+                {plan.error && !saving && (
+                    <AvisoDeFalta motivo={plan.error}
+                        onIr={plan.campo ? () => irAlCampo(plan.campo, formRef.current ?? undefined) : null} />
+                )}
             </form>
         </LiquidModal>
     );

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1533.2 — Encargos: tarjetas que dicen quién lo pidió y qué respondió Bodega
+
+- **Cada encargo es una tarjeta con dos bloques.** «Lo pidió»: el cliente con su nombre completo, si lo pidió desde su app o lo anotó alguien en la sala (y quién), cuándo, y lo que escribió. «Respuesta de Bodega»: quién respondió, cuándo, si se consigue, a qué precio (y el total si son varios), para cuándo llega y su nota; mientras no responde, se dice. El producto va arriba como título, con «Producto nuevo» o «Resto de R-…» como etiqueta.
+- **En una sala sin reservas los encargos se veían como renglones apretados**, no como tarjetas: faltaba pasarle el modo de tarjeta en ese caso.
+- Con el encargo esperando el pago, «Ahora» dice que, si el cliente ya no lo quiere, lo cancela desde su app sin perder nada.
+
 ## v2.1533.1 — App: cancelar una impresión ya no muestra error
 
 En la app del personal, cerrar el diálogo de impresión sin imprimir mostraba «No se pudo preparar el papel», como si algo hubiera fallado. Pasaba en todos los papeles: acta y carta de terminación, boletas, cotizaciones, nómina, bitácoras, formularios de datos personales y documentos fiscales. Ahora cancelar no muestra nada, y la salida del dato sólo se anota cuando de verdad se mandó a imprimir.

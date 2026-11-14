@@ -553,7 +553,7 @@ export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
             return 'Compras averigua si se consigue, a qué precio y cuándo llega, y aprieta «Confirmar». Si no se consigue, «No se puede conseguir».';
         case 'confirmado':
             if (e?.reserva || e?.reserva_id) return 'El cliente decide si acepta el precio nuevo; se resuelve desde su reserva.';
-            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Hasta que pague, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}`;
+            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Hasta que pague, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}${e?.tiene_app ? ' Si ya no lo quiere, lo cancela desde su app: sin pago no se pierde nada.' : ''}`;
         case 'aceptado':
             return 'Ya está pagado. Compras le hace el pedido al proveedor y aprieta «Ya se pidió», para que nadie lo pida dos veces.';
         case 'pedido':
@@ -563,6 +563,54 @@ export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
         default:
             return '';
     }
+}
+
+// La persona de un paso de `encargos_de_sucursal`, en la forma de `AvatarConEstado`.
+const personaDePaso = (p) => (p?.por_id ? { id: p.por_id, first_names: p.por_nombres, last_names: p.por_apellidos, name: p.por } : null);
+const pasoDe = (e, clave) => (e?.pasos ?? []).find((p) => p.paso === clave) ?? null;
+
+/**
+ * Quién pidió el encargo y cómo (2026-11-14): el cliente, por qué camino
+ * (su app, anotado en la sala por alguien, o el resto de una reserva), cuándo
+ * y lo que escribió. Para la tarjeta, que antes sólo decía el primer nombre.
+ */
+export function pedidoDelEncargo(e) {
+    const h = pasoDe(e, 'encargado');
+    const persona = personaDePaso(h);
+    const resto = !!(e?.reserva || e?.reserva_id);
+    return {
+        cliente: e?.cliente || 'Sin cliente',
+        canal: resto ? `Es el resto de la reserva ${e?.reserva ?? ''}`.trim() : persona ? 'Lo anotó en la sala' : 'Lo pidió desde su app',
+        persona,
+        at: h?.at ?? e?.creado ?? null,
+        nota: String(e?.nota_cliente ?? '').trim() || null,
+    };
+}
+
+/**
+ * Lo que respondió Bodega (Compras): si se consigue, a qué precio, para cuándo,
+ * quién lo confirmó y su nota. `hecho: false` mientras no responde.
+ */
+export function respuestaDeBodega(e) {
+    if (!e || e.estado === 'solicitado') {
+        return { hecho: false, texto: 'Todavía no responde. Averigua si se consigue, a qué precio y cuándo llega.', persona: null, at: null, nota: null };
+    }
+    const h = pasoDe(e, 'confirmado');
+    const precio = Number(e.precio_unitario);
+    const total = Number(e.anticipo);
+    const llega = e.fecha_estimada ? fechaTexto(e.fecha_estimada, { weekday: 'short', day: 'numeric', month: 'short' }) : null;
+    const partes = [
+        precio > 0 ? `Sí se consigue a ${formatMoney(precio)}${Number(e.cantidad) > 1 ? ' c/u' : ''}` : 'Sí se consigue',
+        Number(e.cantidad) > 1 && total > 0 ? `total ${formatMoney(total)}` : null,
+        llega ? `llega aprox. el ${llega}` : null,
+    ].filter(Boolean);
+    return {
+        hecho: true,
+        texto: partes.join(' · '),
+        persona: personaDePaso(h),
+        at: h?.at ?? null,
+        nota: String(e.nota_sucursal ?? '').trim() || null,
+    };
 }
 
 /** Un producto que no tenemos y Bodega todavía no amarró al catálogo: sin eso no se marca «Llegó». */

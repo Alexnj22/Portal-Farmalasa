@@ -31,7 +31,7 @@ import { BotonDeAccion } from './TarjetaDeReserva';
 // ═══════════════════════════════════════════════════════════════════════════
 export default function TarjetaCompacta({
     codigo, estado = null, sala = null, cliente, lineas = [], cifras = [], plazo = null, aviso = null, acciones = [], tono = null,
-    pasos = null, ahora = null,
+    pasos = null, ahora = null, titulo = null, etiquetas = [], bloques = [],
 }) {
     const [masAbierto, setMasAbierto] = useState(false);
     const [principal, segunda, ...resto] = acciones;
@@ -45,7 +45,26 @@ export default function TarjetaCompacta({
                     {sala && <span className="inline-flex items-center gap-1 text-caption text-content-3"><Store size={12} aria-hidden /> {sala}</span>}
                 </div>
 
-                <p className="text-body font-bold text-content truncate" title={cliente ?? undefined}>{cliente ?? 'Sin cliente'}</p>
+                {titulo ? (
+                    <div className="space-y-1.5 min-w-0">
+                        <p className="text-body font-bold text-content leading-snug line-clamp-2" title={titulo}>{titulo}</p>
+                        {etiquetas.filter(Boolean).length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {etiquetas.filter(Boolean).map((t) => (
+                                    <Badge key={t.label} variant={t.variant ?? 'neutral'} uppercase={false} title={t.title}>{t.label}</Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <p className="text-body font-bold text-content truncate" title={cliente ?? undefined}>{cliente ?? 'Sin cliente'}</p>
+                )}
+
+                {bloques.filter(Boolean).length > 0 && (
+                    <div className="grid gap-2 min-w-0">
+                        {bloques.filter(Boolean).map((b) => <Bloque key={b.k} b={b} />)}
+                    </div>
+                )}
 
                 {lineas.length > 0 && (
                     <div className="border-t border-divider pt-3 space-y-0.5 min-w-0">
@@ -116,6 +135,32 @@ export default function TarjetaCompacta({
 }
 
 const cuando = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+// Un bloque con rótulo («Lo pidió», «Respuesta de Bodega»): quién, cuándo, qué
+// dijo y su nota entre comillas. `pendiente` lo pinta apagado y punteado.
+function Bloque({ b }) {
+    const Icono = b.icon;
+    return (
+        <section className={`rounded-xl border px-3 py-2.5 min-w-0 space-y-1 ${b.pendiente ? 'border-dashed border-divider' : 'border-divider bg-surface-card-hover'}`}
+            aria-label={b.rotulo}>
+            <p className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-content-3">
+                {Icono && <Icono size={12} aria-hidden />} {b.rotulo}
+            </p>
+            {(b.persona || b.quien) && (
+                <p className="flex items-center gap-1.5 text-body-sm font-semibold text-content min-w-0">
+                    {b.persona && <AvatarConEstado emp={b.persona} px={20} mostrarChip={false} />}
+                    <span className="truncate" title={b.persona ? shortEmployeeName(b.persona) : b.quien}>{b.persona ? shortEmployeeName(b.persona) : b.quien}</span>
+                </p>
+            )}
+            {(b.detalle || b.at) && (
+                <p className="text-caption text-content-3 truncate">{[b.detalle, b.at ? cuando(b.at) : null].filter(Boolean).join(' · ')}</p>
+            )}
+            {b.texto && <p className={`text-body-sm ${b.pendiente ? 'text-content-3' : 'text-content-2'}`}>{b.texto}</p>}
+            {b.nota && <p className="text-caption italic text-content-2 line-clamp-3" title={b.nota}>«{b.nota}»</p>}
+        </section>
+    );
+}
+
 
 // El recorrido del encargo: lo hecho con su persona, lo que falta en gris.
 function Pasos({ pasos, ahora }) {

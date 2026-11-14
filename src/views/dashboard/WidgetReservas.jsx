@@ -489,7 +489,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                             ariaLabel="Buscar un saldo a favor por su código" />
                     )}
                     {botonNueva && <div className="flex justify-center">{botonNueva}</div>}
-                    <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura}
+                    <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} completa={completa}
                         salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
                 </div>
                 {modalNueva}

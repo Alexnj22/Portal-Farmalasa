@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote } from 'lucide-react';
+import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote, UserRound, Warehouse } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -23,7 +23,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega } from '@nucleo/utils/reservasDeSala';
 import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -145,6 +146,15 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
         }
     };
     const vencido = (e) => encargoVencido(e, hoySV());
+    // Los dos bloques de la tarjeta: quién lo pidió y qué respondió Bodega.
+    const pedido = (e) => {
+        const p = pedidoDelEncargo(e);
+        return { k: 'pedido', rotulo: 'Lo pidió', icon: UserRound, quien: p.cliente, detalle: p.persona ? `Lo anotó ${shortEmployeeName(p.persona)}` : p.canal, at: p.at, nota: p.nota };
+    };
+    const respuesta = (e) => {
+        const r = respuestaDeBodega(e);
+        return { k: 'respuesta', rotulo: 'Respuesta de Bodega', icon: Warehouse, persona: r.persona, at: r.at, texto: r.texto, nota: r.nota, pendiente: !r.hecho };
+    };
     // Abrir WhatsApp con el mensaje; desde el reglamento v2 el aviso queda anotado.
     const avisarPorWhatsapp = (e, numero) => {
         window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensajeDeEncargo(e))}`, '_blank', 'noopener');
@@ -228,18 +238,21 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                 tono={vencido(e) ? 'warning' : null}
                                 estado={{ label: estado?.label ?? e.estado, variant: estado?.variant ?? 'neutral' }}
                                 cliente={e.cliente}
-                                lineas={[
-                                    `${e.cantidad} × ${e.producto}`,
-                                    e.producto_nuevo ? (e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : sinVincular(e) && e.sugerido ? `Producto nuevo · ¿ya está como «${e.sugerido}»?` : 'Producto nuevo') : null,
-                                    e.reserva ? `Resto de la reserva ${e.reserva}` : null,
-                                    textoDeNivel(e.nivel),
-                                    ultimoAviso(e),
+                                titulo={`${e.cantidad} × ${e.producto}`}
+                                etiquetas={[
+                                    e.producto_nuevo && { label: e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : 'Producto nuevo', variant: 'info',
+                                        title: e.product_id ? undefined : 'Todavía no está en el catálogo: Bodega lo crea y lo vincula' },
+                                    sinVincular(e) && e.sugerido && { label: `¿Ya está como «${e.sugerido}»?`, variant: 'warning' },
+                                    e.reserva && { label: `Resto de ${e.reserva}`, variant: 'neutral' },
+                                    textoDeNivel(e.nivel) && { label: textoDeNivel(e.nivel), variant: 'neutral' },
                                 ]}
+                                bloques={[pedido(e), respuesta(e)]}
+                                lineas={[ultimoAviso(e)].filter(Boolean)}
                                 cifras={[
                                     ...(cifra ? [{ rotulo: cifra.rotulo, valor: cifra.valor, tono: cifra.cobrado ? 'text-success-text' : 'text-warning-text' }] : []),
                                     ...(e.fecha_estimada ? [{ rotulo: 'Llega', valor: fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' }) }] : []),
                                 ]}
-                                pasos={pasosDeEncargo(e)} ahora={siguientePasoDeEncargo(e, { cobraAqui: cobrable(e) })}
+                                pasos={pasosDeEncargo(e).filter((p) => p.clave !== 'encargado' && p.clave !== 'confirmado')} ahora={siguientePasoDeEncargo(e, { cobraAqui: cobrable(e) })}
                                 aviso={vencido(e) ? 'No lo retiró a tiempo: llamar al cliente' : null}
                                 plazo={e.retirar_hasta ? `Retira hasta el ${dia(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : null}
                                 acciones={acc} />

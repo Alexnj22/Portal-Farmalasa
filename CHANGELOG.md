@@ -21,20 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-<<<<<<< HEAD
+## v2.1534.3 — Encargos: foto de quien lo anotó; Vincular y Confirmar sólo para Compras
+
+- En «Lo pidió», quien anotó el encargo en la sala sale con su foto y su nombre corto, igual que quien respondió de Bodega.
+- «Vincular producto», «Confirmar» y «No se puede conseguir» sólo le aparecen a Compras o administración. Son los que la base deja: a la sala le salían y al apretarlos daban error. «Vincular producto» va delante sólo cuando el encargo ya está pagado, porque es lo que destraba «Llegó». Antes era el botón principal mientras el encargo esperaba el pago.
+- El diálogo de «Ya no lo quiere» avisa si la cancelación falla.
+
 ## v2.1534.2 — Baja: lo que falta lleva al campo y la devolución va artículo por artículo
 
 - **Lo que falta, a la vista.** Al elegir el motivo de la baja aparece una tarjeta con el avance («3 de 6 listos») y una pastilla por requisito —fechas, fuero, causal, observaciones, respaldo—. Tocar una lleva al campo, lo centra y lo hace destellar. El siguiente que falta dice debajo del campo qué le falta.
 - **El aviso del pie es un botón.** «Falta el último día que trabajó. Ir al campo» lleva hasta él (también en las demás novedades cuando falta la observación o el respaldo).
 - **Devolución artículo por artículo.** «Devolvió carné, uniforme, llaves y equipo» era una sola casilla: quien devolvía todo menos el uniforme no tenía respuesta. Ahora cada uno es Devuelto / Pendiente / No tenía, y lo pendiente se resume («Pendiente: uniforme»). La casilla vieja se sigue guardando y queda marcada sólo si no falta nada. También en la app.
 - El bloque se partió en secciones (fechas y requisitos, respaldo, liquidación con el total arriba, cierre con su avance) en vez de una sola caja roja.
-=======
-## v2.1534.2 — Encargos: foto de quien lo anotó; Vincular y Confirmar sólo para Compras
-
-- En «Lo pidió», quien anotó el encargo en la sala sale con su foto y su nombre corto, igual que quien respondió de Bodega.
-- «Vincular producto», «Confirmar» y «No se puede conseguir» sólo le aparecen a Compras o administración. Son los que la base deja: a la sala le salían y al apretarlos daban error. «Vincular producto» va delante sólo cuando el encargo ya está pagado, porque es lo que destraba «Llegó». Antes era el botón principal mientras el encargo esperaba el pago.
-- El diálogo de «Ya no lo quiere» avisa si la cancelación falla.
->>>>>>> 380674004 (fix(reservas): foto de quien anotó el encargo; Vincular/Confirmar sólo para Compras (v2.1534.2))
 
 ## v2.1534.1 — Datos de mercado: la ventana de elegir producto ya se desplaza
 

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1533.3 — Datos de mercado: «Es éste» ya confirma
+
+- En **Cumplimiento → Datos de mercado**, «Es éste» y «Confirmar las N» fallaban siempre con «Uno de los valores está fuera del rango permitido»: la base armaba la fila con el producto de la SRS vacío antes de ver que ya tenía uno. Ahora confirma el que tiene propuesto (`srs_mercado_revisar`, migración `20261114154004`).
+
 ## v2.1533.2 — Encargos: tarjetas que dicen quién lo pidió y qué respondió Bodega
 
 - **Cada encargo es una tarjeta con dos bloques.** «Lo pidió»: el cliente con su nombre completo, si lo pidió desde su app o lo anotó alguien en la sala (y quién), cuándo, y lo que escribió. «Respuesta de Bodega»: quién respondió, cuándo, si se consigue, a qué precio (y el total si son varios), para cuándo llega y su nota; mientras no responde, se dice. El producto va arriba como título, con «Producto nuevo» o «Resto de R-…» como etiqueta.

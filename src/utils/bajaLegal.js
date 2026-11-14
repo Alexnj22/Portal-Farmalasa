@@ -95,10 +95,10 @@ export const pendientesDeBaja = (motivo) => PENDIENTES_DE_BAJA.filter((p) => !p.
  * le entregó). Se guarda en `activosDevueltos: { carne: 'SI', … }`.
  */
 export const ACTIVOS_DE_BAJA = [
-    { clave: 'carne', texto: 'Carné' },
-    { clave: 'uniforme', texto: 'Uniforme' },
-    { clave: 'llaves', texto: 'Llaves' },
-    { clave: 'equipo', texto: 'Equipo', detalle: 'computadora, teléfono, herramientas' },
+    { clave: 'carne', texto: 'Carné', pregunta: 'el carné' },
+    { clave: 'uniforme', texto: 'Uniforme', pregunta: 'el uniforme' },
+    { clave: 'llaves', texto: 'Llaves', pregunta: 'las llaves' },
+    { clave: 'equipo', texto: 'Equipo', pregunta: 'el equipo', detalle: 'computadora, teléfono, herramientas' },
 ];
 
 /**

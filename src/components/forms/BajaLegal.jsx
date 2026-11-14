@@ -30,8 +30,10 @@ const FUERO = [
 ];
 
 const DEVOLUCION = [
-    { value: 'SI', label: 'Devuelto', tone: 'success' },
-    { value: 'NO', label: 'Pendiente', tone: 'warning' },
+    // Se pregunta «¿lo devolvió?» y se responde con un verbo: «Pendiente» no
+    // decía si no lo devolvió o si nunca lo tuvo (2026-11-14, pedido del usuario).
+    { value: 'SI', label: 'Devolvió', tone: 'success' },
+    { value: 'NO', label: 'No devolvió', tone: 'warning' },
     { value: 'NA', label: 'No tenía', tone: 'neutro' },
 ];
 
@@ -416,16 +418,16 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                         <div data-campo="activosDevueltos" className="rounded-2xl border border-border-card p-3 space-y-2">
                             <div className="flex items-center gap-2">
                                 <PackageCheck size={15} className={activos.completo ? 'text-success-text' : 'text-content-2'} />
-                                <span className="text-body-sm font-bold text-content flex-1">Lo que se le entregó</span>
+                                <span className="text-body-sm font-bold text-content flex-1">¿Devolvió lo que se le entregó?</span>
                                 {activos.pendientes.length > 0 && (
-                                    <Badge variant="warning" size="sm" uppercase={false}>Pendiente: {activos.pendientes.map((a) => a.texto.toLowerCase()).join(', ')}</Badge>
+                                    <Badge variant="warning" size="sm" uppercase={false}>No devolvió: {activos.pendientes.map((a) => a.texto.toLowerCase()).join(', ')}</Badge>
                                 )}
                             </div>
                             <ul className="divide-y divide-border-card">
                                 {activos.items.map((a) => (
                                     <li key={a.clave} className="flex flex-col sm:flex-row sm:items-center gap-2 py-2">
                                         <span className="flex-1 min-w-0 text-body-sm text-content-2">
-                                            {a.texto}{a.detalle && <span className="text-caption text-content-3"> · {a.detalle}</span>}
+                                            ¿Devolvió {a.pregunta}?{a.detalle && <span className="block text-caption text-content-3">{a.detalle}</span>}
                                         </span>
                                         <SegmentedControl size="sm" label={`${a.texto}: ¿lo devolvió?`} options={DEVOLUCION} value={a.estado}
                                             onChange={(v) => setFormData((prev) => ({ ...prev, ...conActivo(prev, a.clave, v) }))} />
@@ -433,7 +435,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                                 ))}
                             </ul>
                             {activos.pendientes.length > 0 && (
-                                <p className="text-caption text-content-3">Anota en las observaciones qué quedó pendiente y cuándo lo va a devolver.</p>
+                                <p className="text-caption text-content-3">Anota en las observaciones qué no devolvió y cuándo lo va a hacer.</p>
                             )}
                         </div>
 

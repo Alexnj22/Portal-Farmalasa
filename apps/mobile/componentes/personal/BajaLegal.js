@@ -33,8 +33,8 @@ const larga = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: '
 // web): con una sola casilla no había respuesta para «devolvió todo menos el
 // uniforme» (2026-11-14).
 const DEVOLUCION = [
-  { id: 'SI', label: 'Devuelto', color: colorSistema.verde },
-  { id: 'NO', label: 'Pendiente', color: colorSistema.naranja },
+  { id: 'SI', label: 'Devolvió', color: colorSistema.verde },
+  { id: 'NO', label: 'No devolvió', color: colorSistema.naranja },
   { id: 'NA', label: 'No tenía', color: colorSistema.texto2 },
 ];
 function Devolucion({ valor, onCambiar }) {
@@ -244,7 +244,7 @@ export default function BajaLegal({ f, pon, emp }) {
           <Seccion titulo="Cierre" pie="Se puede completar después, corrigiendo la baja desde el historial.">
             {estadoDeActivos(f).items.map((a) => (
               <View key={a.clave} style={{ minHeight: 44, paddingVertical: 6, gap: 6 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{a.texto}</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{`¿Devolvió ${a.pregunta}?`}</Text>
                 <Devolucion valor={a.estado} onCambiar={(v) => pon(conActivo(f, a.clave, v))} />
               </View>
             ))}

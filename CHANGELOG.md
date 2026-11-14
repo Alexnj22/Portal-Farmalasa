@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1534.4 — Baja: cada artículo pregunta ¿lo devolvió? — Devolvió, No devolvió o No tenía
+
+- En el cierre de la baja, cada artículo ahora se pregunta («¿Devolvió el uniforme?») y se responde **Devolvió**, **No devolvió** o **No tenía**. «Pendiente» no dejaba claro si no lo devolvió o si nunca se le entregó. El resumen dice «No devolvió: uniforme». También en la app.
+
 ## v2.1534.3 — Encargos: foto de quien lo anotó; Vincular y Confirmar sólo para Compras
 
 - En «Lo pidió», quien anotó el encargo en la sala sale con su foto y su nombre corto, igual que quien respondió de Bodega.

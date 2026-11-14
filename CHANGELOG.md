@@ -28,6 +28,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - Lo confirmado queda guardado para los años siguientes (`srs_mercado_productos`); una nueva propuesta automática nunca pisa lo que ya decidió una persona.
 - La búsqueda en el catálogo va por la función `srs-datos-mercado`, con la cuenta de la empresa guardada en la bóveda.
 - Permiso `cumplimiento_tab_datos_mercado`: Gerente General, Administrador y Supervisor/a de Ventas.
+- **App del personal:** la misma revisión en Cumplimiento sanitario → Mercado (confirmar, elegir otra opción, «no es medicamento», deshacer y confirmar todas las de confianza alta). La búsqueda libre en el catálogo queda en el portal.
 
 ## v2.1528.2 — Envíos: el renglón sin lote en un envío que salió a medias se quita y se arma de nuevo
 

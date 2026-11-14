@@ -12,6 +12,10 @@
 //     cierran, se anulan con motivo y se imprimen (el papel lleva la firma y
 //     el sello: `htmlDelRegistro`, el mismo del portal).
 //   · Acreditaciones: quién atiende el mostrador y si tiene su acreditación.
+//   · Mercado (2026-11-14): la pareja de cada producto con el catálogo de la
+//     SRS para la Captura de Datos de Mercado — confirmar, elegir otra de las
+//     opciones del emparejador, marcar «no es medicamento» o deshacer. La
+//     búsqueda libre en el catálogo queda en el portal.
 //
 // Mismos permisos que el portal (`cumplimiento_tab_*`); la base vuelve a
 // decidir en cada llamada. Quien ve una sola sala no elige sala.
@@ -32,6 +36,8 @@ import { documentosDeSucursal } from '@nucleo/utils/expedienteDeSucursal';
 import { salasDeBitacora } from '@nucleo/utils/rondaDeBitacora';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { registrarEgreso } from '@nucleo/data/egreso';
+import { fetchParejasSrs, mensajeDeDatosMercado, revisarParejaSrs } from '@nucleo/data/datosMercadoSrs';
+import { coincide } from '@nucleo/utils/busqueda';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Segmentos from '../componentes/Segmentos';
@@ -294,6 +300,146 @@ function Registros({ tema, sala, nombreSala, puedeEditar, retiroATodas, recarga 
   );
 }
 
+const GRUPOS_MERCADO = [
+  { id: 'alta', label: 'Alta' },
+  { id: 'media', label: 'Media' },
+  { id: 'baja', label: 'Baja' },
+  { id: 'sin_pareja', label: 'Sin pareja' },
+  { id: 'confirmados', label: 'Confirmados' },
+  { id: 'no_aplica', label: 'No es medicamento' },
+];
+const POR_PAGINA = 40;
+
+function grupoDeMercado(f) {
+  if (f.estado === 'confirmado') return 'confirmados';
+  if (f.estado === 'no_aplica') return 'no_aplica';
+  if (!f.crp) return 'sin_pareja';
+  return f.confianza === 'alta' ? 'alta' : f.confianza === 'media' ? 'media' : 'baja';
+}
+
+function Mercado({ puedeEditar, texto, recarga }) {
+  const [filas, setFilas] = useState(null);
+  const [error, setError] = useState(null);
+  const [grupo, setGrupo] = useState('alta');
+  const [visibles, setVisibles] = useState(POR_PAGINA);
+  const [masivo, setMasivo] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    fetchParejasSrs().then(({ filas: f, error: e }) => {
+      if (!vivo) return;
+      setError(e ? mensajeDeDatosMercado(e) : null);
+      if (!e) setFilas(f);
+    });
+    return () => { vivo = false; };
+  }, [recarga]);
+
+  const conteo = useMemo(() => {
+    const c = { alta: 0, media: 0, baja: 0, sin_pareja: 0, confirmados: 0, no_aplica: 0 };
+    for (const f of filas ?? VACIO) c[grupoDeMercado(f)] += 1;
+    return c;
+  }, [filas]);
+  const lista = useMemo(() => (filas ?? VACIO)
+    .filter((f) => grupoDeMercado(f) === grupo)
+    .filter((f) => coincide(texto, f.nombre, f.laboratorio, f.nombre_srs, f.crp)), [filas, grupo, texto]);
+
+  const reemplazar = (fila) => setFilas((prev) => prev.map((f) => (f.product_id === fila.product_id ? { ...f, ...fila } : f)));
+  const decidir = async (f, estado, producto = null) => {
+    const { fila, error: e } = await revisarParejaSrs(f.product_id, estado, producto);
+    if (e) { fallo('No se guardó', mensajeDeDatosMercado(e)); return; }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    reemplazar(fila);
+    useStaffStore.getState().appendAuditLog('SRS_MERCADO_PAREJA', String(f.product_id), { producto: f.nombre, estado, crp: fila?.crp ?? null, via: 'app' });
+  };
+  const elegirOtro = (f) => {
+    const alts = (Array.isArray(f.alternativas) ? f.alternativas : VACIO).slice(0, 2);
+    if (!alts.length) { fallo('Sin otras opciones', 'Búscalo en el catálogo desde el portal: Cumplimiento → Datos de mercado.'); return; }
+    Alert.alert('Elegir otro producto', f.nombre, [
+      ...alts.map((a) => ({ text: `${a.nombre_comercial} · ${a.presentacion}`.slice(0, 90), onPress: () => decidir(f, 'confirmado', a) })),
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+  const confirmarAltas = () => {
+    const pendientes = (filas ?? VACIO).filter((f) => grupoDeMercado(f) === 'alta');
+    Alert.alert(`¿Confirmar ${pendientes.length} productos?`, 'Se confirman todas las parejas de confianza alta. Cualquiera se puede deshacer después.', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Confirmar', onPress: async () => {
+          const cola = [...pendientes];
+          let hechos = 0;
+          let fallas = 0;
+          setMasivo(`0 de ${pendientes.length}`);
+          const trabajar = async () => {
+            while (cola.length) {
+              const f = cola.shift();
+              const { fila, error: e } = await revisarParejaSrs(f.product_id, 'confirmado');
+              if (e) fallas += 1; else reemplazar(fila);
+              hechos += 1;
+              setMasivo(`${hechos} de ${pendientes.length}`);
+            }
+          };
+          await Promise.all(Array.from({ length: 6 }, trabajar));
+          setMasivo(null);
+          useStaffStore.getState().appendAuditLog('SRS_MERCADO_CONFIRMAR_ALTAS', 'srs_mercado', { confirmadas: pendientes.length - fallas, fallas, via: 'app' });
+          if (fallas) fallo('Confirmación incompleta', `${fallas} no se pudieron confirmar. Vuelve a intentar.`);
+          else listo('Listo', `${pendientes.length} productos confirmados.`);
+        },
+      },
+    ]);
+  };
+
+  if (error) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
+  if (!filas) return <Cargando />;
+  const opciones = GRUPOS_MERCADO.map((g) => ({ ...g, label: `${g.label} · ${conteo[g.id]}` }));
+  return (
+    <>
+      <View style={{ marginHorizontal: 16 }}>
+        <Aviso texto={`La SRS pide cada año existencias y precio de venta de todo medicamento, por farmacia. Aquí se elige qué producto de su catálogo es cada uno nuestro. Revisados ${conteo.confirmados + conteo.no_aplica} de ${filas.length}.`} />
+      </View>
+      <View style={{ marginHorizontal: 16 }}>
+        <Subfiltro opciones={opciones} activa={grupo} onCambiar={(g) => { setGrupo(g); setVisibles(POR_PAGINA); }} />
+      </View>
+      {grupo === 'alta' && puedeEditar && conteo.alta > 0 ? (
+        <View style={{ marginHorizontal: 16 }}>
+          <BotonGrande texto={masivo ? `Confirmando ${masivo}…` : `Confirmar las ${conteo.alta}`} color={MARCA.verde}
+            deshabilitado={!!masivo} onPress={confirmarAltas} />
+        </View>
+      ) : null}
+      {!lista.length ? <Vacio titulo={texto ? 'Nada coincide con la búsqueda' : 'No hay productos en este grupo'} /> : null}
+      {lista.slice(0, visibles).map((f) => {
+        const g = grupoDeMercado(f);
+        const decidido = g === 'confirmados' || g === 'no_aplica';
+        return (
+          <Tarjeta key={f.product_id}>
+            <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{f.nombre}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${f.laboratorio || 'Sin laboratorio'} · Existencia ${f.existencia}`}</Text>
+            {g === 'no_aplica' ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>No es medicamento: la SRS no lo pide.</Text>
+              : f.crp ? (
+                <View style={{ gap: 2, marginTop: 4 }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`→ ${f.nombre_srs}`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.presentacion_srs}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${f.laboratorio_srs || '—'} · Reg. ${f.n_registro} · ${f.crp}`}</Text>
+                </View>
+              ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin producto de la SRS.</Text>}
+            {puedeEditar ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                {!decidido && f.crp ? <Accion texto="Es éste" color={MARCA.verde} onPress={() => decidir(f, 'confirmado')} /> : null}
+                {!decidido || g === 'confirmados' ? <Accion texto="Elegir otro" onPress={() => elegirOtro(f)} /> : null}
+                {!decidido ? <Accion texto="No es medicamento" color={MARCA.gris} onPress={() => decidir(f, 'no_aplica')} /> : null}
+                {decidido ? <Accion texto="Deshacer" color={MARCA.ambar} onPress={() => decidir(f, 'propuesto')} /> : null}
+              </View>
+            ) : null}
+          </Tarjeta>
+        );
+      })}
+      {lista.length > visibles ? (
+        <View style={{ marginHorizontal: 16 }}>
+          <BotonGrande texto={`Ver más (${lista.length - visibles})`} borde color={MARCA.azul} onPress={() => setVisibles((v) => v + POR_PAGINA)} />
+        </View>
+      ) : null}
+    </>
+  );
+}
+
 export default function Cumplimiento() {
   const { user, hasPermission, getScope } = useAuth();
   const branches = useStaffStore((s) => s.branches) || VACIO;
@@ -313,7 +459,9 @@ export default function Cumplimiento() {
     ver('vencimientos') && { id: 'vencimientos', label: 'Fechas' },
     temasVisibles.length && { id: 'registros', label: 'Registros' },
     ver('dependientes') && { id: 'dependientes', label: 'Acreditación' },
+    ver('datos_mercado') && { id: 'mercado', label: 'Mercado' },
   ].filter(Boolean), [ver, temasVisibles]);
+  const [textoMercado, setTextoMercado] = useState('');
   const [elegida, setSeccion] = useState(null);
   const seccion = elegida && secciones.some((s) => s.id === elegida) ? elegida : secciones[0]?.id;
   const [temaElegido, setTema] = useState(null);
@@ -330,14 +478,22 @@ export default function Cumplimiento() {
     else { setTema(t); setSeccion('registros'); }
   };
 
-  const grupos = alcanceTodas && seccion !== 'resumen' ? [{
+  const grupos = alcanceTodas && seccion !== 'resumen' && seccion !== 'mercado' ? [{
     id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSalaElegida,
     opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((o) => ({ id: o.value, label: o.label }))],
   }] : [];
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Cumplimiento sanitario' }} />
+      <Stack.Screen options={{
+        ...BARRA_FIJA, title: 'Cumplimiento sanitario',
+        ...(seccion === 'mercado' ? {
+          headerSearchBarOptions: {
+            placeholder: 'Buscar producto', hideWhenScrolling: false,
+            onChangeText: (e) => setTextoMercado(e.nativeEvent.text), onCancelButtonPress: () => setTextoMercado(''),
+          },
+        } : {}),
+      }} />
       <MenuDeFiltros grupos={grupos} />
       {secciones.length > 1 ? <FijoArriba><Segmentos activa={seccion} onCambiar={setSeccion} opciones={secciones} /></FijoArriba> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
@@ -348,6 +504,7 @@ export default function Cumplimiento() {
           : seccion === 'resumen' ? <Resumen temas={temas} onIr={irA} recarga={llave} />
             : seccion === 'vencimientos' ? <Vencimientos branches={branches} sala={sala} />
               : seccion === 'dependientes' ? <Dependientes sala={sala} recarga={llave} />
+                : seccion === 'mercado' ? <Mercado puedeEditar={hasPermission('cumplimiento_tab_datos_mercado', 'can_edit')} texto={textoMercado} recarga={llave} />
                 : (
                   <>
                     {temasVisibles.length > 1 ? <View style={{ marginHorizontal: 16 }}><Subfiltro opciones={temasVisibles} activa={tema} onCambiar={setTema} /></View> : null}

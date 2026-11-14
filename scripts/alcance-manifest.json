@@ -336,6 +336,10 @@
       "guarda": "sin-sala",
       "motivo": "Proxy externo."
     },
+    "srs-datos-mercado": {
+      "guarda": "sin-sala",
+      "motivo": "Datos de mercado de la SRS: busca en el catálogo de la Superintendencia con la cuenta de la empresa (permiso cumplimiento_tab_datos_mercado) y carga propuestas con un secreto propio. Los establecimientos son de la empresa, no de una sala."
+    },
     "recortar-foto-producto": {
       "guarda": "sin-sala",
       "motivo": "Recorta la foto del producto que acaba de subir quien llama, y escribe con SU sesión (RLS y guardar_carga_producto deciden): no toca nada que esa persona no pudiera tocar."

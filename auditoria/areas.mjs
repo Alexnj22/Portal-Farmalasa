@@ -1207,7 +1207,8 @@ export const AREAS = [
                   // Cumplimiento sanitario (2026-11-11).
                   'cumplimiento', 'cumplimiento_tab_resumen', 'cumplimiento_tab_vencimientos',
                   'cumplimiento_tab_farmacovigilancia', 'cumplimiento_tab_vencidos', 'cumplimiento_tab_retiros',
-                  'cumplimiento_tab_autoinspeccion', 'cumplimiento_tab_capacitacion', 'cumplimiento_tab_dependientes'],
+                  'cumplimiento_tab_autoinspeccion', 'cumplimiento_tab_capacitacion', 'cumplimiento_tab_dependientes',
+                  'cumplimiento_tab_datos_mercado'],
         rutas: ['/bitacoras', '/cumplimiento'],
         archivos: [
             'src/views/BitacorasView.jsx', 'src/views/bitacoras/',
@@ -1222,13 +1223,15 @@ export const AREAS = [
             // Cumplimiento sanitario: registros no diarios de la norma (2026-11-11).
             'src/views/CumplimientoView.jsx', 'src/views/cumplimiento/',
             'src/data/cumplimiento.js', 'src/utils/cumplimiento.js', 'src/utils/papelDeCumplimiento.js',
+            // Datos de mercado de la SRS (2026-11-14).
+            'src/data/datosMercadoSrs.js',
         ],
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas', 'libro_lote_revisiones',
                  'bitacora_limpiezas_historial', 'antibioticos_aware', 'antibioticos_producto',
                  'recetas', 'receta_items', 'medicos', 'dispensacion_clases', 'antibioticos_lote_diario',
-                 'regencia_visitas', 'cumplimiento_registros', 'inyeccion_libro'],
-        edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
+                 'regencia_visitas', 'cumplimiento_registros', 'inyeccion_libro', 'srs_mercado_productos'],
+        edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer', 'srs-datos-mercado'],
         crons: ['bitacora-dispensaciones-1min', 'cuadre-antibioticos-0700-sv', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min', 'antibioticos-lote-foto-diaria', 'avisar-lotes-del-libro-0815-sv',
                 'bitacora-anomalias-diario'],

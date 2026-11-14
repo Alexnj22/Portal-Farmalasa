@@ -32,3 +32,15 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_CONSUMO_TOKEN || secrets.VERCEL_TOKEN }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+      # Si falla, qué contesta Vercel a ese token en cada consulta (sólo códigos).
+      - if: failure()
+        run: |
+          for u in "/v2/user" "/v9/projects?limit=1&teamId=$T" "/v2/budgets?limit=1&teamId=$T"; do
+            echo "$u → $(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com$u")"
+          done
+          echo "/v2/billing/costs → $(curl -s -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' \
+            -d '{"from":"2026-11-13T00:00:00Z","to":"2026-11-14T00:00:00Z","metrics":["gross_cost"],"format":"timeseries","views":{"s":{"groupBy":["product"]}}}' \
+            "https://api.vercel.com/v2/billing/costs?teamId=$T")"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_CONSUMO_TOKEN || secrets.VERCEL_TOKEN }}
+          T: ${{ secrets.VERCEL_TEAM_ID }}

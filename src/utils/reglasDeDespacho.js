@@ -94,6 +94,36 @@ export function minimoDeDespacho(regla, factor) {
     return { unidades: f * mult, texto: `${regla.dispatch_label ? 1 : mult} ${tipo}` };
 }
 
+/**
+ * El freno de «Generar pedido»: un producto cuya regla de despacho quedó
+ * PENDIENTE (la base la quitó porque su presentación se apagó o cambió de
+ * factor) no puede salir en un pedido hasta que alguien la resuelva. Sin
+ * regla, salía en la presentación suelta: el pedido #236 (2026-10-30) mandó
+ * «4 PAR» de un guante que se despacha por caja de 50, 43 minutos antes de que
+ * se resolviera la pendiente.
+ *
+ * `rows` son los renglones de la vista previa; `pendientes`, las abiertas
+ * (`fetchReglasPendientes`). Devuelve el error para mostrar, o `null`.
+ * La base repite el mismo freno en `confirm_pedido`.
+ */
+export function frenoPorReglasPendientes(rows = [], pendientes = []) {
+    const abiertas = new Set((pendientes ?? []).map(p => Number(p.erp_product_id)));
+    if (!abiertas.size) return null;
+    const nombres = new Map();
+    for (const r of rows ?? []) {
+        const id = Number(r.erp_product_id);
+        if (abiertas.has(id) && !nombres.has(id)) nombres.set(id, r.product_name || `Producto ${id}`);
+    }
+    if (!nombres.size) return null;
+    const lista = [...nombres.values()];
+    const muestra = lista.slice(0, 2).join(', ') + (lista.length > 2 ? ` y ${lista.length - 2} más` : '');
+    const uno = lista.length === 1;
+    const err = new Error(
+        `No se puede generar: ${uno ? 'un producto tiene' : `${lista.length} productos tienen`} la regla de despacho `
+        + `pendiente (${muestra}). Hay que resolverla${uno ? '' : 's'} en Pedidos → Reglas.`);
+    return Object.assign(err, { userFacing: true, reglasPendientes: [...nombres.keys()] });
+}
+
 /** «Bodega lo envía de a 1 CAJA (10 unidades)»: la explicación que ve la sala. */
 export function envioDeBodega(minimo) {
     return `Bodega lo envía de a ${minimo.texto} (${minimo.unidades} ${minimo.unidades === 1 ? 'unidad' : 'unidades'})`;

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.1 — Pedidos: un producto con la regla de despacho pendiente frena el pedido
+
+Cuando la presentación de una regla de despacho se apaga o cambia de factor, la regla se quita y queda pendiente en Pedidos → Reglas. Mientras estaba pendiente, el producto salía en el pedido en su presentación suelta: el pedido #236 (30/oct) mandó «4 PAR» de GUANTE TALLA S NIPRO, que se despacha por CAJA X 50 PARES, 43 minutos antes de que se resolviera la regla. Ahora, al calcular el pedido (portal y app), si algún producto tiene la regla pendiente, el pedido no se genera y el aviso nombra los productos y dice que hay que resolverlos en Pedidos → Reglas.
+
+Base: migración `20261114174059_pedido_frena_con_regla_de_despacho_pendiente` (`reglas_pendientes_de_productos`, DEFINER porque el Auxiliar de Bodega genera pedidos sin ver la pestaña Reglas; `confirm_pedido` repite el freno). Probado en producción dentro de una transacción revertida: con una pendiente abierta del guante, `confirm_pedido` frena con el mensaje.
+
 ## v2.1537.0 — Encargos: «Ya se vendió» amarra el encargo a una venta hecha en caja
 
 Cuando un encargo se cobró en caja como una venta normal y nadie lo pasó por el portal, ya no hay que cobrarlo otra vez (contaría el dinero dos veces). El portal busca la venta en la misma sala desde que se anotó el encargo, por producto y por monto; el nombre es sólo una pista, porque a veces paga un familiar a su nombre (pasó con E-000018). La tarjeta avisa «Parece que ya se vendió · COF … del …» y pone «Ya se vendió» como botón principal; «Por cobrar» también lo avisa. Al elegir la venta, el encargo queda entregado y amarrado a ese renglón de la factura (uno por encargo), sin meter dinero al cajón. No aplica si ya hubo cobro por el portal o un pago en línea en curso.

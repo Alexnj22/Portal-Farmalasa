@@ -150,6 +150,19 @@ export async function fetchReglasPendientes() {
     return data ?? [];
 }
 
+/**
+ * De estos productos, cuáles tienen la regla de despacho PENDIENTE. Va por una
+ * función DEFINER: quien genera el pedido (Auxiliar de Bodega) no tiene la
+ * pestaña Reglas y el RLS de la tabla le devolvería vacío —el freno no frenaría—.
+ */
+export async function productosConReglaPendiente(productIds) {
+    const ids = [...new Set((productIds ?? []).map(Number).filter(Number.isFinite))];
+    if (!ids.length) return [];
+    const { data, error } = await supabase.rpc('reglas_pendientes_de_productos', { p_product_ids: ids });
+    if (error) throw error;
+    return (data ?? []).map(id => ({ erp_product_id: id }));
+}
+
 /** «Que quede sin regla» también responde el pendiente. */
 export async function resolverPendienteSinRegla(productId) {
     const { error } = await conBitacora(

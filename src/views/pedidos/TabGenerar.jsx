@@ -28,6 +28,9 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 function friendlyError(e) {
     const msg = e?.message || String(e);
+    // El freno de las reglas pendientes (vista previa o `confirm_pedido`).
+    if (e?.reglasPendientes || /regla de despacho pendiente/i.test(msg))
+        return msg.replace(/^REGLAS_PENDIENTES:\s*/, '');
     if (/statement timeout|canceling statement/i.test(msg))
         return 'El cálculo tardó demasiado. Intenta seleccionando menos sucursales a la vez.';
     if (/Failed to fetch|NetworkError|network/i.test(msg))

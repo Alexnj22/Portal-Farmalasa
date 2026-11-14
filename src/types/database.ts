@@ -39355,6 +39355,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      reglas_pendientes_de_productos: {
+        Args: { p_product_ids: number[] }
+        Returns: number[]
+      }
       reglas_v2_desde: { Args: never; Returns: string }
       regrant_employees_columns: { Args: never; Returns: string }
       reimprimir_impresion: { Args: { p_id: number }; Returns: number }

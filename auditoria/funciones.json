@@ -5469,6 +5469,10 @@
    "area": "pedidos",
    "por": "tablas"
   },
+  "reglas_pendientes_de_productos": {
+   "area": "pedidos",
+   "por": "código"
+  },
   "reglas_v2_desde": {
    "area": "app-clientes",
    "por": "código"

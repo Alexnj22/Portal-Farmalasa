@@ -16,6 +16,8 @@ import { confirmarLlegadaDeReenvio as llegadaDeReenvioEnLaBase, programarEntrega
 import { PAUSE_REASONS } from '../constants/pedidos';
 import { SUCURSALES } from '../constants/erp';
 import { buildPedidoCodigo, fefoProject } from '../utils/codigoDePedido';
+import { frenoPorReglasPendientes } from '../utils/reglasDeDespacho';
+import { productosConReglaPendiente } from './dispatchRules';
 
 const sinError = ({ error }) => { if (error) throw error; };
 
@@ -178,7 +180,14 @@ export async function vistaPreviaDePedido({ salas, globalMode = false }) {
     const rpcParams = globalMode ? { p_sucursal_ids: SUCURSALES, p_target_ids: elegidas } : { p_sucursal_ids: elegidas };
     const { data, error } = await fetchVistaPreviaDePedido(rpcParams);
     if (error) throw error;
-    return Array.isArray(data) ? data : [];
+    const rows = Array.isArray(data) ? data : [];
+    const pendientes = await productosConReglaPendiente(rows.map(r => r.erp_product_id));
+    // Un producto con la regla de despacho pendiente frena el pedido entero
+    // (decisión del usuario, 2026-11-14). Si la consulta falla, lanza y
+    // tampoco se sigue. `confirm_pedido` repite el freno en la base.
+    const freno = frenoPorReglasPendientes(rows, pendientes);
+    if (freno) throw freno;
+    return rows;
 }
 
 /**

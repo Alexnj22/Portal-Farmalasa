@@ -7,7 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto, opcionesConTexto, MAX_TEXTO, MAX_NUMERO,
-    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala, escalaNumerica,
+    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, guionDeEscala, escalaDePregunta,
 } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import useMediaQuery from '../../plataforma/useMediaQuery';
@@ -301,19 +301,9 @@ function Incentivo({ r, entrevista, entregando, onEntregar }) {
 
 // ── Una pregunta ───────────────────────────────────────────────────────────
 
-// `activaCls`: el color de lo marcado cuando no es el de la marca (los tramos del NPS).
-const opcionCls = (activa, activaCls = 'bg-brand text-white border-brand') => `min-h-[var(--tap-min)] rounded-xl border px-3 py-2 text-body-sm font-semibold
+const opcionCls = (activa) => `min-h-[var(--tap-min)] rounded-xl border px-3 py-2 text-body-sm font-semibold
     transition-colors duration-[var(--dur-fast)] active:scale-[0.97]
-    ${activa ? activaCls : 'bg-surface-card border-border-card text-content hover:bg-surface-card-hover'}`;
-
-// Literales completos: Tailwind no ve una clase armada con `${tono}`.
-const TRAMO_SOLIDO = {
-    danger: 'bg-danger-solid border-danger-solid text-white',
-    warning: 'bg-warning-solid border-warning-solid text-white',
-    success: 'bg-success-solid border-success-solid text-white',
-};
-const TRAMO_PUNTO = { danger: 'bg-danger-solid', warning: 'bg-warning-solid', success: 'bg-success-solid' };
-const TRAMO_TEXTO = { danger: 'text-danger-text', warning: 'text-warning-text', success: 'text-success-text' };
+    ${activa ? 'bg-brand text-white border-brand' : 'bg-surface-card border-border-card text-content hover:bg-surface-card-hover'}`;
 
 function Pregunta({ p, valor, falta, onChange, entrevista }) {
     const guion = entrevista ? guionDeEscala(p) : null;
@@ -337,9 +327,10 @@ const COLUMNAS = { 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5', 6: 'gri
 const COLUMNAS_SM = { 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4', 5: 'sm:grid-cols-5', 6: 'sm:grid-cols-6', 7: 'sm:grid-cols-7',
     8: 'sm:grid-cols-8', 9: 'sm:grid-cols-9', 10: 'sm:grid-cols-10', 11: 'sm:grid-cols-11' };
 
-// Una «opción única» de números seguidos (1…10) pintada como escala: cuadrícula,
-// qué es cada punta y lo marcado en palabras. Guarda el id de la opción, igual
-// que la lista de antes (`escalaNumerica`).
+// Toda pregunta de puntaje —recomendación 0–10 y las «opción única» de números
+// seguidos (1…10)— pintada igual: cuadrícula, qué es cada punta y lo marcado en
+// palabras (`escalaDePregunta`). Guarda el id de la opción (en la de
+// recomendación, el número), igual que antes.
 function EscalaNumerica({ escala, valor, onChange }) {
     const { opciones, min, max, etiquetaMin, etiquetaMax } = escala;
     const marcada = opciones.find((o) => o.id === valor);
@@ -349,14 +340,14 @@ function EscalaNumerica({ escala, valor, onChange }) {
             <div className={`grid gap-1 sm:gap-1.5 ${COLUMNAS[porFila]} ${COLUMNAS_SM[opciones.length]}`}>
                 {opciones.map((o) => (
                     <button key={o.id} type="button" aria-pressed={valor === o.id} className={`${opcionCls(valor === o.id)} !px-0`}
-                        onClick={() => onChange(o.id)}>{o.n}</button>
+                        aria-label={`${o.n} de ${max}`} onClick={() => onChange(o.id)}>{o.n}</button>
                 ))}
             </div>
-            {(etiquetaMin || etiquetaMax) && (
-                <div className="flex justify-between gap-3 text-micro text-content-2">
-                    <span>{min} = {etiquetaMin || '—'}</span><span className="text-right">{max} = {etiquetaMax || '—'}</span>
-                </div>
-            )}
+            {/* Las puntas SIEMPRE, y con la misma forma en todas las escalas: es
+                lo que dice en qué sentido va y desde qué número arranca. */}
+            <div className="flex justify-between gap-3 text-micro font-medium text-content-2">
+                <span>{min} = {etiquetaMin || 'lo más bajo'}</span><span className="text-right">{max} = {etiquetaMax || 'lo más alto'}</span>
+            </div>
             {marcada && (
                 <p className="text-body-sm font-semibold text-brand-text" aria-live="polite">
                     Marcó {marcada.n} de {max}{marcada.n === min && etiquetaMin ? `: ${etiquetaMin}` : marcada.n === max && etiquetaMax ? `: ${etiquetaMax}` : ''}.
@@ -368,43 +359,10 @@ function EscalaNumerica({ escala, valor, onChange }) {
 
 function Respuesta({ p, valor, onChange, entrevista }) {
     switch (p.tipo) {
-        case 'nps': {
-            // Cada tramo con su color, en la leyenda y en el botón marcado, y lo
-            // marcado repetido en palabras: con la cuadrícula partida en dos filas
-            // «nada / muy probable» ya no marcaba las puntas (TRAMOS_NPS).
-            const marcado = tramoNps(valor);
-            return (
-                <div className="space-y-2">
-                    {/* En el teléfono, 7 por fila: 0–6 arriba y 7–10 abajo, así cada
-                        fila coincide con su tramo (con 6 por fila el 6, que es
-                        «poco probable», caía en la fila de los buenos). */}
-                    <div className="grid grid-cols-7 sm:grid-cols-11 gap-1 sm:gap-1.5">
-                        {Array.from({ length: 11 }, (_, n) => {
-                            const t = tramoNps(n);
-                            const activa = valor === n;
-                            return (
-                                <button key={n} type="button" aria-pressed={activa} aria-label={`${n} · ${t.label}`}
-                                    className={`${opcionCls(activa, TRAMO_SOLIDO[t.tono])} !px-0`}
-                                    onClick={() => onChange(n)}>{n}</button>
-                            );
-                        })}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-micro text-content-2">
-                        {TRAMOS_NPS.map((t) => (
-                            <span key={t.tono} className="inline-flex items-center gap-1.5">
-                                <span className={`size-2 rounded-full ${TRAMO_PUNTO[t.tono]}`} aria-hidden />
-                                {t.desde}–{t.hasta} {t.label.toLowerCase()}
-                            </span>
-                        ))}
-                    </div>
-                    {marcado && (
-                        <p className={`text-body-sm font-semibold ${TRAMO_TEXTO[marcado.tono]}`} aria-live="polite">
-                            Marcó {valor}: {marcado.label.toLowerCase()} que recomiende la farmacia.
-                        </p>
-                    )}
-                </div>
-            );
-        }
+        case 'nps':
+            // La misma escala que satisfacción y confianza (ver `escalaDePregunta`):
+            // con semáforo y otra cuadrícula parecía que se puntuaba distinto.
+            return <EscalaNumerica escala={escalaDePregunta(p)} valor={valor} onChange={onChange} />;
         case 'csat': {
             // El rótulo va SIEMPRE: en el teléfono iba escondido, y sin él
             // 🙁, 😐 y 🙂 se parecen demasiado.
@@ -450,7 +408,7 @@ function Respuesta({ p, valor, onChange, entrevista }) {
                 </div>
             );
         case 'unica': {
-            const escala = escalaNumerica(p);
+            const escala = escalaDePregunta(p);
             if (escala) return <EscalaNumerica escala={escala} valor={valor} onChange={onChange} />;
             return (
                 <div className="flex flex-col gap-1.5">

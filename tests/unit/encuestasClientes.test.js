@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     cumpleCondicion, recorrido, preguntasEnOrden, primeraSinContestar, quitarPregunta, cambiarTipo,
     muestraSugerida, metaTotal, telefonoValido, textoDeValor, tablaDeRespuestas, lecturaNps, categoriasDe,
-    nuevaOpcion, idNuevo, operadoresPara, tramoNps, guionDeEscala, escalaNumerica,
+    nuevaOpcion, idNuevo, operadoresPara, tramoNps, guionDeEscala, escalaNumerica, escalaDePregunta,
 } from '@nucleo/utils/encuestasClientes';
 
 // El cuestionario de la plantilla «Calidad de la atención», recortado: tiene
@@ -354,5 +354,25 @@ describe('escala escrita como opción única', () => {
     it('guion: sólo si el texto no nombra la escala', () => {
         expect(guionDeEscala(satisf)).toBeNull();
         expect(guionDeEscala({ ...satisf, texto: '¿Qué tan satisfecho está?' })).toBe('Léale la escala: del 1 al 10, donde 1 es «nada satisfecho» y 10 es «muy satisfecho».');
+    });
+});
+
+describe('escalaDePregunta: recomendación y satisfacción se pintan igual', () => {
+    const op = (n) => ({ id: 'v' + n, texto: String(n) });
+    const satisf = { tipo: 'unica', ayuda: '1 = nada satisfecho · 10 = muy satisfecho', opciones: Array.from({ length: 10 }, (_, i) => op(i + 1)) };
+    it('la de recomendación es 0–10, guarda el número y rotula las puntas', () => {
+        const e = escalaDePregunta({ tipo: 'nps' });
+        expect(e).toMatchObject({ min: 0, max: 10, etiquetaMin: 'nada probable', etiquetaMax: 'muy probable' });
+        expect(e.opciones).toHaveLength(11);
+        expect(e.opciones[3]).toMatchObject({ id: 3, n: 3 });
+    });
+    it('con la cuadrícula partida en dos, la segunda fila empieza en el 6 en las dos', () => {
+        const segundaFila = (e) => e.opciones[Math.ceil(e.opciones.length / 2)].n;
+        expect(segundaFila(escalaDePregunta({ tipo: 'nps' }))).toBe(6);
+        expect(segundaFila(escalaDePregunta(satisf))).toBe(6);
+    });
+    it('lo que no es de puntaje no es escala', () => {
+        expect(escalaDePregunta({ tipo: 'texto' })).toBeNull();
+        expect(escalaDePregunta({ tipo: 'unica', opciones: [{ id: 'a', texto: 'Ubicación' }, op(2), op(3)] })).toBeNull();
     });
 });

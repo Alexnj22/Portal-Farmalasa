@@ -329,6 +329,31 @@ export function escalaNumerica(p) {
     return { min, max, etiquetaMin: etiqueta(min), etiquetaMax: etiqueta(max), opciones: ops.map((o, i) => ({ ...o, n: nums[i] })) };
 }
 
+/**
+ * La escala que pinta el formulario para CUALQUIER pregunta de puntaje: la de
+ * recomendación (0–10) y las «opción única» de números seguidos (1–10).
+ *
+ * Una sola forma a propósito (2026-11-14). La de recomendación se pintaba
+ * distinta —semáforo rojo/ámbar/verde, filas 0–6 y 7–10, leyenda de tramos—
+ * y las de satisfacción y confianza en gris con filas 1–5 y 6–10. En la
+ * entrevista eso hacía pensar que se puntuaban distinto: un cliente con
+ * satisfacción 10 quedó anotado con recomendación 3. Ahora las tres tienen la
+ * misma cuadrícula (la segunda fila empieza en el 6 en las dos), el mismo
+ * color al marcar y las puntas rotuladas. Los tramos (`TRAMOS_NPS`) siguen
+ * existiendo para los RESULTADOS, no para capturar.
+ *
+ * Devuelve la forma de `escalaNumerica`; null si la pregunta no es de puntaje.
+ */
+export function escalaDePregunta(p) {
+    if (p?.tipo === 'nps') {
+        return {
+            min: 0, max: 10, etiquetaMin: 'nada probable', etiquetaMax: 'muy probable',
+            opciones: Array.from({ length: 11 }, (_, n) => ({ id: n, n, texto: String(n) })),
+        };
+    }
+    return escalaNumerica(p);
+}
+
 function guionNps(p) {
     if (p?.tipo !== 'nps') return null;
     if (/\b0\b/.test(p.texto || '') && /\b10\b/.test(p.texto || '')) return null;

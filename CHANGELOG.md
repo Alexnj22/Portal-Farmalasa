@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1532.0 — Encuestas: el aviso de cliente insatisfecho sale de la satisfacción, y las escalas se ven iguales
+
+- **El aviso «Cliente insatisfecho» mira la satisfacción, no la recomendación.** Antes salía con recomendación ≤ 6 y mostraba la sugerencia como si fuera la queja: un cliente con satisfacción 10, recomendación 3 y «Lo ve bien» llegaba como «insatisfecho 3/10». Y de los 8 clientes con satisfacción 3–5, sólo uno había avisado. Ahora: satisfacción ≤ 3 de 10 → aviso al momento; 4–5 → un solo aviso a las 9:50 p. m. con los del día. El aviso rotula las tres notas (Satisfacción · Recomendación · Confianza) y el comentario como «Sugiere: …». Una encuesta sin pregunta de satisfacción usa la recomendación y lo dice («no recomendaría»). Migración `20261114152309`, cron `encuestas-quejas-del-dia`.
+- **Las tres escalas se ven iguales en el formulario** (portal y app): la de recomendación ya no lleva semáforo rojo/ámbar/verde ni filas 0–6 / 7–10; tiene la misma cuadrícula que satisfacción y confianza (la segunda fila empieza en el 6 en las tres), el mismo color al marcar y las puntas rotuladas («0 = nada probable · 10 = muy probable»). Con dos formas distintas parecía que se puntuaban distinto.
+
+
 ## v2.1531.3 — Personal: las bajas sólo en «De baja»; el motivo de baja ya no se corta
 
 En Personal → Equipos, quien renunció o fue despedido ya no aparece en «Todos» ni en «Ausentes»: está en la vista nueva **De baja**, que es donde se lo busca para reincorporarlo. Y la etiqueta del motivo de baja («Despido con indemnización · 31/08/2026») baja de línea en vez de cortarse.

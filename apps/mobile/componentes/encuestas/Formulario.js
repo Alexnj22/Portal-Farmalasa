@@ -12,14 +12,11 @@ import { Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
-import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala, escalaNumerica } from '@nucleo/utils/encuestasClientes';
+import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, guionDeEscala, escalaDePregunta } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion, Vacio } from '../formulario/Piezas';
 import { FONDO_CONTROL, MARCA } from '../inicio/marca';
-
-// El color de cada tramo del NPS (TRAMOS_NPS dice el nombre; acá, el color).
-const COLOR_TRAMO = { danger: MARCA.rojo, warning: MARCA.ambar, success: MARCA.verde };
 
 function Opcion({ activa, onPress, children, ancho, color = MARCA.azul, etiqueta }) {
   return (
@@ -35,35 +32,37 @@ function Opcion({ activa, onPress, children, ancho, color = MARCA.azul, etiqueta
   );
 }
 
+// Toda pregunta de puntaje —recomendación 0–10 y las «opción única» de números
+// seguidos (1…10)— pintada igual que en el portal: mismas filas (la segunda
+// empieza en el 6 en las dos), mismo color al marcar y las puntas SIEMPRE.
+function Escala({ e, valor, onChange }) {
+  const marcada = e.opciones.find((o) => o.id === valor);
+  const mitad = e.opciones.length > 6 ? Math.ceil(e.opciones.length / 2) : e.opciones.length;
+  const filas = [e.opciones.slice(0, mitad), e.opciones.slice(mitad)].filter((f) => f.length);
+  const punta = marcada && marcada.n === e.min && e.etiquetaMin ? `: ${e.etiquetaMin}` : marcada && marcada.n === e.max && e.etiquetaMax ? `: ${e.etiquetaMax}` : '';
+  return (
+    <View style={{ gap: 6 }}>
+      {filas.map((f, i) => (
+        <View key={i} style={{ flexDirection: 'row', gap: 6 }}>{f.map((o) => (
+          <View key={o.id} style={{ flex: 1, maxWidth: 64 }}><Opcion activa={valor === o.id} ancho={0} etiqueta={`${o.n} de ${e.max}`} onPress={() => onChange(o.id)}>{String(o.n)}</Opcion></View>
+        ))}</View>
+      ))}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '500' }}>{`${e.min} = ${e.etiquetaMin || 'lo más bajo'}`}</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '500', textAlign: 'right' }}>{`${e.max} = ${e.etiquetaMax || 'lo más alto'}`}</Text>
+      </View>
+      {marcada ? <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Marcó ${marcada.n} de ${e.max}${punta}.`}</Text> : null}
+    </View>
+  );
+}
+
 function Respuesta({ p, valor, onChange }) {
   const fila = { flexDirection: 'row', flexWrap: 'wrap', gap: 8 };
   switch (p.tipo) {
-    case 'nps': {
-      // Mismo criterio que el portal: cada tramo con su color y lo marcado en
-      // palabras, porque la fila del 0 al 10 se parte en dos en el teléfono.
-      const marcado = tramoNps(valor);
-      return (
-        <View style={{ gap: 8 }}>
-          {/* Dos filas fijas, 0–6 y 7–10: cada fila es un tramo. */}
-          {[[0, 6], [7, 10]].map(([a, z]) => (
-            <View key={a} style={{ flexDirection: 'row', gap: 6 }}>{Array.from({ length: z - a + 1 }, (_, k) => {
-              const n = a + k;
-              const t = tramoNps(n);
-              return <View key={n} style={{ flex: 1, maxWidth: 52 }}><Opcion activa={valor === n} color={COLOR_TRAMO[t.tono]} etiqueta={`${n} · ${t.label}`} ancho={0} onPress={() => onChange(n)}>{String(n)}</Opcion></View>;
-            })}</View>
-          ))}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4 }}>
-            {TRAMOS_NPS.map((t) => (
-              <View key={t.tono} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_TRAMO[t.tono] }} />
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${t.desde}–${t.hasta} ${t.label.toLowerCase()}`}</Text>
-              </View>
-            ))}
-          </View>
-          {marcado ? <Text style={{ color: COLOR_TRAMO[marcado.tono], fontSize: 14, fontWeight: '600' }}>{`Marcó ${valor}: ${marcado.label.toLowerCase()} que recomiende la farmacia.`}</Text> : null}
-        </View>
-      );
-    }
+    case 'nps':
+      // La misma escala que satisfacción y confianza (`escalaDePregunta`): con
+      // semáforo y filas 0–6 / 7–10 parecía que se puntuaba distinto.
+      return <Escala e={escalaDePregunta(p)} valor={valor} onChange={onChange} />;
     case 'csat': {
       // Con su rótulo: sin él 🙁, 😐 y 🙂 se parecen demasiado.
       const marcada = CARITAS.find((c) => c.valor === valor);
@@ -86,28 +85,8 @@ function Respuesta({ p, valor, onChange }) {
     case 'si_no':
       return <View style={fila}>{[[true, 'Sí'], [false, 'No']].map(([v, l]) => <Opcion key={l} activa={valor === v} onPress={() => onChange(v)} ancho={100}>{l}</Opcion>)}</View>;
     case 'unica': {
-      const e = escalaNumerica(p);
-      if (e) {
-        const marcada = e.opciones.find((o) => o.id === valor);
-        const mitad = e.opciones.length > 6 ? Math.ceil(e.opciones.length / 2) : e.opciones.length;
-        const filas = [e.opciones.slice(0, mitad), e.opciones.slice(mitad)].filter((f) => f.length);
-        return (
-          <View style={{ gap: 6 }}>
-            {filas.map((f, i) => (
-              <View key={i} style={{ flexDirection: 'row', gap: 6 }}>{f.map((o) => (
-                <View key={o.id} style={{ flex: 1, maxWidth: 64 }}><Opcion activa={valor === o.id} ancho={0} onPress={() => onChange(o.id)}>{String(o.n)}</Opcion></View>
-              ))}</View>
-            ))}
-            {e.etiquetaMin || e.etiquetaMax ? (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${e.min} = ${e.etiquetaMin || '—'}`}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'right' }}>{`${e.max} = ${e.etiquetaMax || '—'}`}</Text>
-              </View>
-            ) : null}
-            {marcada ? <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{`Marcó ${marcada.n} de ${e.max}.`}</Text> : null}
-          </View>
-        );
-      }
+      const e = escalaDePregunta(p);
+      if (e) return <Escala e={e} valor={valor} onChange={onChange} />;
       return <View style={{ gap: 6 }}>{opcionesConTexto(p).map((o) => <Opcion key={o.id} activa={valor === o.id} onPress={() => onChange(o.id)}>{o.texto}</Opcion>)}</View>;
     }
     case 'multiple': {

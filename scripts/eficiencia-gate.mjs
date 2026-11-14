@@ -740,6 +740,13 @@ const CRONS = [
           + '`functions/v1/`, así que si no está escrito no lo vigila nadie.',
   },
   {
+    job: 'encuestas-quejas-del-dia', slug: null, cadencia: '50 3 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Encuestas a clientes (2026-11-14): a las 21:50 SV junta en UN aviso por persona a los '
+          + 'clientes poco satisfechos del día (satisfacción 4–5 de 10, y lo grave que el freno de '
+          + 'ráfaga no avisó al momento). Un SELECT de las respuestas del día (decenas). Sólo la base propia.',
+  },
+  {
     job: 'encuestas-cerrar-vencidas', slug: null, cadencia: '10 6 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: a las 00:10 SV cierra las encuestas a clientes publicadas cuya fecha de '

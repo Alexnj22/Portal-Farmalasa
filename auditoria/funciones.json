@@ -6508,6 +6508,21 @@
    "area": "bitacoras",
    "por": "manual",
    "manual": true
+  },
+  "encuesta_cliente_nota": {
+   "area": "encuestas-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "encuesta_cliente_queja": {
+   "area": "encuestas-clientes",
+   "por": "manual",
+   "manual": true
+  },
+  "encuesta_cliente_avisar_quejas_del_dia": {
+   "area": "encuestas-clientes",
+   "por": "manual",
+   "manual": true
   }
  }
 }

@@ -676,7 +676,7 @@ export const AREAS = [
                  'encuesta_cliente_respuestas', 'encuesta_cliente_incentivos', 'encuesta_cliente_resumenes',
                  'encuesta_cliente_lecturas'],
         edge: [],
-        crons: ['encuestas-cerrar-vencidas'],
+        crons: ['encuestas-cerrar-vencidas', 'encuestas-quejas-del-dia'],
         docs: ['docs/planes-cerrados/PLAN-ENCUESTAS-A-CLIENTES-2026-10-01.md'],
     },
     {

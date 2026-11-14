@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1534.2 — Baja: lo que falta lleva al campo y la devolución va artículo por artículo
+
+- **Lo que falta, a la vista.** Al elegir el motivo de la baja aparece una tarjeta con el avance («3 de 6 listos») y una pastilla por requisito —fechas, fuero, causal, observaciones, respaldo—. Tocar una lleva al campo, lo centra y lo hace destellar. El siguiente que falta dice debajo del campo qué le falta.
+- **El aviso del pie es un botón.** «Falta el último día que trabajó. Ir al campo» lleva hasta él (también en las demás novedades cuando falta la observación o el respaldo).
+- **Devolución artículo por artículo.** «Devolvió carné, uniforme, llaves y equipo» era una sola casilla: quien devolvía todo menos el uniforme no tenía respuesta. Ahora cada uno es Devuelto / Pendiente / No tenía, y lo pendiente se resume («Pendiente: uniforme»). La casilla vieja se sigue guardando y queda marcada sólo si no falta nada. También en la app.
+- El bloque se partió en secciones (fechas y requisitos, respaldo, liquidación con el total arriba, cierre con su avance) en vez de una sola caja roja.
+
 ## v2.1534.1 — Datos de mercado: la ventana de elegir producto ya se desplaza
 
 - En **Cumplimiento → Datos de mercado**, la ventana «Elegir otro» no se podía desplazar: con muchos resultados del catálogo de la SRS, los de abajo y el botón Cerrar quedaban fuera de la pantalla. Ahora tiene cabecera y pie fijos y la lista se desplaza en el medio.

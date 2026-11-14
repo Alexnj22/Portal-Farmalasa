@@ -12,7 +12,7 @@ import Interruptor from '../Interruptor';
 import { TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
 import {
   CAUSALES_ART_50, DIAS_DE_LA_SEMANA, DOCUMENTO_DE_BAJA, SALARIO_MINIMO_INICIAL,
-  avisosDeBaja, diasDePreaviso, liquidacionEstimada, pendientesDeBaja,
+  avisosDeBaja, diasDePreaviso, liquidacionEstimada, pendientesDeBaja, estadoDeActivos, conActivo,
 } from '@nucleo/utils/bajaLegal';
 import { htmlDeActaYCarta } from '@nucleo/utils/papelDeBaja';
 import { registrarEgreso } from '@nucleo/data/egreso';
@@ -28,6 +28,31 @@ import Fecha from '../formulario/Fecha';
 import { MARCA } from '../inicio/marca';
 
 const larga = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
+
+// Lo que se le entregó, artículo por artículo (gemelo del segmentado de la
+// web): con una sola casilla no había respuesta para «devolvió todo menos el
+// uniforme» (2026-11-14).
+const DEVOLUCION = [
+  { id: 'SI', label: 'Devuelto', color: colorSistema.verde },
+  { id: 'NO', label: 'Pendiente', color: colorSistema.naranja },
+  { id: 'NA', label: 'No tenía', color: colorSistema.texto2 },
+];
+function Devolucion({ valor, onCambiar }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 6 }}>
+      {DEVOLUCION.map((o) => {
+        const activa = valor === o.id;
+        return (
+          <Pressable key={o.id} onPress={() => onCambiar(o.id)} accessibilityRole="radio" accessibilityState={{ selected: activa }}
+            style={{ minHeight: 36, paddingHorizontal: 10, borderRadius: 18, justifyContent: 'center',
+              borderWidth: 1, borderColor: activa ? o.color : colorSistema.separador, backgroundColor: activa ? o.color : 'transparent' }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: activa ? '#fff' : colorSistema.texto2 }}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 function Fila({ rotulo, children }) {
   return (
@@ -217,6 +242,12 @@ export default function BajaLegal({ f, pon, emp }) {
           </Seccion>
 
           <Seccion titulo="Cierre" pie="Se puede completar después, corrigiendo la baja desde el historial.">
+            {estadoDeActivos(f).items.map((a) => (
+              <View key={a.clave} style={{ minHeight: 44, paddingVertical: 6, gap: 6 }}>
+                <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{a.texto}</Text>
+                <Devolucion valor={a.estado} onCambiar={(v) => pon(conActivo(f, a.clave, v))} />
+              </View>
+            ))}
             {pendientesDeBaja(motivo).map((p) => (
               <Fila key={p.clave} rotulo={p.texto}><Interruptor value={!!f[p.clave]} onValueChange={(v) => pon({ [p.clave]: v })} /></Fila>
             ))}

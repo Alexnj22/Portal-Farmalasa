@@ -137,3 +137,28 @@ describe('ultimaBajaPorPersona', () => {
         expect(m.get('7')).toEqual({ id: 3, motivo: 'DESPIDO_SIN_RESPONSABILIDAD', fecha: '2026-10-01', sucursalId: 2, cargoId: null });
     });
 });
+
+describe('lo que falta y la devolución por artículo (2026-11-14)', () => {
+    it('cada requisito dice su campo, y el primero que falta es el del pie', async () => {
+        const { requisitosDeBaja, primerProblemaDeBaja } = await import('@nucleo/utils/bajaLegal');
+        const d = { ...comun, terminationReason: 'RENUNCIA', ultimoDiaLaborado: '' };
+        const req = requisitosDeBaja(d, emp);
+        expect(req.map((r) => r.campo)).toEqual(['terminationReason', 'ultimoDiaLaborado', 'hojaRenunciaExpedida', 'renunciaPresentada']);
+        expect(req.filter((r) => r.problema).length).toBe(3);
+        expect(primerProblemaDeBaja(d, emp).campo).toBe('ultimoDiaLaborado');
+        expect(validarNovedad({ formData: d, empleado: emp }).campo).toBe('ultimoDiaLaborado');
+    });
+    it('devolvió todo menos el uniforme: queda pendiente y entregoActivos es false', async () => {
+        const { conActivo, estadoDeActivos } = await import('@nucleo/utils/bajaLegal');
+        let d = {};
+        for (const [k, v] of [['carne', 'SI'], ['uniforme', 'NO'], ['llaves', 'NA'], ['equipo', 'SI']]) d = { ...d, ...conActivo(d, k, v) };
+        expect(d.entregoActivos).toBe(false);
+        expect(estadoDeActivos(d).pendientes.map((a) => a.clave)).toEqual(['uniforme']);
+        d = { ...d, ...conActivo(d, 'uniforme', 'SI') };
+        expect(d.entregoActivos).toBe(true);
+    });
+    it('una baja vieja con la casilla única marcada se lee como todo devuelto', async () => {
+        const { estadoDeActivos } = await import('@nucleo/utils/bajaLegal');
+        expect(estadoDeActivos({ entregoActivos: true }).completo).toBe(true);
+    });
+});

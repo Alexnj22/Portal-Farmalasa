@@ -74,7 +74,9 @@ export const DIAS_DE_LA_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'J
 /** Lo que queda por hacer después de la baja. No frena el registro: se anota. */
 export const PENDIENTES_DE_BAJA = [
     { clave: 'hasFiniquito', texto: 'Finiquito pagado y firmado' },
-    { clave: 'entregoActivos', texto: 'Devolvió carné, uniforme, llaves y equipo' },
+    // La devolución de lo que se le entregó va APARTE, artículo por artículo
+    // (`ACTIVOS_DE_BAJA`): una sola casilla «carné, uniforme, llaves y equipo»
+    // no tenía respuesta cuando devolvía todo menos el uniforme (2026-11-14).
     { clave: 'avisoIsssAfp', texto: 'Aviso de retiro presentado al ISSS y a la AFP' },
     { clave: 'constanciaEntregada', texto: 'Constancia de trabajo entregada' },
     // Art. 55 CT: el despido comunicado por otra persona y sin escrito firmado
@@ -86,6 +88,39 @@ export const PENDIENTES_DE_BAJA = [
 
 /** Los pendientes que aplican a ese motivo. */
 export const pendientesDeBaja = (motivo) => PENDIENTES_DE_BAJA.filter((p) => !p.motivos || p.motivos.includes(motivo));
+
+/**
+ * Lo que se le entregó y tiene que devolver, uno por uno. Cada artículo tiene
+ * tres respuestas: `SI` (lo devolvió), `NO` (queda pendiente) o `NA` (nunca se
+ * le entregó). Se guarda en `activosDevueltos: { carne: 'SI', … }`.
+ */
+export const ACTIVOS_DE_BAJA = [
+    { clave: 'carne', texto: 'Carné' },
+    { clave: 'uniforme', texto: 'Uniforme' },
+    { clave: 'llaves', texto: 'Llaves' },
+    { clave: 'equipo', texto: 'Equipo', detalle: 'computadora, teléfono, herramientas' },
+];
+
+/**
+ * El estado de la devolución. `entregoActivos` (la casilla vieja) sigue
+ * existiendo en `metadata`: queda en true sólo si no falta nada. Una baja vieja
+ * con `entregoActivos: true` y sin el detalle se lee como todo devuelto.
+ */
+export function estadoDeActivos(d = {}) {
+    const guardado = d?.activosDevueltos || {};
+    const viejo = d?.entregoActivos === true && !d?.activosDevueltos;
+    const items = ACTIVOS_DE_BAJA.map((a) => ({ ...a, estado: viejo ? 'SI' : (guardado[a.clave] || null) }));
+    const respondidos = items.filter((i) => i.estado).length;
+    const pendientes = items.filter((i) => i.estado === 'NO');
+    const sinResponder = items.filter((i) => !i.estado);
+    return { items, respondidos, pendientes, sinResponder, completo: sinResponder.length === 0 && pendientes.length === 0 };
+}
+
+/** El cambio de UN artículo, con `entregoActivos` recalculado. Lo usan la web y la app. */
+export function conActivo(d = {}, clave, estado) {
+    const activosDevueltos = { ...(d?.activosDevueltos || estadoDeActivos(d).items.reduce((o, i) => (i.estado ? { ...o, [i.clave]: i.estado } : o), {})), [clave]: estado };
+    return { activosDevueltos, entregoActivos: estadoDeActivos({ activosDevueltos }).completo };
+}
 
 /**
  * ¿El respaldo es obligatorio para registrar la baja? En el abandono NO: quien
@@ -127,6 +162,99 @@ export function incapacidadVigente(historial = [], dia) {
     }) || null;
 }
 
+/** El nombre corto de cada campo, para la lista de lo que falta. */
+export const ROTULOS_DE_BAJA = {
+    terminationReason: 'Motivo legal',
+    ultimoDiaLaborado: 'Último día que trabajó',
+    fueroDeclarado: '¿Tiene fuero?',
+    hojaRenunciaExpedida: 'Fecha de la hoja oficial',
+    renunciaPresentada: 'Fecha en que la presentó',
+    causalArt50: 'Causal del Art. 50',
+    fechaDeLosHechos: 'Fecha de los hechos',
+    pruebas: 'Pruebas de la causal',
+    diasDeAusencia: 'Días que faltó',
+    intentoDeContacto: 'Intento de contacto',
+};
+
+/**
+ * Cada comprobación de la baja, EN ORDEN, con el campo al que pertenece y el
+ * problema (o null). El orden es el de la pantalla: el primer problema es el
+ * que se dice en el pie, y su `campo` es a donde lleva el clic (2026-11-14).
+ */
+function comprobacionesDeBaja(d = {}, empleado = {}) {
+    const lista = [];
+    const exigir = (campo, problema) => lista.push({ campo, problema: problema || null });
+    const motivo = d.terminationReason;
+    exigir('terminationReason', motivo ? null : 'Elige el motivo legal de la baja.');
+    if (!motivo) return lista;
+
+    exigir('ultimoDiaLaborado', !fecha(d.ultimoDiaLaborado) ? 'Falta el último día que trabajó.'
+        : (d.date && d.ultimoDiaLaborado > d.date) ? 'El último día trabajado no puede ser después de la fecha de baja.' : null);
+
+    const esDespido = motivo === 'DESPIDO_SIN_RESPONSABILIDAD' || motivo === 'DESPIDO_CON_RESPONSABILIDAD' || motivo === 'ABANDONO';
+    if (esDespido) {
+        exigir('fueroDeclarado', (d.fueroDeclarado !== 'NO' && d.fueroDeclarado !== 'SI')
+            ? 'Responde si tiene fuero: embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical.'
+            : d.fueroDeclarado === 'SI'
+                ? 'Con fuero (embarazo y los 6 meses después del postnatal, incapacidad vigente o directiva sindical) el despido no termina el contrato (Arts. 113 y 248 CT). Consúltalo con el abogado antes de registrarlo.'
+                : null);
+    }
+
+    if (motivo === 'RENUNCIA') {
+        exigir('hojaRenunciaExpedida', fecha(d.hojaRenunciaExpedida) ? null : 'Falta la fecha de expedición de la hoja oficial de renuncia.');
+        let p = null;
+        if (!fecha(d.renunciaPresentada)) p = 'Falta la fecha en que presentó la renuncia.';
+        else if (fecha(d.hojaRenunciaExpedida)) {
+            const n = dias(d.hojaRenunciaExpedida, d.renunciaPresentada);
+            if (n < 0) p = 'La renuncia no se puede presentar antes de que se expida la hoja.';
+            else if (n > 10) p = `La hoja se presentó ${n} días después de expedida: sólo vale dentro de los 10 días (Art. 402 CT). Hay que pedir una hoja nueva.`;
+        }
+        exigir('renunciaPresentada', p);
+    }
+
+    if (motivo === 'DESPIDO_SIN_RESPONSABILIDAD') {
+        const causal = Number(d.causalArt50);
+        exigir('causalArt50', CAUSALES_ART_50.some((c) => c.n === causal) ? null : 'Elige la causal del Art. 50 CT.');
+        exigir('fechaDeLosHechos', fecha(d.fechaDeLosHechos) ? null : 'Falta la fecha de los hechos.');
+        exigir('pruebas', String(d.pruebas || '').trim().length < 15 ? 'Describe las pruebas de la causal (actas, testigos, sanciones previas, cámaras).' : null);
+        const ingreso = empleado?.hire_date || empleado?.hireDate;
+        exigir('causalArt50', (causal === 1 && ingreso && d.date && dias(ingreso, d.date) > 30)
+            ? 'La causal 1 sólo vale dentro de los primeros 30 días de trabajo.' : null);
+        if (causal === 12) {
+            exigir('diasDeAusencia', ausenciasConfiguranCausal(d.diasDeAusencia, d.diaDeDescanso) ? null
+                : 'Para la causal 12 marca las ausencias: 2 días laborales seguidos (si en medio está su día de descanso, dilo arriba), o 3 en un mismo mes.');
+        }
+    }
+
+    if (motivo === 'ABANDONO') {
+        exigir('diasDeAusencia', ausenciasConfiguranCausal(d.diasDeAusencia, d.diaDeDescanso) ? null
+            : 'Marca los días que faltó: 2 días laborales seguidos (si en medio está su día de descanso, dilo arriba), o 3 en un mismo mes.');
+        exigir('intentoDeContacto', String(d.intentoDeContacto || '').trim().length < 10 ? 'Anota cómo se le intentó contactar (llamadas, mensajes, visita) y cuándo.' : null);
+    }
+    return lista;
+}
+
+/**
+ * Lo que la baja exige, un renglón por campo y en el orden de la pantalla:
+ * `{ campo, rotulo, problema }` (`problema` null = listo). Es la lista de
+ * «lo que falta» que se ve arriba del formulario.
+ */
+export function requisitosDeBaja(d = {}, empleado = {}) {
+    const porCampo = new Map();
+    for (const c of comprobacionesDeBaja(d, empleado)) {
+        const previo = porCampo.get(c.campo);
+        if (!previo) porCampo.set(c.campo, { campo: c.campo, rotulo: ROTULOS_DE_BAJA[c.campo] || c.campo, problema: c.problema });
+        else if (!previo.problema && c.problema) previo.problema = c.problema;
+    }
+    return [...porCampo.values()];
+}
+
+/** El primer problema de la baja con su campo, o null. */
+export function primerProblemaDeBaja(d = {}, empleado = {}) {
+    const c = comprobacionesDeBaja(d, empleado).find((x) => x.problema);
+    return c ? { campo: c.campo, problema: c.problema } : null;
+}
+
 /**
  * Lo que impide guardar la baja, o null. Los campos vacíos devuelven un motivo
  * corto: en una baja conviene decir QUÉ falta, no sólo apagar el botón.
@@ -135,48 +263,7 @@ export function incapacidadVigente(historial = [], dia) {
  * @param {object} [empleado]
  */
 export function problemaDeBaja(d = {}, empleado = {}) {
-    const motivo = d.terminationReason;
-    if (!motivo) return 'Elige el motivo legal de la baja.';
-    if (!fecha(d.ultimoDiaLaborado)) return 'Falta el último día que trabajó.';
-    if (d.date && d.ultimoDiaLaborado > d.date) return 'El último día trabajado no puede ser después de la fecha de baja.';
-
-    const esDespido = motivo === 'DESPIDO_SIN_RESPONSABILIDAD' || motivo === 'DESPIDO_CON_RESPONSABILIDAD' || motivo === 'ABANDONO';
-    if (esDespido) {
-        if (d.fueroDeclarado !== 'NO' && d.fueroDeclarado !== 'SI') {
-            return 'Responde si tiene fuero: embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical.';
-        }
-        if (d.fueroDeclarado === 'SI') {
-            return 'Con fuero (embarazo y los 6 meses después del postnatal, incapacidad vigente o directiva sindical) el despido no termina el contrato (Arts. 113 y 248 CT). Consúltalo con el abogado antes de registrarlo.';
-        }
-    }
-
-    if (motivo === 'RENUNCIA') {
-        if (!fecha(d.hojaRenunciaExpedida)) return 'Falta la fecha de expedición de la hoja oficial de renuncia.';
-        if (!fecha(d.renunciaPresentada)) return 'Falta la fecha en que presentó la renuncia.';
-        const n = dias(d.hojaRenunciaExpedida, d.renunciaPresentada);
-        if (n < 0) return 'La renuncia no se puede presentar antes de que se expida la hoja.';
-        if (n > 10) return `La hoja se presentó ${n} días después de expedida: sólo vale dentro de los 10 días (Art. 402 CT). Hay que pedir una hoja nueva.`;
-    }
-
-    if (motivo === 'DESPIDO_SIN_RESPONSABILIDAD') {
-        const causal = Number(d.causalArt50);
-        if (!CAUSALES_ART_50.some((c) => c.n === causal)) return 'Elige la causal del Art. 50 CT.';
-        if (!fecha(d.fechaDeLosHechos)) return 'Falta la fecha de los hechos.';
-        if (String(d.pruebas || '').trim().length < 15) return 'Describe las pruebas de la causal (actas, testigos, sanciones previas, cámaras).';
-        const ingreso = empleado?.hire_date || empleado?.hireDate;
-        if (causal === 1 && ingreso && d.date && dias(ingreso, d.date) > 30) {
-            return 'La causal 1 sólo vale dentro de los primeros 30 días de trabajo.';
-        }
-        if (causal === 12 && !ausenciasConfiguranCausal(d.diasDeAusencia, d.diaDeDescanso)) {
-            return 'Para la causal 12 marca las ausencias: 2 días laborales seguidos (si en medio está su día de descanso, dilo arriba), o 3 en un mismo mes.';
-        }
-    }
-
-    if (motivo === 'ABANDONO') {
-        if (!ausenciasConfiguranCausal(d.diasDeAusencia, d.diaDeDescanso)) return 'Marca los días que faltó: 2 días laborales seguidos (si en medio está su día de descanso, dilo arriba), o 3 en un mismo mes.';
-        if (String(d.intentoDeContacto || '').trim().length < 10) return 'Anota cómo se le intentó contactar (llamadas, mensajes, visita) y cuándo.';
-    }
-    return null;
+    return primerProblemaDeBaja(d, empleado)?.problema ?? null;
 }
 
 /** Días entre la renuncia presentada y la fecha de baja, o null si falta una. */

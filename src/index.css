@@ -4357,3 +4357,17 @@ html[data-en-pestana] #main-scroll {
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--saly-atencion-2) 22%, transparent);
 }
 @media (prefers-reduced-motion: reduce) { .saly-cuerpo, .saly-ojos, .saly-anillo, .saly-mota, .saly-toque::before { animation: none; } }
+
+/* ── `data-destello`: el campo al que se llegó desde «lo que falta» ──────────
+   Lo pone `irAlCampo` (src/plataforma/irAlCampo.js) por 1.6 s. Va con
+   `outline` y no con `box-shadow`: el campo puede ser una tarjeta, y la
+   tarjeta ya declara su sombra. */
+@keyframes destello-campo {
+  0%, 100% { outline-color: transparent; }
+  25%, 60% { outline-color: var(--warning); }
+}
+[data-destello] {
+  outline: 2px solid transparent; outline-offset: 4px; border-radius: 0.875rem;
+  animation: destello-campo 1.6s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) { [data-destello] { animation: none; outline-color: var(--warning); } }

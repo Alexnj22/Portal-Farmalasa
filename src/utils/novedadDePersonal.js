@@ -6,7 +6,7 @@
 // `registerEmployeeEvent` / `editEmployeeEvent` del store.
 import { EVENT_TYPES } from '../data/constants';
 import { buscarCargo } from './roles';
-import { problemaDeBaja, respaldoDeBajaObligatorio } from './bajaLegal';
+import { primerProblemaDeBaja, respaldoDeBajaObligatorio } from './bajaLegal';
 
 /** Las acciones que se ofrecen: los turnos van por Horarios y las sanciones por su propio diálogo. */
 export const opcionesDeNovedad = () => Object.keys(EVENT_TYPES)
@@ -145,14 +145,15 @@ export function validarNovedad({ formData = {}, empleado, empleados = [], roles 
     // Lo que la ley pide según el motivo (hoja de renuncia, causal, ausencias,
     // fuero…): `problemaDeBaja` dice QUÉ falta (2026-11-11).
     if (r.esBaja) {
-        const falta = problemaDeBaja(formData, empleado);
-        if (falta) return { ok: false, motivo: falta };
+        // `campo`: a dónde lleva el clic en el aviso del pie (2026-11-14).
+        const falta = primerProblemaDeBaja(formData, empleado);
+        if (falta) return { ok: false, motivo: falta.problema, campo: falta.campo };
     }
     if (r.esCodigo && !formData.newCode) return { ok: false, motivo: null };
     if (r.esCodigo && formData.hasConflict) return { ok: false, motivo: 'El código ya está en uso por otro empleado.' };
     // Se decía en silencio: el botón quedaba apagado sin explicar por qué, y
     // con todo lo demás lleno nadie adivinaba que faltaban las observaciones.
-    if (!formData.note || !formData.note.trim()) return { ok: false, motivo: 'Escribe las observaciones o la justificación.' };
+    if (!formData.note || !formData.note.trim()) return { ok: false, motivo: 'Escribe las observaciones o la justificación.', campo: 'note' };
     return { ok: true, motivo: null };
 }
 

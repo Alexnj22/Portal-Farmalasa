@@ -132,12 +132,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // ============================================================================
     useEffect(() => {
         if (typeof onValidationChange !== 'function') return;
-        const { ok, motivo } = validarNovedad({ formData, empleado: activeEmployee, empleados: employees, roles, asuetos: holidays });
+        const { ok, motivo, campo } = validarNovedad({ formData, empleado: activeEmployee, empleados: employees, roles, asuetos: holidays });
         // El respaldo decía «(Obligatorio)» y se podía guardar sin él: la app
         // ya lo exigía y la web no (2026-11-11). Al corregir una novedad no se
         // pide de nuevo: el archivo ya está en el historial.
         const faltaRespaldo = ok && respaldoObligatorio(formData?.type, formData) && !formData?.file && !formData?._editingEventId;
-        onValidationChange(ok && !faltaRespaldo, faltaRespaldo ? 'Falta adjuntar el respaldo.' : motivo);
+        // El tercer dato es el CAMPO que falta: el aviso del pie lleva hasta él.
+        onValidationChange(ok && !faltaRespaldo, faltaRespaldo ? 'Falta adjuntar el respaldo.' : motivo, faltaRespaldo ? 'file' : (campo ?? null));
     }, [formData, activeEmployee, employees, roles, holidays, onValidationChange]);
     const actionOptions = useMemo(() => opcionesDeNovedad(), []);
     const branchOptions = useMemo(() => {
@@ -583,7 +584,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {type && (
                 <>
-                    <div>
+                    {/* `data-campo`: a dónde llevan «lo que falta» y el aviso del pie (irAlCampo). */}
+                    <div data-campo="note">
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-content-3" size={14} strokeWidth={2.5}/>
@@ -601,6 +603,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         y los tipos permitidos eran validaciones a mano acá; ahora
                         son props, y el aviso de error se muestra en la fila en vez
                         de abrir un modal encima del formulario. */}
+                    <div data-campo="file">
                     <FileField
                         label={`Soporte Digital ${respaldoObligatorio(formData?.type, formData) ? '(Obligatorio)' : '(Opcional)'}`}
                         accept=".pdf,image/jpeg,image/png,image/webp"
@@ -610,6 +613,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
                         hint={`Adjuntá ${isDisability ? 'la boleta médica' : isTermination ? (DOCUMENTO_DE_BAJA[formData?.terminationReason] || 'el respaldo de la baja') : 'el respaldo'} — PDF, JPG o PNG`}
                     />
+                    </div>
                 </>
             )}
 

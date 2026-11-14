@@ -13,6 +13,7 @@ import AvatarConEstado from './common/AvatarConEstado';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { LoadingState } from './common/StateViews';
 import useMontadoParaSalida from '../plataforma/useMontadoParaSalida';
+import { irAlCampo } from '../plataforma/irAlCampo';
 import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { CATEGORIAS_DOCUMENTO } from './common/catalogos/constantes';
@@ -307,6 +308,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
      * Un botón apagado que no dice qué falta es indistinguible de uno roto, y
      * peor todavía cuando la condición la creó el portal solo. */
     const [motivoNoGuardable, setMotivoNoGuardable] = useState(null);
+    // El campo al que pertenece ese motivo (sólo las novedades lo dicen): el
+    // aviso del pie se vuelve un botón que lleva hasta él (2026-11-14).
+    const [campoNoGuardable, setCampoNoGuardable] = useState(null);
     const [empActiveTab, setEmpActiveTab] = useState('personal');
     const scrollRef = useRef(null);
 
@@ -315,6 +319,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         setIsSaving(false);
         setIsFormValid(true);
         setMotivoNoGuardable(null);
+        setCampoNoGuardable(null);
         setEmpActiveTab('personal');
     }, [type, isOpen]);
 
@@ -1133,7 +1138,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "editBranchInmueble" && <FormSucursal formData={formData} setFormData={setFormData} section="inmueble" />}
                                 {type === "editBranchServicios" && <FormSucursal formData={formData} setFormData={setFormData} section="servicios" />}
 
-                                {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} onValidationChange={(ok, motivo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); }} />}
+                                {type === "newEvent" && <FormNovedad formData={formData} setFormData={setFormData} branches={branches} activeEmployee={activeEmployee} onValidationChange={(ok, motivo, campo) => { setIsFormValid(ok); setMotivoNoGuardable(motivo ?? null); setCampoNoGuardable(campo ?? null); }} />}
                                 
                                 {type === "uploadDocument" && <FormUploadOnly formData={formData} setFormData={setFormData} />}
                                 {type === "viewRoleEmployees" && <FormRoleEmployees formData={formData} />}
@@ -1245,9 +1250,16 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 puede ser legal —la hoja de renuncia vencida, la causal
                                 que falta— y sin esto el botón sólo aparecía apagado
                                 (2026-11-11). Igual que en la ficha del empleado. */}
-                            {!isFormValid && !isSaving && motivoNoGuardable && (
+                            {!isFormValid && !isSaving && motivoNoGuardable && (campoNoGuardable ? (
+                                <Button variant="ghost" size="sm" icon={AlertCircle} aria-live="polite"
+                                    className="min-w-0 flex-1 justify-start h-auto py-1.5 text-left whitespace-normal text-warning-text hover:text-warning-text"
+                                    title="Ir a ese campo"
+                                    onClick={() => irAlCampo(campoNoGuardable, document.getElementById('unified-modal-form') || document)}>
+                                    <span className="min-w-0 text-label font-semibold leading-snug">{motivoNoGuardable} <span className="underline underline-offset-2 whitespace-nowrap">Ir al campo</span></span>
+                                </Button>
+                            ) : (
                                 <p className="min-w-0 flex-1 text-label font-medium text-warning-text leading-snug" role="status">{motivoNoGuardable}</p>
-                            )}
+                            ))}
                             <Button type="submit" form="unified-modal-form" size="lg" title={motivoNoGuardable || undefined}
                         disabled={isSaving || !isFormValid} loading={isSaving} icon={Save}>
                         {isSaving ? 'Guardando' : 'Guardar'}

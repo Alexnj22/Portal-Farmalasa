@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1533.4 — Encargos: «Ya no lo quiere» cancela un encargo sin pagar
+
+Un encargo que el cliente todavía no pagó sólo lo podía cancelar él desde su app. Si no tenía la app, o avisaba por teléfono, el encargo se quedaba abierto para siempre en Reservas. Ahora la sala del retiro, Bodega o administración lo cancelan con **«Ya no lo quiere»**, escribiendo el motivo. No se cobra ni se devuelve nada, y al cliente le llega el aviso si tiene la app. Si ya pagó, si hay un cobro en caja o un pago en línea en curso, no deja cancelarlo: lo pagado sigue yendo por «Pasar a saldo a favor». Queda en la bitácora. Migración `20261114154410` (`encargo_cancelar_sin_pago`).
+
 ## v2.1533.3 — Datos de mercado: «Es éste» ya confirma
 
 - En **Cumplimiento → Datos de mercado**, «Es éste» y «Confirmar las N» fallaban siempre con «Uno de los valores está fuera del rango permitido»: la base armaba la fila con el producto de la SRS vacío antes de ver que ya tenía uno. Ahora confirma el que tiene propuesto (`srs_mercado_revisar`, migración `20261114154004`).

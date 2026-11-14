@@ -443,6 +443,11 @@ export async function fetchProrrogasPendientes() {
     return sinError(await supabase.rpc('prorrogas_pendientes')) ?? [];
 }
 
+/** El cliente ya no quiere un encargo que todavía no pagó: se cancela sin cobro (2026-11-14). */
+export async function cancelarEncargoSinPago(id, motivo) {
+    return sinError(await supabase.rpc('encargo_cancelar_sin_pago', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));
+}
+
 /** El cliente no retira (o desiste de) un encargo pagado: lo pagado queda a su favor. */
 export async function pasarEncargoASaldo(id, motivo) {
     return sinError(await supabase.rpc('encargo_pasar_a_saldo', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));

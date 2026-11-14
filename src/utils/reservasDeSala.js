@@ -477,6 +477,7 @@ export const ROTULOS_DE_ENCARGO = {
     prorrogar: 'Prorrogar 7 días',
     pedir_prorroga: 'Pedir prórroga',
     saldo: 'Pasar a saldo a favor',
+    cancelar: 'Ya no lo quiere',
 };
 
 /**
@@ -553,7 +554,7 @@ export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
             return 'Compras averigua si se consigue, a qué precio y cuándo llega, y aprieta «Confirmar». Si no se consigue, «No se puede conseguir».';
         case 'confirmado':
             if (e?.reserva || e?.reserva_id) return 'El cliente decide si acepta el precio nuevo; se resuelve desde su reserva.';
-            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Hasta que pague, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}${e?.tiene_app ? ' Si ya no lo quiere, lo cancela desde su app: sin pago no se pierde nada.' : ''}`;
+            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Hasta que pague, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}${e?.tiene_app ? ' Si ya no lo quiere, lo cancela desde su app: sin pago no se pierde nada.' : ' Si ya no lo quiere, «Ya no lo quiere»: sin pago no se pierde nada.'}`;
         case 'aceptado':
             return 'Ya está pagado. Compras le hace el pedido al proveedor y aprieta «Ya se pidió», para que nadie lo pida dos veces.';
         case 'pedido':
@@ -612,6 +613,14 @@ export function respuestaDeBodega(e) {
         nota: String(e.nota_sucursal ?? '').trim() || null,
     };
 }
+
+/**
+ * El cliente ya no quiere un encargo que no pagó (2026-11-14): lo cancela la
+ * sala con `encargo_cancelar_sin_pago`. La base repite la regla y además frena
+ * si hay un cobro en caja o un pago en línea en curso.
+ */
+export const encargoCancelableSinPago = (e) => ['solicitado', 'confirmado'].includes(e?.estado)
+    && e?.pago_estado !== 'pagado' && !e?.reserva && !e?.reserva_id;
 
 /** Un producto que no tenemos y Bodega todavía no amarró al catálogo: sin eso no se marca «Llegó». */
 export const encargoSinVincular = (e) => !!e?.producto_nuevo && !e?.product_id;

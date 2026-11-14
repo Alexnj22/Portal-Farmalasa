@@ -2369,6 +2369,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "encargo_cancelar_sin_pago": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "encargo_pasar_a_saldo": {
    "area": "app-clientes",
    "por": "código"

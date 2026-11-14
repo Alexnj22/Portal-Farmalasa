@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote, UserRound, Warehouse } from 'lucide-react';
+import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote, UserRound, Warehouse, Ban } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -21,10 +21,10 @@ import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
-import { cambiarFechaDeEncargo, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
+import { cambiarFechaDeEncargo, cancelarEncargoSinPago, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega, encargoCancelableSinPago } from '@nucleo/utils/reservasDeSala';
 import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -84,6 +84,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
     const [retirando, setRetirando] = useState(null);
     const [vinculando, setVinculando] = useState(null);
     const [aSaldo, setASaldo] = useState(null);
+    const [cancelando, setCancelando] = useState(null);
     const [llamando, setLlamando] = useState(null);
     const [cambiandoFecha, setCambiandoFecha] = useState(null);
     const [noEntrego, setNoEntrego] = useState(null);
@@ -143,6 +144,17 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
             cargar();
         } catch (err) {
             showToast('No se pudo pasar a saldo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    };
+    // No lanza: el error se avisa acá (el diálogo sólo espera).
+    const cancelarSinPago = async (motivo) => {
+        try {
+            await cancelarEncargoSinPago(cancelando.id, motivo);
+            showToast('Encargo cancelado', 'No se le cobró nada. Si tiene la app, le llega el aviso.', 'success');
+            setCancelando(null);
+            cargar();
+        } catch (err) {
+            showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         }
     };
     const vencido = (e) => encargoVencido(e, hoySV());
@@ -229,6 +241,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                         !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: ROT.saldo,
                             icon: Wallet, title: 'El cliente no lo retira o desiste: lo pagado queda a su favor', onClick: () => setASaldo(e) },
                         !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
+                        !soloLectura && encargoCancelableSinPago(e) && { k: 'cancelar', label: ROT.cancelar, icon: Ban,
+                            title: 'El cliente ya no lo quiere: se cancela sin cobrarle nada', onClick: () => setCancelando(e) },
                     ].filter(Boolean);
                     const estado = estadoDe(e);
                     const cifra = cifraDeEncargo(e);
@@ -294,6 +308,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                         title="Una sola prórroga" onClick={() => prorrogar(e)}>{ROT.prorrogar}</Button>}
                                     {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && <Button variant="ghost" size="xs" icon={CalendarPlus}
                                         title="La autoriza Talento Humano o Supervisión de ventas" onClick={() => setPidiendoProrroga(e)}>{ROT.pedir_prorroga}</Button>}
+                                    {!soloLectura && encargoCancelableSinPago(e) && (
+                                        <Button variant="ghost" size="xs" icon={Ban} title="El cliente ya no lo quiere: se cancela sin cobrarle nada" onClick={() => setCancelando(e)}>{ROT.cancelar}</Button>
+                                    )}
                                     {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && (
                                         <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste: lo pagado queda a su favor" onClick={() => setASaldo(e)}>{ROT.saldo}</Button>
                                     )}
@@ -318,6 +335,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
             )}
             {vinculando && <Vincular encargo={vinculando} onClose={() => setVinculando(null)}
                 onListo={() => { setVinculando(null); cargar(); }} />}
+            {cancelando && <CancelarSinPago encargo={cancelando} onClose={() => setCancelando(null)} onConfirmar={cancelarSinPago} />}
             {aSaldo && <ASaldo encargo={aSaldo} reglas={reglas} onClose={() => setASaldo(null)} onConfirmar={pasarASaldo} />}
             {llamando && <RegistrarLlamada encargo={llamando.id} telefono={llamando.telefono}
                 titulo={`${llamando.codigo} · ${String(llamando.cliente ?? '').split(/\s+/)[0]}`}
@@ -409,6 +427,33 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
                     onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } catch (err) {
                         showToast('No se pudo pasar a saldo', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
                     } finally { setEnviando(false); } }}>{ROT.saldo}</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// El cliente ya no quiere un encargo que no pagó: se cancela con el motivo.
+function CancelarSinPago({ encargo, onClose, onConfirmar }) {
+    const [motivo, setMotivo] = useState('');
+    const [enviando, setEnviando] = useState(false);
+    return (
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Cancelar el encargo">
+            <LiquidModal.Header titulo={`Cancelar ${encargo.codigo}`}
+                subtitulo={<>{encargo.cantidad} × {encargo.producto} · {encargo.cliente}</>} onClose={onClose} />
+            <LiquidModal.Body>
+                <div className="space-y-3">
+                    <Notice variant="info" compact icon={Ban}>
+                        Todavía no lo pagó, así que no se le cobra ni se le devuelve nada, y no se le pide al proveedor.
+                        Si tiene la app, le llega el aviso. No se deshace: si después lo quiere, lo encarga de nuevo.
+                    </Notice>
+                    <PortalTextarea label="Motivo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
+                        placeholder="Ej. Llamó y dijo que ya lo consiguió / el precio le pareció alto" />
+                </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onClose}>Volver</Button>
+                <Button variant="destructive" icon={Ban} loading={enviando} disabled={motivo.trim().length < 3}
+                    onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } finally { setEnviando(false); } }}>Cancelar el encargo</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

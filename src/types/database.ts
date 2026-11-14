@@ -3161,6 +3161,27 @@ export type Database = {
           },
         ]
       }
+      avisos_ultimo_valor: {
+        Row: {
+          avisado_at: string
+          clave: string
+          created_at: string
+          valor: string | null
+        }
+        Insert: {
+          avisado_at?: string
+          clave: string
+          created_at?: string
+          valor?: string | null
+        }
+        Update: {
+          avisado_at?: string
+          clave?: string
+          created_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
       backup_sync_log: {
         Row: {
           checked_at: string
@@ -27813,6 +27834,54 @@ export type Database = {
           },
         ]
       }
+      resumen_manana_renglones: {
+        Row: {
+          con_push: boolean
+          created_at: string
+          cuerpo: string | null
+          enviado_at: string | null
+          fecha: string
+          id: number
+          link: string | null
+          metadata: Json
+          orden: number
+          recipient_id: string
+          tema: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          con_push?: boolean
+          created_at?: string
+          cuerpo?: string | null
+          enviado_at?: string | null
+          fecha: string
+          id?: never
+          link?: string | null
+          metadata?: Json
+          orden?: number
+          recipient_id: string
+          tema: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          con_push?: boolean
+          created_at?: string
+          cuerpo?: string | null
+          enviado_at?: string | null
+          fecha?: string
+          id?: never
+          link?: string | null
+          metadata?: Json
+          orden?: number
+          recipient_id?: string
+          tema?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       resumen_sala_diario: {
         Row: {
           branch_id: number
@@ -29931,6 +30000,83 @@ export type Database = {
             columns: ["solicitud_id"]
             isOneToOne: false
             referencedRelation: "solicitudes_datos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      srs_mercado_productos: {
+        Row: {
+          alternativas: Json
+          confianza: string
+          created_at: string
+          crp: string | null
+          estado: string
+          laboratorio_srs: string | null
+          n_registro: string | null
+          nombre_srs: string | null
+          presentacion_srs: string | null
+          product_id: number
+          revisado_at: string | null
+          revisado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          alternativas?: Json
+          confianza?: string
+          created_at?: string
+          crp?: string | null
+          estado?: string
+          laboratorio_srs?: string | null
+          n_registro?: string | null
+          nombre_srs?: string | null
+          presentacion_srs?: string | null
+          product_id: number
+          revisado_at?: string | null
+          revisado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alternativas?: Json
+          confianza?: string
+          created_at?: string
+          crp?: string | null
+          estado?: string
+          laboratorio_srs?: string | null
+          n_registro?: string | null
+          nombre_srs?: string | null
+          presentacion_srs?: string | null
+          product_id?: number
+          revisado_at?: string | null
+          revisado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "srs_mercado_productos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "srs_mercado_productos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "srs_mercado_productos_revisado_por_fkey"
+            columns: ["revisado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "srs_mercado_productos_revisado_por_fkey"
+            columns: ["revisado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -32587,6 +32733,7 @@ export type Database = {
         Returns: number
       }
       aprobar_pago_compra: { Args: { p_pago_id: number }; Returns: undefined }
+      armar_resumen_manana: { Args: { p_solo_ver?: boolean }; Returns: Json }
       asentar_diferencias_corte: {
         Args: { p_abono_ids?: number[]; p_ids: number[]; p_ref: string }
         Returns: Json
@@ -32595,6 +32742,7 @@ export type Database = {
         Args: { p_documento: Json; p_employee_ids: string[] }
         Returns: Json
       }
+      asueto_nacional: { Args: { p_fecha: string }; Returns: string }
       audiencia_de_aviso: {
         Args: { p_target_type: string; p_target_value: Json }
         Returns: string[]
@@ -32673,6 +32821,19 @@ export type Database = {
         Args: { p_horas?: number }
         Returns: number
       }
+      avisar_ccf: {
+        Args: {
+          p_body: string
+          p_branch_id: number
+          p_correlativo: string
+          p_link: string
+          p_metadata: Json
+          p_push?: boolean
+          p_recipients: string[]
+          p_title: string
+        }
+        Returns: number
+      }
       avisar_cierre_del_dia: {
         Args: { p_fecha?: string; p_forzado?: boolean }
         Returns: number
@@ -32729,10 +32890,15 @@ export type Database = {
         Args: { p_dias_sello_tardio?: number; p_probar?: boolean }
         Returns: Json
       }
+      aviso_cambio_o_semanal: {
+        Args: { p_clave: string; p_valor: string }
+        Returns: boolean
+      }
       aviso_de_pedido_fallo: {
         Args: { p_err: string; p_pedido: string; p_que: string }
         Returns: undefined
       }
+      aviso_valor_olvidar: { Args: { p_clave: string }; Returns: undefined }
       aviso_ventana: {
         Args: { p_employee: string; p_ts?: string }
         Returns: string
@@ -34182,6 +34348,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      destinatarios_de_aperturas: { Args: never; Returns: string[] }
       destinatarios_de_cortes: {
         Args: { p_branch_id: number }
         Returns: string[]
@@ -34706,6 +34873,10 @@ export type Database = {
         Args: { p_fecha: string; p_id: number; p_motivo?: string }
         Returns: Json
       }
+      encargo_cancelar_sin_pago: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
       encargo_en_sucursal_crear: {
         Args: {
           p_branch_id: number
@@ -34819,6 +34990,10 @@ export type Database = {
         }
         Returns: number
       }
+      encuesta_cliente_avisar_quejas_del_dia: {
+        Args: { p_fecha?: string }
+        Returns: number
+      }
       encuesta_cliente_cerrar: {
         Args: { p_id: string; p_motivo?: string }
         Returns: Json
@@ -34905,6 +35080,10 @@ export type Database = {
         Args: { p_respuesta: string }
         Returns: Json
       }
+      encuesta_cliente_nota: {
+        Args: { p_clave: string; p_cuestionario: Json; p_respuestas: Json }
+        Returns: Json
+      }
       encuesta_cliente_poblacion: { Args: never; Returns: Json }
       encuesta_cliente_problemas: { Args: { p_id: string }; Returns: string[] }
       encuesta_cliente_problemas_de: {
@@ -34917,6 +35096,10 @@ export type Database = {
       encuesta_cliente_puntaje: {
         Args: { p_tipo: string; p_valor: Json }
         Returns: number
+      }
+      encuesta_cliente_queja: {
+        Args: { p_encuesta_id: string; p_nps: number; p_respuestas: Json }
+        Returns: Json
       }
       encuesta_cliente_registrar: {
         Args: {
@@ -39559,6 +39742,21 @@ export type Database = {
           sin_ingresar: number
         }[]
       }
+      resumen_manana_agregar: {
+        Args: {
+          p_cuerpo: string
+          p_link: string
+          p_metadata: Json
+          p_orden: number
+          p_push: boolean
+          p_recipients: string[]
+          p_tema: string
+          p_tipo: string
+          p_titulo: string
+        }
+        Returns: number
+      }
+      resumen_manana_paso_la_hora: { Args: never; Returns: boolean }
       resumen_sala_feriado: {
         Args: { p_fecha: string; p_municipio: string }
         Returns: string
@@ -39916,6 +40114,22 @@ export type Database = {
         Args: { p_invoice_id: number; p_rechazo_desde?: string }
         Returns: Json
       }
+      srs_mercado_cargar_propuestas: { Args: { p_filas: Json }; Returns: Json }
+      srs_mercado_lista: { Args: never; Returns: Json }
+      srs_mercado_por_emparejar: { Args: never; Returns: Json }
+      srs_mercado_revisar: {
+        Args: {
+          p_crp?: string
+          p_estado: string
+          p_laboratorio_srs?: string
+          p_n_registro?: string
+          p_nombre_srs?: string
+          p_presentacion_srs?: string
+          p_product_id: number
+        }
+        Returns: Json
+      }
+      srs_mercado_secretos: { Args: never; Returns: Json }
       sucursal_en_conteo: { Args: { p_branch_id: number }; Returns: Json }
       suggest_proveedor_categoria_id: {
         Args: { p_desc_actividad: string }

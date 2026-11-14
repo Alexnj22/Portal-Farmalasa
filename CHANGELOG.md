@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.3 — Puntos Salud web: la barra flota sobre el contenido y sin franjas negras
+
+En app.farmasalud.lat la barra de pestañas ahora flota encima del contenido, como el vidrio del iPhone: lo de la pestaña pasa por detrás. Ya no queda una franja negra debajo de la barra, y el fondo de la página sigue el degradado de la app en vez de franjas oscuras arriba y abajo.
+
 ## v2.1537.2 — Puntos Salud en el navegador igual que la app: barra de abajo, íconos, tarjeta y volver
 
 En app.farmasalud.lat el menú salía arriba como una fila de texto y «Cuenta» no cabía. Ahora es la barra de abajo de la app, con íconos y el número del carrito. También salen los íconos (antes había cuadros vacíos), la tarjeta con sus minerales y el logo en relieve, y los juegos de Bienestar. Las pantallas internas llevan la barra de arriba como en iPhone, y «volver» siempre lleva a algún lado, aunque la pantalla se haya abierto desde un enlace.

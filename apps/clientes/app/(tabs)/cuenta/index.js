@@ -34,7 +34,8 @@ import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import { colorSistema, FilaInterruptor, Formulario, Grupo } from '../../../componentes/sistema';
-import { Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
+import { ALTO_BARRA_WEB, Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MENSAJE_CODIGO, useConCodigo, useSesion } from '../../../lib/sesion';
 import { irACompletarEntrada } from '../../../componentes/SoloConDocumento';
 import { useCuenta } from '../../../lib/cuenta';
@@ -105,6 +106,7 @@ function FilaAccion({ texto, detalle, sf, color, tinte, flecha = true, alTocar, 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
 export default function Cuenta() {
+  const ins = useSafeAreaInsets();
   const t = useTema();
   const pedirW = useSesion((s) => s.pedir);
   const serialW = useCuenta((s) => s.resumen?.wallet_serial);
@@ -341,7 +343,7 @@ export default function Cuenta() {
 
   return (
     // Abajo, el lugar de la burbuja del chat (2026-10-13).
-    <Formulario contentContainerStyle={Platform.OS === 'web' ? undefined : { paddingBottom: 20 + ESPACIO_BURBUJA }}>
+    <Formulario contentContainerStyle={Platform.OS === 'web' ? { paddingBottom: 20 + ALTO_BARRA_WEB + ins.bottom } : { paddingBottom: 20 + ESPACIO_BURBUJA }}>
       {vistaPrevia.vista}
       {resumen?.nombre ? (
         // El encabezado de Cuenta (2026-10-20, «el aro no se distingue qué

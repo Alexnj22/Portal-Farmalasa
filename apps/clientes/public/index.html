@@ -10,8 +10,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <title>Puntos Salud</title>
     <meta name="description" content="Tus puntos, ofertas, reservas, facturas y el chat con Farmacias Salud." />
-    <meta name="theme-color" content="#F5F4F8" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0A090E" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Puntos Salud" />
@@ -23,8 +21,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" />
     <style id="expo-reset">
-      html, body { height: 100%; background: #F5F4F8; }
-      @media (prefers-color-scheme: dark) { html, body { background: #0A090E; } }
+      /* Sin theme-color: Safari pinta la barra de estado y la de abajo con
+         el fondo de la página. El fondo repite las manchas de la aurora
+         (componentes/Aurora.js) para que esas franjas sigan el degradado y
+         no queden como bandas negras encima y debajo de la app. */
+      html, body { height: 100%; }
+      html {
+        background-color: #F5F4F8;
+        background-image:
+          radial-gradient(circle at 10% 6%, rgba(142,195,15,0.22), transparent 60%),
+          radial-gradient(circle at 95% 30%, rgba(152,29,151,0.22), transparent 60%),
+          radial-gradient(circle at 80% 95%, rgba(142,195,15,0.22), transparent 55%);
+        background-attachment: fixed;
+      }
+      body { background: transparent; }
+      @media (prefers-color-scheme: dark) {
+        html {
+          background-color: #0A090E;
+          background-image:
+            radial-gradient(circle at 10% 6%, rgba(142,195,15,0.32), transparent 60%),
+            radial-gradient(circle at 95% 30%, rgba(152,29,151,0.32), transparent 60%),
+            radial-gradient(circle at 80% 95%, rgba(142,195,15,0.32), transparent 55%);
+        }
+      }
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
     </style>

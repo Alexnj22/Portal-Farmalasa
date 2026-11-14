@@ -11,7 +11,7 @@
 // íconos que `_layout.js` (los `md=` de allá son los nombres de acá): al
 // cambiar una allá, cambiarla acá.
 import { Pressable, Text, View } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, ThemeProvider, useTheme } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colorSistema } from '../../componentes/sistema';
 import { suave, useTema } from '../../tema/tema';
@@ -45,7 +45,10 @@ function Barra({ state, navigation }) {
   const enCarrito = useCarrito((s) => s.items.length);
   const inactivo = colorSistema.texto2;
   return (
-    <View pointerEvents="box-none" style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: Math.max(ins.bottom, 10), alignItems: 'center' }}>
+    // Flota ENCIMA del contenido (como el vidrio del iPhone): lo de la
+    // pestaña pasa por detrás y se ve borroso a través de la barra. Cada
+    // pestaña deja el margen de abajo con `ALTO_BARRA_WEB` (componentes/ui.js).
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 6, paddingBottom: Math.max(ins.bottom, 10), alignItems: 'center' }}>
       <View
         accessibilityRole="tablist"
         style={{
@@ -94,12 +97,17 @@ function Barra({ state, navigation }) {
 }
 
 export default function Pestanas() {
+  // El contenedor de las pestañas toma el fondo del tema (opaco): tapaba la
+  // aurora de la raíz alrededor de la barra y dejaba una franja negra abajo.
+  const tema = useTheme();
   return (
+    <ThemeProvider value={{ ...tema, colors: { ...tema.colors, background: 'transparent' } }}>
     <Tabs
       backBehavior="initialRoute"
       tabBar={(props) => <Barra {...props} />}
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }}>
       {PESTANAS.map((p) => <Tabs.Screen key={p.name} name={p.name} options={{ title: p.rotulo }} />)}
     </Tabs>
+    </ThemeProvider>
   );
 }

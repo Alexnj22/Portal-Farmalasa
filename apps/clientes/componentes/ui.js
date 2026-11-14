@@ -39,6 +39,10 @@ const TIPO = ANDROID
 // Lo que ocupa la burbuja del chat (56 + su margen + un respiro), 2026-10-13:
 // sin este espacio abajo, la burbuja tapaba la última tarjeta de la lista.
 export const ESPACIO_BURBUJA = 88;
+// Web (2026-11-14): la barra de pestañas flota ENCIMA del contenido, como el
+// vidrio del iPhone (app/(tabs)/_layout.web.js); lo último de una pestaña
+// necesita este margen para no quedar debajo. Se suma al área segura de abajo.
+export const ALTO_BARRA_WEB = 84;
 
 // `alFinal`: se llama al acercarse al final (listas paginadas, 2026-10-09).
 // `conBurbuja`: deja abajo el lugar de la burbuja del chat (2026-10-13). Las
@@ -101,7 +105,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.
       contentContainerStyle={{
-        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0), gap: 14,
+        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conPestanas && Platform.OS === 'web' ? ALTO_BARRA_WEB : 0) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0), gap: 14,
         // Sin barra, iOS ya corre el contenido bajo la barra de estado
         // (`automatic`); Android no: se suma a mano.
         ...(sinBarra ? { paddingTop: (Platform.OS === 'ios' ? 4 : ins.top + 8) } : null),
@@ -175,7 +179,7 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
       ListHeaderComponent={encabezado ? <View style={{ gap: HUECO, marginBottom: datos?.length ? HUECO : 0 }}>{encabezado}</View> : null}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
-        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0),
+        padding: 16, paddingBottom: (conPestanas ? 24 : 32) + (Platform.OS === 'ios' ? 0 : ins.bottom) + (conPestanas && Platform.OS === 'web' ? ALTO_BARRA_WEB : 0) + (conBurbuja && Platform.OS !== 'web' ? ESPACIO_BURBUJA : 0),
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"

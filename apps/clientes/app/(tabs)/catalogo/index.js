@@ -23,7 +23,8 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 import Animated, { runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
-import { ESPACIO_BURBUJA, Vacio } from '../../../componentes/ui';
+import { ALTO_BARRA_WEB, ESPACIO_BURBUJA, Vacio } from '../../../componentes/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icono from '../../../componentes/Icono';
 import Vidrio from '../../../componentes/Vidrio';
 import FotoProducto from '../../../componentes/FotoProducto';
@@ -60,6 +61,7 @@ function mayorAhorro(productos) {
 }
 
 export default function Catalogo() {
+  const ins = useSafeAreaInsets();
   const t = useTema();
   // Con letra grande (2026-10-13), dos columnas dejaban el nombre en tres
   // letras por línea y el precio cortado: pasa a una sola columna.
@@ -297,7 +299,7 @@ export default function Catalogo() {
         numColumns={columnas}
         columnWrapperStyle={columnas > 1 ? { gap: 12 } : undefined}
         // Abajo, el lugar de la burbuja del chat (2026-10-13).
-        contentContainerStyle={{ padding: 16, paddingBottom: 32 + (Platform.OS === 'web' ? 0 : ESPACIO_BURBUJA), gap: 12, width: '100%', maxWidth: 720, alignSelf: 'center' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 + (Platform.OS === 'web' ? ALTO_BARRA_WEB + ins.bottom : ESPACIO_BURBUJA), gap: 12, width: '100%', maxWidth: 720, alignSelf: 'center' }}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"

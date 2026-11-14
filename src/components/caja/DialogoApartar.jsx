@@ -889,6 +889,9 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
     // La fila pedida desde afuera se elige UNA vez, con la primera lista: si ya
     // no está (alguien la cobró en el medio), queda la lista sin elegir nada.
     const yaElegida = useRef(false);
+    // Desde la tarjeta se cobra ESE encargo: la lista muestra sólo esa fila
+    // (pedido del usuario, 2026-11-14: «se le dio cobrar a una y salen las 2»).
+    const [soloLaPedida, setSoloLaPedida] = useState(!!elegirClave);
     useEffect(() => {
         if (!elegirClave || yaElegida.current || !filas) return;
         yaElegida.current = true;
@@ -927,10 +930,11 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
     if (enlace) return <EnlaceListo enlace={enlace} onListo={() => { setEnlace(null); setElegido(null); setVuelta((v) => v + 1); }} />;
     if (filas == null) return <p className="text-body-sm text-content-3">Cargando…</p>;
     if (!filas.length) return <p className="text-body-sm text-content-3">No hay encargos confirmados ni reservas con saldo en esta sala.</p>;
+    const visibles = soloLaPedida && elegido ? filas.filter((f) => f.clave === elegido.clave) : filas;
     return (
         <div className="space-y-3">
             <ul className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {filas.map((f) => (
+                {visibles.map((f) => (
                     <li key={f.clave}>
                         <button type="button" onClick={() => elegir(f)} data-surface="card" aria-pressed={elegido?.clave === f.clave}
                             className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97] ${elegido?.clave === f.clave ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
@@ -945,6 +949,11 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
                     </li>
                 ))}
             </ul>
+            {visibles.length < filas.length && (
+                <Button variant="ghost" size="xs" onClick={() => setSoloLaPedida(false)}>
+                    Ver {filas.length - visibles.length === 1 ? 'el otro' : `los otros ${filas.length - visibles.length}`} por cobrar
+                </Button>
+            )}
             {elegido && (
                 <>
                     <PortalInput label="Monto" prefix="$" inputMode="decimal" maskType="DECIMAL" value={monto} readOnly={elegido.tipo === 'encargo'}

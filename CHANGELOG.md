@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1536.1 — Cobrar desde la tarjeta muestra sólo ese encargo
+
+Al apretar «Cobrar» en la tarjeta de un encargo, «Por cobrar» mostraba la lista entera de la sala (con dos encargos parecía que se cobraban los dos). Ahora muestra sólo ese encargo, con «Ver el otro / los otros N por cobrar» debajo.
+
 ## v2.1536.0 — Todos los modales dicen qué falta y llevan al campo
 
 Tercera tanda, la grande: unos 60 diálogos que apagaban el botón de guardar sin decir por qué (o lo decían lejos, en gris) ahora lo dicen al pie, junto al botón, y un toque lleva al campo que falta. Ningún botón cambió cuándo se habilita.

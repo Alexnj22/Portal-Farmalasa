@@ -478,6 +478,7 @@ export const ROTULOS_DE_ENCARGO = {
     pedir_prorroga: 'Pedir prórroga',
     saldo: 'Pasar a saldo a favor',
     cancelar: 'Ya no lo quiere',
+    ya_vendido: 'Ya se vendió',
 };
 
 /**
@@ -621,6 +622,16 @@ export function respuestaDeBodega(e) {
  */
 export const encargoCancelableSinPago = (e) => ['solicitado', 'confirmado'].includes(e?.estado)
     && e?.pago_estado !== 'pagado' && !e?.reserva && !e?.reserva_id;
+
+/**
+ * Se cobró en caja como una venta normal y nadie lo pasó por el portal
+ * (2026-11-14): se puede amarrar a esa venta mientras no haya dinero del portal.
+ */
+export const encargoVendibleAfuera = (e) => ['solicitado', 'confirmado', 'aceptado', 'pedido', 'listo'].includes(e?.estado)
+    && e?.pago_estado !== 'pagado' && !e?.reserva && !e?.reserva_id;
+
+/** La venta casi seguro es la del encargo: mismo producto y mismo monto, o mismo cliente con uno de los dos. */
+export const ventaProbableDeEncargo = (v) => !!v && ((v.mismo_producto && v.mismo_monto) || (v.mismo_cliente && (v.mismo_producto || v.mismo_monto)));
 
 /** Un producto que no tenemos y Bodega todavía no amarró al catálogo: sin eso no se marca «Llegó». */
 export const encargoSinVincular = (e) => !!e?.producto_nuevo && !e?.product_id;

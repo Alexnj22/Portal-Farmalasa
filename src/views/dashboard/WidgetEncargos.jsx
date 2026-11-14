@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote, UserRound, Warehouse, Ban } from 'lucide-react';
+import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote, UserRound, Warehouse, Ban, Receipt } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -24,9 +24,11 @@ import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
-import { cambiarFechaDeEncargo, cancelarEncargoSinPago, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
+import { cambiarFechaDeEncargo, cancelarEncargoSinPago, encargoYaVendido, fetchEncargos, ventasCandidatasDeEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega, encargoCancelableSinPago } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega, encargoCancelableSinPago, encargoVendibleAfuera, ventaProbableDeEncargo } from '@nucleo/utils/reservasDeSala';
+import { hora12 } from '@nucleo/utils/hora';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -87,6 +89,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
     const [vinculando, setVinculando] = useState(null);
     const [aSaldo, setASaldo] = useState(null);
     const [cancelando, setCancelando] = useState(null);
+    // «Ya se vendió» (2026-11-14): las ventas que pueden ser la de cada encargo.
+    const [vendiendo, setVendiendo] = useState(null);
+    const [ventas, setVentas] = useState({});
     const [llamando, setLlamando] = useState(null);
     const [cambiandoFecha, setCambiandoFecha] = useState(null);
     const [noEntrego, setNoEntrego] = useState(null);
@@ -95,7 +100,14 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
     const reglas = useReglasDeReserva();
 
     const cargar = useCallback(async () => {
-        try { setFilas(await fetchEncargos(branchId, true)); setErrorCarga(null); } catch (err) {
+        try {
+            const lista = await fetchEncargos(branchId, true);
+            setFilas(lista); setErrorCarga(null);
+            // Lo que ya se facturó como venta normal: se avisa en la tarjeta para
+            // que nadie lo cobre otra vez. Si falla, la tarjeta sigue sin el aviso.
+            const ids = (lista ?? []).filter(encargoVendibleAfuera).map((e) => e.id);
+            ventasCandidatasDeEncargos(ids).then(setVentas).catch((err) => console.error('WidgetEncargos: ventas candidatas', err));
+        } catch (err) {
             console.error('WidgetEncargos: no se pudieron cargar', err);
             setErrorCarga(err);
             setFilas((f) => f ?? []);
@@ -159,6 +171,19 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
             showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         }
     };
+    // No lanza: el error se avisa acá (el diálogo sólo espera).
+    const yaVendido = async (itemId, nota) => {
+        try {
+            const r = await encargoYaVendido(vendiendo.id, itemId, nota);
+            showToast('Encargo entregado', `Quedó amarrado a la venta ${r?.factura ?? ''}. No entra dinero al cajón: ya entró con esa venta.`, 'success');
+            setVendiendo(null);
+            cargar();
+        } catch (err) {
+            showToast('No se pudo amarrar a la venta', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        }
+    };
+    // La venta casi segura de un encargo (la primera de la lista, si convence).
+    const ventaProbable = (e) => (encargoVendibleAfuera(e) && ventaProbableDeEncargo(ventas?.[e.id]?.[0])) ? ventas[e.id][0] : null;
     const vencido = (e) => encargoVencido(e, hoySV());
     // Los dos bloques de la tarjeta: quién lo pidió y qué respondió Bodega.
     const pedido = (e) => {
@@ -219,7 +244,13 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                     const wa = !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono);
                     const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
                     // En orden: lo que destraba al encargo primero.
+                    const probable = ventaProbable(e);
+                    const vendible = !soloLectura && encargoVendibleAfuera(e);
+                    const accVendido = { k: 'ya_vendido', label: ROT.ya_vendido, icon: Receipt,
+                        title: 'Se cobró en caja como una venta normal: se amarra a esa venta sin cobrar otra vez', onClick: () => setVendiendo(e) };
                     const acc = [
+                        // Si parece que ya se vendió, eso va antes que cobrar otra vez.
+                        vendible && probable && accVendido,
                         cobrable(e) && { k: 'cobrar', label: ROT.cobrar, icon: Banknote, onClick: () => onCobrar(e) },
                         puedeComprar && e.estado === 'solicitado' && { k: 'confirmar', label: ROT.confirmar, icon: Check, onClick: () => setConfirmando(e) },
                         !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: ROT.pedido, icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
@@ -247,6 +278,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                         puedeComprar && sinVincular(e) && !['aceptado', 'pedido'].includes(e.estado) && { k: 'vincular', label: ROT.vincular, icon: Link2,
                             title: 'Elegir el producto ya creado en el catálogo: sin eso no se puede marcar «Llegó»', onClick: () => setVinculando(e) },
                         puedeComprar && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
+                        vendible && !probable && accVendido,
                         !soloLectura && encargoCancelableSinPago(e) && { k: 'cancelar', label: ROT.cancelar, icon: Ban,
                             title: 'El cliente ya no lo quiere: se cancela sin cobrarle nada', onClick: () => setCancelando(e) },
                     ].filter(Boolean);
@@ -265,6 +297,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                     sinVincular(e) && e.sugerido && { label: `¿Ya está como «${e.sugerido}»?`, variant: 'warning' },
                                     e.reserva && { label: `Resto de ${e.reserva}`, variant: 'neutral' },
                                     textoDeNivel(e.nivel) && { label: textoDeNivel(e.nivel), variant: 'neutral' },
+                                    probable && { label: `Parece que ya se vendió · ${probable.factura} del ${fechaTexto(probable.fecha, { day: 'numeric', month: 'short' })}`, variant: 'warning',
+                                        title: 'Misma sala, mismo producto y mismo monto: no lo cobres otra vez' },
                                 ]}
                                 bloques={[pedido(e), respuesta(e)]}
                                 lineas={[ultimoAviso(e)].filter(Boolean)}
@@ -292,7 +326,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                 <>
                                     <Badge variant={estadoDe(e)?.variant ?? 'neutral'} uppercase={false}>{estadoDe(e)?.label ?? e.estado}</Badge>
                                     {!cobrable(e) && notaDeEncargo(e) && <span className="text-caption text-content-2">{notaDeEncargo(e)}</span>}
-                                    {cobrable(e) && <Button variant="primary" size="xs" icon={Banknote} onClick={() => onCobrar(e)}>{ROT.cobrar}</Button>}
+                                    {!soloLectura && ventaProbable(e) && <Button variant="primary" size="xs" icon={Receipt} title={`Parece que ya se vendió en ${ventaProbable(e).factura}`} onClick={() => setVendiendo(e)}>{ROT.ya_vendido}</Button>}
+                                    {cobrable(e) && <Button variant={ventaProbable(e) ? 'secondary' : 'primary'} size="xs" icon={Banknote} onClick={() => onCobrar(e)}>{ROT.cobrar}</Button>}
                                     {sinVincular(e) && e.sugerido && <Badge variant="info" uppercase={false} title={`Parece que ya entró como «${e.sugerido}»`}>¿Ya está en el catálogo?</Badge>}
                                     {!soloLectura && !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono) && (
                                         <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title={ROT.whatsapp}
@@ -314,6 +349,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                         title="Una sola prórroga" onClick={() => prorrogar(e)}>{ROT.prorrogar}</Button>}
                                     {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && <Button variant="ghost" size="xs" icon={CalendarPlus}
                                         title="La autoriza Talento Humano o Supervisión de ventas" onClick={() => setPidiendoProrroga(e)}>{ROT.pedir_prorroga}</Button>}
+                                    {!soloLectura && encargoVendibleAfuera(e) && !ventaProbable(e) && (
+                                        <Button variant="ghost" size="xs" icon={Receipt} title="Se cobró en caja como una venta normal" onClick={() => setVendiendo(e)}>{ROT.ya_vendido}</Button>
+                                    )}
                                     {!soloLectura && encargoCancelableSinPago(e) && (
                                         <Button variant="ghost" size="xs" icon={Ban} title="El cliente ya no lo quiere: se cancela sin cobrarle nada" onClick={() => setCancelando(e)}>{ROT.cancelar}</Button>
                                     )}
@@ -341,6 +379,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
             )}
             {vinculando && <Vincular encargo={vinculando} onClose={() => setVinculando(null)}
                 onListo={() => { setVinculando(null); cargar(); }} />}
+            {vendiendo && <YaVendido encargo={vendiendo} onClose={() => setVendiendo(null)} onConfirmar={yaVendido} />}
             {cancelando && <CancelarSinPago encargo={cancelando} onClose={() => setCancelando(null)} onConfirmar={cancelarSinPago} />}
             {aSaldo && <ASaldo encargo={aSaldo} reglas={reglas} onClose={() => setASaldo(null)} onConfirmar={pasarASaldo} />}
             {llamando && <RegistrarLlamada encargo={llamando.id} telefono={llamando.telefono}
@@ -471,6 +510,77 @@ function CancelarSinPago({ encargo, onClose, onConfirmar }) {
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button variant="destructive" icon={Ban} loading={enviando} disabled={motivo.trim().length < 3}
                     onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } catch (err) { showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error'); } finally { setEnviando(false); } }}>Cancelar el encargo</Button>
+            </PieDeModal>
+        </LiquidModal>
+    );
+}
+
+// «Ya se vendió» (2026-11-14): el encargo se cobró en caja como una venta
+// normal. Se elige la venta entre las que coinciden (sala, producto, monto,
+// fecha) y el encargo queda entregado sin meter dinero al cajón otra vez.
+function YaVendido({ encargo, onClose, onConfirmar }) {
+    const [lista, setLista] = useState(null);
+    const [error, setError] = useState(null);
+    const [elegida, setElegida] = useState(null);
+    const [nota, setNota] = useState('');
+    const [enviando, setEnviando] = useState(false);
+    useEffect(() => {
+        let vivo = true;
+        ventasCandidatasDeEncargos([encargo.id])
+            .then((r) => { if (!vivo) return; const l = r?.[encargo.id] ?? []; setLista(l); if (ventaProbableDeEncargo(l[0])) setElegida(l[0].item_id); })
+            .catch((err) => { if (vivo) { setError(err); setLista([]); } });
+        return () => { vivo = false; };
+    }, [encargo.id]);
+    const desde = fechaTexto(encargo.creado, { day: 'numeric', month: 'long' });
+    const pistas = (v) => [v.mismo_producto && 'Mismo producto', v.mismo_monto && 'Mismo monto',
+        v.mismo_cliente ? 'Mismo cliente' : v.mismo_apellido && 'Nombre parecido'].filter(Boolean);
+    return (
+        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Ya se vendió">
+            <LiquidModal.Header titulo={`${encargo.codigo} ya se vendió`}
+                subtitulo={<>{encargo.cantidad} × {encargo.producto} · {encargo.cliente}</>} onClose={onClose} />
+            <LiquidModal.Body>
+                <div className="space-y-3">
+                    <Notice variant="info" compact icon={Receipt}>
+                        Elige la venta en la que se cobró. El encargo queda entregado y <b>no entra dinero al cajón</b>: ya entró con esa venta.
+                    </Notice>
+                    {lista == null && <p className="text-body-sm text-content-3">Buscando ventas…</p>}
+                    {error && <Notice variant="error" compact>{mensajeAmigable(error, 'No se pudieron leer las ventas.')}</Notice>}
+                    {lista && !lista.length && !error && (
+                        <p className="text-body-sm text-content-3">
+                            No encontré ventas de este producto ni por {encargo.anticipo ? formatMoney(encargo.anticipo) : 'este monto'} en la sala desde el {desde}.
+                            Si se vendió en otra sala o con otro precio, avísale a administración.
+                        </p>
+                    )}
+                    {!!lista?.length && (
+                        <ul className="space-y-2 max-h-[45vh] overflow-y-auto overscroll-contain">
+                            {lista.map((v) => (
+                                <li key={v.item_id}>
+                                    <button type="button" onClick={() => setElegida(v.item_id)} data-surface="card" aria-pressed={elegida === v.item_id}
+                                        className={`w-full text-left rounded-xl p-3 min-h-[var(--tap-min)] active:scale-[0.97] ${elegida === v.item_id ? 'ring-2 ring-accent' : 'ring-1 ring-border-card'}`}>
+                                        <div className="flex items-baseline justify-between gap-2">
+                                            <span className="text-body-sm font-bold text-content truncate">{v.factura} · {fechaTexto(v.fecha, { weekday: 'short', day: 'numeric', month: 'short' })} {hora12(v.hora)}</span>
+                                            <span className="text-body-sm font-bold tabular-nums">{formatMoney(v.total)}</span>
+                                        </div>
+                                        <p className="text-caption text-content-2 truncate">{Number(v.cantidad)} × {v.producto}</p>
+                                        <p className="text-caption text-content-3 truncate">{shortEmployeeName(v.cliente ?? '') || 'Sin nombre'}</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {pistas(v).map((t) => <Badge key={t} variant={t === 'Nombre parecido' ? 'neutral' : 'success'} uppercase={false}>{t}</Badge>)}
+                                        </div>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {!!lista?.length && (
+                        <PortalInput label="Nota (opcional)" name="notaYaVendido" value={nota} maxLength={120} onChange={(e) => setNota(e.target.value)}
+                            placeholder="Ej. Lo pagó el esposo a su nombre" />
+                    )}
+                </div>
+            </LiquidModal.Body>
+            <PieDeModal izquierda={lista?.length && !elegida && !enviando ? <AvisoDeFalta motivo="Elige la venta." /> : null}>
+                <Button variant="secondary" onClick={onClose}>Volver</Button>
+                <Button variant="primary" icon={Receipt} loading={enviando} disabled={!elegida}
+                    onClick={async () => { setEnviando(true); try { await onConfirmar(elegida, nota); } catch (err) { console.error('YaVendido', err); } finally { setEnviando(false); } }}>Es esta venta</Button>
             </PieDeModal>
         </LiquidModal>
     );

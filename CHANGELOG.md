@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.0 — Encargos: «Ya se vendió» amarra el encargo a una venta hecha en caja
+
+Cuando un encargo se cobró en caja como una venta normal y nadie lo pasó por el portal, ya no hay que cobrarlo otra vez (contaría el dinero dos veces). El portal busca la venta en la misma sala desde que se anotó el encargo, por producto y por monto; el nombre es sólo una pista, porque a veces paga un familiar a su nombre (pasó con E-000018). La tarjeta avisa «Parece que ya se vendió · COF … del …» y pone «Ya se vendió» como botón principal; «Por cobrar» también lo avisa. Al elegir la venta, el encargo queda entregado y amarrado a ese renglón de la factura (uno por encargo), sin meter dinero al cajón. No aplica si ya hubo cobro por el portal o un pago en línea en curso.
+
+Base: migración `20261114172206_encargo_ya_vendido` (columna `app_encargos.venta_item_id`, `encargos_ventas_candidatas`, `encargo_ya_vendido`). Probado en el entorno de pruebas: sugerencia, amarre, auditoría y rechazo de una venta ya usada.
+
 ## v2.1536.2 — Puntos Salud también en el navegador: app.farmasalud.lat
 
 La app de clientes se puede usar desde cualquier navegador en app.farmasalud.lat, igual que en iPhone y Android (es la misma app). Se publica con `npm run app:web`; se puede agregar a la pantalla de inicio.

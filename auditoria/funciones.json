@@ -6553,5 +6553,13 @@
    "por": "manual",
    "manual": true
   }
+ },
+ "encargos_ventas_candidatas": {
+  "area": "app-clientes",
+  "por": "código"
+ },
+ "encargo_ya_vendido": {
+  "area": "app-clientes",
+  "por": "código"
  }
 }

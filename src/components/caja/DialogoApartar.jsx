@@ -16,7 +16,7 @@ import FormaDePago from './FormaDePago';
 import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    apartarSinAnticipo, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
+    apartarSinAnticipo, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal, ventasCandidatasDeEncargos,
     listaDelCliente, mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
@@ -35,7 +35,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { apartadoDelPedido, clavePresentacion, listaQueLeToca, origenesDelPedido, planDeApartar, redondear, telefonoDeFicha, tomaDeCadaTraslado } from '@nucleo/utils/apartar';
-import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala, SI_EL_TRASLADO_NO_SALIO } from '@nucleo/utils/reservasDeSala';
+import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala, SI_EL_TRASLADO_NO_SALIO, ventaProbableDeEncargo } from '@nucleo/utils/reservasDeSala';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
@@ -899,6 +899,18 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
         if (f) elegir(f);
         else showToast('Ya no está por cobrar', 'Alguien lo cobró recién o cambió de estado.', 'info');
     }, [elegirClave, filas, showToast]);
+    // El encargo elegido que ya parece facturado como venta normal (2026-11-14):
+    // cobrarlo otra vez cuenta el dinero dos veces. Si la consulta falla, no avisa.
+    const [yaVendida, setYaVendida] = useState(null);
+    useEffect(() => {
+        setYaVendida(null);
+        if (elegido?.tipo !== 'encargo') return undefined;
+        let vivo = true;
+        ventasCandidatasDeEncargos([elegido.id])
+            .then((r) => { const v = r?.[elegido.id]?.[0]; if (vivo && ventaProbableDeEncargo(v)) setYaVendida(v); })
+            .catch((err) => console.error('PorCobrar: ventas candidatas', err));
+        return () => { vivo = false; };
+    }, [elegido]);
     const n = Number(monto);
     const estadoPago = estadoDeFormaDePago(pago, n);
     const falta = !elegido ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
@@ -953,6 +965,12 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
                 <Button variant="ghost" size="xs" onClick={() => setSoloLaPedida(false)}>
                     Ver {filas.length - visibles.length === 1 ? 'el otro' : `los otros ${filas.length - visibles.length}`} por cobrar
                 </Button>
+            )}
+            {yaVendida && (
+                <Notice variant="warning" compact>
+                    <b>Parece que ya se vendió</b> en {yaVendida.factura} ({fechaTexto(yaVendida.fecha, { day: 'numeric', month: 'short' })}, {formatMoney(yaVendida.total)}):
+                    misma sala, mismo producto y mismo monto. No lo cobres otra vez; en la tarjeta del encargo usa «Ya se vendió».
+                </Notice>
             )}
             {elegido && (
                 <>

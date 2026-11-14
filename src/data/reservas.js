@@ -443,6 +443,21 @@ export async function fetchProrrogasPendientes() {
     return sinError(await supabase.rpc('prorrogas_pendientes')) ?? [];
 }
 
+/**
+ * Las ventas que pueden ser la de cada encargo (2026-11-14): misma sala, mismo
+ * producto o mismo monto, desde que se anotó. `{ [id]: [venta…] }`, de mejor a peor.
+ */
+export async function ventasCandidatasDeEncargos(ids) {
+    const lista = (ids ?? []).map(Number).filter((n) => n > 0);
+    if (!lista.length) return {};
+    return sinError(await supabase.rpc('encargos_ventas_candidatas', { p_ids: lista })) ?? {};
+}
+
+/** «Ya se vendió»: el encargo se cobró como venta normal; se amarra a ese renglón y queda entregado. */
+export async function encargoYaVendido(id, itemId, nota = null) {
+    return sinError(await supabase.rpc('encargo_ya_vendido', { p_id: Number(id), p_item_id: Number(itemId), p_nota: nota?.trim() || null }));
+}
+
 /** El cliente ya no quiere un encargo que todavía no pagó: se cancela sin cobro (2026-11-14). */
 export async function cancelarEncargoSinPago(id, motivo) {
     return sinError(await supabase.rpc('encargo_cancelar_sin_pago', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));

@@ -1873,6 +1873,7 @@ export type Database = {
           sugerido_at: string | null
           sugerido_product_id: number | null
           updated_at: string
+          venta_item_id: number | null
           vinculado_at: string | null
           vinculado_por: string | null
         }
@@ -1909,6 +1910,7 @@ export type Database = {
           sugerido_at?: string | null
           sugerido_product_id?: number | null
           updated_at?: string
+          venta_item_id?: number | null
           vinculado_at?: string | null
           vinculado_por?: string | null
         }
@@ -1945,6 +1947,7 @@ export type Database = {
           sugerido_at?: string | null
           sugerido_product_id?: number | null
           updated_at?: string
+          venta_item_id?: number | null
           vinculado_at?: string | null
           vinculado_por?: string | null
         }
@@ -34937,6 +34940,10 @@ export type Database = {
         Args: { p_id: number; p_product_id: number }
         Returns: Json
       }
+      encargo_ya_vendido: {
+        Args: { p_id: number; p_item_id: number; p_nota?: string }
+        Returns: Json
+      }
       encargos_de_sucursal: {
         Args: { p_abiertos?: boolean; p_branch_id: number }
         Returns: Json
@@ -34951,6 +34958,7 @@ export type Database = {
         Returns: Json
       }
       encargos_sugerir_producto: { Args: never; Returns: number }
+      encargos_ventas_candidatas: { Args: { p_ids: number[] }; Returns: Json }
       encolar_impresion: {
         Args: { p_branch_id: number; p_contenido: string; p_titulo: string }
         Returns: number

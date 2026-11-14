@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, useRef } from 'react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { AlertTriangle, ArrowLeft, ArrowRight, HandCoins, Package, ScanLine } from 'lucide-react';
 import Button from '../common/Button';
@@ -966,11 +968,26 @@ export default function SalidaDeBolsa({
         laFotoManda, puedeSalirDelCajon, lectura, leyendo, esOtro, nota, conceptos,
         sinComprobante, motivoSinFoto]);
 
+    const faltaDeIdentidad = 'Falta identificar a quien se lo lleva.';
     const falta = useMemo(() => {
         if (faltaEnElFormulario) return faltaEnElFormulario;
-        if (t?.pide_receptor && (!persona || !vale)) return 'Falta identificar a quien se lo lleva.';
+        if (t?.pide_receptor && (!persona || !vale)) return faltaDeIdentidad;
         return null;
     }, [faltaEnElFormulario, t, persona, vale]);
+
+    // A qué campo pertenece lo que falta, para que el aviso del pie lleve
+    // hasta él (2026-11-14). Se deduce del texto porque las frases nacen
+    // arriba, en este mismo archivo; las que no tienen un control (la foto, la
+    // persona) devuelven null y el aviso queda como texto.
+    const campoDeLaFalta = (() => {
+        if (!falta || falta === faltaDeIdentidad) return null;
+        if (t?.etiqueta_entidad && falta === `Falta ${t.etiqueta_entidad.toLowerCase()}.`) return 'entidad';
+        if (falta === 'Falta cuánto.' || /alcanza/.test(falta)) return 'monto';
+        if (falta === 'Falta el número de boleta.' || falta === problemaDeLaBoleta?.texto) return 'boleta';
+        if (/^En «Otro»/.test(falta) || (esOtro && falta === vaEnOtroLado(conceptos, 'SALIDA', nota))) return 'nota';
+        if (/^Sin foto del comprobante/.test(falta)) return 'motivoSinFoto';
+        return null;
+    })();
 
     const alIdentificar = useCallback(({ persona: p, vale: v }) => {
         setPersona(p);
@@ -1741,15 +1758,18 @@ export default function SalidaDeBolsa({
 
             <LiquidModal.Footer>
                 <div className="flex items-center justify-between gap-3 w-full flex-wrap">
+                    {/* Lo que falta: completo (antes se cortaba) y, si tiene
+                        campo, lleva hasta él. */}
+                    {falta ? <AvisoDeFalta motivo={falta} onIr={campoDeLaFalta ? () => irAlCampo(campoDeLaFalta) : null} /> : (
                     <span className="text-caption text-content-3 min-w-0 truncate">
-                        {falta || (delCajon
+                        {(delCajon
                             ? 'Sale el comprobante de la caja para archivar'
                             : mixta
                                 ? 'Sale un vale para archivar y la etiqueta nueva de la bolsa'
                                 : eleccion.repartos.length > 1
                                 ? `Sale un vale para archivar y ${eleccion.repartos.length} etiquetas nuevas`
                                 : 'Sale un vale para archivar y la etiqueta nueva de la bolsa')}
-                    </span>
+                    </span>)}
                     <div className="flex items-center gap-2 ml-auto">
                         {enIdentidad ? (
                             <Button variant="ghost" icon={ArrowLeft} onClick={volverAlFormulario}

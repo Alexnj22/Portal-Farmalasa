@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1535.1 — El aviso de lo que falta lleva al campo en Enviar producto, Salida y Entrega de bolsas, Apartar e Inyectables
+
+Segunda tanda del aviso «por qué no se puede guardar»: se ve completo (antes algunos se cortaban o iban en letra gris) y, si se sabe el campo, un toque lleva hasta él.
+- **Enviar producto:** sala de destino, motivo, foto del daño y «por qué se lo mandas».
+- **Salida de bolsa:** monto, remesadora o entidad, número de boleta, detalle de «Otro» y el motivo sin comprobante.
+- **Apartar:** cliente, producto, presentación, cantidad y anticipo.
+- **Libro de inyectables:** «Falta: documento, edad, vía…» pasa al pie, junto al botón, y lleva al primero.
+- **Entrega de bolsas:** el aviso ya no se corta.
+
 ## v2.1535.0 — Personal: bajas con el cierre pendiente, y el aviso de lo que falta lleva al campo
 
 - **Bajas con el cierre pendiente.** En Personal (vista Todos o Bajas) aparece una tarjeta con cada persona de baja a la que le falta algo del cierre: finiquito, lo que no devolvió («No devolvió: uniforme»), aviso al ISSS y la AFP, constancia o carta. Dice hace cuántos días salió, y **Completar** abre su ficha con la corrección de la baja ya abierta. La tarjeta de la persona también lo marca («Cierre: 2 pendientes»).

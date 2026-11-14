@@ -17,11 +17,16 @@ const DESTELLO_MS = 1600;
  */
 export function irAlCampo(campo, raiz = typeof document !== 'undefined' ? document : null) {
     if (!campo || !raiz) return false;
-    const el = raiz.querySelector(`[data-campo="${CSS.escape(String(campo))}"]`);
+    // Primero el contenedor marcado; si no, el control por su `name` (los
+    // `PortalInput`/`PortalTextarea` ya lo llevan) y su envoltura.
+    const clave = CSS.escape(String(campo));
+    const porNombre = raiz.querySelector(`[name="${clave}"]`);
+    const el = raiz.querySelector(`[data-campo="${clave}"]`)
+        || porNombre?.closest('[data-campo]') || porNombre?.parentElement || null;
     if (!el) return false;
     const quieto = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     el.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
-    const foco = el.querySelector('input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    const foco = porNombre && el.contains(porNombre) ? porNombre : el.querySelector('input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])');
     // Sin `preventScroll` el foco salta de golpe y le gana al desplazamiento suave.
     foco?.focus?.({ preventScroll: true });
     el.setAttribute('data-destello', '');

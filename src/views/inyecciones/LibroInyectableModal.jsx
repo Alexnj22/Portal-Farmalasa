@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import LiquidModal from '../../components/common/LiquidModal';
 import PieDeModal from '../../components/common/PieDeModal';
 import Button from '../../components/common/Button';
@@ -25,6 +27,9 @@ import { loadDraft, saveDraft, clearDraft } from '@nucleo/utils/draftUtils';
 
 const VACIO = { documento: '', edad: '', medico: '', junta_medico: '', via: '', sitio: '', reaccion: '', observaciones: '',
     lote: '', vence: '', dosis_ml: '' };
+
+// Lo que dice `faltaDelLibro` → el campo del formulario.
+const CAMPO_DEL_LIBRO = { documento: 'documento', edad: 'edad', 'vía': 'via', sitio: 'sitio', 'reacción': 'reaccion', lote: 'lote', vencimiento: 'vence', dosis: 'dosis_ml' };
 
 export default function LibroInyectableModal({ fila, libro, onClose, onHecho }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -68,9 +73,9 @@ export default function LibroInyectableModal({ fila, libro, onClose, onHecho }) 
             <LiquidModal.Body className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-2">
-                        <PortalInput label="DUI u otro documento del paciente" required value={datos.documento} onChange={poner('documento')} />
+                        <PortalInput label="DUI u otro documento del paciente" name="documento" required value={datos.documento} onChange={poner('documento')} />
                     </div>
-                    <PortalInput label="Edad" type="number" required value={datos.edad} onChange={poner('edad')} />
+                    <PortalInput label="Edad" name="edad" type="number" required value={datos.edad} onChange={poner('edad')} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <PortalInput label="Médico que la recetó" value={datos.medico} onChange={poner('medico')} />
@@ -80,22 +85,22 @@ export default function LibroInyectableModal({ fila, libro, onClose, onHecho }) 
                 {/* La ampolla: lo que la aplicación ya tiene no se vuelve a pedir. */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {fila.lote ? dato('Lote', fila.lote)
-                        : <PortalInput label="Lote" required value={datos.lote} onChange={poner('lote')} />}
+                        : <PortalInput label="Lote" name="lote" required value={datos.lote} onChange={poner('lote')} />}
                     {fila.vence ? dato('Vence', venceDeAmpolla(fila.vence))
-                        : <PortalInput label="Vence" type="date" required value={datos.vence} onChange={poner('vence')} />}
+                        : <PortalInput label="Vence" name="vence" type="date" required value={datos.vence} onChange={poner('vence')} />}
                     {fila.dosis_ml != null ? dato('Dosis', `${fila.dosis_ml} ml`)
-                        : <PortalInput label="Dosis (ml)" type="number" required value={datos.dosis_ml} onChange={poner('dosis_ml')} />}
+                        : <PortalInput label="Dosis (ml)" name="dosis_ml" type="number" required value={datos.dosis_ml} onChange={poner('dosis_ml')} />}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                    <div data-campo="via">
                         <p className="text-caption font-bold text-content-3 mb-1">Vía</p>
                         <LiquidSelect value={datos.via} onChange={(v) => setDatos((d) => ({ ...d, via: v || '' }))}
                             options={VIAS_DE_APLICACION} placeholder="¿Por qué vía?" clearable={false} />
                     </div>
-                    <PortalInput label="Sitio de aplicación" required placeholder="Glúteo, deltoides…" value={datos.sitio} onChange={poner('sitio')} />
+                    <PortalInput label="Sitio de aplicación" name="sitio" required placeholder="Glúteo, deltoides…" value={datos.sitio} onChange={poner('sitio')} />
                 </div>
-                <div>
+                <div data-campo="reaccion">
                     <p className="text-caption font-bold text-content-3 mb-1">Reacción observada</p>
                     <LiquidSelect value={datos.reaccion} onChange={(v) => setDatos((d) => ({ ...d, reaccion: v || '' }))}
                         options={REACCIONES_DEL_LIBRO} placeholder="¿Hubo alguna reacción?" clearable={false} />
@@ -109,10 +114,12 @@ export default function LibroInyectableModal({ fila, libro, onClose, onHecho }) 
                 <FirmaEnPantalla onChange={setFirma} disabled={guardando}
                     ayuda={libro?.firmado ? 'Opcional: ya hay una firma guardada.' : 'Opcional. Si el paciente no quiere firmar, se guarda igual.'} />
 
-                {faltan.length > 0 && <Notice variant="warning">{`Falta: ${faltan.join(', ')}.`}</Notice>}
                 {error && <Notice variant="danger">{error}</Notice>}
             </LiquidModal.Body>
-            <PieDeModal>
+            {/* Lo que falta, al lado del botón, y lleva al primero (2026-11-14). */}
+            <PieDeModal izquierda={faltan.length > 0
+                ? <AvisoDeFalta motivo={`Falta: ${faltan.join(', ')}.`} onIr={() => irAlCampo(CAMPO_DEL_LIBRO[faltan[0]])} />
+                : null}>
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                 <Button variant="primary" loading={guardando} disabled={faltan.length > 0} onClick={guardar}>Guardar</Button>
             </PieDeModal>

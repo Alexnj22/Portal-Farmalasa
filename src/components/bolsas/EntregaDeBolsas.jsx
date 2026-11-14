@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
 import { AlertTriangle, Send } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
@@ -295,9 +296,10 @@ export default function EntregaDeBolsas({
 
             <LiquidModal.Footer>
                 <div className="flex items-center justify-between gap-3 w-full flex-wrap">
-                    <span className="text-caption text-content-3 min-w-0 truncate">
-                        {falta || 'Se imprime el comprobante que firman los dos'}
-                    </span>
+                    {/* Lo que falta, completo y en el tono de aviso (antes se cortaba). */}
+                    {falta ? <AvisoDeFalta motivo={falta} /> : (
+                        <span className="text-caption text-content-3 min-w-0 truncate">Se imprime el comprobante que firman los dos</span>
+                    )}
                     <div className="flex items-center gap-2 ml-auto">
                         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
                         <Button variant="primary" icon={Send} loading={guardando}

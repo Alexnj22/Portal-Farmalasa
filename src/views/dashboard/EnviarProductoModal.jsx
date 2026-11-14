@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import AvisoDeFalta from '../../components/common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { AlertTriangle, Check, Loader2, Pencil, Send, Trash2, X } from 'lucide-react';
 import Button from '../../components/common/Button';
@@ -764,6 +766,16 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             ? 'El motivo escrito no puede ser sólo la categoría de arriba.'
         : null;
 
+    // El campo de ese motivo, en el mismo orden: el aviso del pie lleva hasta
+    // él (2026-11-14). `null` = está en la lista de productos, sin un control.
+    const campoQueFalta = !faltaParaMandar ? null
+        : (renglones.length === 0 || excesos.length > 0 || sinLoteElegido.length > 0) ? null
+        : (!destino || chocanConElDestino.length > 0 || sinMotivoPosible) ? 'destino'
+        : !motivo ? 'motivo'
+        : (reglasPendientes || sueltosABodega.length > 0) ? null
+        : (pideFoto && fotos.length === 0) ? 'foto'
+        : 'nota';
+
     const listoParaMandar = !faltaParaMandar;
 
     const transferir = async () => {
@@ -1370,7 +1382,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             que le explica al otro lado por qué le llegó algo que
                             no pidió. */}
                         <div className="flex flex-col gap-2.5 pt-1">
-                            <div>
+                            <div data-campo="destino">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sala de destino</p>
                             <LiquidSelect
                                 value={destino}
@@ -1380,7 +1392,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 ariaLabel="Sala de destino"
                             />
                             </div>
-                            <div>
+                            <div data-campo="motivo">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Motivo</p>
                             <LiquidSelect
                                 value={motivo}
@@ -1435,7 +1447,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 tiene el producto en la mano, antes de sentarse a
                                 escribir el porqué. */}
                             {pideFoto && (
-                                <div>
+                                <div data-campo="foto">
                                     <div className="flex items-center justify-between mb-1.5 px-1">
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3">
                                             Foto del daño
@@ -1470,6 +1482,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 palabra y una caja. Lo exige también la base, que
                                 además rebota el motivo que se limita a repetir
                                 la categoría. */}
+                            <div data-campo="nota">
                             <PortalTextarea
                                 label="Por qué se lo mandas"
                                 required
@@ -1492,6 +1505,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                     ? 'Ej.: se cayó la caja al bajarla y se quebraron dos frascos'
                                     : 'Explica por qué mandas este producto'}
                             />
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1507,9 +1521,8 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                         nadie que apruebe primero — el producto sale de tu sala en
                         el momento. */}
                     {pestana === 'lista' && faltaParaMandar && renglones.length > 0 && (
-                        <p className="text-micro font-semibold text-warning-text leading-snug">
-                            {faltaParaMandar}
-                        </p>
+                        <AvisoDeFalta motivo={faltaParaMandar}
+                            onIr={campoQueFalta ? () => irAlCampo(campoQueFalta) : null} />
                     )}
                     {pestana === 'lista' && renglones.length > 0 && (
                         <p className="text-micro text-content-3 font-medium leading-snug">

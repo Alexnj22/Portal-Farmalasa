@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import AvisoDeFalta from '../common/AvisoDeFalta';
+import { irAlCampo } from '../../plataforma/irAlCampo';
 import { ArrowLeftRight, Check, Copy, Link2, MessageCircle, PackagePlus, PackageSearch, Pencil, Phone, Plus, Search, Trash2, Truck } from 'lucide-react';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
@@ -383,7 +385,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
     // cómo llega y el cobro, cada uno con su rótulo; los avisos en una línea.
     return (
         <div className="space-y-6">
-            <Seccion titulo="Cliente">
+            <Seccion titulo="Cliente" campo="cliente">
                 <BuscarFicha ficha={cliente} onElegir={(c) => { setCliente(c); setTelOk(false); }} rotulo="Cliente"
                     ayuda="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes." />
                 {cliente && (
@@ -400,7 +402,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                 <LineasDelEncargo lineas={lineas} total={totalLineas} onQuitar={(i) => setLineas((ls) => ls.filter((_, j) => j !== i))} />
             )}
 
-            <Seccion titulo={enPedido || soloEncargo ? 'Otro producto (opcional)' : 'Producto'}>
+            <Seccion campo="producto" titulo={enPedido || soloEncargo ? 'Otro producto (opcional)' : 'Producto'}>
                 {sinCatalogo ? (
                     <ProductoQueNoTenemos nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
                         onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
@@ -419,12 +421,12 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                             </Button>
                         </div>
                         <div className="grid grid-cols-[1fr_7rem] gap-3">
-                            <div className="flex flex-col gap-1.5 min-w-0">
+                            <div data-campo="presentacion" className="flex flex-col gap-1.5 min-w-0">
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Presentación</span>
                                 <LiquidSelect clearable={false} placeholder={presentaciones == null ? 'Cargando…' : '¿Cuál?'} value={pres} onChange={setPres}
                                 options={(presentaciones ?? []).map((p) => ({ value: clavePresentacion(p), label: p.tipo }))} />
                             </div>
-                            <PortalInput label="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
+                            <PortalInput label="Cantidad" name="cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
                         </div>
                         {presElegida && (
                             <div className="flex flex-col gap-1.5 min-w-0">
@@ -511,7 +513,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
             )}
 
             {!sinCatalogo && seCobra && (opciones || (enPedido && !producto)) && (
-                <Seccion titulo={enPedido ? `Cobro del pedido · ${renglonesDelPedido.length} productos` : 'Cobro'}>
+                <Seccion campo="cobro" titulo={enPedido ? `Cobro del pedido · ${renglonesDelPedido.length} productos` : 'Cobro'}>
                     {/* Un solo bloque, de arriba abajo: cuánto es, cuánto deja,
                         dónde y con qué paga. Los tres controles a lo ancho para
                         que se lean como una columna y no como tres rieles sueltos. */}
@@ -522,13 +524,13 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                                 atiende={atiende} enCamino={modo === 'viene' || modo === 'traslado'} />
                         ) : (<>
                         <ResumenDeCobro total={totalCobro} deja={deja} />
-                        <Campo rotulo="Cuánto deja">
+                        <Campo rotulo="Cuánto deja" campo="anticipo">
                             <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto} layout="block" columns={3}
                                 options={[{ value: 'mitad', label: `50 % · ${formatMoney(mitad)}` }, { value: 'todo', label: `Todo · ${formatMoney(totalCobro)}` },
                                     { value: 'otro', label: 'Otro monto' }]} />
                         </Campo>
                         {cuanto === 'otro' && (
-                            <PortalInput label="Anticipo" prefix="$" inputMode="decimal" maskType="DECIMAL" value={anticipo} placeholder={String(mitad)} autoFocus
+                            <PortalInput label="Anticipo" name="montoAnticipo" prefix="$" inputMode="decimal" maskType="DECIMAL" value={anticipo} placeholder={String(mitad)} autoFocus
                                 // El motivo va pegado al campo: al pie del diálogo, en letra chica, no se veía.
                                 hasError={anticipo !== '' && montoAnticipo > totalCobro + 0.004}
                                 errorMessage={`No puede pasar de ${formatMoney(totalCobro)}`}
@@ -553,7 +555,8 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
             <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
                 {/* Por qué no se puede enviar, a la vista (2026-11-07: en gris
                     chico nadie lo veía y no se entendía el botón apagado). */}
-                <div className="min-w-0">{falta && <Notice variant="warning" compact>{falta}</Notice>}</div>
+                {/* Lo que falta lleva a su bloque (2026-11-14). */}
+                <div className="min-w-0 flex-1">{falta && <AvisoDeFalta motivo={falta} onIr={campoDeFalta(falta) ? () => irAlCampo(campoDeFalta(falta)) : null} />}</div>
                 <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>{etiquetaBoton}</Button>
             </div>
         </div>
@@ -622,9 +625,21 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
 }
 
 // Un bloque del formulario con su rótulo (2026-10-22).
-function Seccion({ titulo, children }) {
+// A qué bloque pertenece lo que falta. Las frases nacen en `planDeApartar`
+// (utils/apartar.js); las que no tienen un control devuelven null.
+function campoDeFalta(falta) {
+    if (/cliente/i.test(falta)) return 'cliente';
+    if (/^Escribe el nombre del producto|SRS|^Elige el producto/.test(falta)) return 'producto';
+    if (/presentación/.test(falta)) return 'presentacion';
+    if (/cantidad|unidades/i.test(falta)) return 'cantidad';
+    if (/anticipo|cuánto deja/i.test(falta)) return 'anticipo';
+    return null;
+}
+
+// `campo`: el `data-campo` al que lleva el aviso del pie (irAlCampo).
+function Seccion({ titulo, campo, children }) {
     return (
-        <section className="space-y-2.5">
+        <section className="space-y-2.5" data-campo={campo}>
             <TituloDeSeccion nivel="seccion" className="ml-1">{titulo}</TituloDeSeccion>
             {children}
         </section>
@@ -984,9 +999,9 @@ function SinAnticipo({ total, confirmado, onConfirmar, atiende, enCamino }) {
 
 // Un control con su rótulo visible (el `label` de SegmentedControl es sólo
 // para el lector de pantalla): la misma letra que «Cómo pagó» de FormaDePago.
-function Campo({ rotulo, children }) {
+function Campo({ rotulo, campo, children }) {
     return (
-        <div>
+        <div data-campo={campo}>
             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">{rotulo}</p>
             {children}
         </div>

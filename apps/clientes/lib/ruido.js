@@ -24,6 +24,7 @@ import Constants from 'expo-constants';
 import { Asset } from 'expo-asset';
 import PortadaViva from '../modules/portada-viva';
 import VIVAS from './portadasVivas';
+import { alOcultar, sonidoAPropositoWeb } from './audioWeb';
 
 let AudioAPI = null;
 try { AudioAPI = require('react-native-audio-api'); } catch { AudioAPI = null; }
@@ -293,6 +294,7 @@ const Aviso = () => (conSegundoPlano() ? AudioAPI?.PlaybackNotificationManager ?
 // le da el control en la pantalla de bloqueo. Al parar vuelve a mezclarse,
 // como la quieren los juegos (lib/sensaciones.js).
 function sesion(propia) {
+  if (propia) sonidoAPropositoWeb();
   if (Platform.OS !== 'ios') return;
   try {
     AudioAPI.AudioManager?.setSystemOptions?.({ ios: { category: 'playback', options: propia ? [] : ['mixWithOthers'] } });
@@ -573,3 +575,7 @@ export function pararRuido(seg = 0.6) {
 // Al volver a la app, el reproductor de la pantalla bloqueada se alinea con lo
 // que de verdad suena (por si se perdió un toque mientras estaba en segundo plano).
 AppState.addEventListener('change', (e) => { if (e === 'active' && (estado.sonando || estado.pausado)) sincronizarAviso(); });
+
+// En el navegador no hay audio de fondo: al irse a otra pestaña, a otra app o
+// al bloquear, se pausa (y se retoma con «Reproducir»).
+alOcultar(() => { if (estado.sonando) pausarRuido(); });

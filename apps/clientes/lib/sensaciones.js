@@ -29,6 +29,7 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
+import { alOcultar, sonidoAPropositoWeb } from './audioWeb';
 
 let AudioAPI = null;
 try { AudioAPI = require('react-native-audio-api'); } catch { AudioAPI = null; }
@@ -115,6 +116,7 @@ function contexto() {
     if (Platform.OS === 'ios') {
       AudioAPI.AudioManager?.setSystemOptions?.({ ios: { category: 'playback', options: ['mixWithOthers'] } });
     }
+    sonidoAPropositoWeb();
     ctx = new AudioAPI.AudioContext();
     salida = ctx.createGain();
     salida.gain.value = 0.9;
@@ -181,6 +183,8 @@ function pararLista(lista) {
   if (lista) lista.length = 0;
 }
 function callarTodo() { Object.values(sonando).forEach(pararLista); }
+// Navegador: al irse de la página, nada sigue sonando (despertar() lo retoma).
+alOcultar(() => { callarTodo(); if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); });
 
 /**
  * Al salir de un juego: que no quede nada sonando. Un rato después el motor de

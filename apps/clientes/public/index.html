@@ -52,14 +52,25 @@
       html.documento, html.documento body { height: auto; min-height: 100%; }
       html.documento body { overflow: visible; }
       html.documento #root { height: auto; min-height: 100vh; }
-      html.documento [data-encabezado] { transition: background-color 0.2s, backdrop-filter 0.2s; }
-      html.documento.desplazada [data-encabezado] {
-        background-color: rgba(245, 244, 248, 0.72);
-        -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
-        box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.12);
+      /* Al bajar, lo que flota del encabezado (la foto, el logo, la campana)
+         lleva su vidrio, para leerse sobre el contenido que pasa debajo. */
+      html.documento [data-flota] { transition: background-color 0.2s, box-shadow 0.2s; border-radius: 999px; }
+      html.documento.desplazada [data-flota] {
+        background-color: rgba(245, 244, 248, 0.78);
+        -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+        box-shadow: 0 0 0 6px rgba(245, 244, 248, 0.78), 0 4px 14px 6px rgba(0, 0, 0, 0.12);
       }
-      html.documento.desplazada.oscura [data-encabezado] {
-        background-color: rgba(18, 16, 24, 0.72); box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.1);
+      /* Safari del iPhone: sin difuminado cerca del borde (lib/documentoWeb). */
+      html.documento.desplazada [data-flota][data-sin-desenfoque] {
+        -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(245, 244, 248, 0.95);
+        box-shadow: 0 0 0 6px rgba(245, 244, 248, 0.95), 0 4px 14px 6px rgba(0, 0, 0, 0.12);
+      }
+      html.documento.desplazada.oscura [data-flota][data-sin-desenfoque] {
+        background-color: rgba(28, 26, 34, 0.95); box-shadow: 0 0 0 6px rgba(28, 26, 34, 0.95), 0 4px 14px 6px rgba(0, 0, 0, 0.35);
+      }
+      html.documento.desplazada.oscura [data-flota] {
+        background-color: rgba(28, 26, 34, 0.8);
+        box-shadow: 0 0 0 6px rgba(28, 26, 34, 0.8), 0 4px 14px 6px rgba(0, 0, 0, 0.35);
       }
     </style>
   </head>

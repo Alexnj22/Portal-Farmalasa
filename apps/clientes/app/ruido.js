@@ -13,7 +13,7 @@
 // El temporizador apaga despacio —medio minuto de fundido— para no despertar
 // a nadie; está programado dentro del audio, así que se cumple bloqueado.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { InteractionManager, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { InteractionManager, PanResponder, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -110,6 +110,9 @@ export default function Ruido() {
   const toque = useSharedValue({ x: 0, y: 0, t: -10 });
 
   useEffect(() => { energia.value = withTiming(sonando ? 1 : 0, { duration: 1400 }); }, [sonando, energia]);
+  // En el navegador el sonido es de esta pantalla: al salir de ella se pausa
+  // (en el teléfono sigue de fondo y en la pantalla bloqueada).
+  useEffect(() => () => { if (Platform.OS === 'web') pausarRuido(); }, []);
   // El sonido elegido se fabrica en cuanto la pantalla termina de entrar.
   useEffect(() => { const h = InteractionManager.runAfterInteractions(() => prepararRuido(tipo)); return () => h.cancel(); }, [tipo]);
 

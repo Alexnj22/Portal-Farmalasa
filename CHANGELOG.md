@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.11 — Puntos Salud web: el contenido pasa bajo las barras de Safari; sonidos con el iPhone en silencio
+
+- **Safari del iPhone, de verdad a pantalla completa**: el contenido pasa por debajo de la hora y de la barra de direcciones. Medido en el simulador, ocultando una cosa por vez, había tres cosas que hacían que Safari pintara esas zonas de un color liso:
+  - **la aurora**, una capa opaca que tapa toda la pantalla: en Safari del iPhone se oculta, y el fondo de la página ya trae las mismas manchas;
+  - **algo fijo de lado a lado pegado a un borde**, como la barra del encabezado o la caja del menú: ahora flotan sueltos la foto, el logo y la campana, cada uno con su vidrio al bajar, y el menú queda fijo sólo del ancho de su pastilla;
+  - **el difuminado cerca de un borde**: en Safari del iPhone lo que flota lleva un fondo casi opaco.
+- En la computadora, la foto, «volver» y los botones de la derecha de TODOS los encabezados se alinean con la columna del contenido («Notificaciones» incluido).
+- **Sonidos en la web**: con el iPhone en silencio, Safari callaba los juegos y los sonidos de Bienestar sin avisar. Ahora suenan igual, como en la app (`navigator.audioSession`). Y en el navegador se pausan al salir de la pantalla de sonidos, al cambiar de pestaña o de app y al bloquear (`apps/clientes/lib/audioWeb.js`).
+
 ## v2.1537.10 — Puntos Salud web: la página se desplaza, con encabezado y menú fijos
 
 - En el navegador la que se desplaza es la PÁGINA, no una caja adentro: en Safari del iPhone el contenido pasa por debajo de la barra de direcciones (que se achica al bajar) y, al subir, por debajo del encabezado. Quedan fijos el encabezado (se vuelve vidrio al bajar), el menú de abajo y la burbuja del chat. Reemplaza la página «anclada» de v2.1537.9, que seguía viéndose como un cuadrado.

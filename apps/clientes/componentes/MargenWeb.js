@@ -13,7 +13,10 @@ export function useMargenLateral() {
   return Math.max(RELLENO, (width - COLUMNA) / 2 + RELLENO);
 }
 
+// El margen de 16 de los lados del encabezado en la web (en el teléfono lo da
+// el sistema). Lo que falta para llegar a la columna en la computadora lo pone
+// lib/documentoWeb (`alinearEncabezados`), en TODOS los encabezados.
 export function AlLado({ lado, children }) {
-  const m = useMargenLateral();
+  const m = RELLENO;
   return <View style={lado === 'izq' ? { marginLeft: m } : { marginRight: m }}>{children}</View>;
 }

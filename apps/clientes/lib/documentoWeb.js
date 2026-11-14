@@ -14,8 +14,8 @@
 //   - lo que flotaba encima en esos contenedores (`absolute`: la barra de
 //     pestañas, la burbuja del chat, la aurora, avisos) pasa a `fixed`, así
 //     queda en la pantalla y no al final de la página;
-//   - el encabezado (va en el flujo, arriba) queda `sticky`: el contenido pasa
-//     por debajo al subir;
+//   - el encabezado se queda en la página y sus partes (foto, logo, campana)
+//     flotan sueltas (`flotarPartes`): el contenido pasa por debajo al subir;
 //   - cada pantalla recuerda dónde quedó, y `scrollTo` de la lista mueve la
 //     página (volver arriba al tocar la pestaña otra vez).
 // Una pantalla sin la marca (las listas largas con FlatList, el chat) sigue
@@ -42,7 +42,8 @@ function guardarYPoner(el, estilos) {
 }
 
 function deshacer() {
-  for (const [el, orig] of tocados) { Object.assign(el.style, orig); delete el.dataset.encabezado; }
+  for (const [el, orig] of tocados) { Object.assign(el.style, orig); delete el.dataset.encabezado; delete el.dataset.flota; }
+  document.querySelectorAll('[data-flota],[data-encabezado]').forEach((e) => { delete e.dataset.flota; delete e.dataset.encabezado; });
   tocados.clear();
   if (activo) {
     posiciones.set(activo, window.scrollY);
@@ -122,13 +123,174 @@ function acomodarVecinos() {
       if (v === n) { antes = false; continue; }
       const s = getComputedStyle(v);
       if (s.display === 'none') continue;
-      if (s.position === 'absolute') guardarYPoner(v, { position: 'fixed' });
-      else if (antes && s.position !== 'fixed' && s.position !== 'sticky' && v.getBoundingClientRect().height < 200 && n !== activo) {
-        guardarYPoner(v, { position: 'sticky', top: '0px', zIndex: '20' });
+      if (s.position === 'absolute') fijar(v);
+      else if (s.position === 'fixed' && !tocados.has(v)) fondoEnLaPagina(v);
+      else if (antes && !v.dataset.encabezado && s.position !== 'fixed' && v.getBoundingClientRect().height < 200 && n !== activo) {
         v.dataset.encabezado = '1';
+        flotarPartes(v);
       }
     }
   }
+}
+
+// Lo que flotaba (absolute) pasa a fijo, salvo que ocupe el ANCHO entero:
+// Safari toma algo fijo de lado a lado pegado a un borde como una barra y pinta
+// su zona (la hora, la barra de direcciones) de un color liso — medido en el
+// simulador. Así que:
+//   - el fondo (la aurora, que tapa toda la pantalla) se queda en la página y
+//     se estira con ella;
+//   - una franja de lado a lado (la caja del menú de abajo, el indicador de
+//     refrescar) queda fija pero sólo del ancho de lo que lleva adentro: el
+//     menú es una pastilla con margen, como en la prueba que sí funcionó.
+function fijar(v) {
+  const W = window.innerWidth; const H = window.innerHeight;
+  const r = v.getBoundingClientRect();
+  if (r.width >= W * 0.9 && r.height >= H * 0.8) { fondoEnLaPagina(v); return; } // fondo
+  if (r.width >= W * 0.9) {
+    // Del tamaño de lo que lleva adentro, en los dos sentidos: la caja del
+    // menú tiene relleno abajo y tocaba el borde.
+    const hijos = [...v.children].map((c) => c.getBoundingClientRect()).filter((c) => c.width > 0);
+    if (hijos.length) {
+      const izq = Math.min(...hijos.map((c) => c.left)); const der = Math.max(...hijos.map((c) => c.right));
+      const arr = Math.min(...hijos.map((c) => c.top)); const aba = Math.max(...hijos.map((c) => c.bottom));
+      if (der - izq < W - 8) {
+        // Medido dentro de la caja: la caja ya está al final de la página, no
+        // de la pantalla. Lo que la separa del borde de abajo se conserva.
+        guardarYPoner(v, {
+          position: 'fixed', left: `${Math.round(izq - r.left)}px`, right: `${Math.round(r.right - der)}px`,
+          top: 'auto', bottom: `${Math.round(r.bottom - aba)}px`, height: `${Math.ceil(aba - arr)}px`,
+          paddingLeft: '0px', paddingRight: '0px', paddingTop: '0px', paddingBottom: '0px',
+        });
+        sinDesenfoque(v);
+        return;
+      }
+    }
+  }
+  guardarYPoner(v, { position: 'fixed' });
+  sinDesenfoque(v);
+}
+
+// Medido en el simulador: un vidrio difuminado (`backdrop-filter`) cerca de un
+// borde hace que Safari del iPhone pinte la franja de la hora o la de la barra
+// de direcciones con el color liso de la página. Ahí, lo que flota lleva un
+// fondo casi opaco en lugar del difuminado. En la computadora no cambia.
+const IPHONE_SAFARI = typeof navigator !== 'undefined'
+  && (/iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform)))
+  && !(typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true));
+function sinDesenfoque(raiz) {
+  if (!IPHONE_SAFARI) return;
+  for (const el of [raiz, ...raiz.querySelectorAll('*')]) {
+    const s = getComputedStyle(el);
+    const bf = s.webkitBackdropFilter || s.backdropFilter;
+    if (!bf || bf === 'none') continue;
+    const m = s.backgroundColor.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
+    const estilos = { backdropFilter: 'none', webkitBackdropFilter: 'none' };
+    if (m && Number(m[4] ?? 1) < 0.92) estilos.backgroundColor = `rgba(${m[1]}, ${m[2]}, ${m[3]}, 0.94)`;
+    guardarYPoner(el, estilos);
+  }
+}
+
+// La aurora (componentes/Aurora.js) es una capa opaca que tapa toda la
+// pantalla. Medido en el simulador, ocultando una cosa por vez: con ella,
+// Safari del iPhone pinta la zona de la hora y la de la barra de direcciones
+// con su color liso, fija o no, opaca o transparente; sin ella, el contenido
+// pasa por debajo de las dos. Ahí se oculta: el fondo de la página
+// (public/index.html) ya trae las mismas manchas de la aurora. En la
+// computadora se queda como está.
+function fondoEnLaPagina(v) {
+  if (!IPHONE_SAFARI) return;
+  const r = v.getBoundingClientRect();
+  if (r.width < window.innerWidth * 0.9 || r.height < window.innerHeight * 0.8) return;
+  guardarYPoner(v, { display: 'none' });
+}
+
+// Las partes de un encabezado: la foto o «volver», el título y los botones
+// de la derecha. Es el primer nivel con dos o más hijos angostos.
+function partes(h) {
+  const W = window.innerWidth;
+  let nivel = [h];
+  for (let i = 0; i < 8 && nivel.length; i++) {
+    const sig = [];
+    for (const n of nivel) {
+      const hijos = [...n.children].filter((c) => { const r = c.getBoundingClientRect(); return r.height > 0 && r.width > 0; });
+      if (hijos.length >= 2 && hijos.every((c) => c.getBoundingClientRect().width < W * 0.7)) return hijos;
+      sig.push(...hijos);
+    }
+    nivel = sig;
+  }
+  return [];
+}
+
+// Lo que se ve de cada parte (la foto, el logo, la campana): el primer hijo
+// más chico que la parte. Ahí va el vidrio al bajar.
+function pieza(p) {
+  const r0 = p.getBoundingClientRect();
+  for (let n = p; n; n = n.firstElementChild) {
+    const r = n.getBoundingClientRect();
+    if (r.width < r0.width - 1 || r.height < r0.height - 1) return n;
+    if (n.children.length !== 1) return n;
+  }
+  return p;
+}
+
+// Medido en el simulador: una barra fija de lado a lado pegada arriba hace que
+// Safari pinte la zona de la hora de un color liso (el contenido no pasa por
+// debajo). Piezas chicas sueltas, no. Así que el encabezado se queda en la
+// página (se va al bajar) y sus partes flotan, cada una por su cuenta, en el
+// mismo lugar donde estaban — como el menú de abajo, que no toca los bordes.
+function flotarPartes(h) {
+  const hr = h.getBoundingClientRect();
+  const ps = partes(h);
+  alinearUno(ps); // antes de medir: el margen de la computadora va adentro
+  // Se fija lo que se VE de cada parte (la foto, el logo, la campana), no la
+  // caja de 64 px de alto: la caja toca el borde de arriba y Safari vuelve a
+  // pintar la franja. Todo se mide antes de mover nada.
+  const lista = ps.map((p) => { const v = pieza(p); return { p, v, r: v.getBoundingClientRect(), rp: p.getBoundingClientRect() }; });
+  for (const { p, v, r, rp } of lista) {
+    // Una parte vacía (Cuenta no lleva foto a la izquierda) no flota: sería un
+    // vidrio sin nada adentro.
+    if (r.width <= 0 || (!v.textContent.trim() && !v.querySelector('img, svg, canvas'))) continue;
+    // La parte guarda su lugar en la fila aunque su contenido se vaya.
+    guardarYPoner(p, { width: `${Math.ceil(rp.width)}px`, height: `${Math.ceil(rp.height)}px`, flexShrink: '0', flexGrow: '0' });
+    guardarYPoner(v, {
+      position: 'fixed', zIndex: '20', margin: '0px',
+      top: `${Math.round(r.top - hr.top)}px`, left: `${Math.round(r.left)}px`,
+      // Hacia arriba y con un px de aire: redondeado hacia abajo, el título
+      // («Notificaciones», 113.6 px) salía con puntos suspensivos.
+      width: `${Math.ceil(r.width) + 1}px`, height: `${Math.ceil(r.height)}px`,
+    });
+    v.dataset.flota = '1';
+    if (IPHONE_SAFARI) v.dataset.sinDesenfoque = '1';
+  }
+}
+
+// En la computadora, la foto, «volver» y los botones de la derecha se alinean
+// con la columna del contenido (560 px, componentes/ui.js), no con la orilla
+// de una ventana de 1400. En todos los encabezados, no sólo los de la página
+// que se desplaza. En el teléfono no cambia nada.
+const alineados = new Map();
+function alinearUno(ps, extra = Math.max(0, Math.round((window.innerWidth - 560) / 2))) {
+  if (ps.length !== 3) return;
+  // En la FILA, no en los lados: así el título conserva su ancho (con el
+  // margen en los lados, «Notificaciones» salía cortado).
+  const fila = ps[0].parentElement;
+  if (!alineados.has(fila)) alineados.set(fila, { paddingLeft: fila.style.paddingLeft, paddingRight: fila.style.paddingRight });
+  for (const k of ['paddingLeft', 'paddingRight']) {
+    const v = extra ? `${extra}px` : alineados.get(fila)[k];
+    if (fila.style[k] !== v) fila.style[k] = v;
+  }
+}
+function alinearEncabezados() {
+  const W = window.innerWidth;
+  const extra = Math.max(0, Math.round((W - 560) / 2));
+  const raiz = document.getElementById('root');
+  for (const el of raiz.querySelectorAll('div')) {
+    const r = el.getBoundingClientRect();
+    if (r.width < W * 0.9 || r.height < 40 || r.height > 130) continue;
+    if (Math.abs(r.top + window.scrollY) > 2 && !el.dataset.encabezado) continue;
+    alinearUno(partes(el), extra);
+  }
+  for (const p of alineados.keys()) if (!p.isConnected) alineados.delete(p);
 }
 
 function elegir() {
@@ -151,8 +313,24 @@ export function anclarDocumento() {
   const empezar = () => {
     const raiz = document.getElementById('root');
     if (!raiz) { setTimeout(empezar, 100); return; }
-    new MutationObserver(pronto).observe(raiz, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class'] });
-    window.addEventListener('resize', pronto);
+    // Buscar encabezados recorre todo el árbol: sólo cuando entran o salen
+    // elementos, y como mucho cada 300 ms (las animaciones cambian estilos en
+    // cada cuadro).
+    let relojAlinear = null;
+    const alinearPronto = () => { if (!relojAlinear) relojAlinear = setTimeout(() => { relojAlinear = null; alinearEncabezados(); pronto(); }, 300); };
+    new MutationObserver((ms) => {
+      pronto();
+      if (ms.some((m) => m.type === 'childList')) alinearPronto();
+    }).observe(raiz, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class'] });
+    // Al cambiar el ancho, las partes que flotan se vuelven a medir.
+    window.addEventListener('resize', () => {
+      // Primero se quita el margen viejo: con el de una ventana más ancha la
+      // fila queda sin lugar y las partes no se encuentran.
+      for (const [fila, o] of alineados) Object.assign(fila.style, o);
+      alineados.clear();
+      deshacer(); alinearEncabezados(); pronto();
+    });
+    alinearEncabezados();
     // Al bajar, el encabezado se vuelve vidrio (index.html), como la barra
     // del iPhone: arriba del todo es transparente sobre la aurora.
     const html = document.documentElement;

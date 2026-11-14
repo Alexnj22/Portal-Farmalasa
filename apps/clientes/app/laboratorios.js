@@ -69,7 +69,7 @@ export default function Laboratorios() {
   if (!labs) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator /></View>;
 
   return (
-    <FlatList data={lista} keyExtractor={(l) => String(l.id)} renderItem={({ item }) => <Fila l={item} alElegir={alElegir} />}
+    <FlatList dataSet={{ documento: 'no' }} data={lista} keyExtractor={(l) => String(l.id)} renderItem={({ item }) => <Fila l={item} alElegir={alElegir} />}
       contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 + ESPACIO_BURBUJA }} stickyHeaderIndices={[0]}
       ListHeaderComponent={(

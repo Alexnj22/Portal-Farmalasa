@@ -35,6 +35,7 @@ import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
 import { sinBloquear } from '../../../lib/bloqueo';
+import { AlLado } from '../../../componentes/MargenWeb';
 import { useDesplazamiento } from '../../../lib/desplazamiento';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -48,7 +49,7 @@ const marcarConfeti = () => { confetiMostrado = true; };
 const fotoEnEncabezado = (foto) => (Platform.OS === 'ios'
   ? { unstable_headerLeftItems: () => [{ type: 'custom', element: foto, hidesSharedBackground: true }] }
   // Web: con margen, como en el teléfono (sin él, la foto tocaba la orilla).
-  : { headerLeft: () => (Platform.OS === 'web' ? <View style={{ marginLeft: 16 }}>{foto}</View> : foto) });
+  : { headerLeft: () => (Platform.OS === 'web' ? <AlLado lado="izq">{foto}</AlLado> : foto) });
 
 export default function Puntos() {
   const t = useTema();

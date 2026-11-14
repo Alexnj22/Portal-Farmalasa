@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.10 — Puntos Salud web: la página se desplaza, con encabezado y menú fijos
+
+- En el navegador la que se desplaza es la PÁGINA, no una caja adentro: en Safari del iPhone el contenido pasa por debajo de la barra de direcciones (que se achica al bajar) y, al subir, por debajo del encabezado. Quedan fijos el encabezado (se vuelve vidrio al bajar), el menú de abajo y la burbuja del chat. Reemplaza la página «anclada» de v2.1537.9, que seguía viéndose como un cuadrado.
+- Medido en el simulador: Safari recorta todo lo fijo en el borde de sus barras; por debajo sólo pasa lo que se desplaza con la página. `apps/clientes/lib/documentoWeb.js` toma la lista de la pantalla visible y la hace crecer con su contenido. Las listas largas que cargan a medida que se bajan (Tienda, avisos, chat) siguen con su caja propia.
+- En la computadora, la foto de perfil y la campana se alinean con la columna del contenido, y la burbuja del chat queda justo al lado, no en la orilla de la ventana.
+
 ## v2.1537.9 — Puntos Salud web: pantalla completa en Safari del iPhone
 
 - En Safari del iPhone, Puntos Salud ya llena la pantalla: el fondo llega debajo de la hora y de la barra de Safari, sin las dos franjas negras. El menú de abajo queda fijo, justo encima de la barra de Safari.

@@ -46,16 +46,21 @@
       }
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
-      /* Safari del iPhone (lib/documentoWeb.js): la página queda desplazada y
-         la app fija encima, para que Safari dibuje la aurora debajo de sus
-         barras en lugar de dos franjas lisas. */
-      html.anclado { scrollbar-width: none; overscroll-behavior: none; }
-      html.anclado body { overflow: visible; min-height: calc(100lvh + 160px); }
-      html.anclado #root {
-        position: fixed; top: 0; left: 0; right: 0; height: 100lvh;
-        box-sizing: border-box; padding-bottom: var(--bajo-safari, 0px);
+      /* La página se desplaza (lib/documentoWeb.js): así el contenido pasa
+         bajo la barra de estado y la de direcciones de Safari, que recortan
+         todo lo fijo. */
+      html.documento, html.documento body { height: auto; min-height: 100%; }
+      html.documento body { overflow: visible; }
+      html.documento #root { height: auto; min-height: 100vh; }
+      html.documento [data-encabezado] { transition: background-color 0.2s, backdrop-filter 0.2s; }
+      html.documento.desplazada [data-encabezado] {
+        background-color: rgba(245, 244, 248, 0.72);
+        -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+        box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.12);
       }
-      html.anclado #root * { overscroll-behavior: contain; }
+      html.documento.desplazada.oscura [data-encabezado] {
+        background-color: rgba(18, 16, 24, 0.72); box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.1);
+      }
     </style>
   </head>
   <body>

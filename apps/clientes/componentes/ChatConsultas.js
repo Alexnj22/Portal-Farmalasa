@@ -93,7 +93,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
             returnKeyType="search" clearButtonMode="while-editing" autoCorrect={false} accessibilityLabel="Buscar un producto"
             style={{ flex: 1, fontSize: 17, color: colorSistema.texto, paddingVertical: 8 }} />
         </View>
-        <FlatList
+        <FlatList dataSet={{ documento: 'no' }}
           data={datos}
           keyExtractor={(p) => String(p.id)}
           keyboardShouldPersistTaps="handled"

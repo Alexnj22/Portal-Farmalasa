@@ -87,7 +87,7 @@ export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {
         </View>
 
         {seccion === 'mensajes' ? (
-          <FlatList data={resultados ?? []} keyExtractor={(m) => String(m.id)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+          <FlatList dataSet={{ documento: 'no' }} data={resultados ?? []} keyExtractor={(m) => String(m.id)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 8 }}
             ListEmptyComponent={(
               <Text style={{ textAlign: 'center', color: colorSistema.texto3, fontSize: 15, marginTop: 30 }}>
@@ -107,7 +107,7 @@ export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {
               </Presionable>
             )} />
         ) : seccion === 'fotos' ? (
-          <FlatList data={galeria?.fotos ?? []} keyExtractor={(m) => String(m.id)} numColumns={3}
+          <FlatList dataSet={{ documento: 'no' }} data={galeria?.fotos ?? []} keyExtractor={(m) => String(m.id)} numColumns={3}
             contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 40, gap: 4 }} columnWrapperStyle={{ gap: 4 }}
             ListEmptyComponent={<Vacio cargando={!galeria} texto="Todavía no hay fotos en el chat." />}
             renderItem={({ item: m, index }) => (
@@ -118,7 +118,7 @@ export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {
               </Presionable>
             )} />
         ) : (
-          <FlatList data={galeria?.productos ?? []} keyExtractor={(m) => String(m.id)}
+          <FlatList dataSet={{ documento: 'no' }} data={galeria?.productos ?? []} keyExtractor={(m) => String(m.id)}
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 8 }}
             ListEmptyComponent={<Vacio cargando={!galeria} texto="Todavía no se mandó ningún producto." />}
             renderItem={({ item: m }) => {

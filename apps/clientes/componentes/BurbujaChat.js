@@ -27,6 +27,7 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
+import { useMargenLateral } from './MargenWeb';
 import { colorSistema } from './sistema';
 import { M3, IOS } from './movimiento';
 import { alLlegarAviso, esAvisoDeChat } from '../lib/avisos';
@@ -66,6 +67,10 @@ const PressableAnimado = Animated.createAnimatedComponent(Pressable);
 export default function BurbujaChat() {
   const t = useTema();
   const ins = useSafeAreaInsets();
+  // Web: junto a la columna del contenido, por FUERA si cabe (así no tapa un
+  // botón de la tarjeta) y si no, a 16 de la orilla como en el teléfono.
+  const margen = useMargenLateral();
+  const derecha = Platform.OS === 'web' ? Math.max(16, margen - 16 - TAM - 16) : 16;
   const segmentos = useSegments();
   const token = useSesion((s) => s.token);
   // Con el bloqueo (2026-10-14, «la burbuja sale encima de la pantalla de
@@ -194,7 +199,7 @@ export default function BurbujaChat() {
   }
 
   return (
-    <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', right: 16 + ins.right, bottom: abajo, zIndex: 900 }, animado]}>
+    <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', right: derecha + ins.right, bottom: abajo, zIndex: 900 }, animado]}>
       {boton}
       {sinLeer ? (
         <Animated.View pointerEvents="none" style={[estilos.numero, { backgroundColor: colorSistema.rojo, borderColor: borde, ...(ANDROID ? { elevation: 7 } : null) }, animadoNumero]}>

@@ -3,7 +3,7 @@
 // texto en los colores del sistema (`label`; los secundarios, sólidos — ver sistema.js), el botón del
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
 import IndicadorCarga from './IndicadorCarga';
 import Presionable from './Presionable';
@@ -15,6 +15,7 @@ import Icono from './Icono';
 import Vidrio, { SinVidrio } from './Vidrio';
 import { ContextoDesplazamiento, crearDesplazamiento } from '../lib/desplazamiento';
 import { useTirarParaRefrescar } from './TirarParaRefrescar';
+import { esListaDelDocumento } from '../lib/documentoWeb';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 
@@ -90,12 +91,34 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
   // Web: deslizar para refrescar (RefreshControl no existe en el navegador).
   const tirar = useTirarParaRefrescar({ alRefrescar, refrescando, refExterno: refLista, arriba: sinBarra ? ins.top + 60 : 8 + bajoBarra });
   useEffect(() => () => d.soltarTodo(), [d]);
+  const alDesplazar = alFinal || sinBarra ? ({ nativeEvent: e }) => {
+    if (sinBarra) { const v = e.contentOffset.y > 4; if (v !== velo) setVelo(v); }
+    if (alFinal && e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
+  } : undefined;
+  // Web (lib/documentoWeb): la que se desplaza es la PÁGINA, así que lo que
+  // esta lista hacía al desplazarse (el velo, cargar más) se lo pasa la ventana.
+  const nodo = useRef(null);
+  const alDesplazarRef = useRef(alDesplazar);
+  alDesplazarRef.current = alDesplazar;
+  const refTirar = tirar.ref;
+  const refWeb = useCallback((r) => { nodo.current = r; if (typeof refTirar === 'function') refTirar(r); }, [refTirar]);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return undefined;
+    const f = () => {
+      const el = nodo.current?.getScrollableNode?.() ?? nodo.current;
+      if (!alDesplazarRef.current || !esListaDelDocumento(el)) return;
+      alDesplazarRef.current({ nativeEvent: { contentOffset: { x: 0, y: window.scrollY }, layoutMeasurement: { height: window.innerHeight }, contentSize: { height: document.documentElement.scrollHeight } } });
+    };
+    window.addEventListener('scroll', f, { passive: true });
+    return () => window.removeEventListener('scroll', f);
+  }, []);
   return (
     <ContextoDesplazamiento.Provider value={d}>
     <SinVidrio.Provider value={sinVidrio}>
     <ConTeclado>
     <ScrollView
-      ref={tirar.ref}
+      ref={Platform.OS === 'web' ? refWeb : tirar.ref}
+      dataSet={Platform.OS === 'web' ? { documento: '1' } : undefined}
       contentInsetAdjustmentBehavior={fijo ? 'never' : 'automatic'}
       // Con `bajoBarra`, el margen es explícito y el reposo es «menos la
       // barra», que es justo donde iOS lo lleva al volver a tocar la pestaña:
@@ -122,10 +145,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       onMomentumScrollBegin={d.inercia}
       onMomentumScrollEnd={d.terminar}
       scrollEventThrottle={sinBarra ? 32 : alFinal ? 250 : undefined}
-      onScroll={alFinal || sinBarra ? ({ nativeEvent: e }) => {
-        if (sinBarra) { const v = e.contentOffset.y > 4; if (v !== velo) setVelo(v); }
-        if (alFinal && e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
-      } : undefined}
+      onScroll={alDesplazar}
       // `colors` y `progressBackgroundColor` sólo los lee Android: el círculo de
       // Material en la marca, sobre la superficie alta (2026-10-13).
       refreshControl={alRefrescar ? <RefreshControl refreshing={refrescando} onRefresh={alRefrescar}
@@ -173,7 +193,7 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
     <ContextoDesplazamiento.Provider value={d}>
     <SinVidrio.Provider value={sinVidrio}>
     <ConTeclado>
-    <FlatList
+    <FlatList dataSet={{ documento: 'no' }}
       ref={tirar.ref}
       data={datos}
       renderItem={renderItem}

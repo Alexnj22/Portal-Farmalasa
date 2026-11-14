@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTema } from '../tema/tema';
+import { esListaDelDocumento } from '../lib/documentoWeb';
 
 const WEB = Platform.OS === 'web';
 const UMBRAL = 64;
@@ -41,19 +42,22 @@ export function useTirarParaRefrescar({ alRefrescar, refrescando, arriba = 8, re
     const el = r?.getScrollableNode?.() ?? r;
     if (!el?.addEventListener) return undefined;
     const contenido = () => el.firstElementChild;
+    // Si la página es la que se desplaza (lib/documentoWeb), «arriba del todo»
+    // lo dice la ventana, no la lista.
+    const desde = () => (esListaDelDocumento(el) ? window.scrollY : el.scrollTop);
     let y0 = null; let d = 0; let paso = false;
     const mover = (px, suave) => {
       const c = contenido();
       if (c) { c.style.transition = suave ? 'transform 0.25s ease' : 'none'; c.style.transform = px ? `translateY(${px}px)` : ''; }
     };
     const inicio = (e) => {
-      y0 = el.scrollTop <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null;
+      y0 = desde() <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null;
       d = 0; paso = false;
     };
     const moviendo = (e) => {
       if (y0 == null) return;
       const dy = e.touches[0].clientY - y0;
-      if (dy <= 0 || el.scrollTop > 0) { if (d) { d = 0; mover(0); setTiro(0); } if (el.scrollTop > 0) y0 = null; return; }
+      if (dy <= 0 || desde() > 0) { if (d) { d = 0; mover(0); setTiro(0); } if (desde() > 0) y0 = null; return; }
       // Tirando desde arriba: el gesto es nuestro (sin el rebote de Safari).
       if (e.cancelable) e.preventDefault();
       d = Math.min(dy * 0.5, TOPE);

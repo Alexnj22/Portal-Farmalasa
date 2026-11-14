@@ -15,6 +15,7 @@ import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import Aurora from './Aurora';
 import Campana from './Campana';
+import { AlLado } from './MargenWeb';
 import { colorSistema } from './sistema';
 import { useVisible } from '../lib/visible';
 
@@ -82,9 +83,9 @@ function LogoEncabezado() {
   );
 }
 // En la web el encabezado no le da margen a lo de los lados (en el teléfono sí):
-// la campana quedaba pegada a la orilla (2026-11-14).
+// la campana quedaba pegada a la orilla (2026-11-14). Se alinea con la columna.
 const ENCABEZADO_MARCA = { headerTitle: () => <LogoEncabezado />, headerTitleAlign: 'center',
-  headerRight: () => (Platform.OS === 'web' ? <View style={{ marginRight: 16 }}><Campana /></View> : <Campana />) };
+  headerRight: () => (Platform.OS === 'web' ? <AlLado lado="der"><Campana /></AlLado> : <Campana />) };
 
 export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = false }) {
   useColorScheme();

@@ -291,7 +291,7 @@ export default function Catalogo() {
           </View>
         ),
       }} />
-      <Animated.FlatList
+      <Animated.FlatList dataSet={{ documento: 'no' }}
         ref={tirar.ref}
         onScroll={alDesplazar}
         scrollEventThrottle={16}

@@ -313,7 +313,7 @@ export default function Notificaciones() {
   return (
     <>
       {barra}
-      <Animated.FlatList
+      <Animated.FlatList dataSet={{ documento: 'no' }}
         ref={tirar.ref}
         data={filas}
         keyExtractor={(f) => f.clave}

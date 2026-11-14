@@ -104,7 +104,7 @@ function usarFondoDelDocumento(base) {
     const vp = document.querySelector('meta[name=viewport]');
     if (vp && !vp.content.includes('viewport-fit')) vp.content += ', viewport-fit=cover';
     // Sin theme-color ni fondo en el body (2026-11-14): Safari pintaba sus
-    // barras con ese color liso. Ahora dibuja la página debajo (lib/documentoWeb).
+    // barras con ese color liso. Con la página desplazándose, dibuja la página debajo (lib/documentoWeb).
     document.querySelector('meta[name=theme-color]')?.remove();
   }, [base]);
 }

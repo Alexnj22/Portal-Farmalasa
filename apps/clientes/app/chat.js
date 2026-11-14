@@ -1132,7 +1132,7 @@ export default function Chat() {
           del título: nada pasa por detrás de él tampoco. */}
       <View style={{ flex: 1, marginTop: arriba, overflow: 'hidden' }}>
         <Animated.View style={[{ flex: 1 }, subida]}>
-          <FlatList
+          <FlatList dataSet={{ documento: 'no' }}
             ref={lista}
             data={datos}
             inverted

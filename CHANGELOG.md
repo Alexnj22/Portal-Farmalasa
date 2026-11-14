@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.4 — Mis tratamientos: agregar un medicamento ya no falla
+
+En la app de clientes (teléfono y web), agregar un medicamento a «Mis tratamientos» respondía «No se pudo agregar» cuando la duración quedaba fuera de 7 a 120 días, aunque la app deja poner de 1 a 365. La base ahora acepta el mismo rango que la app.
+
 ## v2.1537.3 — Puntos Salud web: la barra flota sobre el contenido y sin franjas negras
 
 En app.farmasalud.lat la barra de pestañas ahora flota encima del contenido, como el vidrio del iPhone: lo de la pestaña pasa por detrás. Ya no queda una franja negra debajo de la barra, y el fondo de la página sigue el degradado de la app en vez de franjas oscuras arriba y abajo.

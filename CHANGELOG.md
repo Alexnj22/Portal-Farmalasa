@@ -21,17 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-<<<<<<< HEAD
-## v2.1533.5 — Datos de mercado: las dudosas ya no son confianza alta
-
-- En **Cumplimiento → Datos de mercado**, 65 parejas pasaron de confianza alta a media para que «Confirmar las N» confirme sólo las que coinciden en todo. Una pareja no es «alta» si el nombre del portal no dice el empaque (HELIOCARE 360 protector solar → HELIOCARE cápsulas), si el portal dice la concentración y la SRS no la escribe (FARCOLIT 40 MG → «FARCOLIT COMPRIMIDOS») o si la SRS tiene una variante que el portal no dice (pediátrico, adultos y niños, forte…). Ninguna pareja cambió de producto; las confirmadas no se tocaron.
-=======
 ## v2.1534.0 — Cumplimiento: el resumen nuevo — cómo va la red, qué toca hacer y el mapa
 
 - **Cómo va la red**: un anillo con el % de obligaciones cumplidas en todas las salas, y tres cifras: urgentes (con plazo legal corriendo), por anotar y salas al día.
 - **Qué toca hacer**: cada obligación pendiente con su ícono, por qué la pide la norma, una barra con una franja por sala (verde la que cumple) y las salas que faltan. Tocar una sala abre el formulario ya con esa sala, o lleva a su pestaña.
 - **Mapa de la red** (pantallas anchas): obligaciones contra salas, una casilla por cruce — al día, por anotar, urgente o no aplica. Tocar una casilla la resuelve.
->>>>>>> 241135435 (feat(cumplimiento): resumen nuevo — anillo de la red, qué toca hacer y mapa salas × obligaciones (v2.1534.0))
+
+## v2.1533.5 — Datos de mercado: las dudosas ya no son confianza alta
+
+- En **Cumplimiento → Datos de mercado**, 65 parejas pasaron de confianza alta a media para que «Confirmar las N» confirme sólo las que coinciden en todo. Una pareja no es «alta» si el nombre del portal no dice el empaque (HELIOCARE 360 protector solar → HELIOCARE cápsulas), si el portal dice la concentración y la SRS no la escribe (FARCOLIT 40 MG → «FARCOLIT COMPRIMIDOS») o si la SRS tiene una variante que el portal no dice (pediátrico, adultos y niños, forte…). Ninguna pareja cambió de producto; las confirmadas no se tocaron.
 
 ## v2.1533.4 — Encargos: «Ya no lo quiere» cancela un encargo sin pagar
 

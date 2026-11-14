@@ -134,8 +134,14 @@ export default function ViewTabBar({
     const cs = getComputedStyle(fila);
     if (cs.display === 'none') return;      // viewport < lg con la fila aceptada: manda el CSS
     const enFlujo = cs.position !== 'absolute';
+    // En flujo, el riel tiene techo (`max-w-[…px]`, más abajo): con una fila más
+    // ancha que eso, `track.offsetWidth` se queda en el techo, la fila se sale
+    // por la derecha y el riel «cabía» igual (2026-11-14, Cumplimiento: 9
+    // pestañas, ~1,450px, cortadas debajo de la campana en vez de pasar al
+    // desplegable). La fila no se encoge —desborda el riel—, así que lo que
+    // dice cuánto hace falta es el `scrollWidth` del riel, no su ancho.
     const necesita = enFlujo
-      ? track.offsetWidth
+      ? Math.max(track.offsetWidth, track.scrollWidth)
       : track.offsetWidth - (selectorRef.current?.offsetWidth || 0) + fila.scrollWidth;
     if (!necesita) return;
 
@@ -294,7 +300,7 @@ export default function ViewTabBar({
         transition-all duration-[var(--dur-lento)] ${spring} origin-right
         ${buscando
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'
-          : 'max-w-[1200px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
+          : 'max-w-[1600px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
         {/* Desktop (lg+): fila de botones, una por tab.
             El techo de arriba era `max-w-[900px]` y con 7 pestañas la fila se

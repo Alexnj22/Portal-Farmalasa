@@ -56,7 +56,7 @@ function FechaDeLey({ rotulo, valor, onCambiar, hasta }) {
   );
 }
 
-const SI_NO = [{ id: 'NO', label: 'No' }, { id: 'SI', label: 'Sí — embarazo, postnatal, incapacidad o directiva sindical' }];
+const SI_NO = [{ id: 'NO', label: 'No' }, { id: 'SI', label: 'Sí — embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical' }];
 
 export default function BajaLegal({ f, pon, emp }) {
   const motivo = f.terminationReason || '';
@@ -119,7 +119,7 @@ export default function BajaLegal({ f, pon, emp }) {
           </Seccion>
 
           {esDespido ? (
-            <Seccion titulo="¿Tiene fuero?" pie="Embarazo, descanso postnatal, incapacidad vigente o directiva sindical.">
+            <Seccion titulo="¿Tiene fuero?" pie="Una embarazada, desde el embarazo hasta 6 meses después del descanso postnatal (Art. 113 CT); quien tiene una incapacidad vigente; o directivos de un sindicato, durante su cargo y un año después (Art. 248 CT). Con fuero, el despido no termina el contrato.">
               <Opciones valor={f.fueroDeclarado || ''} onCambiar={(v) => pon({ fueroDeclarado: v })} opciones={SI_NO} />
             </Seccion>
           ) : null}

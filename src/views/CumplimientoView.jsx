@@ -51,12 +51,12 @@ export default function CumplimientoView() {
         ver('resumen') && { key: 'resumen', label: 'Resumen', icon: LayoutGrid },
         ver('vencimientos') && { key: 'vencimientos', label: 'Vencimientos', icon: CalendarClock },
         ver('farmacovigilancia') && { key: 'farmacovigilancia', label: 'Farmacovigilancia', icon: AlertOctagon },
-        ver('vencidos') && { key: 'vencidos', label: 'Bajas y destrucción', icon: PackageX },
-        ver('retiros') && { key: 'retiros', label: 'Retiros de lote', icon: Undo2 },
+        ver('vencidos') && { key: 'vencidos', label: 'Bajas', icon: PackageX },
+        ver('retiros') && { key: 'retiros', label: 'Retiros', icon: Undo2 },
         ver('autoinspeccion') && { key: 'autoinspeccion', label: 'Autoinspección', icon: ClipboardCheck },
         ver('capacitacion') && { key: 'capacitacion', label: 'Capacitación', icon: GraduationCap },
         ver('dependientes') && { key: 'dependientes', label: 'Acreditaciones', icon: BadgeCheck },
-        ver('datos_mercado') && { key: 'datos_mercado', label: 'Datos de mercado', icon: Store },
+        ver('datos_mercado') && { key: 'datos_mercado', label: 'Mercado', icon: Store },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `ver` sale de hasPermission
     ].filter(Boolean)), [hasPermission]);
     const pestanas = useMemo(() => new Set(tabs.map((t) => t.key)), [tabs]);

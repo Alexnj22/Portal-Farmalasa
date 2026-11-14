@@ -23,7 +23,7 @@ const MINIMO_INICIAL = SALARIO_MINIMO_INICIAL;
 
 const FUERO = [
     { value: 'NO', label: 'No' },
-    { value: 'SI', label: 'Sí — embarazo, postnatal, incapacidad o directiva sindical' },
+    { value: 'SI', label: 'Sí — embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical' },
 ];
 
 /**
@@ -133,7 +133,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             <label className={rotuloCampo()}>¿Tiene fuero?</label>
                             <LiquidSelect value={formData?.fueroDeclarado || ''} onChange={(v) => poner('fueroDeclarado', v)} options={FUERO}
                                 placeholder="Responder..." icon={Scale} menuPosition="fixed" />
-                            <p className="text-caption text-content-3 mt-1">Embarazo, descanso postnatal, incapacidad vigente o directiva sindical.</p>
+                            <p className="text-caption text-content-3 mt-1">Una embarazada, desde el embarazo hasta 6 meses después del descanso postnatal (Art. 113 CT); quien tiene una incapacidad vigente; o directivos de un sindicato, durante su cargo y un año después (Art. 248 CT). Con fuero, el despido no termina el contrato.</p>
                         </div>
                     )}
 

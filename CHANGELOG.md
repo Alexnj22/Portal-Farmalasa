@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1531.2 — Baja: qué es tener fuero, bien dicho
+
+En la baja, «¿Tiene fuero?» ahora explica qué es y dura lo que dice la ley: la embarazada está protegida desde el embarazo **hasta 6 meses después del descanso postnatal** (Art. 113 CT; antes decía sólo «postnatal»), quien tiene una incapacidad vigente, y los directivos de un sindicato durante su cargo y un año después (Art. 248 CT). En el portal y en la app.
+
+## v2.1531.1 — Cumplimiento: la barra de pestañas ya no se sale del encabezado
+
+- La fila de pestañas que no cabe pasa al selector desplegable, como en el resto del portal. En Cumplimiento (9 pestañas) se salía del encabezado y la última quedaba cortada debajo de la campana: la barra medía el riel con su tope y creía que cabía. Vale para toda vista con muchas pestañas.
+- Rótulos más cortos en Cumplimiento: «Bajas», «Retiros», «Mercado».
+
 ## v2.1531.0 — Bajas: la liquidación sigue la ley, el abandono se puede registrar y la baja es nativa en la app
 
 Talento Humano no pudo dar de baja a dos personas que dejaron de llegar sin firmar nada. El formulario las frenaba por tres cosas:

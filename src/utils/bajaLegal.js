@@ -143,10 +143,10 @@ export function problemaDeBaja(d = {}, empleado = {}) {
     const esDespido = motivo === 'DESPIDO_SIN_RESPONSABILIDAD' || motivo === 'DESPIDO_CON_RESPONSABILIDAD' || motivo === 'ABANDONO';
     if (esDespido) {
         if (d.fueroDeclarado !== 'NO' && d.fueroDeclarado !== 'SI') {
-            return 'Responde si la persona está embarazada, en descanso postnatal, incapacitada o es directiva sindical.';
+            return 'Responde si tiene fuero: embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical.';
         }
         if (d.fueroDeclarado === 'SI') {
-            return 'Con fuero (embarazo, postnatal, incapacidad o directiva sindical) el despido no termina el contrato (Art. 113 CT). Consúltalo con el abogado antes de registrarlo.';
+            return 'Con fuero (embarazo y los 6 meses después del postnatal, incapacidad vigente o directiva sindical) el despido no termina el contrato (Arts. 113 y 248 CT). Consúltalo con el abogado antes de registrarlo.';
         }
     }
 

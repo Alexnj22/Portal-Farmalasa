@@ -23,7 +23,6 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, cancelarEncargoSinPago, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega, encargoCancelableSinPago } from '@nucleo/utils/reservasDeSala';
 import { EmptyState } from '../../components/common/StateViews';
 
@@ -73,7 +72,7 @@ const estadoDe = (e) => { const x = estadoDeEncargo(e); return { label: x.texto,
 // cambia cuando afuera se cobró: la lista se relee sin esperar los 2 minutos.
 // `completa` (2026-10-22): en la pantalla de Reservas, una tarjeta por encargo
 // como las de las reservas; en la baldosa del Inicio, la fila de siempre.
-export default function WidgetEncargos({ branchId = null, soloLectura = false, completa = false, salaDeCobro = null, onCobrar = null, recarga = 0 }) {
+export default function WidgetEncargos({ branchId = null, soloLectura = false, puedeComprar = false, completa = false, salaDeCobro = null, onCobrar = null, recarga = 0 }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     // Un error de lectura no es «no hay encargos»: se dice y se ofrece reintentar.
@@ -161,7 +160,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
     // Los dos bloques de la tarjeta: quién lo pidió y qué respondió Bodega.
     const pedido = (e) => {
         const p = pedidoDelEncargo(e);
-        return { k: 'pedido', rotulo: 'Lo pidió', icon: UserRound, quien: p.cliente, detalle: p.persona ? `Lo anotó ${shortEmployeeName(p.persona)}` : p.canal, at: p.at, nota: p.nota };
+        return { k: 'pedido', rotulo: 'Lo pidió', icon: UserRound, quien: p.cliente, detalle: p.persona ? 'Lo anotó' : p.canal, detallePersona: p.persona, at: p.at, nota: p.nota };
     };
     const respuesta = (e) => {
         const r = respuestaDeBodega(e);
@@ -219,9 +218,11 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                     // En orden: lo que destraba al encargo primero.
                     const acc = [
                         cobrable(e) && { k: 'cobrar', label: ROT.cobrar, icon: Banknote, onClick: () => onCobrar(e) },
-                        !soloLectura && e.estado === 'solicitado' && { k: 'confirmar', label: ROT.confirmar, icon: Check, onClick: () => setConfirmando(e) },
+                        puedeComprar && e.estado === 'solicitado' && { k: 'confirmar', label: ROT.confirmar, icon: Check, onClick: () => setConfirmando(e) },
                         !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: ROT.pedido, icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
-                        !soloLectura && sinVincular(e) && { k: 'vincular', label: ROT.vincular, icon: Link2, onClick: () => setVinculando(e) },
+                        // Vincular destraba «Llegó»: va delante sólo cuando ya está pagado.
+                        puedeComprar && sinVincular(e) && ['aceptado', 'pedido'].includes(e.estado) && { k: 'vincular', label: ROT.vincular, icon: Link2,
+                            title: 'Elegir el producto ya creado en el catálogo: sin eso no se puede marcar «Llegó»', onClick: () => setVinculando(e) },
                         !soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && { k: 'llego', label: ROT.llego, icon: PackageCheck,
                             loading: ocupado === e.id, disabled: sinVincular(e),
                             title: sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined, onClick: () => mover(e, 'listo') },
@@ -240,7 +241,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                             title: 'La autoriza Talento Humano o Supervisión de ventas', onClick: () => setPidiendoProrroga(e) },
                         !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: ROT.saldo,
                             icon: Wallet, title: 'El cliente no lo retira o desiste: lo pagado queda a su favor', onClick: () => setASaldo(e) },
-                        !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
+                        puedeComprar && sinVincular(e) && !['aceptado', 'pedido'].includes(e.estado) && { k: 'vincular', label: ROT.vincular, icon: Link2,
+                            title: 'Elegir el producto ya creado en el catálogo: sin eso no se puede marcar «Llegó»', onClick: () => setVinculando(e) },
+                        puedeComprar && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
                         !soloLectura && encargoCancelableSinPago(e) && { k: 'cancelar', label: ROT.cancelar, icon: Ban,
                             title: 'El cliente ya no lo quiere: se cancela sin cobrarle nada', onClick: () => setCancelando(e) },
                     ].filter(Boolean);
@@ -292,13 +295,13 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                         <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title={ROT.whatsapp}
                                             onClick={() => avisarPorWhatsapp(e, whatsappDe(e.telefono))} />
                                     )}
-                                    {!soloLectura && e.estado === 'solicitado' && (<>
+                                    {puedeComprar && e.estado === 'solicitado' && (<>
                                         <Button variant="primary" size="xs" icon={Check} onClick={() => setConfirmando(e)}>{ROT.confirmar}</Button>
                                         <Button variant="ghost" size="xs" iconOnly icon={X} title={ROT.rechazar} onClick={() => setRechazando(e)} />
                                     </>)}
                                     {!soloLectura && e.estado === 'aceptado' && <Button variant="secondary" size="xs" icon={Truck} loading={ocupado === e.id} onClick={() => mover(e, 'pedido')}>{ROT.pedido}</Button>}
                                     {e.foto_url && <Button variant="ghost" size="xs" iconOnly icon={ImageIcon} title={ROT.foto} onClick={() => openStoredFile(e.foto_url)} />}
-                                    {!soloLectura && sinVincular(e) && <Button variant="secondary" size="xs" icon={Link2} onClick={() => setVinculando(e)}>{ROT.vincular}</Button>}
+                                    {puedeComprar && sinVincular(e) && <Button variant="secondary" size="xs" icon={Link2} onClick={() => setVinculando(e)}>{ROT.vincular}</Button>}
                                     {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && <Button variant="secondary" size="xs" icon={PackageCheck} loading={ocupado === e.id}
                                         disabled={sinVincular(e)} title={sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined} onClick={() => mover(e, 'listo')}>{ROT.llego}</Button>}
                                     {vencido(e) && <Badge variant="warning" uppercase={false}>Sin retirar · llamar</Badge>}
@@ -434,6 +437,7 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
 
 // El cliente ya no quiere un encargo que no pagó: se cancela con el motivo.
 function CancelarSinPago({ encargo, onClose, onConfirmar }) {
+    const showToast = useToastStore((s) => s.showToast);
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
     return (
@@ -453,7 +457,7 @@ function CancelarSinPago({ encargo, onClose, onConfirmar }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button variant="destructive" icon={Ban} loading={enviando} disabled={motivo.trim().length < 3}
-                    onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } finally { setEnviando(false); } }}>Cancelar el encargo</Button>
+                    onClick={async () => { setEnviando(true); try { await onConfirmar(motivo.trim()); } catch (err) { showToast('No se pudo cancelar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error'); } finally { setEnviando(false); } }}>Cancelar el encargo</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

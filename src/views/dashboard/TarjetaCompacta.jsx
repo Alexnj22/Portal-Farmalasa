@@ -152,8 +152,12 @@ function Bloque({ b }) {
                     <span className="truncate" title={b.persona ? shortEmployeeName(b.persona) : b.quien}>{b.persona ? shortEmployeeName(b.persona) : b.quien}</span>
                 </p>
             )}
-            {(b.detalle || b.at) && (
-                <p className="text-caption text-content-3 truncate">{[b.detalle, b.at ? cuando(b.at) : null].filter(Boolean).join(' · ')}</p>
+            {(b.detalle || b.detallePersona || b.at) && (
+                <p className="flex items-center gap-1.5 text-caption text-content-3 min-w-0">
+                    {b.detalle && <span className="shrink-0">{b.detalle}</span>}
+                    {b.detallePersona && <AvatarConEstado emp={b.detallePersona} px={20} mostrarChip={false} />}
+                    <span className="truncate">{[b.detallePersona ? shortEmployeeName(b.detallePersona) : null, b.at ? cuando(b.at) : null].filter(Boolean).join(' · ')}</span>
+                </p>
             )}
             {b.texto && <p className={`text-body-sm ${b.pendiente ? 'text-content-3' : 'text-content-2'}`}>{b.texto}</p>}
             {b.nota && <p className="text-caption italic text-content-2 line-clamp-3" title={b.nota}>«{b.nota}»</p>}

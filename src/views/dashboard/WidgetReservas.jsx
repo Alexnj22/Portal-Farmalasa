@@ -406,6 +406,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // Popular no cobra en el cajón de La Popular (la misma regla que
     // `puedeApartar` de ReservasView).
     const salaPropia = user?.branchId ?? user?.branch_id ?? null;
+    // Precio, rechazo y vínculo al catálogo de un encargo los decide Compras o
+    // administración (la base lo exige en `encargo_responder` y
+    // `encargo_vincular_producto`): a la sala no se le ofrece un botón que falla.
+    const filaPropia = (branches || []).find((b) => String(b.id) === String(salaPropia));
+    const puedeComprar = !soloLectura && (filaPropia?.type === 'BODEGA' || hasPermission('ofertas_clientes', 'can_edit'));
     const salaDeCobro = !todas && !soloLectura && miSala && !esBodega && String(miSala) === String(salaPropia) ? miSala : null;
     const cobrarEncargo = (e) => { setCobrandoEncargo(e.id); setNueva(true); };
     // Sólo en una sala de ventas (Administración y Bodega no tienen caja) y
@@ -490,7 +495,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     )}
                     {botonNueva && <div className="flex justify-center">{botonNueva}</div>}
                     <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} completa={completa}
-                        salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
+                        puedeComprar={puedeComprar} salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
                 </div>
                 {modalNueva}
             </div>
@@ -855,7 +860,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 </div>
             )}
             <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} completa={completa}
-                salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
+                puedeComprar={puedeComprar} salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
             </div>
             {modalNueva}
             {modalRetirar}

@@ -109,9 +109,60 @@ export async function pedirPermisoDeAvisos() {
   return status === 'granted';
 }
 
+// ── Avisos en el NAVEGADOR (app.farmasalud.lat, 2026-11-14) ────────────────
+// Web Push: el navegador da una suscripción (endpoint + llaves) que se guarda
+// como `web:<JSON>` en el mismo `push_token` de la sesión, y el servidor la usa
+// con la llave VAPID del proyecto (supabase/functions/_shared/pushClientes.ts).
+// public/sw.js muestra el aviso y abre la pantalla al tocarlo.
+//
+// En el iPhone, Safari sólo lo permite a la app AGREGADA A LA PANTALLA DE
+// INICIO (iOS 16.4+): en una pestaña normal no existe `PushManager`.
+//
+// La llave es PÚBLICA (es la mitad que se publica; la privada vive en los
+// secretos de las funciones): la misma del portal, VITE_VAPID_PUBLIC_KEY.
+const LLAVE_VAPID = 'BDIuzuuM7McdFH-brkHgxuLwOL2IAR0R4U3fY4PTPWy_UWB4M1JW0fRdS3feA312sGiBhdN8dt4eMlRyc3X5NXk';
+
+/** Qué puede este navegador: `{ soportado, instalada, iphone, permiso }` (fuera de la web, null). */
+export function estadoAvisosWeb() {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  const ua = navigator.userAgent || '';
+  const iphone = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const instalada = !!(window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone);
+  const soportado = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  return { soportado, instalada, iphone, permiso: soportado ? Notification.permission : 'default' };
+}
+
+const bytesDeLlave = (b64) => {
+  const s = atob((b64 + '='.repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(s, (c) => c.charCodeAt(0));
+};
+
+// `pedirPermiso` false: sólo renovar si el permiso ya está dado (nunca preguntar sin un toque).
+async function tokenWeb(pedirPermiso = true) {
+  const e = estadoAvisosWeb();
+  if (!e?.soportado) {
+    return { error: e?.iphone
+      ? 'En el iPhone, los avisos llegan cuando Puntos Salud está en tu pantalla de inicio: toca Compartir, luego «Agregar a inicio», y actívalos desde ahí.'
+      : 'Este navegador no puede recibir avisos.' };
+  }
+  // Lo primero, dentro del toque: el navegador sólo pregunta durante un gesto.
+  const permiso = pedirPermiso && Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
+  if (permiso !== 'granted') return { error: 'Permite las notificaciones de este sitio en los ajustes del navegador.' };
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription())
+      ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytesDeLlave(LLAVE_VAPID) });
+    return { token: `web:${JSON.stringify(sub)}`, formato: 1 };
+  } catch {
+    return { error: 'No se pudieron activar los avisos. Intenta más tarde.' };
+  }
+}
+
 /** Devuelve `{ token, formato }`, o `{ error }` con una frase que se puede mostrar. */
 export async function pedirTokenDeAvisos() {
-  if (Platform.OS === 'web' || !Device.isDevice) return { error: 'Los avisos sólo funcionan en un teléfono.' };
+  if (Platform.OS === 'web') return tokenWeb(true);
+  if (!Device.isDevice) return { error: 'Los avisos sólo funcionan en un teléfono.' };
   let formato = 1;
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('ofertas', {
@@ -157,13 +208,18 @@ export async function recordarAvisos(acepta) {
 
 /** Una vez por apertura: re-enciende los avisos de la sesión si el teléfono ya los tenía, y refresca el token. */
 export async function sincronizarAvisos(pedir, aceptaEnServidor) {
-  if (sincronizado || Platform.OS === 'web' || !Device.isDevice) return;
+  if (sincronizado || (Platform.OS !== 'web' && !Device.isDevice)) return;
   sincronizado = true;
   try {
     const recordado = await SecureStore.getItemAsync(CLAVE_AVISOS).catch(() => null);
     // Lo apagó a propósito en este teléfono: no se toca.
     if (recordado === '0') return;
     if (!aceptaEnServidor && recordado !== '1') return;
+    if (Platform.OS === 'web') {
+      const r = await tokenWeb(false);
+      if (r.token) await pedir('avisos', { acepta: true, push_token: r.token, formato: r.formato, responde: false });
+      return;
+    }
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return; // nunca se pide el permiso sin que la persona lo active
     const r = await pedirTokenDeAvisos();

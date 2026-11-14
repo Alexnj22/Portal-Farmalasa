@@ -50,7 +50,7 @@ import { suave, useTema } from '../tema/tema';
 import { useSesion } from '../lib/sesion';
 import { fechaLarga } from '../lib/formato';
 import { useCuenta } from '../lib/cuenta';
-import { pedirTokenDeAvisos, recordarAvisos } from '../lib/avisos';
+import { estadoAvisosWeb, pedirTokenDeAvisos, recordarAvisos } from '../lib/avisos';
 import { conBiometria, nombreBiometria, sinBloquear, useBloqueo } from '../lib/bloqueo';
 import { marcarGuiaVista, usePresentacion } from '../lib/novedades';
 import { aceptadoEnTelefono, aceptarDocumentos, documentosVigentes, ultimaAceptacion, useAceptacion } from '../lib/aceptacion';
@@ -603,8 +603,8 @@ function Permisos({ resumen }) {
     : biometria === 'huella' ? 'la huella' : biometria === 'reconocimiento facial' ? 'el reconocimiento facial' : 'el bloqueo biométrico';
   // En el navegador no hay avisos al teléfono ni biometría: el botón sólo
   // daba un error rojo («sólo funcionan en un teléfono», desde un teléfono).
-  if (Platform.OS === 'web') {
-    return <Texto nivel={3} estilo={{ textAlign: 'center', fontSize: 14 }}>Los avisos al teléfono llegan con la app Puntos Salud. Aquí los verás en la campana del Inicio.</Texto>;
+  if (Platform.OS === 'web' && !estadoAvisosWeb()?.soportado) {
+    return <Texto nivel={3} estilo={{ textAlign: 'center', fontSize: 14 }}>Para recibir avisos, agrega Puntos Salud a tu pantalla de inicio y actívalos en Cuenta. Mientras tanto, los verás en la campana del Inicio.</Texto>;
   }
   return (
     <>

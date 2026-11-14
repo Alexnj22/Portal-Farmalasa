@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.8 — Puntos Salud web: avisos en el navegador y márgenes del encabezado
+
+- **Avisos en la web**: Puntos Salud en el navegador ya puede recibir avisos (ofertas, reservas, chat), igual que la app. En Cuenta → «Avisos en este dispositivo». En el iPhone, Apple sólo los permite cuando Puntos Salud está en la pantalla de inicio (Compartir → «Agregar a inicio»); ahí además se abre en pantalla completa. Mientras no esté agregada, Cuenta explica cómo hacerlo en vez de mostrar un error.
+- La campana y la foto del encabezado ya no quedan pegadas a la orilla.
+
+## v2.1537.7 — Afiche de los nuevos puntos con el QR de la app
+
+Afiche para las salas desde el 15 de noviembre (`docs/legal/AFICHE-NUEVOS-PUNTOS.pdf`, fuente `afiche-nuevos-puntos.html`):
+
+- Lo principal es el código de **app.farmasalud.lat**, con el aviso de que la app para iPhone y Android está en proceso y que desde el código ya se usa la misma.
+- Los cuatro niveles con su factor, lo que se compra al año para llegar y los puntos de cumpleaños; tres cambios (hasta el doble de puntos, cumpleaños, raspable con premios «muy pronto»); lo que no suma (centavos, productos y precios) y el código del reglamento.
+- El raspable quedó sin premios en el programa hasta que se definan, para que el afiche no prometa lo que todavía no se entrega.
+
 ## v2.1537.6 — Puntos Salud web: menús, fotos, facturas, pago, reglamento y lo que se recuerda
 
 En app.farmasalud.lat, la revisión completa contra la app:

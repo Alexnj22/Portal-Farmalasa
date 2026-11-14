@@ -81,7 +81,10 @@ function LogoEncabezado() {
     </View>
   );
 }
-const ENCABEZADO_MARCA = { headerTitle: () => <LogoEncabezado />, headerTitleAlign: 'center', headerRight: () => <Campana /> };
+// En la web el encabezado no le da margen a lo de los lados (en el teléfono sí):
+// la campana quedaba pegada a la orilla (2026-11-14).
+const ENCABEZADO_MARCA = { headerTitle: () => <LogoEncabezado />, headerTitleAlign: 'center',
+  headerRight: () => (Platform.OS === 'web' ? <View style={{ marginRight: 16 }}><Campana /></View> : <Campana />) };
 
 export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = false }) {
   useColorScheme();

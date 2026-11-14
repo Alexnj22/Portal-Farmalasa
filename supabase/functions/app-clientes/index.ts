@@ -39,6 +39,7 @@ import { codigoNuevo, enviarCodigoWhatsapp, recibeWhatsapp, whatsappListo } from
 import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
 import { getErpBranchMap } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
+import { enviarPushClientes, type MensajeExpo } from "../_shared/pushClientes.ts";
 import { reconocer } from "../_shared/autoRespuesta.ts";
 import { bloqueoPorVencidas, fechaCorta } from "../_shared/reservasBloqueo.ts";
 
@@ -1735,7 +1736,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
 
     if (accion === "avisos") {
       const acepta = body?.acepta === true;
-      const pushToken = acepta && body?.push_token ? String(body.push_token).slice(0, 200) : null;
+      // La suscripción del navegador (`web:{endpoint, keys}`, la app en la web,
+      // 2026-11-14) es más larga que un token de Expo: hasta 2000.
+      const crudo = acepta && body?.push_token ? String(body.push_token) : null;
+      const pushToken = crudo ? crudo.slice(0, crudo.startsWith("web:") ? 2000 : 200) : null;
       // `formato` (2026-10-20): 2 = la app ya creó el canal secreto de Android
       // (_shared/avisoPrivado.ts). Una versión vieja no lo manda: queda en 1.
       const formato = Number(body?.formato) === 2 ? 2 : 1;
@@ -3988,11 +3992,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const tokens = (sesiones ?? []) as { push_token: string; plataforma: string | null; avisos_formato: number | null }[];
       if (!tokens.length) return json({ ok: false, mensaje: "Activa los avisos en Cuenta para recibirlo." });
       // Armado igual que el aviso real: lo que nombra un producto no se lee bloqueado.
-      const r = await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify(tokens.map((t) => mensajePush(a, t.push_token, t.plataforma, t.avisos_formato))),
-      });
-      return json({ ok: r.ok, enviados: tokens.length });
+      // Teléfono y navegador (_shared/pushClientes.ts).
+      const res = await enviarPushClientes(tokens.map((t) => mensajePush(a, t.push_token, t.plataforma, t.avisos_formato) as MensajeExpo));
+      return json({ ok: res.some((x) => x.ok), enviados: res.filter((x) => x.ok).length });
     }
 
     // Los datos fiscales de la ficha, para pedir un crédito fiscal: si están

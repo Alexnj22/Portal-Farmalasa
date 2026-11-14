@@ -50,6 +50,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
+import { enviarPushClientes, type MensajeExpo } from "../_shared/pushClientes.ts";
 
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
@@ -746,24 +747,14 @@ async function enviar(admin: any, tokens: Map<number, Token[]>, avisos: Aviso[])
   const errores: string[] = [];
   const ok_por = new Set<number>();
   const muertas: string[] = [];
-  for (let i = 0; i < mensajes.length; i += 100) {
-    const tanda = mensajes.slice(i, i + 100);
-    const r = await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(tanda.map(({ _c, _s, ...m }) => m)),
-      // Con plazo: un Expo colgado no se lleva la corrida entera.
-      signal: AbortSignal.timeout(20_000),
-    }).catch((e) => ({ ok: false, status: 0, json: async () => null, _e: e }) as unknown as Response);
-    const res = await r.json().catch(() => null);
-    if (!r.ok || !Array.isArray(res?.data)) { errores.push(`expo ${r.status}`); continue; }
-    res.data.forEach((t: { status: string; message?: string; details?: { error?: string } }, j: number) => {
-      if (t.status === "ok") { enviados++; ok_por.add(tanda[j]._c); return; }
-      errores.push(t.details?.error ?? t.message ?? "error");
-      // El teléfono ya no tiene la app: se olvida el token.
-      if (t.details?.error === "DeviceNotRegistered") muertas.push(tanda[j]._s);
-    });
-  }
+  // Teléfono (Expo) y navegador (Web Push), repartidos en _shared/pushClientes.ts.
+  const res = await enviarPushClientes(mensajes.map(({ _c, _s, ...m }) => m as MensajeExpo));
+  res.forEach((t, j) => {
+    if (t.ok) { enviados++; ok_por.add(mensajes[j]._c); return; }
+    errores.push(t.error ?? "error");
+    // El teléfono ya no tiene la app, o el navegador quitó el permiso: se olvida el token.
+    if (t.muerta) muertas.push(mensajes[j]._s);
+  });
   if (muertas.length) {
     const { error } = await admin.from("app_cliente_sesiones").update({ push_token: null }).in("id", muertas);
     if (error) console.error("no se pudieron limpiar los tokens:", error.message);

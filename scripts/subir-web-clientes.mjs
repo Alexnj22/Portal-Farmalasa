@@ -50,12 +50,14 @@ execSync(`npx expo export --platform web --clear --output-dir ${salida}`, {
 // al recargar.
 writeFileSync(join(salida, 'vercel.json'), JSON.stringify({
   cleanUrls: false,
-  rewrites: [{ source: '/((?!_expo/|assets/|canvaskit\\.wasm).*)', destination: '/index.html' }],
+  rewrites: [{ source: '/((?!_expo/|assets/|canvaskit\\.wasm|sw\\.js).*)', destination: '/index.html' }],
   headers: [
     { source: '/_expo/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
     { source: '/assets/(.*)', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
     { source: '/canvaskit.wasm', headers: [{ key: 'Cache-Control', value: 'public, max-age=604800' }] },
     { source: '/index.html', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
+    // El service worker de los avisos (public/sw.js): siempre el último.
+    { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }, { key: 'Service-Worker-Allowed', value: '/' }] },
   ],
 }, null, 2));
 

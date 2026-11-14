@@ -47,7 +47,8 @@ const marcarConfeti = () => { confetiMostrado = true; };
 // nivel es el fondo.
 const fotoEnEncabezado = (foto) => (Platform.OS === 'ios'
   ? { unstable_headerLeftItems: () => [{ type: 'custom', element: foto, hidesSharedBackground: true }] }
-  : { headerLeft: () => foto });
+  // Web: con margen, como en el teléfono (sin él, la foto tocaba la orilla).
+  : { headerLeft: () => (Platform.OS === 'web' ? <View style={{ marginLeft: 16 }}>{foto}</View> : foto) });
 
 export default function Puntos() {
   const t = useTema();

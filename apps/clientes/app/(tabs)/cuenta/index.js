@@ -39,7 +39,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MENSAJE_CODIGO, useConCodigo, useSesion } from '../../../lib/sesion';
 import { irACompletarEntrada } from '../../../componentes/SoloConDocumento';
 import { useCuenta } from '../../../lib/cuenta';
-import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
+import { estadoAvisosWeb, pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
 import { abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, marcarGoogleWalletAgregada, serieEnWallet, walletDisponible } from '../../../modules/wallet';
 import { conBiometria, nombreBiometria, rotuloBiometria, sinBloquear, useBloqueo } from '../../../lib/bloqueo';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
@@ -260,6 +260,7 @@ export default function Cuenta() {
     guardarPermiso(campo, valor);
   }
 
+  const avisosWeb = estadoAvisosWeb();
   async function avisos(valor) {
     if (guardando) return;
     setMensaje(null);
@@ -476,15 +477,22 @@ export default function Cuenta() {
       ) : null}
 
       {!conCodigo || resumen?.acepta_avisos === true ? (
-      <Grupo titulo="Notificaciones" pie={Platform.OS === 'web'
-        ? 'Los avisos al teléfono llegan con la app Puntos Salud. Aquí los ves en la campana.'
+      <Grupo titulo="Notificaciones" pie={avisosWeb && !avisosWeb.soportado
+        ? 'En el iPhone, los avisos llegan cuando Puntos Salud está en tu pantalla de inicio. Mientras tanto los ves en la campana.'
         : 'Ofertas nuevas, puntos por vencer y tus reservas. Las promociones son las ofertas personalizadas que te mandamos.'}>
         {/* Con el código, los avisos sólo se pueden apagar: hablan de reservas, chat y facturas. */}
-        {/* En el navegador no hay avisos al teléfono (lib/avisos): el interruptor
-            no se muestra —tocarlo daba un error rojo, y apagarlo desde aquí
-            apagaría los del teléfono—. La campana sí funciona. */}
-        {Platform.OS !== 'web' && (!conCodigo || resumen?.acepta_avisos === true) ? (
-          <FilaInterruptor titulo="Avisos en este teléfono" valor={valorDe('avisos', resumen?.acepta_avisos === true)}
+        {/* Web (2026-11-14): avisos por Web Push (lib/avisos). Donde el navegador
+            no puede —el iPhone, mientras no esté en la pantalla de inicio— en
+            vez del interruptor va cómo agregarla: el interruptor daba un error
+            rojo. Los avisos son por sesión: esto no toca los del teléfono. */}
+        {avisosWeb && !avisosWeb.soportado ? (
+          <FilaAccion sf="bell.badge.fill" tinte={t.color.magenta} texto="Recibir avisos aquí" detalle="Agrega Puntos Salud a tu pantalla de inicio"
+            alTocar={() => Alert.alert('Agrégala a tu pantalla de inicio',
+              avisosWeb.iphone
+                ? 'En Safari, toca el botón Compartir y luego «Agregar a inicio». Abre Puntos Salud desde ese ícono: se ve en pantalla completa y desde Cuenta puedes activar los avisos.'
+                : 'Este navegador no puede recibir avisos. Prueba con Chrome, o instala la app Puntos Salud.')} />
+        ) : !conCodigo || resumen?.acepta_avisos === true ? (
+          <FilaInterruptor titulo={Platform.OS === 'web' ? 'Avisos en este dispositivo' : 'Avisos en este teléfono'} valor={valorDe('avisos', resumen?.acepta_avisos === true)}
             alCambiar={avisos} color={t.color.magenta} />
         ) : null}
         {completa ? (

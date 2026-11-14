@@ -43,8 +43,14 @@ export default function Pestanas() {
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger contentStyle={contenido} name="bienestar" disableAutomaticContentInsets={!ANDROID}>
+        <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="spa" />
+        <NativeTabs.Trigger.Label>Bienestar</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       {/* Ofertas dejó de ser pestaña (2026-11-03): se abre desde la Tienda.
           Su lugar es para Bienestar: la frase del día y la zona anti estrés. */}
+      {/* Tienda Salud al centro (2026-11-14, «en el centro no debería de estar
+          lo más importante?»): es lo que vende, y queda junto al Carrito. */}
       <NativeTabs.Trigger contentStyle={contenido} name="catalogo">
         {/* «Tienda Salud» con el ícono de tienda (2026-11-05, «y si a la tienda
             le llamamos Tienda Salud… y en el menú usamos el ícono?»). */}
@@ -52,10 +58,6 @@ export default function Pestanas() {
         {/* En Android la barra de Material da ~72 dp por pestaña y «Tienda
             Salud» se cortaba (2026-11-11): ahí va «Tienda» a secas. */}
         <NativeTabs.Trigger.Label>{ANDROID ? 'Tienda' : 'Tienda Salud'}</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={contenido} name="bienestar" disableAutomaticContentInsets={!ANDROID}>
-        <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="spa" />
-        <NativeTabs.Trigger.Label>Bienestar</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {/* El carrito, con cuántos productos lleva. Inyecciones pasó al Inicio.
           `disableScrollToTop` (2026-11-11, medido en el teléfono): volver a

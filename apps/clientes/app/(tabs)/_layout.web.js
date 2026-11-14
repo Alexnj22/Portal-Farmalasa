@@ -20,8 +20,8 @@ export { default as ErrorBoundary } from '../../componentes/ErrorDePantalla';
 
 const PESTANAS = [
   { name: 'puntos', rotulo: 'Inicio', icono: 'home' },
-  { name: 'catalogo', rotulo: 'Tienda Salud', icono: 'storefront' },
   { name: 'bienestar', rotulo: 'Bienestar', icono: 'spa' },
+  { name: 'catalogo', rotulo: 'Tienda Salud', icono: 'storefront' },
   { name: 'carrito', rotulo: 'Carrito', icono: 'shopping_cart' },
   { name: 'cuenta', rotulo: 'Cuenta', icono: 'account_circle' },
 ];

@@ -337,7 +337,7 @@ export function anclarDocumento() {
     window.addEventListener('scroll', () => {
       const bajo = window.scrollY > 4;
       if (bajo !== html.classList.contains('desplazada')) html.classList.toggle('desplazada', bajo);
-      const oscuro = getComputedStyle(html).backgroundColor === 'rgb(10, 9, 14)';
+      const oscuro = !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
       if (oscuro !== html.classList.contains('oscura')) html.classList.toggle('oscura', oscuro);
     }, { passive: true });
     pronto();

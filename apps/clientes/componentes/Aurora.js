@@ -13,6 +13,9 @@ const MANCHAS = [
 
 export default function Aurora(_props) {
   const oscuro = useColorScheme() === 'dark';
+  // En la web el fondo es un solo tono, el de la página (public/index.html):
+  // las manchas hacían que Safari pintara la franja de la hora como una barra.
+  if (Platform.OS === 'web') return null;
   const base = oscuro ? '#0A090E' : '#F5F4F8';
   const fuerza = oscuro ? 0.32 : 0.22;
   // En Android, el SVG de pantalla completa se volvía a pintar en la CPU cada

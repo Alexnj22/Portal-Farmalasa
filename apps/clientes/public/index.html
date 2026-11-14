@@ -26,24 +26,14 @@
          (componentes/Aurora.js) para que esas franjas sigan el degradado y
          no queden como bandas negras encima y debajo de la app. */
       html, body { height: 100%; }
-      html {
-        background-color: #F5F4F8;
-        background-image:
-          radial-gradient(circle at 10% 6%, rgba(142,195,15,0.22), transparent 60%),
-          radial-gradient(circle at 95% 30%, rgba(152,29,151,0.22), transparent 60%),
-          radial-gradient(circle at 80% 95%, rgba(142,195,15,0.22), transparent 55%);
-        background-attachment: fixed;
-      }
+      /* Un solo tono en la web (2026-11-14, «mejor deja un tono, algo que se
+         vea bien»): Safari pinta la franja de la hora con el color del fondo,
+         y con las manchas de la aurora esa franja salía como una barra negra
+         encima de la app. Con un tono parejo, la franja ES la app. La aurora
+         no se pinta en la web (componentes/Aurora.js). */
+      html { background-color: #F5F4F8; }
       body { background: transparent; }
-      @media (prefers-color-scheme: dark) {
-        html {
-          background-color: #0A090E;
-          background-image:
-            radial-gradient(circle at 10% 6%, rgba(142,195,15,0.32), transparent 60%),
-            radial-gradient(circle at 95% 30%, rgba(152,29,151,0.32), transparent 60%),
-            radial-gradient(circle at 80% 95%, rgba(142,195,15,0.32), transparent 55%);
-        }
-      }
+      @media (prefers-color-scheme: dark) { html { background-color: #15131B; } }
       body { overflow: hidden; }
       #root { display: flex; height: 100%; flex: 1; }
       /* La página se desplaza (lib/documentoWeb.js): así el contenido pasa
@@ -52,6 +42,9 @@
       html.documento, html.documento body { height: auto; min-height: 100%; }
       html.documento body { overflow: visible; }
       html.documento #root { height: auto; min-height: 100vh; }
+      /* Nada se sale de lado: una pieza oculta de 2000 px dentro de una
+         tarjeta del Inicio dejaba deslizar la página hacia la derecha. */
+      html, body, #root { overflow-x: clip; }
       /* Al bajar, lo que flota del encabezado (la foto, el logo, la campana)
          lleva su vidrio, para leerse sobre el contenido que pasa debajo. */
       html.documento [data-flota] { transition: background-color 0.2s, box-shadow 0.2s; border-radius: 999px; }
@@ -66,11 +59,11 @@
         box-shadow: 0 0 0 6px rgba(245, 244, 248, 0.95), 0 4px 14px 6px rgba(0, 0, 0, 0.12);
       }
       html.documento.desplazada.oscura [data-flota][data-sin-desenfoque] {
-        background-color: rgba(28, 26, 34, 0.95); box-shadow: 0 0 0 6px rgba(28, 26, 34, 0.95), 0 4px 14px 6px rgba(0, 0, 0, 0.35);
+        background-color: rgba(36, 33, 44, 0.95); box-shadow: 0 0 0 6px rgba(36, 33, 44, 0.95), 0 4px 14px 6px rgba(0, 0, 0, 0.35);
       }
       html.documento.desplazada.oscura [data-flota] {
-        background-color: rgba(28, 26, 34, 0.8);
-        box-shadow: 0 0 0 6px rgba(28, 26, 34, 0.8), 0 4px 14px 6px rgba(0, 0, 0, 0.35);
+        background-color: rgba(36, 33, 44, 0.8);
+        box-shadow: 0 0 0 6px rgba(36, 33, 44, 0.8), 0 4px 14px 6px rgba(0, 0, 0, 0.35);
       }
     </style>
   </head>

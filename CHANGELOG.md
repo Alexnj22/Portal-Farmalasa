@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.12 — Puntos Salud: Tienda Salud al centro del menú; la web con un solo tono de fondo
+
+- **Menú: Inicio · Bienestar · Tienda Salud · Carrito · Cuenta.** La Tienda queda al centro, que es lo más visible y lo más cómodo para el pulgar, y junto al Carrito. Bienestar había quedado en el medio por accidente cuando Ofertas dejó de ser pestaña. En la app (iPhone y Android, por aire) y en la web.
+- **Web: un solo tono de fondo.** Las manchas de la aurora hacían que Safari pintara la franja de la hora como una barra negra encima de la app; con un tono parejo, la franja es la app. La aurora no se pinta en la web.
+- **Web: la página ya no se desliza hacia los lados** (una pieza oculta de 2000 px dentro de una tarjeta del Inicio).
+
 ## v2.1537.11 — Puntos Salud web: el contenido pasa bajo las barras de Safari; sonidos con el iPhone en silencio
 
 - **Safari del iPhone, de verdad a pantalla completa**: el contenido pasa por debajo de la hora y de la barra de direcciones. Medido en el simulador, ocultando una cosa por vez, había tres cosas que hacían que Safari pintara esas zonas de un color liso:

@@ -1,0 +1,32 @@
+name: Consumo de Vercel
+
+# Control diario del gasto en Vercel (scripts/vercel-consumo.mjs). Desde el
+# 2026-11-14 las peticiones y la transferencia se cobran por uso (se quitó el
+# paquete «Flat Rate CDN 10M»), y se pagan del crédito de $20 del Pro junto
+# con las compilaciones. Esto proyecta el cierre del ciclo cada mañana:
+#   verde / amarillo → la corrida pasa (amarillo deja un aviso)
+#   rojo             → la corrida FALLA y GitHub manda el correo
+# El detalle de cada día queda en el resumen de la corrida.
+#
+# Usa los secretos VERCEL_TOKEN y VERCEL_TEAM_ID (los mismos de entorno-pruebas).
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 07:00 SV
+  workflow_dispatch:
+
+jobs:
+  consumo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # Versión FIJA: `billing usage` y `billing budgets` necesitan ≥ 65.11.
+      - run: npm install -g vercel@65.16.0
+      - run: node scripts/vercel-consumo.mjs
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}

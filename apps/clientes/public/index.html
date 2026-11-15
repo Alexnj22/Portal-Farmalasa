@@ -80,6 +80,15 @@
         -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
         box-shadow: 0 0 0 6px rgba(245, 244, 248, 0.78), 0 4px 14px 6px rgba(0, 0, 0, 0.12);
       }
+      /* Computadora y Android: el encabezado entero pegado arriba, con vidrio
+         al bajar (lib/documentoWeb, pegarArriba). */
+      html.documento [data-pegado] { transition: background-color 0.2s, box-shadow 0.2s; }
+      html.documento.desplazada [data-pegado] {
+        background-color: rgba(245, 244, 248, 0.8);
+        -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+      }
+      html.documento.desplazada.oscura [data-pegado] { background-color: rgba(21, 19, 27, 0.8); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06); }
       /* Safari del iPhone: sin difuminado cerca del borde (lib/documentoWeb). */
       html.documento.desplazada [data-flota][data-sin-desenfoque] {
         -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(245, 244, 248, 0.95);

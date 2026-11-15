@@ -43,8 +43,8 @@ function guardarYPoner(el, estilos) {
 }
 
 function deshacer() {
-  for (const [el, orig] of tocados) { Object.assign(el.style, orig); delete el.dataset.encabezado; delete el.dataset.flota; }
-  document.querySelectorAll('[data-flota],[data-encabezado]').forEach((e) => { delete e.dataset.flota; delete e.dataset.encabezado; });
+  for (const [el, orig] of tocados) { Object.assign(el.style, orig); delete el.dataset.encabezado; delete el.dataset.flota; delete el.dataset.pegado; }
+  document.querySelectorAll('[data-flota],[data-encabezado],[data-pegado]').forEach((e) => { delete e.dataset.flota; delete e.dataset.encabezado; delete e.dataset.pegado; });
   tocados.clear();
   if (activo) {
     posiciones.set(activo, window.scrollY);
@@ -128,7 +128,12 @@ function acomodarVecinos() {
       else if (s.position === 'fixed' && !tocados.has(v)) fondoEnLaPagina(v);
       else if (antes && !v.dataset.encabezado && s.position !== 'fixed' && v.getBoundingClientRect().height < 200 && n !== activo) {
         v.dataset.encabezado = '1';
-        flotarPartes(v);
+        // Las piezas sueltas son SÓLO para Safari del iPhone, que es el que
+        // pinta la franja de la hora si algo fijo va de lado a lado. En la
+        // computadora (y en Android) el encabezado entero se pega arriba y
+        // sus piezas se acomodan solas: medir y congelar posiciones ahí dejó
+        // el logo encima de la foto y la campana afuera (2026-11-14).
+        if (IPHONE_SAFARI) flotarPartes(v); else pegarArriba(v);
       }
     }
   }
@@ -154,6 +159,12 @@ function fijar(v) {
     if (hijos.length) {
       const izq = Math.min(...hijos.map((c) => c.left)); const der = Math.max(...hijos.map((c) => c.right));
       const arr = Math.min(...hijos.map((c) => c.top)); const aba = Math.max(...hijos.map((c) => c.bottom));
+      // Arriba (el buscador de la Tienda): se queda donde está, sólo más angosto.
+      if (der - izq < W - 8 && r.top < H / 2) {
+        guardarYPoner(v, { position: 'fixed', left: `${Math.round(izq - r.left)}px`, right: `${Math.round(r.right - der)}px`, paddingLeft: '0px', paddingRight: '0px' });
+        sinDesenfoque(v);
+        return;
+      }
       if (der - izq < W - 8) {
         // Medido dentro de la caja: la caja ya está al final de la página, no
         // de la pantalla. Lo que la separa del borde de abajo se conserva.
@@ -239,6 +250,11 @@ function pieza(p) {
 // debajo). Piezas chicas sueltas, no. Así que el encabezado se queda en la
 // página (se va al bajar) y sus partes flotan, cada una por su cuenta, en el
 // mismo lugar donde estaban — como el menú de abajo, que no toca los bordes.
+function pegarArriba(h) {
+  guardarYPoner(h, { position: 'sticky', top: '0px', zIndex: '20' });
+  h.dataset.pegado = '1';
+}
+
 function flotarPartes(h) {
   const hr = h.getBoundingClientRect();
   const ps = partes(h);
@@ -247,6 +263,16 @@ function flotarPartes(h) {
   // caja de 64 px de alto: la caja toca el borde de arriba y Safari vuelve a
   // pintar la franja. Todo se mide antes de mover nada.
   const lista = ps.map((p) => { const v = pieza(p); return { p, v, r: v.getBoundingClientRect(), rp: p.getBoundingClientRect() }; });
+  // Si la fila todavía no se acomodó (piezas encimadas o fuera de la
+  // pantalla), no se congela nada: se vuelve a intentar en un rato.
+  const W = window.innerWidth;
+  const conAlgo = lista.filter(({ r }) => r.width > 0);
+  const malo = conAlgo.some(({ r }, i) => r.left < -1 || r.right > W + 1 || (i > 0 && r.left < conAlgo[i - 1].r.right - 1));
+  if (malo) {
+    delete h.dataset.encabezado;
+    if ((h.__intentos = (h.__intentos ?? 0) + 1) < 10) setTimeout(() => { if (h.isConnected) acomodarVecinos(); }, 300);
+    return;
+  }
   for (const { p, v, r, rp } of lista) {
     // Una parte vacía (Cuenta no lleva foto a la izquierda) no flota: sería un
     // vidrio sin nada adentro.
@@ -261,7 +287,7 @@ function flotarPartes(h) {
       top: `${Math.round(r.top - hr.top)}px`, left: `${Math.round(r.left)}px`,
       // Hacia arriba y con un px de aire: redondeado hacia abajo, el título
       // («Notificaciones», 113.6 px) salía con puntos suspensivos.
-      width: `${Math.ceil(r.width) + 1}px`, height: `${Math.ceil(r.height)}px`,
+      width: `${Math.min(Math.ceil(r.width) + 1, Math.floor(W - r.left))}px`, height: `${Math.ceil(r.height)}px`,
     });
     v.dataset.flota = '1';
     if (IPHONE_SAFARI) v.dataset.sinDesenfoque = '1';

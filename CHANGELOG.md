@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.16 — Puntos Salud web: la Tienda se desplaza como las demás; encabezado de la computadora pegado arriba
+
+- **La Tienda se desplaza con la página**, como las demás pestañas: el contenido pasa bajo las barras de Safari. La lista se dibuja completa en la web (crece con «Ver más», no sola), y el buscador se pega DEBAJO del encabezado en vez de encima del logo.
+- **Computadora: el logo quedaba encima de la foto y la campana se perdía.** Las piezas sueltas del encabezado (medidas y congeladas en su lugar) son ahora SÓLO para Safari del iPhone, que es el que las necesita; en la computadora y en Android el encabezado entero se pega arriba, con vidrio al bajar, y sus piezas se acomodan solas. En el iPhone, si la fila todavía no se acomodó al medir, no se congela: se reintenta.
+- La pieza de la derecha («…» en Notificaciones) ya no se pasa un píxel del borde.
+
 ## v2.1537.15 — Puntos Salud web: las pestañas de atrás ya no se ven a través de la actual; fondo vivo más liviano
 
 - **Arreglo urgente: al cambiar de pestaña se veían las otras por detrás** (Inicio debajo de Bienestar, el logo dos veces, la Tienda encima de Bienestar). Las pestañas que no se ven quedan montadas detrás de la actual; antes las tapaba la aurora opaca de cada pantalla, y al pasar a un solo tono de fondo quedaron a la vista. Ahora se ocultan (`display: none`; con `visibility` las tarjetas animadas seguían visibles).

@@ -39,6 +39,7 @@ import { dolares } from '../../../lib/formato';
 import { BUSQUEDAS, alCambiarVistos, alPedirLaboratorio, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
+import { esListaDelDocumento } from '../../../lib/documentoWeb';
 // Precio de mayoreo (2026-10-12): el catálogo se pide con la sesión, y a quien
 // le corresponde el servidor le agrega `precio_tuyo` (lib/precioTuyo.js).
 import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
@@ -94,7 +95,9 @@ export default function Catalogo() {
   // Es una sola pieza, fuera de la lista: así nunca pierde el foco ni el teclado.
   // En iOS la barra es transparente y la lista corre debajo; en Android, no.
   const altoBarra = useHeaderHeight();
-  const tope = Platform.OS === 'ios' ? altoBarra : 0;
+  // En la web la página corre por debajo del encabezado (lib/documentoWeb.js),
+  // como en iOS: el buscador se pega DEBAJO de él, no encima del logo.
+  const tope = Platform.OS === 'ios' || Platform.OS === 'web' ? altoBarra : 0;
   const desplazado = useSharedValue(null);
   const posBuscador = useSharedValue(null);
   const yaLejos = useSharedValue(false);
@@ -104,6 +107,25 @@ export default function Catalogo() {
     const ahora = yaLejos.value ? y > altoPantalla : y > altoPantalla * 1.5;
     if (ahora !== yaLejos.value) { yaLejos.value = ahora; runOnJS(setLejos)(ahora); }
   }, [altoPantalla]);
+  // Web: la Tienda se desplaza con la PÁGINA, como las demás pestañas
+  // (lib/documentoWeb.js; 2026-11-14, «y la tienda por qué no se desplaza
+  // igual?»). La lista ya no recibe su propio desplazamiento: el buscador y
+  // «Arriba» leen el de la ventana.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return undefined;
+    let lejosAhora = false;
+    const f = () => {
+      const r = listaRef.current;
+      const el = r?.getScrollableNode?.() ?? r?.getNativeScrollRef?.() ?? null;
+      if (!el || !esListaDelDocumento(el)) return;
+      const y = window.scrollY;
+      desplazado.value = y;
+      const ahora = lejosAhora ? y > altoPantalla : y > altoPantalla * 1.5;
+      if (ahora !== lejosAhora) { lejosAhora = ahora; setLejos(ahora); }
+    };
+    window.addEventListener('scroll', f, { passive: true });
+    return () => window.removeEventListener('scroll', f);
+  }, [altoPantalla, desplazado]);
   const estiloBuscador = useAnimatedStyle(() => {
     // Fuera de pantalla y no con opacidad: el Liquid Glass a veces no se dibuja bajo un fundido.
     if (posBuscador.value == null) return { transform: [{ translateY: -200 }] };
@@ -291,7 +313,11 @@ export default function Catalogo() {
           </View>
         ),
       }} />
-      <Animated.FlatList dataSet={{ documento: 'no' }}
+      {/* En la web la lista se dibuja COMPLETA y se desplaza con la página:
+          no crece sola al llegar al final (crece con «Ver más»), así que no
+          necesita dibujar sólo lo que se ve. */}
+      <Animated.FlatList dataSet={Platform.OS === 'web' ? { documento: '1' } : undefined}
+        disableVirtualization={Platform.OS === 'web'}
         ref={tirar.ref}
         onScroll={alDesplazar}
         scrollEventThrottle={16}
@@ -307,7 +333,7 @@ export default function Catalogo() {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={encabezado}
-        initialNumToRender={8}
+        initialNumToRender={Platform.OS === 'web' ? 400 : 8}
         windowSize={7}
         renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}

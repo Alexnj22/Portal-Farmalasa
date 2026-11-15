@@ -21,7 +21,9 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fetchCustomersPage, fetchCustomersStats } from '@nucleo/data/customers';
+import { fetchCustomersPage, fetchCustomersStats, fetchNivelesDeClientes } from '@nucleo/data/customers';
+import { RANGOS } from '@nucleo/data/mayoristas';
+import { NIVELES } from '@nucleo/utils/chatClientes';
 import { documentoAnonimizado } from '@nucleo/data/solicitudesDatos';
 import { EL_SALVADOR_GEO, municipiosDe } from '@nucleo/data/elSalvadorGeo';
 import { fechaNumerica } from '@nucleo/utils/fecha';
@@ -67,7 +69,34 @@ const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 
 // ── Celdas ───────────────────────────────────────────────────────────────────
 
-function ClienteCell({ row }) {
+// El nivel de Puntos Salud (2026-11-15, pedido del usuario): «si es de
+// mayoreo, su rango y su nivel; si no, sólo el nivel». Lo calcula la base con
+// las mismas reglas que acumula el motor (`clientes_niveles`); empresas,
+// mostrador y quien salió del programa no acumulan, así que no llevan nada.
+function InsigniasDePuntos({ info, verMonto }) {
+    if (!info || (info.programa !== 'socio' && info.programa !== 'mayorista')) return null;
+    const nivel = NIVELES[info.nivel];
+    // El monto sólo con `clientes_ver_montos`, como la columna Facturado.
+    const compra = verMonto && info.compra_12m != null ? `Compró ${formatMoney(info.compra_12m)} en 12 meses` : null;
+    // Renglón propio y con `flex-wrap`: la celda está acotada a 132px (ver
+    // COLS) y «Mayoreo Diamante» + «Platino» no caben al lado del código.
+    return (
+        <div className="flex flex-wrap items-center gap-1 mt-0.5">
+            {info.programa === 'mayorista' && (
+                <Badge size="sm" variant="chart-9" title="Cliente Mayorista aprobado">
+                    Mayoreo{info.rango && RANGOS[info.rango] ? ` ${RANGOS[info.rango].nombre}` : ''}
+                </Badge>
+            )}
+            {nivel && (
+                <Badge size="sm" variant={nivel.variant} title={compra ? `Nivel ${nivel.label} · ${compra}` : `Nivel ${nivel.label}`}>
+                    {nivel.label}
+                </Badge>
+            )}
+        </div>
+    );
+}
+
+function ClienteCell({ row, puntos, verMonto }) {
     return (
         <div className="flex items-center gap-2 min-w-0">
             <IconoEnCaja tamano="sm" className="border border-divider">
@@ -105,6 +134,7 @@ function ClienteCell({ row }) {
                         </Badge>
                     )}
                 </div>
+                <InsigniasDePuntos info={puntos} verMonto={verMonto} />
             </div>
         </div>
     );
@@ -187,6 +217,9 @@ export default function ClientesView({ openModal }) {
     const [pageSize, setPageSize] = useState(25);
 
     const [rows, setRows] = useState([]);
+    // `{ [id]: { programa, rango, nivel, … } }` de la página a la vista. Llega
+    // después de la lista: si falla, la lista se ve igual, sin las insignias.
+    const [niveles, setNiveles] = useState({});
     const [total, setTotal] = useState(0);
     const [sonParecidos, setSonParecidos] = useState(false);
     const [stats, setStats] = useState(null);
@@ -224,6 +257,10 @@ export default function ClientesView({ openModal }) {
             if (mio !== pedidoRef.current) return;
             setRows(r);
             setTotal(n);
+            setNiveles({});
+            fetchNivelesDeClientes(r.map((x) => x.id))
+                .then((m) => { if (mio === pedidoRef.current) setNiveles(m); })
+                .catch((e) => console.error('ClientesView.jsx: niveles', e));
             setSonParecidos(aproximado);
             setDocAnonimizado(false);
             if (n === 0 && String(searchAplicado ?? '').replace(/[^0-9]/g, '').length >= 8) {
@@ -526,7 +563,7 @@ export default function ClientesView({ openModal }) {
                         const f = FICHA[row.ficha] || FICHA.vacia;
                         return (
                             <DataRow key={row.id} index={i} onClick={() => abrirFicha(row)}>
-                                <DataCell><ClienteCell row={row} /></DataCell>
+                                <DataCell><ClienteCell row={row} puntos={niveles[row.id]} verMonto={canVerMontos} /></DataCell>
                                 <DataCell hideBelow="md"><DocumentoCell row={row} /></DataCell>
                                 <DataCell>
                                     <div className="flex flex-col items-start gap-1">

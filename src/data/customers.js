@@ -60,6 +60,21 @@ export async function fetchCustomersPage({
     return { total: data?.total ?? 0, rows: data?.rows ?? [], aproximado: !!data?.aproximado };
 }
 
+/**
+ * El programa y el nivel de Puntos Salud de HOY de las fichas de una página
+ * (`clientes_niveles`, 2026-11-15). Devuelve `{ [id]: { programa, rango,
+ * nivel, nivel_nombre, compra_12m } }`. `programa` es 'socio', 'mayorista',
+ * 'empresa', 'fuera' o 'mostrador'; sólo los dos primeros traen nivel.
+ * La base acepta hasta 200 ids: la página nunca pasa de 100.
+ */
+export async function fetchNivelesDeClientes(ids) {
+    const lista = [...new Set((ids || []).filter((x) => x != null))];
+    if (!lista.length) return {};
+    const { data, error } = await supabase.rpc('clientes_niveles', { p_ids: lista });
+    if (error) throw error;
+    return Object.fromEntries((data || []).map((r) => [r.id, r]));
+}
+
 export async function fetchCustomersStats() {
     const { data, error } = await supabase.rpc('get_customers_stats');
     if (error) throw error;

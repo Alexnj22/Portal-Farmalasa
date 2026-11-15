@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1538.0 — Clientes: nivel de Puntos Salud y mayoreo en la lista
+
+- **Cada cliente de la lista muestra su nivel de Puntos Salud de hoy** (Bronce, Plata, Oro, Platino), y si es Cliente Mayorista aprobado, además «Mayoreo» con su rango. Al pasar el puntero dice cuánto compró en 12 meses, sólo a quien puede ver montos.
+- Empresas, mostrador y quien salió del programa no llevan insignia: no acumulan.
+- Lo calcula la base con las mismas reglas que usa el motor para acumular (`clientes_niveles`, migración `20261115123634`): la compra de 12 meses de la ficha y de las que se le fusionaron. Si la consulta falla, la lista se ve igual, sin las insignias.
+- Verificado antes de publicar: con las reglas del 15-nov simuladas sobre las compras del 8 al 14 de noviembre, los cuatro niveles reciben su factor (×1, ×1.25, ×1.5, ×2), el personal se queda en 1 punto por dólar a cualquier precio y las 12 compras de empresas quedan fuera.
+
 ## v2.1537.20 — Puntos Salud web: la guía de bienvenida también la primera vez en el navegador
 
 - **La guía de bienvenida sale en la web la primera vez** (una vez por navegador), igual que en la app: la tarjeta, el nivel, la Tienda, el chat y las reglas y la privacidad. Después, sólo las reglas cuando cambia una versión. `lib/novedades.js` guarda en el navegador por `SecureStore` (entrada.web.js).

@@ -33517,6 +33517,7 @@ export type Database = {
       }
       cliente_vigente: { Args: { p_id: number }; Returns: number }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
+      clientes_niveles: { Args: { p_ids: number[] }; Returns: Json }
       clientes_sin_distrito_corregibles: {
         Args: never
         Returns: {

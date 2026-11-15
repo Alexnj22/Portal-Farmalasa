@@ -3,7 +3,7 @@
 // variantes en hoja inferior de las apps de compras. Pide los mismos datos y
 // agrega con los mismos campos que la ficha (app/producto/[id].js).
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeInDown, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -116,7 +116,9 @@ function Hoja({ p }) {
           <Pressable style={{ flex: 1 }} onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar" />
         </Animated.View>
         <Animated.View onLayout={(e) => { altoHoja.value = e.nativeEvent.layout.height; }}
-          style={[estiloHoja, { maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: colorSistema.fondo, paddingTop: 8, paddingBottom: ins.bottom + 14 }]}>
+          // En la computadora la hoja medía todo el ancho de la ventana: va
+          // del ancho de la columna, centrada (2026-11-14).
+          style={[estiloHoja, Platform.OS === 'web' && { width: '100%', maxWidth: 560, alignSelf: 'center' }, { maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: colorSistema.fondo, paddingTop: 8, paddingBottom: ins.bottom + 14 }]}>
           <View style={{ alignSelf: 'center', width: 38, height: 5, borderRadius: 3, backgroundColor: colorSistema.separador, marginBottom: 12 }} />
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18 }}>
@@ -216,7 +218,8 @@ function Aviso({ a, t, soltar }) {
   const alMedir = useOcupaAbajo('aviso-agregado', ABAJO_AVISO);
   return (
     <Animated.View key={a.id} onLayout={alMedir} entering={FadeInDown.duration(280).easing(Easing.out(Easing.cubic))} exiting={FadeOutDown.duration(180)} accessibilityLiveRegion="polite"
-      style={{ position: 'absolute', left: 16, right: 16, bottom: ABAJO_AVISO, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingLeft: 14, paddingRight: 6, borderRadius: 18,
+      // Web: del ancho de la columna y centrado, no de lado a lado.
+      style={{ position: 'absolute', left: 16, right: 16, bottom: ABAJO_AVISO, ...(Platform.OS === 'web' ? { maxWidth: 528, marginHorizontal: 'auto' } : null), flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingLeft: 14, paddingRight: 6, borderRadius: 18,
         backgroundColor: t.oscuro ? '#2A2630' : '#1F1B24', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
       <Icono sf="checkmark.circle.fill" respaldo="✓" tam={20} color={t.color.verde} />
       <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', lineHeight: 18, color: '#FFFFFF' }} numberOfLines={2}>{a.cant} × {a.nombre} · {a.tipo}</Text>

@@ -327,7 +327,9 @@ export default function Puntos() {
 
       {/* Mis tratamientos: arriba SÓLO lo que se acaba en 3 días o menos; la
           lista completa está en el menú. */}
-      {urgentes.length ? (
+      {/* En la web no hay recordatorios de tratamientos (2026-11-14, «si no se
+          pueden activar, mejor ocultémoslos de la app web»). */}
+      {urgentes.length && Platform.OS !== 'web' ? (
         <Entrada indice={2}>
           <TratamientosInicio lista={urgentes} />
         </Entrada>
@@ -622,8 +624,11 @@ function Menu({ resumen, urgentes }) {
   const casillas = [
     { sf: 'bag.fill', titulo: 'Reservas', color: t.color.magenta, ruta: '/reservas', resaltar: r.reservas_listas > 0,
       detalle: r.reservas_listas ? `${r.reservas_listas} lista${r.reservas_listas === 1 ? '' : 's'}` : r.reservas_abiertas ? `${r.reservas_abiertas} en curso` : 'Ninguna' },
-    { sf: 'pills.fill', titulo: 'Tratamientos', color: t.acentos.azul.fuerte, ruta: '/tratamientos', resaltar: urgentes > 0,
-      detalle: urgentes ? `${urgentes} por acabarse` : tratamientos ? `${tratamientos} activo${tratamientos === 1 ? '' : 's'}` : 'Ver' },
+    // En la web, Ofertas en lugar de Tratamientos (sin recordatorios ahí).
+    Platform.OS === 'web'
+      ? { sf: 'tag.fill', titulo: 'Ofertas', color: t.acentos.azul.fuerte, ruta: '/ofertas', detalle: 'Precios bajos' }
+      : { sf: 'pills.fill', titulo: 'Tratamientos', color: t.acentos.azul.fuerte, ruta: '/tratamientos', resaltar: urgentes > 0,
+        detalle: urgentes ? `${urgentes} por acabarse` : tratamientos ? `${tratamientos} activo${tratamientos === 1 ? '' : 's'}` : 'Ver' },
     { sf: 'list.bullet.rectangle.fill', titulo: 'Compras', color: t.acentos.violeta.fuerte, ruta: '/compras', detalle: 'Volver a pedir' },
     { sf: 'star.fill', titulo: 'Mis puntos', color: t.acentos.naranja.fuerte, ruta: '/movimientos', detalle: 'Movimientos' },
     { sf: 'mappin.and.ellipse', titulo: 'Sucursales', color: t.acentos.violeta.fuerte, ruta: '/sucursales', detalle: 'Horarios' },

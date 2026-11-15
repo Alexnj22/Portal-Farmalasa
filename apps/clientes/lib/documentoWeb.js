@@ -152,7 +152,11 @@ function fijar(v) {
   const W = window.innerWidth; const H = window.innerHeight;
   const r = v.getBoundingClientRect();
   if (r.width >= W * 0.9 && r.height >= H * 0.8) { fondoEnLaPagina(v); return; } // fondo
-  if (r.width >= W * 0.9) {
+  // Una caja que se VE (el aviso de «agregado», con su fondo) no se angosta
+  // a lo de adentro: queda fija con sus mismos márgenes.
+  const cs = getComputedStyle(v);
+  const seVe = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent';
+  if (r.width >= W * 0.9 && !seVe) {
     // Del tamaño de lo que lleva adentro, en los dos sentidos: la caja del
     // menú tiene relleno abajo y tocaba el borde.
     const hijos = [...v.children].map((c) => c.getBoundingClientRect()).filter((c) => c.width > 0);
@@ -168,9 +172,12 @@ function fijar(v) {
       if (der - izq < W - 8) {
         // Medido dentro de la caja: la caja ya está al final de la página, no
         // de la pantalla. Lo que la separa del borde de abajo se conserva.
+        // Más la distancia que ya tenía al borde de abajo: el aviso de
+        // «agregado» va a 104 px, y sin sumarla caía detrás del menú.
+        const abajo = parseFloat(getComputedStyle(v).bottom) || 0;
         guardarYPoner(v, {
           position: 'fixed', left: `${Math.round(izq - r.left)}px`, right: `${Math.round(r.right - der)}px`,
-          top: 'auto', bottom: `${Math.round(r.bottom - aba)}px`, height: `${Math.ceil(aba - arr)}px`,
+          top: 'auto', bottom: `${Math.round(abajo + r.bottom - aba)}px`, height: `${Math.ceil(aba - arr)}px`,
           paddingLeft: '0px', paddingRight: '0px', paddingTop: '0px', paddingBottom: '0px',
         });
         sinDesenfoque(v);
@@ -349,6 +356,11 @@ export function anclarDocumento() {
     let relojAlinear = null;
     const alinearPronto = () => { if (!relojAlinear) relojAlinear = setTimeout(() => { relojAlinear = null; alinearEncabezados(); pronto(); }, 300); };
     new MutationObserver((ms) => {
+      // Lo que se anima DENTRO del contenido (la tarjeta que brilla, las
+      // entradas) cambia `style` en cada cuadro: eso no mueve nada de lo que
+      // se acomoda acá, y reacomodar en cada cuadro mientras se desplaza hacía
+      // temblar el encabezado en el iPhone (2026-11-14).
+      if (!ms.some((m) => m.type === 'childList' || !activo || !activo.contains(m.target))) return;
       pronto();
       if (ms.some((m) => m.type === 'childList')) alinearPronto();
     }).observe(raiz, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class'] });

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.17 — Puntos Salud web: sin tratamientos; hoja de agregar y aviso del ancho de la columna; el encabezado ya no tiembla
+
+- **Sin tratamientos en la web**: ahí no se pueden activar los recordatorios, así que no se ofrecen. Sale «Se te acaba pronto» del Inicio, la fila de Cuenta, y en los accesos rápidos Tratamientos cede su lugar a **Ofertas**. La app no cambia.
+- **Hoja de «agregar al carrito»**: en la computadora medía todo el ancho de la ventana; ahora es del ancho de la columna, centrada.
+- **Aviso de «agregado»**: caía detrás del menú y de lado a lado. Ahora va encima del menú y centrado. Causa: al pasar a fijo, se perdía su distancia al borde de abajo (104 px), y por tener fondo no debía angostarse a lo de adentro.
+- **El encabezado temblaba al desplazar en el iPhone**: cada animación del contenido (la tarjeta que brilla) disparaba un reacomodo en cada cuadro; ahora sólo reacomoda lo que cambia afuera del contenido. Y el buscador de la Tienda se queda quieto en la web en vez de seguir al dedo desde JavaScript (iba un cuadro atrás).
+
 ## v2.1537.16 — Puntos Salud web: la Tienda se desplaza como las demás; encabezado de la computadora pegado arriba
 
 - **La Tienda se desplaza con la página**, como las demás pestañas: el contenido pasa bajo las barras de Safari. La lista se dibuja completa en la web (crece con «Ver más», no sola), y el buscador se pega DEBAJO del encabezado en vez de encima del logo.

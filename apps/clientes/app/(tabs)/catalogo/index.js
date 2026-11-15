@@ -40,6 +40,8 @@ import { BUSQUEDAS, alCambiarVistos, alPedirLaboratorio, leerVistos, vistosEnMem
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 import { esListaDelDocumento } from '../../../lib/documentoWeb';
+
+const WEB = Platform.OS === 'web';
 // Precio de mayoreo (2026-10-12): el catálogo se pide con la sesión, y a quien
 // le corresponde el servidor le agrega `precio_tuyo` (lib/precioTuyo.js).
 import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
@@ -130,6 +132,10 @@ export default function Catalogo() {
     // Fuera de pantalla y no con opacidad: el Liquid Glass a veces no se dibuja bajo un fundido.
     if (posBuscador.value == null) return { transform: [{ translateY: -200 }] };
     const d = desplazado.value;
+    // En la web se queda QUIETO en su lugar y la página pasa por debajo:
+    // seguir al desplazamiento desde JavaScript va un cuadro atrás del dedo
+    // y en el iPhone se veía temblar (2026-11-14).
+    if (WEB) return { transform: [{ translateY: posBuscador.value + tope }] };
     return { transform: [{ translateY: d == null ? posBuscador.value + tope : Math.max(tope + 6, posBuscador.value - d) }] };
   }, [tope]);
   const arriba = useCallback(() => {

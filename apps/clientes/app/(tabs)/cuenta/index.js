@@ -419,12 +419,15 @@ export default function Cuenta() {
         </Grupo>
       ) : null}
 
-      {/* Mi salud: tratamientos e inyecciones. */}
+      {/* Mi salud: tratamientos e inyecciones (en la web, sólo inyecciones). */}
       {completa ? (
         <Grupo titulo="Mi salud">
-          <FilaAccion sf="pills.fill" tinte={t.acentos.azul.fuerte} texto="Mis tratamientos" insignia={urgentes}
-            detalle={urgentes ? `${plural(urgentes, 'se acaba', 'se acaban')} en 3 días o menos` : tratamientos ? plural(tratamientos, 'activo', 'activos') : 'Te avisamos antes de que se acabe'}
-            alTocar={() => navegar('/tratamientos')} />
+          {/* En la web no hay recordatorios de tratamientos: no se ofrecen. */}
+          {Platform.OS !== 'web' ? (
+            <FilaAccion sf="pills.fill" tinte={t.acentos.azul.fuerte} texto="Mis tratamientos" insignia={urgentes}
+              detalle={urgentes ? `${plural(urgentes, 'se acaba', 'se acaban')} en 3 días o menos` : tratamientos ? plural(tratamientos, 'activo', 'activos') : 'Te avisamos antes de que se acabe'}
+              alTocar={() => navegar('/tratamientos')} />
+          ) : null}
           <FilaAccion sf="syringe.fill" tinte={t.acentos.verde.fuerte} texto="Mis inyecciones" insignia={inyecciones}
             detalle={inyecciones ? `${plural(inyecciones, 'por aplicar', 'por aplicar')}` : 'Al día'}
             alTocar={() => navegar('/inyecciones')} />

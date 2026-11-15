@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1538.3 — Plan de clientes desde el portal: auditado y corregido
+
+- `docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md` auditado contra el código y producción. Lo nuevo: 93 fichas creadas en la caja y en la app del personal no existen en el ERP y sus cambios no suben nunca (35 de los 37 trabados): hay que subirlas (paso 4c) y el alta de mostrador pasa por el mismo camino. Permiso nuevo `clientes_crear`, activo para todo cargo que hoy ve Clientes. El alta del ERP no devuelve el número del cliente (cómo encontrarlo sin duplicar). La revisión completa no reemplaza un dato válido del portal por uno inválido del ERP. El aviso a las salas va antes de cerrar el ERP.
+
 ## v2.1538.2 — Plan: clientes sólo desde el portal
 
 - `docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md`: los clientes se crearán y corregirán sólo en el portal, que los manda al ERP al instante; después el ERP se cierra a altas y ediciones y se hace una revisión completa de las fichas. Por qué el espejo no se mantenía al día, el orden obligatorio (crear desde el portal antes de cerrar el ERP) y lo que la sesión de la Mac tiene que averiguar primero (`modal_new_cliente.php`).

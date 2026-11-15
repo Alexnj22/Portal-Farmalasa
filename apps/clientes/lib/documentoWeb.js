@@ -354,7 +354,9 @@ function alinearEncabezados() {
 
 function elegir() {
   if (activo && visible(activo)) { acomodarVecinos(); return; }
-  const listas = [...document.querySelectorAll(MARCA)].filter(visible);
+  // Dentro de un `data-documento="no"` (el carrusel de la guía) ninguna lista
+  // manda: desarmar a sus padres dejaba el carrusel en la primera página.
+  const listas = [...document.querySelectorAll(MARCA)].filter((el) => visible(el) && !el.parentElement?.closest('[data-documento="no"]'));
   const lista = listas[listas.length - 1] ?? buscarSola();
   if (lista === activo) { acomodarVecinos(); return; }
   deshacer();

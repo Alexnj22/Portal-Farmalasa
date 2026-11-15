@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.20 — Puntos Salud web: la guía de bienvenida también la primera vez en el navegador
+
+- **La guía de bienvenida sale en la web la primera vez** (una vez por navegador), igual que en la app: la tarjeta, el nivel, la Tienda, el chat y las reglas y la privacidad. Después, sólo las reglas cuando cambia una versión. `lib/novedades.js` guarda en el navegador por `SecureStore` (entrada.web.js).
+- **El carrusel de la guía se quedaba en la primera página al llegar a las reglas** en la computadora: `lib/documentoWeb` tomaba la lista del reglamento como la principal y desarmaba a sus padres. Las listas dentro de `data-documento="no"` ya no mandan.
+- La página del chat ya no menciona Mis tratamientos en la web (ahí están ocultos).
+
 ## v2.1537.19 — Puntos Salud web: «Volver» en la ficha del producto; el encabezado nace alineado con la columna
 
 - **Ficha del producto en la web**: «‹ Volver» arriba, en la columna, en lugar de la X en la esquina de la ventana. Abierta directo desde un enlace, vuelve a la Tienda.

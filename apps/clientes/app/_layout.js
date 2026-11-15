@@ -217,10 +217,15 @@ function Presentacion() {
   const inicial = useRef(undefined);
   useEffect(() => {
     if (!lista) return;
-    // Web: sin la guía de bienvenida (es de la app), pero las reglas y la
-    // privacidad sí se piden — al abrir con sesión y al entrar (2026-11-14).
+    // Web: la guía de bienvenida la primera vez en este navegador (trae las
+    // reglas y la privacidad); después, sólo las reglas si cambiaron. Al abrir
+    // con sesión y al entrar (2026-11-14).
     if (WEB) {
-      if (token && inicial.current !== token) revisarAceptacion();
+      if (token && inicial.current !== token) {
+        guiaVista().then((vista) => {
+          if (!vista) usePresentacion.getState().pedirGuia(); else revisarAceptacion();
+        });
+      }
       inicial.current = token;
       return;
     }

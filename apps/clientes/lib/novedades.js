@@ -81,8 +81,9 @@ export function novedadesActuales() {
   }) ?? null;
 }
 
-const leer = (k) => (WEB ? Promise.resolve(null) : SecureStore.getItemAsync(k).catch(() => null));
-const guardar = (k, v) => (WEB ? Promise.resolve() : SecureStore.setItemAsync(k, v).catch(() => {}));
+// En la web, SecureStore guarda en el navegador (entrada.web.js).
+const leer = (k) => SecureStore.getItemAsync(k).catch(() => null);
+const guardar = (k, v) => SecureStore.setItemAsync(k, v).catch(() => {});
 
 /**
  * Qué se ve ahora encima de la app. `guia` / `novedades`: lo que ya toca
@@ -103,7 +104,8 @@ export const usePresentacion = create((set) => ({
 
 /** ¿Ya vio la guía en este teléfono? */
 export async function guiaVista() {
-  if (WEB) return true;
+  // La web también la muestra la primera vez (2026-11-14, «actívala para
+  // todos la primera vez»): una vez por navegador.
   return (await leer(CLAVE_GUIA)) === '1';
 }
 

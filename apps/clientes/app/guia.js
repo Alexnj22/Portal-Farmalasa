@@ -235,8 +235,8 @@ export default function Guia() {
         ) : null}
       </View>
 
-      {soloReglas ? <View style={{ flex: 1 }}>{reglas}</View> : (
-        <Animated.ScrollView ref={lista} horizontal pagingEnabled showsHorizontalScrollIndicator={false} bounces={false}
+      {soloReglas ? <View dataSet={{ documento: 'no' }} style={{ flex: 1 }}>{reglas}</View> : (
+        <Animated.ScrollView dataSet={{ documento: 'no' }} ref={lista} horizontal pagingEnabled showsHorizontalScrollIndicator={false} bounces={false}
           onScroll={alDesplazar} scrollEventThrottle={16} style={{ flex: 1 }} decelerationRate="fast"
           onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); setAltoTira((a) => (a === h ? a : h)); }}>
           <Pagina ancho={ancho} titulo="Tu tarjeta Puntos Salud"
@@ -260,7 +260,7 @@ export default function Guia() {
             Aparta productos y retíralos sin hacer fila. Si llevan receta, súbela con una foto.
           </Pagina>
           <Pagina ancho={ancho} titulo="Chat con la farmacia" arte={<Insignia sf="bubble.left.and.bubble.right.fill" respaldo="✉" color={t.color.verde} texto={t.color.verdeTexto} />}
-            nota="En Mis tratamientos te recordamos tus tomas y cuándo te toca volver a comprar.">
+            nota={Platform.OS === 'web' ? undefined : 'En Mis tratamientos te recordamos tus tomas y cuándo te toca volver a comprar.'}>
             Pregúntanos por un medicamento, su precio o si lo tenemos. Te responde nuestro equipo.
           </Pagina>
           {reglas}

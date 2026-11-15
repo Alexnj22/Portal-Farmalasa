@@ -62,6 +62,8 @@ const pantallaBienvenida = (m) => ({ clave: m.clave, etiqueta: '¡BIENVENIDO!', 
     `${m.puntos} pts por cada $1 a tu precio de mayoreo`, 'Tu rango sube con tu compra promedio de 3 meses'] });
 
 let siguienteId = 0;
+// Ancho máximo del texto y del botón: en una tablet o en la web no se estiran.
+const ANCHO_MAX = 440;
 
 /**
  * `nivel`: el nivel de Puntos Salud. `mayoreo`: el rango del cliente de mayoreo
@@ -150,6 +152,11 @@ function Celebracion({ p, alCerrar }) {
   // en un ScrollView por si el texto del sistema está muy grande, y en
   // pantallas bajas (iPhone SE) todo se achica un poco. El botón queda fijo
   // abajo, siempre a la vista.
+  // En la web (2026-11-15, captura del usuario en una pantalla ancha): el
+  // bloque con `alignSelf: 'stretch'` y tope de ancho quedaba pegado a la
+  // IZQUIERDA —stretch ignora el `alignItems: 'center'` del padre— y el botón
+  // cruzaba la pantalla entera. Ahora el texto y el botón comparten el tope
+  // y van centrados; en el teléfono no cambia nada (el ancho útil es menor).
   const compacta = alto < 720;
   const disco = compacta ? 88 : 120;
   return (
@@ -169,7 +176,7 @@ function Celebracion({ p, alCerrar }) {
               <Momento material={p.clave} radio={disco / 2} />
             </Animated.View>
           </View>
-          <Animated.View style={[{ alignSelf: 'stretch', alignItems: 'center', gap: compacta ? 8 : 10, maxWidth: 440, width: '100%' }, eTexto]}>
+          <Animated.View style={[{ alignSelf: 'center', alignItems: 'center', gap: compacta ? 8 : 10, maxWidth: ANCHO_MAX, width: '100%' }, eTexto]}>
             <Text maxFontSizeMultiplier={1.3} style={{ color: paleta.acento ?? '#FFFFFF', fontSize: compacta ? 13 : 15, fontWeight: '900', letterSpacing: compacta ? 2 : 3, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}>{p.etiqueta}</Text>
             <Text adjustsFontSizeToFit minimumFontScale={0.5} numberOfLines={1} maxFontSizeMultiplier={1.2}
               style={{ alignSelf: 'stretch', textAlign: 'center', color: '#FFFFFF', fontSize: compacta ? 36 : 44, fontWeight: '900', letterSpacing: -1, textShadowColor: 'rgba(0,0,0,0.3)', textShadowRadius: 12 }}>{p.titulo}</Text>
@@ -192,12 +199,14 @@ function Celebracion({ p, alCerrar }) {
             </View>
           </Animated.View>
         </ScrollView>
-        <Presionable onPress={alCerrar} accessibilityRole="button"
-          style={({ pressed }) => ({ marginHorizontal: Math.max(24, ins.left + 16), marginTop: 8, marginBottom: Math.max(ins.bottom, 12) + (compacta ? 12 : 20),
-            minHeight: compacta ? 50 : 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-            backgroundColor: '#FFFFFF', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-          <Text maxFontSizeMultiplier={1.3} style={{ color: '#1A1320', fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
-        </Presionable>
+        <View style={{ paddingHorizontal: Math.max(24, ins.left + 16), marginTop: 8, marginBottom: Math.max(ins.bottom, 12) + (compacta ? 12 : 20), alignItems: 'center' }}>
+          <Presionable onPress={alCerrar} accessibilityRole="button"
+            style={({ pressed }) => ({ width: '100%', maxWidth: ANCHO_MAX,
+              minHeight: compacta ? 50 : 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: '#FFFFFF', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <Text maxFontSizeMultiplier={1.3} style={{ color: '#1A1320', fontSize: 17, fontWeight: '900' }}>¡Genial!</Text>
+          </Presionable>
+        </View>
         <Confeti colores={colores} alTerminar={() => {}} />
       </LinearGradient>
   );

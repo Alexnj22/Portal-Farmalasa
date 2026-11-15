@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1546.1 — Consulta de precios: ordenada en cada tamaño del widget
+
+- **Cada presentación dice su precio Regular** ya en la pregunta («Caja · 30
+  unidades — $10.29»), o «2 precios» si tiene dos.
+- **Ordenada en cada tamaño:** en el widget ancho las presentaciones van en dos
+  o tres columnas, y los precios quedan a la izquierda con los lotes al lado,
+  sin filas estiradas de punta a punta. Verificado en pantalla ancha, mediana y
+  de teléfono, con un producto de una caja con dos precios.
+
 ## v2.1546.0 — Consulta de precios: primero la presentación
 
 - **Consulta de precios, simple.** Al abrir un producto pregunta la

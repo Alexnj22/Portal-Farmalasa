@@ -87,15 +87,22 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
   // ── Paso 1: ¿qué presentación? ──
   if (!grupo) {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="@container flex flex-col gap-1.5">
         <p className="text-label font-semibold text-content-2">¿Qué presentación?</p>
-        {grupos.map(g => (
-          <ListRow key={g.clave} density="sm" icon={Package}
-            title={g.nombre}
-            subtitle={unidadesTexto(g.unidades)}
-            trailing={<ChevronRight size={14} className="text-content-3" />}
-            onClick={() => setElegida(g.clave)} />
-        ))}
+        <div className="grid gap-1.5 @xl:grid-cols-2 @3xl:grid-cols-3">
+          {grupos.map(g => (
+            <ListRow key={g.clave} density="sm" icon={Package}
+              title={g.nombre}
+              subtitle={unidadesTexto(g.unidades)}
+              trailing={<span className="flex items-center gap-1.5">
+                <span className="text-body-sm font-black tabular-nums text-content">
+                  {g.variantes.length > 1 ? `${g.variantes.length} precios` : formatMoney(g.variantes[0].precios[PRINCIPAL.key])}
+                </span>
+                <ChevronRight size={14} className="text-content-3" />
+              </span>}
+              onClick={() => setElegida(g.clave)} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -103,7 +110,7 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
   // ── Paso 2: sus precios ──
   const varios = grupo.variantes.length > 1;
   return (
-    <div className="flex flex-col gap-3">
+    <div className="@container flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <p className="min-w-0 truncate">
           <span className="text-body font-black text-content">{grupo.nombre}</span>
@@ -114,14 +121,19 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
         )}
       </div>
 
-      {varios && (
-        <p className="text-caption text-content-3">Esta presentación tiene {grupo.variantes.length} precios.</p>
-      )}
-      <div className={`grid gap-2 ${varios ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        {grupo.variantes.map(v => <Columna key={v.id} variante={v} />)}
+      {/* Ancho: precios a la izquierda y lotes a la derecha, para que una fila
+          no quede con la etiqueta en una punta y el monto en la otra. */}
+      <div className="grid gap-4 @3xl:grid-cols-2 @3xl:items-start">
+      <div className="flex flex-col gap-2 max-w-2xl">
+        {varios && (
+          <p className="text-caption text-content-3">Esta presentación tiene {grupo.variantes.length} precios.</p>
+        )}
+        <div className={`grid gap-2 ${varios ? 'grid-cols-2' : 'grid-cols-1 max-w-md'}`}>
+          {grupo.variantes.map(v => <Columna key={v.id} variante={v} />)}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 max-w-md">
         <p className="text-caption font-black uppercase tracking-widest text-content-3">{conSala ? 'En tu sala' : 'En las salas'}</p>
         {grupo.lotes.length ? (
           <ul className="divide-y divide-divider">
@@ -138,6 +150,7 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
         ) : (
           <p className="text-label text-content-3">No hay existencia de esta presentación.</p>
         )}
+      </div>
       </div>
     </div>
   );

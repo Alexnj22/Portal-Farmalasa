@@ -30,7 +30,7 @@ import {
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
   Upload, Eye, Lock, Thermometer, Pill,
-  Wallet, Mail, ShoppingBag
+  Wallet, Mail, ShoppingBag, UserPlus
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '@nucleo/utils/scheduleHelpers';
 // Los mapas del sistema de origen se mudaron a `constants/erp` el 2026-08-11:
@@ -66,6 +66,8 @@ const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
  * alta con anticipo, el buscador de producto, el calendario y la ticketera de
  * la constancia— le sumaba ~25 kB al Inicio de TODO el mundo (99 → 130 kB). */
 const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
+// Buscar, abrir y crear clientes desde el Inicio (2026-11-15).
+const WidgetClientes = lazy(() => import('./dashboard/WidgetClientes'));
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
@@ -228,6 +230,9 @@ const WIDGET_SIZES = {
   // para que se vean el encabezado, el buscador y al menos dos reservas. El
   // resto se desplaza dentro de la tarjeta (ver `WidgetReservas`).
   reservas:      { minCols: 2, minRows: 3, label: 'Reservas' },
+  // Buscador con resultados y el botón de nuevo: el buscador, tres filas y el
+  // botón necesitan dos renglones; una columna alcanza para un nombre.
+  clientes:      { minCols: 1, minRows: 2, label: 'Clientes' },
   meta_sala:     { minCols: 2, minRows: 2, label: 'Meta del mes'  },
   // Lista con botones: sin alto no entra ni un corte (mismo motivo que
   // `vendedores` y `traslados`, abajo). Tres renglones desde el 2026-08-14:
@@ -664,6 +669,7 @@ const WIDGET_DEFS = [
   { id: 'bitacoras',    label: 'Bitácoras de mi sala',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
   { id: 'recetas_pend', label: 'Recetas pendientes de mi sala', permission: 'dash_recetas_pendientes', icon: Pill, category: 'productos' },
   { id: 'reservas',     label: 'Reservas de mi sala',     permission: 'dash_reservas',     icon: ShoppingBag,  category: 'ventas'    },
+  { id: 'clientes',     label: 'Clientes',                permission: 'dash_clientes',     icon: UserPlus,     category: 'ventas'    },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
   { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
@@ -3818,6 +3824,17 @@ const DashboardView = ({ openModal }) => {
           <WidgetRecetasPendientes onVacio={avisosVacio.recetas_pend} />
         </WidgetCard>
       , staggerIdx, !!vaciosHijos.recetas_pend);
+    }
+
+    /* ── CLIENTES ── */
+    // Buscar una ficha para corregirla, o crear un cliente nuevo.
+    if (wid === 'clientes') {
+      if (!showWidget('clientes', 'dash_clientes')) return null;
+      return wrapWidget('clientes',
+        <WidgetCard title="Clientes" icon={UserPlus} category="ventas">
+          <WidgetClientes openModal={openModal} />
+        </WidgetCard>
+      , staggerIdx);
     }
 
     /* ── RESERVAS DE MI SALA ── */

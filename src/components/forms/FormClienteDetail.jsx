@@ -169,6 +169,35 @@ function PanelActividad({ actividad, facturas, bitacora }) {
 const FICHA_NUEVA = Object.freeze(
     Object.fromEntries(CAMPOS.map(c => [c, c === 'categoria' ? 'Consumidor' : ''])));
 
+// ── El tipo de cliente, primero ──────────────────────────────────────────────
+// En el alta lo primero que se elige es QUÉ es el cliente, y de eso sale qué
+// se pide (2026-11-15, «que sea fácil y eficiente»). Tres grupos y no seis
+// opciones: casi todos son consumidores o contribuyentes, y el canon pone el
+// tope de un segmentado en tres (DESIGN.md §15.3). Las variantes raras se
+// eligen después, sólo dentro de su grupo.
+const GRUPO_DE = {
+    'Consumidor': 'consumidor', 'Contribuyente': 'contribuyente',
+    'Gran Contribuyente': 'contribuyente', 'Contribuyente Exento': 'contribuyente',
+    'Extranjero': 'otro', 'Menor de edad': 'otro',
+};
+const PRIMERA_DEL_GRUPO = { consumidor: 'Consumidor', contribuyente: 'Contribuyente', otro: 'Extranjero' };
+const VARIANTES = {
+    contribuyente: ['Contribuyente', 'Gran Contribuyente', 'Contribuyente Exento'],
+    otro: ['Extranjero', 'Menor de edad'],
+};
+const QUE_ES = {
+    'Consumidor': 'Persona que compra. Lleva factura: basta su DUI (o su NIT), el teléfono y dónde vive.',
+    'Contribuyente': 'Inscrito en IVA: se le emite Crédito Fiscal. Pide NIT, NRC, giro, correo y dirección.',
+    'Gran Contribuyente': 'Como un contribuyente, y además es agente de retención: lleva su porcentaje.',
+    'Contribuyente Exento': 'Inscrito en IVA pero exento del impuesto. Pide los mismos datos que un contribuyente.',
+    'Extranjero': 'No tiene DUI: se identifica con su pasaporte.',
+    'Menor de edad': 'No tiene documento propio: basta el nombre, el teléfono y dónde vive.',
+};
+
+/** Lo que llega ya escrito (desde el buscador del Inicio): sólo campos de la ficha. */
+const inicialDe = (x) => Object.fromEntries(Object.entries(x || {})
+    .filter(([k, v]) => CAMPOS.includes(k) && k !== 'categoria' && v != null && String(v).trim()));
+
 // Lo que pide `cliente_crear` además del formulario de siempre: nombre y
 // apellido, y un documento según la categoría (FALTA_DOCUMENTO en la base).
 function faltaAlNacer(f) {
@@ -233,11 +262,12 @@ const FormClienteDetail = ({ formData }) => {
     // tarde pisa a la nueva, y la segunda escritura del formulario la guardaba
     // el borrador como «cambios sin guardar» (medido en pruebas, 2026-11-15).
     const pedidoRef = useRef(0);
+    const inicial = formData?.inicial;
     const cargar = useCallback(async () => {
         const mio = ++pedidoRef.current;
         if (!id) {
             setCliente({ ...FICHA_NUEVA });
-            setForm({ ...FICHA_NUEVA });
+            setForm({ ...FICHA_NUEVA, ...inicialDe(inicial) });
             setCargando(false);
             return;
         }
@@ -267,7 +297,7 @@ const FormClienteDetail = ({ formData }) => {
         } finally {
             if (mio === pedidoRef.current) setCargando(false);
         }
-    }, [id]);
+    }, [id, inicial]);
 
     useEffect(() => { cargar(); }, [cargar, vuelta]);
 
@@ -483,7 +513,31 @@ const FormClienteDetail = ({ formData }) => {
                 <div className="space-y-5">
                     {/* Identidad */}
                     <div className="space-y-3">
-                        <SectionHeader icon={IdCard}>Identidad</SectionHeader>
+                        <SectionHeader icon={IdCard}>{esNuevo ? 'Tipo de cliente' : 'Identidad'}</SectionHeader>
+                        {esNuevo && (
+                            <div className="space-y-2">
+                                <SegmentedControl
+                                    value={GRUPO_DE[form.categoria] ?? 'consumidor'}
+                                    onChange={g => setForm(p => conCategoria(p, PRIMERA_DEL_GRUPO[g]))}
+                                    label="Tipo de cliente"
+                                    options={[
+                                        { value: 'consumidor', label: 'Consumidor' },
+                                        { value: 'contribuyente', label: 'Contribuyente' },
+                                        { value: 'otro', label: 'Otro' },
+                                    ]}
+                                />
+                                {VARIANTES[GRUPO_DE[form.categoria]] && (
+                                    <LiquidSelect
+                                        value={form.categoria}
+                                        onChange={v => v && setForm(p => conCategoria(p, v))}
+                                        options={VARIANTES[GRUPO_DE[form.categoria]].map(c => ({ value: c, label: c }))}
+                                        clearable={false}
+                                        ariaLabel="Qué clase de cliente"
+                                    />
+                                )}
+                                <p className="text-caption text-content-3 ml-1">{QUE_ES[form.categoria]}</p>
+                            </div>
+                        )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="sm:col-span-2">
                                 <PortalInput
@@ -498,7 +552,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                                 />
                             </div>
-                            <div>
+                            {!esNuevo && <div>
                                 <label className={rotuloCampo('text-content-3')}>
                                     Categoría
                                 </label>
@@ -513,7 +567,7 @@ const FormClienteDetail = ({ formData }) => {
                                     disabled={!editable}
                                     ariaLabel="Categoría fiscal del cliente"
                                 />
-                            </div>
+                            </div>}
                             {ver('dui') && <PortalInput
                                 name="dui" label="DUI" maskType="DUI"
                                 placeholder="00000000-0"
@@ -522,7 +576,7 @@ const FormClienteDetail = ({ formData }) => {
                                 helperText={esNuevo && !esContribuyente ? 'O el NIT, si no tiene DUI' : undefined}
                                 onChange={e => setForm(p => ({ ...p, dui: e.target.value }))}
                             />}
-                            {form.categoria === 'Menor de edad' && (
+                            {!esNuevo && form.categoria === 'Menor de edad' && (
                                 <p className="sm:col-span-2 text-caption text-content-3 ml-1">
                                     Un menor de edad no lleva documento: se identifica por nombre y teléfono.
                                 </p>

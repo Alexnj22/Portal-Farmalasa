@@ -102,6 +102,7 @@ const ERRORES = {
     RETENCION_INVALIDA:           'La retención va de 0 a 100.',
     GEO_INCOHERENTE:              'El departamento, el municipio y el distrito no se corresponden.',
     DUI_INVALIDO:                 'El DUI no pasa el dígito verificador. Revisa los números.',
+    NIT_INVALIDO:                 'El NIT no pasa el dígito verificador. Revisa los números.',
     TELEFONO_INVALIDO:            'El teléfono debe tener 8 dígitos, o 503 + 8.',
     REQUIERE_CONFIRMACION_FISCAL: 'Son datos que se declaran a Hacienda: confirma el cambio.',
     NOMBRE_INCOMPLETO:            'Escribe nombre y apellido.',

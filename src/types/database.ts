@@ -35300,6 +35300,7 @@ export type Database = {
         Args: { p_nombre: string; p_principio_activo: string }
         Returns: boolean
       }
+      es_nit_valido: { Args: { p_nit: string }; Returns: boolean }
       es_parte_del_nombre: {
         Args: { completo: string; parte: string }
         Returns: boolean

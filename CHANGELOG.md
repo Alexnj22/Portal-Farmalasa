@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1541.0 — Clientes: el tipo primero al crear y widget en el Inicio
+
+- **Al crear un cliente, lo primero es el tipo**: Consumidor · Contribuyente ·
+  Otro, y dentro del grupo la variante (Gran Contribuyente, Exento; Extranjero,
+  Menor de edad), con una línea que dice qué pide cada uno. Los campos de abajo
+  salen de esa elección.
+- **Widget «Clientes» en el Inicio** (pestaña Operación, permiso
+  `dash_clientes`, activo para los ocho cargos que ven Clientes): busca por
+  nombre, DUI, NIT o teléfono y abre la ficha para corregirla; «Nuevo cliente»
+  abre el alta, y si lo buscado no existe, «Crearlo con esto» la abre con el
+  nombre, el DUI o el teléfono ya escritos. Es la misma ficha de Clientes, con
+  las mismas reglas y el número de ficha automático.
+- **El NIT también se valida en la base** (migración `20261115164615`):
+  `es_nit_valido` —el mismo verificador que la pantalla— en `cliente_crear`
+  siempre y en `update_customer_fiscal` cuando el NIT cambia (`NIT_INVALIDO`).
+  Las dos funciones se parchearon desde su definición viva. Ninguna de las
+  fichas actuales tiene un NIT que no pase.
+
 ## v2.1540.0 — Alta de clientes: campos según la categoría y giro de Hacienda
 
 La ficha de cliente (alta y edición) muestra sólo los documentos de su

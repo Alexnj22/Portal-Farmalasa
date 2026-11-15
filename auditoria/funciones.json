@@ -2676,6 +2676,11 @@
    "area": "facturacion-dte",
    "por": "código"
   },
+  "es_nit_valido": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
+  },
   "es_inyectable": {
    "area": "ventas",
    "por": "llamada"

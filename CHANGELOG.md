@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1547.0 — Consulta de precios: la presentación se cambia con un toque
+
+- **La presentación se elige arriba, con un toque, sin volver atrás.** Cada
+  opción dice cuántas unidades trae y su precio Regular; al abrir el producto
+  arranca en la presentación que hay en la sala.
+- Debajo, los precios: Regular destacado y los otros cuatro en lista. Si la
+  presentación tiene dos precios, van en dos columnas.
+- La existencia, compacta: el total y cada lote con su cantidad.
+- Verificado en pantalla ancha, mediana y de teléfono.
+
 ## v2.1546.1 — Consulta de precios: ordenada en cada tamaño del widget
 
 - **Cada presentación dice su precio Regular** ya en la pregunta («Caja · 30

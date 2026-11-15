@@ -67,14 +67,16 @@ describe('agruparPorPresentacion', () => {
 });
 
 describe('PreciosDelProducto', () => {
-  it('pregunta la presentación y muestra sus dos precios lado a lado con los lotes de la sala', async () => {
+  it('arranca en la presentación con existencia y cambia de presentación con un toque', async () => {
     fetchPrecios.mockResolvedValue({ data: PRECIOS, error: null });
     const { getByText, queryByText, container } = render(
       <PreciosDelProducto erpProductId={77} salas={SALAS} miErp={1} />,
     );
     expect(fetchPrecios).toHaveBeenCalledWith(77, 'vineta, descuento_1, vip, clinica, mayoreo');
 
-    await waitFor(() => expect(getByText('¿Qué presentación?')).toBeTruthy());
+    // Arranca en Unidad (la más chica con existencia en la sala).
+    await waitFor(() => expect(getByText('$0.34')).toBeTruthy());
+    expect(getByText('S2')).toBeTruthy();
     fireEvent.click(getByText('Caja'));
 
     expect(getByText('$10.29')).toBeTruthy();

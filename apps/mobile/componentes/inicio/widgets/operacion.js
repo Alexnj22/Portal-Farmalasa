@@ -40,6 +40,20 @@ export function PedirAjuste({ ctx }) {
   );
 }
 
+// ── Consulta de precios ─────────────────────────────────────────────────────
+// En el portal es un buscador dentro del widget; en la app, como la consulta de
+// inventario, es la puerta a su pantalla (`/consulta-precios`), con el buscador
+// en la barra. Los precios por presentación se ven en `/precio/[id]`.
+export function ConsultaPrecios() {
+  const abrir = () => router.push('/consulta-precios');
+  return (
+    <Widget titulo="Consulta de precios" icono="Tag" color={MARCA.ambar} onAbrir={abrir} accion="Buscar">
+      <Renglon primero titulo="Busca un producto o su principio activo" detalle="Regular, Preferente y demás precios por presentación"
+        izquierda={<Chip icono="Tag" color={MARCA.ambar} tamano={30} />} onPress={abrir} />
+    </Widget>
+  );
+}
+
 // ── Consulta de inventario ──────────────────────────────────────────────────
 // En el portal es un buscador dentro del widget; en la app la búsqueda vive en
 // su pestaña (la de iOS 26), así que acá es la puerta hacia ella. Debajo, como

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1548.1 — Consulta de precios en la app del personal
+
+- **App del personal:** nueva tarjeta «Consulta de precios» en el Inicio
+  (pestañas General y Operación, mismo permiso que el portal). Abre un buscador
+  y cada producto muestra sus presentaciones arriba, fijas, con Regular y
+  Preferente destacados, los demás precios debajo y lo que hay en la sala.
+  Misma lógica que el widget del portal.
+
 ## v2.1548.0 — Consulta de precios: teclado, Preferente destacado y presentaciones por factor
 
 - **Con el teclado:** ↑ ↓ recorren la lista de productos, Enter abre el

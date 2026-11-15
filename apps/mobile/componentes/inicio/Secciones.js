@@ -265,7 +265,7 @@ export const WIDGET_WEB = {
   ventas: 'sales', ventas_hora: 'sales', meta: 'meta_sala', equipo: 'shifts', sucursales: 'branches', datos_pedidos: 'dato_pedido',
   avisos: 'announcements', facturacion: 'facturacion', vendedores: 'vendedores', top: 'top_productos', cortes: 'cortes_sala',
   bolsas: 'bolsas_sala', cotizaciones: 'cotizaciones', reservas: 'reservas', turnos: 'shifts', tendencia: 'trend',
-  ausencias: 'absences', solicitudes: 'requests', cumpleanos: 'birthdays', calendario: 'calendar', consulta: 'inv_search',
+  ausencias: 'absences', solicitudes: 'requests', cumpleanos: 'birthdays', calendario: 'calendar', consulta: 'inv_search', precios: 'precios',
   traslados: 'traslados', bitacoras: 'bitacoras', recetas: 'recetas_pend', facturas_sala: 'facturas_sala',
 };
 /** Los rótulos del portal, para la pantalla de personalizar. */
@@ -274,7 +274,7 @@ export const ROTULO_WIDGET = {
   dato_pedido: 'Datos que faltan', announcements: 'Avisos recientes', facturacion: 'Facturación hoy', vendedores: 'Venta por vendedor',
   top_productos: 'Top productos del mes', cortes_sala: 'Cortes de caja', bolsas_sala: 'Bolsas de efectivo', cotizaciones: 'Cotizaciones activas',
   reservas: 'Reservas de mi sala', trend: 'Tendencia de asistencia', absences: 'Ausencias activas', requests: 'Solicitudes pendientes',
-  birthdays: 'Cumpleaños del mes', calendar: 'Calendario', inv_search: 'Consulta de inventario', traslados: 'Traslados entre salas',
+  birthdays: 'Cumpleaños del mes', calendar: 'Calendario', inv_search: 'Consulta de inventario', precios: 'Consulta de precios', traslados: 'Traslados entre salas',
   bitacoras: 'Bitácoras de mi sala', recetas_pend: 'Recetas pendientes', facturas_sala: 'Facturas de mi sala',
 };
 
@@ -305,6 +305,7 @@ export const SECCIONES = [
   { id: 'calendario', pestanas: ['general', 'rrhh'], permiso: 'dash_calendar', Componente: W.Calendario },
   // Operación
   { id: 'consulta', pestanas: ['general', 'operacion'], permiso: 'dash_inv_search', Componente: O.ConsultaInventario },
+  { id: 'precios', pestanas: ['general', 'operacion'], permiso: 'dash_consulta_precios', Componente: O.ConsultaPrecios },
   { id: 'traslados', pestanas: ['general', 'operacion'], permiso: 'dash_traslados', Componente: O.Traslados },
   { id: 'bitacoras', pestanas: ['general', 'operacion'], permiso: 'dash_bitacoras', Componente: O.Bitacoras },
   { id: 'recetas', pestanas: ['general', 'operacion'], permiso: 'dash_recetas_pendientes', Componente: O.RecetasPendientes },

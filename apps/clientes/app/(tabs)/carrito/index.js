@@ -16,6 +16,8 @@
 // cuenta como que «tiene todo». La regla es la de componentes/DondeLoHay.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, PlatformColor, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { posAvisoWeb } from '../../../componentes/MargenWeb';
 import Presionable from '../../../componentes/Presionable';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
@@ -675,6 +677,7 @@ function Campo({ etiqueta, valor, alCambiar, teclado, multilinea }) {
 // deslizando), 5 s para devolverlo con su cantidad y en su lugar.
 function AvisoQuitado() {
   const t = useTema();
+  const ins = useSafeAreaInsets();
   const q = useCarrito((s) => s.quitado);
   useEffect(() => {
     if (!q) return undefined;
@@ -684,7 +687,7 @@ function AvisoQuitado() {
   if (!q) return null;
   return (
     <Animated.View key={q.en} entering={FadeInDown.duration(240)} exiting={FadeOutDown.duration(160)} accessibilityLiveRegion="polite"
-      style={{ position: 'absolute', left: 16, right: 16, bottom: Platform.OS === 'ios' ? 104 : 24, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56,
+      style={{ position: 'absolute', left: 16, right: 16, bottom: Platform.OS === 'ios' ? 104 : 24, ...posAvisoWeb(ins), flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56,
         paddingLeft: 14, paddingRight: 6, borderRadius: 18, backgroundColor: t.oscuro ? '#2A2630' : '#1F1B24',
         shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
       <Icono sf="trash.fill" respaldo="✕" tam={17} color="rgba(255,255,255,0.75)" />

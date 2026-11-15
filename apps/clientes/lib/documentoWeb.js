@@ -299,6 +299,24 @@ function flotarPartes(h) {
     v.dataset.flota = '1';
     if (IPHONE_SAFARI) v.dataset.sinDesenfoque = '1';
   }
+  // Comprobación DESPUÉS de fijar: en los juegos (Botiquín, Torre) la pantalla
+  // entra con una animación que desplaza a sus hijos, y lo fijo quedaba fuera
+  // de la pantalla (los botones de sonido no se veían). Si pasa, ese
+  // encabezado vuelve a su lugar normal: se va con la página, pero se ve.
+  const fuera = lista.some(({ v }) => {
+    if (!v.dataset.flota) return false;
+    const q = v.getBoundingClientRect();
+    return q.left < -1 || q.right > W + 1;
+  });
+  if (fuera) {
+    for (const { p, v } of lista) {
+      for (const el of [p, v]) {
+        const orig = tocados.get(el);
+        if (orig) { Object.assign(el.style, orig); tocados.delete(el); }
+      }
+      delete v.dataset.flota; delete v.dataset.sinDesenfoque;
+    }
+  }
 }
 
 // En la computadora, la foto, «volver» y los botones de la derecha se alinean

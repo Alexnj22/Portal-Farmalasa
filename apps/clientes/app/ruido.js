@@ -221,7 +221,7 @@ export default function Ruido() {
         </View>
 
         {/* Abajo, en vidrio: los lugares y el temporizador. */}
-        <BlurView intensity={30} tint="dark" style={{ marginHorizontal: 12, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' }}>
+        <BlurView intensity={30} tint="dark" style={{ marginHorizontal: 12, ...(Platform.OS === 'web' ? { marginHorizontal: 0, width: 'calc(100% - 24px)', maxWidth: 536, alignSelf: 'center' } : null), borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' }}>
           <View style={{ paddingVertical: 14, gap: 12, backgroundColor: 'rgba(0,0,0,0.18)' }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 4 }}
               accessibilityRole="radiogroup">

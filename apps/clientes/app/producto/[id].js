@@ -10,7 +10,7 @@
 // 2026-10-15: «¿Dónde lo hay?» cuenta por lo que se va a pedir (presentación ×
 // cantidad), dice si la sucursal está abierta y a cuánto queda.
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Modal, ScrollView, Text, View } from 'react-native';
+import { Alert, Linking, Modal, Platform, ScrollView, Text, View } from 'react-native';
 import { Image as ImagenFicha } from 'expo-image';
 import Presionable from '../../componentes/Presionable';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
@@ -20,6 +20,7 @@ import MismoPrincipio from '../../componentes/MismoPrincipio';
 import BotonAvisame from '../../componentes/BotonAvisame';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { posAvisoWeb } from '../../componentes/MargenWeb';
 import * as Haptics from 'expo-haptics';
 import { Cargando, RADIO, Seccion, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
@@ -129,7 +130,9 @@ export default function Producto() {
           <ImagenFicha source={{ uri: p.foto }} contentFit="contain" style={{ flex: 1 }} accessibilityIgnoresInvertColors />
         </Presionable>
       </Modal>
-      <ScrollView contentContainerStyle={{ paddingBottom: ins.bottom + 110 }}
+      {/* Web: del ancho de la columna, como el resto de la app (en la
+          computadora la ficha ocupaba toda la ventana). */}
+      <ScrollView contentContainerStyle={[{ paddingBottom: ins.bottom + 110 }, Platform.OS === 'web' && { width: '100%', maxWidth: 560, alignSelf: 'center' }]}
         // Jalar hacia abajo estando arriba del todo también la cierra: el gesto de la
         // hoja a veces se lo queda el ScrollView (2026-10-07).
         onScrollEndDrag={(e) => { if (e.nativeEvent.contentOffset.y < -80) router.back(); }} scrollEventThrottle={16}>
@@ -247,7 +250,7 @@ export default function Producto() {
       </ScrollView>
 
       {/* Abajo, fijos: agregar al carrito (la presentación mayor) y consultar. */}
-      <View style={{ position: 'absolute', left: 16, right: 16, bottom: ins.bottom + 12, flexDirection: 'row', gap: 10 }}>
+      <View style={{ position: 'absolute', left: 16, right: 16, bottom: ins.bottom + 12, ...posAvisoWeb(ins, { conPestanas: false, aire: 0 }), ...(Platform.OS === 'web' ? { bottom: ins.bottom + 12 } : null), flexDirection: 'row', gap: 10 }}>
         {!p.bajo_receta && !(p.existencias ?? []).length ? (
           // No hay en ninguna sucursal: se pide por encargo (2026-10-07).
           <Presionable onPress={() => setEncargando(true)} accessibilityRole="button" accessibilityLabel="Pedir por encargo"

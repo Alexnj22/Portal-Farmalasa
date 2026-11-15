@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.18 — Puntos Salud web: todos los avisos encima del menú y del ancho de la columna; ficha de producto, laboratorios y sonidos en la columna; botones de los juegos visibles
+
+- **Todos los avisos de abajo, con una sola regla** (`posAvisoWeb` en `componentes/MargenWeb.js`): del ancho de la columna, centrados, y en una pestaña encima del menú. Lo usan «agregado», «quitaste… · Deshacer» del Carrito (caía detrás del menú y de lado a lado) y la barra de la ficha del producto.
+- **Ficha del producto, Laboratorios y el panel de Sonidos**: en la computadora ocupaban toda la ventana; ahora van del ancho de la columna.
+- **Juegos (Botiquín, Torre)**: los botones de sonido y vibración del encabezado quedaban fuera de la pantalla en el teléfono. La pantalla entra con una animación que desplaza a sus hijos; si lo fijo queda afuera, el encabezado vuelve a su lugar normal.
+
 ## v2.1537.17 — Puntos Salud web: sin tratamientos; hoja de agregar y aviso del ancho de la columna; el encabezado ya no tiembla
 
 - **Sin tratamientos en la web**: ahí no se pueden activar los recordatorios, así que no se ofrecen. Sale «Se te acaba pronto» del Inicio, la fila de Cuenta, y en los accesos rápidos Tratamientos cede su lugar a **Ofertas**. La app no cambia.

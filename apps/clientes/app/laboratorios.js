@@ -1,7 +1,7 @@
 // Todos los laboratorios de la Tienda (2026-11-09, «Ver todos»): la lista
 // completa con su logo y un buscador. Tocar uno vuelve a la Tienda filtrada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -71,7 +71,7 @@ export default function Laboratorios() {
   return (
     <FlatList dataSet={{ documento: 'no' }} data={lista} keyExtractor={(l) => String(l.id)} renderItem={({ item }) => <Fila l={item} alElegir={alElegir} />}
       contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 + ESPACIO_BURBUJA }} stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 + ESPACIO_BURBUJA, ...(Platform.OS === 'web' ? { width: '100%', maxWidth: 560, alignSelf: 'center' } : null) }} stickyHeaderIndices={[0]}
       ListHeaderComponent={(
         <View style={{ paddingVertical: 8 }}>
           <Vidrio radio={23} elevacion={3} style={{ height: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14 }}>

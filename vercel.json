@@ -1,6 +1,13 @@
 {
   "git": { "deploymentEnabled": { "main": false } },
   "ignoreCommand": "bash scripts/vercel-ignorar.sh",
+  "redirects": [
+    {
+      "source": "/mis-puntos",
+      "destination": "https://app.farmasalud.lat/mis-puntos",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/oss-proxy/:path*",

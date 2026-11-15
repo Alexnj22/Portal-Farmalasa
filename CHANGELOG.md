@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.15 — Puntos Salud web: las pestañas de atrás ya no se ven a través de la actual; fondo vivo más liviano
+
+- **Arreglo urgente: al cambiar de pestaña se veían las otras por detrás** (Inicio debajo de Bienestar, el logo dos veces, la Tienda encima de Bienestar). Las pestañas que no se ven quedan montadas detrás de la actual; antes las tapaba la aurora opaca de cada pantalla, y al pasar a un solo tono de fondo quedaron a la vista. Ahora se ocultan (`display: none`; con `visibility` las tarjetas animadas seguían visibles).
+- **Fondo vivo más liviano**: dos manchas grandes y lentas en vez de tres, que sólo se desplazan (`transform`, sin volver a pintar) y con `contain: strict`.
+
 ## v2.1537.14 — subir-android: confirma la subida cuando Google no deja mandarla a revisión por API
 
 - `scripts/subir-android.mjs`: cuando Google Play contesta que los cambios no se pueden mandar a revisión por API, confirma la subida con `changesNotSentForReview=true` y avisa que el envío a revisión queda en Play Console. Puntos Salud 1.0.0 (59) subida a la pista interna.

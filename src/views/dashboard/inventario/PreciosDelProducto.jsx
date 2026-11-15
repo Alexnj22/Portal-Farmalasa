@@ -1,41 +1,167 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Package, CalendarClock } from 'lucide-react';
-import LiquidSelect from '../../../components/common/LiquidSelect';
 import { LoadingState } from '../../../components/common/StateViews';
 import Notice from '../../../components/common/Notice';
+import Badge from '../../../components/common/Badge';
 import { fetchPreciosDelProducto } from '@nucleo/data/productos';
-import { nivelesVisibles } from '@nucleo/utils/preciosDeProducto';
+import { COLUMNAS, NIVELES, PRINCIPAL, SECUNDARIOS, titulo, presentacionesParaMostrar } from './presentacionesDePrecio';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
-/* ── Precios en la consulta de inventario (2026-11-15) ──────────────────────
- * Pedido del usuario: que el personal de sala vea cuánto cuesta un producto
- * desde el widget, eligiendo presentación y lote, con los precios hasta
- * Mayoreo Plus PARA TODOS. Por eso el tope es fijo acá y no sale del
- * `max_price_level` del cargo: es una decisión de esta pantalla, no del cargo.
- * El costo no viaja nunca (la consulta no lo pide).
+/* ── Precios de un producto, para el mostrador (2026-11-15) ──────────────────
+ * Lo usa el widget «Consulta de precios». Hasta Mayoreo Plus PARA TODOS (lo
+ * pidió el usuario): el tope es de esta pantalla, no del `max_price_level` del
+ * cargo. El costo no viaja nunca (la consulta no lo pide).
  *
- * El precio es de la PRESENTACIÓN, no del lote: `product_precios` no tiene
- * lote. El lote se elige para saber de cuál se habla —sala, vencimiento,
- * existencia— y, si su presentación coincide con una con precio, la elige. */
-const TOPE_DEL_WIDGET = 'mayoreo'; // «Mayoreo Plus»
-const NIVELES = nivelesVisibles(TOPE_DEL_WIDGET);
-const COLUMNAS = NIVELES.map(n => n.key).join(', ');
+ * ── Por qué no hay selectores (tercera versión, mismo día) ─────────────────
+ * Las dos primeras pedían elegir presentación y lote en dos listas. Un
+ * producto tiene a lo sumo 4 presentaciones activas (medido: 4,396 productos,
+ * máximo 4), así que se muestran TODAS a la vez, cada una con sus cinco
+ * precios: comparar caja contra unidad es justo lo que se pregunta en el
+ * mostrador, y con un selector había que ir y volver. El lote dejó de elegirse
+ * y pasó a ser una lista: dice qué hay en la sala y de qué presentación, que
+ * era para lo único que servía elegirlo — el precio no depende del lote
+ * (`product_precios` no lo tiene).
+ *
+ * ── Dos presentaciones con el mismo nombre ─────────────────────────────────
+ * 1,129 productos tienen dos o más presentaciones de igual tipo y factor (dos
+ * «UNIDAD 1x1», ids distintos en el origen). Si los cinco precios son iguales
+ * se muestran una vez; si difieren, cada una lleva su código para que no se
+ * lean como la misma con dos precios.
+ *
+ * ── Tamaños ────────────────────────────────────────────────────────────────
+ * Con `@container`: angosto, una tarjeta por presentación (Regular grande y los
+ * otros cuatro en una rejilla); ancho, una tabla presentación × precio, que es
+ * donde se compara de un vistazo. */
+const DIAS_PRONTO = 180;
 
-const normal = (s) => String(s ?? '').trim().toUpperCase();
-const claveDeLote = (l) => `${l.erp_sucursal_id}|${l.lote ?? ''}|${l.fecha_vencimiento ?? ''}|${l.presentacion ?? ''}`;
-const nombreDePresentacion = (p) => p.presentaciones?.tipo || p.descripcion || `Presentación ${p.id_presentacion}`;
+function NombreDePresentacion({ p, compacto = false }) {
+  return (
+    <span className="flex flex-col min-w-0">
+      <span className={`${compacto ? 'text-body-sm' : 'text-body'} font-black text-content truncate`}>
+        {p.nombre}
+        {p.codigo != null && <span className="ml-1.5 text-micro font-bold text-content-3 tabular-nums">cód. {p.codigo}</span>}
+      </span>
+      <span className="text-micro text-content-3">{p.unidades > 1 ? `${p.unidades} unidades` : '1 unidad'}</span>
+    </span>
+  );
+}
+
+function Existencia({ p, conSala }) {
+  if (!p.existencia) return <Badge variant="neutral">{conSala ? 'Sin existencia aquí' : 'Sin existencia'}</Badge>;
+  return <Badge variant="success">{p.existencia} en {conSala ? 'tu sala' : 'salas'}</Badge>;
+}
+
+/** Angosto: una tarjeta por presentación. */
+function Tarjeta({ p, conSala }) {
+  return (
+    <article className="rounded-2xl border border-divider overflow-hidden bg-surface-card-hover">
+      <header className="flex items-start justify-between gap-3 px-3 pt-3">
+        <NombreDePresentacion p={p} />
+        <Existencia p={p} conSala={conSala} />
+      </header>
+      <div className="px-3 pt-2 pb-3">
+        <p className="text-micro font-black uppercase tracking-widest text-brand-text">{PRINCIPAL.label}</p>
+        <p className="text-display-lg font-black tabular-nums text-content leading-none mt-0.5">{formatMoney(p.precios[PRINCIPAL.key])}</p>
+      </div>
+      <dl className="grid grid-cols-2 @md:grid-cols-4 gap-px bg-divider border-t border-divider">
+        {SECUNDARIOS.map(n => (
+          <div key={n.key} className="flex flex-col gap-0.5 px-3 py-2 bg-surface-card">
+            <dt className="text-micro font-semibold text-content-3 truncate">{n.label}</dt>
+            <dd className="text-body-sm font-black tabular-nums text-content">{formatMoney(p.precios[n.key])}</dd>
+          </div>
+        ))}
+      </dl>
+    </article>
+  );
+}
+
+/** Ancho: presentación × precio, para comparar de un vistazo. */
+function Tabla({ lista, conSala }) {
+  return (
+    <div className="rounded-2xl border border-divider overflow-hidden">
+      <table className="w-full text-left">
+        <thead className="bg-surface-card-hover">
+          <tr>
+            <th scope="col" className="px-3 py-2 text-micro font-black uppercase tracking-widest text-content-3">Presentación</th>
+            {NIVELES.map((n, i) => (
+              <th key={n.key} scope="col"
+                className={`px-3 py-2 text-right text-micro font-black uppercase tracking-widest ${i === 0 ? 'text-brand-text bg-brand/10' : 'text-content-3'}`}>
+                {n.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-divider">
+          {lista.map(p => (
+            <tr key={p.id}>
+              <th scope="row" className="px-3 py-2.5 font-normal">
+                <span className="flex items-center justify-between gap-2">
+                  <NombreDePresentacion p={p} compacto />
+                  <Existencia p={p} conSala={conSala} />
+                </span>
+              </th>
+              {NIVELES.map((n, i) => (
+                <td key={n.key}
+                  className={`px-3 py-2.5 text-right tabular-nums ${i === 0 ? 'text-title-sm font-black text-content bg-brand/10' : 'text-body-sm font-bold text-content-2'}`}>
+                  {formatMoney(p.precios[n.key])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function diasHasta(fecha) {
+  if (!fecha) return null;
+  return Math.round((new Date(`${String(fecha).slice(0, 10)}T12:00:00Z`) - Date.now()) / 86400000);
+}
+
+function Lotes({ lotes, conSala }) {
+  if (!lotes.length) return null;
+  return (
+    <section aria-label="Lotes" className="flex flex-col gap-1.5">
+      <p className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-content-3">
+        <CalendarClock size={13} className="shrink-0" />
+        {conSala ? 'Lotes en tu sala' : 'Lotes'}
+      </p>
+      <ul className="rounded-2xl border border-divider divide-y divide-divider overflow-hidden">
+        {lotes.map(l => {
+          const dias = diasHasta(l.fecha_vencimiento);
+          const pronto = dias != null && dias <= DIAS_PRONTO;
+          return (
+            <li key={l._clave} className="flex items-center gap-3 px-3 py-2 bg-surface-card-hover">
+              <span className="flex-1 min-w-0">
+                <span className="block text-body-sm font-bold text-content font-mono truncate">{l.lote || 'Sin lote'}</span>
+                <span className="block text-micro text-content-3 truncate">
+                  {[titulo(l.presentacion), conSala ? null : l._sala].filter(Boolean).join(' · ')}
+                </span>
+              </span>
+              {l.fecha_vencimiento && (
+                <span className={`text-micro font-semibold tabular-nums whitespace-nowrap ${pronto ? 'text-warning-text' : 'text-content-3'}`}>
+                  vence {fechaTexto(l.fecha_vencimiento, { month: 'short', year: 'numeric' })}
+                </span>
+              )}
+              <span className="text-body-sm font-black tabular-nums text-content whitespace-nowrap">{l.cantidad}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
 
 /**
  * @param {{ erpProductId: number|null, salas: {name: string, erp: number|null, lots: object[]}[], miErp: number|null }} props
- *   `salas` son las del detalle, SIN el área de vencidos: no se vende de ahí.
+ *   `salas` sin el área de vencidos: no se vende de ahí.
  */
 export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
   const [precios, setPrecios] = useState(null);
   const [error, setError] = useState(null);
-  const [idPresentacion, setIdPresentacion] = useState(null);
-  const [lote, setLote] = useState(null);
 
   useEffect(() => {
     if (erpProductId == null) return;
@@ -44,7 +170,7 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
       if (cancelado) return;
       if (err) { setError(mensajeAmigable(err)); setPrecios([]); return; }
       setError(null);
-      setPrecios((data ?? []).filter(p => p.activo !== false));
+      setPrecios(data ?? []);
     });
     return () => { cancelado = true; };
   }, [erpProductId]);
@@ -58,110 +184,38 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
     const out = [];
     for (const s of salas.filter(x => !conSala || x.erp === miErp)) {
       for (const l of s.lots ?? []) {
-        const k = claveDeLote(l);
+        const k = `${l.erp_sucursal_id}|${l.lote ?? ''}|${l.fecha_vencimiento ?? ''}|${l.presentacion ?? ''}`;
         if (vistos.has(k)) continue;
         vistos.add(k);
         out.push({ ...l, _clave: k, _sala: s.name });
       }
     }
-    return out;
+    // Lo que vence primero, arriba: es lo que se despacha primero.
+    return out.sort((a, b) => String(a.fecha_vencimiento ?? '9999').localeCompare(String(b.fecha_vencimiento ?? '9999')));
   }, [salas, miErp, conSala]);
 
-  const opcionesLote = useMemo(() => lotes.map(l => ({
-    value: l._clave,
-    label: conSala ? (l.lote || 'Sin lote') : `${l.lote || 'Sin lote'} · ${l._sala}`,
-    sublabel: [
-      l.presentacion?.trim(),
-      l.fecha_vencimiento ? `vence ${fechaTexto(l.fecha_vencimiento, { month: 'short', year: 'numeric' })}` : null,
-      `${l.cantidad} en existencia`,
-    ].filter(Boolean).join(' · '),
-  })), [lotes, conSala]);
+  const lista = useMemo(() => presentacionesParaMostrar(precios, lotes), [precios, lotes]);
 
-  const opcionesPresentacion = useMemo(() => (precios ?? []).map(p => ({
-    value: String(p.id_presentacion),
-    label: nombreDePresentacion(p),
-    sublabel: Number(p.factor) > 1 ? `${p.factor} unidades` : null,
-  })), [precios]);
-
-  // Lo elegido, o lo primero si todavía no se eligió (o ya no existe).
-  const loteElegido = lotes.find(l => l._clave === lote) ?? lotes[0] ?? null;
-  const presentacionDelLote = useMemo(() => {
-    if (!loteElegido || !precios?.length) return null;
-    const p = normal(loteElegido.presentacion);
-    return precios.find(x => normal(x.presentaciones?.tipo) === p)
-      ?? precios.find(x => x.presentaciones?.tipo && p.startsWith(normal(x.presentaciones.tipo)))
-      ?? null;
-  }, [loteElegido, precios]);
-  const elegida = (precios ?? []).find(p => String(p.id_presentacion) === idPresentacion)
-    ?? presentacionDelLote ?? precios?.[0] ?? null;
-
-  const elegirLote = (v) => {
-    setLote(v);
-    // Cambiar de lote vuelve a proponer la presentación que le corresponde.
-    setIdPresentacion(null);
-  };
-
-  const [principal, ...resto] = NIVELES;
+  if (precios === null) return <LoadingState variant="inline" size="sm" label="Cargando precios…" />;
 
   return (
-    <section className="flex flex-col gap-3 shrink-0" aria-label="Precios">
+    <div className="@container flex flex-col gap-3">
       {error && <Notice variant="danger">{error}</Notice>}
-
-      {precios === null ? (
-        <LoadingState variant="inline" size="sm" label="Cargando precios…" />
-      ) : !precios.length ? (
-        !error && <p className="text-label text-content-3 italic">Este producto no tiene precios registrados.</p>
+      {!lista.length ? (
+        !error && (
+          <p className="flex items-center gap-2 text-label text-content-3">
+            <Package size={16} className="shrink-0" /> Este producto no tiene precios registrados.
+          </p>
+        )
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <LiquidSelect
-              ariaLabel="Presentación"
-              icon={Package}
-              placeholder="Presentación"
-              value={elegida ? String(elegida.id_presentacion) : ''}
-              onChange={v => setIdPresentacion(v || null)}
-              options={opcionesPresentacion}
-              clearable={false}
-            />
-            {lotes.length ? (
-              <LiquidSelect
-                ariaLabel="Lote"
-                icon={CalendarClock}
-                placeholder="Lote"
-                value={loteElegido?._clave ?? ''}
-                onChange={v => elegirLote(v || null)}
-                options={opcionesLote}
-                clearable={false}
-              />
-            ) : (
-              <p className="flex items-center gap-2 px-3 min-h-[var(--tap-min)] text-label text-content-3">
-                <CalendarClock size={16} className="shrink-0" />
-                {conSala ? 'Sin existencia en tu sala' : 'Sin existencia'}
-              </p>
-            )}
+          <div className="hidden @2xl:block"><Tabla lista={lista} conSala={conSala} /></div>
+          <div className="grid gap-2 @lg:grid-cols-2 @2xl:hidden">
+            {lista.map(p => <Tarjeta key={p.id} p={p} conSala={conSala} />)}
           </div>
-
-          {elegida && (
-            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] rounded-2xl border border-divider overflow-hidden">
-              <div className="flex flex-col justify-center gap-0.5 px-4 py-3 bg-brand/10">
-                <span className="text-caption font-black uppercase tracking-widest text-brand-text">{principal.label}</span>
-                <span className="text-display font-black tabular-nums text-content leading-none">{formatMoney(elegida[principal.key])}</span>
-                <span className="text-micro text-content-3 mt-1">
-                  {nombreDePresentacion(elegida)}{Number(elegida.factor) > 1 ? ` · ${elegida.factor} unidades` : ''}
-                </span>
-              </div>
-              <dl className="divide-y divide-divider bg-surface-card-hover">
-                {resto.map(n => (
-                  <div key={n.key} className="flex items-center justify-between gap-3 px-4 py-2">
-                    <dt className="text-label font-semibold text-content-2">{n.label}</dt>
-                    <dd className="text-body font-black tabular-nums text-content">{formatMoney(elegida[n.key])}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
         </>
       )}
-    </section>
+      <Lotes lotes={lotes} conSala={conSala} />
+    </div>
   );
 }

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1545.0 — Consulta de precios: todas las presentaciones a la vista
+
+- **Todas las presentaciones a la vista, sin selectores.** Cada presentación
+  muestra sus cinco precios (Regular grande; Público, Preferente, Mayoreo y
+  Mayoreo Plus debajo), de la más chica a la más grande, con cuánto hay de ella
+  en tu sala.
+- **Se adapta al tamaño del widget:** angosto, una tarjeta por presentación (dos
+  por fila si cabe); ancho, una tabla presentación × precio para comparar de un
+  vistazo.
+- **Presentaciones con el mismo nombre** (p. ej. dos «Caja» de 30): si tienen
+  los mismos precios salen una sola vez; si no, cada una lleva su código.
+- **Lotes en tu sala** como lista, lo que vence primero arriba, y en ámbar lo
+  que vence en menos de seis meses.
+
 ## v2.1544.1 — Consulta de precios: más clara y sólo con los lotes de la sala
 
 - **Consulta de precios, más clara.** El precio Regular va grande y destacado,

@@ -6,6 +6,8 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchAltasPendientes, reintentarAlta, mensajeDeError } from '@nucleo/data/customers';
+import { fechaNumerica } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
 
 /**
  * Las fichas del portal que todavía no tienen número de ficha y que necesitan
@@ -17,11 +19,17 @@ import { fetchAltasPendientes, reintentarAlta, mensajeDeError } from '@nucleo/da
  * «Reintentar» vuelve a buscar. «Crear de todas formas» autoriza a crearla
  * aunque no haya nacido en el portal — es una decisión, y queda anotada.
  */
+// El motivo va DENTRO del bloque del cliente y no en columna propia: en el
+// teléfono la última columna de datos es el «ancla» de la ficha (corta, a la
+// derecha) y una frase larga ahí empujaba el nombre fuera de la tarjeta
+// (medido a 390px, 2026-11-15). El ancla es cuándo se intentó por última vez.
 const COLS = [
-    { key: 'nombre', label: 'Cliente', align: 'left' },
-    { key: 'motivo', label: 'Por qué no tiene número', align: 'left' },
+    { key: 'nombre', label: 'Cliente y por qué no tiene número', align: 'left' },
+    { key: 'cuando', label: 'Último intento', align: 'right' },
     { key: 'accion', label: '', align: 'right' },
 ];
+
+const cuando = (t) => (t ? `${fechaNumerica(t)} ${hora12(new Date(t))}` : '—');
 
 export default function SinNumeroDeFicha({ onAbrir }) {
     const { hasPermission } = useAuth();
@@ -67,8 +75,9 @@ export default function SinNumeroDeFicha({ onAbrir }) {
             {error && <Notice variant="danger">{error}</Notice>}
             {!!datos?.porRevisar?.length && (
                 <DataTable columns={COLS} minWidth="320px"
-                    /* Dos acciones por fila: tira visible (§32.7 lo admite con una o dos). */
-                    movil={{ usarAccionDeFila: true, acciones: true }}>
+                    /* Dos acciones por fila: tira visible (§32.7 lo admite con una o dos).
+                       `apilada`: la identidad es un bloque (nombre, documento y motivo). */
+                    movil={{ usarAccionDeFila: true, acciones: true, apilada: true }}>
                     {datos.porRevisar.map((f, i) => (
                         <DataRow key={f.customer_id} index={i} onClick={() => onAbrir?.(f)}>
                             <DataCell>
@@ -77,10 +86,15 @@ export default function SinNumeroDeFicha({ onAbrir }) {
                                     <div className="text-caption text-content-3 truncate">
                                         {[f.dui, f.phone].filter(Boolean).join(' · ') || 'Sin documento'}
                                     </div>
+                                    <p className="text-caption text-content-2 mt-1 whitespace-normal break-words">
+                                        {f.error || 'Sin detalle'}
+                                    </p>
                                 </div>
                             </DataCell>
-                            <DataCell>
-                                <span className="text-caption text-content-2">{f.error || 'Sin detalle'}</span>
+                            <DataCell align="right">
+                                <span className="text-caption tabular-nums text-content-3 whitespace-nowrap">
+                                    {cuando(f.ultimo_intento_at)}
+                                </span>
                             </DataCell>
                             <DataCell align="right">
                                 {canCrear && (

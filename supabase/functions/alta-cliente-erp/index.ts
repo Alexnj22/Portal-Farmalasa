@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 import {
-  login, leerFicha, buscarEnCaja, armarAlta, darDeAlta, ponerUbicacion, sinTildes,
+  login, leerFicha, buscarEnCaja, armarAlta, darDeAlta, ponerUbicacion, sinTildes, TOPE_BUSQUEDA,
   type FichaPortal, type FilaCaja,
 } from "../_shared/erp-clientes.ts";
 
@@ -47,13 +47,46 @@ function seParecen(a: string, b: string): boolean {
   return comunes >= 2;
 }
 
+/** Las formas en que la caja puede tener escrito un NIT: tal cual, sólo
+ *  dígitos y con guiones 4-6-3-1. La búsqueda es por frase, así que cada forma
+ *  es una consulta. */
+function formasDeNit(nit: string): string[] {
+  const d = digitos(nit);
+  const formas = new Set([nit.trim(), d]);
+  if (d.length === 14) formas.add(`${d.slice(0, 4)}-${d.slice(4, 10)}-${d.slice(10, 13)}-${d.slice(13)}`);
+  return [...formas].filter(x => x.length >= 9);
+}
+
+/** Por nombre: la frase entera y, como red, dos pares de palabras seguidas,
+ *  porque un doble espacio en la ficha de la caja esconde la frase entera. Los
+ *  pares son de palabras LARGAS: «MARIA DE» trae cientos (medido el 2026-11-15:
+ *  mandó a revisar a dos personas que no estaban). Se comparan normalizados
+ *  (sin tildes ni espacios de más). Sólo una frase entera que llena la
+ *  respuesta cuenta como «no sé»: los pares son la red, no la búsqueda. */
+async function porNombre(cookie: string, nombre: string): Promise<{ mismos: FilaCaja[]; lleno: boolean }> {
+  const w = sinTildes(nombre).split(" ").filter(Boolean);
+  const pares: string[] = [];
+  for (let i = 0; i + 1 < w.length; i++)
+    if (w[i].length > 3 && w[i + 1].length > 3) pares.push(`${w[i]} ${w[i + 1]}`);
+  const consultas = [nombre.trim(), ...new Set([pares[0], pares[pares.length - 1]].filter(Boolean))];
+  const vistos = new Map<string, FilaCaja>();
+  let lleno = false;
+  for (const [i, c] of consultas.entries()) {
+    const filas = await buscarEnCaja(cookie, c);
+    if (i === 0 && filas.length >= TOPE_BUSQUEDA) lleno = true;
+    for (const r of filas) if (sinTildes(r.nombre) === sinTildes(nombre)) vistos.set(r.id, r);
+  }
+  return { mismos: [...vistos.values()], lleno };
+}
+
 async function buscarExistente(cookie: string, f: FichaPortal):
   Promise<{ vincular?: FilaCaja; revisar?: string }> {
   // Por documento: un DUI o NIT identifican a la persona.
   const porDoc = new Map<string, FilaCaja>();
   if (f.dui) for (const r of await buscarEnCaja(cookie, f.dui)) if (r.dui === f.dui) porDoc.set(r.id, r);
   const nit = digitos(f.nit);
-  if (nit) for (const r of await buscarEnCaja(cookie, f.nit!)) if (digitos(r.nit) === nit) porDoc.set(r.id, r);
+  if (nit) for (const forma of formasDeNit(f.nit!))
+    for (const r of await buscarEnCaja(cookie, forma)) if (digitos(r.nit) === nit) porDoc.set(r.id, r);
   if (porDoc.size > 1)
     return { revisar: `En la caja hay ${porDoc.size} fichas con ese documento (${[...porDoc.keys()].join(", ")}).` };
   if (porDoc.size === 1) {
@@ -63,9 +96,14 @@ async function buscarExistente(cookie: string, f: FichaPortal):
       : { revisar: `En la caja ese documento es de «${r.nombre}» (ficha ${r.id}).` };
   }
 
-  // Por nombre, sin tildes ni espacios de más.
-  const mismos = (await buscarEnCaja(cookie, f.name)).filter(r => sinTildes(r.nombre) === sinTildes(f.name));
-  if (!mismos.length) return {};
+  const { mismos, lleno } = await porNombre(cookie, f.name);
+  if (!mismos.length) {
+    // Una respuesta llena puede haber dejado afuera justo a la persona: crear
+    // ahí podría duplicarla, así que lo decide alguien.
+    return lleno
+      ? { revisar: `El nombre es muy común y la caja devolvió más de ${TOPE_BUSQUEDA} coincidencias: búscala a mano antes de crearla.` }
+      : {};
+  }
   if (f.dui && mismos.some(r => r.dui && r.dui !== f.dui))
     return { revisar: `En la caja ya hay otro cliente llamado «${mismos[0].nombre}» con otro DUI (ficha ${mismos[0].id}).` };
   if (mismos.length > 1)
@@ -96,7 +134,7 @@ async function altaDeUna(cookie: string, f: FichaPortal & { puede_crear?: boolea
   let id = alta.id;
   if (!id) {
     // Aceptó sin devolver el número: se busca, y sólo vale si hay uno exacto.
-    const mismos = (await buscarEnCaja(cookie, f.name)).filter(r => sinTildes(r.nombre) === sinTildes(f.name));
+    const { mismos } = await porNombre(cookie, f.name);
     if (mismos.length !== 1)
       return { ok: false, revisar: true, error: `La caja aceptó el alta pero no devolvió el número, y por nombre aparecen ${mismos.length}.` };
     id = mismos[0].id;

@@ -423,9 +423,16 @@ function opcionesDeHtml(html: string): [string, string][] {
 
 export interface FilaCaja { id: string; nombre: string; dui: string; categoria: string; nit: string; nrc: string; telefono: string }
 
+// Cómo busca la caja (medido el 2026-11-15): FRASE exacta como `%texto%`, sin
+// distinguir tildes, pero «MARIA  LOPEZ» (doble espacio) o «LOPEZ MARIA» no
+// encuentran a «MARIA LOPEZ»; el NIT sólo aparece escrito igual que allá; y
+// `recordsFiltered` no sirve (devuelve el total). Por eso se piden hasta
+// `TOPE_BUSQUEDA` filas y quien llama trata una respuesta LLENA como «no sé».
+export const TOPE_BUSQUEDA = 200;
+
 export async function buscarEnCaja(cookie: string, texto: string): Promise<FilaCaja[]> {
   const q = new URLSearchParams({
-    draw: "1", start: "0", length: "25", "search[value]": texto, "search[regex]": "false",
+    draw: "1", start: "0", length: String(TOPE_BUSQUEDA), "search[value]": texto, "search[regex]": "false",
     "order[0][column]": "0", "order[0][dir]": "asc",
   });
   for (let i = 0; i < 8; i++) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
     History, AlertTriangle, Store, Building2,
@@ -219,7 +219,13 @@ const FormClienteDetail = ({ formData }) => {
     // reenvía confirmando — el candado real vive en el RPC, no acá.
     const [pideConfirmacion, setPideConfirmacion] = useState(false);
 
+    // Sólo cuenta la ÚLTIMA lectura. Al crear un cliente se cruzan dos (la de
+    // abrir su ficha y la de después de pedirle el número): si la vieja llega
+    // tarde pisa a la nueva, y la segunda escritura del formulario la guardaba
+    // el borrador como «cambios sin guardar» (medido en pruebas, 2026-11-15).
+    const pedidoRef = useRef(0);
     const cargar = useCallback(async () => {
+        const mio = ++pedidoRef.current;
         if (!id) {
             setCliente({ ...FICHA_NUEVA });
             setForm({ ...FICHA_NUEVA });
@@ -227,8 +233,12 @@ const FormClienteDetail = ({ formData }) => {
             return;
         }
         setCargando(true);
+        // Sin ficha mientras se relee: así el borrador se apaga y vuelve a armar
+        // su guarda, y la ficha recién leída no cuenta como «cambios sin guardar».
+        setForm(null);
         try {
             const d = await fetchCustomerDetail(id);
+            if (mio !== pedidoRef.current) return;
             // El ERP rotula en MAYÚSCULA y sin tildes, y los selects comparan
             // por igualdad: sin conciliar, 687 de las 894 fichas con distrito se
             // ven VACÍAS teniéndolo. Se concilia la ficha ENTERA —no solo el
@@ -242,10 +252,11 @@ const FormClienteDetail = ({ formData }) => {
             setBitacora(d.bitacora || []);
             setForm(Object.fromEntries(CAMPOS.map(c => [c, conciliado?.[c] ?? ''])));
         } catch (e) {
+            if (mio !== pedidoRef.current) return;
             console.error('FormClienteDetail.jsx: ', e);
             setError(mensajeDeError(e));
         } finally {
-            setCargando(false);
+            if (mio === pedidoRef.current) setCargando(false);
         }
     }, [id]);
 
@@ -298,8 +309,16 @@ const FormClienteDetail = ({ formData }) => {
     //  ocurrir porque el botón deshabilitado no dispara el clic.)
     const señalarFaltantes = intentoGuardar || hayCambios;
     const marcarFalta = (campo) => señalarFaltantes && v.faltan.includes(campo);
+    // Al crear, lo que falta puede no ser «para facturar» sino para identificar
+    // a la persona (nombre y apellido, un documento): se dice eso.
+    const FALTA_AL_NACER = {
+        name: 'Nombre y apellido',
+        dui: form?.categoria === 'Extranjero' ? undefined : 'DUI o NIT',
+        pasaporte: 'El pasaporte, si es extranjero',
+    };
     const errorDe = (campo) =>
-        v.errores[campo] || (marcarFalta(campo) ? 'Requerido para facturar' : undefined);
+        v.errores[campo] || (marcarFalta(campo)
+            ? (esNuevo && FALTA_AL_NACER[campo]) || 'Requerido para facturar' : undefined);
 
     const guardar = useCallback(async (confirmando = false) => {
         setIntentoGuardar(true);
@@ -385,7 +404,8 @@ const FormClienteDetail = ({ formData }) => {
 
     if (cargando) return <LoadingState label="Cargando la ficha…" />;
 
-    if (!cliente) {
+    // `!form`: una relectura que falló deja la ficha vieja pero sin formulario.
+    if (!cliente || !form) {
         return (
             <Notice variant="danger" icon={AlertTriangle}>
                 {error || 'No se pudo cargar la ficha.'}
@@ -672,10 +692,11 @@ const FormClienteDetail = ({ formData }) => {
                         que la persona lo encuentre sin adivinar. */}
                     {señalarFaltantes && v.faltan.length > 0 && (
                         <Notice variant="warning" icon={AlertTriangle} compact>
-                            Falta {v.faltan.length === 1 ? 'un dato' : `${v.faltan.length} datos`} que
-                            el DTE exige{esContribuyente ? ' para un contribuyente' : ''}:{' '}
+                            Falta {v.faltan.length === 1 ? 'un dato' : `${v.faltan.length} datos`}{esNuevo
+                                ? ' para crear el cliente'
+                                : <> que el DTE exige{esContribuyente ? ' para un contribuyente' : ''}</>}:{' '}
                             <span className="font-black">
-                                {v.faltan.map(c => ETIQUETA_CAMPO[c] || c).join(', ')}
+                                {v.faltan.map(c => (esNuevo && FALTA_AL_NACER[c]) || ETIQUETA_CAMPO[c] || c).join(', ')}
                             </span>.
                         </Notice>
                     )}

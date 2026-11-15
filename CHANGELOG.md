@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1539.1 — Auditoría del alta de clientes
+
+Auditoría completa del alta de clientes desde el portal (v2.1539.0), probada
+en pruebas con el navegador a 1440 y 390 px y en producción con el cron real.
+
+- **Búsqueda en la caja antes de crear** (`alta-cliente-erp`): su buscador
+  compara la frase entera, así que un doble espacio o el orden de las palabras
+  escondían a la persona y el alta habría creado un duplicado. Ahora busca la
+  frase y dos pares de palabras largas, compara sin tildes ni espacios de más,
+  y el NIT en sus tres formas (crudo, sólo dígitos y `0000-000000-000-0`). La
+  respuesta subió de 25 a 200 filas (`TOPE_BUSQUEDA`); si la frase entera llena
+  la respuesta, la ficha va a «Por revisar» en vez de crearse a ciegas.
+- **El resultado no marca como aplicado lo que se cambió después**
+  (migración `20261115154423`): `clientes_alta_erp_resultado` sólo da por
+  enviados los cambios anteriores al momento en que se tomó la ficha.
+- **Ficha recién creada sin borrador falso**: al crear se cruzaban dos lecturas
+  y la segunda escritura quedaba como «Quedaron cambios sin guardar». Sólo
+  cuenta la última lectura.
+- **Mensajes propios del alta**: «Falta N datos para crear el cliente: …».
+- **«Sin número de ficha» en el teléfono**: el motivo va dentro del bloque del
+  cliente (ficha apilada) y el ancla es el último intento; antes el nombre no
+  se veía.
+
 ## v2.1539.0 — Clientes nuevos desde el portal, con su número de ficha automático
 
 Pasos 4a–4d de `docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md` (sin la distribuidora, por decisión del usuario).

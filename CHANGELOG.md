@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1548.0 — Consulta de precios: teclado, Preferente destacado y presentaciones por factor
+
+- **Con el teclado:** ↑ ↓ recorren la lista de productos, Enter abre el
+  marcado, ← → cambian de presentación y Esc vuelve a la búsqueda.
+- **Regular y Preferente, los dos destacados** arriba; Público, Mayoreo y
+  Mayoreo Plus debajo.
+- **Las presentaciones se juntan por cantidad de unidades:** dos de 100
+  unidades son una sola opción, con sus precios separados en columnas.
+- Las opciones del selector, cortas (nombre y unidades), para que en el teléfono
+  entren tres por fila sin partirse; se quitó el recuadro azul de foco.
+
 ## v2.1547.0 — Consulta de precios: la presentación se cambia con un toque
 
 - **La presentación se elige arriba, con un toque, sin volver atrás.** Cada

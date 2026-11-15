@@ -18,7 +18,7 @@ vi.mock('@nucleo/data/productos', () => ({
 }));
 
 import PreciosDelProducto from '../../src/views/dashboard/inventario/PreciosDelProducto';
-import { presentacionesParaMostrar, agruparPorPresentacion } from '../../src/views/dashboard/inventario/presentacionesDePrecio';
+import { presentacionesParaMostrar, agruparPorPresentacion } from '@nucleo/utils/presentacionesDePrecio';
 
 afterEach(() => { cleanup(); fetchPrecios.mockReset(); });
 
@@ -43,33 +43,29 @@ const SALAS = [
   ] },
 ];
 
-describe('presentacionesParaMostrar', () => {
-  it('funde las idénticas, marca las que sólo comparten nombre y ordena por tamaño', () => {
-    const lista = presentacionesParaMostrar(PRECIOS, SALAS[1].lots);
-    expect(lista.map(x => [x.nombre, x.unidades, x.codigo])).toEqual([
-      ['Unidad', 1, null],
-      ['Caja', 30, 9],
-      ['Caja', 30, 38],
+describe('presentaciones agrupadas por factor', () => {
+  it('funde las idénticas, junta por factor y ordena variantes por Regular', () => {
+    const grupos = agruparPorPresentacion(presentacionesParaMostrar(PRECIOS), SALAS[1].lots);
+    expect(grupos.map(g => [g.nombre, g.unidades, g.variantes.map(v => v.precios.vineta)])).toEqual([
+      ['Unidad', 1, [0.34]],
+      ['Caja', 30, [10.29, 12.5]],
     ]);
-    expect(lista[0].existencia).toBe(12);
-    expect(lista[1].existencia).toBe(3);
+    expect(grupos[0].existencia).toBe(12);
+    expect(grupos[1].existencia).toBe(3);
   });
-});
 
-describe('agruparPorPresentacion', () => {
-  it('junta las dos cajas de 30 en un grupo, ordenadas por el Regular', () => {
-    const grupos = agruparPorPresentacion(presentacionesParaMostrar(PRECIOS, SALAS[1].lots));
-    expect(grupos.map(g => [g.nombre, g.variantes.map(v => v.precios.vineta)])).toEqual([
-      ['Unidad', [0.34]],
-      ['Caja', [10.29, 12.5]],
-    ]);
+  it('dos tipos con el mismo factor son una sola opción que nombra a los dos', () => {
+    const grupos = agruparPorPresentacion(presentacionesParaMostrar([p(1, 'UNIDAD', 1, 2), p(5, 'CAJA', 1, 2.5)]));
+    expect(grupos).toHaveLength(1);
+    expect(grupos[0].nombre).toBe('Unidad / Caja');
+    expect(grupos[0].conTipos).toBe(true);
   });
 });
 
 describe('PreciosDelProducto', () => {
   it('arranca en la presentación con existencia y cambia de presentación con un toque', async () => {
     fetchPrecios.mockResolvedValue({ data: PRECIOS, error: null });
-    const { getByText, queryByText, container } = render(
+    const { getByText, getAllByText, queryByText, container } = render(
       <PreciosDelProducto erpProductId={77} salas={SALAS} miErp={1} />,
     );
     expect(fetchPrecios).toHaveBeenCalledWith(77, 'vineta, descuento_1, vip, clinica, mayoreo');
@@ -81,6 +77,12 @@ describe('PreciosDelProducto', () => {
 
     expect(getByText('$10.29')).toBeTruthy();
     expect(getByText('$12.50')).toBeTruthy();
+    // Regular y Preferente destacados en cada columna.
+    expect(getAllByText('Preferente').length).toBe(2);
+    // ← vuelve a Unidad.
+    fireEvent.keyDown(getByText('$10.29').closest('[tabindex="-1"]'), { key: 'ArrowLeft' });
+    expect(getByText('$0.34')).toBeTruthy();
+    fireEvent.keyDown(getByText('$0.34').closest('[tabindex="-1"]'), { key: 'ArrowRight' });
     expect(container.querySelector('.grid-cols-2')).toBeTruthy();
     expect(queryByText('Premium')).toBeNull();
     expect(queryByText('Precio 7')).toBeNull();

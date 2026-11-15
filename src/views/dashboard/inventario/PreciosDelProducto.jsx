@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Package } from 'lucide-react';
 import { LoadingState } from '../../../components/common/StateViews';
 import Notice from '../../../components/common/Notice';
 import SegmentedControl from '../../../components/common/SegmentedControl';
 import { fetchPreciosDelProducto } from '@nucleo/data/productos';
-import { COLUMNAS, PRINCIPAL, SECUNDARIOS, presentacionesParaMostrar, agruparPorPresentacion } from './presentacionesDePrecio';
+import { COLUMNAS, DESTACADOS, RESTO, presentacionesParaMostrar, agruparPorPresentacion } from '@nucleo/utils/presentacionesDePrecio';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
@@ -17,21 +17,32 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
  * Arranca en la que hay en la sala. Si esa presentación tiene más de un precio
  * —1,129 productos tienen dos «Caja» de 30 con ids distintos y a veces
  * precios distintos—, van lado a lado, una columna por precio, ordenadas por el
- * Regular. Si hay una sola presentación no se pregunta nada.
+ * Regular. Las presentaciones se juntan por FACTOR (lo pidió el usuario): dos
+ * de 30 unidades son una sola opción, con sus precios separados debajo. Con
+ * el teclado: ← → cambian de presentación.
  *
  * Los lotes son informativos: cuánto hay de esa presentación en la sala de
  * quien mira (o en todas, para quien no tiene sala). El precio no depende del
  * lote: `product_precios` no lo tiene. */
 
-function Columna({ variante }) {
+/* Regular y Preferente arriba, del mismo tamaño: los dos son los que se dicen
+ * en el mostrador. Público, Mayoreo y Mayoreo Plus debajo, en lista. */
+function Columna({ variante, conTipo }) {
   return (
     <div className="flex flex-col rounded-xl border border-divider overflow-hidden">
-      <div className="px-3 py-2.5 bg-brand/10">
-        <p className="text-micro font-black uppercase tracking-widest text-brand-text">{PRINCIPAL.label}</p>
-        <p className="text-title font-black tabular-nums text-content leading-tight">{formatMoney(variante.precios[PRINCIPAL.key])}</p>
+      {conTipo && (
+        <p className="px-3 pt-2 text-micro font-black uppercase tracking-widest text-content-3">{variante.nombre}</p>
+      )}
+      <div className="grid grid-cols-2 gap-px bg-divider">
+        {DESTACADOS.map(n => (
+          <div key={n.key} className="px-3 py-2.5 bg-brand/10">
+            <p className="text-micro font-black uppercase tracking-widest text-brand-text">{n.label}</p>
+            <p className="text-title font-black tabular-nums text-content leading-tight">{formatMoney(variante.precios[n.key])}</p>
+          </div>
+        ))}
       </div>
       <dl className="divide-y divide-divider">
-        {SECUNDARIOS.map(n => (
+        {RESTO.map(n => (
           <div key={n.key} className="flex items-center justify-between gap-2 px-3 py-1.5">
             <dt className="text-label text-content-3 truncate">{n.label}</dt>
             <dd className="text-body-sm font-bold tabular-nums text-content">{formatMoney(variante.precios[n.key])}</dd>
@@ -71,10 +82,22 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
     .filter(s => !conSala || s.erp === miErp)
     .flatMap(s => (s.lots ?? []).map(l => ({ ...l, _sala: s.name }))), [salas, miErp, conSala]);
 
-  const grupos = useMemo(() => agruparPorPresentacion(presentacionesParaMostrar(precios, lotes)), [precios, lotes]);
+  const grupos = useMemo(() => agruparPorPresentacion(presentacionesParaMostrar(precios), lotes), [precios, lotes]);
   // Sin elegir todavía: la primera que hay en la sala (es la que se vende),
   // y si ninguna tiene, la más chica.
   const grupo = grupos.find(g => g.clave === elegida) ?? grupos.find(g => g.existencia > 0) ?? grupos[0] ?? null;
+
+  // Teclado: al abrir, el foco viene acá para que ← → cambien de presentación
+  // sin tocar el mouse (Esc lo atiende el widget: vuelve a la búsqueda).
+  const raiz = useRef(null);
+  const listo = precios !== null && !error && !!grupo;
+  useEffect(() => { if (listo) raiz.current?.focus({ preventScroll: true }); }, [listo]);
+  const alTeclear = (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const i = grupos.findIndex(g => g.clave === grupo?.clave);
+    const j = Math.max(0, Math.min(grupos.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)));
+    if (j !== i) { e.preventDefault(); setElegida(grupos[j].clave); }
+  };
 
   if (precios === null) return <LoadingState variant="inline" size="sm" label="Cargando precios…" />;
   if (error) return <Notice variant="danger">{error}</Notice>;
@@ -87,13 +110,16 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
   }
 
   const varios = grupo.variantes.length > 1;
-  const precioCorto = (g) => (g.variantes.length > 1
-    ? `${g.variantes.length} precios`
-    : formatMoney(g.variantes[0].precios[PRINCIPAL.key]));
   const total = grupo.lotes.reduce((s, l) => s + (Number(l.cantidad) || 0), 0);
 
   return (
-    <div className="@container flex flex-col gap-3">
+    <div ref={raiz} tabIndex={-1} onKeyDown={alTeclear}
+      aria-label="Precios. Flechas izquierda y derecha para cambiar de presentación."
+      // El foco llega acá sólo para que las flechas funcionen: el anillo global
+      // de `[tabindex]` dibujaba un recuadro azul alrededor de todo el widget.
+      // La presentación activa ya se ve en el selector.
+      style={{ outline: 'none' }}
+      className="@container flex flex-col gap-3">
       {/* La presentación se cambia con un toque, sin volver atrás: cada opción
           ya dice cuántas unidades trae y su precio Regular. */}
       {grupos.length > 1 ? (
@@ -105,8 +131,10 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
           onChange={setElegida}
           options={grupos.map(g => ({
             value: g.clave,
+            // Corto a propósito: en el teléfono van tres por fila. Los precios
+            // de la elegida se leen grandes justo debajo.
             label: g.nombre,
-            description: `${unidadesTexto(g.unidades)} · ${precioCorto(g)}`,
+            description: g.variantes.length > 1 ? `${unidadesTexto(g.unidades)} · ${g.variantes.length} precios` : unidadesTexto(g.unidades),
           }))}
         />
       ) : (
@@ -121,7 +149,7 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
             <p className="text-caption text-content-3">{grupo.nombre} tiene {grupo.variantes.length} precios:</p>
           )}
           <div className={`grid gap-2 ${varios ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {grupo.variantes.map(v => <Columna key={v.id} variante={v} />)}
+            {grupo.variantes.map(v => <Columna key={v.id} variante={v} conTipo={grupo.conTipos} />)}
           </div>
         </div>
 

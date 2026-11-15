@@ -48,8 +48,11 @@ describe('PreciosDelProducto', () => {
     expect(getByText('$14.00')).toBeTruthy();
     expect(queryByText('Premium')).toBeNull();
     expect(queryByText('Precio 7')).toBeNull();
-    // Cinco niveles, ni uno más.
-    expect(container.querySelectorAll('dt')).toHaveLength(5);
+    // Regular arriba y cuatro más en la lista: cinco, ni uno más.
+    expect(container.querySelectorAll('dt')).toHaveLength(4);
+    // Sólo los lotes de la sala propia: el de Bodega no se ofrece.
+    expect(getByText('S1')).toBeTruthy();
+    expect(queryByText(/B1/)).toBeNull();
   });
 
   it('sin precios lo dice', async () => {

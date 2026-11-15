@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1544.1 — Consulta de precios: más clara y sólo con los lotes de la sala
+
+- **Consulta de precios, más clara.** El precio Regular va grande y destacado,
+  con su presentación debajo; Público, Preferente, Mayoreo y Mayoreo Plus en
+  una lista al lado. Los selectores llevan su propio ícono (presentación y lote)
+  y se quitó el rótulo «Precios» repetido.
+- **El lote sale sólo de la sala de quien consulta.** Si la sala no tiene
+  existencia lo dice; quien no tiene sala (administración) sigue viendo los de
+  todas, con el nombre de cada una.
+
 ## v2.1544.0 — Consulta de precios, widget propio
 
 - **Los precios pasan a su propio widget del Inicio: «Consulta de precios».**

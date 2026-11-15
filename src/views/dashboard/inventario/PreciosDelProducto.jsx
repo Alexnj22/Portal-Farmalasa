@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Package, CalendarClock } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import { LoadingState } from '../../../components/common/StateViews';
 import Notice from '../../../components/common/Notice';
@@ -48,13 +49,14 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
     return () => { cancelado = true; };
   }, [erpProductId]);
 
-  // Los lotes de todas las salas, la propia primero.
+  // Sólo los lotes de la sala de quien mira (pedido del usuario, 2026-11-15):
+  // en el mostrador se vende lo que hay en el estante propio. Quien no tiene
+  // sala —administración— ve los de todas, con el nombre de cada una.
+  const conSala = miErp != null;
   const lotes = useMemo(() => {
-    const propias = salas.filter(s => s.erp === miErp);
-    const otras = salas.filter(s => s.erp !== miErp);
     const vistos = new Set();
     const out = [];
-    for (const s of [...propias, ...otras]) {
+    for (const s of salas.filter(x => !conSala || x.erp === miErp)) {
       for (const l of s.lots ?? []) {
         const k = claveDeLote(l);
         if (vistos.has(k)) continue;
@@ -63,17 +65,17 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
       }
     }
     return out;
-  }, [salas, miErp]);
+  }, [salas, miErp, conSala]);
 
   const opcionesLote = useMemo(() => lotes.map(l => ({
     value: l._clave,
-    label: `${l.lote || 'Sin lote'} · ${l._sala}`,
+    label: conSala ? (l.lote || 'Sin lote') : `${l.lote || 'Sin lote'} · ${l._sala}`,
     sublabel: [
       l.presentacion?.trim(),
       l.fecha_vencimiento ? `vence ${fechaTexto(l.fecha_vencimiento, { month: 'short', year: 'numeric' })}` : null,
       `${l.cantidad} en existencia`,
     ].filter(Boolean).join(' · '),
-  })), [lotes]);
+  })), [lotes, conSala]);
 
   const opcionesPresentacion = useMemo(() => (precios ?? []).map(p => ({
     value: String(p.id_presentacion),
@@ -99,10 +101,10 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
     setIdPresentacion(null);
   };
 
-  return (
-    <section className="flex flex-col gap-2 shrink-0" aria-label="Precios">
-      <p className="text-caption font-black uppercase tracking-widest text-content-3">Precios</p>
+  const [principal, ...resto] = NIVELES;
 
+  return (
+    <section className="flex flex-col gap-3 shrink-0" aria-label="Precios">
       {error && <Notice variant="danger">{error}</Notice>}
 
       {precios === null ? (
@@ -114,32 +116,49 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <LiquidSelect
               ariaLabel="Presentación"
+              icon={Package}
               placeholder="Presentación"
               value={elegida ? String(elegida.id_presentacion) : ''}
               onChange={v => setIdPresentacion(v || null)}
               options={opcionesPresentacion}
               clearable={false}
             />
-            <LiquidSelect
-              ariaLabel="Lote"
-              placeholder={lotes.length ? 'Lote' : 'Sin lotes en existencia'}
-              value={loteElegido?._clave ?? ''}
-              onChange={v => elegirLote(v || null)}
-              options={opcionesLote}
-              disabled={!lotes.length}
-              clearable={false}
-            />
+            {lotes.length ? (
+              <LiquidSelect
+                ariaLabel="Lote"
+                icon={CalendarClock}
+                placeholder="Lote"
+                value={loteElegido?._clave ?? ''}
+                onChange={v => elegirLote(v || null)}
+                options={opcionesLote}
+                clearable={false}
+              />
+            ) : (
+              <p className="flex items-center gap-2 px-3 min-h-[var(--tap-min)] text-label text-content-3">
+                <CalendarClock size={16} className="shrink-0" />
+                {conSala ? 'Sin existencia en tu sala' : 'Sin existencia'}
+              </p>
+            )}
           </div>
 
           {elegida && (
-            <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 px-3 py-2.5 rounded-xl bg-surface-card-hover border border-divider">
-              {NIVELES.map(n => (
-                <div key={n.key} className="flex items-baseline justify-between gap-2 min-w-0">
-                  <dt className="text-label text-content-3 truncate">{n.label}</dt>
-                  <dd className="text-body-sm font-black tabular-nums text-content">{formatMoney(elegida[n.key])}</dd>
-                </div>
-              ))}
-            </dl>
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] rounded-2xl border border-divider overflow-hidden">
+              <div className="flex flex-col justify-center gap-0.5 px-4 py-3 bg-brand/10">
+                <span className="text-caption font-black uppercase tracking-widest text-brand-text">{principal.label}</span>
+                <span className="text-display font-black tabular-nums text-content leading-none">{formatMoney(elegida[principal.key])}</span>
+                <span className="text-micro text-content-3 mt-1">
+                  {nombreDePresentacion(elegida)}{Number(elegida.factor) > 1 ? ` · ${elegida.factor} unidades` : ''}
+                </span>
+              </div>
+              <dl className="divide-y divide-divider bg-surface-card-hover">
+                {resto.map(n => (
+                  <div key={n.key} className="flex items-center justify-between gap-3 px-4 py-2">
+                    <dt className="text-label font-semibold text-content-2">{n.label}</dt>
+                    <dd className="text-body font-black tabular-nums text-content">{formatMoney(elegida[n.key])}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           )}
         </>
       )}

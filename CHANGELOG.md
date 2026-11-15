@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1540.0 — Alta de clientes: campos según la categoría y giro de Hacienda
+
+La ficha de cliente (alta y edición) muestra sólo los documentos de su
+categoría, y las validaciones atrapan más errores antes de facturar.
+
+- **Campos según la categoría** (`camposDeCategoria`): Consumidor → DUI o NIT;
+  Contribuyente y Exento → DUI, NIT, NRC y giro; Gran Contribuyente → NIT, NRC,
+  giro y retención; Extranjero → pasaporte; Menor de edad → ningún documento.
+  Sale de las fichas reales: ningún consumidor tiene NRC ni retención, ningún
+  grande tiene DUI, y la retención sólo la tienen los grandes. En un alta,
+  cambiar la categoría vacía lo que la nueva no lleva; en una ficha existente
+  lo que tiene escrito se sigue viendo.
+- **El giro se elige del catálogo de actividades de Hacienda** (CAT-019, 774),
+  con búsqueda. Los 51 giros que ya existen en fichas están todos en el
+  catálogo, y se reconocen aunque cambien tildes o mayúsculas.
+- **NIT con dígito verificador**: el de 14 dígitos tiene que pasar el
+  verificador de Hacienda (los 60 NIT reales pasan); atrapa 10 de cada 11
+  dígitos mal tecleados.
+- **Nombre y apellido completos** y **pasaporte** de 5 a 20 letras y números,
+  como ya exigía la base al crear. Textos de ayuda según la categoría.
+
 ## v2.1539.1 — Auditoría del alta de clientes
 
 Auditoría completa del alta de clientes desde el portal (v2.1539.0), probada

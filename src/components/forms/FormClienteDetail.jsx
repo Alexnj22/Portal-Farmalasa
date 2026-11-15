@@ -22,7 +22,8 @@ import {
 } from '@nucleo/data/elSalvadorGeo';
 import {
     validarCliente, camposRequeridos, esContribuyente as esFiscal,
-    ETIQUETA_CAMPO as ETIQUETAS, CAMPOS_FICHA, CATEGORIAS_CLIENTE, cambiosDeFicha } from '@nucleo/utils/clienteValidacion';
+    ETIQUETA_CAMPO as ETIQUETAS, CAMPOS_FICHA, CATEGORIAS_CLIENTE, cambiosDeFicha,
+    camposDeCategoria, conCategoria, cargarGiros, giroDelCatalogo } from '@nucleo/utils/clienteValidacion';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -199,6 +200,14 @@ const FormClienteDetail = ({ formData }) => {
 
     const [form, setForm] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    // El catálogo de giros de Hacienda, cargado aparte (ver `cargarGiros`).
+    const [giros, setGiros] = useState([]);
+    useEffect(() => {
+        let vivo = true;
+        cargarGiros().then(g => { if (vivo) setGiros(g); })
+            .catch(e => console.error('FormClienteDetail.jsx: giros', e));
+        return () => { vivo = false; };
+    }, []);
 
     /* La ficha fiscal se EDITA, así que el borrador se OFRECE y no se repone
      * solo: reponer sobre un registro vivo escribiría datos viejos encima de lo
@@ -270,6 +279,13 @@ const FormClienteDetail = ({ formData }) => {
     }, []);
 
     const esContribuyente = esFiscal(form?.categoria);
+
+    // Los documentos que se ven dependen de la categoría. En una ficha que ya
+    // existe, lo que tiene escrito se sigue viendo aunque la categoría no lo
+    // lleve: esconder un dato guardado es perderlo de vista.
+    const lleva = useMemo(() => camposDeCategoria(form?.categoria), [form?.categoria]);
+    const ver = (campo) => lleva.has(campo)
+        || (!esNuevo && !!String(cliente?.[campo] ?? '').trim());
 
     // Un solo veredicto para toda la ficha, calculado en `clienteValidacion`:
     // el formulario pinta, no decide. `errores` es "está mal escrito" y `faltan`
@@ -474,7 +490,11 @@ const FormClienteDetail = ({ formData }) => {
                                     name="name" label="Nombre" required
                                     value={form.name} readOnly={!editable}
                                     hasError={!!errorDe('name')} errorMessage={errorDe('name')}
-                                    helperText={esNuevo ? 'Nombre y apellido, como en el DUI. Se guarda en mayúscula' : 'Se guarda en mayúscula'}
+                                    helperText={esContribuyente
+                                        ? 'Nombre o razón social, como en su tarjeta de IVA. Se guarda en mayúscula'
+                                        : form.categoria === 'Extranjero'
+                                            ? 'Nombre y apellido, como en el pasaporte. Se guarda en mayúscula'
+                                            : esNuevo ? 'Nombre y apellido, como en el DUI. Se guarda en mayúscula' : 'Se guarda en mayúscula'}
                                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                                 />
                             </div>
@@ -484,7 +504,9 @@ const FormClienteDetail = ({ formData }) => {
                                 </label>
                                 <LiquidSelect
                                     value={form.categoria}
-                                    onChange={v => setForm(p => ({ ...p, categoria: v || '' }))}
+                                    onChange={v => setForm(p => (esNuevo
+                                        ? conCategoria(p, v || 'Consumidor')
+                                        : { ...p, categoria: v || '' }))}
                                     options={CATEGORIAS.map(c => ({ value: c, label: c }))}
                                     placeholder="Sin categoría"
                                     clearable={false}
@@ -492,13 +514,19 @@ const FormClienteDetail = ({ formData }) => {
                                     ariaLabel="Categoría fiscal del cliente"
                                 />
                             </div>
-                            <PortalInput
+                            {ver('dui') && <PortalInput
                                 name="dui" label="DUI" maskType="DUI"
                                 placeholder="00000000-0"
                                 value={form.dui} readOnly={!editable}
                                 hasError={!!errorDe('dui')} errorMessage={errorDe('dui')}
+                                helperText={esNuevo && !esContribuyente ? 'O el NIT, si no tiene DUI' : undefined}
                                 onChange={e => setForm(p => ({ ...p, dui: e.target.value }))}
-                            />
+                            />}
+                            {form.categoria === 'Menor de edad' && (
+                                <p className="sm:col-span-2 text-caption text-content-3 ml-1">
+                                    Un menor de edad no lleva documento: se identifica por nombre y teléfono.
+                                </p>
+                            )}
                             {/* De SÓLO LECTURA a propósito. El guardado de esta
                                 ficha va por `update_customer_fiscal`, que es la
                                 vía FISCAL: pide confirmación para tocar a un
@@ -511,15 +539,16 @@ const FormClienteDetail = ({ formData }) => {
                                 <Dato label="Fecha de nacimiento"
                                     value={`${fmtDate(cliente.fecha_nacimiento)} · ${edadDe(cliente.fecha_nacimiento)} años`} />
                             )}
-                            <PortalInput
+                            {ver('nit') && <PortalInput
                                 name="nit" label="NIT" maskType="NIT"
                                 placeholder="14 dígitos"
                                 required={requeridos.has('nit')}
                                 value={form.nit} readOnly={!editable}
                                 hasError={!!errorDe('nit')} errorMessage={errorDe('nit')}
+                                helperText={esContribuyente ? 'El de la tarjeta de IVA; una persona puede usar su DUI' : undefined}
                                 onChange={e => setForm(p => ({ ...p, nit: e.target.value }))}
-                            />
-                            <PortalInput
+                            />}
+                            {ver('nrc') && <PortalInput
                                 name="nrc" label="NRC" maskType="NRC"
                                 placeholder="4 a 8 dígitos"
                                 required={requeridos.has('nrc')}
@@ -527,19 +556,39 @@ const FormClienteDetail = ({ formData }) => {
                                 hasError={!!errorDe('nrc')} errorMessage={errorDe('nrc')}
                                 helperText={esContribuyente ? 'Requerido para facturarle con CCF' : undefined}
                                 onChange={e => setForm(p => ({ ...p, nrc: e.target.value }))}
-                            />
-                            <PortalInput
+                            />}
+                            {ver('pasaporte') && <PortalInput
                                 name="pasaporte" label="Pasaporte"
+                                required={esNuevo && form.categoria === 'Extranjero'}
                                 value={form.pasaporte} readOnly={!editable}
-                                onChange={e => setForm(p => ({ ...p, pasaporte: e.target.value }))}
-                            />
-                            <PortalInput
-                                name="giro" label="Giro" required={requeridos.has('giro')}
-                                placeholder="Actividad económica"
-                                value={form.giro} readOnly={!editable}
-                                hasError={!!errorDe('giro')} errorMessage={errorDe('giro')}
-                                onChange={e => setForm(p => ({ ...p, giro: e.target.value }))}
-                            />
+                                hasError={!!errorDe('pasaporte')} errorMessage={errorDe('pasaporte')}
+                                onChange={e => setForm(p => ({ ...p, pasaporte: e.target.value.toUpperCase() }))}
+                            />}
+                            {/* El giro sale del catálogo de actividades de
+                                Hacienda: escrito a mano, la caja no lo
+                                reconoce y el CCF no lo acepta. Un giro viejo
+                                escrito con otras tildes se reconoce igual
+                                (`giroDelCatalogo`); uno que no está se ve tal
+                                cual hasta que alguien elija del listado. */}
+                            {ver('giro') && <div className="sm:col-span-2" data-campo="giro">
+                                <label className={rotuloCampo(errorDe('giro') ? 'text-danger-text' : 'text-content-3')}>
+                                    Giro{requeridos.has('giro') ? ' *' : ''}
+                                </label>
+                                <LiquidSelect
+                                    value={giroDelCatalogo(form.giro, giros) ?? form.giro}
+                                    onChange={v => setForm(p => ({ ...p, giro: v || '' }))}
+                                    options={giroDelCatalogo(form.giro, giros) || !form.giro
+                                        ? giros
+                                        : [{ value: form.giro, label: form.giro, sublabel: 'No está en el listado de Hacienda' }, ...giros]}
+                                    placeholder={giros.length ? 'Busca la actividad económica' : 'Cargando actividades…'}
+                                    clearable={!requeridos.has('giro')}
+                                    disabled={!editable || !giros.length}
+                                    ariaLabel="Giro o actividad económica"
+                                />
+                                {errorDe('giro') && (
+                                    <p className="text-caption text-danger-text mt-1 ml-1 font-bold">{errorDe('giro')}</p>
+                                )}
+                            </div>}
                         </div>
                     </div>
 
@@ -642,9 +691,9 @@ const FormClienteDetail = ({ formData }) => {
 
                     {/* Fiscal y notas */}
                     <div className="space-y-3">
-                        <SectionHeader icon={ShieldCheck}>Retención y notas</SectionHeader>
+                        <SectionHeader icon={ShieldCheck}>{ver('retencion_pct') ? 'Retención y notas' : 'Notas'}</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <PortalInput
+                            {ver('retencion_pct') && <PortalInput
                                 name="retencion_pct" label="Retención %"
                                 maskType="PERCENT" inputMode="numeric"
                                 value={form.retencion_pct} readOnly={!editable}
@@ -652,7 +701,7 @@ const FormClienteDetail = ({ formData }) => {
                                 errorMessage={errorDe('retencion_pct')}
                                 helperText="0 a 100"
                                 onChange={e => setForm(p => ({ ...p, retencion_pct: e.target.value }))}
-                            />
+                            />}
                             {!esNuevo && <div>
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
                                     Origen

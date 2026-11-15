@@ -62,7 +62,7 @@ describe('teléfono', () => {
 
 describe('NIT', () => {
     it('catorce dígitos siempre valen', () => {
-        expect(nitValido('0614-123456-101-2')).toBe(true);
+        expect(nitValido('0614-123456-101-9')).toBe(true);
     });
 
     it('el de nueve se compara CONTRA EL DUI de la misma ficha', () => {
@@ -184,7 +184,7 @@ describe('validarCliente — el formato sólo se le exige a lo que se toca', () 
         const r = validarCliente({
             name: 'ACME S.A. de C.V.', phone: '2538-5899', categoria: 'Contribuyente',
             departamento: 'San Salvador', municipio: 'San Salvador', distrito: 'San Salvador',
-            nit: '0614-123456-101-2', nrc: '123456', giro: 'Comercio',
+            nit: '0614-123456-101-9', nrc: '123456', giro: 'Comercio',
             email: 'facturacion@acme.sv', direccion: 'Av. Siempre Viva 742',
         });
         expect(r.errores).toEqual({});
@@ -195,5 +195,35 @@ describe('validarCliente — el formato sólo se le exige a lo que se toca', () 
     it('un formulario vacío no rompe', () => {
         expect(() => validarCliente(null)).not.toThrow();
         expect(validarCliente(undefined).ok).toBe(false);
+    });
+});
+
+describe('verificador del NIT, categorías y giro (2026-11-15)', () => {
+    it('acepta NIT reales y rechaza un dígito cambiado', async () => {
+        const { nitValido } = await import('@nucleo/utils/clienteValidacion');
+        for (const n of ['06142811861066', '04070510660020', '06140104911380', '95010703811016'])
+            expect(nitValido(n)).toBe(true);
+        expect(nitValido('06142811861067')).toBe(false);
+        expect(nitValido('06142811861166')).toBe(false);
+    });
+    it('cada categoría lleva sus documentos', async () => {
+        const { camposDeCategoria, conCategoria } = await import('@nucleo/utils/clienteValidacion');
+        expect([...camposDeCategoria('Consumidor')]).toEqual(['dui', 'nit']);
+        expect(camposDeCategoria('Gran Contribuyente').has('dui')).toBe(false);
+        expect(camposDeCategoria('Extranjero').has('pasaporte')).toBe(true);
+        expect(camposDeCategoria('Menor de edad').size).toBe(0);
+        const f = conCategoria({ name: 'A B', nrc: '1234', giro: 'Bancos', dui: '04413277-6' }, 'Consumidor');
+        expect(f).toMatchObject({ categoria: 'Consumidor', nrc: '', giro: '', dui: '04413277-6' });
+    });
+    it('nombre incompleto y pasaporte mal escrito', async () => {
+        const { validarCliente } = await import('@nucleo/utils/clienteValidacion');
+        expect(validarCliente({ name: 'JUAN' }).errores.name).toMatch(/apellido/);
+        expect(validarCliente({ name: 'JUAN PEREZ', pasaporte: 'A1' }).errores.pasaporte).toBeTruthy();
+    });
+    it('el giro se reconoce sin tildes ni mayúsculas', async () => {
+        const { giroDelCatalogo } = await import('@nucleo/utils/clienteValidacion');
+        const ops = [{ value: 'Servicios de odontología' }, { value: 'Bancos' }];
+        expect(giroDelCatalogo('Servicios de Odontologia', ops)).toBe('Servicios de odontología');
+        expect(giroDelCatalogo('Comercio', ops)).toBe(null);
     });
 });

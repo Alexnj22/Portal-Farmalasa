@@ -81,11 +81,49 @@ export const duiValido = (dui) => vacio(dui) || isValidDUIAlgorithm(dui);
 export const nitValido = (nit, dui) => {
     const d = digitos(nit);
     if (d.length === 0) return true;
-    if (d.length === 14) return true;
+    if (d.length === 14) return nit14Verifica(d);
     if (d.length !== 9) return false;
     const dd = digitos(dui);
     if (dd.length === 9) return d === dd;
     return isValidDUIAlgorithm(d);
+};
+
+/**
+ * El dígito verificador del NIT de 14 (el de Hacienda). Con correlativo hasta
+ * 100 pondera 14…2 y toma el residuo de 11; con correlativo mayor pondera
+ * 2,7,6,5,4,3 cíclico y toma 11 menos el residuo. Medido el 2026-11-15 contra
+ * los 60 NIT de 14 dígitos de las fichas reales: pasan los 60. Atrapa 10 de
+ * cada 11 dígitos mal tecleados, que es lo que hace un CCF rechazado.
+ */
+export function nit14Verifica(d) {
+    const n = [...d].map(Number);
+    let suma = 0, dv;
+    if (Number(d.slice(10, 13)) <= 100) {
+        for (let i = 0; i < 13; i++) suma += n[i] * (14 - i);
+        dv = suma % 11;
+        if (dv === 10) dv = 0;
+    } else {
+        const w = [2, 7, 6, 5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+        for (let i = 0; i < 13; i++) suma += n[i] * w[i];
+        dv = 11 - (suma % 11);
+        if (dv >= 10) dv = 0;
+    }
+    return dv === n[13];
+}
+
+/**
+ * Nombre y apellido: dos palabras y cinco letras, la misma regla con la que
+ * `cliente_crear` rechaza (NOMBRE_INCOMPLETO). Sólo se exige a lo que se toca.
+ */
+export const nombreCompleto = (nombre) => {
+    const t = String(nombre ?? '').trim().replace(/\s+/g, ' ');
+    return t.length >= 5 && t.includes(' ');
+};
+
+/** Pasaporte: letras y números, 5 a 20 (sin contar espacios ni guiones). */
+export const pasaporteValido = (p) => {
+    const t = String(p ?? '').replace(/[\s-]/g, '');
+    return t.length === 0 || /^[A-Za-z0-9]{5,20}$/.test(t);
 };
 
 /**
@@ -139,8 +177,10 @@ export const ETIQUETA_CAMPO = {
 // juzgar el NIT aunque el NIT no se haya tocado.
 const FORMATO = [
     ['name',          ['name'],        (f) => !vacio(f.name),               'No puede quedar vacío'],
+    ['name',          ['name'],        (f) => vacio(f.name) || nombreCompleto(f.name), 'Nombre y apellido completos'],
+    ['pasaporte',     ['pasaporte'],   (f) => pasaporteValido(f.pasaporte), 'Letras y números, de 5 a 20'],
     ['dui',           ['dui'],         (f) => duiValido(f.dui),             'No pasa el dígito verificador'],
-    ['nit',           ['nit', 'dui'],  (f) => nitValido(f.nit, f.dui),      '14 dígitos, o el DUI de esta ficha'],
+    ['nit',           ['nit', 'dui'],  (f) => nitValido(f.nit, f.dui),      '14 dígitos que pasen el verificador, o el DUI de esta ficha'],
     ['nrc',           ['nrc'],         (f) => nrcValido(f.nrc),             'Entre 4 y 8 dígitos'],
     ['phone',         ['phone'],       (f) => telefonoValido(f.phone),      '8 dígitos, empezando en 2, 5, 6 o 7'],
     ['telefono2',     ['telefono2'],   (f) => telefonoValido(f.telefono2),  '8 dígitos, empezando en 2, 5, 6 o 7'],
@@ -180,7 +220,7 @@ export function validarCliente(form, original) {
 
     const errores = {};
     for (const [campo, deps, prueba, mensaje] of FORMATO) {
-        if (deps.some(cambio) && !prueba(f)) errores[campo] = mensaje;
+        if (!errores[campo] && deps.some(cambio) && !prueba(f)) errores[campo] = mensaje;
     }
     const faltan = camposRequeridos(f.categoria)
         .filter(c => vacio(f[c]) && !errores[c]);
@@ -218,4 +258,63 @@ export function cambiosDeFicha(form, cliente) {
         if (String(antes) !== String(ahora)) out[c] = ahora === '' ? null : ahora;
     }
     return out;
+}
+
+// ── Qué campos lleva cada categoría ──────────────────────────────────────────
+// El formulario muestra sólo los documentos que corresponden (2026-11-15, lo
+// pidió el usuario). Medido en las fichas reales: ningún consumidor tiene NRC
+// ni retención; ningún Gran Contribuyente tiene DUI; la retención la tienen 4
+// de los 5 grandes y nadie más (es el agente de retención). Extranjero se
+// identifica con pasaporte; un menor de edad no tiene documento propio.
+// Nombre, teléfono, correo, dirección y ubicación los llevan todas.
+export const CAMPOS_DE_DOCUMENTO = ['dui', 'nit', 'nrc', 'pasaporte', 'giro', 'retencion_pct'];
+const POR_CATEGORIA = {
+    'Consumidor': ['dui', 'nit'],
+    'Contribuyente': ['dui', 'nit', 'nrc', 'giro'],
+    'Contribuyente Exento': ['dui', 'nit', 'nrc', 'giro'],
+    'Gran Contribuyente': ['nit', 'nrc', 'giro', 'retencion_pct'],
+    'Extranjero': ['pasaporte'],
+    'Menor de edad': [],
+};
+
+/** Los campos de documento que lleva la categoría; sin categoría, todos. */
+export const camposDeCategoria = (categoria) =>
+    new Set(POR_CATEGORIA[categoria] ?? CAMPOS_DE_DOCUMENTO);
+
+/**
+ * Al cambiar la categoría de una ficha NUEVA se vacían los documentos que la
+ * otra no lleva: un NRC escrito como contribuyente no puede viajar escondido
+ * con un consumidor. En una ficha existente no se borra nada: lo que tiene
+ * sigue a la vista y se quita a mano.
+ */
+export function conCategoria(form, categoria) {
+    const lleva = camposDeCategoria(categoria);
+    const out = { ...form, categoria };
+    for (const c of CAMPOS_DE_DOCUMENTO) if (!lleva.has(c)) out[c] = '';
+    return out;
+}
+
+// ── El giro: el catálogo de actividades de Hacienda (CAT-019) ────────────────
+// El giro de la ficha es el TEXTO de la actividad, que es lo que guarda la
+// caja y lo que su lista resuelve. Medido el 2026-11-15: los 51 giros distintos
+// de las fichas reales están en el catálogo (sin tildes ni mayúsculas de por
+// medio). Se carga con `import()`: son ~50 kB que sólo pide el formulario.
+export const claveGiro = (t) => String(t ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+let girosPromesa = null;
+export function cargarGiros() {
+    if (!girosPromesa) {
+        girosPromesa = import('../data/actividadesMH')
+            .then(m => m.ACTIVIDADES_MH.map(([codigo, texto]) => ({ value: texto, label: texto, sublabel: codigo })))
+            .catch(e => { girosPromesa = null; throw e; });
+    }
+    return girosPromesa;
+}
+
+/** El texto del catálogo que corresponde a un giro guardado, o null. */
+export function giroDelCatalogo(texto, opciones) {
+    const k = claveGiro(texto);
+    if (!k || !opciones?.length) return null;
+    return opciones.find(o => claveGiro(o.value) === k)?.value ?? null;
 }

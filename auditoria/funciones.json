@@ -6591,6 +6591,21 @@
    "area": "comunicacion",
    "por": "manual",
    "manual": true
+  },
+  "clientes_importar_de_caja": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
+  },
+  "giro_clave": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
+  },
+  "giro_valido": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
   }
  },
  "encargos_ventas_candidatas": {

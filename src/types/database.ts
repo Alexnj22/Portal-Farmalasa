@@ -133,6 +133,24 @@ export type Database = {
           },
         ]
       }
+      actividades_economicas: {
+        Row: {
+          codigo: string
+          created_at: string
+          descripcion: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descripcion: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descripcion?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string
@@ -33595,6 +33613,7 @@ export type Database = {
         Returns: Json
       }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
+      clientes_importar_de_caja: { Args: { p_filas: Json }; Returns: Json }
       clientes_niveles: { Args: { p_ids: number[] }; Returns: Json }
       clientes_sin_distrito_corregibles: {
         Args: never
@@ -37195,6 +37214,8 @@ export type Database = {
           total_sum: number
         }[]
       }
+      giro_clave: { Args: { p: string }; Returns: string }
+      giro_valido: { Args: { p_giro: string }; Returns: boolean }
       guardar_carga_producto: {
         Args: {
           p_filas?: Json

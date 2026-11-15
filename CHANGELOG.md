@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1542.0 — Clientes: el portal con todas las fichas de la caja y el giro validado en la base
+
+- **El portal tiene ya todas las fichas de clientes.** Hasta hoy una ficha
+  llegaba al portal sólo si compraba o si la corrida nocturna la corregía; las
+  creadas o editadas en la caja que no volvían a comprar no llegaban nunca.
+  Nueva función `barrido-clientes-caja` (secreto fiscal, sin sesión): `contar`
+  cruza la lista entera de la caja (29,270 fichas, 1000 por página) contra el
+  portal por número de ficha; `copiar` lee cada ficha completa y la trae. Las
+  que el portal ya tiene van por `aplicar_espejo_erp` (no pisa un cambio del
+  portal que todavía no llegó a la caja); las que faltan, por la nueva
+  `clientes_importar_de_caja` (sólo `service_role`), que no duplica: si el
+  número ya está no hace nada, si hay una ficha con el mismo nombre sin número
+  y sin DUI distinto la vincula, y si el nombre lo tiene otra ficha con número
+  lo informa en vez de crear.
+- Corrida del 2026-11-15: 63 fichas faltaban y 195 diferían (teléfono 171, DUI
+  30, categoría 11, NIT 6, NRC 5; muchas con `1111-1111` en el portal y el
+  teléfono real en la caja). Se trajeron todas. Quedan para una persona: las
+  fichas que la caja repite con el mismo nombre (`nombre_ocupado`) y cuatro con
+  un NIT que la caja tiene en dos fichas, que entraron sin ese NIT.
+- **El giro se valida en la base** contra el catálogo de actividades de
+  Hacienda (CAT-019): tabla `actividades_economicas` (774 renglones, los siembra
+  la función con `sembrar_giros` desde `_shared/actividadesMH.ts`, copia
+  generada de `src/data/actividadesMH.js`), `giro_clave` (sin tildes ni
+  mayúsculas) y `giro_valido`. `cliente_crear` lo exige siempre y
+  `update_customer_fiscal` sólo si el giro cambió (`GIRO_INVALIDO`). Los 52
+  giros distintos de las fichas reales están en el catálogo.
+
 ## v2.1541.0 — Clientes: el tipo primero al crear y widget en el Inicio
 
 - **Al crear un cliente, lo primero es el tipo**: Consumidor · Contribuyente ·

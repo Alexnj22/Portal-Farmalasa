@@ -411,6 +411,10 @@
     "alta-cliente-erp": {
       "guarda": "sin-sala",
       "motivo": "Las fichas de cliente son de toda la red, no de una sala. La llama la pantalla con la SESIÓN de quien crea (clientes_alta_erp_tomar exige clientes_crear o editar Clientes) y el cron con el secreto fiscal; la llave del servidor sólo anota el resultado de las fichas que la base entregó."
+    },
+    "barrido-clientes-caja": {
+      "guarda": "cron",
+      "motivo": "Cruza la lista entera de fichas de la caja contra el portal y trae lo que falta. Sin sesión: exige el secreto fiscal (requireInvokeSecret) y la llaman la base o un script; las fichas son de toda la red."
     }
   },
   "rpc": {

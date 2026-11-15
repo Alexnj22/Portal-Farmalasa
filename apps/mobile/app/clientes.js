@@ -4,7 +4,8 @@
 // Son ~28 mil fichas: todo lo pagina el servidor (`get_customers_page`, de a
 // 25) y la búsqueda se descarta si llega tarde. Tocar una abre su ficha.
 //
-// No hay alta: las fichas las da de alta el punto de venta.
+// El alta (desde el 2026-11-15 los clientes nacen en el portal) todavía es del
+// portal web: «Nuevo cliente» en Clientes. Pendiente traerla acá.
 //
 // A la par del portal: las cinco tarjetas (Clientes, Completas, Por completar,
 // Contribuyentes, A revisar); «Por completar» es el MISMO criterio del portal

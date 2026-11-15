@@ -811,6 +811,14 @@ const CRONS = [
           + 'afuera. Con algo en cola: login + lectura + envío + relectura por ficha, hasta 5.',
   },
   {
+    job: 'alta-cliente-erp-10min', slug: 'alta-cliente-erp', cadencia: '7,17,27,37,47,57 * * * *',
+    corridasDia: 144, sistema: 0,
+    motivo: 'Da de alta en la caja los clientes nacidos en el portal que el alta inmediata no pudo '
+          + 'dejar (2026-11-15). Sin nada pendiente no toca el sistema: contesta sin iniciar sesión; lo que necesita a una '
+          + 'persona (`revisar`) no se reintenta, y lo pendiente espera 10 min, 20, 40… hasta 6 h. '
+          + 'Con algo pendiente: login + 2-3 búsquedas + alta + relectura por ficha, hasta 5.',
+  },
+  {
     job: 'sync-dte-inv-all-1min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '* 12-23,0-5 * * *',
     corridasDia: 1033, sistema: 18,
     motivo: 'Ventas e inventario de las seis salas cada minuto: el usuario quiere el inventario lo más '

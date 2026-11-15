@@ -4,7 +4,7 @@ import Button from '../common/Button';
 import PortalInput from '../common/PortalInput';
 import SearchInput from '../common/SearchInput';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
-import { buscarClientes, crearClienteDeMostrador } from '@nucleo/data/customers';
+import { buscarClientes, crearClienteDeMostrador, altaClienteEnCaja } from '@nucleo/data/customers';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Notice from '../common/Notice';
 
@@ -62,6 +62,9 @@ export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = '
             setYaExistia(!!c.existente);
             setNueva(null);
             onElegir(c);
+            // El número de ficha se pide sin esperar: la venta no depende de él,
+            // y si no llega ahora se asigna solo en unos minutos (2026-11-15).
+            if (!c.existente) altaClienteEnCaja(c.id);
         } catch (e) {
             setErrorNueva(mensajeAmigable(e, 'No se pudo crear la ficha'));
         } finally {

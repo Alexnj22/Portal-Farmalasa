@@ -20,7 +20,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { anotarIngreso, fetchTiposDeMovimiento } from '@nucleo/data/bolsas';
 import { aplicarPendientes, buscarVentaPorComprobante, fetchAplicacionesPendientes, fetchInyeccionesParaCobrar, fetchPreciosDeAplicacion } from '@nucleo/data/inyecciones';
-import { buscarClientes, crearClienteDeMostrador } from '@nucleo/data/customers';
+import { buscarClientes, crearClienteDeMostrador, altaClienteEnCaja } from '@nucleo/data/customers';
 import { aplicacionDelCobro, cuentaDelCobro, gruposDePendientes, itemsDelCobro, LOTE_VACIO, motivoDelLote, seleccionDeVenta, topeDeMezcla } from '@nucleo/utils/cobroDeAplicacion';
 import { aplicacionesPorDosis, esPorMl, fmtMl, saldoDelRenglon } from '@nucleo/utils/inyeccionDosis';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -191,6 +191,8 @@ export default function AplicacionInyeccion() {
     try {
       const f = await crearClienteDeMostrador(nueva);
       setFicha(f); setNueva(null);
+      // El número de ficha se pide sin esperar; si no llega, se asigna solo (2026-11-15).
+      if (!f.existente) altaClienteEnCaja(f.id);
       listo(f.existente ? 'Ya tenía ficha: se usa ésa' : 'Ficha creada');
     } catch (e) { fallo('No se pudo crear la ficha', mensajeAmigable(e)); }
   };

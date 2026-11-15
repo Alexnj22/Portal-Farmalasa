@@ -249,6 +249,9 @@ const GRUPOS_CRUDOS = [
                 // Acá el monto SÍ es una columna más: la ficha fiscal se completa
                 // igual sin ver cuánto factura cada cliente.
                 { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
+                // Crear una ficha nueva. Desde el 2026-11-15 los clientes nacen en el
+                // portal y el portal los da de alta en la caja (lo tiene todo cargo que ve Clientes).
+                { key: 'clientes_crear', label: 'Crear clientes nuevos', tipo: 'cap' },
             ]},
             { key: 'mayoristas',     label: 'Clientes Mayoristas', desc: 'Las solicitudes para ser Cliente Mayorista (del cliente en la app o del dependiente), los candidatos —quien compró a precio de mayoreo en 6 meses— con su historial, y los aprobados con su precio y su rango. Ver = mirar; editar = proponer un cliente; aprobar = aprobar, rechazar, cambiar el precio o retirar (quien aprueba no puede ser quien pidió)', icono: 'Gem', hasApprove: true },
             { key: 'reclamos_clientes', label: 'Reclamos de clientes', desc: 'Los reclamos que un cliente presenta en sala sobre el programa de puntos, las reservas o su condición de Cliente Mayorista. Los tres reglamentos dan diez días hábiles para responder y el portal avisa antes de que venzan. Editar = registrar el reclamo en la sala; aprobar = responderlo', icono: 'MessageSquareWarning', hasApprove: true },

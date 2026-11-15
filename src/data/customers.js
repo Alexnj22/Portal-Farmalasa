@@ -104,6 +104,9 @@ const ERRORES = {
     DUI_INVALIDO:                 'El DUI no pasa el dígito verificador. Revisa los números.',
     TELEFONO_INVALIDO:            'El teléfono debe tener 8 dígitos, o 503 + 8.',
     REQUIERE_CONFIRMACION_FISCAL: 'Son datos que se declaran a Hacienda: confirma el cambio.',
+    NOMBRE_INCOMPLETO:            'Escribe nombre y apellido.',
+    NOMBRE_DE_OTRA_PERSONA:       'Ya hay un cliente con ese nombre y otro DUI. Búscalo: si es la misma persona, corrige esa ficha; si no, agrega el segundo apellido.',
+    FALTA_DOCUMENTO:              'Falta el documento: DUI o NIT (pasaporte si es extranjero).',
 };
 
 /** El código crudo del RPC, para que la vista pueda reaccionar a uno puntual
@@ -193,6 +196,55 @@ export async function pushClienteAlErp(id) {
     } catch (e) {
         return { empujado: false, error: e?.message || String(e) };
     }
+}
+
+// ── Alta de clientes nuevos (2026-11-15) ────────────────────────────────────
+//
+// Los clientes nacen en el portal y el portal les da el número de la caja.
+// docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md.
+
+/**
+ * Crea la ficha. Si la persona ya existía —mismo DUI, mismo NIT o mismo
+ * nombre— devuelve ésa con `existente: true` en vez de duplicarla.
+ * @returns {Promise<{ id: number, name: string, existente: boolean, por?: 'dui'|'nit'|'nombre' }>}
+ */
+export async function crearCliente(campos) {
+    const { data, error } = await supabase.rpc('cliente_crear', { p_campos: campos });
+    if (error) throw error;
+    const r = /** @type {any} */ (data);
+    anotar(r?.existente ? 'CLIENTES_CREAR_YA_EXISTIA' : 'CLIENTES_CREAR', r?.id, { name: r?.name, por: r?.por });
+    return r;
+}
+
+/**
+ * Le pide a la caja el número de la ficha. NUNCA lanza: si la caja no contesta,
+ * la ficha queda en la cola y se reintenta sola cada pocos minutos.
+ * @returns {Promise<{ hecho: boolean, erp_id?: string, como?: string, error?: string, revisar?: boolean, motivo?: string }>}
+ */
+export async function altaClienteEnCaja(id) {
+    try {
+        const { data, error } = await supabase.functions.invoke('alta-cliente-erp', { body: { customer_id: id } });
+        if (error) return { hecho: false, error: error.message };
+        return data || { hecho: false, error: 'sin respuesta' };
+    } catch (e) {
+        return { hecho: false, error: e?.message || String(e) };
+    }
+}
+
+/** Cuántas fichas no tienen número todavía y cuáles necesitan a una persona. */
+export async function fetchAltasPendientes() {
+    const { data, error } = await supabase.rpc('clientes_alta_erp_resumen');
+    if (error) throw error;
+    const r = /** @type {any} */ (data);
+    return { sinNumero: r?.sin_numero ?? 0, revisar: r?.revisar ?? 0, porRevisar: r?.por_revisar ?? [] };
+}
+
+/** «Reintentar» (`crear=false`) o «Crear de todas formas» (`crear=true`). */
+export async function reintentarAlta(id, crear = false, contexto = {}) {
+    const { error } = await supabase.rpc('clientes_alta_erp_reintentar', { p_customer_id: id, p_crear: crear });
+    if (error) throw error;
+    anotar(crear ? 'CLIENTES_ALTA_CREAR_IGUAL' : 'CLIENTES_ALTA_REINTENTAR', id, contexto);
+    return altaClienteEnCaja(id);
 }
 
 // ── Por revisar ──────────────────────────────────────────────────────────────

@@ -15,7 +15,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
     fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp, motivoSinAplicar,
-    codigoDeError, mensajeDeError,
+    codigoDeError, mensajeDeError, crearCliente, altaClienteEnCaja,
 } from '@nucleo/data/customers';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
@@ -163,9 +163,32 @@ function PanelActividad({ actividad, facturas, bitacora }) {
 
 // ── Formulario ───────────────────────────────────────────────────────────────
 
+// La ficha vacía con la que nace un cliente (2026-11-15: los clientes se crean
+// en el portal y el portal les da el número de la caja).
+const FICHA_NUEVA = Object.freeze(
+    Object.fromEntries(CAMPOS.map(c => [c, c === 'categoria' ? 'Consumidor' : ''])));
+
+// Lo que pide `cliente_crear` además del formulario de siempre: nombre y
+// apellido, y un documento según la categoría (FALTA_DOCUMENTO en la base).
+function faltaAlNacer(f) {
+    const faltan = [];
+    if (String(f?.name ?? '').trim().split(/\s+/).filter(Boolean).length < 2) faltan.push('name');
+    if (f?.categoria === 'Extranjero') { if (!String(f?.pasaporte ?? '').trim()) faltan.push('pasaporte'); }
+    else if (f?.categoria !== 'Menor de edad'
+        && !String(f?.dui ?? '').trim() && !String(f?.nit ?? '').trim()) faltan.push('dui');
+    return faltan;
+}
+
 const FormClienteDetail = ({ formData }) => {
-    const id = formData?.id;
-    const canEdit = formData?.canEdit !== false;
+    // Sin `id` es un alta. Al crearse, la misma ventana pasa a ser la ficha de
+    // ese cliente: así se ve en vivo cuando la caja le da su número.
+    const [idCreado, setIdCreado] = useState(null);
+    const id = formData?.id ?? idCreado;
+    const esNuevo = !id;
+    // Crear lo decide `clientes_crear` (lo mira quien abre el alta); ya creada,
+    // corregirla vuelve a ser el permiso de editar de siempre.
+    const canEdit = esNuevo || formData?.canEdit !== false;
+    const [vuelta, setVuelta] = useState(0);   // releer la ficha tras el alta en la caja
 
     const [cargando, setCargando] = useState(true);
     const [cliente, setCliente] = useState(null);
@@ -185,7 +208,7 @@ const FormClienteDetail = ({ formData }) => {
      *
      * Sólo se guarda con la ficha ya cargada (`form` deja de ser `null`): antes
      * de eso, guardar escribiría el vacío encima de lo que hubiera. */
-    const claveBorrador = id ? `cliente_${id}` : null;
+    const claveBorrador = id ? `cliente_${id}` : 'cliente_nuevo';
     const { recuperado: borrador, cuando: borradorCuando, descartar: descartarBorrador } =
         useBorrador(claveBorrador, form, { activo: canEdit && !!form });
     const [ofrecido, setOfrecido] = useState(false);
@@ -197,6 +220,12 @@ const FormClienteDetail = ({ formData }) => {
     const [pideConfirmacion, setPideConfirmacion] = useState(false);
 
     const cargar = useCallback(async () => {
+        if (!id) {
+            setCliente({ ...FICHA_NUEVA });
+            setForm({ ...FICHA_NUEVA });
+            setCargando(false);
+            return;
+        }
         setCargando(true);
         try {
             const d = await fetchCustomerDetail(id);
@@ -220,7 +249,7 @@ const FormClienteDetail = ({ formData }) => {
         }
     }, [id]);
 
-    useEffect(() => { cargar(); }, [cargar]);
+    useEffect(() => { cargar(); }, [cargar, vuelta]);
 
     // La cascada se normaliza en un solo lugar (`normalizarGeo`), el mismo que
     // usa el servidor como regla: cambiar el departamento no puede dejar vivo un
@@ -234,7 +263,12 @@ const FormClienteDetail = ({ formData }) => {
     // Un solo veredicto para toda la ficha, calculado en `clienteValidacion`:
     // el formulario pinta, no decide. `errores` es "está mal escrito" y `faltan`
     // es "todavía no lo llenaste" — se muestran distinto porque se leen distinto.
-    const v = useMemo(() => validarCliente(form, cliente), [form, cliente]);
+    const v = useMemo(() => {
+        const r = validarCliente(form, cliente);
+        if (!esNuevo) return r;
+        const extra = faltaAlNacer(form).filter(c => !r.faltan.includes(c) && !r.errores[c]);
+        return extra.length ? { ...r, faltan: [...r.faltan, ...extra], ok: false } : r;
+    }, [form, cliente, esNuevo]);
     const requeridos = useMemo(
         () => new Set(camposRequeridos(form?.categoria)), [form?.categoria]);
 
@@ -272,9 +306,40 @@ const FormClienteDetail = ({ formData }) => {
         // Cinturón además del botón deshabilitado: `guardar(true)` se llama
         // también desde el botón "Confirmar" del aviso fiscal, que es otro
         // camino y no pasa por el `disabled` del principal.
-        if (!validarCliente(form, cliente).ok) return;
+        if (!v.ok) return;
         setGuardando(true);
         setError('');
+        if (esNuevo) {
+            try {
+                const r = await crearCliente(cambios);
+                descartarBorrador();
+                setIdCreado(r.id);
+                formData?.onSaved?.(r);
+                const toast = useToastStore.getState().showToast;
+                if (r.existente) {
+                    toast('Ya estaba registrado',
+                        `${r.name} ya tenía ficha${r.por === 'nombre' ? ' con ese nombre' : ' con ese documento'}: se abrió ésa.`,
+                        'info');
+                } else {
+                    toast('Cliente creado', 'Dándole su número de ficha…', 'success');
+                    // Como el empuje de una edición: la ficha ya está guardada, y
+                    // si la caja no contesta se reintenta sola en unos minutos.
+                    const a = await altaClienteEnCaja(r.id);
+                    if (a?.hecho) toast('Listo para facturar', `Ficha ${a.erp_id}.`, 'success');
+                    else toast('Creado, falta el número',
+                        a?.revisar ? 'Hay que revisarlo: aparece en «Sin número» de la lista de clientes.'
+                            : 'Se le asigna solo en unos minutos.',
+                        'warning');
+                    setVuelta(n => n + 1);
+                }
+            } catch (e) {
+                console.error('FormClienteDetail.jsx: crear', e);
+                setError(mensajeDeError(e));
+            } finally {
+                setGuardando(false);
+            }
+            return;
+        }
         try {
             // La bitácora la anota `updateCustomerFiscal` (D3).
             await updateCustomerFiscal(id, cambios, { confirmarFiscal: confirmando }, { nombre: cliente?.name });
@@ -316,7 +381,7 @@ const FormClienteDetail = ({ formData }) => {
         } finally {
             setGuardando(false);
         }
-    }, [id, cambios, cliente, formData, cargar, form, descartarBorrador]);
+    }, [id, cambios, cliente, formData, cargar, descartarBorrador, esNuevo, v.ok]);
 
     if (cargando) return <LoadingState label="Cargando la ficha…" />;
 
@@ -349,7 +414,7 @@ const FormClienteDetail = ({ formData }) => {
                 />
             )}
 
-            <SegmentedControl
+            {!esNuevo && <SegmentedControl
                 options={[
                     { value: 'ficha', label: 'Ficha fiscal' },
                     { value: 'actividad', label: 'Actividad' },
@@ -359,7 +424,7 @@ const FormClienteDetail = ({ formData }) => {
                 value={panel}
                 onChange={setPanel}
                 label="Sección de la ficha del cliente"
-            />
+            />}
 
             {cliente.mostrador && (
                 <Notice variant="warning" icon={Store}>
@@ -389,7 +454,7 @@ const FormClienteDetail = ({ formData }) => {
                                     name="name" label="Nombre" required
                                     value={form.name} readOnly={!editable}
                                     hasError={!!errorDe('name')} errorMessage={errorDe('name')}
-                                    helperText="Se guarda en mayúscula"
+                                    helperText={esNuevo ? 'Nombre y apellido, como en el DUI. Se guarda en mayúscula' : 'Se guarda en mayúscula'}
                                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                                 />
                             </div>
@@ -568,7 +633,7 @@ const FormClienteDetail = ({ formData }) => {
                                 helperText="0 a 100"
                                 onChange={e => setForm(p => ({ ...p, retencion_pct: e.target.value }))}
                             />
-                            <div>
+                            {!esNuevo && <div>
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
                                     Origen
                                 </p>
@@ -577,7 +642,7 @@ const FormClienteDetail = ({ formData }) => {
                                         ? <Badge variant="success" icon={Building2}>Ficha {cliente.erp_id}</Badge>
                                         : <Badge variant="neutral">Sin número de ficha</Badge>}
                                 </div>
-                            </div>
+                            </div>}
                             <div className="sm:col-span-2">
                                 <label className={rotuloCampo('text-content-3')}>
                                     Notas
@@ -634,11 +699,12 @@ const FormClienteDetail = ({ formData }) => {
                             declaran a Hacienda. Confirma para guardar.
                         </Notice>
                     )}
-                    <Button size="lg" icon={Check} loading={guardando} disabled={!hayCambios || !v.ok}
+                    <Button size="lg" icon={Check} loading={guardando} disabled={(!esNuevo && !hayCambios) || !v.ok}
                         title={!hayCambios ? 'No hay cambios que guardar'
                             : !v.ok ? 'Hay datos incompletos o mal escritos' : undefined}
                         onClick={() => guardar(false)}>
-                        {guardando ? 'Guardando…' : <>Guardar cambios{hayCambios ? ` (${Object.keys(cambios).length})` : ''}</>}
+                        {esNuevo ? (guardando ? 'Creando…' : 'Crear cliente')
+                            : guardando ? 'Guardando…' : <>Guardar cambios{hayCambios ? ` (${Object.keys(cambios).length})` : ''}</>}
                     </Button>
                 </div>
             )}

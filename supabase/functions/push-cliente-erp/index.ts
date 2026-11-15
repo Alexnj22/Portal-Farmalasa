@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
-import { BASE, login, pedir, parsearFicha, type Ficha } from "../_shared/erp-clientes.ts";
+import { BASE, login, pedir, parsearFicha, valorDeSelect as valorDeSelectCompartido, type Ficha } from "../_shared/erp-clientes.ts";
 
 // Empuja al ERP, EN EL MOMENTO, la edición que se acaba de guardar en el portal.
 //
@@ -59,41 +59,11 @@ const A_SELECT: Record<string, string> = {
 // con la ficha 20434, del 2026-10-02 al 2026-11-10).
 const SOLO_PORTAL = new Set(["notes"]);
 
-const sinTildes = (s: string) => (s ?? "")
-  .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
-
-// El ERP TRUNCA los nombres de distrito para que entren en su campo, así que
-// ninguna normalización saca "SN MIG MERCEDES" de "San Miguel de Mercedes".
-// Es el reverso de la tabla de `src/data/elSalvadorGeo.js`; está duplicada
-// porque son dos runtimes distintos y no hay bundling entre ellos. Si se agrega
-// una fila allá, agregarla acá.
-const ABREVIATURAS_ERP: Record<string, string> = {
-  "DULCE NOMBRE DE MARIA": "DULCE NOM MARIA",
-  "NUEVA CONCEPCION": "NVA CONCEPCION",
-  "SAN ANTONIO DE LA CRUZ": "SAN ANT LA CRUZ",
-  "SAN ANTONIO LOS RANCHOS": "SAN ANT RANCHOS",
-  "SAN ISIDRO LABRADOR": "SAN I LABRADOR",
-  "SAN JOSE CANCASQUE": "SAN J CANCASQUE",
-  "LAS FLORES": "SAN JOSE FLORES",
-  "SAN LUIS DEL CARMEN": "SAN LUIS CARMEN",
-  "SAN PABLO TACACHICO": "SAN P TACACHICO",
-  "SAN MIGUEL DE MERCEDES": "SN MIG MERCEDES",
-};
-
-/** Etiqueta del portal → value del ERP. `null` = no se pudo resolver, y
- *  entonces el campo NO viaja: inventar un distrito en una ficha fiscal es
- *  exactamente lo que este proyecto tiene prohibido. */
-function valorDeSelect(opciones: Ficha["opciones"], campo: string, etiqueta: string): string | null {
-  const lista = opciones[campo] ?? [];
-  const objetivo = sinTildes(etiqueta);
-  if (!objetivo) return "";                              // vaciar es una intención válida
-  for (const [value, texto] of lista) if (sinTildes(texto) === objetivo) return value;
-  const abrev = ABREVIATURAS_ERP[objetivo];
-  if (abrev) for (const [value, texto] of lista) if (sinTildes(texto) === abrev) return value;
-  // `porcentaje` rotula '10%' y el portal guarda 10.
-  for (const [value, texto] of lista) if (texto.replace(/\D/g, "") === objetivo) return value;
-  return null;
-}
+// El mapeo etiqueta → value (con las abreviaturas de distrito que trunca la
+// caja) vive en `_shared/erp-clientes.ts` desde el 2026-11-15: lo usa también
+// el alta (`alta-cliente-erp`), y dos copias de esa tabla se desincronizan.
+const valorDeSelect = (opciones: Ficha["opciones"], campo: string, etiqueta: string) =>
+  valorDeSelectCompartido(opciones[campo], etiqueta);
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);

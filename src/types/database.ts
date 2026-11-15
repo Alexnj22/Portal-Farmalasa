@@ -6308,6 +6308,66 @@ export type Database = {
           },
         ]
       }
+      clientes_alta_erp: {
+        Row: {
+          como: string | null
+          creado_por: string | null
+          created_at: string
+          customer_id: number
+          erp_id: string | null
+          estado: string
+          intentos: number
+          permitir_crear: boolean
+          resuelto_at: string | null
+          tomado_hasta: string | null
+          ultimo_error: string | null
+          ultimo_intento_at: string | null
+        }
+        Insert: {
+          como?: string | null
+          creado_por?: string | null
+          created_at?: string
+          customer_id: number
+          erp_id?: string | null
+          estado?: string
+          intentos?: number
+          permitir_crear?: boolean
+          resuelto_at?: string | null
+          tomado_hasta?: string | null
+          ultimo_error?: string | null
+          ultimo_intento_at?: string | null
+        }
+        Update: {
+          como?: string | null
+          creado_por?: string | null
+          created_at?: string
+          customer_id?: number
+          erp_id?: string | null
+          estado?: string
+          intentos?: number
+          permitir_crear?: boolean
+          resuelto_at?: string | null
+          tomado_hasta?: string | null
+          ultimo_error?: string | null
+          ultimo_intento_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clientes_alta_erp_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_alta_erp_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       clientes_anonimizados: {
         Row: {
           anonimizada_at: string
@@ -33503,6 +33563,7 @@ export type Database = {
         Args: { p_customer_id: number; p_prueba: string }
         Returns: string
       }
+      cliente_crear: { Args: { p_campos: Json }; Returns: Json }
       cliente_crear_de_mostrador: {
         Args: { p_dui?: string; p_nombre: string; p_telefono?: string }
         Returns: Json
@@ -33510,12 +33571,29 @@ export type Database = {
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
       cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
+      cliente_necesita_alta_erp: {
+        Args: { c: Database["public"]["Tables"]["customers"]["Row"] }
+        Returns: boolean
+      }
       cliente_por_tarjeta: { Args: { p_entrada: string }; Returns: Json }
       cliente_tipo_persona_guardar: {
         Args: { p_customer_id: number; p_tipo: string }
         Returns: Json
       }
       cliente_vigente: { Args: { p_id: number }; Returns: number }
+      clientes_alta_erp_reintentar: {
+        Args: { p_crear?: boolean; p_customer_id: number }
+        Returns: Json
+      }
+      clientes_alta_erp_resultado: {
+        Args: { p_customer_id: number; p_resultado: Json }
+        Returns: Json
+      }
+      clientes_alta_erp_resumen: { Args: never; Returns: Json }
+      clientes_alta_erp_tomar: {
+        Args: { p_customer_id?: number; p_limite?: number }
+        Returns: Json
+      }
       clientes_anotar_nacimiento: { Args: { p_filas: Json }; Returns: number }
       clientes_niveles: { Args: { p_ids: number[] }; Returns: Json }
       clientes_sin_distrito_corregibles: {

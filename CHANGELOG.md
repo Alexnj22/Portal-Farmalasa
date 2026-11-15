@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1539.0 — Clientes nuevos desde el portal, con su número de ficha automático
+
+Pasos 4a–4d de `docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md` (sin la distribuidora, por decisión del usuario).
+
+- **«Nuevo cliente» en Clientes** (permiso nuevo `clientes_crear`, activo para todo cargo que ve Clientes). La ficha nueva usa los mismos campos y validación que la edición; además pide nombre y apellido y un documento según la categoría. Si la persona ya existía (mismo DUI, NIT o nombre) se abre ésa en vez de duplicarla. Al crearse, la ventana pasa a ser su ficha y muestra el número cuando llega.
+- **El número de ficha se pide solo** (edge `alta-cliente-erp`): antes de crear BUSCA en la caja por DUI, NIT y nombre, vincula si encuentra una sola coincidencia que se parece, y manda a revisar ante la duda. Sólo CREA lo que nació en el portal; una ficha vieja que no aparece queda para que alguien decida («Crear de todas formas»). Verificado en producción: 3201356 → ficha 29264, creada y releída; 3201144 a revisar (su ficha ya era de otro cliente del portal).
+- **Red de seguridad**: cron `alta-cliente-erp-10min` con espera creciente (10 min → 6 h); sin pendientes no inicia sesión. Candado en la base para que pantalla y cron no tomen la misma ficha.
+- **«Por revisar» muestra las fichas sin número** que necesitan a una persona, con «Reintentar» y «Crear de todas formas».
+- La caja (inyecciones) y la app del personal piden el número apenas crean una ficha.
+- Migraciones `20261115151429`, `20261115152532`, `20261115152913`. `push-cliente-erp` redesplegada: el emparejamiento de opciones pasó a `_shared/erp-clientes.ts`.
+- Pendiente: el alta dentro de la app del personal; cerrar el alta y la edición en la caja (paso 5, del usuario).
+
 ## v2.1538.3 — Plan de clientes desde el portal: auditado y corregido
 
 - `docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md` auditado contra el código y producción. Lo nuevo: 93 fichas creadas en la caja y en la app del personal no existen en el ERP y sus cambios no suben nunca (35 de los 37 trabados): hay que subirlas (paso 4c) y el alta de mostrador pasa por el mismo camino. Permiso nuevo `clientes_crear`, activo para todo cargo que hoy ve Clientes. El alta del ERP no devuelve el número del cliente (cómo encontrarlo sin duplicar). La revisión completa no reemplaza un dato válido del portal por uno inválido del ERP. El aviso a las salas va antes de cerrar el ERP.

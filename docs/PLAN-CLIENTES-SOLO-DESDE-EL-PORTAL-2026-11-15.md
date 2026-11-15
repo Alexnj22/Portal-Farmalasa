@@ -60,9 +60,9 @@ mostrador tiene que pasar por el mismo camino.
 | 1 | **Regla para las salas**: los datos del cliente se corrigen en el portal (Clientes → ficha → editar), no en el ERP. | Decidido. Es inmediato para fichas emparejadas; para las 93 sin número, sólo después del 4c. |
 | 2 | Releer la ficha del ERP cuando el cliente no puede entrar a la app. | **Descartado** por el usuario. |
 | 3 | **Revisión completa, una sola vez**: releer las fichas del ERP y dejar el portal igual. | Por hacer. |
-| 4 | **Crear el cliente desde el portal** (y desde la app del personal), con el alta en el ERP en el mismo momento. | Por hacer. |
+| 4 | **Crear el cliente desde el portal** (y desde la app del personal), con el alta en el ERP en el mismo momento. | **Hecho en el portal web** (v2.1539.0, 2026-11-15). Falta la pantalla de alta en la app del personal. |
 | 5 | El usuario **desactiva en el ERP** la creación y la edición de clientes. | Lo hace el usuario — **después del 4**. |
-| 6 | **Permiso nuevo para crear** (`clientes_crear`). Nace activo para todo cargo que hoy VE Clientes. | Decidido por el usuario, 2026-11-15. |
+| 6 | **Permiso nuevo para crear** (`clientes_crear`). Nace activo para todo cargo que hoy VE Clientes. | **Hecho** (roles 2, 3, 11, 13, 19, 23, 30, 33). |
 
 ### ⚠️ El orden importa
 
@@ -172,6 +172,26 @@ de `customers_changelog` debería quedar en cero salvo `notes`.
   can_view`.
 - Subjefe/a de Sala (20) **no** ve Clientes hoy, así que no lo recibe. Si las
   salas lo necesitan para crear en la caja, es una decisión aparte.
+
+### Cómo quedó implementado (2026-11-15)
+
+- **Base**: `cliente_crear(p_campos)` valida y deduplica (DUI → NIT → nombre);
+  la tabla `clientes_alta_erp` es la cola (`pendiente`/`hecha`/`revisar`, con
+  candado `tomado_hasta` y espera creciente). `clientes_alta_erp_resumen()` y
+  `clientes_alta_erp_reintentar(id, crear)` alimentan «Por revisar».
+- **Edge `alta-cliente-erp`** (`--no-verify-jwt`; pantalla con JWT o cron con
+  el secreto fiscal). Endpoints del ERP: alta = `procesos/clientes.php` con
+  `process=insert` e `id_cliente=0` (devuelve `id_cliente`); búsqueda =
+  `admin_cliente_dt.php` (DataTables; el DUI sólo aparece como `00000000-0`);
+  ubicación = `_helpers.php` (`getMunicipio`/`getDistrito`); giro = `getGiro.php`.
+- **Regla nueva, medida**: de las 34 fichas sin número que sí necesitaban alta,
+  25 nacieron de facturas viejas y ya NO están en la caja (las borraron o les
+  cambiaron el nombre). Crearlas las resucitaría. Por eso **sólo se crea lo que
+  nació en el portal** (`creado_por`, o la nota de `cliente_crear_de_mostrador`);
+  lo demás se vincula si aparece o va a «revisar» con «Crear de todas formas».
+- Cron `alta-cliente-erp-10min`. Prueba en producción: 3201356 → 29264 creada y
+  releída; 3201144 a revisar (su ficha de la caja ya es del cliente 396 del
+  portal: es un duplicado del portal, para fusionar).
 
 ## 3 · Revisión completa
 

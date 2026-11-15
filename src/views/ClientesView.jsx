@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import {
     Contact, Users, IdCard, Building2, MapPin, AlertTriangle, ShieldCheck,
-    FileWarning, Receipt, Store, Search,
+    FileWarning, Receipt, Store, Search, UserPlus,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -195,6 +195,8 @@ export default function ClientesView({ openModal }) {
         () => (canVerMontos ? COLS : COLS.filter(c => c.key !== 'total')),
         [canVerMontos]);
     const canEdit = hasPermission('clientes', 'can_edit');
+    // Los clientes nacen en el portal (2026-11-15); lo tiene todo cargo que ve Clientes.
+    const canCrear = hasPermission('clientes_crear');
 
     const [search, setSearch] = useState('');
     const [categoria, setCategoria] = useState('');
@@ -321,6 +323,14 @@ export default function ClientesView({ openModal }) {
         useStaff.getState().appendAuditLog('CLIENTES_VER_FICHA', String(row.id), { nombre: row.name });
     }, [openModal, canEdit, cargar, cargarStats]);
 
+    const nuevoCliente = useCallback(() => {
+        openModal?.('editCliente', {
+            nombre: 'Nuevo cliente',
+            canEdit,
+            onSaved: () => { cargar(); cargarStats(); },
+        });
+    }, [openModal, canEdit, cargar, cargarStats]);
+
     const limpiar = useCallback(() => {
         setCategoria(''); setDepartamento(''); setMunicipio('');
         setFicha(''); setErp(''); setRevisar(''); setSinMostrador(false);
@@ -347,7 +357,11 @@ export default function ClientesView({ openModal }) {
     );
 
     const barraFiltros = (
-        <FilterBar onClear={limpiar} activeCount={activeCount}>
+        <FilterBar onClear={limpiar} activeCount={activeCount}
+            acciones={canCrear ? [{
+                key: 'nuevo', icon: UserPlus, label: 'Nuevo cliente',
+                onClick: nuevoCliente, variant: 'primary',
+            }] : undefined}>
             <FilterBar.Section active={!!departamento} onClear={() => onDepartamentoChange('')} label="departamento">
                 <div style={{ width: '170px' }}>
                     <LiquidSelect value={departamento} onChange={onDepartamentoChange}
@@ -545,8 +559,7 @@ export default function ClientesView({ openModal }) {
                     /* Buscar sin resultados NO es un vacío (§34.2): uno se
                        arregla borrando el filtro y el otro no tiene arreglo.
                        Confundirlos manda a alguien a buscar el botón de crear
-                       un cliente, que en este módulo no existe — las fichas las
-                       da de alta el punto de venta. */
+                       un cliente que quizá ya existe con otro dato. */
                     empty={searchAplicado || activeCount
                         ? {
                             icon: Search,

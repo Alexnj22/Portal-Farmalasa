@@ -277,7 +277,8 @@
       "guarda": "cron"
     },
     "push-cliente-erp": {
-      "guarda": "cron"
+      "guarda": "sin-sala",
+      "motivo": "Las fichas de cliente son de toda la red. La llaman el formulario con la SESIÓN de la persona (los RPC aplican su permiso de Clientes) y el cron drain-cliente-erp-queue con el secreto fiscal."
     },
     "regularizar-dte": {
       "guarda": "modulo-de-red",
@@ -406,6 +407,10 @@
     "preventa-caja": {
       "guarda": "alcance",
       "motivo": "Editar reservas (permisoDeModulo) y la sala de la RESERVA —no la del navegador— igual a la del empleado salvo alcance ALL; preventa_preparar lo vuelve a comprobar en la base."
+    },
+    "alta-cliente-erp": {
+      "guarda": "sin-sala",
+      "motivo": "Las fichas de cliente son de toda la red, no de una sala. La llama la pantalla con la SESIÓN de quien crea (clientes_alta_erp_tomar exige clientes_crear o editar Clientes) y el cron con el secreto fiscal; la llave del servidor sólo anota el resultado de las fichas que la base entregó."
     }
   },
   "rpc": {

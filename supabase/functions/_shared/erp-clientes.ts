@@ -360,3 +360,170 @@ export function filaPortal(customerId: number | null, erpId: string, f: Ficha): 
   fila.retencion_pct = pct && Number(pct) <= 100 ? Number(pct) : null;
   return fila;
 }
+
+// ── Etiqueta del portal → value de un <select> de la caja ────────────────────
+//
+// Vivía en `push-cliente-erp/index.ts`; se trajo acá el 2026-11-15 porque el
+// alta (`alta-cliente-erp`) necesita exactamente la misma traducción, y dos
+// copias de esta tabla son cómo una se queda atrás.
+
+export const sinTildes = (s: string) => (s ?? "")
+  .normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+
+// El ERP TRUNCA los nombres de distrito para que entren en su campo, así que
+// ninguna normalización saca "SN MIG MERCEDES" de "San Miguel de Mercedes".
+// Es el reverso de la tabla de `src/data/elSalvadorGeo.js`; está duplicada
+// porque son dos runtimes distintos y no hay bundling entre ellos. Si se agrega
+// una fila allá, agregarla acá.
+export const ABREVIATURAS_ERP: Record<string, string> = {
+  "DULCE NOMBRE DE MARIA": "DULCE NOM MARIA",
+  "NUEVA CONCEPCION": "NVA CONCEPCION",
+  "SAN ANTONIO DE LA CRUZ": "SAN ANT LA CRUZ",
+  "SAN ANTONIO LOS RANCHOS": "SAN ANT RANCHOS",
+  "SAN ISIDRO LABRADOR": "SAN I LABRADOR",
+  "SAN JOSE CANCASQUE": "SAN J CANCASQUE",
+  "LAS FLORES": "SAN JOSE FLORES",
+  "SAN LUIS DEL CARMEN": "SAN LUIS CARMEN",
+  "SAN PABLO TACACHICO": "SAN P TACACHICO",
+  "SAN MIGUEL DE MERCEDES": "SN MIG MERCEDES",
+};
+
+/** Etiqueta del portal → value de la caja. `null` = no se pudo resolver, y
+ *  entonces el campo NO viaja: inventar un distrito en una ficha fiscal es
+ *  exactamente lo que este proyecto tiene prohibido. */
+export function valorDeSelect(lista: [string, string][] | undefined, etiqueta: string): string | null {
+  const opciones = lista ?? [];
+  const objetivo = sinTildes(etiqueta);
+  if (!objetivo) return "";                              // vaciar es una intención válida
+  for (const [value, texto] of opciones) if (sinTildes(texto) === objetivo) return value;
+  const abrev = ABREVIATURAS_ERP[objetivo];
+  if (abrev) for (const [value, texto] of opciones) if (sinTildes(texto) === abrev) return value;
+  // `porcentaje` rotula '10%' y el portal guarda 10.
+  for (const [value, texto] of opciones) if (texto.replace(/\D/g, "") === objetivo) return value;
+  return null;
+}
+
+/** Las <option> sueltas que devuelve `_helpers.php` → pares [value, etiqueta]. */
+function opcionesDeHtml(html: string): [string, string][] {
+  const out: [string, string][] = [];
+  for (const o of html.matchAll(/<option([^>]*)>\s*([^<]*)/g)) {
+    const value = o[1].match(/value\s*=\s*["']([^"']*)/)?.[1] ?? "";
+    if (value !== "" && value !== "-1") out.push([value, desescapar(o[2]).trim()]);
+  }
+  return out;
+}
+
+// ── Buscar en la lista de clientes de la caja ────────────────────────────────
+//
+// `admin_cliente_dt.php` es la tabla de la pantalla de clientes (DataTables,
+// lado servidor). Busca por contenido en todas las columnas y sin distinguir
+// tildes (MUNOZ trae MUÑOZ). Columnas medidas el 2026-11-15:
+// [id, nombre, dui, categoria, nit, nrc, telefono, menú]. El DUI sólo se
+// encuentra escrito con guion (00000000-0), igual que se guarda.
+
+export interface FilaCaja { id: string; nombre: string; dui: string; categoria: string; nit: string; nrc: string; telefono: string }
+
+export async function buscarEnCaja(cookie: string, texto: string): Promise<FilaCaja[]> {
+  const q = new URLSearchParams({
+    draw: "1", start: "0", length: "25", "search[value]": texto, "search[regex]": "false",
+    "order[0][column]": "0", "order[0][dir]": "asc",
+  });
+  for (let i = 0; i < 8; i++) {
+    q.set(`columns[${i}][data]`, String(i));
+    q.set(`columns[${i}][searchable]`, "true");
+    q.set(`columns[${i}][orderable]`, "true");
+    q.set(`columns[${i}][search][value]`, "");
+  }
+  const cruda = await pedir(cookie, `${BASE}/admin_cliente_dt.php`, q);
+  let d: { data?: string[][] };
+  try { d = JSON.parse(cruda); } catch { throw new Error(`la búsqueda de clientes no devolvió JSON: ${cruda.slice(0, 120)}`); }
+  return (d.data ?? [])
+    .filter(r => /^\d+$/.test(String(r[0] ?? "")) && Number(r[0]) > 0)
+    .map(r => ({ id: String(r[0]), nombre: desescapar(String(r[1] ?? "")), dui: String(r[2] ?? ""),
+                 categoria: String(r[3] ?? ""), nit: String(r[4] ?? ""), nrc: String(r[5] ?? ""),
+                 telefono: String(r[6] ?? "") }));
+}
+
+// ── El alta ──────────────────────────────────────────────────────────────────
+//
+// Es el formulario de cliente nuevo del punto de venta (`modal_new_cliente.php`,
+// leído el 2026-11-15): POST a `procesos/clientes.php` con `process=insert`,
+// `id_cliente=0`, y contesta `{typeinfo, msg, id_cliente}`. Los mismos campos
+// que la edición más `fecha1` (nacimiento, yyyy-mm-dd) y `hi_retiene`.
+// Departamento, categoría y retención vienen en el formulario; municipio y
+// distrito se piden a `_helpers.php` (dependen del padre); el giro a
+// `getGiro.php` (`searchTerm`).
+
+export interface FichaPortal {
+  name: string; nit?: string | null; dui?: string | null; nrc?: string | null;
+  pasaporte?: string | null; phone?: string | null; telefono2?: string | null;
+  email?: string | null; direccion?: string | null; departamento?: string | null;
+  municipio?: string | null; distrito?: string | null; categoria?: string | null;
+  giro?: string | null; retencion_pct?: number | null; fecha_nacimiento?: string | null;
+}
+
+export async function armarAlta(cookie: string, f: FichaPortal):
+  Promise<{ payload: URLSearchParams; sinResolver: string[] }> {
+  const form = parsearFicha(await pedir(cookie, `${BASE}/modal_new_cliente.php`));
+  const sinResolver: string[] = [];
+  const sel = (campo: string, lista: [string, string][] | undefined, etiqueta: string | null | undefined) => {
+    if (!etiqueta) return "";
+    const v = valorDeSelect(lista, etiqueta);
+    if (v === null) { sinResolver.push(`${campo} «${etiqueta}»`); return ""; }
+    return v;
+  };
+
+  const departamento = sel("departamento", form.opciones.departamento, f.departamento);
+  let municipio = "", distrito = "";
+  if (departamento && f.municipio) {
+    const munis = opcionesDeHtml(await pedir(cookie, `${BASE}/_helpers.php`,
+      new URLSearchParams({ process: "getMunicipio", id_departamento: departamento })));
+    municipio = sel("municipio", munis, f.municipio);
+    if (municipio && f.distrito) {
+      const dists = opcionesDeHtml(await pedir(cookie, `${BASE}/_helpers.php`,
+        new URLSearchParams({ process: "getDistrito", id_departamento: departamento, id_municipio: municipio })));
+      distrito = sel("distrito", dists, f.distrito);
+    }
+  }
+
+  let giro = "";
+  if (f.giro) {
+    const cruda = await pedir(cookie, `${BASE}/getGiro.php`, new URLSearchParams({ searchTerm: f.giro }));
+    let lista: { id: string; text: string }[] = [];
+    try { lista = JSON.parse(cruda); } catch { /* sin lista: queda sin resolver */ }
+    giro = sel("giro", lista.map(g => [String(g.id), String(g.text)] as [string, string]), f.giro);
+  }
+
+  const pct = f.retencion_pct ? String(f.retencion_pct) : "";
+  const porcentaje = pct ? (sel("retención", form.opciones.porcentaje, pct) || "0") : "0";
+
+  const payload = new URLSearchParams({
+    id_cliente: "0",
+    nombre: f.name,                                   // crudo: el control de repetidos de la caja compara tal cual
+    direccion: f.direccion ?? "",
+    apunte: "",
+    departamento: departamento || "-1",
+    municipio, distrito,
+    categoria: sel("categoría", form.opciones.categoria, f.categoria || "Consumidor") || "1",
+    sel_giro: giro,
+    dui: f.dui ?? "", nit: f.nit ?? "", nrc: f.nrc ?? "",
+    telefono1: f.phone ?? "", telefono2: f.telefono2 ?? "",
+    correo: f.email ?? "",
+    fecha1: f.fecha_nacimiento ? String(f.fecha_nacimiento).slice(0, 10) : "",
+    pasaporte: f.pasaporte ?? "",
+    hi_retiene: porcentaje !== "0" ? "1" : "0",
+    porcentaje,
+    process: "insert",
+  });
+  return { payload, sinResolver };
+}
+
+export async function darDeAlta(cookie: string, payload: URLSearchParams):
+  Promise<{ ok: boolean; id?: string; motivo?: string }> {
+  const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`, payload);
+  let resp: { typeinfo?: string; msg?: string; id_cliente?: string | number };
+  try { resp = JSON.parse(cruda); } catch { return { ok: false, motivo: `respuesta sin JSON: ${cruda.slice(0, 200)}` }; }
+  if (resp.typeinfo !== "Success") return { ok: false, motivo: resp.msg ?? resp.typeinfo ?? "rechazo sin motivo" };
+  const id = String(resp.id_cliente ?? "").trim();
+  return /^\d+$/.test(id) && Number(id) > 0 ? { ok: true, id } : { ok: true, motivo: "aceptó pero no devolvió el número" };
+}

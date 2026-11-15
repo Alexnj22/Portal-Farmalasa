@@ -746,7 +746,7 @@ export const AREAS = [
         resumen: 'El documento electrónico: sello de Hacienda, anuladas, saltos de numeración, corrección de fichas de cliente y su reenvío. Más cotizaciones.',
         modulos: ['facturacion', 'facturacion_tab_anuladas', 'facturacion_tab_pendiente_mh',
                   'facturacion_tab_saltos', 'facturacion_tab_no_efectivo', 'facturacion_tab_observaciones',
-                  'facturacion_ver_montos', 'clientes', 'clientes_ver_montos',
+                  'facturacion_ver_montos', 'clientes', 'clientes_ver_montos', 'clientes_crear',
                   'cotizaciones', 'cotizaciones_descargar'],
         rutas: ['/facturacion', '/clientes', '/cotizaciones', '/mis-puntos'],
         archivos: [
@@ -766,17 +766,21 @@ export const AREAS = [
             'src/views/MisPuntosView.jsx', 'src/data/misPuntos.js',
         ],
         tablas: ['customers', 'customers_changelog', 'customer_activity', 'clientes_por_revisar',
+                 // El alta en la caja de los clientes que nacen en el portal (2026-11-15).
+                 'clientes_alta_erp',
                  'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido', 'dte_sucursales_en_pausa', 'dte_clientes_siempre_se_envian', 'dte_entregas_cliente',
                  'dte_datos_pedidos',
                  'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos',
                  'puntos_consulta_intentos', 'dte_rechazos_avisados'],
         edge: ['regularizar-dte', 'dte-para-cliente', 'sincronizar-fichas-clientes', 'push-cliente-erp',
+               'alta-cliente-erp',
                'aplicar-solicitud-facturacion', 'sync-sales-dte', 'sync-numero-control',
                'backfill-dte-related-docs', 'leer-dte-json', 'cargar-compra-erp', 'mis-puntos',
                // La dispara una sala desde Inicio, pero el EFECTO es fiscal:
                // escribe el correo en la ficha de origen y retransmite el DTE.
                'responder-dato-pedido'],
         crons: ['regularizar-dte-2230-sv', 'reenviar-ccf-10min', 'sincronizar-fichas-clientes-2130-sv', 'drain-cliente-erp-queue',
+                'alta-cliente-erp-10min',
                 'ccf-repaso-22h-sv', 'alerta-barrido-dte-8am-sv', 'sync-numero-control-daily', 'sync-numero-control-inyecciones',
                 'refresh-customer-activity-daily', 'avisar-rechazos-mh-8am-sv', 'avisar-ventas-sin-sello-8am-sv',
                 // Vigila que las ventas reconozcan al cliente y que no queden

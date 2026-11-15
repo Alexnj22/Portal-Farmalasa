@@ -11,6 +11,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fetchClientesPorRevisar, descartarClientePorRevisar } from '@nucleo/data/customers';
 import { MOTIVO_POR_REVISAR } from '@nucleo/utils/clientesPorRevisar';
+import SinNumeroDeFicha from './SinNumeroDeFicha';
 
 // El rótulo de cada motivo: núcleo (`clientesPorRevisar`), el mismo de la app.
 const MOTIVO = MOTIVO_POR_REVISAR;
@@ -110,6 +111,8 @@ export default function TabPorRevisar({ openModal }) {
                 </CarrilCards>
                 <div className="flex justify-end min-w-0">{pildora}</div>
             </div>
+
+            <SinNumeroDeFicha onAbrir={(f) => abrirFicha({ customer_id: f.customer_id, name: f.name })} />
 
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 

@@ -1256,6 +1256,36 @@
    "area": "ventas",
    "por": "código"
   },
+  "cliente_crear": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
+  "cliente_necesita_alta_erp": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
+  "clientes_alta_erp_reintentar": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
+  "clientes_alta_erp_resultado": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
+  "clientes_alta_erp_resumen": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
+  "clientes_alta_erp_tomar": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
   "cliente_vigente": {
    "area": "facturacion-dte",
    "por": "tablas"

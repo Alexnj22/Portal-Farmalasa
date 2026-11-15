@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1546.0 — Consulta de precios: primero la presentación
+
+- **Consulta de precios, simple.** Al abrir un producto pregunta la
+  presentación; elegida, muestra sus precios: Regular destacado arriba y
+  Público, Preferente, Mayoreo y Mayoreo Plus debajo. Si el producto tiene una
+  sola presentación, va directo.
+- **Si una presentación tiene dos precios** (p. ej. dos «Caja» de 30), se ven
+  los dos lado a lado, ordenados por el precio Regular.
+- **Lotes, sólo informativos:** cuánto hay de esa presentación en tu sala.
+
 ## v2.1545.0 — Consulta de precios: todas las presentaciones a la vista
 
 - **Todas las presentaciones a la vista, sin selectores.** Cada presentación

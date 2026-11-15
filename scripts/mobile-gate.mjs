@@ -94,9 +94,6 @@ const RAICES = ['src/views', 'src/components'];
 // hace que una categoría nunca llegue a cero y que nadie sepa cuál de los dos
 // mensajes está leyendo.
 const EXCEPCIONES = {
-    'src/views/dashboard/inventario/PreciosDelProducto.jsx': {
-        'tabla-a-mano': 'Matriz presentación × nivel de precio (a lo sumo 4 × 5): la fila no es un registro que se abra, y su valor es comparar columnas de un vistazo. Sólo se dibuja con el widget ANCHO (`@2xl` del contenedor); angosto —teléfono incluido— son tarjetas por presentación.',
-    },
     'src/components/forms/FormPurchaseDteViewer.jsx': {
         'tabla-a-mano': 'Reproduce el documento fiscal del proveedor. Su forma ES una tabla: las columnas son las del DTE y cambiarlas sería mostrar otro documento.',
     },

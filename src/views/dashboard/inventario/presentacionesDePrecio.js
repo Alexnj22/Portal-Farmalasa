@@ -61,3 +61,23 @@ export function presentacionesParaMostrar(precios, lotes) {
     .sort((a, b) => a.unidades - b.unidades || a.nombre.localeCompare(b.nombre) || a.id - b.id);
 }
 
+
+/**
+ * Las presentaciones agrupadas por lo que el cliente pide —«una caja de 30»—,
+ * con sus precios distintos como variantes, ordenadas por el Regular (viñeta)
+ * de menor a mayor. Los lotes son del grupo: las variantes comparten tipo y
+ * factor, así que son los mismos.
+ * @returns {{ clave, nombre, unidades, variantes, existencia, lotes }[]}
+ */
+export function agruparPorPresentacion(lista) {
+  const grupos = new Map();
+  for (const p of lista ?? []) {
+    const clave = `${normal(p.tipo)}|${p.unidades}`;
+    if (!grupos.has(clave)) grupos.set(clave, { clave, nombre: p.nombre, unidades: p.unidades, variantes: [], existencia: p.existencia, lotes: p.lotes });
+    grupos.get(clave).variantes.push(p);
+  }
+  for (const g of grupos.values()) {
+    g.variantes.sort((a, b) => (Number(a.precios[PRINCIPAL.key]) || 0) - (Number(b.precios[PRINCIPAL.key]) || 0));
+  }
+  return [...grupos.values()];
+}

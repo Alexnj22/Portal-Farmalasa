@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
-import { render, cleanup, waitFor } from '@testing-library/react';
+import { render, cleanup, waitFor, fireEvent } from '@testing-library/react';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los precios del widget «Consulta de precios» (2026-11-15).
@@ -18,7 +18,7 @@ vi.mock('@nucleo/data/productos', () => ({
 }));
 
 import PreciosDelProducto from '../../src/views/dashboard/inventario/PreciosDelProducto';
-import { presentacionesParaMostrar } from '../../src/views/dashboard/inventario/presentacionesDePrecio';
+import { presentacionesParaMostrar, agruparPorPresentacion } from '../../src/views/dashboard/inventario/presentacionesDePrecio';
 
 afterEach(() => { cleanup(); fetchPrecios.mockReset(); });
 
@@ -56,23 +56,35 @@ describe('presentacionesParaMostrar', () => {
   });
 });
 
+describe('agruparPorPresentacion', () => {
+  it('junta las dos cajas de 30 en un grupo, ordenadas por el Regular', () => {
+    const grupos = agruparPorPresentacion(presentacionesParaMostrar(PRECIOS, SALAS[1].lots));
+    expect(grupos.map(g => [g.nombre, g.variantes.map(v => v.precios.vineta)])).toEqual([
+      ['Unidad', [0.34]],
+      ['Caja', [10.29, 12.5]],
+    ]);
+  });
+});
+
 describe('PreciosDelProducto', () => {
-  it('pide hasta Mayoreo Plus sin costo y muestra sólo los lotes de la sala propia', async () => {
+  it('pregunta la presentación y muestra sus dos precios lado a lado con los lotes de la sala', async () => {
     fetchPrecios.mockResolvedValue({ data: PRECIOS, error: null });
-    const { getAllByText, getByText, queryByText } = render(
+    const { getByText, queryByText, container } = render(
       <PreciosDelProducto erpProductId={77} salas={SALAS} miErp={1} />,
     );
-
     expect(fetchPrecios).toHaveBeenCalledWith(77, 'vineta, descuento_1, vip, clinica, mayoreo');
 
-    await waitFor(() => expect(getAllByText('Mayoreo Plus').length).toBeGreaterThan(0));
-    expect(getAllByText('$10.29').length).toBeGreaterThan(0);
-    expect(getAllByText('$12.50').length).toBeGreaterThan(0);
-    expect(getAllByText('cód. 38').length).toBeGreaterThan(0);
+    await waitFor(() => expect(getByText('¿Qué presentación?')).toBeTruthy());
+    fireEvent.click(getByText('Caja'));
+
+    expect(getByText('$10.29')).toBeTruthy();
+    expect(getByText('$12.50')).toBeTruthy();
+    expect(container.querySelector('.grid-cols-2')).toBeTruthy();
     expect(queryByText('Premium')).toBeNull();
     expect(queryByText('Precio 7')).toBeNull();
-    expect(getByText('Lotes en tu sala')).toBeTruthy();
+    // Lotes: sólo los de la caja en la sala propia.
     expect(getByText('S1')).toBeTruthy();
+    expect(queryByText('S2')).toBeNull();
     expect(queryByText('B1')).toBeNull();
   });
 

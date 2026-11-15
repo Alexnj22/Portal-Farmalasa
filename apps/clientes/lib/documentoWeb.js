@@ -31,11 +31,12 @@ const tocados = new Map();  // elemento → estilos originales
 const posiciones = new WeakMap(); // lista → scrollY al dejarla
 
 function guardarYPoner(el, estilos) {
-  if (!tocados.has(el)) {
-    const orig = {};
-    for (const k of Object.keys(estilos)) orig[k] = el.style[k];
-    tocados.set(el, orig);
-  }
+  // El original de CADA propiedad, también de las que se tocan en una segunda
+  // pasada: si no, al deshacer quedaba puesta (y al girar el teléfono la foto
+  // y la campana se iban contra los bordes).
+  if (!tocados.has(el)) tocados.set(el, {});
+  const orig = tocados.get(el);
+  for (const k of Object.keys(estilos)) if (!(k in orig)) orig[k] = el.style[k];
   // Sólo lo que cambia: escribir el mismo valor dispararía otra vez al
   // observador del árbol.
   for (const [k, v] of Object.entries(estilos)) if (el.style[k] !== v) el.style[k] = v;
@@ -253,7 +254,10 @@ function flotarPartes(h) {
     // La parte guarda su lugar en la fila aunque su contenido se vaya.
     guardarYPoner(p, { width: `${Math.ceil(rp.width)}px`, height: `${Math.ceil(rp.height)}px`, flexShrink: '0', flexGrow: '0' });
     guardarYPoner(v, {
-      position: 'fixed', zIndex: '20', margin: '0px',
+      // Los cuatro márgenes por separado, nunca `margin`: el original de la
+      // foto es un `margin-left: 16px` en línea, y guardar el atajo (vacío) y
+      // reponerlo lo borraba — al girar, la foto y la campana quedaban en 0.
+      position: 'fixed', zIndex: '20', marginTop: '0px', marginRight: '0px', marginBottom: '0px', marginLeft: '0px',
       top: `${Math.round(r.top - hr.top)}px`, left: `${Math.round(r.left)}px`,
       // Hacia arriba y con un px de aire: redondeado hacia abajo, el título
       // («Notificaciones», 113.6 px) salía con puntos suspensivos.
@@ -323,12 +327,29 @@ export function anclarDocumento() {
       if (ms.some((m) => m.type === 'childList')) alinearPronto();
     }).observe(raiz, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class'] });
     // Al cambiar el ancho, las partes que flotan se vuelven a medir.
+    let anchoVisto = window.innerWidth; let relojAncho = null;
     window.addEventListener('resize', () => {
-      // Primero se quita el margen viejo: con el de una ventana más ancha la
-      // fila queda sin lugar y las partes no se encuentran.
-      for (const [fila, o] of alineados) Object.assign(fila.style, o);
-      alineados.clear();
-      deshacer(); alinearEncabezados(); pronto();
+      // En el iPhone, la barra de direcciones se encoge y crece AL DESPLAZAR, y
+      // cada vez dispara `resize` con otro alto. Rearmar ahí devolvía la página
+      // arriba y corría la foto y la campana contra los bordes (2026-11-14, «se
+      // sube o baja solo» · «el ícono de persona y notificación se cortan»).
+      // Sólo el ANCHO cambia lo que se acomoda.
+      if (window.innerWidth === anchoVisto) return;
+      anchoVisto = window.innerWidth;
+      // Se rearma cuando la ventana DEJA de cambiar y la app ya se volvió a
+      // dibujar con el ancho nuevo: medido antes, la foto quedaba en 0.
+      const y = window.scrollY;
+      clearTimeout(relojAncho);
+      relojAncho = setTimeout(() => {
+        // Primero se quita el margen viejo: con el de una ventana más ancha la
+        // fila queda sin lugar y las partes no se encuentran.
+        for (const [fila, o] of alineados) Object.assign(fila.style, o);
+        alineados.clear();
+        const lista = activo;
+        deshacer(); alinearEncabezados();
+        if (lista) posiciones.set(lista, y);
+        pronto();
+      }, 250);
     });
     alinearEncabezados();
     // Al bajar, el encabezado se vuelve vidrio (index.html), como la barra

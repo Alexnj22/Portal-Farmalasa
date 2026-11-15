@@ -35,7 +35,27 @@
       body { background: transparent; }
       @media (prefers-color-scheme: dark) { html { background-color: #15131B; } }
       body { overflow: hidden; }
-      #root { display: flex; height: 100%; flex: 1; }
+      #root { display: flex; height: 100%; flex: 1; position: relative; z-index: 1; }
+      #fondo-vivo i {
+        position: fixed; z-index: 0; pointer-events: none; display: block;
+        width: min(78vw, 560px); aspect-ratio: 1; border-radius: 50%;
+        background: radial-gradient(circle, var(--c) 0%, transparent 68%);
+        will-change: transform; animation: deriva 26s ease-in-out infinite alternate;
+      }
+      #fondo-vivo i:nth-child(1) { --c: rgba(142, 195, 15, 0.38); top: 16vh; left: 0; animation-duration: 23s; }
+      #fondo-vivo i:nth-child(2) { --c: rgba(152, 29, 151, 0.34); top: 34vh; right: 0; animation-duration: 31s; animation-direction: alternate-reverse; }
+      #fondo-vivo i:nth-child(3) { --c: rgba(142, 195, 15, 0.28); top: 52vh; left: 18vw; animation-duration: 37s; }
+      @media (prefers-color-scheme: dark) {
+        #fondo-vivo i:nth-child(1) { --c: rgba(142, 195, 15, 0.40); }
+        #fondo-vivo i:nth-child(2) { --c: rgba(152, 29, 151, 0.55); }
+        #fondo-vivo i:nth-child(3) { --c: rgba(142, 195, 15, 0.30); }
+      }
+      @keyframes deriva {
+        0%   { transform: translate(-8%, -6%) scale(1); }
+        50%  { transform: translate(10%, 8%) scale(1.12); }
+        100% { transform: translate(-4%, 12%) scale(0.94); }
+      }
+      @media (prefers-reduced-motion: reduce) { #fondo-vivo i { animation: none; } }
       /* La página se desplaza (lib/documentoWeb.js): así el contenido pasa
          bajo la barra de estado y la de direcciones de Safari, que recortan
          todo lo fijo. */
@@ -69,6 +89,12 @@
   </head>
   <body>
     <noscript>Para usar Puntos Salud hay que activar JavaScript.</noscript>
+    <!-- Fondo vivo (2026-11-14): manchas con el verde y el magenta del logo
+         que se mueven despacio detrás del vidrio. Sólo decoración: no se
+         toca, no se lee, no ocupa lugar. Cada mancha es una pieza suelta y
+         lejos de arriba y de abajo: algo fijo de lado a lado hace que Safari
+         del iPhone pinte la franja de la hora como una barra. -->
+    <div id="fondo-vivo" aria-hidden="true"><i></i><i></i><i></i></div>
     <div id="root"></div>
   </body>
 </html>

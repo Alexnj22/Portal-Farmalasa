@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.13 — Puntos Salud web: fondo vivo, sin saltos al desplazar y la foto y la campana dentro de la pantalla
+
+- **Fondo vivo**: tres manchas con el verde y el magenta del logo se mueven despacio detrás del vidrio. Son piezas sueltas y lejos de los bordes de arriba y de abajo (algo fijo de lado a lado hace que Safari pinte la franja de la hora). Quietas si el teléfono pide menos movimiento.
+- **Sin saltos al desplazar**: en el iPhone la barra de direcciones crece y se encoge al desplazar y cada vez avisa un cambio de tamaño; la página se rearmaba y saltaba. Ahora sólo un cambio de ANCHO la rearma, y conserva dónde estaba.
+- **La foto y la campana ya no quedan cortadas contra los bordes**: al rearmar se borraba el margen de 16 px de la foto (se guardaba el atajo `margin`, vacío, en vez de los cuatro márgenes).
+
 ## v2.1537.12 — Puntos Salud: Tienda Salud al centro del menú; la web con un solo tono de fondo
 
 - **Menú: Inicio · Bienestar · Tienda Salud · Carrito · Cuenta.** La Tienda queda al centro, que es lo más visible y lo más cómodo para el pulgar, y junto al Carrito. Bienestar había quedado en el medio por accidente cuando Ofertas dejó de ser pestaña. En la app (iPhone y Android, por aire) y en la web.

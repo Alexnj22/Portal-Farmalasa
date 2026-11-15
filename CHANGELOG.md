@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1538.2 — Plan: clientes sólo desde el portal
+
+- `docs/PLAN-CLIENTES-SOLO-DESDE-EL-PORTAL-2026-11-15.md`: los clientes se crearán y corregirán sólo en el portal, que los manda al ERP al instante; después el ERP se cierra a altas y ediciones y se hace una revisión completa de las fichas. Por qué el espejo no se mantenía al día, el orden obligatorio (crear desde el portal antes de cerrar el ERP) y lo que la sesión de la Mac tiene que averiguar primero (`modal_new_cliente.php`).
+
 ## v2.1538.1 — Mis puntos: la consulta vieja lleva a la app
 
 - **`portal.farmasalud.lat/mis-puntos` ahora lleva a la app Puntos Salud** (`app.farmasalud.lat/mis-puntos`) en vez de abrir la consulta vieja del portal. Es una redirección del servidor (`vercel.json`, temporal a propósito para poder deshacerla sin que los navegadores la recuerden) y conserva el `?codigo=` del QR del ticket y del pase: la app abre «Entrar» con el código ya escrito, o va directo a los puntos si ya hay sesión.

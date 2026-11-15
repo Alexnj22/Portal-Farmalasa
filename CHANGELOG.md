@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.14 — subir-android: confirma la subida cuando Google no deja mandarla a revisión por API
+
+- `scripts/subir-android.mjs`: cuando Google Play contesta que los cambios no se pueden mandar a revisión por API, confirma la subida con `changesNotSentForReview=true` y avisa que el envío a revisión queda en Play Console. Puntos Salud 1.0.0 (59) subida a la pista interna.
+
 ## v2.1537.13 — Puntos Salud web: fondo vivo, sin saltos al desplazar y la foto y la campana dentro de la pantalla
 
 - **Fondo vivo**: tres manchas con el verde y el magenta del logo se mueven despacio detrás del vidrio. Son piezas sueltas y lejos de los bordes de arriba y de abajo (algo fijo de lado a lado hace que Safari pinte la franja de la hora). Quietas si el teléfono pide menos movimiento.

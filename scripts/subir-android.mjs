@@ -291,7 +291,19 @@ try {
   // Una app que todavía no se publicó en ninguna pista sólo acepta borradores.
   if (/draft/i.test(e.texto ?? '')) await lanzar('draft'); else throw e;
 }
-await play('POST', `/edits/${edit.id}:commit`);
+// Cuando la cuenta tiene cambios esperando revisión (o la publicación
+// administrada encendida), Google no acepta mandarlos a revisar por API y pide
+// `changesNotSentForReview` (2026-11-14). Se confirma igual y se avisa: el
+// envío a revisión queda para un botón en Play Console.
+let aRevisarEnConsola = false;
+try {
+  await play('POST', `/edits/${edit.id}:commit`);
+} catch (e) {
+  if (!/changesNotSentForReview/.test(e.texto ?? '')) throw e;
+  await play('POST', `/edits/${edit.id}:commit?changesNotSentForReview=true`);
+  aRevisarEnConsola = true;
+}
+if (aRevisarEnConsola) console.warn('⚠ Google pidió no mandar los cambios a revisión por API: quedan confirmados y hay que enviarlos a revisión desde Play Console («Resumen de publicación» → «Enviar cambios a revisión»).');
 writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [CLAVE_REGISTRO]: Number(subido.versionCode) }, null, 2) + '\n');
 console.log(`✓ ${appJson.name} ${appJson.version} (${subido.versionCode}) subida a la pista «internal» de Google Play.`);
 anotarVersionPublicada({ perfil, plataforma: 'android', version: appJson.version, build: subido.versionCode });

@@ -175,7 +175,8 @@ export const AREAS = [
                   'dash_annulment_req', 'dash_minmax_req', 'dash_inv_movement', 'dash_traslados',
                   'dash_cortes_sala', 'dash_bolsas_sala', 'dash_bitacoras', 'dash_recetas_pendientes',
                   'dash_meta_sala', 'dash_meta_sala_vista_completa',
-                  'dash_vendedores', 'dash_vendedores_vista_completa', 'dash_clientes'],
+                  'dash_vendedores', 'dash_vendedores_vista_completa', 'dash_clientes',
+                  'dash_consulta_precios'],
         rutas: ['/inicio'],
         archivos: [
             'src/views/DashboardView.jsx', 'src/views/dashboard/',

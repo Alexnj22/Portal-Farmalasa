@@ -91,6 +91,8 @@ import {
     Pill,
     Mail,
     Star,
+    Tag,
+    UserPlus,
 } from 'lucide-react';
 import { MODULE_GROUPS as GRUPOS, MODULE_INFO as INFO } from '@nucleo/constants/permissionModules';
 
@@ -98,6 +100,8 @@ export * from '@nucleo/constants/permissionModules';
 
 const ICONOS = {
     Camera,
+    Tag,
+    UserPlus,
     Activity,
     AlertTriangle,
     BadgeAlert,

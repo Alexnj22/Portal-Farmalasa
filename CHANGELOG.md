@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1544.0 — Consulta de precios, widget propio
+
+- **Los precios pasan a su propio widget del Inicio: «Consulta de precios».**
+  Se busca un producto, se abre, y se eligen presentación y lote para ver
+  Regular, Público, Preferente, Mayoreo y Mayoreo Plus, sin el costo. Sale de
+  «Consulta de inventario», que vuelve a mostrar sólo existencias.
+- Activo para los 11 cargos que ya tenían «Consulta de inventario»,
+  dependientes incluidos (permiso `dash_consulta_precios`).
+- Íconos de los widgets Clientes y Consulta de precios registrados en el
+  catálogo de permisos (la pantalla de roles los mostraba vacíos).
+
 ## v2.1543.0 — Precios en la consulta de inventario
 
 - **Los precios se ven desde el widget «Consulta de inventario» del Inicio.**

@@ -61,7 +61,6 @@ import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
  * la vista. Del otro lado ya se abría así. */
 const PedirTrasladoModal = lazy(() => import('../PedirTrasladoModal'));
 import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './salas';
-import PreciosDelProducto from './PreciosDelProducto';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { MIN_LETRAS_BUSQUEDA } from '@nucleo/utils/consultaInventario';
 import { buscarEnSrs } from '@nucleo/data/srs';
@@ -880,20 +879,6 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {/* Precios por presentación, hasta Mayoreo Plus (2026-11-15). Sin el
-              área de vencidos: de ahí no se vende. */}
-          <div className="mb-3">
-            <PreciosDelProducto
-              key={drillProduct.erpProductId ?? drillProduct.descripcion}
-              erpProductId={drillProduct.erpProductId ?? drillBranches[0]?.products[0]?.lots?.[0]?.erp_product_id ?? null}
-              salas={drillBranches.filter(b => !b.isVencidos).map(b => ({
-                name: b.name,
-                erp: b.products[0]?.lots?.[0]?.erp_sucursal_id ?? null,
-                lots: b.products[0]?.lots ?? [],
-              }))}
-              miErp={miErp}
-            />
-          </div>
           {drillBranches.length === 0 ? (
             <EmptyState linea icon={Package} title="Sin stock en ninguna sucursal" />
           ) : (

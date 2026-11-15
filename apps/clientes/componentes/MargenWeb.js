@@ -32,3 +32,15 @@ export function posAvisoWeb(ins, { conPestanas = true, aire = 12 } = {}) {
   const abajo = conPestanas ? ALTO_MENU_WEB + Math.max(ins?.bottom ?? 0, 10) + aire : (ins?.bottom ?? 0) + 16;
   return { left: RELLENO, right: RELLENO, bottom: abajo, maxWidth: COLUMNA - 2 * RELLENO, marginHorizontal: 'auto' };
 }
+
+// El margen de la computadora en los encabezados de react-navigation, como
+// opciones de la pila (2026-11-14, «el header al cambiar de vista se pone a
+// los bordes y ya luego al ancho correcto»): antes lo agregaba
+// lib/documentoWeb DESPUÉS de dibujar, y se veía el salto. Así el encabezado
+// nace alineado con la columna. En el teléfono y en la app: nada.
+export function useBarraWeb() {
+  const { width } = useWindowDimensions();
+  if (Platform.OS !== 'web') return null;
+  const extra = Math.max(0, Math.round((width - COLUMNA) / 2));
+  return { headerLeftContainerStyle: { paddingLeft: extra }, headerRightContainerStyle: { paddingRight: extra } };
+}

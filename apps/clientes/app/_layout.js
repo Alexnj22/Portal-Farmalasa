@@ -11,6 +11,7 @@ import Aurora from '../componentes/Aurora';
 import AlertaWeb from '../componentes/AlertaWeb';
 import { useAppActiva } from '../lib/visible';
 import { BARRA_NATIVA, barraAndroid } from '../componentes/PilaDePestana';
+import { useBarraWeb } from '../componentes/MargenWeb';
 import * as SystemUI from 'expo-system-ui';
 import * as SplashScreen from 'expo-splash-screen';
 import { useConCodigo, useSesion } from '../lib/sesion';
@@ -340,6 +341,7 @@ function Telon() {
 function Raiz() {
   const oscuro = useColorScheme() === 'dark';
   const t = useTema();
+  const barraWeb = useBarraWeb();
   usarFondoDelDocumento(oscuro ? '#0A090E' : '#F5F4F8');
   // Android: el fondo de la VENTANA en el color de la superficie. Es lo que se
   // ve un instante entre una pantalla y otra, al abrir el teclado o al volver
@@ -360,6 +362,7 @@ function Raiz() {
         // Android (flecha ← y título a la izquierda). Acá va como en iPhone:
         // título centrado y el chevrón ‹ (la imagen la tiñe el magenta).
         ...(WEB ? {
+          ...barraWeb,
           headerTitleAlign: 'center',
           headerTitleStyle: { color: colorSistema.texto, fontSize: 17, fontWeight: '600' },
           // Volver SIEMPRE tiene adónde: en el navegador se puede abrir

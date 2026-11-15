@@ -11,6 +11,7 @@
 // la «top app bar» chica de Material —título a la izquierda, 22 sp, flecha
 // de volver—, sin títulos grandes ni transparencias.
 import { Image, Platform, useColorScheme, View } from 'react-native';
+import { useBarraWeb } from './MargenWeb';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import Aurora from './Aurora';
@@ -89,6 +90,7 @@ const ENCABEZADO_MARCA = { headerTitle: () => <LogoEncabezado />, headerTitleAli
 
 export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = false }) {
   useColorScheme();
+  const barraWeb = useBarraWeb();
   // La aurora de esta pestaña sólo se mueve mientras se ve.
   const visible = useVisible() && !auroraQuieta;
   if (ANDROID) {
@@ -103,7 +105,7 @@ export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = 
   return (
     <View style={{ flex: 1 }}>
       <Aurora activa={visible} />
-      <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
+      <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA, ...barraWeb }}>
         <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra, ...ENCABEZADO_MARCA }} />
       </Stack>
     </View>

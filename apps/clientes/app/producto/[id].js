@@ -136,6 +136,17 @@ export default function Producto() {
         // Jalar hacia abajo estando arriba del todo también la cierra: el gesto de la
         // hoja a veces se lo queda el ScrollView (2026-10-07).
         onScrollEndDrag={(e) => { if (e.nativeEvent.contentOffset.y < -80) router.back(); }} scrollEventThrottle={16}>
+        {/* Web (2026-11-14, «agrega un botón de atrás»): en el navegador la
+            ficha es una página, no una hoja: «‹ Volver» arriba, en la columna,
+            en lugar de la X en la esquina de la ventana. Abierta directo (un
+            enlace), vuelve a la Tienda. */}
+        {Platform.OS === 'web' ? (
+          <Presionable onPress={() => (router.canGoBack() ? router.back() : router.replace('/catalogo'))} accessibilityRole="button" accessibilityLabel="Volver"
+            style={({ pressed }) => ({ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44, marginLeft: 8, paddingLeft: 4, paddingRight: 12, marginTop: 8, opacity: pressed ? 0.5 : 1 })}>
+            <Icono sf="chevron.left" respaldo="‹" tam={20} color={t.color.magentaTexto} />
+            <Text style={{ fontSize: 17, color: t.color.magentaTexto }}>Volver</Text>
+          </Presionable>
+        ) : null}
         {/* Foto al lado del nombre (2026-11-09): el cuadro grande dejaba mucho blanco
             y empujaba precio y existencias hacia abajo. Tocarla la amplía. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12 }}>
@@ -318,11 +329,13 @@ export default function Producto() {
       </View>
 
       {encargando ? <EncargoHoja producto={p} presentacion={elegidaP} salas={p.salas} alCerrar={() => setEncargando(false)} /> : null}
+      {Platform.OS !== 'web' ? (
       <Presionable onPress={cerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar"
         style={{ position: 'absolute', top: 14, right: 14, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(0,0,0,0.45)' }}>
         <Icono sf="xmark" respaldo="✕" tam={14} color="#FFFFFF" />
       </Presionable>
+      ) : null}
     </View>
   );
 }

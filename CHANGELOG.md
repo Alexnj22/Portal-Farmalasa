@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1537.19 — Puntos Salud web: «Volver» en la ficha del producto; el encabezado nace alineado con la columna
+
+- **Ficha del producto en la web**: «‹ Volver» arriba, en la columna, en lugar de la X en la esquina de la ventana. Abierta directo desde un enlace, vuelve a la Tienda.
+- **El encabezado ya no salta al cambiar de pantalla en la computadora**: se veía pegado a los bordes y después se corría a la columna, porque el margen lo ponía `lib/documentoWeb` después de dibujar. Ahora lo da la pila al dibujar (`useBarraWeb`, `headerLeftContainerStyle`/`headerRightContainerStyle`), en la pila principal y en las de cada pestaña.
+
 ## v2.1537.18 — Puntos Salud web: todos los avisos encima del menú y del ancho de la columna; ficha de producto, laboratorios y sonidos en la columna; botones de los juegos visibles
 
 - **Todos los avisos de abajo, con una sola regla** (`posAvisoWeb` en `componentes/MargenWeb.js`): del ancho de la columna, centrados, y en una pestaña encima del menú. Lo usan «agregado», «quitaste… · Deshacer» del Carrito (caía detrás del menú y de lado a lado) y la barra de la ficha del producto.

@@ -325,6 +325,10 @@ function flotarPartes(h) {
 // que se desplaza. En el teléfono no cambia nada.
 const alineados = new Map();
 function alinearUno(ps, extra = Math.max(0, Math.round((window.innerWidth - 560) / 2))) {
+  // Desde el 2026-11-14 el margen lo pone la pila (`useBarraWeb`,
+  // componentes/MargenWeb.js) al dibujar: ponerlo acá, después, se veía saltar.
+  return;
+  // eslint-disable-next-line no-unreachable
   if (ps.length !== 3) return;
   // En la FILA, no en los lados: así el título conserva su ancho (con el
   // margen en los lados, «Notificaciones» salía cortado).

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1543.0 — Precios en la consulta de inventario
+
+- **Los precios se ven desde el widget «Consulta de inventario» del Inicio.**
+  Al abrir un producto aparece la sección Precios: se elige la presentación y
+  el lote (primero los de la sala propia, con vencimiento y existencia) y se ven
+  Regular, Público, Preferente, Mayoreo y Mayoreo Plus. Es igual para todos los
+  cargos que tienen el widget, dependientes incluidos; el costo no se muestra.
+- El precio es de la presentación, no del lote: al elegir un lote se propone
+  la presentación que le corresponde.
+
 ## v2.1542.0 — Clientes: el portal con todas las fichas de la caja y el giro validado en la base
 
 - **El portal tiene ya todas las fichas de clientes.** Hasta hoy una ficha

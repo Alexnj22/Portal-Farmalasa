@@ -52,6 +52,10 @@ exportados. Los comentarios del código y los nombres de variables o columnas
 | **factura** (en la Distribuidora) | documento | Vale como genérico aunque la lista mezcle notas. |
 | **jefe de Compras y Logística** | el gerente | Con quien Bodega confirma un encargo caro que no se puede devolver. |
 | **ND: repórtalo al jefe de sucursal** | reportar a jefe inmediato | El jefe de sucursal lo pasa al supervisor de ventas. |
+| **Productos de la factura** | Líneas de factura | En Cargar compra. |
+| **jefe inmediato** (sólo en la encuesta de clima laboral) | — | Única excepción: ahí cada quien evalúa a su propio jefe. |
+| **la farmacia** (en lo que lee el cliente) | la sala | «la visita a la farmacia». |
+| **cliente** / **datos del cliente** | ficha | También en Por revisar: «ya es de otro cliente», «la caja no deja guardar los datos». |
 
 Y la regla que ya existía (CLAUDE.md): nunca nombrar el ERP ni la jerga de la
 tubería («sincronizar», «sync»).

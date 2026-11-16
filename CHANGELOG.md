@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1559.2 — Lenguaje: decisiones en la tabla
+
+- `docs/reglas/como-habla-el-portal.md`: Productos de la factura, jefe inmediato sólo en la encuesta de clima, «la farmacia» para el cliente, cliente en vez de ficha.
+
 ## v2.1559.1 — Lenguaje: Por revisar y Cargar compra
 
 - Clientes → Por revisar: los avisos dicen «cliente» o «datos» (no «ficha»)

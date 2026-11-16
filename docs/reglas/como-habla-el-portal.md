@@ -35,7 +35,7 @@ exportados. Los comentarios del código y los nombres de variables o columnas
 | **Ministerio de Hacienda** o **MH** | Hacienda a secas | |
 | **Mín/Máx** | MinMax, Min/Max, MIN·MAX, Mín·Máx | |
 | **cargo** | puesto | «Cargo: Regente». |
-| **jefe inmediato** | jefatura, supervisor (como quien aprueba) | «Supervisor/a de Ventas» sigue siendo el nombre de un cargo. |
+| **el cargo**: jefe de sucursal, subjefe de sucursal, supervisor, Talento Humano | jefe inmediato, jefatura, supervisión | «Jefe inmediato» cambia según quien lee (para un dependiente es el jefe de sucursal; para el jefe, el supervisor). Antes de nombrar a quien recibe un aviso o hace algo, mirar en el código o la base quién es de verdad. |
 | **Soporte** | Sistemas, Informática | «Si sigue igual, avisa a Soporte». |
 
 Y la regla que ya existía (CLAUDE.md): nunca nombrar el ERP ni la jerga de la

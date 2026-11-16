@@ -3692,7 +3692,7 @@ function FrenoDeEfectivoSinContar({ sala, falta, pendiente, ocupado, onClose, on
                 <>
                     <Notice variant="danger" icon={AlertTriangle}>
                         El día se cierra con <b>{formatMoney(pendiente)}</b> que ningún corte contó.
-                        Queda anotado con tu nombre y el motivo, y se avisa a tu jefe inmediato.
+                        Queda anotado con tu nombre y el motivo, y se avisa a la sucursal.
                         El cierre no se deshace.
                     </Notice>
                     <LiquidSelect label="Motivo" placeholder="Elige el motivo" value={motivo}

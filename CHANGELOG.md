@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1552.1 — Lenguaje: los jefes por su cargo
+
+- «Jefe inmediato» cambia según quien lee, así que la regla ahora nombra el
+  cargo. Bonos de promoción: «Los paga el jefe de sucursal» (es quien la base
+  deja pagar). Cierre con diferencia: «se avisa a la sucursal», que es a
+  quien de verdad le llega (antes decía «supervisión», y no le llegaba).
+
 ## v2.1552.0 — Caja de varios lotes: despacho por lote y venta al precio de caja
 
 Pedido del usuario con un traslado de DRAMANYL X 100 CAP sin lote asignado:

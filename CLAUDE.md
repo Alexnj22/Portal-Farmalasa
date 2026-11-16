@@ -373,7 +373,7 @@ Tú, frases cortas y directas, sin rayas ni porqués, «aquí». Y un vocabulari
 fijo que eligió el usuario: **caja** (no cajón), **sucursal** (no sala),
 **existencia** (no stock), **producto** (no renglón/línea), **datos** (no
 ficha), **corte** / **cierre del día** (no Z), **Mín/Máx**, **MH** o
-**Ministerio de Hacienda**, **jefe inmediato**, **Soporte**. La tabla completa
+**Ministerio de Hacienda**, **Soporte**, y a un jefe se lo nombra **por su cargo** (jefe de sucursal, supervisor), nunca «jefe inmediato». La tabla completa
 y los cuidados (un rótulo puede ser el dato) viven en
 `docs/reglas/como-habla-el-portal.md`: leerla antes de escribir un texto
 visible. Palabra que no esté ahí → preguntarle al usuario y agregarla.

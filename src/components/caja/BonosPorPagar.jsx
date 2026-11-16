@@ -69,7 +69,7 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
                     <p className="text-body-sm font-black text-content">Bonos de promoción por pagar</p>
                     <p className="text-label font-semibold text-content-3 mt-0.5">
                         {!datos?.puedo_pagar
-                            ? 'Los paga el jefe inmediato.'
+                            ? 'Los paga el jefe de sucursal.'
                             : !cajaAbierta
                                 ? 'Abre la caja para pagarlos. El efectivo sale de la caja.'
                                 : 'Cada pago sale de la caja. Quien lo recibe tiene que identificarse.'}

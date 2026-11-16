@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1552.3 — Corregir lote: el nombre del producto sale de products.nombre
+
+`corregir-lote-inventario` leía `products.descripcion`, una columna que no
+existe (es `nombre`): toda corrección habría fallado con error 500. Visto al
+revisar la tabla para la Preventa, antes de que nadie la usara. Corregido y
+desplegado.
+
 ## v2.1552.2 — Lenguaje: Pedidos y traslados con frases cortas
 
 - Cuarta tanda de la revisión del lenguaje: Pedidos (recepción, llegada,

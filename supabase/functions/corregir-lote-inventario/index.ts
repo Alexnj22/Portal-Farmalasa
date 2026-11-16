@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       return json({ ok: false, codigo: "EN_CONTEO", error: "Ese producto se está contando: corrígelo cuando se cierre el conteo." }, 409);
 
     const { data: prod, error: prodErr } = await admin.from("products")
-      .select("id, descripcion").eq("id", pid).maybeSingle();
+      .select("id, nombre").eq("id", pid).maybeSingle();
     if (prodErr) throw prodErr;
     if (!prod) return json({ ok: false, error: "Ese producto no existe." }, 404);
 
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     const r = await corregirLote({
       erpSucursal, erpUbicacion: ubicacion, erpProductId: pid,
-      descripcion: String(prod.descripcion ?? ""),
+      descripcion: String(prod.nombre ?? ""),
       loteViejo: String(lote).trim(), venceViejo: vence ? String(vence).slice(0, 10) : null,
       unidades: n, loteNuevo: v.lote, venceNuevo: v.vence,
       referencia: `${causa} - Hecho por: ${nombreCorto({ ...(permiso.emp ?? {}), name: quien.name })}`,
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     }
     const avisos = [...r.avisos];
     if (choca) avisos.push(`En otra sala el lote ${v.lote} figura con vencimiento ${choca}: corrígelo allá si es el mismo.`);
-    return json({ ...r, avisos, sala: mapa.nombre, producto: prod.descripcion });
+    return json({ ...r, avisos, sala: mapa.nombre, producto: prod.nombre });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

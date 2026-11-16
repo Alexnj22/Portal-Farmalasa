@@ -35789,6 +35789,20 @@ export type Database = {
           laboratorio_nombre: string
         }[]
       }
+      get_conteo_pagina: {
+        Args: {
+          p_area?: string
+          p_conteo_id: string
+          p_filtro?: string
+          p_laboratorio_id?: number
+          p_limit?: number
+          p_offset?: number
+          p_order_by?: string
+          p_order_dir?: string
+          p_search?: string
+        }
+        Returns: Json
+      }
       get_conteo_products_count: {
         Args: {
           p_area?: string

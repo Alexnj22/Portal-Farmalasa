@@ -222,6 +222,28 @@ export const createConteoInventarioSlice = (set, get) => ({
         };
     },
 
+    // La página, su total y sus lotes en UN viaje (`get_conteo_pagina`,
+    // 2026-11-16): los mismos números que `fetchConteoProductsPage` +
+    // `fetchConteoItemsForProducts`, sin repetir el cálculo del total ni
+    // esperar un segundo viaje por los lotes. `lotes` viene agrupado por
+    // producto, con una lista (aunque vacía) por cada producto de la página.
+    fetchConteoPagina: async (conteoId, {
+        page = 1, pageSize = 20, search = '', filtro = 'TODOS',
+        laboratorioId = null, orderBy = null, orderDir = 'asc', area = null,
+    } = {}) => {
+        const { data, error } = await supabase.rpc('get_conteo_pagina', {
+            p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
+            p_limit: pageSize, p_offset: (page - 1) * pageSize,
+            p_laboratorio_id: laboratorioId, p_order_by: orderBy, p_order_dir: orderDir,
+            p_area: area,
+        });
+        if (error) throw traducirError(error);
+        const rows = data?.filas || [];
+        const lotes = Object.fromEntries(rows.map((r) => [r.erp_product_id, []]));
+        for (const it of data?.lotes || []) (lotes[it.erp_product_id] ||= []).push(it);
+        return { rows, total: data?.total || 0, aproximado: !!data?.aproximado, lotes };
+    },
+
     // Solo los laboratorios que están EN ESTE conteo. El catálogo completo son
     // 1,100+: ofrecerlos todos deja elegir uno que no está en el estante y
     // vaciar la tabla sin explicación.

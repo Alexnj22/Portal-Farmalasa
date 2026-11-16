@@ -3108,6 +3108,10 @@
    "area": "inventario",
    "por": "código"
   },
+  "get_conteo_pagina": {
+   "area": "inventario",
+   "por": "código"
+  },
   "get_conteo_products_count": {
    "area": "inventario",
    "por": "código"

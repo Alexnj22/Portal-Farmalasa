@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1556.2 — Conteo en la app: la página en un solo viaje y al instante al volver
+
+Seguimiento de «tardó 1 a 3 s en cargar los productos» (Bodega).
+
+- **Un viaje en vez de dos.** La función nueva `get_conteo_pagina` devuelve la página, su total y los lotes de esos productos. Antes eran tres pedidos (total y página juntos, y después los lotes). Reusa las mismas funciones de siempre: comparado con el conteo de Bodega, da el mismo total, las mismas filas en el mismo orden, los mismos lotes y la misma marca de búsqueda aproximada. En el servidor tarda ~330 ms en total.
+- **El total no se calcula dos veces.** Sale de la misma pasada que la página. Antes `get_conteo_products_count` repetía el cálculo completo (524 ms de promedio en el historial).
+- **Al volver a entrar se ve al instante.** La app recuerda la primera página de cada conteo mientras está abierta y la pinta de inmediato, mientras llega lo actualizado.
+- **«Ver más» sin espera.** La página siguiente se pide por detrás. Al juntar páginas no se repiten productos.
+
 ## v2.1556.1 — Lenguaje: decisiones de vocabulario
 
 - Vocabulario que decidió el usuario, aplicado en web, app, funciones y base:

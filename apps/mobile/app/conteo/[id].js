@@ -169,12 +169,16 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
 
 const contadosVivos = (r) => Number(r?.contados ?? 0);
 
+// Lo último que se vio de cada conteo, mientras la app está abierta: al
+// volver a entrar se pinta al instante y se actualiza por detrás.
+const RECUERDO = new Map();
+
 export default function Conteo() {
   const { id } = useLocalSearchParams();
   const { hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
-  const fetchConteoProductsPage = useStaffStore((s) => s.fetchConteoProductsPage);
+  const fetchConteoPagina = useStaffStore((s) => s.fetchConteoPagina);
   const fetchConteoItemsForProducts = useStaffStore((s) => s.fetchConteoItemsForProducts);
   const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
   const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
@@ -243,32 +247,56 @@ export default function Conteo() {
     return () => { vivo = false; };
   }, [id, fetchConteoLaboratorios]);
 
+  // La página llega en UN viaje con su total y sus lotes (`get_conteo_pagina`).
+  // Lo último que se vio de cada conteo queda en memoria (`RECUERDO`) y se pinta
+  // al instante al volver a entrar, mientras llega lo actualizado; y la página
+  // siguiente se trae por detrás, para que «Ver más» no espere.
+  const clave = [id, area, filtro, busqueda, laboratorioId, orden].join('|');
+  const siguiente = useRef(null);   // { clave, pagina, promesa }
+  const claveMostrada = useRef(null); // de qué filtro es lo que está en pantalla
+  const pedirPagina = useCallback((n) => {
+    const [orderBy, orderDir] = orden ? orden.split(':') : [null, 'asc'];
+    return fetchConteoPagina(id, { page: n, pageSize: POR_PAGINA, search: busqueda, filtro,
+      laboratorioId: laboratorioId === 'todos' ? null : Number(laboratorioId), area, orderBy, orderDir });
+  }, [id, busqueda, filtro, laboratorioId, area, orden, fetchConteoPagina]);
   const cargar = useCallback(async () => {
     const yo = ++pedido.current;
+    if (pagina === 1 && RECUERDO.has(clave)) {
+      const r = RECUERDO.get(clave);
+      setProductos(r.productos); setItems(r.items); claveMostrada.current = clave;
+    }
     setCargando(true);
     try {
-      const [orderBy, orderDir] = orden ? orden.split(':') : [null, 'asc'];
-      const estante = area;
-      const r = await fetchConteoProductsPage(id, { page: pagina, pageSize: POR_PAGINA, search: busqueda, filtro, laboratorioId: laboratorioId === 'todos' ? null : Number(laboratorioId),
-        area: estante, orderBy, orderDir });
+      const listo = siguiente.current?.clave === clave && siguiente.current?.pagina === pagina ? siguiente.current.promesa : null;
+      siguiente.current = null;
+      const r = await (listo || pedirPagina(pagina)).catch((e) => { if (listo) return pedirPagina(pagina); throw e; });
       if (yo !== pedido.current) return;
-      setProductos((p) => ({ filas: pagina === 1 ? r.rows : [...p.filas, ...r.rows], total: r.total, aproximado: r.aproximado }));
-      // Los renglones de toda la página, en un viaje: ningún producto se abre
-      // a mano (era un toque por producto antes de poder teclear).
-      const ids = r.rows.map((x) => x.erp_product_id);
-      const lineas = ids.length ? await fetchConteoItemsForProducts(id, ids, { area: estante }) : [];
-      if (yo !== pedido.current) return;
-      // Todo producto de la página queda con su lista, aunque venga vacía:
-      // un hueco aquí es una rueda que gira para siempre.
-      const porProducto = Object.fromEntries(ids.map((x) => [x, []]));
-      for (const it of lineas) (porProducto[it.erp_product_id] ||= []).push(it);
-      setItems((m) => (pagina === 1 ? porProducto : { ...m, ...porProducto }));
+      // Al juntar páginas, sin repetidos: con «Pendientes», lo que se contó sale
+      // de la lista y el tramo siguiente se corre.
+      setProductos((p) => {
+        const ya = new Set(pagina === 1 ? [] : p.filas.map((f) => f.erp_product_id));
+        return { filas: pagina === 1 ? r.rows : [...p.filas, ...r.rows.filter((f) => !ya.has(f.erp_product_id))], total: r.total, aproximado: r.aproximado };
+      });
+      claveMostrada.current = clave;
+      setItems((m) => (pagina === 1 ? r.lotes : { ...m, ...r.lotes }));
+      if (r.total > pagina * POR_PAGINA) {
+        const promesa = pedirPagina(pagina + 1);
+        promesa.catch(() => {});
+        siguiente.current = { clave, pagina: pagina + 1, promesa };
+      }
     } catch (e) {
       if (yo === pedido.current) fallo('No se pudo cargar el conteo', mensajeAmigable(e));
     } finally {
       if (yo === pedido.current) setCargando(false);
     }
-  }, [id, pagina, busqueda, filtro, laboratorioId, area, orden, fetchConteoProductsPage, fetchConteoItemsForProducts]);
+  }, [pagina, clave, pedirPagina]);
+  // Lo que se ve, recordado para la próxima vez que se entre a este conteo.
+  useEffect(() => {
+    if (!productos.filas.length || claveMostrada.current !== clave) return;
+    // Sólo la primera página: es la que se pinta al volver a entrar.
+    const filas = productos.filas.slice(0, POR_PAGINA);
+    RECUERDO.set(clave, { productos: { ...productos, filas }, items: Object.fromEntries(filas.map((f) => [f.erp_product_id, items[f.erp_product_id] || []])) });
+  }, [clave, productos, items]);
   useEffect(() => { cargar(); }, [cargar]);
 
 

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1555.3 — Conteo en la app: abre más rápido
+
+Bodega: «abrí bodega desde la app y tardó 1 a 3 s en cargar los productos».
+
+Medido en producción con el conteo de Bodega: la lista tarda ~180 ms, sus lotes ~140 ms y el resumen ~100 ms en el servidor. Lo lento era la cadena: desde la v2.1554.10 la lista esperaba al resumen para saber si había área de vencidos, y recién después pedía productos y lotes.
+
+- La lista se pide por estante desde el primer momento, junto con el resumen. En un conteo sin área de vencidos, «Inventario» ya es todo, así que el resultado es el mismo con un viaje menos.
+
 ## v2.1555.2 — Lenguaje: mensajes de la base
 
 - Los mensajes que devuelven las funciones de la base (errores, avisos y

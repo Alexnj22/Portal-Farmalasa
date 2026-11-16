@@ -204,19 +204,14 @@ export default function Conteo() {
   const [orden, setOrden] = useState('');
   const [recuento, setRecuento] = useState(false);
   const pedido = useRef(0);
-  // Si el conteo tiene área de vencidos, la lista se pide por estante.
-  const hayVencidosRef = useRef(false);
-  // La lista espera a saber si hay área de vencidos: sin esto pedía los
-  // productos de los dos estantes y los renglones de uno solo, y un producto
-  // que sólo está en vencidos (KISS en Bodega) se quedaba cargando.
-  const listoRef = useRef(null);
-  if (!listoRef.current) { let soltar; listoRef.current = { promesa: new Promise((r) => { soltar = r; }), soltar: () => soltar() }; }
+  // La lista se pide SIEMPRE por estante, sin esperar al resumen: en un conteo
+  // sin área de vencidos, «inventario» es todo. Esperar a saberlo (v2.1554.10,
+  // por KISS en Bodega, que sólo está en vencidos) sumaba un viaje entero antes
+  // de ver un producto: 1 a 3 s al abrir.
 
   const cargarConteo = useCallback(async () => {
     const [c, r] = await Promise.all([fetchConteoDetalle(id).catch(() => null), fetchConteoResumen(id).catch(() => null)]);
     setConteo(c); setResumen(r);
-    hayVencidosRef.current = (r?.productos_vencidos ?? 0) > 0;
-    listoRef.current.soltar();
   }, [id, fetchConteoDetalle, fetchConteoResumen]);
   useEffect(() => { cargarConteo(); }, [cargarConteo]);
 
@@ -253,9 +248,7 @@ export default function Conteo() {
     setCargando(true);
     try {
       const [orderBy, orderDir] = orden ? orden.split(':') : [null, 'asc'];
-      await listoRef.current.promesa;
-      if (yo !== pedido.current) return;
-      const estante = hayVencidosRef.current ? area : null;
+      const estante = area;
       const r = await fetchConteoProductsPage(id, { page: pagina, pageSize: POR_PAGINA, search: busqueda, filtro, laboratorioId: laboratorioId === 'todos' ? null : Number(laboratorioId),
         area: estante, orderBy, orderDir });
       if (yo !== pedido.current) return;
@@ -298,7 +291,7 @@ export default function Conteo() {
   const refrescarProducto = useCallback(async (erp) => {
     cargarConteo();
     try {
-      const filas = await fetchConteoItemsForProducts(id, [erp], { area: hayVencidosRef.current ? area : null });
+      const filas = await fetchConteoItemsForProducts(id, [erp], { area });
       setItems((m) => ({ ...m, [erp]: filas }));
       const tot = totalesDelProducto(filas);
       setProductos((p) => ({ ...p, filas: p.filas.map((f) => (f.erp_product_id === erp ? { ...f, ...tot } : f)) }));

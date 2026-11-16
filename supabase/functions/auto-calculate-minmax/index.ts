@@ -138,7 +138,7 @@ serve(async (req) => {
       // El caso que antes salía como "completado, no hay borradores pendientes".
       ? `NO se recalculó ninguna sucursal: las ${skipped.length} se saltaron.${detalleSaltadas} El MIN/MAX quedó igual que el mes pasado.`
       : failed.length > 0
-        ? `Recálculo con errores (${succeeded.length}/${ERP_ORDER.length} sucursales calculadas). Errores en: ${failed.join(", ")}.${detalleSaltadas} Revisá MinMax.`
+        ? `Recálculo con errores (${succeeded.length}/${ERP_ORDER.length} sucursales calculadas). Errores en: ${failed.join(", ")}.${detalleSaltadas} Revisa MinMax.`
         : totalDrafted > 0
           ? `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente · ${totalDrafted.toLocaleString()} requieren revisión en MinMax.${detalleSaltadas}`
           : `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente. No hay borradores pendientes.${detalleSaltadas}`;

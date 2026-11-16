@@ -261,7 +261,7 @@ Deno.serve(async (req) => {
     if (sol.type !== "INVENTORY_TRANSFER_REQUEST")
       return json({
         ok: false, codigo: "TIPO_NO_AUTOMATIZADO",
-        error: `El tipo ${sol.type} no se aplica desde acá.`,
+        error: `El tipo ${sol.type} no se aplica desde aquí.`,
       }, 422);
 
     const meta = (typeof sol.metadata === "string" ? JSON.parse(sol.metadata) : sol.metadata) ?? {};
@@ -696,7 +696,7 @@ Deno.serve(async (req) => {
       if (sinPres.length) {
         for (const s of sinPres) nombres.set(s.prod, s.nombre);
         if (!hayTiempoParaDestrabar()) {
-          noEnviar = "Una presentación del traslado está oculta en la ficha y no quedaba tiempo para destrabarla. Volvé a intentarlo.";
+          noEnviar = "Una presentación del traslado está oculta en la ficha y no quedaba tiempo para destrabarla. Vuelve a intentarlo.";
         } else {
           const r = await presentacionesParaMostrar(cookie, sinPres)
             .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
@@ -705,7 +705,7 @@ Deno.serve(async (req) => {
             destrabe.pres = r.pres;
             if (!(await anotarMarca())) {
               destrabe.pres = [];
-              noEnviar = "No se pudo anotar el destrabe de la presentación. Volvé a intentarlo.";
+              noEnviar = "No se pudo anotar el destrabe de la presentación. Vuelve a intentarlo.";
             } else {
               try {
                 for (const p of r.pres) await mostrarPresentacion(cookie, p.prod, p.pres, true);
@@ -811,7 +811,7 @@ Deno.serve(async (req) => {
        * activar, y el `finally` de entonces nunca corrió — AMBROXOL quedó sin
        * lote. Sin tiempo para terminar, no se empieza. */
       if (!noEnviar && !resp.ok && sinLote.size > 0 && !hayTiempoParaDestrabar()) {
-        resp = { ...resp, msg: `${resp.msg || "No se proporcionó un lote"} (volvé a intentarlo: no quedaba tiempo para destrabar el lote)` };
+        resp = { ...resp, msg: `${resp.msg || "No se proporcionó un lote"} (vuelve a intentarlo: no quedaba tiempo para destrabar el lote)` };
       }
       if (!noEnviar && !resp.ok && sinLote.size > 0 && hayTiempoParaDestrabar()
           && await estadoDeRecepcion(cookie, idTraslado) !== "recibido") {
@@ -827,7 +827,7 @@ Deno.serve(async (req) => {
           // llamada muere entre quitar y volver a activar.
           if (!(await anotarMarca())) {
             destrabe.lote = [];
-            resp = { ...resp, ok: false, msg: "No se pudo anotar el destrabe del lote; volvé a intentarlo." };
+            resp = { ...resp, ok: false, msg: "No se pudo anotar el destrabe del lote; vuelve a intentarlo." };
           } else {
             try {
               for (const id of regulados) await cambiarRegulado(cookie, id, false);

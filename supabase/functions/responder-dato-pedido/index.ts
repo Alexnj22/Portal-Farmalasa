@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     // esto era un correo perfecto con un espacio al final, y rechazárselo a
     // quien lo tecleó bien sería repetir el mismo defecto del otro lado.
     const { valor: limpio } = repararCorreo(String(valor ?? ""));
-    if (!limpio) return json({ ok: false, error: "Escribí el correo." }, 400);
+    if (!limpio) return json({ ok: false, error: "Escribe el correo." }, 400);
     if (!correoValido(limpio))
       return json({ ok: false, error: `«${limpio}» no tiene forma de correo.` }, 400);
 

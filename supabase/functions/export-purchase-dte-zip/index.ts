@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       });
     }
     if (ids.length > MAX_ITEMS) {
-      return new Response(JSON.stringify({ error: `Máximo ${MAX_ITEMS} documentos por descarga — acotá el rango de fechas.` }), {
+      return new Response(JSON.stringify({ error: `Máximo ${MAX_ITEMS} documentos por descarga — acorta el rango de fechas.` }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

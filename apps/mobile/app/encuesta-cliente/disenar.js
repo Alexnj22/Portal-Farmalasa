@@ -268,7 +268,7 @@ export default function DisenarEncuesta() {
               {editable ? <Text style={{ color: estado === 'error' ? MARCA.rojo : colorSistema.texto2, fontSize: 13 }}>{rotuloEstado}</Text> : null}
             </View>
           ) : null}
-          {encuesta && !editable ? <Aviso texto="Sólo se diseña mientras la encuesta está en borrador; acá se ve como quedó." /> : null}
+          {encuesta && !editable ? <Aviso texto="Sólo se diseña mientras la encuesta está en borrador; aquí se ve como quedó." /> : null}
 
           {encuesta && !secciones.length ? (
             <Aviso texto="Sin preguntas todavía. Arma la encuesta por secciones: por ejemplo «Tu visita de hoy» y «Para cerrar»." />

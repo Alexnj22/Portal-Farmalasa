@@ -1474,7 +1474,7 @@ Deno.serve(async (req) => {
           error: yaCerroElDia === true
             ? "Esta sala ya cerró el día. La caja se vuelve a abrir mañana."
             : "No se pudo comprobar si el día ya cerró, y no se abre la caja sin saberlo. "
-              + "Volvé a intentarlo en un momento.",
+              + "Vuelve a intentarlo en un momento.",
         }, 409);
       }
 
@@ -1725,7 +1725,7 @@ Deno.serve(async (req) => {
       if (String(suyo.aper ?? "") !== String(estado.aper ?? "")) {
         console.error(`[operar-caja] iniciar_turno sala=${sala}: aperturas distintas `
           + `(compartida ${estado.aper}, sala ${suyo.aper})`);
-        return json({ ok: false, error: "La caja cambió mientras se preparaba el turno. Recarga y volvé a intentarlo." }, 409);
+        return json({ ok: false, error: "La caja cambió mientras se preparaba el turno. Recarga y vuelve a intentarlo." }, 409);
       }
       if (!body.simular && suyo.turnoCorriendo) {
         return json({ ok: false, ya_estaba: true, error: "El turno ya está corriendo." }, 409);
@@ -1768,7 +1768,7 @@ Deno.serve(async (req) => {
       }
       if (!suyo.idDetalle) {
         console.error(`[operar-caja] iniciar_turno sala=${sala}: el panel no trajo id_d_ap1`);
-        return json({ ok: false, error: "No se pudo saber qué turno sigue. Volvé a intentarlo en un momento." }, 503);
+        return json({ ok: false, error: "No se pudo saber qué turno sigue. Vuelve a intentarlo en un momento." }, 503);
       }
 
       const resp = await (await fetch(APERTURA, {
@@ -1784,7 +1784,7 @@ Deno.serve(async (req) => {
       })).text();
       if (!exito(resp)) {
         console.error(`[operar-caja] iniciar_turno sala=${sala}: ${resp.slice(0, 1000)}`);
-        return json({ ok: false, error: "La caja no aceptó el inicio del turno. Volvé a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+        return json({ ok: false, error: "La caja no aceptó el inicio del turno. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
       }
 
       /* El «success» NO es la prueba: se relee el panel. Es la misma lección del

@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
       return json({
         ok: false,
         codigo: "TIPO_NO_AUTOMATIZADO",
-        error: `El tipo ${sol.type} no se aplica desde acá.`,
+        error: `El tipo ${sol.type} no se aplica desde aquí.`,
       }, 422);
     if (sol.status !== "PENDING")
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);

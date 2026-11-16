@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.2 — Lenguaje: sin voseo ni «acá» en los mensajes
+
+- Barrido de los textos que ve el usuario (~46,000 en web, app y funciones):
+  el voseo que quedaba («volvé a intentarlo», «rechazá», «avisá», «escribí»,
+  «adjuntá», «la decidís vos»…) pasa a tuteo; «acá» → «aquí»; y dos textos con
+  jerga de la tubería («se sincronizará solo», «sincronizadas… match de
+  proveedor») dicen lo que pasa en palabras del negocio.
+- Las funciones del servidor tocadas toman el texto nuevo en su próximo
+  despliegue (sólo se redesplegó `aplicar-movimiento-inventario`).
+
 ## v2.1551.1 — Corregir lote: conteo por producto, tres fechas y corregir otro lote
 
 Auditoría de la corrección de lote (v2.1551.0), con un simulacro contra el

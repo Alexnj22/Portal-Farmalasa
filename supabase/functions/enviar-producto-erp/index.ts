@@ -331,7 +331,7 @@ Deno.serve(async (req) => {
     if (solErr) throw solErr;
     if (!sol) return json({ ok: false, error: "Ese envío no existe." }, 404);
     if (sol.type !== "INVENTORY_TRANSFER_PUSH")
-      return json({ ok: false, error: `El tipo ${sol.type} no se aplica desde acá.` }, 422);
+      return json({ ok: false, error: `El tipo ${sol.type} no se aplica desde aquí.` }, 422);
 
     /* Y recién acá se sabe con qué nombre firma el cron: el del envío. Se lee
      * de la base, nunca del cuerpo de la petición — quién armó el envío es un

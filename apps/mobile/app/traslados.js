@@ -352,7 +352,7 @@ export default function Traslados() {
           piden.length ? piden.map((f) => (
             <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} onPress={() => abrir(f)}
               estado={{ texto: 'Por contestar', color: MARCA.ambar }} />
-          )) : datos ? <Vacio titulo="Nadie te está pidiendo nada" detalle="Lo que otra sala le pida a la tuya aparece acá." /> : null
+          )) : datos ? <Vacio titulo="Nadie te está pidiendo nada" detalle="Lo que otra sala le pida a la tuya aparece aquí." /> : null
         ) : null}
 
         {vista === 'recibir' ? (
@@ -386,7 +386,7 @@ export default function Traslados() {
                 {bloques.grupos.length && bloques.sueltas.length ? <Titulo texto="Las demás" n={bloques.sueltas.length} /> : null}
                 {bloques.sueltas.map(tarjetaRecibir)}
               </>
-            ) : datos ? <Vacio titulo="Nada en camino" detalle="Cuando una sala despache lo que pediste, aparece acá. También puedes escanear la caja." /> : null}
+            ) : datos ? <Vacio titulo="Nada en camino" detalle="Cuando una sala despache lo que pediste, aparece aquí. También puedes escanear la caja." /> : null}
           </>
         ) : null}
 
@@ -400,7 +400,7 @@ export default function Traslados() {
                 {lista.map((e) => <TarjetaEnvio key={e.id} envio={e} color={s.color} onPress={() => router.push({ pathname: '/envio/[id]', params: { id: String(e.id) } })} />)}
               </View>
             );
-          }) : datos ? <Vacio titulo="Sin envíos en curso" detalle="Lo que una sala manda sin que se lo pidan aparece acá." /> : null
+          }) : datos ? <Vacio titulo="Sin envíos en curso" detalle="Lo que una sala manda sin que se lo pidan aparece aquí." /> : null
         ) : null}
 
         {vista === 'historial' ? (

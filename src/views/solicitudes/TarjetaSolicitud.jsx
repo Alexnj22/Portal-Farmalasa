@@ -626,7 +626,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 value={nota}
                                 onChange={e => setNota(e.target.value)}
                                 rows={3}
-                                placeholder="Explicá el motivo..."
+                                placeholder="Escribe el motivo…"
                                 readOnly={ocupado}
                                 textareaClassName="disabled:opacity-50"
                             />

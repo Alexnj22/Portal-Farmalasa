@@ -103,7 +103,7 @@ function CategoriaCell({ row }) {
                     Sugerida: {row.categoria_sugerida_nombre}
                 </span>
             ) : (
-                <span className="text-caption text-content-3 truncate block max-w-[132px]" title={`Giro ambiguo o ausente ("${row.desc_actividad || '—'}") — la categoría la decidís vos`}>
+                <span className="text-caption text-content-3 truncate block max-w-[132px]" title={`Giro ambiguo o ausente ("${row.desc_actividad || '—'}") — la categoría la decides tú`}>
                     Sin sugerencia
                 </span>
             )}

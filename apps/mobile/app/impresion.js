@@ -204,7 +204,7 @@ export default function Impresion() {
         ) : null}
 
         {puedeEditar ? (
-          <Seccion titulo="Agregar una caja" pie="La ticketera no se pregunta acá: la encuentra el instalador en la propia computadora.">
+          <Seccion titulo="Agregar una caja" pie="La ticketera no se pregunta aquí: la encuentra el instalador en la propia computadora.">
             <Opciones opciones={sucursales.map((b) => ({ id: String(b.id), label: b.name }))} valor={sala} onCambiar={setSala} />
             <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="Nombre (p. ej. Caja Salud 3)" />
             <BotonGrande texto={guardando ? 'Generando…' : 'Generar el código'} onPress={registrar} deshabilitado={!sala || !nombre.trim() || guardando} />

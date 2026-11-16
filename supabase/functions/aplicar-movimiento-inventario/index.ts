@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
     if (!esCarga && sol.type !== "INVENTORY_DISCARD_REQUEST")
       return json({
         ok: false, codigo: "TIPO_NO_AUTOMATIZADO",
-        error: `El tipo ${sol.type} no se aplica desde acá.`,
+        error: `El tipo ${sol.type} no se aplica desde aquí.`,
       }, 422);
     if (sol.status !== "PENDING")
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
@@ -548,7 +548,7 @@ Deno.serve(async (req) => {
       if (aceptadas.length === 0)
         return json({
           ok: false,
-          error: "No quedó ninguna línea para aplicar. Si no entra nada, rechazá la solicitud.",
+          error: "No quedó ninguna línea para aplicar. Si no va a entrar nada, rechaza la solicitud.",
         }, 422);
     }
 

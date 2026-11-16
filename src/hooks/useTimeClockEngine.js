@@ -321,7 +321,7 @@ export function useTimeClockEngine(props = {}) {
         });
 
         if (queuedOffline) {
-            normalizedFeedback.subtext = [normalizedFeedback.subtext, 'Sin conexión: marcaje guardado, se sincronizará solo.']
+            normalizedFeedback.subtext = [normalizedFeedback.subtext, 'Sin conexión: la marcación quedó guardada y se envía sola cuando vuelva la señal.']
                 .filter(Boolean).join(' — ');
         }
 

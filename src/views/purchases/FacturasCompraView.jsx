@@ -1182,7 +1182,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             .catch((e) => {
                 console.error('FacturasCompraView.jsx: loadDocuments', e);
                 setDocumentsLoaded(false);
-                useToastStore.getState().showToast('No se pudieron cargar los documentos', 'No se puede emparejar por ahora — reintentá en un momento.', 'error');
+                useToastStore.getState().showToast('No se pudieron cargar los documentos', 'No se pudo emparejar ahora. Intenta de nuevo en un momento.', 'error');
             });
     }, [documentsLoaded, dateStart, dateEnd]);
 

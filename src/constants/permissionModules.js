@@ -486,7 +486,7 @@ const GRUPOS_CRUDOS = [
         group: 'Datos contables',
         color: 'text-chart-1-text',
         modules: [
-            { key: 'facturas_compra', label: 'Facturas de compra (correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icono: 'FileText', hasApprove: false, sub: [
+            { key: 'facturas_compra', label: 'Facturas de compra (correo)', desc: 'Las facturas de compra que llegan a los correos de la empresa: descargar el JSON y el PDF, ver de qué proveedor son y revisar los adjuntos que no se pudieron leer', icono: 'FileText', hasApprove: false, sub: [
                 // Tres cosas distintas, tres permisos (pedido del usuario
                 // 2026-08-03): ver el listado (facturas_compra.can_view),
                 // ABRIR el documento en pantalla, y DESCARGAR el archivo. Sin

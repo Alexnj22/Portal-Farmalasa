@@ -723,7 +723,7 @@ Deno.serve(async (req) => {
         return json({
           ok: false,
           error: "No se pudo comprobar si el día ya tiene su corte Z. No se emite otro:"
-            + " un Z de más no se deshace. Volvé a intentarlo en un momento.",
+            + " un Z de más no se deshace. Vuelve a intentarlo en un momento.",
         }, 503);
       }
       if (yaHayZ) {
@@ -758,7 +758,7 @@ Deno.serve(async (req) => {
       return json({
         ok: false, turno_parado: true,
         error: "El turno está cerrado, y el cierre del día hecho así no cuenta nada. "
-             + "Iniciá el turno y volvé a cerrar el día.",
+             + "Inicia el turno y vuelve a cerrar el día.",
       }, 409);
     }
 
@@ -950,7 +950,7 @@ Deno.serve(async (req) => {
           return json({
             ok: false, sin_contar: true,
             error: "No se pudo comprobar si quedó efectivo sin contar, y el día no se"
-              + " cierra sin saberlo. Volvé a intentarlo en un momento.",
+              + " cierra sin saberlo. Vuelve a intentarlo en un momento.",
           }, 503);
         }
 
@@ -989,7 +989,7 @@ Deno.serve(async (req) => {
               ok: false, sin_contar: true, falta: pendiente, desde: falta?.desde ?? null,
               puede_reconocer: !automatico,
               error: `${desde} $${pendiente.toFixed(2)} que nadie ha contado.`
-                + " Hacé un corte antes de cerrar el día: la caja no vuelve a abrir"
+                + " Haz un corte antes de cerrar el día: la caja no vuelve a abrir"
                 + " y ese dinero ya no se podría contar.",
             }, 409);
           }
@@ -1519,7 +1519,7 @@ Deno.serve(async (req) => {
         return json({
           ok: false,
           error: "El sistema de la caja no dio el total del cierre, y un corte Z sin su monto "
-               + "no se puede corregir después. Volvé a intentarlo en un momento.",
+               + "no se puede corregir después. Vuelve a intentarlo en un momento.",
         }, 503);
       }
       campos.set("total_efectivo", dosDecimales(totalCorte));
@@ -1676,10 +1676,10 @@ Deno.serve(async (req) => {
           + " para confirmar que salió del tipo correcto."
         : tipoQueSalio === null
           ? `El ${tipo} se registró (número ${idCorte}), pero su comprobante dice «${rotulo}»`
-            + " y el portal no reconoce ese tipo. Avisá a Sistemas antes de seguir."
+            + " y el portal no reconoce ese tipo. Avisa a Sistemas antes de seguir."
           : tipoQueSalio !== tipo
             ? `Se pidió un corte ${tipo} y el sistema emitió uno de tipo ${rotulo}`
-              + ` (número ${idCorte}). Avisá a Sistemas antes de seguir.`
+              + ` (número ${idCorte}). Avisa a Sistemas antes de seguir.`
             : undefined;
 
     /* ── El corte CIERRA el vale de su tramo ──────────────────────────────

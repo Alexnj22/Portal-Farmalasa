@@ -658,7 +658,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {configChanged && !calculating && (
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chart-1/10 border border-chart-1/30 text-body-sm text-chart-1-text font-medium">
                     <Settings2 size={13} className="shrink-0 text-chart-1-text" />
-                    <span className="flex-1">Configuración actualizada — recalculá para que los nuevos parámetros surtan efecto.</span>
+                    <span className="flex-1">Configuración guardada. Recalcula para que se apliquen los cambios.</span>
                     <Button icon={RefreshCw} onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}>Recalcular ahora</Button>
                     <Button variant="ghost" icon={X} iconOnly onClick={() => setConfigChanged(false)} />
                 </div>

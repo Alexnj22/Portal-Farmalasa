@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1558.1 — Preventa: la píldora canónica arriba, Vaciar con la venta y el producto sin precio
+
+- Vuelve la píldora de filtros canónica arriba: sucursal (quien ve todas),
+  Otras sucursales y Apartar o encargar. El buscador de productos, solo.
+- «Vaciar venta» pasa al panel de la venta, bajo el botón de enviar.
+- Factura / Crédito fiscal como dos tarjetas a lo ancho, con lo que pide
+  cada una (Consumidor final · Con NIT y NRC).
+- Un producto sin precio en ninguna presentación (p. ej. comisiones de
+  corresponsal) dice «Sin precio» en vez de «…» y «Seleccionar…», y el aviso
+  explica que no se vende por preventa.
+
 ## v2.1558.0 — Preventa: elegir el lote, la caja armada de varios lotes y la ficha marca lo que falta
 
 - **Lote:** al tocar el lote de un producto se elige de cuál sale

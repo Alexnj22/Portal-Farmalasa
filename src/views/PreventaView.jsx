@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-    AlertTriangle, Ban, Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
+    AlertTriangle, Ban, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
     RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -86,8 +86,8 @@ const PESTANAS = [
     { key: 'hoy', label: 'Preventas', icon: ClipboardList },
 ];
 const DOCUMENTOS = [
-    { value: 'consumidor_final', label: 'Factura' },
-    { value: 'credito_fiscal', label: 'Crédito fiscal' },
+    { value: 'consumidor_final', label: 'Factura', icon: Receipt, description: 'Consumidor final' },
+    { value: 'credito_fiscal', label: 'Crédito fiscal', icon: FileText, description: 'Con NIT y NRC' },
 ];
 const DIAS = [{ value: '1', label: 'Hoy' }, { value: '7', label: '7 días' }, { value: '30', label: '30 días' }];
 const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
@@ -416,6 +416,11 @@ export default function PreventaView({ openModal }) {
 
     const barra = (
         <FilterBar acciones={pestana === 'nueva' ? accionesVender : accionesLista} activeCount={0}>
+            {todas && opcionesSala.length > 1 && (
+                <FilterBar.Section label="sucursal" fija>
+                    <FilterBar.Sucursal value={String(sala ?? '')} onChange={(v) => v && setSalaUrl(v)} options={opcionesSala} ancho="170px" />
+                </FilterBar.Section>
+            )}
             {pestana === 'hoy' && (
                 <FilterBar.Section label="período">
                     <FilterBar.Opciones value={dias} onChange={setDias} label="Desde" options={DIAS} />
@@ -426,30 +431,17 @@ export default function PreventaView({ openModal }) {
 
     return (
         <GlassViewLayout icon={Receipt} title="Preventa" transparentBody
-            filtersContent={(
-                // La sucursal (sólo quien ve todas) y vaciar van junto a las
-                // pestañas: son de toda la venta, no de los productos.
-                <div className="flex items-center gap-2 min-w-0">
-                    {todas && opcionesSala.length > 1 && (
-                        <div className="w-44 shrink-0">
-                            <LiquidSelect compact clearable={false} icon={Building2} value={String(sala ?? '')} options={opcionesSala}
-                                onChange={(v) => v && setSalaUrl(v)} ariaLabel="Sucursal" />
-                        </div>
-                    )}
-                    {pestana === 'nueva' && (
-                        <Button size="sm" variant="ghost" icon={Trash2} onClick={pedirVaciar}
-                            disabled={!(venta.lineas.length || venta.cliente || venta.corrigiendo)}>Vaciar venta</Button>
-                    )}
-                    <ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />
-                </div>
-            )}>
+            filtersContent={<ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />}>
             <div className="p-3 md:p-4 space-y-3">
                 {!sala && <Notice variant="warning">Tu usuario no tiene sucursal asignada.</Notice>}
-                {/* Al vender, la barra va en la cabecera de Productos: una fila
-                    entera menos arriba, que en los monitores de sala es mucho. */}
-                {sala && pestana !== 'nueva' && (
+                {/* La píldora canónica: sucursal (quien ve todas) y las acciones. */}
+                {sala && (
                     <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-                        <p className="flex-1 min-w-0 text-body-sm text-content-3">{enCaja} en caja sin facturar</p>
+                        <p className="flex-1 min-w-0 text-body-sm text-content-3">
+                            {pestana === 'nueva'
+                                ? <>Llega a caja de <span className="font-bold text-content">{nombreSala}</span> con tu nombre como vendedor.</>
+                                : <>{enCaja} en caja sin facturar</>}
+                        </p>
                         <div className="flex justify-end min-w-0">{barra}</div>
                     </div>
                 )}
@@ -473,11 +465,7 @@ export default function PreventaView({ openModal }) {
                                     onAgregarVarios={agregarVarios} />
 
                                 <section data-surface="card" className="p-3 space-y-2">
-                                    {/* El buscador a la izquierda de sus acciones: una fila. */}
-                                    <div className="flex flex-col md:flex-row md:items-start gap-2">
-                                        <div className="min-w-0 flex-1"><BuscarProducto onElegir={agregarProducto} /></div>
-                                        <div className="shrink-0 flex justify-end">{barra}</div>
-                                    </div>
+                                    <BuscarProducto onElegir={agregarProducto} />
                                     {venta.lineas.length === 0 ? (
                                         <p className="flex items-center justify-center gap-2 py-4 text-body-sm text-content-3">
                                             <Package size={18} strokeWidth={1.5} /> Busca o escanea un producto para empezar.
@@ -501,7 +489,7 @@ export default function PreventaView({ openModal }) {
                             </div>
 
                             <aside data-surface="card" className="p-3 space-y-2.5 lg:sticky lg:top-3 min-w-0">
-                                <SegmentedControl label="Comprobante" value={venta.documento} options={DOCUMENTOS}
+                                <SegmentedControl label="Comprobante" layout="block" columns={2} value={venta.documento} options={DOCUMENTOS}
                                     onChange={(v) => cambiar({ documento: v })} />
                                 <LiquidSelect label="Tipo de pago" clearable={false} value={venta.pago} options={PAGOS}
                                     invalid={problemas.some((p) => p.clave === 'credito')}
@@ -564,7 +552,9 @@ export default function PreventaView({ openModal }) {
                                         : venta.corrigiendo ? 'Guardar corrección' : 'Enviar a caja'}
                                     {!tactil && !problemas.length && <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-60">F2</kbd>}
                                 </Button>
-                                <p className="text-micro text-content-3">Llega a caja de <span className="font-bold text-content-2">{nombreSala}</span> con tu nombre como vendedor.</p>
+                                {/* Vaciar es de toda la venta (cliente, productos, pago): va con ella. */}
+                                <Button className="w-full" size="sm" variant="ghost" icon={Trash2} onClick={pedirVaciar}
+                                    disabled={!(venta.lineas.length || venta.cliente || venta.corrigiendo)}>Vaciar venta</Button>
                                 {!puedeVender && <p className="text-micro text-content-3">Puedes mirar, pero no enviar preventas.</p>}
                                 {!tactil && (
                                     <p className="hidden lg:flex flex-wrap gap-x-2.5 gap-y-1 text-micro text-content-3">
@@ -1081,7 +1071,7 @@ function BuscarProducto({ onElegir }) {
 // Con problema: borde y fondo rojos, el campo culpable marcado, y debajo qué
 // pasa y qué hacer, con sus botones.
 function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAutorizar, listaCliente, onCambiar, onQuitar, onListo, onResolver }) {
-    const presentaciones = (fila?.presentaciones ?? [{ factor: linea.factor, tipo: '…' }])
+    const presentaciones = (fila?.presentaciones?.length ? fila.presentaciones : [{ factor: linea.factor, tipo: fila ? 'Sin precio' : '…' }])
         .map((p) => ({ value: String(p.factor), label: p.tipo }));
     const cant = Number(linea.cantidad) || 0;
     const opciones = opcionesDePrecio(fila?.precios);
@@ -1130,7 +1120,9 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             onClick={() => onCambiar({ cantidad: Math.min(999, cant + 1) })} />
                     </div>
                     <div className="max-md:min-w-[9rem] max-md:flex-1 md:w-full md:min-w-0" data-col="2">
-                        {puedeAutorizar ? (
+                        {fila && !opcionesPrecio.length ? (
+                            <p className="text-body-sm font-semibold text-danger-text">Sin precio</p>
+                        ) : puedeAutorizar ? (
                             <LiquidSelect compact clearable={false} value={listaElegida} options={opcionesPrecio} ariaLabel={`Precio de ${nombre}`}
                                 onChange={(v) => onCambiar({ lista: !v || v === (fila?.lista && !linea.lista ? fila.lista : listaCliente) ? null : v })} />
                         ) : (

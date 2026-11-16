@@ -219,6 +219,11 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
         } else if (/cantidad/i.test(l.error)) {
             out.push({ ...base, tipo: 'cantidad', titulo: `${nombre}: escribe una cantidad.`, ayuda: 'Va de 1 a 999.',
                 acciones: [{ id: 'ajustar', label: 'Poner 1', valor: 1 }, { id: 'quitar', label: 'Quitar' }] });
+        } else if (/precio/i.test(l.error) && !(l.presentaciones ?? []).length) {
+            // Ninguna presentación tiene precio: un servicio o un producto que
+            // no se vende en sala (p. ej. comisiones de corresponsal).
+            out.push({ ...base, tipo: 'precio', titulo: `${nombre}: no tiene precio de venta.`,
+                ayuda: 'No se vende por preventa. Quítalo de la venta.', acciones: [{ id: 'quitar', label: 'Quitar' }] });
         } else if (/precio/i.test(l.error)) {
             out.push({ ...base, tipo: 'precio', titulo: `${nombre}: esa presentación no tiene precio.`,
                 ayuda: 'Elige otra presentación o quítalo.', acciones: [{ id: 'quitar', label: 'Quitar' }] });

@@ -1606,8 +1606,7 @@ export default function ConteoDetailView() {
     const canVerMontos = hasPermission('conteo_inventario_ver_montos');
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
-    const fetchConteoProductsPage = useStaffStore((s) => s.fetchConteoProductsPage);
-    const fetchConteoItemsForProducts = useStaffStore((s) => s.fetchConteoItemsForProducts);
+    const fetchConteoPagina = useStaffStore((s) => s.fetchConteoPagina);
     const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
     const editarLoteConteoItem = useStaffStore((s) => s.editarLoteConteoItem);
     const agregarProductoManualConteo = useStaffStore((s) => s.agregarProductoManualConteo);
@@ -1784,31 +1783,26 @@ export default function ConteoDetailView() {
     const cargarPagina = useCallback(async ({ silencioso = false } = {}) => {
         if (!silencioso) setLoading(true);
         try {
-            const productsPage = await fetchConteoProductsPage(id, {
+            // Página, total y lotes en UNA llamada (`get_conteo_pagina`). Antes
+            // eran cuatro —total, página, «¿es parecido?» y lotes—, y con
+            // Bodega buscando desde el teléfono saturaron la base (2026-11-16).
+            const productsPage = await fetchConteoPagina(id, {
                 page, pageSize: tamPagina, search: searchDiferido, filtro,
                 laboratorioId, area: 'NORMAL',
                 orderBy: orden.key ? (ORDEN_SERVIDOR[orden.key] ?? orden.key) : null,
-                orderDir: orden.dir,
+                orderDir: orden.dir, lotesConBusqueda: true,
             });
             setProducts(productsPage.rows);
             setTotal(productsPage.total);
             setSonParecidos(!!productsPage.aproximado);
             if (!silencioso) setDesbloqueadas({});
-
-            // Nada se contrae: las líneas de los productos de la página vienen
-            // de una sola llamada. Antes era una por producto, al expandirlo.
-            const ids = productsPage.rows.map((r) => r.erp_product_id);
-            const lines = await fetchConteoItemsForProducts(id, ids, { search: searchDiferido, filtro, area: 'NORMAL' });
-            const porProducto = {};
-            for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
-            setItemsByProduct(porProducto);
+            setItemsByProduct(productsPage.lotes);
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             if (!silencioso) setLoading(false);
         }
-    }, [id, page, tamPagina, searchDiferido, filtro, laboratorioId, orden, fetchConteoProductsPage,
-        fetchConteoItemsForProducts, showToast]);
+    }, [id, page, tamPagina, searchDiferido, filtro, laboratorioId, orden, fetchConteoPagina, showToast]);
 
     // El área de vencidos. Va en su propia vuelta y no dentro de `cargarPagina`
     // porque no comparte paginación con la bodega: si compartiera la vuelta,
@@ -1821,25 +1815,18 @@ export default function ConteoDetailView() {
     const cargarVencidos = useCallback(async () => {
         setVencidosLoading(true);
         try {
-            const pagina = await fetchConteoProductsPage(id, {
+            const pagina = await fetchConteoPagina(id, {
                 page: 1, pageSize: 500, search: searchDiferido, filtro,
-                laboratorioId, area: 'VENCIDOS',
+                laboratorioId, area: 'VENCIDOS', lotesConBusqueda: true,
             });
             setVencidos(pagina.rows);
-            const ids = pagina.rows.map((r) => r.erp_product_id);
-            const lines = await fetchConteoItemsForProducts(id, ids, {
-                search: searchDiferido, filtro, area: 'VENCIDOS',
-            });
-            const porProducto = {};
-            for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
-            setVencidosItems(porProducto);
+            setVencidosItems(pagina.lotes);
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setVencidosLoading(false);
         }
-    }, [id, searchDiferido, filtro, laboratorioId, fetchConteoProductsPage,
-        fetchConteoItemsForProducts, showToast]);
+    }, [id, searchDiferido, filtro, laboratorioId, fetchConteoPagina, showToast]);
 
     // ── El avance se vuelve a preguntar, no se lleva de cabeza ───────────
     // `resumen` sólo se cargaba al entrar, así que el «84% · faltan 2,141» del

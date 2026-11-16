@@ -35796,6 +35796,7 @@ export type Database = {
           p_filtro?: string
           p_laboratorio_id?: number
           p_limit?: number
+          p_lotes_con_busqueda?: boolean
           p_offset?: number
           p_order_by?: string
           p_order_dir?: string

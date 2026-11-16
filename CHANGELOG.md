@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.1 — Conteo en la web: una llamada por búsqueda en vez de ocho
+
+«¿Pero carga lento? Se tarda en salirme el listado». La función nueva de la app tardaba 6.9 s en producción, contra 330 ms a solas. No era ella: la base estaba saturada.
+
+Alguien en Bodega contaba desde el navegador de un Android, buscando producto por producto. Cada búsqueda de la web pedía total, página, «¿es parecido?» y lotes, dos veces: una para el inventario y otra para el área de vencidos. En los registros eran 20 a 26 páginas y otros tantos totales por minuto, cada uno de 0.5 a 0.7 s de CPU sobre los 3,984 renglones del conteo. Con seis a la vez, cada uno tardaba de 5 a 16 s, y la app se quedaba esperando detrás.
+
+- La web usa `get_conteo_pagina`, como la app: **una llamada** por estante en vez de cuatro. Una búsqueda pasa de 8 consultas pesadas a 2.
+- `get_conteo_pagina` ahora acepta `p_lotes_con_busqueda`, porque la web filtra también los lotes por la búsqueda. Además, los lotes ya no se cortan en 900: el área de vencidos pide hasta 500 productos de una vez. Comparado con las funciones de antes en el conteo de Bodega, coinciden el total, los lotes con búsqueda y el área de vencidos completa (50 productos, 66 lotes).
+- Las fotos de quién contó se firman igual que antes.
+
 ## v2.1557.0 — Preventa: compacta, datos del cliente, últimas compras y validación con sugerencias
 
 Quinta vuelta de Preventa (usuario: «ocupa demasiado espacio… avisarme si

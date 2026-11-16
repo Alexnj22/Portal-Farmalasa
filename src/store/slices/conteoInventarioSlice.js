@@ -230,17 +230,22 @@ export const createConteoInventarioSlice = (set, get) => ({
     fetchConteoPagina: async (conteoId, {
         page = 1, pageSize = 20, search = '', filtro = 'TODOS',
         laboratorioId = null, orderBy = null, orderDir = 'asc', area = null,
+        lotesConBusqueda = false,
     } = {}) => {
         const { data, error } = await supabase.rpc('get_conteo_pagina', {
             p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
             p_limit: pageSize, p_offset: (page - 1) * pageSize,
             p_laboratorio_id: laboratorioId, p_order_by: orderBy, p_order_dir: orderDir,
             p_area: area,
+            // La web filtra también los lotes por la búsqueda; la app no.
+            p_lotes_con_busqueda: lotesConBusqueda,
         });
         if (error) throw traducirError(error);
         const rows = data?.filas || [];
         const lotes = Object.fromEntries(rows.map((r) => [r.erp_product_id, []]));
-        for (const it of data?.lotes || []) (lotes[it.erp_product_id] ||= []).push(it);
+        // Las fotos de quién contó vienen crudas: se firman como en
+        // `fetchConteoItemsForProducts`.
+        for (const it of await signPhotosDeep(data?.lotes || [])) (lotes[it.erp_product_id] ||= []).push(it);
         return { rows, total: data?.total || 0, aproximado: !!data?.aproximado, lotes };
     },
 

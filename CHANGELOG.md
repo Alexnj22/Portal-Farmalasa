@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1555.2 — Lenguaje: mensajes de la base
+
+- Los mensajes que devuelven las funciones de la base (errores, avisos y
+  motivos que se ven en el portal y la app) pasan al lenguaje del portal:
+  unos 360 textos en 186 funciones. «sala» → sucursal, sin voseo, «aquí»,
+  MH, caja, Mín/Máx; «supervisión» → «un supervisor o administrador» y «la
+  jefatura de la sala» → «el jefe de sucursal», como deciden las funciones.
+  Cada función partió de su definición viva; sólo cambiaron los textos.
+
 ## v2.1555.1 — Corregir lote en la app: lote vacío, lotes ya registrados a un toque y vence por mes y año
 
 Bodega pidió que «Corregir lote» fuera práctico en el teléfono, sin tantos toques.

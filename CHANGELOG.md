@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1553.0 — Preventa: vender desde el portal y que llegue a caja
+
+- Nueva vista **Preventa** (Comercial): se elige el cliente, se agregan
+  productos y la venta llega armada a caja con su número.
+- El precio lo pone el cliente: Público sin datos o cliente frecuente,
+  Preferente con datos, el suyo al mayorista y Mayoreo Plus al personal. La
+  base lo vuelve a calcular antes de mandar.
+- Revisa en vivo existencia, presentación y precio, y dice qué falta.
+- Corregir cambia la misma preventa en caja; anular la borra. Las dos, sólo
+  mientras no se facture.
+- Otro precio sólo con permiso de aprobar y con motivo, y queda anotado.
+- Permiso propio `preventa`; de entrada, los cuatro cargos de administración.
+- Apartar también toma la regla: todo cliente con datos va a Preferente.
+
 ## v2.1552.4 — Lenguaje: quién decide, motorista y traslado a otra sucursal
 
 - Diferencias de pedido y traslados que no aparecen: «el supervisor» →

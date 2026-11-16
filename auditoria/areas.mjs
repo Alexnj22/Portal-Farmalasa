@@ -847,8 +847,8 @@ export const AREAS = [
         resumen: 'La app del cliente: entra con documento + teléfono una sola vez (sesión por token, sólo su huella en la base), ve su saldo y movimientos de puntos, las ofertas publicadas (las exclusivas sólo para socios), las inyecciones que pagó y le faltan aplicar, sus permisos y avisos, y puede borrar su cuenta. Quien no tiene ficha deja un pre-registro que se vincula solo cuando la sala lo registra con el mismo documento y teléfono.',
         // `reclamos_clientes` (2026-10-24): los reclamos de los tres programas
         // del cliente (puntos, reservas, mayorista) viven con ellos.
-        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes', 'reservas', 'reclamos_clientes'],
-        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes', '/reservas', '/reclamos-clientes'],
+        modulos: ['ofertas_clientes', 'mayoristas', 'chat_clientes', 'reservas', 'reclamos_clientes', 'preventa'],
+        rutas: ['/ofertas-clientes', '/mayoristas', '/chat-clientes', '/reservas', '/reclamos-clientes', '/preventa'],
         archivos: [
             'apps/clientes/',
             // La misma app publicada en el navegador (app.farmasalud.lat, 2026-11-14).
@@ -895,6 +895,12 @@ export const AREAS = [
             // y el adaptador la deja en la caja; el cierre lo hace un cron.
             'src/utils/preventa.js',
             'tests/unit/preventa.test.js',
+            // La vista Preventa (2026-11-16): vender desde el portal y que la
+            // venta llegue a caja con el precio del cliente.
+            'src/views/PreventaView.jsx',
+            'src/data/preventas.js',
+            'src/utils/preventaDirecta.js',
+            'tests/unit/preventaDirecta.test.js',
             'supabase/functions/preventa-caja/',
             'supabase/functions/_shared/preventaCaja.ts',
             'supabase/functions/_shared/ofertaDeDescuento.ts',

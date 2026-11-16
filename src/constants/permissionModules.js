@@ -242,6 +242,8 @@ const GRUPOS_CRUDOS = [
             // (2026-10-21) La pantalla de Reservas del menú. El widget del Inicio
             // sigue con su propio permiso (`dash_reservas`).
             { key: 'reservas',       label: 'Reservas',      desc: 'Los productos que los clientes apartaron —desde la app Puntos Salud o con anticipo en la caja—, los pedidos a domicilio, los saldos a favor y los encargos. Ver = mirar las reservas; editar = apartar y avisar, entregar, cancelar y aplicar un saldo a favor. Con alcance «su sala», sólo las de la propia; con «todas», las de todas las salas', icono: 'ShoppingBag', hasApprove: false, hasScope: true },
+            // (2026-11-16) Vender desde el portal: la venta llega armada a caja.
+            { key: 'preventa',       label: 'Preventa',      desc: 'Armar una venta en el portal y mandarla a caja con el precio que le toca al cliente: Público sin datos, Preferente con datos, el suyo al mayorista y Mayoreo Plus al personal. Ver = mirar las preventas; editar = enviarlas, corregirlas y anularlas mientras no se facturen; aprobar = autorizar otro precio, con motivo. Con alcance «su sala», sólo en la propia; con «todas», en cualquiera', icono: 'Receipt', hasApprove: true, hasScope: true },
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icono: 'Receipt',       hasApprove: false, hasScope: true, sub: [
                 { key: 'cotizaciones_descargar', label: 'Imprimir / guardar PDF', tipo: 'cap' },
             ]},

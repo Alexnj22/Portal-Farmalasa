@@ -27,6 +27,7 @@ const APP = join(RAIZ, 'apps/mobile/app');
 // Sin motivo no se declara: se le hace su pantalla nativa.
 const EXCEPCIONES = {
   entrevistas: 'el portal muestra «próximamente»: no hay nada que pasar a nativo',
+  preventa: 'nueva el 2026-11-16: se vende en mostrador desde la computadora; la pantalla nativa va cuando la sala la pida en el teléfono',
 };
 
 const fuente = readFileSync(join(RAIZ, 'apps/mobile/pantallas.js'), 'utf8');

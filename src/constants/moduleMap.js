@@ -93,6 +93,8 @@ export const MODULE_MAP = {
     // estén en Comercial, como pantalla principal»). Antes eran una pestaña de
     // Ofertas para clientes y el widget del Inicio.
     reservas:          { path: '/reservas',          label: 'Reservas',              icono: 'ShoppingBag' },
+    // Vender desde el portal (2026-11-16): la venta llega armada a caja.
+    preventa:          { path: '/preventa',          label: 'Preventa',              icono: 'Receipt' },
     galeria:           { path: '/galeria',          label: 'Galería',                  icono: 'FolderOpen' },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icono: 'Users',        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icono: 'Package'       },

@@ -107,7 +107,10 @@ export function armarVenta(datos) {
         codigo: String(datos?.codigo ?? ''),
         documento: datos?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
         cliente, vendedor, renglones, total, falta_pagar: faltaPagar, pagado,
-        nota: notaDeLaVenta({ codigo: datos?.codigo, cliente, nombre: datos?.cliente?.name, pagado, faltaPagar, documento: datos?.documento }),
+        nota: notaDeLaVenta({
+            codigo: datos?.codigo, cliente, nombre: datos?.cliente?.name, pagado, faltaPagar, documento: datos?.documento,
+            tipo: datos?.tipo, extra: datos?.nota,
+        }),
     };
 }
 
@@ -121,14 +124,16 @@ const montoAscii = (v) => '$' + (Math.round(Number(v || 0) * 100) / 100).toFixed
  * el nombre del cliente cuando va como genérico; lo ya pagado (para no cobrarlo
  * dos veces) y si pide crédito fiscal. Sólo ASCII y corta.
  */
-export function notaDeLaVenta({ codigo, cliente, nombre, pagado, faltaPagar, documento }) {
-    const partes = [`RESERVA ${enAscii(codigo)}`];
+export function notaDeLaVenta({ codigo, cliente, nombre, pagado, faltaPagar, documento, tipo, extra }) {
+    // La preventa directa (vista Preventa, 2026-11-16) dice PREVENTA y su código V-…
+    const partes = [`${tipo === 'directa' ? 'PREVENTA' : 'RESERVA'} ${enAscii(codigo)}`];
     if (cliente?.generico && nombre) {
         const p = enAscii(nombre).split(' ');
         partes.push(p.length > 2 ? `${p[0]} ${p[2]}` : p.join(' '));
     }
     if (pagado > 0.004) partes.push(`PAGADO ${montoAscii(pagado)} FALTA ${montoAscii(faltaPagar)}`);
     if (documento === 'credito_fiscal') partes.push('CCF');
+    if (extra && enAscii(extra)) partes.push(enAscii(extra));
     return partes.join(' - ').slice(0, 90);
 }
 

@@ -33,7 +33,7 @@ export const MENU_GROUPS = [
     // `reservas` (2026-10-21): lo que el cliente apartó —desde la app o en la
     // caja— es una venta por terminar, así que vive con las ventas y no en
     // «App de clientes», que es lo que se le muestra al cliente.
-    { key: 'comercial',    label: 'Comercial',     icono: 'TrendingUp',    modules: ['ventas', 'facturacion', 'cotizaciones', 'reservas'] },
+    { key: 'comercial',    label: 'Comercial',     icono: 'TrendingUp',    modules: ['ventas', 'facturacion', 'cotizaciones', 'reservas', 'preventa'] },
     // Lo del cliente en dos grupos pegados, por la pregunta que contesta
     // (pedido del usuario, 2026-10-19: «siento un desorden, está puntos, app de
     // clientes, y varias cosas en varios lados»). Antes Clientes, Mayoristas y

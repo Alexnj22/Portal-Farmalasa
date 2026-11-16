@@ -22688,8 +22688,11 @@ export type Database = {
       }
       preventas: {
         Row: {
+          anulada_at: string | null
+          anulada_por: string | null
           branch_id: number
           codigo_generacion: string | null
+          corregida_veces: number
           created_at: string
           customer_id: number | null
           destino: Json | null
@@ -22701,6 +22704,7 @@ export type Database = {
           externo_ref: string | null
           facturada_at: string | null
           id: number
+          origen: string
           reservas_ids: number[]
           sales_invoice_id: number | null
           sistema: string
@@ -22710,8 +22714,11 @@ export type Database = {
           venta: Json | null
         }
         Insert: {
+          anulada_at?: string | null
+          anulada_por?: string | null
           branch_id: number
           codigo_generacion?: string | null
+          corregida_veces?: number
           created_at?: string
           customer_id?: number | null
           destino?: Json | null
@@ -22723,6 +22730,7 @@ export type Database = {
           externo_ref?: string | null
           facturada_at?: string | null
           id?: never
+          origen?: string
           reservas_ids: number[]
           sales_invoice_id?: number | null
           sistema?: string
@@ -22732,8 +22740,11 @@ export type Database = {
           venta?: Json | null
         }
         Update: {
+          anulada_at?: string | null
+          anulada_por?: string | null
           branch_id?: number
           codigo_generacion?: string | null
+          corregida_veces?: number
           created_at?: string
           customer_id?: number | null
           destino?: Json | null
@@ -22745,6 +22756,7 @@ export type Database = {
           externo_ref?: string | null
           facturada_at?: string | null
           id?: never
+          origen?: string
           reservas_ids?: number[]
           sales_invoice_id?: number | null
           sistema?: string
@@ -22754,6 +22766,20 @@ export type Database = {
           venta?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "preventas_anulada_por_fkey"
+            columns: ["anulada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventas_anulada_por_fkey"
+            columns: ["anulada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "preventas_branch_id_fkey"
             columns: ["branch_id"]
@@ -33591,6 +33617,7 @@ export type Database = {
         Returns: Json
       }
       cliente_es_empleado: { Args: { p_customer: number }; Returns: boolean }
+      cliente_es_generico: { Args: { p_customer: number }; Returns: boolean }
       cliente_expediente: { Args: { p_customer_id: number }; Returns: Json }
       cliente_foto_quitar: { Args: { p_customer: number }; Returns: Json }
       cliente_necesita_alta_erp: {
@@ -38253,9 +38280,47 @@ export type Database = {
         }
         Returns: number
       }
+      preventa_anular: {
+        Args: { p_employee: string; p_id: number; p_paso?: string }
+        Returns: Json
+      }
+      preventa_cotizar: {
+        Args: { p_branch: number; p_customer: number; p_lineas: Json }
+        Returns: Json
+      }
+      preventa_directa_preparar: {
+        Args: {
+          p_branch: number
+          p_customer: number
+          p_documento: string
+          p_employee: string
+          p_lineas: Json
+          p_motivo_precio?: string
+          p_nota: string
+          p_preventa?: number
+        }
+        Returns: Json
+      }
+      preventa_lista_efectiva: {
+        Args: {
+          p_clinica: number
+          p_descuento_1: number
+          p_factor: number
+          p_factor_mayor: number
+          p_lista: string
+          p_mayoreo: number
+          p_vineta: number
+          p_vip: number
+        }
+        Returns: string
+      }
       preventa_preparar: {
         Args: { p_employee: string; p_reservas: number[] }
         Returns: Json
+      }
+      preventa_puede: {
+        Args: { p_branch: number; p_employee: string; p_que?: string }
+        Returns: boolean
       }
       preventa_registrar: {
         Args: {
@@ -38270,6 +38335,10 @@ export type Database = {
         Returns: Json
       }
       preventas_cerrar_facturadas: { Args: never; Returns: number }
+      preventas_de_sala: {
+        Args: { p_branch: number; p_dias?: number }
+        Returns: Json
+      }
       preview_metas_gasto: {
         Args: { p_meses: number; p_salas: Json; p_ym_inicio: string }
         Returns: Json

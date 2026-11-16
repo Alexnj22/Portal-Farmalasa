@@ -178,7 +178,31 @@ export function repartirCajaEnUnidades(
   return { partes: enteras.partes, sueltas: sueltas.partes, faltan: 0 };
 }
 
-export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<ResultadoCaja> {
+/**
+ * ¿Sigue viva en la caja la preventa `id`, y es la nuestra? Antes de corregirla
+ * o borrarla (2026-11-16): si ya no está en la lista de la sala, se facturó o
+ * alguien la borró en caja, y escribir encima sería crear otra cosa.
+ */
+export async function preventaVivaEnLaCaja(http: Http, id: string, vendedor: string | null) {
+  const lista = leerReferencias(await http.post("venta.php", { process: "get_referencias" }));
+  const fila = lista.find((p) => p.id === id);
+  if (!fila) return { viva: false as const, motivo: "Esa preventa ya no está en caja: se facturó o la borraron allá." };
+  const pagina = await http.get("venta.php?preventa=1");
+  const fecha = pagina.match(/id="fecha" value="([^"]+)"/)?.[1] ?? "";
+  let j: Record<string, unknown> = {};
+  try { j = JSON.parse(await http.post("venta.php", { process: "cargar_data", n_ref: id, fecha })); } catch { j = {}; }
+  if (String(j.id_factura ?? "") !== id) return { viva: false as const, motivo: "La caja no devolvió esa preventa." };
+  if (vendedor && String(j.codvende ?? "") !== vendedor)
+    return { viva: false as const, motivo: "En caja esa preventa tiene otro vendedor: no se toca." };
+  return { viva: true as const, referencia: fila.referencia, total: fila.total };
+}
+
+/**
+ * Mandar la venta a la caja. Con `idFactura`, CORRIGE esa preventa en vez de
+ * crear otra (medido en Salud 5 el 2026-11-16: `insert_preventa` con su
+ * `id_factura` reemplaza los renglones y conserva número y referencia).
+ */
+export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idFactura?: string | null } = {}): Promise<ResultadoCaja> {
   const avisos: string[] = [];
   const pagina = await http.get("venta.php?preventa=1");
   const fecha = pagina.match(/id="fecha" value="([^"]+)"/)?.[1];
@@ -280,7 +304,7 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<R
     id_cliente: venta.cliente.id, total: total.toFixed(2), id_vendedor: "",
     json_arr: "[" + renglonesCaja.map((r) => JSON.stringify(r)).join(",") + "]",
     retencion: "0.00", total_percepcion: "0", iva: "0.00", items: String(renglonesCaja.length),
-    subtotal: g, sumas: total.toFixed(2), venta_exenta: x, suma_gravada: g, tipo_impresion: "COF", id_factura: "0",
+    subtotal: g, sumas: total.toFixed(2), venta_exenta: x, suma_gravada: g, tipo_impresion: "COF", id_factura: opc.idFactura || "0",
     precio_aut: "", clave: "", codvende: venta.vendedor, datos_extras: venta.nota, credito: "0", medico: "",
   };
   const crudo = await http.post("venta.php", datos);
@@ -288,6 +312,16 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<R
   try { resp = JSON.parse(crudo); } catch { throw new Error("La caja contestó algo que no se entiende al crear la preventa."); }
   if (resp.typeinfo !== "Success") throw new Error(`La caja no aceptó la preventa: ${resp.msg ?? "sin motivo"}`);
   const referencia = String(resp.referencia ?? "").trim();
+
+  // Una corrección conserva su número: se relee para confirmar que quedó.
+  if (opc.idFactura) {
+    let j: Record<string, unknown> = {};
+    try { j = JSON.parse(await http.post("venta.php", { process: "cargar_data", n_ref: opc.idFactura, fecha })); } catch { j = {}; }
+    const quedo = String(j.id_factura ?? "") === opc.idFactura
+      && venta.renglones.every((r) => new RegExp(`\\b${r.producto_id}\\b`).test(String(j.lista ?? "")));
+    if (!quedo) avisos.push("No se pudo confirmar la corrección en la caja: revísala allá.");
+    return { referencia, externo_id: opc.idFactura, total_caja: total, renglones_caja: renglonesCaja, avisos };
+  }
 
   // El número de la venta: por la referencia en la lista de la sala, y se relee.
   let externo: string | null = null;

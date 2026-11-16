@@ -1,7 +1,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { getCortesCreds } from "../_shared/creditos.ts";
-import { enviarPreventaALaCaja, sesionDeCaja } from "../_shared/preventaCaja.ts";
+import { borrarPreventaDeLaCaja, enviarPreventaALaCaja, preventaVivaEnLaCaja, sesionDeCaja } from "../_shared/preventaCaja.ts";
 import { armarVenta } from "../../../src/utils/preventa.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const accion = String(body.accion ?? "enviar");
+    if (accion === "directa" || accion === "anular") return await directa(req, accion, body, responder);
     if (accion !== "enviar") return responder({ ok: false, error: "Acción desconocida." }, 400);
 
     const ids = (Array.isArray(body.reservas) ? body.reservas : [body.reserva])
@@ -115,3 +116,117 @@ Deno.serve(async (req) => {
     return responder({ ok: false, error: "No se pudo enviar la preventa." }, 500);
   }
 });
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LA PREVENTA DIRECTA — la vista Preventa (2026-11-16).
+//
+// Quien vende arma la venta en el portal (cliente, productos, documento) y
+// llega a la caja con el precio que le toca al cliente. Mientras no se
+// facture, se CORRIGE sobre la misma preventa (la caja la reescribe con su
+// número) o se ANULA (se borra de la caja).
+//
+// La base decide todo lo que importa (`preventa_directa_preparar`: permiso del
+// módulo `preventa` y sucursal, precio por cliente, existencia, autorización de
+// otro precio) y esto sólo lo lleva a la caja. Antes de corregir o borrar se
+// relee la preventa en la caja: si ya no está (se facturó o la borraron allá),
+// no se escribe encima.
+// ═══════════════════════════════════════════════════════════════════════════
+async function directa(
+  req: Request, accion: string, body: Record<string, unknown>,
+  responder: (b: unknown, s?: number) => Response,
+) {
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const quien = await requireActiveEmployeeUser(req, admin);
+  if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+  const permiso = await permisoDeModulo(admin, quien.id, "preventa", "can_edit");
+  if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
+  if (!permiso.puede) return responder({ ok: false, error: "No tienes permiso para hacer preventas." }, 403);
+  const motivoDe = (m: string) => (m === "FORBIDDEN" ? "No puedes hacer preventas en esa sucursal." : m);
+
+  // ── Anular ──────────────────────────────────────────────────────────────
+  if (accion === "anular") {
+    const id = Number(body.preventa_id);
+    if (!Number.isInteger(id) || id <= 0) return responder({ ok: false, error: "No se dijo qué preventa." }, 400);
+    const { data: info, error: eInfo } = await admin.rpc("preventa_anular", { p_employee: quien.id, p_id: id, p_paso: "revisar" });
+    if (eInfo) return responder({ ok: false, error: motivoDe(String(eInfo.message ?? "")) }, eInfo.message === "FORBIDDEN" ? 403 : 409);
+    if (info.externo_id) {
+      try {
+        const { username, password } = getCortesCreds();
+        const http = await sesionDeCaja(username, password, Number(info.erp_sucursal));
+        const viva = await preventaVivaEnLaCaja(http, String(info.externo_id), info.vendedor ?? null);
+        // Si no está en la lista puede estar facturada y todavía no llegó la
+        // factura: marcarla anulada sería perder una venta. Se dice y se deja.
+        if (!viva.viva) return responder({ ok: false, error: viva.motivo }, 409);
+        await borrarPreventaDeLaCaja(http, String(info.externo_id), {
+          vendedor: String(info.vendedor ?? ""), productos: (info.productos ?? []).map(Number),
+        });
+      } catch (e) {
+        return responder({ ok: false, error: (e as Error).message }, 502);
+      }
+    }
+    const { data: hecho, error: eHecho } = await admin.rpc("preventa_anular", { p_employee: quien.id, p_id: id, p_paso: "confirmar" });
+    if (eHecho) {
+      console.error("[preventa-caja] anular quedó a medias:", eHecho.message);
+      return responder({ ok: false, error: `Se borró de la caja, pero el portal no la pudo marcar: ${eHecho.message}` }, 500);
+    }
+    return responder({ ok: true, preventa: hecho });
+  }
+
+  // ── Crear o corregir ────────────────────────────────────────────────────
+  const corrige = body.preventa_id != null ? Number(body.preventa_id) : null;
+  let vendedorPrevio: string | null = null;
+  if (corrige) {
+    const { data: previa, error: ePrev } = await admin.from("preventas").select("vendedor_codigo").eq("id", corrige).maybeSingle();
+    if (ePrev) return responder({ ok: false, error: "No se pudo leer la preventa." }, 503);
+    vendedorPrevio = previa?.vendedor_codigo ?? null;
+  }
+  const { data: datos, error: ePrep } = await admin.rpc("preventa_directa_preparar", {
+    p_employee: quien.id, p_branch: Number(body.branch_id), p_customer: body.customer_id ? Number(body.customer_id) : null,
+    p_documento: String(body.documento ?? "consumidor_final"), p_nota: String(body.nota ?? ""),
+    p_lineas: Array.isArray(body.lineas) ? body.lineas : [], p_preventa: corrige,
+    p_motivo_precio: body.motivo_precio ? String(body.motivo_precio) : null,
+  });
+  if (ePrep) {
+    const m = String(ePrep.message ?? "");
+    return responder({ ok: false, error: motivoDe(m) }, m === "FORBIDDEN" ? 403 : 409);
+  }
+  const preventaId = Number(datos.preventa_id);
+  const fallar = async (m: string, status: number, venta: unknown = null) => {
+    const { error } = await admin.rpc("preventa_registrar", { p_id: preventaId, p_ok: false, p_venta: venta, p_error: m });
+    if (error) console.error("[preventa-caja] registrar fallida:", error.message);
+    return responder({ ok: false, error: m }, status);
+  };
+
+  let venta;
+  try { venta = armarVenta(datos); } catch (e) { return await fallar((e as Error).message, 409); }
+
+  let resultado;
+  try {
+    const { username, password } = getCortesCreds();
+    const http = await sesionDeCaja(username, password, Number(datos.erp_sucursal));
+    if (datos.externo_id) {
+      const viva = await preventaVivaEnLaCaja(http, String(datos.externo_id), vendedorPrevio);
+      if (!viva.viva) return await fallar(viva.motivo, 409);
+    }
+    resultado = await enviarPreventaALaCaja(http, venta, { idFactura: datos.externo_id ?? null });
+  } catch (e) {
+    console.error("[preventa-caja] directa:", (e as Error).message);
+    return await fallar((e as Error).message, 502, venta);
+  }
+
+  const { data: reg, error: eReg } = await admin.rpc("preventa_registrar", {
+    p_id: preventaId, p_ok: true, p_venta: { ...venta, motivo_precio: datos.motivo_precio ?? null },
+    p_externo_id: resultado.externo_id, p_externo_ref: resultado.referencia,
+    p_destino: { total_caja: resultado.total_caja, renglones: resultado.renglones_caja, avisos: resultado.avisos },
+  });
+  if (eReg) {
+    console.error("[preventa-caja] registrar directa:", eReg.message);
+    return responder({ ok: false, error: `La preventa #${resultado.referencia} quedó en caja, pero el portal no la pudo guardar.` }, 500);
+  }
+  return responder({
+    ok: true, preventa: reg, codigo: datos.codigo, referencia: resultado.referencia, externo_id: resultado.externo_id,
+    corregida: Boolean(datos.externo_id), cliente_generico: venta.cliente.generico,
+    total_caja: resultado.total_caja, avisos: resultado.avisos,
+  });
+}

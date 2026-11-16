@@ -299,7 +299,7 @@ export default function PiezaModal({
         setLiberando(true);
         try {
             await liberarPieza(pieza.id, on);
-            showToast(on ? 'Liberada para las salas' : 'Retenida', pieza.titulo, 'success');
+            showToast(on ? 'Liberada para las sucursales' : 'Retenida', pieza.titulo, 'success');
             onCambio?.();
         } catch (err) {
             showToast('No se pudo cambiar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -433,7 +433,7 @@ export default function PiezaModal({
                             {!puedeEditar && <FichaDeLectura pieza={pieza} catalogos={catalogos} promociones={promociones} />}
                             {puedeEditar && !esCreador && (
                                 <Notice icon={ShieldCheck} compact>
-                                    La creó otra persona: puedes editar el contenido, pero el estado, el día y quitarla
+                                    La creó otra persona. Puedes editar el contenido. El estado, el día y quitarla
                                     los decide quien la creó.
                                 </Notice>
                             )}
@@ -487,12 +487,12 @@ export default function PiezaModal({
                                         {!form.pautar ? (
                                             <p className="text-body-sm text-content-3">
                                                 Actívala para invertir en esta pieza. Presupuesto de {mes ? etiquetaMes(mes.mes) : 'este mes'}:{' '}
-                                                {limite > 0 ? `${formatMoney(limite - otros)} libres de ${formatMoney(limite)}` : 'gerencia todavía no lo fija'}.
+                                                {limite > 0 ? `${formatMoney(limite - otros)} libres de ${formatMoney(limite)}` : 'todavía no hay presupuesto'}.
                                             </p>
                                         ) : limite === 0 ? (
                                             <Notice variant="warning" icon={AlertTriangle} compact>
-                                                Gerencia todavía no fijó el presupuesto de pauta del mes. Se puede marcar para
-                                                pautar; el monto se asigna cuando lo fije.
+                                                Un supervisor o administrador todavía no fija el presupuesto de pauta del mes.
+                                                Puedes marcarla para pautar. El monto se asigna cuando lo fije.
                                             </Notice>
                                         ) : (
                                             <div className="space-y-2">
@@ -544,7 +544,7 @@ export default function PiezaModal({
                                         )}
                                         {vigentes.some((a) => a.borrador) && (
                                             <Notice icon={EyeOff} compact>
-                                                Los diseños «Sin enviar» todavía no los ve nadie más: se verán cuando vuelvas a enviar la pieza o el mes a revisión.
+                                                Los diseños «Sin enviar» sólo los ves tú. Se verán cuando vuelvas a enviar la pieza o el mes a revisión.
                                             </Notice>
                                         )}
                                         <Disenos archivos={archivos} firmadas={firmadas} marcasPorArchivo={marcasPorArchivo}
@@ -590,13 +590,13 @@ export default function PiezaModal({
                             </Bloque>
 
                             {sePuedeLiberar && (
-                                <Bloque icon={Store} titulo="Para las salas"
-                                    accion={<Switch checked={!!pieza.liberada} label="Liberada para las salas" disabled={liberando}
+                                <Bloque icon={Store} titulo="Para las sucursales"
+                                    accion={<Switch checked={!!pieza.liberada} label="Liberada para las sucursales" disabled={liberando}
                                         onChange={liberar} />}>
                                     <p className="text-body-sm text-content-3">
                                         {pieza.liberada
-                                            ? 'Las salas la ven en Galería y la pueden descargar para publicarla en WhatsApp.'
-                                            : 'Al liberarla, las salas la ven en Galería y la pueden descargar.'}
+                                            ? 'Las sucursales la ven en Galería y la pueden descargar para publicarla en WhatsApp.'
+                                            : 'Al liberarla, las sucursales la ven en Galería y la pueden descargar.'}
                                     </p>
                                     {vigentes.filter((a) => a.url).map((a) => {
                                         const w = aptoParaWhatsApp(a);

@@ -61,7 +61,7 @@ export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles
                   formato={(v) => formatPct(v)} formatoEje={(v) => `${Math.round(v)}%`}
                   detalle={(f) => `Meta ${formatMoney(f.meta)} · vendido ${formatMoney(f.venta)}`}
                   resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${meses.length} meses · el más alto ${mejor.mes} ${formatPct(mejor.pct)} · el más bajo ${peor.mes} ${formatPct(peor.pct)}`}</Text>} />
-                <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>El eje arranca cerca del 95%, no en cero: son porcentajes alrededor del 100.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>El eje arranca cerca del 95%.</Text>
               </View>
             </Vidrio>
           </View>
@@ -80,7 +80,7 @@ export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles
           </View>
         </>
       ) : null}
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${filtradas.length} mes${filtradas.length === 1 ? '' : 'es'} de sala`}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${filtradas.length} mes${filtradas.length === 1 ? '' : 'es'} de sucursal`}</Text>
       {filtradas.map((r) => {
         const tramo = TRAMO_CFG[r.bono_tier];
         const color = COLOR_TRAMO[r.bono_tier] ?? colorSistema.texto2;

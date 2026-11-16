@@ -528,7 +528,7 @@ export default function MarketingView() {
                                     )}
                                 </TituloDeSeccion>
                                 <p className="text-caption text-content-3">
-                                    Entre gerencia y diseño sobre {etiquetaMes(mes).toLowerCase()}. Lo de una pieza, coméntalo dentro de la pieza.
+                                    Entre quien aprueba y quien diseña, sobre {etiquetaMes(mes).toLowerCase()}. Lo de una pieza, coméntalo dentro de la pieza.
                                 </p>
                             </div>
                         </header>
@@ -586,8 +586,8 @@ export default function MarketingView() {
                                 </FilterBar.Section>
                             )}
                             {tab === 'galeria' && (
-                                <FilterBar.Section label="salas" active={!!fLiberada} onClear={() => setFLiberada('')}>
-                                    <FilterBar.Opciones value={fLiberada} onChange={(v) => setFLiberada(v || '')} label="Salas"
+                                <FilterBar.Section label="sucursales" active={!!fLiberada} onClear={() => setFLiberada('')}>
+                                    <FilterBar.Opciones value={fLiberada} onChange={(v) => setFLiberada(v || '')} label="Sucursales"
                                         options={[{ value: '', label: 'Todas' }, { value: 'si', label: 'Liberadas' }, { value: 'no', label: 'Sin liberar' }]} />
                                 </FilterBar.Section>
                             )}

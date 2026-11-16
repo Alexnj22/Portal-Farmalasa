@@ -155,7 +155,7 @@ export default function TabDatosMercado({ puedeEditar }) {
         <div className="space-y-4">
             <Notice variant="info" bloque>
                 La Superintendencia pide cada año las existencias y el precio de venta de todo medicamento de uso
-                humano, por farmacia. Aquí se elige, una sola vez, qué producto de su catálogo es cada producto
+                humano, por sucursal. Aquí se elige, una sola vez, qué producto de su catálogo es cada producto
                 nuestro. Revisados {decididos} de {total}.
             </Notice>
 
@@ -177,7 +177,7 @@ export default function TabDatosMercado({ puedeEditar }) {
             )}
             {grupo === 'sin_pareja' && (
                 <Notice variant="info" bloque>
-                    Casi todos son productos que no son medicamentos (curitas, cepillos, leches, cosméticos): márcalos
+                    Casi todos son productos que no son medicamentos (curitas, cepillos, leches, cosméticos). Márcalos
                     como «No es medicamento». Si alguno sí lo es, búscalo en el catálogo de la SRS.
                 </Notice>
             )}

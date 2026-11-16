@@ -153,9 +153,9 @@ export default function PiezaDeMarketing() {
       setOcupado(false);
     } },
   ]);
-  const liberar = (on) => Alert.alert(on ? 'Liberar para las salas' : 'Retener', on ? 'Las salas la ven en Galería y la pueden descargar para publicarla en WhatsApp.' : 'Deja de verse en la Galería de las salas.', [
+  const liberar = (on) => Alert.alert(on ? 'Liberar para las sucursales' : 'Retener', on ? 'Las sucursales la ven en Galería y la pueden descargar para publicarla en WhatsApp.' : 'Deja de verse en la Galería de las sucursales.', [
     { text: 'Cancelar', style: 'cancel' },
-    { text: on ? 'Liberar' : 'Retener', onPress: () => correr(() => liberarPieza(pieza.id, on), on ? 'Liberada para las salas' : 'Retenida', { liberada: on }) },
+    { text: on ? 'Liberar' : 'Retener', onPress: () => correr(() => liberarPieza(pieza.id, on), on ? 'Liberada para las sucursales' : 'Retenida', { liberada: on }) },
   ]);
   const enlace = () => Alert.prompt('Agregar un enlace', 'El diseño en Drive o Canva (https://…).', [
     { text: 'Cancelar', style: 'cancel' },
@@ -315,8 +315,8 @@ export default function PiezaDeMarketing() {
             </Seccion>
           ) : null}
           {sePuedeLiberar ? (
-            <Seccion titulo="Para las salas" pie={pieza.liberada ? 'Las salas la ven en Galería y la pueden descargar para publicarla en WhatsApp.' : 'Al liberarla, las salas la ven en Galería y la pueden descargar.'}>
-              <BotonGrande texto={pieza.liberada ? 'Retener (dejar de mostrarla)' : 'Liberar para las salas'} color={pieza.liberada ? MARCA.ambar : MARCA.verde} borde={!!pieza.liberada} deshabilitado={ocupado} onPress={() => liberar(!pieza.liberada)} />
+            <Seccion titulo="Para las sucursales" pie={pieza.liberada ? 'Las sucursales la ven en Galería y la pueden descargar para publicarla en WhatsApp.' : 'Al liberarla, las sucursales la ven en Galería y la pueden descargar.'}>
+              <BotonGrande texto={pieza.liberada ? 'Retener (dejar de mostrarla)' : 'Liberar para las sucursales'} color={pieza.liberada ? MARCA.ambar : MARCA.verde} borde={!!pieza.liberada} deshabilitado={ocupado} onPress={() => liberar(!pieza.liberada)} />
               {(pieza.archivos || []).filter((a) => a.url && !a.reemplazado).map((a) => {
                 const w = aptoParaWhatsApp(a);
                 return <Text key={a.id ?? a.url} style={{ color: w.apto ? MARCA.verde : MARCA.ambar, fontSize: 12 }}>{`${a.nombre || 'Diseño'}: ${w.apto ? (w.vertical === false ? 'sirve para WhatsApp, pero no es vertical' : 'listo para WhatsApp') : w.motivo}`}</Text>;

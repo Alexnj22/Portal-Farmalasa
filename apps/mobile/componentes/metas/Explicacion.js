@@ -63,8 +63,8 @@ export default function Explicacion({ branchId, yearMonth, montoPropuesto }) {
           <View style={{ gap: 12 }}>
             <Paso n="1" titulo="Su ritmo diario" monto={`${formatMoney(d.ritmo_dia)}/día`}>
               {nota((d.meses_base || []).map((m) => `${ymLabelCorto(m.ym)} ${formatMoney(m.venta)}${m.proyectado ? ' (proy.)' : ''}`).join(' · '))}
-              {nota(`${formatMoney(d.suma_venta)} entre los ${d.suma_dias} días de esos tres meses. Se divide por días y no por meses, para que uno de 30 y uno de 31 no pesen distinto.`)}
-              {proyectado ? nota(`${ymLabelCorto(proyectado.ym)} todavía no cierra: entra con lo que lleva vendido llevado a mes completo.`) : null}
+              {nota(`${formatMoney(d.suma_venta)} entre los ${d.suma_dias} días de esos tres meses.`)}
+              {proyectado ? nota(`${ymLabelCorto(proyectado.ym)} todavía no cierra. Entra lo vendido hasta hoy, llevado a mes completo.`) : null}
             </Paso>
             <Paso n="2" titulo={`Por los ${d.dias_mes} días del mes`} monto={formatMoney(d.sub_ritmo)}>
               {nota('Lo que vendería el mes si mantuviera exactamente ese ritmo.')}
@@ -72,7 +72,7 @@ export default function Explicacion({ branchId, yearMonth, montoPropuesto }) {
             <Paso n="3" titulo={`Por el factor ${Number(d.factor).toFixed(2)}`} monto={formatMoney(d.recalculada)}>
               {d.pct_ultimo != null
                 ? nota(`${d.ultimo_proyectado ? 'Viene cerrando' : 'Cerró'} ${ymLabelCorto(d.ym_ultimo)} en ${formatPct(d.pct_ultimo)}${d.meta_ultimo != null ? ` de su meta de ${formatMoney(d.meta_ultimo)}` : ''}.`)
-                : nota(`Ese mes no tuvo meta, así que el factor queda en ${Number(d.factor).toFixed(2)}: no se pide crecimiento sobre algo que no se pudo medir.`)}
+                : nota(`Ese mes no tuvo meta. El factor queda en ${Number(d.factor).toFixed(2)}.`)}
               <View style={{ gap: 2, marginTop: 4 }}>
                 {(d.tramos || []).map((t, i, arr) => {
                   const suyo = d.pct_ultimo != null && Number(t.factor) === Number(d.factor);
@@ -86,14 +86,14 @@ export default function Explicacion({ branchId, yearMonth, montoPropuesto }) {
                   );
                 })}
               </View>
-              {nota('A la sala que se quedó corta se le pide crecer más, para que recupere terreno. A la que va bien se le pide sostenerse.')}
+              {nota('A la sucursal que se quedó corta se le pide crecer más, para recuperar terreno. A la que va bien se le pide sostenerse.')}
             </Paso>
             {montoPropuesto != null ? (
               coincide
-                ? <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '700' }}>{`= ${formatMoney(d.recalculada)} — el mismo monto de la meta.`}</Text>
+                ? <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '700' }}>{`= ${formatMoney(d.recalculada)}. Es el mismo monto de la meta.`}</Text>
                 : d.ultimo_proyectado
-                  ? nota(`Hoy la cuenta da ${formatMoney(d.recalculada)}: la propuesta se guardó en ${formatMoney(montoPropuesto)} y ${ymLabelCorto(d.ym_ultimo)} siguió vendiendo. Manda la guardada.`)
-                  : <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{`Con la fórmula de hoy da ${formatMoney(d.recalculada)} y la propuesta guardada es ${formatMoney(montoPropuesto)}. Manda la guardada.`}</Text>
+                  ? nota(`Hoy la cuenta da ${formatMoney(d.recalculada)}. La propuesta se guardó en ${formatMoney(montoPropuesto)} y ${ymLabelCorto(d.ym_ultimo)} siguió vendiendo. Vale la guardada.`)
+                  : <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{`Con la fórmula de hoy da ${formatMoney(d.recalculada)}. La propuesta guardada es ${formatMoney(montoPropuesto)}. Vale la guardada.`}</Text>
             ) : null}
           </View>
         ) : null}

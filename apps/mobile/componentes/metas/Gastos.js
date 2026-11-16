@@ -47,7 +47,7 @@ export default function Gastos({ canEdit, onCambio }) {
           const res = await anularMetaGasto({ id: g.id, nota }, { concepto: g.concepto });
           listo('Gasto quitado', res?.cuotas_anuladas
             ? `Las metas de ${res.cuotas_anuladas} mes(es) que no arrancaron volvieron a su monto anterior.`
-            : 'No quedaban meses por delante, así que ninguna meta cambió.');
+            : 'No quedaban meses por delante. Ninguna meta cambió.');
           onCambio?.();
           setIntento((n) => n + 1);
         } catch (err) {
@@ -75,7 +75,7 @@ export default function Gastos({ canEdit, onCambio }) {
             <Kpi icono="TrendingUp" rotulo="Agrega a metas" valor={formatMoney(resumen.agregaAMetas)} color={MARCA.verde} apoyo="en los meses que faltan" />
           </FilaDeKpis>
           <View style={{ marginHorizontal: 16 }}>
-            <Aviso texto={`Con ganancia de ${formatPct(resumen.margen, { decimales: 0 })}: el gasto se convierte en la venta que lo devuelve.`} />
+            <Aviso texto={`Con ganancia de ${formatPct(resumen.margen, { decimales: 0 })}, el gasto se convierte en la venta que lo devuelve.`} />
           </View>
         </>
       ) : null}
@@ -97,7 +97,7 @@ export default function Gastos({ canEdit, onCambio }) {
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                       {`${salas.map((s) => s.sala).join(' y ')} · ${g.meses === 1 ? `se recupera en ${ymLabel(g.ym_inicio).toLowerCase()}` : `se recupera en ${g.meses} meses, desde ${ymLabel(g.ym_inicio).toLowerCase()}`}`}
                     </Text>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{anulado ? `Se quitó — ${g.anulado_nota || 'sin motivo anotado'}` : `Lo cargó ${g.creado_por_nombre || 'el portal'}`}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{anulado ? `Se quitó · ${g.anulado_nota || 'sin motivo anotado'}` : `Lo cargó ${g.creado_por_nombre || 'el portal'}`}</Text>
                   </View>
                   <Pildora texto={anulado ? 'Quitado' : 'Activo'} color={anulado ? colorSistema.texto2 : MARCA.verde} />
                 </View>

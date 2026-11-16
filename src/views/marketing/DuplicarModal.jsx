@@ -68,7 +68,7 @@ export default function DuplicarModal({ mes, piezas, preseleccion = null, onClos
                     <p className="text-caption text-content-3">
                         {modo === 'semana'
                             ? 'El primer lunes cae en el primer lunes, el segundo viernes en el segundo viernes…'
-                            : 'El 10 cae en el 10; si el mes no tiene ese día, en el último.'}
+                            : 'El 10 cae en el 10. Si el mes no tiene ese día, cae en el último.'}
                         {' '}Las copias quedan pendientes, sin diseños ni pauta.
                     </p>
                     {!preseleccion && (

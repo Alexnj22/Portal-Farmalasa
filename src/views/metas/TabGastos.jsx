@@ -18,7 +18,7 @@ import { resumenDeGastos, ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/m
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const COLS = [
     { key: 'mes',   label: 'Mes' },
-    { key: 'sala',  label: 'Sala' },
+    { key: 'sala',  label: 'Sucursal' },
     { key: 'gasto', label: 'Gasto del mes',       align: 'right' },
     { key: 'venta', label: 'Le agrega a la meta', align: 'right' },
     { key: 'meta',  label: 'Meta del mes',        align: 'right' },
@@ -65,7 +65,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
             showToast('Gasto quitado',
                 res?.cuotas_anuladas
                     ? `Las metas de ${res.cuotas_anuladas} mes(es) que no arrancaron volvieron a su monto anterior.`
-                    : 'No quedaban meses por delante, así que ninguna meta cambió.',
+                    : 'No quedaban meses por delante. Ninguna meta cambió.',
                 'success');
             setQuitando(null); setNotaQuitar('');
             onChanged?.();
@@ -195,7 +195,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
                                 <>
                                     <span className="text-label font-semibold text-content-3">
                                         {anulado
-                                            ? `Se quitó — ${g.anulado_nota || 'sin motivo anotado'}`
+                                            ? `Se quitó · ${g.anulado_nota || 'sin motivo anotado'}`
                                             : `Lo cargó ${g.creado_por_nombre || 'el portal'}`}
                                     </span>
                                     <span className="text-body-sm font-black tabular-nums">
@@ -249,7 +249,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
                             <div data-surface="card" data-tono="warning" className="mt-3 p-3 space-y-2">
                                 <p className="text-label font-semibold text-content-2">
                                     Los meses que todavía no arrancaron vuelven a su meta anterior.
-                                    Los que ya empezaron conservan su parte: esa meta ya se persiguió con ese número.
+                                    Los que ya empezaron conservan su parte.
                                 </p>
                                 <PortalInput
                                     label="¿Por qué se quita?" name={`nota-quitar-${g.id}`}

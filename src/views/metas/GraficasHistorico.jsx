@@ -135,8 +135,7 @@ export default function GraficasHistorico({ datos, umbralMedio = 95, umbralTotal
                     </ChartContainer>
                 </div>
                 <p className="text-micro font-semibold text-content-3 mt-2">
-                    El eje arranca cerca del 95%, no en cero: son porcentajes alrededor del 100 y
-                    forzar el cero aplastaría toda la historia en una franja.
+                    El eje arranca cerca del 95%.
                 </p>
             </div>
 

@@ -146,11 +146,11 @@ export default function MetaGasto() {
               onPress={() => hoja('¿En cuántos meses?', MESES_PARA_RECUPERAR, setMeses)} />
           </Seccion>
 
-          <Seccion titulo="Salas y cuánto le toca a cada una">
+          <Seccion titulo="Sucursales y cuánto le toca a cada una">
             {filas.map((f, i) => (
               <View key={i} style={{ gap: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>
-                <Elegir primero rotulo="Sala" valor={salaOpciones.find((o) => o.value === f.branchId)?.label ?? 'Elegir'}
-                  onPress={() => hoja('Sala', libres(i), (v) => setFila(i, { branchId: v }))} />
+                <Elegir primero rotulo="Sucursal" valor={salaOpciones.find((o) => o.value === f.branchId)?.label ?? 'Elegir'}
+                  onPress={() => hoja('Sucursal', libres(i), (v) => setFila(i, { branchId: v }))} />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Campo multiline={false} keyboardType="decimal-pad" value={String(f.monto)} onChangeText={(v) => setFila(i, { monto: v })} placeholder="Monto $0.00" style={{ flex: 1 }} />
                   {filas.length > 1 ? (
@@ -163,7 +163,7 @@ export default function MetaGasto() {
             ))}
             {filas.length < salaOpciones.length ? (
               <Tocable onPress={() => setFilas((fs) => [...fs, FILA_VACIA])}>
-                <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>+ Otra sala</Text>
+                <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>+ Otra sucursal</Text>
               </Tocable>
             ) : null}
             {total > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Total: ${formatMoney(total)}`}</Text> : null}
@@ -180,7 +180,7 @@ export default function MetaGasto() {
             </Seccion>
           ) : null}
           {reabre.length ? (
-            <Aviso tono="cuidado" texto={`${reabre.length === 1 ? `La meta de ${reabre[0]} ya estaba aprobada.` : `Estas metas ya estaban aprobadas: ${reabre.join(', ')}.`} Al guardar vuelven a revisión y hay que confirmarlas y aprobarlas otra vez.`} />
+            <Aviso tono="cuidado" texto={`${reabre.length === 1 ? `La meta de ${reabre[0]} ya estaba aprobada.` : `Estas metas ya estaban aprobadas: ${reabre.join(', ')}.`} Al guardar, vuelven a revisión. Hay que confirmarlas y aprobarlas otra vez.`} />
           ) : null}
 
           <Seccion titulo="Nota (opcional)">

@@ -100,7 +100,7 @@ export default function PautaModal({ open, onClose, pieza, redes, limite = 0, ot
                                 hasError={pasado}
                                 helperText={limite > 0
                                     ? (pasado ? `Te pasas por ${formatMoney(-libre)}` : `Quedan ${formatMoney(libre)} de ${formatMoney(limite)} del mes`)
-                                    : 'Gerencia todavía no fija el presupuesto del mes'} />
+                                    : 'Un supervisor o administrador todavía no fija el presupuesto del mes'} />
                             <Campo rotulo="Objetivo">
                                 <LiquidSelect value={form.objetivo} onChange={set('objetivo')} placeholder="Qué se busca"
                                     options={OBJETIVOS_PAUTA.map((o) => ({ value: o.value, label: o.label }))} />

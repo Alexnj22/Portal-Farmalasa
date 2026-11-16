@@ -186,15 +186,15 @@ function CatalogoDeDosis({ showToast }) {
                     </h4>
                     <p className="text-body-sm text-content-3">
                         Cuántas aplicaciones trae UNA unidad suelta. Una caja multiplica por lo que trae: TRAMAL en
-                        caja de 5 con 1 por unidad son 5. Lo que sólo se vende entero —un TRI PACK— es su propia
-                        unidad. Un vial que rinde según la dosis se cuenta «por ml». Mientras no se confirma,
+                        caja de 5 con 1 por unidad son 5. Lo que solo se vende entero, como un TRI PACK, cuenta como
+                        una unidad. Un vial que rinde según la dosis se cuenta «por ml». Mientras no se confirma,
                         rige la sugerencia. {filas && `${sinConfirmar} sin confirmar.`}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button type="button" onClick={() => setSoloSinConfirmar((v) => !v)}
                         className="text-caption underline text-content-3 min-h-[var(--tap-min)]">
-                        {soloSinConfirmar ? 'Ver también las confirmadas' : 'Ver sólo las sin confirmar'}
+                        {soloSinConfirmar ? 'Ver también las confirmadas' : 'Ver solo las sin confirmar'}
                     </button>
                     <Button variant="secondary" size="sm" icon={Plus} onClick={() => setAgregando((v) => !v)}>
                         Agregar un producto
@@ -266,7 +266,7 @@ function CatalogoDeDosis({ showToast }) {
                             <DataCell align="right">
                                 <div className="flex justify-end gap-2">
                                     <Button variant="ghost" size="sm" disabled={guardando != null}
-                                        title="No es una inyección: deja de ofrecerse para cobrar la aplicación"
+                                        title="No es inyección. Ya no se ofrece al cobrar la aplicación."
                                         onClick={() => quitar(f)}>
                                         Quitar
                                     </Button>

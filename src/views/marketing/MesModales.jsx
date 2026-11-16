@@ -58,7 +58,7 @@ export function DecisionMesModal({ modo, mes, resumen, onClose, onCambio }) {
                     {publicar ? (
                         <p className="text-body-sm text-content-2">
                             Quien revisa recibe el aviso y desde ese momento ve los diseños de las {resumen.total} piezas.
-                            {resumen.abiertas > 0 && ` Hay ${resumen.abiertas} que todavía no están terminadas: se ven con su estado.`}
+                            {resumen.abiertas > 0 && ` Hay ${resumen.abiertas} sin terminar. Se ven con su estado.`}
                         </p>
                     ) : (
                         <>
@@ -125,8 +125,8 @@ export function DatosDelMesModal({ open, mes, puedeAprobar, asignado = 0, onClos
                         value={presupuesto} onChange={(e) => setPresupuesto(e.target.value)} placeholder="0.00"
                         readOnly={!puedeAprobar}
                         helperText={puedeAprobar
-                            ? `${formatMoney(asignado)} ya repartidos en piezas: no puede quedar por debajo.`
-                            : 'Lo fija gerencia. Tú lo repartes al marcar cada pieza para pautar.'} />
+                            ? `Ya hay ${formatMoney(asignado)} repartidos en piezas. No puede ser menor.`
+                            : 'Lo fija un supervisor o administrador. Tú lo repartes al marcar cada pieza para pautar.'} />
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>

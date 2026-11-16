@@ -21,7 +21,7 @@ import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, SALAS_VENTA, TRAMO_CFG }
 const COLS_BASE = [
     { key: 'persona', label: 'Persona' },
     { key: 'venta',   label: 'Vendido',      align: 'right' },
-    { key: 'pct',     label: '% de la sala', align: 'right' },
+    { key: 'pct',     label: '% de la sucursal', align: 'right' },
     { key: 'bono',    label: 'Bono hoy',     align: 'right' },
 ];
 // La columna de proyección solo existe mientras el mes se puede mover.
@@ -105,7 +105,7 @@ export default function TabBono({
                 activas ? 'Bonificaciones activadas' : 'Bonificaciones apagadas',
                 activas
                     ? (esteMes ? `Sólo por ${ymLabel(ymActual).toLowerCase()}.` : 'Sin fecha de fin.')
-                    : 'Las pantallas vuelven a hablar solo de la meta.',
+                    : 'Las pantallas solo muestran la meta.',
                 'success',
             );
             onCambioBono?.();
@@ -135,9 +135,9 @@ export default function TabBono({
                     <p className="text-label font-semibold text-content-3 mt-1.5">
                         {bonificacionesActivas
                             ? (soloEsteMes
-                                ? <>Sólo por <strong className="text-content-2">{ymLabel(bonificacionesHastaYm).toLowerCase()}</strong> — el día 1 se apagan solas.</>
-                                : 'Sin fecha de fin: siguen activas hasta que las apagues.')
-                            : 'Las pantallas hablan de la meta y no nombran el bono en ningún lado.'}
+                                ? <>Sólo por <strong className="text-content-2">{ymLabel(bonificacionesHastaYm).toLowerCase()}</strong>. El día 1 se apagan solas.</>
+                                : 'Sin fecha de fin. Siguen activas hasta que las apagues.')
+                            : 'Las pantallas solo muestran la meta. El bono no aparece.'}
                     </p>
                 </div>
 
@@ -156,7 +156,7 @@ export default function TabBono({
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen del bono">
                     <StatCard
-                        icon={Coins} label="Bono de la sala"
+                        icon={Coins} label="Bono de la sucursal"
                         value={data?.bolsa > 0 ? formatMoney(data.bolsa) : '—'}
                         sub={data?.tasa_pct > 0
                             ? `${formatPct(data.tasa_pct, { decimales: 2 })} de lo vendido`
@@ -167,7 +167,7 @@ export default function TabBono({
                         loading={loading}
                     />
                     <StatCard
-                        icon={Crown} label="Jefatura"
+                        icon={Crown} label="Jefe de sucursal"
                         value={data?.bolsa > 0 ? formatMoney(data.bolsa_jefatura) : '—'}
                         sub="un cuarto del bono"
                         iconBg="bg-chart-4/10" iconCls="text-chart-4-text"
@@ -217,7 +217,7 @@ export default function TabBono({
                         {/* Sólo con alcance sobre todas. Sin él la sala queda
                             en `defaultBranchId`, que ya es la propia. */}
                         {alcanceTodas && (
-                        <FilterBar.Section label="sala">
+                        <FilterBar.Section label="sucursal">
                             <FilterBar.Sucursal
                                 value={sala}
                                 onChange={(v) => setSala(v || String(SALAS_VENTA[0]))}
@@ -242,8 +242,7 @@ export default function TabBono({
             {!loading && !error && metaSinAprobar && (
                 <Notice variant="warning" icon={AlertTriangle}>
                     La meta de {salaNombre(sala)} en {ymLabel(ym).toLowerCase()} todavía
-                    no está aprobada, así que este reparto es una referencia: si el monto
-                    de la meta cambia, cambia lo que le toca a cada persona.
+                    no está aprobada. Este reparto puede cambiar.
                 </Notice>
             )}
 
@@ -252,12 +251,11 @@ export default function TabBono({
                 mes siguiente — y deja claro que lo de hoy no es definitivo. */}
             {!loading && !error && esMesActual && hayProyeccion && (
                 <Notice variant="info">
-                    Si {salaNombre(sala)} sigue a este ritmo cierra en{' '}
-                    <strong>{formatMoney(data.proyeccion)}</strong> —{' '}
-                    <strong className={tramoProy?.textCls || ''}>{formatPct(data.pct_proyectado)}</strong> de la meta,
-                    y el bono de la sala sería <strong>{formatMoney(data.bolsa_proyectada)}</strong>.
+                    Si {salaNombre(sala)} sigue a este ritmo, cierra en{' '}
+                    <strong>{formatMoney(data.proyeccion)}</strong>{' ('}<strong className={tramoProy?.textCls || ''}>{formatPct(data.pct_proyectado)}</strong> de la meta).
+                    El bono de la sucursal sería <strong>{formatMoney(data.bolsa_proyectada)}</strong>.
                     {data.tramo_proyectado === 'medio' && (
-                        <> Llegando al 100% se duplica: le faltan {formatMoney(Math.max(0, data.meta - data.proyeccion))}.</>
+                        <> Si llega al 100%, se duplica. Le faltan {formatMoney(Math.max(0, data.meta - data.proyeccion))}.</>
                     )}
                 </Notice>
             )}
@@ -266,7 +264,7 @@ export default function TabBono({
                 <EmptyState
                     compact icon={Wallet}
                     title={`${salaNombre(sala)} no tiene meta en ${ymLabel(ym).toLowerCase()}`}
-                    subtitle="El bono se calcula sobre el cumplimiento, así que sin meta no hay reparto."
+                    subtitle="Sin meta no hay bono."
                 />
             )}
 
@@ -276,10 +274,10 @@ export default function TabBono({
             {!loading && !error && !sinMeta && !hayReparto && (
                 <EmptyState
                     compact icon={Wallet}
-                    title={esMesActual ? 'El bono todavía no se gana' : 'La sala no alcanzó el bono'}
+                    title={esMesActual ? 'El bono todavía no se gana' : 'La sucursal no alcanzó el bono'}
                     subtitle={esMesActual
-                        ? `${salaNombre(sala)} va en ${formatPct(data.pct)} de la meta y, al ritmo de hoy, cerraría en ${formatPct(data.pct_proyectado)}. Desde el 95% se gana la mitad del bono y desde el 100%, completo.`
-                        : `Cerró en ${formatPct(data.pct)} de la meta; desde el 95% se gana la mitad y desde el 100% el bono completo.`}
+                        ? `${salaNombre(sala)} va en ${formatPct(data.pct)} de la meta. Al ritmo de hoy, cerraría en ${formatPct(data.pct_proyectado)}. Desde el 95% se gana la mitad del bono. Desde el 100%, el bono completo.`
+                        : `Cerró en ${formatPct(data.pct)} de la meta. Desde el 95% se gana la mitad del bono. Desde el 100%, el bono completo.`}
                 />
             )}
 
@@ -294,7 +292,7 @@ export default function TabBono({
                                 key={p.employee_id}
                                 icon={p.es_jefe ? Crown : Users}
                                 title={p.nombre}
-                                subtitle={`${formatMoney(p.venta)} · ${formatPct(p.pct_venta)} de la sala`}
+                                subtitle={`${formatMoney(p.venta)} · ${formatPct(p.pct_venta)} de la sucursal`}
                                 trailing={(
                                     <span className="flex flex-col items-end gap-1">
                                         <span className="text-body-sm font-black tabular-nums">{formatMoney(p.bono)}</span>
@@ -303,7 +301,7 @@ export default function TabBono({
                                                 {formatMoney(p.bono_proyectado)} si cierra así
                                             </span>
                                         )}
-                                        {p.es_jefe && <Badge variant="chart-4" size="sm">Jefatura</Badge>}
+                                        {p.es_jefe && <Badge variant="chart-4" size="sm">Jefe de sucursal</Badge>}
                                         {p.en_prueba && <Badge variant="warning" size="sm">En prueba</Badge>}
                                     </span>
                                 )}
@@ -314,7 +312,7 @@ export default function TabBono({
                     <div className="hidden md:block">
                         <DataTable columns={cols} loading={loading} empty={{
                             icon: Users,
-                            message: 'Sin personal en la sala',
+                            message: 'Sin personal en la sucursal',
                             subtext: 'El reparto necesita al menos una persona activa asignada aquí.',
                         }}>
                             {personas.map((p, i) => (
@@ -322,7 +320,7 @@ export default function TabBono({
                                     <DataCell>
                                         <span className="flex items-center gap-2 flex-wrap">
                                             <span className="text-body-sm font-bold">{p.nombre}</span>
-                                            {p.es_jefe && <Badge variant="chart-4" size="sm">Jefatura</Badge>}
+                                            {p.es_jefe && <Badge variant="chart-4" size="sm">Jefe de sucursal</Badge>}
                                             {p.en_prueba && <Badge variant="warning" size="sm">En prueba</Badge>}
                                         </span>
                                         <span className="block text-label font-semibold text-content-3">{p.rol}</span>
@@ -360,15 +358,14 @@ export default function TabBono({
                 «código incorrecto» y nadie sabía de qué estaba hecha. */}
             {!loading && !error && perdido > 0 && (
                 <Notice variant="warning" icon={UserMinus}>
-                    {formatMoney(perdido)} del bono no lo cobra nadie
+                    {formatMoney(perdido)} del bono no lo cobra nadie.
                     {data.venta_otra_sala > 0 && (
-                        <> — {formatMoney(data.venta_otra_sala)} de lo vendido está a nombre de personal de otra sala</>
+                        <> {formatMoney(data.venta_otra_sala)} de lo vendido está a nombre de personal de otra sucursal.</>
                     )}
-                    {data.venta_otra_sala > 0 && data.venta_codigo_inexistente > 0 && ' y'}
                     {data.venta_codigo_inexistente > 0 && (
-                        <> {formatMoney(data.venta_codigo_inexistente)} a nombre de un código que no existe</>
+                        <> {formatMoney(data.venta_codigo_inexistente)} está a nombre de un código que no existe.</>
                     )}
-                    . Esa parte no se reparte entre los demás.
+                    {' '}Esa parte no se reparte entre los demás.
                 </Notice>
             )}
         </div>

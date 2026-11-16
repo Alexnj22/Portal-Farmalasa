@@ -179,11 +179,11 @@ function CatalogoDeDosis({ recarga }) {
       <View style={{ marginHorizontal: 16, gap: 6 }}>
         <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>Aplicaciones por producto</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-          {`Cuántas aplicaciones trae UNA unidad suelta. Una caja multiplica por lo que trae. Lo que sólo se vende entero —un TRI PACK— es su propia unidad. Un vial que rinde según la dosis se cuenta «por ml». Mientras no se confirma, rige la sugerencia. ${sinConfirmar} sin confirmar.`}
+          {`Cuántas aplicaciones trae UNA unidad suelta. Una caja multiplica por lo que trae. Lo que solo se vende entero, como un TRI PACK, cuenta como una unidad. Un vial que rinde según la dosis se cuenta «por ml». Mientras no se confirma, rige la sugerencia. ${sinConfirmar} sin confirmar.`}
         </Text>
         <View style={{ flexDirection: 'row', gap: 16 }}>
           <Tocable onPress={() => setSoloSinConfirmar((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{soloSinConfirmar ? 'Ver también las confirmadas' : 'Ver sólo las sin confirmar'}</Text>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{soloSinConfirmar ? 'Ver también las confirmadas' : 'Ver solo las sin confirmar'}</Text>
           </Tocable>
           <Tocable onPress={() => setAgregando((v) => !v)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
             <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{agregando ? 'Cerrar' : 'Agregar un producto'}</Text>

@@ -118,7 +118,7 @@ function Formulario({ tipo, modo = 'crear', registro = null, branchId, sala, aTo
     setGuardando(false);
     if (r.error) { const t = mensajeDeCumplimiento(r.error); setError(t); fallo('No se pudo guardar', t); return; }
     clearDraft(clave);
-    listo(cerrando ? 'Registro cerrado' : 'Registro guardado', aTodas ? `Llegó a ${r.salas} salas` : sala);
+    listo(cerrando ? 'Registro cerrado' : 'Registro guardado', aTodas ? `Llegó a ${r.salas} sucursales` : sala);
     volver('/cumplimiento');
   };
 
@@ -175,7 +175,7 @@ function Formulario({ tipo, modo = 'crear', registro = null, branchId, sala, aTo
                     onPress={() => poner(c.key, activo ? (v || []).filter((x) => x.id !== p.value) : [...(v || []), { id: p.value, nombre: p.label }])} />
                 );
               })}
-              {!personal.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>No hay personal activo en esta sala.</Text> : null}
+              {!personal.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>No hay personal activo en esta sucursal.</Text> : null}
             </View>
           </View>
         );
@@ -235,7 +235,7 @@ function Formulario({ tipo, modo = 'crear', registro = null, branchId, sala, aTo
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
-          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{aTodas ? 'Para todas las salas y la bodega' : sala}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{aTodas ? 'Para todas las sucursales y la bodega' : sala}</Text>
           {/* Con lista de verificación, lo escrito (plan de acción, notas) va
               después de responderla, como se llena en papel. */}
           <Seccion>

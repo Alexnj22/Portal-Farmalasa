@@ -76,7 +76,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
       // El historial va después y aparte: si falla, la pantalla sigue sirviendo para confirmar.
       fetchMetasCambios(r.map((x) => x.id)).then((l) => setCambios(cambiosPorMeta(l))).catch(() => setCambios(null));
     }
-    catch (e) { setError(mensajeAmigable(e, 'Error al cargar el flujo')); setRows([]); }
+    catch (e) { setError(mensajeAmigable(e, 'No se pudieron cargar las metas')); setRows([]); }
   }, [ymActual, ymSig]);
   useEffect(() => { cargar(); }, [cargar]);
   useEffect(() => { fetchAutorizadores().then(setAutorizadores).catch(() => {}); }, []);
@@ -140,7 +140,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
               <View style={{ marginHorizontal: 16 }}>
                 <BotonGrande texto={ocupado === 'generar' ? 'Generando…' : `Generar las propuestas de ${ymLabel(g.ym)}`} deshabilitado={ocupado != null}
                   onPress={() => accion('generar', async () => { const n = await generarPropuestas({ mes: g.ym }); if (!n) throw new Error('No había nada que proponer'); },
-                    'Propuestas listas', 'Cada sala tiene su propuesta para ajustar y confirmar.')} />
+                    'Propuestas listas', 'Cada sucursal tiene su propuesta para ajustar y confirmar.')} />
               </View>
             ) : null}
             {g.filas.map((r) => {
@@ -174,7 +174,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
                       <View style={{ flexDirection: 'row', gap: 8 }}>
                         {confirmable(r) ? (
                           <Boton texto={ocupado === r.id ? 'Confirmando…' : 'Confirmar'} desactivado={ocupado != null}
-                            onPress={() => accion(r.id, () => confirmarMeta({ id: r.id, monto }, ctx), 'Meta confirmada', `${sala} · ${formatMoney(monto)}. Al confirmar todas, le llega al gerente.`)} />
+                            onPress={() => accion(r.id, () => confirmarMeta({ id: r.id, monto }, ctx), 'Meta confirmada', `${sala} · ${formatMoney(monto)}. Al confirmar todas, le llegan al gerente general.`)} />
                         ) : null}
                         {canApprove && r.estado === 'confirmada_supervisor' ? (
                           <>
@@ -184,20 +184,20 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
                             <Boton texto="Devolver" color={MARCA.rojo} borde desactivado={ocupado != null}
                               onPress={() => Alert.prompt('¿Por qué se devuelve?', 'Ej. la meta quedó baja para la temporada', [
                                 { text: 'Cancelar', style: 'cancel' },
-                                { text: 'Devolver', style: 'destructive', onPress: (nota) => { if (nota?.trim()) accion(r.id, () => devolverMeta({ id: r.id, nota: nota.trim() }, ctx), 'Meta devuelta', `${sala} vuelve al supervisor.`); } },
+                                { text: 'Devolver', style: 'destructive', onPress: (nota) => { if (nota?.trim()) accion(r.id, () => devolverMeta({ id: r.id, nota: nota.trim() }, ctx), 'Meta devuelta', `${sala} vuelve al supervisor de ventas.`); } },
                               ], 'plain-text')} />
                           </>
                         ) : null}
                         {!canApprove && canEdit && r.estado === 'confirmada_supervisor' ? (
-                          <Boton texto="Registrar autorización del gerente" borde desactivado={ocupado != null}
+                          <Boton texto="Registrar autorización del gerente general" borde desactivado={ocupado != null}
                             onPress={() => pedirAutorizacion((quien, nota) => accion(r.id,
                               () => aprobarMetaPorAutorizacion({ id: r.id, autorizoPor: quien.id, nota, monto: pasos !== 0 ? monto : null }, { ...ctx, monto: monto + recup(r), autorizo: quien.name }),
-                              'Meta oficial', 'Quedó registrada con la autorización, y a quien autorizó le llegó el aviso.'))} />
+                              'Meta oficial', 'Quedó oficial con esa autorización. A quien autorizó le llegó el aviso.'))} />
                         ) : null}
                       </View>
                       {r.estado === 'oficial' && r.autorizado_por ? (
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                          {`Autorizó ${(() => { const a = autorizadores.find((x) => x.id === r.autorizado_por); return a ? shortEmployeeName(a) : 'la gerencia'; })()}${r.autorizado_nota ? ` — ${r.autorizado_nota}` : ''}`}
+                          {`Autorizó ${(() => { const a = autorizadores.find((x) => x.id === r.autorizado_por); return a ? shortEmployeeName(a) : 'la gerencia'; })()}${r.autorizado_nota ? `. ${r.autorizado_nota}` : ''}`}
                         </Text>
                       ) : null}
                       {cambios === null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>No se pudo cargar quién cambió esta meta.</Text>
@@ -229,11 +229,11 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
             {porConfirmar.length >= 2 ? (
               <View style={{ marginHorizontal: 16 }}>
                 <BotonGrande texto={ocupado === `c${g.ym}` ? 'Confirmando…' : `Confirmar las ${porConfirmar.length} · ${formatMoney(totConf)}`} deshabilitado={ocupado != null}
-                  onPress={() => Alert.alert('Confirmar todas', `${porConfirmar.length} salas por ${formatMoney(totConf)}. Al confirmar todas, le llega al gerente.`, [
+                  onPress={() => Alert.alert('Confirmar todas', `${porConfirmar.length} sucursales por ${formatMoney(totConf)}. Al confirmar todas, le llegan al gerente general.`, [
                     { text: 'Cancelar', style: 'cancel' },
                     { text: 'Confirmar', onPress: () => accion(`c${g.ym}`, () => confirmarMetasLote(porConfirmar.map((r) => ({ id: r.id, monto: montoDe(r) })),
                       { mes: g.ym, total: totConf, salas: porConfirmar.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', '), desde: 'app' }),
-                      'Metas confirmadas', `${porConfirmar.length} salas · ${formatMoney(totConf)}.`) },
+                      'Metas confirmadas', `${porConfirmar.length} sucursales · ${formatMoney(totConf)}.`) },
                   ])} />
               </View>
             ) : null}
@@ -241,22 +241,22 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
               <View style={{ marginHorizontal: 16 }}>
                 <BotonGrande texto={ocupado === `la${g.ym}` ? 'Registrando…' : `Registrar la autorización de las ${porAprobar.length}`} borde color={MARCA.verde} deshabilitado={ocupado != null}
                   onPress={() => pedirAutorizacion((quien, nota) => Alert.alert('Dejar oficiales todas',
-                    `Las ${porAprobar.length} metas (${formatMoney(totApr)}) quedan oficiales de golpe. Queda asentado que las ejecutaste tú con autorización de ${shortEmployeeName(quien)}, y le llega el aviso.`, [
+                    `Las ${porAprobar.length} metas (${formatMoney(totApr)}) quedan oficiales a la vez. Queda registrado que lo hiciste tú con la autorización de ${shortEmployeeName(quien)}. A esa persona le llega el aviso.`, [
                       { text: 'Cancelar', style: 'cancel' },
                       { text: 'Dejar oficiales', onPress: () => accion(`la${g.ym}`, () => aprobarMetasPorAutorizacionLote({ ids: porAprobar.map((r) => r.id), autorizoPor: quien.id, nota },
                         { mes: g.ym, cuantas: porAprobar.length, total: totApr, salas: porAprobar.map((r) => salaNombre(r.branch_id)).join(', '), autorizo: quien.name, desde: 'app' }),
-                        'Metas oficiales', `${porAprobar.length} salas quedaron registradas con esa autorización, y a quien autorizó le llegó el aviso.`) },
+                        'Metas oficiales', `${porAprobar.length} sucursales quedaron oficiales con esa autorización. A quien autorizó le llegó el aviso.`) },
                     ]))} />
               </View>
             ) : null}
             {canApprove && porAprobar.length >= 2 ? (
               <View style={{ marginHorizontal: 16 }}>
                 <BotonGrande texto={ocupado === `a${g.ym}` ? 'Aprobando…' : `Aprobar las ${porAprobar.length} · ${formatMoney(totApr)}`} color={MARCA.verde} deshabilitado={ocupado != null}
-                  onPress={() => Alert.alert('Aprobar todas', `${porAprobar.length} salas quedan oficiales.`, [
+                  onPress={() => Alert.alert('Aprobar todas', `${porAprobar.length} sucursales quedan oficiales.`, [
                     { text: 'Cancelar', style: 'cancel' },
                     { text: 'Aprobar', onPress: () => accion(`a${g.ym}`, () => aprobarMetasLote(porAprobar.map((r) => r.id),
                       { mes: g.ym, cuantas: porAprobar.length, total: totApr, salas: porAprobar.map((r) => salaNombre(r.branch_id)).join(', '), desde: 'app' }),
-                      'Metas aprobadas', `${porAprobar.length} salas quedaron oficiales.`) },
+                      'Metas aprobadas', `${porAprobar.length} sucursales quedaron oficiales.`) },
                   ])} />
               </View>
             ) : null}

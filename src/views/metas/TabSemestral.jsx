@@ -79,7 +79,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
             .catch((err) => {
                 if (!alive) return;
                 setError(err?.code === '42501'
-                    ? 'El pago semestral necesita ver las metas de todas las salas, y tu cargo no tiene ese alcance.'
+                    ? 'Tu cargo no puede ver las metas de todas las sucursales.'
                     : mensajeAmigable(err, 'No se pudo cargar el pago semestral'));
                 setLoading(false);
             });
@@ -131,7 +131,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
 
     const columnas = useMemo(() => [
         { key: 'persona', label: 'Persona' },
-        { key: 'salas', label: 'Sala', hideBelow: 'md' },
+        { key: 'salas', label: 'Sucursal', hideBelow: 'md' },
         ...meses.map((m) => ({ key: m.ym, label: ymLabelCorto(m.ym), align: 'right', hideBelow: 'lg' })),
         { key: 'total', label: 'Total', align: 'right' },
         ...(canApprove && hayInactivos && !aprobado ? [{ key: 'acciones', label: '' }] : []),
@@ -248,17 +248,17 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                     {informativo && (
                         <Notice variant="warning" icon={AlertTriangle}>
                             <span className="font-semibold">Hubo meses con las bonificaciones apagadas.</span>{' '}
-                            Lo de esos meses dice lo que se habría ganado y no se paga: encenderlas
-                            hoy vale desde este mes, no hacia atrás. «A pagar» cuenta sólo los meses
-                            con el bono encendido.
+                            Esos meses muestran lo que se habría ganado, pero no se pagan. Encenderlas
+                            hoy vale desde este mes. «A pagar» cuenta solo los meses con el bono
+                            encendido.
                         </Notice>
                     )}
 
                     {!aprobado && !terminado && (
                         <Notice variant="info">
-                            El semestre sigue abierto: los meses cerrados ya no cambian y el mes en
-                            curso se mueve con cada venta. Se aprueba cuando cierre el último mes
-                            (el cierre corre el día 5).
+                            El semestre sigue abierto. Los meses cerrados ya no cambian. El mes en
+                            curso cambia con cada venta. Se aprueba cuando cierre el último mes,
+                            el día 5 del mes siguiente.
                         </Notice>
                     )}
 
@@ -355,7 +355,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                 <EmptyState
                     compact icon={Coins}
                     title="Nadie ganó bono en este semestre"
-                    subtitle="Ninguna sala llegó al 95% de su meta en los meses que van."
+                    subtitle="Ninguna sucursal llegó al 95% de su meta en los meses que van."
                 />
             )}
 
@@ -369,7 +369,7 @@ export default function TabSemestral({ canApprove, searchTerm = '' }) {
                     if (ok) showToast('Semestre aprobado', `${formatMoney(aPagar)} quedan congelados.`, 'success');
                 }}
                 title={`Aprobar ${semestreLabel(sem).toLowerCase()}`}
-                message={`Quedan congelados ${formatMoney(aPagar)} para ${r.cuantosCobran} personas. A partir de aquí la hoja no cambia: es la que se paga.`}
+                message={`Quedan congelados ${formatMoney(aPagar)} para ${r.cuantosCobran} personas. Desde aquí la hoja no cambia. Es la que se paga.`}
                 confirmText="Aprobar"
                 isProcessing={ocupado}
             />

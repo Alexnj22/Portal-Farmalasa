@@ -62,7 +62,7 @@ const TONO = { danger: MARCA.rojo, warning: MARCA.ambar, get info() { return MAR
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const TEMAS = [
   { id: 'farmacovigilancia', label: 'Farmacovigilancia' },
-  { id: 'vencidos', label: 'Bajas' },
+  { id: 'vencidos', label: 'Descartes' },
   { id: 'retiros', label: 'Retiros' },
   { id: 'autoinspeccion', label: 'Autoinspección' },
   { id: 'capacitacion', label: 'Capacitación' },
@@ -100,7 +100,7 @@ function Resumen({ temas, onIr, recarga }) {
   }, [recarga]);
   if (!salas && !error) return <Cargando />;
   if (error) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (!salas.length) return <Vacio titulo="Sin salas para revisar" />;
+  if (!salas.length) return <Vacio titulo="Sin sucursales para revisar" />;
   return salas.map((s) => {
     const renglones = pendientesDeSala(s, hoy, (f) => fechaTexto(f)).filter((x) => temas.has(x.tab));
     const grave = renglones.some((x) => x.tono === 'danger');
@@ -139,7 +139,7 @@ function Vencimientos({ branches, sala }) {
     }
     return [...g.entries()];
   }, [filas]);
-  if (!filas.length) return <Vacio titulo="Sin fechas de vencimiento" detalle="Las fechas se anotan en el expediente de cada sucursal." />;
+  if (!filas.length) return <Vacio titulo="Sin fechas de vencimiento" detalle="Las fechas se anotan en los datos de cada sucursal." />;
   return grupos.map(([clave, lista]) => {
     const [a, m] = clave.split('-').map(Number);
     return (
@@ -177,10 +177,10 @@ function Dependientes({ sala, recarga }) {
     });
     return () => { vivo = false; };
   }, [sala, recarga]);
-  if (!sala) return <Vacio titulo="Elige una sala" detalle="En el filtro de arriba, para ver a su personal de mostrador." icono="Filtro" />;
+  if (!sala) return <Vacio titulo="Elige una sucursal" detalle="Elígela en el filtro de arriba para ver a su personal de mostrador." icono="Filtro" />;
   if (error) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
   if (!personas) return <Cargando />;
-  if (!personas.length) return <Vacio titulo="Sin personal de mostrador en esta sala" />;
+  if (!personas.length) return <Vacio titulo="Sin personal de mostrador en esta sucursal" />;
   const faltan = personas.filter((p) => !p.acreditado && !p.practicante).length;
   return (
     <>
@@ -256,8 +256,8 @@ function Registros({ tema, sala, nombreSala, puedeEditar, retiroATodas, recarga 
             <BotonGrande key={t.tipo} texto={t.boton} borde={!t.principal} color={MARCA.azul} deshabilitado={!sala}
               onPress={() => abrir({ tipo: t.tipo, modo: 'crear', branchId: sala, sala: nombreSala })} />
           ))}
-          {retiroATodas ? <BotonGrande texto="Avisar retiro a todas las salas" borde color={MARCA.azulClaro} onPress={() => abrir({ tipo: 'retiro', modo: 'crear', aTodas: true })} /> : null}
-          {!sala ? <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>Para anotar, elige una sala en el filtro.</Text> : null}
+          {retiroATodas ? <BotonGrande texto="Avisar retiro a todas las sucursales" borde color={MARCA.azulClaro} onPress={() => abrir({ tipo: 'retiro', modo: 'crear', aTodas: true })} /> : null}
+          {!sala ? <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>Para anotar, elige una sucursal en el filtro.</Text> : null}
           {abiertos ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${abiertos} abierto${abiertos === 1 ? '' : 's'}`}</Text> : null}
         </View>
       ) : null}
@@ -393,7 +393,7 @@ function Mercado({ puedeEditar, texto, recarga }) {
   return (
     <>
       <View style={{ marginHorizontal: 16 }}>
-        <Aviso texto={`La SRS pide cada año existencias y precio de venta de todo medicamento, por farmacia. Aquí se elige qué producto de su catálogo es cada uno nuestro. Revisados ${conteo.confirmados + conteo.no_aplica} de ${filas.length}.`} />
+        <Aviso texto={`La SRS pide cada año existencias y precio de venta de todo medicamento, por sucursal. Aquí se elige qué producto de su catálogo es cada uno nuestro. Revisados ${conteo.confirmados + conteo.no_aplica} de ${filas.length}.`} />
       </View>
       <View style={{ marginHorizontal: 16 }}>
         <Subfiltro opciones={opciones} activa={grupo} onCambiar={(g) => { setGrupo(g); setVisibles(POR_PAGINA); }} />
@@ -412,7 +412,7 @@ function Mercado({ puedeEditar, texto, recarga }) {
           <Tarjeta key={f.product_id}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{f.nombre}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${f.laboratorio || 'Sin laboratorio'} · Existencia ${f.existencia}`}</Text>
-            {g === 'no_aplica' ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>No es medicamento: la SRS no lo pide.</Text>
+            {g === 'no_aplica' ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>No es medicamento. La SRS no lo pide.</Text>
               : f.crp ? (
                 <View style={{ gap: 2, marginTop: 4 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`→ ${f.nombre_srs}`}</Text>
@@ -480,7 +480,7 @@ export default function Cumplimiento() {
 
   const grupos = alcanceTodas && seccion !== 'resumen' && seccion !== 'mercado' ? [{
     id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSalaElegida,
-    opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((o) => ({ id: o.value, label: o.label }))],
+    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((o) => ({ id: o.value, label: o.label }))],
   }] : [];
 
   return (

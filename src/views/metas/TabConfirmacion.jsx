@@ -126,7 +126,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     })
                     .catch(() => { if (alive) setCambios(null); });
             })
-            .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'Error al cargar el flujo')); setLoading(false); } });
+            .catch((err) => { if (alive) { setError(mensajeAmigable(err, 'No se pudieron cargar las metas')); setLoading(false); } });
         return () => { alive = false; };
     };
     useEffect(cargar, [reloadKey, ymActual, ymSig]);
@@ -259,7 +259,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                       salas: porConfirmar.map((r) => `${salaNombre(r.branch_id)}=${montoDe(r)}`).join(', ') }),
                                 'lote-confirmar',
                                 'Metas confirmadas',
-                                `${porConfirmar.length} salas · ${formatMoney(totalConfirmar)}. Al confirmar todas, le llega al gerente.`,
+                                `${porConfirmar.length} sucursales · ${formatMoney(totalConfirmar)}. Al confirmar todas, le llegan al gerente general.`,
                             )}
                         >
                             {busy === 'lote-confirmar'
@@ -274,7 +274,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 () => aprobarMetasLote(idsAprobar, detalleAprobar),
                                 'lote-aprobar',
                                 'Metas aprobadas',
-                                `${porAprobar.length} salas quedaron oficiales. Cada una ve la suya.`,
+                                `${porAprobar.length} sucursales quedaron oficiales. Cada una ve la suya.`,
                             )}
                         >
                             {busy === 'lote-aprobar'
@@ -299,9 +299,9 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 {loteAut?.mes === mes && (
                     <div data-surface="card" data-tono="warning" className="w-full mt-3 p-3 space-y-2">
                         <p className="text-label font-semibold text-content-2">
-                            Esto deja oficiales las {loteAut.cuantas} metas de golpe
-                            ({formatMoney(loteAut.total)}). Queda asentado que las ejecutaste vos
-                            con autorización de quien elijas, y a esa persona le llega el aviso.
+                            Esto deja oficiales las {loteAut.cuantas} metas a la vez
+                            ({formatMoney(loteAut.total)}). Queda registrado que lo hiciste tú
+                            con la autorización de quien elijas. A esa persona le llega el aviso.
                         </p>
                         <LiquidSelect
                             value={quienAut} onChange={setQuienAut}
@@ -323,7 +323,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                      autorizo: autorizadores.find((a) => a.id === quienAut)?.name }),
                                 'lote-autorizar',
                                 'Metas oficiales',
-                                `${loteAut.cuantas} salas quedaron registradas con esa autorización, y a quien autorizó le llegó el aviso.`,
+                                `${loteAut.cuantas} sucursales quedaron oficiales con esa autorización. A quien autorizó le llegó el aviso.`,
                             )}
                         >
                             {busy === 'lote-autorizar'
@@ -410,7 +410,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                             )}
                         </div>
                         <p className="text-label font-semibold text-content-3 mt-1.5">
-                            {filas.length === 1 ? 'Una sala' : `${filas.length} salas`}
+                            {filas.length === 1 ? 'Una sucursal' : `${filas.length} sucursales`}
                             {searchTerm?.trim() ? ' (las que coinciden con la búsqueda)' : ''}
                             {ajusteTotal != null && (
                                 <>
@@ -619,7 +619,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         número que otra persona ya confirmó. */}
                     {ajustable && pasos !== 0 && (
                         <p className="text-micro font-semibold text-warning-text mt-1">
-                            Cambiaste lo que confirmó el supervisor — le va a llegar el aviso.
+                            Cambiaste lo que confirmó el supervisor de ventas. Le va a llegar el aviso.
                         </p>
                     )}
                     {/* Una vez confirmada, el ajuste queda a la vista: quien
@@ -749,7 +749,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <div data-surface="card" className="flex items-center justify-between gap-3 px-3 py-2">
                             {pasos === 0 ? (
                                 <p className="text-label font-semibold text-content-3 py-1.5">
-                                    {ajustable ? 'Igual a lo que confirmó el supervisor' : 'Igual a la propuesta del sistema'}
+                                    {ajustable ? 'Igual a lo que confirmó el supervisor de ventas' : 'Igual a la propuesta del sistema'}
                                 </p>
                             ) : (
                                 <p className="text-label font-semibold text-content-2 min-w-0">
@@ -843,7 +843,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 () => confirmarMeta({ id: r.id, monto: montoNum },
                                     { sala: salaNombre(r.branch_id), mes: r.year_month }),
                                 r.id,
-                                'Meta confirmada', `${salaNombre(r.branch_id)} · ${formatMoney(montoNum)}. Al confirmar todas, le llega al gerente.`,
+                                'Meta confirmada', `${salaNombre(r.branch_id)} · ${formatMoney(montoNum)}. Al confirmar todas, le llegan al gerente general.`,
                             )}
                         >
                             {busy === r.id ? 'Confirmando…' : 'Confirmar'}
@@ -863,7 +863,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                     r.id,
                                     'Meta aprobada',
                                     pasos !== 0
-                                        ? `${salaNombre(r.branch_id)} quedó oficial en ${formatMoney(montoNum + recuperacion)}. Al supervisor le llegó el aviso del cambio.`
+                                        ? `${salaNombre(r.branch_id)} quedó oficial en ${formatMoney(montoNum + recuperacion)}. Al supervisor de ventas le llegó el aviso del cambio.`
                                         : `${salaNombre(r.branch_id)} quedó oficial.`,
                                 )}
                             >
@@ -885,7 +885,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 setAutorizando(autorizando === r.id ? null : r.id);
                                 setNotaAut(''); setQuienAut('');
                             }}>
-                            Registrar autorización del gerente
+                            Registrar autorización del gerente general
                         </Button>
                     )}
                 </div>
@@ -893,8 +893,8 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                 {autorizando === r.id && (
                     <div data-surface="card" data-tono="warning" className="p-3 space-y-2">
                         <p className="text-label font-semibold text-content-2">
-                            Esto la deja oficial. Queda asentado que la ejecutaste vos con
-                            autorización de quien elijas, y a esa persona le llega el aviso.
+                            Esto la deja oficial. Queda registrado que lo hiciste tú con la
+                            autorización de quien elijas. A esa persona le llega el aviso.
                         </p>
                         <LiquidSelect
                             value={quienAut} onChange={setQuienAut}
@@ -919,8 +919,8 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 r.id,
                                 'Meta oficial',
                                 pasos !== 0
-                                    ? `Quedó en ${formatMoney(montoNum + recuperacion)} con esa autorización. Al supervisor le llegó el aviso del cambio.`
-                                    : 'Quedó registrada con la autorización, y a quien autorizó le llegó el aviso.',
+                                    ? `Quedó en ${formatMoney(montoNum + recuperacion)} con esa autorización. Al supervisor de ventas le llegó el aviso del cambio.`
+                                    : 'Quedó oficial con esa autorización. A quien autorizó le llegó el aviso.',
                             )}
                         >
                             Dejar oficial con esta autorización
@@ -933,7 +933,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         Oficial por autorización de <strong className="text-content-2">
                             {autorizadores.find((a) => a.id === r.autorizado_por)?.name || 'la gerencia'}
                         </strong>
-                        {r.autorizado_nota ? ` — ${r.autorizado_nota}` : ''}
+                        {r.autorizado_nota ? `. ${r.autorizado_nota}` : ''}
                     </p>
                 )}
 
@@ -951,7 +951,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 () => devolverMeta({ id: r.id, nota: notaDev.trim() },
                                     { sala: salaNombre(r.branch_id), mes: r.year_month }),
                                 r.id,
-                                'Meta devuelta', 'Le llega la nota al supervisor para que la revise.',
+                                'Meta devuelta', 'Le llega la nota al supervisor de ventas.',
                             )}
                         >
                             Devolver con esta nota
@@ -974,7 +974,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
             <EmptyState
                 compact icon={AlertTriangle}
                 iconClass="text-danger" glowClass="bg-danger/30"
-                title="No se pudo cargar el flujo"
+                title="No se pudieron cargar las metas"
                 subtitle={error}
                 action={<Button variant="secondary" icon={RefreshCw} onClick={cargar}>Reintentar</Button>}
             />
@@ -988,7 +988,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     <Notice variant="warning" icon={CalendarCheck}>
                         {ymLabel(ymActual)} ya empezó y {pendientesTodas.length === 1
                             ? 'una meta sigue sin oficializar'
-                            : `${pendientesTodas.length} metas siguen sin oficializar`} — las salas la ven como pendiente.
+                            : `${pendientesTodas.length} metas siguen sin oficializar`}. Las sucursales la ven como pendiente.
                     </Notice>
                     {pendientesActual.length > 0 && resumenGeneral(pendientesActual, ymActual)}
                     {pendientesActual.length === 0 ? (
@@ -1035,14 +1035,14 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <EmptyState
                             compact icon={CalendarCheck}
                             title={`Sin metas para ${ymLabel(ymSig).toLowerCase()}`}
-                            subtitle={`El día ${diaPropuesta} el portal las propone solo, con el ritmo de los últimos 3 meses — el que está por cerrar entra proyectado.`}
+                            subtitle={`El día ${diaPropuesta} el portal las propone solo, con el ritmo de los últimos 3 meses.`}
                             action={canEdit && (
                                 <Button
                                     variant="primary" icon={Sparkles} disabled={busy != null}
                                     onClick={() => accion(
                                         async () => { const n = await generarPropuestas({ mes: ymSig }); if (!n) throw new Error('No había nada que proponer'); },
                                         'generar',
-                                        'Propuestas listas', 'Revisa cada sala, ajusta el monto si hace falta y confirma.',
+                                        'Propuestas listas', 'Revisa cada sucursal, ajusta el monto si hace falta y confirma.',
                                     )}
                                 >
                                     {busy === 'generar' ? 'Calculando…' : 'Generar propuestas ahora'}

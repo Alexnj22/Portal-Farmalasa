@@ -42,7 +42,7 @@ export function GraficaDelMes({ data }) {
     <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ gap: 2 }}>
-          <Titulo>{`${data?.sala ?? 'La sala'} · este mes`}</Titulo>
+          <Titulo>{`${data?.sala ?? 'La sucursal'} · este mes`}</Titulo>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
             {vistaReal === 'dias'
               ? <><Text style={{ fontWeight: '800' }}>{`${r.sobreRitmo} de ${r.cerrados}`}</Text> días cerrados por encima del ritmo</>
@@ -64,7 +64,7 @@ export function GraficaDelMes({ data }) {
                 </View>
               )} />
             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-              {`El día de hoy va más claro porque todavía no termina.${r.porVenir > 0 ? ` Quedan ${r.porVenir} día${r.porVenir === 1 ? '' : 's'} del mes.` : ''}`}
+              {`Hoy va más claro porque todavía no termina.${r.porVenir > 0 ? ` Quedan ${r.porVenir} día${r.porVenir === 1 ? '' : 's'} del mes.` : ''}`}
             </Text>
           </>
         ) : (
@@ -79,7 +79,7 @@ export function GraficaDelMes({ data }) {
               <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
                 Cierra en <Text style={{ fontWeight: '800' }}>{formatMoney(r.proy)}</Text>{' → '}
                 <Text style={{ fontWeight: '800', color }}>{formatPct(r.pctProy)}</Text>
-                {r.porDiaParaLlegar != null ? <Text style={{ color: colorSistema.texto2 }}>{` · faltan ${formatMoney(r.falta)} en ${r.diasRestantes} día${r.diasRestantes === 1 ? '' : 's'} — ${formatMoney(r.porDiaParaLlegar)} por día`}</Text> : null}
+                {r.porDiaParaLlegar != null ? <Text style={{ color: colorSistema.texto2 }}>{` · faltan ${formatMoney(r.falta)} en ${r.diasRestantes} día${r.diasRestantes === 1 ? '' : 's'} · ${formatMoney(r.porDiaParaLlegar)} por día`}</Text> : null}
               </Text>
             ) : null}
             {r.tramoProy ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Al ritmo de hoy: ${TRAMO_CFG[r.tramoProy]?.sinBono?.toLowerCase()}.`}</Text> : null}
@@ -102,7 +102,7 @@ export function Ranking({ data, limite }) {
       <Vidrio radio={20}>
         <View style={{ padding: 16 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Sin ventas este mes</Text>
-          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Cuando alguien registre una venta, aparece aquí con su puesto.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Cuando alguien registre una venta, aparece aquí.</Text>
         </View>
       </Vidrio>
     );
@@ -116,7 +116,7 @@ export function Ranking({ data, limite }) {
         <View style={{ gap: 2 }}>
           <Titulo>{`Venta por vendedor · ${data?.sala ?? ''}`}</Titulo>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-            {`${r.filas.length} persona${r.filas.length === 1 ? '' : 's'} · promedio ${formatMoney(r.promedio)}${sufijo}${data?.promedio_ticket != null ? ` · ticket de la sala ${formatMoney(data.promedio_ticket)}` : ''}`}
+            {`${r.filas.length} persona${r.filas.length === 1 ? '' : 's'} · promedio ${formatMoney(r.promedio)}${sufijo}${data?.promedio_ticket != null ? ` · ticket de la sucursal ${formatMoney(data.promedio_ticket)}` : ''}`}
           </Text>
         </View>
         {opciones.length > 1 ? <Segmentos margen={0} activa={r.ordenActivo} onCambiar={setOrden} opciones={opciones} /> : null}
@@ -145,7 +145,7 @@ export function Ranking({ data, limite }) {
                 </Text>
                 {v.sala_ajena || v.dias_sin_turno > 0 ? (
                   <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '800', textTransform: MAYUSCULAS }}>
-                    {[v.sala_ajena ? 'No es su sala' : null, v.dias_sin_turno > 0 ? `${v.dias_sin_turno} día${v.dias_sin_turno === 1 ? '' : 's'} sin turno` : null].filter(Boolean).join(' · ')}
+                    {[v.sala_ajena ? 'No es su sucursal' : null, v.dias_sin_turno > 0 ? `${v.dias_sin_turno} día${v.dias_sin_turno === 1 ? '' : 's'} sin turno` : null].filter(Boolean).join(' · ')}
                   </Text>
                 ) : null}
                 <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.15)', marginTop: 2 }}>
@@ -161,7 +161,7 @@ export function Ranking({ data, limite }) {
           );
         })}
         <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-          La raya de cada barra es el promedio. Quien trabajó un solo día lo lleva anotado: un total bajo con pocos días no es lo mismo que un total bajo con el mes entero.
+          La raya de cada barra es el promedio. Quien trabajó un solo día lo lleva marcado.
         </Text>
       </View>
     </Vidrio>

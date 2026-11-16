@@ -64,7 +64,7 @@ export default function DuplicarPiezas() {
         <PasoDeMes mes={destino} onCambiar={setDestino} />
         <Segmentos activa={modo} onCambiar={setModo} opciones={[{ id: 'semana', label: 'Mismo día de la semana' }, { id: 'dia', label: 'Mismo número de día' }]} />
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso texto={`${modo === 'semana' ? 'El primer lunes cae en el primer lunes, el segundo viernes en el segundo viernes…' : 'El 10 cae en el 10; si el mes no tiene ese día, en el último.'} Las copias quedan pendientes, sin diseños ni pauta.`} />
+          <Aviso texto={`${modo === 'semana' ? 'El primer lunes cae en el primer lunes, el segundo viernes en el segundo viernes…' : 'El 10 cae en el 10. Si el mes no tiene ese día, cae en el último.'} Las copias quedan pendientes, sin diseños ni pauta.`} />
         </View>
         {piezas == null ? <Indicador /> : (
           <View style={{ marginHorizontal: 16 }}>

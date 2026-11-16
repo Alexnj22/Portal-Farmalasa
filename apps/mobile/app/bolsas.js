@@ -132,7 +132,7 @@ function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar, userId, onRe
     const seguir = () => { onMarcar(bolsa, monto); setTexto(''); };
     if (monto === 0 && saldo >= 0.01) {
       Alert.alert('Anotar cero dice que la bolsa vino vacía',
-        'Si alguien retiró ese efectivo, eso es una salida y va con su vale: se registra desde Efectivo → «Sacar dinero», y entonces el conteo cuadra solo. Anotarlo aquí deja una diferencia que hay que explicar a mano.',
+        'Si alguien sacó ese efectivo, regístralo en Efectivo → «Sacar dinero» con su vale. Así el conteo cuadra. Si lo anotas aquí, queda una diferencia que hay que explicar.',
         [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sí, vino vacía', onPress: seguir }]);
       return;
     }
@@ -227,7 +227,7 @@ export default function Bolsas() {
   // las cifras por debajo a quien está decidiendo es cómo se firma otra cosa.
   useRefrescoEnVivo(cargar, { tabla: 'bolsas', ms: 60_000, activo: !abierta && !resolviendo });
 
-  const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`;
+  const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sucursal ${id}`;
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const quien = (id) => { const e = porId.get(String(id)); return e ? shortEmployeeName(e) : null; };
 
@@ -328,11 +328,11 @@ export default function Bolsas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_FIJA, title: 'Bolsas',
-        headerSearchBarOptions: { placeholder: 'Folio, caja, sala o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
+        headerSearchBarOptions: { placeholder: 'Folio, caja, sucursal o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
       <MenuDeFiltros grupos={grupos} extra={puedeEntregar || verMontos ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
       <FijoArriba>
         <Segmentos activa={etapa} onCambiar={(e) => { setEtapa(e); setElegidas(new Set()); }} opciones={[
-          { id: 'sala', label: 'Sala' },
+          { id: 'sala', label: 'Sucursal' },
           { id: 'camino', label: 'Recibir' },
           { id: 'contar', label: 'Contar' },
           { id: 'contadas', label: 'Contadas' },
@@ -347,7 +347,7 @@ export default function Bolsas() {
           <FilaDeKpis>
             <Kpi icono="HandCoins" rotulo="Sin recibir" color={MARCA.azulClaro}
               valor={verMontos ? formatMoney(suma(sinRecibir)) : String(sinRecibir.length)}
-              apoyo={sinRecibir.length ? `${sinRecibir.length} en sala o en camino` : 'todo recibido'} />
+              apoyo={sinRecibir.length ? `${sinRecibir.length} en sucursal o en camino` : 'todo recibido'} />
             <Kpi icono="CalendarDays" rotulo="La más vieja" color={diasMasVieja >= DIAS_DE_ALARMA_BOLSA ? MARCA.rojo : MARCA.azulClaro}
               pide={diasMasVieja >= DIAS_DE_ALARMA_BOLSA}
               valor={masVieja ? `${diasMasVieja} d` : '—'}
@@ -374,8 +374,8 @@ export default function Bolsas() {
         {diasQueNoCuadran.length ? (
           <View style={{ marginHorizontal: 16, gap: 4 }}>
             <Aviso tono="freno" texto={diasQueNoCuadran.every((d) => Number(d.bolsas) === 0)
-              ? `${diasQueNoCuadran.length === 1 ? 'Un día cerró' : `${diasQueNoCuadran.length} días cerraron`} sin guardar nada del efectivo que declaró el corte: ese efectivo nunca entró al circuito.`
-              : `${diasQueNoCuadran.length === 1 ? 'Un día no cuadra' : `${diasQueNoCuadran.length} días no cuadran`} entre lo que declaró el corte y lo que se guardó en bolsas. Hay que revisar la caja de esa sala.`} />
+              ? `${diasQueNoCuadran.length === 1 ? 'Un día cerró' : `${diasQueNoCuadran.length} días cerraron`} sin guardar nada del efectivo que declaró el corte.`
+              : `${diasQueNoCuadran.length === 1 ? 'Un día no cuadra' : `${diasQueNoCuadran.length} días no cuadran`} entre lo que declaró el corte y lo que se guardó en bolsas. Revisa la caja de esa sucursal.`} />
             {diasQueNoCuadran.map((d) => (
               <Text key={`${d.branch_id}-${d.fecha}`} style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>
                 {`${nombreDeSala(d.branch_id)} · ${dia(d.fecha)} · ${Number(d.bolsas) === 0 ? (verMontos ? `${formatMoney(d.declarado)} sin guardar · ninguna bolsa` : 'ninguna bolsa') : (verMontos ? `${Number(d.descuadre) > 0 ? 'sobran' : 'faltan'} ${formatMoney(Math.abs(Number(d.descuadre)))} de ${formatMoney(d.declarado)}` : (Number(d.descuadre) > 0 ? 'se guardó de más' : 'se guardó de menos'))}`}
@@ -400,7 +400,7 @@ export default function Bolsas() {
         {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
           {[
-            etapa === 'sala' ? 'En la sala, esperando que la entreguen' : etapa === 'camino' ? 'Entregadas, esperando recepción'
+            etapa === 'sala' ? 'En la sucursal, esperando que la entreguen' : etapa === 'camino' ? 'Entregadas, esperando recepción'
               : etapa === 'contar' ? `Por contar · ${marcadas.length} de ${porContarVistas.length} anotadas` : etapa === 'contadas' ? (tanda === 'sin-resolver' ? 'Contadas sin resolver (de cualquier fecha)' : `Contadas ${periodo === 'rango' ? `del ${dia(rango.desde)} al ${dia(rango.hasta)}` : `en los últimos ${periodo} días`}`) : 'Contadas que no cuadraron',
             `${lista.length} bolsa${lista.length === 1 ? '' : 's'}`,
             verMontos && lista.length ? formatMoney(suma(lista)) : null,
@@ -410,7 +410,7 @@ export default function Bolsas() {
           <View style={{ marginHorizontal: 16, gap: 8 }}>
             {verMontos ? (
               <Aviso tono={Math.abs(difMarcada) < 0.01 ? 'nota' : 'freno'}
-                texto={`${marcadas.length} anotada${marcadas.length === 1 ? '' : 's'}: se esperaban ${formatMoney(suma(marcadas))} y se contaron ${formatMoney(contadoMarcado)}${Math.abs(difMarcada) < 0.01 ? ' — cuadra.' : ` — diferencia ${difMarcada > 0 ? '+' : ''}${formatMoney(difMarcada)}.`} Al confirmar ya no se puede corregir, sólo resolver la diferencia.`} />
+                texto={`${marcadas.length} anotada${marcadas.length === 1 ? '' : 's'}: se esperaban ${formatMoney(suma(marcadas))} y se contaron ${formatMoney(contadoMarcado)}${Math.abs(difMarcada) < 0.01 ? '. Cuadra.' : `. Diferencia ${difMarcada > 0 ? '+' : ''}${formatMoney(difMarcada)}.`} Después de confirmar ya no se puede corregir, solo resolver la diferencia.`} />
             ) : null}
             <BotonGrande texto={ocupado === 'confirmar' ? 'Confirmando…' : `Confirmar el conteo (${marcadas.length})`} color={MARCA.verde}
               deshabilitado={!!ocupado} onPress={confirmar} />
@@ -495,7 +495,7 @@ export default function Bolsas() {
         ) : null}
         {bolsas && !lista.length ? (
           <Vacio>
-            {etapa === 'sala' ? 'Ninguna bolsa en las salas' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'
+            {etapa === 'sala' ? 'Ninguna bolsa en las sucursales' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'
               : etapa === 'contadas' ? 'Ninguna contada en ese período' : 'Sin diferencias por resolver'}
           </Vacio>
         ) : null}

@@ -114,7 +114,7 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
 
             {salaPropia && (
                 <p className="text-caption text-content-3">
-                    Se ven las de <b className="text-content-2">todas las sucursales</b>: el cliente puede venir a
+                    Se ven las de <b className="text-content-2">todas las sucursales</b>. El cliente puede
                     aplicarse aquí aunque haya pagado en otra.
                     {deOtras > 0 && ` ${deOtras === 1 ? '1 es' : `${deOtras} son`} de otra sucursal.`}
                 </p>
@@ -138,7 +138,7 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
                 ]}
                 loading={filas == null}
                 skeletonRows={6}
-                empty={{ icon: Hourglass, message: searchTerm ? 'Nadie con ese dato tiene aplicaciones pendientes' : 'Ninguna pendiente: todo lo pagado ya se aplicó' }}
+                empty={{ icon: Hourglass, message: searchTerm ? 'Nadie con ese dato tiene aplicaciones pendientes' : 'Todo lo pagado ya se aplicó' }}
                 minWidth="680px"
                 /* `acciones: true`: «Elegir» es la única acción y tiene que verse en el
                    teléfono — es justo donde la sala marca lo que aplicó. */

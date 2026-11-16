@@ -34,7 +34,7 @@ const EsqueletoGraficas = () => (
 
 const COLS = [
     { key: 'mes',    label: 'Mes' },
-    { key: 'sala',   label: 'Sala' },
+    { key: 'sala',   label: 'Sucursal' },
     { key: 'meta',   label: 'Meta',         align: 'right' },
     { key: 'venta',  label: 'Vendido',      align: 'right' },
     { key: 'pct',    label: 'Cumplimiento', align: 'right' },
@@ -105,7 +105,7 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
                         filas que llegaron, que es el catálogo de lo que hay —
                         no de lo que esta persona puede mirar. */}
                     {alcanceTodas && (
-                    <FilterBar.Section active={!!salaFilter} onClear={() => setSalaFilter('')} label="sala">
+                    <FilterBar.Section active={!!salaFilter} onClear={() => setSalaFilter('')} label="sucursal">
                         <FilterBar.Sucursal
                             value={salaFilter || null}
                             onChange={(v) => setSalaFilter(v || '')}
@@ -208,7 +208,7 @@ export default function TabHistorico({ salaNombre, canEdit, onAgregarMeta, reloa
                     icon: Target,
                     message: 'Sin meses en el histórico',
                     subtext: canEdit
-                        ? 'Agrega las metas de meses anteriores y el cumplimiento se calcula solo con las ventas del portal.'
+                        ? 'Agrega las metas de meses anteriores. El cumplimiento se calcula solo.'
                         : 'El cumplimiento aparece cuando cada mes tiene su meta registrada.',
                     action: canEdit ? { label: 'Agregar meta', onClick: () => onAgregarMeta(null, null) } : undefined,
                 }}>

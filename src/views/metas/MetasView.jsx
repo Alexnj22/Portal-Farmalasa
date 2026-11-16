@@ -105,7 +105,7 @@ export default function MetasView() {
     }, [canEdit, reloadKey]);
 
     const salaNombre = useCallback(
-        (id) => (branches || []).find((b) => b.id === Number(id))?.name || `Sala ${id}`,
+        (id) => (branches || []).find((b) => b.id === Number(id))?.name || `Sucursal ${id}`,
         [branches],
     );
 
@@ -127,7 +127,7 @@ export default function MetasView() {
             onTabChange={setActiveTab}
             searchValue={search}
             onSearchChange={setSearch}
-            placeholder={activeTab === 'semestral' ? 'Buscar persona...' : 'Buscar sala...'}
+            placeholder={activeTab === 'semestral' ? 'Buscar persona...' : 'Buscar sucursal...'}
         />
     );
 

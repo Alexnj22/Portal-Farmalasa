@@ -115,7 +115,7 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
 
             {!grupos.length && (
                 <EmptyState icon={Palette} title="Sin recursos de marca"
-                    subtitle={puedeGestionar ? 'Sube los logos, la paleta y las tipografías de cada farmacia.' : 'Todavía no se cargó la biblioteca de marca.'} />
+                    subtitle={puedeGestionar ? 'Sube los logos, la paleta y las tipografías de cada marca.' : 'Todavía no se cargó la biblioteca de marca.'} />
             )}
 
             {grupos.map((g) => (

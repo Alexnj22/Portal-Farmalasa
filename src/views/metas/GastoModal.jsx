@@ -124,8 +124,8 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
         if (salasValidas.length === 0) {
             const i = Math.max(0, filas.findIndex((f) => !Number(f.branchId) || !(parseFloat(String(f.monto).replace(/,/g, '')) > 0)));
             return Number(filas[i]?.branchId)
-                ? { texto: 'Escribe cuánto le toca a la sala.', campo: `monto-${i}` }
-                : { texto: 'Elige al menos una sala y cuánto le toca.', campo: `sala-${i}` };
+                ? { texto: 'Escribe cuánto le toca a la sucursal.', campo: `monto-${i}` }
+                : { texto: 'Elige al menos una sucursal y cuánto le toca.', campo: `sala-${i}` };
         }
         if (!ym) return { texto: 'Elige desde qué mes.', campo: 'mes-gasto' };
         if (!(Number(meses) > 0)) return { texto: 'Elige en cuántos meses se recupera.', campo: 'meses-gasto' };
@@ -187,7 +187,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
 
                 <div>
                     <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
-                        Salas y cuánto le toca a cada una
+                        Sucursales y cuánto le toca a cada una
                     </p>
                     <div className="space-y-2">
                         {filas.map((f, i) => (
@@ -197,7 +197,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                                         value={f.branchId}
                                         onChange={(v) => setFila(i, { branchId: v })}
                                         options={salasLibres(i)}
-                                        placeholder="Sala"
+                                        placeholder="Sucursal"
                                     />
                                 </div>
                                 <div className="w-36 shrink-0">
@@ -223,7 +223,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                             variant="secondary" size="sm" icon={Plus} className="mt-2"
                             onClick={() => setFilas((fs) => [...fs, { branchId: '', monto: '' }])}
                         >
-                            Agregar otra sala
+                            Agregar otra sucursal
                         </Button>
                     )}
                 </div>
@@ -270,8 +270,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
                         {reabre.length === 1
                             ? `La meta de ${reabre[0]} ya estaba aprobada.`
                             : `Estas metas ya estaban aprobadas: ${reabre.join(', ')}.`}
-                        {' '}Al guardar vuelven a revisión y hay que confirmarlas y aprobarlas otra vez,
-                        porque cambia el monto que la sala va a perseguir.
+                        {' '}Al guardar, vuelven a revisión. Hay que confirmarlas y aprobarlas otra vez.
                     </Notice>
                 )}
 

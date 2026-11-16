@@ -218,7 +218,7 @@ const BolsasView = () => {
             onTabChange={setEtapa}
             searchValue={busqueda}
             onSearchChange={setBusqueda}
-            placeholder="Buscar por folio, sala, día, monto o persona…"
+            placeholder="Buscar por folio, sucursal, día, monto o persona…"
         />
     );
 

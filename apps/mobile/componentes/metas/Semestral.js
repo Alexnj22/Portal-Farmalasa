@@ -75,7 +75,7 @@ export default function Semestral({ canApprove }) {
       .catch((err) => {
         if (!vivo) return;
         setError(err?.code === '42501'
-          ? 'El pago semestral necesita ver las metas de todas las salas, y tu cargo no tiene ese alcance.'
+          ? 'Tu cargo no puede ver las metas de todas las sucursales.'
           : mensajeAmigable(err, 'No se pudo cargar el pago semestral'));
       });
     return () => { vivo = false; };
@@ -98,7 +98,7 @@ export default function Semestral({ canApprove }) {
   };
 
   const aprobar = () => Alert.alert(`Aprobar ${semestreLabel(sem).toLowerCase()}`,
-    `Quedan congelados ${formatMoney(r.aPagar)} para ${r.cuantosCobran} personas. A partir de aquí la hoja no cambia: es la que se paga.`, [
+    `Quedan congelados ${formatMoney(r.aPagar)} para ${r.cuantosCobran} personas. Desde aquí la hoja no cambia. Es la que se paga.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Aprobar', onPress: () => correr(() => aprobarBonoSemestral(sem, true, null, { a_pagar: r.aPagar }), 'Semestre aprobado') },
     ]);
@@ -153,8 +153,8 @@ export default function Semestral({ canApprove }) {
               ))}
             </View>
           ) : null}
-          {r.informativo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Hubo meses con las bonificaciones apagadas: lo de esos meses dice lo que se habría ganado y no se paga. Encenderlas hoy vale desde este mes, no hacia atrás." /></View> : null}
-          {!r.aprobado && !r.terminado ? <View style={{ marginHorizontal: 16 }}><Aviso texto="El semestre sigue abierto: los meses cerrados ya no cambian y el mes en curso se mueve con cada venta. Se aprueba cuando cierre el último mes (el cierre corre el día 5)." /></View> : null}
+          {r.informativo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Hubo meses con las bonificaciones apagadas. Esos meses muestran lo que se habría ganado, pero no se pagan. Encenderlas hoy vale desde este mes." /></View> : null}
+          {!r.aprobado && !r.terminado ? <View style={{ marginHorizontal: 16 }}><Aviso texto="El semestre sigue abierto. Los meses cerrados ya no cambian. El mes en curso cambia con cada venta. Se aprueba cuando cierre el último mes, el día 5 del mes siguiente." /></View> : null}
 
           {r.personas.length > 1 ? (
             <View style={{ marginHorizontal: 16 }}>

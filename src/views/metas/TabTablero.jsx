@@ -147,7 +147,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 <StatCard
                     icon={Target} label="Meta del mes"
                     value={resumen.meta > 0 ? dinero(resumen.meta) : '—'}
-                    sub={resumen.conMeta > 0 ? `${resumen.conMeta} sala${resumen.conMeta !== 1 ? 's' : ''} con meta` : 'sin metas este mes'}
+                    sub={resumen.conMeta > 0 ? `${resumen.conMeta} sucursal${resumen.conMeta !== 1 ? 'es' : ''} con meta` : 'sin metas este mes'}
                     iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
                     loading={loading}
                 />
@@ -162,7 +162,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     valueCls="text-content"
                     sub={resumen.meta > 0
                         ? (ocultarMontos ? 'de la meta' : `${fmtPct(resumen.vendidoConMeta / resumen.meta * 100)} de la meta`)
-                        : cerrado ? 'en el mes' : 'salas con meta'}
+                        : cerrado ? 'en el mes' : 'sucursales con meta'}
                     iconBg="bg-success/10" iconCls="text-success-text"
                     loading={loading}
                 />
@@ -246,7 +246,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                         catálogo de las 6 salas de venta, no lo que el permiso
                         deja ver. */}
                     {alcanceTodas && (
-                    <FilterBar.Section active={!!salaMes} onClear={() => setSalaMes('')} label="sala">
+                    <FilterBar.Section active={!!salaMes} onClear={() => setSalaMes('')} label="sucursal">
                         <FilterBar.Sucursal
                             value={salaMes || null}
                             onChange={(v) => setSalaMes(v || '')}
@@ -375,7 +375,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                     <EmptyState
                         compact icon={Search}
                         title="Sin resultados"
-                        subtitle={`Ninguna sala coincide con "${searchTerm.trim()}".`}
+                        subtitle={`Ninguna sucursal coincide con "${searchTerm.trim()}".`}
                         action={onClearSearch && (
                             <Button variant="secondary" onClick={onClearSearch}>Limpiar la búsqueda</Button>
                         )}
@@ -383,8 +383,8 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
                 ) : (
                     <EmptyState
                         compact icon={Target}
-                        title="Sin salas para este mes"
-                        subtitle="Cuando una sala registre ventas, su tarjeta aparece aquí."
+                        title="Sin sucursales para este mes"
+                        subtitle="Cuando una sucursal registre ventas, su tarjeta aparece aquí."
                     />
                 )
             )}

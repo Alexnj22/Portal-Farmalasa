@@ -56,7 +56,7 @@ export default function MetaNueva() {
     return out;
   }, [ymActual]);
   const salas = useMemo(() => SALAS_VENTA.map((id) => ({
-    value: String(id), label: (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`,
+    value: String(id), label: (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sucursal ${id}`,
   })).sort((a, b) => a.label.localeCompare(b.label)), [sucursales]);
 
   // El estado de cada meta existente, una vez: pocas filas.
@@ -95,7 +95,7 @@ export default function MetaNueva() {
           <Seccion>
             <Eleccion rotulo="Mes" valor={ym} opciones={meses} onCambiar={setYm} />
             <View style={{ borderTopWidth: 0.5, borderTopColor: colorSistema.separador }} />
-            <Eleccion rotulo="Sala" valor={sala} opciones={salas} onCambiar={setSala} />
+            <Eleccion rotulo="Sucursal" valor={sala} opciones={salas} onCambiar={setSala} />
           </Seccion>
           {sit ? <Aviso tono={sit.tono === 'warning' ? 'cuidado' : 'nota'} texto={sit.texto} /> : null}
           <Seccion titulo="Monto de la meta">

@@ -67,7 +67,7 @@ export default function FichaDePieza({ pieza, marcas = [], comentarios, cambio, 
                 </span>
                 <span className="ml-auto flex items-center gap-1 shrink-0">
                     {esperando && <Send size={grande ? 13 : 10} className="text-chart-3-text" aria-label="Enviada a revisión" />}
-                    {pieza.liberada && <Store size={grande ? 13 : 10} className="text-success-text" aria-label="Liberada a las salas" />}
+                    {pieza.liberada && <Store size={grande ? 13 : 10} className="text-success-text" aria-label="Liberada para las sucursales" />}
                     {pieza.pautar && <Megaphone size={grande ? 13 : 10} className="text-warning-text" aria-label="Se pauta" />}
                     {pendientes > 0 && (
                         <span className="flex items-center gap-0.5 rounded-full bg-warning/15 text-warning-text px-1 text-micro font-semibold"

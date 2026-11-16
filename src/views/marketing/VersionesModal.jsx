@@ -79,7 +79,7 @@ export default function VersionesModal({ archivos, archivo, firmadas, mesId, pie
                             {panel(der, setDer, 'Después')}
                         </div>
                     ) : (
-                        <p className="text-body-sm text-content-3">Es la primera versión: todavía no hay con qué comparar.</p>
+                        <p className="text-body-sm text-content-3">Es la primera versión. Todavía no hay con qué comparar.</p>
                     )}
                     {puedeEditar && (
                         <FileField label={`Subir la V${ultima.version + 1}`} accept="image/*,video/*,.pdf" maxSizeMB={200}

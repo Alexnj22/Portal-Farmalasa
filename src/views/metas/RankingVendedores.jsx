@@ -73,7 +73,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                 <EmptyState
                     compact icon={Users}
                     title="Sin ventas este mes"
-                    subtitle="Cuando alguien registre una venta, aparece aquí con su puesto."
+                    subtitle="Cuando alguien registre una venta, aparece aquí."
                 />
             </div>
         );
@@ -128,11 +128,11 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                 {filas.length} persona{filas.length !== 1 ? 's' : ''} · promedio{' '}
                                 <strong className="text-content-2">{formatMoney(promedio)}</strong>{sufijo}
                                 {data?.promedio_ticket != null && (
-                                    <> · ticket de la sala <strong className="text-content-2">{formatMoney(data.promedio_ticket)}</strong></>
+                                    <> · ticket de la sucursal <strong className="text-content-2">{formatMoney(data.promedio_ticket)}</strong></>
                                 )}
                             </>
                         ) : data?.promedio_ticket != null ? (
-                            <>Ticket de la sala <strong className="text-content-2">{dinero(data.promedio_ticket)}</strong></>
+                            <>Ticket de la sucursal <strong className="text-content-2">{dinero(data.promedio_ticket)}</strong></>
                         ) : (
                             <>{filas.length} persona{filas.length !== 1 ? 's' : ''}</>
                         )}
@@ -246,7 +246,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                     uno solo con un ticket a las 15:37. */}
                                 {(v.sala_ajena || v.dias_sin_turno > 0) && (
                                     <p className="text-micro font-black uppercase tracking-widest text-warning-text mt-0.5">
-                                        {v.sala_ajena && 'No es su sala'}
+                                        {v.sala_ajena && 'No es su sucursal'}
                                         {v.sala_ajena && v.dias_sin_turno > 0 && ' · '}
                                         {v.dias_sin_turno > 0 &&
                                             `${v.dias_sin_turno} día${v.dias_sin_turno !== 1 ? 's' : ''} sin turno`}
@@ -295,8 +295,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                 <div className="text-micro font-semibold text-content-3 mt-3 space-y-1">
                     <p>
                         La marca de cada barra es el promedio.{' '}
-                        <strong className="text-warning-text">Quien trabajó un solo día</strong> lo lleva anotado:
-                        un total bajo con pocos días no es lo mismo que un total bajo con el mes entero.
+                        <strong className="text-warning-text">Quien trabajó un solo día</strong> lo lleva marcado.
                     </p>
                     {/* Por qué el botón está apagado, dicho donde se puede hacer
                         algo al respecto: el módulo es de supervisión y es quien
@@ -304,9 +303,8 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                         se ofrece, así que no hay nada que explicar. */}
                     <p>
                         {horaDisponible ? (
-                            <><strong className="text-content-2">Por hora</strong> divide entre las horas que el
-                            horario publicado le asigna a cada día que la persona vendió — así media jornada
-                            deja de competir contra una completa.</>
+                            <><strong className="text-content-2">Por hora</strong> divide la venta entre las horas
+                            del horario publicado, en los días que la persona vendió.</>
                         ) : (
                             <><strong className="text-content-2">Por hora</strong> se activa cuando el horario
                             del mes esté publicado para toda la lista
@@ -321,8 +319,8 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                 {data.para_revisar === 1 ? 'Una persona tiene' : `${data.para_revisar} personas tienen`}
                                 {' '}ventas que no cuadran con su horario
                             </strong>
-                            {' '}— vendió en una sala que no es la suya, o en un día que su horario marca libre.
-                            Puede ser una venta anotada a quien no era, o un horario que quedó sin actualizar.
+                            . Hay ventas en otra sucursal o en un día libre del horario.
+                            Revisa la venta o el horario.
                         </p>
                     )}
                 </div>

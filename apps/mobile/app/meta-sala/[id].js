@@ -30,13 +30,13 @@ export default function MetaSala() {
       setMes(m ?? null);
       setFila((filas || []).find((f) => String(f.branch_id) === String(id)) ?? null);
       setError(null);
-    } catch (e) { setError(mensajeAmigable(e, 'Error al cargar la sala')); setMes(null); }
+    } catch (e) { setError(mensajeAmigable(e, 'No se pudo cargar la sucursal')); setMes(null); }
   }, [id, ym]);
   useEffect(() => { cargar(); }, [cargar]);
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: sala?.name ?? 'Sala', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: sala?.name ?? 'Sucursal', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -48,7 +48,7 @@ export default function MetaSala() {
             <GraficaDelMes data={mes} />
             <Ranking data={mes} />
           </>
-        ) : mes === null && !error ? <Aviso tono="nota" texto="Esta sala todavía no tiene ventas este mes." /> : null}
+        ) : mes === null && !error ? <Aviso tono="nota" texto="Esta sucursal todavía no tiene ventas este mes." /> : null}
         {fila?.monto_meta != null || fila?.monto_propuesto != null ? (
           <Explicacion branchId={id} yearMonth={ym} montoPropuesto={fila?.monto_propuesto ?? null} />
         ) : null}

@@ -120,7 +120,7 @@ function Pendientes({ busqueda, salaPropia, salaFiltro, nombreSala, puedeAplicar
       </FilaDeKpis>
       {salaPropia ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso tono="nota" texto={`Se ven las de todas las sucursales: el cliente puede venir a aplicarse aquí aunque haya pagado en otra.${r.deOtras ? ` ${r.deOtras === 1 ? '1 es' : `${r.deOtras} son`} de otra sucursal.` : ''}`} />
+          <Aviso tono="nota" texto={`Se ven las de todas las sucursales. El cliente puede aplicarse aquí aunque haya pagado en otra.${r.deOtras ? ` ${r.deOtras === 1 ? '1 es' : `${r.deOtras} son`} de otra sucursal.` : ''}`} />
         </View>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -175,7 +175,7 @@ function Pendientes({ busqueda, salaPropia, salaFiltro, nombreSala, puedeAplicar
       })}
       {!grupos.length && !error ? (
         <Vacio>
-          {busqueda ? 'Nadie con ese dato tiene aplicaciones pendientes' : 'Ninguna pendiente: todo lo pagado ya se aplicó'}
+          {busqueda ? 'Nadie con ese dato tiene aplicaciones pendientes' : 'Todo lo pagado ya se aplicó'}
         </Vacio>
       ) : null}
     </>
@@ -259,7 +259,7 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
   const confirmar = (ids) => {
     if (confirmando || !ids.length) return;
     Alert.alert(ids.length === 1 ? 'Confirmar la aplicación' : `Confirmar ${ids.length} aplicaciones`,
-      'Confirma sólo las que aplicaste tú: quedan en la bitácora de enfermería a tu nombre.', [
+      'Confirma solo las que aplicaste tú. Quedan en la bitácora de enfermería a tu nombre.', [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Confirmar', onPress: async () => {
           setConfirmando(true);
@@ -348,7 +348,7 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {puedeConfirmar && nPorConfirmar > 0 ? (
         <View style={{ marginHorizontal: 16, gap: 8 }}>
-          <Aviso tono="cuidado" texto={`${nPorConfirmar === 1 ? 'Una aplicación espera' : `${nPorConfirmar} aplicaciones esperan`} tu confirmación. Confirma sólo las que aplicaste tú: lo que no confirmes hasta el final del día siguiente no entra a la bitácora.`} />
+          <Aviso tono="cuidado" texto={`${nPorConfirmar === 1 ? 'Una aplicación espera' : `${nPorConfirmar} aplicaciones esperan`} tu confirmación. Confirma solo las que aplicaste tú. Lo que no confirmes antes del final del día siguiente no entra a la bitácora.`} />
           <BotonGrande texto={confirmando ? 'Confirmando…' : nPorConfirmar === 1 ? 'Confirmar' : `Confirmar las ${nPorConfirmar}`} color={MARCA.verde}
             deshabilitado={confirmando} onPress={() => confirmar(porConfirmar.map((f) => f.id))} />
         </View>
@@ -381,7 +381,7 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {f.venta_sala ? <Pildora texto={`Venta de ${f.venta_sala}`} color={MARCA.azulClaro} /> : null}
                   {f.asignada_a_mano ? <Pildora texto="Asignada después" color={MARCA.gris} /> : null}
-                  {f.sin_ficha ? <Pildora texto="Sin ficha · no sale en su app" color={MARCA.ambar} /> : null}
+                  {f.sin_ficha ? <Pildora texto="Sin cliente registrado · no sale en su app" color={MARCA.ambar} /> : null}
                 </View>
               ) : null}
               <Persona nombre={f.cobrada_por} id={f.cobrada_por_id} rol="Cobró" />
@@ -472,7 +472,7 @@ export default function Inyecciones() {
   const [libreBit, setLibreBit] = useState(() => ({ desde: sumarDias(hoySV(), -30), hasta: hoySV() }));
   const [estadoBit, setEstadoBit] = useState('todas');
   const grupoSala = salaPropia ? [] : [{ id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
-    opciones: [{ id: 'todas', label: 'Todas las salas' }, ...(sucursales || []).map((b) => ({ id: String(b.id), label: b.name }))] }];
+    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...(sucursales || []).map((b) => ({ id: String(b.id), label: b.name }))] }];
   const grupos = pestana === 'por-cobrar' ? [
     { id: 'periodo', titulo: 'Período', activa: rango, porDefecto: periodos[0].id, onCambiar: setRango, opciones: periodos },
     ...grupoSala,

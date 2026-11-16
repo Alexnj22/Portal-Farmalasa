@@ -103,7 +103,7 @@ export default function BolsasDeLaSala() {
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
-  const nombre = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sala ${id}`;
+  const nombre = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sucursal ${id}`;
   const salasConAlgo = useMemo(() => [...new Set([...(datos?.bolsas || []), ...(datos?.faltan || []), ...(datos?.diferencias || [])].map((x) => String(x.branch_id)))]
     .sort((a, b) => ordenDeSala(a) - ordenDeSala(b)), [datos]);
   const sala = todas ? (salaElegida ?? (salasConAlgo.includes(miSala) ? miSala : salasConAlgo[0] ?? null)) : miSala;
@@ -139,7 +139,7 @@ export default function BolsasDeLaSala() {
     const reimprimir = async () => {
       trabajando('Mandando la etiqueta a la caja…');
       const r = await reimprimirEtiqueta(b, nombre(b.branch_id), user?.name || '');
-      if (r.ok) listo('Etiqueta enviada', `${b.folio} · sale en la caja de la sala`);
+      if (r.ok) listo('Etiqueta enviada', `${b.folio} · sale en la caja de la sucursal`);
       else fallo('La etiqueta no salió', r.detalle);
     };
     if (Platform.OS === 'ios') {
@@ -164,7 +164,7 @@ export default function BolsasDeLaSala() {
     cargar();
   };
 
-  const grupos = todas && salasConAlgo.length > 1 ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: sala, onCambiar: (v) => { setSala(v); setDias(null); },
+  const grupos = todas && salasConAlgo.length > 1 ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: sala, onCambiar: (v) => { setSala(v); setDias(null); },
     opciones: salasConAlgo.map((s) => ({ id: s, label: nombre(s) })) }] : [];
 
   return (
@@ -201,7 +201,7 @@ export default function BolsasDeLaSala() {
         ) : null}
 
         {diferencias.length ? (
-          <Seccion titulo={`Diferencias por resolver · ${diferencias.length}`} pie="Estas bolsas se contaron y el dinero no coincidió. Ya no están en la sala: al anotar qué pasó, la diferencia queda explicada.">
+          <Seccion titulo={`Diferencias por resolver · ${diferencias.length}`} pie="Estas bolsas se contaron y el dinero no coincidió. Anota qué pasó.">
             {diferencias.map((b, i) => {
               const dif = diferenciaDeBolsa(b) ?? 0;
               return (
@@ -240,7 +240,7 @@ export default function BolsasDeLaSala() {
         ) : (
           <>
             {enSala.length ? (
-              <Seccion titulo="En la sala" pie="Toca una bolsa para reimprimir su etiqueta.">
+              <Seccion titulo="En la sucursal" pie="Toca una bolsa para reimprimir su etiqueta.">
                 {enSala.map((b, i) => {
                   const d = diasEntre(b.fecha, hoy);
                   return (

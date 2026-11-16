@@ -29,7 +29,7 @@ export default function Galeria({ piezas, marcas, firmadas, gestion = false, pue
         return (
             <EmptyState icon={ImageIcon} title="Sin piezas"
                 subtitle={gestion
-                    ? 'Libera las piezas aprobadas para que las salas las descarguen.'
+                    ? 'Libera las piezas aprobadas para que las sucursales las descarguen.'
                     : 'Todavía no hay piezas liberadas para descargar.'} />
         );
     }
@@ -89,7 +89,7 @@ function TarjetaDeGaleria({ pieza, marcas, firmadas, gestion, puedeLiberar, onLi
                 return new File([blob], `${pieza.titulo}${medios.length > 1 ? ` (${i + 1})` : ''}${extension(a)}`, { type: a.mime || blob.type });
             }));
             const datos = { files: archivos, text: texto || undefined };
-            if (!navigator.canShare(datos)) throw new Error('Este equipo no comparte archivos: usa Descargar.');
+            if (!navigator.canShare(datos)) throw new Error('Este equipo no comparte archivos. Usa Descargar.');
             await navigator.share(datos);
             registrarEgreso('galeria', { formato: 'compartir', filas: medios.length, detalle: { pieza: pieza.id } });
         } catch (err) {
@@ -134,9 +134,9 @@ function TarjetaDeGaleria({ pieza, marcas, firmadas, gestion, puedeLiberar, onLi
                     <div className="flex items-center gap-2 pt-2 border-t border-divider">
                         <Store size={14} className="text-content-3" aria-hidden />
                         <span className="text-caption text-content-2 flex-1">
-                            {aprobada ? (pieza.liberada ? 'Liberada para las salas' : 'Sin liberar') : 'Se libera al aprobarla'}
+                            {aprobada ? (pieza.liberada ? 'Liberada para las sucursales' : 'Sin liberar') : 'Se libera al aprobarla'}
                         </span>
-                        <Switch checked={!!pieza.liberada} label="Liberada para las salas"
+                        <Switch checked={!!pieza.liberada} label="Liberada para las sucursales"
                             disabled={!puedeLiberar || !aprobada} onChange={(on) => onLiberar?.(pieza, on)} />
                     </div>
                 )}

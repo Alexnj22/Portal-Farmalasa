@@ -84,7 +84,7 @@ export default function TabRegistros({ tipos, branchId, sala, puedeEditar, retir
                     {retiroATodas && (
                         <Button variant="secondary" size="sm" icon={Plus}
                             onClick={() => setModal({ tipo: 'retiro', modo: 'crear', aTodas: true })}>
-                            Avisar retiro a todas las salas
+                            Avisar retiro a todas las sucursales
                         </Button>
                     )}
                     {tipos.map((t) => (
@@ -154,7 +154,7 @@ export default function TabRegistros({ tipos, branchId, sala, puedeEditar, retir
                     onHecho={() => { setModal(null); cargar(); }} />
             )}
             <PromptModal isOpen={!!anulando} onClose={() => setAnulando(null)} onConfirm={anular}
-                title="Anular registro" message="El registro no se borra: queda anulado con este motivo."
+                title="Anular registro" message="El registro no se borra. Queda anulado con este motivo."
                 placeholder="¿Por qué se anula?" confirmText="Anular" required isProcessing={procesando} />
         </div>
     );

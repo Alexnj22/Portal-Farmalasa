@@ -36,7 +36,7 @@ export default function TabVencimientos({ branches, branchId }) {
 
     if (filas.length === 0) {
         return <EmptyState icon={CalendarClock} title="Sin fechas de vencimiento"
-            subtitle="Las fechas se anotan en el expediente de cada sucursal." />;
+            subtitle="Las fechas se anotan en los datos de cada sucursal." />;
     }
 
     return (

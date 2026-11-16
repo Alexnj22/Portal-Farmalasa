@@ -92,14 +92,14 @@ export default function TabResumen({ onIr, pestanas, puedeAnotar }) {
     if (error) return <Notice variant="danger">{error}</Notice>;
     if (!salas) {
         return (
-            <div className="space-y-4" aria-busy="true" aria-label="Revisando cada sala…">
+            <div className="space-y-4" aria-busy="true" aria-label="Revisando cada sucursal…">
                 <Skeleton h={144} rounded="var(--radius-card)" />
                 <Skeleton h={112} rounded="var(--radius-card)" />
                 <Skeleton h={112} rounded="var(--radius-card)" />
             </div>
         );
     }
-    if (salas.length === 0) return <EmptyState icon={ShieldCheck} title="Sin salas para revisar" />;
+    if (salas.length === 0) return <EmptyState icon={ShieldCheck} title="Sin sucursales para revisar" />;
 
     const tocar = (f, s) => {
         const c = s.celdas[f.clave];
@@ -125,7 +125,7 @@ export default function TabResumen({ onIr, pestanas, puedeAnotar }) {
                             {faltanTodas ? `${faltanTodas} pendiente${faltanTodas === 1 ? '' : 's'}` : 'Todo al día'}
                         </p>
                         <p className="text-body-sm text-content-3">
-                            Se cumplen {mapa.cumplidas} de {mapa.aplicables} obligaciones en {total} sala{total === 1 ? '' : 's'}.
+                            Se cumplen {mapa.cumplidas} de {mapa.aplicables} obligaciones en {total} sucursal{total === 1 ? '' : 'es'}.
                         </p>
                     </div>
                 </div>
@@ -133,7 +133,7 @@ export default function TabResumen({ onIr, pestanas, puedeAnotar }) {
                     {[
                         { k: 'urgentes', label: 'Urgentes', valor: mapa.urgentes, icono: AlertTriangle, tono: mapa.urgentes ? 'danger' : 'neutro', sub: mapa.urgentes ? 'plazo legal corriendo' : 'nada vencido' },
                         { k: 'anotar', label: 'Por anotar', valor: mapa.pendientes, icono: ClipboardCheck, tono: mapa.pendientes ? 'warning' : 'neutro', sub: 'registros que faltan' },
-                        { k: 'salas', label: 'Salas al día', valor: `${mapa.salasAlDia}/${total}`, icono: Building2, tono: mapa.salasAlDia === total ? 'success' : mapa.salasAlDia ? 'brand' : 'neutro', sub: 'sin nada pendiente' },
+                        { k: 'salas', label: 'Sucursales al día', valor: `${mapa.salasAlDia}/${total}`, icono: Building2, tono: mapa.salasAlDia === total ? 'success' : mapa.salasAlDia ? 'brand' : 'neutro', sub: 'sin nada pendiente' },
                     ].map((x) => {
                         const Icono = x.icono;
                         return (
@@ -155,7 +155,7 @@ export default function TabResumen({ onIr, pestanas, puedeAnotar }) {
                 <div data-surface="card" data-tono="success" className="p-6 flex items-center gap-4">
                     <IconoEnCaja tono="success" tamano="lg"><CheckCircle2 size={22} /></IconoEnCaja>
                     <div>
-                        <p className="text-body font-bold text-content">Todas las salas están al día</p>
+                        <p className="text-body font-bold text-content">Todas las sucursales están al día</p>
                         <p className="text-body-sm text-content-3">Lo que se lleva en el portal está completo en toda la red.</p>
                     </div>
                 </div>
@@ -187,7 +187,7 @@ export default function TabResumen({ onIr, pestanas, puedeAnotar }) {
 
                                     {/* Una franja por sala: verde la que cumple. */}
                                     <div className="flex gap-1" role="img"
-                                        aria-label={`${f.aplican.length - f.faltan.length} de ${f.aplican.length} salas al día`}>
+                                        aria-label={`${f.aplican.length - f.faltan.length} de ${f.aplican.length} sucursales al día`}>
                                         {f.aplican.map((s) => {
                                             const c = s.celdas[f.clave];
                                             return <span key={s.branch_id}
@@ -224,7 +224,7 @@ export default function TabResumen({ onIr, pestanas, puedeAnotar }) {
                 <section className="space-y-3 max-md:hidden">
                     <TituloDeSeccion nivel="seccion">Mapa de la red</TituloDeSeccion>
                     <div data-surface="card" className="p-2 overflow-x-auto">
-                        <div role="table" aria-label="Obligaciones por sala" className="grid w-full"
+                        <div role="table" aria-label="Obligaciones por sucursal" className="grid w-full"
                             style={{ gridTemplateColumns: `minmax(13rem, 1.4fr) repeat(${total}, minmax(5rem, 1fr))`, minWidth: `${13 + total * 5}rem` }}>
                             <div role="row" className="contents">
                                 <div role="columnheader" className="px-3 py-3 text-caption font-bold text-content-3">Obligación</div>

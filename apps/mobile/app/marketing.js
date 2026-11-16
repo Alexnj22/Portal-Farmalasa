@@ -180,7 +180,7 @@ export default function Marketing() {
     const etiqueta = etiquetaMes(fila.mes);
     const titulo = enviar ? (reenvio ? `Reenviar ${etiqueta}` : `Enviar ${etiqueta} a revisión`) : `Aprobar ${etiqueta}`;
     const cuerpo = enviar
-      ? `Quien revisa recibe el aviso y desde ese momento ve los diseños de las ${resumen.total} piezas.${resumen.abiertas ? ` Hay ${resumen.abiertas} sin terminar: se ven con su estado.` : ''} Nota (opcional):`
+      ? `Quien revisa recibe el aviso y desde ese momento ve los diseños de las ${resumen.total} piezas.${resumen.abiertas ? ` Hay ${resumen.abiertas} sin terminar. Se ven con su estado.` : ''} Nota (opcional):`
       : `Se aprueban de una vez las piezas finalizadas y el calendario queda listo para publicar.${resumen.abiertas ? ` Quedan ${resumen.abiertas} sin terminar o con cambios.` : ''} Comentario (opcional):`;
     Alert.prompt(titulo, cuerpo, [
       { text: 'Cancelar', style: 'cancel' },
@@ -209,7 +209,7 @@ export default function Marketing() {
         } catch (e) { fallo('No se pudo guardar', mensajeAmigable(e)); }
       };
       if (!puedeAprobar) { guardarMes({ objetivo }); return; }
-      Alert.prompt('Presupuesto de pauta del mes', 'En dólares. Lo manda quien aprueba.', [
+      Alert.prompt('Presupuesto de pauta del mes', 'En dólares.', [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Guardar', onPress: (monto) => guardarMes({ objetivo, presupuesto_pauta: String(monto || '').replace(',', '.') }) },
       ], 'plain-text', fila?.presupuesto_pauta ? String(fila.presupuesto_pauta) : '', 'decimal-pad');

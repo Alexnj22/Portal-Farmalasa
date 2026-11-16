@@ -109,7 +109,7 @@ export default function TabIdeas({
                     <div className="min-w-0">
                         <TituloDeSeccion nivel="tarjeta">Deja una idea</TituloDeSeccion>
                         <p className="text-caption text-content-3">
-                            Un tema, una campaña, algo que viste en la sala. Quien diseña la toma y la convierte en publicación.
+                            Un tema, una campaña, algo que viste en la sucursal. Quien diseña la toma y la convierte en publicación.
                         </p>
                     </div>
                 </header>

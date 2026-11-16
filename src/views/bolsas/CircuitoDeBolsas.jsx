@@ -388,7 +388,7 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
                     </Badge>
                 )}
                 {alarma && dias >= DIAS_DE_ALARMA && (
-                    <Badge variant="danger" size="sm" dot>{dias} días en sala</Badge>
+                    <Badge variant="danger" size="sm" dot>{dias} días en la sucursal</Badge>
                 )}
                 {!bolsa.etiqueta_impresa_at && bolsa.estado === 'ABIERTA' && (
                     <Badge variant="warning" size="sm">Sin etiqueta</Badge>
@@ -669,10 +669,9 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
                 <Notice variant="warning" icon={AlertTriangle} bloque className="w-full">
                     <span className="font-bold">Anotar cero dice que la bolsa vino vacía</span>
                     <span className="block mt-1 font-normal text-content-2">
-                        Si alguien retiró ese efectivo, eso es una salida y va con su vale:
-                        se registra desde Efectivo → «Sacar efectivo», y entonces el conteo
-                        cuadra solo. Anotarlo aquí deja una diferencia que hay que explicar
-                        a mano.
+                        Si alguien sacó ese efectivo, regístralo en Efectivo → «Sacar efectivo»
+                        con su vale. Así el conteo cuadra. Si lo anotas aquí, queda una
+                        diferencia que hay que explicar.
                     </span>
                 </Notice>
             )}
@@ -2020,13 +2019,13 @@ export default function CircuitoDeBolsas({
             { clave: 'circulacion', icon: HandCoins, label: 'Sin recibir',
               value: cifra(enCirculacion),
               sub: enCirculacion.length
-                  ? `${enCirculacion.length} en sala o en camino`
+                  ? `${enCirculacion.length} en sucursal o en camino`
                   : 'todo recibido',
               iconBg: 'bg-brand/10', iconCls: 'text-brand-text' },
             { clave: 'masVieja', icon: CalendarDays, label: 'La más vieja',
               value: masVieja ? `${diasMasVieja} d` : '—',
               sub: masVieja
-                  ? `${nombreSala[masVieja.branch_id] || 'sin sala'} · ${rotularDia(masVieja.fecha)}`
+                  ? `${nombreSala[masVieja.branch_id] || 'sin sucursal'} · ${rotularDia(masVieja.fecha)}`
                   : 'sin pendientes',
               iconBg: diasMasVieja >= DIAS_DE_ALARMA ? 'bg-danger/10' : 'bg-surface-card-hover',
               iconCls: diasMasVieja >= DIAS_DE_ALARMA ? 'text-danger-text' : 'text-content-3',
@@ -2132,15 +2131,12 @@ export default function CircuitoDeBolsas({
                     </span>
                     <span className="block mt-1 font-normal text-content-2">
                         {ningunaBolsa
-                            ? `Esos días el corte se confirmó y no se abrió ninguna bolsa, así que ese
-                               efectivo nunca entró al circuito. Hay que averiguar qué se hizo con ese
-                               dinero en la sala antes de darlo por guardado.`
+                            ? `Esos días se confirmó el corte y no se abrió ninguna bolsa. Averigua qué
+                               se hizo con ese dinero en la sucursal.`
                             : soloDeMas
-                                ? `El corte de esos días cuadró y las bolsas también: lo que no cuadra es
-                                   que se guardó de más. Suele ser un mismo efectivo contado dos veces,
-                                   así que hay que revisar las bolsas de esa sala antes de que salgan.`
-                                : `El corte de esos días cuadró y las bolsas también: lo que no cuadra es
-                                   cuánto llegó a guardarse. Hay que revisar la caja de esa sala.`}
+                                ? `El corte y las bolsas cuadraron, pero se guardó de más. Suele ser el mismo
+                                   efectivo contado dos veces. Revisa las bolsas de esa sucursal antes de que salgan.`
+                                : `El corte y las bolsas cuadraron, pero se guardó menos. Revisa la caja de esa sucursal.`}
                     </span>
                     <span className="block mt-2.5 border-t border-danger/20 pt-2 space-y-1">
                         {diasQueNoCuadran.map((d) => {
@@ -2149,7 +2145,7 @@ export default function CircuitoDeBolsas({
                                 <span key={`${d.branch_id}-${d.fecha}`}
                                     className="flex items-baseline justify-between gap-3 text-caption font-normal text-content-2">
                                     <span className="min-w-0 truncate">
-                                        {nombreSala[d.branch_id] || 'Sala'} · {rotularDia(d.fecha)}
+                                        {nombreSala[d.branch_id] || 'Sucursal'} · {rotularDia(d.fecha)}
                                     </span>
                                     <span className="shrink-0 tabular-nums">
                                         {verMontos
@@ -2264,7 +2260,7 @@ export default function CircuitoDeBolsas({
                     <EmptyState icon={Scale} title="Sin diferencias por resolver"
                         subtitle={alcanceTodos
                             ? 'Cuando una tanda deje una diferencia sin causa anotada, aparece aquí.'
-                            : 'Si alguna bolsa de la sala no cuadra al contarla, aparece aquí y llega un aviso.'} />
+                            : 'Si una bolsa de la sucursal no cuadra al contarla, aparece aquí y te llega un aviso.'} />
                 ) : (
                 <section className="space-y-2">
                     <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
@@ -2279,7 +2275,7 @@ export default function CircuitoDeBolsas({
                     <p className="text-caption text-content-3 px-1">
                         {alcanceTodos
                             ? 'Bolsas que se contaron y no cuadraron, y todavía no tienen causa anotada. Salen TODAS, sin importar el período.'
-                            : 'Estas bolsas se contaron y el dinero no coincidió. Ya no están en la sala: al anotar qué pasó, la diferencia queda explicada.'}
+                            : 'Estas bolsas se contaron y el dinero no coincidió. Anota qué pasó.'}
                     </p>
                     <div className="grid gap-2 grid-cols-1 xl:grid-cols-2">
                         {sinResolver.map((b) => {
@@ -2319,8 +2315,8 @@ export default function CircuitoDeBolsas({
                     subtitle={pendientesFuera.length
                         ? `${pendientesFuera.length === 1 ? 'La bolsa pendiente que hay está' : `Las ${pendientesFuera.length} bolsas pendientes que hay están`} fuera del rango${verMontos ? ` y suman ${formatMoney(suma(pendientesFuera))}` : ''}.`
                         : alcanceTodos
-                            ? 'Ninguna sala guardó efectivo en este período.'
-                            : 'Esta sala no guardó efectivo en este período.'}
+                            ? 'Ninguna sucursal guardó efectivo en este período.'
+                            : 'Esta sucursal no guardó efectivo en este período.'}
                     action={onAmpliarPeriodo && masViejaFuera ? (
                         <Button variant="secondary" icon={CalendarDays}
                             onClick={() => onAmpliarPeriodo(masViejaFuera)}>
@@ -2333,7 +2329,7 @@ export default function CircuitoDeBolsas({
             {etapa === 'sala' && (
             <Etapa
                 icon={Package}
-                titulo="En la sala"
+                titulo="En la sucursal"
                 ayuda="Nacen solas al confirmar el corte. La etiqueta se imprime aquí y se pega a la bolsa."
                 grupos={conNodo(enSala, {
                     // Sin casilla: entregar dejó de elegirse bolsa por bolsa
@@ -2357,7 +2353,7 @@ export default function CircuitoDeBolsas({
                 })}
                 total={enSala.length} montoTotal={suma(enSala)}
                 verMontos={verMontos}
-                vacio={pendientesFuera.length ? "Sin efectivo esperando en las salas en estas fechas" : "Sin efectivo esperando en las salas"}
+                vacio={pendientesFuera.length ? "Sin efectivo esperando en las sucursales en estas fechas" : "Sin efectivo esperando en las sucursales"}
             />
             )}
 
@@ -2382,8 +2378,7 @@ export default function CircuitoDeBolsas({
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
                         {verMontos && `Suman ${formatMoney(suma(enCaminoViejas))}. `}
-                        Mientras nadie confirme la recepción, ese dinero no está ni en la
-                        sala ni en administración.
+                        Ese dinero ya salió de la sucursal y nadie ha confirmado que llegó.
                     </span>
                 </Notice>
             )}
@@ -2391,7 +2386,7 @@ export default function CircuitoDeBolsas({
             <Etapa
                 icon={Send}
                 titulo="Esperando recepción"
-                ayuda="Ya salieron de la sala. Administración confirma cuántas llegaron, sin contar el dinero todavía."
+                ayuda="Ya salieron de la sucursal. Confirma cuántas llegaron. El dinero se cuenta después."
                 grupos={conNodo(enCamino, { elegible: puedeContar })}
                 total={enCamino.length} montoTotal={suma(enCamino)}
                 /* Tres caminos, del más usado al más raro (usuario, 2026-08-24:
@@ -2441,7 +2436,7 @@ export default function CircuitoDeBolsas({
             <Etapa
                 icon={Banknote}
                 titulo="Por contar"
-                ayuda="Se cuenta sala por sala y, dentro de cada una, día por día. Nada se cierra hasta confirmar el conteo: mientras tanto se puede contar de nuevo."
+                ayuda="Cuenta sucursal por sucursal y día por día. Nada se cierra hasta que confirmes el conteo. Antes puedes contar de nuevo."
                 /* El cuadre de la tanda, no un botón suelto. Las tres cifras
                    van juntas y en el orden en que se leen —lo que debía haber,
                    lo que se contó, la resta— porque separadas obligan a
@@ -2538,8 +2533,7 @@ export default function CircuitoDeBolsas({
                                             ? 'Queda 1 bolsa sin contar'
                                             : `Quedan ${sinMarcar.length} bolsas sin contar`}
                                     </b>
-                                    {' '}· se cerrarán sólo las contadas. Una sala que
-                                    todavía no llegó no deja en el aire lo que ya se contó.
+                                    {' '}· solo se cierran las contadas.
                                 </span>
                             )}
                             {sinCausa.length > 0 && (
@@ -2547,8 +2541,7 @@ export default function CircuitoDeBolsas({
                                     {sinCausa.length === 1
                                         ? 'Una bolsa no cuadra y todavía no tiene causa anotada.'
                                         : `${sinCausa.length} bolsas no cuadran y todavía no tienen causa anotada.`}
-                                    {' '}Se les puede anotar aquí mismo, antes de confirmar,
-                                    con su foto de respaldo si hace falta.
+                                    {' '}Puedes anotarla aquí antes de confirmar, con su foto si hace falta.
                                 </span>
                             )}
                         </Notice>
@@ -2652,10 +2645,10 @@ export default function CircuitoDeBolsas({
                    NO manda el período. */
                 titulo={soloSinResolver ? 'Diferencias por resolver' : 'Contadas'}
                 ayuda={soloSinResolver
-                    ? 'Contadas que no cuadraron y todavía no se saldaron. Salen TODAS, sin importar el período: una diferencia no se esconde por mover unas fechas. En cada una se anota qué pasó.'
-                    : `El historial ${rangoEnPalabras}, por la fecha en que se contaron. Lo que se contó queda; resolver una diferencia no lo cambia.${
+                    ? 'Contadas que no cuadraron y siguen sin resolver. Salen todas, de cualquier fecha. Anota qué pasó en cada una.'
+                    : `El historial ${rangoEnPalabras}, por la fecha en que se contaron.${
                         sinResolverFuera.length
-                            ? ` Además ${sinResolverFuera.length === 1 ? 'sale una bolsa sin resolver de fuera' : `salen ${sinResolverFuera.length} bolsas sin resolver de fuera`} de estas fechas: una diferencia no se esconde por mover el período.`
+                            ? ` Además ${sinResolverFuera.length === 1 ? 'sale una bolsa sin resolver de fuera' : `salen ${sinResolverFuera.length} bolsas sin resolver de fuera`} de estas fechas.`
                             : ''}`}
                 grupos={conNodo(archivo, {
                     rotuloMonto: 'Debía haber',

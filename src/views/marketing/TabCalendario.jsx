@@ -176,7 +176,7 @@ function MarcaDeFecha({ fecha, puedeEditar, onUsar }) {
     );
     return puedeEditar ? (
         <Button variant="ghost" size="xs" className="justify-start min-w-0 max-w-full text-chart-8-text"
-            title={`${fecha.nombre}${fecha.idea ? ` — ${fecha.idea}` : ''}. Toca para planificar una pieza`} onClick={onUsar}>
+            title={`${fecha.nombre}${fecha.idea ? ` · ${fecha.idea}` : ''}. Toca para planificar una pieza`} onClick={onUsar}>
             <span className="flex items-center gap-1 min-w-0 text-micro font-semibold">{contenido}</span>
         </Button>
     ) : (

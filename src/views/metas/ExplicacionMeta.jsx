@@ -119,12 +119,11 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto, d
                                 <strong className="text-content-2 tabular-nums">{formatMoney(d.suma_venta)}</strong>
                                 {' entre los '}
                                 <strong className="text-content-2 tabular-nums">{d.suma_dias} días</strong>
-                                {' de esos tres meses. Se divide por días y no por meses, para que uno de 30 y uno de 31 no pesen distinto.'}
+                                {' de esos tres meses.'}
                                 {mesProyectado && (
                                     <span className="block mt-1">
                                         <strong className="text-content-2">{ymLabelCorto(mesProyectado.ym)}</strong>
-                                        {' todavía no cierra: entra con lo que lleva vendido llevado a mes '}
-                                        {'completo. Dejarlo afuera armaría la meta con el ritmo de hace un mes.'}
+                                        {' todavía no cierra. Entra lo vendido hasta hoy, llevado a mes completo.'}
                                     </span>
                                 )}
                             </Paso>
@@ -152,9 +151,7 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto, d
                                         )}.
                                     </>
                                 ) : (
-                                    <>Ese mes no tuvo meta, así que no hay cumplimiento que medir y el
-                                       factor queda en {Number(d.factor).toFixed(2)}: no se pide crecimiento
-                                       sobre algo que no se pudo medir.</>
+                                    <>Ese mes no tuvo meta. El factor queda en {Number(d.factor).toFixed(2)}.</>
                                 )}
                                 {/* La tabla completa, con el tramo de esta sala marcado: así se
                                     ve que el factor no es un número elegido a dedo. Sin
@@ -178,9 +175,9 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto, d
                                     })}
                                 </span>
                                 <span className="block mt-1">
-                                    A la sala que se quedó corta se le pide crecer más, para que
-                                    <strong className="text-content-2"> recupere terreno</strong> en vez de
-                                    quedarse ahí. A la que va bien se le pide sostenerse.
+                                    A la sucursal que se quedó corta se le pide crecer más, para
+                                    <strong className="text-content-2"> recuperar terreno</strong>. A la que
+                                    va bien se le pide sostenerse.
                                 </span>
                             </Paso>
 
@@ -188,7 +185,7 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto, d
                                 número que muestra la tarjeta. */}
                             {coincide ? (
                                 <p className="text-micro font-black tabular-nums text-success-text pt-0.5 border-t border-border-card">
-                                    = {formatMoney(d.recalculada)} — el mismo monto de arriba.
+                                    = {formatMoney(d.recalculada)}. Es el mismo monto de arriba.
                                 </p>
                             ) : d.ultimo_proyectado ? (
                                 /* Con un mes proyectado adentro, que los dos números
@@ -199,17 +196,16 @@ export default function ExplicacionMeta({ branchId, yearMonth, montoPropuesto, d
                                    de verdad — que es cuando los tres meses ya cerraron
                                    y el número igual no da. */
                                 <p className="text-micro font-semibold text-content-3 tabular-nums pt-0.5 border-t border-border-card">
-                                    Hoy la cuenta da {formatMoney(d.recalculada)}: la propuesta se guardó en{' '}
+                                    Hoy la cuenta da {formatMoney(d.recalculada)}. La propuesta se guardó en{' '}
                                     {formatMoney(montoPropuesto)} y {ymLabelCorto(d.ym_ultimo)} siguió
-                                    vendiendo. Manda la guardada.
+                                    vendiendo. Vale la guardada.
                                 </p>
                             ) : (
                                 <p className="text-micro font-semibold text-warning-text tabular-nums flex items-start gap-1 pt-0.5 border-t border-border-card">
                                     <AlertTriangle size={11} className="mt-0.5 shrink-0" />
                                     <span>
-                                        Con la fórmula de hoy da {formatMoney(d.recalculada)} y la propuesta
-                                        guardada es {formatMoney(montoPropuesto)}. Manda la guardada: es la que
-                                        se calculó el día que se propuso.
+                                        Con la fórmula de hoy da {formatMoney(d.recalculada)}. La propuesta
+                                        guardada es {formatMoney(montoPropuesto)}. Vale la guardada.
                                     </span>
                                 </p>
                             )}

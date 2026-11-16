@@ -88,9 +88,9 @@ function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
         <>
           <FilaDeKpis>
             <Kpi icono="Target" rotulo="Meta del mes" valor={r.meta > 0 ? formatMoney(r.meta) : '—'} color={MARCA.azul}
-              apoyo={r.conMeta > 0 ? `${r.conMeta} sala${r.conMeta === 1 ? '' : 's'} con meta` : 'sin metas este mes'} />
+              apoyo={r.conMeta > 0 ? `${r.conMeta} sucursal${r.conMeta === 1 ? '' : 'es'} con meta` : 'sin metas este mes'} />
             <Kpi icono="TrendingUp" rotulo="Vendido" valor={formatMoney(r.vendidoConMeta)} color={MARCA.verde}
-              apoyo={r.meta > 0 ? `${formatPct(r.vendidoConMeta / r.meta * 100)} de la meta` : cerrado ? 'en el mes' : 'salas con meta'} />
+              apoyo={r.meta > 0 ? `${formatPct(r.vendidoConMeta / r.meta * 100)} de la meta` : cerrado ? 'en el mes' : 'sucursales con meta'} />
           </FilaDeKpis>
           <FilaDeKpis>
             {esActual ? (
@@ -151,7 +151,7 @@ function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
         );
       })}
       {rows && !visibles.length && !error ? (
-        <Vacio>Sin salas para este mes</Vacio>
+        <Vacio>Sin sucursales para este mes</Vacio>
       ) : null}
       {esActual ? (
         <View style={{ gap: 10, marginTop: 6 }}>
@@ -191,13 +191,13 @@ export default function Metas() {
     setLlave((k) => k + 1);
   }, []));
 
-  const salaNombre = useCallback((id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`, [sucursales]);
+  const salaNombre = useCallback((id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sucursal ${id}`, [sucursales]);
   const opcionesSala = useMemo(() => SALAS_VENTA.map((id) => ({ id: String(id), label: salaNombre(id) })).sort((a, b) => a.label.localeCompare(b.label)), [salaNombre]);
   const salasVisibles = useMemo(() => (todas ? null : new Set([String(user?.branchId)])), [todas, user?.branchId]);
 
-  const grupoSala = { id: 'sala', titulo: 'Sala', opciones: [{ id: 'todas', label: 'Todas las salas' }, ...opcionesSala], activa: sala, porDefecto: 'todas', onCambiar: setSala };
+  const grupoSala = { id: 'sala', titulo: 'Sucursal', opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...opcionesSala], activa: sala, porDefecto: 'todas', onCambiar: setSala };
   const grupos = pestana === 'tablero' ? (todas ? [grupoSala] : [])
-    : pestana === 'bono' ? (todas ? [{ id: 'sala', titulo: 'Sala', opciones: opcionesSala, activa: salaBono, porDefecto: propia, onCambiar: setSalaBono }] : [])
+    : pestana === 'bono' ? (todas ? [{ id: 'sala', titulo: 'Sucursal', opciones: opcionesSala, activa: salaBono, porDefecto: propia, onCambiar: setSalaBono }] : [])
       : [
         ...(todas ? [grupoSala] : []),
         { id: 'meses', titulo: 'Qué meses', opciones: [{ id: 'todos', label: 'Todos los meses' }, { id: 'con_meta', label: 'Solo con meta' }], activa: conMeta, porDefecto: 'todos', onCambiar: setConMeta },

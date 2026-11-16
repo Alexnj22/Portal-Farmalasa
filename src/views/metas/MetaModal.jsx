@@ -81,10 +81,10 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
     // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
     // mismas condiciones que apagaban el botón.
     const queFalta = !ym ? { texto: 'Elige el mes.', campo: 'mes-meta' }
-        : !branchId ? { texto: 'Elige la sala.', campo: 'sala-meta' }
+        : !branchId ? { texto: 'Elige la sucursal.', campo: 'sala-meta' }
         : !(Number.isFinite(montoNum) && montoNum > 0) && sit?.puede !== false
             ? { texto: 'Escribe el monto de la meta.', campo: 'monto' }
-        : sit?.puede === false ? { texto: 'Esa meta no se puede cambiar ahora: elige otro mes u otra sala.', campo: 'mes-meta' }
+        : sit?.puede === false ? { texto: 'Esa meta no se puede cambiar ahora. Elige otro mes u otra sucursal.', campo: 'mes-meta' }
         : sit?.pideNota && !nota.trim() ? { texto: 'Escribe por qué se corrige.', campo: 'nota' }
         : null;
     const valido = !queFalta;
@@ -111,7 +111,7 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
                 <div className={`${squircleClass} text-brand-text`}><Target size={22} strokeWidth={2.5} /></div>
                 <div>
                     <TituloDeSeccion nivel="modal">Agregar meta</TituloDeSeccion>
-                    <p className="text-label font-medium text-content-3 mt-0.5">Metas por sala</p>
+                    <p className="text-label font-medium text-content-3 mt-0.5">Metas por sucursal</p>
                 </div>
             </div>
 
@@ -121,8 +121,8 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
                     <LiquidSelect value={ym} onChange={setYm} options={mesOptions} placeholder="Mes" />
                 </div>
                 <div data-campo="sala-meta">
-                    <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sala</p>
-                    <LiquidSelect value={branchId} onChange={setBranchId} options={salaOptions} placeholder="Sala" />
+                    <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sucursal</p>
+                    <LiquidSelect value={branchId} onChange={setBranchId} options={salaOptions} placeholder="Sucursal" />
                 </div>
 
                 {/* El aviso aparece recién con las dos cosas elegidas: antes de
@@ -149,7 +149,7 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
                     readOnly={sit?.puede === false}
                 />
                 <p className="text-label font-semibold text-content-3 leading-relaxed">
-                    La venta del mes se calcula sola con los datos del portal.
+                    La venta del mes se calcula sola.
                     Queda registrado quién agregó esta meta.
                 </p>
             </div>

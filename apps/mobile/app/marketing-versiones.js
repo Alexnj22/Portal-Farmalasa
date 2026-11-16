@@ -57,7 +57,7 @@ export default function VersionesDelDiseno() {
         </Tocable>
         {tipoDeArchivo(a) === 'imagen' && src
           ? <Image source={{ uri: src }} style={{ width: '100%', aspectRatio: a.ancho && a.alto ? a.ancho / a.alto : 1, borderRadius: 14 }} resizeMode="contain" />
-          : <Aviso texto={`${a.nombre || 'Archivo'}${src ? '' : ' — se ve cuando la pieza se envía a revisión.'}`} />}
+          : <Aviso texto={`${a.nombre || 'Archivo'}${src ? '' : '. Se ve cuando la pieza se envía a revisión.'}`} />}
       </View>
     );
   };
@@ -99,7 +99,7 @@ export default function VersionesDelDiseno() {
           </>
         ) : (
           <>
-            <Aviso texto="Es la primera versión: todavía no hay con qué comparar." />
+            <Aviso texto="Es la primera versión. Todavía no hay con qué comparar." />
             {panel(ultima.id, () => {}, 'Versión')}
           </>
         )}

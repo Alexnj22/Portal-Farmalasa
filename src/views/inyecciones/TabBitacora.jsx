@@ -260,7 +260,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
                         <span>
                             {nPorConfirmar === 1 ? 'Una aplicación espera' : `${nPorConfirmar} aplicaciones esperan`} tu confirmación.
-                            Confirma sólo las que <b>aplicaste tú</b>: lo que no confirmes hasta el final del día siguiente no entra a la bitácora.
+                            Confirma solo las que <b>aplicaste tú</b>. Lo que no confirmes antes del final del día siguiente no entra a la bitácora.
                         </span>
                         <Button variant="primary" size="sm" icon={CheckCircle2} loading={confirmando} className="shrink-0"
                             onClick={() => confirmar(porConfirmar.map((f) => f.id))}>
@@ -298,7 +298,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                     : <span>Factura {factura(f.correlativo)}</span>}
                                 {f.venta_sala && <Badge variant="info" size="sm">Venta de {f.venta_sala}</Badge>}
                                 {f.asignada_a_mano && <Badge variant="neutral" size="sm">Asignada después</Badge>}
-                                {f.sin_ficha && <Badge variant="warning" size="sm">Sin ficha · no sale en su app</Badge>}
+                                {f.sin_ficha && <Badge variant="warning" size="sm">Sin cliente registrado · no sale en su app</Badge>}
                             </p>
                             {f.sin_ficha && puedeAsignar && (
                                 <Button size="xs" variant="ghost" className="mt-1" onClick={() => setAsignando(f)}>

@@ -79,7 +79,7 @@ export default function VistaPrevia({ pieza, marca, archivos, firmadas }) {
                 {red === 'instagram' && pie}
             </div>
             <p className="text-caption text-content-3 text-center">
-                El texto se corta a ~125 caracteres en la red: lo importante va al principio.
+                La red muestra unos 125 caracteres. Pon lo importante al principio.
             </p>
         </div>
     );

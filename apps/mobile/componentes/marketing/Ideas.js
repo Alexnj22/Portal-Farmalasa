@@ -106,7 +106,7 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
   return (
     <>
       <View style={{ marginHorizontal: 16 }}>
-        <Seccion titulo="Deja una idea" pie="Un tema, una campaña, algo que viste en la sala. Quien diseña la toma y la convierte en publicación.">
+        <Seccion titulo="Deja una idea" pie="Un tema, una campaña, algo que viste en la sucursal. Quien diseña la toma y la convierte en publicación.">
           <Campo multiline={false} placeholder="Ej. Reel: cómo leer la etiqueta de un medicamento" value={form.titulo} onChangeText={(t) => setForm((f) => ({ ...f, titulo: t }))} />
           <Campo placeholder="Detalle (opcional): para qué, a quién, una referencia…" value={form.detalle} onChangeText={(t) => setForm((f) => ({ ...f, detalle: t }))} />
           <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>

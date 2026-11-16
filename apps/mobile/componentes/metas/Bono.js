@@ -55,14 +55,14 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
   // el bono se apaga solo al cambiar de mes (lo único que entiende el servidor).
   const cambiarBono = (on, esteMes) => Alert.alert(
     on ? (activas ? 'Cambiar la vigencia' : 'Activar las bonificaciones') : 'Apagar las bonificaciones',
-    on ? (esteMes ? `Valen sólo por ${mesActual}: el día 1 se apagan solas. Es para toda la red.` : 'Sin fecha de fin: siguen activas hasta que se apaguen. Es para toda la red.')
-      : 'Las pantallas vuelven a hablar solo de la meta, en toda la red.', [
+    on ? (esteMes ? `Valen solo por ${mesActual}. El día 1 se apagan solas. Es para toda la red.` : 'Sin fecha de fin. Siguen activas hasta que se apaguen. Es para toda la red.')
+      : 'Las pantallas solo muestran la meta, en toda la red.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: on ? 'Confirmar' : 'Apagar', style: on ? 'default' : 'destructive', onPress: async () => {
         setGuardando(true); trabajando('Guardando…');
         try {
           await setBonificaciones(on, esteMes);
-          listo(on ? 'Bonificaciones activadas' : 'Bonificaciones apagadas', on ? (esteMes ? `Sólo por ${mesActual}.` : 'Sin fecha de fin.') : 'Las pantallas vuelven a hablar solo de la meta.');
+          listo(on ? 'Bonificaciones activadas' : 'Bonificaciones apagadas', on ? (esteMes ? `Sólo por ${mesActual}.` : 'Sin fecha de fin.') : 'Las pantallas solo muestran la meta.');
           onCambioBono?.();
         } catch (e) { fallo('No se pudo cambiar', mensajeAmigable(e, 'Vuelve a intentarlo.')); }
         setGuardando(false);
@@ -78,8 +78,8 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{activas ? 'Bonificaciones activas' : 'Bonificaciones apagadas'}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                {activas ? (hasta ? `Este mes: sólo por ${ymLabel(hasta).toLowerCase()}, el día 1 se apagan solas.` : 'Indefinido: siguen activas hasta que se apaguen.')
-                  : 'Las pantallas hablan de la meta y no nombran el bono.'}
+                {activas ? (hasta ? `Solo por ${ymLabel(hasta).toLowerCase()}. El día 1 se apagan solas.` : 'Sin fecha de fin. Siguen activas hasta que se apaguen.')
+                  : 'Las pantallas solo muestran la meta. El bono no aparece.'}
               </Text>
             </View>
             {canEdit ? <Interruptor value={activas} disabled={guardando} onValueChange={(on) => cambiarBono(on, on ? !!hasta : false)} /> : null}
@@ -104,9 +104,9 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
       {data ? (
         <>
           <FilaDeKpis>
-            <Kpi icono="HandCoins" rotulo="Bono de la sala" valor={data.bolsa > 0 ? formatMoney(data.bolsa) : '—'} color={MARCA.azul}
+            <Kpi icono="HandCoins" rotulo="Bono de la sucursal" valor={data.bolsa > 0 ? formatMoney(data.bolsa) : '—'} color={MARCA.azul}
               apoyo={data.tasa_pct > 0 ? `${formatPct(data.tasa_pct, { decimales: 2 })} de lo vendido` : sinMeta ? 'sin meta este mes' : hayProyeccion ? `${formatMoney(data.bolsa_proyectada)} si cierra así` : 'no alcanzó el 95%'} />
-            <Kpi icono="Medal" rotulo="Jefatura" valor={data.bolsa > 0 ? formatMoney(data.bolsa_jefatura) : '—'} color={MARCA.violeta} apoyo="un cuarto del bono" />
+            <Kpi icono="Medal" rotulo="Jefe de sucursal" valor={data.bolsa > 0 ? formatMoney(data.bolsa_jefatura) : '—'} color={MARCA.violeta} apoyo="un cuarto del bono" />
           </FilaDeKpis>
           <FilaDeKpis>
             <Kpi icono="Users" rotulo="Equipo" valor={data.bolsa > 0 ? formatMoney(data.bolsa_equipo) : '—'} color={MARCA.verde} apoyo="tres cuartos, por venta" />
@@ -118,15 +118,15 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
             </View>
           ) : null}
           <View style={{ marginHorizontal: 16, gap: 8 }}>
-            {metaSinAprobar ? <Aviso tono="cuidado" texto={`La meta de ${nombre} en ${mes} todavía no está aprobada: este reparto es una referencia y cambia si cambia el monto.`} /> : null}
+            {metaSinAprobar ? <Aviso tono="cuidado" texto={`La meta de ${nombre} en ${mes} todavía no está aprobada. Este reparto puede cambiar.`} /> : null}
             {esMesActual && hayProyeccion ? (
-              <Aviso tono="nota" texto={`Si ${nombre} sigue a este ritmo cierra en ${formatMoney(data.proyeccion)} — ${formatPct(data.pct_proyectado)} de la meta, y el bono de la sala sería ${formatMoney(data.bolsa_proyectada)}.${data.tramo_proyectado === 'medio' ? ` Llegando al 100% se duplica: le faltan ${formatMoney(Math.max(0, data.meta - data.proyeccion))}.` : ''}`} />
+              <Aviso tono="nota" texto={`Si ${nombre} sigue a este ritmo, cierra en ${formatMoney(data.proyeccion)} (${formatPct(data.pct_proyectado)} de la meta). El bono de la sucursal sería ${formatMoney(data.bolsa_proyectada)}.${data.tramo_proyectado === 'medio' ? ` Si llega al 100%, se duplica. Le faltan ${formatMoney(Math.max(0, data.meta - data.proyeccion))}.` : ''}`} />
             ) : null}
-            {sinMeta ? <Aviso tono="nota" texto={`${nombre} no tiene meta en ${mes}: el bono se calcula sobre el cumplimiento, así que sin meta no hay reparto.`} /> : null}
+            {sinMeta ? <Aviso tono="nota" texto={`${nombre} no tiene meta en ${mes}. Sin meta no hay bono.`} /> : null}
             {!sinMeta && !hayReparto ? (
               <Aviso tono="nota" texto={esMesActual
-                ? `El bono todavía no se gana: ${nombre} va en ${formatPct(data.pct)} de la meta y, al ritmo de hoy, cerraría en ${formatPct(data.pct_proyectado)}. Desde el 95% se gana la mitad y desde el 100%, completo.`
-                : `La sala no alcanzó el bono: cerró en ${formatPct(data.pct)} de la meta.`} />
+                ? `El bono todavía no se gana. ${nombre} va en ${formatPct(data.pct)} de la meta. Al ritmo de hoy, cerraría en ${formatPct(data.pct_proyectado)}. Desde el 95% se gana la mitad del bono. Desde el 100%, el bono completo.`
+                : `La sucursal no alcanzó el bono. Cerró en ${formatPct(data.pct)} de la meta.`} />
             ) : null}
           </View>
           {hayReparto ? personas.map((p) => {
@@ -138,10 +138,10 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
                     <Avatar empleado={persona} tamano={36} />
                     <View style={{ flex: 1, gap: 3 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{shortEmployeeName(persona)}</Text>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatMoney(p.venta)} · ${formatPct(p.pct_venta)} de la sala`}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatMoney(p.venta)} · ${formatPct(p.pct_venta)} de la sucursal`}</Text>
                       {p.es_jefe || p.en_prueba ? (
                         <View style={{ flexDirection: 'row', gap: 6 }}>
-                          {p.es_jefe ? <Pildora texto="Jefatura" color={MARCA.violeta} /> : null}
+                          {p.es_jefe ? <Pildora texto="Jefe de sucursal" color={MARCA.violeta} /> : null}
                           {p.en_prueba ? <Pildora texto="En prueba" color={MARCA.ambar} /> : null}
                         </View>
                       ) : null}
@@ -158,7 +158,7 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
           }) : null}
           {data && TRAMO_CFG[data.tramo] && hayReparto ? (
             <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 20 }}>
-              Un cuarto del bono va a la jefatura y el resto se reparte en el equipo según lo que vendió cada persona.
+              Un cuarto del bono es para el jefe de sucursal. El resto se reparte en el equipo según lo que vendió cada persona.
             </Text>
           ) : null}
         </>

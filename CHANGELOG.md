@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.5 — Lenguaje: Marketing, Metas, Bolsas, Inyecciones y Cumplimiento
+
+- Décima tanda de la revisión del lenguaje, web y app: Marketing, Metas,
+  Bolsas, Inyecciones y Cumplimiento. Unos 285 textos. En Metas cada aviso
+  nombra a quien le llega (jefe de sucursal, gerente general, supervisor de
+  ventas); el presupuesto de Marketing lo fija «un supervisor o
+  administrador»; la pestaña «Bajas» de Cumplimiento → «Descartes».
+
 ## v2.1554.4 — Lenguaje: Clientes
 
 - Novena tanda de la revisión del lenguaje: Clientes (datos, mayoristas,

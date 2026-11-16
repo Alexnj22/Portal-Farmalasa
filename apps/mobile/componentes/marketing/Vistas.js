@@ -161,7 +161,7 @@ export function GaleriaGestion({ marca, formato, liberada, busqueda, puedeLibera
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      <View style={{ marginHorizontal: 16 }}><Aviso texto="Las piezas aprobadas que se liberan las ven las salas en su Galería, para publicarlas en WhatsApp." /></View>
+      <View style={{ marginHorizontal: 16 }}><Aviso texto="Las sucursales ven en su Galería las piezas aprobadas que se liberan. Las publican en WhatsApp." /></View>
       <View style={{ marginHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {visibles.slice(0, 120).map((p) => {
           const portada = mediosDe(p).find((a) => tipoDeArchivo(a) === 'imagen' && firmadas.get(a.url));

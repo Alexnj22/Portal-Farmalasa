@@ -84,7 +84,7 @@ export default function Banner() {
               {!imagen ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Toca para elegir una imagen horizontal (1200 × 500)</Text> : null}
             </View>
           </Pressable>
-          {banner.imagen_path && !foto ? <Aviso texto="Ya tiene imagen; toca la foto para reemplazarla." /> : null}
+          {banner.imagen_path && !foto ? <Aviso texto="Ya tiene imagen. Toca la foto para cambiarla." /> : null}
           {/* Se mide ANTES de subir, como el portal: una foto con otra forma se recorta en el teléfono del cliente. */}
           <FormatoImagen tipo="banner" medida={foto?.ancho ? { ancho: foto.ancho, alto: foto.alto } : null} />
           <Seccion titulo="Título" pie="Lo lee VoiceOver y sirve para encontrarlo aquí.">

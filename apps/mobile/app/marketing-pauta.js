@@ -86,7 +86,7 @@ export default function PautaDePieza() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{pieza.titulo}</Text>
-          <Seccion titulo="El plan" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · otras piezas ${formatMoney(otros)} · queda ${formatMoney(Math.max(libre, 0))}` : 'Gerencia todavía no fija el presupuesto del mes.'}>
+          <Seccion titulo="El plan" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · otras piezas ${formatMoney(otros)} · queda ${formatMoney(Math.max(libre, 0))}` : 'Un supervisor o administrador todavía no fija el presupuesto del mes.'}>
             <Tocable onPress={() => {
               const opciones = [...OBJETIVOS_PAUTA.map((o) => o.label), 'Cancelar'];
               ActionSheetIOS.showActionSheetWithOptions({ title: 'Objetivo', options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => { if (i < OBJETIVOS_PAUTA.length) set('objetivo')(OBJETIVOS_PAUTA[i].value); });
@@ -111,7 +111,7 @@ export default function PautaDePieza() {
                 : <Tocable onPress={() => set('fecha_fin')(form.fecha_inicio || pieza.fecha)}><Text style={{ color: colorSistema.acento, fontSize: 16 }}>Elegir</Text></Tocable>}
             </View>
           </Seccion>
-          <Seccion titulo="Lo que trajo" pie="Vacío es «todavía no se anotó», no cero.">
+          <Seccion titulo="Lo que trajo" pie="Si todavía no lo sabes, déjalo vacío.">
             {RESULTADOS.map(([k, t]) => <Numero key={k} titulo={t} valor={form[k]} onCambiar={set(k)} />)}
             <Campo value={form.notas} onChangeText={set('notas')} placeholder="Notas" />
           </Seccion>

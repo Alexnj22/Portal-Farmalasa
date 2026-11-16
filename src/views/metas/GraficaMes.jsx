@@ -109,8 +109,8 @@ export default function GraficaMes({ data, vista, onVista, ocultarMontos = false
                         )}
                     </div>
                     <p className="text-micro font-semibold text-content-3 mt-2">
-                        El día de hoy va más claro porque todavía no termina.
-                        {porVenir > 0 && <> La gráfica llega hasta hoy: quedan {porVenir} día{porVenir !== 1 ? 's' : ''} del mes.</>}
+                        Hoy va más claro porque todavía no termina.
+                        {porVenir > 0 && <> Quedan {porVenir} día{porVenir !== 1 ? 's' : ''} del mes.</>}
                     </p>
                 </>
             ) : (
@@ -151,7 +151,7 @@ export default function GraficaMes({ data, vista, onVista, ocultarMontos = false
                             {!ocultarMontos && falta > 0 && diasRestantes > 0 && (
                                 <span className="text-content-3">
                                     {' · '}faltan {formatMoney(falta)} en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}
-                                    {' — '}{formatMoney(falta / diasRestantes)} por día
+                                    {' · '}{formatMoney(falta / diasRestantes)} por día
                                 </span>
                             )}
                         </p>

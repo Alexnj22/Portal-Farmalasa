@@ -60,7 +60,7 @@ export default function EfectoEnVentas({ pieza }) {
                     <p className="text-caption text-content-3">
                         {efecto.dias} días desde el {fechaTexto(efecto.desde, { day: 'numeric', month: 'short' })}: {formatQty(v.unidadesDurante)} unidades,
                         contra {formatMoney(v.antes)} ({formatQty(v.unidadesAntes)} unidades) los {efecto.dias} días anteriores.
-                        Es una referencia: la temporada y el inventario también mueven la venta.
+                        Es sólo una referencia. La temporada y la existencia también cuentan.
                     </p>
                 </>
             )}

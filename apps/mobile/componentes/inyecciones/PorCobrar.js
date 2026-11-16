@@ -109,9 +109,9 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
         <Kpi icono="HandCoins" rotulo="Cobros sin venta" valor={String(r.sueltos)} color={MARCA.azulClaro} apoyo={`${formatMoney(r.montoSueltos)} cobrados`} />
       </FilaDeKpis>
       <View style={{ marginHorizontal: 16, gap: 6 }}>
-        {fini < DESDE_EL_PORTAL ? <Aviso tono="cuidado" texto="Antes del 3 de septiembre la aplicación no se registraba en el portal: las ventas anteriores a esa fecha aparecen «sin cobro» aunque se hayan cobrado." /> : null}
+        {fini < DESDE_EL_PORTAL ? <Aviso tono="cuidado" texto="Antes del 3 de septiembre las aplicaciones no se anotaban. Las ventas anteriores salen «sin cobro» aunque se hayan cobrado." /> : null}
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        <Aviso texto="El cobro de la aplicación se asigna a su venta al cobrarse. Los cobros de antes, o los que se cobraron sin venta, se unen por hora con la venta más cercana del mismo día y sucursal, y se marcan «estimado»." />
+        <Aviso texto="Cada cobro de aplicación va con su venta. Si no la tiene, se une con la venta más cercana en hora del mismo día y sucursal, y se marca «estimado»." />
       </View>
 
       {vendedores.length ? (

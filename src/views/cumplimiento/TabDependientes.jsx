@@ -58,7 +58,7 @@ export default function TabDependientes({ branchId, salas = [] }) {
         return () => { vivo = false; };
     }, [lista]);
 
-    if (lista.length === 0) return <EmptyState icon={Users} title="Sin salas para revisar" />;
+    if (lista.length === 0) return <EmptyState icon={Users} title="Sin sucursales para revisar" />;
     if (error) return <Notice variant="danger">{error}</Notice>;
     // Lo cargado es de OTRA selección mientras llega la nueva: no se muestra.
     if (!porSala || porSala[0]?.clave !== lista) return <LoadingState label="Cargando personal…" />;

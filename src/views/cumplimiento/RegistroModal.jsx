@@ -68,7 +68,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
     const nombreSala = sala || opcionesSala.find((o) => o.value === salaId)?.label || '';
 
     const poner = (k, v) => setDatos((d) => ({ ...d, [k]: v }));
-    const falta = [...(eligeSala && !salaId ? ['Sala'] : []), ...faltantes(tipo, datos, campos)];
+    const falta = [...(eligeSala && !salaId ? ['Sucursal'] : []), ...faltantes(tipo, datos, campos)];
 
     // Para la capacitación: el personal activo de la sala (o de toda la red si
     // se anota para administración).
@@ -118,7 +118,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
         if (r.error) { setError(mensajeDeCumplimiento(r.error)); return; }
         clearDraft(claveBorrador);
         showToast(cerrando ? 'Registro cerrado' : 'Registro guardado',
-            aTodas ? `Llegó a ${r.salas} salas` : nombreSala, 'success');
+            aTodas ? `Llegó a ${r.salas} sucursales` : nombreSala, 'success');
         onHecho?.();
     };
 
@@ -179,7 +179,7 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
                                     </button>
                                 );
                             })}
-                            {personal.length === 0 && <p className="text-caption text-content-3">No hay personal activo en esta sala.</p>}
+                            {personal.length === 0 && <p className="text-caption text-content-3">No hay personal activo en esta sucursal.</p>}
                         </div>
                     </div>
                 );
@@ -232,14 +232,14 @@ export default function RegistroModal({ tipo, modo = 'crear', registro = null, b
 
     return (
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth={lista.length ? 'max-w-2xl' : 'max-w-lg'} ariaLabel={titulo}>
-            <LiquidModal.Header titulo={titulo} subtitulo={aTodas ? 'Para todas las salas y la bodega' : nombreSala || undefined}
+            <LiquidModal.Header titulo={titulo} subtitulo={aTodas ? 'Para todas las sucursales y la bodega' : nombreSala || undefined}
                 onClose={guardando ? undefined : onClose} />
             <LiquidModal.Body className="space-y-4">
                 {eligeSala && (
                     <div data-campo="sala">
-                        <p className="text-caption font-bold text-content-3 mb-1">Sala</p>
+                        <p className="text-caption font-bold text-content-3 mb-1">Sucursal</p>
                         <LiquidSelect value={salaId} onChange={(x) => setSalaId(x ? String(x) : '')} options={opcionesSala}
-                            placeholder="¿De qué sala?" clearable={false} />
+                            placeholder="¿De qué sucursal?" clearable={false} />
                     </div>
                 )}
                 {/* La fecha nace con hoy: no es el campo por donde se empieza. Sin

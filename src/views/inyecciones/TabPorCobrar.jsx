@@ -192,16 +192,15 @@ export default function TabPorCobrar({
 
             {sinHistorial && (
                 <Notice variant="warning" icon={Info}>
-                    Antes del 3 de septiembre la aplicación no se registraba en el portal: las ventas
-                    anteriores a esa fecha aparecen «sin cobro» aunque se hayan cobrado.
+                    Antes del 3 de septiembre las aplicaciones no se anotaban. Las ventas anteriores
+                    salen «sin cobro» aunque se hayan cobrado.
                 </Notice>
             )}
             {error && <Notice variant="danger">{error}</Notice>}
 
             <Notice variant="info" icon={Info}>
-                El cobro de la aplicación se asigna a su venta al cobrarse. Los cobros de antes, o los que
-                se cobraron sin venta, se unen por hora con la venta más cercana del mismo día y sucursal, y
-                se marcan <b>estimado</b>: la hora de los dos y quién cobró quedan a la vista para revisarlo.
+                Cada cobro de aplicación va con su venta. Si no la tiene, se une con la venta más cercana en
+                hora del mismo día y sucursal, y se marca <b>estimado</b>. Revisa la hora y quién cobró.
             </Notice>
 
             {/* ── Por vendedor ─────────────────────────────────────────── */}

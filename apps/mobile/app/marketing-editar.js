@@ -184,7 +184,7 @@ export default function EditarPiezaDeMarketing() {
             <Rotulo texto="Notas para el diseñador" />
             <Campo value={form.notas} onChangeText={set('notas')} placeholder="Opcional" />
           </Seccion>
-          <Seccion titulo="Pauta" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · asignado a otras ${formatMoney(otros)} · disponible ${formatMoney(Math.max(disponible, 0))}` : 'Gerencia todavía no fija el presupuesto del mes.'}>
+          <Seccion titulo="Pauta" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · asignado a otras ${formatMoney(otros)} · disponible ${formatMoney(Math.max(disponible, 0))}` : 'Un supervisor o administrador todavía no fija el presupuesto del mes.'}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Se pautará</Text>
               <Interruptor value={!!form.pautar} onValueChange={set('pautar')} />

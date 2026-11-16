@@ -79,16 +79,16 @@ export default function Historia() {
               {!imagen ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center', padding: 12 }}>Toca para elegir una imagen vertical (1080 × 1920)</Text> : null}
             </View>
           </Pressable>
-          {historia.imagen_path && !foto ? <Aviso texto="Ya tiene imagen; toca la foto para reemplazarla." /> : null}
+          {historia.imagen_path && !foto ? <Aviso texto="Ya tiene imagen. Toca la foto para cambiarla." /> : null}
           {/* Se mide ANTES de subir, como el portal: una foto con otra forma se recorta en el teléfono del cliente. */}
           <FormatoImagen tipo="historia" medida={foto?.ancho ? { ancho: foto.ancho, alto: foto.alto } : null} />
           <Seccion titulo="Título">
             <Campo multiline={false} maxLength={60} placeholder="Ej. Semana del bebé" value={f.titulo} onChangeText={cambiar('titulo')} />
           </Seccion>
-          <Seccion titulo="Rótulo corto" pie="Va debajo del círculo en la app. Una o dos palabras; si lo dejas vacío, se usa la primera del título.">
+          <Seccion titulo="Rótulo corto" pie="Va debajo del círculo en la app. Una o dos palabras. Si lo dejas vacío, va la primera del título.">
             <Campo multiline={false} maxLength={12} placeholder="Ej. Bebé" value={f.rotulo} onChangeText={cambiar('rotulo')} />
           </Seccion>
-          <Seccion titulo="Texto (opcional)" pie="Una o dos líneas: se leen sobre la foto.">
+          <Seccion titulo="Texto (opcional)" pie="Una o dos líneas. Van sobre la foto.">
             <Campo maxLength={240} placeholder="Texto" value={f.texto} onChangeText={cambiar('texto')} />
           </Seccion>
           <Seccion titulo="Botón" pie="A dónde lleva el botón de la historia en la app.">

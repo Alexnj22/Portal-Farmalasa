@@ -59,7 +59,7 @@ const AccessDeniedView = () => {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-[var(--dur-lento)] fill-mode-both" style={{ animationDelay: '280ms' }}>
                 <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(-1)}>Volver</Button>
 
-                <Button variant="ghost" icon={MessageCircle} onClick={handleWhatsApp}>Contactar soporte</Button>
+                <Button variant="ghost" icon={MessageCircle} onClick={handleWhatsApp}>Avisar a Soporte</Button>
             </div>
         </div>
     );

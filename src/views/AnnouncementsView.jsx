@@ -288,7 +288,7 @@ const AnnouncementsView = ({ openModal }) => {
       setAlertDialog({
         isOpen: true,
         title: 'Operación bloqueada',
-        message: 'No puedes editar un aviso que ya fue leído. Por temas de auditoría, debes archivarlo y crear uno nuevo.'
+        message: 'Ya alguien leyó este aviso y no se puede editar. Archívalo y crea uno nuevo.'
       });
       return;
     }
@@ -324,7 +324,7 @@ const AnnouncementsView = ({ openModal }) => {
       setError('Selecciona a qué sucursal quieres enviarle el aviso.'); return;
     }
     if (targetType === 'ROLE' && !targetValue) {
-      setError('Necesitas especificar a qué cargo va dirigido este mensaje.'); return;
+      setError('Elige a qué cargo va el aviso.'); return;
     }
     if (targetType === 'EMPLOYEE' && selectedEmployees.length === 0) {
       setError('No has seleccionado a nadie. Elige al menos a una persona.'); return;
@@ -332,7 +332,7 @@ const AnnouncementsView = ({ openModal }) => {
 
     if (!publishImmediately) {
       if (!scheduledDate) {
-        setError('Si no publicas inmediatamente, debes elegir una fecha de programación.'); 
+        setError('Si no lo publicas ahora, elige una fecha.'); 
         return;
       }
       
@@ -343,7 +343,7 @@ const AnnouncementsView = ({ openModal }) => {
       today.setHours(0, 0, 0, 0); 
       
       if (selected <= today) {
-        setError('La fecha programada debe ser a partir de mañana. Si lo necesitas para hoy, usa "Publicar Inmediatamente".'); 
+        setError('La fecha tiene que ser desde mañana. Para hoy, usa «Publicar de inmediato».'); 
         return;
       }
     }
@@ -371,7 +371,7 @@ const AnnouncementsView = ({ openModal }) => {
           editedAt: new Date().toISOString()
         };
         await updateAnnouncement(editingAnnId, updatePayload, {});
-        useToastStore.getState().showToast('Aviso Actualizado', 'Los cambios se han guardado con éxito.', 'success');
+        useToastStore.getState().showToast('Aviso actualizado', 'Cambios guardados.', 'success');
         if (finalScheduledFor && new Date(finalScheduledFor) > new Date()) {
           setListTab('SCHEDULED');
         }
@@ -413,7 +413,7 @@ const AnnouncementsView = ({ openModal }) => {
     try {
       await archiveAnnouncement(archiveDialog.annId);
       setArchiveDialog({ isOpen: false, annId: null });
-      useToastStore.getState().showToast('Aviso Archivado', 'El aviso ya no será visible.', 'success');
+      useToastStore.getState().showToast('Aviso archivado', 'Ya no se muestra.', 'success');
     } catch {
       setError('No se pudo archivar el aviso.');
       setArchiveDialog({ isOpen: false, annId: null });
@@ -423,7 +423,7 @@ const AnnouncementsView = ({ openModal }) => {
   const handleDeleteCallback = useCallback((ann) => {
     setError('');
     if (ann.readIds?.length > 0) {
-      setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: 'Alguien ya leyó este aviso. Por seguridad no puedes eliminarlo, archívalo.' });
+      setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: 'Alguien ya leyó este aviso y no se puede eliminar. Archívalo.' });
       return;
     }
     setConfirmDialog({ isOpen: true, annId: ann.id });
@@ -517,15 +517,15 @@ const AnnouncementsView = ({ openModal }) => {
       onTabChange={setListTab}
       searchValue={announcementSearch}
       onSearchChange={setAnnouncementSearch}
-      placeholder="Buscar en avisos, sucursales o roles..."
+      placeholder="Buscar en avisos, sucursales o cargos..."
     />
   );
 
   return (
     <>
       <style>{`@keyframes subtle-shake { 0%, 100% { transform: rotate(0deg) scale(1.01); } 25% { transform: rotate(-0.5deg) scale(1.01); } 75% { transform: rotate(0.5deg) scale(1.01); } } .animate-subtle-shake { animation: subtle-shake 0.4s ease-in-out infinite; }`}</style>
-      <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, annId: null })} onConfirm={executeDelete} title="¿Eliminar este aviso?" message="Esta acción borrará el aviso para siempre. No podrás recuperarlo ni ver las estadísticas." confirmText="Sí, Eliminar" isProcessing={isSubmitting} isDestructive={true} />
-      <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar aviso?" message="El aviso se moverá a la pestaña de Archivo y dejará de mostrarse en los Kioscos. ¿Continuar?" confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
+      <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, annId: null })} onConfirm={executeDelete} title="¿Eliminar este aviso?" message="El aviso se borra para siempre, con sus estadísticas." confirmText="Sí, Eliminar" isProcessing={isSubmitting} isDestructive={true} />
+      <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar aviso?" message="El aviso pasa a Archivo y deja de verse en los kioscos." confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
       <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '' })} title={alertDialog.title} message={alertDialog.message} type="error" />
 
       <GlassViewLayout icon={Megaphone} title="Gestión de avisos" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
@@ -697,12 +697,12 @@ const AnnouncementsView = ({ openModal }) => {
                   glowClass={announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}
                   iconClass={announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}
                   title={announcementSearch ? 'Sin resultados' : listTab === 'ACTIVE' ? 'Todo está al día' : listTab === 'SCHEDULED' ? 'Sin programaciones' : 'Archivo vacío'}
-                  subtitle={announcementSearch ? 'No encontramos avisos con esa búsqueda.' : listTab === 'ACTIVE' ? 'Bandeja limpia. No hay avisos activos pendientes por el momento.' : listTab === 'SCHEDULED' ? 'No tienes avisos esperando para publicarse en el futuro.' : 'Aquí aparecerán los avisos que ya cumplieron su ciclo.'} />
+                  subtitle={announcementSearch ? 'No encontramos avisos con esa búsqueda.' : listTab === 'ACTIVE' ? 'No hay avisos activos.' : listTab === 'SCHEDULED' ? 'No tienes avisos esperando para publicarse en el futuro.' : 'Aquí aparecerán los avisos que ya cumplieron su ciclo.'} />
               ) : (
                 <>
                 {isAnnFuzzy && debouncedSearchTerm && (
                   <Notice variant="warning" icon={Search}>
-                            Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
+                            Sin coincidencias exactas para &ldquo;{debouncedSearchTerm}&rdquo;. Estos se parecen.
                         </Notice>
                 )}
                 {paginatedList.map((ann, i) => (

@@ -124,7 +124,7 @@ export default function EditarEncuestaInterna() {
             <Segmentos activa={alcance} onCambiar={(v) => { setAlcance(v); setIds([]); setBusca(''); }} margen={0}
               opciones={ALCANCES_DE_ENCUESTA.map((a) => ({ id: a.id, label: a.label }))} />
             {alcance === 'all' ? <Aviso texto="Todo el personal puede responderla." /> : null}
-            {alcance === 'roles' ? <Aviso texto="Solo aplicará a jefes/as de sala registrados en el sistema." /> : null}
+            {alcance === 'roles' ? <Aviso texto="Sólo la responden quienes tienen el cargo Jefe/a de Sala." /> : null}
             {alcance === 'branches' ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {(branches || []).map((b) => {

@@ -106,7 +106,7 @@ function Respuesta({ p, valor, onChange }) {
       const mover = (i, d) => { const j = i + d; if (j < 0 || j >= orden.length) return; const n = [...orden]; [n[i], n[j]] = [n[j], n[i]]; onChange(n); };
       return (
         <View style={{ gap: 6 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Use las flechas para cambiar el orden. Si ya está como lo dijo, siga.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Usa las flechas para cambiar el orden. Si ya está como lo dijo, sigue.</Text>
           {orden.map((id, i) => (
             <View key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{`${i + 1}. ${ops.find((o) => o.id === id)?.texto ?? ''}`}</Text>
@@ -194,7 +194,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
         <Seccion>
           <Text style={{ color: MARCA.verde, fontSize: 20, fontWeight: '800', textAlign: 'center' }}>Respuesta guardada</Text>
           {inc?.tipo === 'puntos' && inc.estado === 'acreditado' ? <Aviso texto={`Se acreditaron ${inc.puntos} puntos en la cuenta del cliente.`} /> : null}
-          {inc?.tipo === 'puntos' && inc.estado === 'pendiente' ? <Aviso tono="cuidado" texto={`Los ${inc.puntos} puntos quedaron pendientes: el teléfono no corresponde a una sola ficha.`} /> : null}
+          {inc?.tipo === 'puntos' && inc.estado === 'pendiente' ? <Aviso tono="cuidado" texto={`Los ${inc.puntos} puntos quedaron pendientes: el teléfono no corresponde a un solo cliente.`} /> : null}
           {inc?.tipo === 'muestra' && inc.estado !== 'entregado' ? (
             <>
               <Aviso tono="cuidado" texto={`Entrégale al cliente: ${inc.descripcion || 'la muestra médica'}.`} />

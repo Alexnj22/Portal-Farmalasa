@@ -455,7 +455,7 @@ const VacationPlanView = () => {
                 return {
                     value: String(e.id),
                     label: e.name,
-                    sublabel: '⚠ Sin fecha de ingreso — Actualizar datos',
+                    sublabel: '⚠ Sin fecha de ingreso. Actualiza sus datos.',
                     persona: e,
                     disabled: true,
                 };
@@ -1001,7 +1001,7 @@ const VacationPlanView = () => {
                                 <>
                                 {isVacSearchFuzzy && searchTerm && (
                                     <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    Resultados similares para &ldquo;{searchTerm}&rdquo;. No hay coincidencias exactas.
                 </Notice>
                                 )}
                                 {/* `DataTable` y no una tabla a mano: en el teléfono cada
@@ -1146,7 +1146,7 @@ const VacationPlanView = () => {
                 onClose={() => setRechazandoCambio(null)}
                 onConfirm={(motivo) => handleProcessRequest(rechazandoCambio, 'REJECTED', motivo)}
                 title="Rechazar el cambio"
-                message="Se mantienen las fechas originales. Decile por qué."
+                message="Se mantienen las fechas originales. Dile por qué."
                 placeholder="Por qué no se puede cambiar..."
                 confirmText="Rechazar"
                 isProcessing={Boolean(processingRequestId)}

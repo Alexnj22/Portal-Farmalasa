@@ -124,7 +124,7 @@ export default function PlanDeVacaciones() {
             </Pressable>
           ) : (
             <Seccion titulo="¿A quién?">
-              <Campo multiline={false} value={buscar} onChangeText={setBuscar} placeholder="Buscar por nombre o sala" />
+              <Campo multiline={false} value={buscar} onChangeText={setBuscar} placeholder="Buscar por nombre o sucursal" />
               {filtradas.slice(0, 60).map(({ e, motivo, sala }, i) => (
                 <Pressable key={e.id} disabled={!!motivo} onPress={() => { Haptics.selectionAsync().catch(() => {}); cambiar('empId')(String(e.id)); }}
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, opacity: motivo ? 0.45 : pressed ? 0.7 : 1,
@@ -183,7 +183,7 @@ export default function PlanDeVacaciones() {
               <Seccion titulo="Nota (opcional)">
                 <Campo value={f.nota} onChangeText={cambiar('nota')} placeholder="Comentario del plan" />
               </Seccion>
-              {eleg && !eleg.isEligible && !eleg.isNearEligible ? <Aviso tono="cuidado" texto="Todavía no cumple el año: el sistema puede rechazar la asignación." /> : null}
+              {eleg && !eleg.isEligible && !eleg.isNearEligible ? <Aviso tono="cuidado" texto="Todavía no cumple el año. El portal puede rechazar la asignación." /> : null}
               <BotonGrande texto={guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Asignar vacaciones'} onPress={confirmar} deshabilitado={!valido || guardando} />
             </>
           ) : null}

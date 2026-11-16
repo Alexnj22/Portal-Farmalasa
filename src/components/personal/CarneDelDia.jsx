@@ -62,7 +62,7 @@ export default function CarneDelDia({ employeeId, nombre, cargo = '', sala = '' 
             // `CARNE_TEMPORAL_ANULADO` lo anota `anularCarneTemporal`.
             const r = await anularCarneTemporal(vigente.id, { employeeId });
             if (r?.ok) {
-                showToast('Carné anulado', 'Ese papel ya no sirve para nada.', 'success');
+                showToast('Carné anulado', 'Ese papel ya no sirve.', 'success');
             } else {
                 showToast('No se anuló', r?.motivo || 'Intenta de nuevo.', 'error');
             }
@@ -111,7 +111,7 @@ export default function CarneDelDia({ employeeId, nombre, cargo = '', sala = '' 
                 title="Anular el carné de papel"
                 confirmText="Anular"
                 isProcessing={anulando}
-                message={`El papel que tenga ${nombre || 'esta persona'} deja de servir en el acto: no abre el portal, no marca en el kiosco y no firma nada. Si tiene una sesión abierta con él, se le cierra. Para darle otro hay que imprimirlo de nuevo.`}
+                message={`El carné de papel de ${nombre || 'esta persona'} deja de servir ahora mismo. No abre el portal, no marca en el kiosco ni firma nada. Si tiene una sesión abierta con él, se cierra. Para darle otro, imprímelo de nuevo.`}
             />
         </div>
     );

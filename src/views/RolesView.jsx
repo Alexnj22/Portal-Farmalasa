@@ -228,9 +228,9 @@ const RolesView = ({ openModal }) => {
         try {
             await deleteRole(confirmDialog.role.id, confirmDialog.role.name);
             if (editingRoleId === confirmDialog.role.id) handleCancelEdit();
-            useToastStore.getState().showToast('Cargo Eliminado', `El cargo ha sido removido del sistema.`, 'success');
+            useToastStore.getState().showToast('Cargo eliminado', 'Se quitó el cargo.', 'success');
         } catch (err) {
-            useToastStore.getState().showToast('Error', `Error al eliminar: ${mensajeAmigable(err, 'Desconocido')}`, 'error');
+            useToastStore.getState().showToast('No se pudo eliminar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
             setConfirmDialog({ isOpen: false, role: null });
         }
@@ -248,15 +248,15 @@ const RolesView = ({ openModal }) => {
         try {
             if (editingRoleId) {
                 await updateRole(editingRoleId, newRole, parentRoleId || null, secondaryParentRoleId || null, scope, Number(maxLimit));
-                useToastStore.getState().showToast('Cargo Actualizado', 'Los cambios en el organigrama se han guardado.', 'success');
+                useToastStore.getState().showToast('Cargo actualizado', 'Se guardaron los cambios.', 'success');
             } else {
                 await addRole(newRole, parentRoleId || null, secondaryParentRoleId || null, scope, Number(maxLimit));
-                useToastStore.getState().showToast('Cargo Creado', 'El nuevo cargo ha sido añadido al organigrama.', 'success');
+                useToastStore.getState().showToast('Cargo creado', 'Ya está en el organigrama.', 'success');
             }
 
             handleCancelEdit();
         } catch (err) {
-            setError(mensajeAmigable(err, 'Oops, algo hizo cortocircuito. Intenta guardarlo de nuevo.'));
+            setError(mensajeAmigable(err, 'No se pudo guardar. Intenta de nuevo.'));
         }
     };
 
@@ -289,10 +289,10 @@ const RolesView = ({ openModal }) => {
                 link.click();
 
                 setIsExporting(false);
-                useToastStore.getState().showToast('Exportación Exitosa', 'El organigrama se ha descargado como imagen.', 'success');
+                useToastStore.getState().showToast('Organigrama descargado', 'Se guardó como imagen.', 'success');
             }, 500);
         } catch {
-            useToastStore.getState().showToast('Error', 'Hubo un problema al generar la imagen.', 'error');
+            useToastStore.getState().showToast('Error', 'No se pudo crear la imagen.', 'error');
             setIsExporting(false);
         }
     };
@@ -450,8 +450,8 @@ const RolesView = ({ openModal }) => {
                 onClose={() => setConfirmDialog({ isOpen: false, role: null })}
                 onConfirm={executeDeleteRole}
                 title="¿Eliminar cargo?"
-                message={`Estás a punto de eliminar el cargo "${confirmDialog.role?.name}". Esta acción no se puede deshacer.`}
-                confirmText="Sí, Eliminar"
+                message={`Vas a eliminar el cargo "${confirmDialog.role?.name}". No se puede deshacer.`}
+                confirmText="Sí, eliminar"
             />
 
             <AlertModal
@@ -502,7 +502,7 @@ const RolesView = ({ openModal }) => {
                                                 <Award size={16} />
                                             </IconoEnCaja>
                                             <PortalInput
-                                                aria-label="Nombre del rol nuevo"
+                                                aria-label="Nombre del cargo"
                                                 type="text"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
@@ -772,7 +772,7 @@ const RolesView = ({ openModal }) => {
                                                 <div className="text-center py-20 px-10 opacity-60">
                                                     <Network className="mx-auto text-content-3 mb-4" size={48} strokeWidth={1.5} />
                                                     <TituloDeSeccion nivel="tarjeta">Sin Estructura Definida</TituloDeSeccion>
-                                                    <p className="text-content-3 text-body-lg mt-1 font-medium">Crea un cargo "Nivel Raíz" para comenzar el árbol.</p>
+                                                    <p className="text-content-3 text-body-lg mt-1 font-medium">Crea un cargo de nivel raíz para empezar.</p>
                                                 </div>
                                             )}
                                         </div>

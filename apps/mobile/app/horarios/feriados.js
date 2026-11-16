@@ -52,7 +52,7 @@ export default function Feriados() {
   const quitar = (h) => {
     if (!puedeEditar) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    Alert.alert('Quitar el feriado', `«${h.name}» (${fechaTexto(h.holiday_date, { day: 'numeric', month: 'long', year: 'numeric' })}) deja de contar como asueto: ese día se paga como cualquier otro.`, [
+    Alert.alert('Quitar el feriado', `«${h.name}» (${fechaTexto(h.holiday_date, { day: 'numeric', month: 'long', year: 'numeric' })}) deja de contar como asueto. Ese día se paga como cualquier otro.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Quitar', style: 'destructive', onPress: async () => {
         try { await deleteHoliday(h.id); listo('Feriado quitado', h.name); }

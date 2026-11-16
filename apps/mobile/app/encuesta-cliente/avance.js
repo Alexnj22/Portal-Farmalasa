@@ -51,13 +51,13 @@ function AsignarFicha({ incentivo, onListo, onCancelar }) {
     buscarClientes(q, { select: 'id, name, phone, acumula_puntos', limite: 8 }).then(({ data }) => { if (vivo) setResultados(data || []); });
     return () => { vivo = false; };
   }, [q]);
-  const elegir = (c) => Alert.alert('Asignar la ficha', `${incentivo.puntos} puntos para ${c.name}. Se acreditan en el acto.`, [
+  const elegir = (c) => Alert.alert('Asignar al cliente', `${incentivo.puntos} puntos para ${c.name}. Se acreditan en el acto.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Asignar', onPress: async () => {
       trabajando('Asignando…');
       try {
         const r = await asignarIncentivo(incentivo.id, c.id);
-        listo(r?.estado === 'acreditado' ? 'Puntos acreditados' : 'Ficha asignada', r?.estado === 'no_aplica' ? 'Esa ficha no acumula puntos.' : '');
+        listo(r?.estado === 'acreditado' ? 'Puntos acreditados' : 'Cliente asignado', r?.estado === 'no_aplica' ? 'Ese cliente no acumula puntos.' : '');
         onListo();
       } catch (e) { fallo('No se pudo asignar', mensajeAmigable(e)); }
     } },
@@ -72,7 +72,7 @@ function AsignarFicha({ incentivo, onListo, onCancelar }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${c.phone || 'Sin teléfono'}${c.acumula_puntos === false ? ' · no acumula puntos' : ''}`}</Text>
         </Tocable>
       ))}
-      {q.length >= 3 && !resultados.length ? <Vacio enSeccion>Sin fichas con esa búsqueda.</Vacio> : null}
+      {q.length >= 3 && !resultados.length ? <Vacio enSeccion>Sin clientes con esa búsqueda.</Vacio> : null}
       <Tocable onPress={onCancelar} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Cancelar</Text>
       </Tocable>
@@ -216,7 +216,7 @@ export default function AvanceEncuesta() {
                             ? <AsignarFicha incentivo={i} onCancelar={() => setAsignando(null)} onListo={() => { setAsignando(null); cargar(); }} />
                             : (
                               <Tocable onPress={() => setAsignando(i.id)} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
-                                <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Asignar ficha</Text>
+                                <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Asignar cliente</Text>
                               </Tocable>
                             )
                         ) : null}

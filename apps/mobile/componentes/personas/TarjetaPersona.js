@@ -144,7 +144,7 @@ export function PuestoVacante({ cargo }) {
         <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderStyle: 'dashed', borderColor: MARCA.ambar }} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>Puesto sin cubrir</Text>
+            <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>Cargo sin cubrir</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{cargo}</Text>
           </View>
         </View>

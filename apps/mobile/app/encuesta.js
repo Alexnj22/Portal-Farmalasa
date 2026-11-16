@@ -106,8 +106,8 @@ function Bloque({ bloque: b, filas, preguntas, inv, abierto, onAbrir, anonima })
                   ))}
                 </View>
                 <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                  <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Jefes evaluando a su jefe inmediato</Text>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.</Text>
+                  <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Jefes evaluando a su supervisor</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Bodega evalúa a Administración. Las sucursales, al Supervisor/a de Ventas.</Text>
                   {jefes.porSupervisor.map((g) => (
                     <View key={g.supervisor} style={{ gap: 4 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

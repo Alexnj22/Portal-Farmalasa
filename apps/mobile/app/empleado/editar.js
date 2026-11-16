@@ -244,7 +244,7 @@ export default function EditarEmpleado() {
     enlace: motivoDelEnlace(form),
     first_names: !form.first_names.trim() ? 'Falta el nombre.' : !isValidPersonName(form.first_names) ? 'El nombre sólo puede llevar letras.' : null,
     last_names: !form.last_names.trim() ? 'Faltan los apellidos.' : !isValidPersonName(form.last_names) ? 'Los apellidos sólo pueden llevar letras.' : null,
-    dui: !veIdentidad || esMenor || !form.dui ? null : duiRepetido ? 'Ese DUI ya está registrado en otra ficha.'
+    dui: !veIdentidad || esMenor || !form.dui ? null : duiRepetido ? 'Ese DUI ya lo tiene otra persona.'
       : !isValidDUIAlgorithm(form.dui) ? 'El DUI no está completo o su dígito verificador no cuadra.' : null,
     alt_identity_document: veIdentidad && esMenor && !form.alt_identity_document?.trim() ? 'Falta el número del documento del menor.' : null,
     birth_date: fechaFutura ? 'La fecha de nacimiento no es válida.' : edad !== null && (edad < MIN_WORK_AGE || edad > MAX_WORK_AGE) ? `La edad debe ser ${MIN_WORK_AGE}-${MAX_WORK_AGE}.` : null,
@@ -300,10 +300,10 @@ export default function EditarEmpleado() {
 
   const avisarAlta = (r) => {
     const partes = [];
-    if (r?.enlazadoCon) partes.push(`Quedó sobre la ficha de ${shortEmployeeName(r.enlazadoCon)}, que conserva su historial.`);
+    if (r?.enlazadoCon) partes.push(`Quedó en los datos de ${shortEmployeeName(r.enlazadoCon)}, con su historial.`);
     if (r?.tempPassword) {
       Clipboard.setStringAsync(r.tempPassword).catch(() => {});
-      partes.push(`Usuario: ${r.username} · Contraseña temporal: ${r.tempPassword} (copiada). Anótala: no se puede volver a ver.`);
+      partes.push(`Usuario: ${r.username} · Contraseña temporal: ${r.tempPassword} (copiada). Anótala. Después ya no se puede ver.`);
     } else if (r?.contrasenaConservada) {
       partes.push(`Entra igual que siempre, con el usuario ${r.username} y la contraseña que ya tenía.`);
     } else if (r?.accesoFallo) {
@@ -316,7 +316,7 @@ export default function EditarEmpleado() {
     // dónde subir licencias y AFP sin encontrarlo (2026-10-28).
     const botones = [{ text: 'Listo', style: 'cancel', onPress: () => router.back() }];
     if (r?.id) botones.push({ text: 'Abrir el expediente', onPress: () => router.replace({ pathname: '/empleado/expediente', params: { id: String(r.id) } }) });
-    Alert.alert(r?.enlazadoCon ? 'Expediente enlazado' : 'Empleado registrado', partes.join('\n\n') || 'La ficha se guardó.', botones);
+    Alert.alert(r?.enlazadoCon ? 'Datos enlazados' : 'Empleado registrado', partes.join('\n\n') || 'Los datos se guardaron.', botones);
   };
 
   const guardar = async () => {
@@ -332,7 +332,7 @@ export default function EditarEmpleado() {
         avisarAlta(r);
       } else {
         await updateEmployee(emp.id, d);
-        listo('Ficha guardada', shortEmployeeName(emp));
+        listo('Datos guardados', shortEmployeeName(emp));
         router.back();
       }
     } catch (e) {
@@ -342,8 +342,8 @@ export default function EditarEmpleado() {
     }
   };
 
-  if (!puedeEditar) return <PantallaSinDato texto="Tu cargo no puede dar de alta ni editar fichas." />;
-  if (!esAlta && !emp) return <PantallaSinDato texto="No se encontró la ficha." />;
+  if (!puedeEditar) return <PantallaSinDato texto="Tu cargo no puede dar de alta ni editar empleados." />;
+  if (!esAlta && !emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   // La ficha de las órdenes de descuento: la que se edita, o la que se enlaza en el alta.
   const idDeFicha = emp?.id || form.enlazar_con_id || null;
@@ -351,7 +351,7 @@ export default function EditarEmpleado() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_FIJA, title: esAlta ? 'Nuevo empleado' : 'Editar ficha', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: esAlta ? 'Nuevo empleado' : 'Editar datos', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <FijoArriba>
           <Segmentos opciones={PESTANAS} activa={pestana} onCambiar={setPestana} />
@@ -393,7 +393,7 @@ export default function EditarEmpleado() {
                       onChangeText={(t) => cambiar('dui_lugar_expedicion')(t.toUpperCase())} placeholder="Ej. Chalatenango" />
                     <CampoFecha rotulo="Fecha de expedición" valor={form.dui_fecha_expedicion} onCambiar={cambiar('dui_fecha_expedicion')} />
                   </>
-                ) : <Nota texto="El documento de identidad, el ISSS y el AFP sólo los ve quien tiene la llave del expediente." />}
+                ) : <Nota texto="El documento de identidad, el ISSS y el AFP sólo los ve quien tiene permiso." />}
                 <Elegir rotulo="Género" valor={form.gender} opciones={op(GENDER_OPTIONS)} onCambiar={cambiar('gender')} vacio="Sin indicar" />
                 <Elegir rotulo="Estado civil" valor={form.marital_status} opciones={op(MARITAL_STATUS_OPTIONS)} onCambiar={cambiar('marital_status')} vacio="Sin indicar" />
               </Seccion>
@@ -407,14 +407,14 @@ export default function EditarEmpleado() {
 
           {pestana === 'laboral' ? (
             <>
-              <Seccion titulo="El puesto" pie={esAlta ? null : 'Sala, cargos e ingreso se cambian con una acción de personal desde la ficha.'}>
+              <Seccion titulo="El puesto" pie={esAlta ? null : 'Sucursal, cargos e ingreso se cambian con una acción de personal desde su perfil.'}>
                 {esAlta ? (
                   <>
                     <Elegir rotulo="Área de trabajo" valor={form.branch_id} opciones={opcionesSala} onCambiar={(v) => setForm((f) => ({ ...f, branch_id: v, assigned_branch_ids: [] }))}
                       vacio="Pendiente" />
                     {cubreVarias ? (
                       <View style={{ gap: 8 }}>
-                        <Nota texto={`${sala.name} no es una sala, pero esta persona sí atiende salas. Toca las que le tocan: va a salir en el equipo de cada una.`} />
+                        <Nota texto={`${sala.name} no es una sucursal, pero esta persona atiende sucursales. Toca las que le corresponden. Sale en el equipo de cada una.`} />
                         <Enlace texto={(form.assigned_branch_ids || []).length === opcionesSala.length ? 'Quitar todas' : 'Todas'}
                           onPress={() => setForm((f) => ({ ...f, assigned_branch_ids: (f.assigned_branch_ids || []).length === opcionesSala.length ? [] : opcionesSala.map((o) => o.id) }))} />
                         <SalasQueCubre opciones={opcionesSala} elegidas={(form.assigned_branch_ids || []).map(String)} onCambiar={cambiar('assigned_branch_ids')} />
@@ -466,10 +466,10 @@ export default function EditarEmpleado() {
           ) : null}
 
           {intento && motivo ? <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{motivo}</Text> : null}
-          <BotonGrande texto={guardando ? 'Guardando…' : esAlta ? (form.enlazar_con_id ? 'Guardar sobre su ficha' : 'Dar de alta') : 'Guardar cambios'}
+          <BotonGrande texto={guardando ? 'Guardando…' : esAlta ? (form.enlazar_con_id ? 'Guardar sobre sus datos' : 'Dar de alta') : 'Guardar cambios'}
             onPress={guardar} deshabilitado={guardando} />
           <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>
-            {esAlta ? 'La foto y los estudios se completan en «Expediente» de su ficha.' : 'La foto y los estudios están en «Expediente».'}
+            {esAlta ? 'La foto y los estudios se completan en «Expediente», en su perfil.' : 'La foto y los estudios están en «Expediente».'}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

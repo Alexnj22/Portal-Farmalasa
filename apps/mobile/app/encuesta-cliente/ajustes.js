@@ -121,7 +121,7 @@ export default function AjustesEncuesta() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           {!editable ? <Aviso texto="Sólo se edita en borrador y con permiso de editar encuestas." /> : null}
           <Seccion titulo="La encuesta">
-            <Campo multiline={false} editable={editable} placeholder="Ej. Satisfacción en sala — octubre" value={encuesta.nombre} onChangeText={set('nombre')} />
+            <Campo multiline={false} editable={editable} placeholder="Ej. Satisfacción en sucursal, octubre" value={encuesta.nombre} onChangeText={set('nombre')} />
             <Campo editable={editable} placeholder="Qué queremos saber" value={encuesta.objetivo || ''} onChangeText={set('objetivo')} />
           </Seccion>
           {!encuesta.es_plantilla ? (
@@ -132,7 +132,7 @@ export default function AjustesEncuesta() {
                     valor={(encuesta.canales || []).includes(c.value)} onCambiar={(on) => set('canales')(canalesCon(encuesta.canales, c.value, on))} />
                 ))}
               </Seccion>
-              <Seccion titulo="Dónde y cuántas respuestas" pie={porSala ? 'Cada sucursal tiene su cuota: la encuesta termina cuando todas la cumplen.' : 'Se reparte en las sucursales elegidas y cuenta el total.'}>
+              <Seccion titulo="Dónde y cuántas respuestas" pie={porSala ? 'Cada sucursal tiene su cuota. La encuesta termina cuando todas la cumplen.' : 'Se reparte en las sucursales elegidas y cuenta el total.'}>
                 {editable ? <Opciones valor={encuesta.alcance} onCambiar={set('alcance')} opciones={[{ id: 'general', label: 'Meta general' }, { id: 'sucursales', label: 'Meta por sucursal' }]} />
                   : <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{porSala ? 'Meta por sucursal' : 'Meta general'}</Text>}
                 {salas.map((s) => {
@@ -206,7 +206,7 @@ export default function AjustesEncuesta() {
             {!encuesta.es_plantilla ? (
               <>
                 <Campo editable={editable} placeholder="Consentimiento para guardar sus datos" value={encuesta.texto_consentimiento || ''} onChangeText={set('texto_consentimiento')} />
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se muestra sólo si el cliente quiere dejar su ficha o teléfono. Sin aceptarlo, la respuesta queda anónima.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se muestra sólo si el cliente quiere dejar sus datos. Sin aceptarlo, la respuesta queda anónima.</Text>
               </>
             ) : null}
           </Seccion>

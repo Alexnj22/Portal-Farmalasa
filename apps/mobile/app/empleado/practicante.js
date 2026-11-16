@@ -136,7 +136,7 @@ export default function Practicante() {
           </Seccion>
 
           <Seccion titulo="La práctica">
-            <Elegir rotulo="Sala" requerido valor={form.branch_id} opciones={salas} onCambiar={cambiar('branch_id')} error={err(!form.branch_id, 'Elige la sala')} />
+            <Elegir rotulo="Sucursal" requerido valor={form.branch_id} opciones={salas} onCambiar={cambiar('branch_id')} error={err(!form.branch_id, 'Elige la sucursal')} />
             <Elegir rotulo="Institución educativa" requerido valor={form.institucion_educativa} opciones={opcionesInstitucion} onCambiar={cambiar('institucion_educativa')} error={err(v.faltaInstitucion, 'Elige la institución')} />
             <Pressable onPress={pedirInstitucion} hitSlop={6}><Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>¿No está? Escribir otra institución</Text></Pressable>
             <CampoConRotulo rotulo="Tutor (institución)" requerido value={form.tutor_nombre} onChangeText={cambiar('tutor_nombre')} error={err(!form.tutor_nombre.trim(), 'Escribe el tutor')} />

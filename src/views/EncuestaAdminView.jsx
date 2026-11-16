@@ -607,7 +607,7 @@ export default function EncuestaAdminView() {
                                     <p className={`text-caption mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-chart-3-text' : 'text-content-3'}`}>
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfAnonima
-                                            ? 'Internamente se guarda quién respondió, pero el empleado no verá su propia atribución.'
+                                            ? 'Se guarda quién respondió, pero no se muestra.'
                                             : 'Cada respuesta es visible con el nombre del empleado.'}
                                     </p>
                                     <p className={`text-caption mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-success' : 'text-content-3'}`}>
@@ -702,7 +702,7 @@ export default function EncuestaAdminView() {
 
                                     {sfScope === 'roles' && (
                                         <p className="text-label text-content-3 mt-2 ml-1">
-                                            Solo aplicará a jefes/as de sala registrados en el sistema.
+                                            Sólo la responden quienes tienen el cargo Jefe/a de Sala.
                                         </p>
                                     )}
                                 </div>
@@ -1096,7 +1096,7 @@ export default function EncuestaAdminView() {
                                                             <div className="flex items-center gap-2 px-5 py-3 border-b border-border-card bg-surface-card">
                                                                 <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                                                 <span className="text-body-sm font-black text-content-2">{branchName}</span>
-                                                                <span className="text-label text-content-3">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
+                                                                <span className="text-label text-content-3">· {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
                                                             </div>
                                                             <div className="overflow-x-auto">
                                                                 <table className="w-full min-w-[520px]">

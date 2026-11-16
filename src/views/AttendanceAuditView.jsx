@@ -211,7 +211,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   };
 
   return (
-    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" surface={null} ariaLabel={`Corrección de marcaje — ${fmtDia}`}>
+    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" surface={null} ariaLabel={`Corrección de marcaje · ${fmtDia}`}>
       {/* El contenedor y la cabecera los pone `CuerpoDialogo`: hoja en el
           teléfono, panel centrado en escritorio. Antes eran un `bg-surface-card
           backdrop-blur-2xl` a mano —o sea material escrito en clases, no en
@@ -302,7 +302,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
           {isDemoMode && (
             <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
-              <p className="text-caption text-warning-text font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
+              <p className="text-caption text-warning-text font-bold text-center">Modo demo. Los cambios no se guardan.</p>
             </div>
           )}
         </div>
@@ -476,7 +476,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             <p className="text-micro font-bold text-success-text flex items-center gap-1">
               <Check size={9} strokeWidth={3} />
               Editado por {editedInfo.details.auditedByName}
-              {editedInfo.details.reason && ` — "${editedInfo.details.reason}"`}
+              {editedInfo.details.reason && ` · "${editedInfo.details.reason}"`}
             </p>
           )}
 
@@ -484,7 +484,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           {isAutoDay && (
             <p className="text-micro font-bold text-chart-3-text flex items-center gap-1">
               <Bot size={10} strokeWidth={2.5} />
-              Salida generada automáticamente — requiere verificación
+              Salida generada automáticamente. Hay que verificarla.
             </p>
           )}
 
@@ -847,7 +847,7 @@ const AttendanceAuditView = () => {
   }, [employees, filterBranch, search, quincenaByEmployee]);
 
   const handleApproveAllForEmployee = useCallback(async (emp) => {
-    if (isDemoMode) { showToast('Demo', 'En modo demo los timesheets no se aprueban.', 'info'); return; }
+    if (isDemoMode) { showToast('Demo', 'En modo demo no se aprueban las horas.', 'info'); return; }
     const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
     if (!pending.length) return;
     const ids = pending.map(ts => ts.id);
@@ -975,7 +975,7 @@ const AttendanceAuditView = () => {
       if (error) throw error;
       if (yaResuelta) {
         showToast('Ya estaba resuelta',
-          'Alguien la decidió antes, así que no se volvió a aplicar.', 'error');
+          'Alguien la decidió antes. No se volvió a aplicar.', 'error');
         setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
         setEditingExId(null);
         return;
@@ -1102,7 +1102,7 @@ const AttendanceAuditView = () => {
             <div className="px-5 py-3 border-b border-chart-3/30 flex items-center gap-2">
               <ShieldAlert size={14} className="text-chart-3-text" strokeWidth={2.5} />
               <span className="text-label font-black text-chart-3-text uppercase tracking-widest">
-                Turnos Extra Sin Autorizar — Revisión TH
+                Turnos Extra Sin Autorizar · Revisión TH
               </span>
               <Badge variant="chart-3" tone="solid" size="sm" uppercase={false}>{shiftExceptions.length}</Badge>
             </div>
@@ -1126,7 +1126,7 @@ const AttendanceAuditView = () => {
                           {meta.pinOmitido && <span className="ml-2 text-warning-text text-micro uppercase tracking-widest font-black">sin PIN</span>}
                         </p>
                       ) : (
-                        <p className="text-caption text-content-3 mt-1 italic">No declaró horario — solo registró entrada</p>
+                        <p className="text-caption text-content-3 mt-1 italic">No declaró horario. Solo registró la entrada.</p>
                       )}
                     </div>
                     {isEditing ? (
@@ -1271,7 +1271,7 @@ const AttendanceAuditView = () => {
           setRechazandoEx(null);
         }}
         title="Rechazar el turno declarado"
-        message="No se le va a contar el turno extra. Decile por qué."
+        message="No se le va a contar el turno extra. Dile por qué."
         placeholder="Por qué no se confirma..."
         confirmText="Rechazar"
         isProcessing={Boolean(processingExId)}

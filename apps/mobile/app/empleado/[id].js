@@ -135,7 +135,7 @@ export default function Empleado() {
   const sala = useMemo(() => (sucursales || []).find((b) => String(b.id) === String(emp?.branchId ?? emp?.branch_id)), [sucursales, emp]);
   const historial = useMemo(() => historialDePerfil(emp?.history || [], emp?.hire_date || emp?.hireDate, sala?.name), [emp, sala]);
   const semana = useMemo(() => semanaDelPerfil(emp?.weeklySchedule, turnos || [], hoy), [emp, turnos, hoy]);
-  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona (o no está en tu alcance)." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona o no la puedes ver." />;
 
   const estado = estadoDePersona(emp);
   const alertas = alertasDePersona(emp);
@@ -173,7 +173,7 @@ export default function Empleado() {
         if (error) throw error;
         if (!data?.ok) throw new Error('No se pudo restablecer.');
         if (data.tempPassword) {
-          listo('Contraseña temporal', 'Anótala o compártela: no se puede volver a ver.');
+          listo('Contraseña temporal', 'Anótala o compártela. Después ya no se puede ver.');
           Alert.alert('Contraseña temporal', `Usuario: ${emp.username}\nContraseña: ${data.tempPassword}`, [
             { text: 'Compartir', onPress: () => Share.share({ message: `Usuario: ${emp.username}\nContraseña temporal: ${data.tempPassword}` }).catch(() => {}) },
             { text: 'Listo' },
@@ -223,7 +223,7 @@ export default function Empleado() {
         {/* Lo de todos los días, arriba y a un toque (antes, al final de la ficha). */}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {hasPermission?.('staff_list', 'can_edit') && !inactiva ? (
-            <Casilla enRenglon icono="PenLine" rotulo="Editar la ficha" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
+            <Casilla enRenglon icono="PenLine" rotulo="Editar los datos" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
           ) : null}
           {hasPermission?.('staff_detail', 'can_view') ? (
             <Casilla enRenglon icono="FolderOpen" rotulo="Expediente" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/expediente', params: { id: String(emp.id) } })} />
@@ -313,7 +313,7 @@ export default function Empleado() {
         ) : null}
 
         <Seccion titulo="Laboral">
-          <Dato primero rotulo="Sala" valor={sala?.name || 'Sin sala'} />
+          <Dato primero rotulo="Sucursal" valor={sala?.name || 'Sin sucursal'} />
           {areas.length >= 2 ? <Dato rotulo="Cubre" valor={areas.join(', ')} /> : null}
           {emp.code ? <Dato rotulo="Código" valor={String(emp.code)} /> : null}
           <Dato rotulo="Ingreso" valor={fecha(emp.hire_date || emp.hireDate)} />

@@ -74,7 +74,7 @@ export default function Turnos() {
   const duplicar = (g) => { setForm({ start: g.start, end: g.end, name: g.name, lunchStart: g.lunchStart || '', lunchMinutes: g.lunchMinutes ?? MINUTOS_DE_PAUSA, grupo: null }); listo('Copia del turno', 'Cámbiale las horas o el nombre y guárdalo.'); };
 
   const archivar = (g, archivado) => Alert.alert(archivado ? 'Reactivar el turno' : 'Archivar el turno',
-    archivado ? `«${g.name}» vuelve al catálogo y se puede asignar.` : `«${g.name}» sale del catálogo: ya no se ofrece al asignar. Los días que ya lo tienen no cambian.`, [
+    archivado ? `«${g.name}» vuelve al catálogo y se puede asignar.` : `«${g.name}» sale del catálogo y ya no se ofrece al asignar. Los días que ya lo tienen no cambian.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: archivado ? 'Reactivar' : 'Archivar', style: archivado ? 'default' : 'destructive', onPress: async () => {
         try {

@@ -42,7 +42,7 @@ const DOC_CFG = {
     CERTIFICATE:  { label: 'Constancia',      Icon: FileCheck,   iconBg: 'bg-chart-1/10', iconCls: 'text-chart-1-text' },
     VACATION:     { label: 'Vacaciones',      Icon: Palmtree,    iconBg: 'bg-success/10', iconCls: 'text-success-text' },
     PERMIT:       { label: 'Permiso',         Icon: FileText,    iconBg: 'bg-warning/10', iconCls: 'text-warning-text' },
-    EXPEDIENTE:   { label: 'Del expediente',  Icon: FolderOpen,  iconBg: 'bg-brand/10',   iconCls: 'text-brand-text'   },
+    EXPEDIENTE:   { label: 'De tus datos',  Icon: FolderOpen,  iconBg: 'bg-brand/10',   iconCls: 'text-brand-text'   },
     SHIFT_CHANGE: { label: 'Cambio de turno', Icon: RefreshCw,   iconBg: 'bg-chart-9/10', iconCls: 'text-chart-9-text' },
 };
 const DEFAULT_CFG = {
@@ -54,7 +54,7 @@ const STATUS_CFG = {
     // Los del expediente no son una solicitud: no se aprueban ni se rechazan,
     // simplemente están. Sin un estado propio caerían en el `|| { label:
     // undefined }` de abajo y la tarjeta mostraría una píldora vacía.
-    EN_EXPEDIENTE: { label: 'En tu expediente', Icon: FolderOpen, variante: 'brand' },
+    EN_EXPEDIENTE: { label: 'En tus datos', Icon: FolderOpen, variante: 'brand' },
     APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, variante: 'success' },
     PENDING:   { label: 'Pendiente', Icon: Clock,        variante: 'warning' },
     REJECTED:  { label: 'Rechazada', Icon: XCircle,      variante: 'danger'  },
@@ -146,7 +146,7 @@ const DocCard = ({ doc, alAbrir }) => {
     // «ISSS y AFP · Del…»—, o sea que el truncado se comía el grupo, que es el
     // dato, para dejar la mitad de una redundancia.
     const bajada = delExpediente
-        ? (grupoDeCategoria(doc.meta.categoria) || 'Del expediente')
+        ? (grupoDeCategoria(doc.meta.categoria) || 'De tus datos')
         : (title === cfg.label ? 'Solicitud' : cfg.label);
 
     // Los hechos de la ficha: núcleo (`datosDelDocumento`), los mismos de la app.

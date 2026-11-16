@@ -53,7 +53,7 @@ const SesionesView = () => {
         if (error) {
             console.error('SesionesView: list_sessions falló:', error.message);
             setFallo(error.code === '42501'
-                ? 'Tu cargo todavía no tiene acceso a Conexiones. Pídele a quien administra los permisos que te lo habilite.'
+                ? 'Tu cargo no tiene acceso a Conexiones.'
                 : 'No se pudo cargar la lista. Vuelve a intentar en un momento.');
         } else {
             setFallo(null);
@@ -130,8 +130,8 @@ const SesionesView = () => {
             showToast?.(
                 esTodas ? `${data} conexiones cerradas` : 'Conexión cerrada',
                 meCerreAMi
-                    ? 'Cerraste también la de este equipo: hay que volver a entrar.'
-                    : 'Esos dispositivos ya no pueden renovar su acceso.',
+                    ? 'También cerraste la de este equipo. Vuelve a entrar.'
+                    : 'Esos dispositivos salen en unos minutos.',
                 'success',
             );
             if (esTodas) setAbierta(null);
@@ -222,9 +222,7 @@ const SesionesView = () => {
                     explicación —de dónde salen el dispositivo y el lugar— vive
                     en el detalle, que es donde esos datos se ven. */}
                 <Notice variant="neutral" icon={Info}>
-                    Cada vez que alguien entra al portal se abre una conexión nueva. Las que pasan su
-                    tiempo sin usarse se cierran solas cada hora, y la tarjeta sigue mostrando cuándo
-                    entró esa persona por última vez.
+                    Cada entrada al portal abre una conexión. Las que no se usan se cierran solas cada hora.
                 </Notice>
 
                 <div className="flex justify-end min-w-0">{barraFiltros}</div>
@@ -332,10 +330,7 @@ const SesionesView = () => {
                         </Notice>
                     )}
                     <p className="text-caption text-content-3 px-0.5 pb-1">
-                        Cerrar una conexión le quita a ese dispositivo la posibilidad de renovar su
-                        acceso; sale del todo en cuanto se le venza el que ya tiene, y puede tardar
-                        unos minutos. El dispositivo y el lugar son los que declaró el equipo al
-                        conectarse: sirven para reconocer algo raro, no como comprobante.
+                        Al cerrar una conexión, ese dispositivo sale en unos minutos. El dispositivo y el lugar los informa el mismo equipo. Sirven para notar algo raro.
                     </p>
                     {/* Repartido por PUERTA, no una lista sola. Antes esto eran
                         dos tarjetas idénticas en la pantalla anterior, y la
@@ -452,7 +447,7 @@ const SesionesView = () => {
                     porCerrarVisible?.tipo === 'todas'
                         ? `${porCerrarVisible?.persona?.empleado} tendrá que volver a entrar en todos sus dispositivos${porCerrarVisible?.persona?.tiene_esta ? ', incluido este' : ''}. Puede tardar unos minutos en salir del todo.`
                         : porCerrarVisible?.conexion?.es_actual
-                            ? 'Es la conexión de este mismo equipo: vas a tener que volver a entrar.'
+                            ? 'Es la conexión de este equipo. Vas a tener que volver a entrar.'
                             : `${porCerrarVisible?.persona?.empleado} tendrá que volver a entrar en ese dispositivo. Puede tardar unos minutos en salir del todo.`
                 }
                 confirmText="Sí, cerrar"

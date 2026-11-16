@@ -566,7 +566,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             Nombrado distinto de "Mis documentos" (menú aparte, adjuntos de
                             solicitudes) para no confundir ambos conceptos. */}
                         <SectionCard>
-                            <SectionHeader icon={FolderOpen} label="Mi expediente">
+                            <SectionHeader icon={FolderOpen} label="Mis documentos">
                                 {documentos.length > 0 && <Badge uppercase={false}>{documentos.length}</Badge>}
                             </SectionHeader>
                             <EmployeeDocumentsList documents={documentos} />

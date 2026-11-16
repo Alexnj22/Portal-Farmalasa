@@ -81,7 +81,7 @@ function FechaDeLey({ rotulo, valor, onCambiar, hasta }) {
   );
 }
 
-const SI_NO = [{ id: 'NO', label: 'No' }, { id: 'SI', label: 'Sí — embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical' }];
+const SI_NO = [{ id: 'NO', label: 'No' }, { id: 'SI', label: 'Sí: embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical' }];
 
 export default function BajaLegal({ f, pon, emp }) {
   const motivo = f.terminationReason || '';
@@ -195,15 +195,15 @@ export default function BajaLegal({ f, pon, emp }) {
           {motivo === 'ABANDONO' ? (
             <Seccion titulo="Cómo se le intentó contactar">
               <Campo value={f.intentoDeContacto || ''} onChangeText={(t) => pon({ intentoDeContacto: t })} style={{ minHeight: 70 }}
-                placeholder="Llamadas, mensajes, visita al domicilio — con fechas" />
+                placeholder="Llamadas, mensajes, visita al domicilio, con fechas" />
             </Seccion>
           ) : null}
 
           {avisos.map((a) => <Aviso key={a} tono="cuidado" texto={a} />)}
 
-          <Seccion titulo="Liquidación" pie={salario == null ? null : `El mínimo de comercio y servicios es $${SALARIO_MINIMO_INICIAL.toFixed(2)}; cámbialo si es otro. Si se pagará un total distinto al estimado, escríbelo; vacío = el estimado. Es una estimación: confírmala con el contador o el abogado antes de pagar.`}>
+          <Seccion titulo="Liquidación" pie={salario == null ? null : `El mínimo de comercio y servicios es $${SALARIO_MINIMO_INICIAL.toFixed(2)}; Cámbialo si es otro. Si se pagará un total distinto, escríbelo. Vacío, se usa el estimado. Confírmalo con el contador o el abogado antes de pagar.`}>
             {salario == null ? <Vacio enSeccion>Sólo la ve quien tiene permiso para ver salarios.</Vacio>
-              : !ingreso || !f.date ? <Vacio enSeccion>Faltan la fecha de ingreso de la ficha o la fecha de la baja.</Vacio>
+              : !ingreso || !f.date ? <Vacio enSeccion>Falta la fecha de ingreso o la fecha de la baja.</Vacio>
                 : !(minimo > 0) ? <Aviso tono="cuidado" texto="Escribe el salario mínimo para calcularla." />
                   : liquidacion ? (
                     <>
@@ -257,7 +257,7 @@ export default function BajaLegal({ f, pon, emp }) {
           {conActa ? (
             <>
               <BotonGrande texto="Imprimir acta y carta" borde color={MARCA.azulClaro} onPress={imprimirActaYCarta} />
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>La persona no tiene que firmar: la carta la firma el patrono o su representante, y se entrega o se envía a su domicilio (Art. 55 CT).</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>La persona no tiene que firmar. La carta la firma el patrono o su representante, y se entrega o se envía a su domicilio (Art. 55 CT).</Text>
             </>
           ) : null}
         </>

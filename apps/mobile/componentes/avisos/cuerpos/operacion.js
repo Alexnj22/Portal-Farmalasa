@@ -236,7 +236,7 @@ function CuerpoDeTraslados({ d, expandida }) {
       <Panel datos={[
         { etiqueta: traslados.length === 1 ? 'traslado' : 'traslados', valor: traslados.length },
         { etiqueta: u === 1 ? 'unidad' : 'unidades', valor: u },
-        { etiqueta: salas === 1 ? 'sala' : 'salas', valor: salas },
+        { etiqueta: salas === 1 ? 'sucursal' : 'sucursales', valor: salas },
       ]} />
       <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12 }}>
         {visibles.map((t, i) => <FilaDeTraslado key={t.id ?? i} t={t} primero={!i} />)}
@@ -278,7 +278,7 @@ function CuerpoDeMinmax({ d }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>
             {d.ventasMesCurso != null ? <>Este mes van <Text style={{ color: colorSistema.texto, fontWeight: '800' }}>{`${unidades(d.ventasMesCurso)} u.`}</Text></> : null}
             {d.ventasMesCurso != null && d.existencia != null ? ' · ' : null}
-            {d.existencia != null ? <>Hay <Text style={{ color: colorSistema.texto, fontWeight: '800' }}>{`${unidades(d.existencia)} u.`}</Text> en la sala</> : null}
+            {d.existencia != null ? <>Hay <Text style={{ color: colorSistema.texto, fontWeight: '800' }}>{`${unidades(d.existencia)} u.`}</Text> en la sucursal</> : null}
           </Text>
         </Bloque>,
       );
@@ -322,7 +322,7 @@ function CuerpoDeMinmax({ d }) {
     <View style={{ gap: 8 }}>
       <Tabla>{filas}</Tabla>
       {maxNoAlcanzaParaDespachar(d) ? (
-        <Advertencia texto={`MAX ${unidades(d.maxNuevo)} es menos de lo que se despacha (${despacho.etiqueta}, ${unidades(despacho.unidades)} u.): el pedido no mandará nada.`} />
+        <Advertencia texto={`El Máx de ${unidades(d.maxNuevo)} es menos de lo que se despacha (${despacho.etiqueta}, ${unidades(despacho.unidades)} u.). El pedido no mandará nada.`} />
       ) : null}
     </View>
   );

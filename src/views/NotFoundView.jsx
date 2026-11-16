@@ -27,7 +27,7 @@ export default function NotFoundView() {
         <EmptyState
             icon={Compass}
             title="Esta página no existe"
-            subtitle={`No encontramos nada en ${pathname}. Puede que el enlace esté desactualizado o que la dirección tenga un error.`}
+            subtitle={`No hay nada en ${pathname}. Revisa la dirección.`}
             glowClass="bg-chart-3/30"
             iconClass="text-chart-3-text"
             action={

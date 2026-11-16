@@ -224,7 +224,7 @@ function Expediente({ b, puedeEditar }) {
   ].map(([t, l]) => [t, filtrar(l)]).filter(([, l]) => l.length);
   return (
     <>
-      <Seccion titulo="Expediente">
+      <Seccion titulo="Datos">
         <Barra rotulo={`${exp.subidos} de ${exp.total} documentos`} pct={exp.avance} />
       </Seccion>
       <Subfiltro activa={todos ? 'todos' : 'atencion'} onCambiar={(v) => setTodos(v === 'todos')}
@@ -234,7 +234,7 @@ function Expediente({ b, puedeEditar }) {
           {lista.map((d, i) => <Documento key={d.id} b={b} d={d} primero={i === 0} puedeEditar={puedeEditar} propio={propios.has(d.id)} />)}
         </Seccion>
       ))}
-      {!grupos.length ? <Aviso texto={todos ? 'Esta sucursal no tiene documentos configurados.' : 'Todo el expediente está al día.'} /> : null}
+      {!grupos.length ? <Aviso texto={todos ? 'Esta sucursal no tiene documentos configurados.' : 'Todo está al día.'} /> : null}
       {puedeEditar ? <BotonGrande texto="Nuevo documento" borde onPress={() => router.push({ pathname: '/sucursal/documento', params: { id: String(b.id) } })} /> : null}
     </>
   );
@@ -426,7 +426,7 @@ export default function Sucursal() {
         <Segmentos activa={pestana} onCambiar={setPestana}
           opciones={b.expedienteOculto
             ? [{ id: 'resumen', label: 'Resumen' }, { id: 'historial', label: 'Historial' }]
-            : [{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
+            : [{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Datos' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <View style={{ gap: 6, marginHorizontal: 4 }}>

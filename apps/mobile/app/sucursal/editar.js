@@ -221,12 +221,12 @@ export default function EditarSucursal() {
 
           {seccion === 'enfermeria' ? (
             <>
-              <Seccion titulo="Permiso del servicio de enfermería" pie={inyecciones ? null : 'La sala no tiene marcado «Aplica inyecciones» (sección Legal): sin eso, estos documentos no le piden nada.'}>
+              <Seccion titulo="Permiso del servicio de enfermería" pie={inyecciones ? null : 'La sucursal no tiene marcado «Aplica inyecciones» (sección Legal). Sin eso, estos documentos no se piden.'}>
                 <Rotulo texto="Número de permiso" />
                 <Campo multiline={false} value={legal.nursingServicePermit || ''} onChangeText={(v) => cambiar('legal', 'nursingServicePermit', v)} />
                 <FechaFila rotulo="Vence" valor={legal.nursingServicePermitExp} onCambiar={(v) => cambiar('legal', 'nursingServicePermitExp', v)} />
               </Seccion>
-              <Seccion titulo={`Profesionales asignados · ${enfermeras.length}`} pie="Asignar a alguien la mueve a esta sucursal, igual que en el portal. El carné, la licencia y el recibo de cada una se suben desde el expediente.">
+              <Seccion titulo={`Profesionales asignados · ${enfermeras.length}`} pie="Asignar a alguien la mueve a esta sucursal. El carné, la licencia y el recibo de cada una se suben en Datos.">
                 {enfermeras.map((n, i) => (
                   <View key={n.id ?? i} style={{ gap: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>
                     <Elegir primero rotulo={`Enfermería ${i + 1}`} valor={n.employeeId ? nombre(n.employeeId) : 'Elegir'}
@@ -291,7 +291,7 @@ export default function EditarSucursal() {
                 <Rotulo texto="Inscripción SRS" />
                 <Campo multiline={false} value={legal.srsInscripcion || ''} onChangeText={(v) => cambiar('legal', 'srsInscripcion', v)} placeholder="Ej. 0123" />
               </Seccion>
-              <Seccion titulo="Regencia" pie="Asignar a alguien la mueve a esta sucursal, igual que en el portal.">
+              <Seccion titulo="Regencia" pie="Asignar a alguien la mueve a esta sucursal.">
                 <Elegir primero rotulo="Regente" valor={legal.regentEmployeeId ? nombre(legal.regentEmployeeId) : 'Elegir'}
                   onPress={() => elegirPersona('Regente', candidatos.regentes, 'regentEmployeeId')} />
                 <FechaFila rotulo="Vence la credencial" valor={legal.regentCredentialExp} onCambiar={(v) => cambiar('legal', 'regentCredentialExp', v)} />
@@ -342,7 +342,7 @@ export default function EditarSucursal() {
                 <Campo multiline={false} value={legal.municipalAccount || ''} onChangeText={(v) => cambiar('legal', 'municipalAccount', v)} />
                 <FechaFila rotulo="Vence" valor={legal.municipalExpiration} onCambiar={(v) => cambiar('legal', 'municipalExpiration', v)} />
               </Seccion>
-              <Seccion titulo="Desechos bioinfecciosos" pie={inyecciones ? 'Obligatorio: la sala aplica inyecciones.' : null}>
+              <Seccion titulo="Desechos bioinfecciosos" pie={inyecciones ? 'Obligatorio. La sucursal aplica inyecciones.' : null}>
                 <Interruptor primero titulo="Contrato de desechos" valor={inyecciones || legal.wasteManagement}
                   onCambiar={(v) => { if (!inyecciones) cambiar('legal', 'wasteManagement', v); }} />
                 {inyecciones || legal.wasteManagement ? (
@@ -380,7 +380,7 @@ export default function EditarSucursal() {
             );
           }) : null}
 
-          <Aviso texto="Los documentos (licencias, contratos, solvencias) se suben desde el Expediente de la sucursal." />
+          <Aviso texto="Los documentos (licencias, contratos, solvencias) se suben en Datos de la sucursal." />
           <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} onPress={guardar} deshabilitado={guardando} />
         </ScrollView>
       </KeyboardAvoidingView>

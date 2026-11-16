@@ -195,10 +195,9 @@ export default function MaintenanceView() {
 
             {/* El límite del candado, dicho donde se toma la decisión. */}
             <Notice variant="warning" icon={Wrench}>
-                <strong>El candado detiene personas, no procesos.</strong> Los syncs automáticos
-                siguen escribiendo (DTE, inventario, productos): para frenar uno hay que desactivar
-                su job de cron aparte. La única excepción es el recálculo mensual de MIN·MAX, que sí
-                lo respeta.
+                <strong>El candado frena a las personas.</strong> Las actualizaciones automáticas de
+                facturas, existencias y productos siguen corriendo. Solo el recálculo mensual de
+                Mín/Máx se detiene.
             </Notice>
 
             {/* La franja de aviso del portal. Va primera porque es lo que se
@@ -242,8 +241,8 @@ export default function MaintenanceView() {
                 {envioPausado && (
                     <Notice variant="warning" icon={Clock}>
                         <strong>Lo que ya salió sigue en camino.</strong> Está fuera de bodega y
-                        todavía no en la sala. Deja la recepción abierta para poder cerrarlo; si
-                        también la pausas, esa mercadería queda sin poder entrar a ningún lado.
+                        todavía no llega a la sucursal. Deja la recepción abierta para poder cerrarlo.
+                        Si también la pausas, esa mercadería no podrá entrar a ninguna sucursal.
                     </Notice>
                 )}
             </div>
@@ -373,7 +372,7 @@ export default function MaintenanceView() {
             <ConfirmModal
                 isOpen={!!aLiberar}
                 title={`Terminar el mantenimiento de ${info(aLiberar).label}`}
-                message="El equipo vuelve a poder guardar de inmediato."
+                message="Todos pueden volver a guardar de inmediato."
                 confirmText="Terminar"
                 isDestructive={false}
                 isProcessing={busy === aLiberar}

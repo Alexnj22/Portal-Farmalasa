@@ -96,7 +96,7 @@ export default function Sancion() {
   const guardar = () => {
     const p = PELDANOS.find((x) => x.n === peldano);
     Alert.alert(`¿Registrar ${p?.nombre?.toLowerCase() || 'la sanción'}?`,
-      `Queda en el expediente de ${shortEmployeeName(emp)}. Después se comparte la constancia para imprimirla y firmarla.`, [
+      `Queda en el historial de ${shortEmployeeName(emp)}. Después compartes la constancia para imprimirla y firmarla.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Registrar', style: 'destructive', onPress: async () => {
           setGuardando(true); trabajando('Registrando…');
@@ -201,7 +201,7 @@ export default function Sancion() {
               <Seccion titulo="Qué pasó">
                 <Campo value={f.nota} onChangeText={(t) => pon({ nota: t })} style={{ minHeight: 90 }} placeholder="Los hechos, en las palabras de quien los presenció" />
               </Seccion>
-              <Aviso texto="Al guardar se comparte la constancia. Fírmala con el trabajador —el reglamento exige la firma de ambas partes y su compromiso escrito a mano— y súbela al expediente." />
+              <Aviso texto="Al guardar se comparte la constancia. Fírmala con el trabajador, que escribe a mano su compromiso. Después súbela como respaldo en el historial." />
               <BotonGrande texto={guardando ? 'Registrando…' : 'Registrar la sanción'} color={MARCA.rojo} deshabilitado={!completa || guardando} onPress={guardar} />
             </>
           ) : null}

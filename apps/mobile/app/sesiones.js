@@ -71,8 +71,8 @@ function Ficha({ p, onCerrar, puedeCerrar, puedeBloquear, onCerrarConexion, onRe
         <EncabezadoDeHoja titulo={shortEmployeeName({ name: p.empleado || p.cuenta })} subtitulo={[p.cargo, p.cuenta].filter(Boolean).join(' · ')} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
           <Avatar empleado={{ id: p.ficha_id, name: p.empleado, photo: p.foto }} tamano={48} />
-          {bloqueo ? <Aviso tono="freno" texto={`${bloqueo}${p.bloqueo_motivo ? ` — ${p.bloqueo_motivo}` : ''}`} /> : null}
-          {p.conexiones.length > MUCHAS ? <Aviso tono="cuidado" texto={`Tiene ${p.conexiones.length} conexiones abiertas: puede haber sesiones olvidadas.`} /> : null}
+          {bloqueo ? <Aviso tono="freno" texto={`${bloqueo}${p.bloqueo_motivo ? ` · ${p.bloqueo_motivo}` : ''}`} /> : null}
+          {p.conexiones.length > MUCHAS ? <Aviso tono="cuidado" texto={`Tiene ${p.conexiones.length} conexiones abiertas. Puede haber sesiones olvidadas.`} /> : null}
 
           {(p.accesos?.length ? p.accesos : [{ acceso: null, conexiones: p.conexiones }]).map((puerta) => (
             <Seccion key={puerta.acceso ?? 'sin'} titulo={`${puerta.acceso ? describirAcceso(puerta.acceso) : 'Conexiones'} · ${puerta.conexiones.length === 0 ? 'sin conexiones' : puerta.conexiones.length === 1 ? '1 conexión' : `${puerta.conexiones.length} conexiones`}`}>
@@ -151,13 +151,13 @@ export default function Sesiones() {
     const mia = todas ? persona.tiene_esta : conexion.es_actual;
     Alert.alert(
       todas ? `¿Cerrar las ${persona.conexiones.length} conexiones?` : '¿Cerrar esta conexión?',
-      `${shortEmployeeName({ name: persona.empleado })}${mia ? ' — incluye la de este equipo: vas a tener que volver a entrar.' : ''}`,
+      `${shortEmployeeName({ name: persona.empleado })}${mia ? '. Incluye la de este equipo. Vas a tener que volver a entrar.' : ''}`,
       [{ text: 'Cancelar', style: 'cancel' }, { text: 'Cerrar', style: 'destructive', onPress: async () => {
         trabajando('Cerrando…');
         const quien = { persona: persona.empleado, cuenta: persona.cuenta };
         const { data, error: e } = todas ? await cerrarTodasDe(persona.ficha_id, quien) : await cerrarSesion(conexion.session_id, quien);
         if (e) { fallo('No se pudo cerrar', 'Vuelve a intentar en un momento.'); return; }
-        listo(todas ? `${data} conexiones cerradas` : 'Conexión cerrada', 'Esos dispositivos ya no pueden renovar su acceso.');
+        listo(todas ? `${data} conexiones cerradas` : 'Conexión cerrada', 'Esos dispositivos salen en unos minutos.');
         if (mia) { logout(); return; }
         if (todas) setAbierta(null);
         cargar();

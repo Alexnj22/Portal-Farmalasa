@@ -58,7 +58,7 @@ export default function ElegirSalaDeImpresion({
         const deSalas = salas
             .map(s => ({
                 value: String(s.branch_id),
-                label: s.latiendo ? nombre(s.branch_id) : `${nombre(s.branch_id)} — la caja no responde`,
+                label: s.latiendo ? nombre(s.branch_id) : `${nombre(s.branch_id)} (la caja no responde)`,
                 orden: nombre(s.branch_id),
             }))
             .sort((a, b) => a.orden.localeCompare(b.orden));
@@ -86,7 +86,7 @@ export default function ElegirSalaDeImpresion({
         <ModalShell open={open} onClose={onClose} surface={null} maxWidthClass="max-w-sm" ariaLabel={titulo}>
             <CuerpoDialogo
                 titulo={titulo}
-                subtitulo="El papel sale en la ticketera de la sala que elijas."
+                subtitulo="El papel sale en la ticketera de la sucursal que elijas."
                 icono={Printer}
                 pie={<>
                     <Button onClick={confirmar} disabled={!elegida || cargando} icon={Printer}>Imprimir</Button>
@@ -105,12 +105,12 @@ export default function ElegirSalaDeImpresion({
                     sanos. Es la misma lección de `fetchCajasDeImpresion`. */}
                 {!cargando && fallo && (
                     <p className="text-caption font-bold text-danger-text mt-3">
-                        No se pudo leer qué salas pueden imprimir. Puedes mandarlo a esta computadora.
+                        No se pudo leer qué sucursales pueden imprimir. Puedes mandarlo a esta computadora.
                     </p>
                 )}
                 {!cargando && !fallo && salas.length === 0 && (
                     <p className="text-caption font-bold text-content-3 mt-3">
-                        Ninguna sala tiene una caja registrada todavía.
+                        Ninguna sucursal tiene una caja registrada todavía.
                     </p>
                 )}
             </CuerpoDialogo>

@@ -288,7 +288,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     </div>
                     <TituloDeSeccion nivel="modal" className="mb-2">¡Todo al día!</TituloDeSeccion>
                     <p className="font-medium text-body-lg text-content-3 max-w-[260px] leading-relaxed">
-                        Leíste todos tus avisos. Nada se te escapa.
+                        Leíste todos tus avisos.
                     </p>
                 </div>
             </div>
@@ -552,10 +552,10 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 {label && <span className="text-micro font-black text-content-2 uppercase tracking-widest">{label}</span>}
                             </div>
                         ))}
-                        <span className="text-micro font-black text-content-2 uppercase tracking-widest">— confirmar</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest">para confirmar</span>
                         <span className="text-content-3">·</span>
                         <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[var(--shadow-glass-1)] font-mono leading-none">←</kbd>
-                        <span className="text-micro font-black text-content-2 uppercase tracking-widest">— retroceder</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest">para retroceder</span>
                     </div>
                 </div>
             </div>
@@ -577,7 +577,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         <span className="relative z-base text-caption font-black uppercase tracking-widest">
                             {pendingReads.length > 1
                                 ? `Retroceder · ${pendingReads.length} disponibles`
-                                : '¿Lo pasaste por error? — Retroceder'}
+                                : '¿Lo pasaste por error? Retroceder'}
                         </span>
                     </button>
                 </div>
@@ -698,7 +698,7 @@ const EmployeeAnnouncementsView = () => {
                     <>
                     {isAnnFuzzy && searchQuery && (
                         <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                    Sin coincidencias exactas para &ldquo;{searchQuery}&rdquo;. Estos se parecen.
                 </Notice>
                     )}
                     {filtered.length === 0 ? (

@@ -56,7 +56,7 @@ export default function NuevaEncuesta() {
             )}
           </Seccion>
           <Seccion titulo="Nombre" pie={base ? 'Si lo dejas vacío, usa el de la plantilla.' : null}>
-            <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="Ej. Satisfacción en sala — octubre" />
+            <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="Ej. Satisfacción en sucursal, octubre" />
           </Seccion>
           <Seccion titulo="Es">
             <Opciones valor={tipo} onCambiar={setTipo} opciones={[

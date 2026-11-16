@@ -100,8 +100,8 @@ export default function Vacaciones() {
       opciones: [anioActual + 1, anioActual, anioActual - 1].map((a) => ({ id: String(a), label: String(a) })) },
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'ALL', onCambiar: setEstado,
       opciones: [{ id: 'ALL', label: 'Todos' }, ...Object.entries(ESTADO_PLAN).map(([k, l]) => ({ id: k, label: l }))] },
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-      opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
+      opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
 
   const puedeEditar = hasPermission('vacation_plan', 'can_edit');
@@ -153,7 +153,7 @@ export default function Vacaciones() {
       <Stack.Screen options={{
         ...BARRA_FIJA, title: 'Vacaciones',
         headerSearchBarOptions: {
-          placeholder: 'Nombre o sala', hideWhenScrolling: false,
+          placeholder: 'Nombre o sucursal', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -200,7 +200,7 @@ export default function Vacaciones() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
                       <Avatar empleado={p.employee ?? { name: '?' }} tamano={36} />
                       <View style={{ flex: 1, gap: 3 }}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{p.employee ? shortEmployeeName(p.employee) : 'Sin ficha'}</Text>
+                        <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{p.employee ? shortEmployeeName(p.employee) : 'Sin datos'}</Text>
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                           {[`${corta(p.start_date)}${p.start_time ? ` ${hora12(p.start_time)}` : ''} – ${corta(p.end_date)}${p.end_time ? ` ${hora12(p.end_time)}` : ''}`, sala === 'ALL' ? p.branch?.name : null].filter(Boolean).join(' · ')}
                         </Text>

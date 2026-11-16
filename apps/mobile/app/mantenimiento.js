@@ -214,7 +214,7 @@ export default function Mantenimiento() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Aviso tono="cuidado" texto="El candado detiene personas, no procesos: las actualizaciones automáticas siguen escribiendo." />
+        <Aviso tono="cuidado" texto="El candado frena a las personas. Las actualizaciones automáticas siguen corriendo." />
         <Franja />
         {traslado == null ? <Indicador /> : traslado.length ? (
           <Seccion titulo="Movimiento de mercadería">
@@ -223,7 +223,7 @@ export default function Mantenimiento() {
               return <Fila key={t.accion} primero={!i} titulo={r.titulo} detalle={r.detalle} extra={t.pausado ? `En pausa desde ${hora12(t.cambiado_at)}` : null}
                 valor={!!t.pausado} ocupado={ocupado === t.accion} onCambiar={(v) => alternarTraslado(t, v)} />;
             })}
-            {envioPausado ? <Aviso tono="cuidado" texto="Lo que ya salió sigue en camino: deja la recepción abierta para poder cerrarlo." /> : null}
+            {envioPausado ? <Aviso tono="cuidado" texto="Lo que ya salió sigue en camino. Deja la recepción abierta para poder cerrarlo." /> : null}
           </Seccion>
         ) : null}
         {bloqueables == null ? <Indicador /> : (

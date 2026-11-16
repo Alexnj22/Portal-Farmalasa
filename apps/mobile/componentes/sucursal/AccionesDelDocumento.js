@@ -47,7 +47,7 @@ export default function AccionesDelDocumento({ b, d }) {
     const f = await elegirOrigen();
     if (!f) return;
     Alert.alert(d.url ? 'Reemplazar el documento' : 'Subir el documento',
-      d.url ? `«${d.title}» se reemplaza; el anterior queda en el historial de la sucursal.` : `Se guarda «${d.title}» en el expediente de ${b.name}.`, [
+      d.url ? `«${d.title}» se reemplaza. El anterior queda en el historial de la sucursal.` : `Se guarda «${d.title}» en los datos de ${b.name}.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: d.url ? 'Reemplazar' : 'Subir', onPress: async () => {
           try {
@@ -58,7 +58,7 @@ export default function AccionesDelDocumento({ b, d }) {
       ]);
   };
 
-  const quitar = () => Alert.alert('Quitar el documento', `«${d.title}» deja de estar en el expediente; queda en el historial de la sucursal.`, [
+  const quitar = () => Alert.alert('Quitar el documento', `«${d.title}» deja de estar en los datos. Queda en el historial de la sucursal.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Quitar', style: 'destructive', onPress: () => guardar(null, 'Documento quitado') },
   ]);

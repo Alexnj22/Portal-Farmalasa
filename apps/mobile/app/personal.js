@@ -142,7 +142,7 @@ export default function Personal() {
       if (texto.trim()) lista = smartFilter(texto, lista, (p) => [`${p.first_names || ''} ${p.last_names || ''}`, p.institucion_educativa, nombreDe.get(Number(p.branch_id))]).results;
       const m = new Map();
       lista.forEach((p) => { const k = Number(p.branch_id) || 0; if (!m.has(k)) m.set(k, []); m.get(k).push(p); });
-      return [...m.entries()].map(([id, l]) => ({ id, titulo: nombreDe.get(id) || 'Sin sala', pulso: `${l.length} practicante${l.length === 1 ? '' : 's'}`, data: l.map((p) => ({ k: `p${p.id}`, practicante: p })) }))
+      return [...m.entries()].map(([id, l]) => ({ id, titulo: nombreDe.get(id) || 'Sin sucursal', pulso: `${l.length} practicante${l.length === 1 ? '' : 's'}`, data: l.map((p) => ({ k: `p${p.id}`, practicante: p })) }))
         .sort((a, b) => pesoDeSucursal(a.titulo) - pesoDeSucursal(b.titulo));
     }
     let personas = (tipo === 'externos' ? soloNoEmpleados(base) : soloPersonalEnPlanilla(base))
@@ -162,7 +162,7 @@ export default function Personal() {
       (r.vacantesDeSegundo || []).forEach((c) => filas.push({ k: `v${c.id}`, vacante: c.name }));
       (r.equipo || []).forEach((e) => filas.push({ k: `e${e.id}`, emp: e }));
       if ((r.adscritos || []).length) {
-        filas.push({ k: `t${id}`, titulo: 'También en esta sala' });
+        filas.push({ k: `t${id}`, titulo: 'También en esta sucursal' });
         r.adscritos.forEach((e) => filas.push({ k: `a${e.id}`, emp: e, conSuperior: true }));
       }
       if (bajas.length) {
@@ -171,7 +171,7 @@ export default function Personal() {
       }
       const sinSede = id === 0;
       return {
-        id, sinSede, titulo: sinSede ? 'Sin sucursal asignada' : (nombreDe.get(id) || 'Sin sala'),
+        id, sinSede, titulo: sinSede ? 'Sin sucursal asignada' : (nombreDe.get(id) || 'Sin sucursal'),
         pulso: `${pulso(gente)}${bajas.length ? ` · ${bajas.length} de baja` : ''}`, sinJefatura: !r.jefe && !sinSede && gente.length > 0,
         soloCuentas: todosEnSala.length > 0 && todosEnSala.every(esFichaQueNoEsEmpleado), data: filas,
       };
@@ -179,12 +179,12 @@ export default function Personal() {
   }, [tipo, practicantes, todas, user?.branchId, sala, texto, nombreDe, base, vista, plantilla, roles]);
 
   const salas = useMemo(() => [...new Set(plantilla.map(salaDe))].filter(Boolean)
-    .map((id) => ({ id: String(id), label: nombreDe.get(id) || 'Sin sala' }))
+    .map((id) => ({ id: String(id), label: nombreDe.get(id) || 'Sin sucursal' }))
     .sort((a, b) => pesoDeSucursal(a.label) - pesoDeSucursal(b.label) || a.label.localeCompare(b.label)), [plantilla, nombreDe]);
   const grupos = [
     ...(tipo === 'personal' ? [{ id: 'estado', titulo: 'Ver', activa: vista, porDefecto: 'todos', onCambiar: setVista,
       opciones: [{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Activos' }, { id: 'ausentes', label: 'Ausentes' }] }] : []),
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas] }] : []),
   ];
   // Quién entra en la póliza: la misma lista que usa la vista del seguro.
   const enPlanilla = useMemo(() => soloPersonalEnPlanilla((empleados || []).filter((e) => e.status === 'ACTIVO')), [empleados]);
@@ -211,7 +211,7 @@ export default function Personal() {
         {secciones.length > 1 && !buscando ? (
           <Pressable hitSlop={8} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setPlegadas(todasPlegadas ? new Set() : new Set(secciones.map((s) => s.id))); }}
             style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{todasPlegadas ? 'Abrir todas las salas' : 'Contraer todas las salas'}</Text>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{todasPlegadas ? 'Abrir todas las sucursales' : 'Contraer todas las sucursales'}</Text>
           </Pressable>
         ) : null}
         <View style={{ flex: 1 }} />
@@ -230,7 +230,7 @@ export default function Personal() {
       <Stack.Screen options={{
         ...BARRA_FIJA, title: 'Personal',
         headerSearchBarOptions: {
-          placeholder: 'Nombre, cargo o sala', hideWhenScrolling: false,
+          placeholder: 'Nombre, cargo o sucursal', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -262,7 +262,7 @@ export default function Personal() {
                     <View style={{ flex: 1, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{s.titulo}</Text>
-                        {s.sinJefatura ? <Pildora texto="Sin jefatura" color={MARCA.ambar} /> : null}
+                        {s.sinJefatura ? <Pildora texto="Sin jefe" color={MARCA.ambar} /> : null}
                       </View>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{s.pulso}</Text>
                     </View>
@@ -278,8 +278,8 @@ export default function Personal() {
             {s.sinSede && !s.plegada ? (
               <View style={{ marginTop: 8, marginHorizontal: 4 }}>
                 <Aviso tono={s.soloCuentas ? 'nota' : 'cuidado'} texto={s.soloCuentas
-                  ? 'Son cuentas del portal, no personas: no trabajan en ninguna sala, así que no llevan sede.'
-                  : 'Estas fichas no tienen sucursal: no aparecen en ningún equipo ni en el conteo de ninguna sala. Falta elegirles una sede.'} />
+                  ? 'Son cuentas del portal, no personas. No llevan sucursal. La de pruebas lleva una sólo mientras se prueba algo.'
+                  : 'Estas personas no tienen sucursal. No salen en ningún equipo ni en el conteo de ninguna sucursal. Elígeles una.'} />
               </View>
             ) : null}
           </View>

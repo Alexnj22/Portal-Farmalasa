@@ -78,8 +78,8 @@ export default function Kioscos() {
       'Ese equipo deja de poder marcar asistencia en el acto. Para volver a usarlo hay que vincularlo otra vez iniciando sesión en la tablet.', 'Revocar');
     if (!si) return;
     if (ultimo) {
-      const seguro = await preguntar('Es el último equipo de la sala',
-        `${b?.name ?? 'La sucursal'} se queda sin ningún kiosco: nadie podrá marcar ahí hasta que se vincule otro. ¿Revocarlo igual?`, 'Sí, revocar');
+      const seguro = await preguntar('Es el último equipo de la sucursal',
+        `${b?.name ?? 'La sucursal'} se queda sin kiosco. Nadie podrá marcar ahí hasta que se vincule otro. ¿Revocarlo igual?`, 'Sí, revocar');
       if (!seguro) return;
     }
     setOcupado(k.id);
@@ -106,7 +106,7 @@ export default function Kioscos() {
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {lista == null ? <Cargando /> : (
           <Seccion titulo="Dispositivos aprobados"
-            pie={cupo.lleno ? `La sala ya tiene ${cupo.limite} equipos: para vincular otro hay que revocar uno.` : 'Para vincular un equipo, inicia sesión en la tablet de la sucursal.'}>
+            pie={cupo.lleno ? `La sucursal ya tiene ${cupo.limite} equipos. Para vincular otro, revoca uno.` : 'Para vincular un equipo, inicia sesión en la tablet de la sucursal.'}>
             {activos.length ? activos.map((k, i) => (
               <Equipo key={k.id} k={k} primero={i === 0} puedeRevocar={puedeRevocar} ocupado={ocupado === k.id} onRevocar={() => revocar(k)} />
             )) : (

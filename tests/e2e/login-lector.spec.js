@@ -215,7 +215,7 @@ test.describe('Login · pegar', () => {
             await input.click();
             await page.keyboard.press('ControlOrMeta+V');
             await expect(input).toHaveValue('');
-            await expect(page.getByText(/aquí no se pega/i)).toBeVisible();
+            await expect(page.getByText(/aquí no se puede pegar/i)).toBeVisible();
         });
     }
 

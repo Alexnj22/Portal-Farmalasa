@@ -508,7 +508,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                         <div className="pt-5">
                             {isHistorySearchFuzzy && searchQuery && (
                                 <Notice variant="warning" icon={Search} className="mb-4">
-                                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                                    Sin coincidencias exactas para &ldquo;{searchQuery}&rdquo;. Estos se parecen.
                                 </Notice>
                             )}
                             {groupedHistory.map((yearGroup) => {
@@ -614,7 +614,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                     {topeAlcanzado && (showAllHistory || dateFilter.start || dateFilter.end || searchQuery !== '' || typeFilter !== 'ALL') && !isLoadingHistory && (
                         <div className="pt-6 relative z-base">
                             <Notice variant="info" icon={Clock}>
-                                Se muestran los {TOPE_DE_LA_BITACORA} movimientos más recientes de la bitácora de esta sucursal. Los anteriores no se cargan en esta vista.
+                                Se muestran los {TOPE_DE_LA_BITACORA} movimientos más recientes.
                             </Notice>
                         </div>
                     )}

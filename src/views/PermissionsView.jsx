@@ -161,8 +161,8 @@ const PERM_DESC = {
     can_edit:    'Puede crear, editar y eliminar registros en este módulo',
     can_approve: 'Puede aprobar o rechazar solicitudes',
     delega_en_ausencia:
-        'Si quienes tienen este cargo están de vacaciones o incapacitados, su jefe '
-        + 'inmediato se hace cargo de este módulo mientras dure la ausencia. Se apaga solo al volver',
+        'Si quienes tienen este cargo están de vacaciones o incapacitados, su suplente '
+        + 'o el cargo de arriba en el organigrama se hace cargo de este módulo. Se apaga solo al volver',
 };
 
 // ─── Toggle — alias del canónico (A14, 2026-07-27) ─────────────────────────
@@ -200,10 +200,10 @@ const Toggle = ({ value, onChange, color = 'chart-1', disabled = false, size = '
 const FAMILIAS_DECIDIR = [
     { key: 'requests_facturacion', label: 'Facturación', desc: 'Anular una factura, o cambiarle el pago, el vendedor o el cliente' },
     { key: 'requests_inventario',  label: 'Inventario',  desc: 'Cargas y descartes de existencia' },
-    { key: 'requests_minmax',      label: 'Min / Max',   desc: 'Ajustes de stock mínimo y máximo' },
+    { key: 'requests_minmax',      label: 'Mín/Máx',     desc: 'Ajustes de Mín/Máx' },
     { key: 'requests_caja',        label: 'Caja',        desc: 'Anular o corregir el monto de un movimiento de caja ya anotado' },
-    { key: 'requests_cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Anular o corregir un abono ya cobrado, y confirmar los que se pagaron con «Otro» — el del ISSS, una aseguradora o un convenio' },
-    { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el envío de producto que otra sala pide' },
+    { key: 'requests_cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Anular o corregir un abono ya cobrado, y confirmar los que se pagaron con «Otro», como el ISSS, una aseguradora o un convenio' },
+    { key: 'traslados',            label: 'Traslados',   desc: 'Confirmar el traslado que pide otra sucursal' },
 ];
 
 // ── Cuánto aguanta una sesión sin que nadie la use ───────────────────────────
@@ -373,7 +373,7 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                     <Toggle value={encendidas === total} color="success" disabled={locked}
                         onChange={(v) => onChange('requests', 'can_approve', v)} />
                 </div>
-                <LiquidTooltip content="Mientras alguien de este cargo esté de vacaciones o incapacitado, sus decisiones las resuelve quien esté arriba en el organigrama. Se apaga solo al volver.">
+                <LiquidTooltip content="Mientras alguien de este cargo esté de vacaciones o incapacitado, sus decisiones las resuelve su suplente o el cargo de arriba en el organigrama. Se apaga solo al volver.">
                     <div className="flex items-center gap-2">
                         <span className="text-caption font-black uppercase tracking-widest text-content-3">Delegar</span>
                         <Toggle value={delegando} color="chart-4" disabled={locked}
@@ -410,9 +410,8 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                                 quien lo lea va a buscar un control que no está y va a
                                 concluir que el portal se rompió. Lo que sí se puede
                                 hacer es lo que ahora dice. */}
-                            <span>{conSuplente.length > 0 ? 'Del resto no se hace cargo nadie: ' : 'No se hace cargo nadie: '}
-                                arriba de este cargo no hay ninguna persona activa. Revisa el organigrama:
-                                a este cargo le falta alguien encima, o quien está no figura como activo.</span>
+                            <span>{conSuplente.length > 0 ? 'Del resto no se hace cargo nadie. ' : 'No se hace cargo nadie. '}
+                                No hay nadie activo en el cargo de arriba. Revisa el organigrama.</span>
                         </p>
                     )}
                 </div>
@@ -1290,7 +1289,7 @@ const PermissionsView = () => {
                                                 )}
                                             </div>
                                             <p className={`text-micro font-medium mt-0.5 leading-snug transition-colors duration-[var(--dur-slow)] ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>
-                                                {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
+                                                {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso a todo el portal'}
                                             </p>
                                         </div>
                                         {/* Warning badge */}
@@ -1503,7 +1502,7 @@ const PermissionsView = () => {
             onClose={() => setConfirmActivate(false)}
             onConfirm={() => { setConfirmActivate(false); handleActivateAll(); }}
             title="¿Activar todos los permisos?"
-            message={`Se habilitarán todos los módulos para el cargo "${selectedOrgRole?.name}". Los permisos que ya tenía se sobreescribirán.`}
+            message={`Se habilitarán todos los módulos para el cargo "${selectedOrgRole?.name}". Se reemplazan los permisos que ya tenía.`}
             confirmText="Sí, activar todo"
             isDestructive={false}
             isProcessing={activatingAll}
@@ -1515,7 +1514,7 @@ const PermissionsView = () => {
             onClose={() => setConfirmCopy(null)}
             onConfirm={() => { const id = confirmCopy; setConfirmCopy(null); handleCopyFrom(id); }}
             title="¿Copiar permisos?"
-            message={`Se copiarán los permisos de "${orgRoles.find(r => r.id === confirmCopy)?.name}" al cargo "${selectedOrgRole?.name}". Los permisos actuales serán reemplazados.`}
+            message={`Se copiarán los permisos de "${orgRoles.find(r => r.id === confirmCopy)?.name}" al cargo "${selectedOrgRole?.name}". Se reemplazan los permisos que tiene ahora.`}
             confirmText="Sí, copiar"
             isDestructive={false}
             isProcessing={copyingFrom}

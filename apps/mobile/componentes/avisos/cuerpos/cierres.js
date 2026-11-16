@@ -127,7 +127,7 @@ function AnilloDeMeta({ pct }) {
 function PuestoDelVendedor({ d }) {
   const { puesto, de, promedio, miParte } = d;
   if (!puesto || !de || miParte == null) return null;
-  const parte = `${miParte}% de la venta de la sala`;
+  const parte = `${miParte}% de la venta de la sucursal`;
   if (puesto <= 2) {
     const color = puesto === 1 ? MARCA.ambar : colorSistema.texto;
     return (

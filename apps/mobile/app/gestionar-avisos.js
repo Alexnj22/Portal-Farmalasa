@@ -112,7 +112,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando
             {salaFija ? null : (
               <Seccion titulo="Para quién" pie={`Le llega a ${audiencia.length} persona${audiencia.length === 1 ? '' : 's'}.`}>
                 <Segmentos activa={tipo} onCambiar={setTipo} opciones={[
-                  { id: 'GLOBAL', label: 'Todos' }, { id: 'BRANCH', label: 'Sala' }, { id: 'ROLE', label: 'Cargo' }, { id: 'EMPLOYEE', label: 'Personas' },
+                  { id: 'GLOBAL', label: 'Todos' }, { id: 'BRANCH', label: 'Sucursal' }, { id: 'ROLE', label: 'Cargo' }, { id: 'EMPLOYEE', label: 'Personas' },
                 ]} />
                 {tipo === 'BRANCH' ? <Opciones valor={sala} onCambiar={setSala} opciones={salas.map((b) => ({ id: String(b.id), label: b.name }))} /> : null}
                 {tipo === 'ROLE' ? <Opciones valor={cargo} onCambiar={setCargo} opciones={cargos.map((r) => ({ id: r.name, label: r.name }))} /> : null}
@@ -211,7 +211,7 @@ function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar, onEditar }) {
           {puedeEditar && !a.isArchived && !a.readIds.length ? <BotonGrande texto="Editar" color={MARCA.azul} onPress={() => onEditar(a)} /> : null}
           {puedeEditar && !a.isArchived ? <BotonGrande texto="Archivar" borde color={colorSistema.texto2} onPress={() => onArchivar(a)} /> : null}
           {puedeEditar && !a.readIds.length ? <BotonGrande texto="Eliminar" borde color={MARCA.rojo} onPress={() => onEliminar(a)} /> : null}
-          {puedeEditar && a.readIds.length ? <Aviso texto="Alguien ya lo leyó: no se edita ni se elimina. Se archiva y se publica uno nuevo." /> : null}
+          {puedeEditar && a.readIds.length ? <Aviso texto="Alguien ya lo leyó y no se puede editar ni eliminar. Archívalo y publica uno nuevo." /> : null}
         </ScrollView>
       </ConAurora>
     </Modal>

@@ -237,7 +237,7 @@ function CuerpoDeRespuesta({ d }) {
   const r = deRespuesta(d.estado);
   const emp = usePersona(d.quienId, d.quien, d.quienFoto);
   const esEnvio = d.tipo === 'envio';
-  const salaTxt = d.sala ?? 'la otra sala';
+  const salaTxt = d.sala ?? 'la otra sucursal';
   const resumenEnvio = [
     d.aceptados > 0 && `Se quedó con ${d.aceptados === 1 ? 'un producto' : `${d.aceptados} productos`}`,
     d.devueltos.length > 0 && `te devuelve ${d.devueltos.length === 1 ? 'uno' : d.devueltos.length}`,
@@ -258,10 +258,10 @@ function CuerpoDeRespuesta({ d }) {
       ) : null}
       {esEnvio && d.estado === 'APARECIO' ? (
         <>
-          <Bloque rotulo={`Tu envío a ${salaTxt}`}>
+          <Bloque rotulo={`Tu traslado a ${salaTxt}`}>
             {`Apareció lo que faltaba: ${d.aceptados === 1
               ? 'recibió el producto que había marcado como no llegado'
-              : `recibió los ${d.aceptados} productos que había marcado como no llegados`}. Ya no hay que buscarlo en tu sala.`}
+              : `recibió los ${d.aceptados} productos que había marcado como no llegados`}. Ya no hay que buscarlo en tu sucursal.`}
           </Bloque>
           {d.productos.length > 0 ? (
             <Caja>{d.productos.map((p, i) => <FilaDeProducto key={`${p.nombre}-${i}`} nombre={p.nombre} primero={!i} />)}</Caja>
@@ -269,12 +269,12 @@ function CuerpoDeRespuesta({ d }) {
         </>
       ) : null}
       {esEnvio && d.estado !== 'APARECIO' ? (
-        <Bloque rotulo={`Tu envío a ${salaTxt}`}>
+        <Bloque rotulo={`Tu traslado a ${salaTxt}`}>
           <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>
             {resumenEnvio ? `${resumenEnvio}.` : ''}
             {d.noLlegaron > 0 ? (
               <Text style={{ color: MARCA.rojo }}>
-                {` ${d.noLlegaron === 1 ? 'Un producto no llegó' : `${d.noLlegaron} productos no llegaron`} en la caja: revisa si quedó en tu sala.`}
+                {` ${d.noLlegaron === 1 ? 'Un producto no llegó' : `${d.noLlegaron} productos no llegaron`} en la caja. Revisa si quedó en tu sucursal.`}
               </Text>
             ) : null}
           </Text>
@@ -295,7 +295,7 @@ function CuerpoDeRespuesta({ d }) {
         </Caja>
       ) : null}
       {esEnvio && d.estado === 'DEVUELVE' ? (
-        <Bloque rotulo="Qué sigue" color={MARCA.ambar}>Confirma en Envíos cuando la caja esté de vuelta en tu sala.</Bloque>
+        <Bloque rotulo="Qué sigue" color={MARCA.ambar}>Cuando la caja esté de vuelta en tu sucursal, confírmalo en Traslados, en «A otra sucursal».</Bloque>
       ) : null}
       {porque ? <Bloque rotulo={d.estado === 'NO' ? 'Por qué no' : 'Por qué no va todo'}>{porque}</Bloque> : null}
       {d.alternativa ? (
@@ -452,7 +452,7 @@ function CuerpoDeHacienda({ d }) {
               </View>
               {f.motivo ? (
                 <Text style={{ fontSize: 12 }}>
-                  <Text style={{ color: MARCA.rojo, fontWeight: '800', textTransform: MAYUSCULAS }}>Hacienda dice </Text>
+                  <Text style={{ color: MARCA.rojo, fontWeight: '800', textTransform: MAYUSCULAS }}>MH dice </Text>
                   <Text style={{ color: colorSistema.texto, fontWeight: '600' }}>{f.motivo}</Text>
                 </Text>
               ) : null}
@@ -560,7 +560,7 @@ function CuerpoDePromo({ d }) {
         ) : null}
         <Bloque rotulo="Todavía hay en" color={MARCA.azulClaro}>
           {/* Los avisos anteriores traen «Salud 1 12»: la cantidad va entre paréntesis. */}
-          {d.donde ? d.donde.replace(/([^\s(]) (\d+)(?=\s*·|$)/g, '$1 ($2)') : 'Ya no queda en ninguna otra sala.'}
+          {d.donde ? d.donde.replace(/([^\s(]) (\d+)(?=\s*·|$)/g, '$1 ($2)') : 'Ya no queda en ninguna otra sucursal.'}
         </Bloque>
       </>
     );
@@ -639,7 +639,7 @@ function CuerpoDeReinicio({ d }) {
   return (
     <>
       {cuando ? <Grilla celdas={[{ k: 'c', rotulo: 'Volvió a arrancar', valor: cuando, fila: true }]} /> : null}
-      <Bloque rotulo="Qué significa">Si poco antes el portal estuvo lento o no dejaba entrar, fue esto. No hay que hacer nada: ya está funcionando.</Bloque>
+      <Bloque rotulo="Qué significa">Si el portal estuvo lento o no dejaba entrar, fue esto. Ya está funcionando.</Bloque>
     </>
   );
 }
@@ -692,7 +692,7 @@ function CuerpoDeProductosSinVenta({ d }) {
         </Caja>
       ) : null}
       <Bloque rotulo="Qué sigue" color={MARCA.ambar}>
-        Abre Gestión de stock y aprieta «Armar envío» en cada destino: el envío sale cargado y lo puedes cambiar antes de transferir.
+        Abre Gestión de stock y aprieta «Armar envío» en cada destino. Sale cargado y lo puedes cambiar antes de transferir.
       </Bloque>
     </>
   );

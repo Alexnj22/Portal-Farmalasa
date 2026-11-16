@@ -91,7 +91,7 @@ export default function CicloDeEncuesta({ encuesta, sinProblemas = true, onHecho
   const pulsar = async (k) => {
     Haptics.selectionAsync().catch(() => {});
     if (k === 'enviar') {
-      const nota = await pedirTexto('Enviar a revisión', 'Gerencia recibe el aviso. Mientras la revisa, la encuesta no se puede editar. Nota para quien aprueba (opcional):', { boton: 'Enviar' });
+      const nota = await pedirTexto('Enviar a revisión', 'Le llega a quien aprueba encuestas. Mientras la revisa, no se puede editar. Nota para quien aprueba (opcional):', { boton: 'Enviar' });
       if (nota != null) correr(() => enviarARevision(encuesta.id, nota), 'Enviada a revisión');
     } else if (k === 'aprobar') {
       const c = await pedirTexto('Aprobar la encuesta', 'Quedará lista para publicarse tal como está. Comentario (opcional):', { boton: 'Aprobar' });
@@ -105,7 +105,7 @@ export default function CicloDeEncuesta({ encuesta, sinProblemas = true, onHecho
         correr(() => publicarEncuesta(encuesta.id), 'Encuesta publicada');
       }
     } else if (k === 'cerrar') {
-      if (!(await confirmar('Cerrar la encuesta', 'Deja de recibir respuestas. No se puede reabrir: para repetirla, se duplica.', 'Cerrar', true))) return;
+      if (!(await confirmar('Cerrar la encuesta', 'Deja de recibir respuestas. No se puede reabrir. Para repetirla, duplícala.', 'Cerrar', true))) return;
       const m = await pedirTexto('Cerrar la encuesta', 'Motivo (opcional):', { boton: 'Cerrar' });
       if (m != null) correr(() => cerrarEncuesta(encuesta.id, m), 'Encuesta cerrada');
     } else if (k === 'archivar') {

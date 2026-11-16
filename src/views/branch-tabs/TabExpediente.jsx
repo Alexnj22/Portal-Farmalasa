@@ -215,7 +215,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
             setDocToDelete(null);
         } catch (error) {
             console.error("Error eliminando documento:", error);
-            setDeleteError("Ocurrió un error al eliminar el documento.");
+            setDeleteError("No se pudo eliminar el documento.");
         } finally {
             setIsDeleting(false);
         }
@@ -272,7 +272,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
                 onClose={() => setDeleteModalOpen(false)}
                 onConfirm={confirmDeleteDoc}
                 title="Eliminar documento"
-                message="¿Estás seguro de eliminar este espacio vacío del expediente? Se quitará de la vista actual."
+                message="¿Quitar este espacio vacío?"
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 isProcessing={isDeleting}
@@ -292,7 +292,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
 
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <div className="min-w-0">
-                        <TituloDeSeccion nivel="modal">Expediente Digital</TituloDeSeccion>
+                        <TituloDeSeccion nivel="modal">Datos de la sucursal</TituloDeSeccion>
                         <p className="text-label font-black text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
                     </div>
 
@@ -366,7 +366,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
                     icon={CheckCircle2}
                     iconClass="text-success"
                     glowClass="bg-success/30"
-                    title="Expediente impecable"
+                    title="Todo al día"
                     subtitle="No hay alertas ni documentos pendientes."
                     action={<Button tone="chart-1" onClick={() => setShowAllDocs(true)}>Ver documentos al día</Button>}
                 />

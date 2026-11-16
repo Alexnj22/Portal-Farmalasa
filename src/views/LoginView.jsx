@@ -632,7 +632,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     setCameraActive(false);
                     handleScanLoginRef.current(scannedCode);
                 });
-            } catch { if (!cancelled) { stopCameraSafely(); setCameraActive(false); setError('No se pudo acceder a la cámara. Verifica los permisos.'); } }
+            } catch { if (!cancelled) { stopCameraSafely(); setCameraActive(false); setError('No se pudo abrir la cámara. Revisa los permisos.'); } }
         })();
         return () => { cancelled = true; clearTimeout(warmupTimer); stopCameraSafely(); };
     }, [cameraActive]);
@@ -831,7 +831,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const bloquearPegado = (e) => {
         if (!esPegadoDeUnaPersona({ confiable: e.isTrusted, ahora: Date.now(), ultimoAtajo: ultimoAtajoPegarRef.current })) return;
         e.preventDefault();
-        setError('Por seguridad, escribe tus datos: aquí no se pega.');
+        setError('Escribe tus datos. Aquí no se puede pegar.');
     };
 
     /* ── Login usuario/contraseña ────────────────────────────────────────── */
@@ -869,10 +869,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setIsLoading(true);
         try {
             const result = await loginWithUsername(username, password);
-            if (!result.ok) { setError(result.error || 'Credenciales inválidas.'); setIsLoading(false); if (userPasswordRef.current) userPasswordRef.current.value = ''; userPasswordRef.current?.focus(); }
+            if (!result.ok) { setError(result.error || 'Usuario o contraseña incorrectos.'); setIsLoading(false); if (userPasswordRef.current) userPasswordRef.current.value = ''; userPasswordRef.current?.focus(); }
             else if (result.mustChangePassword) { setNewPassword(''); setConfirmPassword(''); setChangePassError(''); setIsLoading(false); }
             else { setIsLoading(false); }
-        } catch { setError('Error de conexión. Intenta de nuevo.'); setIsLoading(false); }
+        } catch { setError('No hay conexión. Intenta de nuevo.'); setIsLoading(false); }
     };
 
     const handleChangePassword = async () => {
@@ -886,7 +886,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             // entrada solo, con el motivo a la vista: no hay nada que hacer acá.
             if (!r.ok && !r.reentrar) { setChangePassError(mensajeAmigable(r.error)); setChangePassLoading(false); return; }
             setNewPassword(''); setConfirmPassword('');
-        } catch { setChangePassError('Error de conexión. Intenta de nuevo.'); }
+        } catch { setChangePassError('No hay conexión. Intenta de nuevo.'); }
         setChangePassLoading(false);
     };
 
@@ -1128,7 +1128,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </IconoEnCaja>
                             <TituloDeSeccion nivel="modal" className="text-center">Cambia tu contraseña</TituloDeSeccion>
-                            <p className="text-caption font-black text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
+                            <p className="text-caption font-black text-content-3 uppercase tracking-widest text-center">Primer acceso. Crea tu propia contraseña.</p>
                         </div>
                         <form id="cpf" onSubmit={e=>{e.preventDefault();handleChangePassword();}} className="relative flex flex-col gap-3">
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
@@ -1279,7 +1279,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <p className="text-micro font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
                     </div>
                     {[
-                        {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Sistema de Ventas',sub:'DTE · OSS',color:'#0052CC'},
+                        {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Sistema de Ventas',sub:'Facturación',color:'#0052CC'},
                         {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4'},
                     ].map(({href,Icon,label,sub,color})=>(
                         /* El halo de color se pintaba con `onMouseEnter` /

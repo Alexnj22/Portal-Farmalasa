@@ -296,7 +296,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (employeesStatus !== 'ready') {
             useToastStore.getState().showToast(
                 'Cargando datos completos…',
-                'Espera un momento y vuelve a intentar — se están terminando de guardar los datos del empleado.',
+                'Todavía se están cargando los datos del empleado. Espera un momento y vuelve a intentarlo.',
                 'info'
             );
             return;
@@ -411,7 +411,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 `SegmentedControl` ya modela esto, y de paso trae el
                 `role="radiogroup"` que decía "1 de 5". */}
             <SegmentedControl
-                label="Sección de la ficha"
+                label="Sección del perfil"
                 value={currentTab}
                 onChange={setCurrentTab}
                 options={[
@@ -787,13 +787,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         // El soporte se busca por `event_id` en los documentos de la
                                                                         // ficha: `metadata.document_id`, que era lo único que miraba
                                                                         // este botón, no lo escribe nadie. Con eso, una boleta recién
-                                                                        // adjuntada seguía ofreciendo «Adjuntar Soporte».
+                                                                        // adjuntada seguía ofreciendo «Adjuntar respaldo».
                                                                         <Button tone="chart-1" soft size="xs" icon={FileText} onClick={() => {
                                                                             const doc = soporteDe(ev, emp.documents);
                                                                             if (doc?.url) setRespaldoViendo(doc);
-                                                                        }}>Ver Respaldo Legal</Button>
+                                                                        }}>Ver respaldo</Button>
                                                                     ) : esSancion(ev) ? null : (
-                                                                        <Button tone="chart-4" icon={Paperclip} disabled={!canEdit || !ev.eventoId} onClick={() => openModal('uploadDocument', {}, ev.eventoId)}>Adjuntar Soporte</Button>
+                                                                        <Button tone="chart-4" icon={Paperclip} disabled={!canEdit || !ev.eventoId} onClick={() => openModal('uploadDocument', {}, ev.eventoId)}>Adjuntar respaldo</Button>
                                                                     )}
                                                                     {canEdit && eventoVigente(ev) && (
                                                                         <Button tone="chart-1" icon={Pencil} disabled={!canEdit} onClick={() => openModal('newEvent', datosParaCorregir(ev, emp.id))}>Editar</Button>
@@ -810,7 +810,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             {isHiring && (
                                                                 <div className="pt-3 mt-1 flex items-center gap-1.5 text-success opacity-70">
                                                                     <Briefcase size={12} strokeWidth={2.5}/> 
-                                                                    <span className="text-micro font-black uppercase tracking-widest">Hito de Inicio Operativo</span>
+                                                                    <span className="text-micro font-black uppercase tracking-widest">Inicio de labores</span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -828,11 +828,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                          <div className="flex justify-between items-center mb-6">
                                             <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
-                                                <FileText size={18} className="text-brand-text"/> Expediente Digital
+                                                <FileText size={18} className="text-brand-text"/> Documentos
                                             </TituloDeSeccion>
                                         </div>
                                         <Suspense fallback={null}>
-                                            <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Expediente vacío" />
+                                            <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Sin documentos" />
                                         </Suspense>
                                     </div>
                                 )}
@@ -1273,9 +1273,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         </ModalShell>
         )}
 
-        <ModalShell open={cancelModalRender} onClose={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : () => {}} maxWidthClass="max-w-sm" zClass="z-confirm" closeOnEsc={!isCancelling} ariaLabel="Cancelar el evento del expediente" surface={null}>
+        <ModalShell open={cancelModalRender} onClose={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : () => {}} maxWidthClass="max-w-sm" zClass="z-confirm" closeOnEsc={!isCancelling} ariaLabel="Cancelar el evento del historial" surface={null}>
                 <CuerpoDialogo
-                    titulo={isCancelling ? 'Procesando…' : 'Cancelar acción de RRHH'}
+                    titulo={isCancelling ? 'Procesando…' : 'Cancelar acción de personal'}
                     subtitulo={isCancelling
                         ? 'No cierres esta ventana.'
                         : 'Quedará registrada como cancelada. No se puede deshacer.'}
@@ -1290,7 +1290,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 // El store relanza: un fallo se dice, no se cierra el diálogo en silencio.
                                 try {
                                     await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
-                                    useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
+                                    useToastStore.getState().showToast('Acción cancelada', 'El evento quedó cancelado.', 'success');
                                 } catch (err) {
                                     useToastStore.getState().showToast('No se canceló', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
                                 }

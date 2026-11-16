@@ -242,7 +242,7 @@ export default function Permisos() {
                 <Interruptor primero titulo="Super Usuario" detalle="Entra a todo, sin importar lo que diga cada módulo." valor={!!cargo.is_su} onCambiar={alternarSU} deshabilitado={bloqueado} />
                 <Elegir rotulo="Cerrar la sesión sin uso después de" valor={String(minutos)} opciones={opcionesTiempo} onCambiar={cambiarInactividad} deshabilitado={bloqueado} />
                 <Elegir rotulo="Nivel de precio máximo" valor={cargo.max_price_level ?? ''} opciones={opcionesPrecio} onCambiar={cambiarPrecio} deshabilitado={bloqueado} />
-                <Interruptor titulo="Delegar las decisiones en ausencia" detalle="Cuando falta, las solicitudes que decide este cargo pasan a su superior o a su suplente."
+                <Interruptor titulo="Delegar las decisiones en ausencia" detalle="Cuando falta, las solicitudes que decide este cargo pasan a su suplente o al cargo de arriba en el organigrama."
                   valor={delegando} onCambiar={delegar} deshabilitado={bloqueado} />
                 {llega ? (
                   <View style={{ gap: 4 }}>
@@ -257,7 +257,7 @@ export default function Permisos() {
                       </Text>
                     ) : (
                       <Text style={{ color: MARCA.ambar, fontSize: 13 }}>
-                        {`${llega.conSuplente.length ? 'Del resto no se hace cargo nadie' : 'No se hace cargo nadie'}: arriba de este cargo no hay ninguna persona activa. Revisa el organigrama: a este cargo le falta alguien encima, o quien está no figura como activo.`}
+                        {`${llega.conSuplente.length ? 'Del resto no se hace cargo nadie' : 'No se hace cargo nadie'}. No hay nadie activo en el cargo de arriba. Revisa el organigrama.`}
                       </Text>
                     )}
                   </View>

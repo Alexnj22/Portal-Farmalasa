@@ -115,11 +115,11 @@ export default function DocumentoPropio() {
   };
 
   const confirmarGuardar = () => Alert.alert(existente ? 'Guardar los cambios' : 'Agregar el documento',
-    `«${datos.title.trim() || 'Sin nombre'}» en el expediente de ${sucursal.name}.`, [
+    `«${datos.title.trim() || 'Sin nombre'}» en los datos de ${sucursal.name}.`, [
       { text: 'Cancelar', style: 'cancel' }, { text: 'Guardar', onPress: guardar },
     ]);
 
-  const eliminar = () => Alert.alert('Eliminar documento', `«${existente.title}» deja de estar en el expediente de ${sucursal.name}.`, [
+  const eliminar = () => Alert.alert('Eliminar documento', `«${existente.title}» deja de estar en los datos de ${sucursal.name}.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Eliminar', style: 'destructive', onPress: async () => {
       trabajando('Eliminando…');
@@ -161,7 +161,7 @@ export default function DocumentoPropio() {
           </Seccion>
 
           <View style={{ marginHorizontal: 16, gap: 10 }}>
-            <BotonGrande texto={guardando ? 'Guardando…' : existente ? 'Guardar cambios' : 'Agregar al expediente'} onPress={confirmarGuardar} deshabilitado={guardando} />
+            <BotonGrande texto={guardando ? 'Guardando…' : existente ? 'Guardar cambios' : 'Agregar a los datos'} onPress={confirmarGuardar} deshabilitado={guardando} />
             {existente ? <BotonGrande texto="Eliminar documento" borde color={MARCA.rojo} onPress={eliminar} deshabilitado={guardando} /> : null}
           </View>
         </ScrollView>

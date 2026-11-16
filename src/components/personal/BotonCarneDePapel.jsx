@@ -103,7 +103,7 @@ export default function BotonCarneDePapel({
                 salas={salas}
                 cargando={cargandoSalas}
                 fallo={falloSalas}
-                titulo={nombre ? `Carné del día — ${nombre}` : 'Carné del día'}
+                titulo={nombre ? `Carné del día · ${nombre}` : 'Carné del día'}
             />
         </>
     );

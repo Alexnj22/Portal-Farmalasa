@@ -83,7 +83,7 @@ export default function Expediente() {
   const [banco, setBanco] = useState(() => ({ bank_name: emp?.bank_name || '', account_type: emp?.account_type || 'AHORRO', account_number: emp?.account_number || '' }));
   const [ocupado, setOcupado] = useState(false);
   const [nuevoExtra, setNuevoExtra] = useState('');
-  if (!emp) return <PantallaSinDato texto="No se encontró la ficha." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   const docs = Array.isArray(emp.employee_documents) ? emp.employee_documents : [];
   const docDe = (cat) => docs.find((d) => d.category === cat);
@@ -180,7 +180,7 @@ export default function Expediente() {
       if (ok) setNuevoExtra('');
     } catch (e) { fallo('No se pudo subir el documento', e?.message || ''); }
   };
-  const quitarExtra = (cat) => Alert.alert('Quitar el documento', '¿Quitarlo del expediente?', [
+  const quitarExtra = (cat) => Alert.alert('Quitar el documento', '¿Quitar este documento?', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Quitar', style: 'destructive', onPress: () => guardar({ employee_documents: docs.filter((d) => d.category !== cat) }, 'Documento quitado') },
   ]);

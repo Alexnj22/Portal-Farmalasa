@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.2 — Lenguaje: Personal
+
+- Octava tanda de la revisión del lenguaje, web y app: Personal (empleados,
+  planilla, horarios, asistencia, vacaciones), Sucursales, Avisos, Encuestas,
+  Cargos, Permisos e inicio de sesión. Unos 300 textos. La pestaña
+  «Expediente» de la sucursal → «Datos»; «Puesto sin cubrir» → «Cargo sin
+  cubrir»; la delegación en ausencia nombra al suplente o al cargo de arriba;
+  «Credenciales inválidas» → «Usuario o contraseña incorrectos».
+
 ## v2.1554.1 — Lenguaje: Compras, Contabilidad y Bitácoras
 
 - Séptima tanda de la revisión del lenguaje, web y app: Compras (propuesta,

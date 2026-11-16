@@ -130,7 +130,7 @@ export default function AccionDePersonal() {
   const guardar = () => {
     const titulo = EVENT_TYPES[f.type]?.label || 'Acción';
     Alert.alert(eventoAEditar ? 'Guardar los cambios' : `¿Registrar «${titulo}»?`,
-      r.esBaja ? `${shortEmployeeName(emp)} pasa a INACTIVO y pierde el acceso al sistema.` : `Queda en el expediente de ${shortEmployeeName(emp)}.`, [
+      r.esBaja ? `${shortEmployeeName(emp)} pasa a inactivo y pierde el acceso al portal.` : `Queda en el historial de ${shortEmployeeName(emp)}.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: eventoAEditar ? 'Guardar' : 'Registrar', style: r.esBaja ? 'destructive' : 'default', onPress: async () => {
           setEnviando(true); trabajando('Guardando…');
@@ -170,14 +170,14 @@ export default function AccionDePersonal() {
 
           {f.type ? (
             <>
-              {r.esBaja ? <Aviso tono="freno" texto="Alerta de desvinculación: el estado pasa a INACTIVO y se le revocan los accesos al sistema." /> : null}
-              {r.esTraslado && !r.esCargo && !r.esApoyo ? <Aviso texto="Cambio de sucursal: desaparece de la planilla actual de inmediato." /> : null}
-              {r.esApoyo ? <Aviso texto="Apoyo temporal: apoya en otra sucursal por un tiempo y sigue en la planilla actual." /> : null}
+              {r.esBaja ? <Aviso tono="freno" texto="Baja: pasa a inactivo y pierde el acceso al portal." /> : null}
+              {r.esTraslado && !r.esCargo && !r.esApoyo ? <Aviso texto="Cambio de sucursal. Sale de la planilla actual de inmediato." /> : null}
+              {r.esApoyo ? <Aviso texto="Apoyo temporal. Apoya en otra sucursal por un tiempo y sigue en la planilla actual." /> : null}
               {plaza ? (
                 <Aviso tono="freno" texto={`Límite de organigrama: ${plaza.role} admite ${plaza.limit} por ${plaza.scope === 'GLOBAL' ? 'empresa' : 'sucursal'}. Lo ocupa: ${plaza.occupants.map((o) => shortEmployeeName(o)).join(', ')}.`} />
               ) : null}
               {TIPOS_PROGRAMABLES.includes(f.type) && f.date && f.date > hoySV() ? (
-                <Aviso texto={`Acción programada: se registra hoy y el cambio se aplica solo el ${larga(f.date)} a las 5:00 a. m. Se puede cancelar antes desde el historial.`} />
+                <Aviso texto={`Acción programada. Se registra hoy y el cambio se aplica solo el ${larga(f.date)} a las 5:00 a. m. Puedes cancelarla antes desde el historial.`} />
               ) : null}
 
               {r.esIncapacidad ? (

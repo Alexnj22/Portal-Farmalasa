@@ -73,7 +73,7 @@ const NoAccessView = ({ porFalloDeLectura = false, onReintentar }) => {
                     </h1>
                     <p className="text-subtitle text-content-3 font-medium leading-relaxed mb-8">
                         {porFalloDeLectura
-                            ? 'Revisa tu conexión e intenta de nuevo. Tu cuenta está bien: lo que falló fue la consulta.'
+                            ? 'Revisa tu conexión e intenta de nuevo.'
                             : 'Tu cuenta no tiene módulos habilitados.'}
                     </p>
                 </div>
@@ -97,7 +97,7 @@ const NoAccessView = ({ porFalloDeLectura = false, onReintentar }) => {
                         className="w-full"
                         icon={MessageCircle}
                         onClick={handleWhatsApp}
-                    >Contacta con soporte</Button>
+                    >Avisar a Soporte</Button>
 
                     {/* Logout */}
                     <Button variant="secondary" icon={LogOut} loading={loggingOut} onClick={handleLogout}>

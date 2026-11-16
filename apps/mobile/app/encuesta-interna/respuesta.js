@@ -160,7 +160,7 @@ export default function RespuestaInterna() {
                   </View>
                 ) : (
                   <>
-                    <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar por nombre o sala" />
+                    <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar por nombre o sucursal" />
                     {disponibles.slice(0, 30).map((e, i) => (
                       <Pressable key={e.id} onPress={() => elegir(e.id)} style={({ pressed }) => ({ paddingVertical: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{nombreDe(e)}</Text>

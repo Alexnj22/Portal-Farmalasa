@@ -790,7 +790,7 @@ const SchedulesView = ({ openModal, setView }) => {
                             iconClass="text-danger"
                             glowClass="bg-danger/30"
                             title="No se pudieron cargar los horarios"
-                            subtitle={`${falloDeCarga} La semana que ves está en blanco porque no cargó, no porque esté vacía — por eso no se puede publicar.`}
+                            subtitle={`${falloDeCarga} La semana no cargó y no se puede publicar.`}
                             action={
                                 <Button icon={RefreshCw} onClick={() => window.dispatchEvent(new CustomEvent('force-history-refresh'))}>
                                     Reintentar

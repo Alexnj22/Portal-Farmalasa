@@ -131,7 +131,7 @@ export default function Horarios() {
   const fecha = sumarDias(lunes, offset(dia));
   const rosterDe = (id) => semana?.rosters?.[id] || {};
   const horasDe = useCallback((p) => calculateEmployeeWeeklyHoursLocal(semana?.rosters?.[p.id] || {}, turnos || [], p.history, fechas), [semana, turnos, fechas]);
-  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'otra sala';
+  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'otra sucursal';
 
   const delDia = useMemo(() => personas.map((p) => {
     const apoyo = salen.find((c) => String(c.employee_id) === String(p.id) && Number(c.day_of_week) === dia);
@@ -247,7 +247,7 @@ export default function Horarios() {
   const coberturaDe = (empId, d) => vienen.find((c) => String(c.employee_id) === String(empId) && Number(c.day_of_week) === d)?.schedule_data;
   const candidatos = useMemo(() => personasParaCubrir(empleados, sala).filter((e) => !busca.trim() || tokenMatch(busca, e.name)), [empleados, sala, busca]);
 
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: salaPorDefecto, onCambiar: setSala,
+  const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: salaPorDefecto, onCambiar: setSala,
     opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
   const nombreDia = DIAS.find((d) => d.id === dia)?.largo;
   // Turnos y Feriados son otras secciones: van al menú de la barra, no al final.
@@ -393,7 +393,7 @@ export default function Horarios() {
                           <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{r.trabaja ? rango(r) : '—'}</Text>
                         </Pressable>
                       ))}
-                      {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca para editar su día; mantén presionado para quitarla de la semana.</Text> : null}
+                      {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca para editar su día. Mantén presionado para quitarla de la semana.</Text> : null}
                     </View>
                   </Vidrio>
                 </View>
@@ -461,7 +461,7 @@ export default function Horarios() {
             <EditorDeDia key={`${editando.persona.id}-${editando.dia}`} fecha={sumarDias(lunes, offset(editando.dia))} dia={editando.dia}
               actual={editando.actual} turnos={turnos || []} sala={(sucursales || []).find((b) => String(b.id) === String(sala))}
               guardando={guardando} onGuardar={guardarEdicion} variosDias={editando.tipo === 'persona'}
-              aviso={semana?.publishedIds?.has(String(editando.persona.id)) ? 'La semana ya está publicada: el cambio se ve en el kiosco y en la planilla en cuanto lo guardes.' : null} />
+              aviso={semana?.publishedIds?.has(String(editando.persona.id)) ? 'La semana ya está publicada. El cambio se ve en el kiosco y en la planilla al guardarlo.' : null} />
           </ConAurora>
         ) : hoja ? (
           <ConAurora>
@@ -525,7 +525,7 @@ export default function Horarios() {
                 </Vidrio>
               </Pressable>
             ))}
-            {!candidatos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center', marginTop: 20 }}>Nadie con ese nombre en otras salas.</Text> : null}
+            {!candidatos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center', marginTop: 20 }}>Nadie con ese nombre en otras sucursales.</Text> : null}
           </ScrollView>
         </ConAurora>
       </Modal>

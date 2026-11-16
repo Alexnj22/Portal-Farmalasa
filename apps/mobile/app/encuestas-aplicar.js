@@ -163,8 +163,8 @@ export default function EncuestasAplicar() {
   }
 
   const opcionesDonde = [
-    ...salas.map((s) => ({ id: s.id, label: s.nombre, detalle: s.id === miSala ? 'tu sala de hoy' : null })),
-    ...(hayCampo ? [{ id: CAMPO, label: 'Campo (fuera de las salas)', detalle: 'mercados, parques, la calle' }] : []),
+    ...salas.map((s) => ({ id: s.id, label: s.nombre, detalle: s.id === miSala ? 'tu sucursal de hoy' : null })),
+    ...(hayCampo ? [{ id: CAMPO, label: 'Campo (fuera de las sucursales)', detalle: 'mercados, parques, la calle' }] : []),
   ];
   const mostrarLista = !efectivo || eligiendo;
 

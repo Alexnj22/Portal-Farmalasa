@@ -138,7 +138,7 @@ export default function Cargos() {
         ) : (
           <>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
-              Línea continua: superior directo · punteada: matricial. Toca un cargo para ver su ficha.
+              Línea continua: superior directo · punteada: matricial. Toca un cargo para ver sus datos.
             </Text>
             <Pressable disabled={exportando} onPress={() => { Haptics.selectionAsync().catch(() => {}); setExportando(true); }} accessibilityRole="button"
               style={({ pressed }) => ({ alignSelf: 'flex-start', marginHorizontal: 16, minHeight: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}2E`, opacity: exportando ? 0.5 : pressed ? 0.7 : 1 })}>

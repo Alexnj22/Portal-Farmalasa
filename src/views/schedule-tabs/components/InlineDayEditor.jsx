@@ -210,10 +210,10 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         const baseOptions = [{ value: 'OFF', label: 'Libre / descanso' }];
 
         if (!branchLimits.hasValidHours) {
-            return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sala no tiene horario' }];
+            return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sucursal no tiene horario' }];
         }
         if (branchLimits.isClosedToday) {
-            return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sala cierra este día' }];
+            return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sucursal cierra este día' }];
         }
         if (filteredShifts.length === 0) {
             return [...baseOptions, { value: 'NO_SHIFTS', label: 'Ningún turno cabe en este horario' }];
@@ -238,7 +238,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
     // Lo que falta, en el orden de las condiciones del botón y con su campo
     // (2026-11-14). Antes «no elegiste turno» apagaba el botón sin decir nada.
-    const queFalta = shiftId === 'NO_SHIFTS' ? { texto: 'Ningún turno cabe este día: elige «Libre / descanso».', campo: 'turno' }
+    const queFalta = shiftId === 'NO_SHIFTS' ? { texto: 'Ningún turno cabe este día. Elige «Libre / descanso».', campo: 'turno' }
         : (!shiftId && !customStart) ? { texto: 'Elige un turno.', campo: 'turno' }
         : reparos.length > 0 ? { texto: reparos[0], campo: 'horas' }
         : null;
@@ -292,7 +292,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                 <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-1">No se puede asignar</h4>
                                 {branchLimits.isClosedToday ? (
                                     <p className="text-label font-medium text-danger-text/80 leading-snug">
-                                        La sala está configurada como <strong>cerrada</strong> este día. Elige «Libre / descanso», o cámbiale el horario de atención en Sucursales.
+                                        La sucursal está configurada como <strong>cerrada</strong> este día. Elige «Libre / descanso» o cambia su horario de atención en Sucursales.
                                     </p>
                                 ) : !branchLimits.hasValidHours ? (
                                     <p className="text-label font-medium text-danger-text/80 leading-snug">
@@ -300,7 +300,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                     </p>
                                 ) : (
                                     <p className="text-label font-medium text-danger-text/80 leading-snug">
-                                        La sala atiende de {formatHourAMPM(Math.floor(branchLimits.minOpen/60))} a {formatHourAMPM(Math.floor(branchLimits.maxClose/60))}. Ningún turno del catálogo cabe ahí.
+                                        La sucursal atiende de {formatHourAMPM(Math.floor(branchLimits.minOpen/60))} a {formatHourAMPM(Math.floor(branchLimits.maxClose/60))}. Ningún turno del catálogo cabe ahí.
                                     </p>
                                 )}
                             </div>

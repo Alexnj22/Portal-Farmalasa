@@ -106,7 +106,7 @@ export default function TabResumen({ liveBranch }) {
         return (
             <div className="py-6 max-w-xl mx-auto">
                 <SalyDice animo="pensando" tamano="lg">
-                    Todavía no les he escrito nada. Cada mañana, a las 5:30, les cuento cómo le fue ayer a esta sala.
+                    Todavía no les he escrito nada. Cada mañana, a las 5:30, les cuento cómo le fue ayer a esta sucursal.
                 </SalyDice>
             </div>
         );

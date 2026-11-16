@@ -363,7 +363,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="bg-surface-card-hover border border-divider p-3 rounded-xl flex items-start gap-2.5 mb-2">
                             <Globe size={16} className="text-content-3 mt-0.5 shrink-0" strokeWidth={2.5} />
                             <p className="text-label font-medium text-content-3 leading-snug">
-                                El turno queda disponible para <strong>todas las salas</strong>. Cada sala sólo verá los que caben en su horario de atención.
+                                El turno queda disponible para <strong>todas las sucursales</strong>. Cada sucursal sólo verá los que caben en su horario de atención.
                             </p>
                         </div>
 

@@ -476,7 +476,7 @@ export default function EncuestaView() {
                     <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima organizacional'}</span>
                 </div>
             }
-            subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} empleados`}
+            subtitle={`Farmacias La Popular y La Salud · ${RESPUESTAS.length} empleados`}
             filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
 
@@ -515,8 +515,8 @@ export default function EncuestaView() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {[
                                 { label: 'Participantes',  value: RESPUESTAS.length, sub: '100% del total', Icon: Users,    grad: 'from-chart-1 to-brand' },
-                                { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sala / área', Icon: UserCheck, grad: 'from-chart-3 to-chart-6' },
-                                { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-chart-8 to-chart-8/70' },
+                                { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sucursal / área', Icon: UserCheck, grad: 'from-chart-3 to-chart-6' },
+                                { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sucursal / área', Icon: UserX,     grad: 'from-chart-8 to-chart-8/70' },
                                 { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-chart-9 to-success' },
                             ].map(({ label, value, sub, Icon, grad }) => (
                                 <div key={label} data-surface="card" className="flex items-center gap-3 px-4 py-3">
@@ -832,10 +832,10 @@ export default function EncuestaView() {
                                                     {/* Jefes evaluando a su jefe inmediato (agrupado) */}
                                                     <div className="rounded-xl border border-chart-3/30 bg-chart-3/10 p-3">
                                                         <p className="text-caption font-black text-chart-3-text uppercase tracking-widest mb-1">
-                                                            Jefes evaluando a su Jefe Inmediato
+                                                            Jefes evaluando a su supervisor
                                                         </p>
                                                         <p className="text-micro text-content-3 mb-3">
-                                                            Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.
+                                                            Bodega evalúa a Administración. Las sucursales, al Supervisor/a de Ventas.
                                                         </p>
                                                         {(() => {
                                                             const groups = {};
@@ -1076,7 +1076,7 @@ export default function EncuestaView() {
                                 <div className="flex items-center gap-2 px-5 py-3 border-b border-divider bg-surface-card">
                                     <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
                                     <span className="text-body-sm font-black text-content-2">{branchName}</span>
-                                    <span className="text-label text-content-3">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
+                                    <span className="text-label text-content-3">· {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[560px] text-body-lg">
@@ -1313,7 +1313,7 @@ export default function EncuestaView() {
                                     <div className="px-5 py-3">
                                         <p className="text-caption text-content-3 truncate">
                                             {sections[0]?.title
-                                                ? <><span className="text-chart-3-text font-black uppercase tracking-widest text-micro">{sections[0].title}</span> — {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
+                                                ? <><span className="text-chart-3-text font-black uppercase tracking-widest text-micro">{sections[0].title}</span> · {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
                                                 : summary.replace(/\*\*/g, '').slice(0, 140) + '…'
                                             }
                                         </p>

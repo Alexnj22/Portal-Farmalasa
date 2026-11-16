@@ -297,7 +297,7 @@ const PayrollView = ({ openModal }) => {
                 const names = result.warnings.slice(0, 2).join(', ') + (result.warnings.length > 2 ? ' y más…' : '');
                 showToast('Planilla generada con advertencias', `${result.warnings.length} empleado(s) sin salario base: ${names}`, 'warning');
             } else if (pendTH > 0) {
-                showToast('Planilla generada con pendientes', `${pendTH} renglón(es) esperan una decisión de Talento Humano (incapacidad o suspensión). No se podrá aprobar hasta resolverlos.`, 'warning');
+                showToast('Planilla generada con pendientes', `${pendTH} incapacidad(es) o suspensión(es) esperan una decisión de Talento Humano. No se puede aprobar hasta resolverlas.`, 'warning');
             } else {
                 showToast('Generado', 'Planilla generada correctamente.', 'success');
             }
@@ -488,7 +488,7 @@ const PayrollView = ({ openModal }) => {
                                         <div className="mt-3 flex items-center gap-3 bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
                                             <AlertTriangle size={14} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                                             <p className="text-label font-bold text-warning-text flex-1">
-                                                {unapprovedCount} timesheet{unapprovedCount !== 1 ? 's' : ''} sin aprobar en este período
+                                                {unapprovedCount} hoja{unapprovedCount !== 1 ? 's' : ''} de horas sin aprobar en este período
                                             </p>
                                             <span className="text-micro font-black text-warning uppercase tracking-widest">
                                                 Revisa en Auditoría
@@ -524,7 +524,7 @@ const PayrollView = ({ openModal }) => {
                                     <>
                                     {isPayrollSearchFuzzy && searchTerm && (
                                         <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    Sin coincidencias exactas para &ldquo;{searchTerm}&rdquo;. Estos se parecen.
                 </Notice>
                                     )}
                                     <BranchGroupedTable

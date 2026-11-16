@@ -167,7 +167,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             <div className="absolute bottom-3 right-3 z-content">
-                <Button size="sm" title="Ver expediente de personal" onClick={(e) => { e.stopPropagation(); onClick(employee); }}><CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" /></Button>
+                <Button size="sm" title="Ver los datos de la persona" onClick={(e) => { e.stopPropagation(); onClick(employee); }}><CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" /></Button>
             </div>
         </div>
     );
@@ -301,7 +301,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
     const handleEditHROperative = (e) => {
         if (e) e.stopPropagation();
-        setInfoAlert({ isOpen: true, title: "Modificación Operativa", message: "Ve al Módulo General de Empleados (RRHH) para cambiar la sucursal o el cargo de este trabajador." });
+        setInfoAlert({ isOpen: true, title: "Cambiar sucursal o cargo", message: "Cambia la sucursal o el cargo desde Personal." });
     };
 
     // ========================================================================
@@ -386,22 +386,22 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         </p>
                                         <div className="border-t border-border-card pt-2 mt-1">
                                             <p className="text-caption font-bold text-warning-text leading-tight">
-                                                La sucursal exige un presupuesto de <span className="text-content font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Al dividir entre 44h legales, requieres <span className="font-black text-warning-text">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
+                                                La sucursal necesita <span className="text-content font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Con 44 h por persona, son <span className="font-black text-warning-text">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
                                             </p>
                                         </div>
                                     </>
                                 ) : isNewBranch ? (
                                     <>
-                                        <p className="text-caption font-black uppercase tracking-widest text-chart-3-text mb-2 border-b border-border-card pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
+                                        <p className="text-caption font-black uppercase tracking-widest text-chart-3-text mb-2 border-b border-border-card pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal nueva</p>
                                         <p className="text-caption font-bold text-content-3 leading-tight mb-2">
-                                            Esta sucursal tiene menos de 3 meses. El cálculo actual <span className="text-content font-black">({minStaff} operativos)</span> está basado únicamente en la cobertura mínima de seguridad ({MIN_CONCURRENT_STAFF} por turno).
+                                            Esta sucursal tiene menos de 3 meses. Por ahora el cálculo usa sólo la cobertura mínima ({MIN_CONCURRENT_STAFF} por turno): <span className="text-content font-black">{minStaff} operativos</span>.
                                         </p>
                                     </>
                                 ) : (
                                     <>
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-border-card pb-1 flex items-center gap-1.5"><Calculator size={12} /> Cálculo Tradicional</p>
                                         <p className="text-caption font-bold text-content-3 leading-tight">
-                                            Basado en los horarios de apertura configurados, necesitas al menos <span className="text-warning-text font-black">{minStaff} operativos</span> para cubrir los turnos legales.
+                                            Con el horario de la sucursal, necesitas al menos <span className="text-warning-text font-black">{minStaff} operativos</span> para cubrir los turnos.
                                         </p>
                                     </>
                                 )}
@@ -553,7 +553,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {isFarmacia && wfmError && (
                                 <div className="mb-6">
                                     <Notice variant="danger" icon={AlertTriangle}>
-                                        {wfmError} El mínimo de personal se calcula sólo con el horario hasta que se pueda leer.
+                                        {wfmError} Por ahora, el mínimo de personal sale sólo del horario.
                                     </Notice>
                                 </div>
                             )}
@@ -566,7 +566,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         </IconoEnCaja>
                                         <div>
                                             <h4 className="text-body font-black uppercase tracking-widest text-brand-text leading-none">Análisis en vivo</h4>
-                                            <p className="text-caption font-black text-content-3 mt-1 uppercase tracking-widest">Las horas de la sala, al momento</p>
+                                            <p className="text-caption font-black text-content-3 mt-1 uppercase tracking-widest">Las horas de la sucursal, al momento</p>
                                         </div>
                                     </div>
 
@@ -594,9 +594,9 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         <div className="bg-chart-3/10 rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
                                             <Hourglass size={28} className="text-chart-3-text shrink-0 mt-1" strokeWidth={2} />
                                             <div>
-                                                <p className="text-body-sm font-black uppercase tracking-widest text-chart-3-text mb-1">Fase de Incubación (Recolección de Datos)</p>
+                                                <p className="text-body-sm font-black uppercase tracking-widest text-chart-3-text mb-1">Sucursal nueva</p>
                                                 <p className="text-caption font-bold text-chart-3-text/80 leading-relaxed">
-                                                    La sucursal tiene menos de 3 meses. El algoritmo está recopilando silenciosamente los patrones de venta sin afectar el cálculo base. Cuando el historial madure, se activarán las sugerencias automáticas de refuerzo de plantilla.
+                                                    La sucursal tiene menos de 3 meses. Las sugerencias de refuerzo empiezan cuando haya más historial de ventas.
                                                 </p>
                                             </div>
                                         </div>
@@ -612,7 +612,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {jefeEmp
                                         ? <ProfileCard employee={jefeEmp} roleLabel={isAdmin ? 'Gerente General' : 'Jefe/a de Sala'} colorTheme="amber" onClick={goToProfile} onEditRole={handleEditHROperative} />
-                                        : !isAdmin && <ProfileCard isMissing missingText="Sin Jefe/a" missingSub="Asignar en RRHH" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: null })} />
+                                        : !isAdmin && <ProfileCard isMissing missingText="Sin Jefe/a" missingSub="Toca para asignar" onEditRole={() => openModal('editBranchLeadership', { branch: liveBranch, targetRole: 'Jefe/a de Sala', currentAssignee: null })} />
                                     }
                                     {subjefeEmp
                                         ? <ProfileCard employee={subjefeEmp} roleLabel={isAdmin ? 'Administrador/a' : 'Subjefe/a de Sala'} colorTheme="blue" onClick={goToProfile} onEditRole={handleEditHROperative} />

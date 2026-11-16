@@ -202,10 +202,10 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
             // lo que pasó y se dice qué hacer, en vez de dejar a quien sancionó
             // creyendo que no se guardó nada.
             if (r?.ok) toast('Sanción registrada. Imprime la constancia y súbela firmada.', 'success');
-            else toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el expediente para descargarla.', 'warning');
+            else toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el perfil del empleado para descargarla.', 'warning');
         } catch (err) {
             console.error('sanción: registrada, falló lo de después', err);
-            toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el expediente para descargarla.', 'warning');
+            toast('Sanción registrada, pero la constancia no se pudo generar. Vuelve a abrir el perfil del empleado para descargarla.', 'warning');
         }
         try { onGuardado?.(eventoId); } catch (err) { console.error('sanción: no se pudo refrescar el historial', err); }
         enCurso.current = false;
@@ -234,8 +234,8 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                     label="Falta cometida"
                     value={falta}
                     onChange={setFalta}
-                    options={faltas.map(f => ({ value: f.clave, label: f.articulo ? `${f.nombre} — ${f.articulo}` : f.nombre }))}
-                    placeholder="-- Elegir la falta --"
+                    options={faltas.map(f => ({ value: f.clave, label: f.articulo ? `${f.nombre} · ${f.articulo}` : f.nombre }))}
+                    placeholder="Elige la falta"
                     disabled={guardando}
                     clearable={false}
                 />
@@ -357,9 +357,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                     «con puño y letra». Se imprime, se firma y se sube al
                     expediente colgada de este mismo registro. */}
                 <Notice variant="info" icon={Info}>
-                    Al guardar se descarga la constancia. Fírmala con el trabajador —el
-                    reglamento exige la firma de ambas partes y su compromiso escrito a mano— y
-                    súbela al expediente.
+                    Al guardar se descarga la constancia. Fírmala con el trabajador, que escribe a mano su compromiso. Después súbela como respaldo en el historial.
                 </Notice>
             </LiquidModal.Body>
 

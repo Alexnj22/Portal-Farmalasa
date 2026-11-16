@@ -76,7 +76,7 @@ export default function Entrar() {
         if (esFalloDeCredencial(r)) {
           await olvidarBiometria();
           setBiometria(null);
-          setError(`${r?.error || 'Credenciales inválidas.'} Escribe tu contraseña.`);
+          setError(`${r?.error || 'Usuario o contraseña incorrectos.'} Escribe tu contraseña.`);
         } else {
           setError(r?.error || 'No se pudo entrar. Intenta de nuevo.');
         }
@@ -85,7 +85,7 @@ export default function Entrar() {
       if (r.mustChangePassword) { setUsuario(c.usuario); return; }
       router.replace('/inicio');
     } catch {
-      setError('Error de conexión. Intenta de nuevo.');
+      setError('No hay conexión. Intenta de nuevo.');
     } finally {
       setOcupado(false);
     }
@@ -119,12 +119,12 @@ export default function Entrar() {
     setOcupado(true);
     try {
       const r = await loginWithUsername(usuario, clave);
-      if (!r?.ok) { setError(r?.error || 'Credenciales inválidas.'); setClave(''); claveRef.current?.clear(); return; }
+      if (!r?.ok) { setError(r?.error || 'Usuario o contraseña incorrectos.'); setClave(''); claveRef.current?.clear(); return; }
       if (r.mustChangePassword) return;
       await ofrecerBiometria(usuario, clave);
       router.replace('/inicio');
     } catch {
-      setError('Error de conexión. Intenta de nuevo.');
+      setError('No hay conexión. Intenta de nuevo.');
     } finally {
       setOcupado(false);
     }
@@ -150,7 +150,7 @@ export default function Entrar() {
       else await ofrecerBiometria(usuario, nueva);
       router.replace('/inicio');
     } catch {
-      setError('Error de conexión. Intenta de nuevo.');
+      setError('No hay conexión. Intenta de nuevo.');
     } finally {
       setOcupado(false);
     }
@@ -170,7 +170,7 @@ export default function Entrar() {
           {pendiente ? 'Elige tu contraseña' : 'Portal Farmasalud'}
         </Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginHorizontal: 32 }}>
-          {pendiente ? 'Es tu primera entrada: la contraseña que te dieron es temporal.' : 'Portal del equipo'}
+          {pendiente ? 'Es tu primera entrada. La contraseña que te dieron es temporal.' : 'Portal del equipo'}
         </Text>
       </View>
 

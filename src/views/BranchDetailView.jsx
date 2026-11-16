@@ -197,7 +197,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         { id: 'resumen',  label: 'Resumen',     icon: Sparkles,   show: isFarmacia },
         { id: 'history',  label: 'Historial',   icon: Clock,      show: true },
         { id: 'staff',    label: 'Personal',     icon: Users,      show: true },
-        { id: 'dossier',  label: 'Expediente',   icon: FolderOpen, show: hasLegal && !liveBranch?.expedienteOculto },
+        { id: 'dossier',  label: 'Datos',        icon: FolderOpen, show: hasLegal && !liveBranch?.expedienteOculto },
         { id: 'expenses', label: 'Gastos',        icon: Briefcase,  show: (isFarmacia || isBodega) && !liveBranch?.expedienteOculto },
     ].filter(t => t.show);
 

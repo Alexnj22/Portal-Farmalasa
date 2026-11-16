@@ -69,7 +69,7 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
   const adjuntar = async () => {
     const a = await elegirArchivo(`respaldo_${ev.type}`);
     if (!a) return;
-    Alert.alert('Adjuntar el respaldo', `Se guarda en el expediente de ${shortEmployeeName(emp)}, colgado de este evento.`, [
+    Alert.alert('Adjuntar el respaldo', `Se guarda junto a este evento, en el historial de ${shortEmployeeName(emp)}, colgado de este evento.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Adjuntar', onPress: async () => {
         trabajando('Subiendo…');
@@ -94,7 +94,7 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
         } catch (e) { fallo('No se guardó', mensajeAmigable(e)); }
       } },
     ]);
-  const cancelar = () => Alert.prompt('Cancelar el evento', 'Si ya cambió algo en la ficha, se revierte. Escribe el motivo: queda en la bitácora.', [
+  const cancelar = () => Alert.prompt('Cancelar el evento', 'Si ya cambió algo en sus datos, se revierte. Escribe el motivo. Queda registrado.', [
     { text: 'Volver', style: 'cancel' },
     { text: 'Cancelar el evento', style: 'destructive', onPress: async (motivo) => {
       if (!motivo?.trim()) { fallo('Falta el motivo', 'Escribe por qué se cancela.'); return; }

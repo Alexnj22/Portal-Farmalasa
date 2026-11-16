@@ -221,7 +221,7 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
          afordancias para la MISMA acción. Acá son tres acciones distintas —
          abrir el expediente, escribir por WhatsApp, llamar—, así que sin esto
          la principal sería la única sin camino de teclado. */
-      {...clickable(() => abrir(emp), { label: `Abrir la ficha de ${emp.name || 'la persona'}` })}
+      {...clickable(() => abrir(emp), { label: `Abrir el perfil de ${emp.name || 'la persona'}` })}
       /* Sin `hover:-translate-y-*` propio: `data-surface="card"` ya levanta con
          `--lift-card`, y el segundo se SUMA al primero (DESIGN.md §5). */
       className={`group relative flex gap-3 p-3.5 transition-all duration-[var(--dur-base)]
@@ -468,12 +468,12 @@ function AvanceDeHoras({ horas, p }) {
         </div>
       )}
       {p?.estado === 'ACTIVO' && !p?.horario && (
-        <p className="text-micro font-bold text-content-3">Sin horario: no se sabe cuándo termina.</p>
+        <p className="text-micro font-bold text-content-3">Sin horario. No se sabe cuándo termina.</p>
       )}
       {fin?.fecha && (
         <p className={`text-micro font-bold ${fin.alcanza === false ? 'text-warning-text' : 'text-content-2'}`}>
           {fin.faltan > 0 ? `Termina el ${fechaCortaDMA(fin.fecha)}` : 'Ya cumplió sus horas'}
-          {fin.alcanza === false ? ` — después del ${fechaCortaDMA(p.fecha_fin)} del convenio` : ''}
+          {fin.alcanza === false ? `, después del ${fechaCortaDMA(p.fecha_fin)} del convenio` : ''}
           {` · ${(Math.round(fin.horasSemana * 10) / 10).toLocaleString('es-SV')} h/sem`}
         </p>
       )}
@@ -500,7 +500,7 @@ function PuestoVacante({ cargo }) {
         <UserPlus size={22} strokeWidth={2} />
       </div>
       <div className="min-w-0">
-        <p className="text-body font-black tracking-tight text-content-2">Puesto sin cubrir</p>
+        <p className="text-body font-black tracking-tight text-content-2">Cargo sin cubrir</p>
         <Badge variant="neutral" size="sm" className="mt-1">{cargo}</Badge>
       </div>
     </div>
@@ -618,7 +618,7 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
             vacío que nadie mira: es un hallazgo, y acá es donde se ve. */}
         {!jefe && !sinSede && activas.length > 0 && (
           <Badge variant="warning" size="sm" icon={AlertCircle} uppercase={false}>
-            Sin jefatura
+            Sin jefe
           </Badge>
         )}
       </header>
@@ -633,14 +633,11 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
       {sinSede && activas.length > 0 && (
         soloCuentasDelSistema ? (
           <Notice variant="neutral">
-            Son cuentas del portal, no personas: no trabajan en ninguna sala, así
-            que no llevan sede. A la de pruebas se le asigna una sólo mientras se
-            prueba algo, y se le quita al terminar.
+            Son cuentas del portal, no personas. No llevan sucursal. La de pruebas lleva una sólo mientras se prueba algo.
           </Notice>
         ) : (
           <Notice variant="warning" icon={AlertCircle}>
-            Estas fichas no tienen sucursal, así que no aparecen en ningún equipo
-            ni en el conteo de ninguna sala. Falta elegirles una sede.
+            Estas personas no tienen sucursal. No salen en ningún equipo ni en el conteo de ninguna sucursal. Elígeles una.
           </Notice>
         )
       )}
@@ -673,7 +670,7 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
       {!!adscritos.length && (
         <>
           <p className="pt-1 text-micro font-black uppercase tracking-widest text-content-3">
-            También en esta sala
+            También en esta sucursal
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {adscritos.map(emp => (
@@ -1013,7 +1010,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     if (employeesStatus !== 'ready') {
       useToastStore.getState().showToast(
         'Cargando datos completos…',
-        'Espera un momento y vuelve a intentar — se están terminando de traer los datos del empleado.',
+        'Todavía se están cargando los datos del empleado. Espera un momento y vuelve a intentarlo.',
         'info');
       return;
     }
@@ -1067,7 +1064,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     const sinAcceso = (practicantes || []).filter(p => p.estado === 'ACTIVO' && !p.employee_id).length;
     if (!conFicha.length) {
       showToast('Nadie para imprimir', sinAcceso
-        ? 'Los practicantes activos todavía no tienen acceso: dales acceso primero, ahí se les asigna el código.'
+        ? 'Los practicantes activos todavía no tienen acceso. Dales acceso primero para que tengan código.'
         : 'No hay practicantes activos.', 'info');
       return;
     }
@@ -1090,7 +1087,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       registrarEgreso('staff_list', { formato: 'pdf', filas: r.impresos, detalle: { motivo: 'hoja de carnés de practicantes' } });
       const faltan = (r.sinCodigo?.length || 0) + sinAcceso;
       showToast('Hoja de carnés descargada',
-        `${r.impresos} carné${r.impresos === 1 ? '' : 's'}.` + (faltan ? ` ${faltan} sin código todavía: dales acceso primero.` : ''),
+        `${r.impresos} carné${r.impresos === 1 ? '' : 's'}.` + (faltan ? ` ${faltan} sin código todavía. Dales acceso primero.` : ''),
         'success', 10000);
     } catch (e) {
       showToast('No se pudo armar la hoja', mensajeAmigable(e), 'error');

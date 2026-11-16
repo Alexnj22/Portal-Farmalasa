@@ -173,7 +173,7 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
     });
 
     const vacantes = (container) => tarjetas(container)
-        .filter(c => c.textContent.includes('Puesto sin cubrir'))
+        .filter(c => c.textContent.includes('Cargo sin cubrir'))
         .map(c => c.querySelector('span')?.textContent?.trim());
 
     it('la sala sin subjefe muestra el puesto sin cubrir, con su nombre', () => {
@@ -223,7 +223,7 @@ describe('Equipos por sucursal — quién manda y quién responde a quién', () 
 
     it('la técnica queda adscrita: su superior existe, pero está en otra sucursal', () => {
         const { container } = montar();
-        expect(container.textContent).toContain('También en esta sala');
+        expect(container.textContent).toContain('También en esta sucursal');
         expect(enLugar(container, 'adscrito')).toEqual(['Tecnica de Servicios']);
         const adscrita = tarjetas(container).find(c => textoDe(c) === 'Tecnica de Servicios');
         expect(adscrita.textContent).toContain('Responde a Administrador');

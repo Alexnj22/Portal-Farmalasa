@@ -151,8 +151,7 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                                     </div>
                                 ) : (
                                     <Notice variant="warning" compact>
-                                        Todavía no se registró el pago de {vigente}. Cuando llegue el listado de la aseguradora,
-                                        súbelo y el portal deja a cada persona como solvente.
+                                        Todavía no se registró el pago de {vigente}. Cuando llegue el listado de la aseguradora, súbelo para marcar a cada persona como solvente.
                                         {prima != null && ` Estimado: ${activos.length} personas × ${dinero(prima)} = ${dinero(prima * activos.length)}.`}
                                     </Notice>
                                 )}
@@ -177,7 +176,7 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                                 {sinCertificado > 0 && (
                                     <p className="flex items-center gap-1.5 text-micro font-medium text-content-3">
                                         <FileWarning size={13} strokeWidth={2.5} className="shrink-0 text-warning-text" />
-                                        Le falta el certificado de asegurado en su expediente.
+                                        Le falta el certificado de asegurado en sus documentos.
                                     </p>
                                 )}
                                 <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
@@ -302,15 +301,15 @@ function Poliza({ poliza, canEdit, onGuardada }) {
     const sumaMala = !(Number(f.suma_asegurada) > 0);
     const tasaMala = !(Number(f.tasa_por_millar) > 0);
     // Lo que falta, al lado del botón y con su campo (2026-11-14).
-    const queFalta = sumaMala ? { texto: 'Escribe la suma asegurada: tiene que ser mayor a 0.', campo: 'suma_asegurada' }
-        : tasaMala ? { texto: 'Escribe la tasa: tiene que ser mayor a 0.', campo: 'tasa_por_millar' }
+    const queFalta = sumaMala ? { texto: 'Escribe la suma asegurada. Tiene que ser mayor a 0.', campo: 'suma_asegurada' }
+        : tasaMala ? { texto: 'Escribe la tasa. Tiene que ser mayor a 0.', campo: 'tasa_por_millar' }
         : null;
 
     return (
         <section className="flex flex-col gap-2">
             <div>
                 <p className="text-caption font-black uppercase tracking-widest text-content-2">La póliza</p>
-                <p className="text-micro text-content-3 font-medium">El documento general — es el mismo cada año. La suma asegurada es igual para todos.</p>
+                <p className="text-micro text-content-3 font-medium">El documento general. Es el mismo cada año y la suma asegurada es igual para todos.</p>
             </div>
             <div data-surface="card" className="p-3 flex flex-col gap-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -395,7 +394,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
             const cruce = cruzarConElPadron(nombres, activos);
             setFilas(cruce.map(c => ({ clave: c.nombre, nombre: c.nombre, employee_id: c.empleado?.id || null, posible: c.posible || null, ambiguo: c.ambiguo })));
             const sin = cruce.filter(c => !c.empleado).length;
-            setAviso(`Se leyeron ${nombres.length} nombres${sin ? `; ${sin} sin ficha reconocida — revísalos` : ', todos con ficha'}.`);
+            setAviso(`Se leyeron ${nombres.length} nombres${sin ? `; ${sin} sin reconocer. Revísalos` : ', todos reconocidos'}.`);
         } catch (e) {
             setFallo(mensajeAmigable(e) || 'No se pudo subir el listado.');
         } finally { setLeyendo(false); }
@@ -445,8 +444,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
                     {pagoExistente ? 'Corregir' : 'Registrar'} el pago {anio}
                 </p>
                 <p className="text-micro text-content-3 font-medium">
-                    Sube el documento con el listado que envía la aseguradora: el portal lee los nombres y los cruza con las fichas.
-                    Revisa la lista antes de guardar — quien quede afuera no aparece como solvente.
+                    Sube el documento con el listado que envía la aseguradora. Revisa la lista antes de guardar. Quien quede fuera no sale como solvente.
                 </p>
             </div>
 
@@ -470,7 +468,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
             </div>
 
             <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-label font-black text-content">{filas.length} en el listado · {conFicha} con ficha</p>
+                <p className="text-label font-black text-content">{filas.length} en el listado · {conFicha} reconocidos</p>
             </div>
             <div className="flex flex-col gap-1.5">
                 {filas.map(f => {
@@ -487,7 +485,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
                                 <span className="min-w-0 flex-1">
                                     <span className="block text-label font-black text-content truncate">{f.nombre}</span>
                                     <span className="block text-micro text-content-3 font-medium truncate">
-                                        {e ? `Ficha: ${shortEmployeeName(e)}` : 'Sin ficha — elige a quién corresponde, o déjalo así'}
+                                        {e ? `Persona: ${shortEmployeeName(e)}` : 'Sin reconocer. Elige a quién corresponde o déjalo así.'}
                                     </span>
                                 </span>
                                 {f.ambiguo && <Badge variant="warning" size="sm">Hay dos iguales</Badge>}
@@ -502,7 +500,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
                                         </div>
                                     )}
                                     <LiquidSelect value="" onChange={(id) => elegir(f.clave, id)} options={opciones}
-                                        placeholder="Elegir su ficha" compact />
+                                        placeholder="Elegir a la persona" compact />
                                 </div>
                             )}
                         </div>

@@ -196,7 +196,7 @@ export default function MiPerfil() {
 
         {hasPermission('emp_documents') ? (
           (emp.employee_documents || []).some((d) => d?.url) ? <ExpedienteEnLinea empleado={emp} /> : (
-            <BotonGrande texto="Mi expediente" borde color={MARCA.azulClaro} onPress={() => router.push('/mis-documentos')} />
+            <BotonGrande texto="Mis documentos" borde color={MARCA.azulClaro} onPress={() => router.push('/mis-documentos')} />
           )
         ) : null}
 

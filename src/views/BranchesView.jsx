@@ -169,7 +169,7 @@ const BranchCard = memo(({
     return (
         <article
             data-surface="card"
-            {...clickable(() => handleViewProfile(branch), { label: `Abrir la ficha de ${branch.name}` })}
+            {...clickable(() => handleViewProfile(branch), { label: `Abrir los datos de ${branch.name}` })}
             // Sin `hover:-translate-y-*`: `data-surface="card"` ya levanta con
             // `--lift-card`, y un segundo lift se SUMA (DESIGN.md §5).
             style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 340px', '--stagger-delay': `${Math.min(staggerIndex, 8) * 45}ms` }}
@@ -379,7 +379,7 @@ const BranchesView = ({ openModal }) => {
                 const fallidas = results.filter(r => r.error);
                 if (fallidas.length) console.error('Error cargando kioscos', fallidas[0].error);
                 setKioskError(fallidas.length
-                    ? mensajeAmigable(fallidas[0].error, `No se pudieron leer los kioscos de ${fallidas.length === 1 ? 'una sucursal' : `${fallidas.length} sucursales`}: su conteo puede no estar al día.`)
+                    ? mensajeAmigable(fallidas[0].error, `No se pudieron leer los kioscos de ${fallidas.length === 1 ? 'una sucursal' : `${fallidas.length} sucursales`}. Su conteo puede no estar al día.`)
                     : null);
                 setKiosksCount(prev => {
                     const next = { ...prev };
@@ -456,7 +456,7 @@ const BranchesView = ({ openModal }) => {
     const handleDeleteClick = useCallback((branch, count) => {
         if (!branch) return;
         if (count > 0) {
-            setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: `No se puede eliminar "${branch.name}" porque tiene ${count} ficha(s) asignada(s), contando las dadas de baja. Reasígnalas a otra sucursal primero.`, type: 'error' });
+            setAlertDialog({ isOpen: true, title: 'Operación bloqueada', message: `No se puede eliminar "${branch.name}" porque tiene ${count} persona(s) asignada(s), incluidas las dadas de baja. Reasígnalas a otra sucursal primero.`, type: 'error' });
             return;
         }
         setConfirmDialog({ isOpen: true, branch });
@@ -472,7 +472,7 @@ const BranchesView = ({ openModal }) => {
         try {
             const ok = await deleteBranch(id);
             if (ok === false) {
-                useToastStore.getState().showToast('No se eliminó', `La sucursal ${name} no se pudo eliminar: la base rechazó el cambio. Intenta nuevamente.`, 'error');
+                useToastStore.getState().showToast('No se eliminó', `La sucursal ${name} no se pudo eliminar. Intenta de nuevo.`, 'error');
             } else {
                 useToastStore.getState().showToast('Sucursal Eliminada', `La sucursal ${name} ha sido borrada del sistema.`, 'success');
             }
@@ -482,7 +482,7 @@ const BranchesView = ({ openModal }) => {
             // un error de la base pasa por la traducción.
             const texto = err instanceof Error && !('code' in err) && err.message
                 ? err.message
-                : mensajeAmigable(err, 'No se pudo eliminar la sucursal. Intenta nuevamente.');
+                : mensajeAmigable(err, 'No se pudo eliminar la sucursal. Intenta de nuevo.');
             useToastStore.getState().showToast('No se eliminó', texto, 'error');
         } finally {
             setConfirmDialog({ isOpen: false, branch: null });
@@ -549,7 +549,7 @@ const BranchesView = ({ openModal }) => {
 
     return (
         <>
-            <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, branch: null })} onConfirm={executeDelete} title={`¿Eliminar "${confirmDialog.branch?.name}"?`} message="Esta acción eliminará permanentemente la sucursal y toda su configuración operativa del sistema." confirmText="Eliminar" />
+            <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, branch: null })} onConfirm={executeDelete} title={`¿Eliminar "${confirmDialog.branch?.name}"?`} message="La sucursal y toda su configuración se borran del portal. No se puede deshacer." confirmText="Eliminar" />
             <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '', type: 'error' })} title={alertDialog.title} message={alertDialog.message} type={alertDialog.type} />
 
             <GlassViewLayout icon={Building2} title="Sucursales" filtersContent={renderFiltersContent()} transparentBody={true}>
@@ -614,7 +614,7 @@ const BranchesView = ({ openModal }) => {
                             <div className="space-y-8 pt-4 px-2 pb-12">
                                 {isBranchSearchFuzzy && searchTerm && (
                                     <Notice variant="warning" icon={Search}>
-                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                            Sin coincidencias exactas para &ldquo;{searchTerm}&rdquo;. Estos se parecen.
                         </Notice>
                                 )}
                                 {grouped.map(({ type, branches: groupBranches }) => (

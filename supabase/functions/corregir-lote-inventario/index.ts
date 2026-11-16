@@ -70,22 +70,31 @@ Deno.serve(async (req) => {
     }
     if (!enSuSala) return json({ ok: false, error: "Sólo puedes corregir el inventario de tu sala." }, 403);
 
-    // Mientras la sala cuenta, el número no se mueve (igual que el ajuste).
+    // Mientras se cuenta, el número no se mueve (igual que el ajuste): la
+    // sala entera si el conteo todavía no tiene productos (`en_conteo`), o
+    // sólo los productos que ese conteo lleva (`productos`).
     const { data: conteo, error: conteoErr } = await admin.rpc("sucursal_en_conteo", { p_branch_id: branch });
     if (conteoErr) throw conteoErr;
     if (conteo?.en_conteo)
       return json({ ok: false, codigo: "EN_CONTEO", error: `Hay un conteo abierto en ${mapa.nombre}: ciérralo antes.` }, 409);
+    if (Array.isArray(conteo?.productos) && conteo.productos.map(Number).includes(pid))
+      return json({ ok: false, codigo: "EN_CONTEO", error: "Ese producto se está contando: corrígelo cuando se cierre el conteo." }, 409);
 
     const { data: prod, error: prodErr } = await admin.from("products")
       .select("id, descripcion").eq("id", pid).maybeSingle();
     if (prodErr) throw prodErr;
     if (!prod) return json({ ok: false, error: "Ese producto no existe." }, 404);
 
-    // El número nuevo con otra fecha en alguna sala sería otro lote.
-    const ignorar = !esLoteGenerico(lote) && String(lote).trim().toUpperCase() === v.lote
-      ? String(vence ?? "").slice(0, 10) : null;
-    const choca = await fechaQueChocaAlCorregir(admin, pid, v.lote, v.vence, ignorar);
-    if (choca)
+    // El número nuevo con otra fecha en alguna sala: con OTRO número es un
+    // lote distinto (un tecleo que choca) y se frena; con el MISMO número la
+    // persona afirma la fecha de ese lote, y las otras salas que lo tengan
+    // con otra fecha van como aviso (ver la cabecera de erp-corregir-lote).
+    const mismoNumero = !esLoteGenerico(lote) && String(lote).trim().toUpperCase() === v.lote;
+    // Para el aviso cuenta también la fecha que se corrige: otra sala que la
+    // arrastre tiene el mismo error.
+    const choca = await fechaQueChocaAlCorregir(admin, pid, v.lote, v.vence, null,
+      mismoNumero ? erpSucursal : null);
+    if (choca && !mismoNumero)
       return json({
         ok: false, codigo: "LOTE_OTRA_FECHA",
         error: `El lote ${v.lote} ya está registrado con vencimiento ${choca}. Revisa la caja.`,
@@ -102,7 +111,9 @@ Deno.serve(async (req) => {
       if (r.descuadre) console.error(`[corregir-lote-inventario] DESCUADRE ${pid}@${erpSucursal}: ${r.descuadre}`);
       return json({ ok: false, codigo: r.codigo, error: r.descuadre ? `${r.error} ${r.descuadre}` : r.error }, 409);
     }
-    return json({ ...r, sala: mapa.nombre, producto: prod.descripcion });
+    const avisos = [...r.avisos];
+    if (choca) avisos.push(`En otra sala el lote ${v.lote} figura con vencimiento ${choca}: corrígelo allá si es el mismo.`);
+    return json({ ...r, avisos, sala: mapa.nombre, producto: prod.descripcion });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }

@@ -32,6 +32,20 @@
 //  · Y por eso mismo, si el número no cambia se corrige el renglón ENTERO: un
 //    lote físico tiene una sola fecha, y dejar la mitad con cada una es crear
 //    el problema que se está arreglando.
+//
+// ── Tres fechas o más para el mismo número (auditoría, 2026-11-16) ────────
+// El freno «ese número ya existe con otra fecha» protege de un número mal
+// TECLEADO que choca con un lote ajeno. Si el número no cambia no hay tecleo
+// que proteger: la persona afirma la fecha de ESE lote. Frenarlo ahí trababa
+// el caso de tres fechas —A y B mal, C la buena y todavía sin existencia—:
+// corregir A→C chocaba con B y B→C con A, para siempre. Con el mismo número se
+// corrige y las otras fechas que queden se DEVUELVEN como aviso, para seguir
+// con ellas. Se corrige un renglón por vez.
+//
+// ── Un mismo lote en varios renglones ─────────────────────────────────────
+// El portal suma por número + fecha; el sistema puede tener el mismo par en
+// más de un renglón. Se suma igual (`par`), y el descargo ya sabe completar
+// de varios renglones del mismo par (`lotesDelDescargo`, paso 2).
 import { BASE, login, pedir, leerRespuesta } from "./erp-dte.ts";
 import { descartarUnaLinea, conceptoDe } from "./erp-descarte.ts";
 import { esLoteGenerico, resolverPresentacion, sesionEn, traerFila, type LoteErp } from "./erp-traslado.ts";
@@ -47,7 +61,7 @@ function hoySV(): string {
 }
 
 export type ResultadoCorreccion =
-  | { ok: true; lote: string; vence: string; unidades: number; concepto: string }
+  | { ok: true; lote: string; vence: string; unidades: number; concepto: string; avisos: string[] }
   | { ok: false; codigo: string; error: string; descuadre?: string };
 
 /**
@@ -87,17 +101,54 @@ export function revisarCorreccion(opc: {
 export async function fechaQueChocaAlCorregir(
   // deno-lint-ignore no-explicit-any
   sb: any, erpProductId: number, loteNuevo: string, venceNuevo: string, ignorar: string | null,
+  /** Para el aviso: las otras salas, sin la propia (ésa la avisa `corregirLote`). */
+  excluirSucursal: number | null = null,
 ): Promise<string | null> {
-  const { data, error } = await sb.from("inventory")
+  let q = sb.from("inventory")
     .select("fecha_vencimiento")
     .eq("erp_product_id", erpProductId)
     .eq("lote", loteNuevo)
+    .gt("cantidad", 0)
     .not("fecha_vencimiento", "is", null)
     .limit(200);
+  if (excluirSucursal != null) q = q.neq("erp_sucursal_id", excluirSucursal);
+  const { data, error } = await q;
   if (error) throw new Error(`No se pudo revisar si el lote ${loteNuevo} ya existe: ${error.message}`);
   const fechas = [...new Set((data ?? []).map((r: { fecha_vencimiento: string }) => dia(r.fecha_vencimiento)))]
     .filter((f) => f !== venceNuevo && f !== ignorar);
   return fechas.length ? (fechas.sort()[0] as string) : null;
+}
+
+/**
+ * Un lote es número + fecha; el sistema puede tenerlo en varios renglones.
+ * Devuelve el par con su stock SUMADO (y el número tal como lo escribe el
+ * sistema, que es lo que el descargo compara), o null.
+ */
+export function par(
+  lotes: LoteErp[], numero: string, vence: string | null,
+): { numero: string; vence: string; stock: number } | null {
+  const del = lotes.filter((x) => norm(x.numero) === norm(numero) && dia(x.vence) === dia(vence));
+  if (!del.length) return null;
+  return { numero: del[0].numero, vence: del[0].vence, stock: del.reduce((n, x) => n + Number(x.stock || 0), 0) };
+}
+
+/**
+ * El número nuevo con OTRAS fechas en la sala (sin contar la que se corrige).
+ * Con otro número es un lote distinto y bloquea —salvo que el par destino ya
+ * exista—; con el mismo número sólo avisa (ver la cabecera: tres fechas).
+ */
+export function choqueEnLaSala(
+  lotes: LoteErp[], origen: { numero: string; vence: string }, loteNuevo: string, venceNuevo: string,
+): { bloquea: string | null; avisos: string[] } {
+  const mismoNumero = norm(origen.numero) === norm(loteNuevo);
+  const otras = [...new Set(lotes
+    .filter((x) => norm(x.numero) === norm(loteNuevo) && Number(x.stock) > 0)
+    .map((x) => dia(x.vence))
+    .filter((f) => f !== venceNuevo && f !== dia(origen.vence)))].sort();
+  if (!otras.length) return { bloquea: null, avisos: [] };
+  if (mismoNumero)
+    return { bloquea: null, avisos: [`En la sala el lote ${loteNuevo} sigue también con vencimiento ${otras.join(", ")}: corrígelo igual si es el mismo.`] };
+  return { bloquea: par(lotes, loteNuevo, venceNuevo) ? null : otras[0], avisos: [] };
 }
 
 export async function corregirLote(opc: {
@@ -146,14 +197,12 @@ export async function corregirLote(opc: {
       lote: loteNuevo, vence: venceNuevo, referencia: o.referencia,
     });
     return r.ok
-      ? { ok: true, lote: r.lote, vence: r.vence, unidades: o.unidades, concepto: r.concepto }
+      ? { ok: true, lote: r.lote, vence: r.vence, unidades: o.unidades, concepto: r.concepto, avisos: [] }
       : { ok: false, codigo: r.codigo, error: r.error, descuadre: r.descuadre };
   }
 
   // ── El lote de origen, por número Y fecha ───────────────────────────────
-  const delPar = (lotes: LoteErp[], numero: string, vence: string | null) =>
-    lotes.find((x) => norm(x.numero) === norm(numero) && dia(x.vence) === dia(vence));
-  const origen = delPar(antes.lotes, o.loteViejo, o.venceViejo);
+  const origen = par(antes.lotes, o.loteViejo, o.venceViejo);
   if (!origen)
     return {
       ok: false, codigo: "LOTE_NO_EXISTE",
@@ -162,16 +211,14 @@ export async function corregirLote(opc: {
   const rev = revisarCorreccion({ origen, unidades: o.unidades, loteNuevo, venceNuevo });
   if (!rev.ok) return { ...rev, error: `${nombre}: ${rev.error}` };
 
-  const mismoNumero = norm(origen.numero) === norm(loteNuevo);
-  // El número nuevo con una tercera fecha EN ESTA SALA: sería otro lote.
-  const destinoPrevio = delPar(antes.lotes, loteNuevo, venceNuevo);
-  const otraFecha = antes.lotes.find((x) => norm(x.numero) === norm(loteNuevo)
-    && dia(x.vence) !== venceNuevo && !(mismoNumero && dia(x.vence) === dia(origen.vence)) && Number(x.stock) > 0);
-  if (otraFecha && !destinoPrevio)
+  const destinoPrevio = par(antes.lotes, loteNuevo, venceNuevo);
+  const choque = choqueEnLaSala(antes.lotes, origen, loteNuevo, venceNuevo);
+  if (choque.bloquea)
     return {
       ok: false, codigo: "LOTE_OTRA_FECHA",
-      error: `${nombre}: el lote ${loteNuevo} ya está en la sala con vencimiento ${dia(otraFecha.vence)}. Revisa la caja.`,
+      error: `${nombre}: el lote ${loteNuevo} ya está en la sala con vencimiento ${choque.bloquea}. Revisa la caja.`,
     };
+  const avisos = choque.avisos;
   const previo = destinoPrevio?.stock ?? 0;
   const concepto = conceptoDe([
     `CORRIGE LOTE ${origen.numero} ${dia(origen.vence)} A ${loteNuevo} ${venceNuevo}`, o.referencia,
@@ -192,7 +239,7 @@ export async function corregirLote(opc: {
 
   // Lo que manda es el lote releído, no la respuesta (ver erp-asignar-lote).
   const despues = await traerFila(cookie, o.erpProductId, o.erpUbicacion);
-  const nuevo = delPar(despues.lotes, loteNuevo, venceNuevo);
+  const nuevo = par(despues.lotes, loteNuevo, venceNuevo);
   if (!nuevo || nuevo.stock - previo < o.unidades) {
     if (nuevo && nuevo.stock > previo)
       return {
@@ -213,7 +260,7 @@ export async function corregirLote(opc: {
     erpSucursal: o.erpSucursal, erpUbicacion: o.erpUbicacion,
     linea: { ...linea, lote: origen.numero, vence: origen.vence }, concepto, iden: "DESCARTE",
   });
-  if (desc.ok) return { ok: true, lote: loteNuevo, vence: venceNuevo, unidades: o.unidades, concepto };
+  if (desc.ok) return { ok: true, lote: loteNuevo, vence: venceNuevo, unidades: o.unidades, concepto, avisos };
 
   if (desc.codigo === "INCIERTO")
     return {

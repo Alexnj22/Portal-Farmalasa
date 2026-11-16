@@ -665,7 +665,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     );
 
     if (corrigiendoLote && erpSucursalId) return (
-        <CorregirLoteSala erpSucursalId={erpSucursalId} branchName={branchName}
+        <CorregirLoteSala erpSucursalId={erpSucursalId} branchName={branchName} enConteo={enElConteo}
             onVolver={() => setCorrigiendoLote(false)} onHecho={onHecho} />
     );
 

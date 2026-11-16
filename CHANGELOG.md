@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.1 — Corregir lote: conteo por producto, tres fechas y corregir otro lote
+
+Auditoría de la corrección de lote (v2.1551.0), con un simulacro contra el
+sistema de la caja sobre el ZALDIAR de Salud 2:
+
+- **Conteo por producto**: `sucursal_en_conteo` frena la sala entera sólo si
+  el conteo no tiene productos; si los tiene, frena ESOS. La función y la
+  pantalla ahora frenan el producto que se está contando.
+- **Tres fechas o más para un número**: con A y B mal y C la buena todavía
+  sin existencia, corregir A→C chocaba con B y B→C con A, sin salida. Con el
+  mismo número ya no frena: corrige y avisa las otras fechas que quedan (en
+  la sala y en otras salas). Con OTRO número sigue frenando (tecleo).
+- **Un lote en varios renglones** del sistema se suma como uno (`par`), igual
+  que lo cuenta el portal.
+- El choque con otras salas mira sólo existencia viva (`cantidad > 0`).
+- Al terminar, **«Corregir otro lote»** vuelve a los lotes del mismo producto.
+
 ## v2.1551.0 — Corregir lote o vencimiento en la sala, sin aprobación
 
 La sala corrige el lote o el vencimiento de lo que ya tiene, sin quitar ni

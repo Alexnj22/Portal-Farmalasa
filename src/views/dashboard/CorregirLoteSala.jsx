@@ -35,7 +35,9 @@ const fmtVence = (d) => fechaNumerica(d, { anio: 'corto', vacio: null });
 const rotulo = (l) => esLoteGenerico(l.lote) ? 'Sin lote asignado' : `Lote ${l.lote}`;
 const norm = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
 
-export default function CorregirLoteSala({ erpSucursalId, branchName, onVolver, onHecho }) {
+// `enConteo`: los productos que un conteo abierto está contando (Set de ids).
+// No se ofrecen: el número no se mueve mientras alguien cuenta.
+export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo = null, onVolver, onHecho }) {
     const [busqueda, setBusqueda] = useState('');
     const [candidatos, setCandidatos] = useState([]);
     const [cargando, setCargando] = useState(false);
@@ -50,6 +52,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, onVolver, 
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
     const [hecho, setHecho] = useState(null);
+    const [vuelta, setVuelta] = useState(0);         // recargar los lotes tras corregir uno
 
     // ── Paso 1 · el producto, entre lo que la sala tiene ──────────────────
     useEffect(() => {
@@ -83,7 +86,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, onVolver, 
             setRegulado(ex.get(Number(producto.erp_product_id))?.regulado ?? false);
         });
         return () => { vivo = false; };
-    }, [producto, erpSucursalId]);
+    }, [producto, erpSucursalId, vuelta]);
 
     // Lo sin lote asignado sólo se puede «corregir» en un producto con control
     // de lote: en los demás no hay lote que ponerle.
@@ -146,7 +149,16 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, onVolver, 
                 </p>
                 <p className="text-caption text-content-3 mt-1">En unos minutos se ve así en el inventario.</p>
             </div>
-            <Button variant="secondary" onClick={onHecho}>Cerrar</Button>
+            {(hecho.avisos ?? []).map(a => <Notice key={a} variant="warning">{a}</Notice>)}
+            <div className="flex gap-2">
+                {/* Otro lote del MISMO producto: con tres fechas para un número se
+                    corrige un renglón por vez, y volver a buscar el producto
+                    cada vez es lo que hacía pesado el arreglo. */}
+                <Button variant="secondary" onClick={() => { setHecho(null); setOrigen(null); setVuelta(v => v + 1); }}>
+                    Corregir otro lote
+                </Button>
+                <Button onClick={onHecho}>Listo</Button>
+            </div>
         </div>
     );
 
@@ -166,14 +178,19 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, onVolver, 
                             cargando ? <SkeletonText lines={3} /> :
                             candidatos.length === 0 ? (
                                 <EmptyState compact title="Sin existencia" subtitle="Ese producto no está en la sala." />
-                            ) : candidatos.map(f => (
-                                <ListRow key={f.erp_product_id}
-                                    onClick={() => { setProducto({ erp_product_id: f.erp_product_id, descripcion: f.descripcion }); setBusqueda(''); }}
-                                    className="border-divider bg-surface-card hover:border-brand/40"
-                                    title={f.descripcion}
-                                    trailing={<ChevronRight size={14} className="text-content-3" />}
-                                />
-                            ))
+                            ) : candidatos.map(f => {
+                                const contando = enConteo?.has(Number(f.erp_product_id));
+                                return (
+                                    <ListRow key={f.erp_product_id}
+                                        onClick={contando ? undefined : () => { setProducto({ erp_product_id: f.erp_product_id, descripcion: f.descripcion }); setBusqueda(''); }}
+                                        className={`border-divider bg-surface-card ${contando ? 'opacity-60' : 'hover:border-brand/40'}`}
+                                        title={f.descripcion}
+                                        trailing={contando
+                                            ? <span className="text-micro font-bold text-warning-text">Se está contando</span>
+                                            : <ChevronRight size={14} className="text-content-3" />}
+                                    />
+                                );
+                            })
                         ) : (
                             <EmptyState compact icon={CalendarCog}
                                 title="Busca el producto con el lote mal puesto"

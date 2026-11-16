@@ -100,6 +100,7 @@ const EncuestasClientesView = lazy(IMPORTADORES.EncuestasClientesView);
 const OfertasClientesView = lazy(IMPORTADORES.OfertasClientesView);
 const ChatClientesView = lazy(IMPORTADORES.ChatClientesView);
 const ReservasView = lazy(IMPORTADORES.ReservasView);
+const NovedadesView = lazy(IMPORTADORES.NovedadesView);
 const PreventaView = lazy(IMPORTADORES.PreventaView);
 const MayoristasView = lazy(IMPORTADORES.MayoristasView);
 const AplicarEncuestaView = lazy(IMPORTADORES.AplicarEncuestaView);
@@ -890,6 +891,7 @@ function MainApp() {
                                         una solicitud aprobada llevaría al 404. */}
                                     <Route path="my-requests" element={<IrAPersonales />} />
                                     <Route path="mis-avisos" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
+                                    <Route path="novedades" element={<PermissionGuard moduleKey="novedades"><NovedadesView /></PermissionGuard>} />
                                     {/* Los avisos propios: el historial de la campana y su
                                         papelera. SIN `PermissionGuard` a propósito — un aviso
                                         es de quien lo recibió y el RLS ya lo acota a sus
@@ -1259,6 +1261,7 @@ const ROUTE_TITLES = {
     '/carnes-del-dia':    'Carnés del día',
     '/impresion':         'Prueba de impresión',
     '/mis-avisos':  'Mis avisos',
+    '/novedades':   'Novedades',
     '/notificaciones':      'Notificaciones',
     '/mis-documentos':      'Mis documentos',
     '/mi-perfil':           'Mi perfil',

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1559.0 — Novedades: lo nuevo del portal con cómo se hace
+
+«ahí agregaremos todas las novedades para que siempre estén enterados de los cambios». Vista nueva en Avisos → Novedades (`/novedades`), para todo el personal.
+
+- Cada novedad lleva una animación o captura de producción (datos de clientes difuminados), para qué sirve, los pasos, lo que hay que tener en cuenta y dónde está. Se abre, se amplía y se marca como revisada (en el dispositivo).
+- Cada quien ve solo las novedades de los módulos que su cargo puede ver: Preventa aparece sola el día que se le da a la sucursal.
+- App del personal: en iPhone, el enlace de App Store; en Android, el correo de Google para la prueba interna. Ese correo pone al día la ficha de empleado (el anterior pasa a correos adicionales) y, si tiene UNA ficha de cliente con su DUI, también la de cliente.
+- Pestaña «Prueba Android» para los cuatro cargos de administración: copiar los correos por agregar a Google Play y marcarlos como agregados.
+- Base: tabla `app_pruebas_android`, `novedades_correo_android` y `novedades_android_agregados` (DEFINER), permiso `novedades` (todos ven; 2, 3, 11 y 13 editan).
+
 ## v2.1558.2 — Lenguaje: lo que se vio en pantalla
 
 - Barrido del texto pintado en las 71 pantallas: «Min / Max» → «Mín/Máx» en

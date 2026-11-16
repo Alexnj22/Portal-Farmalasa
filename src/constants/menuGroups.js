@@ -22,7 +22,7 @@ export const MENU_GROUPS = [
     // su permiso nace en este grupo, aparte de `requests` para que confirmar un
     // envío no arrastre aprobar vacaciones.
     { key: 'solicitudes',   label: 'Solicitudes',   icono: 'ClipboardList', modules: ['requests', 'requests_personales', 'traslados'] },
-    { key: 'avisos',        label: 'Avisos',         icono: 'Bell',          modules: ['emp_announcements', 'announcements']  },
+    { key: 'avisos',        label: 'Avisos',         icono: 'Bell',          modules: ['emp_announcements', 'novedades', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icono: 'FolderOpen',    modules: ['emp_documents']                       },
     { key: 'clima',         label: 'Clima organizacional', icono: 'BarChart2', modules: ['encuesta', 'encuesta_admin']       },
     { key: 'personal',      label: 'Personal',      icono: 'User',          modules: ['staff_list']                         },

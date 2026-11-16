@@ -2231,6 +2231,62 @@ export type Database = {
           },
         ]
       }
+      app_pruebas_android: {
+        Row: {
+          agregado_at: string | null
+          agregado_por: string | null
+          created_at: string
+          email: string
+          employee_id: string
+          updated_at: string
+        }
+        Insert: {
+          agregado_at?: string | null
+          agregado_por?: string | null
+          created_at?: string
+          email: string
+          employee_id: string
+          updated_at?: string
+        }
+        Update: {
+          agregado_at?: string | null
+          agregado_por?: string | null
+          created_at?: string
+          email?: string
+          employee_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_pruebas_android_agregado_por_fkey"
+            columns: ["agregado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_pruebas_android_agregado_por_fkey"
+            columns: ["agregado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_pruebas_android_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_pruebas_android_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_reservas: {
         Row: {
           ajuste_de: number | null
@@ -38245,6 +38301,11 @@ export type Database = {
         Returns: number
       }
       notify_missing_roster: { Args: never; Returns: undefined }
+      novedades_android_agregados: {
+        Args: { p_empleados: string[] }
+        Returns: number
+      }
+      novedades_correo_android: { Args: { p_email: string }; Returns: Json }
       nuevo_folio_de_bolsa: { Args: { p_branch_id: number }; Returns: string }
       numeros_de_caja: { Args: { p: Json }; Returns: string }
       par_min_max_convertido: {

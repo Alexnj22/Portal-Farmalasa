@@ -12,6 +12,8 @@
 export const MODULE_MAP = {
     overview:          { path: '/inicio',          label: 'Inicio',                   icono: 'Home'          },
     emp_announcements: { path: '/mis-avisos',label: 'Mis avisos',               icono: 'Bell'          },
+    // Lo nuevo del portal y la app, con cómo se hace (2026-11-16).
+    novedades:         { path: '/novedades',        label: 'Novedades',                icono: 'Megaphone'     },
     emp_profile:       { path: '/mi-perfil',         label: 'Mi perfil',                icono: 'User'          },
     emp_documents:     { path: '/mis-documentos',   label: 'Mis documentos',           icono: 'FolderOpen'    },
     staff_list:        { path: '/personal',        label: 'Listado',                  icono: 'User'          },

@@ -35,6 +35,8 @@ const GRUPOS_CRUDOS = [
             // lleva `requests_personales` con alcance «sólo míos» — una fila
             // en esta pantalla en vez de dos que se contradicen.
             { key: 'emp_announcements', label: 'Mis avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icono: 'Bell',          hasApprove: false },
+            // (2026-11-16) Lo nuevo del portal y la app, con cómo se hace.
+            { key: 'novedades',         label: 'Novedades',           desc: 'Ver lo nuevo del portal y la app, con una animación o foto de cómo se hace cada cosa, y dejar el correo de Android para la prueba de la app del personal. Editar = ver la lista de correos de la prueba y marcarlos como agregados en Google Play', icono: 'Megaphone', hasApprove: false },
             { key: 'emp_profile',       label: 'Mi perfil',           desc: 'Ver y actualizar datos personales propios',                  icono: 'User',          hasApprove: false },
             { key: 'emp_documents',     label: 'Mis documentos',      desc: 'Consultar documentos personales: incapacidades, constancias, etc.', icono: 'FolderOpen', hasApprove: false },
         ],

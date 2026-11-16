@@ -82,6 +82,7 @@ export const IMPORTADORES = {
     OfertasClientesView: () => import("./views/ofertas-clientes/OfertasClientesView"),
     ChatClientesView: () => import("./views/chat-clientes/ChatClientesView"),
     ReservasView: () => import("./views/ReservasView"),
+    NovedadesView: () => import("./views/NovedadesView"),
     PreventaView: () => import("./views/PreventaView"),
     ProveedoresView: () => import("./views/purchases/ProveedoresView"),
     ClientesView: () => import("./views/ClientesView"),
@@ -173,6 +174,7 @@ export const IMPORTADOR_POR_RUTA = {
     'traslados': IMPORTADORES.TrasladosView,
     'monitor': IMPORTADORES.AttendanceMonitorView,
     'mis-avisos': IMPORTADORES.EmployeeAnnouncementsView,
+    'novedades': IMPORTADORES.NovedadesView,
     'notificaciones': IMPORTADORES.NotificacionesView,
     'mis-documentos': IMPORTADORES.EmployeeDocumentsView,
     // `/my-requests` se fusionó en `/solicitudes-personales` el 2026-08-11 y hoy

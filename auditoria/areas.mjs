@@ -397,8 +397,8 @@ export const AREAS = [
         id: 'comunicacion',
         nombre: 'Avisos, notificaciones y encuestas',
         resumen: 'Los comunicados internos, el push al teléfono, la campana del portal y la encuesta de clima organizacional.',
-        modulos: ['announcements', 'emp_announcements', 'encuesta', 'encuesta_admin', 'entrevistas'],
-        rutas: ['/avisos', '/mis-avisos', '/notificaciones', '/encuesta', '/encuesta-admin', '/entrevistas'],
+        modulos: ['announcements', 'emp_announcements', 'encuesta', 'encuesta_admin', 'entrevistas', 'novedades'],
+        rutas: ['/avisos', '/mis-avisos', '/novedades', '/notificaciones', '/encuesta', '/encuesta-admin', '/entrevistas'],
         archivos: [
             'src/utils/misComunicados.js',
             'src/views/AnnouncementsView.jsx', 'src/views/employee/EmployeeAnnouncementsView.jsx',
@@ -415,8 +415,12 @@ export const AREAS = [
             'src/plataforma/pushEquipo.js',
             'src/components/forms/FormAnnouncements.jsx',
             'src/utils/resumenDeLaManana.js',
+            // Novedades (2026-11-16): lo nuevo del portal con cómo se hace, y el
+            // correo de Android para la prueba de la app del personal.
+            'src/views/NovedadesView.jsx', 'src/constants/novedades.js', 'src/data/novedades.js',
+            'public/novedades/',
         ],
-        tablas: ['announcements', 'notifications', 'avisos_emitidos', 'avisos_diferidos', 'push_subscriptions', 'push_dispositivos',
+        tablas: ['app_pruebas_android', 'announcements', 'notifications', 'avisos_emitidos', 'avisos_diferidos', 'push_subscriptions', 'push_dispositivos',
                  'resumen_manana_renglones', 'avisos_ultimo_valor',
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],

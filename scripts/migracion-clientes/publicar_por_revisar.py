@@ -64,7 +64,7 @@ def congelados(catalogo, campos):
         pendientes = faltan.get(eid) or []
         detalle = f'Categoría {categoria}. '
         detalle += (f'Le falta: {", ".join(pendientes)}.' if pendientes
-                    else 'La ficha está completa; se congela por ser fiscal.')
+                    else 'Sus datos están completos. Está congelado por ser fiscal.')
         filas.append({
             'erp_id': str(eid),
             'name': (v.get('name') or catalogo.get(eid) or '').strip(),
@@ -82,7 +82,7 @@ def repetidos(excl, catalogo, campos):
     for eid, nombre, otro_nombre, otro_id in excl['existe_por_nombre']:
         filas.append({
             'erp_id': str(eid), 'name': nombre.strip(), 'motivo': 'nombre_repetido',
-            'detalle': f'Ya existe «{otro_nombre}» (ficha #{otro_id}) con este mismo nombre.',
+            'detalle': f'Ya existe «{otro_nombre}» (cliente #{otro_id}) con este mismo nombre.',
             'datos': campos.get(str(eid)),
         })
     for clave, motivo, etq in (('dui_repetido', 'dui_repetido', 'DUI'),
@@ -90,7 +90,7 @@ def repetidos(excl, catalogo, campos):
         for eid, nombre, valor in excl[clave]:
             filas.append({
                 'erp_id': str(eid), 'name': nombre.strip(), 'motivo': motivo,
-                'detalle': f'Su {etq} {valor} ya es de otra ficha.',
+                'detalle': f'Su {etq} {valor} ya es de otro cliente.',
                 'datos': campos.get(str(eid)),
             })
 
@@ -107,8 +107,8 @@ def repetidos(excl, catalogo, campos):
             filas.append({
                 'erp_id': eid, 'name': (a.get('name') or '').strip(),
                 'motivo': 'nombre_repetido',
-                'detalle': 'Hay dos fichas con este mismo nombre y no se puede '
-                           'saber cuál corresponde: hay que unificarlas.',
+                'detalle': 'Hay dos clientes con este mismo nombre. No se sabe '
+                           'cuál corresponde. Únelos.',
                 'datos': campos.get(eid),
             })
     return filas

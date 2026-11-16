@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1559.1 — Lenguaje: Por revisar y Cargar compra
+
+- Clientes → Por revisar: los avisos dicen «cliente» o «datos» (no «ficha»)
+  y «la caja» (no «sistema de origen»), sin rayas. Se reescribieron también
+  los ya guardados y el resumen de la mañana. Orden «Número de cliente».
+- Cargar compra: «Productos de la factura» (antes «Líneas de factura»).
+- Encuesta de clientes: «la visita a la farmacia».
+
 ## v2.1559.0 — Novedades: lo nuevo del portal con cómo se hace
 
 «ahí agregaremos todas las novedades para que siempre estén enterados de los cambios». Vista nueva en Avisos → Novedades (`/novedades`), para todo el personal.

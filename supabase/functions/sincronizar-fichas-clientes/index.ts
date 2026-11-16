@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
     const aRevisarDuplicado = (c: Candidato, erpId: string, motivo?: string) => {
       aRevisar.push({
         erp_id: erpId, name: c.name, motivo: "erp_rechaza_duplicado",
-        detalle: `No se pudieron guardar los datos de «${c.name}»: ` +
+        detalle: `La caja no deja guardar los datos de «${c.name}»: ` +
                  `«${motivo ?? "sin motivo"}». Ya hay otro cliente que cuenta como ` +
                  `la misma persona. Únelos o distínguelos a mano.`,
         datos: { customer_id: c.customer_id, erp_id: erpId, motivo },
@@ -394,7 +394,7 @@ Deno.serve(async (req) => {
         if (!Object.keys(ficha.campos).length) {
           aRevisar.push({
             erp_id: erpId, name: c.name, motivo: "erp_id_inexistente",
-            detalle: `El número interno ${erpId} no existe. ` +
+            detalle: `El número interno ${erpId} no existe en la caja. ` +
                      `Averigua cuál es ` +
                      `el número correcto de «${c.name}» o dalo de baja.`,
             datos: { customer_id: c.customer_id, erp_id: erpId },

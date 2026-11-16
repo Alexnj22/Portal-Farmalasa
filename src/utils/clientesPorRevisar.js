@@ -17,7 +17,7 @@ export const motivoPorRevisar = (m) => MOTIVO_POR_REVISAR[m] || { label: m, vari
 /** El orden de la lista de clientes: las columnas que el servidor sabe ordenar. */
 export const ORDEN_CLIENTES = [
     { value: 'nombre', label: 'Nombre', dir: 'asc' },
-    { value: 'ficha', label: 'Ficha', dir: 'asc' },
+    { value: 'ficha', label: 'Número de cliente', dir: 'asc' },
     { value: 'facturas', label: 'Más facturas', dir: 'desc' },
     { value: 'total', label: 'Más facturado', dir: 'desc' },
     { value: 'ultima', label: 'Compra más reciente', dir: 'desc' },

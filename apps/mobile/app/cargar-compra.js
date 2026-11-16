@@ -160,7 +160,7 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16 }}>
         <Cuenta rotulo={ESTADOS.find((e) => e.id === estado)?.label} valor={filas ? t.preguntas : null} sub="productos distintos" />
-        <Cuenta rotulo="Líneas de factura" valor={filas ? t.renglones : null} sub="que destraban" />
+        <Cuenta rotulo="Productos de la factura" valor={filas ? t.renglones : null} sub="que destraban" />
         {estado === 'pendientes' ? <Cuenta rotulo="Sin candidato" valor={filas ? t.sinCandidato : null} sub="a mano" color={t.sinCandidato ? MARCA.ambar : undefined} /> : null}
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}

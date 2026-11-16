@@ -704,7 +704,7 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
                 <StatCard icon={RESUMEN[estado].icon} label={RESUMEN[estado].label}
                     value={totales.preguntas} sub="productos distintos"
                     loading={filas === null} tono="brand" />
-                <StatCard icon={Layers} label="Líneas de factura" value={totales.renglones}
+                <StatCard icon={Layers} label="Productos de la factura" value={totales.renglones}
                     sub={RESUMEN[estado].renglones} loading={filas === null} tono="brand" />
                 {/* «Sin candidato» sólo dice algo de lo que falta contestar. En
                     los otros estados sería un número que nadie va a accionar. */}

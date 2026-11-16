@@ -53,7 +53,7 @@ import { useCuenta } from '../lib/cuenta';
 import { estadoAvisosWeb, pedirTokenDeAvisos, recordarAvisos } from '../lib/avisos';
 import { conBiometria, nombreBiometria, sinBloquear, useBloqueo } from '../lib/bloqueo';
 import { marcarGuiaVista, usePresentacion } from '../lib/novedades';
-import { aceptadoEnTelefono, aceptarDocumentos, documentosVigentes, ultimaAceptacion, useAceptacion } from '../lib/aceptacion';
+import { aceptadoEnTelefono, aceptarDocumentos, documentosVigentes, estadoDeCuenta, ultimaAceptacion, useAceptacion } from '../lib/aceptacion';
 import { LIVIANO } from '../lib/rendimiento';
 import { agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../modules/wallet';
 
@@ -119,7 +119,11 @@ export default function Guia() {
       const v = (await documentosVigentes()) ?? useAceptacion.getState().vigentes;
       if (v) {
         setVigentes(v);
-        if (await aceptadoEnTelefono(v)) { setYaAceptado(true); setLeidos(TODO); setMarcas(TODO); }
+        if (await aceptadoEnTelefono(v)) { setYaAceptado(true); setLeidos(TODO); setMarcas(TODO); return; }
+        // En otro equipo no hay copia local, pero lo aceptado es de la CUENTA
+        // (2026-11-16): se le pregunta al servidor antes de pedirlo de nuevo.
+        const e = await estadoDeCuenta();
+        if (e?.aceptado) { setYaAceptado(true); setLeidos(TODO); setMarcas(TODO); }
         return;
       }
       // Sin conexión y sin versiones: vale lo que esta sesión ya aceptó aquí.

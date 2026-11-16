@@ -16,6 +16,7 @@ import { PRECIOS } from './Mayorista';
 import { Confeti } from './animacion';
 import { Momento, vibrarMomento } from './momentos';
 import Icono from './Icono';
+import { cuentaConocida } from '../lib/aceptacion';
 
 // Mayoreo (2026-10-09): la misma pantalla celebra también subir de RANGO
 // (Jade → Zafiro → Rubí → Diamante), pasar de precio Mayoreo a Mayoreo Plus
@@ -87,9 +88,12 @@ export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, 
   useEffect(() => {
     if (!nivel?.clave || !activos) return;
     let vivo = true;
-    leer(CLAVE).then((ultimo) => {
+    // Sin nada anotado en este equipo, una cuenta que ya pasó por la app en
+    // otro no ve «Tu nivel» (2026-11-16): ya lo conoce. Sólo se anota.
+    leer(CLAVE).then(async (ultimo) => {
+      const conocida = !ultimo && await cuentaConocida();
       if (!vivo) return;
-      if (!ultimo) poner(pantallaTuNivel(nivel));
+      if (!ultimo) { if (!conocida) poner(pantallaTuNivel(nivel)); }
       else if ((ORDEN[nivel.clave] ?? 0) > (ORDEN[ultimo] ?? 0)) poner(pantallaNivel(nivel));
       if (ultimo !== nivel.clave) guardar(CLAVE, nivel.clave);
     });
@@ -100,11 +104,13 @@ export default function SubisteDeNivel({ nivel, forzar = false, mayoreo = null, 
   useEffect(() => {
     if (!mayoreo?.clave) return;
     let vivo = true;
-    Promise.all([leer(CLAVE_BIENVENIDA), leer(CLAVE_RANGO), leer(CLAVE_PRECIO)]).then(([vista, ultRango, ultPrecio]) => {
+    Promise.all([leer(CLAVE_BIENVENIDA), leer(CLAVE_RANGO), leer(CLAVE_PRECIO)]).then(async ([vista, ultRango, ultPrecio]) => {
+      const conocida = !vista && await cuentaConocida();
       if (!vivo) return;
       if (!vista) {
         // La bienvenida ya cuenta el rango y el precio: no se celebran aparte.
-        if (reciente(mayoreo.aprobadoDesde)) poner(pantallaBienvenida(mayoreo));
+        // Tampoco a quien ya usó la app en otro equipo (2026-11-16).
+        if (!conocida && reciente(mayoreo.aprobadoDesde)) poner(pantallaBienvenida(mayoreo));
         guardar(CLAVE_BIENVENIDA, '1');
       } else {
         if (ultRango && (ORDEN_RANGO[mayoreo.clave] ?? 0) > (ORDEN_RANGO[ultRango] ?? 0)) poner(pantallaRango(mayoreo));

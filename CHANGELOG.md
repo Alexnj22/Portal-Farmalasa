@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.3 — La app de clientes ya no repite la bienvenida al entrar en otro equipo
+
+- Entrar con la misma cuenta en otra computadora o en otro teléfono mostraba
+  de nuevo la guía completa, pedía **otra vez** aceptar el reglamento y el
+  aviso de privacidad, y abría «Tu nivel» y la bienvenida de mayoreo. La causa:
+  lo visto se recordaba sólo en el equipo, y la guía no le preguntaba al
+  servidor lo que la cuenta ya había aceptado.
+- `documentos_estado` (app-clientes) devuelve `conocida`: la cuenta aceptó
+  alguna versión antes. Con eso, la guía no se abre a quien ya la pasó en otro
+  equipo, la página de reglas sale ya aceptada si la cuenta lo aceptó, y «Tu
+  nivel» y la bienvenida de mayoreo sólo se anotan sin mostrarse. Si el
+  reglamento cambia de versión, se sigue pidiendo (sólo esa página).
+- Una consulta por sesión, compartida (`estadoDeCuenta` en
+  `apps/clientes/lib/aceptacion.js`). Sin conexión o con un servidor viejo,
+  queda como antes.
+
 ## v2.1550.2 — La ficha del cliente se completa con lo que dio en la app
 
 - Al vincularse un pre-registro de la app a una ficha existente, el correo y

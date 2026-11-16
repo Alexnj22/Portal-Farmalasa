@@ -1769,9 +1769,14 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           .select("documento, version").or(filtro).in("documento", ["reglamento", "aviso"]).limit(200);
         if (error) throw error;
         const tiene = (d: string, v: string) => (data ?? []).some((f: any) => f.documento === d && f.version === v);
+        // `conocida` (2026-11-16): la cuenta aceptó ALGUNA versión antes, o sea
+        // que ya pasó por la bienvenida en otro teléfono o navegador. La app lo
+        // usa para no repetirle la guía ni «Tu nivel» al entrar en otro equipo
+        // (lo que se ve se recuerda por equipo; lo aceptado, por cuenta).
         return json({
           ok: true, documentos: DOCUMENTOS_VIGENTES,
           aceptado: tiene("reglamento", DOCUMENTOS_VIGENTES.reglamento) && tiene("aviso", DOCUMENTOS_VIGENTES.aviso),
+          conocida: (data ?? []).length > 0,
         });
       }
       // Se acepta lo que la persona tenía delante: si la app trae otra versión

@@ -30,8 +30,8 @@ import { esRespuestaDeAviso } from '../lib/avisos';
 import AvisoSinConexion from '../componentes/AvisoSinConexion';
 import HojasAndroid, { instalarHojasAndroid } from '../componentes/HojasAndroid';
 import NovedadesHoja from '../componentes/NovedadesHoja';
-import { guiaVista, revisarAlAbrir, usePresentacion } from '../lib/novedades';
-import { revisarAceptacion, useAceptacion } from '../lib/aceptacion';
+import { guiaVista, marcarGuiaVista, revisarAlAbrir, usePresentacion } from '../lib/novedades';
+import { cuentaConocida, revisarAceptacion, useAceptacion } from '../lib/aceptacion';
 import { revisarActualizacion } from '../lib/actualizacion';
 import { vigilarActualizacionesPorAire } from '../lib/actualizacionAire';
 
@@ -200,6 +200,15 @@ function AbrirAviso() {
 // Las dos esperan a que se vean las pestañas y a que no esté el bloqueo
 // encima: así no tapan el login, la pantalla de Face ID ni una oferta abierta
 // desde un aviso.
+// La guía sale una vez por equipo, pero no a una cuenta que ya la pasó en otro
+// (2026-11-16): ésa sólo revisa si el reglamento cambió. Si el servidor no
+// contesta, vale lo de antes (la guía, que trae la aceptación).
+async function abrirBienvenida() {
+  if (await guiaVista()) { revisarAceptacion(); return; }
+  if (await cuentaConocida()) { await marcarGuiaVista(); revisarAceptacion(); return; }
+  usePresentacion.getState().pedirGuia();
+}
+
 function Presentacion() {
   const token = useSesion((s) => s.token);
   const lista = useSesion((s) => s.lista);
@@ -222,9 +231,7 @@ function Presentacion() {
     // con sesión y al entrar (2026-11-14).
     if (WEB) {
       if (token && inicial.current !== token) {
-        guiaVista().then((vista) => {
-          if (!vista) usePresentacion.getState().pedirGuia(); else revisarAceptacion();
-        });
+        abrirBienvenida();
       }
       inicial.current = token;
       return;
@@ -238,9 +245,7 @@ function Presentacion() {
     const antes = inicial.current;
     inicial.current = token;
     if (!antes && token) {
-      guiaVista().then((vista) => {
-        if (!vista) usePresentacion.getState().pedirGuia(); else revisarAceptacion();
-      });
+      abrirBienvenida();
     }
   }, [lista, token]);
   const enPestanas = segmentos[0] === '(tabs)';

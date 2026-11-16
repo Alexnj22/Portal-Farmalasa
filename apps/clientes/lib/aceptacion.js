@@ -80,6 +80,37 @@ export async function ultimaAceptacion() {
   return local && local.sesion === huella(useSesion.getState().token) ? normal(local) : null;
 }
 
+// Lo que el servidor sabe de ESTA cuenta (2026-11-16, pedido del usuario: «no
+// tiene sentido que acepte todo, me muestre que subí de nivel y demás cuando
+// ya lo sé y ya lo acepté»). La guía, el «Tu nivel» y la bienvenida de mayoreo
+// se recuerdan por equipo; entrar en otro navegador o teléfono los repetía
+// todos, y la guía pedía otra vez el reglamento ya aceptado. Una consulta por
+// sesión, compartida: la piden la raíz, la guía y SubisteDeNivel.
+let estadoCache = { huella: null, promesa: null };
+
+/**
+ * `{ aceptado, conocida, documentos }` de `documentos_estado`, o null si no se
+ * pudo saber (sin conexión, servidor viejo). `conocida`: la cuenta ya aceptó
+ * alguna versión antes, en cualquier equipo. Nunca lanza.
+ */
+export function estadoDeCuenta() {
+  const h = huella(useSesion.getState().token);
+  if (!h) return Promise.resolve(null);
+  if (estadoCache.huella !== h || !estadoCache.promesa) {
+    const promesa = useSesion.getState().pedir('documentos_estado')
+      .then((r) => (r?.ok ? { aceptado: !!r.aceptado, conocida: r.conocida === true, documentos: normal(r.documentos) } : null))
+      .catch(() => null)
+      .then((e) => { if (!e && estadoCache.promesa === promesa) estadoCache = { huella: null, promesa: null }; return e; });
+    estadoCache = { huella: h, promesa };
+  }
+  return estadoCache.promesa;
+}
+
+/** ¿Esta cuenta ya pasó por la bienvenida en algún equipo? false si no se sabe. */
+export async function cuentaConocida() {
+  return (await estadoDeCuenta())?.conocida === true;
+}
+
 /**
  * Al abrir con sesión (o al entrar). Deja `pendiente` en true si hay que pedir
  * la aceptación. Nunca lanza.
@@ -89,9 +120,9 @@ export async function revisarAceptacion() {
     const vigentes = await documentosVigentes();
     if (!vigentes) return false; // sin forma de saberlo: no se molesta
     if (await aceptadoEnTelefono(vigentes)) { useAceptacion.getState().listo(vigentes); return false; }
-    const r = await useSesion.getState().pedir('documentos_estado');
-    if (!r?.ok) return false;
-    const actuales = normal(r.documentos) ?? vigentes;
+    const r = await estadoDeCuenta();
+    if (!r) return false;
+    const actuales = r.documentos ?? vigentes;
     if (r.aceptado) { await guardarLocal(actuales); useAceptacion.getState().listo(actuales); return false; }
     useAceptacion.getState().marcarPendiente(actuales);
     return true;
@@ -117,6 +148,7 @@ export async function aceptarDocumentos(vigentes) {
       mensaje: r?.mensaje ?? 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.' };
   }
   const actuales = normal(r.documentos) ?? vigentes;
+  estadoCache = { huella: null, promesa: null };
   await guardarLocal(actuales);
   useAceptacion.getState().listo(actuales);
   return { ok: true, documentos: actuales };

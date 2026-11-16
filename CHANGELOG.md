@@ -23,7 +23,9 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1559.3 — Preventa: dos viñetas del mismo empaque y crear cliente con lo buscado
 
-_(pendiente de redactar)_
+- Un producto con dos viñetas del mismo empaque (CAJA $10.61 y CAJA $10.65) muestra las dos en Presentación. Por defecto va la más alta; la que elijas es la que recibe caja.
+- Si buscas un cliente por DUI, teléfono o nombre y no aparece, sale «Crear cliente con …» y la ficha nueva empieza con ese dato.
+- En la ficha del cliente, el nombre y la dirección se escriben en mayúscula.
 
 ## v2.1559.2 — Lenguaje: decisiones en la tabla
 

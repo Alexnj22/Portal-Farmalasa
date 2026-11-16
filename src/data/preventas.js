@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { firmarRutas } from './chatClientes';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La vista Preventa (2026-11-16). La base cotiza y decide; la función
@@ -18,7 +19,23 @@ export async function cotizarPreventa(branchId, customerId, lineas) {
 export async function fetchClienteDePreventa(branchId, customerId) {
     const { data, error } = await supabase.rpc('preventa_cliente', { p_branch: Number(branchId), p_customer: Number(customerId) });
     if (error) throw error;
-    return data;
+    if (!data?.foto_ruta) return data ? { ...data, foto: null } : data;
+    // La foto que subió desde la app. Si no se puede firmar, va sin foto.
+    const firmadas = await firmarRutas([data.foto_ruta]);
+    return { ...data, foto: firmadas.get(data.foto_ruta) ?? null };
+}
+
+/**
+ * La foto de cada producto, `Map<id, url>`. Para los que entran sin pasar por
+ * el buscador (corregir, repetir, un borrador viejo). `id` es único y son ≤30.
+ * Si falla, sin fotos: no detiene la venta.
+ */
+export async function fotosDeProductos(ids) {
+    const unicos = [...new Set((ids ?? []).map(Number).filter(Boolean))];
+    if (!unicos.length) return new Map();
+    const { data, error } = await supabase.from('products').select('id, foto_url').in('id', unicos);
+    if (error) { console.error('preventas.js: fotos de productos', error); return new Map(); }
+    return new Map((data ?? []).filter((p) => p.foto_url).map((p) => [Number(p.id), p.foto_url]));
 }
 
 /** Las preventas de la sucursal, de hoy hacia atrás `dias` días. Lanza si la base falla. */

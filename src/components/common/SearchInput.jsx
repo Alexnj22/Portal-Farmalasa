@@ -36,6 +36,13 @@ import { useSearchToggle } from '../../plataforma/useSearchToggle';
  *   accentColor  – hex de categoría (CATEGORY_META) para el ícono cuando
  *                  está colapsado — nunca azul genérico, se integra con el
  *                  color del propio widget. Solo aplica con expandable.
+ *   combobox     – `{ lista, abierto, activo }` (2026-11-16, Preventa). Para
+ *                  un buscador con lista de resultados que se recorre con
+ *                  ↑ ↓: el campo se anuncia como combobox, `lista` es el id
+ *                  del `role="listbox"` y `activo` el id de la opción
+ *                  resaltada. El foco se queda en el campo. Sólo sin
+ *                  `expandable`. Hasta ese día, además, el campo normal no
+ *                  llevaba `aria-label` aunque se pasara `ariaLabel`.
  *
  * ref — se resuelve al <input> real (forwardRef), para callers que
  * necesitan enfocarlo programáticamente (ej. `searchRef.current?.focus()`
@@ -54,6 +61,8 @@ const SearchInput = forwardRef(function SearchInput({
     expandable = false,
     accentColor,
     ariaLabel,
+    combobox = null,
+    id,
 }, forwardedRef) {
     const inputRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
@@ -147,12 +156,18 @@ const SearchInput = forwardRef(function SearchInput({
                 : <Search size={s.icon} strokeWidth={2.5} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand-text pointer-events-none shrink-0`} />}
             <input
                 ref={inputRef}
+                id={id}
                 type="text"
                 data-surface="input"
                 value={value}
                 onChange={e => onChange?.(e.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder={placeholder}
+                aria-label={ariaLabel ?? placeholder}
+                {...(combobox ? {
+                    role: 'combobox', 'aria-autocomplete': 'list', 'aria-controls': combobox.lista,
+                    'aria-expanded': Boolean(combobox.abierto), 'aria-activedescendant': combobox.activo || undefined,
+                } : {})}
                 autoComplete="off"
                 autoFocus={autoFocus}
                 disabled={disabled}

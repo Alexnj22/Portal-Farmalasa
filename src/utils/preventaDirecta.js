@@ -58,7 +58,10 @@ export const MAX_PRODUCTOS = 30;
 
 /** Un producto nuevo en la venta: 1 de la presentación más chica, salvo que se diga otra. */
 export function lineaNueva(producto, factor = 1) {
-    return { producto_id: Number(producto.id), nombre: producto.nombre ?? '', factor: Number(factor) || 1, cantidad: 1, lista: null };
+    return {
+        producto_id: Number(producto.id), nombre: producto.nombre ?? '', factor: Number(factor) || 1, cantidad: 1, lista: null,
+        foto_url: producto.foto_url ?? null,
+    };
 }
 
 /** Lo que viaja a la base: sólo producto, presentación, cantidad y la lista autorizada. */

@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1556.0 — Preventa: fotos, sucursal en la píldora y todo con el teclado
+
+Cuarta vuelta de Preventa, pedida por el usuario («moderno, fácil, eficiente,
+intuitivo, que funcione con las teclas y los focus estén donde deben»).
+
+- **Sucursal** en la píldora del cuerpo (`FilterBar.Sucursal`) para quien ve
+  todas, junto a las acciones de la vista (Otras sucursales, Apartar o
+  encargar, Vaciar; en Preventas, el período y Actualizar).
+- **Foto del cliente**, la que sube desde la app, dentro del aro de su nivel
+  (`ClienteAvatar`, el del chat). `preventa_cliente` devuelve `foto_ruta` y
+  el navegador la firma; la policy de `app-clientes-archivos` deja leer
+  `perfil/` también a quien tiene `preventa` (migración
+  `20261116204531_preventa_foto_cliente`).
+- **Foto de cada producto** en el buscador y en las filas
+  (`fotosDeProductos` para los que entran al corregir o repetir).
+- **Teclado**, con las mismas teclas que la caja y la venta de Distribución:
+  F2 / F8 / Ctrl+Enter enviar, F3 o `/` buscar producto, F4 cliente, F6
+  vaciar (confirma), F7 existencia en otras sucursales, Supr quitar. En los
+  buscadores ↑ ↓ y Enter (combobox accesible); en las filas ← → y ↑ ↓ como
+  en una hoja. Guía de teclas en el resumen.
+- **Foco**: al entrar, al primer buscador que falta; al elegir cliente, a
+  productos; al agregar uno, a su cantidad (Enter vuelve al buscador); al
+  quitar o cerrar un diálogo, al buscador; al enviar, a «Nueva preventa». En
+  pantallas táctiles no se enfoca nada solo.
+- `SearchInput`: acepta `id` y `combobox`, y el campo normal ahora sí lleva
+  el `aria-label` que se le pasa.
+
 ## v2.1555.3 — Conteo en la app: abre más rápido
 
 Bodega: «abrí bodega desde la app y tardó 1 a 3 s en cargar los productos».

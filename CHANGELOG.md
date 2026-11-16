@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1560.0 — Preventa: el cobro de comisiones con el monto del correo
+
+- COMISIONES POR SERVICIO DE CORRESPONSAL se cobra desde la preventa: escribes el monto (neto + IVA) o pegas el correo y el portal lo suma. Al enviar, el portal pone ese precio en el producto, confirma que quedó y lo manda a caja. Sólo administración y con crédito fiscal.
+- Si un producto tiene dos viñetas iguales en el mismo empaque, Presentación muestra una sola.
+
 ## v2.1559.5 — Lenguaje: conteos dicen Sistema
 
 - Conteos de inventario: vuelven a decir «el sistema» (columna Sistema / Físico), como decidió el usuario. Anotado en la tabla de vocabulario.

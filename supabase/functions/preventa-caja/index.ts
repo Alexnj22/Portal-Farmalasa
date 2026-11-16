@@ -3,6 +3,8 @@ import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_
 import { getCortesCreds } from "../_shared/creditos.ts";
 import { borrarPreventaDeLaCaja, enviarPreventaALaCaja, preventaVivaEnLaCaja, sesionDeCaja } from "../_shared/preventaCaja.ts";
 import { armarVenta } from "../../../src/utils/preventa.js";
+import { login as entrarAlSistema } from "../_shared/erp-dte.ts";
+import { fijarVineta } from "../_shared/erp-regulado.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PREVENTA DE UNA RESERVA — dejar la venta lista en la caja (2026-10-21).
@@ -220,6 +222,28 @@ async function directa(
     return await fallar(venta.cliente.motivo === "nombre_con_tilde"
       ? "El nombre del cliente lleva tilde o Ñ y así no se puede emitir a su nombre. Corrígelo en sus datos."
       : "El cliente todavía no tiene número. Espera unos minutos o revísalo en Clientes.", 409);
+  }
+
+  // Cobro con monto (2026-11-16): el monto que escribió administración es el
+  // precio de esa presentación en la ficha del producto; se pone y se relee
+  // ANTES de mandar, para que la caja lo encuentre entre sus precios. La base
+  // ya decidió quién puede (`preventa_directa_preparar`).
+  const cobros = (datos.renglones ?? []).filter((r: { cobro_con_monto?: boolean }) => r.cobro_con_monto);
+  if (cobros.length) {
+    const { data: filas, error: eCob } = await admin.from("preventa_cobros_con_monto")
+      .select("product_id, id_pres_prod_erp").in("product_id", cobros.map((r: { producto_id: number }) => Number(r.producto_id)));
+    if (eCob) return await fallar("No se pudo leer qué presentación lleva el monto.", 503);
+    try {
+      const cookie = await entrarAlSistema();
+      for (const r of cobros) {
+        const f = (filas ?? []).find((x) => Number(x.product_id) === Number(r.producto_id));
+        if (!f) throw new Error(`«${r.nombre}» no dice qué presentación lleva el monto.`);
+        await fijarVineta(cookie, Number(r.producto_id), String(f.id_pres_prod_erp), Number(r.precio_unitario));
+      }
+    } catch (e) {
+      console.error("[preventa-caja] cobro con monto:", (e as Error).message);
+      return await fallar((e as Error).message, 502, venta);
+    }
   }
 
   let resultado;

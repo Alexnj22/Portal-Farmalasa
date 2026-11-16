@@ -935,7 +935,7 @@ export const AREAS = [
                  // cliente cuando reserva de más (2026-10-19).
                  'producto_cantidad_habitual',
                  // La preventa de una reserva enviada a caja (2026-10-21).
-                 'preventas',
+                 'preventas', 'preventa_cobros_con_monto',
                  // Frases del día cargadas en el portal (2026-11-03).
                  'app_frases',
                  // El libro del saldo a favor: usos (pasados a puntos), devoluciones y vencimientos (2026-10-21).

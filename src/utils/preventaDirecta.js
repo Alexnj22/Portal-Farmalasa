@@ -69,6 +69,7 @@ export const lineasParaCotizar = (lineas) => (lineas ?? []).map((l) => ({
     producto_id: l.producto_id, factor: l.factor, cantidad: Number(l.cantidad) || 0,
     ...(l.lista ? { lista: l.lista } : {}),
     ...(l.presentacion ? { presentacion: l.presentacion } : {}),
+    ...(l.monto != null && l.monto !== '' && Number(l.monto) > 0 ? { monto: Math.round(Number(l.monto) * 100) / 100 } : {}),
 }));
 
 /**
@@ -78,8 +79,16 @@ export const lineasParaCotizar = (lineas) => (lineas ?? []).map((l) => ({
  * `leer(valor)` devuelve el cambio para la línea: `{ factor, presentacion }`.
  */
 export function opcionesDePresentacion(fila, linea) {
-    const lista = fila?.presentaciones?.length ? fila.presentaciones : null;
-    if (!lista) {
+    // Dos filas con las mismas unidades Y la misma viñeta son la misma opción:
+    // se muestra una sola (2026-11-16, CARDIOZAR FORTE: CAJA $33.00 dos veces).
+    const vistas = new Set();
+    const lista = (fila?.presentaciones ?? []).filter((p) => {
+        const k = `${p.factor}|${Number(p.vineta ?? 0).toFixed(2)}`;
+        if (vistas.has(k)) return false;
+        vistas.add(k);
+        return true;
+    });
+    if (!lista.length) {
         const v = String(linea.factor);
         return { options: [{ value: v, label: fila ? 'Sin precio' : '…' }], value: v, leer: () => ({}) };
     }
@@ -131,6 +140,8 @@ export function faltaParaEnviar({ lineas, cotizacion, cotizando, documento, pago
     if (cotizando || !cotizacion) return { texto: 'Revisando precios y existencia…', campo: null };
     const mala = (cotizacion.lineas ?? []).find((l) => l.error);
     if (mala) return { texto: `${mala.nombre ?? 'Un producto'}: ${mala.error}`, campo: `linea-${mala.producto_id}-${mala.factor}` };
+    const cobro = (cotizacion.lineas ?? []).find((l) => l.cobro_con_monto);
+    if (cobro && documento !== 'credito_fiscal') return { texto: `${cobro.nombre ?? 'Este cobro'} va con crédito fiscal.`, campo: null };
     if (documento === 'credito_fiscal') {
         const f = faltanParaCcf(cotizacion.cliente);
         if (f.length) return { texto: `Para crédito fiscal le falta al cliente: ${f.join(', ')}.`, campo: 'cliente' };
@@ -165,7 +176,30 @@ export function lineasDeVenta(venta) {
         producto_id: Number(r.producto_id), nombre: String(r.nombre ?? ''),
         factor: Number(r.factor) || 1, cantidad: Number(r.cantidad) || 1, lista: null,
         lote: r.lote?.nombre ? { lote: r.lote.nombre, vence: r.lote.vence ?? null } : null,
+        ...(r.cobro_con_monto && r.precio != null ? { monto: Number(r.precio).toFixed(2) } : {}),
     }));
+}
+
+/**
+ * El monto de un cobro con monto (2026-11-16): neto + IVA. Acepta el correo
+ * pegado tal cual («El Valor Neto es: $345.29 / El IVA es: $44.89 …») o un
+ * número. Devuelve `{ monto, neto, iva }` con el monto en texto de 2
+ * decimales, o null si no se entiende.
+ */
+export function montoDelCorreo(texto) {
+    const t = String(texto ?? '');
+    const leer = (re) => {
+        const m = re.exec(t);
+        return m ? Number(m[1].replace(/,/g, '')) : null;
+    };
+    const neto = leer(/valor\s+neto[^$\d]*\$?\s*([\d,]+(?:\.\d{1,2})?)/i);
+    const iva = leer(/(?:^|[^n])\biva\s+es[^$\d]*\$?\s*([\d,]+(?:\.\d{1,2})?)/im);
+    if (neto != null && iva != null) {
+        return { monto: (Math.round((neto + iva) * 100) / 100).toFixed(2), neto, iva };
+    }
+    const solo = t.trim().replace(/[$\s,]/g, '');
+    if (/^\d{1,5}(\.\d{1,2})?$/.test(solo)) return { monto: Number(solo).toFixed(2), neto: null, iva: null };
+    return null;
 }
 
 /** Cómo se llama el programa del cliente en pantalla. */
@@ -245,6 +279,9 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
                     { id: 'apartar', label: 'Apartar' },
                     { id: 'quitar', label: 'Quitar' },
                 ] });
+        } else if (l.cobro_con_monto && /monto/i.test(l.error)) {
+            out.push({ ...base, tipo: 'precio', titulo: `${nombre}: escribe el monto.`,
+                ayuda: 'Neto más IVA. Puedes pegar el correo en la casilla.', acciones: [{ id: 'quitar', label: 'Quitar' }] });
         } else if (/cantidad/i.test(l.error)) {
             out.push({ ...base, tipo: 'cantidad', titulo: `${nombre}: escribe una cantidad.`, ayuda: 'Va de 1 a 999.',
                 acciones: [{ id: 'ajustar', label: 'Poner 1', valor: 1 }, { id: 'quitar', label: 'Quitar' }] });
@@ -260,6 +297,11 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
             out.push({ ...base, tipo: 'producto', titulo: `${nombre}: ${l.error}`, ayuda: 'No se puede vender. Quítalo de la venta.',
                 acciones: [{ id: 'quitar', label: 'Quitar' }] });
         }
+    }
+    const cobro = (cotizacion?.lineas ?? []).find((l) => l.cobro_con_monto);
+    if (cobro && documento !== 'credito_fiscal') {
+        out.push({ clave: 'cobro-ccf', campo: 'documento', titulo: `${cobro.nombre ?? 'Este cobro'} va con crédito fiscal.`,
+            ayuda: 'Elige Crédito fiscal y un cliente con NIT y NRC.', acciones: [{ id: 'ccf', label: 'Crédito fiscal' }] });
     }
     if (documento === 'credito_fiscal') {
         const f = faltanParaCcf(hayCliente ? cotizacion.cliente : null);

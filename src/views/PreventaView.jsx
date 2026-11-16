@@ -33,7 +33,7 @@ import {
 } from '@nucleo/data/preventas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
-    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
+    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, montoDelCorreo, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
     porQueEsaLista, problemasDeVenta, sePuedeAnular, sePuedeCorregir, totalesDe, vencePronto,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -291,6 +291,7 @@ export default function PreventaView({ openModal }) {
             case 'editar': editarCliente(); break;
             case 'cliente': setFoco({ id: ID_BUSCAR_CLIENTE }); break;
             case 'factura': cambiar({ documento: 'consumidor_final' }); break;
+            case 'ccf': cambiar({ documento: 'credito_fiscal' }); break;
             case 'contado': cambiar({ pago: 'contado' }); break;
             case 'puntos': cambiar({ puntos: a.valor ? String(a.valor) : '' }); break;
             case 'reintentar': setVuelta((n) => n + 1); break;
@@ -1131,7 +1132,19 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             onClick={() => onCambiar({ cantidad: Math.min(999, cant + 1) })} />
                     </div>
                     <div className="max-md:min-w-[9rem] max-md:flex-1 md:w-full md:min-w-0" data-col="2">
-                        {fila && !opcionesPrecio.length ? (
+                        {fila?.cobro_con_monto ? (
+                            // Cobro con monto: lo escribe administración (neto + IVA), o pega el correo.
+                            <PortalInput compact prefix="$" inputMode="decimal" name={`monto-${linea.producto_id}`}
+                                value={linea.monto ?? ''} placeholder="Neto + IVA" aria-label={`Monto de ${nombre}: neto más IVA`}
+                                hasError={problema?.tipo === 'precio'}
+                                onPaste={(e) => {
+                                    const m = montoDelCorreo(e.clipboardData?.getData('text'));
+                                    if (!m) return;
+                                    e.preventDefault();
+                                    onCambiar({ monto: m.monto });
+                                }}
+                                onChange={(e) => onCambiar({ monto: e.target.value.replace(/[^\d.]/g, '').replace(/^(\d{0,5})(\.\d{0,2})?.*$/, '$1$2') })} />
+                        ) : fila && !opcionesPrecio.length ? (
                             <p className="text-body-sm font-semibold text-danger-text">Sin precio</p>
                         ) : puedeAutorizar ? (
                             <LiquidSelect compact clearable={false} value={listaElegida} options={opcionesPrecio} ariaLabel={`Precio de ${nombre}`}

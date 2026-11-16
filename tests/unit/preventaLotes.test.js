@@ -79,3 +79,33 @@ describe('opcionesDePresentacion', () => {
         expect(opcionesDePresentacion(fila, { factor: 10 }).leer('10')).toEqual({ factor: 10, presentacion: null });
     });
 });
+
+describe('opcionesDePresentacion con viñetas iguales', () => {
+    it('la misma viñeta dos veces sale una sola vez', () => {
+        const fila = { presentaciones: [
+            { factor: 30, tipo: 'CAJA', id_presentacion: 9, vineta: 33 },
+            { factor: 30, tipo: 'CAJA', id_presentacion: 227, vineta: 33 },
+        ] };
+        const o = opcionesDePresentacion(fila, { factor: 30 });
+        expect(o.options).toEqual([{ value: '30', label: 'CAJA' }]);
+        expect(o.leer('30')).toEqual({ factor: 30, presentacion: null });
+    });
+});
+
+import { montoDelCorreo } from '@nucleo/utils/preventaDirecta';
+
+describe('montoDelCorreo', () => {
+    it('suma neto e IVA del correo pegado', () => {
+        const t = 'El Valor Neto es: $345.29\n\nEl IVA es: $44.89\n\nLa Retención de IVA es: $3.46\n\nPor un monto total de: $386.72';
+        expect(montoDelCorreo(t)).toEqual({ monto: '390.18', neto: 345.29, iva: 44.89 });
+    });
+    it('un número solo', () => {
+        expect(montoDelCorreo('$1,390.5').monto).toBe('1390.50');
+    });
+    it('otra cosa: nada', () => {
+        expect(montoDelCorreo('hola')).toBeNull();
+    });
+    it('va a la base con el monto', () => {
+        expect(lineasParaCotizar([{ producto_id: 4239, factor: 1, cantidad: 1, monto: '390.18' }])[0].monto).toBe(390.18);
+    });
+});

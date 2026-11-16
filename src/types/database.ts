@@ -22751,6 +22751,42 @@ export type Database = {
         }
         Relationships: []
       }
+      preventa_cobros_con_monto: {
+        Row: {
+          created_at: string
+          id_pres_prod_erp: number
+          presentacion: string
+          product_id: number
+        }
+        Insert: {
+          created_at?: string
+          id_pres_prod_erp: number
+          presentacion?: string
+          product_id: number
+        }
+        Update: {
+          created_at?: string
+          id_pres_prod_erp?: number
+          presentacion?: string
+          product_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventa_cobros_con_monto_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventa_cobros_con_monto_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preventas: {
         Row: {
           anulada_at: string | null

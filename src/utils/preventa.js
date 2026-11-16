@@ -93,6 +93,7 @@ export function armarVenta(datos) {
         precio_normal: r.precio_normal == null ? null : centavos(r.precio_normal),
         lista_precio: r.lista_precio ?? null,
         subtotal: centavos(Number(r.precio_unitario) * Number(r.cantidad)),
+        ...(r.cobro_con_monto ? { cobro_con_monto: true } : {}),
     }));
     if (!renglones.length) throw new Error('La preventa no tiene productos.');
     for (const r of renglones) {

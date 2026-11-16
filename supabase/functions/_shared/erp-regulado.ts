@@ -232,3 +232,51 @@ export async function habilitarProducto(cookie: string, id: number): Promise<Fic
     throw new Error(`Los datos de ${antes.nombre} quedaron distintos en algo más que la habilitación.`);
   return despues;
 }
+
+/**
+ * Pone la VIÑETA (precio0) de una presentación y lo VERIFICA releyendo
+ * (2026-11-16). Para los cobros con monto de la preventa (COMISIONES POR
+ * SERVICIO DE CORRESPONSAL): el monto del mes es su precio. Mismo sobre y
+ * misma verificación que `fijarCosto`: todo lo demás tiene que quedar igual.
+ * Los otros precios no se recalculan (los «precios automáticos» los hace el
+ * navegador del sistema, no el servidor).
+ */
+export async function fijarVineta(
+  cookie: string, id: number, idPrp: string, precio: number, opc: { aunqueSeaIgual?: boolean } = {},
+): Promise<Ficha> {
+  if (!(precio > 0) || precio > 99999.99) throw new Error("El monto va de $0.01 a $99,999.99.");
+  const antes = await leerFichaDe(cookie, id);
+  if (antes.conUbi) throw new Error(`Los datos del producto ${id} traen campos que el portal no conoce.`);
+  const k = antes.presentaciones.findIndex((p) => p.exis && p.id_prp === idPrp);
+  if (k < 0) throw new Error(`La presentación ${idPrp} no está en los datos de ${antes.nombre}.`);
+  if (antes.presentaciones[k].oculta) throw new Error(`La presentación de ${antes.nombre} está oculta.`);
+  // Igual que ya está: no se escribe. `aunqueSeaIgual` manda el sobre igual —
+  // es la prueba de que el sobre reproduce la ficha sin cambiar nada.
+  if (!opc.aunqueSeaIgual && Math.abs(parseFloat(antes.presentaciones[k].precios[0]) - precio) < 0.00005) return antes;
+
+  const texto = precio.toFixed(4);
+  const nueva: Ficha = {
+    ...antes,
+    presentaciones: antes.presentaciones.map((p, i) =>
+      (i === k ? { ...p, precios: p.precios.map((x, j) => (j === 0 ? texto : x)) } : p)),
+  };
+
+  let resp = "";
+  try {
+    resp = await pedir(cookie, EDITAR, sobreDeEdicion(nueva, antes.regulado),
+      { extra: { Referer: `${BASE}/admin_producto.php` }, reintentos: 1 });
+  } catch { /* se decide abajo con la relectura */ }
+  let j: { typeinfo?: string; msg?: string } | null = null;
+  try { j = JSON.parse(resp); } catch { /* idem */ }
+
+  const despues = await leerFichaDe(cookie, id);
+  const quedo = despues.presentaciones.find((p) => p.id_prp === idPrp);
+  if (!quedo || Math.abs(parseFloat(quedo.precios[0]) - precio) > 0.00005)
+    throw new Error(`El sistema no guardó el precio de ${antes.nombre}: ${(j?.msg ?? resp.slice(0, 160)) || "sin respuesta"}`);
+  const sinVineta = (f: Ficha) => JSON.stringify({
+    ...f, presentaciones: f.presentaciones.map((p) => (p.id_prp === idPrp ? { ...p, precios: ["", ...p.precios.slice(1)] } : p)),
+  });
+  if (sinVineta(despues) !== sinVineta(antes))
+    throw new Error(`Los datos de ${antes.nombre} quedaron distintos en algo más que el precio.`);
+  return despues;
+}

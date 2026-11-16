@@ -463,7 +463,7 @@ export default function PreventaView({ openModal }) {
                                         </p>
                                     ) : (
                                         <div className="space-y-1" onKeyDown={navegarRenglones}>
-                                            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_112px_150px_80px_32px] gap-2 pl-3 pr-1 text-micro font-black text-content-3 uppercase tracking-widest">
+                                            <div className="max-md:hidden grid grid-cols-[minmax(0,1fr)_150px_112px_224px_84px_32px] gap-2 pl-3 pr-1 text-micro font-black text-content-3 uppercase tracking-widest">
                                                 <span>Producto</span><span>Presentación</span><span className="text-center">Cantidad</span>
                                                 <span>Precio</span><span className="text-right">Subtotal</span><span />
                                             </div>
@@ -1063,18 +1063,17 @@ function Linea({ indice, linea, fila, foto, cotizando, problema, puedeAutorizar,
         .map((p) => ({ value: String(p.factor), label: p.tipo }));
     const cant = Number(linea.cantidad) || 0;
     const opciones = opcionesDePrecio(fila?.precios);
-    const precioCliente = fila && !linea.lista ? fila.precio : null;
-    const opcionesPrecio = [
-        { value: '', label: `Del cliente${precioCliente != null ? ` · ${formatMoney(precioCliente)}` : ''}` },
-        ...opciones.map((o) => ({ value: o.lista, label: `${o.nombre} · ${formatMoney(o.precio)}` })),
-    ];
+    // El precio que le toca al cliente sale ya marcado; elegir otro lo
+    // autoriza, y volver al suyo quita la autorización (`lista: null`).
+    const opcionesPrecio = opciones.map((o) => ({ value: o.lista, label: `${o.nombre} · ${formatMoney(o.precio)}` }));
+    const listaElegida = linea.lista ?? fila?.lista ?? listaCliente ?? '';
     const nombre = fila?.nombre ?? linea.nombre;
     const malaCantidad = problema && (problema.tipo === 'existencia' || problema.tipo === 'cantidad');
     return (
         <div data-fila={indice} data-campo={`linea-${linea.producto_id}-${linea.factor}`}
             className={`rounded-lg border-l-[3px] py-1.5 pl-2 pr-1 transition-colors ${problema
                 ? 'border-danger bg-danger/5' : 'border-transparent focus-within:bg-brand/5 hover:bg-surface-card-hover'}`}>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_120px_112px_150px_80px_32px] gap-x-2 gap-y-1.5 items-center">
+            <div className="grid max-md:grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_150px_112px_224px_84px_32px] gap-x-2 gap-y-1.5 items-center">
                 <div className="min-w-0 flex items-center gap-2">
                     <Miniatura src={foto} />
                     <div className="min-w-0">
@@ -1086,13 +1085,13 @@ function Linea({ indice, linea, fila, foto, cotizando, problema, puedeAutorizar,
                         </p>
                     </div>
                 </div>
-                <Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre}`} onClick={onQuitar} className="md:hidden" />
-                <div className="col-span-2 md:col-span-1 flex flex-wrap md:contents items-center gap-2">
-                    <div className="w-32 md:w-auto" data-col="0">
-                        <LiquidSelect clearable={false} value={String(linea.factor)} options={presentaciones} ariaLabel={`Presentación de ${nombre}`}
+                <span className="md:hidden"><Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre}`} onClick={onQuitar} /></span>
+                <div className="max-md:col-span-2 max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-2 md:contents">
+                    <div className="max-md:w-32 md:w-full min-w-0" data-col="0">
+                        <LiquidSelect compact clearable={false} value={String(linea.factor)} options={presentaciones} ariaLabel={`Presentación de ${nombre}`}
                             invalid={problema?.tipo === 'precio'} disabled={presentaciones.length < 2} onChange={(v) => onCambiar({ factor: Number(v) || 1 })} />
                     </div>
-                    <div className="flex items-center gap-0.5" data-col="1">
+                    <div className="flex items-center justify-center gap-0.5 min-w-0" data-col="1">
                         <Button size="xs" variant="ghost" icon={Minus} iconOnly aria-label="Una menos" tabIndex={-1}
                             onClick={() => onCambiar({ cantidad: Math.max(1, cant - 1) })} />
                         <div className="w-14">
@@ -1105,10 +1104,10 @@ function Linea({ indice, linea, fila, foto, cotizando, problema, puedeAutorizar,
                         <Button size="xs" variant="ghost" icon={Plus} iconOnly aria-label="Una más" tabIndex={-1}
                             onClick={() => onCambiar({ cantidad: Math.min(999, cant + 1) })} />
                     </div>
-                    <div className="min-w-[9rem] flex-1 md:flex-none" data-col="2">
+                    <div className="max-md:min-w-[9rem] max-md:flex-1 md:w-full md:min-w-0" data-col="2">
                         {puedeAutorizar ? (
-                            <LiquidSelect clearable={false} value={linea.lista ?? ''} options={opcionesPrecio} ariaLabel={`Precio de ${nombre}`}
-                                onChange={(v) => onCambiar({ lista: v || null })} />
+                            <LiquidSelect compact clearable={false} value={listaElegida} options={opcionesPrecio} ariaLabel={`Precio de ${nombre}`}
+                                onChange={(v) => onCambiar({ lista: !v || v === (fila?.lista && !linea.lista ? fila.lista : listaCliente) ? null : v })} />
                         ) : (
                             <p className="text-body-sm tabular-nums text-content-2">
                                 {fila?.precio != null ? formatMoney(fila.precio) : '…'}
@@ -1116,10 +1115,10 @@ function Linea({ indice, linea, fila, foto, cotizando, problema, puedeAutorizar,
                             </p>
                         )}
                     </div>
-                    <p className={`ml-auto md:ml-0 text-right text-body-sm font-black tabular-nums ${cotizando ? 'text-content-3' : problema ? 'text-danger-text line-through' : 'text-content'}`}>
+                    <p className={`max-md:ml-auto text-right text-body-sm font-black tabular-nums ${cotizando ? 'text-content-3' : problema ? 'text-danger-text line-through' : 'text-content'}`}>
                         {fila ? formatMoney(fila.subtotal) : '…'}
                     </p>
-                    <div className="hidden md:block" data-col="3">
+                    <div className="max-md:hidden" data-col="3">
                         <Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre} (Supr)`} onClick={onQuitar} />
                     </div>
                 </div>

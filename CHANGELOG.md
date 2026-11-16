@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.4 — Preventa: columnas alineadas y el precio del cliente ya marcado
+
+- Las columnas de los productos (presentación, cantidad, precio, subtotal)
+  quedan siempre alineadas, con o sin aviso. La fila usaba `md:` sobre clases
+  base que otra hoja cargada después pisaba; ahora lo de teléfono va en
+  `max-md:` y no compite.
+- El precio sale marcado con la lista que le toca al cliente
+  («Preferente · $5.85»); ya no existe la opción «Del cliente», que repetía
+  esa misma lista. Volver a la suya quita la autorización.
+- Los selects de la fila, compactos y con más ancho: ya no se cortan.
+
 ## v2.1557.3 — Conteo: la lista ya no tarda 7 s desde la sexta consulta
 
 Seguía lento después de juntar las llamadas. La causa real: `get_conteo_products_page` pasaba al plan **genérico** de Postgres en la sexta llamada sobre la misma conexión (PostgREST las reusa). Medido: 186 ms las primeras cinco veces y **6,725 ms** desde la sexta (con búsqueda, 297 → 1,681 ms). Eso eran las llamadas de 5 a 29 s en producción.

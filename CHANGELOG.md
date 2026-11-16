@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.4 — Datos de mercado: el emparejador descarta presentaciones institucionales y hospitalarias
+
+La farmacia declara a la SRS lo que vende al público, así que la pareja de un
+producto tiene que ser siempre la presentación comercial. El emparejador sólo
+le restaba 5 puntos a la hospitalaria y nada a la institucional, y 13 parejas
+quedaron con una de ellas. Ahora las dos pesan como una muestra médica (−60 y
+choque `no_comercial`, nunca «alta») y no salen como alternativa. En la base se
+cambiaron 8 propuestas a su gemela comercial y se quitaron las alternativas no
+comerciales de las pendientes.
+
 ## v2.1550.3 — La app de clientes ya no repite la bienvenida al entrar en otro equipo
 
 - Entrar con la misma cuenta en otra computadora o en otro teléfono mostraba

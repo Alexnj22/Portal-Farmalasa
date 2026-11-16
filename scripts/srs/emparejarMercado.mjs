@@ -176,7 +176,9 @@ export function analizarSrs(fila) {
         volumen,
         forma: formaDe(nombre) ?? formaDe(pres),
         muestra: /MUESTRA/.test(pres),
-        hospitalaria: /HOSPITALARI/.test(pres),
+        // La farmacia declara lo que vende al público: una presentación
+        // institucional u hospitalaria nunca es la pareja (2026-11-16).
+        noComercial: /HOSPITALARI|INSTITUCIONAL/.test(pres),
     };
 }
 
@@ -263,10 +265,10 @@ export function juzgar(portal, fila) {
         else { puntos -= 12; choques.push('forma'); }
     }
 
-    // Laboratorio, muestra médica, hospitalaria.
+    // Laboratorio, muestra médica, institucional u hospitalaria.
     if (portal.lab.some(w => w.length >= 3 && contiene(s.lab, w))) puntos += 5;
     if (s.muestra) { puntos -= 60; choques.push('muestra'); }
-    if (s.hospitalaria) puntos -= 5;
+    if (s.noComercial) { puntos -= 60; choques.push('no_comercial'); }
 
     return { fila, s, puntos, choques: [...new Set(choques)], avisos, marca: true, fuerza, empaque };
 }
@@ -360,6 +362,6 @@ export function decidir(producto, filasCatalogo) {
         nombre_srs: mejor.fila.nombre_comercial, presentacion_srs: mejor.fila.presentacion,
         laboratorio_srs: mejor.fila.laboratorio,
         confianza,
-        alternativas: juicios.slice(1, 6).filter(j => !j.s.muestra).map(alternativa),
+        alternativas: juicios.slice(1, 6).filter(j => !j.s.muestra && !j.s.noComercial).map(alternativa),
     };
 }

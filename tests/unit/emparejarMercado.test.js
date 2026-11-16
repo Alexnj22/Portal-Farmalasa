@@ -61,6 +61,17 @@ describe('decidir', () => {
         expect(r.crp).toBe('E-2');
         expect(r.confianza).toBe('alta');
     });
+    it('una presentación institucional u hospitalaria nunca gana ni va de alternativa', () => {
+        const r = decidir({ product_id: 1, nombre: 'XUMER 60MG X 14 TAB' }, [
+            fila('F03-10', 'XUMER (ETORICOXIB) 60 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 2 BLISTER X 7 COMPRIMIDOS RECUBIERTOS (PRESENTACIÓN INSTITUCIONAL)'),
+            fila('F03-7', 'XUMER (ETORICOXIB) 60 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 2 BLISTER X 7 COMPRIMIDOS RECUBIERTOS (PRESENTACIÓN HOSPITALARIA)'),
+            fila('F03-4', 'XUMER (ETORICOXIB) 60 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 2 BLISTER X 7 COMPRIMIDOS RECUBIERTOS (PRESENTACIÓN COMERCIAL)'),
+        ]);
+        expect(r.crp).toBe('F03-4');
+        expect(r.alternativas.map(a => a.crp)).not.toContain('F03-10');
+        expect(r.alternativas.map(a => a.crp)).not.toContain('F03-7');
+    });
+
     it('una muestra médica nunca gana', () => {
         const r = decidir({ product_id: 1, nombre: 'AVELOX 400MG X 5 COMP.' }, [
             fila('F05-1', 'AVELOX 400 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 1 BLISTER X 5 COMPRIMIDOS RECUBIERTOS (MUESTRA MÉDICA)'),

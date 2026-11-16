@@ -122,6 +122,6 @@ ${simple ? '' : `<td>${esc(i.lote || '—')}</td><td>${vence(i)}</td>`}<td class
     const cuerpo = ajustes.length
         ? seccion('FALTANTES (salida)', ajustes.filter(i => i.diferencia < 0)) + seccion('SOBRANTES (entrada)', ajustes.filter(i => i.diferencia > 0))
         : '<p class="nota">Este conteo no arrojó diferencias: no hay ajuste que aplicar.</p>';
-    return `<!doctype html><html><head><meta charset="utf-8"/>${ESTILO}</head><body><div class="cab"><div><h1>AJUSTE DE INVENTARIO</h1><div>Documento para aplicar en el sistema. El portal no modifica existencias</div></div>
+    return `<!doctype html><html><head><meta charset="utf-8"/>${ESTILO}</head><body><div class="cab"><div><h1>AJUSTE DE INVENTARIO</h1><div>Para aplicar en la caja. El portal no cambia las existencias.</div></div>
 <div class="der"><b>${esc(conteo?.branches?.name || 'Sucursal')}</b></div></div>${cuerpo}<div class="pie"><div>Aplicó</div><div>Revisó</div></div></body></html>`;
 }

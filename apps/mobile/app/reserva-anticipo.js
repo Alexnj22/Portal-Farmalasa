@@ -90,7 +90,7 @@ export default function ApartarOEncargar() {
         {sala ? <FijoArriba><Segmentos opciones={[{ id: 'nuevo', label: 'Nuevo' }, { id: 'cobrar', label: 'Por cobrar' }]} activa={vista} onCambiar={setVista} /></FijoArriba> : null}
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          {!sala ? <Aviso tono="freno" texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /> : (
+          {!sala ? <Aviso tono="freno" texto="No tienes sucursal asignada. Las reservas se hacen desde una sucursal." /> : (
             <>
               {vista === 'nuevo' ? <Nuevo sala={sala} nombreSala={nombreSala} user={user} /> : <PorCobrar sala={sala} nombreSala={nombreSala} user={user} elegirClave={elegir ? String(elegir) : null} />}
             </>
@@ -290,7 +290,7 @@ function Nuevo({ sala, nombreSala, user }) {
   return (
     <>
       <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
-        {`Si hay en ${nombreSala || 'la sala'} se aparta con anticipo y ${plazoAlApartar(reglasDeReserva)} para retirarlo; si no hay, se encarga y Compras confirma el precio. Todo sale con su papel.`}
+        {`Si hay en ${nombreSala || 'la sucursal'}, se aparta con anticipo y tiene ${plazoAlApartar(reglasDeReserva)} para retirarlo. Si no hay, se encarga y Compras confirma el precio. Todo sale con su papel.`}
       </Text>
       <Seccion titulo="Cliente">
         <ElegirCliente cliente={cliente} onElegir={(c) => { setCliente(c); setTelOk(false); }} />
@@ -349,7 +349,7 @@ function Nuevo({ sala, nombreSala, user }) {
             <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)} apiRef={trasladoApi} onCambio={setTraslado} />
           ) : null}
           {modo === 'viene' ? <Aviso texto={`Queda en camino y se marca lista sola al llegar; ahí empieza su plazo.${restoABodega > 0 ? ` Los ${restoABodega} que faltan se encargan a Bodega con la misma reserva.` : ''}`} />
-            : modo === 'reserva' ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{`Hay ${Number(opciones.disponibles)} en esta sala: se aparta ${plazoAlApartar(reglasDeReserva)} con el precio de hoy.`}</Text>
+            : modo === 'reserva' ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{`Hay ${Number(opciones.disponibles)} en esta sucursal. Se aparta ${plazoAlApartar(reglasDeReserva)} con el precio de hoy.`}</Text>
               : modo === 'traslado' ? <Aviso texto={`Se pide a ${traslado.sala}: queda en camino y se marca lista al llegar.`} />
                 : modo === 'encargo' ? <Aviso tono="cuidado" texto="Se encarga. Compras confirma precio y fecha; cuando el cliente acepte se cobra completo en «Por cobrar». Ahora no se cobra nada." />
                   : null}

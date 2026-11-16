@@ -187,14 +187,14 @@ export default function AplicacionInyeccion() {
   const renglonesSinLote = items.filter((i) => 'lote' in i).map((i) => renglonDe(i.linea_num)).filter(Boolean);
   const c = cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, aplicarAhora, aNombreDe, venta, producto, sala, ficha, loteTraida });
   const crearFicha = async () => {
-    trabajando('Creando la ficha…');
+    trabajando('Registrando al cliente…');
     try {
       const f = await crearClienteDeMostrador(nueva);
       setFicha(f); setNueva(null);
       // El número de ficha se pide sin esperar; si no llega, se asigna solo (2026-11-15).
       if (!f.existente) altaClienteEnCaja(f.id);
-      listo(f.existente ? 'Ya tenía ficha: se usa ésa' : 'Ficha creada');
-    } catch (e) { fallo('No se pudo crear la ficha', mensajeAmigable(e)); }
+      listo(f.existente ? 'Ya estaba registrado. Se usan sus datos.' : 'Cliente registrado');
+    } catch (e) { fallo('No se pudo registrar al cliente', mensajeAmigable(e)); }
   };
   const estadoPago = estadoDeFormaDePago(pago, c.monto);
   const grupos = useMemo(() => gruposDePendientes(pendientes), [pendientes]);

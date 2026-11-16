@@ -146,7 +146,7 @@ export default function MapfreAsegurado() {
           </Seccion>
 
           {elegida ? (
-            <Seccion titulo="El asegurado" pie="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes.">
+            <Seccion titulo="El asegurado" pie="Búscalo en el listado de clientes. Si no está, regístralo primero en Clientes.">
               {asegurado ? (
                 <Fila activa titulo={asegurado.name} detalle={[asegurado.dui, asegurado.phone].filter(Boolean).join(' · ') || 'Toca para cambiarlo'}
                   onPress={() => { setAsegurado(null); setTexto(''); }} />

@@ -68,7 +68,7 @@ function FilaResguardo({ fila }) {
     <View style={{ gap: 4, paddingVertical: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
       {fila.tabla === 'customers' ? (
         <>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Ficha #${d.id}`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Cliente #${d.id}`}</Text>
           {CAMPOS_FICHA.filter(([k]) => d[k] != null && d[k] !== '').map(([k, rotulo]) => (
             <View key={k} style={{ flexDirection: 'row', gap: 8 }}>
               <Text style={{ width: 96, color: colorSistema.texto2, fontSize: 13 }}>{rotulo}</Text>
@@ -253,7 +253,7 @@ export default function AnonimizarCliente({ solicitud }) {
           {!candidatos.length ? (
             <View style={{ gap: 8 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
-                Ninguna ficha de cliente tiene el documento de esta solicitud. Si la persona es cliente con una ficha sin documento, escribe el número de ficha (aparece en Clientes).
+                Ningún cliente tiene el documento de esta solicitud. Si la persona es cliente pero sus datos no tienen documento, escribe su número de cliente (aparece en Clientes).
               </Text>
               <Rotulo texto="Número de cliente" />
               <Campo multiline={false} keyboardType="number-pad" value={fichaManual} onChangeText={(t) => setFichaManual(t.replace(/\D/g, ''))} />

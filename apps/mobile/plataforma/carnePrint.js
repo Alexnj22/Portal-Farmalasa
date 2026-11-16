@@ -17,7 +17,7 @@ export { SIMBOLOGIA_DEL_CARNE, construirCarneDePapel } from '@nucleo/utils/carne
 
 export async function imprimirCarneDePapel(datos, { sala = null } = {}) {
   if (sala == null) {
-    return { via: 'cola', ok: false, detalle: 'Desde el teléfono el carné sale por la caja de una sala: elige cuál.' };
+    return { via: 'cola', ok: false, detalle: 'Desde el teléfono el carné sale por la caja de una sucursal. Elige cuál.' };
   }
   try {
     const { ancho } = leerAjustesDeImpresion();
@@ -26,8 +26,8 @@ export async function imprimirCarneDePapel(datos, { sala = null } = {}) {
       titulo: 'Carné del día',
       contenidoB64: ticketEnBase64(textoParaElRollo({ ancho, ...construirCarneDePapel(datos) })),
     });
-    if (error) return { via: 'cola', ok: false, detalle: 'Esa sala no tiene una caja que reciba el documento. Elige otra.' };
-    return { via: 'cola', ok: true, detalle: 'Se mandó a la caja de la sala. Sale en unos segundos.' };
+    if (error) return { via: 'cola', ok: false, detalle: 'Esa sucursal no tiene una caja que reciba el documento. Elige otra.' };
+    return { via: 'cola', ok: true, detalle: 'Se mandó a la caja de la sucursal. Sale en unos segundos.' };
   } catch (e) {
     return { via: 'cola', ok: false, detalle: e?.message || 'No se pudo mandar a imprimir.' };
   }

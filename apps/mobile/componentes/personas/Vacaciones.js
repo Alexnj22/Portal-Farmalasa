@@ -63,7 +63,7 @@ export function SolicitudesDeCambio({ cambios, puedeDecidir, procesar, aprobador
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Avatar empleado={emp ?? { name: '?' }} tamano={36} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{emp ? shortEmployeeName(emp) : 'Sin ficha'}</Text>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{emp ? shortEmployeeName(emp) : 'Sin nombre'}</Text>
                     <Text style={{ color: colorSistema.texto, fontSize: 13 }}>{`Pide: ${corta(m.requested_start)} → ${corta(m.requested_end)}`}</Text>
                     {m.original_start ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Original: ${corta(m.original_start)} → ${corta(m.original_end)}`}</Text> : null}
                   </View>

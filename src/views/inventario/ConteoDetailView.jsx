@@ -2611,13 +2611,13 @@ export default function ConteoDetailView() {
 
                 {!verSistema && (
                     <Notice variant="info" icon={EyeOff}>
-                        <strong>Conteo ciego.</strong> Anota lo que ves en el estante. No verás la existencia del sistema ni la diferencia hasta que se finalice el conteo.
+                        <strong>Conteo ciego.</strong> Anota lo que ves en el estante. No verás lo que dice la caja ni la diferencia hasta que se finalice el conteo.
                     </Notice>
                 )}
 
                 {recuento && (
                     <Notice variant="info" icon={ShieldCheck}>
-                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. No puedes recontar lo que contaste tú.
+                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni lo que dice la caja hasta guardar el tuyo. No puedes recontar lo que contaste tú.
                     </Notice>
                 )}
 

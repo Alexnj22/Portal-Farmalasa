@@ -233,7 +233,7 @@ export default function Facturacion() {
         ) : null}
         {docs && g.sinEntregar.length ? (
           <View style={{ marginHorizontal: 16, gap: 8 }}>
-            <Aviso tono="cuidado" texto={`${g.sinEntregar.length} factura${g.sinEntregar.length === 1 ? '' : 's'} sellada${g.sinEntregar.length === 1 ? '' : 's'} todavía no le ${g.sinEntregar.length === 1 ? 'llegó' : 'llegaron'} al cliente por correo${g.sinEntregar.length > g.enviables.length ? ` (${g.sinEntregar.length - g.enviables.length} sin correo en la ficha)` : ''}.`} />
+            <Aviso tono="cuidado" texto={`${g.sinEntregar.length} factura${g.sinEntregar.length === 1 ? '' : 's'} sellada${g.sinEntregar.length === 1 ? '' : 's'} todavía no le ${g.sinEntregar.length === 1 ? 'llegó' : 'llegaron'} al cliente por correo${g.sinEntregar.length > g.enviables.length ? ` (${g.sinEntregar.length - g.enviables.length} sin correo en sus datos)` : ''}.`} />
             {puedeVender && g.enviables.length ? <BotonGrande borde color={PETROLEO} texto={`Enviar correos (${g.enviables.length})`} deshabilitado={ocupado} onPress={enviarCorreos} /> : null}
           </View>
         ) : null}

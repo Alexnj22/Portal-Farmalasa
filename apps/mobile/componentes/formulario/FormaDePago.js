@@ -122,9 +122,9 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
 
       {estado.noEfectivo && v.sinComprobante ? (
         <>
-          <Aviso tono="cuidado" texto={`Sin el ${papel}, el ingreso se anota pero queda pendiente de autorización. Lo revisa Supervisión o Talento Humano.`} />
+          <Aviso tono="cuidado" texto={`Sin el ${papel}, el ingreso se anota pero queda pendiente de autorización. Lo revisa un supervisor, un administrador o Talento Humano.`} />
           <Campo value={v.motivo} onChangeText={(t) => poner({ motivo: t })}
-            placeholder={`Por qué no hay ${papel} — p. ej. el cliente no mandó la captura`} />
+            placeholder={`Por qué no hay ${papel}. Ej.: el cliente no mandó la captura`} />
           <Enlace texto={`Sí tengo el ${papel}: subir la foto`} onPress={() => poner({ sinComprobante: false, motivo: '' })} />
         </>
       ) : null}

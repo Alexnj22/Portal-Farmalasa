@@ -167,7 +167,7 @@ export const createBranchSlice = (set, get) => ({
                 timeline_title: `Apertura: ${newBranch.name}`,
                 dimension: 'OPERATIVE',
                 branch_id: newBranch.id,
-                new_value: 'Registrada en el sistema'
+                new_value: 'Registrada en el portal'
             });
 
             const retHours = typeof newBranch.weekly_hours === 'string' ? JSON.parse(newBranch.weekly_hours) : (newBranch.weekly_hours || {});

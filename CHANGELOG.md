@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1559.4 — Lenguaje: app del personal
+
+- Barrido del texto de las dos apps (la de clientes salió limpia). En la del
+  personal y sus gemelos web: reservas, devoluciones e impresión del carné
+  dicen «sucursal»; inyecciones y datos de clientes dicen «cliente»; caja,
+  diferencias y conteos dicen «la caja» en vez de «el sistema»; el ingreso
+  sin comprobante lo revisa «un supervisor, un administrador o Talento
+  Humano»; Metas dice «El portal» cuando el cambio no lo hizo una persona.
+
 ## v2.1559.3 — Preventa: dos viñetas del mismo empaque y crear cliente con lo buscado
 
 - Un producto con dos viñetas del mismo empaque (CAJA $10.61 y CAJA $10.65) muestra las dos en Presentación. Por defecto va la más alta; la que elijas es la que recibe caja.

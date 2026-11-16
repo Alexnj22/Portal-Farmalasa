@@ -98,7 +98,7 @@ function Hecha({ corte, d, puedeResolver, bajoMovimiento, hook, onCambio }) {
       {d.monto != null ? <Dato primero rotulo="Cubre" valor={formatMoney(d.monto)} /> : null}
       {d.evidencia_ref ? <Dato rotulo="Comprobante" valor={d.evidencia_ref} /> : null}
       {d.evidencia_foto_url ? <Pequeno texto="Ver la foto del comprobante" onPress={() => Promise.resolve(openStoredFile(d.evidencia_foto_url)).catch(() => {})} /> : null}
-      {d.asentado_at ? <Pildora texto={`Anotada en el sistema · ${d.asentado_ref || ''}`} color={MARCA.azulClaro} /> : null}
+      {d.asentado_at ? <Pildora texto={`Anotada en la caja · ${d.asentado_ref || ''}`} color={MARCA.azulClaro} /> : null}
       {d.registrado_nombre ? <Dato rotulo="Lo anotó" valor={`${shortEmployeeName({ name: d.registrado_nombre })}${d.registrado_at ? ` · ${fechaHora12(d.registrado_at)}` : ''}`} /> : null}
 
       {d.via === 'REPONE' ? (

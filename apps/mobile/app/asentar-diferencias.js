@@ -97,16 +97,16 @@ export default function AsentarDiferenciasApp() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Anotar en el sistema' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Anotar en la caja' }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           {!puede ? <Aviso tono="freno" texto="Anotar diferencias es de quien tiene el permiso de resolver cortes." />
             : cargando && !grupos.length ? <Cargando />
-              : !grupos.length ? <Aviso texto="No queda nada por anotar en el sistema." /> : (
+              : !grupos.length ? <Aviso texto="No queda nada por anotar en la caja." /> : (
                 <>
                   <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
-                    Haz el vale o el ingreso en el sistema por el total de cada grupo y escribe aquí su número.
+                    Haz el vale o el ingreso en la pantalla de la caja por el total de cada grupo y escribe aquí su número.
                   </Text>
                   {grupos.map((g) => {
                     const incluidas = g.filas.filter((d) => !excluidas.has(claveDeFilaDeAsiento(d)));
@@ -146,7 +146,7 @@ export default function AsentarDiferenciasApp() {
                           );
                         })}
                         <Campo multiline={false} value={refs[g.k] || ''} onChangeText={(v) => setRefs((r) => ({ ...r, [g.k]: v }))}
-                          placeholder={g.entra ? 'Número del ingreso en el sistema' : 'Número del vale en el sistema'} autoCapitalize="characters" />
+                          placeholder={g.entra ? 'Número del ingreso en la caja' : 'Número del vale en la caja'} autoCapitalize="characters" />
                         <BotonGrande texto={ocupado ? 'Registrando…' : g.entra ? 'Registrar el ingreso' : 'Registrar el vale'} color={MARCA.verde}
                           deshabilitado={ocupado || !incluidas.length || !(refs[g.k] || '').trim()} onPress={() => registrar(g)} />
                       </Seccion>

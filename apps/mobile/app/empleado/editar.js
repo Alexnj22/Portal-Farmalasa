@@ -418,7 +418,7 @@ export default function EditarEmpleado() {
                         <Enlace texto={(form.assigned_branch_ids || []).length === opcionesSala.length ? 'Quitar todas' : 'Todas'}
                           onPress={() => setForm((f) => ({ ...f, assigned_branch_ids: (f.assigned_branch_ids || []).length === opcionesSala.length ? [] : opcionesSala.map((o) => o.id) }))} />
                         <SalasQueCubre opciones={opcionesSala} elegidas={(form.assigned_branch_ids || []).map(String)} onCambiar={cambiar('assigned_branch_ids')} />
-                        {!(form.assigned_branch_ids || []).length ? <Nota texto="Sin áreas elegidas — sólo trabaja en su área de trabajo." /> : null}
+                        {!(form.assigned_branch_ids || []).length ? <Nota texto="Sin áreas elegidas. Sólo trabaja en su área de trabajo." /> : null}
                       </View>
                     ) : null}
                     <CampoFecha rotulo="Fecha de inicio de labores" valor={form.hire_date} onCambiar={cambiar('hire_date')} />

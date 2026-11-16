@@ -402,7 +402,7 @@ const BloqueAplicado = ({ req, aplicado, employeesById }) => {
                     ) : (
                         aplicado.campo === 'anulacion'
                             ? (aplicado.solventado_internamente
-                                ? 'Factura anulada en el sistema'
+                                ? 'Factura anulada en la caja'
                                 : 'Factura anulada')
                             : `${aplicado.de || '—'} → ${aplicado.a || '—'}`
                     )}

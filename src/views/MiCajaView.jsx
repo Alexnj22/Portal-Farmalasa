@@ -708,7 +708,7 @@ export default function MiCajaView({ comoPestana = false }) {
         // «anotado» a secas haría creer que no falta nada.
         else if (r.movimiento?.autorizacion === 'PENDIENTE') {
             showToast('Anotado, falta autorizarlo',
-                'No hay comprobante. Lo revisa Supervisión o Talento Humano.', 'warning');
+                'No hay comprobante. Lo revisa un supervisor, un administrador o Talento Humano.', 'warning');
         } else if (exito) showToast(exito, '', 'success');
         setDialogo(null);
         cargar();

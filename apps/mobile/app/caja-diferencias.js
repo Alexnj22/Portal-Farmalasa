@@ -110,7 +110,7 @@ export default function CajaDiferencias() {
             <Vidrio radio={20} interactivo tinte="rgba(52,120,246,0.14)">
               <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${porAnotar.length} ${porAnotar.length === 1 ? 'movimiento' : 'movimientos'} por anotar en el sistema`}</Text>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${porAnotar.length} ${porAnotar.length === 1 ? 'movimiento' : 'movimientos'} por anotar en la caja`}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Dinero que ya entró o salió de la caja por una diferencia.</Text>
                 </View>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Anotar ›</Text>
@@ -172,7 +172,7 @@ export default function CajaDiferencias() {
           );
         })}
         {leyo && !cargando && !visibles.length && !error ? (
-          <Vacio titulo={signo === 'sobra' ? 'Sin sobrantes' : 'Sin faltantes pendientes'} detalle={signo === 'sobra' ? 'Ningún corte quedó arriba de lo esperado.' : 'Todos tienen su causa, o están pagados y anotados en el sistema.'} tono="bien" />
+          <Vacio titulo={signo === 'sobra' ? 'Sin sobrantes' : 'Sin faltantes pendientes'} detalle={signo === 'sobra' ? 'Ningún corte quedó arriba de lo esperado.' : 'Todos tienen su causa, o están pagados y anotados en la caja.'} tono="bien" />
         ) : null}
       </ScrollView>
     </>

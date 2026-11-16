@@ -177,7 +177,7 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos 
                 <Seccion titulo="Primer conteo">
                   <Text style={{ color: colorSistema.texto, fontSize: 16 }}>
                     {aCiegas && !item?.recontado_at
-                      ? 'Conteo ciego. Verás el primer conteo y el sistema después de guardar el tuyo.'
+                      ? 'Conteo ciego. Verás el primer conteo y lo que dice la caja después de guardar el tuyo.'
                       : `Físico ${item?.fisico_cantidad ?? '—'}${item?.ver_sistema && item?.sistema_cantidad != null ? ` · sistema ${item.sistema_cantidad}` : ''}`}
                   </Text>
                 </Seccion>

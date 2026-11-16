@@ -750,7 +750,7 @@ function buildAjusteSection(titulo, color, fill, items, simple = false) {
 function ajusteHeaderBlock(conteo, faltantes, sobrantes) {
     const lineas = [
         { text: 'AJUSTE DE INVENTARIO', fontSize: 13, bold: true, color: '#111' },
-        { text: 'Documento para aplicar en el sistema. El portal no modifica existencias', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
+        { text: 'Para aplicar en la caja. El portal no cambia las existencias.', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
     ];
     return {
         margin: [0, 0, 0, 6],

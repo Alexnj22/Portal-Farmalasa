@@ -210,7 +210,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
                               return (
                                 <View key={cb.id} style={{ gap: 1 }}>
                                   <Text style={{ color: colorSistema.texto, fontSize: 13 }}>
-                                    {`${cb.actor ? (emp ? shortEmployeeName(emp) : 'Alguien') : 'El sistema'} ${c.texto}${c.despues != null ? ` ${formatMoney(c.despues)}` : ''}`}
+                                    {`${cb.actor ? (emp ? shortEmployeeName(emp) : 'Alguien') : 'El portal'} ${c.texto}${c.despues != null ? ` ${formatMoney(c.despues)}` : ''}`}
                                   </Text>
                                   <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                                     {`${c.mov ? `${c.mov > 0 ? 'subió' : 'bajó'} ${formatMoney(Math.abs(c.mov))} (${formatPct(c.pct)}) · ` : ''}${fechaHora12(cb.created_at)}`}

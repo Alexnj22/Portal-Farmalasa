@@ -99,7 +99,7 @@ export function Anonimizados() {
     <View style={{ gap: 10 }}>
       <View style={{ marginHorizontal: 16, gap: 10 }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-          Clientes que pidieron cancelar sus datos. Si una persona vuelve, se reactiva su misma ficha presentando el documento con que se identificó; los puntos no vuelven.
+          Clientes que pidieron cancelar sus datos. Si una persona vuelve, se reactivan sus mismos datos con el documento con que se identificó. Los puntos no vuelven.
         </Text>
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {reactivando ? (
@@ -120,7 +120,7 @@ export function Anonimizados() {
               <View style={{ padding: 12, gap: 6 }}>
                 <Tocable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(esta ? null : a.id); }} style={{ gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Ficha #${a.customer_id}`}</Text>
+                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Cliente #${a.customer_id}`}</Text>
                     {a.reactivada_at
                       ? <Pildora texto={`Reactivada el ${dia(a.reactivada_at)}`} color={MARCA.azulClaro} />
                       : (a.archivos_pendientes ?? []).length

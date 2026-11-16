@@ -25,15 +25,15 @@ const MODOS = {
   }; },
   autorizar: {
     titulo: 'Autorizar devolución', rotulo: 'Motivo de la devolución', boton: 'Autorizar', color: MARCA.verde,
-    pie: 'La sala lo entrega con un vale de su caja. El saldo deja de poder usarse en caja.',
+    pie: 'La sucursal lo entrega con un vale de su caja. El saldo ya no se puede usar en caja.',
   },
   negar: {
-    titulo: 'No autorizar', rotulo: 'Motivo (se le dice a la sala)', boton: 'No autorizar', color: MARCA.rojo,
+    titulo: 'No autorizar', rotulo: 'Motivo (se le dice a la sucursal)', boton: 'No autorizar', color: MARCA.rojo,
     pie: 'El saldo sigue a favor del cliente para usarlo en caja.',
   },
   entregar: {
     titulo: 'Entregar en efectivo', rotulo: null, boton: 'Sacar de caja y entregar', color: MARCA.rojo,
-    pie: 'Sale de la caja de esta sala como vale «Devolución a un cliente»: el corte ya lo descuenta. Entrega el dinero al confirmar.',
+    pie: 'Sale de la caja de esta sucursal como vale «Devolución a un cliente». El corte ya lo descuenta. Entrega el dinero al confirmar.',
   },
 };
 
@@ -53,10 +53,10 @@ export default function DevolucionDeSaldo() {
         listo('Devolución pedida', 'Administración recibe el aviso para autorizarla.');
       } else if (modo === 'autorizar') {
         await devolverSaldoAFavor(id, motivo.trim());
-        listo('Devolución autorizada', 'La sala la entrega con un vale de su caja.');
+        listo('Devolución autorizada', 'La sucursal la entrega con un vale de su caja.');
       } else if (modo === 'negar') {
         await negarDevolucionEnEfectivo(id, motivo.trim());
-        listo('Devolución no autorizada', 'La sala recibe el aviso.');
+        listo('Devolución no autorizada', 'La sucursal recibe el aviso.');
       } else {
         trabajando('Sacando de caja…');
         if (!clave.current) clave.current = globalThis.crypto?.randomUUID?.() ?? `dev-${id}-${monto}`;
@@ -87,7 +87,7 @@ export default function DevolucionDeSaldo() {
           <Seccion titulo={String(codigo ?? '')} pie={m.pie}>
             <Dato rotulo="Monto" valor={formatMoney(monto)} primero fuerte />
             {cliente ? <Dato rotulo="Cliente" valor={String(cliente)} /> : null}
-            {motivoPedido && modo !== 'pedir' ? <Dato rotulo="La sala pidió" valor={String(motivoPedido)} /> : null}
+            {motivoPedido && modo !== 'pedir' ? <Dato rotulo="La sucursal pidió" valor={String(motivoPedido)} /> : null}
           </Seccion>
           {m.rotulo ? (
             <Seccion titulo={m.rotulo}>

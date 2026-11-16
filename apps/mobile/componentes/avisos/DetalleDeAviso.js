@@ -621,7 +621,7 @@ function BloqueAplicado({ req, aplicado, porId }) {
   const que = esMovimiento
     ? `${aplicado.lineas ?? 0} ${aplicado.lineas === 1 ? 'producto' : 'productos'} · ${aplicado.unidades ?? 0} ${aplicado.unidades === 1 ? 'unidad' : 'unidades'}${Number.isFinite(Number(aplicado.total)) ? ` · ${formatMoney(aplicado.total)}` : ''}`
     : aplicado.campo === 'anulacion'
-      ? (aplicado.solventado_internamente ? 'Factura anulada en el sistema' : 'Factura anulada')
+      ? (aplicado.solventado_internamente ? 'Factura anulada en la caja' : 'Factura anulada')
       : `${aplicado.de || '—'} → ${aplicado.a || '—'}`;
   return (
     <Caja rotulo={rotulo} color={MARCA.verde} tinte={MARCA.verde}>

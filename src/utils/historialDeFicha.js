@@ -70,7 +70,7 @@ export function historialDeFicha(filas = [], eventos = []) {
             category: ev.category,
             date: ev.event_date,
             endDate: ev.event_end_date,
-            note: ev.note || m.note || m.details?.note || 'Evento registrado en el sistema.',
+            note: ev.note || m.note || m.details?.note || 'Evento registrado en el portal.',
             metadata: m,
             documentId: m.document_id || null,
             isSystem: ['HIRE', 'ROSTER_PUBLISHED'].includes(ev.event_type),

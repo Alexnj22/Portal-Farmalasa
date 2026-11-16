@@ -1309,7 +1309,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const entraron = r.entraron;
             if (entraron === 0) {
                 useToastStore.getState().showToast('Nada entró al inventario',
-                    'Los productos siguen pendientes. Si se repite, hay que revisarlos en el sistema.', 'error', 8000);
+                    'Los productos siguen pendientes. Si se repite, hay que revisarlos en la caja.', 'error', 8000);
             } else {
                 useToastStore.getState().showToast('Ingresado',
                     `${entraron} producto${entraron !== 1 ? 's' : ''} entr${entraron !== 1 ? 'aron' : 'ó'} al inventario.`

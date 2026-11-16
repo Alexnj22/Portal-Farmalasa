@@ -419,7 +419,7 @@ function CuerpoDeConteo({ d }) {
           </View>
         ) : null}
       </View>
-      <Bloque rotulo="Cómo se cuenta">A ciegas: anota lo que ves en el estante, sin mirar lo que dice el sistema.</Bloque>
+      <Bloque rotulo="Cómo se cuenta">A ciegas: anota lo que ves en el estante, sin mirar lo que dice la caja.</Bloque>
     </>
   );
 }

@@ -610,7 +610,7 @@ export default function Conteo() {
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>Modo recuento</Text>
                 <Interruptor value={recuento} onValueChange={(v) => { setRecuento(v); if (v) { setFiltro('DIFERENCIA'); setOrden(''); } }} />
               </View>
-              {recuento ? <Aviso tono="nota" texto="Vuelve a contar los productos con diferencia, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. No puedes recontar lo que contaste tú." /> : null}
+              {recuento ? <Aviso tono="nota" texto="Vuelve a contar los productos con diferencia, en orden de estante (por laboratorio). No verás el primer conteo ni lo que dice la caja hasta guardar el tuyo. No puedes recontar lo que contaste tú." /> : null}
             </View>
           ) : null}
           {/* El conteo firma la diferencia; el stock se corrige afuera. Hasta que

@@ -794,7 +794,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                         <div className="min-w-0 flex-1">
                                             <p className="text-label text-content-2">
                                                 <span className="font-black text-content-1">
-                                                    {cb.actor ? (emp ? shortEmployeeName(emp.name) : 'Alguien') : 'El sistema'}
+                                                    {cb.actor ? (emp ? shortEmployeeName(emp.name) : 'Alguien') : 'El portal'}
                                                 </span>
                                                 {' '}{EVENTO_TXT[cb.evento] || cb.evento.replace(/_/g, ' ')}
                                                 {despues != null && !EVENTO_SIN_MONTO.has(cb.evento) && (

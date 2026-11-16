@@ -38344,6 +38344,10 @@ export type Database = {
         }
         Returns: string
       }
+      preventa_lotes: {
+        Args: { p_branch: number; p_ids: number[] }
+        Returns: Json
+      }
       preventa_preparar: {
         Args: { p_employee: string; p_reservas: number[] }
         Returns: Json

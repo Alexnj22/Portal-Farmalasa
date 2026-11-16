@@ -267,3 +267,27 @@ export function datosQueFaltan(info) {
 export function nombreDeComprobante(tipo) {
     return { COF: 'Factura', CCF: 'Crédito fiscal', TIK: 'Ticket', NC: 'Nota de crédito' }[tipo] ?? tipo ?? '';
 }
+
+/**
+ * De qué lotes sale lo que se pide (2026-11-16, usuario: «¿cómo sé qué lote
+ * sacar?»). `lotes` viene de `preventa_lotes` ya en el orden en que caja los
+ * usa (GENERICO primero, después el que vence antes); se toma de cada uno lo
+ * que tiene hasta completar `unidades`. Cada lote vuelve con `toma`.
+ */
+export function lotesQueSalen(lotes, unidades) {
+    let falta = Math.max(0, Number(unidades) || 0);
+    return (lotes ?? []).map((l) => {
+        const toma = Math.min(falta, Number(l.unidades) || 0);
+        falta -= toma;
+        return { ...l, toma };
+    });
+}
+
+/** `2026-08-01` → `08/2026`. */
+export const mesDeVencimiento = (fecha) => (/^\d{4}-\d{2}/.test(fecha ?? '') ? `${fecha.slice(5, 7)}/${fecha.slice(0, 4)}` : '—');
+
+/** Vence en menos de 90 días contados desde `hoy` (`YYYY-MM-DD`). */
+export function vencePronto(fecha, hoy) {
+    if (!fecha || !hoy) return false;
+    return (new Date(`${fecha}T00:00:00Z`) - new Date(`${hoy}T00:00:00Z`)) / 86400000 < 90;
+}

@@ -73,3 +73,15 @@ export const enviarPreventaDirecta = ({ branchId, customerId, documento, pago = 
 
 /** Borrar la preventa de la caja y marcarla anulada. Nunca lanza. */
 export const anularPreventa = (preventaId) => invocar({ accion: 'anular', preventa_id: Number(preventaId) });
+
+/**
+ * Los lotes de cada producto en la sucursal, `Map<id, [{lote, vence, unidades}]>`,
+ * en el orden en que caja los usa. Lanza si la base falla.
+ */
+export async function lotesDePreventa(branchId, ids) {
+    const unicos = [...new Set((ids ?? []).map(Number).filter(Boolean))];
+    if (!unicos.length) return new Map();
+    const { data, error } = await supabase.rpc('preventa_lotes', { p_branch: Number(branchId), p_ids: unicos });
+    if (error) throw error;
+    return new Map((data ?? []).map((p) => [Number(p.producto_id), p.lotes ?? []]));
+}

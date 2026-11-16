@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.5 — Preventa: más compacta y el lote de cada producto
+
+- La barra (sucursal, Otras sucursales, Apartar, Vaciar) pasa a la cabecera de
+  Productos: una fila entera menos arriba. «Llega a caja de…» va bajo el botón
+  de enviar.
+- Cada producto dice de qué lote sale y cuándo vence (naranja si vence en menos
+  de 90 días, rojo si ya venció). Al tocarlo, todos los lotes de la sucursal
+  con sus unidades y cuántas salen de cada uno, en el mismo orden en que caja
+  los usa. Nueva función `preventa_lotes` (sólo lectura).
+
 ## v2.1557.4 — Preventa: columnas alineadas y el precio del cliente ya marcado
 
 - Las columnas de los productos (presentación, cantidad, precio, subtotal)

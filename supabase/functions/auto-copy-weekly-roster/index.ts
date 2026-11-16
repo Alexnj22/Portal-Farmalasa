@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
           '',
           lineasFeriado.length === 1 ? 'Y esa semana cae un asueto:' : 'Y esa semana caen asuetos:',
           ...lineasFeriado,
-          'La copia lo armó como un día normal — hay que decidir quién trabaja.',
+          'La copia lo armó como un día normal. Decide quién trabaja.',
         );
       }
       partes.push('', 'Revisa y ajusta en Horarios antes del lunes.');

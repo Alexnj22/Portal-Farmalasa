@@ -97,7 +97,7 @@ async function abrirSala(cookie: string, erpId: number): Promise<void> {
   // Escribir en la sala equivocada es el peor final posible de esta función:
   // un vale en la caja de otra sala corre DOS cortes, el que no debía y el que
   // sí. Si no se pudo fijar, esta sala no se toca.
-  if (!fijada) throw new Error(`no se pudo abrir la sala ${erpId}`);
+  if (!fijada) throw new Error(`no se pudo abrir la sucursal ${erpId}`);
 }
 
 /** La apertura vigente de la sala: `id_apertura`, empleado y turno. */
@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
        * de sala. Ver PLAN-ALCANCE-POR-SUCURSAL F1. */
       if (!permiso.alcanceTodo) {
         const propia = Number(permiso.emp?.branch_id);
-        if (!propia) return json({ ok: false, error: "Tu ficha no tiene sucursal asignada." }, 403);
+        if (!propia) return json({ ok: false, error: "No tienes sucursal asignada." }, 403);
         if (soloSala && soloSala !== propia) {
           return json({ ok: false, error: "Sólo puedes anotar los vales de tu sucursal." }, 403);
         }
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
         }
 
         const entrada = mapa.find((e) => e.branchId === branchId);
-        if (!entrada) throw new Error(`la sala ${branchId} no está en el mapa`);
+        if (!entrada) throw new Error(`la sucursal ${branchId} no está en el mapa`);
         if (!cookie) {
           const { username, password } = getCortesCreds();
           cookie = await getSessionCookie(username, password);
@@ -311,7 +311,7 @@ Deno.serve(async (req) => {
         await abrirSala(cookie, entrada.erpId);
 
         const viva = await aperturaViva(cookie);
-        if (!viva) throw new Error("la sala no tiene una caja abierta ahora");
+        if (!viva) throw new Error("la sucursal no tiene una caja abierta ahora");
 
         // Cuántas salidas cubre EN TOTAL, no cuántas trae esta corrida. La
         // primera versión decía `nuevas + 1` cuando ya existía el vale, o sea

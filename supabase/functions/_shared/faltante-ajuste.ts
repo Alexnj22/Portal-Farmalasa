@@ -110,7 +110,7 @@ export async function nombreDelResponsable(admin: SupabaseClient, f: FaltanteTom
   }
   const branch = f.responsable === "origen" ? f.origen_branch_id : f.destino_branch_id;
   const { data } = await admin.from("branches").select("name").eq("id", branch).maybeSingle();
-  return String(data?.name ?? (f.responsable === "origen" ? "la sala que envió" : "la sala que recibió"));
+  return String(data?.name ?? (f.responsable === "origen" ? "la sucursal que envió" : "la sucursal que recibió"));
 }
 
 /**
@@ -132,8 +132,8 @@ export async function descontarYCerrar(opc: {
   const { admin, f, actor } = opc;
   const nombre = f.descripcion ?? `el producto ${f.erp_product_id}`;
   if (!f.erp_product_id || !opc.factor || !opc.presentacion) {
-    await soltarAjuste(admin, f, actor, { ultimo_error: "Al renglón le falta el producto o su presentación." });
-    return { status: 422, body: { ok: false, error: `${nombre}: al renglón le falta el producto o su presentación; no se puede descontar.` } };
+    await soltarAjuste(admin, f, actor, { ultimo_error: "Le falta el producto o su presentación." });
+    return { status: 422, body: { ok: false, error: `${nombre}: le falta el producto o su presentación; no se puede descontar.` } };
   }
   const aCargo = await nombreDelResponsable(admin, f);
   const concepto = conceptoDe([
@@ -165,7 +165,7 @@ export async function descontarYCerrar(opc: {
       body: {
         ok: false, codigo: r.codigo,
         error: r.codigo === "INCIERTO"
-          ? `${r.error} Antes de volver a intentarlo hay que revisar el kardex de la sala.`
+          ? `${r.error} Antes de volver a intentarlo hay que revisar el kardex de la sucursal.`
           : r.error,
       },
     };
@@ -191,7 +191,7 @@ export async function descontarYCerrar(opc: {
     return {
       status: 500,
       body: { ok: false, codigo: "DESCONTADO_SIN_CERRAR",
-              error: `${nombre} se descontó de la sala, pero no se pudo cerrar el faltante. No lo vuelvas a intentar: avisa a sistemas.` },
+              error: `${nombre} se descontó de la sucursal, pero no se pudo cerrar el faltante. No lo vuelvas a intentar: avisa a Soporte.` },
     };
   }
 

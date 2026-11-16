@@ -271,7 +271,7 @@ Deno.serve(async (req) => {
     const origenBranch = Number(meta.origen_branch_id);
 
     if (!erpOrigen || !erpDestino)
-      return json({ ok: false, error: "La solicitud no trae la sala de origen o la de destino." }, 422);
+      return json({ ok: false, error: "La solicitud no trae la sucursal de origen o la de destino." }, 422);
 
     // ── El registro de salas, de una sola vez ─────────────────────────────
     // Son 7 filas. Antes se pedía dos veces —origen y destino— y ahora hace
@@ -346,7 +346,7 @@ Deno.serve(async (req) => {
       }
       if (!ubicDestino) {
         await soltarAjuste(admin, f, t.actor);
-        return json({ ok: false, error: `No se conoce la ubicación de la sala que recibió (${erpDestino}).` }, 422);
+        return json({ ok: false, error: `No se conoce la ubicación de la sucursal que recibió (${erpDestino}).` }, 422);
       }
       const item = lineas[f.posicion] as Linea | undefined;
       const r = await descontarYCerrar({
@@ -366,7 +366,7 @@ Deno.serve(async (req) => {
       if (!ubicDestino)
         return json({
           ok: false,
-          error: `No se conoce la ubicación de la sala que recibe (${erpDestino}).`,
+          error: `No se conoce la ubicación de la sucursal que recibe (${erpDestino}).`,
         }, 422);
 
       const idTraslado = String(meta.erp_traslado?.id_traslado ?? "");
@@ -392,7 +392,7 @@ Deno.serve(async (req) => {
         if (!enLaSala)
           return json({
             ok: false,
-            error: "El traslado lo recibe la sala que lo pidió.",
+            error: "El traslado lo recibe la sucursal que lo pidió.",
           }, 403);
       }
 
@@ -583,7 +583,7 @@ Deno.serve(async (req) => {
       if (!tomadaRec)
         return json({
           ok: false, codigo: "YA_EN_CURSO",
-          error: "Alguien más de tu sala está recibiendo este traslado en este momento.",
+          error: "Alguien más de tu sucursal está recibiendo este traslado en este momento.",
         }, 409);
       // Salidas SIN recibir: se suelta en vez de esperar a que caduque. Conserva
       // la marca de destrabe si quedó algo pendiente (`conMarca`).
@@ -628,7 +628,7 @@ Deno.serve(async (req) => {
         await soltarCandado();
         return json({
           ok: false, codigo: "TRASLADO_ANULADO",
-          error: `El traslado ${idTraslado} está anulado en el sistema: el producto no entró a tu sala. `
+          error: `El traslado ${idTraslado} está anulado en el sistema: el producto no entró a tu sucursal. `
                + `Pídelo de nuevo.`,
         }, 409);
       }
@@ -666,7 +666,7 @@ Deno.serve(async (req) => {
         await soltarCandado();
         return json({
           ok: false, codigo: "TRASLADO_SIN_LINEAS",
-          error: `El traslado ${idTraslado} no muestra líneas para recibir.`,
+          error: `El traslado ${idTraslado} no muestra productos para recibir.`,
         }, 409);
       }
 
@@ -696,10 +696,10 @@ Deno.serve(async (req) => {
       if (sinPres.length) {
         for (const s of sinPres) nombres.set(s.prod, s.nombre);
         if (!hayTiempoParaDestrabar()) {
-          noEnviar = "Una presentación del traslado está oculta en la ficha y no quedaba tiempo para destrabarla. Vuelve a intentarlo.";
+          noEnviar = "Una presentación del traslado está oculta en los datos del producto y no quedaba tiempo para destrabarla. Vuelve a intentarlo.";
         } else {
           const r = await presentacionesParaMostrar(cookie, sinPres)
-            .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
+            .catch((e) => ({ ok: false as const, motivo: `No se pudieron leer los datos del producto: ${(e as Error).message}` }));
           if (!r.ok) noEnviar = r.motivo;
           else {
             destrabe.pres = r.pres;
@@ -756,8 +756,8 @@ Deno.serve(async (req) => {
         unidades += Number(esp);
       }
       if (!noEnviar && sinPresentacion > 0)
-        noEnviar = `${sinPresentacion} renglón(es) del traslado no tienen presentación en su ficha; no se recibe a medias.`;
-      if (!noEnviar && partes.length === 0) noEnviar = `No se pudo leer ni una línea del traslado ${idTraslado}.`;
+        noEnviar = `${sinPresentacion} producto(s) del traslado no tienen presentación en sus datos; no se recibe a medias.`;
+      if (!noEnviar && partes.length === 0) noEnviar = `No se pudo leer ni un producto del traslado ${idTraslado}.`;
 
       // Nombra a las DOS personas que el sistema no guarda —quien despachó y
       // quien recibe—, cada una con su sala. Misma gramática que el pedido y la
@@ -944,8 +944,8 @@ Deno.serve(async (req) => {
           // La solicitud pide del área de vencidos y esa sala no tiene una. El
           // trigger ya lo corta al crearla; esto cubre las que nacieron antes o
           // por otro camino, y dice CUÁL de las dos cosas falta.
-          ? `La sala de origen (${erpOrigen}) no tiene área de vencidos.`
-          : `No se conoce la ubicación de la sala de origen (${erpOrigen}).`,
+          ? `La sucursal de origen (${erpOrigen}) no tiene área de vencidos.`
+          : `No se conoce la ubicación de la sucursal de origen (${erpOrigen}).`,
       }, 422);
 
     // ── Quién puede despachar: lo mismo que decide el RLS ─────────────────
@@ -1001,7 +1001,7 @@ Deno.serve(async (req) => {
     if (!alcanceTodo && !esDeLaSalaDeOrigen && !cubreAlOrigen)
       return json({
         ok: false,
-        error: "Este traslado lo confirma la sala que tiene el producto.",
+        error: "Este traslado lo confirma la sucursal que tiene el producto.",
       }, 403);
 
     const { data: solicitante, error: solicitanteErr } = await admin
@@ -1288,7 +1288,7 @@ Deno.serve(async (req) => {
       if (!f.encontrado)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
-          error: `${nombre} no tiene existencia en la sala de origen.`,
+          error: `${nombre} no tiene existencia en la sucursal de origen.`,
         }, 409);
 
       // ── La presentación, en dos tiempos ──────────────────────────────────
@@ -1388,7 +1388,7 @@ Deno.serve(async (req) => {
           // Lo apartado en el área de vencidos ya no achica este número: el
           // sistema respeta la ubicación desde el 26-ago (ver
           // `disponibleEnBodega`). Si falta, falta en el estante.
-          error: `De ${nombre} ${hayEnTexto(hay, "la sala de origen")}: alcanzan para `
+          error: `De ${nombre} ${hayEnTexto(hay, "la sucursal de origen")}: alcanzan para `
             + `${hay.paquetes} y se pidieron ${l.cantidad}.`,
         }, 409);
 
@@ -1462,7 +1462,7 @@ Deno.serve(async (req) => {
         return json({
           ok: false, codigo: "SIN_EXISTENCIA_EN_LOTE",
           error: `De ${nombre} faltan ${reparto.faltan} de ${l.presentacion_tipo} para `
-               + `completar ${l.cantidad}: los lotes de la sala de origen no alcanzan. `
+               + `completar ${l.cantidad}: los lotes de la sucursal de origen no alcanzan. `
                + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
         }, 409);
 
@@ -1632,7 +1632,7 @@ Deno.serve(async (req) => {
         prop.lineas!.some((p) => Number(p.posicion) === c.posicion
           && String(p.lote).trim().toUpperCase() === c.lote.trim().toUpperCase()
           && String(p.vence).slice(0, 10) === c.vence)));
-      const sala = meta.branch_name ?? "la sala que pidió";
+      const sala = meta.branch_name ?? "la sucursal que pidió";
       if (!(prop?.estado === "aceptada" && coincide)) {
         if (prop?.estado === "pendiente" && coincide)
           return json({
@@ -1698,7 +1698,7 @@ Deno.serve(async (req) => {
     if (!tomada)
       return json({
         ok: false, codigo: "YA_EN_CURSO",
-        error: "Alguien más de tu sala está despachando este traslado en este momento.",
+        error: "Alguien más de tu sucursal está despachando este traslado en este momento.",
       }, 409);
 
     // ── El lote de la caja, para lo que salía de GENERICO ────────────────
@@ -1807,7 +1807,7 @@ Deno.serve(async (req) => {
             // lo mismo que «no salió nada», y quien reintente tiene que saberlo
             // antes de despachar dos veces.
             + (aparecieron.length
-              ? `. Ojo: en ese momento salieron ${aparecieron.length} traslado(s) más desde esa sala, así que puede haber salido igual — comprobalo antes de volver a intentar.`
+              ? `. Ojo: en ese momento salieron ${aparecieron.length} traslado(s) más desde esa sucursal, así que puede haber salido igual. Compruébalo antes de volver a intentar.`
               : ""),
         }, 502);
       }

@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
     const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; branch_id: number | null; first_names?: string; last_names?: string }>(
       admin.from("employees").select("role_id, secondary_role_id, branch_id, first_names, last_names")
         .eq("id", quien.id).maybeSingle(),
-      "tu ficha de empleado",
+      "tus datos de empleado",
     );
     if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
     // El concepto es el único lugar del sistema donde aparece la persona real:
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
     if (mapaErr) throw mapaErr;
     const mapaBodega = (mapas ?? []).find((m) => m.es_bodega) ?? null;
     if (!mapaBodega)
-      return json({ ok: false, error: "No hay una bodega marcada en el mapa de salas." }, 422);
+      return json({ ok: false, error: "No hay una bodega marcada en el mapa de sucursales." }, 422);
 
     const erpBodega = Number(mapaBodega.erp_sucursal_id);
     // Decisión del usuario (2026-08-12): TODO entra a la ubicación de trabajo,
@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
         detalle: { revisar_a_mano: true },
         error_msg: "La corrida anterior se cortó mientras se movía este producto. Hay que verificar "
           + "en el sistema si el movimiento entró (buscar la clave en el concepto) antes de "
-          + "reintentarlo — reintentar a ciegas lo movería dos veces.",
+          + "reintentarlo. Si lo reintentas sin revisar, se mueve dos veces.",
         updated_at: new Date().toISOString(),
       })
       .in("id", devs.map((d) => d.id))
@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
         if (ya) return ya;
         const mapaDestino = (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpDestino) ?? null;
         const ubic = ubicacionDeTrabajo(mapaDestino);
-        if (!ubic) throw new Error(`No se conoce la ubicación de trabajo de la sala ${erpDestino}.`);
+        if (!ubic) throw new Error(`No se conoce la ubicación de trabajo de la sucursal ${erpDestino}.`);
         const c = await sesionEn(erpDestino, login);
         // Fichas que una llamada muerta dejó destrabadas: se devuelven primero.
         if (!simulacro) await devolverFichasHuerfanas(admin, "pedido_devolucion", c);
@@ -415,7 +415,7 @@ Deno.serve(async (req) => {
         // cambian de lugar. Un mensaje que diga «no entró a Bodega» sobre un
         // sobrante manda a buscar el producto al lugar equivocado.
         const nombreSala = (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === Number(d.erp_sucursal_id))?.nombre
-          ?? `la sala ${d.erp_sucursal_id}`;
+          ?? `la sucursal ${d.erp_sucursal_id}`;
         const dondeEntra = haciaLaSala(d) ? nombreSala : "Bodega";
         const dondeSale  = haciaLaSala(d) ? "Bodega" : nombreSala;
 
@@ -479,7 +479,7 @@ Deno.serve(async (req) => {
             );
             await noCallar(
               admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id }),
-              `el cierre del renglón de ${d.clave}`,
+              `el cierre del producto de ${d.clave}`,
               (m) => fallos.push({ clave: d.clave, error: m }),
             );
           }
@@ -499,15 +499,15 @@ Deno.serve(async (req) => {
             await noCallar(
               admin.from("pedido_devolucion").update({
                 estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien.id,
-                aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
+                aviso: "No mostraba productos que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
                 updated_at: new Date().toISOString(),
               }).eq("id", d.id),
-              `que ${d.clave} no mostraba líneas que recibir`,
+              `que ${d.clave} no mostraba productos que recibir`,
               (m) => fallos.push({ clave: d.clave, error: m }),
             );
             await noCallar(
               admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id }),
-              `el cierre del renglón de ${d.clave}`,
+              `el cierre del producto de ${d.clave}`,
               (m) => fallos.push({ clave: d.clave, error: m }),
             );
           }
@@ -551,7 +551,7 @@ Deno.serve(async (req) => {
               total += Number(compra) * Number(esp);
             }
             if (partes.length === 0)
-              return { ok: false, enviado: false, msg: "No se pudo leer ni una línea del movimiento." };
+              return { ok: false, enviado: false, msg: "No se pudo leer ni un producto del movimiento." };
             return leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
               process: "insert",
               datos: partes.join("#") + "#",
@@ -583,7 +583,7 @@ Deno.serve(async (req) => {
             );
             await noCallar(
               admin.rpc("cerrar_item_por_devolucion", { p_devolucion_id: d.id, p_actor: quien.id }),
-              `el cierre del renglón de ${d.clave}`,
+              `el cierre del producto de ${d.clave}`,
               (m) => fallos.push({ clave: d.clave, error: m }),
             );
             hechas.push({ clave: d.clave, ya_estaba: true });
@@ -612,7 +612,7 @@ Deno.serve(async (req) => {
             recibido_at: new Date().toISOString(),
             recibido_por: quien.id,
             error_msg: null,
-            ...(destrabado ? { aviso: `Se recibió destrabando la ficha y dejándola como estaba: ${destrabado}` } : {}),
+            ...(destrabado ? { aviso: `Se recibió destrabando los datos del producto y dejándolos como estaban: ${destrabado}` } : {}),
             updated_at: new Date().toISOString(),
           }).eq("id", d.id),
           `la entrada de ${d.clave} a Bodega (el producto YA entró)`,
@@ -628,10 +628,10 @@ Deno.serve(async (req) => {
           // aviso en la fila para que se vea que el renglón no cerró solo.
           await noCallar(
             admin.from("pedido_devolucion")
-              .update({ aviso: `Entró en Bodega, pero el renglón del pedido no cerró: ${cerrarErr.message}`,
+              .update({ aviso: `Entró en Bodega, pero el producto del pedido no cerró: ${cerrarErr.message}`,
                         updated_at: new Date().toISOString() })
               .eq("id", d.id),
-            `el aviso de que el renglón de ${d.clave} no cerró`,
+            `el aviso de que el producto de ${d.clave} no cerró`,
             (m) => fallos.push({ clave: d.clave, error: m }),
           );
         }
@@ -763,10 +763,10 @@ Deno.serve(async (req) => {
       const mapaOrigen = (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpOrigen) ?? null;
       const ubicOrigen = ubicacionDeTrabajo(mapaOrigen);
       if (!ubicOrigen) {
-        for (const d of lista) fallos.push({ clave: d.clave, error: `No se conoce la ubicación de la sala ${erpOrigen}.` });
+        for (const d of lista) fallos.push({ clave: d.clave, error: `No se conoce la ubicación de la sucursal ${erpOrigen}.` });
         continue;
       }
-      const nombreOrigen = String(mapaOrigen?.nombre ?? `la sala ${erpOrigen}`);
+      const nombreOrigen = String(mapaOrigen?.nombre ?? `la sucursal ${erpOrigen}`);
 
       const cookie = await sesionEn(erpOrigen, login);
       // La foto de los pendientes: el movimiento nuevo es el que no estaba. El
@@ -801,7 +801,7 @@ Deno.serve(async (req) => {
 
         const it = porItem.get(d.pedido_item_id);
         if (!it || !it.factor || !it.tipo) {
-          fallos.push({ clave: d.clave, error: "El renglón del pedido no guardó presentación o factor." });
+          fallos.push({ clave: d.clave, error: "El producto del pedido no guardó presentación o factor." });
           continue;
         }
 
@@ -810,7 +810,7 @@ Deno.serve(async (req) => {
         // sentido, igual que el origen de arriba.
         const erpDestino  = haciaLaSala(d) ? d.erp_sucursal_id : erpBodega;
         const nombreDestino = String(
-          (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpDestino)?.nombre ?? `la sala ${erpDestino}`,
+          (mapas ?? []).find((m) => Number(m.erp_sucursal_id) === erpDestino)?.nombre ?? `la sucursal ${erpDestino}`,
         );
 
         // `fallar` es lo único que le cuenta a alguien por qué una devolución no
@@ -1127,7 +1127,7 @@ Deno.serve(async (req) => {
               + `(${candidatos.join(", ") || "ninguno"}). Buscar «${d.clave}» en el concepto.`,
           updated_at: new Date().toISOString(),
           }).eq("id", d.id),
-          `la salida de ${d.clave} de la sala (el producto YA salió, movimiento ${idTraslado ?? "sin identificar"})`,
+          `la salida de ${d.clave} de la sucursal (el producto YA salió, movimiento ${idTraslado ?? "sin identificar"})`,
           (m) => fallos.push({ clave: d.clave, error: m }),
         );
 

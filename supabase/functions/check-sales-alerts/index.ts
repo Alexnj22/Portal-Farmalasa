@@ -83,8 +83,8 @@ serve(async (req) => {
         alertType: 'consecutive_mh',
         alertKey:  row.first_correlativo,
         branchId:  row.branch_id,
-        title:     `${row.branch_name} · ${row.run_len} ventas seguidas sin sello de Hacienda`,
-        message:   `Desde la N.º ${numeroLegible(row.first_correlativo)}, ${row.run_len} ventas seguidas no tienen el sello de Hacienda. Puede ser un problema de envío.`,
+        title:     `${row.branch_name} · ${row.run_len} ventas seguidas sin sello del MH`,
+        message:   `Desde la N.º ${numeroLegible(row.first_correlativo)}, ${row.run_len} ventas seguidas no tienen el sello del MH. Puede ser un problema de envío.`,
         urgent:    false,
         extra:     { tipo: 'consecutive_mh', sala: row.branch_name, seguidas: Number(row.run_len),
                      numero: numeroLegible(row.first_correlativo) },
@@ -93,9 +93,9 @@ serve(async (req) => {
     }
 
     for (const row of (ccfAlerts ?? [])) {
-      const que = row.tipo === 'ccf_null'       ? 'anulado sin completar ante Hacienda'
-                : row.tipo === 'ccf_observacion' ? 'con una observación de Hacienda'
-                :                                  'sin sello de Hacienda';
+      const que = row.tipo === 'ccf_null'       ? 'anulado sin completar ante el MH'
+                : row.tipo === 'ccf_observacion' ? 'con una observación del MH'
+                :                                  'sin sello del MH';
       allAlerts.push({
         alertType: row.tipo,
         alertKey:  row.correlativo,

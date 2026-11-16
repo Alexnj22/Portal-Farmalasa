@@ -64,7 +64,7 @@ export function armarInvalidacion(d: DatosInvalidacion) {
     throw new Error("invalidar por «otro» exige escribir el motivo");
   }
   if (d.documento.selloRecibido?.length !== 40) {
-    throw new Error("sólo se invalida un documento con sello de Hacienda");
+    throw new Error("Sólo se invalida un documento con sello del MH.");
   }
   const { fecEmi, horEmi } = fechaHoraSV(d.ahora);
   const r = d.documento.receptor;

@@ -167,7 +167,7 @@ async function abrirSala(cookie: string, erpId: number): Promise<void> {
   let ok = false;
   try { ok = Boolean(JSON.parse(await r.text())?.success); } catch { ok = false; }
   // Operar la caja de otra sala no se deshace solo. Si no se pudo fijar, se para.
-  if (!ok) throw new Error(`no se pudo abrir la sala ${erpId}`);
+  if (!ok) throw new Error(`no se pudo abrir la sucursal ${erpId}`);
 }
 
 /** La caja y la apertura vigentes de la sala, leídas del panel. */
@@ -467,7 +467,7 @@ Deno.serve(async (req) => {
           "aplicar_correccion", "rechazar_autorizacion", "enlace_apartado"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
-    if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
+    if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sucursal." }, 400);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
      * se aplica a lo que sí toca una caja por número de sala. */
     if (!["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
         && !permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-      return json({ ok: false, error: "Solo puedes operar la caja de tu propia sala." }, 403);
+      return json({ ok: false, error: "Solo puedes operar la caja de tu propia sucursal." }, 403);
     }
 
     // ── EL ENLACE DE PAGO DE UN APARTADO (reglamento v3, 2026-10-22) ────────
@@ -583,7 +583,7 @@ Deno.serve(async (req) => {
       // de quien pide: se podía pedir la corrección de un movimiento de otra
       // sucursal. Mismo hueco que `pedir_correccion` en creditos-erp.
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(mov.branch_id)) {
-        return json({ ok: false, error: "Ese movimiento es de otra sala." }, 403);
+        return json({ ok: false, error: "Ese movimiento es de otra sucursal." }, 403);
       }
       /* La parte del cajón de una salida que salió primero de una bolsa no se
        * corrige de monto: el vale dice «$130 de la bolsa + $20 de la caja», y
@@ -717,7 +717,7 @@ Deno.serve(async (req) => {
       };
     } else {
       const deLaSala = getErpBranchMap().find((e) => e.branchId === sala);
-      if (!deLaSala) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!deLaSala) return json({ ok: false, error: "Esa sucursal no está configurada." }, 400);
       entrada = deLaSala;
       const { username, password } = getCortesCreds();
       try {
@@ -857,7 +857,7 @@ Deno.serve(async (req) => {
         })).text();
         if (!exito(r)) {
           console.error(`[operar-caja] sin número mov=${mov.id}: ingreso en caja: ${r.slice(0, 1000)}`);
-          return { ok: false, status: 502, error: "La caja no aceptó el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." };
+          return { ok: false, status: 502, error: "La caja no aceptó el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Soporte." };
         }
         try { idMov = Number(JSON.parse(r)?.id_mov) || null; } catch { idMov = null; }
         reenviado = true;
@@ -884,7 +884,7 @@ Deno.serve(async (req) => {
       const { data: mov, error: errMov } = await supabase.from("caja_movimientos_portal")
         .select("*").eq("id", Number(body.movimiento)).maybeSingle();
       if (errMov) throw new Error(`leyendo el movimiento: ${errMov.message}`);
-      if (!mov || mov.branch_id !== sala) return json({ ok: false, error: "Ese movimiento no es de esta sala." }, 404);
+      if (!mov || mov.branch_id !== sala) return json({ ok: false, error: "Ese movimiento no es de esta sucursal." }, 404);
       if (mov.anulado_at) return json({ ok: false, error: "Ese movimiento está anulado." }, 409);
       if (mov.erp_movimiento_id) return json({ ok: true, movimiento_del_portal: mov.id, movimiento_en_caja: mov.erp_movimiento_id, repetido: true });
       if (String(mov.forma_pago ?? "EFECTIVO") !== "EFECTIVO") {
@@ -991,9 +991,9 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: "No existe esa solicitud de autorización." }, 404);
       }
       const meta = (sol.metadata ?? {}) as Record<string, unknown>;
-      if (Number(meta.branch_id) !== sala) return json({ ok: false, error: "Esa solicitud es de otra sala." }, 400);
+      if (Number(meta.branch_id) !== sala) return json({ ok: false, error: "Esa solicitud es de otra sucursal." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return json({ ok: false, error: "Esa solicitud es de otra sala." }, 403);
+        return json({ ok: false, error: "Esa solicitud es de otra sucursal." }, 403);
       }
       if (sol.employee_id === quien.id) {
         return json({ ok: false, error: "No puedes rechazar un movimiento que anotaste tú." }, 403);
@@ -1019,7 +1019,7 @@ Deno.serve(async (req) => {
         if (errOp) throw new Error(`leyendo la salida de bolsa: ${errOp.message}`);
         if (op?.anulada_at) return json({ ok: true, rechazado: true, anulado: true });
         return json({ ok: true, rechazado: true,
-          aviso: "Se rechazó, pero la salida de la bolsa no se pudo anular: si también sacó de la caja o la bolsa ya salió de la sala, anúlala pidiendo la corrección." });
+          aviso: "Se rechazó, pero la salida de la bolsa no se pudo anular. Si también salió de la caja o la bolsa ya salió de la sucursal, pide la corrección para anularla." });
       }
 
       const { data: mov, error: errMov } = await supabase.from("caja_movimientos_portal")
@@ -1064,7 +1064,7 @@ Deno.serve(async (req) => {
       }).eq("id", mov.id).is("anulado_at", null);
       if (errAnu) {
         console.error(`[operar-caja] rechazo mov=${mov.id}: portal: ${errAnu.message}`);
-        return json({ ok: true, rechazado: true, aviso: "La caja ya lo anuló, pero el portal no lo pudo anotar. Avísale a Sistemas." });
+        return json({ ok: true, rechazado: true, aviso: "La caja ya lo anuló, pero el portal no lo pudo anotar. Avísale a Soporte." });
       }
       // Un anticipo con tarjeta sin comprobante: su apartado vuelve a como estaba.
       if (mov.reserva_id || mov.encargo_id) {
@@ -1098,13 +1098,13 @@ Deno.serve(async (req) => {
 
       const meta = (sol.metadata ?? {}) as Record<string, unknown>;
       if (Number(meta.branch_id) !== sala) {
-        return json({ ok: false, error: "Esa corrección es de otra sala." }, 400);
+        return json({ ok: false, error: "Esa corrección es de otra sucursal." }, 400);
       }
       // Y quien decide, sólo sobre su sala si su permiso es de una (2026-10-02).
       // Lo de arriba sólo comparaba contra la `sala` que manda el navegador.
       // Hoy deciden sólo cargos de red: está para el día que no.
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(meta.branch_id)) {
-        return json({ ok: false, error: "Esa corrección es de otra sala." }, 403);
+        return json({ ok: false, error: "Esa corrección es de otra sucursal." }, 403);
       }
 
       const { data: mov, error: errMov } = await supabase
@@ -1253,7 +1253,7 @@ Deno.serve(async (req) => {
             })).text();
             if (!exito(r)) {
               console.error(`[operar-caja] forma mov=${mov.id}: borrar en caja: ${r.slice(0, 1000)}`);
-              return json({ ok: false, error: "La caja no aceptó sacar el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+              return json({ ok: false, error: "La caja no aceptó sacar el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Soporte." }, 502);
             }
           }
           erpNuevo = null;
@@ -1284,7 +1284,7 @@ Deno.serve(async (req) => {
             })).text();
             if (!exito(r)) {
               console.error(`[operar-caja] forma mov=${mov.id}: ingreso en caja: ${r.slice(0, 1000)}`);
-              return json({ ok: false, error: "La caja no aceptó el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+              return json({ ok: false, error: "La caja no aceptó el ingreso. Vuelve a intentarlo; si sigue igual, avisa a Soporte." }, 502);
             }
             try { erpNuevo = Number(JSON.parse(r)?.id_mov) || null; } catch { erpNuevo = null; }
           } else {
@@ -1311,7 +1311,7 @@ Deno.serve(async (req) => {
         await cancelarAutorizacion("Se cambió la forma de pago con una corrección aprobada.");
         const { error: errCerrarForma } = await cerrarSolicitud();
         const avisoForma = errForma
-          ? "La caja ya cambió, pero el portal no quedó anotado. Avisa a Sistemas."
+          ? "La caja ya cambió, pero el portal no quedó anotado. Avisa a Soporte."
           : errCerrarForma ? "Se aplicó, pero la solicitud no quedó marcada como aprobada." : null;
         return json({ ok: true, aplicado: { que: "FORMA", forma: formaNueva, de: formaAntes },
           ...(avisoForma ? { aviso: avisoForma } : {}) });
@@ -1371,7 +1371,7 @@ Deno.serve(async (req) => {
 
       if (resp !== null && !exito(resp)) {
         console.error(`[operar-caja] corrección mov=${meta.erp_movimiento_id}: ${resp.slice(0, 1000)}`);
-        return json({ ok: false, error: "La caja no aceptó la corrección. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+        return json({ ok: false, error: "La caja no aceptó la corrección. Vuelve a intentarlo; si sigue igual, avisa a Soporte." }, 502);
       }
 
       // Ya cambió del otro lado. De acá en adelante un fallo deja el portal
@@ -1435,11 +1435,11 @@ Deno.serve(async (req) => {
 
       if (errBolsa) {
         return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id },
-          aviso: "La caja se corrigió, pero la parte de la bolsa no se pudo anular. Anúlala desde el detalle de la bolsa o avísale a Sistemas." });
+          aviso: "La caja se corrigió, pero la parte de la bolsa no se pudo anular. Anúlala desde el detalle de la bolsa o avísale a Soporte." });
       }
       if (errPortal || errCerrar) {
         return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id },
-          aviso: "La caja se corrigió, pero el portal no lo pudo anotar entero. Avísale a Sistemas." });
+          aviso: "La caja se corrigió, pero el portal no lo pudo anotar entero. Avísale a Soporte." });
       }
       return json({ ok: true, aplicado: { que: meta.que, movimiento: mov.id,
         monto: anular ? null : Number(dosDecimales(montoNuevo)) } });
@@ -1448,7 +1448,7 @@ Deno.serve(async (req) => {
     // ── ABRIR ───────────────────────────────────────────────────────────────
     if (accion === "abrir") {
       if (estado.abierta) return json({ ok: false, error: "Esa caja ya está abierta." }, 409);
-      if (!estado.idCaja) return json({ ok: false, error: "Esa sala no tiene ninguna caja configurada." }, 409);
+      if (!estado.idCaja) return json({ ok: false, error: "Esa sucursal no tiene ninguna caja configurada." }, 409);
 
       /* ── CON EL Z DEL DÍA HECHO, LA CAJA NO SE VUELVE A ABRIR ───────────
        *
@@ -1472,7 +1472,7 @@ Deno.serve(async (req) => {
         return json({
           ok: false, dia_cerrado: yaCerroElDia === true,
           error: yaCerroElDia === true
-            ? "Esta sala ya cerró el día. La caja se vuelve a abrir mañana."
+            ? "Esta sucursal ya cerró el día. La caja se vuelve a abrir mañana."
             : "No se pudo comprobar si el día ya cerró, y no se abre la caja sin saberlo. "
               + "Vuelve a intentarlo en un momento.",
         }, 409);
@@ -1490,7 +1490,7 @@ Deno.serve(async (req) => {
       // sesión en vez del que esa sala usa siempre. Un dato equivocado en la
       // caja, sin error a la vista.
       if (errUltima) {
-        return json({ ok: false, error: "No se pudo averiguar con qué empleado abre esta sala." }, 503);
+        return json({ ok: false, error: "No se pudo averiguar con qué empleado abre esta sucursal." }, 503);
       }
       const empErp = ultima?.[0]?.erp_empleado_id ?? estado.idEmple;
 
@@ -1573,7 +1573,7 @@ Deno.serve(async (req) => {
                  + "si vas a empezar otro turno, primero hay que cerrar el que está.",
           }, 409);
         }
-        return json({ ok: false, error: "La caja no aceptó la apertura. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+        return json({ ok: false, error: "La caja no aceptó la apertura. Vuelve a intentarlo; si sigue igual, avisa a Soporte." }, 502);
       }
 
       /* Quién la abrió DE VERDAD, y a CUÁL apertura corresponde.
@@ -1637,7 +1637,7 @@ Deno.serve(async (req) => {
       // y se dice que no quedó anotada, en vez de callarlo.
       if (errApertura) {
         return json({ ok: true, abierta: true, caja: estado.idCaja,
-          aviso: "La caja abrió, pero no se pudo anotar quién la abrió. Avísale a Sistemas." });
+          aviso: "La caja abrió, pero no se pudo anotar quién la abrió. Avísale a Soporte." });
       }
       return json({ ok: true, abierta: true, caja: estado.idCaja });
     }
@@ -1677,7 +1677,7 @@ Deno.serve(async (req) => {
     // quedaría. Es como se mide antes de soltarlo, sin tocar la caja.
     if (accion === "iniciar_turno") {
       if (!estado.abierta) {
-        return json({ ok: false, error: "Esa sala no tiene una caja abierta. Primero hay que abrir la caja." }, 409);
+        return json({ ok: false, error: "Esa sucursal no tiene una caja abierta. Primero hay que abrir la caja." }, 409);
       }
       /* ── CON EL Z DEL DÍA HECHO NO SE INICIA UN TURNO ──────────────────────
        *
@@ -1696,7 +1696,7 @@ Deno.serve(async (req) => {
         if (yaCerro === true) {
           return json({
             ok: false, dia_cerrado: true,
-            error: "Esta sala ya cerró el día. El turno se inicia mañana, con la caja del día nuevo.",
+            error: "Esta sucursal ya cerró el día. El turno se inicia mañana, con la caja del día nuevo.",
           }, 409);
         }
       }
@@ -1714,7 +1714,7 @@ Deno.serve(async (req) => {
       // propia no se cae a la compartida: sería firmar con el nombre de otro,
       // que es exactamente lo que esta acción viene a evitar.
       if (!entrada.username || !entrada.password) {
-        return json({ ok: false, error: "Esta sala no tiene cuenta propia en el sistema de la caja. Avísale a Sistemas." }, 503);
+        return json({ ok: false, error: "Esta sucursal no tiene cuenta propia en el sistema de la caja. Avísale a Soporte." }, 503);
       }
       const cookieSala = await getSessionCookie(entrada.username, entrada.password);
       await abrirSala(cookieSala, entrada.erpId);
@@ -1763,7 +1763,7 @@ Deno.serve(async (req) => {
         return json({
           ok: false,
           error: "El turno quedaría a nombre de otro usuario del sistema, no del de esta caja. "
-               + "Inícialo desde el sistema de la caja y avísale a Sistemas.",
+               + "Inícialo desde el sistema de la caja y avísale a Soporte.",
         }, 409);
       }
       if (!suyo.idDetalle) {
@@ -1784,7 +1784,7 @@ Deno.serve(async (req) => {
       })).text();
       if (!exito(resp)) {
         console.error(`[operar-caja] iniciar_turno sala=${sala}: ${resp.slice(0, 1000)}`);
-        return json({ ok: false, error: "La caja no aceptó el inicio del turno. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+        return json({ ok: false, error: "La caja no aceptó el inicio del turno. Vuelve a intentarlo; si sigue igual, avisa a Soporte." }, 502);
       }
 
       /* El «success» NO es la prueba: se relee el panel. Es la misma lección del
@@ -1853,7 +1853,7 @@ Deno.serve(async (req) => {
     }
 
     // De acá para abajo hace falta una caja abierta.
-    if (!estado.abierta) return json({ ok: false, error: "Esa sala no tiene una caja abierta." }, 409);
+    if (!estado.abierta) return json({ ok: false, error: "Esa sucursal no tiene una caja abierta." }, 409);
 
     // ── INGRESO y SALIDA del cajón ──────────────────────────────────────────
     //
@@ -2136,7 +2136,7 @@ Deno.serve(async (req) => {
           const c = choque as { numero_boleta?: string; fecha?: string; monto?: number; concepto?: string };
           return json({
             ok: false,
-            error: `La boleta ${c.numero_boleta ?? ""} ya se anotó en esta sala`
+            error: `La boleta ${c.numero_boleta ?? ""} ya se anotó en esta sucursal`
               + `${c.fecha ? ` el ${c.fecha}` : ""}`
               + `${c.monto != null ? ` por $${Number(c.monto).toFixed(2)}` : ""}`
               + `${c.concepto ? ` (${c.concepto})` : ""}.`,
@@ -2202,7 +2202,7 @@ Deno.serve(async (req) => {
             : { data: null, error: null };
           if (errF) console.error(`[operar-caja] aplicacion: ficha ${fichaId}: ${errF.message}`);
           if (!ficha) {
-            return json({ ok: false, error: "Falta el cliente: búscalo o créale la ficha antes de cobrar." }, 400);
+            return json({ ok: false, error: "Falta el cliente. Búscalo o regístralo antes de cobrar." }, 400);
           }
         }
         const { data: cot, error: errCot } = await supabase.rpc("inyeccion_cotizar", {
@@ -2266,7 +2266,7 @@ Deno.serve(async (req) => {
           .select("id, name").eq("id", mapfreAsegurado).maybeSingle();
         if (errAseg) {
           console.error(`[operar-caja] mapfre: asegurado ${mapfreAsegurado}: ${errAseg.message}`);
-          return json({ ok: false, error: "No se pudo leer la ficha del asegurado. Vuelve a intentarlo." }, 503);
+          return json({ ok: false, error: "No se pudieron leer los datos del asegurado. Vuelve a intentarlo." }, 503);
         }
         if (!asegurado) return json({ ok: false, error: "Ese asegurado no está en el listado de clientes." }, 400);
         monto = Number(c.monto);
@@ -2428,7 +2428,7 @@ Deno.serve(async (req) => {
           return json({ ok: false, error: "La parte de la bolsa no existe o ya se anuló." }, 409);
         }
         if (Number(op.branch_id) !== sala) {
-          return json({ ok: false, error: "La parte de la bolsa es de otra sala." }, 400);
+          return json({ ok: false, error: "La parte de la bolsa es de otra sucursal." }, 400);
         }
         if (op.registrado_por !== quien.id) {
           return json({ ok: false, error: "La parte de la bolsa la registró otra persona." }, 403);
@@ -2711,7 +2711,7 @@ Deno.serve(async (req) => {
             .update({ confirmada: true }).eq("cobro_id", fila.id);
           if (errConf) {
             console.error(`[operar-caja] aplicacion fila=${fila.id}: confirmar: ${errConf.message}`);
-            avisoNoEfectivo = "El cobro quedó anotado, pero las aplicaciones no quedaron confirmadas. Avisa a Sistemas.";
+            avisoNoEfectivo = "El cobro quedó anotado, pero las aplicaciones no quedaron confirmadas. Avisa a Soporte.";
           }
         }
         if (sinComprobante) {
@@ -2720,7 +2720,7 @@ Deno.serve(async (req) => {
           });
           if (errAut) {
             console.error(`[operar-caja] autorizacion fila=${fila.id}: ${errAut.message}`);
-            avisoNoEfectivo = "El ingreso quedó anotado, pero no se pudo pedir la autorización. Avisa a Supervisión.";
+            avisoNoEfectivo = "El ingreso quedó anotado, pero no se pudo pedir la autorización. Avisa a un supervisor o administrador.";
           }
         }
         const { data: escrita, error: errRel } = await supabase.from("caja_movimientos_portal")
@@ -2857,7 +2857,7 @@ Deno.serve(async (req) => {
         }
         return json({
           ok: false, movimiento_del_portal: fila.id,
-          error: "La caja no aceptó el movimiento. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
+          error: "La caja no aceptó el movimiento. Vuelve a intentarlo; si sigue igual, avisa a Soporte.",
         }, 502);
       }
       let idMov: number | null = null;
@@ -2884,7 +2884,7 @@ Deno.serve(async (req) => {
           .update({ confirmada: true }).eq("cobro_id", fila.id);
         if (errConf) {
           console.error(`[operar-caja] aplicacion fila=${fila.id}: confirmar: ${errConf.message}`);
-          avisoAplicaciones = "El cobro entró, pero las aplicaciones no quedaron confirmadas. Avisa a Sistemas.";
+          avisoAplicaciones = "El cobro entró, pero las aplicaciones no quedaron confirmadas. Avisa a Soporte.";
         }
       }
       // El efectivo ya se movió; sin comprobante, queda a la espera de quien
@@ -2895,7 +2895,7 @@ Deno.serve(async (req) => {
         });
         if (errAut) {
           console.error(`[operar-caja] autorizacion fila=${fila.id}: ${errAut.message}`);
-          avisoAplicaciones = "El movimiento quedó anotado, pero no se pudo pedir la autorización. Avisa a Supervisión.";
+          avisoAplicaciones = "El movimiento quedó anotado, pero no se pudo pedir la autorización. Avisa a un supervisor o administrador.";
         } else {
           fila.autorizacion = "PENDIENTE";
           avisoAplicaciones ??= "Sin comprobante: quedó pendiente de autorización.";
@@ -3013,7 +3013,7 @@ Deno.serve(async (req) => {
 
     if (!exito(resp)) {
       console.error(`[operar-caja] cerrar sala=${sala}: ${resp.slice(0, 1000)}`);
-      return json({ ok: false, error: "La caja no aceptó el cierre. Vuelve a intentarlo; si sigue igual, avisa a Sistemas." }, 502);
+      return json({ ok: false, error: "La caja no aceptó el cierre. Vuelve a intentarlo; si sigue igual, avisa a Soporte." }, 502);
     }
 
     /* ── ¿Salió el Z? Se COMPRUEBA, no se supone ──────────────────────────
@@ -3064,9 +3064,9 @@ Deno.serve(async (req) => {
     return json({
       ok: true, cerrada: true, z: zEmitido,
       aviso: zEmitido === false
-        ? "La caja cerró, pero no aparece el corte Z del día. Hay que revisarlo antes de que se cierre el mes."
+        ? "La caja cerró, pero no aparece el cierre del día. Hay que revisarlo antes de que se cierre el mes."
         : zEmitido === null
-          ? "La caja cerró, pero no se pudo comprobar que saliera el corte Z."
+          ? "La caja cerró, pero no se pudo comprobar que saliera el cierre del día."
           : undefined,
     });
   } catch (e) {

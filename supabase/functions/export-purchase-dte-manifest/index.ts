@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
       });
     }
     if (entradas.length > MAX_ARCHIVOS) {
-      return new Response(JSON.stringify({ error: `Demasiados archivos (${entradas.length}) — acorta el rango de fechas.` }), {
+      return new Response(JSON.stringify({ error: `Demasiados archivos (${entradas.length}). Acorta el rango de fechas.` }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

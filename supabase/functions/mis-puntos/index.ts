@@ -350,7 +350,7 @@ Deno.serve(async (req) => {
       return json({
         ok: true, consentimiento, nombre: cli.name, saldo: 0, equivale: 0,
         acumulados: 0, canjeados: 0, movimientos: [], vencimientos: [],
-        aviso: "Todavía no tienes cuenta de puntos. Se te crea en la sala la primera vez que acumulás.",
+        aviso: "Todavía no tienes cuenta de puntos. Se crea en la sucursal la primera vez que acumulas.",
       });
     }
 

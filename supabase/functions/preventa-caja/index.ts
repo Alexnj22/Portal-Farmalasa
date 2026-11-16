@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     const { data: salas, error: eSalas } = await admin.from("app_reservas").select("branch_id").in("id", ids);
     if (eSalas) return responder({ ok: false, error: "No se pudieron leer las reservas." }, 503);
     const ramas = [...new Set((salas ?? []).map((s: { branch_id: number }) => Number(s.branch_id)))];
-    if (ramas.length !== 1) return responder({ ok: false, error: "Esas reservas no son de una sola sala." }, 400);
+    if (ramas.length !== 1) return responder({ ok: false, error: "Esas reservas no son de una sola sucursal." }, 400);
     if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== ramas[0]) {
       return responder({ ok: false, error: MENSAJES.FORBIDDEN }, 403);
     }
@@ -207,7 +207,7 @@ async function directa(
   if (venta.cliente.generico && datos.cliente && (venta.documento === "credito_fiscal" || venta.pago === "credito")) {
     return await fallar(venta.cliente.motivo === "nombre_con_tilde"
       ? "El nombre del cliente lleva tilde o Ñ y así no se puede emitir a su nombre. Corrígelo en sus datos."
-      : "El cliente todavía no tiene número de ficha: espera unos minutos o revísalo en Clientes.", 409);
+      : "El cliente todavía no tiene número. Espera unos minutos o revísalo en Clientes.", 409);
   }
 
   let resultado;

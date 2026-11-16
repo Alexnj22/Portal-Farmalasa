@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
       let r;
       try {
-        if (!mov.erp_sucursal_id) throw new Error("La sala no tiene inventario ligado.");
+        if (!mov.erp_sucursal_id) throw new Error("La sucursal no tiene inventario ligado.");
         // Una sesión por producto: la sucursal es estado global de la sesión y
         // el descargo abre la suya; compartirla entre escrituras es cómo una
         // termina en otra sala.

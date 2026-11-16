@@ -128,7 +128,7 @@ describe('Caja', () => {
 
 describe('invalidar un sellado se PIDE (auditoría H3)', () => {
     it('lo que vuelve de pedir es una solicitud, no un documento invalidado', () => {
-        const r = { estado: 'sellado', solicitud_id: 'abc', aviso: 'Solicitud enviada: el documento sigue vigente hasta que la aprueben.' };
+        const r = { estado: 'sellado', solicitud_id: 'abc', aviso: 'Solicitud enviada. El documento sigue vigente hasta que la aprueben.' };
         const av = avisoDeAccion(r, { sellado: { label: 'Sellado' } });
         expect(av.titulo).toBe('Solicitud enviada');
         expect(av.bien).toBe(true);

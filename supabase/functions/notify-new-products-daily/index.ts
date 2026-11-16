@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
   const title   = `${total} producto${total > 1 ? "s" : ""} nuevo${total > 1 ? "s" : ""} ${rango}`;
   const cuando  = desdeDia === ayer ? `el ${ayer}` : `entre el ${desdeDia} y el ${ayer}`;
-  const message = `Se agregaron ${total} producto${total > 1 ? "s" : ""} al catálogo ${cuando}. Revisa MinMax para asignarlos a las sucursales que corresponda.\n\n${listaCorta}${resto}`;
+  const message = `Se agregaron ${total} producto${total > 1 ? "s" : ""} al catálogo ${cuando}. Revisa Mín/Máx para asignarlos a las sucursales que corresponda.\n\n${listaCorta}${resto}`;
 
   // 4. A la CAMPANA, no a los avisos (2026-11-11, usuario: «no debe haber
   // aviso nuevo, mejor notificación»): lo que genera el sistema es una

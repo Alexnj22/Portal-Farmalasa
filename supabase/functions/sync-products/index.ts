@@ -209,7 +209,7 @@ async function avisarFueraDeCatalogo(
     // El aviso dice lo que hay que hacer, no sólo lo que pasó. Y no nombra de
     // dónde salió el dato: la pantalla habla del portal.
     const message =
-      `${p.nombre} dejó de aparecer en el catálogo, pero ${salas === 1 ? 'una sala tiene' : `${salas} salas tienen`} `
+      `${p.nombre} dejó de aparecer en el catálogo, pero ${salas === 1 ? 'una sucursal tiene' : `${salas} sucursales tienen`} `
       + `${acc.unidades} unidad${acc.unidades === 1 ? '' : 'es'} en existencia. `
       + `Hay que decidir qué se hace con lo que queda antes de que el producto deje de poder moverse.`;
 

@@ -1321,7 +1321,7 @@ export async function anotar(
   const { error } = await consulta;
   if (!error) return true;
   const aviso = `No se pudo anotar ${que}: ${error.message}. `
-    + `El movimiento en el sistema NO se deshace por esto — hay que mirarlo a mano.`;
+    + `El movimiento no se deshace por esto. Revísalo a mano.`;
   console.error(`[erp-traslado] ${aviso}`);
   registrar?.(aviso);
   return false;

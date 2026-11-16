@@ -147,7 +147,7 @@ export function choqueEnLaSala(
     .filter((f) => f !== venceNuevo && f !== dia(origen.vence)))].sort();
   if (!otras.length) return { bloquea: null, avisos: [] };
   if (mismoNumero)
-    return { bloquea: null, avisos: [`En la sala el lote ${loteNuevo} sigue también con vencimiento ${otras.join(", ")}: corrígelo igual si es el mismo.`] };
+    return { bloquea: null, avisos: [`En la sucursal el lote ${loteNuevo} sigue también con vencimiento ${otras.join(", ")}: corrígelo igual si es el mismo.`] };
   return { bloquea: par(lotes, loteNuevo, venceNuevo) ? null : otras[0], avisos: [] };
 }
 
@@ -173,7 +173,7 @@ export async function corregirLote(opc: {
   const cookie = await sesionEn(o.erpSucursal, login);
   const antes = await traerFila(cookie, o.erpProductId, o.erpUbicacion);
   if (!antes.encontrado)
-    return { ok: false, codigo: "SIN_EXISTENCIA", error: `${nombre} no tiene existencia en esta sala.` };
+    return { ok: false, codigo: "SIN_EXISTENCIA", error: `${nombre} no tiene existencia en esta sucursal.` };
   if (!antes.regulado)
     return { ok: false, codigo: "SIN_CONTROL_DE_LOTE", error: `${nombre} no lleva control de lote.` };
 
@@ -206,7 +206,7 @@ export async function corregirLote(opc: {
   if (!origen)
     return {
       ok: false, codigo: "LOTE_NO_EXISTE",
-      error: `${nombre}: el lote ${o.loteViejo}${o.venceViejo ? ` (vence ${dia(o.venceViejo)})` : ""} ya no está en esta sala.`,
+      error: `${nombre}: el lote ${o.loteViejo}${o.venceViejo ? ` (vence ${dia(o.venceViejo)})` : ""} ya no está en esta sucursal.`,
     };
   const rev = revisarCorreccion({ origen, unidades: o.unidades, loteNuevo, venceNuevo });
   if (!rev.ok) return { ...rev, error: `${nombre}: ${rev.error}` };
@@ -216,7 +216,7 @@ export async function corregirLote(opc: {
   if (choque.bloquea)
     return {
       ok: false, codigo: "LOTE_OTRA_FECHA",
-      error: `${nombre}: el lote ${loteNuevo} ya está en la sala con vencimiento ${choque.bloquea}. Revisa la caja.`,
+      error: `${nombre}: el lote ${loteNuevo} ya está en la sucursal con vencimiento ${choque.bloquea}. Revisa la caja.`,
     };
   const avisos = choque.avisos;
   const previo = destinoPrevio?.stock ?? 0;

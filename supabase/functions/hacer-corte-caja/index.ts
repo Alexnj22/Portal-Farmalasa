@@ -106,7 +106,7 @@ async function abrirSala(cookie: string, erpId: number): Promise<void> {
   try { ok = Boolean(JSON.parse(await r.text())?.success); } catch { ok = false; }
   // Cortar la caja de otra sala no se deshace: el corte queda hecho allá y el
   // turno de esta sigue abierto. Si no se pudo fijar, no se sigue.
-  if (!ok) throw new Error(`no se pudo abrir la sala ${erpId}`);
+  if (!ok) throw new Error(`no se pudo abrir la sucursal ${erpId}`);
 }
 
 /**
@@ -590,7 +590,7 @@ Deno.serve(async (req) => {
      * Por eso `efectivo` no se exige con `tipo: 'Z'`. */
     const tipo = String(body.tipo ?? "C").toUpperCase() === "Z" ? "Z" : "C";
     const esZ = tipo === "Z";
-    if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sala." }, 400);
+    if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sucursal." }, 400);
     // La consulta de preventas (`body.preventas`) no cuenta nada: sin esta
     // excepción contestaba 400 «Falta el efectivo contado» y el aviso previo
     // de Mi caja no salía nunca (2026-10-28, Salud 2).
@@ -622,7 +622,7 @@ Deno.serve(async (req) => {
       if (!secreto || req.headers.get("x-cierre-automatico") !== secreto) {
         return json({ ok: false, error: "UNAUTHORIZED" }, 401);
       }
-      if (!esZ) return json({ ok: false, error: "El cierre automático sólo emite el corte Z." }, 400);
+      if (!esZ) return json({ ok: false, error: "El cierre automático sólo hace el cierre del día." }, 400);
     } else {
       quien = await requireActiveEmployeeUser(req, supabase);
       if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
@@ -635,12 +635,12 @@ Deno.serve(async (req) => {
       // no se deshace. El módulo `caja_vales` no ofrecía alcance en la pantalla de
       // permisos, así que tampoco había forma de acotarlo.
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return json({ ok: false, error: "Solo puedes hacer el corte de tu propia sala." }, 403);
+        return json({ ok: false, error: "Solo puedes hacer el corte de tu propia sucursal." }, 403);
       }
     }
 
     const entrada = getErpBranchMap().find((e) => e.branchId === sala);
-    if (!entrada) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
+    if (!entrada) return json({ ok: false, error: "Esa sucursal no está configurada." }, 400);
 
     const { username, password } = getCortesCreds();
     const cookie = await getSessionCookie(username, password);
@@ -722,20 +722,20 @@ Deno.serve(async (req) => {
       if (yaHayZ === null) {
         return json({
           ok: false,
-          error: "No se pudo comprobar si el día ya tiene su corte Z. No se emite otro:"
-            + " un Z de más no se deshace. Vuelve a intentarlo en un momento.",
+          error: "No se pudo comprobar si el día ya tiene su cierre. No se hace otro,"
+            + " porque un cierre de más no se deshace. Vuelve a intentarlo en un momento.",
         }, 503);
       }
       if (yaHayZ) {
         return json({
           ok: false, ya_estaba: true,
-          error: "Este día ya tiene su corte Z. No se emite otro.",
+          error: "Este día ya tiene su cierre. No se hace otro.",
         }, 409);
       }
     }
 
     const viva = await aperturaViva(cookie);
-    if (!viva) return json({ ok: false, error: "Esa sala no tiene una caja abierta ahora." }, 409);
+    if (!viva) return json({ ok: false, error: "Esa sucursal no tiene una caja abierta ahora." }, 409);
 
     /* ── UN Z CON EL TURNO PARADO ──────────────────────────────────────────
      *
@@ -1016,7 +1016,7 @@ Deno.serve(async (req) => {
             if (errSuc) console.error(`[hacer-corte-caja] nombre de la sala: ${errSuc.message}`);
             const { error: errAviso } = await supabase.rpc("notify_employees", {
               p_recipients: dest, p_type: "CIERRE_DEL_DIA",
-              p_title: `${suc?.name ?? "Una sala"} cerró el día con $${pendiente.toFixed(2)} sin contar`,
+              p_title: `${suc?.name ?? "Una sucursal"} cerró el día con $${pendiente.toFixed(2)} sin contar`,
               p_body: `Motivo: ${motivo.rotulo}.`,
               p_link: "/cortes", p_metadata: { origen: "cierre-con-diferencia", falta: pendiente, motivo: motivo.id },
               p_push: true, p_branch_id: sala,
@@ -1445,9 +1445,8 @@ Deno.serve(async (req) => {
     if (!simular && !esZ && Number(efectivo) === 0 && esperado > 0) {
       return json({
         ok: false,
-        error: "No se puede cortar con $0.00: el sistema de la caja da por exacto "
-             + "un corte sin efectivo contado, y el comprobante sale sin diferencia. "
-             + "Hay que contar el efectivo del cajón y escribir cuánto hay.",
+        error: "No se puede hacer el corte con $0.00. "
+             + "Cuenta el efectivo de la caja y escribe cuánto hay.",
       }, 400);
     }
 
@@ -1518,7 +1517,7 @@ Deno.serve(async (req) => {
           + `(${JSON.stringify(campos.get("total_corte"))})`);
         return json({
           ok: false,
-          error: "El sistema de la caja no dio el total del cierre, y un corte Z sin su monto "
+          error: "La caja no dio el total del cierre, y un cierre del día sin su monto "
                + "no se puede corregir después. Vuelve a intentarlo en un momento.",
         }, 503);
       }
@@ -1672,14 +1671,14 @@ Deno.serve(async (req) => {
     const avisoTipo = !ok || !idCorte
       ? undefined
       : !tiquete
-        ? `El ${tipo} se registró (número ${idCorte}), pero no se pudo leer su comprobante`
+        ? `El ${tipo === "Z" ? "cierre del día" : "corte"} se registró (número ${idCorte}), pero no se pudo leer su comprobante`
           + " para confirmar que salió del tipo correcto."
         : tipoQueSalio === null
-          ? `El ${tipo} se registró (número ${idCorte}), pero su comprobante dice «${rotulo}»`
-            + " y el portal no reconoce ese tipo. Avisa a Sistemas antes de seguir."
+          ? `El ${tipo === "Z" ? "cierre del día" : "corte"} se registró (número ${idCorte}), pero su comprobante dice «${rotulo}»`
+            + " y el portal no reconoce ese tipo. Avisa a Soporte antes de seguir."
           : tipoQueSalio !== tipo
-            ? `Se pidió un corte ${tipo} y el sistema emitió uno de tipo ${rotulo}`
-              + ` (número ${idCorte}). Avisa a Sistemas antes de seguir.`
+            ? `Se pidió ${tipo === "Z" ? "el cierre del día" : "un corte"} y la caja emitió otro tipo (${rotulo})`
+              + ` (número ${idCorte}). Avisa a Soporte antes de seguir.`
             : undefined;
 
     /* ── El corte CIERRA el vale de su tramo ──────────────────────────────

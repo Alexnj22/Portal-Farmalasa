@@ -289,8 +289,8 @@ describe('pistasDeDiferencia: qué revisar cuando el total no cuadra', () => {
                 { renglon: 1, descripcion: 'IBUPROFENO CAJA X 10', armado: 251.50, cobrado: 152.98 },
             ],
         });
-        expect(p.some(t => t.startsWith('Renglón 2 «IBUPROFENO CAJA X 10»') && t.includes('sobran $98.52'))).toBe(true);
-        expect(p.some(t => t.startsWith('Renglón 1'))).toBe(false);
+        expect(p.some(t => t.startsWith('Producto 2 «IBUPROFENO CAJA X 10»') && t.includes('sobran $98.52'))).toBe(true);
+        expect(p.some(t => t.startsWith('Producto 1'))).toBe(false);
     });
     it('la percepción que el proveedor no tiene en su ficha (IMBERTON)', () => {
         const p = pistasDeDiferencia({
@@ -309,7 +309,7 @@ describe('pistasDeDiferencia: qué revisar cuando el total no cuadra', () => {
             carga: { gravada: 100, exenta: 0, iva: 13, percepcion: 0 },
             renglones: [{ renglon: 0, descripcion: 'X', armado: 100, cobrado: 100 }],
         });
-        expect(p).toEqual(['La factura trae otros impuestos que la carga no suma: FOVIAL $2.40 — y son exactamente la diferencia.']);
+        expect(p).toEqual(['La factura trae otros impuestos que la carga no suma: FOVIAL $2.40. Son exactamente la diferencia.']);
     });
     it('centavos sin causa visible = redondeo', () => {
         const p = pistasDeDiferencia({
@@ -328,6 +328,6 @@ describe('pistasDeDiferencia: qué revisar cuando el total no cuadra', () => {
             carga: { gravada: 100, exenta: 0, iva: 13, percepcion: 0 },
             renglones: [{ renglon: 0, descripcion: 'X', armado: 80, cobrado: 100 }, { renglon: 1, descripcion: 'REGALO', armado: 20, cobrado: 0 }],
         });
-        expect(p.some(t => t.startsWith('Renglón'))).toBe(false);
+        expect(p.some(t => t.startsWith('Producto'))).toBe(false);
     });
 });

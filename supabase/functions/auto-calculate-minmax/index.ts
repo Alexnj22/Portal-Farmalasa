@@ -136,14 +136,14 @@ serve(async (req) => {
 
     const message = nadaSeCalculo && skipped.length > 0 && failed.length === 0
       // El caso que antes salía como "completado, no hay borradores pendientes".
-      ? `NO se recalculó ninguna sucursal: las ${skipped.length} se saltaron.${detalleSaltadas} El MIN/MAX quedó igual que el mes pasado.`
+      ? `NO se recalculó ninguna sucursal: las ${skipped.length} se saltaron.${detalleSaltadas} El Mín/Máx quedó igual que el mes pasado.`
       : failed.length > 0
-        ? `Recálculo con errores (${succeeded.length}/${ERP_ORDER.length} sucursales calculadas). Errores en: ${failed.join(", ")}.${detalleSaltadas} Revisa MinMax.`
+        ? `Recálculo con errores (${succeeded.length}/${ERP_ORDER.length} sucursales calculadas). Errores en: ${failed.join(", ")}.${detalleSaltadas} Revisa Mín/Máx.`
         : totalDrafted > 0
-          ? `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente · ${totalDrafted.toLocaleString()} requieren revisión en MinMax.${detalleSaltadas}`
+          ? `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente · ${totalDrafted.toLocaleString()} requieren revisión en Mín/Máx.${detalleSaltadas}`
           : `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente. No hay borradores pendientes.${detalleSaltadas}`;
 
-    const pushTitle = "Recálculo mensual MIN/MAX";
+    const pushTitle = "Recálculo mensual de Mín/Máx";
 
     // A la CAMPANA, no a los avisos (2026-11-11, usuario: «no debe haber aviso
     // nuevo, mejor notificación»): lo automático es notificación; un aviso lo

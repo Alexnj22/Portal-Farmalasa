@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     const simulacro = cuerpo.simulacro !== false;
 
     if (!pedidoId || !Number.isFinite(sucId) || labels.length === 0)
-      return json({ ok: false, error: "Falta el pedido, la sala o las cajas." }, 400);
+      return json({ ok: false, error: "Falta el pedido, la sucursal o las cajas." }, 400);
     if (labels.length > 30)
       return json({ ok: false, error: "Demasiadas cajas de una vez (máximo 30)." }, 400);
 
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     // Bodega, y lo decide quien lo despachó.
     const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; branch_id: number | null }>(
       admin.from("employees").select("role_id, secondary_role_id, branch_id").eq("id", usuario.id).maybeSingle(),
-      "tu ficha de empleado",
+      "tus datos de empleado",
     );
     if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
     const delDia = await cargosYSalaDelDia(admin, usuario.id, emp);
@@ -105,9 +105,9 @@ Deno.serve(async (req) => {
       .from("erp_sucursal_map").select("erp_sucursal_id, es_bodega, branch_id");
     if (mapaErr) throw mapaErr;
     const mapaBodega = (mapas ?? []).find((m) => m.es_bodega) ?? null;
-    if (!mapaBodega) return json({ ok: false, error: "No hay una bodega marcada en el mapa de salas." }, 422);
+    if (!mapaBodega) return json({ ok: false, error: "No hay una bodega marcada en el mapa de sucursales." }, 422);
     if (!(mapas ?? []).some((m) => Number(m.erp_sucursal_id) === sucId))
-      return json({ ok: false, error: "Esa sala no está en el mapa." }, 422);
+      return json({ ok: false, error: "Esa sucursal no está en el mapa." }, 422);
     if (!alcanceTodo && Number(delDia.branch_id ?? 0) !== Number(mapaBodega.branch_id ?? -1))
       return json({ ok: false, error: "Esto lo decide Bodega, que es a donde regresa el producto." }, 403);
 
@@ -115,10 +115,10 @@ Deno.serve(async (req) => {
     const { dato: pss, roto: rotoPss } = await leerBien<{ cajas_especiales: unknown; cajas_especiales_llegadas: unknown }>(
       admin.from("pedido_sucursal_status").select("cajas_especiales, cajas_especiales_llegadas")
         .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).maybeSingle(),
-      "el estado de la sala",
+      "el estado de la sucursal",
     );
     if (rotoPss) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoPss }, 503);
-    if (!pss) return json({ ok: false, codigo: "NO_EXISTE", error: "Esa sala no tiene este pedido." }, 404);
+    if (!pss) return json({ ok: false, codigo: "NO_EXISTE", error: "Esa sucursal no tiene este pedido." }, 404);
     const especiales = (Array.isArray(pss.cajas_especiales) ? pss.cajas_especiales : []) as
       { label: string; pedido_item_id: number; product_name?: string }[];
     const llegadas = (pss.cajas_especiales_llegadas && typeof pss.cajas_especiales_llegadas === "object"
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
       return json({
         ok: false, codigo: "PARCIAL",
         error: `Parte de ese producto sí llegó (${parcial.map((e) => e.label).join(", ")}). `
-          + "Va en un solo traslado: anularlo regresaría también lo que la sala tiene.",
+          + "Va en un solo traslado: anularlo regresaría también lo que la sucursal tiene.",
       }, 409);
 
     // ── Freno: falla cerrado, salvo el simulacro, que no escribe ──────────
@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
       );
       return json({
         ok: false, codigo: "REVISAR_A_MANO",
-        error: "Una anulación anterior de este producto se cortó a medias. Hay que revisarla en el sistema antes de seguir.",
+        error: "Una anulación anterior de este producto se cortó a medias. Revísala antes de seguir.",
       }, 409);
     }
 
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
     if (noAnulables.length > 0) {
       const l = noAnulables[0];
       const porque = l.estado === "recibida" || l.estado === "recibiendo"
-        ? "ya entró a la sala en el sistema"
+        ? "ya entró a la sucursal en el sistema"
         : l.estado === "anulando" ? "otra persona lo está anulando ahora mismo"
         : l.estado === "error" ? "su traslado quedó con un error que hay que revisar a mano"
         : "su traslado todavía no terminó de salir";
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
         return json({
           ok: false, codigo: "NO_ANULABLE",
           error: raro.estado === "recibido"
-            ? "Ese traslado ya entró a la sala en el sistema: no se puede anular. Se resuelve como diferencia."
+            ? "Ese traslado ya entró a la sucursal en el sistema: no se puede anular. Se resuelve como diferencia."
             : "No se pudo confirmar en el sistema que el traslado siga pendiente. No se movió nada.",
         }, 409);
     }

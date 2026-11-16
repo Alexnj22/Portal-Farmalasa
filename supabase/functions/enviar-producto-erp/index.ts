@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
       sobrante = false,
     } = await req.json().catch(() => ({}));
 
-    if (!request_id) return json({ ok: false, error: "Falta el envío." }, 400);
+    if (!request_id) return json({ ok: false, error: "Falta el traslado." }, 400);
     if (!["despachar", "decidir", "recibir_devolucion", "recibir_aparecido", "no_aparecio"].includes(String(accion)))
       return json({ ok: false, error: `Acción desconocida: ${accion}` }, 400);
 
@@ -316,8 +316,8 @@ Deno.serve(async (req) => {
       return json({
         ok: false,
         error: deDestino
-          ? "No tienes permiso para decidir sobre los envíos de tu sala."
-          : "No tienes permiso para enviar producto a otra sala.",
+          ? "No tienes permiso para decidir sobre los traslados de tu sucursal."
+          : "No tienes permiso para enviar producto a otra sucursal.",
       }, 403);
     let emp = permiso.emp as { branch_id?: number } | null;
     const alcanceTodo = permiso.alcanceTodo;
@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
       .eq("id", request_id)
       .maybeSingle();
     if (solErr) throw solErr;
-    if (!sol) return json({ ok: false, error: "Ese envío no existe." }, 404);
+    if (!sol) return json({ ok: false, error: "Ese traslado no existe." }, 404);
     if (sol.type !== "INVENTORY_TRANSFER_PUSH")
       return json({ ok: false, error: `El tipo ${sol.type} no se aplica desde aquí.` }, 422);
 
@@ -339,10 +339,10 @@ Deno.serve(async (req) => {
     if (porCron) {
       const { dato: autor, roto } = await leerBien<{ id: string; name: string; branch_id: number }>(
         admin.from("employees").select("id, name, branch_id").eq("id", sol.employee_id).maybeSingle(),
-        "quién armó el envío",
+        "quién armó el traslado",
       );
       if (roto) return json({ ok: false, error: roto }, 503);
-      if (!autor) return json({ ok: false, error: "El envío no tiene a quién atribuirle el despacho." }, 422);
+      if (!autor) return json({ ok: false, error: "El traslado no tiene a quién atribuirle el despacho." }, 422);
       quien = { id: autor.id, name: autor.name, status: "ACTIVO", code: "" };
       emp = { branch_id: autor.branch_id };
     }
@@ -353,7 +353,7 @@ Deno.serve(async (req) => {
     const branchOrigen  = Number(meta.origen_branch_id);
     const branchDestino = Number(meta.branch_id);
     if (!erpOrigen || !erpDestino)
-      return json({ ok: false, error: "El envío no dice de qué sala sale o a cuál va." }, 422);
+      return json({ ok: false, error: "El traslado no dice de qué sucursal sale o a cuál va." }, 422);
 
     const { data: mapaSalas, error: mapaErr } = await admin
       .from("erp_sucursal_map").select("erp_sucursal_id, branch_id, codigo, inv_ubicaciones, nombre");
@@ -405,8 +405,8 @@ Deno.serve(async (req) => {
      * está mapeada, o está mapeada y no tiene área de vencidos— y decir la
      * genérica manda a buscar el problema al lugar equivocado. */
     const sinUbicacionOrigen = origenVencidos
-      ? `La sala que envía (${erpOrigen}) no tiene área de vencidos.`
-      : `No se conoce la ubicación de la sala que envía (${erpOrigen}).`;
+      ? `La sucursal que envía (${erpOrigen}) no tiene área de vencidos.`
+      : `No se conoce la ubicación de la sucursal que envía (${erpOrigen}).`;
 
     const { dato: lineasRaw, roto: lineasRoto } = await leerBien<Linea[]>(
       admin.from("envio_linea")
@@ -414,12 +414,12 @@ Deno.serve(async (req) => {
                 "cantidad, unidades, lotes, estado, id_traslado, id_traslado_devolucion, " +
                 "detalle, motivo_rechazo")
         .eq("request_id", sol.id).order("posicion"),
-      "los renglones del envío",
+      "los productos del traslado",
     );
     if (lineasRoto) return json({ ok: false, error: lineasRoto }, 503);
     const lineas = (lineasRaw ?? []) as Linea[];
     if (lineas.length === 0)
-      return json({ ok: false, error: "Ese envío no tiene renglones." }, 422);
+      return json({ ok: false, error: "Ese traslado no tiene productos." }, 422);
 
     /* Quién puede, y desde dónde. Se repite acá lo que decide el RLS porque
      * esta función usa la llave de servicio y el RLS no la frena; si las dos
@@ -461,8 +461,8 @@ Deno.serve(async (req) => {
         await soltarAjuste(admin, f, t.actor, extra);
         return json({ ok: false, error }, status);
       };
-      if (f.request_id !== sol.id || f.familia !== "envio") return await soltarCon(404, "Ese faltante no es de este envío.");
-      if (!ubicDestino) return await soltarCon(422, `No se conoce la ubicación de la sala que recibe (${erpDestino}).`);
+      if (f.request_id !== sol.id || f.familia !== "envio") return await soltarCon(404, "Ese faltante no es de este traslado.");
+      if (!ubicDestino) return await soltarCon(422, `No se conoce la ubicación de la sucursal que recibe (${erpDestino}).`);
       const l = lineas.find((x) => x.posicion === f.posicion);
       if (!l) return await soltarCon(422, `No hay un producto en la posición ${f.posicion}.`);
       const nombre = l.descripcion ?? String(l.erp_product_id);
@@ -478,8 +478,8 @@ Deno.serve(async (req) => {
         // movimiento carga el producto dos veces.
         const { data: tomado, error: candadoErr } = await admin
           .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "decidiendo" });
-        if (candadoErr) return await soltarCon(503, "No se pudo tomar el envío para recibirlo.");
-        if (tomado !== true) return await soltarCon(409, "Alguien más de la sala está contestando este envío en este momento.");
+        if (candadoErr) return await soltarCon(503, "No se pudo tomar el traslado para recibirlo.");
+        if (tomado !== true) return await soltarCon(409, "Alguien más de la sucursal está contestando este traslado en este momento.");
         try {
           const cookie = await sesionEn(erpDestino);
           await devolverFichasHuerfanas(admin, "envio_linea", cookie);
@@ -497,7 +497,7 @@ Deno.serve(async (req) => {
               estado: "aceptada",
               recibido_at: new Date().toISOString(),
               motivo_rechazo: null,
-              aviso: "No llegó y no apareció: se recibió para descontarlo (lo decidió supervisión).",
+              aviso: "No llegó y no apareció. Se recibió para descontarlo (lo decidió un supervisor o administrador).",
               decidido_por: actor.id, decidido_at: new Date().toISOString(),
               error: null,
               updated_at: new Date().toISOString(),
@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
         } finally {
           await anotar(
             admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "decidiendo" }),
-            "la salida del envío",
+            "la salida del traslado",
           );
         }
       } else if (l.estado !== "aceptada") {
@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     // ══════════════════════════════════════════════════════════════════════
     if (accion === "despachar") {
       if (sol.status !== "PENDING")
-        return json({ ok: false, error: `Este envío ya está ${sol.status}.` }, 409);
+        return json({ ok: false, error: `Este traslado ya está ${sol.status}.` }, 409);
       if (!ubicOrigen)
         return json({ ok: false, error: sinUbicacionOrigen }, 422);
       /* El envío de un sobrante (lo arma `declarar_sobrantes`) lo despacha la
@@ -537,10 +537,10 @@ Deno.serve(async (req) => {
        * vale sobre una fila que la base marcó como sobrante. */
       const esDeSobrante = Boolean(meta.sobrante_de);
       if (sobrante === true && !esDeSobrante)
-        return json({ ok: false, error: "Ese envío no es de un sobrante." }, 422);
+        return json({ ok: false, error: "Ese traslado no es de un sobrante." }, 422);
       if (!(await puedeObrarPor(branchOrigen))
           && !(esDeSobrante && sobrante === true && await puedeObrarPor(branchDestino)))
-        return json({ ok: false, error: "Este envío lo despacha la sala de la que sale el producto." }, 403);
+        return json({ ok: false, error: "Este traslado lo despacha la sucursal de la que sale el producto." }, 403);
 
       /* Lo que falta mandar. Una `enviada` no se vuelve a tocar, que es lo que
        * hace seguro apretar dos veces.
@@ -554,7 +554,7 @@ Deno.serve(async (req) => {
       const pendientes = lineas.filter((l) =>
         l.estado === "por_enviar" || (!porCron && l.estado === "error"));
       if (pendientes.length === 0)
-        return json({ ok: false, codigo: "NADA_QUE_ENVIAR", error: "Ya salió todo lo de este envío." }, 409);
+        return json({ ok: false, codigo: "NADA_QUE_ENVIAR", error: "Ya salió todo lo de este traslado." }, 409);
 
       /* El candado: el aviso le llega a varias personas de la sala y cualquiera
        * puede apretar. Sin esto, dos que aprieten a la vez pasan las dos la
@@ -572,12 +572,12 @@ Deno.serve(async (req) => {
       // significa «no se pudo preguntar». Son dos cosas y hay que decir cuál.
       if (candadoErr) {
         console.error("[enviar-producto-erp] candado:", candadoErr.message);
-        return json({ ok: false, error: "No se pudo tomar el envío para despacharlo." }, 503);
+        return json({ ok: false, error: "No se pudo tomar el traslado para despacharlo." }, 503);
       }
       if (tomada !== true)
         return json({
           ok: false, codigo: "YA_EN_CURSO",
-          error: "Alguien más de tu sala está despachando este envío en este momento.",
+          error: "Alguien más de tu sucursal está despachando este traslado en este momento.",
         }, 409);
 
       const cookie = await sesionEn(erpOrigen);
@@ -655,7 +655,7 @@ Deno.serve(async (req) => {
         };
 
         const f = await traerFila(cookie, l.erp_product_id, ubicOrigen);
-        if (!f.encontrado) { await fallar(`${nombre} no tiene existencia en tu sala.`); continue; }
+        if (!f.encontrado) { await fallar(`${nombre} no tiene existencia en tu sucursal.`); continue; }
         // Lo sin lote asignado partido en varios renglones cuenta junto: se le
         // asigna el lote de la caja antes de salir (ver `juntarSinLote`).
         if (f.regulado) f.lotes = juntarSinLote(f.lotes);
@@ -683,8 +683,8 @@ Deno.serve(async (req) => {
           // sistema respeta la ubicación desde el 26-ago (ver
           // `disponibleEnBodega`). Si falta, falta en el estante.
           await fallar(
-            `De ${nombre} ${hayEnTexto(hay, "tu sala")}: alcanzan para ${hay.paquetes} y ` +
-            `el envío lleva ${l.cantidad}.`,
+            `De ${nombre} ${hayEnTexto(hay, "tu sucursal")}: alcanzan para ${hay.paquetes} y ` +
+            `el traslado lleva ${l.cantidad}.`,
           );
           continue;
         }
@@ -701,12 +701,12 @@ Deno.serve(async (req) => {
           .filter((r) => r.numero && r.paquetes > 0);
 
         const reparto = f.regulado
-          ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(pres.unidad), reservados, "el envío")
+          ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(pres.unidad), reservados, "el traslado")
           : { renglones: [{ cantidad: Number(l.cantidad), idLote: "0", lote: null as string | null }], faltan: 0, avisos: [] as string[] };
 
         if (reparto.faltan > 0) {
           await fallar(
-            `De ${nombre} faltan ${reparto.faltan} de ${l.presentacion_tipo}: los lotes de tu sala ` +
+            `De ${nombre} faltan ${reparto.faltan} de ${l.presentacion_tipo}: los lotes de tu sucursal ` +
             `no alcanzan. Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
           );
           continue;
@@ -732,7 +732,7 @@ Deno.serve(async (req) => {
           if (!caja) {
             await fallar(
               `${nombre}: ${deGenerico * Number(pres.unidad)} unidades no tienen lote asignado. `
-              + `Hay que armar el envío de nuevo y escribir el lote y el vencimiento que trae la caja.`,
+              + `Hay que armar el traslado de nuevo y escribir el lote y el vencimiento que trae la caja.`,
             );
             continue;
           }
@@ -839,7 +839,7 @@ Deno.serve(async (req) => {
             await fallar(
               `El sistema no aceptó el traslado: ${resp.msg || "sin detalle"}`
               + (nuevos.length
-                ? `. Ojo: salieron ${nuevos.length} traslado(s) más de esa sala en ese momento (${nuevos.join(", ")}), así que puede haber salido igual — compruébalo antes de reintentar.`
+                ? `. Ojo: salieron ${nuevos.length} traslado(s) más de esa sucursal en ese momento (${nuevos.join(", ")}), así que puede haber salido igual. Compruébalo antes de reintentar.`
                 : ""),
             );
             continue;
@@ -922,7 +922,7 @@ Deno.serve(async (req) => {
       // protege de nada.
       await anotar(
         admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "despachando" }),
-        "la salida del envío del despacho",
+        "la salida del traslado del despacho",
       );
 
       // ── Que el área de vencidos quede como estaba ──────────────────────────
@@ -965,8 +965,8 @@ Deno.serve(async (req) => {
         if (avisoErr) {
           console.error("[enviar-producto-erp] aviso al destino:", avisoErr.message);
           fallos.push({
-            producto: "el aviso a la otra sala",
-            error: `El producto salió pero no se pudo avisar a ${meta.branch_name ?? "la otra sala"}: `
+            producto: "el aviso a la otra sucursal",
+            error: `El producto salió pero no se pudo avisar a ${meta.branch_name ?? "la otra sucursal"}: `
                  + `${avisoErr.message}. Avísales por otro medio.`,
           });
         }
@@ -997,16 +997,16 @@ Deno.serve(async (req) => {
     // ══════════════════════════════════════════════════════════════════════
     if (accion === "decidir") {
       if (sol.status !== "PENDING")
-        return json({ ok: false, error: `Este envío ya está ${sol.status}.` }, 409);
+        return json({ ok: false, error: `Este traslado ya está ${sol.status}.` }, 409);
       if (!ubicDestino)
         return json({
           ok: false,
           error: destinoVencidos
-            ? `Tu sala (${erpDestino}) no tiene área de vencidos.`
-            : `No se conoce la ubicación de tu sala (${erpDestino}).`,
+            ? `Tu sucursal (${erpDestino}) no tiene área de vencidos.`
+            : `No se conoce la ubicación de tu sucursal (${erpDestino}).`,
         }, 422);
       if (!(await puedeObrarPor(branchDestino)))
-        return json({ ok: false, error: "Este envío lo decide la sala a la que llegó el producto." }, 403);
+        return json({ ok: false, error: "Este traslado lo decide la sucursal a la que llegó el producto." }, 403);
 
       /* Las decisiones viajan como POSICIONES, nunca como renglones. Con
        * renglones, el navegador elegiría qué producto se mueve y del otro lado
@@ -1083,12 +1083,12 @@ Deno.serve(async (req) => {
         .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "decidiendo" });
       if (candadoErr) {
         console.error("[enviar-producto-erp] candado decidir:", candadoErr.message);
-        return json({ ok: false, error: "No se pudo tomar el envío para decidirlo." }, 503);
+        return json({ ok: false, error: "No se pudo tomar el traslado para decidirlo." }, 503);
       }
       if (tomado !== true)
         return json({
           ok: false, codigo: "YA_EN_CURSO",
-          error: "Alguien más de tu sala está contestando este envío en este momento.",
+          error: "Alguien más de tu sucursal está contestando este traslado en este momento.",
         }, 409);
 
       const cookie = await sesionEn(erpDestino);
@@ -1169,7 +1169,7 @@ Deno.serve(async (req) => {
               decidido_por: actor.id, decidido_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }).eq("id", l.id),
-            `el renglón sin número de ${nombre}`,
+            `el producto sin número de ${nombre}`,
           );
           fallar(msg);
           continue;
@@ -1187,7 +1187,7 @@ Deno.serve(async (req) => {
             await anotar(
               admin.from("envio_linea").update({
                 estado: "error",
-                error: `El movimiento ${idIda} está anulado en el sistema: el producto no entró a tu sala.`,
+                error: `El movimiento ${idIda} está anulado en el sistema: el producto no entró a tu sucursal.`,
                 updated_at: new Date().toISOString(),
               }).eq("id", l.id),
               `el traslado anulado de ${nombre}`,
@@ -1218,17 +1218,17 @@ Deno.serve(async (req) => {
         // así que devolverlo es sacarlo. La caja viaja después: quien envió lo
         // confirma cuando la tenga, igual que la devolución de un pedido.
         const f = await traerFila(cookie, l.erp_product_id, ubicDestino);
-        if (!f.encontrado) { fallar(`${nombre} no aparece en el inventario de tu sala para devolverlo.`); continue; }
+        if (!f.encontrado) { fallar(`${nombre} no aparece en el inventario de tu sucursal para devolverlo.`); continue; }
         const pres = await resolverPresentacion(cookie, f, l.presentacion_tipo, l.factor);
         if (!pres) { fallar(`${nombre}: no se encontró la presentación ${l.presentacion_tipo} de ${l.factor} para devolverlo.`); continue; }
 
         // Vuelve por los MISMOS lotes con los que llegó; lo que no alcance, por
         // el que vence primero y con su aviso.
         const reparto = f.regulado
-          ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(pres.unidad), lotesDeIda(l), "el envío")
+          ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(pres.unidad), lotesDeIda(l), "el traslado")
           : { renglones: [{ cantidad: Number(l.cantidad), idLote: "0", lote: null as string | null }], faltan: 0, avisos: [] as string[] };
         if (reparto.faltan > 0) {
-          fallar(`Para devolver ${nombre} faltan ${reparto.faltan} de ${l.presentacion_tipo} en los lotes de tu sala.`);
+          fallar(`Para devolver ${nombre} faltan ${reparto.faltan} de ${l.presentacion_tipo} en los lotes de tu sucursal.`);
           continue;
         }
 
@@ -1271,7 +1271,7 @@ Deno.serve(async (req) => {
             // El producto quedó ENTRADO en esta sala y sin devolver. Se dice
             // tal cual: dejarlo como «devuelta» sería inventar un movimiento.
             fallar(
-              `${nombre} entró a tu sala pero el sistema no aceptó la devolución: ${resp.msg || "sin detalle"}`
+              `${nombre} entró a tu sucursal pero el sistema no aceptó la devolución: ${resp.msg || "sin detalle"}`
               + (nuevos.length ? ` · salieron ${nuevos.length} traslado(s) en ese momento (${nuevos.join(", ")}): compruébalo antes de reintentar` : ""),
             );
             continue;
@@ -1364,13 +1364,13 @@ Deno.serve(async (req) => {
        * miró esa parte de la caja. */
       const { dato: quedan } = await leerBien<{ estado: string }[]>(
         admin.from("envio_linea").select("estado").eq("request_id", sol.id).eq("estado", "enviada"),
-        "los renglones que faltan decidir",
+        "los productos que faltan decidir",
       );
       let cerrado: string | null = null;
       if ((quedan ?? []).length === 0) {
         const { dato: finales } = await leerBien<{ estado: string; motivo_rechazo: string | null }[]>(
           admin.from("envio_linea").select("estado, motivo_rechazo").eq("request_id", sol.id),
-          "el resultado del envío",
+          "el resultado del traslado",
         );
         const filas = (finales ?? []) as { estado: string; motivo_rechazo: string | null }[];
         const aceptadas = filas.filter((x) => x.estado === "aceptada").length;
@@ -1410,8 +1410,8 @@ Deno.serve(async (req) => {
               p_nota: String(nota ?? "").trim() || null,
               p_motivos: motivosDados.length ? motivosDados.join("; ") : null,
             }),
-            "el cierre del envío",
-            (m) => fallos.push({ producto: "el envío", error: m }),
+            "el cierre del traslado",
+            (m) => fallos.push({ producto: "el traslado", error: m }),
           );
         }
       }
@@ -1421,7 +1421,7 @@ Deno.serve(async (req) => {
       // 3 minutos — más que lo que vive una invocación.
       await anotar(
         admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "decidiendo" }),
-        "la salida del envío de la decisión",
+        "la salida del traslado de la decisión",
       );
 
       return json({
@@ -1457,9 +1457,9 @@ Deno.serve(async (req) => {
     if (accion === "recibir_aparecido") {
       if (!faltante_id) return json({ ok: false, error: "Falta el faltante." }, 400);
       if (!ubicDestino)
-        return json({ ok: false, error: `No se conoce la ubicación de tu sala (${erpDestino}).` }, 422);
+        return json({ ok: false, error: `No se conoce la ubicación de tu sucursal (${erpDestino}).` }, 422);
       if (!(await puedeObrarPor(branchDestino)))
-        return json({ ok: false, error: "Lo ingresa la sala a la que iba el producto." }, 403);
+        return json({ ok: false, error: "Lo ingresa la sucursal a la que iba el producto." }, 403);
 
       const { dato: bf, roto: bfRoto } = await leerBien<{
         id: string; request_id: string; posicion: number; familia: string; estado: string;
@@ -1470,7 +1470,7 @@ Deno.serve(async (req) => {
       );
       if (bfRoto) return json({ ok: false, error: bfRoto }, 503);
       if (!bf || bf.request_id !== sol.id || bf.familia !== "envio")
-        return json({ ok: false, error: "Ese faltante no es de este envío." }, 404);
+        return json({ ok: false, error: "Ese faltante no es de este traslado." }, 404);
       if (bf.estado === "no_aparecio")
         return json({ ok: false, codigo: "YA_CERRADO", error: "Ese faltante se cerró como no aparecido." }, 409);
 
@@ -1527,12 +1527,12 @@ Deno.serve(async (req) => {
         .rpc("tomar_paso_envio", { p_request_id: sol.id, p_actor: actor.id, p_paso: "decidiendo" });
       if (candadoErr) {
         console.error("[enviar-producto-erp] candado aparecido:", candadoErr.message);
-        return json({ ok: false, error: "No se pudo tomar el envío para ingresarlo." }, 503);
+        return json({ ok: false, error: "No se pudo tomar el traslado para ingresarlo." }, 503);
       }
       if (tomado !== true)
         return json({
           ok: false, codigo: "YA_EN_CURSO",
-          error: "Alguien más de tu sala está contestando este envío en este momento.",
+          error: "Alguien más de tu sucursal está contestando este traslado en este momento.",
         }, 409);
 
       try {
@@ -1566,13 +1566,13 @@ Deno.serve(async (req) => {
         return json({
           ok: fallos.length === 0, ya: entrada.ya, producto: nombre, id_traslado: idIda,
           ...(fallos.length
-            ? { error: `${nombre} entró a tu sala, pero no se pudo anotar en el portal: ${fallos.join("; ")}` }
+            ? { error: `${nombre} entró a tu sucursal, pero no se pudo anotar en el portal: ${fallos.join("; ")}` }
             : {}),
         });
       } finally {
         await anotar(
           admin.rpc("soltar_paso_envio", { p_request_id: sol.id, p_paso: "decidiendo" }),
-          "la salida del envío del ingreso",
+          "la salida del traslado del ingreso",
         );
       }
     }
@@ -1587,7 +1587,7 @@ Deno.serve(async (req) => {
     if (!ubicOrigen)
       return json({ ok: false, error: sinUbicacionOrigen }, 422);
     if (!(await puedeObrarPor(branchOrigen)))
-      return json({ ok: false, error: "La devolución la recibe la sala de la que salió el producto." }, 403);
+      return json({ ok: false, error: "La devolución la recibe la sucursal de la que salió el producto." }, 403);
 
     const porVolver = lineas.filter((l) => l.estado === "devuelta" && l.id_traslado_devolucion);
     if (porVolver.length === 0)
@@ -1605,7 +1605,7 @@ Deno.serve(async (req) => {
     if (tomadaVuelta !== true)
       return json({
         ok: false, codigo: "YA_EN_CURSO",
-        error: "Alguien más de tu sala está recibiendo esta devolución en este momento.",
+        error: "Alguien más de tu sucursal está recibiendo esta devolución en este momento.",
       }, 409);
 
     const cookie = await sesionEn(erpOrigen);
@@ -1629,7 +1629,7 @@ Deno.serve(async (req) => {
             error: null,
             updated_at: new Date().toISOString(),
           }).eq("id", l.id),
-          `la vuelta de ${nombre} a tu sala`,
+          `la vuelta de ${nombre} a tu sucursal`,
           (m) => fallos.push({ producto: nombre, error: m }),
         );
         hechas.push({ producto: nombre, id_traslado: idVuelta });
@@ -1650,7 +1650,7 @@ Deno.serve(async (req) => {
         continue;
       }
       if (vuelta.ya) { await cerrar("El sistema ya lo tenía recibido; no se volvió a cargar."); continue; }
-      if (vuelta.destrabado) { await cerrar(`Se recibió destrabando la ficha y dejándola como estaba: ${vuelta.destrabado}`); continue; }
+      if (vuelta.destrabado) { await cerrar(`Se recibió destrabando los datos del producto y dejándolos como estaban: ${vuelta.destrabado}`); continue; }
       await cerrar(null);
     }
 

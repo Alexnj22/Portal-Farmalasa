@@ -31,7 +31,7 @@ export async function login(): Promise<string> {
     signal: AbortSignal.timeout(20_000),
   });
   const cookie = res.headers.get("set-cookie")?.split(";")[0];
-  if (!cookie) throw new Error("El ERP no devolvió cookie de sesión.");
+  if (!cookie) throw new Error("No se pudo iniciar la sesión de clientes.");
   return cookie;
 }
 
@@ -64,7 +64,7 @@ export async function pedir(cookie: string, url: string, datos?: URLSearchParams
     });
     const t = await res.text();
     if (/name\s*=\s*["']password/i.test(t.slice(0, 4000)))
-      throw new Error("La sesión del ERP caducó (devolvió el login).");
+      throw new Error("La sesión de clientes venció. Vuelve a intentarlo.");
     return t;
   });
 }
@@ -132,7 +132,7 @@ export async function escribirCampo(
   cookie: string, erpId: string, campo: string, valor: string,
 ): Promise<{ ok: boolean; motivo?: string; perdidos?: string[] }> {
   const { campos } = await leerFicha(cookie, erpId);
-  if (!Object.keys(campos).length) return { ok: false, motivo: "el ERP no devolvió la ficha" };
+  if (!Object.keys(campos).length) return { ok: false, motivo: "no llegaron los datos del cliente" };
 
   const nuevos = { ...campos, [campo]: valor };
   const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`,
@@ -167,7 +167,7 @@ export async function escribirCampos(
   cambios: Record<string, string>, vaciadosEsperados: string[] = [],
 ): Promise<{ ok: boolean; motivo?: string; perdidos?: string[] }> {
   const { campos } = await leerFicha(cookie, erpId);
-  if (!Object.keys(campos).length) return { ok: false, motivo: "el ERP no devolvió la ficha" };
+  if (!Object.keys(campos).length) return { ok: false, motivo: "no llegaron los datos del cliente" };
   const nuevos = { ...campos, ...cambios };
   const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`,
     new URLSearchParams({ ...nuevos, process: "edit", id_cliente: String(erpId) }));

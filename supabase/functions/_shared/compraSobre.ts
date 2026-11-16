@@ -91,7 +91,7 @@ export function lineaDelSobre(
 ): { linea: LineaSobre | null; problemas: Problema[]; detalle?: Record<string, unknown> } {
   const problemas: Problema[] = [];
   const costo = costoNeto(r);
-  if (!(r.cantidad > 0)) problemas.push({ renglon: i, texto: "La cantidad del documento no es válida." });
+  if (!(r.cantidad > 0)) problemas.push({ renglon: i, texto: "La cantidad de la factura no es válida." });
 
   if (d.tipo === "consumo" || d.tipo === "servicio") {
     return {
@@ -154,7 +154,7 @@ export function lineaDelSobre(
   if (p.perecedero) {
     const m = /^(\d{4})-(\d{2})/.exec(d.vence ?? "");
     if (m) vence = `${m[1]}-${m[2]}-01`;
-    else if (p.regulado) problemas.push({ renglon: i, texto: `«${p.nombre}» es regulado y el renglón no dice cuándo vence.` });
+    else if (p.regulado) problemas.push({ renglon: i, texto: `«${p.nombre}» es regulado y no dice cuándo vence.` });
     else { vence = ""; vencePendiente = true; }
   }
   // La viñeta: la que Bodega leyó en la caja, o la que ya tiene. El sistema
@@ -165,7 +165,7 @@ export function lineaDelSobre(
   }
   const venta = vinetaNueva ?? pres.precio;
   const lote = p.regulado ? String(d.lote ?? "").trim() : "";
-  if (p.regulado && !lote) problemas.push({ renglon: i, texto: `«${p.nombre}» lleva lote y el renglón no lo trae.` });
+  if (p.regulado && !lote) problemas.push({ renglon: i, texto: `«${p.nombre}» lleva lote y la factura no lo trae.` });
 
   return {
     linea: {
@@ -650,7 +650,7 @@ export function pistasDeDiferencia(x: {
     for (const r of x.renglones) {
       const dif = r2(r.armado - r.cobrado);
       if (Math.abs(dif) > 0.05) {
-        pistas.push(`Renglón ${r.renglon + 1} «${r.descripcion.slice(0, 60)}»: la factura lo cobra ${$(r.cobrado)} y se carga como ${$(r.armado)} (${dif > 0 ? "sobran" : "faltan"} ${$(dif)}). Revisa «Se carga como», la cantidad y si trae descuento.`);
+        pistas.push(`Producto ${r.renglon + 1} «${r.descripcion.slice(0, 60)}»: la factura lo cobra ${$(r.cobrado)} y se carga como ${$(r.armado)} (${dif > 0 ? "sobran" : "faltan"} ${$(dif)}). Revisa «Se carga como», la cantidad y si trae descuento.`);
       }
     }
   }
@@ -677,31 +677,31 @@ export function pistasDeDiferencia(x: {
   if (!cerca(percDoc, x.carga.percepcion) && (percDoc > 0 || x.carga.percepcion > 0)) {
     pistas.push(`Percepción: la factura trae ${$(percDoc)} y la carga calcula ${$(x.carga.percepcion)}${x.tasaPercepcion ? ` (${(x.tasaPercepcion * 100).toFixed(0)} % del proveedor)` : " (el proveedor está sin percepción)"}. Revisa si el proveedor es agente de percepción en su ficha.`);
   } else if (!sinPercepcion && x.carga.percepcion === 0 && d < 0 && cerca(-d, percDe1) && x.carga.gravada >= 100) {
-    pistas.push(`La diferencia (${$(d)}) es el 1 % de lo gravado: parece una percepción que la factura cobra y el proveedor no tiene en su ficha.`);
+    pistas.push(`La diferencia (${$(d)}) es el 1 % de lo gravado: parece una percepción que la factura cobra y el proveedor no tiene en sus datos.`);
   }
 
   // 5. Impuestos que la carga no suma (FOVIAL, COTRANS, turismo…).
   const otros = tributos.filter((t) => String(t?.codigo) !== "20" && num(t?.valor) > 0);
   if (otros.length) {
     const suma = otros.reduce((a, t) => a + num(t.valor), 0);
-    pistas.push(`La factura trae otros impuestos que la carga no suma: ${otros.map((t) => `${String(t.descripcion ?? t.codigo).trim()} ${$(num(t.valor))}`).join(", ")}${cerca(-d, suma) ? " — y son exactamente la diferencia" : ""}.`);
+    pistas.push(`La factura trae otros impuestos que la carga no suma: ${otros.map((t) => `${String(t.descripcion ?? t.codigo).trim()} ${$(num(t.valor))}`).join(", ")}${cerca(-d, suma) ? ". Son exactamente la diferencia" : ""}.`);
   }
 
   // 6. Coincide con un renglón entero: falta, sobra o está repetido.
   for (const r of x.renglones) {
     const conIva = r2(r.cobrado * (x.tipoDoc === "CCF" ? 1.13 : 1));
     if (r.cobrado > 0.5 && (cerca(Math.abs(d), r.cobrado) || cerca(Math.abs(d), conIva))) {
-      pistas.push(`La diferencia es lo que vale el renglón ${r.renglon + 1} «${r.descripcion.slice(0, 60)}»: revisa que no esté de más o que no falte.`);
+      pistas.push(`La diferencia es lo que vale el producto ${r.renglon + 1} «${r.descripcion.slice(0, 60)}»: revisa que no esté de más o que no falte.`);
       break;
     }
   }
 
   // 7. Centavos: el costo por unidad viaja con 4 decimales.
   if (!pistas.length && Math.abs(d) <= 0.5) {
-    pistas.push(`Son ${$(d)}: parece redondeo del costo por unidad (va con 4 decimales). Revisa el renglón con más unidades o el que se partió en presentaciones.`);
+    pistas.push(`Son ${$(d)}: parece redondeo del costo por unidad (va con 4 decimales). Revisa el producto con más unidades o el que se partió en presentaciones.`);
   }
   if (!pistas.length) {
-    pistas.push(`No se encontró una causa en los totales ni en los renglones. Compara la factura (vista «Documento») con «Totales» de abajo, pieza por pieza.`);
+    pistas.push(`No se encontró una causa en los totales ni en los productos. Compara la factura (vista «Documento») con «Totales» de abajo, pieza por pieza.`);
   }
   return pistas;
 }

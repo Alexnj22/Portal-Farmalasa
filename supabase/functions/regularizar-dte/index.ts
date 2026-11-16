@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
       const permiso = await permisoDeModulo(admin, emp.id, "facturacion", "can_edit");
       if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
       if (!permiso.puede)
-        return json({ ok: false, error: "No tenés permiso para regularizar facturas." }, 403);
+        return json({ ok: false, error: "No tienes permiso para regularizar facturas." }, 403);
       actorId = emp.id;
       actorNombre = emp.name;
     }
@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
     const filtroPausa = pausadas.size ? `(${[...pausadas.keys()].join(",")})` : null;
     if (alcance === "sucursal" && pausadas.has(Number(branch_id)))
       return json({ ok: false, pausada: true,
-                    error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(branch_id))}` }, 409);
+                    error: `Esta sucursal no se envía al MH por ahora: ${pausadas.get(Number(branch_id))}` }, 409);
 
     if (alcance === "una") {
       if (!invoice_id) return json({ ok: false, error: "Falta invoice_id." }, 400);
@@ -261,13 +261,13 @@ Deno.serve(async (req) => {
       if (!data) return json({ ok: false, error: "Esa factura ya no está en el portal." }, 404);
       if (pausadas.has(Number(data.branch_id)))
         return json({ ok: false, pausada: true,
-                      error: `Esta sucursal no se envía a Hacienda por ahora: ${pausadas.get(Number(data.branch_id))}` }, 409);
+                      error: `Esta sucursal no se envía al MH por ahora: ${pausadas.get(Number(data.branch_id))}` }, 409);
       // `forzar_cof_noche`: el cliente pidió su documento en la sala
       // (`dte-para-cliente`, 2026-10-19). Sólo se le acepta al servidor: desde
       // el navegador nadie puede saltarse la regla con un parámetro.
       if (cofNoSeEnvia(data, siempre) && !(esCron && cuerpo.forzar_cof_noche === true))
         return json({ ok: false, no_se_envia: true,
-                      error: "Los consumidores finales emitidos desde las 6:00 p. m. no se envían a Hacienda." }, 409);
+                      error: "Los consumidores finales emitidos desde las 6:00 p. m. no se envían al MH." }, 409);
       if (excluidas.has(Number(invoice_id)))
         return json({ ok: false, excluida: true,
                       error: `Esta factura está excluida del barrido: ${excluidas.get(Number(invoice_id))}` }, 409);
@@ -470,7 +470,7 @@ Deno.serve(async (req) => {
         if (yaResuelta) { detalle.push({ ...base, ok: true, omitida: "ya estaba resuelta" }); continue; }
 
         if (f.bolsa === "anuladas" && (!respCfg?.nombre || !respDui))
-          throw new Error("No está configurado el responsable de anulaciones ante Hacienda.");
+          throw new Error("No está configurado el responsable de anulaciones ante el MH.");
 
         const mh = await enviarDteAlMH(cookie, String(f.erp_invoice_id), f.tipo_documento, {
           anula: f.bolsa === "anuladas",
@@ -630,7 +630,7 @@ Deno.serve(async (req) => {
         // del documento deja de ser el mismo.
         const n = (f?.distrito_escrito ?? 0) + (f?.ubicacion_por_defecto ?? 0)
                 + (f?.dui_borrado ?? 0) + (f?.telefono_puesto ?? 0) + (f?.fusionadas ?? 0);
-        if (!n) return { corregidas: 0, motivo: "la corrección de fichas no cambió nada", r2: null };
+        if (!n) return { corregidas: 0, motivo: "la corrección de datos de clientes no cambió nada", r2: null };
         // El reenvío conserva el alcance del llamador: apretar el botón de
         // UNA factura no puede terminar mandando las de toda la empresa.
         const rEnvio = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {

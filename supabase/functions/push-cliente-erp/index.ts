@@ -128,7 +128,7 @@ async function empujarFicha(sb: any, ficha: any): Promise<any> {
     const cookie = await login();
     const { campos, opciones } = parsearFicha(
       await pedir(cookie, `${BASE}/editar_cliente.php?id_cliente=${ficha.erp_id}`));
-    if (!Object.keys(campos).length) throw new Error("El ERP no devolvió la ficha (¿sesión caída?).");
+    if (!Object.keys(campos).length) throw new Error("No llegaron los datos del cliente. Vuelve a intentarlo.");
 
     const nuevos: Record<string, string> = { ...campos };
     const aplicados: any[] = [];
@@ -140,12 +140,12 @@ async function empujarFicha(sb: any, ficha: any): Promise<any> {
         aplicados.push({ ...c, campo_erp: A_TEXTO[c.campo], envia: c.valor ?? "" });
       } else if (A_SELECT[c.campo]) {
         const v = valorDeSelect(opciones, A_SELECT[c.campo], c.valor ?? "");
-        if (v === null) { sinResolver.push({ ...c, motivo: `'${c.valor}' no coincide con ninguna opción del ERP` }); continue; }
+        if (v === null) { sinResolver.push({ ...c, motivo: `'${c.valor}' no coincide con ninguna opción de la caja` }); continue; }
         nuevos[A_SELECT[c.campo]] = v;
         aplicados.push({ ...c, campo_erp: A_SELECT[c.campo], envia: v });
-      } else sinResolver.push({ ...c, motivo: "sin equivalente en el ERP" });
+      } else sinResolver.push({ ...c, motivo: "sin equivalente en la caja" });
     }
-    if (!aplicados.length) return { empujado: false, erp_id: ficha.erp_id, motivo: "nada que el ERP pueda recibir", sin_resolver: sinResolver };
+    if (!aplicados.length) return { empujado: false, erp_id: ficha.erp_id, motivo: "nada que la caja pueda recibir", sin_resolver: sinResolver };
 
     const payload = new URLSearchParams({ ...nuevos, process: "edit", id_cliente: String(ficha.erp_id) });
     const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`, payload);
@@ -159,7 +159,7 @@ async function empujarFicha(sb: any, ficha: any): Promise<any> {
     const perdidos = Object.keys(campos).filter(k =>
       campos[k] && !despues[k] && nuevos[k] !== "");
     if (noQuedo.length || perdidos.length) {
-      return { empujado: false, erp_id: ficha.erp_id, motivo: "el ERP no dejó el dato como se envió",
+      return { empujado: false, erp_id: ficha.erp_id, motivo: "la caja no dejó el dato como se envió",
                no_quedo: noQuedo.map((a: any) => a.campo_erp), perdidos };
     }
 

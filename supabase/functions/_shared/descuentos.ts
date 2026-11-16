@@ -135,7 +135,7 @@ export async function salasDelOrigen(cookie: string): Promise<Map<string, number
   for (const m of html.matchAll(/<option\s+value=['"](\d+)['"][^>]*>([^<]*)<\/option>/gi)) {
     mapa.set(soloTexto(desescapar(m[2])).toUpperCase(), Number(m[1]));
   }
-  if (!mapa.size) throw new Error("No se pudo leer la lista de salas del sistema de la caja.");
+  if (!mapa.size) throw new Error("No se pudo leer la lista de sucursales de la caja.");
   return mapa;
 }
 

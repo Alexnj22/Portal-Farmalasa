@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     if (!permiso.alcanceTodo && !miSala) {
       return responder({
         ok: false,
-        error: "Tu ficha no tiene una sala asignada, así que no se pueden ver sus descuentos.",
+        error: "No tienes una sucursal asignada. No se pueden ver los descuentos.",
       }, 409);
     }
 
@@ -146,8 +146,8 @@ Deno.serve(async (req) => {
     const puedeEscribir = (d: DescuentoDelOrigen) =>
       permiso.alcanceTodo || (!d.todas_las_salas && d.erp_sucursal_id === miSala!.erpId);
     const noEsSuyo = (d: DescuentoDelOrigen) => d.todas_las_salas
-      ? "Ese descuento vale en todas las salas: sólo lo cambia quien ve toda la red."
-      : "Ese descuento no es de tu sala.";
+      ? "Ese descuento vale en todas las sucursales: sólo lo cambia quien ve toda la red."
+      : "Ese descuento no es de tu sucursal.";
 
     /** La copia de la caja al día con lo que se acaba de escribir. Si falla, la
      *  trae el cron (3 veces al día); no es un error del guardado. */
@@ -375,7 +375,7 @@ Deno.serve(async (req) => {
       const d = await detalleDelDescuento(cookie, id, salas);
       if (!d) return responder({ ok: false, error: "Ese descuento ya no existe." }, 404);
       if (!visible(d)) {
-        return responder({ ok: false, error: "Ese descuento no es de tu sala." }, 403);
+        return responder({ ok: false, error: "Ese descuento no es de tu sucursal." }, 403);
       }
 
       /* El error NO se descarta: sin nombres la pantalla muestra «Producto
@@ -407,7 +407,7 @@ Deno.serve(async (req) => {
       }
       const d = await detalleDelDescuento(cookie, id, salas);
       if (!d) return responder({ ok: false, error: "Ese descuento ya no existe." }, 404);
-      if (!visible(d)) return responder({ ok: false, error: "Ese descuento no es de tu sala." }, 403);
+      if (!visible(d)) return responder({ ok: false, error: "Ese descuento no es de tu sucursal." }, 403);
       const foto = await camposDeLaFoto(admin, paraFoto(d, d.productos));
       return responder({
         ok: true,
@@ -456,7 +456,7 @@ Deno.serve(async (req) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(fin)) falta.push("Falta la fecha de fin.");
       if (inicio && fin && fin < inicio) falta.push("La fecha de fin no puede ser anterior a la de inicio.");
       if (!productos.length) falta.push("Agrega al menos un producto.");
-      if (!erpSucursal) falta.push("Elige la sala.");
+      if (!erpSucursal) falta.push("Elige la sucursal.");
       if (falta.length) return responder({ ok: false, error: falta.join(" "), campos: falta }, 400);
 
       /* La lista se lee UNA vez y sirve para todo: si la corrección existe y
@@ -622,7 +622,7 @@ Deno.serve(async (req) => {
           if (!d) { resultados.push({ id, error: "Ese descuento ya no existe." }); continue; }
           const erpSucursal = d.todas_las_salas ? mapa[0].erpId : d.erp_sucursal_id;
           if (!erpSucursal) {
-            resultados.push({ id, error: `No se pudo saber de qué sala es «${d.descripcion}» («${d.sala_rotulo}»).` });
+            resultados.push({ id, error: `No se pudo saber de qué sucursal es «${d.descripcion}» («${d.sala_rotulo}»).` });
             continue;
           }
           if (!d.productos.length) {
@@ -784,7 +784,7 @@ Deno.serve(async (req) => {
            se pudo traducir NO se escribe —mandar 0 lo movía a otra sala—. */
         const erpSucursal = d.todas_las_salas ? mapa[0].erpId : d.erp_sucursal_id;
         if (!erpSucursal) {
-          fallidos.push({ id, descripcion: d.descripcion, error: `No se pudo saber de qué sala es («${d.sala_rotulo}»).` });
+          fallidos.push({ id, descripcion: d.descripcion, error: `No se pudo saber de qué sucursal es («${d.sala_rotulo}»).` });
           continue;
         }
 

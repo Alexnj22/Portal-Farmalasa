@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.7 — Lenguaje: mensajes del servidor
+
+- Tanda 12 de la revisión del lenguaje: los mensajes que devuelven las
+  funciones del servidor (caja, cortes, traslados, compras, clientes,
+  facturación, puntos, Saly). Unos 480 textos. «Sistemas» → Soporte; «corte
+  Z» → cierre del día; sin voseo; ya no se nombra el ERP en lo que llega a
+  una persona.
+
 ## v2.1554.6 — Lenguaje: componentes, núcleo y menú
 
 - Tanda 11 de la revisión del lenguaje: el Tablero, Facturación, Ventas,

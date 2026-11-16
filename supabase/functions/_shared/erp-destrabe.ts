@@ -72,7 +72,7 @@ export async function presentacionesParaMostrar(
     const ficha = await leerFichaDe(cookie, s.prod);
     const candidatas = ficha.presentaciones.filter((p) => p.oculta && p.exis && Number(p.unidad) === s.unidad);
     if (candidatas.length !== 1)
-      return { ok: false, motivo: `${s.nombre || s.prod}: la presentación de ${s.unidad} con que salió no está en su ficha`
+      return { ok: false, motivo: `${s.nombre || s.prod}: la presentación de ${s.unidad} con que salió no está en sus datos`
         + (candidatas.length ? " (hay más de una oculta)" : "") + ". Hay que revisarla en el catálogo." };
     pres.push({ prod: s.prod, pres: candidatas[0].id_prp });
   }
@@ -83,7 +83,7 @@ export async function presentacionesParaMostrar(
 export async function mostrarPresentacion(cookie: string, prod: number, pres: string, visible: boolean): Promise<void> {
   const ver = async () => (await leerFichaDe(cookie, prod)).presentaciones.find((p) => p.id_prp === pres);
   const antes = await ver();
-  if (!antes) throw new Error(`La presentación ${pres} no está en la ficha ${prod}.`);
+  if (!antes) throw new Error(`La presentación ${pres} no está en los datos del producto ${prod}.`);
   if (antes.oculta === !visible) return;
   let resp = "";
   try {
@@ -192,10 +192,10 @@ export async function recibirConDestrabe(o: {
   if (sinPres.length) {
     for (const s of sinPres) nombres.set(s.prod, s.nombre);
     if (!trabas.hayTiempo()) {
-      resp = { ok: false, enviado: false, msg: "Una presentación del producto está oculta en la ficha y no quedaba tiempo para destrabarla. Vuelve a intentarlo." };
+      resp = { ok: false, enviado: false, msg: "Una presentación está oculta en los datos del producto y no quedaba tiempo para destrabarla. Vuelve a intentarlo." };
     } else {
       const r = await presentacionesParaMostrar(cookie, sinPres)
-        .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
+        .catch((e) => ({ ok: false as const, motivo: `No se pudieron leer los datos del producto: ${(e as Error).message}` }));
       if (!r.ok) resp = { ok: false, enviado: false, msg: r.motivo };
       else {
         destrabe.pres = r.pres;
@@ -209,7 +209,7 @@ export async function recibirConDestrabe(o: {
               undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } }));
             // Si sigue sin presentación, no se recibe a medias.
             if (filasSinPresentacion(filas).length)
-              resp = { ok: false, enviado: false, msg: "La presentación con que salió sigue sin aparecer en la ficha; no se recibe a medias." };
+              resp = { ok: false, enviado: false, msg: "La presentación con que salió sigue sin aparecer en los datos del producto; no se recibe a medias." };
           } catch (e) {
             resp = { ok: false, enviado: false, msg: `No se pudo mostrar la presentación oculta: ${(e as Error).message}` };
           }

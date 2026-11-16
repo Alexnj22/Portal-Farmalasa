@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       const permiso = await permisoDeModulo(admin, emp.id, "facturacion", "can_edit");
       if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
       if (!permiso.puede)
-        return json({ ok: false, error: "Este pedido es de otra sala." }, 403);
+        return json({ ok: false, error: "Este pedido es de otra sucursal." }, 403);
     }
 
     // ── 2 · El valor tiene forma ────────────────────────────────────────
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       .from("customers").select("erp_id, name").eq("id", pedido.customer_id).maybeSingle();
     if (cErr) throw cErr;
     if (!cli?.erp_id)
-      return json({ ok: false, error: "El cliente no tiene número interno: no se puede escribir su ficha." }, 422);
+      return json({ ok: false, error: "El cliente no tiene número interno: no se pueden escribir sus datos." }, 422);
 
     // ── 3 · Escribir donde importa, y ── 4 · comprobar releyendo ────────
     const cookie = await login();
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     if ((despues.campos.correo ?? "").trim() !== limpio)
       return json({
         ok: false,
-        error: `Se pidió el cambio pero la ficha quedó en «${despues.campos.correo ?? ""}».`,
+        error: `Se pidió el cambio pero el dato quedó en «${despues.campos.correo ?? ""}».`,
       }, 502);
 
     // El espejo del portal, para que Clientes muestre lo mismo sin esperar a la
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     // ── 5 · Recién ahora el pedido está cerrado ─────────────────────────
     const { data: cerrado, error: cerrErr } = await admin.rpc("cerrar_dato_pedido", {
       p_id: pedido.id, p_valor: limpio, p_actor: emp.id,
-      p_nota: `Contestado desde ${esSuSala ? "la sala" : "Facturación"}.`,
+      p_nota: `Contestado desde ${esSuSala ? "la sucursal" : "Facturación"}.`,
     });
     if (cerrErr) throw cerrErr;
 

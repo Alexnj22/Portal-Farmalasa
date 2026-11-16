@@ -88,12 +88,12 @@ async function buscarExistente(cookie: string, f: FichaPortal):
   if (nit) for (const forma of formasDeNit(f.nit!))
     for (const r of await buscarEnCaja(cookie, forma)) if (digitos(r.nit) === nit) porDoc.set(r.id, r);
   if (porDoc.size > 1)
-    return { revisar: `En la caja hay ${porDoc.size} fichas con ese documento (${[...porDoc.keys()].join(", ")}).` };
+    return { revisar: `En la caja hay ${porDoc.size} clientes con ese documento (${[...porDoc.keys()].join(", ")}).` };
   if (porDoc.size === 1) {
     const r = [...porDoc.values()][0];
     return seParecen(r.nombre, f.name)
       ? { vincular: r }
-      : { revisar: `En la caja ese documento es de «${r.nombre}» (ficha ${r.id}).` };
+      : { revisar: `En la caja ese documento es de «${r.nombre}» (cliente ${r.id}).` };
   }
 
   const { mismos, lleno } = await porNombre(cookie, f.name);
@@ -101,13 +101,13 @@ async function buscarExistente(cookie: string, f: FichaPortal):
     // Una respuesta llena puede haber dejado afuera justo a la persona: crear
     // ahí podría duplicarla, así que lo decide alguien.
     return lleno
-      ? { revisar: `El nombre es muy común y la caja devolvió más de ${TOPE_BUSQUEDA} coincidencias: búscala a mano antes de crearla.` }
+      ? { revisar: `El nombre es muy común y la caja devolvió más de ${TOPE_BUSQUEDA} coincidencias. Búscala a mano antes de crearla.` }
       : {};
   }
   if (f.dui && mismos.some(r => r.dui && r.dui !== f.dui))
-    return { revisar: `En la caja ya hay otro cliente llamado «${mismos[0].nombre}» con otro DUI (ficha ${mismos[0].id}).` };
+    return { revisar: `En la caja ya hay otro cliente llamado «${mismos[0].nombre}» con otro DUI (cliente ${mismos[0].id}).` };
   if (mismos.length > 1)
-    return { revisar: `En la caja hay ${mismos.length} fichas con ese nombre (${mismos.map(r => r.id).join(", ")}).` };
+    return { revisar: `En la caja hay ${mismos.length} clientes con ese nombre (${mismos.map(r => r.id).join(", ")}).` };
   return { vincular: mismos[0] };
 }
 
@@ -121,7 +121,7 @@ async function altaDeUna(cookie: string, f: FichaPortal & { puede_crear?: boolea
   // la borraron allá, y crearla la resucitaría.
   if (!f.puede_crear)
     return { ok: false, revisar: true,
-             error: "No está en la caja con ese nombre ni con su documento. Puede que la hayan borrado allá: confirma que la persona existe antes de crearla." };
+             error: "No está en la caja con ese nombre ni con su documento. Puede que la hayan borrado. Confirma que la persona existe antes de crearla." };
 
   const { payload, sinResolver } = await armarAlta(cookie, f);
   const alta = await darDeAlta(cookie, payload);
@@ -143,7 +143,7 @@ async function altaDeUna(cookie: string, f: FichaPortal & { puede_crear?: boolea
   // Verificar releyendo la ficha creada.
   const ficha = await leerFicha(cookie, id);
   if (sinTildes(ficha.campos.nombre ?? "") !== sinTildes(f.name))
-    return { ok: false, revisar: true, error: `La ficha ${id} de la caja quedó como «${ficha.campos.nombre ?? ""}».` };
+    return { ok: false, revisar: true, error: `El cliente ${id} quedó en la caja como «${ficha.campos.nombre ?? ""}».` };
   if (f.dui && (ficha.campos.dui ?? "") !== f.dui)
     return { ok: true, erp_id: id, como: "creada", sin_resolver: sinResolver, aviso: `el DUI quedó «${ficha.campos.dui ?? ""}»` };
 
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
     const fichas = (tomadas ?? []) as (FichaPortal & { customer_id: number; puede_crear?: boolean })[];
     if (!fichas.length) {
       return json({ hecho: false, motivo: customer_id
-        ? "esa ficha no necesita alta o ya se está procesando" : "no hay fichas sin número" });
+        ? "ese cliente no necesita alta o ya se está procesando" : "no hay clientes sin número" });
     }
 
     const cookie = await login();
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
         { p_customer_id: f.customer_id, p_resultado: r });
       if (eAnotar) throw eAnotar;
       const final = (anotado as { ok?: boolean } | null)?.ok === false && r.ok
-        ? { ok: false, error: "el número ya es de otra ficha del portal", revisar: true } : r;
+        ? { ok: false, error: "el número ya es de otro cliente del portal", revisar: true } : r;
       resultados.push({ customer_id: f.customer_id, ...final });
     }
 

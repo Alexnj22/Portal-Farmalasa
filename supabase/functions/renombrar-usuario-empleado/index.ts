@@ -141,9 +141,9 @@ Deno.serve(async (req: Request) => {
         error: "DB_UPDATE_ERROR",
         desfasado: !deshecho,
         details: deshecho
-          ? `No se pudo escribir el usuario en la ficha: ${updErr.message}. Nada cambió.`
-          : `No se pudo escribir el usuario en la ficha (${updErr.message}) y tampoco devolver la cuenta a "${correoAnterior}". `
-            + `Hasta que se corrija, esa persona entra con "${nuevo}" aunque la ficha diga otra cosa.`,
+          ? `No se pudo escribir el usuario en los datos del empleado: ${updErr.message}. Nada cambió.`
+          : `No se pudo escribir el usuario en los datos del empleado (${updErr.message}) y tampoco devolver la cuenta a "${correoAnterior}". `
+            + `Hasta que se corrija, esa persona entra con "${nuevo}" aunque sus datos digan otra cosa.`,
       });
     }
 

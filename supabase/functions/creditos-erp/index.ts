@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
       for (const { branchId, erpId } of salas) {
         const { data: toca, error: eToca } = await supabase.rpc("creditos_tomar_lectura",
           { p_branch_id: branchId, p_segundos: tope });
-        if (eToca) { fallidas.push(`sala ${branchId}: ${eToca.message}`); continue; }
+        if (eToca) { fallidas.push(`sucursal ${branchId}: ${eToca.message}`); continue; }
         if (!toca) continue;
         try {
           if (!cookie) {
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
           for (const c of await creditosDeLaSala(cookie, erpId, hoy, hoy)) filas.push({ ...c, branch_id: branchId });
           leidas.push(branchId);
         } catch (e) {
-          fallidas.push(`sala ${branchId}: ${(e as Error).message}`);
+          fallidas.push(`sucursal ${branchId}: ${(e as Error).message}`);
         }
       }
 
@@ -338,7 +338,7 @@ Deno.serve(async (req) => {
       const abonoErp = String(meta.abono_erp ?? "");
       const que = String(meta.que ?? "");
       const entrada = mapa.find((e) => e.branchId === sala);
-      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!entrada) return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
 
       const permisoDecidir = await permisoDeModulo(
         supabase, quien.id, "requests_cuentas_por_cobrar", "can_approve");
@@ -382,7 +382,7 @@ Deno.serve(async (req) => {
           return responder({
             ok: false,
             error: "Ese abono ya no estaba en la caja y la solicitud no se pudo cerrar. "
-                 + "NO la apruebes de nuevo: avísale a Sistemas.",
+                 + "NO la apruebes de nuevo: avísale a Soporte.",
           }, 500);
         }
         return responder({
@@ -541,7 +541,7 @@ Deno.serve(async (req) => {
         return responder({
           ok: false,
           error: "El abono se corrigió en la caja, pero la solicitud no se pudo "
-               + "cerrar. NO la apruebes de nuevo: avísale a Sistemas.",
+               + "cerrar. NO la apruebes de nuevo: avísale a Soporte.",
         }, 500);
       }
 
@@ -594,7 +594,7 @@ Deno.serve(async (req) => {
       const meta = (sol.metadata ?? {}) as Record<string, unknown>;
       const sala = Number(meta.branch_id);
       const entrada = mapa.find((e) => e.branchId === sala);
-      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!entrada) return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
       /* Quien decide, sólo sobre SU sala si su permiso de aprobar es de una
        * sala. Hoy aprueban sólo cargos de toda la red, así que no frena a nadie
        * — está para el día que se le dé el permiso a un cargo de sala: sin
@@ -955,9 +955,9 @@ Deno.serve(async (req) => {
       const sala = Number(body.sala);
       const credito = String(body.credito ?? "").trim();
       const entrada = mapa.find((e) => e.branchId === sala);
-      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!entrada) return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return responder({ ok: false, error: "Solo puedes ver tu propia sala." }, 403);
+        return responder({ ok: false, error: "Solo puedes ver tu propia sucursal." }, 403);
       }
       if (!credito) return responder({ ok: false, error: "Falta el crédito." }, 400);
       const abonos = await abonosDelCredito(cookie, entrada.erpId, credito);
@@ -983,9 +983,9 @@ Deno.serve(async (req) => {
         Array.isArray(body.aplicaciones) ? body.aplicaciones : [];
 
       const entrada = mapa.find((e) => e.branchId === sala);
-      if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!entrada) return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return responder({ ok: false, error: "Solo puedes cobrar en tu propia sala." }, 403);
+        return responder({ ok: false, error: "Solo puedes cobrar en tu propia sucursal." }, 403);
       }
       if (!FORMAS.includes(forma)) {
         return responder({ ok: false, error: "Esa forma de pago no se acepta." }, 400);
@@ -997,7 +997,7 @@ Deno.serve(async (req) => {
         .map((a) => ({ credito: String(a?.credito ?? "").trim(), monto: Number(a?.monto) }))
         .filter((a) => a.credito && Number.isFinite(a.monto) && a.monto > 0);
       if (limpias.length !== aplicaciones.length) {
-        return responder({ ok: false, error: "Hay un renglón sin crédito o sin monto." }, 400);
+        return responder({ ok: false, error: "Hay una fila sin crédito o sin monto." }, 400);
       }
       const suma = Number(limpias.reduce((t, a) => t + a.monto, 0).toFixed(2));
       if (!(Number.isFinite(montoDoc) && montoDoc > 0)) {
@@ -1180,7 +1180,7 @@ Deno.serve(async (req) => {
           const vivo = vivos.get(a.credito);
           if (!vivo) {
             await soltar();
-            return responder({ ok: false, error: `El crédito ${a.credito} no existe en esta sala.` }, 404);
+            return responder({ ok: false, error: `El crédito ${a.credito} no existe en esta sucursal.` }, 404);
           }
           if (a.monto > vivo.saldo + 0.004) {
             await soltar();
@@ -1292,7 +1292,7 @@ Deno.serve(async (req) => {
               return responder({
                 ok: false,
                 error: "El cobro no se registró y quedó una solicitud a medias. "
-                     + "Avísale a Sistemas antes de volver a intentarlo.",
+                     + "Avísale a Soporte antes de volver a intentarlo.",
               }, 500);
             }
             await soltar();
@@ -1352,7 +1352,7 @@ Deno.serve(async (req) => {
           await soltar();
           return responder({
             ok: false,
-            error: "La caja no aceptó el pago. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
+            error: "La caja no aceptó el pago. Vuelve a intentarlo; si sigue igual, avisa a Soporte.",
           }, 502);
         }
 
@@ -1429,7 +1429,7 @@ Deno.serve(async (req) => {
             ? `Entraron ${hechos.length} de ${limpias.length}. NO entró: ${fallidos.join(", ")}. `
               + "Ese dinero no se aplicó; vuelve a intentarlo sólo por lo que faltó."
             : null,
-          eAbonos ? "El pago entró, pero no se pudo anotar quién lo recibió. Avísale a Sistemas." : null,
+          eAbonos ? "El pago entró, pero no se pudo anotar quién lo recibió. Avísale a Soporte." : null,
         ].filter(Boolean);
 
         const respuesta = {
@@ -1479,7 +1479,7 @@ Deno.serve(async (req) => {
       const ref = body.apartado && typeof body.apartado === "object" ? body.apartado as Record<string, unknown> : null;
       if (!ref || !(ref.reserva_id || ref.encargo_id)) return responder({ ok: false, error: "Falta qué se retira." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return responder({ ok: false, error: "Sólo puedes retirar en tu propia sala." }, 403);
+        return responder({ ok: false, error: "Sólo puedes retirar en tu propia sucursal." }, 403);
       }
       const apartado = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) } : { encargo_id: Number(ref.encargo_id) };
       const { data: v, error: errV } = await supabase.rpc("apartado_para_retirar", { p_branch_id: sala, p_apartado: apartado });
@@ -1496,7 +1496,7 @@ Deno.serve(async (req) => {
        * una recién hecha tarda hasta un minuto. */
       if (!credito) {
         const entrada = mapa.find((e) => e.branchId === sala);
-        if (!entrada) return responder({ ok: false, error: "Esa sala no está configurada." }, 400);
+        if (!entrada) return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
         const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
         try {
           const delDia = await creditosDeLaSala(cookie, entrada.erpId, hoy, hoy);
@@ -1561,9 +1561,9 @@ Deno.serve(async (req) => {
       const documento = String(body.documento ?? "").trim();
 
       const entrada = mapa.find((e) => e.branchId === sala);
-      if (!entrada) return fallar({ ok: false, error: "Esa sala no está configurada." }, 400);
+      if (!entrada) return fallar({ ok: false, error: "Esa sucursal no está configurada." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
-        return fallar({ ok: false, error: "Solo puedes abonar en tu propia sala." }, 403);
+        return fallar({ ok: false, error: "Solo puedes abonar en tu propia sucursal." }, 403);
       }
       if (!credito) return fallar({ ok: false, error: "Falta a qué crédito se abona." }, 400);
       if (!(Number.isFinite(monto) && monto > 0)) {
@@ -1601,7 +1601,7 @@ Deno.serve(async (req) => {
 
       const filas = await creditosDeLaSala(cookie, entrada.erpId, ventana.desde, ventana.hasta);
       const vivo = filas.find((c) => c.credito === credito);
-      if (!vivo) return fallar({ ok: false, error: "Ese crédito no existe en esta sala." }, 404);
+      if (!vivo) return fallar({ ok: false, error: "Ese crédito no existe en esta sucursal." }, 404);
       if (monto > vivo.saldo + 0.004) {
         return fallar({
           ok: false,
@@ -1637,7 +1637,7 @@ Deno.serve(async (req) => {
         console.error(`[creditos-erp] abonar credito=${credito} sala=${sala}: ${resp.slice(0, 1000)}`);
         return fallar({
           ok: false,
-          error: "La caja no aceptó el abono. Vuelve a intentarlo; si sigue igual, avisa a Sistemas.",
+          error: "La caja no aceptó el abono. Vuelve a intentarlo; si sigue igual, avisa a Soporte.",
         }, 502);
       }
 
@@ -1729,7 +1729,7 @@ Deno.serve(async (req) => {
             + `${esperado.toFixed(2)}. Revísalo antes de cobrar otra vez.`
           : null,
         !confirmado ? "El abono se mandó, pero no se pudo confirmar el saldo nuevo." : null,
-        errLog ? "El abono se hizo, pero no se pudo anotar quién lo recibió. Avísale a Sistemas." : null,
+        errLog ? "El abono se hizo, pero no se pudo anotar quién lo recibió. Avísale a Soporte." : null,
       ].filter(Boolean);
 
       return responder({

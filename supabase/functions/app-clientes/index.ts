@@ -551,7 +551,7 @@ async function vigentesHoy(admin: any) {
 const NO_SE_PUDO_REGISTRAR = {
   ok: false,
   motivo: "soporte",
-  mensaje: "No pudimos completar tu registro con este documento. Escríbenos a soporte o acércate a una sala con tu DUI: verificamos tus datos y te habilitamos.",
+  mensaje: "No pudimos completar tu registro con este documento. Escríbenos a soporte o acércate a una sucursal con tu DUI. Verificamos tus datos y te habilitamos.",
 };
 
 /** 'AAAA-MM-DD' de una fecha REAL entre 1900 y hoy; null si viene vacía; false si es inválida. */
@@ -901,7 +901,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // teléfono nuevo. Mejor eso que dejarla pasar sin verificar.
     if (!idDisp) return json({ ok: false, motivo: "actualizar", mensaje: "Actualiza la app para entrar desde este teléfono." });
     if (!recibeWhatsapp(tel)) {
-      return json({ ok: false, motivo: "sin_whatsapp", mensaje: "Para entrar desde un teléfono nuevo te mandamos un código por WhatsApp, y ese número no lo recibe. Pide en cualquiera de nuestras salas que actualicen tu teléfono." });
+      return json({ ok: false, motivo: "sin_whatsapp", mensaje: "Para entrar desde un teléfono nuevo te mandamos un código por WhatsApp, y ese número no lo recibe. Pide en cualquiera de nuestras sucursales que actualicen tu teléfono." });
     }
     const hace15 = new Date(Date.now() - 15 * 60_000).toISOString();
     const { count, error: eC } = await admin.from("app_cliente_codigos_entrada")

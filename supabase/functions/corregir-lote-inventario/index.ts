@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     const pid = Number(erp_product_id);
     const n = Number(unidades);
     const causa = String(motivo ?? "").trim();
-    if (!erpSucursal || !pid) return json({ ok: false, error: "Falta la sala o el producto." }, 400);
+    if (!erpSucursal || !pid) return json({ ok: false, error: "Falta la sucursal o el producto." }, 400);
     if (!String(lote ?? "").trim()) return json({ ok: false, error: "Falta el lote que se corrige." }, 400);
     if (!Number.isInteger(n) || n <= 0) return json({ ok: false, error: "Indica cuántas unidades se corrigen." }, 400);
     if (causa.length < 4) return json({ ok: false, error: "Escribe por qué se corrige." }, 400);
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     if (mapaErr) throw mapaErr;
     const ubicacion = Number((mapa?.inv_ubicaciones ?? [])
       .find((u: { id: number; isVencidos: boolean }) => !u.isVencidos)?.id);
-    if (!mapa || !ubicacion) return json({ ok: false, error: "Esa sala no existe." }, 404);
+    if (!mapa || !ubicacion) return json({ ok: false, error: "Esa sucursal no existe." }, 404);
     const branch = Number(mapa.branch_id);
 
     // ── Quién puede, y sobre qué sala ───────────────────────────────────
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       if (error) throw error;
       enSuSala = Array.isArray(cubiertas) && cubiertas.includes(branch);
     }
-    if (!enSuSala) return json({ ok: false, error: "Sólo puedes corregir el inventario de tu sala." }, 403);
+    if (!enSuSala) return json({ ok: false, error: "Sólo puedes corregir el inventario de tu sucursal." }, 403);
 
     // Mientras se cuenta, el número no se mueve (igual que el ajuste): la
     // sala entera si el conteo todavía no tiene productos (`en_conteo`), o
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       return json({ ok: false, codigo: r.codigo, error: r.descuadre ? `${r.error} ${r.descuadre}` : r.error }, 409);
     }
     const avisos = [...r.avisos];
-    if (choca) avisos.push(`En otra sala el lote ${v.lote} figura con vencimiento ${choca}: corrígelo allá si es el mismo.`);
+    if (choca) avisos.push(`En otra sucursal el lote ${v.lote} figura con vencimiento ${choca}: corrígelo ahí si es el mismo.`);
     return json({ ...r, avisos, sala: mapa.nombre, producto: prod.nombre });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);

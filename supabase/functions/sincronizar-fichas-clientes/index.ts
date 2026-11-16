@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
       const permiso = await permisoDeModulo(admin, emp.id, "clientes", "can_edit");
       if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
       if (!permiso.puede)
-        return json({ ok: false, error: "No tenés permiso para editar clientes." }, 403);
+        return json({ ok: false, error: "No tienes permiso para editar clientes." }, 403);
       actor = emp.name;
     }
 
@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
       .filter((c: Candidato) => soloCliente === null || c.customer_id === soloCliente)
       .slice(0, MAX_FICHAS);
     if (!lista.length)
-      return json({ ok: true, revisadas: 0, mensaje: "no hay fichas que corregir" });
+      return json({ ok: true, revisadas: 0, mensaje: "no hay clientes que corregir" });
 
     const cookie = await login();
     const res = {
@@ -228,9 +228,9 @@ Deno.serve(async (req) => {
     const aRevisarDuplicado = (c: Candidato, erpId: string, motivo?: string) => {
       aRevisar.push({
         erp_id: erpId, name: c.name, motivo: "erp_rechaza_duplicado",
-        detalle: `El sistema de origen no deja guardar la ficha de «${c.name}»: ` +
-                 `«${motivo ?? "sin motivo"}». Ya existe otra ficha que considera ` +
-                 `la misma persona — hay que unirlas o distinguirlas a mano.`,
+        detalle: `No se pudieron guardar los datos de «${c.name}»: ` +
+                 `«${motivo ?? "sin motivo"}». Ya hay otro cliente que cuenta como ` +
+                 `la misma persona. Únelos o distínguelos a mano.`,
         datos: { customer_id: c.customer_id, erp_id: erpId, motivo },
       });
       res.a_revisar++;
@@ -306,8 +306,8 @@ Deno.serve(async (req) => {
               // La llave de una fila sin número es la ficha del portal.
               customer_id: c.customer_id,
               detalle: `«${c.name}» no tiene número interno ni ninguna factura ` +
-                       `de la cual deducirlo. Es una ficha suelta del portal: ` +
-                       `hay que ligarla a mano o darla de baja.`,
+                       `de la cual deducirlo. Sólo existe en el portal. ` +
+                       `Lígalo a mano o dalo de baja.`,
               datos: { customer_id: c.customer_id },
             });
             res.a_revisar++;
@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
                   customer_id: c.customer_id,
                   detalle: `«${c.name}» es la misma persona que «${dueño.name}» ` +
                            `(número interno ${erpId}), pero sus puntos no se pudieron ` +
-                           `unir solos: ${error.message}. Hay que resolverlo a mano.`,
+                           `unir solos: ${error.message}. Resuélvelo a mano.`,
                   datos: { ficha_suelta_id: c.customer_id, ficha_destino_id: dueño.id },
                 });
                 res.a_revisar++;
@@ -372,8 +372,8 @@ Deno.serve(async (req) => {
               aRevisar.push({
                 erp_id: erpId, name: c.name, motivo: "fusion_dudosa",
                 detalle: `El número interno ${erpId} corresponde a «${dueño.name}», ` +
-                         `pero esta ficha se llama «${c.name}». Podrían ser dos ` +
-                         `personas distintas: no se unieron.`,
+                         `pero este cliente se llama «${c.name}». Podrían ser dos ` +
+                         `personas distintas. No se unieron.`,
                 datos: { ficha_suelta_id: c.customer_id, ficha_suelta_nombre: c.name,
                          ficha_destino_id: dueño.id, ficha_destino_nombre: dueño.name },
               });
@@ -394,9 +394,9 @@ Deno.serve(async (req) => {
         if (!Object.keys(ficha.campos).length) {
           aRevisar.push({
             erp_id: erpId, name: c.name, motivo: "erp_id_inexistente",
-            detalle: `El número interno ${erpId} no existe en el sistema de ` +
-                     `origen: su ficha vuelve vacía. Hay que averiguar cuál es ` +
-                     `el número correcto de «${c.name}» o dar de baja la ficha.`,
+            detalle: `El número interno ${erpId} no existe. ` +
+                     `Averigua cuál es ` +
+                     `el número correcto de «${c.name}» o dalo de baja.`,
             datos: { customer_id: c.customer_id, erp_id: erpId },
           });
           res.a_revisar++;
@@ -408,9 +408,9 @@ Deno.serve(async (req) => {
         if (c.ya_corregido) {
           aRevisar.push({
             erp_id: erpId, name: c.name, motivo: "rechazo_persistente",
-            detalle: `Ya se corrigió ${c.campo} en la ficha y Hacienda la volvió ` +
+            detalle: `Ya se corrigió ${c.campo} en los datos del cliente y el MH lo volvió ` +
                      `a rechazar: «${c.motivo_mh ?? "sin motivo"}». La corrección ` +
-                     `no alcanza — hay que mirarlo a mano.`,
+                     `no alcanza. Revísalo a mano.`,
             datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
           });
           res.a_revisar++;
@@ -477,11 +477,11 @@ Deno.serve(async (req) => {
 
             aRevisar.push({
               erp_id: erpId, name: c.name, motivo: "correo_pedido_a_la_sala",
-              detalle: `Hacienda rechazó el correo de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +
-                       `y no es un error de tipeo que se pueda arreglar solo ` +
-                       `(dice «${antes || "(vacío)"}»). Como es contribuyente su documento ` +
-                       `EXIGE un correo, así que no se puede borrar: hay que pedirle el ` +
-                       `correcto a la sala que hizo la venta.`,
+              detalle: `El MH rechazó el correo de «${c.name}» («${c.motivo_mh ?? "sin motivo"}»). ` +
+                       `No es un error de tipeo que se pueda arreglar solo ` +
+                       `(dice «${antes || "(vacío)"}»). Es contribuyente y su crédito fiscal ` +
+                       `exige un correo, así que no se puede borrar. Pídele el ` +
+                       `correcto a la sucursal que hizo la venta.`,
               datos: { customer_id: c.customer_id, campo: "email", correo_actual: antes,
                        motivo_mh: c.motivo_mh },
             });
@@ -512,9 +512,9 @@ Deno.serve(async (req) => {
               // desaparecer contando `ya_estaban`.
               aRevisar.push({
                 erp_id: erpId, name: c.name, motivo: "correo_rechazado_sin_valor",
-                detalle: `Hacienda rechazó el correo de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +
-                         `pero su ficha no tiene ninguno. El dato malo está en otro lado: ` +
-                         `hay que mirar el documento a mano.`,
+                detalle: `El MH rechazó el correo de «${c.name}» («${c.motivo_mh ?? "sin motivo"}»), ` +
+                         `pero sus datos no tienen ninguno. El dato malo está en otro lado. ` +
+                         `Revisa la factura a mano.`,
                 datos: { customer_id: c.customer_id, campo: "email", motivo_mh: c.motivo_mh },
               });
               res.a_revisar++;
@@ -536,10 +536,10 @@ Deno.serve(async (req) => {
               // dice, en vez de contarlo como «ya estaba» y desaparecer.
               aRevisar.push({
                 erp_id: erpId, name: c.name, motivo: "distrito_rechazado_con_valor",
-                detalle: `La ficha de «${c.name}» YA tiene distrito y Hacienda la ` +
+                detalle: `Los datos de «${c.name}» ya tienen distrito y el MH los ` +
                          `rechazó igual: «${c.motivo_mh ?? "sin motivo"}». Como es ` +
                          `contribuyente, el portal sólo puede completar el distrito ` +
-                         `cuando falta — hay que revisar su dirección a mano.`,
+                         `cuando falta. Revisa su dirección a mano.`,
                 datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
               });
               res.a_revisar++;
@@ -550,10 +550,10 @@ Deno.serve(async (req) => {
           } else if (!ficha.campos.municipio) {
             aRevisar.push({
               erp_id: erpId, name: c.name, motivo: "sin_municipio_no_derivable",
-              detalle: `«${c.name}» no tiene municipio en su ficha, así que no hay ` +
+              detalle: `«${c.name}» no tiene municipio en sus datos, así que no hay ` +
                        `de dónde deducir el distrito. Como es contribuyente, el ` +
-                       `portal no le pone la ubicación por defecto: eso le cambiaría ` +
-                       `el domicilio. Hay que completarlo a mano.`,
+                       `portal no le pone la ubicación por defecto. ` +
+                       `Complétalo a mano.`,
               datos: { customer_id: c.customer_id },
             });
             res.a_revisar++;
@@ -639,11 +639,11 @@ Deno.serve(async (req) => {
             if (c.origen === "rechazo") {
               aRevisar.push({
                 erp_id: erpId, name: c.name, motivo: "ubicacion_rechazada_sin_alternativa",
-                detalle: `Hacienda rechazó la ubicación de «${c.name}» —«${c.motivo_mh ?? "sin motivo"}»— ` +
-                         `y su ficha YA está en la ubicación por defecto ` +
+                detalle: `El MH rechazó la ubicación de «${c.name}» («${c.motivo_mh ?? "sin motivo"}»), ` +
+                         `y sus datos ya están en la ubicación por defecto ` +
                          `(${UBICACION_DEFECTO.departamento} / ${UBICACION_DEFECTO.municipio} / ` +
                          `${UBICACION_DEFECTO.distrito}). El portal no tiene otra cosa que ` +
-                         `probar: hay que revisar la dirección a mano.`,
+                         `probar. Revisa la dirección a mano.`,
                 datos: { customer_id: c.customer_id, campo: c.campo, motivo_mh: c.motivo_mh },
               });
               res.a_revisar++;

@@ -99,7 +99,7 @@ export function planDelAjuste(lineas: LineaDeAjuste[], regulado: boolean, exigeV
     if (u < 0) {
       // Un regulado sin número no se puede descargar: sin lote, el descargo
       // elegiría cualquiera.
-      if (regulado && !lote) { plan.rechazos.push({ i, error: `Faltan ${-u} unidades de una línea sin lote: se ajusta a mano.` }); return; }
+      if (regulado && !lote) { plan.rechazos.push({ i, error: `Faltan ${-u} unidades de un producto sin lote. Ajústalo a mano.` }); return; }
       plan.descargos.push({ is: [i], lote, unidades: -u });
       return;
     }
@@ -148,7 +148,7 @@ export async function aplicarAjusteDeConteo(
     ({ estado: "ERROR", lineas, error, resultado: { at: new Date().toISOString() } });
 
   const ubic = (m.ubicaciones ?? []).find((u) => Boolean(u.isVencidos) === Boolean(m.is_vencidos))?.id;
-  if (!m.erp_sucursal_id || !ubic) return fallo("La sala no tiene ubicación para este renglón.");
+  if (!m.erp_sucursal_id || !ubic) return fallo("La sucursal no tiene ubicación para este producto.");
 
   const concepto = `CONTEO ${m.conteo_id.slice(0, 8).toUpperCase()} ${norm(m.sala ?? "")}`.slice(0, 120);
   let f: Fila;

@@ -58,9 +58,9 @@ export interface Ficha {
 }
 
 export function leerFicha(id: number, html: string): Ficha {
-  if (!inputPorId(html, "descripcion")) throw new Error(`La ficha ${id} no se pudo leer.`);
+  if (!inputPorId(html, "descripcion")) throw new Error(`No se pudieron leer los datos del producto ${id}.`);
   const idEnFicha = valor(html, "id_producto").trim();
-  if (idEnFicha !== String(id)) throw new Error(`La ficha pedida es ${id} y la página trae ${idEnFicha}.`);
+  if (idEnFicha !== String(id)) throw new Error(`Se pidió el producto ${id} y llegó el ${idEnFicha}.`);
 
   const tabla = /id=["']presentacion_table["'][^>]*>([\s\S]*?)<\/tbody>/.exec(html)?.[1] ?? "";
   const presentaciones = tabla.split(/<tr\b/i).slice(1).map((tr) => {
@@ -129,8 +129,8 @@ export async function leerFichaDe(cookie: string, id: number): Promise<Ficha> {
 export async function cambiarRegulado(cookie: string, id: number, valor: boolean): Promise<Ficha> {
   const antes = await leerFichaDe(cookie, id);
   if (antes.regulado === valor) return antes;
-  if (antes.conUbi) throw new Error(`La ficha ${id} trae campos que el sobre no conoce.`);
-  if (!antes.presentaciones.length) throw new Error(`La ficha ${id} no tiene presentaciones.`);
+  if (antes.conUbi) throw new Error(`Los datos del producto ${id} traen campos que el portal no conoce.`);
+  if (!antes.presentaciones.length) throw new Error(`El producto ${id} no tiene presentaciones.`);
 
   let resp = "";
   try {
@@ -145,7 +145,7 @@ export async function cambiarRegulado(cookie: string, id: number, valor: boolean
   if (despues.regulado !== valor)
     throw new Error(`El sistema no cambió el control de lote de ${antes.nombre}: ${(j?.msg ?? resp.slice(0, 160)) || "sin respuesta"}`);
   if (huella(despues) !== huella(antes))
-    throw new Error(`La ficha de ${antes.nombre} quedó distinta al cambiar el control de lote.`);
+    throw new Error(`Los datos de ${antes.nombre} quedaron distintos al cambiar el control de lote.`);
   return antes;
 }
 
@@ -169,9 +169,9 @@ export async function cambiarRegulado(cookie: string, id: number, valor: boolean
 export async function fijarCosto(cookie: string, id: number, idPrp: string, costo: number): Promise<Ficha> {
   if (!(costo > 0)) throw new Error("El costo tiene que ser mayor que cero.");
   const antes = await leerFichaDe(cookie, id);
-  if (antes.conUbi) throw new Error(`La ficha ${id} trae campos que el sobre no conoce.`);
+  if (antes.conUbi) throw new Error(`Los datos del producto ${id} traen campos que el portal no conoce.`);
   const k = antes.presentaciones.findIndex((p) => p.exis && p.id_prp === idPrp);
-  if (k < 0) throw new Error(`La presentación ${idPrp} no está en la ficha de ${antes.nombre}.`);
+  if (k < 0) throw new Error(`La presentación ${idPrp} no está en los datos de ${antes.nombre}.`);
   const actual = parseFloat(antes.presentaciones[k].costo);
   if (actual > 0)
     throw new Error(`${antes.nombre} ya tiene costo (${antes.presentaciones[k].costo}); no se cambia desde aquí.`);
@@ -200,7 +200,7 @@ export async function fijarCosto(cookie: string, id: number, idPrp: string, cost
     ...f, presentaciones: f.presentaciones.map((p) => (p.id_prp === idPrp ? { ...p, costo: "" } : p)),
   });
   if (sinCosto(despues) !== sinCosto(antes))
-    throw new Error(`La ficha de ${antes.nombre} quedó distinta en algo más que el costo.`);
+    throw new Error(`Los datos de ${antes.nombre} quedaron distintos en algo más que el costo.`);
   return despues;
 }
 
@@ -213,8 +213,8 @@ export async function fijarCosto(cookie: string, id: number, idPrp: string, cost
 export async function habilitarProducto(cookie: string, id: number): Promise<Ficha> {
   const antes = await leerFichaDe(cookie, id);
   if (antes.activo) return antes;
-  if (antes.conUbi) throw new Error(`La ficha ${id} trae campos que el sobre no conoce.`);
-  if (!antes.presentaciones.length) throw new Error(`La ficha ${id} no tiene presentaciones.`);
+  if (antes.conUbi) throw new Error(`Los datos del producto ${id} traen campos que el portal no conoce.`);
+  if (!antes.presentaciones.length) throw new Error(`El producto ${id} no tiene presentaciones.`);
 
   let resp = "";
   try {
@@ -229,6 +229,6 @@ export async function habilitarProducto(cookie: string, id: number): Promise<Fic
     throw new Error(`El sistema no habilitó ${antes.nombre}: ${(j?.msg ?? resp.slice(0, 160)) || "sin respuesta"}`);
   const sinActivo = (f: Ficha) => JSON.stringify({ ...f, activo: undefined });
   if (sinActivo(despues) !== sinActivo(antes))
-    throw new Error(`La ficha de ${antes.nombre} quedó distinta en algo más que la habilitación.`);
+    throw new Error(`Los datos de ${antes.nombre} quedaron distintos en algo más que la habilitación.`);
   return despues;
 }

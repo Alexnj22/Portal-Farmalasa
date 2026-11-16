@@ -184,10 +184,10 @@ Deno.serve(async (req) => {
         let cuerpo = enCero
           // El mínimo a pagar lo dice la base (`puntos_minimo_a_pagar`): US$0.05
           // desde el reglamento v2 (2026-11-15), US$0.01 antes. El aviso trae el total.
-          ? `La venta ${a.documento ?? ''} quedó en $${Number(a.total ?? 0).toFixed(2)} después de canjear ${a.puntos} puntos. Un canje debe dejar por pagar al menos el mínimo ($0.05 desde el 15 de noviembre): hay que revisarla.`
+          ? `La venta ${a.documento ?? ''} quedó en $${Number(a.total ?? 0).toFixed(2)} después de canjear ${a.puntos} puntos. Un canje debe dejar por pagar al menos el mínimo ($0.05 desde el 15 de noviembre). Hay que revisarla.`
           // Quién y qué venta (2026-10-01): sin eso el aviso no se puede
           // revisar desde el teléfono, y «hay que revisar la venta» no dice cuál.
-          : `${a.cliente ?? 'Un cliente'} — venta ${a.documento ?? ''}: se aplicaron ${a.pedidos} puntos de descuento y tenía ${a.tenia}. Hay que revisar la venta.`;
+          : `${a.cliente ?? 'Un cliente'}, venta ${a.documento ?? ''}: se aplicaron ${a.pedidos} puntos de descuento y tenía ${a.tenia}. Hay que revisar la venta.`;
         // El canje sin saldo dice qué pasó, cuál es el error (el descuento que
         // salió sin puntos, en dólares) y quién vendió (2026-11-10). El texto
         // lo arma la base, el MISMO que muestra Puntos → Avisos. Si no se puede

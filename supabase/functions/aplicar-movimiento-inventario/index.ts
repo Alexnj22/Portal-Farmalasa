@@ -164,7 +164,7 @@ function soloAscii(s: string): string {
 function leerConsulta(cuerpo: string): Consulta {
   let j: Record<string, unknown>;
   try { j = JSON.parse(cuerpo); } catch {
-    return { ok: false, msg: `Respuesta ilegible del ERP: ${cuerpo.slice(0, 160)}`,
+    return { ok: false, msg: `Respuesta ilegible: ${cuerpo.slice(0, 160)}`,
              presentaciones: [], costo: "", precio: "", unidad: "", stock: null,
              perecedero: false, regulado: false, lotes: [] };
   }
@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
     if (!puedeDecidir)
       return json({
         ok: false,
-        error: "No tenés permiso para decidir solicitudes de inventario.",
+        error: "No tienes permiso para decidir solicitudes de inventario.",
       }, 403);
 
     // ── La solicitud se relee de la BD, no se recibe ──────────────────────
@@ -298,7 +298,7 @@ Deno.serve(async (req) => {
       if (accion === "corregir_linea") {
         const i = Number(linea);
         if (!Number.isInteger(i) || i < 0 || i >= items.length)
-          return json({ ok: false, error: "Esa línea no está en la solicitud." }, 422);
+          return json({ ok: false, error: "Ese producto no está en la solicitud." }, 422);
         const l = items[i];
         const ya = { lote: String(l.numero_lote ?? "").trim(), vence: String(l.vence ?? "").trim() };
         const pideLote = lote !== undefined && lote !== null && String(lote).trim() !== "";
@@ -425,7 +425,7 @@ Deno.serve(async (req) => {
 
       const i = Number(linea);
       if (!Number.isInteger(i) || i < 0 || i >= items.length)
-        return json({ ok: false, error: "Esa línea no está en la solicitud." }, 422);
+        return json({ ok: false, error: "Ese producto no está en la solicitud." }, 422);
       const l = items[i];
       const nombre = nombreDe(l);
 
@@ -468,7 +468,7 @@ Deno.serve(async (req) => {
       if (!(d && d.costo > 0))
         return json({
           ok: false,
-          error: `Se guardó el costo en la ficha de ${nombre}, pero la carga todavía no lo ve. Prueba de nuevo en un minuto.`,
+          error: `Se guardó el costo en los datos de ${nombre}, pero la carga todavía no lo ve. Prueba de nuevo en un minuto.`,
         }, 502);
       // El catálogo del portal se pone al día ya, sin esperar la próxima lectura.
       const { error: ppErr } = await admin.from("product_precios")
@@ -548,7 +548,7 @@ Deno.serve(async (req) => {
       if (aceptadas.length === 0)
         return json({
           ok: false,
-          error: "No quedó ninguna línea para aplicar. Si no va a entrar nada, rechaza la solicitud.",
+          error: "No quedó ningún producto para aplicar. Si no va a entrar nada, rechaza la solicitud.",
         }, 422);
     }
 

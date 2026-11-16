@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       alcanceTodo: pA.alcanceTodo || pV.alcanceTodo,
       emp: pA.emp ?? pV.emp,
     };
-    if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para entregar documentos de venta." }, 403);
+    if (!permiso.puede) return json({ ok: false, error: "No tienes permiso para entregar facturas." }, 403);
 
     // ── Qué venta ──────────────────────────────────────────────────────
     const { data: f, error: eF } = await admin.from("sales_invoices")
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     // 125). Lo asigna el envío; se exige después de mandarlo, más abajo.
     const { data: valida, error: eV } = await admin.rpc("venta_valida", { p_estado: f.estado });
     if (eV) throw eV;
-    if (!valida) throw new ErrorUsuario("Esta venta está anulada: no tiene documento que entregar.");
+    if (!valida) throw new ErrorUsuario("Esta venta está anulada. No tiene factura que entregar.");
 
     let correo: string | null = null;
     if (accion === "correo") {
@@ -125,9 +125,9 @@ Deno.serve(async (req) => {
         .gte("created_at", new Date(Date.now() - 86400_000).toISOString());
       if (eC) throw eC;
       if ((count ?? 0) >= TOPE_CORREOS_DIA)
-        throw new ErrorUsuario(`Ya enviaste ${TOPE_CORREOS_DIA} correos en las últimas 24 horas. Descarga el documento y entrégalo.`, 429);
+        throw new ErrorUsuario(`Ya enviaste ${TOPE_CORREOS_DIA} correos en las últimas 24 horas. Descarga la factura y entrégala.`, 429);
       if (!Deno.env.get("RESEND_API_KEY") || !(Deno.env.get("CORREO_REMITENTE_CLIENTES") ?? Deno.env.get("CORREO_REMITENTE")))
-        throw new ErrorUsuario("El envío por correo no está disponible. Descarga el documento y entrégalo.", 503);
+        throw new ErrorUsuario("El envío por correo no está disponible. Descarga la factura y entrégala.", 503);
     }
 
     // ── 1 · Si no tiene sello, se manda a Hacienda ahora ───────────────
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
         // la bitácora de Facturación: acá basta con decir que no entró.
         const motivo = d?.error || res?.error || `respuesta ${r.status}`;
         console.error(`dte-para-cliente ${invoiceId}: no entró a Hacienda: ${motivo}`);
-        throw new ErrorUsuario("Hacienda todavía no recibió este documento. Intenta de nuevo en unos minutos; si sigue igual, avisa a supervisión.", 502);
+        throw new ErrorUsuario("El MH todavía no recibió esta factura. Intenta de nuevo en unos minutos. Si sigue igual, avisa a un supervisor o administrador.", 502);
       }
       seEnvio = !d.omitida;
       // `regularizar-dte` releyó esa fecha antes de contestar: el código de
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       if (f2) Object.assign(f, f2);
     }
     if (!f.codigo_generacion)
-      throw new ErrorUsuario("El documento todavía no está listo. Intenta de nuevo en un minuto.", 503);
+      throw new ErrorUsuario("La factura todavía no está lista. Intenta de nuevo en un minuto.", 503);
 
     // ── 2 · Los dos archivos ───────────────────────────────────────────
     const cg = String(f.codigo_generacion).toUpperCase();
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
             return Boolean(j?.identificacion?.numeroControl) && selloValido(j?.selloRecibido);
           } catch { return false; }
         })());
-      if (!ok) throw new ErrorUsuario("El documento todavía no está listo. Intenta de nuevo en un minuto.", 503);
+      if (!ok) throw new ErrorUsuario("La factura todavía no está lista. Intenta de nuevo en un minuto.", 503);
       const { error } = await admin.storage.from("sales-dte").upload(`${a}/${m}/${cg}.${formato}`, buf!, {
         contentType: formato === "pdf" ? "application/pdf" : "application/json", upsert: true,
       });
@@ -233,12 +233,12 @@ Deno.serve(async (req) => {
     if (eUpd) console.error(`dte-para-cliente: no se anotó el resultado del correo ${entrega.id}: ${eUpd.message}`);
     if (!r.ok) {
       console.error(`dte-para-cliente: el correo no salió (${r.status}): ${texto.slice(0, 300)}`);
-      throw new ErrorUsuario("No se pudo enviar el correo. Descarga el documento y entrégalo.", 502);
+      throw new ErrorUsuario("No se pudo enviar el correo. Descarga la factura y entrégala.", 502);
     }
     return json({ ok: true, correo, se_envio: seEnvio });
   } catch (e) {
     if (e instanceof ErrorUsuario) return json({ ok: false, error: e.message }, e.status);
     console.error("dte-para-cliente:", e instanceof Error ? e.message : String(e));
-    return json({ ok: false, error: "No se pudo preparar el documento. Intenta de nuevo." }, 500);
+    return json({ ok: false, error: "No se pudo preparar la factura. Intenta de nuevo." }, 500);
   }
 });

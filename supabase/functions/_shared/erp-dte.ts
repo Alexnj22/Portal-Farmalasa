@@ -116,7 +116,7 @@ export async function login(): Promise<string> {
     signal: AbortSignal.timeout(20_000),
   });
   const cookie = res.headers.get("set-cookie")?.split(";")[0];
-  if (!cookie) throw new Error("El ERP no devolvió cookie de sesión.");
+  if (!cookie) throw new Error("No se pudo iniciar la sesión de facturación.");
   return cookie;
 }
 
@@ -165,7 +165,7 @@ export async function pedir(
     });
     const texto = await res.text();
     if (/name\s*=\s*["']password/i.test(texto.slice(0, 4000)))
-      throw new Error("La sesión del ERP caducó (devolvió el login).");
+      throw new Error("La sesión de facturación venció. Vuelve a intentarlo.");
     return texto;
   }, reintentos);
 }
@@ -176,7 +176,7 @@ export function leerRespuesta(cuerpo: string): { ok: boolean; msg: string } {
     const j = JSON.parse(cuerpo);
     return { ok: String(j.typeinfo).toLowerCase() === "success", msg: String(j.msg ?? "") };
   } catch {
-    return { ok: false, msg: `Respuesta ilegible del ERP: ${cuerpo.slice(0, 200)}` };
+    return { ok: false, msg: `Respuesta ilegible: ${cuerpo.slice(0, 200)}` };
   }
 }
 
@@ -252,7 +252,7 @@ export async function enviarDteAlMH(
   const modal = await pedir(cookie, pantalla);
   const token    = modal.match(/id=\s*"tok"[^>]*>([^<]+)<\/textarea>/)?.[1]?.trim();
   const ambiente = modal.match(/id="ambiente"\s+value="([^"]+)"/)?.[1] ?? "01";
-  if (!token) throw new Error("El ERP no entregó el token de Hacienda.");
+  if (!token) throw new Error("La anulación no entregó el token del MH.");
 
   // 2 · Armar y firmar el documento.
   const campos: Record<string, string> = {
@@ -263,13 +263,13 @@ export async function enviarDteAlMH(
     campos.duiResp    = opts.duiResp ?? "";
   }
   const creado = leerRespuesta(await pedir(cookie, HELPER_DTE, new URLSearchParams(campos)));
-  if (!creado.ok) throw new Error(`No se pudo generar el documento: ${creado.msg}`);
+  if (!creado.ok) throw new Error(`No se pudo generar la factura: ${creado.msg}`);
 
   // 3 · Leerlo.
   const doc = JSON.parse(await pedir(cookie, GENERAR_DTE, new URLSearchParams({
     process: "get_dte", id_factura: erpId, tipodoc, anula,
   })))?.detalles;
-  if (!doc?.encodeDte) throw new Error("El ERP no devolvió el documento firmado.");
+  if (!doc?.encodeDte) throw new Error("No llegó la factura firmada.");
 
   // 4 · Al MH, por el proxy del ERP. La emisión manda tipoDte y
   // codigoGeneracion; la invalidación no los lleva.
@@ -287,7 +287,7 @@ export async function enviarDteAlMH(
   });
   let mh: Record<string, unknown>;
   try { mh = JSON.parse(bruto); }
-  catch { throw new Error(`Hacienda devolvió algo ilegible: ${bruto.slice(0, 200)}`); }
+  catch { throw new Error(`El MH devolvió algo ilegible: ${bruto.slice(0, 200)}`); }
 
   const sello = String(mh.selloRecibido ?? "");
   const observaciones = Array.isArray(mh.observaciones) ? mh.observaciones.map(String) : [];
@@ -305,8 +305,8 @@ export async function enviarDteAlMH(
 
   if (!sello || sello === "null")
     throw new RechazoMH(
-      `Hacienda rechazó el documento: ${mh.descripcionMsg ?? "sin descripción"}` +
-        (observaciones.length ? ` — ${observaciones.join("; ")}` : ""),
+      `El MH rechazó la factura: ${mh.descripcionMsg ?? "sin descripción"}` +
+        (observaciones.length ? `. ${observaciones.join("; ")}` : ""),
       observaciones,
       String(mh.descripcionMsg ?? ""),
       String(mh.codigoMsg ?? ""),

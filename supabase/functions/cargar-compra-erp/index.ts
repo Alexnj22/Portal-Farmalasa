@@ -173,12 +173,12 @@ async function enviarCompra(admin: any, x: {
   // (largo de la clave, después alfabético), así que comparar el texto tal
   // cual daba «algo cambió» siempre — pasó en la primera prueba, 29-oct.
   if (canonico(rev.sobre) !== canonico(x.sobre)) {
-    return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisa la carga de nuevo." };
+    return { enviada: false, error: "Algo cambió desde la revisión, como un precio o una presentación. Revisa la carga de nuevo." };
   }
   // El reparto a salas y lo marcado como error NO van dentro del sobre, y
   // también mueven inventario: tienen que ser los mismos que se revisaron.
   if (canonico(loQueSeMueve(rev.revision)) !== canonico(loQueSeMueve(x.revision))) {
-    return { enviada: false, error: "Cambió lo que va a las salas o lo marcado como error: revisa la carga de nuevo." };
+    return { enviada: false, error: "Cambió lo que va a las sucursales o lo marcado como error. Revisa la carga de nuevo." };
   }
   // Freno de la ubicación: una revisión guardada antes del arreglo trae
   // `destino` "3" (Salud 1). Se compara contra la ubicación VIVA de Bodega.
@@ -284,7 +284,7 @@ async function enviarCompra(admin: any, x: {
     esperado.size ? existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante).catch(() => null) : Promise.resolve(new Map<number, number>()),
   ]);
   if (!estanteDespues) {
-    verif.ok = false; verif.notas.push("No se pudo leer la existencia de Bodega después de cargar: comprobar que entró al estante.");
+    verif.ok = false; verif.notas.push("No se pudo leer la existencia de Bodega después de cargar. Comprueba que entró al estante.");
   } else {
     const faltan = [...esperado].filter(([id, u]) => (estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0) < u);
     if (faltan.length) {
@@ -484,7 +484,7 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
   // Los servicios (consumo) no se sabe todavía si salen en esta lista: el
   // conteo sólo se exige cuando la compra es toda de productos.
   if (productos.length === lineas.length && items.length !== lineas.length && items.length !== repetidos) {
-    notas.push(`El sistema tiene ${items.length} renglones y se mandaron ${lineas.length}.`);
+    notas.push(`La compra tiene ${items.length} productos y se mandaron ${lineas.length}.`);
   }
   const cerca = (a: number, b: number) => Math.abs(a - b) <= 0.001;
   for (const [id, e] of porProducto) {
@@ -564,11 +564,11 @@ async function crearProducto(
     await marcar("sin_verificar", { erp_product_id: id, error: `Creado, sin poder leerlo: ${(e as Error)?.message ?? e}` });
     const { error: eP0 } = await admin.rpc("upsert_products_minimal", { p_rows: [{ id, nombre: x.nombre }] });
     if (eP0) throw eP0;
-    return { creado: true, verificado: false, producto: { id, nombre: x.nombre }, notas: ["no se pudo leer la ficha recién creada"] };
+    return { creado: true, verificado: false, producto: { id, nombre: x.nombre }, notas: ["no se pudieron leer los datos del producto recién creado"] };
   }
   const leido = leerModelo(id, html);
   const notas: string[] = [];
-  if (leido.nombre.toUpperCase() !== x.nombre) notas.push(`la ficha dice «${leido.nombre}»`);
+  if (leido.nombre.toUpperCase() !== x.nombre) notas.push(`los datos dicen «${leido.nombre}»`);
   if (!leido.precios) notas.push("no tiene presentación de 1 unidad activa");
   else if (Math.abs(leido.precios[0] - x.precio) > 0.005) notas.push(`el precio quedó en $${leido.precios[0].toFixed(2)}`);
   await marcar(notas.length ? "sin_verificar" : "creado", { erp_product_id: id, error: notas.length ? notas.join(" · ") : null });
@@ -811,7 +811,7 @@ async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[]
  * existencia de la sala subió.
  */
 async function recibirReparto(admin: any, id: number, vences: Record<string, string>, quien: { id: string; name: string }) {
-  if (!Number.isFinite(id)) return { error: "Falta el envío." };
+  if (!Number.isFinite(id)) return { error: "Falta el traslado." };
   // Destrabar una ficha sólo se empieza si alcanza para terminar y devolverla
   // (ver `_shared/erp-destrabe.ts`). Esta acción no tenía reloj propio.
   const inicio = Date.now();
@@ -821,12 +821,12 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
   if (permiso.roto) return { error: permiso.roto };
   const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
   if (eR) throw eR;
-  if (!r) return { error: "Ese envío no existe." };
+  if (!r) return { error: "Ese traslado no existe." };
   if (!permiso.puede || (!permiso.alcanceTodo && permiso.emp?.branch_id !== r.branch_id)) {
-    return { error: "Sólo lo puede recibir alguien de esa sala." };
+    return { error: "Sólo lo puede recibir alguien de esa sucursal." };
   }
   if (r.estado === "recibido") return { recibido: true, ya: true };
-  if (r.estado !== "enviado" || !r.erp_traslado_id) return { error: "Ese envío no está en camino." };
+  if (r.estado !== "enviado" || !r.erp_traslado_id) return { error: "Ese traslado no está en camino." };
 
   const lineas = r.lineas as LineaReparto[];
   const fechas: Record<string, string> = {};
@@ -839,7 +839,7 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
   }
   const salas = await salasDeReparto(admin);
   const sala = salas.get(Number(r.branch_id));
-  if (!sala) return { error: "No se conoce la ubicación de esa sala." };
+  if (!sala) return { error: "No se conoce la ubicación de esa sucursal." };
 
   const { data: tomada, error: eT } = await admin.from("compra_reparto").update({ estado: "recibiendo", updated_at: new Date().toISOString() })
     .eq("id", id).eq("estado", "enviado").select("id");
@@ -877,7 +877,7 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
       total += Number(f.compra) * Number(f.esp);
       return [f.idProd, f.compra, f.venta, f.esp, f.unidad, vence, f.idPres, f.esp].join("|");
     });
-    if (filas.some((f) => !(fechas[f.idProd] ?? f.vence))) { await volver("Un renglón no tiene vencimiento."); return { error: "Un producto no tiene fecha de vencimiento." }; }
+    if (filas.some((f) => !(fechas[f.idProd] ?? f.vence))) { await volver("Un producto no tiene vencimiento."); return { error: "Un producto no tiene fecha de vencimiento." }; }
     // Que el traslado del sistema sea ESTE envío: mismos productos y unidades.
     // Por producto, en unidades. La cantidad de la página va en paquetes de su
     // presentación; si alguna vez viniera ya en unidades, también se acepta.
@@ -889,7 +889,7 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
     const igual = (m: Map<number, number>) => m.size === esperado.size && [...esperado].every(([pid, u]) => Math.abs((m.get(pid) ?? -1) - u) < 1e-6);
     const coincide = igual(sumar(true)) || igual(sumar(false));
     if (!coincide) {
-      await anotar("sin_verificar", `El traslado ${r.erp_traslado_id} del sistema no trae lo mismo que este envío: revisarlo antes de recibir.`);
+      await anotar("sin_verificar", `El traslado ${r.erp_traslado_id} no trae los mismos productos. Revísalo antes de recibir.`);
       return { error: "El traslado del sistema no coincide con lo enviado: avisa a Bodega." };
     }
     const antes = await existenciasDeUbicacion(cookie, sala.erp, sala.ubic);
@@ -941,7 +941,7 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
     const comprobado = Boolean(antes && despues && [...esperado].every(([pid, u]) => (despues.get(pid) ?? 0) - (antes.get(pid) ?? 0) >= u - 1e-6));
     const { error: eU } = await admin.from("compra_reparto").update({
       estado: "recibido", recibido_por: quien.id, recibido_at: new Date().toISOString(), vences: fechas,
-      nota: comprobado ? null : "Recibido, pero la existencia de la sala no subió lo esperado: revisarlo.", updated_at: new Date().toISOString(),
+      nota: comprobado ? null : "Recibido, pero la existencia de la sucursal no subió lo esperado. Revísalo.", updated_at: new Date().toISOString(),
     }).eq("id", id);
     if (eU) throw eU;
     return { recibido: true, comprobado };
@@ -964,11 +964,11 @@ async function trasladoDelEnvioCortado(admin: any, r: any, salaErp: number):
   Promise<{ id: string; no_salio?: false } | { no_salio: true } | { error: string }> {
   const lineas: LineaReparto[] = Array.isArray(r.lineas) ? r.lineas : [];
   const ids = [...new Set(lineas.map((l) => Number(l.erp_product_id)).filter((n) => n > 0))];
-  if (!ids.length) return { error: "Ese envío no tiene productos." };
+  if (!ids.length) return { error: "Ese traslado no tiene productos." };
   const { data: prods, error: eP } = await admin.from("products").select("id, nombre").in("id", ids);
   if (eP) throw eP;
   const nombres = (prods ?? []).map((p: any) => String(p.nombre ?? "")).filter(Boolean);
-  if (nombres.length !== ids.length) return { error: "No se conocen todos los productos del envío: que Bodega lo busque en el sistema." };
+  if (nombres.length !== ids.length) return { error: "No se conocen todos los productos del traslado. Pídele a Bodega que los revise." };
 
   // El último número anotado antes de armar el envío: el de despacho de
   // pedidos o el de otro envío de compras, el que sea mayor.
@@ -982,13 +982,13 @@ async function trasladoDelEnvioCortado(admin: any, r: any, salaErp: number):
   if (e1) throw e1;
   if (e2) throw e2;
   const desde = Math.max(Number(a1?.[0]?.id_traslado ?? 0), Number(a2?.[0]?.erp_traslado_id ?? 0));
-  if (!desde) return { error: "No hay un traslado anterior de referencia: que Bodega lo busque en el sistema." };
+  if (!desde) return { error: "No hay un traslado anterior de referencia. Pídele a Bodega que lo busque." };
 
   // La sesión de Bodega es la que lista la dirección de todas las salas.
   const cookie = await sesionEn(ERP_BODEGA, login);
   const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
   const dirDestino = direccionesPorSucursal(pagina).get(String(salaErp));
-  if (!dirDestino) return { error: "No se pudo leer la dirección de la sala en el sistema: intenta en un momento." };
+  if (!dirDestino) return { error: "No se pudo leer la dirección de la sucursal. Intenta en un momento." };
 
   const res = await buscarTrasladoHuerfano({
     desde, producto: nombres, dirDestino,
@@ -1009,7 +1009,7 @@ async function trasladoDelEnvioCortado(admin: any, r: any, salaErp: number):
   console.log(`[cargar-compra-erp] envío cortado ${r.id}: ${JSON.stringify(res)}`);
   if (res.estado === "encontrado") return { id: res.id };
   if (res.estado === "no_salio") return { no_salio: true };
-  return { error: `No se pudo comprobar solo (${res.motivo}): que Bodega lo busque en el sistema antes de volver a enviar.` };
+  return { error: `No se pudo comprobar solo (${res.motivo}). Pídele a Bodega que lo busque antes de volver a enviarlo.` };
 }
 
 /**
@@ -1021,11 +1021,11 @@ async function comprobarReparto(admin: any, id: number, quien: { id: string }) {
   if (permiso.roto) return { error: permiso.roto };
   const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
   if (eR) throw eR;
-  if (!r) return { error: "Ese envío no existe." };
-  if (!permiso.puede || (!permiso.alcanceTodo && permiso.emp?.branch_id !== r.branch_id)) return { error: "Sólo lo puede comprobar alguien de esa sala." };
-  if (r.estado !== "sin_verificar") return { error: "Ese envío no está por comprobar." };
+  if (!r) return { error: "Ese traslado no existe." };
+  if (!permiso.puede || (!permiso.alcanceTodo && permiso.emp?.branch_id !== r.branch_id)) return { error: "Sólo lo puede comprobar alguien de esa sucursal." };
+  if (r.estado !== "sin_verificar") return { error: "Ese traslado no está por comprobar." };
   const sala = (await salasDeReparto(admin)).get(Number(r.branch_id));
-  if (!sala) return { error: "No se conoce la ubicación de esa sala." };
+  if (!sala) return { error: "No se conoce la ubicación de esa sucursal." };
   if (!r.erp_traslado_id) {
     // El envío se cortó antes de anotar su número (lo dejó así el barrido de
     // trabados). Antes la respuesta era «que Bodega lo busque en el sistema»,
@@ -1034,7 +1034,7 @@ async function comprobarReparto(admin: any, id: number, quien: { id: string }) {
     if ("error" in h) return h;
     if (h.no_salio) {
       const { error: eF } = await admin.from("compra_reparto").update({
-        estado: "fallido", nota: "Se comprobó en el sistema: el envío no llegó a salir de Bodega. Se puede reintentar.",
+        estado: "fallido", nota: "El traslado no llegó a salir de Bodega. Puedes reintentarlo.",
         updated_at: new Date().toISOString(),
       }).eq("id", id).eq("estado", "sin_verificar");
       if (eF) throw eF;
@@ -1067,18 +1067,18 @@ async function comprobarReparto(admin: any, id: number, quien: { id: string }) {
 async function reintentarReparto(admin: any, id: number, quien: string) {
   const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
   if (eR) throw eR;
-  if (!r) return { error: "Ese envío no existe." };
+  if (!r) return { error: "Ese traslado no existe." };
   const quieto = r.estado === "por_enviar" && Date.parse(r.updated_at ?? r.created_at) < Date.now() - 15 * 60_000;
   if (r.estado !== "fallido" && !quieto) {
     return { error: r.estado === "sin_verificar"
-      ? "Ese envío puede haber salido: primero hay que comprobarlo."
-      : "Sólo se reintenta un envío que no salió de Bodega." };
+      ? "Ese traslado puede haber salido. Compruébalo primero."
+      : "Sólo se reintenta un traslado que no salió de Bodega." };
   }
   const { data: c, error: eC } = await admin.from("compra_carga").select("estado").eq("id", r.compra_carga_id).maybeSingle();
   if (eC) throw eC;
-  if (c?.estado !== "verificada") return { error: "La compra todavía no está comprobada en Bodega: no se puede enviar a la sala." };
+  if (c?.estado !== "verificada") return { error: "La compra todavía no está comprobada en Bodega. Aún no se puede trasladar a la sucursal." };
   const lineas: LineaReparto[] = Array.isArray(r.lineas) ? r.lineas : [];
-  if (!lineas.length) return { error: "Ese envío no tiene productos." };
+  if (!lineas.length) return { error: "Ese traslado no tiene productos." };
 
   // El candado: sólo pasa quien lo saca del estado en que lo vio.
   const { data: tomada, error: eT } = await admin.from("compra_reparto")
@@ -1154,7 +1154,7 @@ async function recibirYComprobar(cookie: string, x: {
     tot += Number(compra) * Number(esp);
   }
   if (filas.length !== x.renglones) {
-    return { ok: false, error: "No se pudo leer la recepción.", nota: `El traslado ${idT} quedó sin recibir: recibirlo a mano.` };
+    return { ok: false, error: "No se pudo leer la recepción.", nota: `El traslado ${idT} quedó sin recibir. Recíbelo a mano.` };
   }
   const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
     process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
@@ -1167,7 +1167,7 @@ async function recibirYComprobar(cookie: string, x: {
   const antes = x.antesDestino;
   const entro = ok2 && antes && despues && [...x.esperado].every(([id, u]) =>
     (despues.get(id) ?? 0) - (antes.get(id) ?? 0) >= u - 1e-6);
-  if (!entro) return { ok: false, error: "No se comprobó en el destino.", nota: `El traslado ${idT} no se pudo comprobar donde se recibió: revisarlo.` };
+  if (!entro) return { ok: false, error: "No se comprobó en el destino.", nota: `El traslado ${idT} no se pudo comprobar donde se recibió. Revísalo.` };
   return { ok: true };
 }
 
@@ -1211,8 +1211,8 @@ async function moverAlAreaDeVencidos(cookie: string, x: {
   // que no se pudo leer, no.
   const idT = antes && despues ? (await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, [])).id : null;
   if (!idT) {
-    return falla(true, null, "Traslado sin identificar: recibirlo a mano.",
-      "Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
+    return falla(true, null, "Traslado sin identificar. Recíbelo a mano.",
+      "Salió el traslado a vencidos pero no se pudo identificar su número. Recíbelo a mano en vencidos.");
   }
 
   const rec = await recibirYComprobar(cookie, { idT, renglones: x.partes.length, destino: x.vencidosUbic,
@@ -1252,7 +1252,7 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
   for (const e of errs) {
     const l = e.linea_idx != null ? x.lineas[e.linea_idx]
       : x.lineas.find((y) => Number(y.id_producto) === e.product_id && Math.abs(Number(y.cant) * (Number(y.unidad) || 1) - e.unidades) < 1e-6);
-    if (!l) { await nota("No se encontró su renglón en la compra."); return { movidos: 0, error: "No se encontró el renglón en la compra." }; }
+    if (!l) { await nota("No se encontró el producto en la compra."); return { movidos: 0, error: "No se encontró el producto en la compra." }; }
     const f = await traerFila(cookie, e.product_id, x.estante);
     if (!f.presentaciones.some((p) => p.id === String(l.id_presentacion))) {
       await nota("Su presentación no aparece en el estante."); return { movidos: 0, error: "Presentación no encontrada en el estante." };
@@ -1405,7 +1405,7 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
   } catch (e: any) {
     // No se sabe si salió: queda para revisar, nunca para reintentar a ciegas.
     await cerrar({ estado: "sin_verificar", nota: `Se cortó a medio camino: ${e?.message ?? e}` });
-    return { error: "Se cortó a medio camino. Quedó anotado para revisarlo; no lo vuelvas a mandar." };
+    return { error: "Se cortó a medio camino. Quedó anotado para revisarlo. No lo vuelvas a mandar." };
   }
   if (!mov.ok) {
     await cerrar({ estado: mov.salio ? "sin_verificar" : "fallido", erp_traslado_id: mov.traslado,
@@ -1466,7 +1466,7 @@ async function terminarDevolucion(admin: any, filas: any[], quien: string) {
     if (texto && buscados.every((d) => texto.includes(d))) candidatos.push(id);
   }
   if (candidatos.length !== 1) {
-    return { error: candidatos.length ? `Hay ${candidatos.length} traslados pendientes con esos productos: recibirlo a mano.` : "No hay ningún traslado pendiente con esos productos desde vencidos." };
+    return { error: candidatos.length ? `Hay ${candidatos.length} traslados pendientes con esos productos. Recíbelo a mano.` : "No hay ningún traslado pendiente con esos productos desde vencidos." };
   }
   const idT = candidatos[0];
   const esperado = new Map<number, number>();
@@ -1579,7 +1579,7 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
   const { data: previa, error: eP } = await admin.from("compra_nota_credito_libro").select("estado").eq("document_id", notaId).maybeSingle();
   if (eP) throw eP;
   if (previa?.estado === "registrada") return { ok: true, ya: true };
-  if (previa && previa.estado !== "fallida") return { ok: false, error: "La nota quedó a medio registrar en el libro: revisarla a mano antes de seguir." };
+  if (previa && previa.estado !== "fallida") return { ok: false, error: "La nota quedó a medio registrar en el libro. Revísala a mano antes de seguir." };
 
   const { data: n, error: eN } = await admin.from("purchase_dte_documents")
     .select("id, tipo_dte, numero_control, codigo_generacion, fecha_emision, json_path").eq("id", notaId).maybeSingle();
@@ -1649,7 +1649,7 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
     return { ok: false, error: "El sistema no contestó al leer la nota." };
   }
   if (!String(leido.numControl_DocRelacionado ?? "").trim()) {
-    await marcar("fallida", { error: "La nota no trae el documento que corrige.", datos: leido });
+    await marcar("fallida", { error: "La nota no trae la factura que corrige.", datos: leido });
     return { ok: false, error: "La nota no dice qué factura corrige: el sistema no la acepta así." };
   }
 
@@ -1676,7 +1676,7 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
     resp = await r.text();
   } catch (e) {
     await marcar("sin_verificar", { datos: leido, error: `Sin respuesta al registrar: ${(e as Error)?.message ?? e}` });
-    return { ok: false, error: "El sistema no contestó al registrar la nota: puede haber entrado, revisar el libro antes de reintentar." };
+    return { ok: false, error: "El sistema no contestó al registrar la nota. Puede haber entrado. Revisa el libro antes de reintentar." };
   }
   let j: any = null;
   try { j = JSON.parse(resp); } catch { /* abajo */ }
@@ -1692,7 +1692,7 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
     enLibro = (await enElLibro()).esta(numero);
   } catch { /* abajo */ }
   await marcar(enLibro ? "registrada" : "sin_verificar", { datos: leido, error: enLibro ? null : `No apareció en el libro de ${mes}: ${resp.slice(0, 300)}` });
-  return enLibro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro: revisarla antes de reintentar." };
+  return enLibro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro. Revísala antes de reintentar." };
 }
 
 /**
@@ -1715,11 +1715,11 @@ async function registrarNotaPapelEnLibro(admin: any, cookie: string, e: any, qui
   if (!n) return { ok: false, error: "La nota en papel no existe." };
   if (n.estado === "registrada") return { ok: true, ya: true };
   if (n.estado === "enviando" || n.estado === "sin_verificar") {
-    return { ok: false, error: "La nota quedó a medio registrar en el libro: revisarla a mano antes de seguir." };
+    return { ok: false, error: "La nota quedó a medio registrar en el libro. Revísala a mano antes de seguir." };
   }
   const { data: pm, error: eP } = await admin.from("proveedores_maestro").select("nit, nrc, nombre").eq("nit", n.proveedor_nit).maybeSingle();
   if (eP) throw eP;
-  if (!pm?.nrc) return { ok: false, error: "Al proveedor le falta el NRC en su ficha: sin eso el libro no la acepta." };
+  if (!pm?.nrc) return { ok: false, error: "Al proveedor le falta el NRC en sus datos. Sin el NRC no entra al libro." };
 
   // El documento que corrige: el número con que la compra quedó registrada.
   let relacionado = "";
@@ -1800,7 +1800,7 @@ async function registrarNotaPapelEnLibro(admin: any, cookie: string, e: any, qui
     resp = await r.text();
   } catch (err) {
     await marcar("sin_verificar", { datos, error: `Sin respuesta al registrar: ${(err as Error)?.message ?? err}` });
-    return { ok: false, error: "El sistema no contestó al registrar la nota: puede haber entrado, revisar el libro antes de reintentar." };
+    return { ok: false, error: "El sistema no contestó al registrar la nota. Puede haber entrado. Revisa el libro antes de reintentar." };
   }
   let j: any = null;
   try { j = JSON.parse(resp); } catch { /* abajo */ }
@@ -1811,7 +1811,7 @@ async function registrarNotaPapelEnLibro(admin: any, cookie: string, e: any, qui
   let entro = false;
   try { entro = await enElLibro(); } catch { /* abajo */ }
   await marcar(entro ? "registrada" : "sin_verificar", { datos, error: entro ? null : `No apareció en el libro: ${resp.slice(0, 300)}` });
-  return entro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro: revisarla antes de reintentar." };
+  return entro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro. Revísala antes de reintentar." };
 }
 
 /**
@@ -1822,7 +1822,7 @@ async function registrarNotaPapelEnLibro(admin: any, cookie: string, e: any, qui
  * 3. lo comprueba leyendo la existencia de vencidos antes y después.
  */
 async function darSalidaErroneo(admin: any, id: number, quien: string) {
-  if (!Number.isFinite(id)) return { error: "Falta el renglón." };
+  if (!Number.isFinite(id)) return { error: "Falta el producto." };
   const { data: tomadas, error: eT } = await admin.from("compra_renglon_erroneo")
     .update({ estado: "saliendo", updated_at: new Date().toISOString() })
     .eq("id", id).eq("estado", "con_nota").not("en_vencidos_at", "is", null).select("*");
@@ -1874,7 +1874,7 @@ async function darSalidaErroneo(admin: any, id: number, quien: string) {
     const comprobado = bajo != null && bajo >= Number(e.unidades) - 1e-6;
     const { error: eU } = await admin.from("compra_renglon_erroneo").update({
       estado: "salio", salida: { ...r.aplicado, antes: stockAntes, comprobado, bajo },
-      nota: comprobado ? null : "Se descargó, pero la existencia de vencidos no bajó lo esperado: revisarlo.",
+      nota: comprobado ? null : "Se descargó, pero la existencia de vencidos no bajó lo esperado. Revísalo.",
       updated_at: new Date().toISOString(),
     }).eq("id", id);
     if (eU) throw eU;
@@ -1901,7 +1901,7 @@ async function comprobarSalida(admin: any, cookie: string, e: any, vencidos: num
   const nada = bajo != null && Math.abs(bajo) < 1e-6;
   const cambios = salio ? { estado: "salio", nota: null, salida: { ...(e.salida ?? {}), antes, bajo, comprobado: true } }
     : nada ? { estado: "con_nota", nota: "No había salido: se puede dar salida de nuevo." }
-    : { estado: "sin_verificar", nota: bajo == null ? "No se pudo leer vencidos para comprobar." : `Vencidos bajó ${bajo} y salían ${Number(e.unidades)}: revisarlo en el sistema.` };
+    : { estado: "sin_verificar", nota: bajo == null ? "No se pudo leer vencidos para comprobar." : `Vencidos bajó ${bajo} y salían ${Number(e.unidades)}. Revísalo.` };
   const { error } = await admin.from("compra_renglon_erroneo").update({ ...cambios, updated_at: t }).eq("id", e.id);
   if (error) throw error;
   return { salio, estado: cambios.estado };
@@ -1911,10 +1911,10 @@ async function comprobarSalida(admin: any, cookie: string, e: any, vencidos: num
 async function comprobarErroneo(admin: any, id: number) {
   const { data: e, error: eE } = await admin.from("compra_renglon_erroneo").select("*").eq("id", id).maybeSingle();
   if (eE) throw eE;
-  if (!e) return { error: "Ese renglón no existe." };
+  if (!e) return { error: "Ese producto no existe." };
   if (e.estado !== "sin_verificar") return { error: "Ese producto no está por comprobar." };
   const antes = Number(e.salida?.antes);
-  if (!Number.isFinite(antes)) return { error: "No quedó la existencia de antes: revisarlo en el sistema." };
+  if (!Number.isFinite(antes)) return { error: "No quedó la existencia de antes. Revísalo." };
   const vencidos = await ubicacionDeBodega(admin, true);
   if (!vencidos) return { error: "No se conoce el área de vencidos." };
   const cookie = await sesionEn(ERP_BODEGA, login);
@@ -1933,7 +1933,7 @@ async function comprobarErroneo(admin: any, id: number) {
  * se «toma» (`deshaciendo`) antes de mandar: dos clics no devuelven dos veces.
  */
 async function deshacerErroneo(admin: any, id: number, quien: string) {
-  if (!Number.isFinite(id)) return { error: "Falta el renglón." };
+  if (!Number.isFinite(id)) return { error: "Falta el producto." };
   const { data: tomadas, error: eT } = await admin.from("compra_renglon_erroneo")
     .update({ estado: "deshaciendo", updated_at: new Date().toISOString() })
     .eq("id", id).eq("estado", "en_vencidos").not("en_vencidos_at", "is", null).select("*");
@@ -1950,7 +1950,7 @@ async function deshacerErroneo(admin: any, id: number, quien: string) {
   const vencidosUbic = await ubicacionDeBodega(admin, true);
   if (!estante || !vencidosUbic) return await volver("No se conoce el estante o el área de vencidos.");
   const unidades = Number(e.unidades);
-  if (!(unidades > 0)) return await volver("El renglón no tiene unidades.");
+  if (!(unidades > 0)) return await volver("El producto no tiene unidades.");
 
   let mov;
   try {
@@ -1998,7 +1998,7 @@ async function deshacerErroneo(admin: any, id: number, quien: string) {
 async function erroneoYaEnVencidos(admin: any, id: number) {
   const { data: e, error: eE } = await admin.from("compra_renglon_erroneo").select("id, erp_traslado_id, en_vencidos_at, estado").eq("id", id).maybeSingle();
   if (eE) throw eE;
-  if (!e) return { error: "Ese renglón no existe." };
+  if (!e) return { error: "Ese producto no existe." };
   if (e.en_vencidos_at) return { ok: true, ya: true };
   if (!e.erp_traslado_id) return { error: "No se sabe con qué traslado salió a vencidos: hay que pasarlo de nuevo." };
   const cookie = await sesionEn(ERP_BODEGA, login);
@@ -2051,7 +2051,7 @@ async function darSalidaFaltante(admin: any, id: number, quien: string) {
   if (eT) throw eT;
   if (!tomadas?.length) return { error: "Ese faltante no está listo para salir (tiene que tener su nota de crédito adjunta)." };
   const x = await faltanteDeBodega(admin, id);
-  if (!x) return { error: "No se encontró el renglón de la compra." };
+  if (!x) return { error: "No se encontró el producto en la compra." };
   const { f, g } = x;
   const faltan = Number(f.faltan);
   const volver = (nota: string) => anotarFaltante(admin, id, "con_nota", { nota }, null, nota);
@@ -2100,7 +2100,7 @@ async function darSalidaFaltante(admin: any, id: number, quien: string) {
     const comprobado = bajo != null && bajo >= faltan - 1e-6;
     await anotarFaltante(admin, id, "nota_credito", {
       salida: { ...r.aplicado, antes: stockAntes, comprobado, bajo },
-      nota: comprobado ? null : "Se descargó, pero la existencia de Bodega no bajó lo esperado: revisarlo.",
+      nota: comprobado ? null : "Se descargó, pero la existencia de Bodega no bajó lo esperado. Revísalo.",
     }, quien, `salió de Bodega (${faltan})`);
     return { ok: true, comprobado };
   } catch (err) {
@@ -2120,7 +2120,7 @@ async function comprobarSalidaDeFaltante(admin: any, cookie: string, id: number,
   if (salio) await anotarFaltante(admin, id, "nota_credito", { nota: null, salida: { antes, bajo, comprobado: true } }, quien, `salió de Bodega (${faltan}), comprobado`);
   else if (nada) await anotarFaltante(admin, id, "con_nota", { nota: "No había salido: se puede dar salida de nuevo." }, null, "no había salido");
   else await anotarFaltante(admin, id, "sin_verificar", {
-    nota: bajo == null ? "No se pudo leer Bodega para comprobar." : `Bodega bajó ${bajo} y salían ${faltan}: revisarlo en el sistema.`,
+    nota: bajo == null ? "No se pudo leer Bodega para comprobar." : `Bodega bajó ${bajo} y salían ${faltan}. Revísalo.`,
   }, null, null);
   return { salio };
 }
@@ -2130,7 +2130,7 @@ async function comprobarFaltante(admin: any, id: number, quien: string) {
   if (!x) return { error: "Ese faltante no existe." };
   if (x.f.estado !== "sin_verificar") return { error: "Ese faltante no está por comprobar." };
   const antes = Number(x.f.salida?.antes);
-  if (!Number.isFinite(antes)) return { error: "No quedó la existencia de antes: revisarlo en el sistema." };
+  if (!Number.isFinite(antes)) return { error: "No quedó la existencia de antes. Revísalo." };
   const estante = await ubicacionDeBodega(admin, false);
   if (!estante) return { error: "No se conoce el estante de Bodega." };
   const cookie = await sesionEn(ERP_BODEGA, login);
@@ -2361,7 +2361,7 @@ Deno.serve(async (req: Request) => {
     const diasCredito = Number.isFinite(Number(body?.dias_credito)) ? Math.max(0, Math.trunc(Number(body.dias_credito))) : null;
     const enviar = body?.enviar === true;
     if (enviar && Deno.env.get("CARGA_COMPRA_ENVIO") !== "on") {
-      return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
+      return responder({ error: "La carga a Bodega todavía no está encendida." }, 409);
     }
     if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
     if (body?.accion === "erroneo_deshacer") {
@@ -2396,7 +2396,7 @@ Deno.serve(async (req: Request) => {
       if (eQ) throw eQ;
       return responder(q?.length ? { ok: true } : { error: "Esa factura ya no se puede descartar." });
     }
-    if (!manualId && !Number.isFinite(documentId)) return responder({ error: "Falta el documento." }, 400);
+    if (!manualId && !Number.isFinite(documentId)) return responder({ error: "Falta la factura." }, 400);
 
     // ── El documento y su proveedor ──────────────────────────────────────────
     // Un papel se viste de DTE (`dteDeManual`) y sigue el mismo camino.
@@ -2413,12 +2413,12 @@ Deno.serve(async (req: Request) => {
         .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, pdf_path, sello_recibido, invalidado")
         .eq("id", documentId).maybeSingle();
       if (eD) throw eD;
-      if (!dd) return responder({ error: "Ese documento no existe." }, 404);
+      if (!dd) return responder({ error: "Esa factura no existe." }, 404);
       d = dd;
     }
 
     const problemas: Problema[] = [];
-    if (d.invalidado) problemas.push({ renglon: null, texto: "El emisor invalidó este documento." });
+    if (d.invalidado) problemas.push({ renglon: null, texto: "El emisor invalidó esta factura." });
     const tipoDoc = tipoDocDe(d.tipo_dte);
     if (!tipoDoc) return responder({ error: `Tipo de documento ${d.tipo_dte} no se carga como compra.` }, 400);
 
@@ -2466,7 +2466,7 @@ Deno.serve(async (req: Request) => {
     let selloDelArchivo: string | null = null;
     if (!dte) {
       const path = pathDeStorage(d.json_path);
-      if (!path) return responder({ error: "El documento no tiene su archivo." }, 400);
+      if (!path) return responder({ error: "La factura no tiene su archivo." }, 400);
       const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
       if (eB || !blob) throw new Error(`No se pudo leer el archivo: ${eB?.message}`);
       const archivo = JSON.parse(await blob.text());
@@ -2489,16 +2489,16 @@ Deno.serve(async (req: Request) => {
       sello = await selloDelPdfGuardado(admin, d);
     }
     if (!manual && !sello) {
-      problemas.push({ renglon: null, texto: "El documento no trae el sello de recepción de Hacienda: se podrá cargar cuando llegue." });
+      problemas.push({ renglon: null, texto: "La factura no trae el sello del Ministerio de Hacienda. Se podrá cargar cuando llegue." });
     }
     const crudos: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
-    if (!crudos.length) return responder({ error: "El documento no trae renglones." }, 400);
+    if (!crudos.length) return responder({ error: "La factura no trae productos." }, 400);
     // Los packs partidos (`compra_renglon_particion`). Las decisiones llegan por
     // posición: si la regla cambió después de abrir la factura, cada una caería
     // sobre el renglón equivocado, así que se rechaza antes de armar nada.
     const { items, firma: particionFirma } = await aplicarParticiones(admin, crudos, d.emisor_nit, manual ? null : documentId);
     if (String(body?.particion_firma ?? "") !== particionFirma) {
-      return responder({ error: "Cambió cómo se parte un renglón de esta factura. Vuelve a abrirla y revísala." }, 409);
+      return responder({ error: "Cambió cómo se parte un producto de esta factura. Vuelve a abrirla y revísala." }, 409);
     }
     // Una parte es de su producto y en unidades, diga lo que diga la pantalla.
     items.forEach((it, i) => {
@@ -2642,7 +2642,7 @@ Deno.serve(async (req: Request) => {
       const pedidoReparto = (decisiones[String(i)] as any)?.reparto;
       if (res.linea && dec.tipo === "producto" && pedidoReparto && typeof pedidoReparto === "object") {
         if ((decisiones[String(i)] as any)?.erroneo === true) {
-          problemas.push({ renglon: i, texto: `«${r.descripcion}» es un producto erróneo: no se envía a salas.` });
+          problemas.push({ renglon: i, texto: `«${r.descripcion}» es un producto erróneo. No se traslada a las sucursales.` });
         } else {
           // La pantalla manda UNIDADES (lo mismo que «Cantidad a cargar»); se
           // traslada en la presentación con que entra, así que tienen que ser
@@ -2654,7 +2654,7 @@ Deno.serve(async (req: Request) => {
             const u = Number(v);
             if (!(u > 0)) continue;
             const sala = salas.get(Number(b));
-            if (!sala) { problemas.push({ renglon: i, texto: `«${r.descripcion}»: la sala ${b} no recibe envíos.` }); continue; }
+            if (!sala) { problemas.push({ renglon: i, texto: `«${r.descripcion}»: la sucursal ${b} no recibe traslados.` }); continue; }
             const n = u / unidad;
             if (Math.abs(n - Math.round(n)) > 1e-9) {
               problemas.push({ renglon: i, texto: `«${r.descripcion}»: a ${sala.nombre} van ${u} unidades y entra en paquetes de ${unidad}.` });
@@ -2669,9 +2669,9 @@ Deno.serve(async (req: Request) => {
             });
           }
           const extra = aVencidos ? ` y ${aVencidos} a vencidos` : "";
-          if (suma + aVencidos > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas${extra}, y entran ${entran}.` });
+          if (suma + aVencidos > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: van ${suma} a sucursales${extra}, y entran ${entran}.` });
           else if (llegaron != null && suma + aVencidos > llegaron + 1e-9) {
-            problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas${extra}, y sólo llegaron ${llegaron}.` });
+            problemas.push({ renglon: i, texto: `«${r.descripcion}»: van ${suma} a sucursales${extra}, y sólo llegaron ${llegaron}.` });
           }
         }
       }
@@ -2708,7 +2708,7 @@ Deno.serve(async (req: Request) => {
     // `encabezadoDelDocumento`). Con una diferencia de verdad queda lo armado
     // y la revisión de abajo frena.
     const tot = lineas.length === items.length ? encabezadoDelDocumento(armado, dte?.resumen, totalDoc, TOLERANCIA) : armado;
-    if (diferencia == null) problemas.push({ renglon: null, texto: "El documento no trae su total." });
+    if (diferencia == null) problemas.push({ renglon: null, texto: "La factura no trae su total." });
     // Sólo con TODOS los renglones armados: con uno sin producto el total
     // sale corto por construcción, y decirlo repite el problema de arriba.
     else if (lineas.length === items.length && Math.abs(diferencia) > TOLERANCIA) {
@@ -2848,7 +2848,7 @@ Deno.serve(async (req: Request) => {
       if (!eC && c?.estado === "simulada") {
         return responder({ enviada: false, error: "No se pudo conectar con Bodega y no se mandó nada. Inténtalo de nuevo en un momento." });
       }
-      return responder({ enviada: null, error: "Se cortó la conexión con Bodega a medio envío." }, 500);
+      return responder({ enviada: null, error: "Se cortó la conexión con Bodega a medio camino." }, 500);
     }
     return responder({ error: e?.message ?? String(e) }, 500);
   }

@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
     if (!puedeDecidir)
       return json({
         ok: false,
-        error: "No tenés permiso para decidir solicitudes de facturación.",
+        error: "No tienes permiso para decidir solicitudes de facturación.",
       }, 403);
 
     // ── La solicitud se relee de la BD, no se recibe ──────────────────────
@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
       if (!cajaAbierta)
         return json({
           ok: false,
-          error: `${mapa.nombre ?? "Esa sala"} ya sacó su cierre del día, así que no hay caja de dónde descontar. Espera a mañana —o a que la sala abra caja— y apruébala entonces.`,
+          error: `${mapa.nombre ?? "Esa sucursal"} ya hizo su cierre del día y no hay caja de dónde descontar. Apruébala mañana, o cuando la sucursal abra caja.`,
         }, 409);
     }
 
@@ -354,7 +354,7 @@ Deno.serve(async (req) => {
       if (!respRaw)
         return json({
           ok: false,
-          error: "No está configurado el responsable de anulaciones ante Hacienda.",
+          error: "No está configurado el responsable de anulaciones ante el MH.",
         }, 500);
       const respCfg = JSON.parse(respRaw) as { nombre?: string; dui?: string };
       const dui = formatearDui(respCfg.dui ?? "");
@@ -435,13 +435,13 @@ Deno.serve(async (req) => {
 
         if (!selloValido(previa?.recibido_mh) && esCofNoche) {
           // No se transmite: se anula tal cual (ver el bloque de arriba).
-          avisos.push("No se transmite a Hacienda por decisión escrita.");
+          avisos.push("No se transmite al MH por decisión escrita.");
         } else if (!selloValido(previa?.recibido_mh)) {
           const secreto = secretoDeCircuito("fiscal");
           if (!secreto)
             return json({
               ok: false,
-              error: "No está configurado el secreto para transmitir a Hacienda; no se anula.",
+              error: "No está configurado el secreto para transmitir al MH. No se anula.",
             }, 500);
 
           // El corte a 120s falla hacia el lado seguro: si la cadena no termina
@@ -476,10 +476,10 @@ Deno.serve(async (req) => {
           if (postErr) console.error(`relectura del sello (factura ${factura.id}):`, postErr.message);
 
           if (selloValido(selloDicho) || selloValido(post?.recibido_mh)) {
-            avisos.push("Se transmitió a Hacienda antes de anular.");
+            avisos.push("Se transmitió al MH antes de anular.");
           } else if (r?.excluida) {
             // Ya hay una decisión escrita de no transmitir este documento.
-            avisos.push("No se transmite a Hacienda por decisión escrita.");
+            avisos.push("No se transmite al MH por decisión escrita.");
           } else if (r?.no_se_envia) {
             // Consumidor final emitido desde las 6:00 p. m. (2026-10-19): por
             // decisión del usuario no se transmite nunca, tampoco para anularlo.
@@ -490,7 +490,7 @@ Deno.serve(async (req) => {
             // sin llamar—; es la red por si las dos copias de la regla
             // divergen. El aviso es el de la lista negra: quien aprueba no
             // necesita saber el motivo.
-            avisos.push("No se transmite a Hacienda por decisión escrita.");
+            avisos.push("No se transmite al MH por decisión escrita.");
           } else {
             // No entró. Antes de frenar, se le pregunta a la base si éste es el
             // caso que NUNCA va a entrar —el crédito fiscal emitido a quien no
@@ -517,11 +517,11 @@ Deno.serve(async (req) => {
               // exactamente lo que hay que ver: el documento todavía puede
               // entrar, y anularlo ahora lo impediría para siempre.
               const motivo = (r?.detalle as { error?: string }[] | undefined)?.[0]?.error
-                ?? r?.error ?? decision?.error ?? "Hacienda no aceptó el documento.";
+                ?? r?.error ?? decision?.error ?? "El MH no aceptó la factura.";
               return json({
                 ok: false,
                 codigo: "NO_ENTRO_A_HACIENDA",
-                error: `Esta venta todavía no llegó a Hacienda y no se puede anular ` +
+                error: `Esta venta todavía no llegó al MH y no se puede anular ` +
                        `hasta que entre: ${motivo}`,
               }, 409);
             }
@@ -618,8 +618,8 @@ Deno.serve(async (req) => {
       if (anuladaAhora && formaErp !== null && SIN_EFECTIVO.has(formaErp)) {
         salidaCaja = await quitarSalidaDeAnulacion(cookie, String(factura.correlativo ?? ""));
         if (salidaCaja.erp_id && !salidaCaja.borrada)
-          avisos.push(`La caja de ${mapa.nombre ?? "la sala"} quedó con la salida ${salidaCaja.erp_id} ` +
-                      `por la anulación y no se pudo quitar: hay que borrarla a mano.`);
+          avisos.push(`La caja de ${mapa.nombre ?? "la sucursal"} quedó con la salida ${salidaCaja.erp_id} ` +
+                      `por la anulación y no se pudo quitar. Bórrala a mano.`);
         else if (!salidaCaja.erp_id)
           console.log(`anulación ${factura.correlativo}: sin salida de caja que quitar.`);
         else
@@ -661,7 +661,7 @@ Deno.serve(async (req) => {
             ok: false,
             codigo: "CIERRE_INTERNO_SIN_ESCRIBIR",
             error: `La venta ya se anuló en el sistema, pero no se pudo dejar escrito el ` +
-                   `cierre interno: ${cierreErr.message}. Avisa a sistemas antes de volver a aprobarla.`,
+                   `cierre interno: ${cierreErr.message}. Avisa a Soporte antes de volver a aprobarla.`,
           }, 500);
         }
       }
@@ -688,12 +688,12 @@ Deno.serve(async (req) => {
 
       let mh: Awaited<ReturnType<typeof enviarDteAlMH>> | null = null;
       if (yaInvalidada) {
-        avisos.push("Ya estaba invalidada ante Hacienda: no se volvió a enviar.");
+        avisos.push("Ya estaba invalidada ante el MH. No se volvió a enviar.");
       } else if (esCofNoche && !selloValido(fresca?.recibido_mh)) {
         // Ver arriba: nunca se transmitió y no se va a transmitir, así que no
         // hay nada que invalidar. Intentarlo revienta: el sistema ya le asignó
         // código de generación al emitirla, y con eso «llegó a armarse».
-        avisos.push("La venta nunca se transmitió a Hacienda, así que no hay nada que invalidar.");
+        avisos.push("La venta nunca se transmitió al MH, así que no hay nada que invalidar.");
       } else if (interno) {
         // El paso 0 ya resolvió que este documento no se le manda a Hacienda:
         // nunca lo recibió y nunca lo va a recibir. Intentar la invalidación
@@ -747,7 +747,7 @@ Deno.serve(async (req) => {
             if (intErr) console.error("marcar_solventado_internamente:", intErr.message);
             throw e;
           } else {
-            avisos.push("La venta nunca se transmitió a Hacienda, así que no hay nada que invalidar.");
+            avisos.push("La venta nunca se transmitió al MH, así que no hay nada que invalidar.");
           }
         }
       }
@@ -912,7 +912,7 @@ Deno.serve(async (req) => {
     if (campo === "cliente") {
       const nuevo = Number(meta.new_client_id);
       if (!Number.isFinite(nuevo) || nuevo <= 0) {
-        avisos.push("Los puntos no se movieron: la solicitud no trae la ficha del cliente nuevo.");
+        avisos.push("Los puntos no se movieron. La solicitud no trae los datos del cliente nuevo.");
       } else {
         /* Tres intentos seguidos (2026-10-01, pedido del usuario: «así lo
          * reintenta y si no, me avisa»). El traspaso es una sola transacción:

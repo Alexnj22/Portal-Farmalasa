@@ -178,7 +178,7 @@ async function pasarAContingencia(admin: Admin, dte: any, tipo: number, yaConsul
         if (ya?.selloRecibido?.length === 40) {
           const { error } = await admin.from("dist_dte").update({ estado: "sellado", sello_recibido: ya.selloRecibido, fh_procesamiento: ya.fhProcesamiento }).eq("id", dte.id);
           if (error) throw new Error(`guardar sello: ${error.message}`);
-          return { estado: "sellado", sello: ya.selloRecibido, aviso: "Hacienda sí lo tenía: quedó sellado." };
+          return { estado: "sellado", sello: ya.selloRecibido, aviso: "El MH sí lo tenía. Quedó sellado." };
         }
       } catch (e) {
         if (!(e instanceof ErrorHacienda)) throw e;
@@ -201,8 +201,8 @@ async function pasarAContingencia(admin: Admin, dte: any, tipo: number, yaConsul
     json, firmado, estado: firmado ? "contingencia" : "sin_firmar", contingencia_id: null,
   }).eq("id", dte.id).in("estado", ["sin_firmar", "firmado"]);
   if (error) throw new Error(`pasar a contingencia: ${error.message}`);
-  if (!firmado) return { estado: "sin_firmar", aviso: "Falta el certificado de firma: el documento quedó guardado sin firmar." };
-  return { estado: "contingencia", aviso: "Hacienda no lo recibió a tiempo: quedó en contingencia y sale con el aviso de contingencia." };
+  if (!firmado) return { estado: "sin_firmar", aviso: "Falta el certificado de firma. El documento quedó guardado sin firmar." };
+  return { estado: "contingencia", aviso: "El MH no lo recibió a tiempo. Quedó en contingencia y sale con el aviso de contingencia." };
 }
 
 /**
@@ -217,12 +217,12 @@ async function enviarContingencia(admin: Admin, empleadoId: string) {
   ]);
   if (eE) throw new Error(`leer el emisor: ${eE.message}`);
   if (eEmp) throw new Error(`leer tu ficha: ${eEmp.message}`);
-  if (!emp?.dui) throw new ErrorUsuario("Tu ficha no tiene DUI: Hacienda pide el documento de quien reporta la contingencia.");
+  if (!emp?.dui) throw new ErrorUsuario("A tus datos les falta el DUI. El MH lo pide a quien reporta la contingencia.");
   const ambiente = e.ambiente as Ambiente;
   const llave = await llaveDeFirma();
-  if (!llave) throw new ErrorUsuario("Falta el certificado de firma: no se puede firmar el aviso de contingencia.");
+  if (!llave) throw new ErrorUsuario("Falta el certificado de firma. No se puede firmar el aviso de contingencia.");
   const token = await tokenHacienda(admin, e.id, ambiente);
-  if (!token) throw new ErrorUsuario("Faltan las credenciales de Hacienda: el aviso de contingencia no se puede enviar.");
+  if (!token) throw new ErrorUsuario("Faltan las credenciales del MH. El aviso de contingencia no se puede enviar.");
 
   const { data: docs, error: eD } = await admin.from("dist_dte")
     .select("id, tipo, codigo_generacion, fec_emi, hor_emi, json, contingencia_id")
@@ -299,9 +299,9 @@ async function transmitirDte(admin: Admin, dteId: number) {
     .eq("id", dteId).single();
   if (error) throw new Error(`leer DTE: ${error.message}`);
   if (dte.estado === "sellado" || dte.estado === "invalidado") return { estado: dte.estado };
-  if (dte.estado === "rechazado") throw new ErrorUsuario("este documento fue rechazado: hay que emitir uno nuevo");
+  if (dte.estado === "rechazado") throw new ErrorUsuario("Este documento fue rechazado. Emite uno nuevo.");
   if (dte.estado === "contingencia" && !dte.contingencia_id) {
-    return { estado: "contingencia", aviso: "Emitido en contingencia: sale a Hacienda con el aviso de contingencia." };
+    return { estado: "contingencia", aviso: "Emitido en contingencia. Sale al MH con el aviso de contingencia." };
   }
   // Más de 25 minutos sin sello: la vía normal ya no lo acepta (±30 min).
   const nacioEnContingencia = (dte.json as any)?.identificacion?.tipoOperacion === OPERACION.CONTINGENCIA;
@@ -313,7 +313,7 @@ async function transmitirDte(admin: Admin, dteId: number) {
   let firmado = dte.firmado as string | null;
   if (!firmado) {
     const llave = await llaveDeFirma();
-    if (!llave) return { estado: "sin_firmar", aviso: "Falta el certificado de firma: el documento quedó guardado sin firmar." };
+    if (!llave) return { estado: "sin_firmar", aviso: "Falta el certificado de firma. El documento quedó guardado sin firmar." };
     firmado = await firmarDte(dte.json, llave);
     const { error: e } = await admin.from("dist_dte").update({ firmado, estado: "firmado" }).eq("id", dteId);
     if (e) throw new Error(`guardar firma: ${e.message}`);
@@ -324,7 +324,7 @@ async function transmitirDte(admin: Admin, dteId: number) {
     await registrarIntento(admin, dteId, "auth", e instanceof ErrorHacienda ? e.http : null, e?.respuesta ?? null, String(e.message));
     throw e;
   });
-  if (!token) return { estado: "firmado", aviso: "Faltan las credenciales de Hacienda: el documento está firmado y pendiente de enviar." };
+  if (!token) return { estado: "firmado", aviso: "Faltan las credenciales del MH. El documento está firmado y pendiente de enviar." };
 
   const nitEmisor = (dte.json as any).emisor.nit as string;
   let r: RespuestaRecepcion;
@@ -342,13 +342,13 @@ async function transmitirDte(admin: Admin, dteId: number) {
       .update({ intentos: dte.intentos + 1, ultimo_intento_at: new Date().toISOString() }).eq("id", dteId);
     if (eInt) throw new Error(`anotar el intento: ${eInt.message}`);
     // Ya en contingencia (con su aviso recibido): se reintenta después.
-    if (dte.estado === "contingencia") return { estado: "contingencia", aviso: `Hacienda no respondió (${e.message}). Se reintenta después.` };
+    if (dte.estado === "contingencia") return { estado: "contingencia", aviso: `El MH no respondió (${e.message}). Se reintenta después.` };
     // Hacienda no disponible: el documento pasa a contingencia (la guía:
     // sin respuesta tras consultar y reintentar → contingencia).
     if (e.sinRespuesta || (e.http ?? 0) >= 500) {
       return await pasarAContingencia(admin, { ...dte, intentos: dte.intentos + 1, firmado }, CONTINGENCIA.MH_NO_DISPONIBLE, true);
     }
-    return { estado: "firmado", aviso: `Hacienda no respondió (${e.message}). Queda pendiente de enviar.` };
+    return { estado: "firmado", aviso: `El MH no respondió (${e.message}). Queda pendiente de enviar.` };
   }
   await registrarIntento(admin, dteId, "transmitir", r.http, r.cruda, null);
 
@@ -398,10 +398,10 @@ async function descartar(admin: Admin, dteId: number) {
   if (error) throw new Error(`leer DTE: ${error.message}`);
   if (dte.estado === "descartado") return { estado: "descartado" };
   if (dte.estado === "sellado" || dte.estado === "invalidado") {
-    throw new ErrorUsuario("Este documento ya tiene sello de Hacienda: no se descarta, se invalida.");
+    throw new ErrorUsuario("Este documento ya tiene sello del MH. Para quitarlo hay que invalidarlo.");
   }
   if (dte.estado === "rechazado") {
-    return { estado: "rechazado", aviso: "Hacienda lo rechazó: el pedido ya quedó libre para corregirlo y facturarlo de nuevo." };
+    return { estado: "rechazado", aviso: "El MH lo rechazó. El pedido ya quedó libre para corregirlo y facturarlo de nuevo." };
   }
   const { count, error: eInt } = await admin.from("dist_dte_intentos")
     .select("id", { count: "exact", head: true }).eq("dte_id", dteId).eq("operacion", "transmitir");
@@ -409,7 +409,7 @@ async function descartar(admin: Admin, dteId: number) {
   if ((count ?? 0) > 0) {
     const ambiente = dte.ambiente as Ambiente;
     const token = await tokenHacienda(admin, dte.emisor_id, ambiente);
-    if (!token) throw new ErrorUsuario("Se intentó enviar y no se puede confirmar con Hacienda que no lo tenga: faltan las credenciales.");
+    if (!token) throw new ErrorUsuario("Se intentó enviar y no se puede confirmar con el MH que no lo tenga. Faltan las credenciales.");
     const ya = await consultar(ambiente, token, {
       nitEmisor: (dte.json as any).emisor.nit, tipoDte: dte.tipo as TipoDte, codigoGeneracion: dte.codigo_generacion,
     });
@@ -419,7 +419,7 @@ async function descartar(admin: Admin, dteId: number) {
         estado: "sellado", sello_recibido: ya.selloRecibido, fh_procesamiento: ya.fhProcesamiento,
       }).eq("id", dteId);
       if (eS) throw new Error(`guardar sello: ${eS.message}`);
-      throw new ErrorUsuario("Hacienda SÍ tiene este documento: quedó sellado. Para corregirlo hay que invalidarlo.");
+      throw new ErrorUsuario("El MH sí tiene este documento. Quedó sellado. Para corregirlo hay que invalidarlo.");
     }
   }
   const { error: eD } = await admin.from("dist_dte").update({ estado: "descartado" }).eq("id", dteId).in("estado", ["sin_firmar", "firmado", "contingencia"]);
@@ -497,11 +497,11 @@ async function prepararInvalidacion(
   ]);
   if (error) throw new Error(`leer el documento: ${error.message}`);
   if (eEmp) throw new Error(`leer tu ficha: ${eEmp.message}`);
-  if (d.estado !== "sellado") throw new ErrorUsuario("Sólo se invalida un documento sellado por Hacienda.");
+  if (d.estado !== "sellado") throw new ErrorUsuario("Sólo se invalida un documento sellado por el MH.");
   if (d.invalidacion_estado === "pendiente" || d.invalidacion_estado === "procesada") {
     throw new ErrorUsuario("Este documento ya tiene una invalidación en curso.");
   }
-  if (!emp?.dui) throw new ErrorUsuario("Tu ficha no tiene DUI: Hacienda pide el documento de quien invalida.");
+  if (!emp?.dui) throw new ErrorUsuario("A tus datos les falta el DUI. El MH lo pide a quien invalida.");
   // El plazo de la Normativa DTE v2.0 (regla 13.1). El juez vive en la base
   // (dist_plazo_invalidacion) y es el mismo que usa la pantalla para avisar.
   const { data: plazo, error: ePlazo } = await admin.rpc("dist_plazo_invalidacion_de", { p_dte: dteId });
@@ -512,7 +512,7 @@ async function prepararInvalidacion(
   const { data: e, error: eE } = await admin.from("dist_emisores").select("*").eq("id", d.emisor_id).single();
   if (eE) throw new Error(`leer el emisor: ${eE.message}`);
   if (!e.cod_estable_mh || !e.cod_punto_venta_mh) {
-    throw new ErrorUsuario("Faltan los códigos de establecimiento y punto de venta de Hacienda (pestaña Empresa).");
+    throw new ErrorUsuario("Faltan los códigos de establecimiento y punto de venta del MH (pestaña Empresa).");
   }
   let reemplazo: string | null = null;
   if (reemplazoId) {
@@ -546,7 +546,7 @@ async function prepararInvalidacion(
     throw new ErrorUsuario((err as Error).message);
   }
   const llave = await llaveDeFirma();
-  if (!llave) throw new ErrorUsuario("Falta el certificado de firma: no se puede preparar la invalidación.");
+  if (!llave) throw new ErrorUsuario("Falta el certificado de firma. No se puede preparar la invalidación.");
   const firmado = await firmarDte(evento, llave);
   const { error: eU } = await admin.from("dist_dte").update({
     invalidacion_estado: "pendiente", invalidacion_tipo: tipo, invalidacion_motivo: motivo,
@@ -564,19 +564,19 @@ async function enviarInvalidacion(admin: Admin, dteId: number) {
     const { data: r, error: eR } = await admin.from("dist_dte").select("estado").eq("id", d.reemplazo_id).single();
     if (eR) throw new Error(`leer el reemplazo: ${eR.message}`);
     if (r.estado !== "sellado") {
-      return { estado: "sellado", aviso: "La invalidación sale cuando el documento que lo reemplaza tenga sello de Hacienda." };
+      return { estado: "sellado", aviso: "La invalidación sale cuando el documento que lo reemplaza tenga sello del MH." };
     }
   }
   const ambiente = d.ambiente as Ambiente;
   const token = await tokenHacienda(admin, d.emisor_id, ambiente);
-  if (!token) return { estado: "sellado", aviso: "Invalidación firmada y pendiente de enviar: faltan las credenciales de Hacienda." };
+  if (!token) return { estado: "sellado", aviso: "Invalidación firmada y pendiente de enviar. Faltan las credenciales del MH." };
   let r;
   try {
     r = await invalidar(ambiente, token, { version: 3, firmado: d.invalidacion_firmado });
   } catch (e) {
     if (!(e instanceof ErrorHacienda)) throw e;
     await registrarIntento(admin, dteId, "invalidar", e.http, e.respuesta, e.message);
-    return { estado: "sellado", aviso: `Hacienda no respondió (${e.message}). La invalidación queda pendiente.` };
+    return { estado: "sellado", aviso: `El MH no respondió (${e.message}). La invalidación queda pendiente.` };
   }
   await registrarIntento(admin, dteId, "invalidar", r.http, r.cruda, null);
   const ok = r.estado === "PROCESADO";
@@ -586,13 +586,13 @@ async function enviarInvalidacion(admin: Admin, dteId: number) {
     : { invalidacion_estado: "rechazada", invalidacion_respuesta: r.cruda }).eq("id", dteId);
   if (eU) throw new Error(`guardar la respuesta: ${eU.message}`);
   if (ok && d.pedido_id) {
-    const motivo = d.reemplazo_id ? "Documento invalidado y reemplazado." : "Venta deshecha: documento invalidado ante Hacienda.";
+    const motivo = d.reemplazo_id ? "Documento invalidado y reemplazado." : "Venta deshecha. Documento invalidado ante el MH.";
     const { error: eP } = await admin.from("dist_pedidos").update({ estado: "anulado", anulado_motivo: motivo }).eq("id", d.pedido_id);
     if (eP) throw new Error(`anular el pedido: ${eP.message}`);
   }
   return ok
-    ? { estado: "invalidado", mensaje: "Hacienda aceptó la invalidación." }
-    : { estado: "sellado", aviso: `Hacienda rechazó la invalidación: ${r.descripcionMsg ?? ""} ${r.observaciones.join(" ")}`.trim() };
+    ? { estado: "invalidado", mensaje: "El MH aceptó la invalidación." }
+    : { estado: "sellado", aviso: `El MH rechazó la invalidación: ${r.descripcionMsg ?? ""} ${r.observaciones.join(" ")}`.trim() };
 }
 
 /** Corregir un sellado: un pedido NUEVO con lo mismo, que al facturarse lo reemplaza. */
@@ -692,7 +692,7 @@ async function aprobadorDeLaCorreccion(admin: Admin, dteId: number): Promise<str
     .order("updated_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error(`leer la aprobación: ${error.message}`);
   if (!data?.approver_id) {
-    throw new ErrorUsuario("Esta corrección no tiene una solicitud aprobada: pídela desde el documento.", 409);
+    throw new ErrorUsuario("Esta corrección no tiene una solicitud aprobada. Pídela desde el documento.", 409);
   }
   return data.approver_id;
 }
@@ -711,7 +711,7 @@ function leerContingencia(c: any): PedidoContingencia | null {
   if (emitidoAt.getTime() > Date.now() + 5 * 60_000) throw new ErrorUsuario("la hora de la venta está en el futuro");
   // Hacienda da 72 horas para transmitir lo emitido en contingencia.
   if (Date.now() - emitidoAt.getTime() > 72 * 3600_000) {
-    throw new ErrorUsuario("Pasaron más de 72 horas desde la venta sin señal: Hacienda ya no la acepta en contingencia. Factúrala de nuevo.");
+    throw new ErrorUsuario("Pasaron más de 72 horas desde la venta sin señal. El MH ya no la acepta en contingencia. Factúrala de nuevo.");
   }
   const cod = typeof c.codigo_generacion === "string" ? c.codigo_generacion.toUpperCase() : null;
   if (cod && !/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/.test(cod)) throw new ErrorUsuario("código de generación no válido");
@@ -734,7 +734,7 @@ async function facturar(admin: Admin, pedidoId: number, empleadoId: string, cont
       if (ya.dte_id) return { dte_id: ya.dte_id, ...(await transmitirDte(admin, ya.dte_id)) };
       throw new ErrorUsuario(`el pedido está ${ya.estado}`);
     }
-    throw new ErrorUsuario("Este pedido ya se está facturando: espera un momento.", 409);
+    throw new ErrorUsuario("Este pedido ya se está facturando. Espera un momento.", 409);
   }
   try {
     return await facturarTomado(admin, pedidoId, empleadoId, cont);
@@ -772,7 +772,7 @@ async function facturarTomado(admin: Admin, pedidoId: number, empleadoId: string
   // lo resuelvan en Solicitudes (borrador 0008). Facturarla ahora sería
   // emitir sin el descuento que el cliente espera, o con uno que nadie dio.
   if (its.data!.some((i: any) => i.descuento_estado === "pendiente")) {
-    throw new ErrorUsuario("Esta venta tiene un descuento esperando aprobación: se factura cuando lo resuelvan.", 409);
+    throw new ErrorUsuario("Esta venta tiene un descuento esperando aprobación. Se factura cuando lo resuelvan.", 409);
   }
 
   // El documento lo eligió quien vendió; si no eligió, el de la ficha. Un
@@ -893,7 +893,7 @@ async function facturarTomado(admin: Admin, pedidoId: number, empleadoId: string
   }
   // En contingencia no se transmite todavía: va con el aviso.
   const envio = cont
-    ? { estado: firmado ? "contingencia" : "sin_firmar", aviso: "Emitido en contingencia: sale a Hacienda con el aviso de contingencia." }
+    ? { estado: firmado ? "contingencia" : "sin_firmar", aviso: "Emitido en contingencia. Sale al MH con el aviso de contingencia." }
     : await transmitirDte(admin, ins.id);
   return { dte_id: ins.id, tipo, numero_control: doc.numeroControl, codigo_generacion: doc.codigoGeneracion, total: doc.totalPagar, ...envio };
 }
@@ -1111,7 +1111,7 @@ Deno.serve(async (req) => {
       return json(req, 200, {
         dte_id: cuerpo.dte_id, estado: "sellado", solicitud_id: (sol as any)?.solicitud_id,
         aviso: n > 0
-          ? "Solicitud enviada: el documento sigue vigente hasta que la aprueben."
+          ? "Solicitud enviada. El documento sigue vigente hasta que la aprueben."
           : "Solicitud enviada, pero nadie tiene hoy permiso para aprobarla: avisa a tu supervisor.",
       });
     }

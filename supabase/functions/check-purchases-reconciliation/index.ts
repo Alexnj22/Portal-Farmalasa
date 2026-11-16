@@ -333,10 +333,10 @@ Deno.serve(async (req) => {
       const { error: avisoErr } = await supabase.rpc('notify_employees', {
         p_recipients: recipientIds,
         p_type: 'COMPRAS_CUADRE',
-        p_title: `⚠️ Libro de compras no cuadra — ${h.mes}`,
+        p_title: `⚠️ El libro de compras de ${h.mes} no cuadra`,
         p_body: faltan !== 0
-          ? `${sala}: al libro le faltan ${faltan} documento(s) y $${plata}.`
-          : `${sala}: mismo conteo (${h.erpN}) pero $${plata} de diferencia — hay un documento que se editó después de registrarlo.`,
+          ? `${sala}: al libro le faltan ${faltan} factura(s) y $${plata}.`
+          : `${sala}: mismo conteo (${h.erpN}) pero $${plata} de diferencia. Una factura se editó después de registrarla.`,
         p_link: '/libros-iva?tab=compras',
         p_metadata: { branch_id: h.branchId, mes: h.mes, alert_key: alertKey },
         p_push: true,
@@ -361,10 +361,10 @@ Deno.serve(async (req) => {
         const { error: avisoErr } = await supabase.rpc('notify_employees', {
           p_recipients: recipientIds,
           p_type: 'PROVEEDOR_DUPLICADO',
-          p_title: '⚠️ Dos fichas para el mismo proveedor',
+          p_title: '⚠️ Un proveedor está registrado dos veces',
           p_body: duplicados.length === 1
-            ? `${d0.motivo} (${d0.clave}): hay dos fichas del mismo proveedor y el libro solo usa una.`
-            : `${duplicados.length} proveedores tienen ficha repetida. El libro usa una sola de cada par.`,
+            ? `${d0.motivo} (${d0.clave}): el proveedor está dos veces y el libro solo usa una.`
+            : `${duplicados.length} proveedores están repetidos. El libro usa uno solo de cada par.`,
           p_link: '/proveedores',
           p_metadata: { claves: claves.slice(0, 200) },
           p_push: true,

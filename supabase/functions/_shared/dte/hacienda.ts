@@ -68,7 +68,7 @@ async function llamar(
   try {
     res = await f(url, { ...init, signal: AbortSignal.timeout(ESPERA_MS) });
   } catch (e) {
-    throw new ErrorHacienda(`Hacienda no respondió: ${(e as Error).message}`, null);
+    throw new ErrorHacienda(`El MH no respondió: ${(e as Error).message}`, null);
   }
   const texto = await res.text();
   let cuerpo: any = texto;
@@ -98,7 +98,7 @@ export async function autenticar(
   const token = cuerpo?.body?.token;
   if (http !== 200 || cuerpo?.status !== "OK" || typeof token !== "string") {
     throw new ErrorHacienda(
-      `Hacienda no aceptó las credenciales: ${cuerpo?.message ?? cuerpo?.error ?? http}`,
+      `El MH no aceptó las credenciales: ${cuerpo?.message ?? cuerpo?.error ?? http}`,
       http,
       cuerpo,
     );
@@ -161,7 +161,7 @@ export async function transmitir(
     }),
   });
   if (http === 200 || http === 400) return aRespuesta(http, cuerpo);
-  throw new ErrorHacienda(`Hacienda devolvió HTTP ${http}`, http, cuerpo);
+  throw new ErrorHacienda(`El MH devolvió HTTP ${http}`, http, cuerpo);
 }
 
 /** POST /fesv/recepcion/consultadte/ — ¿Hacienda tiene este documento? */
@@ -262,5 +262,5 @@ export async function transmitirConReintentos(
       ultimo = e;
     }
   }
-  throw ultimo ?? new ErrorHacienda("Hacienda no respondió", null);
+  throw ultimo ?? new ErrorHacienda("El MH no respondió", null);
 }

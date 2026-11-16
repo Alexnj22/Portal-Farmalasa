@@ -404,7 +404,7 @@ Deno.serve(async (req) => {
           ok: false, codigo: "TRASLADOS_PAUSADOS",
           error: accion === "recibir"
             ? `La recepción de pedidos está pausada${sw.motivo ? `: ${sw.motivo}` : "."}`
-            : `El envío de pedidos está pausado${sw.motivo ? `: ${sw.motivo}` : "."}`,
+            : `El traslado de pedidos está pausado${sw.motivo ? `: ${sw.motivo}` : "."}`,
         }, 409);
       }
     }
@@ -427,7 +427,7 @@ Deno.serve(async (req) => {
       const { dato: emp, roto: rotoEmp } = await leerBien<{ role_id: number | null; secondary_role_id: number | null; branch_id: number | null; first_names?: string; last_names?: string }>(
         admin.from("employees").select("role_id, secondary_role_id, branch_id, first_names, last_names")
           .eq("id", usuario.id).maybeSingle(),
-        "tu ficha de empleado",
+        "tus datos de empleado",
       );
       if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
       yo = nombreCorto({ ...(emp ?? {}), name: usuario.name });
@@ -498,7 +498,7 @@ Deno.serve(async (req) => {
     if (accion === "recibir") {
       const ubicDestino = ubicacionDeTrabajo(mapaDestino);
       if (!ubicDestino)
-        return json({ ok: false, error: `No se conoce la ubicación de la sala que recibe (${sucId}).` }, 422);
+        return json({ ok: false, error: `No se conoce la ubicación de la sucursal que recibe (${sucId}).` }, 422);
 
       // Recibir mete inventario en una sala, así que tiene que ser LA SUYA.
       // Sin esto, cualquiera con permiso de edición en Pedidos podía ingresar
@@ -509,7 +509,7 @@ Deno.serve(async (req) => {
         if (!empBranchId || empBranchId !== branchDestino)
           return json({
             ok: false,
-            error: "El traslado lo recibe la sala a la que va.",
+            error: "El traslado lo recibe la sucursal a la que va.",
           }, 403);
       }
 
@@ -539,14 +539,14 @@ Deno.serve(async (req) => {
         admin.from("pedido_traslado_linea")
           .update({
             estado: "enviada",
-            aviso: "Una corrida anterior se cortó con esta línea tomada. Se vuelve a la cola: "
+            aviso: "Una corrida anterior se cortó con este producto tomado. Se vuelve a la cola: "
               + "antes de recibirla se comprueba en el sistema si ya había entrado.",
             updated_at: new Date().toISOString(),
           })
           .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
           .eq("estado", "recibiendo")
           .lt("updated_at", corteTomada),
-        "el rescate de las líneas que quedaron tomadas",
+        "el rescate de los productos que quedaron tomados",
       );
 
       const traerLineas = async () => {
@@ -608,7 +608,7 @@ Deno.serve(async (req) => {
           const { pendiente, errores } = await deshacerDestrabe(cookie, marca);
           if (errores.length) {
             console.error(`[trasladar] ${m.clave}: no se pudo devolver la ficha: ${errores.join("; ")}`);
-            fallos.push({ clave: String(m.clave), error: `Ficha sin devolver: ${errores.join("; ")}` });
+            fallos.push({ clave: String(m.clave), error: `Datos del producto sin devolver: ${errores.join("; ")}` });
           }
           await anotar(
             admin.from("pedido_traslado_linea")
@@ -655,7 +655,7 @@ Deno.serve(async (req) => {
             .select("id").maybeSingle();
           if (tomarErr) {
             console.error(`[trasladar] no se pudo tomar la línea ${ln.clave}: ${tomarErr.message}`);
-            fallos.push({ clave: String(ln.clave), error: `No se pudo tomar la línea: ${tomarErr.message}` });
+            fallos.push({ clave: String(ln.clave), error: `No se pudo tomar el producto: ${tomarErr.message}` });
             continue;
           }
           if (!tomadaRec) continue;   // otra corrida se la llevó
@@ -686,7 +686,7 @@ Deno.serve(async (req) => {
               admin.from("pedido_traslado_linea").update({
                 estado: "error",
                 error_msg: `El traslado ${ln.id_traslado} está anulado en el sistema: el producto no entró `
-                  + `a la sala. Hay que volver a pedirlo.`,
+                  + `a la sucursal. Hay que volver a pedirlo.`,
                 updated_at: new Date().toISOString(),
               }).eq("id", ln.id),
               `que ${ln.clave} está anulado en el sistema`,
@@ -731,10 +731,10 @@ Deno.serve(async (req) => {
             await anotar(
               admin.from("pedido_traslado_linea").update({
                 estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien!.id,
-                aviso: "No mostraba líneas que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
+                aviso: "No mostraba productos que recibir y el listado no lo daba por recibido. Conviene mirarlo.",
                 updated_at: new Date().toISOString(),
               }).eq("id", ln.id),
-              `que ${ln.clave} no mostraba líneas que recibir`,
+              `que ${ln.clave} no mostraba productos que recibir`,
               (m) => fallos.push({ clave: String(ln.clave), error: m }),
             );
             recibidas++;
@@ -765,10 +765,10 @@ Deno.serve(async (req) => {
           if (sinPres.length) {
             for (const s of sinPres) nombres.set(s.prod, s.nombre);
             if (!hayTiempoParaDestrabar()) {
-              noEnviar = "Una presentación del traslado está oculta en la ficha (se reintenta: no quedaba tiempo para destrabarla).";
+              noEnviar = "Una presentación del traslado está oculta en los datos del producto (se reintenta: no quedaba tiempo para destrabarla).";
             } else {
               const r = await presentacionesParaMostrar(cookie, sinPres)
-                .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
+                .catch((e) => ({ ok: false as const, motivo: `No se pudieron leer los datos del producto: ${(e as Error).message}` }));
               if (!r.ok) noEnviar = r.motivo;
               else {
                 destrabe.pres = r.pres;
@@ -829,8 +829,8 @@ Deno.serve(async (req) => {
           // devuelve las fichas. Si esa escritura fallara la línea quedaría en
           // 'recibiendo' hasta el rescate de 15 minutos.
           if (!noEnviar && sinPresentacion > 0)
-            noEnviar = `${sinPresentacion} renglón(es) del traslado sin presentación en la ficha; no se recibe a medias.`;
-          if (!noEnviar && partes.length === 0) noEnviar = "No se pudo leer ni una línea del traslado.";
+            noEnviar = `${sinPresentacion} producto(s) del traslado sin presentación en los datos del producto; no se recibe a medias.`;
+          if (!noEnviar && partes.length === 0) noEnviar = "No se pudo leer ni un producto del traslado.";
 
           const { concepto } = armarConcepto(`${ln.clave} REC ${yo}`);
           const enviarRecepcion = async () => leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
@@ -899,7 +899,7 @@ Deno.serve(async (req) => {
             pendiente = r.pendiente;
             if (r.errores.length) {
               console.error(`[trasladar] ${ln.clave}: ficha sin devolver: ${r.errores.join("; ")}`);
-              fallos.push({ clave: String(ln.clave), error: `Ficha sin devolver: ${r.errores.join("; ")}` });
+              fallos.push({ clave: String(ln.clave), error: `Datos del producto sin devolver: ${r.errores.join("; ")}` });
             }
           }
           // Qué escribir en `aviso` en cada salida: la marca si quedó algo sin
@@ -963,11 +963,11 @@ Deno.serve(async (req) => {
               recibido_por: quien!.id,
               error_msg: null,
               ...(hayDestrabe(destrabe) ? {
-                aviso: avisoCon(`Se recibió destrabando la ficha y dejándola como estaba: ${descripcionDestrabe}`),
+                aviso: avisoCon(`Se recibió destrabando los datos del producto y dejándolos como estaban: ${descripcionDestrabe}`),
               } : {}),
               updated_at: new Date().toISOString(),
             }).eq("id", ln.id),
-            `la recepción de ${ln.clave} (el producto YA entró a la sala)`,
+            `la recepción de ${ln.clave} (el producto YA entró a la sucursal)`,
             (m) => fallos.push({ clave: String(ln.clave), error: m }),
           );
         }
@@ -1187,7 +1187,7 @@ Deno.serve(async (req) => {
           .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
           .eq("estado", "enviando")
           .limit(50),   // una corrida muere con UNA tomada; 50 es holgura, no un techo real
-        "las líneas que quedaron a medio despachar",
+        "los productos que quedaron a medio despachar",
       );
       if (roto || !huerfanas?.length) return;
 
@@ -1217,7 +1217,7 @@ Deno.serve(async (req) => {
             .select("id_traslado")
             .not("id_traslado", "is", null).lte("enviado_at", tomada)
             .order("enviado_at", { ascending: false }).limit(1),
-          "el último traslado anterior a la línea trabada",
+          "el último traslado anterior al producto trabado",
         );
         const desde = Number(previo?.[0]?.id_traslado ?? 0);
         if (!desde) continue;
@@ -1291,7 +1291,7 @@ Deno.serve(async (req) => {
       if (sinConfirmar > 0) {
         await cerrar({
           estado: "error",
-          error_msg: `El envío todavía no se confirmó: ${sinConfirmar} de ${items.length} productos `
+          error_msg: `El traslado todavía no se confirmó: ${sinConfirmar} de ${items.length} productos `
             + `no tienen cantidad confirmada por Bodega.`,
         });
         return { despachado: false, codigo: "SIN_CONFIRMAR" };
@@ -1320,11 +1320,11 @@ Deno.serve(async (req) => {
             // NO tocarla: no cambiarlo.
             error_msg: "La corrida anterior se cortó mientras se despachaba este producto y no se pudo "
               + "comprobar solo si el traslado entró. Hay que buscarlo en los traslados del sistema de esa "
-              + "hora (mismo producto y sala) antes de reintentarlo — reintentar a ciegas lo movería dos veces.",
+              + "hora (mismo producto y sucursal) antes de reintentarlo. Si lo reintentas sin revisar, se mueve dos veces.",
             updated_at: new Date().toISOString(),
           })
           .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).eq("estado", "enviando"),
-        "las líneas que quedaron a medio despachar en la corrida anterior",
+        "los productos que quedaron a medio despachar en la corrida anterior",
       );
 
       const porItem = new Map(items.map((i) => [i.id, i]));
@@ -1393,7 +1393,7 @@ Deno.serve(async (req) => {
           };
 
           const it = porItem.get(ln.pedido_item_id as number);
-          if (!it) { await fallar("El renglón ya no está en el pedido."); continue; }
+          if (!it) { await fallar("El producto ya no está en el pedido."); continue; }
 
           // Se toma la línea ANTES de tocar el sistema: si esto no escribe,
           // nadie más la agarra, y si el worker muere después queda la marca.
@@ -1685,7 +1685,7 @@ Deno.serve(async (req) => {
         await cerrar({
           estado: "error",
           error_msg: `La corrida no pudo despachar ni un producto y quedan ${quedan}. `
-            + `Se detiene para no reintentar en vano; revisar el sistema de origen.`,
+            + `Se detiene para no reintentar en vano. Avisa a Soporte.`,
         });
       }
 

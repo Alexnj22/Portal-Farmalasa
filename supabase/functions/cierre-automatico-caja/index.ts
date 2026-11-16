@@ -76,10 +76,10 @@ async function avisarSupervision(supabase: any, sala: number, fecha: string,
   const lista = preventas.map((p) => `#${p.referencia} ${p.cliente} $${Number(p.total).toFixed(2)}`).join("; ");
   const { error } = await supabase.rpc("notify_employees", {
     p_recipients: gente.map((e: { id: string }) => e.id), p_type: "DIA_SIN_CIERRE",
-    p_title: `${suc?.name ?? "Una sala"}: el día no se cerró por preventas sin finalizar`,
+    p_title: `${suc?.name ?? "Una sucursal"}: el día no se cerró por preventas sin finalizar`,
     p_body: (preventas.length === 1 ? "Quedó una preventa guardada" : `Quedaron ${preventas.length} preventas guardadas`)
-      + (lista ? ` (${lista})` : "") + ". Puede ser dinero que ya está en el cajón y todavía no es venta: "
-      + "hay que finalizarla o eliminarla y cerrar el día.",
+      + (lista ? ` (${lista})` : "") + ". Puede ser dinero que ya está en la caja y todavía no es venta. "
+      + "Finalízala o elimínala y cierra el día.",
     p_link: "/cortes", p_metadata: { origen: "cierre-automatico", motivo: "preventas_sin_finalizar", fecha, preventas },
     p_push: true, p_branch_id: sala,
   });

@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         p_title: `Lleva ${f.dias} días sin entregarse`,
         // Se nombra a la persona y el recorrido, no el número del traslado: quien
         // lo lee tiene que saber a quién preguntarle, que es lo único accionable.
-        p_body: `${f.origen ?? 'Una sala'} → ${f.destino ?? 'otra sala'}, con ${f.retirador ?? 'alguien'}.`,
+        p_body: `${f.origen ?? 'Una sucursal'} → ${f.destino ?? 'otra sucursal'}, con ${f.retirador ?? 'alguien'}.`,
         p_link: '/traslados',
         p_metadata: { check_key: checkKey, request_id: f.request_id, dias: f.dias },
       });

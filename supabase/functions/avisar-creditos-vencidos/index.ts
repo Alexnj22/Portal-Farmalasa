@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     // convierte el aviso en algo que se puede ir a hacer.
     const grupos = new Map<number, { sala: string; n: number; total: number; dias: number; vendedores: Set<string> }>();
     for (const f of filas) {
-      const g = grupos.get(f.branch_id) ?? { sala: f.sala ?? 'Una sala', n: 0, total: 0, dias: 0, vendedores: new Set<string>() };
+      const g = grupos.get(f.branch_id) ?? { sala: f.sala ?? 'Una sucursal', n: 0, total: 0, dias: 0, vendedores: new Set<string>() };
       g.n++;
       g.total += Number(f.saldo) || 0;
       g.dias = Math.max(g.dias, Number(f.dias) || 0);

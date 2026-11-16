@@ -79,10 +79,10 @@ async function enviar(admin: any, empleadoId: string, cuerpo: any) {
     .select("id, emisor_id, cliente_id, tipo, ambiente, estado, codigo_generacion, numero_control, fec_emi, total_pagar, json, firmado, sello_recibido")
     .eq("id", dteId).single();
   if (error) throw new Error(`leer el documento: ${error.message}`);
-  if (!d.json?.identificacion) throw new ErrorUsuario("Este documento no tiene guardado su archivo: no se puede enviar.");
+  if (!d.json?.identificacion) throw new ErrorUsuario("Este documento no tiene guardado su archivo. No se puede enviar.");
   const simulado = Deno.env.get("CORREO_MODO") === "simulado" && d.ambiente !== "01";
   if (d.estado !== "sellado" && !simulado) {
-    throw new ErrorUsuario("Hacienda todavía no lo selló: se envía cuando tenga el sello, que es lo que el cliente necesita.", 409);
+    throw new ErrorUsuario("El MH todavía no lo selló. Se envía cuando tenga el sello.", 409);
   }
   const [emi, cli] = await Promise.all([
     admin.from("dist_emisores").select("nombre, nombre_comercial, nit, nrc, telefono, correo").eq("id", d.emisor_id).single(),
@@ -91,7 +91,7 @@ async function enviar(admin: any, empleadoId: string, cuerpo: any) {
   for (const r of [emi, cli]) if (r.error) throw new Error(r.error.message);
   const destinatario = String(cuerpo?.destinatario ?? cli.data.correo ?? "").trim().toLowerCase();
   if (!CORREO.test(destinatario)) {
-    throw new ErrorUsuario(destinatario ? `«${destinatario}» no parece un correo.` : "El cliente no tiene correo en su ficha: escríbelo para enviarlo.");
+    throw new ErrorUsuario(destinatario ? `«${destinatario}» no parece un correo.` : "El cliente no tiene correo en sus datos. Escríbelo para enviarlo.");
   }
 
   // El archivo del receptor: el DTE con su firma y su sello, como lo pide Hacienda.

@@ -16,6 +16,8 @@ import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmploy
 //                    `cumplimiento_tab_datos_mercado` can_view.
 //   accion "lista"   (herramienta manual, secreto propio) — los productos que
 //                    falta emparejar (`srs_mercado_por_emparejar`).
+//   accion "confirmadas" (herramienta manual, secreto propio) — las parejas
+//                    confirmadas, para revisarlas. Sólo lee.
 //   accion "cargar"  (herramienta manual, secreto propio) — deja en la base
 //                    las parejas que propuso el emparejador
 //                    (`srs_mercado_cargar_propuestas`, que nunca pisa lo que ya
@@ -128,7 +130,7 @@ Deno.serve(async (req) => {
     const accion = String(body.accion ?? "");
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    if (accion === "lista" || accion === "cargar") {
+    if (accion === "lista" || accion === "cargar" || accion === "confirmadas") {
       const esperado = await secreto(admin, "srs_carga_secreto");
       if (!esperado || req.headers.get("x-carga-secreto") !== esperado) {
         return responder({ ok: false, error: "No autorizado." }, 401);
@@ -140,6 +142,21 @@ Deno.serve(async (req) => {
       const { data, error } = await admin.rpc("srs_mercado_por_emparejar");
       if (error) return responder({ ok: false, error: error.message }, 500);
       return responder({ ok: true, productos: data ?? [] });
+    }
+
+    // Las parejas que ya confirmó una persona, para revisarlas con el mismo
+    // juez del emparejador (scripts/srs/revisar-confirmadas.mjs). Sólo lee.
+    if (accion === "confirmadas") {
+      const filas: unknown[] = [];
+      for (let desde = 0; ; desde += 1000) {
+        const { data, error } = await admin.from("srs_mercado_productos")
+          .select("product_id, crp, n_registro, nombre_srs, presentacion_srs, laboratorio_srs, confianza, products(nombre, laboratorios(nombre))")
+          .eq("estado", "confirmado").order("product_id").range(desde, desde + 999);
+        if (error) return responder({ ok: false, error: error.message }, 500);
+        filas.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return responder({ ok: true, filas });
     }
 
     if (accion === "cargar") {

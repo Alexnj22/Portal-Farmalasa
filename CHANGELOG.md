@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.8 — Datos de mercado: revisión de las parejas confirmadas
+
+`scripts/srs/revisar-confirmadas.mjs` pasa las parejas que ya confirmó una
+persona por el mismo juez del emparejador y deja la lista de sospechosas (sólo
+lee; la función `srs-datos-mercado` suma la acción «confirmadas», con el
+secreto de carga). Primera corrida: 1,479 confirmadas, 212 marcadas; 22 estaban
+mal de verdad (el genérico de otro fabricante, pomada por crema, Sal Andrews
+limón por original, Heliocare protector por cápsulas) y volvieron a pendiente
+con una propuesta nueva.
+
+
 ## v2.1551.7 — Lenguaje: reglas de cómo habla el portal
 
 - Nueva regla escrita, `docs/reglas/como-habla-el-portal.md` (resumen en

@@ -37,7 +37,7 @@ export const ACREDITACIONES = [
         id: 'QUIMICO',
         junta: 'JVPQF',
         organismo: 'Consejo Superior de Salud Pública',
-        label: 'Químico Farmacéutico — JVPQF',
+        label: 'Químico Farmacéutico (JVPQF)',
         campo: 'pharmacist_license_number',
         doc: 'SRS',
         // El certificado de acreditación de la junta, aparte del carné. Se
@@ -51,7 +51,7 @@ export const ACREDITACIONES = [
         id: 'ENFERMERIA',
         junta: 'JVPE',
         organismo: 'Consejo Superior de Salud Pública',
-        label: 'Enfermería — JVPE',
+        label: 'Enfermería (JVPE)',
         campo: 'nursing_license_number',
         doc: 'ENFERMERIA',
         // Técnico y licenciado en enfermería se acreditan los dos: la junta
@@ -62,7 +62,7 @@ export const ACREDITACIONES = [
         id: 'MEDICO',
         junta: 'JVPM',
         organismo: 'Consejo Superior de Salud Pública',
-        label: 'Médico — JVPM',
+        label: 'Médico (JVPM)',
         campo: 'medico_license_number',
         doc: 'MEDICO',
         detecta: ({ cargo, profesion }) =>
@@ -73,7 +73,7 @@ export const ACREDITACIONES = [
         junta: 'CVPCPA',
         // NO es del CSSP. Ver el encabezado.
         organismo: 'Consejo de Vigilancia de la Profesión de Contaduría Pública y Auditoría',
-        label: 'Contaduría Pública — CVPCPA',
+        label: 'Contaduría Pública (CVPCPA)',
         campo: 'contador_license_number',
         doc: 'CONTADURIA',
         detecta: ({ cargo, profesion }) =>

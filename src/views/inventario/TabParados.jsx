@@ -41,7 +41,7 @@ const COLUMNAS = [
     { key: 'costo',      label: 'Costo', align: 'right', hideBelow: 'sm' },
     { key: 'desde',      label: 'Sin venta desde', hideBelow: 'md' },
     { key: 'vendido',    label: 'Se vende en (6 meses)', hideBelow: 'md' },
-    { key: 'minmax',     label: 'Min / Max', align: 'center', hideBelow: 'lg' },
+    { key: 'minmax',     label: 'Mín/Máx', align: 'center', hideBelow: 'lg' },
 ];
 
 /* Lo que la regla de despacho dice de esta fila. A Bodega: cuántas

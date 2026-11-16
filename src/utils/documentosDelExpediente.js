@@ -57,48 +57,48 @@ export const ROTULOS = {
     OFERTA_EMPLEO: 'Oferta de empleo',
     DECLARACION_ETICA: 'Declaración de responsabilidades éticas',
     CONSTANCIA_INDUCCION: 'Constancia de inducción de personal',
-    CV: 'Currículum Vitae — con sus atestados',
+    CV: 'Currículum Vitae (con sus atestados)',
     CONTRATO: 'Contrato de Trabajo Firmado',
     ACUSE_MTPS: 'Acuse sellado del Ministerio de Trabajo',
     COPIA_NIT: 'Copia del NIT',
     // Cada año
-    CERTIFICADO_MEDICO_ANUAL: 'Certificado médico anual — heces y orina',
-    EXAMEN_MEDICO: 'Examen Médico Previo — Art. 117 (se repite cada año hasta los 18)',
-    ANUALIDAD_JVPQF: 'Anualidad JVPQF — solvencia del año en curso',
-    ANUALIDAD_JVPE: 'Anualidad JVPE — solvencia del año en curso',
+    CERTIFICADO_MEDICO_ANUAL: 'Certificado médico anual (heces y orina)',
+    EXAMEN_MEDICO: 'Examen Médico Previo (Art. 117 (se repite cada año hasta los 18))',
+    ANUALIDAD_JVPQF: 'Anualidad JVPQF (solvencia del año en curso)',
+    ANUALIDAD_JVPE: 'Anualidad JVPE (solvencia del año en curso)',
     // ISSS y AFP
     TARJETA_ISSS: 'Copia de la tarjeta del ISSS',
     TARJETA_AFP: 'Copia de la tarjeta de la AFP',
     // Seguro de vida colectivo — el certificado de cada asegurado. La póliza y
     // los pagos de cada año son de la EMPRESA y viven aparte
     // (`seguro_vida_poliza`, `seguro_vida_pagos`).
-    CERTIFICADO_SEGURO_VIDA: 'Certificado del asegurado — Seguro de vida colectivo',
+    CERTIFICADO_SEGURO_VIDA: 'Certificado del asegurado (Seguro de vida colectivo)',
     // Para ejercer
     CONTRATO_REGENCIA: 'Contrato de Regencia',
     // Sólo si aplica
     LICENCIA_MOTO: 'Licencia de Motocicleta',
     LICENCIA_CARRO: 'Licencia de Automóvil',
-    CERTIFICACION_DISCAPACIDAD: 'Certificación de Discapacidad — ISRI / CONAIPD',
+    CERTIFICACION_DISCAPACIDAD: 'Certificación de Discapacidad (ISRI / CONAIPD)',
     // Acreditaciones (se suben en su propia sección: ahí el archivo trae el
     // número y el vencimiento)
-    SRS: 'Carné JVPQF — Regente / Químico Farmacéutico',
+    SRS: 'Carné JVPQF (Regente / Químico Farmacéutico)',
     // El certificado de acreditación que entrega la junta: es otro papel que
     // el carné y va en el mismo apartado (pedido del usuario, 2026-10-24).
-    CERTIFICADO_JVPQF: 'Certificado de acreditación — JVPQF',
-    ENFERMERIA: 'Carné de Enfermería — JVPE',
-    MEDICO: 'Carné médico — JVPM',
-    CONTADURIA: 'Acreditación de Contaduría — CVPCPA',
-    DEPENDIENTE_FARMACIA: 'Acreditación de dependiente de farmacia — CSSP',
+    CERTIFICADO_JVPQF: 'Certificado de acreditación (JVPQF)',
+    ENFERMERIA: 'Carné de Enfermería (JVPE)',
+    MEDICO: 'Carné médico (JVPM)',
+    CONTADURIA: 'Acreditación de Contaduría (CVPCPA)',
+    DEPENDIENTE_FARMACIA: 'Acreditación de dependiente de farmacia (CSSP)',
     // Identidad — los que faltaban
-    DUI_COMPLETO: 'DUI — las dos caras',
-    DUI_FRENTE: 'DUI — frente',
-    DUI_REVERSO: 'DUI — reverso',
+    DUI_COMPLETO: 'DUI (las dos caras)',
+    DUI_FRENTE: 'DUI (frente)',
+    DUI_REVERSO: 'DUI (reverso)',
     DOCUMENTO_IDENTIDAD: 'Documento de identidad',
     // El practicante (2026-11-03). No es un trabajador: no lleva contrato,
     // planilla, ISSS ni AFP, y su expediente es el de una práctica.
     CARTA_INSTITUCION: 'Carta de presentación de la institución',
     CONSTANCIA_ESTUDIOS: 'Constancia de estudios vigente',
-    CONSTANCIA_HORAS: 'Constancia de horas cumplidas — al terminar',
+    CONSTANCIA_HORAS: 'Constancia de horas cumplidas (al terminar)',
 };
 
 // ── El grupo: por qué la persona tiene este papel ──────────────────────────

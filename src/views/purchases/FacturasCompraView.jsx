@@ -370,7 +370,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
             label={applying ? 'Aplicando' : 'Emparejar'}
             color="emerald"
             disabled={applying}
-            title={`Encontrado: ${result.match.proveedor_nombre || 'la factura'} — ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
+            title={`Encontrado: ${result.match.proveedor_nombre || 'la factura'} · ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
             onClick={(e) => { e.stopPropagation(); apply(); }}
         />
     );

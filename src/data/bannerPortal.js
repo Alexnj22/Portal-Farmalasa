@@ -14,11 +14,11 @@ import { conBitacora } from './audit';
 // El orden y los rótulos son los que ve quien lo enciende. `obra` va primera
 // porque es la que reproduce la franja que el portal venía mostrando.
 export const VARIANTES_BANNER = [
-    { value: 'obra',     label: 'Obra — rayado naranja' },
-    { value: 'aviso',    label: 'Aviso — ámbar' },
-    { value: 'problema', label: 'Problema — rojo' },
-    { value: 'info',     label: 'Información — verde de marca' },
-    { value: 'bien',     label: 'Todo bien — verde' },
+    { value: 'obra',     label: 'Obra (rayado naranja)' },
+    { value: 'aviso',    label: 'Aviso (ámbar)' },
+    { value: 'problema', label: 'Problema (rojo)' },
+    { value: 'info',     label: 'Información (verde de marca)' },
+    { value: 'bien',     label: 'Todo bien (verde)' },
 ];
 
 export function fetchBannerPortal() {

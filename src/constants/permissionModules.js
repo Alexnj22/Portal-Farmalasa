@@ -645,7 +645,7 @@ const GRUPOS_CRUDOS = [
             // a los demás en solo lectura, así que quedarse sin forma de
             // asignarlo es justo lo que no conviene.
             { key: 'maintenance',  label: 'Mantenimiento',          desc: 'Poner un módulo en solo lectura para el resto del personal, con motivo y duración: se sigue viendo todo, no se puede editar ni aprobar', icono: 'Wrench', hasApprove: false },
-            { key: 'auditview',    label: 'Auditoría general',      desc: 'Registro completo de cambios y acciones en el sistema',     icono: 'Activity',      hasApprove: false },
+            { key: 'auditview',    label: 'Auditoría general',      desc: 'Registro completo de cambios y acciones en el portal',     icono: 'Activity',      hasApprove: false },
             { key: 'ios_test',     label: 'Prueba iOS',             desc: 'Vista de prueba para verificar safe areas y layout en iOS', icono: 'Smartphone',    hasApprove: false },
             // La prueba de impresión en rollo: imprime una hoja con la regla de
             // columnas, un nombre largo y una barra de control del cabezal, para

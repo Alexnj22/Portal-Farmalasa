@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1558.2 — Lenguaje: lo que se vio en pantalla
+
+- Barrido del texto pintado en las 71 pantallas: «Min / Max» → «Mín/Máx» en
+  Gestión de existencias; las consultas de existencia «cuentan sin ver lo que
+  dice la caja»; rótulos de documentos del expediente, acreditaciones y
+  variantes del aviso del portal sin raya («DUI (frente)», «Aviso (ámbar)»).
+
 ## v2.1558.1 — Preventa: la píldora canónica arriba, Vaciar con la venta y el producto sin precio
 
 - Vuelve la píldora de filtros canónica arriba: sucursal (quien ve todas),

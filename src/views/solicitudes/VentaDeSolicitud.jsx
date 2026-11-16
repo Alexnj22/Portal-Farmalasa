@@ -251,7 +251,7 @@ const LaVenta = memo(({ meta, employeesById, compacta = false }) => {
                         </div>
                     ) : filas.length === 0 ? (
                         <p className="text-caption text-content-3 italic py-1">
-                            No hay detalle de productos guardado para esta venta.
+                            Esta venta no tiene productos guardados.
                         </p>
                     ) : (
                         /* Sin techo propio a propósito: los botones de decidir
@@ -283,9 +283,9 @@ const LaVenta = memo(({ meta, employeesById, compacta = false }) => {
 
             {hayDescuadre && (
                 <Notice variant="warning" icon={AlertTriangle}>
-                    Los renglones suman {formatMoney(sumaMostrada)} y la venta dice {formatMoney(total)} —
-                    una diferencia de {formatMoney(Math.abs(Number(total) - sumaMostrada))}. El detalle
-                    guardado no explica el total: revisa la venta antes de decidir.
+                    Los productos suman {formatMoney(sumaMostrada)} y la venta dice {formatMoney(total)}.
+                    Hay {formatMoney(Math.abs(Number(total) - sumaMostrada))} de diferencia. Revisa la venta
+                    antes de decidir.
                 </Notice>
             )}
         </div>

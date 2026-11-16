@@ -317,7 +317,7 @@ export default function ModalNuevaPersonal({
         if (new Date(fecha + 'T12:00:00') < hoy) return;
         const choque = choqueEnDia(fecha);
         if (choque) {
-            setError(`Hay una incapacidad del ${periodo(choque)} — ese día no se puede pedir permiso.`);
+            setError(`Hay una incapacidad del ${periodo(choque)} . Esos días no se puede pedir permiso.`);
             return;
         }
         setPayload(prev => {
@@ -395,7 +395,7 @@ export default function ModalNuevaPersonal({
 
                     {!sujeto?.hireDate && empleadoId && (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            Sin fecha de ingreso en el expediente no se puede verificar la antigüedad.
+                            No tiene fecha de ingreso en el expediente, así que no se puede saber su antigüedad.
                         </Notice>
                     )}
 
@@ -648,19 +648,19 @@ export default function ModalNuevaPersonal({
                                 : <span>Certificado Médico <span className="text-content-3 ml-1 normal-case font-medium">(opcional)</span></span>}
                         </label>
                         <FileField accept=".pdf,.jpg,.jpeg,.png" file={archivo} onChange={setArchivo}
-                            hint="PDF, JPG o PNG — también se puede adjuntar después" />
+                            hint="PDF, JPG o PNG. También lo puedes adjuntar después." />
                     </div>
 
                     {necesitaISSS && (
                         <Notice variant="warning" icon={Info}>
-                            Desde el día 4 aplica la cobertura del ISSS, que cubre el 75% del salario. La boleta
-                            oficial se presenta dentro de 3 días hábiles para poder tramitar el reembolso.
+                            Desde el día 4 el ISSS cubre el 75% del salario. Entrega la boleta del ISSS
+                            en los próximos 3 días hábiles para poder cobrar el reembolso.
                         </Notice>
                     )}
 
                     <div className="px-4 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                         <p className="text-label font-bold text-danger-text leading-relaxed">
-                            Talento Humano la recibe como urgente. Los días se marcan en el horario al aprobarse.
+                            Le llega a Talento Humano como urgente. Cuando la aprueben, los días se marcan en el horario.
                         </p>
                     </div>
                 </div>

@@ -144,7 +144,7 @@ export const LineasMovimiento = memo(({
     if (items.length === 0) {
         return (
             <Caja tono="hover">
-                <p className="text-caption text-content-2 font-medium">Esta solicitud no trae detalle de productos.</p>
+                <p className="text-caption text-content-2 font-medium">Esta solicitud no tiene productos.</p>
             </Caja>
         );
     }
@@ -426,7 +426,7 @@ const BloqueAplicado = ({ req, aplicado, employeesById }) => {
                 </p>
             )}
             {aplicado.concepto_recortado && (
-                <p className="text-micro text-content-3">El detalle se guardó abreviado.</p>
+                <p className="text-micro text-content-3">El motivo se guardó más corto.</p>
             )}
             {/* Lo que se apartó de lo pedido sin llegar a frenarlo — casi
                 siempre, que el lote que salió no es el que se había apartado.
@@ -459,7 +459,7 @@ const BloqueAplicado = ({ req, aplicado, employeesById }) => {
  * solicitud que el sistema ya tenía recibida por su cuenta
  * (`cerrar_traslado_ya_recibido` escribe `via: 'sistema'` y deja la firma vacía
  * A PROPÓSITO). Ahí no se pone un nombre cualquiera —sería justo lo contrario de
- * lo que este bloque viene a arreglar—: se dice que lo cerró el portal solo, y
+ * lo que este bloque viene a arreglar—: se dice que se cerró solo, y
  * se muestra el aviso que explica que la hora es la del barrido y no la de la
  * entrada.
  */
@@ -493,7 +493,7 @@ const BloqueRecibido = ({ req, recibido, despachado, employeesById }) => {
                     {/* Sin firma no va una cara vacía: lo cerró el portal, y
                         decirlo con un disco gris al lado se leería como una foto
                         que no cargó. */}
-                    {cerroElPortal ? 'lo cerró el portal solo' : 'por'}
+                    {cerroElPortal ? 'se cerró solo' : 'por'}
                 </p>
                 {!cerroElPortal && <Firmante acto={recibido} employeesById={employeesById} />}
             </div>
@@ -1038,7 +1038,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                             <span className="text-micro font-black text-content-3 ml-1.5 uppercase tracking-widest">
                                 {esAbono ? 'vuelve al saldo del crédito'
                                     : (meta.forma_actual && meta.forma_actual !== 'EFECTIVO')
-                                        ? 'no toca el cajón: no se pagó en efectivo'
+                                        ? 'no afecta el cajón porque no fue en efectivo'
                                         : 'sale de la caja del día'}
                             </span>
                         </p>
@@ -1072,10 +1072,10 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 {!esAbono && meta.que === 'FORMA' && (
                     <p className="text-micro text-content-3 leading-snug px-1">
                         {meta.forma_nueva === 'EFECTIVO'
-                            ? 'Aprobarlo mete este monto en la caja del día: el cajón tiene que tenerlo.'
+                            ? 'Si lo apruebas, este monto se suma a la caja del día. Tiene que estar en el cajón.'
                             : meta.forma_actual === 'EFECTIVO'
-                                ? 'Aprobarlo saca este monto de la caja: el cajón deja de esperarlo.'
-                                : 'No toca la caja: sólo cambia el comprobante.'}
+                                ? 'Si lo apruebas, este monto sale de la caja del día.'
+                                : 'No cambia la caja. Solo cambia el comprobante.'}
                     </p>
                 )}
 
@@ -1126,7 +1126,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 </Caja>
                 {meta.reenvio && meta.rechazo_anterior && (
                     <Caja>
-                        <Rotulo>Se reenvía. Antes no se autorizó porque</Rotulo>
+                        <Rotulo>Se envía otra vez. La primera vez no se aprobó porque</Rotulo>
                         <p className="text-body-sm text-content-2 leading-snug">{meta.rechazo_anterior}</p>
                     </Caja>
                 )}
@@ -1321,10 +1321,10 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 {onToggle && (
                     <p className="text-micro text-content-3 leading-snug px-1">
                         {meta.ya_aplicado
-                            ? 'El dinero ya entró. Lo que queda es revisarlo: el crédito que dejes '
-                              + 'sin marcar se le devuelve al cliente y su saldo vuelve a subir.'
-                            : 'Todavía no se aplicó: los créditos siguen con su saldo. Lo que marques '
-                              + 'se abona ahora; lo que dejes sin marcar queda sin cobrar.'}
+                            ? 'El dinero ya entró. Si dejas un crédito sin marcar, se le devuelve '
+                              + 'al cliente y su saldo vuelve a subir.'
+                            : 'Todavía no se aplica. Lo que marques se abona ahora. '
+                              + 'Lo que dejes sin marcar queda sin cobrar.'}
                     </p>
                 )}
 

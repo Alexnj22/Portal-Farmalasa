@@ -125,13 +125,13 @@ describe('el traslado dice quién lo recibió', () => {
 
     /* ── Lo que cerró el barrido ─────────────────────────────────────────── */
 
-    it('cuando lo cerró el portal solo, NO inventa una firma', () => {
+    it('cuando se cerró solo, NO inventa una firma', () => {
         pintar(conRecibido({
             at: '2026-08-20T14:16:07.778Z', by: null, by_name: null,
             por: 'barrido', via: 'sistema', id_traslado: '29444',
             msg: 'El sistema ya lo tenia recibido cuando el portal barrio las solicitudes en camino; no se volvio a cargar. La fecha de arriba es la del barrido, no la de la entrada.',
         }));
-        expect(screen.getByText(/lo cerró el portal solo/)).toBeTruthy();
+        expect(screen.getByText(/se cerró solo/)).toBeTruthy();
         // Y ni una cara: un disco gris al lado se leería como una foto que no
         // cargó, y lo que pasa es que no hay a quién mostrar.
         expect(screen.queryByAltText(/Serrano|Clemente/)).toBeNull();

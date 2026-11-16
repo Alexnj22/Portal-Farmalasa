@@ -173,7 +173,7 @@ function LineasMovimiento({ meta, signo }) {
   const rechazadas = rechazadasDe(meta);
   const ajustadas = ajustadasDe(meta);
   const salida = esDespachoDeTraslado(meta);
-  if (!items.length) return <Caja><Tenue>Esta solicitud no trae detalle de productos.</Tenue></Caja>;
+  if (!items.length) return <Caja><Tenue>Esta solicitud no tiene productos.</Tenue></Caja>;
   return (
     <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 2 }}>
       {items.map((it, i) => {
@@ -357,7 +357,7 @@ function LaVenta({ meta, empleados }) {
           <Tenue>{`${filas.length} ${filas.length === 1 ? 'renglón' : 'renglones'}${unidades > 0 ? ` · ${cifra(unidades)} ${unidades === 1 ? 'unidad' : 'unidades'}` : ''}`}</Tenue>
         ) : null}
         {cargando ? <Indicador style={{ marginVertical: 6 }} /> : filas.length === 0 ? (
-          <Tenue>No hay detalle de productos guardado para esta venta.</Tenue>
+          <Tenue>Esta venta no tiene productos guardados.</Tenue>
         ) : filas.map((it, i) => {
           const resta = restar && !it.descripcion;
           const vence = it.fecha_vencimiento ? fechaTexto(it.fecha_vencimiento, { month: 'short', year: 'numeric' }) : null;
@@ -653,7 +653,7 @@ function BloqueRecibido({ req, recibido, despachado, porId }) {
     lineas != null && `${lineas} ${lineas === 1 ? 'producto' : 'productos'}`,
     unidades != null && `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`,
     total != null && formatMoney(total),
-    cerroElPortal ? 'lo cerró el portal solo' : 'por',
+    cerroElPortal ? 'se cerró solo' : 'por',
   ].filter(Boolean).join(' · ');
   return (
     <Caja rotulo={destino ? `Recibido en ${destino}` : 'Recibido'} color={MARCA.verde} tinte={MARCA.verde}>

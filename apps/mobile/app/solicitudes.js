@@ -89,7 +89,7 @@ const ESTADOS = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
   const tipo = REQUEST_TYPES[r.type]?.label ?? 'Solicitud';
   const base = PILDORA[r.status] ?? PILDORA.PENDING;
-  const estado = teToca ? DECIDIR : (r.status === 'APPROVED' && esParcial(r) ? { texto: 'Aprobada parcial', color: MARCA.ambar } : base);
+  const estado = teToca ? DECIDIR : (r.status === 'APPROVED' && esParcial(r) ? { texto: 'Aprobada en parte', color: MARCA.ambar } : base);
   const meta = (typeof r.metadata === 'object' && r.metadata) ? r.metadata : {};
   const { solicitante, aprobador } = personasDe(r, porId);
   const sala = r.type === 'INVENTORY_TRANSFER_REQUEST'

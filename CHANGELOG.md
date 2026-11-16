@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.4 — Lenguaje: Solicitudes con frases cortas
+
+- Primera tanda de la revisión del lenguaje: los textos de Solicitudes
+  (web y app) pasan a frases cortas y directas, sin rayas ni explicaciones
+  («Aprobarlo mete este monto en la caja del día: el cajón tiene que tenerlo»
+  → «Si lo apruebas, este monto se suma a la caja del día. Tiene que estar en
+  el cajón»). «Aprobada parcial» → «Aprobada en parte».
+
 ## v2.1551.3 — Datos de mercado: el fabricante del genérico decide la pareja
 
 Entre veinte «CARBAMAZEPINA 200» iguales el emparejador no tenía con qué

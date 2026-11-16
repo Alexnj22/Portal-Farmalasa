@@ -196,7 +196,7 @@ export default function Solicitud() {
 
   const titulo = REQUEST_TYPES[tipo]?.label ?? (esMinMax ? 'Ajuste de MIN·MAX' : 'Solicitud');
   const colorEstado = COLOR_ESTADO[estado] ?? MARCA.gris;
-  const rotuloEstado = req && esParcial(req) ? 'Aprobada parcial' : (REQUEST_STATUS[estado]?.label ?? estado);
+  const rotuloEstado = req && esParcial(req) ? 'Aprobada en parte' : (REQUEST_STATUS[estado]?.label ?? estado);
 
   return (
     <>

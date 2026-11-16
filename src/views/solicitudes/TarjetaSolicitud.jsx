@@ -253,7 +253,7 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
                         )}
                         <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
                             <PuntoDeEstado tamano="sm" className={statConf.dot} />
-                            {parcial ? 'Aprobada parcial' : statConf.label}
+                            {parcial ? 'Aprobada en parte' : statConf.label}
                         </span>
                         {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}
                     </div>
@@ -474,7 +474,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                    y su sala— la ficha que abre el detalle, y repetirlo dos
                    renglones más arriba gastaba el único lugar donde cabía la
                    hora. */
-                subtitulo={`${esParcial(req) ? 'Aprobada parcial' : statConf.label} · ${fmtFechaHora(req.created_at)}`}
+                subtitulo={`${esParcial(req) ? 'Aprobada en parte' : statConf.label} · ${fmtFechaHora(req.created_at)}`}
                 icono={TypeIcon}
                 anchoEscritorio="max-w-xl"
                 pie={<>

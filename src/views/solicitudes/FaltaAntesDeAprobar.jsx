@@ -95,7 +95,7 @@ export default function FaltaAntesDeAprobar({ req, meta }) {
                 <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                 <p className="text-body-sm text-warning-text font-bold leading-snug">
                     Completa esto antes de aprobar.
-                    {hayQueRechazar && ' Lo que no se puede arreglar aquí: rechaza la solicitud y que la vuelvan a pedir.'}
+                    {hayQueRechazar && ' Si algo no se puede arreglar aquí, rechaza la solicitud para que la pidan de nuevo.'}
                 </p>
             </div>
             {[...porLinea.entries()].map(([i, fs]) => (

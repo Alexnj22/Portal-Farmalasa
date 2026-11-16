@@ -367,6 +367,17 @@ que sí se quedan (`ERP_ORDER`, `erp_id`, `matchErpFilter`). La verificación es
 atributos. Es la misma lección que el outage del mismo día: compilar y pasar los
 gates no prueba nada sobre lo que se ve.
 
+## REGLA: cómo habla el portal (2026-11-16)
+
+Tú, frases cortas y directas, sin rayas ni porqués, «aquí». Y un vocabulario
+fijo que eligió el usuario: **caja** (no cajón), **sucursal** (no sala),
+**existencia** (no stock), **producto** (no renglón/línea), **datos** (no
+ficha), **corte** / **cierre del día** (no Z), **Mín/Máx**, **MH** o
+**Ministerio de Hacienda**, **jefe inmediato**, **Soporte**. La tabla completa
+y los cuidados (un rótulo puede ser el dato) viven en
+`docs/reglas/como-habla-el-portal.md`: leerla antes de escribir un texto
+visible. Palabra que no esté ahí → preguntarle al usuario y agregarla.
+
 ## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
 
 Hardening aplicado el 2026-07-02 (`supabase/migrations-legacy/20260702_db_hardening_rls_functions_indexes.sql`

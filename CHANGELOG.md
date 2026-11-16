@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.7 — Lenguaje: reglas de cómo habla el portal
+
+- Nueva regla escrita, `docs/reglas/como-habla-el-portal.md` (resumen en
+  CLAUDE.md): tono (tú, frases cortas, sin rayas) y el vocabulario que eligió
+  el usuario — caja (no cajón), sucursal (no sala), existencia, producto,
+  datos, corte y cierre del día, Mín/Máx, MH, jefe inmediato, Soporte.
+- Solicitudes: los textos que decían «cajón» dicen «caja».
+
 ## v2.1551.6 — Datos de mercado: «alta» exige lo que el portal dice en el nombre y la misma forma
 
 Revisión de las 95 «alta» pendientes: cinco estaban mal (DICLOFENAC MK con el

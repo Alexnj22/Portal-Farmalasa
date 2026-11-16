@@ -1038,7 +1038,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                             <span className="text-micro font-black text-content-3 ml-1.5 uppercase tracking-widest">
                                 {esAbono ? 'vuelve al saldo del crédito'
                                     : (meta.forma_actual && meta.forma_actual !== 'EFECTIVO')
-                                        ? 'no afecta el cajón porque no fue en efectivo'
+                                        ? 'no afecta la caja porque no fue en efectivo'
                                         : 'sale de la caja del día'}
                             </span>
                         </p>
@@ -1072,7 +1072,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 {!esAbono && meta.que === 'FORMA' && (
                     <p className="text-micro text-content-3 leading-snug px-1">
                         {meta.forma_nueva === 'EFECTIVO'
-                            ? 'Si lo apruebas, este monto se suma a la caja del día. Tiene que estar en el cajón.'
+                            ? 'Si lo apruebas, este monto se suma a la caja del día. El dinero tiene que estar en la caja.'
                             : meta.forma_actual === 'EFECTIVO'
                                 ? 'Si lo apruebas, este monto sale de la caja del día.'
                                 : 'No cambia la caja. Solo cambia el comprobante.'}
@@ -1131,8 +1131,8 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     </Caja>
                 )}
                 <p className="text-micro text-content-3 leading-snug px-1">
-                    No entra al cajón. Autorizarlo dice que el dinero sí llegó; si no, explica qué prueba hace
-                    falta y la sala lo puede volver a mandar.
+                    Este dinero no entra a la caja. Apruébalo si el dinero sí llegó. Si no, recházalo
+                    y escribe qué prueba falta para que la sucursal lo mande de nuevo.
                 </p>
                 <EvidenciaFotos urls={meta.foto_url ? [meta.foto_url] : null} />
             </div>

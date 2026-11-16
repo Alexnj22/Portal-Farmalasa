@@ -17,7 +17,7 @@ import {
 import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import PuntosDelCambio from './PuntosDelCambio';
-import CostoFaltante from './CostoFaltante';
+import FaltaAntesDeAprobar from './FaltaAntesDeAprobar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -333,6 +333,34 @@ const Firmante = ({ acto, employeesById }) => {
     return null;
 };
 
+/* ─── Lo que se completó desde la solicitud (2026-11-16) ──────────────────── */
+/**
+ * Quien decide puede completar el lote o el vencimiento que le faltaba a un
+ * renglón (`FaltaAntesDeAprobar`). La solicitud deja de decir sólo lo que su
+ * solicitante pidió, así que se muestra qué se agregó y quién: la firma, con
+ * su cara.
+ */
+const CorreccionesDeLaCarga = ({ meta, employeesById }) => {
+    const lista = Array.isArray(meta?.correcciones) ? meta.correcciones : [];
+    if (lista.length === 0) return null;
+    const items = lineasDe(meta);
+    return (
+        <Caja tono="hover" className="space-y-1.5">
+            <Rotulo>Completado al revisar</Rotulo>
+            {lista.map((c, k) => (
+                <div key={k} className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <p className="text-caption text-content-2 font-semibold">
+                        {items[c.i]?.descripcion ?? `Renglón ${c.i + 1}`}
+                        {' · '}{c.campo === 'lote' ? `lote ${c.despues}` : `vence ${String(c.despues).slice(0, 7)}`}
+                        {' · por'}
+                    </p>
+                    <Firmante acto={c} employeesById={employeesById} />
+                </div>
+            ))}
+        </Caja>
+    );
+};
+
 /* ─── Constancia de lo que se aplicó ──────────────────────────────────────── */
 //
 // Sin esto, aprobar y que el cambio ocurra fuera del portal se ve igual que
@@ -642,10 +670,11 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     rechazadas={rech} ajustadas={ajus}
                     signo={SIGNO_POR_TIPO[t] ?? ''} />
                 {/* Sólo a quien decide una carga pendiente: el sistema la
-                    rechaza entera si un producto está a costo cero. */}
+                    rechaza ENTERA si a un renglón le falta un dato. */}
                 {t === 'INVENTORY_LOAD_REQUEST' && req.status === 'PENDING' && typeof onToggle === 'function' && (
-                    <CostoFaltante req={req} meta={meta} />
+                    <FaltaAntesDeAprobar req={req} meta={meta} />
                 )}
+                <CorreccionesDeLaCarga meta={meta} employeesById={employeesById} />
                 <EvidenciaFotos urls={meta.evidencia_urls} />
             </div>
         );

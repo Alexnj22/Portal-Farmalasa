@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.0 — Completar desde la solicitud lo que le falta a una carga
+
+- Al abrir una carga pendiente, quien decide ve «Falta antes de aprobar» con
+  lo que el sistema rechazaría, renglón por renglón, y lo completa ahí mismo:
+  costo en 0 (queda en la ficha), producto deshabilitado (se habilita en la
+  ficha), lote y vencimiento (se completa el renglón). Presentación o factor
+  distinto no se arregla: se rechaza y se pide de nuevo.
+- `aplicar-movimiento-inventario`: acciones `revisar` (sólo lee, mismas
+  preguntas que la carga, con el presupuesto de tiempo y aviso si no alcanzó),
+  `habilitar_producto` (`habilitarProducto` en `_shared/erp-regulado.ts`, con
+  relectura y huella) y `corregir_linea`. Todas sólo LLENAN lo vacío y piden
+  el permiso de aprobar inventario.
+- `corregir_linea` valida el lote como al descargar (`validarLoteEscrito`,
+  `fechaRegistradaQueChoca`), se niega a ponerle lote a un producto sin control
+  de lote, escribe con `status = 'PENDING'` como guarda y deja
+  `metadata.correcciones` (antes, después, quién, cuándo); el detalle lo
+  muestra como «Completado al revisar» con la firma y su cara.
+- Reemplaza el aviso de sólo costo de v2.1549.0 (`CostoFaltante.jsx`).
+
 ## v2.1549.0 — Poner el costo que falta desde la carga de inventario
 
 - Una carga con un producto a costo 0 rebotaba entera al aprobarla («El costo

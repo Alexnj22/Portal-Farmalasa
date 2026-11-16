@@ -203,3 +203,32 @@ export async function fijarCosto(cookie: string, id: number, idPrp: string, cost
     throw new Error(`La ficha de ${antes.nombre} quedó distinta en algo más que el costo.`);
   return despues;
 }
+
+/**
+ * Habilita un producto deshabilitado (casilla «activo» de la ficha), y lo
+ * VERIFICA releyendo (2026-11-16). Para destrabar una carga pendiente: el
+ * sistema contesta «no pertenece a ningún producto» a todo lo deshabilitado.
+ * Sólo habilita; nunca deshabilita. Lo demás de la ficha queda idéntico.
+ */
+export async function habilitarProducto(cookie: string, id: number): Promise<Ficha> {
+  const antes = await leerFichaDe(cookie, id);
+  if (antes.activo) return antes;
+  if (antes.conUbi) throw new Error(`La ficha ${id} trae campos que el sobre no conoce.`);
+  if (!antes.presentaciones.length) throw new Error(`La ficha ${id} no tiene presentaciones.`);
+
+  let resp = "";
+  try {
+    resp = await pedir(cookie, EDITAR, sobreDeEdicion({ ...antes, activo: true }, antes.regulado),
+      { extra: { Referer: `${BASE}/admin_producto.php` }, reintentos: 1 });
+  } catch { /* se decide abajo con la relectura */ }
+  let j: { typeinfo?: string; msg?: string } | null = null;
+  try { j = JSON.parse(resp); } catch { /* idem */ }
+
+  const despues = await leerFichaDe(cookie, id);
+  if (!despues.activo)
+    throw new Error(`El sistema no habilitó ${antes.nombre}: ${(j?.msg ?? resp.slice(0, 160)) || "sin respuesta"}`);
+  const sinActivo = (f: Ficha) => JSON.stringify({ ...f, activo: undefined });
+  if (sinActivo(despues) !== sinActivo(antes))
+    throw new Error(`La ficha de ${antes.nombre} quedó distinta en algo más que la habilitación.`);
+  return despues;
+}

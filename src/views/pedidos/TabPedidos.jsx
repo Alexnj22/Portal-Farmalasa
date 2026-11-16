@@ -133,7 +133,7 @@ const GRUPOS_LISTA = [
     { key: 'preparando',  label: 'En preparación',    Icono: Package },
     { key: 'preparado',   label: 'Listos para salir', Icono: PackageCheck },
     { key: 'transito',    label: 'En camino',         Icono: Truck },
-    { key: 'contando',    label: 'En la sala',        Icono: Store },
+    { key: 'contando',    label: 'En la sucursal',        Icono: Store },
     { key: 'erp',         label: 'Completados',       Icono: CheckCircle2,  tono: 'tenue' },
 ];
 
@@ -278,14 +278,14 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         const nHall = Array.isArray(tr.hallazgos) ? tr.hallazgos.length : 0;
                         if (tr.estado === 'despachado') return (
                             <Badge variant={nHall > 0 ? 'warning' : 'success'} uppercase={false}>
-                                {nHall > 0 ? `en el sistema · ${nHall} con aviso` : 'en el sistema'}
+                                {nHall > 0 ? `traslado registrado · ${nHall} con aviso` : 'traslado registrado'}
                             </Badge>
                         );
                         if (tr.estado === 'en_curso') return (
-                            <Badge variant="chart-3" uppercase={false}>saliendo al sistema…</Badge>
+                            <Badge variant="chart-3" uppercase={false}>registrando el traslado…</Badge>
                         );
                         if (tr.estado === 'error') return (
-                            <Badge variant="danger" uppercase={false}>no salió al sistema</Badge>
+                            <Badge variant="danger" uppercase={false}>no se registró el traslado</Badge>
                         );
                         return null;
                     })()}
@@ -315,7 +315,7 @@ const FilaDeSala = React.memo(function FilaDeSala({
                                     <Button
                                         variant="secondary" size="xs" icon={RefreshCw}
                                         disabled={busyAction === 'ingreso'}
-                                        title={canActuar ? "Manda desde Bodega lo que no salió y vuelve a ingresar lo que ya se contó" : "Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"}
+                                        title={canActuar ? "Manda desde Bodega lo que no salió y vuelve a ingresar lo que ya se contó" : "Vuelve a ingresar al inventario solo lo que ya se contó y no entró"}
                                         onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id, { reenviar: canActuar })}
                                     >Reintentar</Button>
                                 )}
@@ -493,7 +493,7 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         // fila (medido a 1440px, 2026-10-08)—, y la fila ya dice «Falta…».
                         if (conductorEnRuta) return !verSecundarias ? null : (
                             <Notice variant="neutral" icon={Truck} compact>
-                                Esperando que el conductor vuelva a base
+                                Esperando que el motorista regrese
                             </Notice>
                         );
                         return (
@@ -511,11 +511,11 @@ const FilaDeSala = React.memo(function FilaDeSala({
             {isBranch && faltan.hay && !faltan.enCamino && (
                 <div className="px-3 pb-2">
                     <Notice variant="danger" icon={PackageX} bloque>
-                        <strong>Pendiente — no llegó:</strong>{' '}
+                        <strong>Falta por llegar:</strong>{' '}
                         {describirFaltantes(faltan).join(' · ')}.{' '}
                         {faltan.porDespachar
-                            ? 'Bodega ya preparó el reenvío: sale en la próxima ruta y te llega un aviso cuando salga.'
-                            : 'Bodega tiene que reenviarlo; te llega un aviso cuando salga.'}
+                            ? 'Bodega ya preparó el reenvío. Sale en la próxima ruta y te avisamos cuando salga.'
+                            : 'Bodega tiene que reenviarlo. Te avisamos cuando salga.'}
                     </Notice>
                 </div>
             )}
@@ -529,12 +529,11 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         action={canEdit ? (
                             <Button variant="secondary" size="xs" icon={RefreshCw}
                                 disabled={busyAction === 'ingreso'}
-                                title={canActuar ? "Manda desde Bodega lo que no salió y vuelve a ingresar lo que ya se contó" : "Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"}
+                                title={canActuar ? "Manda desde Bodega lo que no salió y vuelve a ingresar lo que ya se contó" : "Vuelve a ingresar al inventario solo lo que ya se contó y no entró"}
                                 onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id, { reenviar: canActuar })}
                             >Reintentar</Button>
                         ) : null}>
-                        <strong>No entró al inventario de la sala.</strong>{' '}
-                        Se contó pero la sala no lo tiene para vender.
+                        <strong>No entró al inventario de la sucursal.</strong>{' '} Se contó, pero todavía no se puede vender.
                         {(ingreso.detalle ?? []).length > 0 && (
                             <ul className="mt-1 space-y-0.5">
                                 {ingreso.detalle.map(d => (
@@ -929,7 +928,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         setReenviarConfirmModal, setDevolverModal]);
     const avisarSinComprobar = () => useToastStore.getState().showToast(
         'Quedó guardado, pero no se pudo comprobar',
-        'No se pudo releer el pedido para ver si quedó alguna diferencia. Abre el pedido de nuevo para revisarlo.',
+        'No se pudo comprobar si quedó alguna diferencia. Abre el pedido de nuevo para revisarlo.',
         'warning', 9000,
     );
     const acc = React.useMemo(() => Object.fromEntries(ACCIONES_DE_FILA.map(n => [n, (...args) => accionesVigentes.current[n]?.(...args)])), []);
@@ -1559,7 +1558,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                         {p.parcial && (
                                             <p className="text-caption text-content-3 pl-5">
-                                                Una de sus cajas sí llegó. Va en un solo traslado: no reenviarla regresaría también la que la sala tiene.
+                                                Una de sus cajas sí llegó. Van en el mismo traslado, así que si no la reenvías también se regresa la que ya tiene la sucursal.
                                             </p>
                                         )}
                                     </div>
@@ -1568,7 +1567,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         )}
                         {aCancelar.length > 0 && (
                             <Notice variant="warning" icon={AlertTriangle} bloque>
-                                {aCancelar.map(p => p.labels.join('–')).join(', ')} no se reenvía: el producto regresa a bodega y la sala deja de verlo pendiente. No se puede deshacer.
+                                {aCancelar.map(p => p.labels.join('–')).join(', ')} no se reenvía. El producto regresa a bodega y la sucursal deja de verlo pendiente. No se puede deshacer.
                             </Notice>
                         )}
                     </div>

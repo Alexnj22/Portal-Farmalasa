@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1552.2 — Lenguaje: Pedidos y traslados con frases cortas
+
+- Cuarta tanda de la revisión del lenguaje: Pedidos (recepción, llegada,
+  reenvío, pestaña de pedidos, diferencias, rutas, reglas, generar) y
+  Traslados, unos 240 textos. Frases cortas, sin rayas, y el vocabulario de
+  `docs/reglas/como-habla-el-portal.md`: «sala» → sucursal, «stock» →
+  existencia, «envío» → traslado («Traslado sin solicitud» para el que se
+  manda sin que lo pidan), «supervisión» → el supervisor, «sistemas» →
+  Soporte; se quitó el voseo que quedaba («resolvela», «recibila», «olvidalo»).
+
 ## v2.1552.1 — Lenguaje: los jefes por su cargo
 
 - «Jefe inmediato» cambia según quien lee, así que la regla ahora nombra el

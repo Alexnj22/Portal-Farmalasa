@@ -914,7 +914,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 });
                 useToastStore.getState().showToast(
                     `${anularModal.sala} quitada del pedido #${anularModal.numero}`,
-                    r.pedido_anulado ? 'Era la última sala: el pedido quedó anulado.' : 'Las demás salas siguen igual.',
+                    r.pedido_anulado ? 'Era la última sucursal. El pedido quedó anulado.' : 'Las demás sucursales siguen igual.',
                     'success');
             } else {
                 await anularPedidoConMotivo({ pedidoId: anularModal.pedidoId, userId: user?.id ?? null, motivo });
@@ -969,7 +969,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // El segundo clic de un doble clic: el primero ya finalizó y ya
             // mandó el traslado. No se anota ni se despacha otra vez.
             if (r.yaEstaba) {
-                useToastStore.getState().showToast('Ya estaba finalizado', 'Esta sala ya se había finalizado.', 'info');
+                useToastStore.getState().showToast('Ya estaba finalizado', 'Esta sucursal ya estaba finalizada.', 'info');
                 setFinalizarModal(null);
                 await loadActive();
                 return true;
@@ -1037,7 +1037,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // sorprenda que el producto aparezca para contarse.
             if (electrolitSinUbicar > 0) {
                 useToastStore.getState().showToast(
-                    'Electrolit faltante anotado en la sala',
+                    'Electrolit faltante anotado en la sucursal',
                     `No se pudo saber de qué sabor ${electrolitSinUbicar === 1 ? 'es la caja que no llegó' : `son las ${electrolitSinUbicar} cajas que no llegaron`}. Al contar, anota como faltante el que no esté.`,
                     'info', 9000,
                 );
@@ -1128,7 +1128,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const regresa = (r.anulados ?? []).length > 0 || (r.ya_anulados ?? []).length > 0;
             useToastStore.getState().showToast(
                 'Reenvío cancelado',
-                regresa ? `${que}: regresó a bodega.` : `${que}: no había salido, quedó cerrado.`,
+                regresa ? `${que}: regresó a bodega.` : `${que}: no había salido. Quedó cerrado.`,
                 'success',
             );
             setBusyAction(null);
@@ -1147,9 +1147,9 @@ export function usePedidosData({ searchTerm = '' }) {
         const c = cicloDeReenvioPendiente(reenviosHistorial, faltaCajasLegacy);
         if (!c) {
             if (reenvioTodaviaEnBodega(reenviosHistorial)) {
-                useToastStore.getState().showToast('El reenvío todavía no sale', 'Las cajas siguen en bodega: se confirman cuando salga su ruta.', 'info');
+                useToastStore.getState().showToast('El reenvío todavía no sale', 'Las cajas siguen en bodega. Se confirman cuando salga su ruta.', 'info');
             } else {
-                useToastStore.getState().showToast('Sin reenvío pendiente', 'No hay ciclo de reenvío registrado para confirmar.', 'info');
+                useToastStore.getState().showToast('Sin reenvío pendiente', 'No hay ningún reenvío para confirmar.', 'info');
             }
             return;
         }
@@ -1415,8 +1415,8 @@ export function usePedidosData({ searchTerm = '' }) {
             useToastStore.getState().showToast(
                 'No hay nada para contar todavía',
                 hasFaltaItems
-                    ? 'Todo lo de esta sala venía en las cajas que faltaron. Se cuenta cuando llegue el reenvío.'
-                    : 'Esta sala no tiene productos pendientes de contar.',
+                    ? 'Todo lo de esta sucursal venía en las cajas que faltaron. Se cuenta cuando llegue el reenvío.'
+                    : 'Esta sucursal no tiene productos por contar.',
                 'info');
             return;
         }
@@ -1471,7 +1471,7 @@ export function usePedidosData({ searchTerm = '' }) {
         });
         if (error) {
             console.error('lifecycle reportar_diferencias:', error);
-            useToastStore.getState().showToast('No se pudo reportar las diferencias', mensajeAmigable(error), 'error');
+            useToastStore.getState().showToast('No se pudieron reportar las diferencias', mensajeAmigable(error), 'error');
             return;
         }
         useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
@@ -1573,17 +1573,17 @@ export function usePedidosData({ searchTerm = '' }) {
                 // Los dos sentidos salen por acá desde el 2026-08-24.
                 const aLaSala = movimiento.aLaSala;
                 useToastStore.getState().showToast(
-                    movimiento.ok ? (aLaSala ? 'Salió de bodega' : 'Salió de la sala')
+                    movimiento.ok ? (aLaSala ? 'Salió de bodega' : 'Salió de la sucursal')
                          : 'Quedaron de acuerdo, pero no salió',
-                    movimiento.ok ? (aLaSala ? 'Falta confirmar la entrada en la sala.'
+                    movimiento.ok ? (aLaSala ? 'Falta confirmar la entrada en la sucursal.'
                                     : 'Falta que bodega confirme la entrada.')
                          : mensajeAmigable(movimiento.error, 'Se puede reintentar.'),
                     movimiento.ok ? 'success' : 'warning',
                 );
             } else if (data?.estado === 'escalada') {
                 useToastStore.getState().showToast(
-                    'Pasó a supervisión',
-                    'No hubo acuerdo. Supervisión decide con qué salida se queda.',
+                    'Pasó al supervisor',
+                    'No hubo acuerdo. El supervisor decide qué se hace.',
                     'info',
                 );
             }
@@ -1644,7 +1644,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const { movimiento } = await decidirDevolucionYMover(id, accion, nota);
             if (movimiento) {
                 useToastStore.getState().showToast(
-                    movimiento.ok ? 'Salió de la sala' : 'Quedó aceptada, pero no salió',
+                    movimiento.ok ? 'Salió de la sucursal' : 'Quedó aceptada, pero no salió',
                     movimiento.ok ? 'Falta confirmar la entrada en bodega.' : mensajeAmigable(movimiento.error, 'Se puede reintentar.'),
                     movimiento.ok ? 'success' : 'warning',
                 );
@@ -1667,7 +1667,7 @@ export function usePedidosData({ searchTerm = '' }) {
         try {
             const r = await moverDevoluciones([id], { simulacro: false });
             useToastStore.getState().showToast(
-                r.ok ? 'Salió de la sala' : 'No salió',
+                r.ok ? 'Salió de la sucursal' : 'No salió',
                 r.ok ? 'Falta confirmar la entrada en bodega.'
                      : mensajeAmigable(r.fallos?.[0]?.error ?? r.error, 'Se puede reintentar.'),
                 r.ok ? 'success' : 'error',
@@ -1696,7 +1696,7 @@ export function usePedidosData({ searchTerm = '' }) {
             const r = await moverDevoluciones([id], { simulacro: true });
             const hecho = r.hechas?.[0] ?? null;
             useToastStore.getState().showToast(
-                r.ok ? 'La prueba pasó — no se movió nada' : 'La prueba encontró un problema',
+                r.ok ? 'La prueba pasó. No se movió nada' : 'La prueba encontró un problema',
                 r.ok && hecho
                     ? `${hecho.producto ?? 'El producto'} · ${hecho.presentacion ?? 'sin presentación'} · `
                       + `${(hecho.renglones ?? []).map(x => `${x.cantidad} del lote ${x.lote ?? 'sin lote'}`).join(', ') || 'sin lotes'}`

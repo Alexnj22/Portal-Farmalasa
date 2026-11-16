@@ -103,7 +103,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         for (let i = 0; i < cajasExtra; i++) {
             const d = cajasExtraData[i] ?? {};
             if (!d.sinRotulacion && !d.cajaNum?.trim()) {
-                setExtraError(`Caja extra ${i + 1}: ingresa el # de caja o marca "Sin rotulación".`);
+                setExtraError(`Caja extra ${i + 1}: escribe el número de caja o marca «Sin rotulación».`);
                 return;
             }
         }
@@ -258,7 +258,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             Algo llegó mal
                         </Button>
                         <p className="text-caption text-content-3 text-center">
-                            Una caja dañada, una que no llegó o cajas de más: se marca caja por caja.
+                            Una caja dañada, una que no llegó o cajas de más. Se marca caja por caja.
                         </p>
                     </div>
                 </div>
@@ -441,7 +441,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 <div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3 rounded-xl border border-warning/30 bg-warning/10">
                         <HelpCircle size={13} className="text-warning shrink-0" />
-                        <span className="text-label text-content-2 flex-1 basis-40">¿Llegaron cajas de más (no esperadas)?</span>
+                        <span className="text-label text-content-2 flex-1 basis-40">¿Llegaron cajas que no esperabas?</span>
                         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                             <Button tone="warning" size="xs" disabled={cajasExtra === 0} onClick={() => setCajasExtra(n => Math.max(0, n - 1))}>−</Button>
                             <span className={`w-6 text-center text-body font-black tabular-nums ${cajasExtra > 0 ? 'text-warning' : 'text-content-3'}`}>{cajasExtra}</span>
@@ -483,7 +483,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                             </div>
                                         )}
                                         {d.sinRotulacion && (
-                                            <p className="text-caption text-warning-text italic">Se reportará a bodega como caja sin identificar.</p>
+                                            <p className="text-caption text-warning-text italic">Se le avisa a bodega como caja sin identificar.</p>
                                         )}
                                     </div>
                                 );

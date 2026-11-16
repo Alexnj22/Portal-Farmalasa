@@ -457,7 +457,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   const conductorBtnLabel = isConductor
     ? (gpsStatus === 'loading' ? 'Buscando GPS…'
       : gpsStatus === 'denied'  ? 'GPS bloqueado'
-      : gpsStatus === 'timeout' ? 'Sin señal — reintentar'
+      : gpsStatus === 'timeout' ? 'Sin señal. Reintentar'
       : gpsStatus === 'ok'      ? 'Centrar en mí'
       : 'Activar GPS')
     : (driverPos ? 'Ver conductor' : 'Sin ubicación aún');

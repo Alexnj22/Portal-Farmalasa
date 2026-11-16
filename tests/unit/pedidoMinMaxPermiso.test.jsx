@@ -72,7 +72,7 @@ describe('Pedidos · la fila de MIN·MAX de «Revisar regla de despacho»', () =
         // El porqué SÍ se queda — es lo que la sección viene a contestar.
         expect(screen.getByText('Necesidad baja')).toBeInTheDocument();
         // Pero no la orden de tocar un campo que esta pantalla ya no tiene.
-        expect(screen.queryByText(/Ajustar MAX/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Ajusta el Máx/i)).not.toBeInTheDocument();
     });
 
     it('con permiso de MIN·MAX sigue estando completa', async () => {
@@ -85,7 +85,7 @@ describe('Pedidos · la fila de MIN·MAX de «Revisar regla de despacho»', () =
         expect(screen.getByText('Ventas 6M')).toBeInTheDocument();
         expect(screen.getByText('Restaurar')).toBeInTheDocument();
         expect(screen.getByText('0 / 0')).toBeInTheDocument();
-        expect(screen.getByText(/Ajustar MAX/i)).toBeInTheDocument();
+        expect(screen.getByText(/Ajusta el Máx/i)).toBeInTheDocument();
         expect(fetchStockParamsForRevision).toHaveBeenCalledTimes(1);
     });
 

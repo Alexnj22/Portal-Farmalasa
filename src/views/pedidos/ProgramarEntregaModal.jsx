@@ -46,7 +46,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
     const isEditing = !!currentAt;
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`${isEditing ? 'Reprogramar entrega' : 'Programar entrega'} — Pedido #${numero}`}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`${isEditing ? 'Reprogramar entrega' : 'Programar entrega'} · Pedido #${numero}`}>
             <LiquidModal.Header icono={CalendarClock} tono="neutral" onClose={onClose}
                 titulo={isEditing ? 'Reprogramar entrega' : 'Programar entrega'}
                 subtitulo={`Pedido #${numero}`} />

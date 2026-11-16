@@ -19,14 +19,14 @@ export default function ElegirLoteDeEnvio({ producto, pedidos = [], opciones, va
             <p className="text-micro font-bold text-warning-text leading-snug">
                 {producto && <span className="text-content">{producto}: </span>}
                 {pedidos.length
-                    ? `el lote ${pedidos.join(', ')} que pidieron no está en tu sala o no alcanza. ¿Cuál mandas?`
+                    ? `el lote ${pedidos.join(', ')} que pidieron no está en tu sucursal o no alcanza. ¿Cuál mandas?`
                     : '¿Qué lote mandas?'}
             </p>
             {opciones == null ? (
-                <p className="text-micro text-content-3">Revisando los lotes de tu sala…</p>
+                <p className="text-micro text-content-3">Revisando los lotes de tu sucursal…</p>
             ) : opciones.length === 0 ? (
                 <p className="text-micro font-semibold text-danger-text leading-snug">
-                    Ningún lote de tu sala alcanza para todo el renglón. Manda menos o rechaza.
+                    Ningún lote de tu sucursal alcanza para todo lo pedido. Manda menos o rechaza.
                 </p>
             ) : (
                 <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Lote que sale de ${producto}`}>
@@ -52,7 +52,7 @@ export default function ElegirLoteDeEnvio({ producto, pedidos = [], opciones, va
             {valor && (
                 <p className="text-micro font-semibold text-content leading-snug">
                     {valor.sinAsignar
-                        ? 'Sale sin lote asignado: copia abajo el lote de la caja.'
+                        ? 'Sale sin lote asignado. Copia abajo el lote de la caja.'
                         : `Sale el lote ${valor.lote} (vence ${mesAnio(valor.vence)}).`}
                 </p>
             )}

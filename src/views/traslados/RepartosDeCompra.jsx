@@ -180,7 +180,7 @@ function Envio({ fila, puedeRecibir, puedeReintentar, onHecho, onAviso }) {
         setRec(false);
         if (e) { setError(e); onHecho(); return; }
         if (resultado && resultado.comprobado === false) {
-            onAviso(`${fila.emisor_nombre ?? 'Un envío de Bodega'}: se recibió, pero la existencia de la sala no subió lo esperado. Avisa a Bodega.`);
+            onAviso(`${fila.emisor_nombre ?? 'Un traslado de Bodega'}: se recibió, pero la existencia de la sucursal no subió lo esperado. Avisa a Bodega.`);
         }
         onHecho();
     };
@@ -194,8 +194,8 @@ function Envio({ fila, puedeRecibir, puedeReintentar, onHecho, onAviso }) {
         setRec(false); setConfR(false);
         if (e) { setError(e); onHecho(); return; }
         onAviso(resultado.ok
-            ? `${fila.emisor_nombre ?? 'El envío'} → ${fila.sala}: ya salió de Bodega${resultado.traslado ? ` (traslado ${resultado.traslado})` : ''}.`
-            : `${fila.emisor_nombre ?? 'El envío'} → ${fila.sala}: volvió a fallar. ${resultado.nota ?? ''}`);
+            ? `${fila.emisor_nombre ?? 'El traslado'} → ${fila.sala}: ya salió de Bodega${resultado.traslado ? ` (traslado ${resultado.traslado})` : ''}.`
+            : `${fila.emisor_nombre ?? 'El traslado'} → ${fila.sala}: volvió a fallar. ${resultado.nota ?? ''}`);
         onHecho();
     };
     const comprobar = async () => {
@@ -274,7 +274,7 @@ function Envio({ fila, puedeRecibir, puedeReintentar, onHecho, onAviso }) {
             <ConfirmModal isOpen={confReintento} onClose={() => !recibiendo && setConfR(false)} onConfirm={reintentar}
                 isProcessing={recibiendo} isDestructive={false}
                 title={`¿Mandar otra vez a ${fila.sala}?`}
-                message={`${fila.nota ? `La vez anterior: ${fila.nota} ` : ''}Se arma un traslado nuevo desde el estante de Bodega con ${lineas.length === 1 ? 'este producto' : `estos ${lineas.length} productos`}. Si el motivo no se arregló (por ejemplo, no hay existencia), va a volver a fallar y lo va a decir.`}
+                message={`${fila.nota ? `La vez anterior: ${fila.nota} ` : ''}Se arma un traslado nuevo desde el estante de Bodega con ${lineas.length === 1 ? 'este producto' : `estos ${lineas.length} productos`}. Si el problema sigue (por ejemplo, no hay existencia), va a fallar de nuevo y te lo dirá.`}
                 confirmText="Mandar otra vez" />
         </div>
     );

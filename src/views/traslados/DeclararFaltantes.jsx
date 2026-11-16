@@ -42,18 +42,18 @@ const TEXTOS = {
     faltante: {
         abrir: 'Faltó algo en el paquete',
         titulo: 'Qué faltó',
-        ayuda: (origen) => `Escribe cuántos NO venían. El traslado entra igual —el producto ya está a nombre de tu sala— y queda anotado para que ${origen} lo busque hoy.`,
+        ayuda: (origen) => `Escribe cuántos no venían. El traslado entra igual y queda anotado para que ${origen} lo busque hoy.`,
         campo: 'falto',
         aria: 'Cuántos faltaron de',
-        cerrar: 'Llegó completa, olvidalo',
+        cerrar: 'Llegó completa',
     },
     sobrante: {
         abrir: 'Vino algo de más',
         titulo: 'Qué vino de más',
-        ayuda: (origen) => `Escribe cuántos vinieron DE MÁS, en la misma presentación. Se descuentan del inventario de ${origen}, se suman al de tu sala y se le avisa.`,
+        ayuda: (origen) => `Escribe cuántos vinieron de más, en la misma presentación. Se descuentan de ${origen}, se suman a tu sucursal y se le avisa.`,
         campo: 'demas',
         aria: 'Cuántos vinieron de más de',
-        cerrar: 'No vino nada de más, olvidalo',
+        cerrar: 'No vino nada de más',
     },
 };
 
@@ -116,7 +116,7 @@ export default function DeclararFaltantes({
                 {t.titulo}
             </p>
             <p className="text-micro text-content-3 font-medium leading-snug">
-                {t.ayuda(origen ?? 'la otra sala')}
+                {t.ayuda(origen ?? 'la otra sucursal')}
             </p>
 
             <div className="flex flex-col gap-1.5">

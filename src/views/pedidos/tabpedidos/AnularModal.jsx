@@ -36,15 +36,14 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30">
                                 <AlertTriangle size={14} className="text-danger shrink-0 mt-0.5" />
                                 <p className="text-body-sm text-danger-text">
-                                    Se quita <strong>{modal.sala}</strong> de este pedido: sus productos ya no se preparan ni se envían.
-                                    Las demás salas siguen igual. No se puede deshacer.
+                                    Se quita <strong>{modal.sala}</strong> de este pedido. Sus productos ya no se preparan ni se mandan. Las demás sucursales siguen igual. No se puede deshacer.
                                 </p>
                             </div>
                         ) : (
                             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
                                 <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" />
                                 <p className="text-body-sm text-warning-text">
-                                    Este pedido ya fue iniciado. Se anulará la preparación en curso y todos los ítems pendientes.
+                                    Este pedido ya se empezó a preparar. Se anula lo que se está preparando y todos los productos pendientes.
                                 </p>
                             </div>
                         )}
@@ -67,7 +66,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                     <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30">
                         <AlertTriangle size={14} className="text-danger shrink-0 mt-0.5" />
                         <p className="text-body-sm text-danger-text">
-                            ¿Confirmas que deseas anular el pedido <strong>#{modal?.numero}</strong>?<br />
+                            ¿Anular el pedido <strong>#{modal?.numero}</strong>?<br />
                             Esta acción no se puede deshacer.
                         </p>
                     </div>

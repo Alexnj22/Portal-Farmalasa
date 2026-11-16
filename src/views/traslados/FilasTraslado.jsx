@@ -54,7 +54,7 @@ const LOTES_EN_TARJETA = 2;
 export function Recorrido({ meta, className = '' }) {
     return (
         <span className={`truncate ${className}`}>
-            {meta?.origen_branch_name ?? 'La otra sala'} → {meta?.branch_name ?? 'destino'}
+            {meta?.origen_branch_name ?? 'La otra sucursal'} → {meta?.branch_name ?? 'destino'}
         </span>
     );
 }
@@ -330,7 +330,7 @@ export function DecisionTraslado({ fila, onHecho }) {
     const propuesta = propuestaLocal ?? fila?.metadata?.propuesta_lote ?? null;
     const propVigente = propuesta && ['pendiente', 'aceptada'].includes(propuesta.estado) ? propuesta : null;
     const dePropuesta = (pos) => propVigente?.lineas?.find(p => Number(p.posicion) === pos) ?? null;
-    const salaQuePide = fila?.metadata?.branch_name ?? 'la sala que pidió';
+    const salaQuePide = fila?.metadata?.branch_name ?? 'la sucursal que pidió';
     const horaSola = propuesta?.propuesta_at
         ? hora12(new Date(new Date(propuesta.propuesta_at).getTime() + 3 * 3600_000))
         : null;
@@ -589,7 +589,7 @@ export function DecisionTraslado({ fila, onHecho }) {
 
     return (
         <div ref={raizRef} className="flex flex-col gap-2">
-            {/* Por qué te aparece un traslado de una sala que no es la tuya.
+            {/* Por qué te aparece un traslado de una sucursal que no es la tuya.
                 Sin esta línea, quien lo ve tiene que adivinar si es un error.
 
                 Lo dice el SERVIDOR —`respaldo` sale de la misma función que
@@ -611,7 +611,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                 <p className="text-micro font-semibold text-danger-text leading-snug">
                     Ya no puedes enviarlo: quedan {lineas[0]?.unidades ?? 0}
                     {(lineas[0]?.en_vuelo ?? 0) > 0
-                        && ` (${lineas[0].en_vuelo} ya salieron y el conteo todavía no lo refleja)`}.
+                        && ` (${lineas[0].en_vuelo} ya salieron y todavía no se descuentan)`}.
                     {sugerencia && ` ${sugerencia}.`}
                 </p>
             )}
@@ -688,7 +688,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                 </ul>
             )}
 
-            {/* ── La propuesta a la sala que pidió ──────────────────────────── */}
+            {/* ── La propuesta a la sucursal que pidió ──────────────────────────── */}
             {modo !== 'rechazo' && propuesta?.estado === 'pendiente' && (
                 <Notice variant="warning">
                     Le preguntamos a {salaQuePide} si acepta el lote que vence antes.
@@ -699,7 +699,7 @@ export function DecisionTraslado({ fila, onHecho }) {
             {modo !== 'rechazo' && propuesta?.estado === 'aceptada' && (
                 <Notice variant="success">
                     {propuesta.auto
-                        ? `${salaQuePide} no contestó en 3 horas: el lote se aceptó solo. Ya puedes enviarlo.`
+                        ? `${salaQuePide} no contestó en 3 horas, así que el lote se aceptó solo. Ya puedes enviarlo.`
                         : `${salaQuePide} aceptó el lote. Ya puedes enviarlo.`}
                 </Notice>
             )}
@@ -932,7 +932,7 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho, miBranch = null }) 
                     {deOtraSala && (
                         <div className="mt-1">
                             <Badge variant="warning" size="sm">
-                                Sale de {meta.origen_branch_name ?? 'otra sala'}
+                                Sale de {meta.origen_branch_name ?? 'otra sucursal'}
                             </Badge>
                         </div>
                     )}
@@ -963,7 +963,7 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho, miBranch = null }) 
                         </div>
                     )}
                     <p className="text-micro text-content-3 mt-0.5 truncate">
-                        {nombrePor(fila.employee_id)} · {meta.branch_name ?? 'otra sala'} · {fmtCuando(fila.created_at)}
+                        {nombrePor(fila.employee_id)} · {meta.branch_name ?? 'otra sucursal'} · {fmtCuando(fila.created_at)}
                     </p>
                     {fila.note && (
                         <p className="text-micro text-content-2 mt-1 leading-snug">{fila.note}</p>

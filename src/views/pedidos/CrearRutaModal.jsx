@@ -770,8 +770,8 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 options={[{ value: 'ahora', label: 'Salir ahora' }, { value: 'despues', label: 'Dejarla lista para después' }]} />
               <span className="text-caption text-content-3">
                 {salida === 'ahora'
-                  ? 'Las salas reciben el aviso de «en camino» al crearla.'
-                  : 'Queda armada; se inicia desde Rutas y ahí avisa a las salas.'}
+                  ? 'Las sucursales reciben el aviso de «en camino» al crearla.'
+                  : 'Queda lista. Se inicia desde Rutas y ahí se avisa a las sucursales.'}
               </span>
             </div>
 
@@ -792,7 +792,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     <Warehouse size={11} className="text-white" />
                   </div>
                   <div className="flex-1 py-1">
-                    <p className="text-label font-bold text-content-2">Bodega — Punto de partida</p>
+                    <p className="text-label font-bold text-content-2">Bodega · Punto de partida</p>
                   </div>
                 </div>
 
@@ -912,7 +912,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       </div>
                       <div className="flex-1 bg-surface-card-hover border border-divider rounded-xl px-3 py-2">
                         <div className="flex items-center justify-between">
-                          <p className="text-label font-bold text-content-2">Bodega — Vuelta en base</p>
+                          <p className="text-label font-bold text-content-2">Bodega · Regreso</p>
                           <div className="text-right">
                             <p className="text-micro text-content-2 font-black uppercase tracking-widest">total estimado</p>
                             <p className="text-subtitle font-black text-content leading-tight">{fmtMin(totalTime)}</p>

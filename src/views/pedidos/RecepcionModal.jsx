@@ -166,7 +166,7 @@ function PanelProblema({ id, fQty, campos, onListo }) {
             quedó con lo del papel. */}
         <p className="text-micro text-content-3 leading-snug">
             <span className="font-semibold text-chart-4-text">Llegó, pero vino mal.</span>{' '}
-            Si no llegó o llegó otra cantidad, no es aquí: cambia el número de «Llegó».
+            Si no llegó o llegó otra cantidad, cambia el número de «Llegó».
         </p>
         <div className="flex items-center gap-2 flex-wrap">
             <SegmentedControl
@@ -196,7 +196,7 @@ function PanelProblema({ id, fQty, campos, onListo }) {
                 </div>
             )}
             <PortalInput
-                aria-label="Nota del renglón"
+                aria-label="Nota del producto"
                 type="text"
                 value={notaVals[id] ?? ''}
                 onChange={e => setNotaVals(p => ({ ...p, [id]: e.target.value }))}
@@ -303,8 +303,7 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
                             único caso donde se puede equivocar. */}
                         {enviadoDisp > 1 && (
                             <p className="text-micro font-medium text-warning-text mt-1 leading-tight">
-                                Cuenta las {enviadoDisp} de una vez: el producto se recibe
-                                completo y después ya no se vuelve a contar.
+                                Cuenta las {enviadoDisp} de una vez. El producto se recibe completo y después ya no se vuelve a contar.
                             </p>
                         )}
 
@@ -502,9 +501,7 @@ function CorrectorDeConteo({ row, presMap, saving, onGuardar, onCancelar }) {
 
             {delta !== 0 && (
                 <p className="text-micro text-warning-text mt-1.5 leading-snug">
-                    Queda anotado como diferencia y pasa a la conversación con bodega:
-                    el producto no entra ni sale del inventario hasta que las dos partes
-                    acuerden qué hacer.
+                    Queda anotado como diferencia y bodega tiene que contestar. El producto no entra ni sale del inventario hasta que se pongan de acuerdo.
                 </p>
             )}
 
@@ -559,7 +556,7 @@ function FilaConfirmada({ row, hoja, presMap, saving, abierta, onAbrir, onCerrar
                 vuelve a aplicar la base. */}
             {enCurso ? (
                 <p className="text-micro text-content-3 mt-1.5">
-                    Esta diferencia ya se está resolviendo con bodega — la cantidad es la que se acordó.
+                    Esta diferencia ya se está resolviendo con bodega. La cantidad es la que se acordó.
                 </p>
             ) : !puedeCorregir ? null : abierta ? (
                 <CorrectorDeConteo row={row} presMap={presMap} saving={saving}
@@ -1086,7 +1083,7 @@ export default function RecepcionModal({
         const { error } = await quitarExtraDePedido(e.id);
         setQuitandoExtra(null);
         if (error) {
-            setExtraError(`No se pudo quitar «${e.nombre}»: ${mensajeAmigable(error)} Sigue anotado.`);
+            setExtraError(`No se pudo quitar «${e.nombre}»: ${mensajeAmigable(error)} Sigue en la lista.`);
             return;
         }
         sacar();
@@ -1195,7 +1192,7 @@ export default function RecepcionModal({
 
     const avisarIngresoFallido = useCallback((detalle) => {
         useToastStore.getState().showToast(
-            'Recepción guardada, inventario pendiente',
+            'Recepción guardada, falta el inventario',
             `El conteo quedó guardado, pero los productos no entraron al inventario${detalle ? ` (${detalle})` : ''}. `
             + 'Reinténtalo desde la tarjeta del pedido.',
             'error', 8000,
@@ -1208,7 +1205,7 @@ export default function RecepcionModal({
     const avisarIngresoEnCurso = useCallback((n) => {
         useToastStore.getState().showToast(
             'Contado',
-            `${n} producto${n !== 1 ? 's' : ''} entrando al inventario. Puedes seguir trabajando — la tarjeta del pedido avisa cuando terminen.`,
+            `${n} producto${n !== 1 ? 's' : ''} entrando al inventario. Puedes seguir trabajando. La tarjeta del pedido avisa cuando terminen.`,
             'success', 6000,
         );
     }, []);
@@ -1240,7 +1237,7 @@ export default function RecepcionModal({
                 // Sin el texto del servidor: ver `ingresarAlInventario`.
                 console.error('ingreso al inventario:', erp.codigo, erp.error);
                 setSaveError(
-                    'Quedó contado, pero todavía no entró al inventario, así que no se puede facturar. '
+                    'Quedó contado, pero todavía no entró al inventario. Hasta entonces no se puede facturar. '
                     + 'Reinténtalo desde la tarjeta del pedido.',
                 );
             }
@@ -1290,10 +1287,10 @@ export default function RecepcionModal({
             useToastStore.getState().showToast(
                 'Corregido',
                 (data?.error_tipo
-                    ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de que el producto se mueva.'
+                    ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de mover el producto.'
                     : 'El conteo ahora coincide con lo enviado.')
                 + (data?.reabrio_el_cierre
-                    ? ' El pedido ya estaba cerrado: vuelve a quedar abierto hasta que bodega y la sala lo cierren de nuevo.'
+                    ? ' El pedido ya estaba cerrado. Queda abierto otra vez hasta que bodega y la sucursal lo cierren.'
                     : ''),
                 data?.error_tipo ? 'warning' : 'success',
                 data?.reabrio_el_cierre ? 9000 : 6000,
@@ -1367,7 +1364,7 @@ export default function RecepcionModal({
         // falló es la marca. Decirlo así —y no con el error a secas— evita que
         // alguien crea que tiene que volver a contar. Reintentar es volver a
         // confirmar: la hoja ya no tiene nada por contar y sólo se marca.
-        if (error) throw errorDeNegocio(`La hoja ${selectedHoja} quedó contada y sus productos están entrando al inventario, pero no se pudo marcar como contada. Vuelve a confirmarla para reintentar.`, error);
+        if (error) throw errorDeNegocio(`La hoja ${selectedHoja} quedó contada y sus productos están entrando al inventario, pero no se pudo marcar como contada. Confírmala otra vez.`, error);
         setLocalRec(prev => [...new Set([...prev, selectedHoja])].sort((a, b) => a - b));
 
         if (regDone && espDone) {
@@ -1590,7 +1587,7 @@ export default function RecepcionModal({
             if (recErr) {
                 throw errorDeNegocio(
                     'Todo quedó contado y los productos están entrando al inventario, pero las hojas no se pudieron '
-                    + 'marcar como contadas. Vuelve a «Confirmar todo» para reintentar: no se cuenta nada dos veces.',
+                    + 'marcar como contadas. Toca «Confirmar todo» otra vez. No se cuenta nada dos veces.',
                     recErr);
             }
             setLocalRec(newRec.filter(n => !initHojasRecibidas.includes(n)));
@@ -1756,7 +1753,7 @@ export default function RecepcionModal({
                                         }`}>
                                             {isContada ? 'Contada'
                                                 : sinNada ? 'En reenvío'
-                                                : isAlertada ? `${itemCount} prod. · revisar una por una`
+                                                : isAlertada ? `${itemCount} prod. · revisar uno por uno`
                                                 : `${itemCount} prod.${cajaHint ? ` · ${cajaHint}` : ''}`}
                                         </p>
                                     </div>
@@ -1775,7 +1772,7 @@ export default function RecepcionModal({
                                 {faltaCajas.length > 0
                                     ? `Contado lo que llegó. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
                                     : hasFaltaItems
-                                        ? 'Contado lo que llegó. Aún hay electrolit o cajas especiales pendientes de reenvío. Finaliza cuando lleguen.'
+                                        ? 'Contado lo que llegó. Faltan cajas de Electrolit o especiales por reenviar. Finaliza cuando lleguen.'
                                         : 'Todo contado'
                                 }
                             </p>
@@ -1786,7 +1783,7 @@ export default function RecepcionModal({
                         <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                             <Truck size={12} className="text-content-3 shrink-0" />
                             <p className="text-label text-content-3">
-                                Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío — se recibirá por separado.
+                                Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío. Se recibe por separado.
                             </p>
                         </div>
                     )}
@@ -1795,8 +1792,7 @@ export default function RecepcionModal({
                         <div className="mt-3 flex items-start gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30">
                             <AlertTriangle size={12} className="text-warning shrink-0 mt-0.5" />
                             <p className="text-label text-warning-text">
-                                Hoja{hojasAlertadas.size > 1 ? 's' : ''} {[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')} venían en una caja
-                                con problema — hay que revisarlas producto por producto, sin confirmarlas de una.
+                                Hoja{hojasAlertadas.size > 1 ? 's' : ''} {[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')} venían en una caja con problema. Revísalas producto por producto.
                             </p>
                         </div>
                     )}
@@ -1925,10 +1921,9 @@ export default function RecepcionModal({
                     onConfirm={async () => { await handleConfirmarTodo(); setConfirmarTodoOpen(false); }}
                     title="¿Dar por bueno todo el pedido?"
                     message={
-                        'Se van a confirmar todas las hojas y cajas especiales tal como se enviaron, sin contarlas, '
-                        + 'y el pedido completo entra al inventario de la sala automáticamente.'
+                        'Se confirman todas las hojas y cajas especiales tal como se enviaron, sin contarlas, ' + 'y el pedido completo entra al inventario de la sucursal.'
                         + (hojasAlertadas.size > 0
-                            ? ` Quedan fuera las hojas ${[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')}, que venían en una caja con problema y hay que revisar.`
+                            ? ` Quedan fuera las hojas ${[...hojasAlertadas].sort((a, b) => a - b).map(n => `H${n}`).join(', ')}. Venían en una caja con problema y hay que revisarlas.`
                             : '')
                     }
                     confirmText="Sí, confirmar todo"
@@ -2018,10 +2013,8 @@ export default function RecepcionModal({
                         y no repetido por fila: el producto no se mueve. */}
                     {confirmadosVivos.length > 0 && (
                         <p className="text-micro text-content-3 mt-4 leading-snug px-1">
-                            Corregir reescribe cuántos contaste. Si el número no coincide con lo
-                            enviado queda como diferencia y bodega tiene que contestar: el producto
-                            no entra ni sale del inventario hasta que las dos partes acuerden.
-                            {!hayAtras && ' Si llegó un producto en lugar de otro, corrige el que no vino a lo que contaste y anota el que sí llegó como extra.'}
+                            «Corregir» cambia cuántos contaste. Si no coincide con lo enviado, queda como diferencia y bodega tiene que contestar. El producto no entra ni sale del inventario hasta que se pongan de acuerdo.
+                            {!hayAtras && ' Si llegó un producto en lugar de otro, corrige el que no vino y anota el que llegó como extra.'}
                         </p>
                     )}
                 </PedidoModal.Body>
@@ -2071,7 +2064,7 @@ export default function RecepcionModal({
                             <p className="text-label text-content-3 mt-0.5">
                                 {extras.length === 0
                                     ? 'Productos recibidos que no estaban en el pedido'
-                                    : `${extras.length} producto${extras.length !== 1 ? 's' : ''} anotado${extras.length !== 1 ? 's' : ''} · queda guardado solo`}
+                                    : `${extras.length} producto${extras.length !== 1 ? 's' : ''} anotado${extras.length !== 1 ? 's' : ''} · se guarda solo`}
                             </p>
                         </div>
                         <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={goBackFromExtras} />
@@ -2153,13 +2146,13 @@ export default function RecepcionModal({
                                             <Button variant="ghost" icon={Trash2} iconOnly
                                                 disabled={(e.bloqueado && e.retirable === false) || quitandoExtra != null}
                                                 loading={quitandoExtra === e.id}
-                                                title={e.bloqueado && e.retirable === false ? 'Bodega ya contestó: no se puede quitar' : 'Quitar'}
+                                                title={e.bloqueado && e.retirable === false ? 'Bodega ya contestó. No se puede quitar' : 'Quitar'}
                                                 onClick={() => borrarExtra(ei)} />
                                         </div>
                                         {(eSinCant || e.nota) && (
                                             <div className="px-5 pb-2">
                                                 <PortalInput
-                                                    aria-label="Nota del renglón"
+                                                    aria-label="Nota del producto"
                                                     type="text"
                                                     value={e.nota}
                                                     readOnly={e.bloqueado}
@@ -2270,13 +2263,13 @@ export default function RecepcionModal({
     const nPorContar     = filasPorContar.length;
     const nYaRecibidos   = filasAbiertas.length - nPorContar;
     const colaYaRecibido = nYaRecibidos > 0
-        ? ` ${nYaRecibidos === 1 ? 'Un producto ya se recibió' : `${nYaRecibidos} productos ya se recibieron`} de a uno y no se vuelve${nYaRecibidos === 1 ? '' : 'n'} a contar.`
+        ? ` ${nYaRecibidos === 1 ? 'Un producto ya se recibió' : `${nYaRecibidos} productos ya se recibieron`} uno por uno y no se vuelve${nYaRecibidos === 1 ? '' : 'n'} a contar.`
         : '';
     const avisoConfirmar = nPorContar === 0
-        ? `No queda nada por contar en ${rotuloAbierto}: sus productos ya se recibieron de a uno y están en el inventario. Confirmar sólo la marca como contada.`
+        ? `No queda nada por contar en ${rotuloAbierto}. Sus productos ya se recibieron uno por uno y están en el inventario. Al confirmar, solo se marca como contada.`
         : confirmarHoja === 'todook'
-            ? `Se van a dar por buenos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} tal como se enviaron, sin contarlos, y entran al inventario de la sala automáticamente.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`
-            : `Se van a dar por recibidos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} con las cantidades que están en pantalla, y entran al inventario de la sala automáticamente.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`;
+            ? `Se dan por buenos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} tal como se enviaron, sin contarlos, y entran al inventario de la sucursal.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`
+            : `Se dan por recibidos ${nPorContar} producto${nPorContar !== 1 ? 's' : ''} de ${rotuloAbierto} con las cantidades en pantalla, y entran al inventario de la sucursal.${colaYaRecibido} Después ${rotuloAbierto} ya no se vuelve a contar.`;
 
     return (
         <PedidoModal open={open} onClose={saving ? undefined : ((hayHojas || selectedEspecial !== null) ? goBack : cerrarModal)} maxWidth="max-w-2xl">
@@ -2309,7 +2302,7 @@ export default function RecepcionModal({
                                 ) : hayHojas ? (
                                     <>
                                         <TituloDeSeccion nivel="tarjeta" className="truncate">
-                                            Hoja {selectedHoja}{hojaLabel[selectedHoja] ? ` — ${hojaLabel[selectedHoja]}` : ''}
+                                            Hoja {selectedHoja}{hojaLabel[selectedHoja] ? ` · ${hojaLabel[selectedHoja]}` : ''}
                                             {hojaEnAlerta && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Revisar</span>}
                                         </TituloDeSeccion>
                                         <p className="text-micro text-content-3 leading-tight">
@@ -2335,8 +2328,8 @@ export default function RecepcionModal({
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
                                         <span className="text-caption text-warning-text font-medium">
                                             {isDanadaEspecial
-                                                ? 'Esta caja especial llegó dañada — revisa el estado físico al contar'
-                                                : `Esta hoja venía en la caja ${(cajasDeHoja[selectedHoja] ?? []).map(n => `#${n}`).join(', ')} — revisa producto por producto`}
+                                                ? 'Esta caja especial llegó dañada. Revisa cómo vienen los productos al contar.'
+                                                : `Esta hoja venía en la caja ${(cajasDeHoja[selectedHoja] ?? []).map(n => `#${n}`).join(', ')}. Revísala producto por producto.`}
                                         </span>
                                     </div>
                                 )}
@@ -2397,7 +2390,7 @@ export default function RecepcionModal({
                     <p className="px-5 pb-2 text-micro text-content-3 leading-snug">
                         ¿No llegó? Pon <span className="font-semibold text-content-2">0</span> en «Llegó».
                         ¿Llegó otro producto en su lugar? 0 aquí y anota el que vino con «Anotar un extra».
-                        El <AlertTriangle size={11} className="inline align-[-1px] text-warning-text" aria-label="ícono de defecto" /> es sólo para lo que llegó dañado o vencido.
+                        El <AlertTriangle size={11} className="inline align-[-1px] text-warning-text" aria-label="ícono de defecto" /> es solo para lo que llegó dañado o vencido.
                     </p>
                 </div>
 
@@ -2545,8 +2538,8 @@ export default function RecepcionModal({
                                                 disabled={saving}
                                                 onClick={() => handleRecibirSolo(r)}
                                                 title={defDispQty > 1
-                                                    ? `Recibir solo este producto e ingresarlo al inventario ahora — entra completo con la cantidad que esté escrita (${defDispQty} enviadas), y después no se vuelve a contar`
-                                                    : 'Recibir solo este producto e ingresarlo al inventario ahora'}
+                                                    ? `Recibir solo este producto y pasarlo al inventario ahora. Entra completo con la cantidad escrita (${defDispQty} enviadas) y después no se vuelve a contar.`
+                                                    : 'Recibir solo este producto y pasarlo al inventario ahora'}
                                             />
                                         </>)}
                                     </div>
@@ -2616,7 +2609,7 @@ export default function RecepcionModal({
                         {/* Sin «Todo OK» en una hoja que venía en una caja dañada o
                             que no llegó: es justo la que hay que mirar de a uno. */}
                         {!hojaEnAlerta && (
-                            <Button variant="secondary" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={() => setConfirmarHoja('todook')}>Todo OK</Button>
+                            <Button variant="secondary" icon={Check} disabled={saving} title="Dar por recibido tal como se envió, sin revisar producto por producto" onClick={() => setConfirmarHoja('todook')}>Todo OK</Button>
                         )}
                         <Button tone="success" icon={PackageCheck} loading={saving} onClick={() => setConfirmarHoja('contado')}>
                             {alcance === 'especial' ? `Confirmar ${selectedEspecial.label}`

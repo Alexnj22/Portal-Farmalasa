@@ -140,7 +140,7 @@ export default function ReenvioLlegadaModal({
                             Algo llegó mal
                         </Button>
                         <p className="text-caption text-content-3 text-center">
-                            Una caja dañada o una que todavía no llegó: se marca caja por caja.
+                            Una caja dañada o una que todavía no llegó. Se marca caja por caja.
                         </p>
                     </div>
                 </div>

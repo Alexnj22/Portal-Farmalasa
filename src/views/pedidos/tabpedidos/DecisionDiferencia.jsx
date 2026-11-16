@@ -32,13 +32,13 @@ import { turnoDe } from '@nucleo/utils/decisionDiferencia';
 // que es exactamente lo que hay que hacer para elegir.
 
 const ESPERA = {
-    sala:        'Esperando que la sala decida',
+    sala:        'Esperando que la sucursal decida',
     bodega:      'Esperando la respuesta de bodega',
-    supervision: 'Lo está viendo supervisión',
+    supervision: 'Lo está viendo el supervisor',
 };
 
 const TITULO = {
-    propuesta:       'La sala propone',
+    propuesta:       'La sucursal propone',
     contrapropuesta: 'Bodega propone la otra',
     escalada:        'Sin acuerdo',
     acordada:        'Acordado',
@@ -50,7 +50,7 @@ const TITULO = {
 const ROTULO_VIEJO = {
     envio_fisico:        'Enviar producto',
     ajuste_sistema:      'Ajuste en sistema',
-    aceptar_sobrante:    'La sala se quedó con el sobrante',
+    aceptar_sobrante:    'La sucursal se quedó con el sobrante',
     devolver_bodega:     'Devolver a bodega',
     devolucion_aceptada: 'Devolución aceptada',
     devolucion_negada:   'Devolución negada',
@@ -188,8 +188,8 @@ export default function DecisionDiferencia({
                     {/* Qué sigue después de proponer: que nadie crea que con
                         el clic ya se movió algo. */}
                     <span className="flex-1 min-w-0 text-caption text-content-3 leading-snug">
-                        {esSala ? 'Bodega la acepta o propone la otra.' : 'La sala la acepta o propone la otra.'}
-                        {' '}Sin acuerdo, decide supervisión.
+                        {esSala ? 'Bodega la acepta o propone la otra.' : 'La sucursal la acepta o propone la otra.'}
+                        {' '}Si no se ponen de acuerdo, decide el supervisor.
                     </span>
                     <Button tone="chart-3" loading={ocupado} disabled={!elegida || (pideCaja(elegida) && !cajaLista)}
                         onClick={() => (necesitaFoto(elegida)
@@ -254,7 +254,7 @@ export default function DecisionDiferencia({
                             <PortalInput
                                 aria-label="Por qué no" className="flex-1" tono="danger" compact autoFocus
                                 value={motivoRech} onChange={e => setMotivoRech(e.target.value)}
-                                placeholder="Por qué no… (lo lee supervisión)"
+                                placeholder="Por qué no… (lo lee el supervisor)"
                                 onKeyDown={e => {
                                     if (e.key === 'Enter' && motivoRech.trim()) decidir('rechazar', null, motivoRech);
                                     if (e.key === 'Escape') setRechazando(false);
@@ -304,7 +304,7 @@ export default function DecisionDiferencia({
                     const meToca = op.cierra_con === 'llegada_sala' ? esSala : !esSala;
                     if (!meToca && !esSupervision) {
                         return <Espera texto={op.cierra_con === 'llegada_sala'
-                            ? 'Falta que la sala confirme que llegó'
+                            ? 'Falta que la sucursal confirme que llegó'
                             : 'Falta que bodega confirme que lo tiene'} />;
                     }
                     return (
@@ -312,7 +312,7 @@ export default function DecisionDiferencia({
                             <Button tone="success" icon={Check} loading={ocupado}
                                 onClick={() => onConfirmarLlegada?.(item.id)}>Confirmar llegada</Button>
                             <span className="text-micro text-content-3">
-                                Con el producto en la mano. No sale ningún traslado.
+                                Confírmalo con el producto en la mano. No sale ningún traslado.
                             </span>
                         </div>
                     );

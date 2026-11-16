@@ -105,15 +105,15 @@ const COLS_SIN_STOCK = [
     { key: 'prod',       label: 'Producto',     render: renderProd },
     { key: 'pres',       label: 'Presentación', render: renderPresentacion },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
-    { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
+    { key: 'stock_suc',  label: 'Existencia en sucursal', align: 'center', render: r => (
         <span className={`tabular-nums text-label font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
             {r.stock_packs_snapshot ?? '—'}
         </span>
     )},
     { key: 'motivo', label: 'Motivo', render: () => (
         <div className="flex flex-col gap-0.5">
-            <span className="text-warning text-caption font-semibold">Sin stock en bodega</span>
-            <span className="text-content-3 text-micro">Esperar reabastecimiento o generar un pedido manual</span>
+            <span className="text-warning text-caption font-semibold">Sin existencia en bodega</span>
+            <span className="text-content-3 text-micro">Espera a que llegue o haz un pedido manual</span>
         </div>
     )},
 ];
@@ -162,7 +162,7 @@ function colsRegla(canEditMinMax) {
     { key: 'prod',       label: 'Producto',      render: renderProd },
     { key: 'pres',       label: 'Presentación',  render: renderPresStock },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
-    { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => {
+    { key: 'stock_suc',  label: 'Existencia en sucursal', align: 'center', render: r => {
         const packs  = r.stock_packs_snapshot ?? null;
         const factor = Number(r.factor) || 1;
         const units  = packs != null ? Math.round(packs * factor) : null;
@@ -183,9 +183,9 @@ function colsRegla(canEditMinMax) {
             <div className="flex flex-col gap-0.5">
                 <span className="text-danger-text text-caption font-semibold">Necesidad baja</span>
                 <span className="text-content-3 text-micro">
-                    {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
+                    {needUnd != null ? `Reponer ${needUnd} und. no llega al mínimo de la regla` : 'Es menos del 40% de lo mínimo que se despacha'}
                 </span>
-                {canEditMinMax && <span className="text-content-3 text-micro">Ajustar MAX o reducir el múltiplo en la regla</span>}
+                {canEditMinMax && <span className="text-content-3 text-micro">Ajusta el Máx o baja el múltiplo en la regla</span>}
             </div>
         );
     }},
@@ -407,7 +407,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
     // El reparto es del núcleo: la ficha del pedido en la app parte igual.
     const { enviados, agotamiento, sinStock, porRegla, total } = seccionesDeRenglones(allItems);
 
-    if (total === 0) return <div className="border-t border-divider py-4 text-center text-label text-content-3">Sin ítems.</div>;
+    if (total === 0) return <div className="border-t border-divider py-4 text-center text-label text-content-3">Sin productos.</div>;
 
     // Mirrors the DB constraint chk_min_lt_max:
     // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
@@ -507,7 +507,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                         <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">MIN</span>
                         <PortalInput
                             aria-label="Mínimo"
-                            tono={!!err && err !== 'MAX inválido' && !err.startsWith('MAX') ? 'danger' : undefined}
+                            tono={!!err && err !== 'Máx inválido' && !err.startsWith('MAX') ? 'danger' : undefined}
                             type="number"
                             min="0"
                             value={edit.min}
@@ -523,7 +523,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                         <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">MAX</span>
                         <PortalInput
                             aria-label="Máximo"
-                            tono={!!err && err !== 'MIN inválido' ? 'danger' : undefined}
+                            tono={!!err && err !== 'Mín inválido' ? 'danger' : undefined}
                             type="number"
                             min="0"
                             value={edit.max}
@@ -538,8 +538,8 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                         />
                         {isSaving && <LoadingState variant="inline" size="sm" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
-                        <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
-                        <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
+                        <Button icon={RotateCcw} disabled={isSaving} title="Volver al Mín/Máx original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
+                        <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0. No entra en el próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>
                     </div>
                 </td>
             </tr>
@@ -551,20 +551,20 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             <div className="border-t border-divider px-4 py-2.5 bg-surface-card-hover/60 flex items-center gap-5 flex-wrap">
                 <span className="text-label text-content-3">Solicitados <strong className="text-content-2">{total}</strong></span>
                 <span className="text-label text-content-3">Enviados <strong className="text-success">{enviados.length}</strong></span>
-                {agotamiento.length > 0 && <span className="text-label text-content-3">Stock insuficiente <strong className="text-warning-text">{agotamiento.length}</strong></span>}
+                {agotamiento.length > 0 && <span className="text-label text-content-3">No alcanzó <strong className="text-warning-text">{agotamiento.length}</strong></span>}
                 {sinStock.length > 0 && <span className="text-label text-content-3">Sin inventario <strong className="text-warning">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-label text-content-3">Revisar regla <strong className="text-danger-text">{porRegla.length}</strong></span>}
             </div>
             <ItemSection label="Productos enviados" count={enviados.length} variante="success" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
-                label="Stock insuficiente en bodega" count={agotamiento.length} variante="warning" rows={agotamiento} columns={COLS_AGOTAMIENTO}
-                noteEl={<p className="text-caption text-warning-text/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
+                label="No alcanzó en bodega" count={agotamiento.length} variante="warning" rows={agotamiento} columns={COLS_AGOTAMIENTO}
+                noteEl={<p className="text-caption text-warning-text/80">Bodega no tenía suficiente. Se mandó lo que había. Lo que falta queda para el próximo pedido.</p>}
             />
-            <ItemSection label="Sin inventario en bodega" count={sinStock.length} variante="warning" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning-text/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} variante="warning" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning-text/80">No se incluyeron porque bodega no tenía existencia al despachar.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} variante="danger" rows={porRegla} columns={colsRegla(canEditMinMax)}
                 renderRowExtra={renderMinMaxRow}
-                noteEl={<div className="flex items-start gap-2 text-caption text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo"{canEditMinMax ? ' y ajusta los MIN/MAX.' : '.'}</div>}
+                noteEl={<div className="flex items-start gap-2 text-caption text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no se despacharon. Lo que se necesitaba no llegó al mínimo de la regla, o bodega ya lo había asignado a otras sucursales. Revisa la columna «Motivo»{canEditMinMax ? ' y ajusta el Mín/Máx.' : '.'}</div>}
             />
             <ConfirmModal
                 isOpen={!!resetZeroTarget}
@@ -577,8 +577,8 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                     setErrorMap(prev => ({ ...prev, [row.id]: null }));
                     doSave(row, 0, 0);
                 }}
-                title="¿Dejar MIN/MAX en 0 / 0?"
-                message={`"${resetZeroTarget?.products?.nombre ?? 'Este producto'}" quedará excluido del próximo pedido automático.`}
+                title="¿Dejar el Mín/Máx en 0 / 0?"
+                message={`"${resetZeroTarget?.products?.nombre ?? 'Este producto'}" no entra en el próximo pedido automático.`}
                 confirmText="Confirmar"
                 cancelText="Cancelar"
                 isDestructive={false}

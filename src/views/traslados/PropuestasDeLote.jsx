@@ -41,7 +41,7 @@ export default function PropuestasDeLote() {
             {lista.map((p) => (
                 <Notice key={p.id} variant="warning">
                     <span className="block font-semibold">
-                        {p.origen ?? 'La otra sala'} no tiene el lote que pediste y propone uno que vence antes:
+                        {p.origen ?? 'La otra sucursal'} no tiene el lote que pediste y propone uno que vence antes:
                     </span>
                     <span className="flex flex-col gap-0.5 mt-1">
                         {(p.propuesta?.lineas ?? []).map((l) => (

@@ -130,7 +130,7 @@ export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
     const m = fila.metadata ?? {};
     const rechazado = esRechazado(fila);
     const motivo = rechazado
-        ? [m.rejection_reason, m.sugerencia].filter(Boolean).join(' — ')
+        ? [m.rejection_reason, m.sugerencia].filter(Boolean).join(' · ')
         : (fila.note || '');
     const renglones = renglonesDe(m);
     const piezas = piezasDe(m);
@@ -160,7 +160,7 @@ export function TarjetaHistorial({ fila, personaPor, onAbrir }) {
            por el ojo: sin esta clase el `group-hover:` no dispara nunca. */
         <div data-surface="card" className="group px-3.5 py-3 flex flex-col gap-2 h-full"
             {...clickable(onAbrir ? () => onAbrir(fila) : null,
-                { label: `Ver el traslado de ${m.origen_branch_name ?? 'otra sala'} a ${m.branch_name ?? 'otra sala'}` })}>
+                { label: `Ver el traslado de ${m.origen_branch_name ?? 'otra sucursal'} a ${m.branch_name ?? 'otra sucursal'}` })}>
             <div className="flex items-start gap-2">
                 {rechazado
                     ? <Ban size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -252,7 +252,7 @@ export function TarjetaEnvioCerrado({ envio, onAbrir }) {
          * tarjeta, y hasta hoy no se veía en ninguna parte. */
         <div data-surface="card" className="group px-3.5 py-3 flex flex-col gap-2 h-full"
             {...clickable(onAbrir ? () => onAbrir(envio) : null,
-                { label: `Ver el envío de ${envio.origen_branch_name ?? 'otra sala'} a ${envio.branch_name ?? 'otra sala'}` })}>
+                { label: `Ver el traslado de ${envio.origen_branch_name ?? 'otra sucursal'} a ${envio.branch_name ?? 'otra sucursal'}` })}>
             <div className="flex items-start gap-2">
                 {devue > 0
                     ? <CornerUpLeft size={14} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
@@ -320,7 +320,7 @@ function DialogoTraslado({ fila, empleadosPorId, onCerrar }) {
         <ModalShell open onClose={onCerrar} maxWidthClass="max-w-2xl" zClass="z-toast"
             surface={null} ariaLabel="Detalle del traslado">
             <CuerpoDialogo
-                titulo="Traslado entre salas"
+                titulo="Traslado entre sucursales"
                 subtitulo={`${rechazado ? 'Rechazado' : 'Recibido'} · ${fmtFechaLarga(fila.updated_at ?? fila.created_at)}`}
                 icono={rechazado ? Ban : PackageCheck}
                 tono={rechazado ? 'danger' : 'success'}
@@ -356,9 +356,9 @@ function DialogoEnvio({ envio, personaPor, onCerrar }) {
 
     return (
         <ModalShell open onClose={onCerrar} maxWidthClass="max-w-2xl" zClass="z-toast"
-            surface={null} ariaLabel="Detalle del envío">
+            surface={null} ariaLabel="Detalle del traslado">
             <CuerpoDialogo
-                titulo="Envío a otra sala"
+                titulo="Traslado sin solicitud"
                 subtitulo={fmtFechaLarga(envio.updated_at ?? envio.created_at)}
                 icono={CornerUpLeft}
                 anchoEscritorio="max-w-xl"
@@ -406,7 +406,7 @@ function DialogoEnvio({ envio, personaPor, onCerrar }) {
                                             {l.motivo_rechazo && (
                                                 <p className="text-micro text-danger-text font-semibold mt-0.5">
                                                     {l.motivo_rechazo}
-                                                    {l.nota_rechazo ? ` — ${l.nota_rechazo}` : ''}
+                                                    {l.nota_rechazo ? `: ${l.nota_rechazo}` : ''}
                                                 </p>
                                             )}
                                         </div>
@@ -525,7 +525,7 @@ export default function HistorialTraslados({
         if (!porSucursal) return null;
         const mapa = new Map();
         for (const f of filas) {
-            const sala = f.metadata?.origen_branch_name || 'Sin sala';
+            const sala = f.metadata?.origen_branch_name || 'Sin sucursal';
             if (!mapa.has(sala)) mapa.set(sala, []);
             mapa.get(sala).push(f);
         }
@@ -537,7 +537,7 @@ export default function HistorialTraslados({
         if (!porSucursal) return null;
         const mapa = new Map();
         for (const e of envios) {
-            const sala = e.origen_branch_name || 'Sin sala';
+            const sala = e.origen_branch_name || 'Sin sucursal';
             if (!mapa.has(sala)) mapa.set(sala, []);
             mapa.get(sala).push(e);
         }
@@ -577,7 +577,7 @@ export default function HistorialTraslados({
                 es el corte por sucursal, que es la misma pregunta. */}
             {envios.length > 0 && (
                 <div className="flex flex-col gap-3">
-                    <Titulo cuenta={envios.length}>Envíos cerrados</Titulo>
+                    <Titulo cuenta={envios.length}>Traslados sin solicitud cerrados</Titulo>
                     {porSucursal ? (
                         enviosPorSala.map(([sala, deLaSala]) => (
                             <div key={sala} className="flex flex-col gap-2">

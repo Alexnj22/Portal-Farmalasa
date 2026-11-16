@@ -117,7 +117,7 @@ export default function LoteDeLaCaja({
                 <Notice variant="warning">
                     <span className="block">
                         {choque.mismoNumero
-                            ? <>El lote <b>{choque.lote}</b> ya está registrado con vencimiento <b>{mesAnio(choque.vence)}</b>. Un lote tiene un solo vencimiento: revisa la caja.</>
+                            ? <>El lote <b>{choque.lote}</b> ya está registrado con vencimiento <b>{mesAnio(choque.vence)}</b>. Un lote tiene un solo vencimiento. Revisa la caja.</>
                             : <>¿Es el lote <b>{choque.lote}</b> · {mesAnio(choque.vence)}? Se parece al que escribiste.</>}
                     </span>
                     <span className="flex flex-wrap gap-2 mt-2">

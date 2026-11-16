@@ -23,7 +23,7 @@ export function Trayecto({ desde, hasta, nota = null, className = '' }) {
     return (
         <span className={`flex flex-wrap items-center gap-1.5 min-w-0 ${className}`}>
             <Badge variant="neutral" uppercase={false} icon={Building2} className="min-w-0 gap-1">
-                <span className="truncate">{desde ?? 'otra sala'}{nota ? ` · ${nota}` : ''}</span>
+                <span className="truncate">{desde ?? 'otra sucursal'}{nota ? ` · ${nota}` : ''}</span>
             </Badge>
             <ArrowRight size={12} strokeWidth={2.5} className="shrink-0 text-content-3" />
             <Badge variant="info" uppercase={false} icon={Building2} className="min-w-0 gap-1">

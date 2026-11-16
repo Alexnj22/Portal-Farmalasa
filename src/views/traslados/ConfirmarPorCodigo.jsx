@@ -230,13 +230,13 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
 
                     {listo && (
                         <Notice variant={listo.faltaron ? 'warning' : 'success'}>
-                            Confirmada la llegada de {listo.origen ?? 'la otra sala'}.
+                            Confirmada la llegada de {listo.origen ?? 'la otra sucursal'}.
                             {listo.faltaron
-                                ? ` Quedó anotado que faltaron ${listo.faltaron} ${listo.faltaron === 1 ? 'producto' : 'productos'};`
-                                  + ` ya le avisamos a ${listo.origen ?? 'la otra sala'}.`
+                                ? ` Quedó anotado que faltaron ${listo.faltaron} ${listo.faltaron === 1 ? 'producto' : 'productos'}.`
+                                  + ` Ya le avisamos a ${listo.origen ?? 'la otra sucursal'}.`
                                 : ' Escanea el siguiente paquete cuando quieras.'}
                             {listo.sobraron
-                                ? ` Lo que vino de más ya está en tu inventario y se le avisó a ${listo.origen ?? 'la otra sala'}.`
+                                ? ` Lo que vino de más ya está en tu inventario y se le avisó a ${listo.origen ?? 'la otra sucursal'}.`
                                 : ''}
                         </Notice>
                     )}
@@ -288,8 +288,8 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                         && !(hallado.envio_bolsa.lineas ?? []).some(l => l?.estado === 'enviada') && (
                         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
                             <p className="text-body-sm font-bold text-content-1">
-                                {hallado.envio_bolsa.origen_branch_name ?? 'La otra sala'}
-                                {' → '}{hallado.envio_bolsa.branch_name ?? 'esta sala'}
+                                {hallado.envio_bolsa.origen_branch_name ?? 'La otra sucursal'}
+                                {' → '}{hallado.envio_bolsa.branch_name ?? 'esta sucursal'}
                             </p>
                             <Notice variant="success">Este paquete ya se contestó.</Notice>
                             <ul className="flex flex-col gap-1">
@@ -314,19 +314,19 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                     {ajena && (
                         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
                             <p className="text-body-sm font-bold text-content-1">
-                                Este paquete es para {ajena.destino ?? 'otra sala'}, no para ustedes
+                                Este paquete es para {ajena.destino ?? 'otra sucursal'}, no para tu sucursal
                             </p>
                             <p className="text-micro text-content-3">
-                                Ticket {ajena.codigo} · sale de {ajena.origen ?? 'otra sala'}
+                                Ticket {ajena.codigo} · sale de {ajena.origen ?? 'otra sucursal'}
                             </p>
                             {ajena.ya_reportada_aqui ? (
                                 <Notice variant="success">
-                                    Ya quedó anotado que está aquí. Bodega y quien lo entregó ya saben; la próxima ruta que pase lo lleva a {ajena.destino ?? 'su sala'}.
+                                    Ya quedó anotado que está aquí. Bodega y quien lo entregó ya saben. La próxima ruta lo lleva a {ajena.destino ?? 'su sucursal'}.
                                 </Notice>
                             ) : (
                                 <>
                                     <p className="text-body-sm text-content-2">
-                                        Si lo dejaron aquí, repórtenlo: avisamos a Bodega y a quien lo entregó, y la próxima ruta que pase lo lleva a su sala.
+                                        Si lo dejaron aquí, repórtalo. Avisamos a Bodega y a quien lo entregó, y la próxima ruta lo lleva a su sucursal.
                                     </p>
                                     <Button variant="secondary" disabled={ocupado} loading={ocupado} onClick={reportarAjena}>
                                         Llegó aquí por error
@@ -338,22 +338,22 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
 
                     {!ajena && hallado?.es_un_envio && !hallado.envio_bolsa && (
                         <Notice variant="danger">
-                            Ese ticket es de un paquete que no puedes ver: es de otras salas.
+                            Ese ticket es de un paquete de otras sucursales. No lo puedes ver.
                         </Notice>
                     )}
 
                     {!ajena && hallado && !hallado.id && !hallado.es_un_envio && (
                         <Notice variant={hallado.es_de_un_pedido ? 'warning' : 'danger'}>
                             {hallado.es_de_un_pedido
-                                ? 'Ese ticket es de un pedido de Bodega, no de un traslado entre salas. Se recibe desde Pedidos.'
-                                : 'No encontramos ese ticket. Puede que sea de otra sala, o que el código no se haya leído bien.'}
+                                ? 'Ese ticket es de un pedido de Bodega. Se recibe desde Pedidos.'
+                                : 'No encontramos ese ticket. Puede ser de otra sucursal, o el código no se leyó bien.'}
                         </Notice>
                     )}
 
                     {hallado?.id && !hallado.es_un_envio && (
                         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
                             <p className="text-body-sm font-bold text-content-1">
-                                {hallado.origen ?? 'La otra sala'} → {hallado.destino ?? 'esta sala'}
+                                {hallado.origen ?? 'La otra sucursal'} → {hallado.destino ?? 'esta sucursal'}
                             </p>
                             <p className="text-micro text-content-3">
                                 Envió {hallado.envio ?? 'alguien'} · Salió {fmtCuando(hallado.despachado_at)}

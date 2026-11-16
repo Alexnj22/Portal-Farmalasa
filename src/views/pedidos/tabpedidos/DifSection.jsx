@@ -113,7 +113,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
     const corrConfEmp   = row?.confirmado_correccion_por ? empMap.get(row.confirmado_correccion_por) : null;
     // «la sucursal» no le dice a nadie CUÁL. La tarjeta es de una sala concreta
     // y su nombre ya está a mano.
-    const nombreSala    = ERP_NAMES[row?.erp_sucursal_id] ?? 'la sala';
+    const nombreSala    = ERP_NAMES[row?.erp_sucursal_id] ?? 'la sucursal';
 
     return (
         <div className="border-t border-warning/30 px-4 py-3 space-y-3">
@@ -130,7 +130,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                 <span className={`text-caption font-black uppercase tracking-widest ${allConfirmed ? 'text-success-text' : 'text-warning-text'}`}>
                     {allConfirmed
                         ? `Diferencias resueltas${resueltas.length > 1 ? ` (${resueltas.length})` : ''}`
-                        : `Diferencias — te toca resolver (${mias.length})`}
+                        : `Diferencias que te toca resolver (${mias.length})`}
                 </span>
                 {!allConfirmed && (esperando.length > 0 || resueltas.length > 0) && (
                     <span className="text-caption text-content-3">
@@ -309,7 +309,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                     {row?.confirmado_correccion_at ? (
                         <Notice variant="success" icon={CheckCircle2}
                             action={<EmpChip emp={corrConfEmp} tono="success-text" />}>
-                            Cerrado. La sala confirmó que recibió la corrección
+                            Cerrado. La sucursal confirmó que recibió la corrección
                             {' · '}{fmtDia(row.confirmado_correccion_at)} {fmtHM(row.confirmado_correccion_at)}
                         </Notice>
                     ) : row?.corregido_bodega_at ? (
@@ -462,11 +462,11 @@ function FilaCompacta({
 function EsperandoA({ item, catalogo, isBranch }) {
     const op = opcionElegida(catalogo, item.error_tipo, item.resolucion_tipo);
     const texto = item.resolucion_status === 'propuesta'      ? 'Contesta bodega'
-                : item.resolucion_status === 'contrapropuesta' ? 'Contesta la sala'
-                : item.resolucion_status === 'escalada'        ? 'Lo ve supervisión'
+                : item.resolucion_status === 'contrapropuesta' ? 'Contesta la sucursal'
+                : item.resolucion_status === 'escalada'        ? 'Lo ve el supervisor'
                 : op?.mueve === 'traslado_a_sala'              ? 'Falta el traslado'
                 : op?.mueve === 'devolucion'                   ? 'Falta el traslado'
-                : op?.cierra_con === 'llegada_sala'            ? (isBranch ? 'Falta que llegue' : 'Lo confirma la sala')
+                : op?.cierra_con === 'llegada_sala'            ? (isBranch ? 'Falta que llegue' : 'Lo confirma la sucursal')
                 : op?.cierra_con === 'llegada_bodega'          ? (isBranch ? 'Lo confirma bodega' : 'Falta que llegue')
                 : null;
     if (!texto) return null;

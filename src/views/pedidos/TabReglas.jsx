@@ -298,7 +298,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                        con `rounded-xl` y su propio par bg/texto, o sea el patrón
                        exacto que D3.5 canonizó (58 avisos, 3 radios distintos). */
                     <Notice variant="warning">
-                        Sin presentaciones en catálogo — no se puede asignar regla de despacho.
+                        Este producto no tiene presentaciones. No se le puede poner regla de despacho.
                     </Notice>
                 ) : unicaPres ? (
                     /* Con una sola presentación en catálogo no hay nada que elegir:
@@ -867,7 +867,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
             {!canEditReglas && (
                 <Notice variant="neutral" icon={ShieldAlert}>
-                    Estás viendo las reglas de despacho en solo lectura — tu cargo no las modifica.
+                    Solo puedes ver las reglas de despacho. Tu cargo no las puede cambiar.
                 </Notice>
             )}
 

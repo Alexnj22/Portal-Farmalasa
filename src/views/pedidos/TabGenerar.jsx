@@ -32,9 +32,9 @@ function friendlyError(e) {
     if (e?.reglasPendientes || /regla de despacho pendiente/i.test(msg))
         return msg.replace(/^REGLAS_PENDIENTES:\s*/, '');
     if (/statement timeout|canceling statement/i.test(msg))
-        return 'El cálculo tardó demasiado. Intenta seleccionando menos sucursales a la vez.';
+        return 'El cálculo tardó demasiado. Elige menos sucursales e intenta de nuevo.';
     if (/Failed to fetch|NetworkError|network/i.test(msg))
-        return 'Error de conexión. Verifica tu internet e intenta de nuevo.';
+        return 'No hay conexión. Revisa tu internet e intenta de nuevo.';
     if (/abastecida|nada que pedir/i.test(msg))
         return msg;
     return 'Ocurrió un error al generar el pedido. Intenta de nuevo.';
@@ -69,7 +69,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [dashStats,   setDashStats]   = useState([]);
     const [dashLoading, setDashLoading] = useState(true);
     // Un error al leer el tablero NO es «no hay nada»: antes dejaba las seis
-    // salas como «Pendiente MIN/MAX» y la tabla como «No hay productos sin
+    // salas como «Pendiente Mín/Máx» y la tabla como «No hay productos sin
     // stock», dos afirmaciones falsas sobre una lectura que no llegó.
     const [dashError,   setDashError]   = useState(null);
 
@@ -140,7 +140,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             // La vista previa: núcleo (`vistaPreviaDePedido`), la misma de la app.
             const rows = await vistaPreviaDePedido({ salas: [...selected], globalMode });
             if (rows.length === 0) {
-                const msg = 'Las sucursales seleccionadas están abastecidas — no hay nada que pedir.';
+                const msg = 'Las sucursales elegidas tienen lo que necesitan. No hay nada que pedir.';
                 setError(msg);
                 showToast('Sin necesidades', msg, 'info');
                 return;
@@ -196,8 +196,8 @@ export default function TabGenerar({ searchTerm = '' }) {
             // Los códigos de sala son los que llevan los PDF y los que se buscan
             // después: el error ya no se descarta.
             if (gen.codigosError) {
-                showToast('Los códigos de las salas no se guardaron',
-                    'El pedido quedó confirmado. Avisa al equipo de sistemas para asignarlos.', 'warning');
+                showToast('Los códigos de las sucursales no se guardaron',
+                    'El pedido quedó confirmado. Avisa a Soporte para que los asigne.', 'warning');
             }
 
             // Capturar grupos de páginas en background para que Finalizar sea
@@ -208,8 +208,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 if (capturadas < total) {
                     showToast(
                         'Las hojas quedaron a medias',
-                        'Se van a recalcular al finalizar. Si puedes, deja esta pestaña abierta '
-                        + 'unos segundos después de generar.',
+                        'Se calculan de nuevo al finalizar. Si puedes, deja esta pestaña abierta ' + 'unos segundos más.',
                         'warning',
                     );
                 }
@@ -383,7 +382,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     {dashLoading ? (
                                         <div className="h-5 w-20 rounded-lg bg-surface-card-hover animate-pulse" />
                                     ) : (
-                                        <Badge variant="warning" size="sm" uppercase={false} className="self-start">Pendiente MIN/MAX</Badge>
+                                        <Badge variant="warning" size="sm" uppercase={false} className="self-start">Pendiente Mín/Máx</Badge>
                                     )}
                                 </div>
                             );
@@ -458,12 +457,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                                                 <span className="inline-flex items-center gap-0.5 text-success-text">
                                                     <Check size={11} strokeWidth={2.5} aria-hidden="true" />
                                                     {stat.con_bodega_productos ?? 0}
-                                                    <span className="sr-only"> con stock en Bodega</span>
+                                                    <span className="sr-only"> con existencia en Bodega</span>
                                                 </span>
                                                 <span className="inline-flex items-center gap-0.5 text-danger-text">
                                                     <PackageX size={11} aria-hidden="true" />
                                                     {stat.sin_bodega_productos ?? 0}
-                                                    <span className="sr-only"> sin stock en Bodega</span>
+                                                    <span className="sr-only"> sin existencia en Bodega</span>
                                                 </span>
                                             </span>
                                             <span className={`whitespace-nowrap ${ultimoCls}`}>
@@ -491,7 +490,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <span className="text-body-sm text-content-3">
                         {selected.size === 0
                             ? 'Elige al menos una sucursal para generar el pedido.'
-                            : `${selected.size} sucursal${selected.size > 1 ? 'es' : ''} · ${productosElegidos.toLocaleString('es-SV')} producto${productosElegidos === 1 ? '' : 's'} con stock en Bodega`}
+                            : `${selected.size} sucursal${selected.size > 1 ? 'es' : ''} · ${productosElegidos.toLocaleString('es-SV')} producto${productosElegidos === 1 ? '' : 's'} con existencia en Bodega`}
                     </span>
                     <Button tone="success" size="lg" onClick={handlePrepararResumen} icon={ClipboardList}
                         className="w-full sm:w-auto"
@@ -506,7 +505,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
             {isSinFuzzy && searchTerm && (
                 <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    No hay resultados exactos para &ldquo;{searchTerm}&rdquo;. Estos se parecen.
                 </Notice>
             )}
             {/* ── Sin-bodega table (DataTable estándar) ────── */}
@@ -523,13 +522,13 @@ export default function TabGenerar({ searchTerm = '' }) {
                     icon: Package,
                     message: searchTerm
                         ? `Sin resultados para "${searchTerm}"`
-                        : 'No hay productos sin stock en Bodega',
+                        : 'No hay productos sin existencia en Bodega',
                 }}
                 minWidth="560px"
                 toolbar={(
                     <div className="flex items-center gap-2 flex-wrap min-w-0">
                         <TriangleAlert size={15} className="text-danger shrink-0" aria-hidden="true" />
-                        <span className="font-semibold text-content text-body-lg">Productos sin stock en Bodega</span>
+                        <span className="font-semibold text-content text-body-lg">Productos sin existencia en Bodega</span>
                         {sinBodega.length > 0 && (
                             <Badge variant="danger" size="sm" uppercase={false}>{sinBodega.length.toLocaleString('es-SV')}</Badge>
                         )}
@@ -624,7 +623,7 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
     }), { renglones: 0, unidades: 0 });
     return (
         <PedidoModal open={abierto} onClose={cerrar} maxWidth="max-w-lg"
-            ariaLabel={esResumen ? 'Resumen del pedido' : 'PDF por sala'}>
+            ariaLabel={esResumen ? 'Resumen del pedido' : 'PDF por sucursal'}>
             <PedidoModal.Header className="px-5 pt-5 pb-3">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -634,10 +633,10 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
                         </TituloDeSeccion>
                         <p className="text-label text-content-3 mt-0.5">
                             {esResumen
-                                ? `${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades`
+                                ? `${resumen.length} sucursal${resumen.length !== 1 ? 'es' : ''} · ${tot.renglones.toLocaleString('es-SV')} productos · ${tot.unidades.toLocaleString('es-SV')} unidades`
                                 : (flujo?.sucIds?.length ?? 0) > 1
-                                    ? 'Descarga el PDF de cada sala. El navegador deja pasar una descarga por clic.'
-                                    : 'El PDF de la sala se está descargando.'}
+                                    ? 'Descarga el PDF de cada sucursal, uno por uno.'
+                                    : 'El PDF de la sucursal se está descargando.'}
                         </p>
                     </div>
                     <Button variant="ghost" icon={X} iconOnly title="Cerrar" disabled={confirming} onClick={cerrar} />
@@ -650,14 +649,14 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
                             <li key={s.erp_sucursal_id} data-surface="card" className="px-3 py-2.5">
                                 <p className="text-body font-bold text-content">{ERP_NAMES[s.erp_sucursal_id] ?? `Sucursal ${s.erp_sucursal_id}`}</p>
                                 <p className="text-caption text-content-3 tabular-nums mt-0.5">
-                                    {s.renglones.toLocaleString('es-SV')} {s.renglones === 1 ? 'renglón' : 'renglones'}
+                                    {s.renglones.toLocaleString('es-SV')} {s.renglones === 1 ? 'producto' : 'productos'}
                                     {' · '}{s.unidades.toLocaleString('es-SV')} unidad{s.unidades !== 1 ? 'es' : ''}
                                 </p>
                                 {(s.revision > 0 || s.sinStock > 0 || s.agotamiento > 0) && (
                                     <span className="mt-1.5 flex flex-wrap gap-1.5">
                                         {s.revision > 0 && <Badge variant="warning" size="sm" uppercase={false}>{s.revision} en revisión</Badge>}
                                         {s.agotamiento > 0 && <Badge variant="chart-3" size="sm" uppercase={false}>{s.agotamiento} por agotamiento</Badge>}
-                                        {s.sinStock > 0 && <Badge variant="danger" size="sm" uppercase={false}>{s.sinStock} sin stock en Bodega</Badge>}
+                                        {s.sinStock > 0 && <Badge variant="danger" size="sm" uppercase={false}>{s.sinStock} sin existencia en Bodega</Badge>}
                                     </span>
                                 )}
                             </li>

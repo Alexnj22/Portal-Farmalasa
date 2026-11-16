@@ -58,7 +58,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
     // Lo que falta, con su campo: el botón ya no se apaga sin decir por qué
     // (2026-11-14). `puede` sale de acá.
     const queFalta = !soloEvidencia && !(cant > 0) ? { texto: 'Escribe cuántas devuelves.', campo: 'cantidad' }
-        : !soloEvidencia && cant > max ? { texto: `Se puede devolver hasta ${max}.`, campo: 'cantidad' }
+        : !soloEvidencia && cant > max ? { texto: `Puedes devolver hasta ${max}.`, campo: 'cantidad' }
         : pideFoto && fotos.length === 0 ? { texto: 'Falta la foto del daño.', campo: 'foto' }
         : null;
     const puede = !queFalta && !saving;
@@ -71,7 +71,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm"
-            ariaLabel={`Devolver a bodega — ${item?.products?.nombre ?? ''}`}>
+            ariaLabel={`Devolver a bodega · ${item?.products?.nombre ?? ''}`}>
             <LiquidModal.Header icono={Undo2} tono="neutral" titulo="Devolver a bodega"
                 subtitulo={item?.products?.nombre ?? '—'} onClose={onClose} />
 
@@ -109,8 +109,8 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
                     </p>
                     <p className="text-caption text-content-2 leading-snug mt-0.5">
                         {viaja
-                            ? 'Sale de la sala ahora y bodega lo confirma cuando lo tenga en la mano.'
-                            : 'Quedó en bodega desde el principio: se corrige y bodega lo confirma en el momento.'}
+                            ? 'Sale de la sucursal ahora y bodega lo confirma cuando lo reciba.'
+                            : 'Nunca salió de bodega. Se corrige y bodega lo confirma en el momento.'}
                     </p>
                 </div>
                 )}
@@ -128,7 +128,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
                     <p className="text-caption text-content-3 px-1">
                         {motivo === 'faltante'
                             ? `Faltaron ${max} de las ${item?.cantidad_enviada ?? item?.cantidad_asignada ?? 0} que salieron.`
-                            : `Llegaron ${max}; se puede devolver hasta esa cantidad.`}
+                            : `Llegaron ${max}. Puedes devolver hasta esa cantidad.`}
                     </p>
                 </div>
                 )}
@@ -154,8 +154,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
 
                         {pideFoto && fotos.length === 0 && (
                             <p className="text-micro text-warning-text font-semibold px-1 leading-snug">
-                                Falta la foto: es lo que bodega mira para decidir si el daño amerita la
-                                devolución o si el producto todavía se puede vender.
+                                Falta la foto. Bodega la necesita para decidir si se devuelve o si todavía se puede vender.
                             </p>
                         )}
                     </div>

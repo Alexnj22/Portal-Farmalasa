@@ -124,7 +124,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             const { traslado } = await fetchTrasladoPorCodigo(codigo);
             if (!traslado?.id) {
                 setError(traslado?.es_de_un_pedido
-                    ? 'Ese ticket es de un pedido de Bodega, no de un traslado entre salas.'
+                    ? 'Ese ticket es de un pedido de Bodega, no de un traslado.'
                     : 'No encontramos ese ticket. Puede que el código no se haya leído bien.');
                 return;
             }
@@ -145,7 +145,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             // pueda. Si en cambio se heredó una firma dada antes, se nombra a
             // quien entrega — que es la confirmación de que ese paso ya se dio.
             if (r.falta_firma) {
-                setAviso(`Cargado. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.`);
+                setAviso(`Cargado. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sucursal'}.`);
             } else if (r.entrego) {
                 setAviso(`Cargado · te lo entrega ${r.entrego}.`);
             }
@@ -205,7 +205,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
             const n = Number(r.firmadas ?? 0);
             setAviso(n > 0
                 ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'paquete' : 'paquetes'}.`
-                : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
+                : `${r.quien} queda como quien entrega lo que te lleves de su sucursal.`);
             await recargar(salaActual?.id ?? miBranch ?? null);
             onCambio?.();
         } catch (e) {
@@ -309,7 +309,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
     return (
         <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-2xl"
-            closeOnEsc={!ocupado} surface={null} ariaLabel="Llevar productos entre salas">
+            closeOnEsc={!ocupado} surface={null} ariaLabel="Llevar productos entre sucursales">
             <CuerpoDialogo
                 titulo="Llevar productos"
                 subtitulo={salaActual?.nombre
@@ -340,7 +340,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                     {sinFirma.map((f, i) => (
                                         <React.Fragment key={f.branch_id ?? i}>
                                             {i > 0 && ', '}
-                                            <strong>{f.bolsas}</strong> en {f.sala ?? 'una sala'}
+                                            <strong>{f.bolsas}</strong> en {f.sala ?? 'una sucursal'}
                                         </React.Fragment>
                                     ))}. Se pasa una sola vez por sala.
                                 </span>
@@ -366,7 +366,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                             <EsperaDeCarne
                                 teclas={teclasCarne} manual={carneTecleado} ocupado={ocupado}
                                 ayuda={<>Pasa el carné de quien te entrega<br />
-                                    Vale para todo lo que te lleves de su sala</>} />
+                                    Vale para todo lo que te lleves de su sucursal</>} />
                             <div className="flex flex-wrap items-center justify-center gap-2">
                                 <Button variant="secondary" icon={Camera} disabled={ocupado}
                                     onClick={() => setCamara('carne')}>Cámara</Button>
@@ -440,7 +440,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                 </p>
                             ))}
                             <p className="text-micro text-content-3">
-                                Las confirma la sala al recibirlas, y ahí salen de tu responsabilidad.
+                                Las confirma la sucursal al recibirlas. Desde ahí ya no son tu responsabilidad.
                             </p>
                         </div>
                     )}

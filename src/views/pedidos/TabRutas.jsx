@@ -206,7 +206,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
           {/* Paradas */}
           <div className="space-y-2">
             {total === 0 && (
-              <p className="text-caption text-content-3 px-1">Sin paradas: las que tenía se devolvieron para otra ruta.</p>
+              <p className="text-caption text-content-3 px-1">Sin paradas. Se devolvieron para otra ruta.</p>
             )}
             {paradas.map((stop, idx) => {
               const isEntregado = !!stop.entregado_at;
@@ -309,7 +309,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, abierta =
         onConfirm={handleNoEntregada}
         title="No se pudo entregar"
         message={noEntregada ? `${noEntregada.suc_name} vuelve a quedar disponible para otra ruta. ¿Qué pasó?` : undefined}
-        placeholder="Ej.: la sala estaba cerrada"
+        placeholder="Ej.: la sucursal estaba cerrada"
         confirmText="Devolver la parada"
         isProcessing={!!noEntregada && busyStop === noEntregada.id}
         required

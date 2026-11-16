@@ -56,14 +56,14 @@ export default function DevolucionBloque({
     // BODEGA y entra a la SALA — decir «salió de la sala» ahí manda a buscar el
     // producto al lugar equivocado.
     const aLaSala = dev.sentido === 'a_sala';
-    const deDonde = aLaSala ? 'bodega'   : 'la sala';
-    const aDonde  = aLaSala ? 'la sala'  : 'bodega';
+    const deDonde = aLaSala ? 'bodega'   : 'la sucursal';
+    const aDonde  = aLaSala ? 'la sucursal'  : 'bodega';
 
     const rotulo = {
         solicitada: 'Movimiento pedido',
-        aceptada:   `Acordado — falta que salga de ${deDonde}`,
+        aceptada:   `Acordado. Falta que salga de ${deDonde}`,
         enviando:   `Saliendo de ${deDonde}…`,
-        enviada:    `Salió de ${deDonde} — falta que entre a ${aDonde}`,
+        enviada:    `Salió de ${deDonde}. Falta que entre a ${aDonde}`,
         recibiendo: `Entrando a ${aDonde}…`,
         recibida:   `Entró en ${aDonde}`,
         rechazada:  'Movimiento rechazado',
@@ -84,8 +84,8 @@ export default function DevolucionBloque({
                 <span>{dev.viaja
                     ? 'El producto viaja de vuelta a bodega.'
                     : aLaSala
-                        ? 'No viaja nada: el producto ya está en la sala.'
-                        : 'No viaja nada: quedó en bodega desde el principio.'}</span>
+                        ? 'No viaja nada. El producto ya está en la sucursal.'
+                        : 'No viaja nada. Se quedó en bodega desde el principio.'}</span>
                 <EmpChip emp={quienPidio} prefijo="Pedida por" />
             </div>
 
@@ -123,7 +123,7 @@ export default function DevolucionBloque({
                     la bitácora, pero ya no nacen así. */}
                 {dev.estado === 'solicitada' && (
                     <p className="text-caption text-content-3 italic">
-                        Pedida con el circuito anterior — resolvela desde la decisión de arriba.
+                        Se pidió con la pantalla anterior. Resuélvela en la decisión de arriba.
                     </p>
                 )}
 
@@ -136,14 +136,14 @@ export default function DevolucionBloque({
                         </Button>
                         <p className="text-micro text-content-3 leading-snug">
                             {dev.viaja
-                                ? 'Confírmalo cuando tengas el producto en la mano, no antes.'
-                                : 'Como no viaja nada, se puede confirmar ya mismo.'}
+                                ? 'Confírmalo cuando tengas el producto en la mano.'
+                                : 'Como no viaja nada, puedes confirmarlo ya.'}
                         </p>
                     </div>
                 )}
                 {dev.estado === 'enviada' && isBranch && (
                     <p className="text-caption text-content-3 italic">
-                        {aLaSala          ? 'Falta que bodega confirme la entrada en tu sala.'
+                        {aLaSala          ? 'Falta que bodega confirme la entrada en tu sucursal.'
                          : dev.viaja      ? 'Falta que bodega lo reciba.'
                          :                  'Falta que bodega lo confirme.'}
                     </p>
@@ -163,14 +163,14 @@ export default function DevolucionBloque({
                             existencias de un lado al otro (2026-10-21). */}
                         <Button tone="chart-3" icon={Truck} loading={moviendo}
                             onClick={() => onMover?.(dev.id)}>
-                            {dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')
-                                       : `Pasar existencias a ${aDonde}`}
+                            {dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sucursal')
+                                       : `Pasar la existencia a ${aDonde}`}
                         </Button>
                     </div>
                     <p className="text-micro text-content-3 leading-snug">
                         {dev.viaja
                             ? `Descuenta el producto de ${deDonde} para mandarlo a ${aDonde}.`
-                            : `El producto ya está donde debe: esto descuenta ${dev.cantidad} de las existencias de ${deDonde} y las suma en ${aDonde}.`}
+                            : `El producto ya está donde debe. Esto descuenta ${dev.cantidad} de la existencia de ${deDonde} y los suma en ${aDonde}.`}
                     </p>
                     </div>
                 )}

@@ -474,7 +474,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     ) : (simu.hallazgos ?? []).length > 0 ? (
                         <Notice variant="warning" icon={TriangleAlert}>
                             {(simu.hallazgos ?? []).length} producto{(simu.hallazgos ?? []).length !== 1 ? 's' : ''} con
-                            problema de existencia. Se marcaron en cero — revísalos y corrige si sí van en la caja.
+                            problema de existencia. Se marcaron en cero. Revísalos y corrige los que sí van en la caja.
                         </Notice>
                     ) : (
                         <Notice variant="success" icon={PackageCheck}>
@@ -509,7 +509,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 asignó. Era una flecha circular, que se leía
                                                 como «actualizar». */}
                                             <Button variant="ghost" size="xs" icon={X} iconOnly
-                                                aria-label="Quitar la corrección: sale como se asignó"
+                                                aria-label="Quitar la corrección. Sale como se asignó"
                                                 title="Quitar la corrección"
                                                 onClick={() => quitarAjuste(id)} />
                                         </div>
@@ -611,7 +611,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 <SearchX size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
                                 <span>
                                     {yaCorregido ? <>Ya lo estás corrigiendo arriba: <strong className="text-content-2">{yaCorregido.products?.nombre}</strong>.</>
-                                        : sinAsignar ? <><strong className="text-content-2">{sinAsignar.products?.nombre}</strong> va en el pedido, pero no se le asignó nada: no hay de dónde sacarlo.</>
+                                        : sinAsignar ? <><strong className="text-content-2">{sinAsignar.products?.nombre}</strong> va en el pedido, pero no se le asignó nada. No hay de dónde sacarlo.</>
                                         : catalogo.cargando || catalogo.termino !== termino ? 'Buscando en el catálogo…'
                                         : catalogo.fallo ? <>Ningún producto de este pedido coincide con «{termino}».</>
                                         : catalogo.nombre ? <><strong className="text-content-2">{catalogo.nombre}</strong> no va en este pedido.</>

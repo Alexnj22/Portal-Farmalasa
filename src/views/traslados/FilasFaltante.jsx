@@ -126,7 +126,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                     {/* El recorrido: las salas en tinta plena y la flecha
                         apagada, como en «En camino». */}
                     <p className="mt-1 text-label font-bold text-content-2 truncate">
-                        {f.origen_branch_name ?? 'otra sala'}
+                        {f.origen_branch_name ?? 'otra sucursal'}
                         <span className="text-content-3 font-medium"> → </span>
                         {f.destino_branch_name ?? 'destino'}
                     </p>
@@ -175,8 +175,8 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                 haber entrado, y reintentarlo descontaría dos veces. */}
             {abierto && f.incierto && (
                 <Notice variant="warning">
-                    El descuento anterior quedó sin confirmar. Antes de volver a cerrarlo hay que revisar el
-                    movimiento de {f.destino_branch_name ?? 'la sala'}.
+                    El descuento anterior quedó sin confirmar. Antes de cerrarlo otra vez, revisa el
+                    movimiento de {f.destino_branch_name ?? 'la sucursal'}.
                 </Notice>
             )}
             {abierto && !f.incierto && f.ajuste_error && (
@@ -202,7 +202,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                 {!abierto && f.falta_ingresar && (
                     <div className="flex flex-col gap-1.5">
                         <p className="text-caption text-warning-text font-semibold leading-snug">
-                            Apareció, pero todavía no entró al inventario de {f.destino_branch_name ?? 'la sala'}.
+                            Apareció, pero todavía no entró al inventario de {f.destino_branch_name ?? 'la sucursal'}.
                         </p>
                         {/* `soft` y no sólido, igual que «Recibir» en «En camino»:
                             con varias tarjetas, cuatro barras sólidas compiten
@@ -216,7 +216,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                 )}
 
                 {abierto && !cerrando && f.en_curso && (
-                    <p className="text-caption font-semibold text-content-3 sm:text-right">Supervisión lo está cerrando…</p>
+                    <p className="text-caption font-semibold text-content-3 sm:text-right">Lo están cerrando…</p>
                 )}
 
                 {abierto && !cerrando && !f.en_curso && (
@@ -238,7 +238,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                             </Button>
                         ) : (
                             <span className="flex-1 sm:flex-none text-caption text-content-3 leading-snug">
-                                Si no aparece, lo cierra supervisión.
+                                Si no aparece, lo cierra el supervisor.
                             </span>
                         )}
                     </div>
@@ -266,12 +266,12 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                             label="Qué se averiguó"
                             value={nota}
                             onChange={e => setNota(e.target.value)}
-                            placeholder="Ej.: no estaba en ninguna de las dos salas"
+                            placeholder="Ej.: no estaba en ninguna de las dos sucursales"
                         />
                         {/* Lo que va a pasar, dicho ANTES: descuenta inventario. */}
                         <Notice variant="warning">
                             Se descontará {f.cantidad} de {f.descripcion ?? 'este producto'} del inventario
-                            de {f.destino_branch_name ?? 'la sala que recibió'}
+                            de {f.destino_branch_name ?? 'la sucursal que recibió'}
                             {f.en_transito ? ', después de recibir lo que quedó en camino' : ''}.
                         </Notice>
                         <div className="flex items-center gap-1.5">

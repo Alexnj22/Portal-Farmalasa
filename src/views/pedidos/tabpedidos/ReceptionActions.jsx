@@ -87,7 +87,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     los dos por debajo de AA. El secundario da 5.3:1. */}
                 <span className="text-caption font-black text-content-2 uppercase tracking-widest">Recepción</span>
                 {!canEdit && (
-                    <Badge variant="neutral" size="sm" uppercase={false}>Solo lectura — tu cargo no recibe pedidos</Badge>
+                    <Badge variant="neutral" size="sm" uppercase={false}>Solo lectura. Tu cargo no recibe pedidos</Badge>
                 )}
             </div>
 
@@ -95,7 +95,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {!llegadaOk && (
                 <Notice variant="info" icon={PackageCheck}
                     action={accion(<Button loading={busy === 'llegada'} onClick={onMarkLlegada}>Confirmar</Button>)}>
-                    Paso 1 — Confirmar llegada de cajas
+                    Paso 1: confirma que llegaron las cajas
                 </Notice>
             )}
 

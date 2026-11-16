@@ -39,7 +39,7 @@ const ESTADO_ROTULO = {
     enviada: 'en camino',
     aceptada: 'se la quedaron',
     devuelta: 'te la devuelven',
-    devuelta_recibida: 'de vuelta en tu sala',
+    devuelta_recibida: 'de vuelta en tu sucursal',
     // Salió del estante y nunca apareció en la caja. No es «se la quedaron» ni
     // «te la devuelven»: es el hueco que hasta hoy no tenía dónde decirse.
     no_llego: 'no llegó',
@@ -324,7 +324,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
 
     const decididas = decididasL.length;
     const parcial = decididas > 0 && decididas < pendientes.length;
-    const origen = envio.origen_branch_name ?? 'la otra sala';
+    const origen = envio.origen_branch_name ?? 'la otra sucursal';
 
     return (
         <Tarjeta>
@@ -438,7 +438,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                 {parcial && (
                     <li className="flex items-start gap-1.5">
                         <Info size={12} strokeWidth={2.5} className="shrink-0 mt-px text-content-3" />
-                        <span>Se confirma sólo lo que marcaste. Lo demás queda pendiente aquí.</span>
+                        <span>Se confirma solo lo que marcaste. Lo demás queda pendiente aquí.</span>
                     </li>
                 )}
             </ul>
@@ -577,7 +577,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, a
             {sinVence.map(l => (
                 <Notice key={l.posicion} variant="warning">
                     {explicarSinVence(l)}
-                    {!nadaSalio && ' Lo demás de este envío ya salió: se quita de aquí y va en un envío nuevo.'}
+                    {!nadaSalio && ' Lo demás de este traslado ya salió. Esto se quita y va en un traslado nuevo.'}
                 </Notice>
             ))}
             {error && <Notice variant="danger">{error}</Notice>}
@@ -589,7 +589,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, a
                         label="Por qué lo cancelas"
                         value={motivoCancel}
                         onChange={e => setMotivoCancel(e.target.value)}
-                        placeholder="Ej.: me equivoqué de sala"
+                        placeholder="Ej.: me equivoqué de sucursal"
                     />
                     <div className="flex items-center justify-end gap-1.5">
                         <Button size="sm" variant="ghost" className="min-h-[var(--tap-min)]"
@@ -599,7 +599,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho, onArmarDeNuevo = null, a
                         <Button size="sm" variant="destructive" icon={Ban} loading={enviando}
                             className="min-h-[var(--tap-min)]"
                             onClick={cancelar} disabled={enviando || !motivoCancel.trim()}>
-                            {enviando ? 'Cancelando…' : 'Cancelar el envío'}
+                            {enviando ? 'Cancelando…' : 'Cancelar el traslado'}
                         </Button>
                     </div>
                 </div>
@@ -658,7 +658,7 @@ export function FilaEnvioEnCamino({ envio, ahora = null }) {
             <Pie>
                 <span className="flex items-center gap-1.5 min-w-0 text-caption font-semibold text-content-3">
                     <Info size={12} strokeWidth={2.5} className="shrink-0" />
-                    <span className="truncate">{envio.branch_name ?? 'La otra sala'} decide qué se queda al abrir la caja.</span>
+                    <span className="truncate">{envio.branch_name ?? 'La otra sucursal'} decide qué se queda al abrir la caja.</span>
                 </span>
                 <span className="sm:ml-auto"><BotonReimprimir envio={envio} /></span>
             </Pie>
@@ -695,7 +695,7 @@ export function FilaDevolucionPorRecibir({ envio, onHecho, ahora = null }) {
                 <Button size="sm" tone="success" soft icon={PackageCheck} loading={enviando}
                     className="min-h-[var(--tap-min)] w-full sm:w-auto sm:ml-auto"
                     onClick={recibir} disabled={enviando}>
-                    {enviando ? 'Recibiendo…' : 'Ya está de vuelta en mi sala'}
+                    {enviando ? 'Recibiendo…' : 'Ya está de vuelta en mi sucursal'}
                 </Button>
             </Pie>
         </Tarjeta>

@@ -52,13 +52,13 @@ export default function GrupoPorRecibir({ grupo, filas, onHecho, children }) {
         setError(''); setOcupado(true);
         let hechas = 0;
         for (const f of filas) {
-            setAvance({ hechas, total: filas.length, sala: f.metadata?.origen_branch_name ?? 'la otra sala' });
+            setAvance({ hechas, total: filas.length, sala: f.metadata?.origen_branch_name ?? 'la otra sucursal' });
             const r = await recibirTraslado(f.id);
             if (!r?.ok) {
                 setError(
                     `Entraron ${hechas} de ${filas.length}. `
-                    + `${f.metadata?.origen_branch_name ?? 'Una sala'}: ${r?.error ?? 'no se pudo recibir'}. `
-                    + 'Vuelve a intentar sólo esa desde su tarjeta.',
+                    + `${f.metadata?.origen_branch_name ?? 'Una sucursal'}: ${r?.error ?? 'no se pudo recibir'}. `
+                    + 'Intenta de nuevo solo esa, desde su tarjeta.',
                 );
                 break;
             }
@@ -72,7 +72,7 @@ export default function GrupoPorRecibir({ grupo, filas, onHecho, children }) {
         <div className="flex flex-col gap-2">
             <div className="flex items-baseline gap-2 px-1 flex-wrap">
                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">
-                    Lo pediste a {salas} salas
+                    Lo pediste a {salas} sucursales
                 </p>
                 <p className="text-micro text-content-3">
                     {grupo?.sinResponder > 0
@@ -106,7 +106,7 @@ export default function GrupoPorRecibir({ grupo, filas, onHecho, children }) {
                         que la salida tiene que estar A LA VISTA antes de
                         apretar, no descubrirse después. */}
                     <p className="text-micro text-content-3 font-medium leading-snug mt-1.5">
-                        Si a una le faltó algo, recibila desde su propia tarjeta: ahí se dice qué no venía.
+                        Si a una le faltó algo, recíbela desde su tarjeta. Ahí anotas qué no venía.
                     </p>
                 </div>
             )}

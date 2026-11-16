@@ -47,9 +47,9 @@ export default function BonosPorPagar({ sala, cajaAbierta, recarga = 0, puedeOpe
           <View style={{ flex: 1 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Bonos de promoción por pagar</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {!d?.puedo_pagar ? 'Los paga la jefatura de la sala.'
-                : !cajaAbierta ? 'Abre la caja para pagarlos: el efectivo sale de la caja.'
-                  : 'Cada pago sale de la caja y quien recibe se identifica con su carné.'}
+              {!d?.puedo_pagar ? 'Los paga el jefe de sucursal.'
+                : !cajaAbierta ? 'Abre la caja para pagarlos. El efectivo sale de la caja.'
+                  : 'Cada pago sale de la caja. Quien lo recibe se identifica con su carné.'}
             </Text>
           </View>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(total)}</Text>

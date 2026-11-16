@@ -136,7 +136,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
      * entre sí. Reportado el 2026-08-20: «los botones están muy juntos abajo,
      * dale más espacio al modal». */
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Solicitar a otra sala">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Solicitar a otra sucursal">
             {/* Las tres ranuras del canónico. Antes era un `<div>` suelto con el
                 título a mano, sin botón de cerrar y con la acción al final del
                 cuerpo que scrollea. */}
@@ -145,8 +145,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 buscador —«si llegó puesto desde la consulta de inventario,
                 atrás no es acá»—. Con el compositor sí es acá: soltar el
                 producto es cómo se elige el siguiente, venga de donde venga. */}
-            <LiquidModal.Header titulo={producto?.descripcion ?? 'Pedir a otra sala'}
-                subtitulo={producto ? 'Solicitar a otra sala' : 'Elige el producto'}
+            <LiquidModal.Header titulo={producto?.descripcion ?? 'Pedir a otra sucursal'}
+                subtitulo={producto ? 'Solicitar a otra sucursal' : 'Elige el producto'}
                 icono={ArrowLeftRight} tono="brand" onClose={onClose}
                 acciones={producto && !listo && pestana === 'agregar' && (
                     <Button variant="ghost" icon={ArrowLeft} iconOnly
@@ -338,7 +338,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                 label: `${d.sala} — ${d.unidades} ${d.unidades === 1 ? 'unidad' : 'unidades'}`
                                      + (esAntibiotico && d.vence ? ` · vence ${fmtVence(d.vence)}` : ''),
                             }))}
-                            placeholder="A qué sala..."
+                            placeholder="A qué sucursal..."
                             clearable={false}
                         />
 
@@ -375,7 +375,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             de que la caja esté en camino. */}
                         {esAntibiotico && (
                             <p className="text-micro font-semibold text-content-2 px-1 leading-snug">
-                                Bajo Receta — se traslada con su lote.
+                                Bajo Receta. Se traslada con su lote.
                             </p>
                         )}
 
@@ -535,7 +535,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                         value={causa}
                         onChange={e => setCausa(e.target.value)}
                         rows={2}
-                        placeholder="Para qué se pide — queda escrito en el movimiento"
+                        placeholder="¿Para qué se pide?"
                     />
                 )}
 
@@ -563,7 +563,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                 value={causa}
                                 onChange={e => setCausa(e.target.value)}
                                 rows={2}
-                                placeholder="Para qué se pide — queda escrito en el movimiento"
+                                placeholder="¿Para qué se pide?"
                             />
                         )}
 
@@ -629,7 +629,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                 // Se dice cuántas van a salir ANTES de apretar: que
                                 // una composición se parta en tres solicitudes es
                                 // exactamente lo que no puede ser una sorpresa.
-                                : salasDestino > 1 ? `Solicitar a ${salasDestino} salas` : 'Solicitar'}
+                                : salasDestino > 1 ? `Solicitar a ${salasDestino} sucursales` : 'Solicitar'}
                         </Button>
                     )}
                 </PieDeModal>

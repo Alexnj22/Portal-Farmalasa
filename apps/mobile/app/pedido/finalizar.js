@@ -90,7 +90,7 @@ function FinalizarPedido() {
     try {
       const conEtiqueta = items.map((r) => ({ ...r, tiene_dispatch_label: tieneEtiquetaDeDespacho(r) }));
       const grupos = await hojasExactas(suc, conEtiqueta);
-      if (!grupos?.length) throw new Error('No salieron hojas para esta sala.');
+      if (!grupos?.length) throw new Error('No salieron hojas para esta sucursal.');
       const { error } = await Promise.resolve(guardarPaginasDeSala(pedidoId, suc, grupos)).catch((e) => ({ error: e }));
       if (error) console.error('guardar hojas:', error?.message ?? error);
       setHojas(grupos);
@@ -163,7 +163,7 @@ function FinalizarPedido() {
       // El segundo toque de un doble toque: ya estaba finalizado; no se anota ni se despacha otra vez.
       if (r.yaEstaba) {
         clearDraft(BORRADOR);
-        listo('Ya estaba finalizado', 'Esta sala ya se había finalizado.');
+        listo('Ya estaba finalizado', 'Esta sucursal ya estaba finalizada.');
         volver('/pedidos');
         return;
       }
@@ -174,7 +174,7 @@ function FinalizarPedido() {
       clearDraft(BORRADOR);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       if (r.despacho.ok) listo(`Pedido #${numero} finalizado`, `${cajas} caja${cajas === 1 ? '' : 's'}.`);
-      else fallo('Quedó finalizado, pero no salió del sistema', r.despacho.error ?? 'Se puede reintentar desde el pedido.');
+      else fallo('Quedó finalizado, pero no se registró el traslado', r.despacho.error ?? 'Puedes intentarlo de nuevo desde el pedido.');
       volver('/pedidos');
       // La hoja de despacho de la sala, con lo que SALIÓ: una sola pregunta.
       Promise.all([
@@ -194,7 +194,7 @@ function FinalizarPedido() {
     }
   };
   const confirmar = () => Alert.alert(`Finalizar el pedido #${numero}`,
-    `${cajas} caja${cajas === 1 ? '' : 's'} · ${totalHojas} hoja${totalHojas === 1 ? '' : 's'}${noSalen ? ` · ${noSalen} producto${noSalen === 1 ? '' : 's'} no sale${noSalen === 1 ? '' : 'n'}` : ''}. Sale del sistema hacia ${ERP_NAMES[suc] ?? 'la sala'} y no se deshace.`,
+    `${cajas} caja${cajas === 1 ? '' : 's'} · ${totalHojas} hoja${totalHojas === 1 ? '' : 's'}${noSalen ? ` · ${noSalen} producto${noSalen === 1 ? '' : 's'} no sale${noSalen === 1 ? '' : 'n'}` : ''}. Sale hacia ${ERP_NAMES[suc] ?? 'la sucursal'}. No se puede deshacer.`,
     [{ text: 'Cancelar', style: 'cancel' }, { text: 'Finalizar', onPress: finalizar }]);
 
   if (items == null || hojas == null) return <><Stack.Screen options={{ ...BARRA_FIJA, title: 'Finalizar' }} /><Cargando /></>;
@@ -215,13 +215,13 @@ function FinalizarPedido() {
             {calculandoHojas || !errorHojas ? (
               <View style={{ alignItems: 'center', gap: 8, paddingVertical: 16 }}>
                 <Indicador />
-                <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Calculando las hojas del papel…</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Calculando las hojas…</Text>
               </View>
             ) : (
               <>
                 <Aviso tono="cuidado" texto={`No se pudieron calcular las hojas: ${errorHojas}`} />
                 <BotonGrande texto="Intentar de nuevo" onPress={calcularHojas} />
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si sigue fallando, revisa la conexión y vuelve a intentarlo en un momento.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si sigue fallando, revisa tu internet e intenta de nuevo en un momento.</Text>
               </>
             )}
           </View>
@@ -258,7 +258,7 @@ function FinalizarPedido() {
               <View style={{ marginHorizontal: 16, gap: 12 }}>
                 {simuError ? <Aviso tono="cuidado" texto={`No se pudo revisar la existencia: ${simuError}. Puedes finalizar igual y ajustar a mano.`} />
                   : !simu || simu.estado === 'en_curso' ? <Aviso texto={`Revisando la existencia de ${despachables.length} productos…`} />
-                    : (simu.hallazgos ?? []).length ? <Aviso tono="cuidado" texto={`${simu.hallazgos.length} producto${simu.hallazgos.length === 1 ? '' : 's'} con problema de existencia. Se marcaron en cero — corrige si sí van en la caja.`} />
+                    : (simu.hallazgos ?? []).length ? <Aviso tono="cuidado" texto={`${simu.hallazgos.length} producto${simu.hallazgos.length === 1 ? '' : 's'} con problema de existencia. Se marcaron en cero. Revísalos y corrige los que sí van en la caja.`} />
                       : <Aviso texto={`Los ${despachables.length} productos tienen existencia. Sale todo como se asignó.`} />}
                 {Object.entries(ajustes).map(([id, a]) => {
                   const it = despachables.find((r) => String(r.id) === String(id));

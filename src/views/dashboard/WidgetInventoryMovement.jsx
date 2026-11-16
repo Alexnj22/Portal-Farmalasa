@@ -195,7 +195,7 @@ function SelectorOperacion({ onSelect, onAVencidos, onAlEstante, onCorregirLote 
                         </IconoEnCaja>
                         <div className="flex-1 min-w-0">
                             <p className="text-body-sm font-black text-danger-text">Enviar a bodega de vencidos</p>
-                            <p className="text-caption text-content-3 mt-0.5">Lo que no se puede vender, sin aprobación</p>
+                            <p className="text-caption text-content-3 mt-0.5">Lo que no se puede vender. Sin aprobación</p>
                         </div>
                         <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
                     </button>
@@ -642,7 +642,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                 <div className="text-center">
                     <p className="text-body-lg font-black text-content">Solicitud enviada</p>
                     <p className="text-body-sm text-content-3 mt-1">
-                        Supervisión fue notificada. El inventario se mueve al aprobarla.
+                        Le avisamos a un supervisor o administrador. La existencia cambia cuando la aprueben.
                     </p>
                 </div>
             </div>
@@ -655,8 +655,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         <div className="flex flex-col gap-3 flex-1 min-h-0">
             {selectorSucursal}
             <EmptyState icon={ClipboardList} compact
-                title="La sala está contando"
-                subtitle={`Hay un conteo de inventario abierto en ${enConteo.sala}. Mientras se cuenta no se puede cargar ni descargar producto: el número cambiaría debajo de quien está contando. Cierra el conteo y vuelve a intentarlo.`} />
+                title="La sucursal está contando"
+                subtitle={`Hay un conteo de inventario abierto en ${enConteo.sala}. Mientras se cuenta no se puede cargar ni descargar producto. Cierra el conteo y vuelve a intentarlo.`} />
         </div>
     );
 
@@ -695,7 +695,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             {enConteo?.conteo_abierto && (
                 <p className="shrink-0 flex items-center gap-1 text-micro text-content-3 font-semibold px-1">
                     <ClipboardList size={12} strokeWidth={2.5} />
-                    Hay un conteo abierto en la sala: lo que se está contando no se puede agregar.
+                    Hay un conteo abierto en la sucursal. Lo que se está contando no se puede agregar.
                 </p>
             )}
 
@@ -764,7 +764,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                             </p>
                             {borrador.unidadesEnSala != null && (
                                 <p className="text-micro text-content-2 font-semibold mt-0.5">
-                                    {borrador.unidadesEnSala} {borrador.unidadesEnSala === 1 ? 'unidad' : 'unidades'} en la sala
+                                    {borrador.unidadesEnSala} {borrador.unidadesEnSala === 1 ? 'unidad' : 'unidades'} en existencia
                                 </p>
                             )}
                         </div>
@@ -923,7 +923,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {loteRepetido && (
                         <p className="flex items-center gap-1 text-micro text-warning-text font-semibold px-1">
                             <AlertTriangle size={11} strokeWidth={2.5} />
-                            Ese producto ya está en la solicitud con ese lote — cámbiale la cantidad ahí.
+                            Ese producto ya está en la solicitud con ese lote. Cámbiale la cantidad ahí.
                         </p>
                     )}
 
@@ -1024,7 +1024,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         cerrarla ahí sólo escondería el problema. */}
                                     <Button variant="ghost" size="xs" iconOnly
                                         icon={abierta ? Check : Pencil}
-                                        aria-label={abierta ? 'Listo' : 'Editar la línea'}
+                                        aria-label={abierta ? 'Listo' : 'Editar el producto'}
                                         disabled={abierta && pide.length > 0}
                                         onClick={() => setEditandoId(abierta ? null : l.id)} />
                                     <Button variant="ghost" size="xs" icon={Trash2} iconOnly
@@ -1205,7 +1205,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                     // El catálogo ofrece productos que la sala no tiene,
                                     // así que el 0 de la derecha necesita decir de qué
                                     // es: sin esto se lee como un dato faltante.
-                                    esCarga && f.cantidad === 0 ? 'no hay en la sala' : null,
+                                    esCarga && f.cantidad === 0 ? 'sin existencia' : null,
                                     bloqueada ? 'se está contando' : null,
                                     yaEsta ? 'ya agregado' : null,
                                 ].filter(Boolean).join(' · ')}
@@ -1223,8 +1223,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                 <button type="button" onClick={() => setPestana('banco')}
                     className="shrink-0 flex items-center gap-1 text-micro text-danger-text font-semibold px-1 text-left">
                     <AlertTriangle size={12} strokeWidth={2.5} />
-                    {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
-                    {' — toca para verlas'}
+                    {incompletas.length} {incompletas.length === 1 ? 'producto sin completar' : 'productos sin completar'}
+                    {' · toca para verlos'}
                 </button>
             )}
 
@@ -1243,15 +1243,15 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {incompletas.length > 0 && (
                         <p className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
                             <AlertTriangle size={12} strokeWidth={2.5} />
-                            {incompletas.length} {incompletas.length === 1 ? 'línea sin completar' : 'líneas sin completar'}
+                            {incompletas.length} {incompletas.length === 1 ? 'producto sin completar' : 'productos sin completar'}
                         </p>
                     )}
                     {lineasEnConteo.length > 0 && (
                         <p className="flex items-center gap-1 text-micro text-danger-text font-semibold px-1">
                             <AlertTriangle size={12} strokeWidth={2.5} />
                             {lineasEnConteo.length === 1
-                                ? `${lineasEnConteo[0].descripcion} se está contando: quítalo para enviar`
-                                : `${lineasEnConteo.length} productos se están contando: quítalos para enviar`}
+                                ? `${lineasEnConteo[0].descripcion} se está contando. Quítalo para enviar.`
+                                : `${lineasEnConteo.length} productos se están contando. Quítalos para enviar.`}
                         </p>
                     )}
 
@@ -1273,8 +1273,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         onChange={e => setCausa(e.target.value)}
                         rows={2}
                         placeholder={detalleObligatorio
-                            ? 'Explica la razón — queda escrita en el movimiento'
-                            : 'Detalle (opcional) — queda escrito en el movimiento'}
+                            ? 'Explica la razón'
+                            : 'Detalle (opcional)'}
                     />
 
                     {/* ── La foto del daño ──────────────────────────────────

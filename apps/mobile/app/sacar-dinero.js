@@ -99,14 +99,14 @@ export default function SacarDinero() {
 
   const falta = !t ? 'Elige el motivo.'
     : !(n > 0) ? 'Escribe el monto.'
-      : !eleccion.alcanza ? `En la sala hay ${formatMoney(totalDisponible(bolsas))} en bolsas${delCajonPermitido && efectivo != null ? ' y la caja no alcanza' : ''}: no alcanza.`
+      : !eleccion.alcanza ? `En la sucursal hay ${formatMoney(totalDisponible(bolsas))} en bolsas${delCajonPermitido && efectivo != null ? ' y en la caja tampoco alcanza' : ''}. No alcanza.`
         : t.etiqueta_entidad && !t.entidad_la_dice_el_papel && !entidad.trim() ? `Falta ${t.etiqueta_entidad.toLowerCase()}.`
           : t.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
-            : repetida ? 'Esa boleta ya está registrada en esta sala.'
+            : repetida ? 'Esa boleta ya está registrada en esta sucursal.'
               : t.foto === 'OBLIGATORIA' && !fotos.length ? 'Falta la foto del comprobante.'
                 : esOtro && !detalleSuficiente(nota) ? 'En «Otro» escribe de qué fue, con detalle.'
                 : avisoOtro ? avisoOtro
-                : sinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.'
+                : sinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué. Quedará pendiente de autorización.'
                 : t.pide_receptor && !identidad ? 'Falta identificar a quien se lo lleva.'
                   : null;
 
@@ -168,7 +168,7 @@ export default function SacarDinero() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-          <Seccion titulo={nombreSala || 'La sala'}>
+          <Seccion titulo={nombreSala || 'La sucursal'}>
             <Dato primero rotulo="En la caja" valor={efectivo != null && delCajonPermitido ? formatMoney(efectivo) : '—'} />
             <Dato rotulo="En bolsas" valor={formatMoney(totalDisponible(bolsas))} />
           </Seccion>

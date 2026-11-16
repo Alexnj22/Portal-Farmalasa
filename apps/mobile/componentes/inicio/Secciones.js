@@ -62,7 +62,7 @@ export function Hoy({ pestana, datos, ctx }) {
     activos: <Kpi key="ac" icono="Users" rotulo="Activos" valor={`${emps.length}`} color={MARCA.azul} onPress={puede('staff_list') ? () => abrir('/personal') : null} />,
     ausentes: <Kpi key="au" icono="UserX" rotulo="Ausencias" valor={`${ausentes}`} apoyo={ausentes ? 'hoy' : 'Nadie falta'} color={MARCA.rojo} pide={ausentes > 0} />,
     facturado: <Kpi key="f" icono="BarChart2" rotulo="Facturado hoy" valor={dinero(facturado)} color={MARCA.ambar} onPress={puede('facturacion') ? () => abrir('/facturacion') : null} />,
-    documentos: <Kpi key="d" icono="FileText" rotulo="Documentos" valor={`${(datos.facturas || []).length}`} apoyo="hoy" color={MARCA.violeta} />,
+    documentos: <Kpi key="d" icono="FileText" rotulo="Facturas" valor={`${(datos.facturas || []).length}`} apoyo="hoy" color={MARCA.violeta} />,
     cotizaciones: <Kpi key="c" icono="Receipt" rotulo="Cotizaciones" valor={`${(datos.cotizaciones || []).length}`} apoyo="activas, 30 días" color={MARCA.azul} onPress={puede('cotizaciones') ? () => abrir('/cotizaciones') : null} />,
     traslados: <Kpi key="t" icono="ArrowLeftRight" rotulo="Traslados" valor={`${datos.traslados ?? 0}`} apoyo="por confirmar" color={MARCA.azul} pide={(datos.traslados ?? 0) > 0} onPress={() => abrir('/traslados')} />,
     cortes: <Kpi key="co" icono="Wallet" rotulo="Cortes" valor={`${datos.cortes ?? 0}`} apoyo="por confirmar" color={MARCA.verde} pide={(datos.cortes ?? 0) > 0} onPress={() => abrir('/cortes')} />,
@@ -85,7 +85,7 @@ export function Pendientes({ datos, ctx }) {
   const porDecidir = usePorDecidir((s) => s.items);
   const filas = [
     { id: 'solicitudes', n: porDecidir.filter((i) => i.tipo === 'solicitud' || i.tipo === 'minmax').length, icono: 'ClipboardList', texto: 'Solicitudes por decidir', ruta: '/solicitudes', color: MARCA.ambar },
-    { id: 'traslados', n: porDecidir.filter((i) => i.tipo === 'traslado' || i.tipo === 'envio').length, icono: 'ArrowLeftRight', texto: 'Traslados y envíos por contestar', ruta: '/traslados', color: MARCA.azul },
+    { id: 'traslados', n: porDecidir.filter((i) => i.tipo === 'traslado' || i.tipo === 'envio').length, icono: 'ArrowLeftRight', texto: 'Traslados por contestar', ruta: '/traslados', color: MARCA.azul },
     { id: 'cortes', n: datos.cortes, icono: 'Wallet', texto: 'Cortes por confirmar', ruta: '/cortes', color: MARCA.verde },
   ].filter((f) => f.n > 0);
   const total = filas.reduce((s, f) => s + f.n, 0);
@@ -175,7 +175,7 @@ function MetaDe({ m, ctx, selector = null, cargando = false }) {
     return (
       <Widget titulo="Meta del mes" icono="Target" color={MARCA.azul} onAbrir={ctx.puede('metas') ? () => ctx.abrir('/metas') : null}>
         {selector}
-        {cargando ? <Esqueleto lineas={2} /> : <Vacio texto="Esta sala no tiene meta este mes" />}
+        {cargando ? <Esqueleto lineas={2} /> : <Vacio texto="Esta sucursal no tiene meta este mes" />}
       </Widget>
     );
   }
@@ -270,12 +270,12 @@ export const WIDGET_WEB = {
 };
 /** Los rótulos del portal, para la pantalla de personalizar. */
 export const ROTULO_WIDGET = {
-  sales: 'Ventas por día y hora', meta_sala: 'Meta del mes', shifts: 'Equipo y estado de turnos', branches: 'Alertas de sucursales',
+  sales: 'Ventas por día y hora', meta_sala: 'Meta del mes', shifts: 'Quién está hoy', branches: 'Alertas de sucursales',
   dato_pedido: 'Datos que faltan', announcements: 'Avisos recientes', facturacion: 'Facturación hoy', vendedores: 'Venta por vendedor',
-  top_productos: 'Top productos del mes', cortes_sala: 'Cortes de caja', bolsas_sala: 'Bolsas de efectivo', cotizaciones: 'Cotizaciones activas',
-  reservas: 'Reservas de mi sala', trend: 'Tendencia de asistencia', absences: 'Ausencias activas', requests: 'Solicitudes pendientes',
-  birthdays: 'Cumpleaños del mes', calendar: 'Calendario', inv_search: 'Consulta de inventario', precios: 'Consulta de precios', traslados: 'Traslados entre salas',
-  bitacoras: 'Bitácoras de mi sala', recetas_pend: 'Recetas pendientes', facturas_sala: 'Facturas de mi sala',
+  top_productos: 'Top productos del mes', cortes_sala: 'Cortes de caja de mi sucursal', bolsas_sala: 'Bolsas de efectivo de mi sucursal', cotizaciones: 'Cotizaciones activas',
+  reservas: 'Reservas de mi sucursal', trend: 'Tendencia de asistencia', absences: 'Ausencias activas', requests: 'Solicitudes pendientes',
+  birthdays: 'Cumpleaños del mes', calendar: 'Calendario', inv_search: 'Consulta de inventario', precios: 'Consulta de precios', traslados: 'Traslados entre sucursales',
+  bitacoras: 'Bitácoras de mi sucursal', recetas_pend: 'Recetas pendientes de mi sucursal', facturas_sala: 'Facturas de mi sucursal',
 };
 
 export const SECCIONES = [

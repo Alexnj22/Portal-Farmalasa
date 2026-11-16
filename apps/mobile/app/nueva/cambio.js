@@ -108,14 +108,14 @@ export default function Cambio() {
     try {
       // La caja se vuelve a preguntar AL ENVIAR: pudo cerrar mientras se llenaba.
       if (accion === 'anular' && (await salaConCajaAbierta(inv._sala?.id ?? inv.branch_id)) !== true) {
-        fallo('No se puede anular ahora', 'La sala ya no tiene caja abierta.'); return;
+        fallo('No se puede anular ahora', 'La sucursal ya no tiene caja abierta.'); return;
       }
       const aprobador = supervisorQueResuelve(empleados || []);
       const { error } = await insertApprovalRequestSilent(solicitudDeFacturacion(TIPO[accion], {
         inv, usuarioId: user?.id, sala: inv._sala, aprobador, nota: comentario, extra: extra(),
       }));
       if (error) throw error;
-      listo('Solicitud enviada', `La revisa ${aprobador ? shortEmployeeName(aprobador) : 'Supervisión'}.`);
+      listo('Solicitud enviada', `La revisa ${aprobador ? shortEmployeeName(aprobador) : 'un supervisor o administrador'}.`);
       router.dismissTo('/solicitudes');
     } catch (e) {
       fallo('No se pudo enviar', mensajeAmigable(e, 'Vuelve a intentar en un momento.'));
@@ -137,12 +137,12 @@ export default function Cambio() {
 
           {accion === 'anular' ? (
             <>
-              {aCredito ? <Aviso tono="cuidado" texto="Venta a crédito: la anulación tomará más tiempo y se confirmará al realizarse." /> : null}
-              {esCCF && !ccfDeOtroDia ? <Aviso tono="cuidado" texto="CCF: asegúrate de que se emitirá la nota de crédito correspondiente." /> : null}
+              {aCredito ? <Aviso tono="cuidado" texto="Es una venta a crédito. La anulación tarda más y se confirma cuando se haga." /> : null}
+              {esCCF && !ccfDeOtroDia ? <Aviso tono="cuidado" texto="Es un crédito fiscal. Asegúrate de que se emita la nota de crédito." /> : null}
               <Seccion titulo="¿Por qué se anula?"><Opciones opciones={MOTIVOS_ANULACION} valor={motivo} onCambiar={setMotivo} /></Seccion>
               {ccfDeOtroDia ? (
-                <Seccion titulo="CCF de fecha anterior">
-                  <Aviso tono="freno" texto="Sólo se anulan el mismo día y requieren nota de crédito." />
+                <Seccion titulo="Crédito fiscal de otro día">
+                  <Aviso tono="freno" texto="Solo se anulan el mismo día. Llevan nota de crédito." />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Entiendo y confirmo que tengo autorización para solicitarlo</Text>
                     <Interruptor value={autorizado} onValueChange={setAutorizado} />
@@ -167,7 +167,7 @@ export default function Cambio() {
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{shortEmployeeName(e)}</Text>
                   <MarcaDeEleccion elegida={vendedor?.id === e.id} />
                 </Pressable>
-              )) : <Text style={{ color: colorSistema.texto2 }}>No hay otras personas activas en la sala.</Text>}
+              )) : <Text style={{ color: colorSistema.texto2 }}>No hay otras personas activas en la sucursal.</Text>}
             </Seccion>
           ) : null}
 
@@ -184,12 +184,12 @@ export default function Cambio() {
                   <MarcaDeEleccion elegida={cliente?.id === c.id} />
                 </Pressable>
               ))}
-              {cliente && !cliente.erp_id ? <Aviso tono="freno" texto="Ese cliente todavía no está registrado en la caja: elige otro." /> : null}
+              {cliente && !cliente.erp_id ? <Aviso tono="freno" texto="Ese cliente todavía no está registrado en la caja. Elige otro." /> : null}
             </Seccion>
           ) : null}
 
           <Seccion titulo={accion === 'anular' && ccfDeOtroDia ? 'Comentario (obligatorio)' : 'Comentario (opcional)'}>
-            <Campo value={comentario} onChangeText={setComentario} placeholder="Algo que Supervisión deba saber" />
+            <Campo value={comentario} onChangeText={setComentario} placeholder="Algo que deba saber quien la revisa" />
           </Seccion>
 
           <BotonGrande texto="Enviar solicitud" color={accion === 'anular' ? MARCA.rojo : MARCA.azul}

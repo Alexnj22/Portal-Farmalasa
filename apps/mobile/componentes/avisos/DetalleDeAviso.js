@@ -156,7 +156,7 @@ function CabeceraMovimiento({ req, meta }) {
     <Caja rotulo={esTraslado ? 'Recorrido' : esCarga ? 'Se carga en' : 'Se descarga de'}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Fuerte>{esTraslado ? `${origen ?? 'Otra sala'} → ${sala ?? 'destino'}` : (sala ?? 'Sin sala')}</Fuerte>
+          <Fuerte>{esTraslado ? `${origen ?? 'Otra sucursal'} → ${sala ?? 'destino'}` : (sala ?? 'Sin sucursal')}</Fuerte>
           {motivo ? <Tenue>{motivo}</Tenue> : null}
         </View>
         <View style={{ alignItems: 'flex-end' }}>
@@ -191,7 +191,7 @@ function LineasMovimiento({ meta, signo }) {
               {it.lote || it.numero_lote || it.vence ? (
                 <Tenue>{[it.lote || it.numero_lote || 'sin lote', it.vence ? `vence ${fmtDate(it.vence)}` : null].filter(Boolean).join(' · ')}</Tenue>
               ) : null}
-              {motivoRechazo ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'No salió' : 'No entró'} — ${motivoRechazo}`}</Text> : null}
+              {motivoRechazo ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'No salió' : 'No entró'}: ${motivoRechazo}`}</Text> : null}
               {recortada && !motivoRechazo ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '700' }}>{`${salida ? 'Salieron' : 'Entraron'} ${actual} de las ${pedida} que se pidieron`}</Text> : null}
             </View>
             <Pildora texto={motivoRechazo ? '—' : `${signo}${actual}`} color={signo === '+' ? MARCA.verde : colorSistema.texto2} />
@@ -231,7 +231,7 @@ function ContextoMinMax({ meta, rechazada }) {
       <Par>
         <Mitad><Caja rotulo="Vendidas este mes"><Fuerte tamano={16}>{cifra(meta.ventas_mes)}</Fuerte></Caja></Mitad>
         <Mitad>
-          <Caja rotulo="En sala">
+          <Caja rotulo="En la sucursal">
             <Fuerte tamano={16}>{meta.existencia != null && Number.isFinite(Number(meta.existencia)) ? `${cifra(meta.existencia)} und` : '—'}</Fuerte>
           </Caja>
         </Mitad>
@@ -264,7 +264,7 @@ function ContextoMinMax({ meta, rechazada }) {
         </Caja>
       ) : null}
       {noAlcanza ? (
-        <Advertencia texto={`MAX ${cifra(meta.max_pedido)} es menos de lo que se despacha (${despacho.etiqueta}, ${cifra(despacho.unidades)} u.): el pedido no mandará nada.`} />
+        <Advertencia texto={`El Máx de ${cifra(meta.max_pedido)} es menos de lo que se despacha (${despacho.etiqueta}, ${cifra(despacho.unidades)} u.). El pedido no mandará nada.`} />
       ) : null}
     </>
   );
@@ -283,16 +283,16 @@ function BloqueMinMax({ req, meta }) {
         {meta.branch_name ? <Tenue>{meta.branch_name}</Tenue> : null}
       </Caja>
       <Par>
-        <Mitad><Caja rotulo={aprobada ? 'Antes' : 'Hoy'}><Fuerte>{`MIN ${meta.min_actual ?? '—'} · MAX ${meta.max_actual ?? '—'}`}</Fuerte></Caja></Mitad>
-        <Mitad><Caja rotulo="Nuevo" color={MARCA.azulClaro} tinte={MARCA.azulClaro}><Fuerte color={MARCA.azulClaro}>{`MIN ${meta.min_pedido ?? '—'} · MAX ${meta.max_pedido ?? '—'}`}</Fuerte></Caja></Mitad>
+        <Mitad><Caja rotulo={aprobada ? 'Antes' : 'Hoy'}><Fuerte>{`Mín ${meta.min_actual ?? '—'} · Máx ${meta.max_actual ?? '—'}`}</Fuerte></Caja></Mitad>
+        <Mitad><Caja rotulo="Nuevo" color={MARCA.azulClaro} tinte={MARCA.azulClaro}><Fuerte color={MARCA.azulClaro}>{`Mín ${meta.min_pedido ?? '—'} · Máx ${meta.max_pedido ?? '—'}`}</Fuerte></Caja></Mitad>
       </Par>
       {sinCambio && !rechazada ? (
-        <Advertencia color={MARCA.ambar} texto={`${aprobada ? 'No cambió nada: ' : 'Aprobarlo no cambia nada: '}${sala} ${aprobada ? 'ya estaba' : 'ya está'}${nOnull(meta.min_actual) === null ? ' sin MIN ni MAX' : ` en MIN ${meta.min_actual} · MAX ${meta.max_actual}`}, que es lo mismo que ${aprobada ? 'se pidió' : 'se pide'}.`} />
+        <Advertencia color={MARCA.ambar} texto={`${aprobada ? 'No cambió nada. ' : 'Aprobarlo no cambia nada. '}${sala} ${aprobada ? 'ya estaba' : 'ya está'}${nOnull(meta.min_actual) === null ? ' sin Mín ni Máx' : ` en Mín ${meta.min_actual} · Máx ${meta.max_actual}`}, igual que lo que ${aprobada ? 'se pidió' : 'se pide'}.`} />
       ) : null}
       {!sinCambio && !rechazada && Number(meta.min_pedido) === 0 && Number(meta.max_pedido) === 0 ? (
         <Advertencia color={MARCA.ambar} texto={aprobada
-          ? `Dejó de reponerse: el producto ya no entra en los pedidos de ${sala} hasta que alguien le fije un MIN y un MAX.`
-          : `Deja de reponerse: aprobado esto, el producto no vuelve a entrar en los pedidos de ${sala} hasta que alguien le fije un MIN y un MAX.`} />
+          ? `Dejó de reponerse. El producto ya no entra en los pedidos de ${sala} hasta que alguien le ponga Mín y Máx.`
+          : `Si lo apruebas, deja de reponerse. El producto no vuelve a entrar en los pedidos de ${sala} hasta que alguien le ponga Mín y Máx.`} />
       ) : null}
       <ContextoMinMax meta={meta} rechazada={rechazada} />
     </>
@@ -341,7 +341,7 @@ function LaVenta({ meta, empleados }) {
           {venta ? (
             <>
               <View style={{ gap: 3 }}>
-                <Rotulo>Hacienda</Rotulo>
+                <Rotulo>MH</Rotulo>
                 <Fuerte color={conSello ? MARCA.verde : MARCA.ambar}>{conSello ? '✓ Con sello' : '! Sin sello'}</Fuerte>
               </View>
               <View style={{ gap: 3 }}>
@@ -354,7 +354,7 @@ function LaVenta({ meta, empleados }) {
       </Caja>
       <Caja rotulo="Qué se vendió">
         {filas.length > 0 ? (
-          <Tenue>{`${filas.length} ${filas.length === 1 ? 'renglón' : 'renglones'}${unidades > 0 ? ` · ${cifra(unidades)} ${unidades === 1 ? 'unidad' : 'unidades'}` : ''}`}</Tenue>
+          <Tenue>{`${filas.length} ${filas.length === 1 ? 'producto' : 'productos'}${unidades > 0 ? ` · ${cifra(unidades)} ${unidades === 1 ? 'unidad' : 'unidades'}` : ''}`}</Tenue>
         ) : null}
         {cargando ? <Indicador style={{ marginVertical: 6 }} /> : filas.length === 0 ? (
           <Tenue>Esta venta no tiene productos guardados.</Tenue>
@@ -386,7 +386,7 @@ function LaVenta({ meta, empleados }) {
         ) : null}
       </Caja>
       {hayDescuadre ? (
-        <Advertencia color={MARCA.ambar} texto={`Los renglones suman ${formatMoney(sumaMostrada)} y la venta dice ${formatMoney(total)} — una diferencia de ${formatMoney(Math.abs(Number(total) - sumaMostrada))}. El detalle guardado no explica el total: revisa la venta antes de decidir.`} />
+        <Advertencia color={MARCA.ambar} texto={`Los productos suman ${formatMoney(sumaMostrada)} y la venta dice ${formatMoney(total)}. Hay ${formatMoney(Math.abs(Number(total) - sumaMostrada))} de diferencia. Revisa la venta antes de decidir.`} />
       ) : null}
     </>
   );
@@ -532,7 +532,7 @@ function BloquePorTipo({ req, meta, empleados }) {
             </Mitad>
           </Par>
         )}
-        {esAbono && !anula ? <Tenue>Se corrige quitando el abono y volviéndolo a hacer, así que el crédito va a mostrar los dos movimientos.</Tenue> : null}
+        {esAbono && !anula ? <Tenue>Se quita el abono y se hace de nuevo. El crédito va a mostrar los dos movimientos.</Tenue> : null}
         <Fotos urls={meta.comprobante_url ? [meta.comprobante_url] : null} titulo="Comprobante" />
       </>
     );
@@ -633,8 +633,8 @@ function BloqueAplicado({ req, aplicado, porId }) {
           <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{aplicado.instruccion}</Text>
         </View>
       ) : null}
-      {aplicado.hacienda?.sello ? <Tenue>{`Sello de Hacienda: ${aplicado.hacienda.sello}`}</Tenue> : null}
-      {aplicado.concepto_recortado ? <Tenue>El detalle se guardó abreviado.</Tenue> : null}
+      {aplicado.hacienda?.sello ? <Tenue>{`Sello de MH: ${aplicado.hacienda.sello}`}</Tenue> : null}
+      {aplicado.concepto_recortado ? <Tenue>El motivo se guardó más corto.</Tenue> : null}
       {Array.isArray(aplicado.avisos) && aplicado.avisos.length > 0 ? aplicado.avisos.map((a, i) => <Tenue key={i}>{`• ${a}`}</Tenue>) : null}
     </Caja>
   );

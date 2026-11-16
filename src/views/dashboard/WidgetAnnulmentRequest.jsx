@@ -175,7 +175,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
           <div className="grid grid-cols-2 divide-x divide-divider">
             <div>
               {[
-                { label: 'Tipo Doc.',     value: inv.tipo_documento || '—' },
+                { label: 'Tipo',     value: inv.tipo_documento || '—' },
                 { label: 'Forma de pago', value: PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || '—' },
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
@@ -243,14 +243,14 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
           <Clock size={12} className={`mt-0.5 shrink-0 ${seAnula ? 'text-warning' : 'text-danger'}`} strokeWidth={2.5} />
           <p className={`text-label font-bold leading-snug ${seAnula ? 'text-warning-text' : 'text-danger'}`}>
             {seAnula
-              ? 'La sala tiene caja abierta: se puede anular hasta que salga el cierre del día.'
-              : `${MOTIVO_SIN_ANULAR[estadoCaja]}: no hay caja de dónde descontar. Los cambios de cliente, vendedor y forma de pago sí se pueden pedir.`}
+              ? 'La sucursal tiene caja abierta. Puedes anular hasta el cierre del día.'
+              : `${MOTIVO_SIN_ANULAR[estadoCaja]}. No hay caja de dónde descontar. Sí puedes pedir cambio de cliente, vendedor o forma de pago.`}
           </p>
         </div>
       </div>
 
       <StickySubmit
-        label={esAnulada(inv) ? 'Factura anulada — sin cambios posibles' : 'Solicitar Modificación'}
+        label={esAnulada(inv) ? 'Factura anulada. Ya no admite cambios.' : 'Solicitar cambio'}
         onClick={onModify}
         disabled={esAnulada(inv)}
       />
@@ -271,8 +271,8 @@ function TypeSelector({ inv, onSelect, onBack, employees, cajaAbierta }) {
       // Los otros tres cambios NO se apagan con el cierre: cambiar el cliente,
       // el vendedor o la forma de pago no mueve el efectivo de la caja.
       desc: !seAnula ? MOTIVO_SIN_ANULAR[estadoCaja]
-          : isCCF   ? 'CCF — requiere nota de crédito'
-          : 'Hasta que la sala saque su cierre del día',
+          : isCCF   ? 'Crédito fiscal. Requiere nota de crédito.'
+          : 'Hasta el cierre del día de la sucursal',
       disabled: !seAnula,
       color: 'text-danger-text',   bg: 'bg-danger/10 border-danger/30',   iconBg: 'bg-danger/10',
     },
@@ -362,7 +362,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
       // Mandarlo también desde el navegador duplicaría la notificación, y era
       // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('annul', target?.name);
-    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'No se pudo enviar la solicitud.')); }
     finally { setSubmitting(false); }
   };
 
@@ -381,8 +381,8 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-danger/10 border border-danger/40">
             <ShieldAlert size={13} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-label font-bold text-danger-text leading-snug">
-              {MOTIVO_SIN_ANULAR[estadoCaja]}: no hay caja de dónde descontar el efectivo.
-              Vuelve mañana, o cuando la sucursal tenga una caja abierta.
+              {MOTIVO_SIN_ANULAR[estadoCaja]}. No hay caja de dónde descontar el efectivo.
+              Vuelve mañana o cuando la sucursal abra caja.
             </p>
           </div>
         )}
@@ -390,7 +390,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-chart-3/10 border border-chart-3/30">
             <Info size={12} className="text-chart-3-text mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-label font-bold text-chart-3-text leading-snug">
-              Venta a <strong>crédito</strong> — al aprobarla también se quita su cuenta por cobrar. Si ya tiene abonos, primero hay que resolverlos.
+              Venta al <strong>crédito</strong>. Si se aprueba, también se quita su cuenta por cobrar. Si ya tiene abonos, primero hay que resolverlos.
             </p>
           </div>
         )}
@@ -398,7 +398,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-warning/10 border border-warning/30">
             <ShieldAlert size={12} className="text-warning mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-label font-bold text-warning-text leading-snug">
-              <strong>CCF:</strong> Asegúrate de que se emitirá la nota de crédito correspondiente.
+              <strong>Crédito fiscal:</strong> asegúrate de que se emita la nota de crédito.
             </p>
           </div>
         )}
@@ -407,7 +407,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             <div className="flex items-start gap-2">
               <ShieldAlert size={13} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
               <p className="text-label font-bold text-danger-text leading-snug">
-                <strong>CCF de fecha anterior.</strong> Solo se anulan el mismo día y requieren nota de crédito.
+                <strong>Crédito fiscal de otro día.</strong> Solo se anula el mismo día y requiere nota de crédito.
               </p>
             </div>
             <Checkbox
@@ -446,7 +446,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </label>
           <PortalTextarea
               value={comment} onChange={e => setComment(e.target.value)} rows={3}
-              placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
+              placeholder={commentRequired ? 'Describe el motivo...' : 'Agrega detalles (opcional)...'}
           />
         </div>
         {submitError && <Notice variant="danger">{submitError}</Notice>}
@@ -492,7 +492,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
       // Mandarlo también desde el navegador duplicaría la notificación, y era
       // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('pay_change', target?.name);
-    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'No se pudo enviar la solicitud.')); }
     finally { setSubmitting(false); }
   };
 
@@ -520,7 +520,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
               options={available.map(m => ({ value: m, label: PAYMENT_LABELS[m] || m }))}
               value={newPayment} onChange={setNewPayment} label="Cambiar a" />
           <p className="text-caption text-content-3 px-1">
-            El crédito no aparece a propósito: una venta ya emitida no se pasa a crédito. Para eso hay que anularla y volver a facturarla.
+            Una venta ya emitida no se pasa a crédito. Para eso hay que anularla y volver a facturarla.
           </p>
         </div>
 
@@ -586,7 +586,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       // Mandarlo también desde el navegador duplicaría la notificación, y era
       // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('vendor_change', target?.name);
-    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'No se pudo enviar la solicitud.')); }
     finally { setSubmitting(false); }
   };
 
@@ -715,7 +715,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       // Mandarlo también desde el navegador duplicaría la notificación, y era
       // el camino que podía no ejecutarse (pestaña cerrada, red caída).
       onSuccess('client_change', target?.name);
-    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'No se pudo enviar la solicitud.')); }
     finally { setSubmitting(false); }
   };
 
@@ -769,7 +769,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
           {/* Resultados */}
           {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (
-            <p className="text-label text-content-3 text-center py-2">Sin coincidencias en el listado de clientes</p>
+            <p className="text-label text-content-3 text-center py-2">No hay clientes con ese dato</p>
           )}
           {!newClient && results.length > 0 && clientesParecidos && <AvisoParecidos texto={query} />}
           {!newClient && results.length > 0 && (
@@ -985,10 +985,10 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null, o
   /* ── Éxito ── */
   if (view === 'success') {
     const msgs = {
-      annul:         { title: 'Anulación solicitada',       sub: 'Supervisión fue notificada y revisará la solicitud.' },
-      pay_change:    { title: 'Cambio de pago solicitado',  sub: 'Supervisión fue notificada para su aprobación.' },
-      vendor_change: { title: 'Cambio de vendedor enviado', sub: 'Supervisión fue notificada para su aprobación.' },
-      client_change: { title: 'Cambio de cliente enviado',  sub: 'Supervisión fue notificada para su aprobación.' },
+      annul:         { title: 'Anulación solicitada',       sub: 'Le avisamos al supervisor para que la revise.' },
+      pay_change:    { title: 'Cambio de pago solicitado',  sub: 'Le avisamos al supervisor para que lo apruebe.' },
+      vendor_change: { title: 'Cambio de vendedor enviado', sub: 'Le avisamos al supervisor para que lo apruebe.' },
+      client_change: { title: 'Cambio de cliente enviado',  sub: 'Le avisamos al supervisor para que lo apruebe.' },
     };
     const lbl = msgs[successInfo.type] || msgs.annul;
     return (
@@ -1063,7 +1063,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null, o
         {!loading && buscando && enTope && (
           <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-caption text-warning-text font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />
-            Hay más coincidencias — agrega una palabra para acotar
+            Hay más resultados. Agrega una palabra para acotar.
           </div>
         )}
 
@@ -1118,7 +1118,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null, o
                     variant="destructive"
                     disabled={anulada}
                     onClick={(e) => { e.stopPropagation(); setFocused(inv); setPrevView('list'); setView('type_select'); }}
-                    title={anulada ? 'Factura anulada — ya no admite cambios' : 'Solicitar modificación'}
+                    title={anulada ? 'Factura anulada. Ya no admite cambios.' : 'Solicitar cambio'}
                 />
               </div>
             </div>

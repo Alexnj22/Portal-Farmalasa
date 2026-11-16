@@ -134,7 +134,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
           setOcupado(false);
           if (r?.error) { fallo('No se pudo anular', mensajeAmigable(r.error, 'Vuelve a intentar en un momento.')); return; }
           setAnulando(null); setMotivo('');
-          if (r?.pedida) { listo('Anulación pedida', `Esta salida también sacó ${formatMoney(r.monto)} de la caja: al aprobarse se anulan las dos partes.`); return; }
+          if (r?.pedida) { listo('Anulación pedida', `Esta salida también sacó ${formatMoney(r.monto)} de la caja. Cuando lo aprueben, se anulan las dos partes.`); return; }
           if (eraBolsa) { listo('Bolsa anulada', bolsa.folio); onCambio?.(); onCerrar?.(); return; }
           const papel = await reimprimirEtiqueta(bolsa, sala, cerradaPor);
           if (papel.ok) listo('Salida anulada', 'Sale la etiqueta nueva de la bolsa.'); else fallo('Salida anulada, pero la etiqueta no salió', papel.detalle);
@@ -194,7 +194,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
             ) : puedeEditar && enLaSala ? (
               <BotonGrande texto="Anular la bolsa" borde color={MARCA.rojo} onPress={() => { setMotivo(''); setAnulando({ tipo: 'bolsa' }); }} />
             ) : null}
-            {!enLaSala ? <Aviso texto="Esta bolsa ya salió de la sala: aquí no se corrige nada. Si el dinero no cuadra, se resuelve en el conteo." /> : null}
+            {!enLaSala ? <Aviso texto="Esta bolsa ya salió de la sucursal. Aquí no se corrige nada. Si el dinero no cuadra, se resuelve en el conteo." /> : null}
           </ScrollView>
         </View>
       ) : null}

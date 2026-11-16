@@ -77,7 +77,7 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
       onGuardado(it.id, { ...payload, sistema: r?.sistema_cantidad });
     } catch (e) {
       setValor(ultimo.current);
-      fallo('No se guardó el conteo', `${it.product_nombre || 'Esta línea'}: ${mensajeAmigable(e)}`);
+      fallo('No se guardó el conteo', `${it.product_nombre || 'Este producto'}: ${mensajeAmigable(e)}`);
     } finally {
       setGuardando(false);
     }
@@ -226,7 +226,7 @@ export default function Conteo() {
   const avanceSuc = sinLote ? avanceSinLote(sinLote.sucursales, conteo?.branch_id) : null;
   const textoSinLote = sinLote ? [
     sinLote.conteo?.sin_lote ? `En este conteo: ${sinLote.conteo.contados} de ${sinLote.conteo.sin_lote} regulados con existencia sin lote ya contados.` : null,
-    avanceSuc?.regulados ? `En ${avanceSuc.sucursal ?? 'la sucursal'} quedan ${avanceSuc.sinLote} de ${avanceSuc.regulados} regulados con existencia sin lote (${avanceSuc.limpios}% ya en su lote). Baja al aprobar un conteo que ajusta.` : null,
+    avanceSuc?.regulados ? `En ${avanceSuc.sucursal ?? 'la sucursal'} quedan ${avanceSuc.sinLote} de ${avanceSuc.regulados} regulados con existencia sin lote. El ${avanceSuc.limpios}% ya tiene toda su existencia en lotes. Se reduce al aprobar cada conteo.` : null,
   ].filter(Boolean).join('\n') : '';
   useEffect(() => { setPagina(1); }, [busqueda, filtro, laboratorioId, area, orden]);
   // Cambiar de estante descarta lo abierto: un producto puede estar en los dos
@@ -284,7 +284,7 @@ export default function Conteo() {
     const traer = () => Promise.resolve(sincronizarConteoEnVivo(id)).then((r) => {
       if (!vivo || !r?.agregados) return;
       const n = r.agregados;
-      listo('Llegaron productos nuevos', `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sala después de empezar el conteo. Ya se pueden contar.`);
+      listo('Llegaron productos nuevos', `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sucursal después de empezar el conteo. Ya se pueden contar.`);
       cargarRef.current?.();
     }).catch(() => {});
     traer();
@@ -294,13 +294,13 @@ export default function Conteo() {
 
   // Eliminar: con el permiso propio, o mientras no se haya contado nada.
   const puedeEliminar = puedeEditar && (hasPermission('conteo_inventario_eliminar') || (conteoEditable(conteo) && contadosVivos(resumen) === 0));
-  const eliminar = () => Alert.alert('Eliminar el conteo', `Se borra el conteo de ${sala ?? 'la sala'} con todos sus renglones. No se puede deshacer.`, [
+  const eliminar = () => Alert.alert('Eliminar el conteo', `Se borra el conteo de ${sala ?? 'la sucursal'} con todos sus productos. No se puede deshacer.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Eliminar', style: 'destructive', onPress: async () => {
       trabajando('Eliminando…');
       try {
         const r = await eliminarConteoInventario(id);
-        listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} renglón(es).`);
+        listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} producto(s).`);
         router.back();
       } catch (e) { fallo('No se pudo eliminar', mensajeAmigable(e)); }
     } },
@@ -313,7 +313,7 @@ export default function Conteo() {
     ActionSheetIOS.showActionSheetWithOptions({ title: 'Papel del conteo', options: [...op.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: op.length }, async (i) => {
       const tipo = op[i]?.[1];
       if (!tipo) return;
-      trabajando('Preparando el documento…');
+      trabajando('Preparando el archivo…');
       try {
         const todos = await fetchTodosLosItemsConteo(id);
         const c = { ...conteo, branches: { name: sala } };
@@ -327,7 +327,7 @@ export default function Conteo() {
           : tipo === 'resultados' ? resultadosDeConteoHtml(c, todos) : ajusteDeConteoHtml(c, todos);
         cerrarProgreso();
         if (await compartirPdf({ html, nombre: `${op[i][0]} ${sala ?? ''}` })) registrarEgreso('conteo_inventario', { formato: 'pdf', filas: todos.length, detalle: { conteo_id: id, tipo, via: 'app' } });
-      } catch (e) { fallo('No se pudo armar el documento', mensajeAmigable(e)); }
+      } catch (e) { fallo('No se pudo armar el archivo', mensajeAmigable(e)); }
     });
   };
 
@@ -366,17 +366,17 @@ export default function Conteo() {
 
   // El que ajusta el inventario se aprueba leyendo lo que va a mover (2026-11-06).
   const aprobar = async () => {
-    let mensaje = 'Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo.';
+    let mensaje = 'Queda cerrado y firmado. No puedes aprobar un conteo que finalizaste tú.';
     if (conteo?.aplica_en_caja) {
       try {
         const plan = await fetchConteoCajaPlan(id);
         const productos = plan?.productos ?? [];
         const avisos = (plan?.problemas ?? []).filter((p) => !p.bloquea);
-        const lineas = productos.slice(0, 12).map((p) => `${p.producto ?? p.erp_product_id}${p.a_medio_contar ? ' (no se ajusta: a medio contar)' : ''}\n${(p.lineas ?? []).map((l) => `  ${rotuloDeAjuste(l)}`).join('\n')}`);
+        const lineas = productos.slice(0, 12).map((p) => `${p.producto ?? p.erp_product_id}${p.a_medio_contar ? ' (no se ajusta, faltan lotes por contar)' : ''}\n${(p.lineas ?? []).map((l) => `  ${rotuloDeAjuste(l)}`).join('\n')}`);
         mensaje = productos.length
           ? `Se ajustan ${productos.length} ${productos.length === 1 ? 'producto' : 'productos'}:\n\n${lineas.join('\n')}${productos.length > 12 ? `\n…y ${productos.length - 12} más` : ''}`
-          : 'Sin diferencias: el inventario no cambia.';
-        if (avisos.length) mensaje += `\n\nPara mirar antes:\n${avisos.map((a) => `• ${a.producto ?? a.erp_product_id}: ${PROBLEMA_DE_AJUSTE[a.tipo] ?? a.tipo}`).join('\n')}`;
+          : 'No hay diferencias. Al aprobarlo, el inventario no cambia.';
+        if (avisos.length) mensaje += `\n\nRevisa antes:\n${avisos.map((a) => `• ${a.producto ?? a.erp_product_id}: ${PROBLEMA_DE_AJUSTE[a.tipo] ?? a.tipo}`).join('\n')}`;
       } catch (e) { fallo('No se pudo leer el ajuste', mensajeAmigable(e)); return; }
     }
     Alert.prompt(conteo?.aplica_en_caja ? 'Aprobar y ajustar' : 'Aprobar conteo', mensaje, [
@@ -386,7 +386,7 @@ export default function Conteo() {
           trabajando('Aprobando el conteo…');
           try {
             await aprobarConteoInventario(id, (nota || '').trim() || null);
-            listo('Conteo aprobado', 'Queda cerrado y con firma auditable.');
+            listo('Conteo aprobado', 'Queda cerrado y firmado.');
             cargarConteo();
           } catch (e) { fallo('No se pudo aprobar', mensajeAmigable(e)); }
         },
@@ -395,14 +395,14 @@ export default function Conteo() {
   };
 
   const registrarAjuste = () => {
-    Alert.prompt('Registrar ajuste aplicado', 'Esto no modifica existencias: sólo deja constancia de que el ajuste ya se aplicó, para que este conteo no quede como pendiente. Escribe la referencia si la tienes.', [
+    Alert.prompt('Registrar ajuste aplicado', 'Esto no cambia la existencia. Solo anota que el ajuste ya se aplicó, para que el conteo no quede pendiente. Escribe la referencia si la tienes.', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Ya lo apliqué', onPress: async (nota) => {
           trabajando('Registrando el ajuste…');
           try {
             await marcarAjusteErp(id, (nota || '').trim() || null);
-            listo('Ajuste registrado', 'Queda constancia de que el ajuste ya se aplicó.');
+            listo('Ajuste registrado', 'Queda anotado que el ajuste ya se aplicó.');
             cargarConteo();
           } catch (e) { fallo('No se pudo registrar', mensajeAmigable(e)); }
         },
@@ -417,7 +417,7 @@ export default function Conteo() {
         const plan = await fetchConteoCajaPlan(id);
         const frenan = (plan?.problemas ?? []).filter((p) => p.bloquea);
         if (frenan.length) {
-          Alert.alert('Antes de finalizar', frenan.slice(0, 10).map((p) => `• ${p.producto ?? p.erp_product_id} — ${PROBLEMA_DE_AJUSTE[p.tipo] ?? p.tipo}: ${p.detalle}`).join('\n\n'));
+          Alert.alert('Antes de finalizar', frenan.slice(0, 10).map((p) => `• ${p.producto ?? p.erp_product_id}. ${PROBLEMA_DE_AJUSTE[p.tipo] ?? p.tipo}: ${p.detalle}`).join('\n\n'));
           return;
         }
       } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
@@ -432,14 +432,14 @@ export default function Conteo() {
       } catch (e) { fallo('No se pudo finalizar', mensajeAmigable(e)); }
     };
     if (!pendientes) {
-      Alert.alert('¿Finalizar el conteo?', 'Ya no se va a poder contar. Después lo aprueba quien corresponde.', [
+      Alert.alert('¿Finalizar el conteo?', 'Ya no se va a poder contar. Otra persona tiene que aprobarlo.', [
         { text: 'Seguir contando', style: 'cancel' }, { text: 'Finalizar', onPress: () => enviar(false) }]);
       return;
     }
-    Alert.alert('Quedan renglones sin contar', `${pendientes} renglón${pendientes === 1 ? '' : 'es'} sin contar. ¿Qué se hace con ellos?`, [
+    Alert.alert('Quedan productos sin contar', `${pendientes} producto${pendientes === 1 ? '' : 's'} sin contar. ¿Qué se hace con ellos?`, [
       { text: 'Seguir contando', style: 'cancel' },
       { text: 'Dejarlos fuera del cálculo', onPress: () => enviar(false) },
-      { text: 'Darlos por no ubicados (físico 0)', style: 'destructive', onPress: () => enviar(true) },
+      { text: 'Marcarlos como no ubicados (en 0)', style: 'destructive', onPress: () => enviar(true) },
     ]);
   };
 
@@ -467,7 +467,7 @@ export default function Conteo() {
                   <View style={{ height: 7, borderRadius: 4, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
                     <View style={{ width: `${total ? Math.round((contados / total) * 100) : 0}%`, height: 7, backgroundColor: MARCA.verde }} />
                   </View>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} renglones contados`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} productos contados`}</Text>
                   {/* Contra qué se compara lo que se teclea: decide si una venta
                       hecha mientras se cuenta sale como diferencia. */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -484,14 +484,14 @@ export default function Conteo() {
           {conteo ? <Resumen resumen={resumen} abierto={conteoEditable(conteo)} verMontos={hasPermission('conteo_inventario_ver_montos')} /> : null}
           {conteo && !verSistema ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Aviso tono="nota" texto="Conteo ciego: anota lo que ves en el estante, no lo que el sistema espera. La existencia del sistema y la diferencia no se muestran para tu cargo; se ven al finalizar el conteo, o con el permiso «Ver existencia del sistema»." />
+              <Aviso tono="nota" texto="Conteo ciego. Anota lo que ves en el estante. No verás la existencia del sistema ni la diferencia hasta que se finalice el conteo." />
             </View>
           ) : null}
           {avisoParcial ? <View style={{ marginHorizontal: 16 }}><Aviso tono={conteo.pendientes_como_cero ? 'cuidado' : 'freno'} texto={avisoParcial} /></View> : null}
           {conteo && !editable && !puedeAprobar ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este conteo ya no se puede contar." /></View> : null}
           {puedeAprobar ? (
             <View style={{ marginHorizontal: 16, gap: 10 }}>
-              <Aviso tono="nota" texto="Finalizado: puedes recontar un renglón antes de aprobar. Quien lo contó no puede recontarlo." />
+              <Aviso tono="nota" texto="Ya está finalizado. Puedes recontar un producto antes de aprobar. Quien lo contó no puede recontarlo." />
               <BotonGrande texto="Aprobar el conteo" color={MARCA.verde} onPress={aprobar} />
               {/* El recuento del supervisor: queda en «Con diferencia» —es lo que
                   se recuenta— pero como filtro, no candado: verificar unas que
@@ -500,14 +500,14 @@ export default function Conteo() {
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>Modo recuento</Text>
                 <Interruptor value={recuento} onValueChange={(v) => { setRecuento(v); if (v) { setFiltro('DIFERENCIA'); setOrden(''); } }} />
               </View>
-              {recuento ? <Aviso tono="nota" texto="Recuento a ciegas sobre los renglones con diferencia, en orden de estante (por laboratorio). No ves el primer conteo ni el sistema hasta registrar el tuyo. No puedes recontar una línea que contaste tú." /> : null}
+              {recuento ? <Aviso tono="nota" texto="Vuelve a contar los productos con diferencia, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. No puedes recontar lo que contaste tú." /> : null}
             </View>
           ) : null}
           {/* El conteo firma la diferencia; el stock se corrige afuera. Hasta que
               alguien registre que lo aplicó, tiene que estar a la vista. */}
           {conteo?.aplica_en_caja && editable ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Aviso tono="nota" texto="Este conteo ajusta el inventario. «Sin lote» es existencia que el sistema tiene sin lote asignado: si esas unidades traen lote impreso, agrega ese lote con su vencimiento y en «Sin lote» cuenta sólo lo que no lo traiga (0 si no hay). Cuenta cada renglón en lo que dice: cajas, blísteres o unidades. Un producto a medio contar no se puede ajustar." />
+              <Aviso tono="nota" texto="Este conteo ajusta el inventario. «Sin lote» es la existencia que no tiene lote asignado. Si esas unidades traen lote impreso, agrega el lote con su vencimiento. En «Sin lote» cuenta solo lo que no trae lote (0 si no hay). Cuenta en lo que dice cada fila: cajas, blísteres o unidades. Si un producto queda a medio contar, no se ajusta." />
             </View>
           ) : null}
           {conteo?.aplica_en_caja && textoSinLote ? (
@@ -517,7 +517,7 @@ export default function Conteo() {
           ) : null}
           {conteo?.aplica_en_caja && conteo.status === 'FINALIZADO' ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Aviso tono="cuidado" texto="Al aprobarlo, el inventario queda como se contó, lote por lote: antes de firmar se ve qué entra y qué sale. Lo que quedó sin contar no se toca." />
+              <Aviso tono="cuidado" texto="Al aprobarlo, el inventario queda como se contó, lote por lote. Antes de firmar verás qué entra y qué sale. Lo que no se contó no cambia." />
             </View>
           ) : null}
           {conteo?.aplica_en_caja && conteo.status === 'CERRADO' ? (
@@ -528,20 +528,20 @@ export default function Conteo() {
           {conteo?.status === 'CERRADO' && !conteo.aplica_en_caja ? (
             <View style={{ marginHorizontal: 16, gap: 10 }}>
               {conteo.ajuste_erp_aplicado ? (
-                <Aviso tono="nota" texto={`Ajuste aplicado el ${fechaTexto(conteo.ajuste_erp_at, { day: 'numeric', month: 'short', year: 'numeric' })} a las ${fmtHM(conteo.ajuste_erp_at)}.${conteo.ajuste_erp_nota ? ` — «${conteo.ajuste_erp_nota}»` : ''}`} />
+                <Aviso tono="nota" texto={`Ajuste aplicado el ${fechaTexto(conteo.ajuste_erp_at, { day: 'numeric', month: 'short', year: 'numeric' })} a las ${fmtHM(conteo.ajuste_erp_at)}.${conteo.ajuste_erp_nota ? ` Nota: «${conteo.ajuste_erp_nota}»` : ''}`} />
               ) : faltaAjusteDelConteo(conteo) ? (
                 <>
-                  <Aviso tono="cuidado" texto={`Ajuste pendiente de aplicar: ${conteo.total_diferencias} línea(s). Aplícalo y regístralo aquí.`} />
+                  <Aviso tono="cuidado" texto={`Falta aplicar el ajuste de ${conteo.total_diferencias} producto(s). Aplícalo y márcalo aquí.`} />
                   {puedeEditar ? <BotonGrande texto="Registrar ajuste" borde color={MARCA.ambar} onPress={registrarAjuste} /> : null}
                 </>
-              ) : <Aviso tono="nota" texto="Sin diferencias: no hay ajuste que aplicar." />}
+              ) : <Aviso tono="nota" texto="No hay diferencias. No hay nada que ajustar." />}
             </View>
           ) : null}
           {editable ? (
             <View style={{ marginHorizontal: 16 }}>
               <BotonGrande texto="Escanear un producto" color={MARCA.azul} onPress={() => setEscaneando(true)} />
               <View style={{ height: 10 }} />
-              <BotonGrande texto="Agregar un renglón a mano" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} />
+              <BotonGrande texto="Agregar un producto a mano" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} />
             </View>
           ) : null}
           {hayVencidos ? (
@@ -552,7 +552,7 @@ export default function Conteo() {
           ) : null}
           <Subfiltro activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
           <FiltrosActivos grupos={grupos} />
-          {productos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
+          {productos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta. Estos son productos parecidos." /></View> : null}
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
           {productos.filas.map((p) => {
             const abiertoAqui = abierto === p.erp_product_id;

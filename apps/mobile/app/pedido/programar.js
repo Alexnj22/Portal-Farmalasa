@@ -75,7 +75,7 @@ function ProgramarEntrega() {
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Pedido #${numero} · ${ERP_NAMES[Number(sucId)] ?? ''}`}</Text>
         {pss == null ? <Indicador /> : (
           <>
-            <Seccion titulo="Cuándo llega a la sala">
+            <Seccion titulo="Cuándo llega a la sucursal">
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Día</Text>
                 <Fecha valor={dia} onCambiar={setDia} desde={hoySV()} />

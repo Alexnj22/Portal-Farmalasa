@@ -84,7 +84,7 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
       if (filas.length === 1) { elegir(filas[0]); return; }
       setTexto(String(codigo));
       setResultados(filas);
-      setAviso(filas.length ? `El código ${codigo} coincide con ${filas.length} productos: elige cuál.` : `Ningún producto con el código ${codigo}.`);
+      setAviso(filas.length ? `El código ${codigo} coincide con ${filas.length} productos. Elige cuál.` : `Ningún producto con el código ${codigo}.`);
     } catch (e) {
       setAviso(`No se pudo buscar el código: ${mensajeAmigable(e)}`);
     }
@@ -138,11 +138,11 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
-        <EncabezadoDeHoja titulo="Agregar un renglón" onCerrar={onCerrar} />
+        <EncabezadoDeHoja titulo="Agregar un producto" onCerrar={onCerrar} />
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-              {`Para un producto que no estaba en la hoja${simple ? '.' : ', o para un lote que no venía.'}`}
+              {`Para un producto que no estaba en la hoja${simple ? '.' : ', o para un lote que no está.'}`}
             </Text>
 
             {producto ? (

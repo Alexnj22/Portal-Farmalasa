@@ -94,7 +94,7 @@ export default function Deposito() {
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
           {`${larga(d.fecha)} · cerrado por ${d.cerrado_por || '—'} · ${d.cerrado_at ? fechaHora12(d.cerrado_at) : ''}`}
         </Text>
-        {anulado ? <Aviso tono="cuidado" texto={`Este cierre se corrigió: ${d.anulado_motivo} · ${d.anulado_por || '—'} · ${fechaHora12(d.anulado_at)}. Sus bolsas volvieron a estar por cerrar.`} /> : null}
+        {anulado ? <Aviso tono="cuidado" texto={`Este cierre se corrigió. Motivo: ${d.anulado_motivo} · ${d.anulado_por || '—'} · ${fechaHora12(d.anulado_at)}. Sus bolsas volvieron a estar por cerrar.`} /> : null}
 
         <Seccion titulo="La cuenta">
           <Dato primero rotulo="Contado" valor={formatMoney(d.total_contado)} />

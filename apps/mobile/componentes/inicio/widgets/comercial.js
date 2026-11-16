@@ -139,7 +139,7 @@ export function Vendedores({ ctx }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>
             {montos
               ? `${r.filas.length} persona${r.filas.length === 1 ? '' : 's'} · promedio ${formatMoney(r.promedio)}${sufijo}${dato?.promedio_ticket != null ? ` · ticket ${formatMoney(dato.promedio_ticket)}` : ''}`
-              : dato?.promedio_ticket != null ? `Ticket de la sala ${formatMoney(dato.promedio_ticket)}` : `${r.filas.length} persona${r.filas.length === 1 ? '' : 's'}`}
+              : dato?.promedio_ticket != null ? `Ticket de la sucursal ${formatMoney(dato.promedio_ticket)}` : `${r.filas.length} persona${r.filas.length === 1 ? '' : 's'}`}
           </Text>
           {opciones.length > 1 ? <Segmentos margen={0} activa={r.ordenActivo} onCambiar={setOrden} opciones={opciones} /> : null}
           {r.filas.slice(0, 6).map((v, i) => {

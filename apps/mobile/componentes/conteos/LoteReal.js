@@ -92,7 +92,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
       await anotar(conteoId, item, plan);
       const n = plan.nuevos.length + plan.aHermanos.length;
       listo(n ? 'Lotes anotados' : 'Lote confirmado',
-        n ? `${n} ${n === 1 ? 'lote' : 'lotes'}${sinLote ? `; sin lote impreso: ${plan.original}` : ''}.` : `${plan.original} ${unidad.nombre} en el lote ${item.lote}.`);
+        n ? `${n} ${n === 1 ? 'lote' : 'lotes'}${sinLote ? `. Sin lote impreso: ${plan.original}` : ''}.` : `${plan.original} ${unidad.nombre} en el lote ${item.lote}.`);
       onCerrar();
     } catch (e) {
       fallo('No se guardó todo', mensajeAmigable(e));
@@ -112,7 +112,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
               {sinLote
                 ? 'Anota cada lote impreso en las cajas, con su vencimiento y cuántas hay. Si hay más de uno, toca «Otro lote».'
-                : 'Revisa el lote y el vencimiento contra la caja. Si coinciden, sólo confirma la cantidad; si no, corrígelos o agrega otro lote.'}
+                : 'Revisa el lote y el vencimiento con la caja. Si coinciden, solo confirma la cantidad. Si no, corrígelos o agrega otro lote.'}
             </Text>
             {lotes.map((l, i) => (
               <Seccion key={i} titulo={`${regla.pideLote ? 'Lote' : 'Caja'}${lotes.length > 1 ? ` ${i + 1}` : ''}`}>
@@ -138,7 +138,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
                   style={{ fontSize: 20, fontWeight: '700' }} />
               </Seccion>
             ) : null}
-            {sinLote ? <Aviso tono="nota" texto={`Había ${total}; anotaste ${anotado} con lote. Al aprobar, las que tienen lote salen de «Sin lote» y entran a su lote.`} /> : null}
+            {sinLote ? <Aviso tono="nota" texto={`Había ${total} y anotaste ${anotado} con lote. Al aprobar, las que tienen lote salen de «Sin lote» y entran a su lote.`} /> : null}
             {plan.error ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{plan.error}</Text> : null}
             <BotonGrande texto={guardando ? 'Guardando…' : conNuevos ? 'Guardar lotes' : 'Confirmar'} color={MARCA.verde}
               deshabilitado={guardando || !!plan.error} onPress={guardar} />

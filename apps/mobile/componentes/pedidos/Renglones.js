@@ -120,16 +120,16 @@ function SeccionDeRenglones({ titulo, nota, filas, modo, color }) {
 export default function Renglones({ items }) {
   if (items == null) return null;
   const s = seccionesDeRenglones(items);
-  if (!s.total) return <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Este pedido no tiene productos para esta sala.</Text>;
+  if (!s.total) return <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Este pedido no tiene productos para esta sucursal.</Text>;
   return (
     <View style={{ gap: 10 }}>
       <SeccionDeRenglones titulo="Productos enviados" filas={s.enviados} modo="enviados" color={MARCA.verde} />
-      <SeccionDeRenglones titulo="Stock insuficiente en bodega" filas={s.agotamiento} modo="agotamiento" color={MARCA.ambar}
-        nota="Se envió menos de lo pedido: bodega no tenía para cubrir el MAX." />
+      <SeccionDeRenglones titulo="No alcanzó en bodega" filas={s.agotamiento} modo="agotamiento" color={MARCA.ambar}
+        nota="Bodega no tenía suficiente. Se mandó lo que había. Lo que falta queda para el próximo pedido." />
       <SeccionDeRenglones titulo="Sin inventario en bodega" filas={s.sinStock} modo="sinStock" color={MARCA.ambar}
-        nota="No se incluyeron por falta de existencia en bodega al momento del despacho." />
+        nota="No se incluyeron porque bodega no tenía existencia al despachar." />
       <SeccionDeRenglones titulo="Revisar regla de despacho" filas={s.porRegla} modo="regla" color={MARCA.rojo}
-        nota="La regla de despacho dejó el producto fuera. El MIN/MAX se corrige en Min·Máx." />
+        nota="La regla de despacho dejó el producto fuera. Revisa su Mín/Máx." />
     </View>
   );
 }

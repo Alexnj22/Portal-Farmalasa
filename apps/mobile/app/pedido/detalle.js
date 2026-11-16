@@ -152,13 +152,13 @@ function DetalleDePedido() {
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {!row ? (
-          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Este pedido ya no está en el tablero de esta sala." /></View>
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Este pedido ya no está en el tablero de esta sucursal." /></View>
         ) : (
           <>
             <Bloque>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{ERP_NAMES[suc] ?? `Sala ${suc}`}</Text>
+                  <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{ERP_NAMES[suc] ?? `Sucursal ${suc}`}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                     {[row.codigo, row.created_at ? fechaTexto(String(row.created_at).slice(0, 10), { weekday: 'short', day: 'numeric', month: 'short' }) : null].filter(Boolean).join(' · ')}
                   </Text>
@@ -177,7 +177,7 @@ function DetalleDePedido() {
               ]} />
               {row.notes ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`“${row.notes}”`}</Text> : null}
               {faltan?.hay ? (
-                <Aviso tono="cuidado" texto={`No llegó: ${describirFaltantes(faltan).join(', ')}${faltan.enCamino ? ' — ya viene en un reenvío.' : ' — bodega todavía no lo reenvía.'}`} />
+                <Aviso tono="cuidado" texto={`No llegó: ${describirFaltantes(faltan).join(', ')}${faltan.enCamino ? '. Ya viene en un reenvío.' : '. Bodega todavía no lo reenvía.'}`} />
               ) : null}
               {puede && etapa === 'transito' ? <BotonGrande texto="Confirmar que llegó" color={MARCA.azul} onPress={() => ir('/pedido/llegada')} /> : null}
               {puede && etapa === 'contando' ? <BotonGrande texto="Contar lo que llegó" color={MARCA.verde} onPress={() => ir('/pedido/recibir')} /> : null}
@@ -211,7 +211,7 @@ function DetalleDePedido() {
             ) : null}
 
             {hasPermission('minmax', 'can_edit') && (items ?? []).some((i) => i.revision_minmax) ? (
-              <Bloque titulo="Revisar MIN·MAX">
+              <Bloque titulo="Revisar Mín/Máx">
                 <RevisionMinMax items={items} />
               </Bloque>
             ) : null}

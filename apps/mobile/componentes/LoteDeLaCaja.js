@@ -97,7 +97,7 @@ export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange, 
       {choque ? (
         <View style={{ gap: 8 }}>
           <Aviso tono="cuidado" texto={choque.mismoNumero
-            ? `El lote ${choque.lote} ya está registrado con vencimiento ${mesAnio(choque.vence)}. Un lote tiene un solo vencimiento: revisa la caja.`
+            ? `El lote ${choque.lote} ya está registrado con vencimiento ${mesAnio(choque.vence)}. Un lote tiene un solo vencimiento. Revisa la caja.`
             : `¿Es el lote ${choque.lote} · ${mesAnio(choque.vence)}? Se parece al que escribiste.`} />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             <Chip texto={`Usar ${choque.lote} · ${mesAnio(choque.vence)}`} onPress={() => usar(choque)} />

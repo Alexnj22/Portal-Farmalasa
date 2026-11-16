@@ -207,7 +207,7 @@ describe('el mismo pedido a dos salas', () => {
         await ponerCantidad(2);
         await irALista();          // cambiar de pestaña agrega el que está a la vista
         await ponerCausa('Se acabaron en sala');
-        expect(screen.getByRole('button', { name: 'Solicitar a 2 salas' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Solicitar a 2 sucursales' })).toBeTruthy();
     });
 });
 

@@ -31,11 +31,11 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
 const AYUDA = {
-  CICLICO: 'Una muestra del mes, priorizando lo que hace más que no se cuenta y lo bajo receta.',
-  TOTAL: 'Todo lo que la sala tiene en existencia.',
+  CICLICO: 'Una muestra del mes. Primero lo que lleva más tiempo sin contarse y lo bajo receta.',
+  TOTAL: 'Todo lo que la sucursal tiene en existencia.',
   LABORATORIO: 'Todos los productos de un laboratorio.',
-  BAJO_RECETA: 'Los productos bajo receta de la sala.',
-  MANUAL: 'Sólo los productos que elijas.',
+  BAJO_RECETA: 'Los productos bajo receta de la sucursal.',
+  MANUAL: 'Solo los productos que elijas.',
 };
 
 export default function NuevoConteo() {
@@ -117,7 +117,7 @@ export default function NuevoConteo() {
       const id = await crearConteoInventario({
         branchId: parseInt(sala, 10), scopeType: alcance, scopeFilter: pedido.scopeFilter, erpProductIds: pedido.erpProductIds, modo, fuenteSistema: fuente, aplicaEnCaja: ajusta,
       });
-      listo('Conteo iniciado', 'Se generó el snapshot de inventario.');
+      listo('Conteo iniciado', 'Ya puedes empezar a contar.');
       router.replace({ pathname: '/conteo/[id]', params: { id: String(id) } });
     } catch (e) {
       fallo('No se pudo crear el conteo', mensajeAmigable(e));
@@ -207,14 +207,14 @@ export default function NuevoConteo() {
             </Seccion>
           ) : null}
 
-          <Seccion titulo="Detalle de cada renglón">
+          <Seccion titulo="Detalle de cada producto">
             <Opciones opciones={MODOS_DE_CONTEO.map((o) => ({ id: o.value, label: o.label }))} valor={modo} onCambiar={elegirModo} />
           </Seccion>
-          <Seccion titulo="Contra qué existencia" pie={fuente === 'HOJA' ? 'Lo contado se compara con la existencia de cuando se imprimió la hoja: una venta en el medio no aparece como diferencia.' : 'Lo contado se compara con la existencia del momento en que se teclea.'}>
+          <Seccion titulo="Contra qué existencia" pie={fuente === 'HOJA' ? 'Lo contado se compara con la existencia de cuando se imprimió la hoja. Una venta en el medio no sale como diferencia.' : 'Lo contado se compara con la existencia del momento en que se digita.'}>
             <Opciones opciones={FUENTES_DE_CONTEO.map((o) => ({ id: o.value, label: o.label }))} valor={fuente} onCambiar={elegirFuente} />
           </Seccion>
-          <Seccion titulo="Al aprobarlo" pie={ajusta ? 'Lo que sobra entra con su lote y lo que falta sale de su lote. Lo que quede sin contar no se toca. Se cuenta por lote y en vivo.' : 'El conteo mide la diferencia; el ajuste se registra aparte.'}>
-            <Opciones opciones={[{ id: 'NO', label: 'Sólo medir' }, { id: 'SI', label: 'Ajusta el inventario' }]} valor={ajusta ? 'SI' : 'NO'} onCambiar={elegirAjuste} />
+          <Seccion titulo="Al aprobarlo" pie={ajusta ? 'Lo que sobra entra a su lote y lo que falta sale de su lote. Lo que no se cuente no cambia. Se cuenta por lote y en vivo.' : 'El conteo mide la diferencia. El ajuste se anota aparte.'}>
+            <Opciones opciones={[{ id: 'NO', label: 'Solo medir' }, { id: 'SI', label: 'Ajusta el inventario' }]} valor={ajusta ? 'SI' : 'NO'} onCambiar={elegirAjuste} />
           </Seccion>
 
           {falta ? <Aviso texto={falta} /> : null}

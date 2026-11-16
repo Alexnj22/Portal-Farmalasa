@@ -92,7 +92,7 @@ function MovimientoSinComprobante({ meta }) {
   const datos = [
     tipo ? ['Tipo', tipo] : null,
     para ? ['Detalle', para] : null,
-    sala ? ['Sala', sala] : null,
+    sala ? ['Sucursal', sala] : null,
     ['Forma de pago', forma],
     meta.fecha ? ['Fecha', fechaTexto(meta.fecha)] : null,
     ['Comprobante', meta.numero_boleta || 'No tiene'],
@@ -121,7 +121,7 @@ function MovimientoSinComprobante({ meta }) {
         </View>
       </Vidrio>
       {meta.reenvio && meta.rechazo_anterior ? (
-        <Bloque rotulo="Se reenvía. Antes no se autorizó porque" color={MARCA.ambar}>
+        <Bloque rotulo="Se envía otra vez. La primera vez no se aprobó porque" color={MARCA.ambar}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{meta.rechazo_anterior}</Text>
         </Bloque>
       ) : null}
@@ -136,7 +136,7 @@ export function QueSignificaDecidir({ req }) {
   return (
     <Text style={{ color: colorSistema.texto2, fontSize: 13, lineHeight: 18, marginHorizontal: 4 }}>
       {sale
-        ? 'El dinero ya salió. Autorizarlo dice que la salida está bien; rechazarlo la anula y el dinero vuelve a contar donde estaba.'
+        ? 'El dinero ya salió. Apruébalo si la salida está bien. Si la rechazas, se anula y el dinero vuelve a contar donde estaba.'
         : 'Este dinero no entra a la caja. Apruébalo si el dinero sí llegó. Si no, recházalo y escribe qué prueba falta para que la sucursal lo mande de nuevo.'}
     </Text>
   );

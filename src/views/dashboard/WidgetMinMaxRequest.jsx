@@ -127,19 +127,19 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
   const submit = async () => {
     setErr('');
     if (!erp) { setErr('Elige una sucursal'); return; }
-    if (productoOculto) { setErr(`Este producto está oculto en ${ERP_NAMES[Number(erp)] || 'la sucursal'}: primero hay que mostrarlo de nuevo en Min/Max.`); return; }
+    if (productoOculto) { setErr(`Este producto está oculto en ${ERP_NAMES[Number(erp)] || 'la sucursal'}. Primero hay que mostrarlo de nuevo en Mín/Máx.`); return; }
     const newMin = nMin;
     const newMax = nMax;
     if (newMin === null || newMax === null || Number.isNaN(newMin) || Number.isNaN(newMax)) { setErr('Completa MIN y MAX'); return; }
     if (newMin < 0 || newMax < 0) { setErr('Los valores no pueden ser negativos'); return; }
     if (!parMinMaxValido(newMin, newMax)) {
       setErr(newMin === 0
-        ? 'Con el MIN en 0, el MAX sólo puede ser 0 (deja de reponerse) o 1'
+        ? 'Con el MIN en 0, el MAX solo puede ser 0 o 1. En 0 deja de reponerse.'
         : 'MAX debe ser mayor al MIN');
       return;
     }
     if (ajusteSinCambio(current, newMin, newMax)) {
-      setErr(`${ERP_NAMES[Number(erp)] || 'La sucursal'} ya está en MIN ${newMin} · MAX ${newMax}: esta solicitud no cambiaría nada.`);
+      setErr(`${ERP_NAMES[Number(erp)] || 'La sucursal'} ya está en MIN ${newMin} · MAX ${newMax}. Esta solicitud no cambia nada.`);
       return;
     }
     if (avisoEnvio) { setErr(avisoEnvio); return; }
@@ -263,7 +263,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
             {!loadingCur && (
               <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
                 <span className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1 shrink-0">
-                  <Boxes size={11} className="text-chart-1-text" /> En sala
+                  <Boxes size={11} className="text-chart-1-text" /> Existencia
                 </span>
                 {ventas === null
                   ? <LoadingState variant="inline" size="sm" />
@@ -305,9 +305,9 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
             sin llave. */}
         {productoOculto && (
           <Notice variant="danger" icon={EyeOff}>
-            Este producto está <b>oculto</b> en {ERP_NAMES[Number(erp)] || 'la sucursal'}: hoy no
-            entra en sus pedidos y no hay MIN ni MAX que ajustar. Para volver a reponerlo hay que
-            mostrarlo de nuevo desde Min/Max.
+            Este producto está <b>oculto</b> en {ERP_NAMES[Number(erp)] || 'la sucursal'}. No
+            entra en sus pedidos y no hay MIN ni MAX que ajustar. Para reponerlo otra vez, hay que
+            mostrarlo de nuevo desde Mín/Máx.
           </Notice>
         )}
 
@@ -315,7 +315,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
         <div className="flex items-start gap-2 rounded-xl bg-chart-1/10 border border-chart-1/30 px-3 py-2">
           <Package size={13} className="text-chart-1-text mt-0.5 shrink-0" />
           <div className="text-caption text-chart-1-text font-medium leading-snug">
-            MIN y MAX se ingresan en <b>unidades</b>.
+            Escribe MIN y MAX en <b>unidades</b>.
             {domPres && <> <b>{domPres.factor} und = 1 {domPres.tipo?.trim() || 'caja'}</b>.</>}
             {domPres?.descripcion && <div className="text-micro text-chart-1-text/80 mt-0.5">Factor calculado: {domPres.descripcion}</div>}
           </div>
@@ -350,8 +350,8 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
           <Notice variant="warning" icon={CircleSlash}>
             {ERP_NAMES[Number(erp)] || 'La sucursal'} ya está en <b>MIN {nMin} · MAX {nMax}</b>
             {current?.min == null && nMin === 0 && nMax === 0
-              ? ' — el «—» de arriba y el 0 son el mismo número: el producto ya no se repone.'
-              : '.'} Esta solicitud no cambiaría nada.
+              ? '. El «—» de arriba equivale a 0. El producto ya no se repone.'
+              : '.'} Esta solicitud no cambia nada.
           </Notice>
         )}
 
@@ -367,9 +367,9 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
           <div className="flex items-start gap-2 rounded-xl bg-warning/10 border border-warning/30 px-3 py-2">
             <CircleSlash size={13} className="text-warning-text mt-0.5 shrink-0" />
             <div className="text-caption text-warning-text font-medium leading-snug">
-              En cero el producto <b>deja de reponerse</b>: no vuelve a entrar en los pedidos
+              En cero, el producto <b>deja de reponerse</b>. No vuelve a entrar en los pedidos
               de {ERP_NAMES[Number(erp)] || 'la sucursal'} hasta que alguien le fije un MIN y un MAX.
-              Por eso el motivo es obligatorio.
+              El motivo es obligatorio.
             </div>
           </div>
         )}
@@ -437,7 +437,7 @@ export function FormularioMinMax({ selectedErp = null }) {
         <CheckCircle2 size={40} className="text-success" strokeWidth={1.5} />
         <div className="text-center">
           <p className="text-body-lg font-black text-content">Solicitud enviada</p>
-          <p className="text-body-sm text-content-3 mt-1">El supervisor fue notificado para aprobarla.</p>
+          <p className="text-body-sm text-content-3 mt-1">Le avisamos al supervisor para que la apruebe.</p>
         </div>
       </div>
     );
@@ -467,8 +467,8 @@ export function FormularioMinMax({ selectedErp = null }) {
       /* Acá la barra SÍ va a la ranura del encabezado del modal: es el envase
          de `ModalConRanuras` y ahí es donde vive, abierta y sin plegar. */
       EnvoltorioBusqueda={HerramientasModal}
-      placeholder="Buscar producto para ajustar Min/Max…"
-      invitacion={{ icono: TrendingUp, texto: 'Busca un producto para proponer un ajuste de mínimo/máximo' }}
+      placeholder="Buscar producto para ajustar Mín/Máx…"
+      invitacion={{ icono: TrendingUp, texto: 'Busca un producto para proponer un ajuste de Mín/Máx' }}
       onElegir={(p) => { setPicked(p); setView('form'); }}
     />
   );

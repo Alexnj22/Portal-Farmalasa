@@ -44,7 +44,7 @@ function Ficha({ rotulo, persona, sala, vacio, cuando, apunte, tono = 'card', pr
         <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text>
         <Text style={{ color: sala || persona ? colorSistema.texto : colorSistema.texto2, fontSize: 16, fontWeight: sala || persona ? '700' : '500',
           fontStyle: sala || persona ? 'normal' : 'italic' }}>{nombre}</Text>
-        {sala ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>La sala que tiene el producto</Text>
+        {sala ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>La sucursal que tiene el producto</Text>
           : persona?.role ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{persona.role}</Text> : null}
         {cuando || apunte ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
@@ -77,7 +77,7 @@ export default function PersonasDeSolicitud({ req, empleadosPorId }) {
           sala={cancelada ? null : esperaSala}
           vacio={cancelada ? 'La retiró quien la envió'
             : !pendiente ? 'Sin registro'
-            : req.type === 'MINMAX_CHANGE_REQUEST' ? 'Quien administre Min/Max'
+            : req.type === 'MINMAX_CHANGE_REQUEST' ? 'Quien aprueba Mín/Máx'
             : area || 'Sin asignar'}
           cuando={cancelada ? req.updated_at : cerro}
           apunte={pendiente

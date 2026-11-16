@@ -97,11 +97,11 @@ export default function Factura() {
         {/* El documento para el cliente que lo pide, sin solicitud (2026-10-19). */}
         {!anulada ? <DocumentoParaCliente invoiceId={inv.id} /> : null}
 
-        {anulada ? <Aviso tono="freno" texto="Esta factura ya está anulada: no se le puede pedir ningún cambio." /> : (
+        {anulada ? <Aviso tono="freno" texto="Esta factura ya está anulada. No se le puede pedir ningún cambio." /> : (
           <View style={{ gap: 10 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>¿Qué necesitas?</Text>
             <Opcion icono="Ban" color={MARCA.rojo} titulo="Anular la factura" deshabilitada={estadoCaja !== 'abierta'}
-              detalle={estadoCaja !== 'abierta' ? MOTIVO_SIN_ANULAR[estadoCaja] : 'Devuelve la venta; lo aprueba Supervisión'} onPress={() => ir('anular')} />
+              detalle={estadoCaja !== 'abierta' ? MOTIVO_SIN_ANULAR[estadoCaja] : 'Devuelve la venta. Lo aprueba un supervisor o administrador'} onPress={() => ir('anular')} />
             <Opcion icono="CreditCard" color={MARCA.azulClaro} titulo="Cambiar la forma de pago"
               detalle={`Actual: ${ROTULO_PAGO[String(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || '—'}`} onPress={() => ir('pago')} />
             <Opcion icono="UserCog" color={MARCA.violeta} titulo="Cambiar el vendedor"

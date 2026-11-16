@@ -212,7 +212,7 @@ export default function NuevaPersonal() {
               </Fila>
               {fin ? <Dato rotulo="Último día" valor={largo(fin)} fuerte /> : null}
               {fin && choqueEnRango(incapacidades, payload.startDate, fin) ? <Aviso tono="freno" texto="Se cruza con una incapacidad ya aprobada." /> : null}
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{Number(payload.days) > 3 ? 'Boleta del ISSS (desde el cuarto día) — foto o PDF' : 'Boleta o constancia (opcional) — foto o PDF'}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{Number(payload.days) > 3 ? 'Boleta del ISSS (desde el cuarto día). Foto o PDF' : 'Boleta o constancia (opcional). Foto o PDF'}</Text>
               <Fotos fotos={fotos} onCambiar={setFotos} max={1} pdf />
             </Seccion>
           ) : null}
@@ -220,7 +220,7 @@ export default function NuevaPersonal() {
           {tipo === 'SHIFT_CHANGE' ? (
             <Seccion titulo="El cambio">
               <Fila rotulo="Fecha"><Fecha valor={payload.date} desde={hoySV()} onCambiar={(v) => set('date', v)} /></Fila>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Con quién (de tu sala)</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Con quién (de tu sucursal)</Text>
               <Opciones opciones={companeros.map((e) => ({ id: String(e.id), label: shortEmployeeName(e) }))} valor={String(payload.targetEmployeeId ?? '')}
                 onCambiar={(v) => set('targetEmployeeId', v)} />
               {companeroOcupado ? <Aviso tono="freno" texto={`Está ${companeroOcupado.motivo} ese día.`} /> : null}

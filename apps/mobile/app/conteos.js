@@ -82,13 +82,13 @@ export default function Conteos() {
   const eliminar = (c) => {
     if (!puedeBorrar(c)) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    Alert.alert('¿Eliminar este conteo?', `Se borra el conteo de ${nombreDeSala(c.branch_id)} del ${fechaTexto(c.created_at, { day: 'numeric', month: 'short', year: 'numeric' })} (${ESTADO_CONTEO[c.status] ?? c.status}) con todos sus renglones y el historial de quién contó cada uno. No se puede deshacer.`, [
+    Alert.alert('¿Eliminar este conteo?', `Se borra el conteo de ${nombreDeSala(c.branch_id)} del ${fechaTexto(c.created_at, { day: 'numeric', month: 'short', year: 'numeric' })} (${ESTADO_CONTEO[c.status] ?? c.status}) con todos sus productos y el historial de quién contó cada uno. No se puede deshacer.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Eliminar', style: 'destructive', onPress: async () => {
         trabajando('Eliminando…');
         try {
           const r = await eliminarConteoInventario(c.id);
-          listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} renglón(es).`);
+          listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} producto(s).`);
           fetchConteosInventario();
         } catch (e) { fallo('No se pudo eliminar', mensajeAmigable(e)); }
       } },
@@ -122,7 +122,7 @@ export default function Conteos() {
         <FilaDeKpis>
           <Kpi icono="FileCheck" rotulo="Por aprobar" valor={String(resumen.porAprobar)} apoyo={foco === 'POR_APROBAR' ? 'filtrando' : 'esperan otra firma'} pide={resumen.porAprobar > 0}
             color={MARCA.azulClaro} onPress={() => alternar('POR_APROBAR')} />
-          <Kpi icono="AlertTriangle" rotulo="Sin ajustar" valor={String(resumen.sinAjuste)} apoyo={foco === 'SIN_AJUSTE' ? 'filtrando' : 'el stock sin corregir'} pide={resumen.sinAjuste > 0}
+          <Kpi icono="AlertTriangle" rotulo="Sin ajustar" valor={String(resumen.sinAjuste)} apoyo={foco === 'SIN_AJUSTE' ? 'filtrando' : 'la existencia aún sin corregir'} pide={resumen.sinAjuste > 0}
             color={MARCA.rojo} onPress={() => alternar('SIN_AJUSTE')} />
         </FilaDeKpis>
         <FiltrosActivos grupos={grupos} />
@@ -151,7 +151,7 @@ export default function Conteos() {
                     <View style={{ width: `${pct}%`, height: 6, backgroundColor: pct >= 100 ? MARCA.verde : MARCA.azulClaro }} />
                   </View>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                    {`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} renglones contados (${pct}%)${difTexto(r, c)}`}
+                    {`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} productos contados (${pct}%)${difTexto(r, c)}`}
                   </Text>
                   {/* El valor neto se sella al cerrar: en uno abierto todavía no existe. */}
                   {verMontos && !['BORRADOR', 'EN_PROGRESO'].includes(c.status) && (c.valor_sobrante != null || c.valor_faltante != null) ? (() => {

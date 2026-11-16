@@ -124,7 +124,7 @@ const TABS = [
     // Pestaña propia y no mezclados en «En camino»: lo que hay que HACER con
     // ellos es distinto, y en una lista sola habría que leer cada tarjeta para
     // saber si te toca contestar o sólo mirar.
-    { key: 'envios',    label: 'Envíos' },
+    { key: 'envios',    label: 'A otra sucursal' },
     /* Lo que NO llegó en la bolsa. Pestaña propia y no un aviso adentro de «En
      * camino»: un faltante ya no es un traslado esperando —el movimiento pasó,
      * el sistema ya cambió las existencias— y lo que hay que hacer con él es

@@ -65,7 +65,7 @@ function Resumen({ flujo, confirmando, onVolver, onConfirmar }) {
     <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={confirmando ? () => {} : onVolver}>
       <ConAurora>
         <EncabezadoDeHoja titulo="Revisa antes de confirmar"
-          subtitulo={`${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades${flujo.global ? ' · distribución global' : ''}`}
+          subtitulo={`${resumen.length} sucursal${resumen.length !== 1 ? 'es' : ''} · ${tot.renglones.toLocaleString('es-SV')} productos · ${tot.unidades.toLocaleString('es-SV')} unidades${flujo.global ? ' · distribución global' : ''}`}
           onCerrar={onVolver} ocupado={confirmando} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 48 }}>
           {resumen.map((s) => (
@@ -73,19 +73,19 @@ function Resumen({ flujo, confirmando, onVolver, onConfirmar }) {
               <View style={{ padding: 12, gap: 6 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{ERP_NAMES[s.erp_sucursal_id] ?? `Sucursal ${s.erp_sucursal_id}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                  {`${s.renglones.toLocaleString('es-SV')} ${s.renglones === 1 ? 'renglón' : 'renglones'} · ${s.unidades.toLocaleString('es-SV')} unidad${s.unidades !== 1 ? 'es' : ''}`}
+                  {`${s.renglones.toLocaleString('es-SV')} ${s.renglones === 1 ? 'producto' : 'productos'} · ${s.unidades.toLocaleString('es-SV')} unidad${s.unidades !== 1 ? 'es' : ''}`}
                 </Text>
                 {s.revision > 0 || s.agotamiento > 0 || s.sinStock > 0 ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {s.revision > 0 ? <Pildora texto={`${s.revision} en revisión`} color={MARCA.ambar} /> : null}
                     {s.agotamiento > 0 ? <Pildora texto={`${s.agotamiento} por agotamiento`} color={MARCA.violeta} /> : null}
-                    {s.sinStock > 0 ? <Pildora texto={`${s.sinStock} sin stock en Bodega`} color={MARCA.rojo} /> : null}
+                    {s.sinStock > 0 ? <Pildora texto={`${s.sinStock} sin existencia en Bodega`} color={MARCA.rojo} /> : null}
                   </View>
                 ) : null}
               </View>
             </Vidrio>
           ))}
-          <Aviso texto="Lo que ves es lo que se confirma. No se deshace desde aquí: para quitarlo hay que anularlo." />
+          <Aviso texto="Lo que ves es lo que se confirma. Después solo se puede anular." />
           <BotonGrande texto={confirmando ? 'Confirmando…' : 'Confirmar'} color={MARCA.verde} deshabilitado={confirmando} onPress={onConfirmar} />
           <BotonGrande texto="Volver" borde deshabilitado={confirmando} onPress={onVolver} />
         </ScrollView>
@@ -105,11 +105,11 @@ function SinStockEnBodega({ filas }) {
     return ordenarSinBodega(base, campo, dir);
   }, [filas, buscar, orden]);
   return (
-    <Seccion titulo={`Productos sin stock en Bodega · ${filas.length.toLocaleString('es-SV')}`} pie="Lo que piden las sucursales y Bodega no tiene para despachar. Entre paréntesis, lo vendido en 6 meses.">
+    <Seccion titulo={`Productos sin existencia en Bodega · ${filas.length.toLocaleString('es-SV')}`} pie="Lo que piden las sucursales y Bodega no tiene para despachar. Entre paréntesis, lo vendido en 6 meses.">
       <MenuDeFiltros grupos={[{ id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: ORDENES_SIN_BODEGA[0].id, onCambiar: setOrden,
         opciones: ORDENES_SIN_BODEGA }]} />
       {filas.length > 8 ? <Campo multiline={false} value={buscar} onChangeText={(t) => { setBuscar(t); setMostrar(15); }} placeholder="Buscar producto o laboratorio" autoCorrect={false} /> : null}
-      {!lista.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{buscar.trim() ? `Sin resultados para «${buscar.trim()}».` : 'No hay productos sin stock en Bodega.'}</Text> : null}
+      {!lista.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{buscar.trim() ? `Sin resultados para «${buscar.trim()}».` : 'No hay productos sin existencia en Bodega.'}</Text> : null}
       {lista.slice(0, mostrar).map((r, i) => (
         <View key={r.erp_product_id} style={{ gap: 4, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -174,11 +174,11 @@ export default function GenerarPedido() {
     trabajando('Calculando el pedido…');
     try {
       const rows = await vistaPreviaDePedido({ salas: [...elegidas], globalMode: global });
-      if (!rows.length) { listo('Sin necesidades', 'Las salas elegidas están abastecidas: no hay nada que pedir.'); return; }
+      if (!rows.length) { listo('Sin necesidades', 'Las sucursales elegidas tienen lo que necesitan. No hay nada que pedir.'); return; }
       listo('Listo para revisar');
       setFlujo({ rows, salas: [...elegidas], global });
     } catch (e) {
-      const msg = /statement timeout|canceling statement/i.test(e?.message ?? '') ? 'El cálculo tardó demasiado. Intenta con menos salas a la vez.' : mensajeAmigable(e);
+      const msg = /statement timeout|canceling statement/i.test(e?.message ?? '') ? 'El cálculo tardó demasiado. Elige menos sucursales e intenta de nuevo.' : mensajeAmigable(e);
       fallo('No se pudo calcular el pedido', msg);
     } finally {
       setPreparando(false);
@@ -197,7 +197,7 @@ export default function GenerarPedido() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       // Sin número (la lectura falló dos veces) se dice «El pedido», nunca «#null».
       const rotulo = gen.numero != null ? `Pedido #${gen.numero}` : 'El pedido';
-      const avisoCodigos = gen.codigosError ? ' Los códigos de las salas no se guardaron: avisa al equipo de sistemas.' : '';
+      const avisoCodigos = gen.codigosError ? ' Los códigos de las sucursales no se guardaron. Avisa a Soporte para que los asigne.' : '';
       // Las hojas (qué producto va en qué hoja) se guardan ANTES de soltar la
       // pantalla: son las que después reparte «Finalizar».
       trabajando('Guardando las hojas…');
@@ -208,24 +208,24 @@ export default function GenerarPedido() {
       let archivos = [];
       let fallaPapel = null;
       try { archivos = await papelesAlGenerar(gen, meta); } catch (e) { fallaPapel = e; }
-      const avisoHojas = hojas.capturadas < hojas.total ? ' Las hojas quedaron a medias: se recalculan al finalizar.' : '';
-      listo(`${rotulo} confirmado`, `${gen.items.length} productos en ${gen.sucIds.length} sala${gen.sucIds.length === 1 ? '' : 's'}.${avisoHojas}${avisoCodigos}`);
+      const avisoHojas = hojas.capturadas < hojas.total ? ' Las hojas quedaron a medias. Se calculan de nuevo al finalizar.' : '';
+      listo(`${rotulo} confirmado`, `${gen.items.length} productos en ${gen.sucIds.length} sucursal${gen.sucIds.length === 1 ? '' : 'es'}.${avisoHojas}${avisoCodigos}`);
       setElegidas(new Set());
       volver('/pedidos');
       if (fallaPapel) {
-        fallo('El pedido quedó, pero el papel no se armó', `${mensajeAmigable(fallaPapel)} Se puede imprimir desde el pedido.`);
+        fallo('El pedido quedó, pero el papel no se armó', `${mensajeAmigable(fallaPapel)} Puedes imprimirlo desde el pedido.`);
       } else if (archivos.length) {
         ofrecerPapelesDelPedido({
           archivos,
           titulo: `${rotulo} · el papel`,
-          mensaje: archivos.length > 1 ? `Un PDF por sala (${archivos.length}).` : undefined,
+          mensaje: archivos.length > 1 ? `Un PDF por sucursal (${archivos.length}).` : undefined,
           nombreZip: gen.numero != null ? `Pedido ${gen.numero}` : 'Pedido',
           pedidoId: gen.pedidoId,
           alFallar: (e) => fallo('No se pudo', mensajeAmigable(e)),
         });
       }
     } catch (e) {
-      const msg = /statement timeout|canceling statement/i.test(e?.message ?? '') ? 'El cálculo tardó demasiado. Intenta con menos salas a la vez.' : mensajeAmigable(e);
+      const msg = /statement timeout|canceling statement/i.test(e?.message ?? '') ? 'El cálculo tardó demasiado. Elige menos sucursales e intenta de nuevo.' : mensajeAmigable(e);
       setFlujo(null);
       fallo('No se pudo generar el pedido', msg);
     } finally {
@@ -233,7 +233,7 @@ export default function GenerarPedido() {
     }
   };
 
-  if (!puede) return <PantallaSinDato titulo={'Generar pedido'} texto="Generar pedidos es de Bodega (permiso de pedidos para todas las salas)." />;
+  if (!puede) return <PantallaSinDato titulo={'Generar pedido'} texto="Generar pedidos es de Bodega. Necesitas permiso de pedidos para todas las sucursales." />;
 
   return (
     <>
@@ -244,7 +244,7 @@ export default function GenerarPedido() {
           <>
             {errorTablero ? <Aviso tono="freno" texto={`No se pudo leer cómo están las sucursales: ${errorTablero}`} /> : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 4 }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Elige las salas a reponer.</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Elige las sucursales a reponer.</Text>
               <Pressable onPress={() => setElegidas(todas ? new Set() : new Set(elegibles))} hitSlop={8}>
                 <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{todas ? 'Quitar la selección' : 'Todas'}</Text>
               </Pressable>
@@ -264,7 +264,7 @@ export default function GenerarPedido() {
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{ERP_NAMES[id]}</Text>
                           <MarcaDeEleccion elegida={on} multiple />
                         </View>
-                        {sin ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin MIN·MAX publicado</Text> : (
+                        {sin ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Pendiente Mín/Máx</Text> : (
                           <>
                             <Text style={{ color: COLOR_URGENCIA[nivel], fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                               {urg != null ? `${Math.round(urg)}%` : '—'}
@@ -287,15 +287,15 @@ export default function GenerarPedido() {
                 );
               })}
             </View>
-            <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>El porcentaje es cuánto se ha vaciado la sala en promedio (depleción): rojo desde 65%, ámbar desde 40%.</Text>
-            <Seccion pie="La Bodega se reparte considerando lo que necesitan TODAS las salas, pero el pedido incluye sólo las elegidas.">
+            <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>El porcentaje es cuánto se ha vaciado la sucursal en promedio. Rojo desde 65%, ámbar desde 40%.</Text>
+            <Seccion pie="Lo de Bodega se reparte según lo que necesitan todas las sucursales. El pedido incluye solo las elegidas.">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Distribución global de Bodega</Text>
                 <Interruptor value={global} onValueChange={setGlobal} />
               </View>
             </Seccion>
-            <Aviso texto="Al generar, el papel de cada sala sale aquí mismo: se imprime, se comparte o se guarda. Es el mismo PDF de la computadora." />
-            <BotonGrande texto={preparando ? 'Calculando…' : elegidas.size ? `Generar pedido · ${elegidas.size} sala${elegidas.size === 1 ? '' : 's'}` : 'Elige al menos una sala'}
+            <Aviso texto="Al generar, el PDF de cada sucursal sale aquí mismo. Puedes imprimirlo, compartirlo o guardarlo." />
+            <BotonGrande texto={preparando ? 'Calculando…' : elegidas.size ? `Generar pedido · ${elegidas.size} sucursal${elegidas.size === 1 ? '' : 'es'}` : 'Elige al menos una sucursal'}
               color={MARCA.azul} onPress={preparar} deshabilitado={!elegidas.size || preparando || generando} />
             {!errorTablero ? <SinStockEnBodega filas={sinBodega} /> : null}
           </>

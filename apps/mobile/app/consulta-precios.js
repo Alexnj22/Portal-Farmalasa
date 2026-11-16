@@ -57,7 +57,7 @@ export default function ConsultaPrecios() {
       }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
-        {!texto ? <Vacio icono="Tag" titulo="Busca un producto" detalle="Sus precios por presentación y lo que hay en tu sala." /> : null}
+        {!texto ? <Vacio icono="Tag" titulo="Busca un producto" detalle="Sus precios por presentación y lo que hay en tu sucursal." /> : null}
         {texto && !buscando ? (
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24 }}>Escribe al menos {MIN_LETRAS_BUSQUEDA} letras.</Text>
         ) : null}

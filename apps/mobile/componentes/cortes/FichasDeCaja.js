@@ -94,8 +94,8 @@ export default function FichasDeCaja({ aperturas = [], entradas = [], pudeLeerAs
           ventas={porVenta.get(`${a.branch_id}:${a.abierta_el}`) || null} piezas={porPieza.get(`${a.branch_id}:${a.abierta_el}`) || null}
           veLosMontos={veLosMontos} />
       ))}
-      {!pudeLeerAsistencia ? <Aviso texto="No se puede leer la asistencia con este permiso, así que las fichas no dicen quién marcó entrada. No significa que nadie haya marcado." /> : null}
-      {sinPersona ? <Aviso tono="cuidado" texto={`${sinPersona === 1 ? 'Una caja abrió' : `${sinPersona} cajas abrieron`} con una cuenta compartida: sus cortes no quedan a nombre de nadie. Se arregla dándole a cada persona su propio usuario en la caja.`} /> : null}
+      {!pudeLeerAsistencia ? <Aviso texto="Con tu permiso no se ve la asistencia, así que aquí no sale quién marcó entrada." /> : null}
+      {sinPersona ? <Aviso tono="cuidado" texto={`${sinPersona === 1 ? 'Una caja abrió' : `${sinPersona} cajas abrieron`} con una cuenta compartida. Sus cortes no quedan a nombre de nadie. Cada persona tiene que tener su propio usuario en la caja.`} /> : null}
     </View>
   );
 }

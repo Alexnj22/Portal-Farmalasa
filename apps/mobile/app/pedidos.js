@@ -87,7 +87,7 @@ function Tarjeta({ r, todas, puede, miErp, esSupervision }) {
             </Text>
           ) : null}
           {r.diferencias_reportadas_at && !r.confirmado_correccion_at ? (
-            <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>Tiene diferencias sin resolver — tócalo para verlas.</Text>
+            <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>Tiene diferencias sin resolver. Tócalo para verlas.</Text>
           ) : observado && r.pedido_status === 'completado' ? (
             <Text style={{ color: MARCA.ambar, fontSize: 13 }}>Completado con observación.</Text>
           ) : null}
@@ -220,8 +220,8 @@ export default function Pedidos() {
   }, [mias, rango]);
 
   const grupos = vista === 'metricas' ? [] : [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...ERP_ORDEN.map((e) => ({ id: String(e), label: ERP_NAMES[e] }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...ERP_ORDEN.map((e) => ({ id: String(e), label: ERP_NAMES[e] }))] }] : []),
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'all', onCambiar: setEstado,
       opciones: ESTADOS_DEL_TABLERO.map((e) => ({ id: e.value, label: e.label })) },
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'mes', onCambiar: setPeriodo,
@@ -259,8 +259,8 @@ export default function Pedidos() {
         {vista === 'metricas' ? <Metricas /> : (
           <>
             <FiltrosActivos grupos={grupos} />
-            {nuevo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Bodega te mandó el pedido #${nuevo.numero}: ya va en camino.`} /></View> : null}
-            {!todas && miErp == null ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu ficha no está asignada a una sala que reciba pedidos." /></View> : null}
+            {nuevo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Bodega te mandó el pedido #${nuevo.numero}. Ya va en camino.`} /></View> : null}
+            {!todas && miErp == null ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="No tienes asignada una sucursal que reciba pedidos." /></View> : null}
             {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
             {/* Generar a la vista (2026-11-11, usuario: «¿por qué no se puede
                 generar un pedido aquí?»): estaba escondido en «Más acciones». */}

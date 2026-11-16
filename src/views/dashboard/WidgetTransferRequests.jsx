@@ -183,7 +183,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                     <Button variant="primary" icon={Send}
                         className="min-h-[var(--tap-min)] w-full sm:w-auto"
                         onClick={() => setAbrirEnvio(true)}>
-                        Enviar producto
+                        Traslado a otra sucursal
                     </Button>
                 )}
                 <Button variant="secondary" icon={ScanLine}
@@ -241,7 +241,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         uno lo dice la píldora de la tarjeta. */}
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
                         {porConfirmar.every(f => String(f.metadata?.origen_branch_id ?? '') === String(miBranch ?? ''))
-                            ? 'Te piden de tu sala'
+                            ? 'Te piden de tu sucursal'
                             : 'Te piden'}
                     </p>
                     <Suspense fallback={null}>
@@ -293,7 +293,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                         sobre un traslado que iba a Salud 2. */}
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
                         {porRecibir.every(f => String(f.metadata?.branch_id ?? '') === String(miBranch ?? ''))
-                            ? 'En camino a tu sala'
+                            ? 'En camino a tu sucursal'
                             : 'En camino'}
                     </p>
                     <Suspense fallback={null}>
@@ -333,7 +333,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
             {!cargando && porMomento.por_despachar.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-                        Sin salir de tu sala
+                        Sin salir de tu sucursal
                     </p>
                     <Suspense fallback={null}>
                         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -502,7 +502,7 @@ export default function WidgetTransferRequests({ irA = null } = {}) {
     return (
         <LanzadorSolicitud
             icon={ArrowLeftRight}
-            label="Traslados entre salas"
+            label="Traslados entre sucursales"
             pendientes={pendientes === null ? null : pendientes + porDecidir}
             error={error}
             etiquetaPendientes="por contestar"
@@ -514,7 +514,7 @@ export default function WidgetTransferRequests({ irA = null } = {}) {
             // —reportado con una captura de cuatro traslados en camino, que ya
             // no entraban en la pantalla—.
             maxWidth="max-w-4xl"
-            descripcion="Pedir y enviar producto entre salas, y contestar lo que te llega"
+            descripcion="Pedir y mandar producto entre sucursales, y contestar lo que te llega"
             // Las dos mitades del mismo movimiento. La baldosa ya traía las dos
             // listas al montarse y pintaba SÓLO la primera: lo que uno está
             // esperando de otra sala —la mitad que hace levantar el teléfono—
@@ -522,7 +522,7 @@ export default function WidgetTransferRequests({ irA = null } = {}) {
             instrumento={porConfirmar === null
                 ? <FranjaVacia />
                 : <Flujo entra={(pendientes ?? 0) + porDecidir} sale={enVuelo} />}
-            detalle={enVuelo ? `${enVuelo} en vuelo` : null}
+            detalle={enVuelo ? `${enVuelo} en camino` : null}
             irA={irA}
         >
             {/* Sin `min-h` ni scroller propio: el cuerpo canónico

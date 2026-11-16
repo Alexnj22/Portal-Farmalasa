@@ -37,7 +37,7 @@ export default function CajaDia() {
   const { sala, fecha, signo = 'falta' } = useLocalSearchParams();
   const { hasPermission } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
-  const nombre = (sucursales || []).find((b) => String(b.id) === String(sala))?.name ?? `Sala ${sala}`;
+  const nombre = (sucursales || []).find((b) => String(b.id) === String(sala))?.name ?? `Sucursal ${sala}`;
   const { dias, cargando, error, recargar } = useDiasConDiferencia({ activo: true, hasta: hoySV() });
   const [recargando, setRecargando] = useState(false);
   useFocusEffect(useCallback(() => { recargar(); }, [recargar]));

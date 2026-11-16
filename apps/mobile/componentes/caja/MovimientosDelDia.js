@@ -172,7 +172,7 @@ export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, 
       <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.5, marginHorizontal: 4 }}>
         {`Movimientos de este día${dia ? ` · ${fechaTexto(dia, { day: 'numeric', month: 'long' })}` : ''}`}
       </Text>
-      {!puedeVerBolsas ? <Aviso texto="Aquí sólo ves lo que entró y salió de la caja. Las salidas pagadas con una bolsa necesitan el permiso de Bolsas." /> : null}
+      {!puedeVerBolsas ? <Aviso texto="Aquí solo ves lo que entró y salió de la caja. Para ver las salidas pagadas con una bolsa necesitas el permiso de Bolsas." /> : null}
       {!lineas.length ? <Vacio enSeccion>Todavía no se ha movido efectivo en este día.</Vacio> : null}
       {grupos.filter((g) => g.lineas.length || (!g.corte && lineas.length)).map((g) => (
         <View key={g.corte?.id ?? 'sin-cortar'} style={{ gap: 8 }}>

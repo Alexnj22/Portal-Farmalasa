@@ -46,7 +46,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel={`Reserva ${codigo}`}>
             <LiquidModal.Header
                 titulo={<span className="tabular-nums">{codigo}</span>}
-                subtitulo={`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}${r.sala ? ` · ${r.sala}` : ''}`}
+                subtitulo={`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sucursal'}${r.sala ? ` · ${r.sala}` : ''}`}
                 acciones={<>
                     <Badge variant={estado.variant} uppercase={false}>{estado.label}</Badge>
                     <InsigniaDeNivel nivel={r.nivel} />
@@ -67,7 +67,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                         <p className="text-body font-bold text-content break-words">{r.cliente ?? 'Sin cliente'}</p>
                         <Datos filas={[
                             ['Teléfono', tel || 'Sin teléfono'],
-                            ['App', r.tiene_app ? 'La tiene: los avisos le llegan solos' : 'No la tiene: se le avisa por WhatsApp'],
+                            ['App', r.tiene_app ? 'La tiene. Los avisos le llegan solos' : 'No la tiene. Se le avisa por WhatsApp'],
                             r.entrega === 'domicilio' && ['Entrega', `A domicilio · ${r.direccion_entrega ?? ''}`],
                             fiscal && ['Factura', `Crédito fiscal · ${fiscal.nombre} · NIT ${fiscal.nit} · NRC ${fiscal.nrc}`],
                         ]} />
@@ -107,7 +107,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                                                 <Badge variant={TRASLADO[x.traslado_estado].variant} uppercase={false}>{TRASLADO[x.traslado_estado].label}</Badge>
                                             )}
                                             <span className="text-caption text-content-2 break-words">
-                                                {x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sala.')}
+                                                {x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sucursal.')}
                                                 {Number(x.traslado_llegaron) > 0 && ` Llegaron ${x.traslado_llegaron} de ${x.cantidad}.`}
                                             </span>
                                         </div>
@@ -139,7 +139,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                         <Datos filas={[
                             pagado > 0 && ['Cómo pagó', formaDePagoLegible(r.pago_metodo)],
                             Number(r.costo_envio) > 0 && ['Envío', formatMoney(Number(r.costo_envio))],
-                            r.pago_prueba && ['Atención', 'El cobro en línea fue de prueba: no entró dinero, se cobra en caja.'],
+                            r.pago_prueba && ['Atención', 'El cobro en línea fue de prueba. No entró dinero. Se cobra en caja.'],
                             r.preventa_ref && ['En caja', `Preventa #${r.preventa_ref}${r.factura ? ` · factura ${r.factura}` : ''}`],
                         ]} />
                     </Bloque>

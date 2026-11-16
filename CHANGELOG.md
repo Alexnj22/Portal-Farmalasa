@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1553.1 — Lenguaje: Tablero, y la app al día con la web
+
+- Quinta tanda de la revisión del lenguaje: el Tablero de inicio (traslados,
+  cargas y descartes, reservas, encargos, recetas, facturación, Mín/Máx,
+  bolsas, metas, vendedores…), unos 270 textos.
+- La app del personal alcanza a la web en Solicitudes, Inventario, Caja,
+  Pedidos, Traslados, Rutas y la pantalla de inicio (unos 470 textos). Sale
+  por aire al terminar toda la revisión.
+- Traslados: la pestaña «Envíos» → «A otra sucursal». Quién decide se nombra
+  por lo que dice el código («un supervisor o administrador», «el supervisor
+  de ventas», «el jefe de sucursal»); un vale que no quedó ligado a la venta
+  manda a Soporte.
+
 ## v2.1553.0 — Preventa: vender desde el portal y que llegue a caja
 
 - Nueva vista **Preventa** (Comercial): se elige el cliente, se agregan

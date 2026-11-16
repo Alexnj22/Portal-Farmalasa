@@ -49,7 +49,7 @@ export function PedirProrroga({ tipo, ids, titulo, vence, onCerrar, onListo }) {
         setEnviando(true);
         try {
             for (const id of ids) await pedirProrroga(tipo, id, n, motivo);
-            showToast('Prórroga pedida', 'Talento Humano o Supervisión de ventas la autoriza. Mientras tanto, el plazo no vence.', 'success');
+            showToast('Prórroga pedida', 'La autoriza Talento Humano o el supervisor de ventas. Mientras tanto, el plazo no vence.', 'success');
             onListo?.();
         } catch (err) {
             showToast('No se pudo pedir la prórroga', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -64,7 +64,7 @@ export function PedirProrroga({ tipo, ids, titulo, vence, onCerrar, onListo }) {
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
                         {vence ? `Hoy puede retirar hasta el ${dia(vence)}. ` : ''}
-                        Se pide una sola vez: la autoriza Talento Humano o Supervisión de ventas, y al cliente le llega el aviso.
+                        Se pide una sola vez. La autoriza Talento Humano o el supervisor de ventas. El cliente recibe el aviso.
                     </p>
                     <PortalInput label="Días que necesita" name="prorrogaDias" inputMode="numeric" maskType="PERCENT" autoFocus
                         value={dias} onChange={(e) => setDias(e.target.value)} placeholder="Ej. 15"
@@ -129,7 +129,7 @@ export function ProrrogasPorAutorizar({ soloLectura = false }) {
                                 p.productos.length > 1 ? `${p.productos.length} productos` : p.producto,
                                 p.sala,
                                 p.vence && `hoy vence el ${dia(p.vence)}`,
-                                p.origen === 'app' ? 'pedida por el cliente en la app' : 'pedida por la sala',
+                                p.origen === 'app' ? 'pedida por el cliente en la app' : 'pedida por la sucursal',
                                 `motivo: ${p.motivo}`,
                             ].filter(Boolean).join(' · ')}
                             acciones={soloLectura ? null : (
@@ -165,7 +165,7 @@ function DecidirProrroga({ p, onCerrar, onListo }) {
             let vence = null;
             for (const id of p.ids) vence = (await decidirProrroga(id, p.autorizar, nota, p.autorizar ? n : null))?.vence ?? vence;
             showToast(p.autorizar ? 'Prórroga autorizada' : 'Prórroga no autorizada',
-                p.autorizar ? `Puede retirar hasta el ${dia(vence)}. La sala y el cliente reciben el aviso.` : 'La sala y el cliente reciben el aviso con el motivo.',
+                p.autorizar ? `Puede retirar hasta el ${dia(vence)}. La sucursal y el cliente reciben el aviso.` : 'La sucursal y el cliente reciben el aviso con el motivo.',
                 'success');
             onListo();
         } catch (err) {

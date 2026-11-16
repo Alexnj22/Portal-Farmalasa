@@ -202,7 +202,7 @@ export default function Ajuste() {
       }), { lineas: lineas.length, fotos: evidencia.length });
       if (error) throw error;
       clearDraft(claveBorrador);
-      listo('Solicitud enviada', `La revisa ${aprobador ? shortEmployeeName(aprobador) : 'Supervisión'}. El inventario se mueve al aprobarla.`);
+      listo('Solicitud enviada', `La revisa ${aprobador ? shortEmployeeName(aprobador) : 'un supervisor o administrador'}. El inventario cambia cuando la aprueben.`);
       router.dismissTo('/solicitudes');
     } catch (e) {
       fallo('No se pudo enviar', String(e?.message ?? '').includes('row-level security') ? 'No tienes permiso para crear solicitudes de inventario.' : (e?.message || 'Inténtalo de nuevo.'));
@@ -211,7 +211,7 @@ export default function Ajuste() {
     }
   };
 
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: salaElegida, onCambiar: (v) => { setSala(v); setLineas([]); },
+  const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: salaElegida, onCambiar: (v) => { setSala(v); setLineas([]); },
     opciones: salasErp.map((id) => ({ id: String(id), label: (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}` })) }] : [];
 
   // ── Paso 1 ──
@@ -222,7 +222,7 @@ export default function Ajuste() {
         {todas ? <MenuDeFiltros grupos={grupos} /> : null}
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{nombreSala} · ¿qué vas a hacer?</Text>
-          {enConteo?.en_conteo ? <Aviso tono="freno" texto={`Hay un conteo de inventario abierto en ${enConteo.sala ?? 'la sala'}. Mientras se cuenta no se puede cargar ni descargar producto.`} /> : null}
+          {enConteo?.en_conteo ? <Aviso tono="freno" texto={`Hay un conteo de inventario abierto en ${enConteo.sala ?? 'la sucursal'}. Mientras se cuenta, no se puede cargar ni descargar producto.`} /> : null}
           {OPERACIONES_AJUSTE.map((o) => (
             <Pressable key={o.key} disabled={!!enConteo?.en_conteo} onPress={() => { Haptics.selectionAsync().catch(() => {}); setOpKey(o.key); }}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], opacity: enConteo?.en_conteo ? 0.4 : 1 })}>
@@ -276,8 +276,8 @@ export default function Ajuste() {
           {/* Agregar un producto */}
           {!borrador ? (
             <Seccion titulo={lineas.length ? 'Agregar otro producto' : 'Producto'}>
-              <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder={esCarga ? 'Busca en el catálogo' : 'Busca en lo que tiene la sala'} autoCorrect={false} />
-              {enConteo?.conteo_abierto ? <Aviso tono="cuidado" texto="Hay un conteo abierto en la sala: lo que se está contando no se puede agregar." /> : null}
+              <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder={esCarga ? 'Busca en el catálogo' : 'Busca en lo que tiene la sucursal'} autoCorrect={false} />
+              {enConteo?.conteo_abierto ? <Aviso tono="cuidado" texto="Hay un conteo abierto en la sucursal. Lo que se está contando no se puede agregar." /> : null}
               {candidatos.slice(0, 12).map((f) => {
                 const contando = enElConteo.has(f.erp_product_id);
                 return (
@@ -285,7 +285,7 @@ export default function Ajuste() {
                     style={({ pressed }) => ({ flexDirection: 'row', gap: 10, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, opacity: contando ? 0.4 : pressed ? 0.6 : 1 })}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={2}>{f.descripcion}</Text>
                     {contando ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>se está contando</Text>
-                      : f.cantidad != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.cantidad} en sala</Text> : null}
+                      : f.cantidad != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.cantidad} en la sucursal</Text> : null}
                   </Pressable>
                 );
               })}
@@ -293,7 +293,7 @@ export default function Ajuste() {
           ) : (
             <Seccion titulo="Producto">
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{borrador.descripcion}</Text>
-              {borrador.unidadesEnSala != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{borrador.unidadesEnSala} {borrador.unidadesEnSala === 1 ? 'unidad' : 'unidades'} en la sala</Text> : null}
+              {borrador.unidadesEnSala != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{borrador.unidadesEnSala} {borrador.unidadesEnSala === 1 ? 'unidad' : 'unidades'} en la sucursal</Text> : null}
               {pres.length > 1 ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {pres.map((p) => <Pastilla key={p.tipo} texto={p.tipo} activa={borrador.tipo === p.tipo} onPress={() => setBorrador((b) => ({ ...b, tipo: p.tipo, factor: p.factor }))} />)}
@@ -343,11 +343,11 @@ export default function Ajuste() {
           {/* Por qué */}
           {motivos ? <Seccion titulo="Motivo"><Opciones opciones={motivos.map((m) => ({ id: m.value, label: m.label }))} valor={motivo} onCambiar={setMotivo} /></Seccion> : null}
           <Seccion titulo={causaObligatoria(opKey, motivo) ? 'Qué pasó (obligatorio)' : 'Qué pasó (opcional)'}>
-            <Campo value={causa} onChangeText={setCausa} placeholder="Cuéntale a Supervisión qué pasó" />
+            <Campo value={causa} onChangeText={setCausa} placeholder="Cuenta qué pasó" />
           </Seccion>
           {pideFoto ? <Seccion titulo={textoFoto.app}><Fotos fotos={fotos} onCambiar={setFotos} max={MAX_FOTOS_AJUSTE} /></Seccion> : null}
 
-          {lineasEnConteo.length ? <Aviso tono="freno" texto={lineasEnConteo.length === 1 ? `${lineasEnConteo[0].descripcion} se está contando: quítalo para enviar.` : `${lineasEnConteo.length} productos se están contando: quítalos para enviar.`} /> : null}
+          {lineasEnConteo.length ? <Aviso tono="freno" texto={lineasEnConteo.length === 1 ? `${lineasEnConteo[0].descripcion} se está contando. Quítalo para enviar.` : `${lineasEnConteo.length} productos se están contando. Quítalos para enviar.`} /> : null}
           <BotonGrande texto={`Enviar solicitud${lineas.length ? ` · ${lineas.length}` : ''}`} color={esCarga ? MARCA.verde : MARCA.rojo}
             deshabilitado={enviando || !puedeEnviar || !!enConteo?.en_conteo} onPress={enviar} />
         </ScrollView>

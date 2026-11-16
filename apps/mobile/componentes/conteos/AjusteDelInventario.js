@@ -15,7 +15,7 @@ const mesAnio = (v) => { const [a, m] = String(v || '').split('-'); return a && 
 const rotulo = (l) => {
   const u = Number(l.unidades);
   const lote = !l.lote || /^gen[eé]rico$/i.test(l.lote) ? 'sin lote asignado' : `lote ${l.lote}`;
-  return `${u > 0 ? '+' : '−'}${Math.abs(u)} ${lote}${l.vence ? ` (vence ${mesAnio(l.vence)})` : ''} — ${l.hecho ? 'aplicado' : (l.error ?? 'pendiente')}`;
+  return `${u > 0 ? '+' : '−'}${Math.abs(u)} ${lote}${l.vence ? ` (vence ${mesAnio(l.vence)})` : ''} · ${l.hecho ? 'aplicado' : (l.error ?? 'pendiente')}`;
 };
 
 export default function AjusteDelInventario({ conteoId }) {
@@ -43,8 +43,8 @@ export default function AjusteDelInventario({ conteoId }) {
     try { await reintentar(id); await cargar(); } catch (e) { fallo('No se pudo reintentar', mensajeAmigable(e)); } finally { setOcupado(null); }
   };
 
-  const resumen = !movs.length ? 'Sin diferencias: el inventario ya estaba como se contó.'
-    : enCola ? `Ajustando el inventario: ${n('HECHO')} de ${movs.length} productos listos. Sigue solo aunque cierres esta pantalla.`
+  const resumen = !movs.length ? 'No hay diferencias. El inventario ya estaba como se contó.'
+    : enCola ? `Ajustando el inventario: ${n('HECHO')} de ${movs.length} productos listos. Sigue aunque cierres esta pantalla.`
       : problemas.length ? `${n('HECHO')} de ${movs.length} productos quedaron como se contaron. ${problemas.length} no se pudieron aplicar.`
         : `Los ${movs.length} productos con diferencia quedaron en el inventario como se contaron.`;
 
@@ -59,7 +59,7 @@ export default function AjusteDelInventario({ conteoId }) {
           {(m.lineas ?? []).filter((l) => Number(l.unidades)).map((l) => (
             <Text key={`${l.lote}|${l.vence}`} style={{ color: colorSistema.texto2, fontSize: 13 }}>{rotulo(l)}</Text>
           ))}
-          {m.estado === 'INCIERTO' ? <Aviso tono="cuidado" texto="Puede haber entrado una parte. Revisa los movimientos del producto antes de reintentar." /> : null}
+          {m.estado === 'INCIERTO' ? <Aviso tono="cuidado" texto="Puede haber entrado una parte. Revisa los movimientos del producto antes de intentar de nuevo." /> : null}
           {hasPermission('conteo_inventario', 'can_approve') ? (
             <BotonGrande texto={ocupado === m.id ? 'Reintentando…' : 'Reintentar'} borde color={MARCA.azulClaro}
               deshabilitado={ocupado === m.id} onPress={() => otraVez(m.id)} />

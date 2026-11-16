@@ -24,8 +24,8 @@ export function Reservas({ ctx }) {
   const recetas = filas.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
   const abrir = () => router.push({ pathname: '/reservas-sala', params: todas ? { todas: '1' } : {} });
   return (
-    <Widget titulo="Reservas de mi sala" icono="ShoppingBag" color={MARCA.ambar} cuenta={(pendientes + recetas) || null} onAbrir={abrir}>
-      {cargando && !dato ? <Esqueleto lineas={2} /> : !sala && !todas ? <Vacio texto="Las reservas son de una sala de ventas." /> : !filas.length ? <Vacio texto="Sin reservas" bien /> : (
+    <Widget titulo="Reservas de mi sucursal" icono="ShoppingBag" color={MARCA.ambar} cuenta={(pendientes + recetas) || null} onAbrir={abrir}>
+      {cargando && !dato ? <Esqueleto lineas={2} /> : !sala && !todas ? <Vacio texto="Las reservas son de una sucursal." /> : !filas.length ? <Vacio texto="Sin reservas" bien /> : (
         <>
           {recetas ? <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '700', marginBottom: 2 }}>{`${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}`}</Text> : null}
           {pendientes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginBottom: 2 }}>{`${pendientes} ${pendientes === 1 ? 'reserva espera' : 'reservas esperan'} que alguien las aparte`}</Text> : null}

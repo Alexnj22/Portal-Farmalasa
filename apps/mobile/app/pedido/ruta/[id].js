@@ -55,7 +55,7 @@ function Pin({ texto, color, alto = 28 }) {
 }
 
 const MOTIVO_GPS = {
-  denegado: 'El teléfono no da permiso de ubicación: Bodega no ve dónde vas. Se activa en Ajustes › FarmaSalud › Ubicación.',
+  denegado: 'El teléfono no da permiso de ubicación. Bodega no ve dónde vas. Actívalo en Ajustes › FarmaSalud › Ubicación.',
   'sin-senal': 'Sin señal de GPS por ahora.',
   'sin-gps': 'El GPS del teléfono no respondió.',
 };
@@ -210,14 +210,14 @@ export default function RutaDeReparto() {
     const aqui = encimaLista.filter((b) => Number(b.destino_erp) === Number(p.erp_sucursal_id));
     const siguen = encimaLista.filter((b) => Number(b.destino_erp) !== Number(p.erp_sucursal_id));
     return [
-      aqui.length ? `\n\nSe quedan aquí ${aqui.length === 1 ? 'este paquete' : `estos ${aqui.length} paquetes`}:\n${aqui.map(fila).join('\n')}` : '\n\nNinguno de los paquetes que llevas es para esta sala.',
+      aqui.length ? `\n\nSe quedan aquí ${aqui.length === 1 ? 'este paquete' : `estos ${aqui.length} paquetes`}:\n${aqui.map(fila).join('\n')}` : '\n\nNinguno de los paquetes que llevas es para esta sucursal.',
       siguen.length ? `\n\nSiguen contigo (no los dejes aquí):\n${siguen.map(fila).join('\n')}` : '',
     ].join('');
   };
   const marcarEntregada = (p) => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }, ultima.current);
   const entregar = (p) => {
-    const mensaje = `${conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.'}${textoBolsas(p)}`
-      + (firmaExigida ? '\n\nPide el carné a quien recibe: sin su firma no se puede entregar.' : '\n\nSi puedes, pide el carné a quien recibe para que quede su firma.');
+    const mensaje = `${conductor ? 'La sucursal recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del motorista. La sucursal recibe el aviso.'}${textoBolsas(p)}`
+      + (firmaExigida ? '\n\nPide el carné a quien recibe. Sin su firma no se puede entregar.' : '\n\nSi puedes, pide el carné a quien recibe para que quede su firma.');
     const conCarne = { text: 'Firma con carné', onPress: () => { setAvisoFirma(null); setFirmando(p); } };
     const sinFirma = { text: conductor ? 'Entregué sin firma' : 'Marcar sin firma', onPress: async () => {
       setOcupado('Entregar');
@@ -277,7 +277,7 @@ export default function RutaDeReparto() {
       } },
     ], 'plain-text');
   };
-  const noEntregada = (p) => conMotivo('No se pudo entregar', `${p.suc_name} vuelve a quedar disponible para otra ruta. ¿Qué pasó? (ej.: la sala estaba cerrada)`,
+  const noEntregada = (p) => conMotivo('No se pudo entregar', `${p.suc_name} vuelve a quedar disponible para otra ruta. ¿Qué pasó? (ej.: la sucursal estaba cerrada)`,
     'Devolver la parada', (motivo) => marcarParadaNoEntregada({ rutaId: ruta.id, pedidoId: p.pedido_id, sucursalId: p.erp_sucursal_id, motivo }),
     `${p.suc_name} queda disponible para otra ruta`);
   const cerrarConPendientes = () => conMotivo('Cerrar ruta', `Quedan ${pendientes} parada${pendientes !== 1 ? 's' : ''} sin entregar. La ruta se cierra igual y queda anotado el motivo.`,
@@ -287,8 +287,8 @@ export default function RutaDeReparto() {
       return r;
     }, 'Ruta cerrada');
   const iniciar = () => hacer(`Iniciar ruta #${ruta.numero}`, conductor
-    ? 'Las salas reciben el aviso de que vas en camino, y tu ubicación se ve en el mapa aun con la app cerrada hasta que vuelvas a base.'
-    : `Se inicia en nombre de ${ruta.conductor_nombre ?? 'el conductor'}: las salas reciben el aviso de que va en camino.`, 'Iniciar',
+    ? 'Las sucursales reciben el aviso de que vas en camino. Tu ubicación se ve en el mapa aun con la app cerrada, hasta que vuelvas a base.'
+    : `Se inicia en nombre de ${ruta.conductor_nombre ?? 'el motorista'}. Las sucursales reciben el aviso de que va en camino.`, 'Iniciar',
     async () => {
       const r = await iniciarRuta(ruta.id, { desde: 'app' });
       if (!r?.error && conductor) {
@@ -297,7 +297,7 @@ export default function RutaDeReparto() {
       }
       return r;
     }, 'Ruta iniciada');
-  const volver = () => hacer('Volver a base', `${conductor ? 'Se cierra la ruta: no quedan paradas pendientes. Se deja de anotar tu ubicación.' : 'Se cierra la ruta: no quedan paradas pendientes.'}${encima ? ` Ojo: llevas ${encima} paquete${encima === 1 ? '' : 's'} sin entregar; siguen a tu nombre hasta que los entregues o los sueltes.` : ''}`, 'Cerrar ruta',
+  const volver = () => hacer('Volver a base', `${conductor ? 'Se cierra la ruta. No quedan paradas pendientes. Tu ubicación deja de verse.' : 'Se cierra la ruta. No quedan paradas pendientes.'}${encima ? ` Llevas ${encima} paquete${encima === 1 ? '' : 's'} sin entregar. Siguen a tu nombre hasta que los entregues o los sueltes.` : ''}`, 'Cerrar ruta',
     async () => {
       const r = await completarRuta(ruta.id, { desde: 'app' });
       if (!r?.error && conductor) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
@@ -328,7 +328,7 @@ export default function RutaDeReparto() {
                       {linea.length > 1 ? <Polyline coordinates={linea} strokeColor={INDIGO} strokeWidth={4} /> : null}
                       {pinesFijos}
                       {!conductor && camion ? (
-                        <Marker tracksViewChanges={false} coordinate={coord(camion)} title={`Conductor: ${ruta.conductor_nombre}`} description={enVivo ? 'En vivo' : `Última posición ${hora12(camion.at)}`}>
+                        <Marker tracksViewChanges={false} coordinate={coord(camion)} title={`Motorista: ${ruta.conductor_nombre}`} description={enVivo ? 'En vivo' : `Última posición ${hora12(camion.at)}`}>
                           <Pin texto="🚚" color="#1d4ed8" alto={34} />
                         </Marker>
                       ) : null}
@@ -348,7 +348,7 @@ export default function RutaDeReparto() {
                 </Vidrio>
               </View>
             ) : (
-              <View style={{ marginHorizontal: 16 }}><Aviso texto="Las salas de esta ruta todavía no tienen ubicación en el mapa." /></View>
+              <View style={{ marginHorizontal: 16 }}><Aviso texto="Las sucursales de esta ruta todavía no tienen ubicación en el mapa." /></View>
             )}
             {conductor && gps ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={MOTIVO_GPS[gps] ?? MOTIVO_GPS['sin-gps']} /></View> : null}
             {conductor && enRuta && fondo ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Tu ubicación se ve en el mapa aun con la app cerrada, hasta que vuelvas a base." /></View> : null}
@@ -371,7 +371,7 @@ export default function RutaDeReparto() {
                         p.entregado_at ? `Entregado ${hora12(p.entregado_at)}` : null].filter(Boolean).join(' · ')}
                     </Text>
                     {!p.entregado_at && p.no_entregado_at ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>No entregada</Text> : null}
-                    {p.firma_sala_at ? <Text style={{ color: MARCA.verde, fontSize: 12, fontWeight: '700' }}>{`Firmó la sala · ${hora12(p.firma_sala_at)}`}</Text> : null}
+                    {p.firma_sala_at ? <Text style={{ color: MARCA.verde, fontSize: 12, fontWeight: '700' }}>{`Firmó la sucursal · ${hora12(p.firma_sala_at)}`}</Text> : null}
                   </View>
                   {(conductor || canEdit) && !deSala && !p.entregado_at && !p.no_entregado_at && ruta.status === 'en_ruta' ? (
                     <View style={{ gap: 6, alignItems: 'flex-end' }}>
@@ -397,7 +397,7 @@ export default function RutaDeReparto() {
               <BolsasDeLaRuta ruta={ruta} paradas={paradas} coords={coords} puedeOperar={conductor || gestiona}
                 posicion={() => ultima.current} onEncima={setEncima} firmaExigida={firmaExigida} />
             ) : null}
-            <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.suc_name ?? 'la sala'}`}
+            <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.suc_name ?? 'la sucursal'}`}
               ayuda="Apunta al código del carné de quien recibe" onCodigo={alLeerCarne}
               onCerrar={() => { setFirmando(null); setAvisoFirma(null); }}
               pie={avisoFirma ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoFirma}</Text> : null} />

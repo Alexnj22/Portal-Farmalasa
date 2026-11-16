@@ -62,7 +62,7 @@ function PausarPedido() {
           <Campo value={comentario} onChangeText={setComentario} placeholder="Qué pasó" maxLength={200} />
         </Seccion>
         {historial?.length ? (
-          <Seccion titulo="Pausas de esta sala">
+          <Seccion titulo="Pausas de esta sucursal">
             {historial.map((h, i) => (
               <Dato key={i} primero={i === 0} rotulo={`Pausa ${i + 1}`} valor={h.razon ?? '—'} />
             ))}

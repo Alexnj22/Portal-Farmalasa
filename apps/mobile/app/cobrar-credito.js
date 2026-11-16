@@ -203,7 +203,7 @@ export default function CobrarCredito() {
                 <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>debe</Text>
               </View>
               {yaPago > 0.004 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatMoney(yaPago)} pagados de ${formatMoney(credito.total)}`}</Text> : null}
-              {otros.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Tiene ${hermanos.length} créditos en esta sala: ${formatMoney(debeTodo)} en total.`}</Text> : null}
+              {otros.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Tiene ${hermanos.length} créditos en esta sucursal: ${formatMoney(debeTodo)} en total.`}</Text> : null}
             </View>
           </Vidrio>
 
@@ -220,14 +220,14 @@ export default function CobrarCredito() {
           {errorLectura ? <Aviso tono="cuidado" texto={`No se pudo leer el comprobante: ${errorLectura} Vuelve a intentarlo con otra foto.`} /> : null}
           {e.bloqueado ? <Aviso tono="freno" texto={MOTIVO_DEL_FRENO[lectura.veredicto] || 'El comprobante no se pudo dar por bueno.'} /> : null}
           {!e.bloqueado && lectura?.nombreSinReconocer ? (
-            <Aviso tono="cuidado" texto={`${lectura.leido?.beneficiario ? `El comprobante está a nombre de «${lectura.leido.beneficiario}», que no es la empresa.` : 'El comprobante no dice a quién se le pagó.'} El cobro se va a registrar esperando aprobación: el crédito sigue con saldo hasta que confirmen que el pago entró.`} />
+            <Aviso tono="cuidado" texto={`${lectura.leido?.beneficiario ? `El comprobante está a nombre de «${lectura.leido.beneficiario}», que no es la empresa.` : 'El comprobante no dice a quién se le pagó.'} El cobro queda esperando aprobación. El crédito sigue con saldo hasta que confirmen que el pago entró.`} />
           ) : null}
           {lectura && !e.bloqueado && (lectura.avisos || []).length ? <Aviso tono="cuidado" texto={lectura.avisos.join(' ')} /> : null}
 
           {e.pideAprobacion ? (
             <Seccion titulo="Forma de pago" pie="El cobro queda esperando aprobación. El crédito sigue con saldo hasta que lo confirmen.">
               <Opciones opciones={FORMAS_REALES} valor={formaReal} onCambiar={setFormaReal} />
-              <Campo value={motivo} onChangeText={setMotivo} placeholder="Motivo — p. ej. ISSS, planilla de agosto" />
+              <Campo value={motivo} onChangeText={setMotivo} placeholder="Motivo (p. ej. ISSS, planilla de agosto)" />
             </Seccion>
           ) : null}
 
@@ -244,7 +244,7 @@ export default function CobrarCredito() {
               ) : null}
             </Seccion>
           ) : null}
-          {topeado ? <Aviso tono="cuidado" texto={`${credito.cliente} debe ${formatMoney(debeTodo)} en total, así que el monto se ajustó a esa cifra. Un pago por más de la deuda no se puede registrar.`} /> : null}
+          {topeado ? <Aviso tono="cuidado" texto={`${credito.cliente} debe ${formatMoney(debeTodo)} en total, así que el monto se ajustó a esa cifra. No se puede registrar un pago mayor que la deuda.`} /> : null}
 
           {mostrarMontos ? (
             <Seccion titulo={repartir ? 'A qué créditos se aplica' : 'Cuánto se le abona'}>
@@ -307,7 +307,7 @@ export default function CobrarCredito() {
           {forma === 'Efectivo' ? <Aviso tono="nota" texto="El efectivo entra a la caja y cuenta para el corte del día." /> : null}
 
           {reserva === 'ocupado' ? <Aviso tono="freno" texto="Este crédito ya tiene un cobro esperando aprobación." /> : null}
-          {reserva === 'sin-leer' ? <Aviso tono="freno" texto="No se pudo comprobar qué créditos están en aprobación. Por precaución no se puede cobrar: vuelve a entrar en un momento." /> : null}
+          {reserva === 'sin-leer' ? <Aviso tono="freno" texto="No se pudo saber qué créditos están en aprobación. Por ahora no se puede cobrar. Vuelve a entrar en un momento." /> : null}
           <BotonGrande texto={enviando ? 'Enviando…' : e.iraAprobacion ? 'Enviar a aprobación' : 'Cobrar'} color={MARCA.verde}
             deshabilitado={enviando || leyendo || !e.listo || reserva !== 'libre'} onPress={cobrar} />
         </ScrollView>

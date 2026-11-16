@@ -65,8 +65,8 @@ function Pedido({ p, onListo }) {
             useToastStore.getState().showToast(
                 'Correo guardado',
                 r.documento?.motivo
-                    ? `El documento sigue pendiente: ${r.documento.motivo}`
-                    : 'El documento se vuelve a intentar esta noche.',
+                    ? `La factura sigue pendiente: ${r.documento.motivo}`
+                    : 'La factura se vuelve a enviar esta noche.',
                 'info', 8000);
         }
         onListo();
@@ -85,7 +85,7 @@ function Pedido({ p, onListo }) {
 
             <p className="text-body-sm text-content-2 leading-relaxed">
                 El correo de <span className="font-bold text-content">{p.cliente}</span> no
-                es válido y esta venta no puede completarse sin uno correcto.
+                es válido. La venta no se completa sin un correo correcto.
                 {p.valor_actual && (
                     <> Hoy dice <span className="font-mono text-content-3">«{p.valor_actual}»</span>.</>
                 )}

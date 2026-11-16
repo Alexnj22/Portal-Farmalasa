@@ -155,7 +155,7 @@ function repartirLotes(lots) {
     // Lo que se lee al pasar el mouse, en `LiquidTooltip` — un `title` nativo
     // sobre algo que no es un control no lo anuncia ningún lector de pantalla.
     detalleHover: g.lotes
-      .map(r => `${r.lote || 'sin lote'} · ${fmtVenceCorto(r.fecha_vencimiento)} — ${r.cantidad}`)
+      .map(r => `${r.lote || 'sin lote'} · ${fmtVenceCorto(r.fecha_vencimiento)} · ${r.cantidad}`)
       .join('\n'),
   }));
 
@@ -779,7 +779,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
         }
       }
     } catch {
-      setError('Error al consultar inventario');
+      setError('No se pudo buscar. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -880,7 +880,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {drillBranches.length === 0 ? (
-            <EmptyState linea icon={Package} title="Sin stock en ninguna sucursal" />
+            <EmptyState linea icon={Package} title="Sin existencia en ninguna sucursal" />
           ) : (
             drillBranches.map((branch, bi) => {
               const theme = branch.isVencidos ? VENCIDOS_THEME : NEUTRAL_THEME;
@@ -1023,7 +1023,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
         {!loading && !escribiendoCorto && results === null && faltantes.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
-              Sin existencia, puedes solicitar en estas sucursales
+              Sin existencia aquí. Puedes solicitarlos a otra sucursal
             </p>
             {/* La fila es un div y no un botón: tiene DOS acciones —mirar el
                 producto y pedirlo— y un botón adentro de otro no es HTML
@@ -1056,7 +1056,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
                   size="sm"
                   variant="primary"
                   onClick={() => setPedido(f)}
-                  aria-label={`Solicitar ${f.descripcion} a otra sala`}
+                  aria-label={`Solicitar ${f.descripcion} a otra sucursal`}
                   className="shrink-0"
                 >
                   Solicitar
@@ -1071,7 +1071,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-content-3" />
             <p className="text-label font-semibold text-content-3 text-center leading-snug">
-              Busca un producto para ver<br />su stock por sucursal
+              Busca un producto para ver<br />su existencia por sucursal
             </p>
           </div>
         )}
@@ -1191,7 +1191,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30">
               <Package size={13} className="text-warning shrink-0" strokeWidth={2} />
               <p className="text-label text-warning-text font-semibold flex-1">
-                Sin stock para <span className="font-black">"{query}"</span>
+                Sin existencia de <span className="font-black">"{query}"</span>
               </p>
             </div>
 
@@ -1213,7 +1213,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
             {/* Alternatives in inventory */}
             {!srsLoading && alternatives.length > 0 && (
               <div className="flex flex-col gap-1">
-                <SectionLabel icon={Package} label="Alternativas en inventario" color="text-success-text" bg="bg-success/10" />
+                <SectionLabel icon={Package} label="Alternativas con existencia" color="text-success-text" bg="bg-success/10" />
                 <BranchSections
                   branches={alternatives}
                   onDrill={setDrillProduct}
@@ -1227,7 +1227,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
             {/* Nothing anywhere */}
             {!srsLoading && srsResults !== null && srsResults.length === 0 && alternatives.length === 0 && (
               <p className="text-center text-label text-content-3 font-medium py-4">
-                Sin resultados en SRS ni alternativas en inventario
+                Sin resultados en SRS ni alternativas con existencia
               </p>
             )}
           </div>

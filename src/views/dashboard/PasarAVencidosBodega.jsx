@@ -121,7 +121,7 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
                 <p className="text-body-lg font-black text-content">{alEstante ? 'Ya está de vuelta en bodega' : 'Ya está en bodega de vencidos'}</p>
                 <p className="text-body-sm text-content-3 mt-1">
                     {hecho.renglones === 1 ? 'El producto se movió' : `Se movieron ${hecho.renglones} productos`}
-                    {alEstante ? ' a bodega: ya se puede vender.' : ' a bodega de vencidos.'}
+                    {alEstante ? ' a bodega. Ya se puede vender.' : ' a bodega de vencidos.'}
                 </p>
             </div>
             <Button variant="secondary" onClick={onHecho}>Cerrar</Button>
@@ -167,8 +167,8 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
                     <EmptyState compact icon={alEstante ? ArchiveRestore : Archive}
                             title={alEstante ? 'Busca lo que vuelve a la venta' : 'Busca lo que va a vencidos'}
                             subtitle={alEstante
-                                ? 'Vuelve de bodega de vencidos a bodega, para venderse, sin aprobación. Queda anotado quién lo hizo y por qué.'
-                                : 'Se envía de bodega a bodega de vencidos, sin aprobación. Queda anotado quién lo hizo y por qué.'} />
+                                ? 'Vuelve de bodega de vencidos a bodega para venderse. No necesita aprobación. Queda anotado quién lo hizo y por qué.'
+                                : 'Pasa de bodega a bodega de vencidos. No necesita aprobación. Queda anotado quién lo hizo y por qué.'} />
                 ) : (
                     <>
                         {lineas.map(({ k, fila, cantidad }) => (
@@ -216,7 +216,7 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
                                     resaltar onError={setError} alt="Foto del producto dañado" />
                                 {faltaFoto && (
                                     <p className="text-micro text-warning-text font-semibold px-1">
-                                        Por daño hace falta al menos una foto.
+                                        Si es por daño, agrega al menos una foto.
                                     </p>
                                 )}
                             </>

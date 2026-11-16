@@ -88,7 +88,7 @@ function Tarjeta({ c, sala, conSala, conFecha, puedeResolver }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{encabezado}</Text>
             {c.tipo === 'Z' || c.tipo === 'X' ? (
-              <Pildora texto={c.tipo === 'Z' ? 'Cierre (Z)' : 'Lectura (X)'} color={MARCA.violeta} />
+              <Pildora texto={c.tipo === 'Z' ? 'Cierre del día' : 'Lectura'} color={MARCA.violeta} />
             ) : sinConteo ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 17, fontWeight: '700' }}>Sin conteo</Text>
             ) : (
@@ -182,8 +182,8 @@ export default function Cortes() {
       opciones: [{ id: 'hoy', label: 'Hoy' }, { id: 'ayer', label: 'Ayer' }, { id: '7', label: 'Últimos 7 días' }, { id: 'mes', label: 'Este mes' }, { id: 'libre', label: 'Otras fechas' }] },
     { id: 'diferencia', titulo: 'Diferencia', activa: diferencia, porDefecto: 'TODAS', onCambiar: setDiferencia,
       opciones: [{ id: 'TODAS', label: 'Todas' }, { id: 'ok', label: 'Cuadraron' }, { id: 'sobra', label: 'Con exceso' }, { id: 'falta', label: 'Con faltante' }] },
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((s) => ({ id: s, label: nombre(s) }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((s) => ({ id: s, label: nombre(s) }))] }] : []),
   ];
 
   return (
@@ -191,7 +191,7 @@ export default function Cortes() {
       <Stack.Screen options={{
         ...BARRA_FIJA, title: 'Cortes de caja',
         headerSearchBarOptions: {
-          placeholder: 'Sala, quién cortó o monto', hideWhenScrolling: true,
+          placeholder: 'Sucursal, quién cortó o monto', hideWhenScrolling: true,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -238,7 +238,7 @@ export default function Cortes() {
             {resumen.descartados || resumen.sinConteo ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
                 {[resumen.descartados ? `${resumen.descartados} descartado${resumen.descartados === 1 ? '' : 's'}` : null,
-                  resumen.sinConteo ? `${resumen.sinConteo} sin conteo` : null].filter(Boolean).join(' · ')}{' — no entran en el reparto.'}
+                  resumen.sinConteo ? `${resumen.sinConteo} sin conteo` : null].filter(Boolean).join(' · ')}{'. No entran en el reparto.'}
               </Text>
             ) : null}
           </>

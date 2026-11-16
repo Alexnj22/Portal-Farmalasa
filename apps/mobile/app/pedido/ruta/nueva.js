@@ -172,7 +172,7 @@ export default function NuevaRuta() {
   const agregarEncargo = () => {
     const usadas = new Set(paradas.map((p) => Number(p.erp_sucursal_id)));
     const opciones = Object.entries(nombres).filter(([id]) => !usadas.has(Number(id)) && coords.porSucursal[id]);
-    if (!opciones.length) { fallo('Sin salas', 'Todas las salas con ubicación ya están en la ruta.'); return; }
+    if (!opciones.length) { fallo('Sin sucursales', 'Todas las sucursales con ubicación ya están en la ruta.'); return; }
     Alert.alert('Agregar un encargo', 'Una parada sin pedido (recoger, llevar papeles…).', [
       ...opciones.slice(0, 8).map(([id, nombre]) => ({
         text: nombre,
@@ -201,8 +201,8 @@ export default function NuevaRuta() {
   }, [conductores, conductorId, user, yo]);
   const soyYo = conductor.id === (user?.id ?? null);
   const elegirConductor = () => {
-    if (!conductores.length) { fallo('Sin lista', 'No se pudo leer quién puede conducir; conduce quien arma la ruta.'); return; }
-    ActionSheetIOS.showActionSheetWithOptions({ title: 'Quién conduce', options: [...conductores.map((c) => (c.id === user?.id ? `${c.corto} (tú)` : c.corto)), 'Cancelar'], cancelButtonIndex: conductores.length },
+    if (!conductores.length) { fallo('Sin lista', 'No se pudo cargar la lista de motoristas. Conduce quien arma la ruta.'); return; }
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Elige el motorista', options: [...conductores.map((c) => (c.id === user?.id ? `${c.corto} (tú)` : c.corto)), 'Cancelar'], cancelButtonIndex: conductores.length },
       (i) => { if (i < conductores.length) setConductorId(conductores[i].id); });
   };
 
@@ -222,8 +222,8 @@ export default function NuevaRuta() {
         { saleAhora: salida === 'ahora', visitas: visitasDeRuta(paradas) }, { conductor: conductor.nombre, desde: 'app' });
       if (errSalida) throw errSalida;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      if (salida === 'ahora') listo('La ruta salió', 'Cada sala recibe el aviso de que va en camino.');
-      else listo('Ruta creada', 'Queda pendiente: arráncala desde Rutas cuando salga.');
+      if (salida === 'ahora') listo('La ruta salió', 'Cada sucursal recibe el aviso de que va en camino.');
+      else listo('Ruta creada', 'Queda pendiente. Iníciala desde Rutas cuando salga.');
       router.replace({ pathname: '/pedido/ruta/[id]', params: { id: String(rutaId) } });
     } catch (e) {
       fallo('No se pudo crear la ruta', mensajeAmigable(e));
@@ -233,7 +233,7 @@ export default function NuevaRuta() {
   };
   const accion = salida === 'ahora' ? 'Crear y salir' : 'Crear ruta';
   const confirmar = () => Alert.alert(accion,
-    `${paradas.length} parada${paradas.length === 1 ? '' : 's'}${distancia ? ` · ${distanciaTexto(distancia)}` : ''}. ${soyYo ? `Conduces tú (${conductor.corto})` : `Conduce ${conductor.corto}`}${salida === 'ahora' ? ' y la ruta sale ya: cada sala recibe el aviso.' : '. Queda pendiente hasta que se arranque.'}`,
+    `${paradas.length} parada${paradas.length === 1 ? '' : 's'}${distancia ? ` · ${distanciaTexto(distancia)}` : ''}. ${soyYo ? `Conduces tú (${conductor.corto})` : `Conduce ${conductor.corto}`}${salida === 'ahora' ? '. La ruta sale ya y cada sucursal recibe el aviso.' : '. Queda pendiente hasta que se inicie.'}`,
     [{ text: 'Cancelar', style: 'cancel' }, { text: accion, onPress: crear }]);
 
   return (
@@ -247,7 +247,7 @@ export default function NuevaRuta() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {disponibles == null ? <Cargando /> : paso === '1' ? (
           <View style={{ marginHorizontal: 16, gap: 12 }}>
-            {!disponibles.length ? <Vacio titulo="No hay salas finalizadas esperando salir." /> : (
+            {!disponibles.length ? <Vacio titulo="No hay sucursales finalizadas esperando salir." /> : (
               <Seccion titulo={`Listos para salir · ${disponibles.length}`} pie={conductor.corto ? `Conduce ${conductor.corto}.` : null}>
                 {disponibles.length > 1 ? (
                   <Pressable onPress={() => setElegidos(elegidos.size === disponibles.length ? new Set() : new Set(disponibles.map((p) => p.key)))} style={{ minHeight: 40, justifyContent: 'center' }}>

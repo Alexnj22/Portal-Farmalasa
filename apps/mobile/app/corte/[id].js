@@ -144,7 +144,7 @@ export default function Corte() {
     if (String(corte.fecha || '') !== hoySV()) return;
     if (await salaConCajaAbierta(corte.branch_id) !== true) return;
     Alert.alert(`¿Cerrar el día en ${sala}?`,
-      'Se emite el cierre (Z) y la caja no vuelve a abrir hoy. No se deshace.',
+      'La caja no vuelve a abrir hoy. No se deshace.',
       [{ text: 'Después', style: 'cancel' }, {
         text: 'Cerrar el día', style: 'destructive', onPress: async () => {
           trabajando('Cerrando el día…');
@@ -231,7 +231,7 @@ export default function Corte() {
                 {corte.recibe?.name ? <Text style={{ color: MARCA.verde, fontWeight: '700' }}>{`  →  ${shortEmployeeName({ name: corte.recibe.name })}`}</Text> : null}
               </Text>
               {esZ || esX ? (
-                <Pildora texto={esZ ? 'Cierre del día (Z)' : 'Lectura (X)'} color={MARCA.violeta} />
+                <Pildora texto={esZ ? 'Cierre del día' : 'Lectura'} color={MARCA.violeta} />
               ) : sinConteo ? (
                 <Text style={{ color: colorSistema.texto2, fontSize: 28, fontWeight: '800' }}>Sin conteo</Text>
               ) : (
@@ -249,20 +249,20 @@ export default function Corte() {
             </View>
           </Vidrio>
 
-          {descartado ? <Aviso tono="nota" texto="Este conteo se descartó: no cuenta para el día ni para los cortes que siguen." /> : null}
+          {descartado ? <Aviso tono="nota" texto="Este conteo se descartó. No cuenta para el día ni para los cortes que siguen." /> : null}
 
           {/* El cierre NO es un conteo de caja: su monto es todo lo vendido, con
               la tarjeta y el crédito adentro. Las formas se pintan como vengan. */}
           {esZ && cierre ? (
-            <Seccion titulo="Se vendió en el día" pie="La tarjeta y el crédito no pasan por la caja: la tarjeta se cobra por el POS y el crédito entra cuando el cliente paga, como cobro de crédito. Los cortes del día sólo cuentan el efectivo.">
+            <Seccion titulo="Se vendió en el día" pie="La tarjeta se cobra por el POS. El crédito entra cuando el cliente paga, y aparece como cobro de crédito en un corte posterior. Los cortes del día solo cuentan el efectivo.">
               <Dato primero rotulo="Total" valor={formatMoney(cierre.total)} fuerte />
               {cierre.formas.map((f) => <Dato key={f.tipo} rotulo={String(f.tipo).charAt(0).toUpperCase() + String(f.tipo).slice(1)} valor={formatMoney(f.total)} />)}
               <Dato rotulo="Entró en efectivo" valor={formatMoney(cierre.efectivo)} fuerte />
             </Seccion>
           ) : esX ? (
-            <Aviso texto="Esto es una lectura, no un corte: sólo imprime las ventas del turno. No cuenta el efectivo, así que no tiene diferencia ni hay nada que confirmar." />
+            <Aviso texto="Solo imprime las ventas del turno. No cuenta el efectivo, así que no hay nada que confirmar. El efectivo lo cuenta el corte del mismo turno." />
           ) : sinConteo ? (
-            <Aviso tono="cuidado" texto="Este corte quedó con $0.00 de efectivo contado y aun así se dio por exacto, así que no hay diferencia que firmar. Lo que corresponde es descartarlo y volver a hacerlo contando." />
+            <Aviso tono="cuidado" texto="Este corte quedó con $0.00 de efectivo contado. Pasa cuando se manda sin escribir cuánto se contó. Descártalo y hazlo de nuevo." />
           ) : (
             <Seccion titulo="La cuenta">
               <Dato primero rotulo="Debía haber en caja" valor={formatMoney(esperado)} />
@@ -304,7 +304,7 @@ export default function Corte() {
           ) : corte.observaciones ? <Aviso texto={`Nota: ${corte.observaciones}`} /> : null}
 
           {!esZ && invisibles.length ? (
-            <Aviso texto={`Este día se cobraron ${invisibles.map((f) => `${formatMoney(Math.abs(f.total))} por ${f.tipo}`).join(' y ')}. Ese dinero no pasa por la caja, así que no entra en la cuenta del día.`} />
+            <Aviso texto={`Este día se cobraron ${invisibles.map((f) => `${formatMoney(Math.abs(f.total))} por ${f.tipo}`).join(' y ')}. Ese dinero no pasa por la caja. No hay que buscarlo ahí.`} />
           ) : null}
 
           {/* Los cobros de crédito con su hora: el comprobante los imprime como
@@ -312,9 +312,9 @@ export default function Corte() {
           {!noEsConteo && cobros && (cobros.cobros > 0 || cobros.antes.length > 0 || cobros.despues.length > 0) ? (
             <Seccion titulo={`Cobros de crédito · ${formatMoney(cobros.antes.length ? cobros.hasta : (cobros.cobros ?? 0))}`}>
               {abonos && !abonos.pude ? (
-                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>No puedes ver el detalle de estos cobros. El total ya está sumado.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>El total ya está sumado. Para ver cada cobro necesitas el permiso de la caja.</Text>
               ) : !cobros.antes.length && !cobros.despues.length ? (
-                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Ninguno se cobró desde el portal, así que no se sabe a qué hora entró cada uno.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Ninguno se cobró desde el portal, así que no tienen hora.</Text>
               ) : (
                 <>
                   {cobros.antes.map((a, i) => (
@@ -326,7 +326,7 @@ export default function Corte() {
                     </View>
                   ))}
                   {cobros.despues.length ? (
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${cobros.despues.length} cobro${cobros.despues.length === 1 ? '' : 's'} después de este corte: los cuenta el siguiente.`}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${cobros.despues.length} cobro${cobros.despues.length === 1 ? '' : 's'} después de este corte. Son del corte siguiente.`}</Text>
                   ) : null}
                 </>
               )}
@@ -364,7 +364,7 @@ export default function Corte() {
                 </>
               ) : (
                 <>
-                  <Campo value={motivoSinEntrega} onChangeText={setMotivoSinEntrega} placeholder="¿Por qué no hay quien reciba? Ej.: quedó sola en la sala" />
+                  <Campo value={motivoSinEntrega} onChangeText={setMotivoSinEntrega} placeholder="¿Por qué no hay quien reciba? Ej.: quedó sola en la sucursal" />
                   <BotonGrande texto={ocupado ? 'Confirmando…' : 'Confirmar sin entregar'} color={MARCA.ambar} deshabilitado={ocupado || !motivoSinEntrega.trim()}
                     onPress={async () => terminar(await escribir('CONFIRMADO', { sinEntregaMotivo: motivoSinEntrega.trim() }), false)} />
                   <BotonGrande texto="Volver a escanear" borde onPress={() => setSinEntrega(false)} />
@@ -397,7 +397,7 @@ export default function Corte() {
             <View style={{ gap: 10 }}>
               {!sinConteo ? <BotonGrande texto="Confirmar" color={MARCA.verde} deshabilitado={ocupado} onPress={alConfirmar} /> : null}
               <BotonGrande texto="Descartar" borde color={MARCA.rojo} onPress={() => { setMotivo(MOTIVOS[0]); setModo('descartar'); }} />
-              {sinConteo ? <Aviso tono="nota" texto="Un corte sin conteo no se confirma: se descarta, y la sala hace uno contando el efectivo." /> : null}
+              {sinConteo ? <Aviso tono="nota" texto="Un corte sin conteo no se confirma. Descártalo y que la sucursal haga uno contando el efectivo." /> : null}
             </View>
           ) : !pendiente && !esZ && !esX ? (
             <BotonGrande texto="Reabrir la firma" borde color={MARCA.ambar} onPress={() => { setMotivo(MOTIVOS_REABRIR[0]); setModo('reabrir'); }} />

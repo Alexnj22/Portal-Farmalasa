@@ -117,7 +117,7 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                         <Cifra rotulo="Falta" valor={falta} tono={falta > 0.004 ? 'text-warning-text' : 'text-content-3'} />
                     </span>
                     {r.pago_prueba ? (
-                        <span className="block mt-2 text-caption font-semibold text-danger-text">El cobro en línea fue de prueba: se cobra en caja</span>
+                        <span className="block mt-2 text-caption font-semibold text-danger-text">El cobro en línea fue de prueba. Se cobra en caja.</span>
                     ) : plazoDeReserva(r) && (
                         <span className="flex items-center gap-1 mt-2 text-caption text-content-3 min-w-0">
                             <Clock size={12} className="shrink-0" aria-hidden /> <span className="truncate">{plazoDeReserva(r)}</span>

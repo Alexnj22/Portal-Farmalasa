@@ -91,7 +91,7 @@ export default function WidgetInventorySearch() {
     const mejor = [...cubre.entries()].sort((a, b) => b[1] - a[1])[0];
     return {
       valores: salas.map(id => cubre.get(id) ?? 0),
-      detalle: mejor?.[1] ? `${mejor[1]} en ${ERP_BRANCH_MAP[mejor[0]] ?? 'otra sala'}` : null,
+      detalle: mejor?.[1] ? `${mejor[1]} en ${ERP_BRANCH_MAP[mejor[0]] ?? 'otra sucursal'}` : null,
     };
   }, [faltantesDeMiSala, miErp]);
 
@@ -115,11 +115,11 @@ export default function WidgetInventorySearch() {
       // llega, y la baldosa mostraba un guión que se lee como «cargando». Se
       // dice lo que pasa. La búsqueda sigue sirviendo: se puede consultar en
       // qué sala hay un producto aunque uno no tenga inventario propio.
-      sinDato={miErp ? null : 'Buscar en las salas'}
+      sinDato={miErp ? null : 'Buscar en las sucursales'}
       vacio="Buscar producto"
       tono="warning"
       maxWidth="max-w-4xl"
-      descripcion="En qué sala hay un producto, y cómo solicitarlo"
+      descripcion="En qué sucursal hay un producto y cómo pedirlo"
     >
       {() => <FormularioPedirASala query={q} onQueryChange={setQ} />}
     </LanzadorSolicitud>

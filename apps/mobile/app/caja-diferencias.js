@@ -87,14 +87,14 @@ export default function CajaDiferencias() {
     { id: 'estado', titulo: 'Estado', activa: filtro, porDefecto: signo === 'sobra' ? 'TODOS' : 'PENDIENTES', onCambiar: setFiltro,
       opciones: [{ id: 'PENDIENTES', label: 'Lo pendiente' }, { id: 'TODOS', label: 'Todos los días' },
         ...Object.entries(ESTADO_DIF).map(([k, [l]]) => ({ id: k, label: l }))] },
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
 
   return (
     <>
       <Stack.Screen options={{ ...BARRA_FIJA, title: 'Diferencias',
-        headerSearchBarOptions: { placeholder: 'Sala, fecha, responsable o monto', hideWhenScrolling: false,
+        headerSearchBarOptions: { placeholder: 'Sucursal, fecha, responsable o monto', hideWhenScrolling: false,
           onChangeText: (e) => setBusqueda(e.nativeEvent.text), onCancelButtonPress: () => setBusqueda('') } }} />
       <MenuDeFiltros grupos={grupos} />
       <FijoArriba>

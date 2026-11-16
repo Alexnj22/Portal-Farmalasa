@@ -194,7 +194,7 @@ export default function Solicitud() {
     setAjuste({ ...vigente, cantidades: m });
   };
 
-  const titulo = REQUEST_TYPES[tipo]?.label ?? (esMinMax ? 'Ajuste de MIN·MAX' : 'Solicitud');
+  const titulo = REQUEST_TYPES[tipo]?.label ?? (esMinMax ? 'Ajuste de Mín/Máx' : 'Solicitud');
   const colorEstado = COLOR_ESTADO[estado] ?? MARCA.gris;
   const rotuloEstado = req && esParcial(req) ? 'Aprobada en parte' : (REQUEST_STATUS[estado]?.label ?? estado);
 

@@ -48,7 +48,7 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
   const [avisoApoyo, setAvisoApoyo] = useState(null);
   const anular = anulacionDelPedido(row, etapas);
   const anularSala = puedeAnularLaSala(row, etapas);
-  const nombreDeLaSala = ERP_NAMES[row.erp_sucursal_id] ?? `Sala ${row.erp_sucursal_id}`;
+  const nombreDeLaSala = ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`;
   const params = { pedidoId: String(row.pedido_id), sucId: String(row.erp_sucursal_id), numero: String(row.numero ?? '') };
   const faltan = faltantesDeLaSala(row);
   const puedePapel = hasPermission('pedidos_descargar');
@@ -103,7 +103,7 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
         numero: row.numero, sala: nombreDeLaSala, erp_sucursal_id: row.erp_sucursal_id, motivo,
         renglones: r.renglones, pedido_anulado: r.pedido_anulado, desde: 'app',
       });
-      listo(`${nombreDeLaSala} quitada del pedido #${row.numero}`, r.pedido_anulado ? 'Era la última sala: el pedido quedó anulado.' : 'Las demás salas siguen igual.');
+      listo(`${nombreDeLaSala} quitada del pedido #${row.numero}`, r.pedido_anulado ? 'Era la última sucursal. El pedido quedó anulado.' : 'Las demás sucursales siguen igual.');
       onCambio?.();
     } catch (e) {
       fallo('No se pudo anular', mensajeAmigable(e));
@@ -112,15 +112,15 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
     }
   };
   const pedirAnularSala = () => {
-    Alert.prompt(`Anular ${nombreDeLaSala}`, `Se quita ${nombreDeLaSala} del pedido #${row.numero}; las demás salas siguen. No se deshace.\n\nEscribe el motivo.`, [
+    Alert.prompt(`Anular ${nombreDeLaSala}`, `Se quita ${nombreDeLaSala} del pedido #${row.numero}. Las demás sucursales siguen igual. No se puede deshacer.\n\nEscribe el motivo.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Anular', style: 'destructive', onPress: (m) => { if (String(m ?? '').trim()) hacerAnularSala(String(m).trim()); else fallo('Falta el motivo', 'Escríbelo para poder anular.'); } },
     ], 'plain-text');
   };
   const pedirAnular = () => {
-    const texto = `Se anula el pedido #${row.numero} completo, en todas sus salas. No se deshace.`;
+    const texto = `Se anula el pedido #${row.numero} completo, en todas sus sucursales. No se puede deshacer.`;
     if (anular.pideMotivo && Platform.OS !== 'web') {
-      Alert.prompt('Anular pedido', `${texto}\n\nUna sala ya lo está preparando: escribe el motivo.`, [
+      Alert.prompt('Anular pedido', `${texto}\n\nYa se empezó a preparar. Escribe el motivo.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Anular', style: 'destructive', onPress: (m) => { if (String(m ?? '').trim()) hacerAnular(String(m).trim()); else fallo('Falta el motivo', 'Escríbelo para poder anular.'); } },
       ], 'plain-text');
@@ -140,7 +140,7 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
     trabajando('Armando la hoja…');
     try {
       const items = await fetchPedidoItemsAll(row.pedido_id, row.erp_sucursal_id);
-      if (!items?.length) { cerrarProgreso(); fallo('Sin productos', 'Esta sala no tiene renglones para imprimir.'); return; }
+      if (!items?.length) { cerrarProgreso(); fallo('Sin productos', 'Esta sucursal no tiene productos para imprimir.'); return; }
       const archivo = await papelDeLaSala({ numero: row.numero, sucId: row.erp_sucursal_id, rows: items, codigo: row.codigo ?? null, finalizada: !!row.finalizado_at });
       cerrarProgreso();
       ofrecerPapelesDelPedido({
@@ -183,7 +183,7 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
         useStaffStore.getState().appendAuditLog?.('REINTENTAR_INGRESO_INVENTARIO', row.pedido_id, {
           sucursal_id: row.erp_sucursal_id, items_count: r.pedidos, entraron: r.entraron, completo: r.completo, desde: 'app',
         });
-        if (r.entraron === 0) fallo('Nada entró al inventario', 'Los productos siguen pendientes. Si se repite, hay que revisarlos en el sistema.');
+        if (r.entraron === 0) fallo('Nada entró al inventario', 'Los productos siguen pendientes. Si se repite, avisa a Soporte.');
         else listo('Ingresado', `${r.entraron} producto${r.entraron === 1 ? '' : 's'} entr${r.entraron === 1 ? 'ó' : 'aron'} al inventario.${r.completo === false ? ` Quedan ${r.pedidos - r.entraron} por reintentar.` : ''}`);
       }
       leer();
@@ -195,7 +195,7 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
     }
   };
   const pedirReintento = () => Alert.alert('Reintentar el ingreso',
-    'Vuelve a ingresar al inventario sólo lo que la sala ya contó y no entró.',
+    'Vuelve a ingresar al inventario solo lo que la sucursal ya contó y no entró.',
     [{ text: 'Cancelar', style: 'cancel' }, { text: 'Reintentar', onPress: hacerReintento }]);
 
   const botones = [];
@@ -220,11 +220,11 @@ export default function AccionesDeBodega({ row, etapa, etapas, onCambio }) {
 
   return (
     <View style={{ gap: 8 }}>
-      {ingreso?.sin_ingresar > 0 ? <Aviso tono="freno" texto={`${ingreso.sin_ingresar} producto${ingreso.sin_ingresar === 1 ? '' : 's'} contado${ingreso.sin_ingresar === 1 ? '' : 's'} y sin ingresar al inventario: la sala no los puede facturar.`} />
+      {ingreso?.sin_ingresar > 0 ? <Aviso tono="freno" texto={`${ingreso.sin_ingresar} producto${ingreso.sin_ingresar === 1 ? '' : 's'} contado${ingreso.sin_ingresar === 1 ? '' : 's'} y sin ingresar al inventario. La sucursal todavía no los puede facturar.`} />
         : ingreso?.ingresadas > 0 ? <Aviso texto={`${ingreso.ingresadas} en el inventario.`} /> : null}
-      {faltan.hay && !faltan.enCamino && enRuta ? <Aviso texto="Esperando que el conductor vuelva a base para reenviar." /> : null}
+      {faltan.hay && !faltan.enCamino && enRuta ? <Aviso texto="Esperando que el motorista regrese para reenviar." /> : null}
       {botones}
-      <Escaner visible={escaneando} titulo="Quién apoyó en la preparación" ayuda="Apunta al código del carné; puedes escanear varios seguidos"
+      <Escaner visible={escaneando} titulo="Quién apoyó en la preparación" ayuda="Apunta al código del carné. Puedes escanear varios seguidos."
         onCodigo={leerCarne} onCerrar={() => { setEscaneando(false); onCambio?.(); }}
         pie={avisoApoyo ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoApoyo}</Text> : null} />
     </View>

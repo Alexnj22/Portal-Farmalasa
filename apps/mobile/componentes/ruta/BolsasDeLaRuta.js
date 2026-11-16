@@ -113,8 +113,8 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
   // Paquete suelto (su sala no es parada): «Entregué» ofrece la firma con
   // carné de alguien de la sala destino, igual que la parada.
   const entregarSuelto = (b) => Alert.alert(`Entregar en ${b.destino}`,
-    'Queda que lo dejaste ahí, con la hora y tu ubicación. La sala lo recibe después en el portal.'
-      + (firmaExigida ? '\n\nPide el carné a quien recibe: sin su firma no se puede entregar.' : '\n\nSi puedes, pide el carné a quien recibe para que quede su firma.'), [
+    'Queda anotado que lo dejaste ahí, con la hora y tu ubicación. La sucursal lo recibe después en el portal.'
+      + (firmaExigida ? '\n\nPide el carné a quien recibe. Sin su firma no se puede entregar.' : '\n\nSi puedes, pide el carné a quien recibe para que quede su firma.'), [
       { text: 'Cancelar', style: 'cancel' },
       ...(firmaExigida ? [] : [{ text: 'Entregué sin firma', onPress: async () => {
         setOcupado(true);
@@ -147,7 +147,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
       {error ? <Aviso tono="cuidado" texto={error} /> : null}
 
       <Seccion titulo={`Paquetes que llevas · ${encima.length}`}
-        pie={encima.length ? 'Al entregar una parada se entregan solos los paquetes para esa sala.' : null}>
+        pie={encima.length ? 'Al entregar una parada se entregan solos los paquetes para esa sucursal.' : null}>
         {!datos.llevas.length ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
             {activa ? 'Ninguno. Escanea el ticket de un paquete para llevarlo con la ruta.' : 'Esta ruta no llevó paquetes.'}
@@ -157,7 +157,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
             titulo={`${b.origen ?? '¿?'} → ${b.destino ?? '¿?'}`}
             detalle={[b.codigo ? `Ticket ${b.codigo}` : null, `recogido ${hora12(b.recogida_at)}`,
               b.entregada_at ? `entregado ${hora12(b.entregada_at)}` : null].filter(Boolean).join(' · ')}
-            etiqueta={b.entregada_at ? (b.recibio_firma_at ? 'Entregado · firmó la sala' : 'Entregado') : b.en_ruta ? null : 'Su sala no es parada de esta ruta'}
+            etiqueta={b.entregada_at ? (b.recibio_firma_at ? 'Entregado · firmó la sucursal' : 'Entregado') : b.en_ruta ? null : 'Su sucursal no es parada de esta ruta'}
             tonoEtiqueta={b.entregada_at ? MARCA.verde : MARCA.ambar}
             acciones={!b.entregada_at && puedeOperar && activa ? [
               !b.en_ruta ? <Accion key="e" texto="Entregué" color={MARCA.verde} deshabilitado={ocupado}
@@ -175,7 +175,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
 
       {activa && sugeridas.length ? (
         <Seccion titulo={`De paso, lleva también · ${sugeridas.length}`}
-          pie="Paquetes despachados que van a una sala de tu ruta. Recogerlos es opcional.">
+          pie="Paquetes despachados que van a una sucursal de tu ruta. Recogerlos es opcional.">
           {sugeridas.map((s, i) => (
             <Fila key={s.request_id} primero={i === 0}
               titulo={`${s.origen ?? '¿?'} → ${s.destino ?? '¿?'}`}
@@ -187,7 +187,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
         </Seccion>
       ) : null}
 
-      <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.destino ?? 'la sala'}`}
+      <Escaner visible={!!firmando} titulo={`Firma de ${firmando?.destino ?? 'la sucursal'}`}
         ayuda="Apunta al código del carné de quien recibe" onCodigo={alLeerCarne}
         onCerrar={() => { setFirmando(null); setAvisoFirma(null); }}
         pie={avisoFirma ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoFirma}</Text> : null} />

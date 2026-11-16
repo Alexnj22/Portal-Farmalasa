@@ -80,7 +80,7 @@ export default function HacerCorte() {
     const contado = Number(efectivo.replace(',', '.')) || 0;
     const total = declaradoDelCorte(contado, yaEmbolsado);
     Alert.alert('¿Hacer el corte?',
-      `${formatMoney(contado)} en la caja${yaEmbolsado > 0 ? ` + ${formatMoney(yaEmbolsado)} ya embolsado = ${formatMoney(total)} declarado` : ''}.\n\nEl corte queda registrado en la caja y después hay que confirmarlo o descartarlo.`, [
+      `${formatMoney(contado)} en la caja${yaEmbolsado > 0 ? ` + ${formatMoney(yaEmbolsado)} ya embolsado = ${formatMoney(total)} declarado` : ''}.\n\nDespués hay que confirmar o descartar el corte.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Hacer el corte', onPress: async () => {
           setOcupado(true);
@@ -117,7 +117,7 @@ export default function HacerCorte() {
       }
       await new Promise((r) => setTimeout(r, 4000));
     }
-    fallo('Todavía no aparece el corte', 'Se registró en la caja y llega en unos minutos. Confírmalo desde Efectivo › Cortes.');
+    fallo('Todavía no aparece el corte', 'Ya se registró. Aparece en unos minutos. Confírmalo desde Efectivo › Cortes.');
   };
 
   if (!puedeOperar) {
@@ -145,7 +145,7 @@ export default function HacerCorte() {
         </Seccion>
         {resultado.ok ? (
           <>
-            <Aviso texto="¿Este conteo es el bueno? Confírmalo para que cuente como el corte del día. Si fue una prueba o contaste mal, descártalo y vuelve a hacerlo. Mientras quede sin resolver no se puede hacer otro corte ni cerrar el día." />
+            <Aviso texto="¿Este conteo es el bueno? Confírmalo para que cuente como el corte del día. Si fue una prueba o contaste mal, descártalo y hazlo de nuevo. Hasta resolverlo, no puedes hacer otro corte ni cerrar el día." />
             <BotonGrande texto="Firmar el corte" color={MARCA.verde} onPress={firmar} />
             <BotonGrande texto="Imprimir el comprobante" borde onPress={imprimir} />
           </>
@@ -155,7 +155,7 @@ export default function HacerCorte() {
   } else if (sinResolver.length) {
     cuerpo = (
       <>
-        <Aviso tono="cuidado" texto="Antes de hacer otro corte hay que decir qué pasa con el que quedó a medias. Los cortes del día se suman: mientras uno quede sin confirmar ni descartar, el que venga después tampoco se va a poder confirmar." />
+        <Aviso tono="cuidado" texto="Antes de hacer otro corte, hay que resolver el que quedó pendiente. Los cortes del día se suman. Si uno queda sin confirmar ni descartar, el siguiente tampoco se puede confirmar." />
         {sinResolver.map((c) => (
           <Seccion key={c.id} titulo={`Corte de las ${hora12(c.hora)}`}>
             {c.total_declarado != null ? <Dato primero rotulo="Declarado" valor={formatMoney(c.total_declarado)} /> : null}

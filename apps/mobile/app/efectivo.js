@@ -200,14 +200,14 @@ export default function Efectivo() {
   const cerrar = () => {
     if (sinResolver.length) {
       Alert.alert(sinResolver.length === 1 ? 'Falta resolver un corte' : 'Faltan cortes por resolver',
-        `${sinResolver.length === 1 ? `El corte de las ${hora12(sinResolver[0].hora)} no está` : `Quedaron ${sinResolver.length} cortes sin`} confirmar ni descartar. Los cortes del día se suman entre sí: resuélvelo antes de cerrar — el cierre no se deshace.`,
+        `${sinResolver.length === 1 ? `El corte de las ${hora12(sinResolver[0].hora)} no está` : `Quedaron ${sinResolver.length} cortes sin`} confirmar ni descartar. Los cortes del día se suman. Resuélvelo antes de cerrar. El cierre no se deshace.`,
         [{ text: 'Entendido', style: 'cancel' }, { text: 'Ver el corte', onPress: () => router.push({ pathname: '/corte/[id]', params: { id: String(sinResolver[0].id), fecha: hoySV() } }) }]);
       return;
     }
     if (sinCorte) {
       Alert.alert(cortesC.length ? 'El corte no está confirmado' : 'Falta el corte',
-        cortesC.length ? 'Un corte descartado o sin revisar no cuenta como conteo del día. Confírmalo antes de cerrar — el cierre no se deshace.'
-          : 'Si cierras ahora, el efectivo de toda la jornada queda sin contar ni una vez, y el cierre no se deshace. Haz el corte primero.',
+        cortesC.length ? 'Un corte descartado o sin revisar no cuenta. Confírmalo antes de cerrar. El cierre no se deshace.'
+          : 'Si cierras ahora, el efectivo de todo el día queda sin contar. El cierre no se deshace. Haz el corte primero.',
         cortesC.length ? [{ text: 'Entendido' }] : [{ text: 'Ahora no', style: 'cancel' }, { text: 'Hacer el corte', onPress: () => router.push({ pathname: '/hacer-corte', params: { sala } }) }]);
       return;
     }
@@ -215,7 +215,7 @@ export default function Efectivo() {
     const pendiente = Number(falta?.falta);
     if (noSeMidio) {
       Alert.alert('No se pudo revisar la caja',
-        'No se pudo comprobar si quedó dinero sin contar. El día no se cierra sin saberlo: vuelve a intentarlo en un momento.',
+        'No se pudo saber si quedó dinero sin contar. Sin saberlo no se puede cerrar el día. Vuelve a intentarlo en un momento.',
         [{ text: 'Entendido' }]);
       return;
     }
@@ -240,12 +240,12 @@ export default function Efectivo() {
     if (!(Number.isFinite(pendiente) && pendiente >= 0.01) && medida?.medido !== false) {
       if (!r?.marcadas?.length) { confirmarCierre(); return; }
       Alert.alert(r.marcadas.length === 1 ? 'Una venta del día ya no existe' : 'Ventas del día que ya no existen',
-        'Dejaron de contar en la caja y Facturación ya está avisada. La caja cuadra.',
+        'Ya no cuentan en la caja y Facturación ya está avisada. La caja cuadra.',
         [{ text: 'Seguir', onPress: confirmarCierre }]);
       return;
     }
     Alert.alert('Falta contar el efectivo',
-      `${medida?.desde ? `Desde el corte de las ${hora12(medida.desde)} entraron` : 'Hoy entraron'} ${formatMoney(pendiente)} que nadie ha contado. Si cierras ahora, ese dinero queda fuera de todo conteo. Haz el corte primero.`,
+      `${medida?.desde ? `Desde el corte de las ${hora12(medida.desde)} entraron` : 'Hoy entraron'} ${formatMoney(pendiente)} que nadie ha contado. Si cierras ahora, ese dinero queda sin contar. Haz el corte primero.`,
       [{ text: 'Ahora no', style: 'cancel' },
         { text: 'Ya conté todo', onPress: () => elegirMotivo(pendiente) },
         { text: 'Hacer el corte', onPress: () => router.push({ pathname: '/hacer-corte', params: { sala } }) }]);
@@ -256,7 +256,7 @@ export default function Efectivo() {
   const elegirMotivo = async (pendiente) => {
     const { data: motivos, error } = await fetchMotivosCierreConDiferencia();
     if (error || !motivos?.length) { fallo('No se pudo', 'No se pudieron leer los motivos. Vuelve a intentarlo.'); return; }
-    Alert.alert(`Cerrar con ${formatMoney(pendiente)} sin contar`, 'Elige el motivo. Queda anotado con tu nombre y le avisa a supervisión.', [
+    Alert.alert(`Cerrar con ${formatMoney(pendiente)} sin contar`, 'Elige el motivo. Queda anotado con tu nombre y se avisa a la sucursal.', [
       ...motivos.map((m) => ({ text: m.rotulo, onPress: () => cerrarConMotivo(m, pendiente) })),
       { text: 'Cancelar', style: 'cancel' },
     ]);
@@ -276,7 +276,7 @@ export default function Efectivo() {
   };
 
   const confirmarCierre = () => {
-    Alert.alert(`¿Cerrar el día en ${nombre}?`, 'Se emite el cierre (Z) y la caja no vuelve a abrir hasta mañana. No se deshace.', [
+    Alert.alert(`¿Cerrar el día en ${nombre}?`, 'La caja no vuelve a abrir hasta mañana. No se deshace.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cerrar el día', style: 'destructive', onPress: async () => {
         trabajando('Cerrando el día…');
@@ -305,7 +305,7 @@ export default function Efectivo() {
       } },
     ]);
   };
-  const iniciar = () => Alert.alert(`¿Iniciar el turno en ${nombre}?`, 'La caja sigue abierta; el turno es lo que deja vender, cortar y cerrar.', [
+  const iniciar = () => Alert.alert(`¿Iniciar el turno en ${nombre}?`, 'La caja sigue abierta. Con el turno iniciado se puede vender, cortar y cerrar.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Iniciar', onPress: async () => {
       trabajando('Iniciando el turno…');
@@ -317,7 +317,7 @@ export default function Efectivo() {
     } },
   ]);
 
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: sala, onCambiar: setElegida, opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
+  const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: sala, onCambiar: setElegida, opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
   const abierta = estado?.abierta && !turnoParado && !noSePudo;
   // Cerrar el día no se deshace y es una vez al día: en el menú, no junto a «Hacer corte».
   const abrirMas = () => ActionSheetIOS.showActionSheetWithOptions({ options: ['Cerrar el día', 'Cancelar'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
@@ -331,7 +331,7 @@ export default function Efectivo() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
         {puedeVerCortes ? <View style={{ marginHorizontal: 16 }}><Secciones /></View> : null}
-        {!sala ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu usuario no tiene una sala con caja." /></View> : null}
+        {!sala ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="No tienes una sucursal con caja asignada." /></View> : null}
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 20 }}>{nombre}</Text> : null}
 
         {/* Lo que se viene a hacer va primero, no debajo del día entero (2026-11-09). */}
@@ -369,7 +369,7 @@ export default function Efectivo() {
                 apoyo={veLosMontos ? 'lo que debería haber' : 'se cuenta al cortar'} />
               <Kpi icono={abierta ? 'Check' : noSePudo ? 'AlertTriangle' : 'Lock'} color={abierta ? MARCA.verde : MARCA.ambar} pide={!abierta && !cargando}
                 rotulo={cargando ? 'La caja' : noSePudo ? 'Sin respuesta' : turnoParado ? 'Turno cerrado' : estado?.abierta ? 'Abierta' : diaCerrado ? 'Día cerrado' : 'Cerrada'}
-                valor={cargando ? '—' : noSePudo ? 'No se leyó' : turnoParado ? 'Hay que iniciarlo' : estado?.abierta ? (estado.desde || 'Abierta') : diaCerrado ? 'Salió el Z' : 'Sin turno'}
+                valor={cargando ? '—' : noSePudo ? 'No se leyó' : turnoParado ? 'Hay que iniciarlo' : estado?.abierta ? (estado.desde || 'Abierta') : diaCerrado ? 'Ya se cerró el día' : 'Sin turno'}
                 apoyo={cargando || noSePudo ? undefined : turnoParado ? 'la caja sigue abierta'
                   : estado?.abierta ? (corto(estado.quien) || 'se abrió fuera del portal')
                     : diaCerrado ? 'vuelve a abrir mañana' : 'nadie puede vender'} />
@@ -396,8 +396,8 @@ export default function Efectivo() {
           {noSePudo ? (
             <Vidrio radio={20} tinte="rgba(240,68,56,0.12)">
               <View style={{ padding: 14, gap: 10 }}>
-                <Text style={{ color: MARCA.rojo, fontSize: 16, fontWeight: '700' }}>No se pudo leer la caja de esta sala.</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${noSePudo} — no se sabe si está abierta, así que no se ofrece ninguna acción: abrir una caja que ya está abierta la deja partida en dos.`}</Text>
+                <Text style={{ color: MARCA.rojo, fontSize: 16, fontWeight: '700' }}>No se pudo leer la caja de esta sucursal.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${noSePudo}. No se sabe si está abierta, así que por ahora no puedes hacer nada aquí.`}</Text>
                 <BotonGrande texto="Volver a intentar" borde onPress={cargar} />
               </View>
             </Vidrio>
@@ -413,7 +413,7 @@ export default function Efectivo() {
           {cortesDeHoy.length ? (
             <Seccion titulo="Cortes de hoy">
               {cortesDeHoy.map((c, i) => {
-                const [rotulo, color] = c.tipo === 'Z' ? ['Cierre (Z)', MARCA.violeta] : (ESTADO[c.estado] ?? [c.estado, MARCA.azulClaro]);
+                const [rotulo, color] = c.tipo === 'Z' ? ['Cierre del día', MARCA.violeta] : (ESTADO[c.estado] ?? [c.estado, MARCA.azulClaro]);
                 const quien = [corto(c.hizo?.name), c.recibe?.name ? corto(c.recibe.name) : null].filter(Boolean).join(' → ');
                 return (
                   <Pressable key={c.id} disabled={c.tipo !== 'C'}

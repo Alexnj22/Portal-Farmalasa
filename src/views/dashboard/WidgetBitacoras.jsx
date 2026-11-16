@@ -64,7 +64,7 @@ export default function WidgetBitacoras() {
     const resumen = useMemo(() => pendientesDelDia(dia), [dia]);
 
     useResumenWidget(cargando ? null
-        : !miSala ? { texto: 'Sin sala asignada' }
+        : !miSala ? { texto: 'Sin sucursal asignada' }
         : error ? { texto: 'No se pudo leer', tono: 'danger' }
         : resumen.vencidas > 0 ? { valor: resumen.vencidas, texto: resumen.vencidas === 1 ? 'lectura pasada de hora' : 'lecturas pasadas de hora', tono: 'danger', accion: { texto: 'Anotar', ir: '/bitacoras?ronda=1' } }
         : resumen.abiertas > 0 ? { valor: resumen.abiertas, texto: resumen.abiertas === 1 ? 'lectura toca ahora' : 'lecturas tocan ahora', tono: 'warning', accion: { texto: 'Anotar', ir: '/bitacoras?ronda=1' } }
@@ -75,8 +75,8 @@ export default function WidgetBitacoras() {
 
     if (!miSala) {
         return <EmptyState icon={Thermometer} compact
-            title="Sin sala asignada"
-            subtitle="Las bitácoras son de una sala." />;
+            title="Sin sucursal asignada"
+            subtitle="Las bitácoras son de una sucursal." />;
     }
 
     if (error) {
@@ -112,7 +112,7 @@ export default function WidgetBitacoras() {
             )}
             {alDia && resumen.total > 0 && (
                 <Notice variant="success" icon={CheckCircle2} compact>
-                    Al día — {resumen.hechas} de {resumen.total} registradas
+                    Al día. {resumen.hechas} de {resumen.total} registradas
                 </Notice>
             )}
 

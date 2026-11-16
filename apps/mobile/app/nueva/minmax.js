@@ -125,7 +125,7 @@ export default function MinMax() {
         producto, erpSucursalId: erp, actual, ventas, min: nMin, max: nMax, motivo, usuario: user,
       }));
       if (error) throw error;
-      listo('Ajuste enviado', `${producto.nombre} · ${sala}: MIN ${nMin} · MAX ${nMax}`);
+      listo('Ajuste enviado', `${producto.nombre} · ${sala}: Mín ${nMin} · Máx ${nMax}`);
       router.dismissTo('/solicitudes');
     } catch (e) {
       fallo('No se pudo enviar', mensajeDeMinMax(e?.message ?? '', sala));
@@ -134,18 +134,18 @@ export default function MinMax() {
     }
   };
 
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: erpElegido, porDefecto: erpElegido, onCambiar: setErp,
+  const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: erpElegido, porDefecto: erpElegido, onCambiar: setErp,
     opciones: opcionesSala.map((e) => ({ id: String(e), label: ERP_NAMES[e] })) }] : [];
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ajuste de Mín·Máx', headerLargeTitle: !producto }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ajuste de Mín/Máx', headerLargeTitle: !producto }} />
       {todas ? <MenuDeFiltros grupos={grupos} /> : null}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-          {!erp ? <Aviso tono="freno" texto="Tu usuario no tiene una sala con inventario." /> : null}
+          {!erp ? <Aviso tono="freno" texto="No tienes una sucursal con inventario asignada." /> : null}
           {!producto ? (
             <Seccion titulo={`Producto · ${sala}`}>
               <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Nombre o principio activo" autoCorrect={false} />
@@ -166,7 +166,7 @@ export default function MinMax() {
                 <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{producto.nombre}</Text>
                 {cargando ? <Text style={{ color: colorSistema.texto2 }}>Cargando…</Text> : (
                   <>
-                    <Dato primero rotulo="MIN · MAX de hoy" valor={actual?.min != null ? `${actual.min} · ${actual.max}${enCajas(actual.min) || enCajas(actual.max) ? `  (${enCajas(actual.min) || '—'} · ${enCajas(actual.max) || '—'})` : ''}` : 'Sin par todavía'} fuerte />
+                    <Dato primero rotulo="Mín/Máx de hoy" valor={actual?.min != null ? `${actual.min} · ${actual.max}${enCajas(actual.min) || enCajas(actual.max) ? `  (${enCajas(actual.min) || '—'} · ${enCajas(actual.max) || '—'})` : ''}` : 'Sin par todavía'} fuerte />
                     <Dato rotulo="Vendido este mes" valor={ventas?.unidadesMes ?? '—'} />
                     <Dato rotulo="Vendido en 6 meses" valor={actual?.sales6m ?? '—'} />
                     <Dato rotulo="En existencia" valor={ventas?.existencia != null ? `${ventas.existencia}${enCajas(ventas.existencia) ? `  ${enCajas(ventas.existencia)}` : ''}` : '—'} />
@@ -174,19 +174,19 @@ export default function MinMax() {
                   </>
                 )}
               </Seccion>
-              {oculto ? <Aviso tono="freno" texto={`Este producto está oculto en ${sala}: primero hay que mostrarlo de nuevo en Min/Max.`} /> : (
+              {oculto ? <Aviso tono="freno" texto={`Este producto está oculto en ${sala}. Primero hay que mostrarlo de nuevo en Mín/Máx.`} /> : (
                 <>
                   <Seccion titulo="Lo que propones (en unidades)" pie={caja ? `${caja.factor} unidades = 1 ${caja.tipo?.trim() || 'caja'}.${caja.descripcion ? ` Factor calculado: ${caja.descripcion}.` : ''}` : null}>
                     <View style={{ flexDirection: 'row', gap: 12 }}>
-                      <Numero rotulo="MIN" valor={min} onCambiar={setMin} />
-                      <Numero rotulo="MAX" valor={max} onCambiar={setMax} />
+                      <Numero rotulo="Mín" valor={min} onCambiar={setMin} />
+                      <Numero rotulo="Máx" valor={max} onCambiar={setMax} />
                     </View>
                     {nMin != null && nMax != null && !parValido ? (
-                      <Aviso tono="cuidado" texto={nMin === 0 ? 'Con el MIN en 0, el MAX sólo puede ser 0 (deja de reponerse) o 1.' : 'El MAX debe ser mayor que el MIN.'} />
+                      <Aviso tono="cuidado" texto={nMin === 0 ? 'Con el Mín en 0, el Máx solo puede ser 0 (deja de reponerse) o 1.' : 'El Máx tiene que ser mayor que el Mín.'} />
                     ) : null}
                     {avisoEnvio ? <Aviso tono="freno" texto={avisoEnvio} /> : null}
                     {envio?.fallo ? <Aviso tono="freno" texto="No se pudo comprobar cómo envía Bodega este producto. Vuelve a abrirlo para reintentar." /> : null}
-                    {sinCambio ? <Aviso tono="cuidado" texto={`${sala} ya está en MIN ${nMin} · MAX ${nMax}: no cambiaría nada.`} /> : null}
+                    {sinCambio ? <Aviso tono="cuidado" texto={`${sala} ya está en Mín ${nMin} · Máx ${nMax}. No cambiaría nada.`} /> : null}
                   </Seccion>
                   <Seccion titulo={exigen.length ? 'Motivo (obligatorio)' : 'Motivo (opcional)'}>
                     {exigen.map((m) => <Aviso key={m} tono="cuidado" texto={m} />)}

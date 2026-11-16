@@ -205,7 +205,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                         {busqueda.trim().length >= 2 ? (
                             cargando ? <SkeletonText lines={3} /> :
                             candidatos.length === 0 ? (
-                                <EmptyState compact title="Sin existencia" subtitle="Ese producto no está en la sala." />
+                                <EmptyState compact title="Sin existencia" subtitle="Ese producto no está en la sucursal." />
                             ) : candidatos.map(f => {
                                 const contando = enConteo?.has(Number(f.erp_product_id));
                                 return (
@@ -222,7 +222,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                         ) : (
                             <EmptyState compact icon={CalendarCog}
                                 title="Busca el producto con el lote mal puesto"
-                                subtitle="Se cambia el lote o el vencimiento de lo que ya está en la sala, sin quitar ni agregar unidades. No pide aprobación: queda anotado quién lo hizo y por qué." />
+                                subtitle="Cambia el lote o el vencimiento de lo que ya está en la sucursal. No quita ni agrega unidades. No necesita aprobación. Queda anotado quién lo hizo y por qué." />
                         )}
                     </>
                 ) : !origen ? (
@@ -232,7 +232,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                         {lotes === null ? <SkeletonText lines={3} /> :
                          ofrecidos.length === 0 ? (
                             <EmptyState compact title="Sin lotes"
-                                subtitle="Este producto no lleva control de lote en la sala: no hay lote que corregir." />
+                                subtitle="Este producto no lleva control de lote en la sucursal." />
                          ) : ofrecidos.map(l => (
                             <ListRow key={l.clave} onClick={() => elegirLote(l)}
                                 className="border-divider bg-surface-card hover:border-brand/40"
@@ -277,15 +277,15 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                         <PortalTextarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={2}
                             placeholder="¿Por qué se corrige? (obligatorio)" />
 
-                        {sinCambio && <Notice variant="warning">Es el mismo lote con el mismo vencimiento: no hay nada que corregir.</Notice>}
+                        {sinCambio && <Notice variant="warning">Es el mismo lote con el mismo vencimiento. No hay nada que corregir.</Notice>}
                         {loteCompleto && (
                             <Notice variant="warning">
-                                Si sólo cambia el vencimiento, se corrige el lote completo ({origen.unidades} u.): un mismo lote no puede quedar con dos fechas.
+                                Si sólo cambia el vencimiento, se corrige el lote completo ({origen.unidades} u.). Un lote no puede tener dos fechas.
                             </Notice>
                         )}
                         {asiQueda && (
                             <div data-surface="card" className="p-3 flex flex-col gap-1">
-                                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Así queda la sala</p>
+                                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Así queda la sucursal</p>
                                 {asiQueda.filas.map(l => (
                                     <div key={l.clave} className="flex items-center gap-2 text-body-sm">
                                         <span className={`flex-1 min-w-0 truncate ${l.unidades === 0 ? 'text-content-3 line-through' : 'text-content'}`}>

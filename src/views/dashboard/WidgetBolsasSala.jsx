@@ -204,8 +204,8 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     useResumenWidget(cargando ? null
         : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
         : faltan.length ? { valor: faltan.length, texto: faltan.length === 1 ? 'corte por embolsar' : 'cortes por embolsar', tono: 'warning', accion: { texto: 'Embolsar' } }
-        : enSala.length ? { valor: verMontos ? formatMoney(total) : enSala.length, texto: `${verMontos ? `en ${enSala.length} ` : ''}${enSala.length === 1 ? 'bolsa' : 'bolsas'} en sala${vencidas ? ` · ${vencidas} con ${DIAS_DE_ALARMA}+ días` : ''}`, tono: vencidas ? 'danger' : null }
-        : { texto: 'Sin bolsas en sala' });
+        : enSala.length ? { valor: verMontos ? formatMoney(total) : enSala.length, texto: `${verMontos ? `en ${enSala.length} ` : ''}${enSala.length === 1 ? 'bolsa' : 'bolsas'} en la sucursal${vencidas ? ` · ${vencidas} con ${DIAS_DE_ALARMA}+ días` : ''}`, tono: vencidas ? 'danger' : null }
+        : { texto: 'Sin bolsas en la sucursal' });
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;
 
@@ -227,7 +227,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
             <div className="shrink-0 px-2 pt-2 pb-1 border-b border-divider">
                 <div className="flex items-baseline justify-between gap-2 mb-1 px-0.5">
                     <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                        En la sala
+                        En la sucursal
                     </span>
                     <span className={`text-caption tabular-nums truncate ${vencidas ? 'text-danger-text font-bold' : 'text-content-3'}`}>
                         {enSala.length
@@ -235,7 +235,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                             : 'nada en espera'}
                     </span>
                 </div>
-                <CarrilCards ariaLabel="Efectivo guardado en la sala">
+                <CarrilCards ariaLabel="Efectivo guardado en la sucursal">
                     {/* Sin el permiso de montos la tarjeta cuenta BOLSAS: la
                         baldosa existe para saber que hay efectivo esperando el
                         retiro, y eso se sabe igual sin la cifra. */}
@@ -286,7 +286,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                                 {vencidas === 1 ? 'Una bolsa lleva' : `${vencidas} bolsas llevan`}
                                 {' '}{DIAS_DE_ALARMA} días o más
                             </span>
-                            {' '}esperando el retiro. Avisá para que pasen a recogerlas.
+                            {' '}esperando el retiro. Avisa para que pasen a recogerlas.
                         </p>
                     </div>
                 )}
@@ -380,8 +380,8 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                             </div>
                             <div className="flex items-center gap-x-2 gap-y-1.5 flex-wrap">
                                 {dias >= DIAS_DE_ALARMA
-                                    ? <Badge variant="danger" size="sm" dot>{dias} días en sala</Badge>
-                                    : <Badge variant="neutral" size="sm">{dias === 0 ? 'De hoy' : `${dias} ${dias === 1 ? 'día' : 'días'} en sala`}</Badge>}
+                                    ? <Badge variant="danger" size="sm" dot>{dias} días en espera</Badge>
+                                    : <Badge variant="neutral" size="sm">{dias === 0 ? 'De hoy' : `${dias} ${dias === 1 ? 'día' : 'días'} en espera`}</Badge>}
                                 {sinEtiqueta && <Badge variant="warning" size="sm">Sin etiqueta</Badge>}
                                 {puedeGuardar && (
                                     <div className="flex items-center justify-end gap-1.5 shrink-0 ml-auto">

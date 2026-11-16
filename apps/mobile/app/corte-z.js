@@ -69,7 +69,7 @@ function Tarjeta({ f, verMontos }) {
             <Pildora texto={ok ? 'Cuadra con el libro' : `Difiere ${formatMoney(Math.abs(f.dif_total))}`} color={ok ? MARCA.verde : MARCA.ambar} />
           </View>
           {f.direccion ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[f.direccion, f.departamento].filter(Boolean).join(', ')}</Text> : null}
-          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Del ${f.fecha_inicio} al ${f.fecha_fin} · ${Number(f.portal_documentos || 0).toLocaleString('es-SV')} documentos en el libro`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Del ${f.fecha_inicio} al ${f.fecha_fin} · ${Number(f.portal_documentos || 0).toLocaleString('es-SV')} ventas en el libro`}</Text>
           {verMontos ? <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', marginTop: 4 }}>{formatMoney(f.z_total)}</Text> : null}
         </View>
       </Vidrio>
@@ -89,9 +89,9 @@ function Tarjeta({ f, verMontos }) {
               </View>
             ))}
           </Seccion>
-          <Seccion titulo="Cotejo contra el libro" pie="Se compara contra las ventas gravadas del Corte Z, no contra su total.">
+          <Seccion titulo="Cotejo contra el libro" pie="Se compara con las ventas gravadas de los cierres del día, no con su total.">
             <View style={{ flexDirection: 'row' }}>
-              {['CORTE Z', 'LIBRO', 'DIFERENCIA'].map((c) => (
+              {['CIERRES', 'LIBRO', 'DIFERENCIA'].map((c) => (
                 <Text key={c} style={{ flex: 1, textAlign: 'right', color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{c}</Text>
               ))}
             </View>
@@ -132,26 +132,26 @@ function Tarjeta({ f, verMontos }) {
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{c.que}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{formatMoney(Math.abs(Number(d.impacto) || 0))}</Text>
                 </View>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${d.fecha} · documento ${d.correlativo || d.erp_invoice_id}`}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${d.fecha} · comprobante ${d.correlativo || d.erp_invoice_id}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{c.hacer}</Text>
               </View>
             );
           }) : (
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-              {`El libro tiene ${Number(f.residuo) > 0 ? 'más' : 'menos'} que el Corte Z y todavía no hay un diagnóstico de este período: se genera con el cuadre diario, que corre cada mañana.`}
+              {`El libro tiene ${Number(f.residuo) > 0 ? 'más' : 'menos'} que los cierres del día. Todavía no se sabe por qué. Se revisa cada mañana.`}
             </Text>
           )}
-          {docs.length && sinExplicar >= 0.005 ? <Aviso tono="cuidado" texto={`Quedan ${formatMoney(sinExplicar)} sin explicar: hay que revisarlos a mano contra el reporte del día.`} /> : null}
+          {docs.length && sinExplicar >= 0.005 ? <Aviso tono="cuidado" texto={`Quedan ${formatMoney(sinExplicar)} sin explicar. Hay que revisarlos contra el reporte del día.`} /> : null}
           {!dias ? (
             <BotonGrande texto={cargandoDias ? 'Cargando…' : 'Ver día por día'} borde deshabilitado={cargandoDias} onPress={verDias} />
           ) : (
             <View style={{ gap: 6 }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Ventas con factura, día por día — para enfrentarlo al reporte diario.</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Ventas con factura, día por día, para compararlas con el reporte diario.</Text>
               {dias.map((d) => (
                 <View key={d.fecha} style={{ gap: 2, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 6 }}>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{d.fecha}</Text>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${d.documentos} docs`}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${d.documentos} facturas`}</Text>
                     <Text style={{ minWidth: 86, textAlign: 'right', color: colorSistema.texto, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(d.total)}</Text>
                   </View>
                   <Text style={{ color: colorSistema.texto2, fontSize: 12, fontFamily: 'Menlo' }}>{`${String(d.numero_control_del || '—').slice(-9)} → ${String(d.numero_control_al || '—').slice(-9)}`}</Text>
@@ -192,7 +192,7 @@ export default function CorteZ() {
   const [recargando, setRecargando] = useState(false);
   const [desde, hasta] = useMemo(() => rangoDelMes(mes), [mes]);
   const cargar = useCallback(async () => {
-    try { setFilas(await fetchCortesZ(desde, hasta, sala)); setError(null); } catch (e) { setError(mensajeAmigable(e, 'No se pudo cargar el Corte Z')); setFilas([]); }
+    try { setFilas(await fetchCortesZ(desde, hasta, sala)); setError(null); } catch (e) { setError(mensajeAmigable(e, 'No se pudieron cargar los cierres del día')); setFilas([]); }
   }, [desde, hasta, sala]);
   useEffect(() => { setFilas(null); cargar(); }, [cargar]);
   useEffect(() => { if (!sala && filas?.length) setConCorte(filas.map((f) => ({ id: String(f.branch_id), label: f.sucursal }))); }, [filas, sala]); // eslint-disable-line react-hooks/set-state-in-effect -- se recuerdan sin filtro
@@ -215,9 +215,9 @@ export default function CorteZ() {
   const elegirPdf = () => {
     Haptics.selectionAsync().catch(() => {});
     const opciones = [`Todas las sucursales (${filas.length})`, ...filas.map((f) => f.sucursal), 'Cancelar'];
-    ActionSheetIOS.showActionSheetWithOptions({ title: `Corte Z · ${etiquetaPeriodo(desde)}`, options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
-      if (i === 0) pdfDe(filas, `Corte Z ${etiquetaPeriodo(desde)} · todas las sucursales`);
-      else if (i > 0 && i <= filas.length) pdfDe([filas[i - 1]], `Corte Z ${etiquetaPeriodo(desde)} · ${filas[i - 1].sucursal}`);
+    ActionSheetIOS.showActionSheetWithOptions({ title: `Cierres del día · ${etiquetaPeriodo(desde)}`, options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
+      if (i === 0) pdfDe(filas, `Cierres del día ${etiquetaPeriodo(desde)} · todas las sucursales`);
+      else if (i > 0 && i <= filas.length) pdfDe([filas[i - 1]], `Cierres del día ${etiquetaPeriodo(desde)} · ${filas[i - 1].sucursal}`);
     });
   };
 
@@ -226,7 +226,7 @@ export default function CorteZ() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Corte Z', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cierres del día', headerLargeTitle: true }} />
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
@@ -235,7 +235,7 @@ export default function CorteZ() {
         <PasoDeMes mes={mes} onCambiar={setMes} />
         {filas && filas.length ? (
           <FilaDeKpis>
-            {verMontos ? <Kpi icono="DollarSign" rotulo="Total general" valor={formatMoney(t.total)} color={MARCA.azul} apoyo={`${t.sucursales} sucursal${t.sucursales === 1 ? '' : 'es'} · CCF ${formatMoney(t.ccf)}`} />
+            {verMontos ? <Kpi icono="DollarSign" rotulo="Total general" valor={formatMoney(t.total)} color={MARCA.azul} apoyo={`${t.sucursales} sucursal${t.sucursales === 1 ? '' : 'es'} · Crédito fiscal ${formatMoney(t.ccf)}`} />
               : <Kpi icono="Building2" rotulo="Sucursales" valor={String(t.sucursales)} color={MARCA.azul} apoyo="del período" />}
             <Kpi icono="AlertTriangle" rotulo="Con observación" valor={String(t.difieren)} color={t.difieren ? MARCA.ambar : MARCA.verde} apoyo={t.difieren ? `${t.sucursales - t.difieren} sin diferencia` : 'Todas cuadran'} />
           </FilaDeKpis>
@@ -245,9 +245,9 @@ export default function CorteZ() {
         {filas == null ? <Cargando /> : filas.map((f) => <Tarjeta key={`${f.branch_id}-${f.periodo}`} f={f} verMontos={verMontos} />)}
         {filas && !filas.length && !error ? (
           <View style={{ marginHorizontal: 24, gap: 6, marginTop: 30 }}>
-            <Vacio>{`Sin Corte Z de ${nombreDelMes(mes)}`}</Vacio>
+            <Vacio>{`Sin cierres del día de ${nombreDelMes(mes)}`}</Vacio>
             <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {mes >= mesSV() ? 'El mes en curso todavía no se cierra. El Corte Z se trae el día 1 del mes siguiente.' : 'Este período no se ha traído todavía. No es un mes sin ventas: es que nadie lo procesó.'}
+              {mes >= mesSV() ? 'El mes en curso todavía no se cierra. Los cierres del día aparecen el día 1 del mes siguiente.' : 'Este mes todavía no se ha cargado.'}
             </Text>
           </View>
         ) : null}

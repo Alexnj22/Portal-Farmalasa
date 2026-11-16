@@ -55,7 +55,7 @@ export default function NuevaSolicitud() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 22, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {familias.length ? (
           <View style={{ gap: 7 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>De la sala</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>De la sucursal</Text>
             <Vidrio radio={20}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {familias.map((f, i) => (
                 <Opcion key={f.key} primero={!i} icono={f.icono} color={COLOR[f.key] ?? MARCA.azul} titulo={f.label} detalle={f.desc}

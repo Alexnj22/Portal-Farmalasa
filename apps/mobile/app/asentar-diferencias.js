@@ -79,7 +79,7 @@ export default function AsentarDiferenciasApp() {
       ]);
   };
 
-  const corregir = (d) => Alert.alert('¿No lleva movimiento?', 'Queda como causa encontrada: no mueve dinero, así que sale de esta lista.', [
+  const corregir = (d) => Alert.alert('¿No lleva movimiento?', 'Queda como causa encontrada y sale de esta lista.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Corregir', onPress: async () => {
       setOcupado(true);
@@ -106,7 +106,7 @@ export default function AsentarDiferenciasApp() {
               : !grupos.length ? <Aviso texto="No queda nada por anotar en el sistema." /> : (
                 <>
                   <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
-                    Haz UN documento por el total en el sistema y escribe acá su número: queda puesto en todas las filas que cubre.
+                    Haz el vale o el ingreso en el sistema por el total de cada grupo y escribe aquí su número.
                   </Text>
                   {grupos.map((g) => {
                     const incluidas = g.filas.filter((d) => !excluidas.has(claveDeFilaDeAsiento(d)));

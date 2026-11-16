@@ -21,7 +21,7 @@ export default function CierreDeDiferencias({ row, resueltas, actuar, quien }) {
   const { user } = useAuth();
   const [nota, setNota] = useState('');
   const [ocupado, setOcupado] = useState(false);
-  const sala = ERP_NAMES[row.erp_sucursal_id] ?? 'la sala';
+  const sala = ERP_NAMES[row.erp_sucursal_id] ?? 'la sucursal';
   const nombre = (id) => { const p = id ? quien?.(id) : null; return p ? shortEmployeeName(p) : null; };
 
   const paso = (cual, titulo, accion) => async () => {
@@ -40,14 +40,14 @@ export default function CierreDeDiferencias({ row, resueltas, actuar, quien }) {
 
   let cuerpo;
   if (row.confirmado_correccion_at) {
-    cuerpo = <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{`Cerrado. La sala confirmó que recibió la corrección · ${fmtDia(row.confirmado_correccion_at)} ${fmtHM(row.confirmado_correccion_at)}${nombre(row.confirmado_correccion_por) ? ` · ${nombre(row.confirmado_correccion_por)}` : ''}`}</Text>;
+    cuerpo = <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{`Cerrado. La sucursal confirmó que recibió la corrección · ${fmtDia(row.confirmado_correccion_at)} ${fmtHM(row.confirmado_correccion_at)}${nombre(row.confirmado_correccion_por) ? ` · ${nombre(row.confirmado_correccion_por)}` : ''}`}</Text>;
   } else if (row.corregido_bodega_at) {
     cuerpo = actuar?.esSala ? (
       <View style={{ gap: 8 }}>
-        <Text style={{ color: MARCA.ambar, fontSize: 14 }}>{`Bodega ya marcó la corrección · ${fmtDia(row.corregido_bodega_at)} ${fmtHM(row.corregido_bodega_at)} — falta que confirmes que la recibiste.`}</Text>
+        <Text style={{ color: MARCA.ambar, fontSize: 14 }}>{`Bodega ya marcó la corrección · ${fmtDia(row.corregido_bodega_at)} ${fmtHM(row.corregido_bodega_at)}. Falta que confirmes que la recibiste.`}</Text>
         {row.corregido_bodega_nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`«${row.corregido_bodega_nota}»`}</Text> : null}
         <BotonGrande texto="Confirmar corrección recibida" color={MARCA.verde} deshabilitado={ocupado}
-          onPress={() => Alert.alert('Confirmar corrección', 'Confirmas que la sala recibió la corrección de bodega.', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: paso('confirmar_correccion', 'Corrección confirmada', 'PEDIDO_CORRECCION_CONFIRMADA') }])} />
+          onPress={() => Alert.alert('Confirmar corrección', '¿La sucursal recibió la corrección de bodega?', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: paso('confirmar_correccion', 'Corrección confirmada', 'PEDIDO_CORRECCION_CONFIRMADA') }])} />
       </View>
     ) : (
       <Text style={{ color: MARCA.ambar, fontSize: 14 }}>{`Falta que ${sala} confirme que recibió la corrección. Bodega la marcó el ${fmtDia(row.corregido_bodega_at)} a las ${fmtHM(row.corregido_bodega_at)}.`}</Text>
@@ -58,11 +58,11 @@ export default function CierreDeDiferencias({ row, resueltas, actuar, quien }) {
     cuerpo = (
       <View style={{ gap: 8 }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-          {`${resueltas === 1 ? 'La diferencia está resuelta.' : `Las ${resueltas} diferencias están resueltas.`} Marca la corrección como completa y ${sala} tendrá que confirmar que la recibió.`}
+          {`${resueltas === 1 ? 'La diferencia está resuelta.' : `Las ${resueltas} diferencias están resueltas.`} Marca la corrección como completa. Después ${sala} tiene que confirmar que la recibió.`}
         </Text>
         <Campo multiline={false} value={nota} onChangeText={setNota} placeholder="Nota (opcional)" />
         <BotonGrande texto="Marcar corregido" color={MARCA.verde} deshabilitado={ocupado}
-          onPress={() => Alert.alert('Marcar corregido', `${sala} va a tener que confirmar que la recibió.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Marcar', onPress: paso('corregir_bodega', 'Marcado como corregido', 'PEDIDO_CORREGIDO_BODEGA') }])} />
+          onPress={() => Alert.alert('Marcar corregido', `Después ${sala} tiene que confirmar que la recibió.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Marcar', onPress: paso('corregir_bodega', 'Marcado como corregido', 'PEDIDO_CORREGIDO_BODEGA') }])} />
       </View>
     );
   }

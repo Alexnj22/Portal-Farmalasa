@@ -135,13 +135,13 @@ function Tarjeta({ g, conSala, vencidas }) {
             <View style={{ gap: 10, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
               {lotes == null ? <Indicador /> : lotes.error ? <Aviso tono="freno" texto="No se pudieron cargar los lotes." /> : (
                 <>
-                  <Lotes titulo={`LOTES EN ${String(ERP_NAMES[g.erp_sucursal_id] ?? 'LA SALA').toUpperCase()}`} filas={lotes.regulares} />
+                  <Lotes titulo={`LOTES EN ${String(ERP_NAMES[g.erp_sucursal_id] ?? 'LA SUCURSAL').toUpperCase()}`} filas={lotes.regulares} />
                   <Lotes titulo="EN EL ÁREA DE VENCIDOS" filas={lotes.vencidos} color={MARCA.rojo} />
                   {!lotes.regulares.length && !lotes.vencidos.length ? <Vacio enSeccion>Sin lotes con existencia.</Vacio> : null}
                 </>
               )}
               <Pressable onPress={ficha} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
-                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Ver la ficha del producto ›</Text>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Ver los datos del producto ›</Text>
               </Pressable>
             </View>
           ) : null}
@@ -242,10 +242,10 @@ export default function Inventario() {
   };
 
   const grupos = [
-    { id: 'sala', titulo: 'Sala', activa: sala, porDefecto: miErp == null ? 'todas' : String(miErp), onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...ERP_ORDEN.map((id) => ({ id: String(id), label: ERP_NAMES[id] }))] },
+    { id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: miErp == null ? 'todas' : String(miErp), onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...ERP_ORDEN.map((id) => ({ id: String(id), label: ERP_NAMES[id] }))] },
     ...(esBodega ? [{ id: 'area', titulo: 'Ubicación', activa: areaVencidos, porDefecto: 'no', onCambiar: setAreaVencidos,
-      opciones: [{ id: 'no', label: 'Toda la bodega' }, { id: 'si', label: 'Sólo área de vencidos' }] }] : []),
+      opciones: [{ id: 'no', label: 'Toda la bodega' }, { id: 'si', label: 'Solo área de vencidos' }] }] : []),
     { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
       opciones: [{ id: 'todos', label: 'Todos' }, ...labs] },
     { id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
@@ -303,7 +303,7 @@ export default function Inventario() {
             </FilaDeKpis>
             {esBodega ? (
               <FilaDeKpis>
-                <Kpi icono="Archive" rotulo="Área vencidos" apoyo="ubicación en Bodega" valor={Object.keys(vencidasPorProducto).length.toLocaleString('es-SV')} color={MARCA.rojo}
+                <Kpi icono="Archive" rotulo="Área de vencidos" apoyo="ubicación en Bodega" valor={Object.keys(vencidasPorProducto).length.toLocaleString('es-SV')} color={MARCA.rojo}
                   onPress={() => setAreaVencidos(areaVencidos === 'si' ? 'no' : 'si')} />
               </FilaDeKpis>
             ) : null}
@@ -311,10 +311,10 @@ export default function Inventario() {
         ) : null}
         {sincronia ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
-            {`${erp == null ? `La más vieja: ${ERP_NAMES[sincronia.erp_sucursal_id]} · ` : ''}actualizado ${desdeHace(sincronia.synced_at, Date.now())}${sincronia.items_count != null ? ` · ${Number(sincronia.items_count).toLocaleString('es-SV')} renglones` : ''}`}
+            {`${erp == null ? `La más vieja: ${ERP_NAMES[sincronia.erp_sucursal_id]} · ` : ''}actualizado ${desdeHace(sincronia.synced_at, Date.now())}${sincronia.items_count != null ? ` · ${Number(sincronia.items_count).toLocaleString('es-SV')} productos` : ''}`}
           </Text>
         ) : null}
-        {datos.parecidos ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
+        {datos.parecidos ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta. Estos son productos parecidos." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos.filas.map((g) => {
           const k = `${g.erp_sucursal_id}_${g.erp_product_id}`;

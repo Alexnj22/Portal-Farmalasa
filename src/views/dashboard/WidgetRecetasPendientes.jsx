@@ -143,7 +143,7 @@ export default function WidgetRecetasPendientes({ onVacio } = {}) {
     // («UN…»): ahí va sólo el lápiz, con su rótulo en `title`.
     const angosto = (useTamanoWidget()?.cols ?? 2) < 2;
     useResumenWidget(cargando ? null
-        : !sala ? { texto: 'Sin sala asignada' }
+        : !sala ? { texto: 'Sin sucursal asignada' }
         : !dispensa ? { texto: 'Aquí no se dispensa' }
         : error ? { texto: 'No se pudo leer', tono: 'danger' }
         : filas.length ? { valor: filas.length, texto: viejasVistazo > 0 ? `por completar · ${viejasVistazo} con 2+ días` : 'por completar', tono: viejasVistazo > 0 ? 'danger' : 'warning', accion: { texto: 'Completar' } }
@@ -155,8 +155,8 @@ export default function WidgetRecetasPendientes({ onVacio } = {}) {
                 value={String(sala ?? '')}
                 onChange={elegirSala}
                 options={salasQueDispensan}
-                placeholder="Sala"
-                ariaLabel="Sala de ventas"
+                placeholder="Sucursal"
+                ariaLabel="Sucursal"
                 icon={Building2}
                 clearable={false}
                 compact
@@ -174,12 +174,12 @@ export default function WidgetRecetasPendientes({ onVacio } = {}) {
         contenido = <div className="p-2"><SkeletonText lines={3} /></div>;
     } else if (!sala) {
         contenido = <EmptyState icon={Pill} compact
-            title="Sin sala asignada"
-            subtitle="El libro bajo receta es de una sala de ventas." />;
+            title="Sin sucursal asignada"
+            subtitle="El libro bajo receta es de una sucursal." />;
     } else if (!dispensa) {
         contenido = <EmptyState icon={Pill} compact
             title="Aquí no se dispensa"
-            subtitle="El libro bajo receta es de las salas de ventas." />;
+            subtitle="El libro bajo receta es de las sucursales de venta." />;
     } else if (error) {
         contenido = <EmptyState linea icon={AlertTriangle}
             title="No se pudieron leer las recetas"

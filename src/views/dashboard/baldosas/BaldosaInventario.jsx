@@ -67,11 +67,11 @@ export default function BaldosaInventario(props) {
             label="Ajuste de inventario"
             pendientes={plazo === null ? null : plazo.vencidas}
             error={plazo?.error ?? null}
-            etiquetaPendientes="línea vencida"
-            etiquetaPendientesPlural="líneas vencidas"
+            etiquetaPendientes="producto vencido"
+            etiquetaPendientesPlural="productos vencidos"
             vacio="Sin vencidos"
             tono="danger"
-            descripcion="Cargar o descargar producto de tu sala"
+            descripcion="Cargar o descargar producto de tu sucursal"
             instrumento={franja === null
                 ? <FranjaVacia />
                 : <BarraTramos tramos={franja.tramos} />}

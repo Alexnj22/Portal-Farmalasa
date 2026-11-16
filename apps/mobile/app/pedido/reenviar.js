@@ -79,8 +79,8 @@ function ReenviarFaltantes() {
     }
   };
   const confirmar = () => Alert.alert(`Pedido #${numero}`,
-    [hayReenvio ? 'Se registra el reenvío y la sala recibe el aviso.' : null,
-      aCancelar.length ? `${aCancelar.map((p) => p.labels.join('–')).join(', ')} no se reenvía: regresa a bodega. No se puede deshacer.` : null].filter(Boolean).join('\n\n'),
+    [hayReenvio ? 'Se registra el reenvío y la sucursal recibe el aviso.' : null,
+      aCancelar.length ? `${aCancelar.map((p) => p.labels.join('–')).join(', ')} no se reenvía. Regresa a bodega. No se puede deshacer.` : null].filter(Boolean).join('\n\n'),
     [{ text: 'Cancelar', style: 'cancel' }, { text: !hayReenvio ? 'No reenviar' : aCancelar.length ? 'Confirmar' : 'Reenviar', style: aCancelar.length ? 'destructive' : 'default', onPress: hacer }]);
 
   return (
@@ -88,7 +88,7 @@ function ReenviarFaltantes() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Lo que no llegó', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Pedido #${numero} · ${ERP_NAMES[suc] ?? ''}`}</Text>
-        {!faltan.hay ? <Aviso texto="No falta nada por reenviar en esta sala." /> : (
+        {!faltan.hay ? <Aviso texto="No falta nada por reenviar en esta sucursal." /> : (
           <>
             {faltan.cajas.length || faltan.electrolits ? (
               <Seccion titulo="Se reenvía">
@@ -102,7 +102,7 @@ function ReenviarFaltantes() {
                   <View key={p.itemId} style={{ gap: 8, paddingVertical: 4 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`${p.labels.join('–')}${p.producto ? ` · ${p.producto}` : ''}`}</Text>
                     {p.parcial ? (
-                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Una de sus cajas sí llegó. Va en un solo traslado: se reenvía.</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Una de sus cajas sí llegó. Van en el mismo traslado, así que se reenvía.</Text>
                     ) : (
                       <Segmentos margen={0} activa={noVa.includes(p.itemId) ? 'no' : 'si'}
                         onCambiar={(v) => setNoVa((xs) => (v === 'no' ? [...new Set([...xs, p.itemId])] : xs.filter((id) => id !== p.itemId)))}
@@ -112,7 +112,7 @@ function ReenviarFaltantes() {
                 ))}
               </Seccion>
             ) : null}
-            {aCancelar.length ? <Aviso tono="cuidado" texto={`${aCancelar.map((p) => p.labels.join('–')).join(', ')} no se reenvía: el producto regresa a bodega y la sala deja de verlo pendiente. No se puede deshacer.`} /> : null}
+            {aCancelar.length ? <Aviso tono="cuidado" texto={`${aCancelar.map((p) => p.labels.join('–')).join(', ')} no se reenvía. El producto regresa a bodega y la sucursal deja de verlo pendiente. No se puede deshacer.`} /> : null}
             <BotonGrande texto={guardando ? 'Guardando…' : !hayReenvio ? 'No reenviar' : aCancelar.length ? 'Confirmar' : 'Reenviar'}
               color={aCancelar.length && !hayReenvio ? MARCA.rojo : MARCA.azul} deshabilitado={guardando} onPress={confirmar} />
           </>

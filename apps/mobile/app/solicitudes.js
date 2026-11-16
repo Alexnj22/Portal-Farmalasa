@@ -295,10 +295,10 @@ export default function Solicitudes() {
     // El selector de sala es del ALCANCE, no de los datos (decisión del
     // usuario, 2026-08-21): con «mi sucursal» no se ofrece filtrar por las demás.
     ...(criterios.branchId === null && !criterios.soloMiasId
-      ? [{ id: 'sala', titulo: 'Sala', opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas], activa: sala, porDefecto: 'todas', onCambiar: setSala }]
+      ? [{ id: 'sala', titulo: 'Sucursal', opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas], activa: sala, porDefecto: 'todas', onCambiar: setSala }]
       : []),
     ...(!soloMioEnTodo
-      ? [{ id: 'quien', titulo: 'De quién', opciones: [{ id: 'TODAS', label: 'Todos' }, { id: 'MIAS', label: 'Sólo yo' }], activa: quien, porDefecto: 'TODAS', onCambiar: setQuien }]
+      ? [{ id: 'quien', titulo: 'De quién', opciones: [{ id: 'TODAS', label: 'Todos' }, { id: 'MIAS', label: 'Solo yo' }], activa: quien, porDefecto: 'TODAS', onCambiar: setQuien }]
       : []),
   ];
 
@@ -366,12 +366,12 @@ export default function Solicitudes() {
             {vacio || !cargado ? null : (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
                 {estado === 'PENDING'
-                  ? `${pendientes} pendiente${pendientes === 1 ? '' : 's'} — se ven todas, sean de la semana que sean`
+                  ? `${pendientes} pendiente${pendientes === 1 ? '' : 's'} de cualquier semana`
                   : `${results.length} solicitud${results.length === 1 ? '' : 'es'}${estado === 'ALL' && pendientes ? ` · ${pendientes} pendiente${pendientes === 1 ? '' : 's'} de cualquier semana` : ''}`}
               </Text>
             )}
             {isFuzzy && busqueda.trim() ? (
-              <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600', marginHorizontal: 20 }}>{`Resultados parecidos a «${busqueda.trim()}»: no hubo coincidencias exactas.`}</Text>
+              <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600', marginHorizontal: 20 }}>{`Resultados parecidos a «${busqueda.trim()}». No hubo coincidencias exactas.`}</Text>
             ) : null}
           </View>
         )}

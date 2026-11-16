@@ -125,15 +125,15 @@ export default function ReglaDeProducto() {
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{nombre}</Text>
           {lab ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{lab}</Text> : null}
         </View>
-        {!puede ? <Aviso texto="Puedes ver la regla; cambiarla pide permiso de edición en Reglas." /> : null}
+        {!puede ? <Aviso texto="Solo puedes ver la regla. Tu cargo no la puede cambiar." /> : null}
         {pendiente ? (
           <View style={{ gap: 8 }}>
-            <Aviso tono="cuidado" texto={`Regla por corregir. ${textoDePendiente(pendiente)} Se quitó para que el pedido no salga con un tamaño que ya no existe: elige la presentación de despacho de nuevo.`} />
+            <Aviso tono="cuidado" texto={`Regla por corregir. ${textoDePendiente(pendiente)} Elige otra vez la presentación de despacho.`} />
             {puede ? <BotonGrande texto="Dejar sin regla" borde deshabilitado={guardando} onPress={dejarSinRegla} /> : null}
           </View>
         ) : null}
         <Seccion titulo="Presentación de despacho">
-          {!presentaciones.length ? <Aviso tono="cuidado" texto="Sin presentaciones en catálogo: no se puede asignar regla de despacho." /> : (
+          {!presentaciones.length ? <Aviso tono="cuidado" texto="Este producto no tiene presentaciones. No se le puede poner regla de despacho." /> : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {presentaciones.map((p) => (
                 <Ficha key={p.id_presentacion} titulo={p.presentaciones?.tipo ?? 'DESCONOCIDO'} detalle={p.factor > 1 ? `×${p.factor} unidades` : 'unidad base'}
@@ -145,7 +145,7 @@ export default function ReglaDeProducto() {
         </Seccion>
         {vals.dispatch_id_presentacion ? (
           <>
-            <Seccion titulo="Por lote" pie={multiplo > 1 ? `Redondea hacia arriba al múltiplo de ${multiplo}.` : 'Sin múltiplo: sale la cantidad exacta.'}>
+            <Seccion titulo="Por lote" pie={multiplo > 1 ? `Redondea hacia arriba al múltiplo de ${multiplo}.` : 'Sin múltiplo. Sale la cantidad exacta.'}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {MULTIPLOS.map((n) => <Ficha key={n} titulo={`×${n}`} activa={multiplo === n} deshabilitado={!puede} onPress={() => { setOtro(''); set({ dispatch_multiplo: String(n) }); }} />)}
               </View>
@@ -156,7 +156,7 @@ export default function ReglaDeProducto() {
                 <Text style={{ fontWeight: '800', color: MARCA.violetaClaro }}>{`${cantidad} ${porEtiqueta ? vals.dispatch_label : (tipo ? `pack(s) de ${tipo}` : 'pack(s)')}`}</Text>
               </Text>
             </Seccion>
-            <Seccion titulo="Mostrar en el papel como" pie="Sólo para cajas físicas grandes (Electrolit, sueros): se listan aparte, una caja por fila con su lote.">
+            <Seccion titulo="Mostrar en el papel como" pie="Solo para cajas grandes, como Electrolit o sueros. Se listan aparte, una caja por fila con su lote.">
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {ETIQUETAS_DE_DESPACHO.map((l) => <Ficha key={l} titulo={l} activa={vals.dispatch_label === l} deshabilitado={!puede} onPress={() => set({ dispatch_label: vals.dispatch_label === l ? '' : l })} />)}
               </View>

@@ -156,7 +156,7 @@ function ExtrasDelPedido() {
                     </Pressable>
                   ) : null}
                 </View>
-                {e.bloqueado ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{e.retirable === false ? `${e.fQty} · Bodega ya contestó: no se puede quitar.` : `${e.fQty} · ya tiene una propuesta en curso; todavía se puede quitar.`}</Text> : (
+                {e.bloqueado ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{e.retirable === false ? `${e.fQty} · Bodega ya contestó. No se puede quitar.` : `${e.fQty} · Ya tiene una propuesta en curso. Todavía se puede quitar.`}</Text> : (
                   <>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                       {(opciones[e.erp_product_id] ?? []).map((o) => (

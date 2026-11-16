@@ -88,7 +88,7 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
 
     useResumenWidget(loading ? null
         : error ? { texto: 'No se pudo cargar', tono: 'danger' }
-        : !row ? { texto: 'Sin sala asignada' }
+        : !row ? { texto: 'Sin sucursal asignada' }
         : row.monto_meta == null ? { texto: 'Sin meta asignada' }
         // En chico, lo que hay que HACER: cuánto vender por día para llegar
         // (`ritmo_necesario`, el mismo número del pie). Ese ritmo es una
@@ -115,7 +115,7 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
         return (
             /* Sin subtítulo, como los otros nueve del tablero: adentro de un
                widget el vacío es UNA línea. */
-            <EmptyState linea icon={Target} title="Sin sala asignada" />
+            <EmptyState linea icon={Target} title="Sin sucursal asignada" />
         );
     }
 

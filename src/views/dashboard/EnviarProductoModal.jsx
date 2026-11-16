@@ -227,7 +227,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 setNota(precarga.nota ?? '');
                 setPestana('lista');
             })
-            .catch(e => { if (!cancelado) setError(e?.message ?? 'No se pudo armar el envío sugerido.'); })
+            .catch(e => { if (!cancelado) setError(e?.message ?? 'No se pudo armar el traslado sugerido.'); })
             .finally(() => { if (!cancelado) setPrecargando(false); });
         return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al abrir
@@ -470,28 +470,28 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     );
 
     const problemaDelPaso = lleno
-            ? `Un envío admite hasta ${TOPE_RENGLONES_ENVIO} productos. Manda éste y arma otro con el resto.`
+            ? `Un traslado lleva hasta ${TOPE_RENGLONES_ENVIO} productos. Manda éste y arma otro con el resto.`
         : !elegido ? 'Elige un producto.'
-        : !origen ? 'Elige de qué sala sale.'
+        : !origen ? 'Elige de qué sucursal sale.'
         : presCargadas === null ? 'Buscando las presentaciones…'
         : presentaciones.length === 0
-            ? 'Este producto es nuevo y todavía no tiene presentación. Se completa sola en unos minutos; puedes dejar esta ventana abierta.'
+            ? 'Este producto es nuevo y todavía no tiene presentación. Estará lista en unos minutos. Puedes dejar esta ventana abierta.'
         : !pres ? 'Elige la presentación.'
         : unidadesPedidas <= 0 ? 'Pon la cantidad.'
         : unidadesPedidas + yaEnLista > (origen.unidades ?? 0)
             ? `${origen.nombre} tiene ${origen.unidades} ${origen.unidades === 1 ? 'unidad' : 'unidades'}`
-              + (yaEnLista ? ` y ya pusiste ${yaEnLista} en el envío.` : '.')
+              + (yaEnLista ? ` y ya pusiste ${yaEnLista} en el traslado.` : '.')
         : reparto.faltan > 0 ? `Faltan ${reparto.faltan} en los lotes.`
         : ningunLoteCompleta
             ? (presBase >= 0
-                ? `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}: confirma mandarla en unidades.`
+                ? `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}. Confirma mandarla en unidades.`
                 : `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}, y el producto no tiene presentación de una unidad.`)
         : faltaCaja ? faltaCaja
         // El origen y el destino se eligen en dos momentos distintos y nada los
         // ata: sin esto, un renglón podía salir de la misma sala a la que va —y
         // eso el servidor lo rebota recién al apretar «Transferir».
         : String(origen.erp) === String(destino)
-            ? `${origen.nombre} es la sala a la que va el envío.`
+            ? `${origen.nombre} es la sucursal a la que va el traslado.`
         // Y si el motivo ya está elegido, que valga para ESTA sala de origen.
         // Puede no valer: una composición saca de varias salas y el motivo es
         // uno solo — de Bodega se puede mandar un producto nuevo, de una sala
@@ -509,7 +509,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         // desplegable de motivos vacío que no explica nada.
         : destino && renglones.length > 0 && motivosParaOrigenes(
               [...origenesEnElEnvio, Number(origen.erp) === ERP_BODEGA], destinoEsBodega).length === 0
-            ? `Lo que sale de ${origen.nombre} no comparte motivo con lo que ya está en el envío. Mándalo aparte.`
+            ? `Lo que sale de ${origen.nombre} no comparte motivo con lo que ya está en el traslado. Mándalo aparte.`
         : null;
 
     const agregar = useCallback(() => {
@@ -597,7 +597,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 ?? claveOrigen(r.origen_erp ?? miErp, r.origen_vencidos)}`;
             const a = porClave.get(clave) ?? {
                 unidades: 0, existencia: r.existencia ?? 0,
-                nombre: r.descripcion, sala: r.origen_nombre ?? NOMBRE_SALA[miErp] ?? 'tu sala',
+                nombre: r.descripcion, sala: r.origen_nombre ?? NOMBRE_SALA[miErp] ?? 'tu sucursal',
             };
             a.unidades += r.unidades;
             porClave.set(clave, a);
@@ -743,16 +743,16 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     const faltaParaMandar = renglones.length === 0 ? 'Agrega al menos un producto.'
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
         : sinLoteElegido.length > 0 ? 'Hay productos con la cantidad cambiada sin lote ni vencimiento elegido.'
-        : !destino ? 'Elige la sala de destino.'
-        : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
+        : !destino ? 'Elige la sucursal de destino.'
+        : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sucursal a la que va.'
         // Antes de «Elige el motivo»: si no hay ninguno posible, ese aviso
         // mandaría a un desplegable vacío — un callejón sin salida con forma de
         // instrucción.
-        : sinMotivoPosible ? 'Separa lo que sale de Bodega de lo que sale de una sala.'
+        : sinMotivoPosible ? 'Separa lo que sale de Bodega de lo que sale de una sucursal.'
         : !motivo ? 'Elige el motivo.'
         : reglasPendientes ? 'Revisando cómo se devuelve cada producto…'
         : sueltosABodega.length > 0
-            ? `A Bodega se devuelve completo: ${sueltosABodega[0].descripcion} va en ${nombreDeDespacho(despacho.get(Number(sueltosABodega[0].erp_product_id)))}`
+            ? `A Bodega se devuelve completo. ${sueltosABodega[0].descripcion} va en ${nombreDeDespacho(despacho.get(Number(sueltosABodega[0].erp_product_id)))}`
               + (sueltosABodega.length > 1 ? ` (y ${sueltosABodega.length - 1} más).` : '.')
         // La foto es lo único que le queda a Bodega para decidir si se le
         // reclama al proveedor: el daño viaja con la caja y no se puede volver
@@ -956,7 +956,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             const msg = String(e?.message ?? '');
             setError(
                 msg.includes('row-level security')
-                    ? 'No tienes permiso para enviar producto a otra sala.'
+                    ? 'No tienes permiso para trasladar producto a otra sucursal.'
                     : (e?.message ?? 'No se pudo enviar.'),
             );
             // También si lo que falló fue la subida: el rótulo del botón no
@@ -982,7 +982,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         const nadaSalio = resultado.enviadas === 0;
         const parcial   = !nadaSalio && resultado.enviadas < resultado.total;
         return (
-            <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resultado del envío">
+            <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Resultado del traslado">
                 <LiquidModal.Header
                     titulo={nadaSalio ? 'No salió nada' : parcial ? 'Salió una parte' : 'Producto en camino'}
                     icono={nadaSalio ? AlertTriangle : Check}
@@ -991,13 +991,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 <LiquidModal.Body className="flex flex-col gap-3">
                     <p className="text-body-sm text-content-2 font-medium leading-snug">
                         {nadaSalio
-                            ? `El envío a ${resultado.sala} quedó armado y el producto sigue en su estante.`
+                            ? `El traslado a ${resultado.sala} quedó armado. El producto sigue en su estante.`
                             : `Salieron ${resultado.enviadas} de ${resultado.total} ${
                                 resultado.total === 1 ? 'producto' : 'productos'} para ${resultado.sala}`
                               + ((resultado.desde ?? []).length > 1
                                   ? `, desde ${resultado.desde.join(' y ')}.`
                                   : '.')}
-                        {resultado.enviadas > 0 && ' Ya les avisamos: cuando abran la caja deciden qué se quedan.'}
+                        {resultado.enviadas > 0 && ' Ya les avisamos. Cuando abran la caja, deciden qué se quedan.'}
                     </p>
                     {resultado.aviso && (
                         <p className={`text-label font-semibold leading-snug ${
@@ -1016,7 +1016,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 </p>
                             ))}
                             <p className="text-micro text-content-3 font-medium leading-snug mt-1">
-                                Quedan en el envío, bajo «Sin salir de tu sala», y ahí mismo se vuelve a intentar.
+                                Quedan en «Sin salir de tu sucursal». Ahí puedes volver a intentarlo.
                             </p>
                         </div>
                     )}
@@ -1029,13 +1029,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     }
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Enviar a otra sala">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Traslado a otra sucursal">
             {/* «tu sala» sólo cuando de verdad es la propia: con alcance sobre
                 todas, el producto sale de la sala que se elija en cada renglón. */}
-            <LiquidModal.Header titulo="Enviar a otra sala"
+            <LiquidModal.Header titulo="Traslado a otra sucursal"
                 subtitulo={alcanceTodo
-                    ? 'Producto que sale de una sala hacia otra'
-                    : 'Producto que sale de tu sala hacia otra'}
+                    ? 'Producto que sale de una sucursal hacia otra'
+                    : 'Producto que sale de tu sucursal hacia otra'}
                 icono={Send} tono="brand" onClose={onClose} />
 
             <LiquidModal.Body className="flex flex-col gap-3 min-h-0">
@@ -1048,7 +1048,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             // El contador muestra el tope cuando falta poco: enterarse
                             // de que no entra otro AL APRETAR «agregar» es peor que verlo
                             // venir con tres renglones de anticipación.
-                            { value: 'lista', label: `En el envío${renglones.length
+                            { value: 'lista', label: `En el traslado${renglones.length
                                 ? ` · ${renglones.length}${renglones.length >= TOPE_RENGLONES_ENVIO - 3 ? `/${TOPE_RENGLONES_ENVIO}` : ''}`
                                 : ''}` },
                         ]}
@@ -1061,7 +1061,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             value={termino}
                             onChange={setTermino}
                             placeholder="Busca el producto que vas a mandar"
-                            ariaLabel="Buscar producto en tu sala"
+                            ariaLabel="Buscar producto en tu sucursal"
                         />
 
                         {!elegido && (
@@ -1075,7 +1075,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                     <LoadingState variant="inline" label="Buscando…" className="px-1" />
                                 )}
                                 {!buscando && resultados?.length === 0 && (
-                                    <EmptyState linea title="Tu sala no tiene ese producto" />
+                                    <EmptyState linea title="Tu sucursal no tiene ese producto" />
                                 )}
                                 {!buscando && resultados?.length > 0 && sonParecidos && <AvisoParecidos texto={termino} />}
                                 {!buscando && resultados?.length > 0 && (
@@ -1117,7 +1117,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                             {origen
                                                 ? `${origen.nombre} tiene ${origen.unidades} ${
                                                     origen.unidades === 1 ? 'unidad' : 'unidades'}`
-                                                : 'Elige de qué sala sale'}
+                                                : 'Elige de qué sucursal sale'}
                                         </p>
                                     </div>
                                     <Button variant="ghost" size="xs" icon={X} iconOnly
@@ -1248,7 +1248,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 <Button variant="secondary" onClick={agregar}
                                     disabled={Boolean(problemaDelPaso)}
                                     className="min-h-[var(--tap-min)]">
-                                    Agregar al envío
+                                    Agregar al traslado
                                 </Button>
                             </div>
                         )}
@@ -1258,7 +1258,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 {pestana === 'lista' && (
                     <div className="flex flex-col gap-3">
                         {precargando && (
-                            <div className="flex justify-center py-8"><LoadingState variant="inline" label="Armando el envío…" /></div>
+                            <div className="flex justify-center py-8"><LoadingState variant="inline" label="Armando el traslado…" /></div>
                         )}
                         {sinArmar.length > 0 && (
                             <div className="rounded-xl bg-warning/10 border border-warning/30 px-3 py-2 text-label text-warning-text leading-snug">
@@ -1272,7 +1272,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             <p className="text-label text-content-3 font-medium py-8 text-center leading-snug">
                                 Todavía no agregaste nada.<br />
                                 <span className="text-micro">
-                                    Busca el producto en «Agregar», ponle la cantidad y aprieta «Agregar al envío».
+                                    Busca el producto en «Agregar», ponle la cantidad y aprieta «Agregar al traslado».
                                 </span>
                             </p>
                         ) : (
@@ -1355,22 +1355,22 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                         {chocanConElDestino.length > 0 && (
                             <p className="text-micro font-semibold text-danger-text leading-snug px-1">
                                 {chocanConElDestino.length === 1
-                                    ? `${chocanConElDestino[0].descripcion} sale de la misma sala a la que va el envío.`
-                                    : `${chocanConElDestino.length} productos salen de la misma sala a la que va el envío.`}
-                                {' '}Cámbiales la sala o elige otro destino.
+                                    ? `${chocanConElDestino[0].descripcion} sale de la misma sucursal a la que va el traslado.`
+                                    : `${chocanConElDestino.length} productos salen de la misma sucursal a la que va el traslado.`}
+                                {' '}Cámbiales la sucursal o elige otro destino.
                             </p>
                         )}
 
                         {excesos.map(x => (
                             <p key={`${x.nombre}|${x.sala}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
-                                Entre todos los renglones estás mandando {x.unidades} de {x.nombre} y{' '}
+                                En total estás mandando {x.unidades} de {x.nombre} y{' '}
                                 {x.sala} tiene {x.existencia}.
                             </p>
                         ))}
 
                         {sinLoteElegido.map((r, k) => (
                             <p key={`sl|${k}|${r.erp_product_id}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
-                                A {r.descripcion} le subiste la cantidad y lo de más no tiene lote ni vencimiento elegido.
+                                A {r.descripcion} le subiste la cantidad. Lo que agregaste no tiene lote ni vencimiento elegido.
                                 {' '}Quítalo y agrégalo de nuevo con la cantidad completa.
                             </p>
                         ))}
@@ -1383,13 +1383,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             no pidió. */}
                         <div className="flex flex-col gap-2.5 pt-1">
                             <div data-campo="destino">
-                                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sala de destino</p>
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Sucursal de destino</p>
                             <LiquidSelect
                                 value={destino}
                                 onChange={v => setDestino(String(v ?? ''))}
                                 options={salasDestino}
-                                placeholder="¿A qué sala va?"
-                                ariaLabel="Sala de destino"
+                                placeholder="¿A qué sucursal va?"
+                                ariaLabel="Sucursal de destino"
                             />
                             </div>
                             <div data-campo="motivo">
@@ -1398,10 +1398,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 value={motivo}
                                 onChange={v => setMotivo(String(v ?? ''))}
                                 options={motivosPosibles.map(m => ({ value: m, label: m }))}
-                                placeholder={!destino ? 'Elige primero la sala'
-                                    : sinMotivoPosible ? 'No hay motivo para este envío'
+                                placeholder={!destino ? 'Elige primero la sucursal'
+                                    : sinMotivoPosible ? 'No hay motivo para este traslado'
                                     : '¿Por qué se lo mandas?'}
-                                ariaLabel="Motivo del envío"
+                                ariaLabel="Motivo del traslado"
                                 disabled={!destino || sinMotivoPosible}
                             />
                             {/* Un desplegable vacío no explica nada, y acá el
@@ -1412,10 +1412,9 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 regla, es armar dos envíos. */}
                             {sinMotivoPosible && (
                                 <p className="text-micro text-danger-text font-semibold leading-snug px-1 mt-1">
-                                    Este envío saca de Bodega y de una sala a la vez, y hacia{' '}
-                                    {NOMBRE_SALA[Number(destino)] ?? 'esa sala'} no hay un motivo que valga
-                                    para los dos: lo de Bodega va como reparto y lo de la sala como sobrante.
-                                    Manda uno y arma el otro después.
+                                    Este traslado saca de Bodega y de una sucursal a la vez. Hacia{' '}
+                                    {NOMBRE_SALA[Number(destino)] ?? 'esa sucursal'} no hay un motivo que valga
+                                    para los dos. Manda uno y arma el otro después.
                                 </p>
                             )}
                             {/* El porqué, donde alguien lo va a leer. Un
@@ -1425,10 +1424,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 a dónde ir en su lugar. */}
                             {soloSobrante && (
                                 <p className="text-micro text-content-3 font-medium leading-snug px-1 mt-1">
-                                    Entre salas sólo se manda lo que sobra. Si {NOMBRE_SALA[Number(destino)] ?? 'la otra sala'}{' '}
+                                    Entre sucursales sólo se manda lo que sobra. Si {NOMBRE_SALA[Number(destino)] ?? 'la otra sucursal'}{' '}
                                     lo necesita, tiene que pedirlo
                                     {soloHaciaBodega.length > 0 && (
-                                        <>; y lo que es {soloHaciaBodega.map(m => `«${m}»`).join(' o ')} va a Bodega</>
+                                        <>. Lo que es {soloHaciaBodega.map(m => `«${m}»`).join(' o ')} va a Bodega</>
                                     )}.
                                 </p>
                             )}
@@ -1464,8 +1463,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                         alt="Foto del daño" />
                                     {fotos.length === 0 && (
                                         <p className="text-micro text-warning-text font-medium leading-snug px-1 mt-1">
-                                            Falta la foto: es lo único que quien recibe puede mirar para
-                                            saber cómo salió el producto.
+                                            Agrega la foto del daño.
                                         </p>
                                     )}
                                 </div>
@@ -1492,7 +1490,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 placeholder={motivo === 'Próximo a vencer'
                                     ? 'Ej.: vence en octubre y aquí no va a salir, allá se vende'
                                     : motivo === 'Producto nuevo'
-                                    ? 'Ej.: llegó el lunes, va uno a cada sala para probarlo'
+                                    ? 'Ej.: llegó el lunes, va uno a cada sucursal para probarlo'
                                     : motivo === 'Impulso'
                                     ? 'Ej.: en Bodega lleva dos meses parado y allá se vende bien'
                                     : motivo === 'Encargo'
@@ -1527,9 +1525,9 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                     {pestana === 'lista' && renglones.length > 0 && (
                         <p className="text-micro text-content-3 font-medium leading-snug">
                             {variosOrigenes
-                                ? 'Al transferir sale un envío POR CADA sala de la que sacas producto, '
-                                  + 'y todos van a la misma sala de destino. '
-                                : 'Al transferir, el producto sale de la sala y le avisamos a la otra. '}
+                                ? 'Sale un traslado por cada sucursal de la que sacas producto. '
+                                  + 'Todos van a la misma sucursal de destino. '
+                                : 'Al transferir, el producto sale de la sucursal y le avisamos a la otra. '}
                             Ellos deciden qué se quedan cuando abran la caja.
                         </p>
                     )}
@@ -1541,7 +1539,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             <Button variant="secondary" onClick={() => setPestana('lista')}
                                 disabled={renglones.length === 0}
                                 className="min-h-[var(--tap-min)]">
-                                Revisar el envío
+                                Revisar el traslado
                             </Button>
                         ) : (
                             <Button variant="primary" icon={enviando ? Loader2 : Send}

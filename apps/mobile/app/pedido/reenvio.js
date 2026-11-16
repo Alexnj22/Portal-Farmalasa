@@ -92,8 +92,8 @@ function LlegoElReenvio() {
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Pedido #${numero} · ${ERP_NAMES[suc] ?? ''}${ciclo ? ` · reenvío ${ciclo.ciclo}` : ''}`}</Text>
         {row === undefined ? <Indicador /> : !ciclo ? (
           <Aviso tono="cuidado" texto={reenvioTodaviaEnBodega(row?.reenvios_historial)
-            ? 'El reenvío todavía no sale: las cajas siguen en Bodega y se confirman cuando salga su ruta.'
-            : 'No hay un reenvío pendiente de confirmar en esta sala.'} />
+            ? 'El reenvío todavía no sale. Las cajas siguen en Bodega. Se confirman cuando salga su ruta.'
+            : 'No hay ningún reenvío para confirmar en esta sucursal.'} />
         ) : (
           <>
             {listaCajas.length ? (

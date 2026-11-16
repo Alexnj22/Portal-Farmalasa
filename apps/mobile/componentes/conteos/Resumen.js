@@ -28,15 +28,15 @@ export default function Resumen({ resumen, abierto, verMontos }) {
   const sobra = Number(sobraNeto ?? sobraBruto) || 0;
   const muestraSobrante = !(falt > 0) && sobra > 0;
   const apoyoDif = reacomodados > 0
-    ? `${formatQty(reacomodados)} renglón${reacomodados === 1 ? '' : 'es'} sólo cambi${reacomodados === 1 ? 'ó' : 'aron'} de lote`
+    ? `${formatQty(reacomodados)} producto${reacomodados === 1 ? '' : 's'} solo cambi${reacomodados === 1 ? 'ó' : 'aron'} de lote`
     : (recontados > 0 ? `${formatQty(recontados)} recontada${recontados === 1 ? '' : 's'}` : (prodDif != null ? 'productos que no cuadran' : 'contra la existencia'));
   const apoyoMonto = [
     falt > 0 && sobra > 0 ? `sobrante ${formatMoney(sobra)}` : null,
-    Number(valorReacomodo) > 0 ? `${formatMoney(valorReacomodo)} sólo cambia de lote` : null,
+    Number(valorReacomodo) > 0 ? `${formatMoney(valorReacomodo)} solo cambia de lote` : null,
   ].filter(Boolean).join(' · ') || (falt > 0 || muestraSobrante ? 'por producto, neto' : 'cuadra');
   const pct = items > 0 ? Math.round((contados / items) * 100) : 0;
   const tarjetas = [
-    <Kpi key="avance" icono="CheckCircle2" rotulo="Avance" valor={`${pct}%`} apoyo={`${formatQty(contados)} de ${formatQty(items)} renglones`}
+    <Kpi key="avance" icono="CheckCircle2" rotulo="Avance" valor={`${pct}%`} apoyo={`${formatQty(contados)} de ${formatQty(items)} contados`}
       color={pendientes === 0 ? MARCA.verde : MARCA.azulClaro} visual={<Avance parte={contados} total={items} color={pendientes === 0 ? MARCA.verde : MARCA.azulClaro} />} />,
     <Kpi key="sin" icono="Clock" rotulo="Sin contar" valor={formatQty(pendientes)} pide={pendientes > 0}
       apoyo={contadores > 0 ? `${formatQty(contadores)} contador${contadores === 1 ? '' : 'es'}` : 'nada pendiente'} color={pendientes > 0 ? MARCA.ambar : MARCA.verde} />,

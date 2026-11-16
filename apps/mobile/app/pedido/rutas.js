@@ -102,14 +102,14 @@ export default function RutasDeReparto() {
       opciones: [{ id: 'activas', label: 'Activas' }, { id: 'completadas', label: 'Completadas' }, { id: 'todas', label: 'Todas' }] },
     ...(estado !== 'activas' ? [{ id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: '7d', onCambiar: setPeriodo,
       opciones: [{ id: 'hoy', label: 'Hoy' }, { id: '7d', label: '7 días' }, { id: '30d', label: '30 días' }] }] : []),
-    ...(conductores.length > 1 ? [{ id: 'conductor', titulo: 'Conductor', activa: conductor, porDefecto: '', onCambiar: setConductor,
+    ...(conductores.length > 1 ? [{ id: 'conductor', titulo: 'Motorista', activa: conductor, porDefecto: '', onCambiar: setConductor,
       opciones: [{ id: '', label: 'Todos' }, ...conductores.map((c) => ({ id: c, label: c }))] }] : []),
   ];
 
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Rutas de reparto', headerLargeTitle: true,
-        headerSearchBarOptions: { placeholder: 'Número o conductor', onChangeText: (e) => setBuscar(e.nativeEvent.text) } }} />
+        headerSearchBarOptions: { placeholder: 'Número o motorista', onChangeText: (e) => setBuscar(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} extra={puedeArmar ? { icono: 'plus', etiqueta: 'Crear ruta', onPress: () => router.push('/pedido/ruta/nueva') } : null} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

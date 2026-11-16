@@ -152,7 +152,7 @@ export default function Traslado() {
       if (otra?.status !== 'APPROVED') { fallo('No se pudo enviar', r?.error ?? 'Inténtalo de nuevo.'); return; }
     }
     usePorDecidir.getState().quitar(fila.id);
-    listo(recortado ? 'Enviado lo que hay' : 'Traslado enviado', 'El ticket del paquete se imprime en la computadora de la sala.');
+    listo(recortado ? 'Enviado lo que hay' : 'Traslado enviado', 'El ticket del paquete se imprime en la computadora de la sucursal.');
     router.back();
   };
 
@@ -176,7 +176,7 @@ export default function Traslado() {
   // Sale en la caja de quien lo pide. Sin número no hay barras: no se ofrece.
   const imprimir = async () => {
     const papel = ticketParaReimprimir({ metadata: m, pide: pide?.name ?? null, familia: 'solicitud' });
-    if (!papel) { fallo('Sin ticket', 'Ese traslado no tiene número: su ticket se confirma a mano.'); return; }
+    if (!papel) { fallo('Sin ticket', 'Ese traslado no tiene número. Su ticket se confirma a mano.'); return; }
     trabajando('Mandando a imprimir…');
     const r = await imprimirEnLaSala(papel.ticket, miSala || null, papel.titulo);
     if (r.ok) listo('Ticket', r.detalle); else fallo('No se pudo imprimir', r.detalle);
@@ -191,8 +191,8 @@ export default function Traslado() {
     if (r?.faltante_error) fallo('Recibido, pero sin anotar lo que faltó', r.faltante_error);
     else if (errSobrante) fallo('Recibido, pero lo de más no pasó', errSobrante);
     else listo(r?.codigo === 'YA_RECIBIDO' ? 'Ya estaba recibido' : 'Recibido',
-      [faltantes.length ? `Se avisó a ${m.origen_branch_name ?? 'la sala'} lo que faltó.` : '',
-       r?.sobrante?.ok ? `Lo que vino de más ya está en tu inventario y se le avisó a ${m.origen_branch_name ?? 'la sala'}.` : '']
+      [faltantes.length ? `Se avisó a ${m.origen_branch_name ?? 'la otra sucursal'} lo que faltó.` : '',
+       r?.sobrante?.ok ? `Lo que vino de más ya está en tu inventario y se le avisó a ${m.origen_branch_name ?? 'la otra sucursal'}.` : '']
         .filter(Boolean).join(' ') || undefined);
     router.back();
   };
@@ -271,11 +271,11 @@ export default function Traslado() {
 
           {/* ── Contestar ── */}
           {puedeContestar && disp?.respaldo ? (
-            <Text style={{ color: MARCA.azulClaro, fontSize: 14 }}>{disp.respaldo.sala} está cerrada: lo despachas tú.</Text>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14 }}>{disp.respaldo.sala} está cerrada. Lo despachas tú.</Text>
           ) : null}
           {puedeContestar && nadaEnFisico ? (
             <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>
-              Ya no puedes enviarlo: quedan {lineas[0]?.unidades ?? 0}.{sugerencia ? ` ${sugerencia}.` : ''}
+              Ya no puedes enviarlo. Quedan {lineas[0]?.unidades ?? 0}.{sugerencia ? ` ${sugerencia}.` : ''}
             </Text>
           ) : null}
 
@@ -286,7 +286,7 @@ export default function Traslado() {
                 ...pideVence.map((x) => ({ ...x, k: `V|${x.posicion}`, solo: true }))].map((x) => (
                 <View key={x.k} style={{ gap: 6, marginTop: 8 }}>
                   <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
-                    {`${x.producto} · ${x.unidades} ${x.unidades === 1 ? 'unidad' : 'unidades'}: ${x.solo ? 'copia el vencimiento que trae la caja' : 'copia el lote y el vencimiento que trae la caja'}`}
+                    {`${x.producto} · ${x.unidades} ${x.unidades === 1 ? 'unidad' : 'unidades'}. ${x.solo ? 'Copia el vencimiento que trae la caja.' : 'Copia el lote y el vencimiento que trae la caja.'}`}
                   </Text>
                   <LoteDeLaCaja soloVence={x.solo} erpProductId={items[x.posicion]?.erp_product_id} producto={x.producto}
                     valor={cajas[x.k] ?? LOTE_DE_CAJA_VACIO} onChange={(v) => setCajas((c) => ({ ...c, [x.k]: v }))} />
@@ -329,7 +329,7 @@ export default function Traslado() {
                     onCambiar={(v) => setFaltan((f) => ({ ...f, [l.posicion]: v }))} />
                 </View>
               ))}
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: 6 }}>¿Vino algo de más? Cuántos, en la misma presentación: se descuentan de {m.origen_branch_name ?? 'la sala que envió'} y se suman a tu sala.</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: 6 }}>¿Vino algo de más? Escribe cuántos, en la misma presentación. Se descuentan de {m.origen_branch_name ?? 'la sucursal que envió'} y se suman a tu sucursal.</Text>
               {llegaron.map((l) => (
                 <View key={`demas-${l.posicion}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{ flex: 1 }}>
@@ -340,7 +340,7 @@ export default function Traslado() {
                     onCambiar={(v) => setSobran((f) => ({ ...f, [l.posicion]: v }))} />
                 </View>
               ))}
-              {faltantes.length || sobrantes.length ? <Campo value={notaFalta} onChangeText={setNotaFalta} placeholder="¿Qué pasó? (se le avisa a la sala que envió)" /> : null}
+              {faltantes.length || sobrantes.length ? <Campo value={notaFalta} onChangeText={setNotaFalta} placeholder="¿Qué pasó? (se le avisa a la sucursal que envió)" /> : null}
               <BotonGrande texto={faltantes.length ? 'Recibir y anotar lo que faltó' : sobrantes.length ? 'Recibir y pasar lo de más' : 'Ya llegó, recibir'} color={MARCA.verde}
                 deshabilitado={ocupado} onPress={recibir} />
             </Bloque>

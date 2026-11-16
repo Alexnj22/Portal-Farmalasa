@@ -81,7 +81,7 @@ export default function Boleta() {
         <Vidrio radio={20} tinte="rgba(18,183,106,0.12)">
           <View style={{ padding: 18, gap: 6, alignItems: 'center' }}>
             <Avatar empleado={e.employee ?? { name: '?' }} tamano={64} />
-            <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{e.employee ? shortEmployeeName(e.employee) : 'Sin ficha'}</Text>
+            <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{e.employee ? shortEmployeeName(e.employee) : 'Sin datos del empleado'}</Text>
             {empleado.role ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{empleado.role}</Text> : null}
             <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>
               {[periodo ? rotuloDePeriodo(periodo.start_date, periodo.end_date) : null, `${formatQty(e.days_worked ?? 0)} días trabajados`].filter(Boolean).join(' · ')}
@@ -113,7 +113,7 @@ export default function Boleta() {
           <Dato primero rotulo="(A − C) + B" valor={formatMoney(p.liquido)} fuerte />
         </Seccion>
         {e.viaticos_detail ? <Seccion titulo="Concepto de viáticos"><Text style={{ color: colorSistema.texto, fontSize: 14 }}>{String(e.viaticos_detail)}</Text></Seccion> : null}
-        {ultimaEdicion ? <Aviso tono="cuidado" texto={`Boleta editada. Última edición: ${ultimaEdicion.by ?? '—'} — ${ultimaEdicion.reason ?? ''}`} /> : null}
+        {ultimaEdicion ? <Aviso tono="cuidado" texto={`Boleta editada. Última edición: ${ultimaEdicion.by ?? '—'}${ultimaEdicion.reason ? ` · ${ultimaEdicion.reason}` : ''}`} /> : null}
         <BotonGrande texto={armando ? 'Armando el PDF…' : 'Compartir o imprimir'} onPress={menu} deshabilitado={armando} />
       </ScrollView>
     </>

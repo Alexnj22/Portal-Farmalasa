@@ -48,12 +48,12 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
     try {
       if (esLote) {
         const r = await editarLote(item.id, { lote: lote.trim() || null, fechaVencimiento: vence || null });
-        listo('Lote corregido', 'Se actualizó la etiqueta del renglón.');
+        listo('Lote corregido', 'Se actualizó el lote en el conteo.');
         onHecho?.(item.id, { lote: r.lote, fecha_vencimiento: r.fecha_vencimiento });
       } else {
         const valor = Number(cantidad);
         const r = await recontar(item.id, { fisicoCantidad: valor, nota: nota.trim() || null });
-        listo('Recuento guardado', `${item.product_nombre || 'Renglón'}: ${valor}`);
+        listo('Recuento guardado', `${item.product_nombre || 'Producto'}: ${valor}`);
         onHecho?.(item.id, {
           fisico_primer_conteo: r.fisico_primer_conteo, fisico_cantidad: valor, sistema_cantidad: r.sistema_cantidad,
           diferencia: r.diferencia, estado_item: valor === 0 && r.sistema_cantidad > 0 ? 'SIN_UBICAR' : 'CONTADO',
@@ -71,10 +71,10 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
   const guardar = () => {
     if (!valido || guardando) return;
     if (esLote) {
-      Alert.alert('¿Corregir el lote?', 'Cambia la etiqueta de este renglón del conteo. El inventario real no se toca.', [
+      Alert.alert('¿Corregir el lote?', 'Solo cambia el lote en este conteo. El inventario no cambia.', [
         { text: 'Cancelar', style: 'cancel' }, { text: 'Corregir', onPress: enviar }]);
     } else {
-      Alert.alert('¿Guardar el recuento?', `El físico de este renglón pasa a ${cantidad}. El primer conteo queda en el historial.`, [
+      Alert.alert('¿Guardar el recuento?', `La cantidad contada pasa a ${cantidad}. El primer conteo queda en el historial.`, [
         { text: 'Cancelar', style: 'cancel' }, { text: 'Guardar', onPress: enviar }]);
     }
   };
@@ -89,7 +89,7 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             {esLote ? (
               <>
-                <Aviso tono="nota" texto="Usa esto cuando el lote encontrado no corresponde al de este renglón. Sólo corrige la etiqueta de este conteo — no modifica el inventario real." />
+                <Aviso tono="nota" texto="Úsalo cuando el lote que encontraste no es el de esta fila, por ejemplo un lote nuevo. Solo corrige este conteo. No cambia el inventario." />
                 <Seccion titulo="Lote">
                   <Campo multiline={false} value={lote} onChangeText={setLote} placeholder="Número de lote" autoCapitalize="characters" autoCorrect={false} />
                 </Seccion>
@@ -110,7 +110,7 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
                 <Seccion titulo="Primer conteo">
                   <Text style={{ color: colorSistema.texto, fontSize: 16 }}>
                     {aCiegas && !item?.recontado_at
-                      ? 'A ciegas: el primer conteo y el sistema se ven después de registrar el tuyo.'
+                      ? 'Conteo ciego. Verás el primer conteo y el sistema después de guardar el tuyo.'
                       : `Físico ${item?.fisico_cantidad ?? '—'}${item?.ver_sistema && item?.sistema_cantidad != null ? ` · sistema ${item.sistema_cantidad}` : ''}`}
                   </Text>
                 </Seccion>

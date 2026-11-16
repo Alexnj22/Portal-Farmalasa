@@ -143,7 +143,7 @@ export default function ReglasDeDespacho() {
       opciones: [{ id: '', label: 'Todos' }, { id: 'con', label: 'Con regla' }, { id: 'sin', label: 'Sin regla' },
         ...(idsPendientes.length ? [{ id: 'pendiente', label: `Por corregir (${idsPendientes.length})` }] : [])] },
     { id: 'nuevos', titulo: 'Nuevos', activa: nuevos, porDefecto: 'no', onCambiar: setNuevos,
-      opciones: [{ id: 'no', label: 'Todos los productos' }, { id: 'si', label: `Sólo los nuevos de ${fechaTexto(hoySV(), { month: 'long' })}` }] },
+      opciones: [{ id: 'no', label: 'Todos los productos' }, { id: 'si', label: `Solo los nuevos de ${fechaTexto(hoySV(), { month: 'long' })}` }] },
     { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
       opciones: [{ id: 'todos', label: 'Todos' }, ...(labs ?? [])] },
     { id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'laboratorio_nombre:asc', onCambiar: setOrden, opciones: ORDENES },
@@ -162,7 +162,7 @@ export default function ReglasDeDespacho() {
         </View>
         {idsPendientes.length ? (
           <View style={{ marginHorizontal: 16 }}>
-            <Cuenta rotulo={conRegla === 'pendiente' ? 'Por corregir · viendo sólo esas' : 'Por corregir · toca para verlas'} valor={idsPendientes.length} color={MARCA.ambar}
+            <Cuenta rotulo={conRegla === 'pendiente' ? 'Por corregir · viendo solo esas' : 'Por corregir · toca para verlas'} valor={idsPendientes.length} color={MARCA.ambar}
               onPress={() => setConRegla((f) => (f === 'pendiente' ? '' : 'pendiente'))} />
           </View>
         ) : null}

@@ -80,7 +80,7 @@ export default function Facturas() {
 
   const nombre = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`;
   const grupos = todas ? [{
-    id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: salaElegida, onCambiar: setSala,
+    id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: salaElegida, onCambiar: setSala,
     opciones: SALAS_VENTA.map((id) => ({ id: String(id), label: nombre(id) })),
   }] : [];
 

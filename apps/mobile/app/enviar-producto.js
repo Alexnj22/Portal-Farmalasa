@@ -117,7 +117,7 @@ export default function EnviarProducto() {
         setMotivo(sugerido.motivo ?? null);
         setNota(sugerido.nota ?? '');
       })
-      .catch((e) => { if (vivo) fallo('No se pudo armar el envío', e?.message); })
+      .catch((e) => { if (vivo) fallo('No se pudo armar el traslado', e?.message); })
       .finally(() => { if (vivo) setPrecargando(false); });
     return () => { vivo = false; };
   }, [sugerido]);
@@ -187,7 +187,7 @@ export default function EnviarProducto() {
     : deCaja.pide === 'vence' ? !String(l.vence || '').trim() : false);
 
   const problema = !producto ? null
-    : renglones.length >= TOPE_RENGLONES_ENVIO ? `Un envío lleva hasta ${TOPE_RENGLONES_ENVIO} productos: manda éste en otro.`
+    : renglones.length >= TOPE_RENGLONES_ENVIO ? `Un traslado lleva hasta ${TOPE_RENGLONES_ENVIO} productos. Manda este en otro.`
       : !pres ? 'Cargando las presentaciones…'
         : unidades <= 0 ? 'Indica cuántas.'
           : unidades + yaEnLista > hay ? `En ${estante(origenErp, vencidos)} hay ${hay} unidades${yaEnLista ? ` (ya pusiste ${yaEnLista})` : ''}.`
@@ -244,10 +244,10 @@ export default function EnviarProducto() {
 
   const falta = !renglones.length ? 'Agrega al menos un producto.'
     : sinCaja.length ? `Falta lo que trae la caja de ${sinCaja.map((r) => r.descripcion).join(', ')}.`
-    : destino == null ? 'Elige a qué sala va.'
+    : destino == null ? 'Elige a qué sucursal va.'
       : !motivo ? 'Elige el motivo.'
         : envioNecesitaFoto(motivo) && !fotos.length ? `«${motivo}» lleva foto.`
-          : nota.trim().length < 4 || nota.trim() === motivo ? 'Escribe una nota que explique el envío.'
+          : nota.trim().length < 4 || nota.trim() === motivo ? 'Escribe una nota que explique el traslado.'
             : sueltos.length ? `A Bodega por baja rotación van presentaciones completas: ${sueltos.map((r) => `${r.descripcion} (${nombreDeDespacho(despacho.get(Number(r.erp_product_id)))})`).join(', ')}.`
               : null;
 
@@ -300,13 +300,13 @@ export default function EnviarProducto() {
         if (conMinMax) {
           minMaxFallo = fallidas.length > 0;
           avisoMinMax = fallidas.length
-            ? `No se pudo pedir quitar el Min/Max de: ${fallidas.join(', ')}. Pídelo a mano.`
-            : `Se pidió quitar el Min/Max de ${conMinMax} producto${conMinMax === 1 ? '' : 's'}; lo aprueba quien aprueba Min/Max.`;
+            ? `No se pudo pedir quitar el Mín/Máx de: ${fallidas.join(', ')}. Pídelo a mano.`
+            : `Se pidió quitar el Mín/Máx de ${conMinMax} producto${conMinMax === 1 ? '' : 's'}. Lo aprueba quien aprueba los Mín/Máx.`;
         }
         sugerido.alTerminar?.();
       }
-      if (!enviadas) fallo('No salió nada', s.error ?? 'El envío quedó creado pero no se despachó. Reintenta desde Envíos.');
-      else if (fallos) fallo('Salió una parte', `${enviadas} renglón(es) salieron y ${fallos} no. Revisa el envío en Traslados → Envíos.`);
+      if (!enviadas) fallo('No salió nada', s.error ?? 'El traslado quedó creado, pero no salió. Intenta de nuevo desde Traslados › A otra sucursal.');
+      else if (fallos) fallo('Salió una parte', `${enviadas} producto(s) salieron y ${fallos} no. Revisa el traslado en Traslados › A otra sucursal.`);
       else if (papel && !papel.ok) fallo('Producto en camino, pero el ticket no salió', papel.detalle);
       else if (minMaxFallo) fallo('Producto en camino', avisoMinMax);
       else listo('Producto en camino', [`A ${ERP_NAMES[destino]} · pega el ticket en el paquete`, avisoMinMax].filter(Boolean).join('\n'));
@@ -331,11 +331,11 @@ export default function EnviarProducto() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-          {!todas && miErp == null ? <Aviso tono="freno" texto="Tu usuario no tiene una sala desde la cual enviar." /> : null}
+          {!todas && miErp == null ? <Aviso tono="freno" texto="No tienes una sucursal asignada desde la cual enviar." /> : null}
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>{`Sale de ${estante(origenErp, vencidos)}`}</Text>
-          {precargando ? <Aviso tono="nota" texto="Armando el envío sugerido…" /> : null}
+          {precargando ? <Aviso tono="nota" texto="Armando el traslado sugerido…" /> : null}
           {sinArmar.length ? (
-            <Aviso tono="cuidado" texto={`No entran en el envío: ${sinArmar.map((f) => `${f.descripcion} (${f.motivo})`).join(', ')}.`} />
+            <Aviso tono="cuidado" texto={`No entran en el traslado: ${sinArmar.map((f) => `${f.descripcion} (${f.motivo})`).join(', ')}.`} />
           ) : null}
 
           <Seccion titulo={`Productos · ${renglones.length} de ${TOPE_RENGLONES_ENVIO}`}>
@@ -392,7 +392,7 @@ export default function EnviarProducto() {
                   </View>
                 ) : null}
                 {problema ? <Aviso tono="cuidado" texto={problema} /> : null}
-                <BotonGrande texto="Agregar al envío" color={MARCA.azul} deshabilitado={!!problema} onPress={agregar} />
+                <BotonGrande texto="Agregar al traslado" color={MARCA.azul} deshabilitado={!!problema} onPress={agregar} />
                 <BotonGrande texto="Otro producto" borde onPress={() => setProducto(null)} />
               </View>
             )}

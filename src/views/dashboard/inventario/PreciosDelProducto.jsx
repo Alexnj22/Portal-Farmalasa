@@ -155,7 +155,7 @@ export default function PreciosDelProducto({ erpProductId, salas, miErp }) {
 
         <div className="flex flex-col gap-1.5">
           <p className="flex items-baseline justify-between gap-2">
-            <span className="text-caption font-black uppercase tracking-widest text-content-3">{conSala ? 'En tu sala' : 'En las salas'}</span>
+            <span className="text-caption font-black uppercase tracking-widest text-content-3">{conSala ? 'En tu sucursal' : 'En las sucursales'}</span>
             {total > 0 && <span className="text-label font-black tabular-nums text-content">{total}</span>}
           </p>
           {grupo.lotes.length ? (

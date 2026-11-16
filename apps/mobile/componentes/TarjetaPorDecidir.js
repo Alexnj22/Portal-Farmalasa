@@ -33,7 +33,7 @@ function describir(item, persona) {
   switch (item.tipo) {
     case 'minmax': {
       const d = detalleDeMinMax(f);
-      return { tipo: 'Ajuste de Mín·Máx', icono: 'BarChart2', quien: persona(f.requested_by_id) ?? { name: f.requested_by_name },
+      return { tipo: 'Ajuste de Mín/Máx', icono: 'BarChart2', quien: persona(f.requested_by_id) ?? { name: f.requested_by_name },
         contexto: d?.contexto, renglones: d?.renglones, abrir: () => abrirSolicitud(item.clave) };
     }
     case 'traslado': {

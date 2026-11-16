@@ -150,7 +150,7 @@ export default function FinalizarEfectivo() {
                 ))}
               </Seccion>
 
-              <Seccion titulo="Lo que entró de afuera (opcional)" pie="Un vale, el cambio de moneda que faltó: suma a lo que se puede repartir.">
+              <Seccion titulo="Lo que entró de afuera (opcional)" pie="Por ejemplo, un vale o el cambio de moneda que faltó. Se suma a lo que se puede repartir.">
                 <FilaMonto rotulo="Entró" valor={f.aporte} onCambiar={(v) => cambiar('aporte', v)} />
                 {r.nAporte > 0 ? <Campo value={f.aporteNota} onChangeText={(v) => cambiar('aporteNota', v)} placeholder="De dónde vino (obligatorio)" /> : null}
               </Seccion>
@@ -179,7 +179,7 @@ export default function FinalizarEfectivo() {
                 </Seccion>
               ) : null}
               {r.nEfectivo > 0 ? (
-                <Seccion titulo="A quién se le entrega en mano" pie="Sólo administración.">
+                <Seccion titulo="A quién se le entrega en mano" pie="Solo administración.">
                   <Opciones opciones={admins.map((p) => ({ id: String(p.id), label: shortEmployeeName(p), detalle: p.cargo }))}
                     valor={String(f.entregadoA)} onCambiar={(v) => cambiar('entregadoA', v)} />
                 </Seccion>

@@ -47,7 +47,7 @@ export default function BonoSinConfirmar() {
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
         <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
-          {`Se mandó la salida de ${formatMoney(item.monto)}${item.promocion ? ` (${item.promocion})` : ''} y la caja no confirmó. Revisa en la caja si el movimiento salió antes de repetirlo.`}
+          {`Se mandó la salida de ${formatMoney(item.monto)}${item.promocion ? ` (${item.promocion})` : ''} y la caja no lo confirmó. Revisa si la salida se hizo antes de repetirla.`}
         </Text>
         <Campo placeholder="Qué viste en la caja" value={nota} onChangeText={setNota} editable={!guardando} />
         <BotonGrande texto="Sí salió" color={MARCA.verde} deshabilitado={!listoParaContestar} onPress={() => resolver(true)} />

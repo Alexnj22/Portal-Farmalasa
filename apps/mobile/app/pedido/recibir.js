@@ -74,7 +74,7 @@ const vence = (iso) => {
 const textoDeLotes = (r) => {
   const ls = lotesQueDebenVenir(r);
   if (!ls.length) return null;
-  return `${ls.length === 1 ? 'Debe venir del lote' : `Debe venir de ${ls.length} lotes`}: ${ls.map((l) => [l.lote || 'sin lote', vence(l.fecha_vencimiento) ? `vence ${vence(l.fecha_vencimiento)}` : null, (l.take ?? l.cantidad ?? l.packs) != null ? String(l.take ?? l.cantidad ?? l.packs) : null].filter(Boolean).join(' · ')).join(' — ')}`;
+  return `${ls.length === 1 ? 'Debe venir del lote' : `Debe venir de ${ls.length} lotes`}: ${ls.map((l) => [l.lote || 'sin lote', vence(l.fecha_vencimiento) ? `vence ${vence(l.fecha_vencimiento)}` : null, (l.take ?? l.cantidad ?? l.packs) != null ? String(l.take ?? l.cantidad ?? l.packs) : null].filter(Boolean).join(' · ')).join('; ')}`;
 };
 const PROBLEMAS = [['danado', 'Dañado'], ['vencido', 'Vencido'], ['otro', 'Otro']];
 
@@ -128,7 +128,7 @@ const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero,
       {distinto ? <Campo value={valor.nota ?? ''} onChangeText={(t) => onCambiar({ nota: t })} placeholder="Nota (opcional)" /> : null}
       {onSolo ? (
         <Pressable disabled={ocupado} onPress={onSolo} style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', alignSelf: 'flex-start', opacity: ocupado ? 0.4 : pressed ? 0.6 : 1 })}>
-          <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Recibir sólo este, para venderlo ya</Text>
+          <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Recibir solo este para venderlo ya</Text>
         </Pressable>
       ) : null}
     </View>
@@ -320,7 +320,7 @@ function Recibir() {
 
   // Recibir UN producto sin contar el resto de la caja: cuenta e ingresa ese
   // traslado entero (cada producto viaja en el suyo).
-  const soloEste = (r) => Alert.alert('Recibir sólo este', `${r.products?.nombre ?? ''}\n\nSe cuenta como lo anotaste y entra al inventario ya, sin contar el resto.`, [
+  const soloEste = (r) => Alert.alert('Recibir solo este', `${r.products?.nombre ?? ''}\n\nSe cuenta como lo anotaste y entra al inventario ya, sin contar el resto.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Recibir', onPress: async () => {
       setGuardando(true); trabajando('Recibiendo…');
@@ -351,8 +351,8 @@ function Recibir() {
           sucursal_id: sucId, producto: r.products?.nombre ?? null, antes: Number(r.cantidad_recibida) || 0, desde: 'app',
         });
         if (error) throw error;
-        listo('Corregido', (data?.error_tipo ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de que el producto se mueva.' : 'El conteo ahora coincide con lo enviado.')
-          + (data?.reabrio_el_cierre ? ' El pedido ya estaba cerrado: vuelve a quedar abierto.' : ''));
+        listo('Corregido', (data?.error_tipo ? 'Quedó anotado como diferencia. Bodega tiene que contestar antes de mover el producto.' : 'El conteo ahora coincide con lo enviado.')
+          + (data?.reabrio_el_cierre ? ' El pedido ya estaba cerrado. Queda abierto otra vez.' : ''));
         cerrar?.();
         await cargar();
       } catch (e) {
@@ -390,7 +390,7 @@ function Recibir() {
             <Seccion titulo={filasVistas.length !== filasAbiertas.length
               ? `${filasVistas.length} de ${filasAbiertas.length} productos`
               : `${filasAbiertas.length} producto${filasAbiertas.length === 1 ? '' : 's'}`}
-              pie={filasVistas.length !== filasAbiertas.length ? 'La búsqueda sólo esconde: al confirmar se cuenta la hoja entera.' : undefined}>
+              pie={filasVistas.length !== filasAbiertas.length ? 'La búsqueda solo oculta productos. Al confirmar se cuenta la hoja entera.' : undefined}>
               {!filasVistas.length ? <Vacio enSeccion>Ningún producto de esta hoja coincide.</Vacio> : null}
               {filasVistas.map((r, i) => (
                 <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? SIN_VALOR} ocupado={guardando} presMap={presMap}
@@ -416,7 +416,7 @@ function Recibir() {
           // Se entró por «Reportar un error» (2026-10-21): la recepción ya se
           // cerró, pero durante 2 días se corrige lo contado y se anota un
           // extra. El plazo lo decide la base; el motivo es obligatorio.
-          <Aviso tono="cuidado" texto="La recepción ya se cerró. Puedes corregir lo ya contado o anotar algo que llegó de más hasta 2 días después; escribe qué pasó. Lo que corrijas queda como diferencia para hablarlo con Bodega." />
+          <Aviso tono="cuidado" texto="La recepción ya se cerró. Hasta 2 días después puedes corregir lo contado o anotar algo que llegó de más. Escribe qué pasó. Lo que corrijas queda como diferencia y Bodega tiene que contestar." />
         ) : !porContar.length ? <Aviso tono="nota" texto="No queda nada por contar en este pedido." /> : null}
         {(() => {
           // «¿Necesitas un producto ya?»: buscarlo en todo el pedido y recibirlo
@@ -486,7 +486,7 @@ function Recibir() {
         {(() => {
           const contados = (datos.items ?? []).filter((r) => !r.es_extra && ['recibido', 'con_diferencia'].includes(r.status));
           return contados.length ? (
-            <Seccion titulo={`Ya contados · ${contados.length}`} pie="Si contaste mal, corrígelo: queda como diferencia y se habla con Bodega.">
+            <Seccion titulo={`Ya contados · ${contados.length}`} pie="Si contaste mal, corrígelo. Queda como diferencia y Bodega tiene que contestar.">
               {contados.map((r, i) => <Contado key={r.id} r={r} primero={!i} ocupado={guardando} onCorregir={corregir} />)}
             </Seccion>
           ) : null;
@@ -503,11 +503,11 @@ function Recibir() {
         </Seccion>
         <Vidrio radio={20}>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, padding: 12 }}>
-            Cuenta cada hoja con su papel. Si algo no cuadra, quedará como diferencia y se resuelve con Bodega.
+            Cuenta cada hoja con su papel. Si algo no cuadra, queda como diferencia y se resuelve con Bodega.
           </Text>
         </Vidrio>
       </ScrollView>
-      <Escaner visible={escaneando} titulo="Quién ayudó a recibir" ayuda="Apunta al código del carné; puedes escanear varios seguidos"
+      <Escaner visible={escaneando} titulo="Quién ayudó a recibir" ayuda="Apunta al código del carné. Puedes escanear varios seguidos."
         onCodigo={leerCarne} onCerrar={() => setEscaneando(false)}
         pie={avisoApoyo ? <Text style={{ color: '#fff', fontSize: 14, textAlign: 'center' }}>{avisoApoyo}</Text> : null} />
     </>

@@ -63,7 +63,7 @@ function notaDeDespacho(existencia, u, aBodega) {
   const nombre = nombreDeDespacho(u);
   if (aBodega) {
     const b = paraBodega(existencia, u);
-    if (b.completos === 0) return { texto: `No vuelve: no completa ${nombre}`, color: MARCA.rojo };
+    if (b.completos === 0) return { texto: `No vuelve. No completa ${nombre}`, color: MARCA.rojo };
     return { texto: b.quedan > 0 ? `Vuelven ${b.viajan} de ${Number(existencia)} (en ${nombre})` : `Vuelven en ${nombre}`, color: colorSistema.texto2 };
   }
   return esPocoParaMandar(existencia, u) ? { texto: `Poco: ${Number(existencia)} de ${nombre}`, color: MARCA.ambar } : null;
@@ -130,14 +130,14 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
           : <Kpi icono="Boxes" rotulo="Unidades" valor={n(t.unidades)} color={MARCA.azul} apoyo="en existencia" />}
       </FilaDeKpis>
       <FilaDeKpis>
-        <Kpi icono="Truck" rotulo="A otra sala" valor={n(t.aSala)} color={MARCA.azulClaro} pide={haciaDonde === 'sala'}
-          apoyo={haciaDonde === 'sala' ? 'filtrando · toca para quitar' : 'allá sí se venden'} onPress={() => alternarHacia('sala')} />
+        <Kpi icono="Truck" rotulo="A otra sucursal" valor={n(t.aSala)} color={MARCA.azulClaro} pide={haciaDonde === 'sala'}
+          apoyo={haciaDonde === 'sala' ? 'filtrando · toca para quitar' : 'ahí sí se venden'} onPress={() => alternarHacia('sala')} />
         <Kpi icono="Archive" rotulo="A Bodega" valor={n(t.aBodega)} color={MARCA.violeta} pide={haciaDonde === 'bodega'}
           apoyo={haciaDonde === 'bodega' ? 'filtrando · toca para quitar' : 'no se venden en ninguna'} onPress={() => alternarHacia('bodega')} />
       </FilaDeKpis>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {!puedeArmar && grupos.length ? (
-        <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Estás viendo ${nombreSala}. Los envíos los arma quien trabaja en esa sala.`} /></View>
+        <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Estás viendo ${nombreSala}. Los traslados los arma quien trabaja en esa sucursal.`} /></View>
       ) : null}
       {grupos.map((g) => {
         const abierto = abiertos.has(g.destino);
@@ -156,7 +156,7 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
             </View>
             {aBodega ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
-                Ninguna sala vendió 3 o más en 6 meses · se devuelve por presentación completa
+                Ninguna sucursal vendió 3 o más en 6 meses · se devuelve por presentación completa
               </Text>
             ) : null}
             {lista.map((r) => {
@@ -184,8 +184,8 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
                         {otras.length ? otras.slice(0, 3).map((v) => (
                           <Pildora key={v.esid} texto={`${ERP_NAMES[v.esid] || `Suc.${v.esid}`} · ${n(v.unidades)}`}
                             color={Number(v.esid) === Number(g.destino) ? MARCA.verde : colorSistema.texto2} />
-                        )) : <Pildora texto="No se vende en ninguna sala" color={colorSistema.texto2} />}
-                        {r.en_minmax ? <Pildora texto={`Min ${r.min_qty ?? '—'} · Max ${r.max_qty ?? '—'}`} color={MARCA.ambar} /> : null}
+                        )) : <Pildora texto="No se vende en ninguna sucursal" color={colorSistema.texto2} />}
+                        {r.en_minmax ? <Pildora texto={`Mín ${r.min_qty ?? '—'} · Máx ${r.max_qty ?? '—'}`} color={MARCA.ambar} /> : null}
                       </View>
                     </View>
                   </Vidrio>
@@ -201,7 +201,7 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
             {puedeArmar ? (
               <View style={{ marginHorizontal: 16, gap: 6 }}>
                 <BotonGrande
-                  texto={`Armar envío a ${ERP_NAMES[g.destino] || 'la sala'}${armables > POR_ENVIO ? ` · ${POR_ENVIO} de ${armables}` : aBodega && armables < g.filas.length ? ` · ${armables}` : ''}`}
+                  texto={`Armar traslado a ${ERP_NAMES[g.destino] || 'la sucursal'}${armables > POR_ENVIO ? ` · ${POR_ENVIO} de ${armables}` : aBodega && armables < g.filas.length ? ` · ${armables}` : ''}`}
                   color={aBodega ? MARCA.violeta : MARCA.azul} borde={aBodega}
                   deshabilitado={armables === 0 || (aBodega && despacho.size === 0)}
                   onPress={() => armar(g)} />
@@ -241,9 +241,9 @@ function Ajuste({ fila, sala, puedePedir, puedeAplicar, descartado, onCerrar, on
     }, { aplicar: puedeAplicar }, { sucursal: ERP_NAMES[sala], producto: fila.product_name, erp_product_id: fila.erp_product_id, min: Number(min), max: Number(max), desde: 'app' });
     setEnviando(false);
     if (!r.ok) { fallo('No se pudo pedir', mensajeAmigable({ message: r.error })); return; }
-    if (r.aplicado) listo('Aplicado', `Min ${min} · Max ${max}`);
-    else if (puedeAplicar) fallo('Quedó pedido', `No se pudo aplicar: resuélvelo en Solicitudes.`);
-    else listo('Pedido', 'Lo aprueba quien aprueba Min/Max.');
+    if (r.aplicado) listo('Aplicado', `Mín ${min} · Máx ${max}`);
+    else if (puedeAplicar) fallo('Quedó pedido', 'No se pudo aplicar. Resuélvelo en Solicitudes.');
+    else listo('Pedido', 'Lo aprueba quien aprueba Mín/Máx.');
     onHecho(fila.erp_product_id, r.aplicado ? 'aplicado' : 'pedido');
   };
   return (
@@ -262,26 +262,26 @@ function Ajuste({ fila, sala, puedePedir, puedeAplicar, descartado, onCerrar, on
               </Text>
             </Seccion>
             {!ofrecer ? (
-              <Aviso tono="nota" texto="La sugerencia es no agregarle Min/Max: no se ofrece pedirlo." />
+              <Aviso tono="nota" texto="La sugerencia es no agregarle Mín/Máx." />
             ) : puedePedir ? (
               <>
-                <Seccion titulo={puedeAplicar ? 'Min y Max que se aplican' : 'Min y Max que se piden'}>
+                <Seccion titulo={puedeAplicar ? 'Mín y Máx que se aplican' : 'Mín y Máx que se piden'}>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 4 }}>Min</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 4 }}>Mín</Text>
                       <Campo multiline={false} value={min} onChangeText={(v) => setMin(v.replace(/[^\d]/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 20, fontWeight: '700' }} />
                     </View>
                     <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 4 }}>Max</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 4 }}>Máx</Text>
                       <Campo multiline={false} value={max} onChangeText={(v) => setMax(v.replace(/[^\d]/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 20, fontWeight: '700' }} />
                     </View>
                   </View>
                 </Seccion>
                 {problema && (min || max) ? <Aviso tono="nota" texto={problema} /> : null}
-                <BotonGrande texto={enviando ? 'Enviando…' : (puedeAplicar ? 'Aplicar Min/Max' : 'Pedir Min/Max')} color={MARCA.verde}
+                <BotonGrande texto={enviando ? 'Enviando…' : (puedeAplicar ? 'Aplicar Mín/Máx' : 'Pedir Mín/Máx')} color={MARCA.verde}
                   deshabilitado={enviando || !!problema} onPress={pedir} />
               </>
-            ) : <Aviso tono="nota" texto="Tu cargo no puede pedir ajustes de Min/Max." />}
+            ) : <Aviso tono="nota" texto="Tu cargo no puede pedir ajustes de Mín/Máx." />}
             <BotonGrande texto={descartado ? 'Volver a sugerirlo' : 'Descartar la sugerencia'} borde color={descartado ? MARCA.azulClaro : MARCA.rojo}
               onPress={() => onDescartar(fila.erp_product_id, !descartado)} />
           </ScrollView>
@@ -345,11 +345,11 @@ function SinMinMax({ sala, busqueda, filtro, orden, puedePedir, puedeAplicar, on
   return (
     <>
       <FilaDeKpis>
-        <Kpi icono="ClipboardList" rotulo="Sin Min/Max" valor={n(filas.length)} color={MARCA.ambar} apoyo="se venden y no se reponen solos" />
+        <Kpi icono="ClipboardList" rotulo="Sin Mín/Máx" valor={n(filas.length)} color={MARCA.ambar} apoyo="se venden y no se reponen solos" />
         <Kpi icono="DollarSign" rotulo="Venta 6 meses" valor={formatMoney(venta6m)} color={MARCA.azul} apoyo="de estos productos" />
       </FilaDeKpis>
       <FilaDeKpis>
-        <Kpi icono="Plus" rotulo="Agregar Min/Max" valor={n(conteos.agregar)} color={MARCA.verde} pide={filtro === 'agregar'}
+        <Kpi icono="Plus" rotulo="Agregar Mín/Máx" valor={n(conteos.agregar)} color={MARCA.verde} pide={filtro === 'agregar'}
           apoyo="la rotación lo justifica" onPress={() => onFiltro('agregar')} />
         <Kpi icono="AlertTriangle" rotulo="Evaluar" valor={n(conteos.evaluar)} color={MARCA.ambar} pide={filtro === 'evaluar'}
           apoyo="rotación moderada" onPress={() => onFiltro('evaluar')} />
@@ -357,7 +357,7 @@ function SinMinMax({ sala, busqueda, filtro, orden, puedePedir, puedeAplicar, on
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {!filas.length && !error ? (
         <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24, marginHorizontal: 20 }}>
-          {`Todo lo que se vende en ${nombreSala} ya tiene Min/Max`}
+          {`Todo lo que se vende en ${nombreSala} ya tiene Mín/Máx`}
         </Text>
       ) : null}
       <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${FILTROS_MINMAX.find((f) => f.value === filtro)?.label} · ${n(filtradas.length)} producto${filtradas.length === 1 ? '' : 's'}`}</Text>
@@ -380,7 +380,7 @@ function SinMinMax({ sala, busqueda, filtro, orden, puedePedir, puedeAplicar, on
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                  {hecho ? <Pildora texto={hecho === 'aplicado' ? 'Min/Max aplicado' : 'Min/Max pedido'} color={MARCA.verde} />
+                  {hecho ? <Pildora texto={hecho === 'aplicado' ? 'Mín/Máx aplicado' : 'Mín/Máx pedido'} color={MARCA.verde} />
                     : <Pildora texto={s.label} color={COLOR_NIVEL[s.level]} />}
                   <Pildora texto={s.reason} color={colorSistema.texto2} />
                 </View>
@@ -430,7 +430,7 @@ export default function GestionStock() {
 
   const salas = ERP_ORDEN.filter((e) => e !== ERP_BODEGA);
   const grupos = [
-    { id: 'sala', titulo: 'Sala', activa: String(sala), porDefecto: String(propia && propia !== ERP_BODEGA ? propia : 5), onCambiar: (v) => setSala(Number(v)),
+    { id: 'sala', titulo: 'Sucursal', activa: String(sala), porDefecto: String(propia && propia !== ERP_BODEGA ? propia : 5), onCambiar: (v) => setSala(Number(v)),
       opciones: salas.map((e) => ({ id: String(e), label: ERP_NAMES[e] })) },
     ...(pestana === 'sin_minmax' ? [{ id: 'filtro', titulo: 'Qué hacer', activa: filtro, porDefecto: 'agregar', onCambiar: setFiltro,
       opciones: FILTROS_MINMAX.map((f) => ({ id: f.value, label: conteos ? `${f.label} · ${conteos[f.value]}` : f.label })) },
@@ -440,7 +440,7 @@ export default function GestionStock() {
         { id: 'units_sold:desc', label: 'Unidades, de más a menos' }, { id: 'units_sold:asc', label: 'Unidades, de menos a más' },
         { id: 'product_name:asc', label: 'Producto, A → Z' }, { id: 'product_name:desc', label: 'Producto, Z → A' },
       ] }] : [{ id: 'mostrar', titulo: 'Qué productos se ven', activa: filtroParados, porDefecto: 'todos', onCambiar: setFiltroParados,
-      opciones: [{ id: 'todos', label: 'Todos' }, { id: 'minmax', label: conMinmax != null ? `Con Min/Max · ${conMinmax}` : 'Con Min/Max' }] }]),
+      opciones: [{ id: 'todos', label: 'Todos' }, { id: 'minmax', label: conMinmax != null ? `Con Mín/Máx · ${conMinmax}` : 'Con Mín/Máx' }] }]),
   ];
   const alConteos = useCallback((c) => setConteos(c), []);
 
@@ -454,7 +454,7 @@ export default function GestionStock() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={exportar ? { icono: 'square.and.arrow.up', etiqueta: 'Descargar', onPress: exportar } : null} />
-      <FijoArriba><Segmentos activa={pestana} onCambiar={(v) => { setExportar(null); setPestana(v); }} opciones={[{ id: 'parados', label: 'Sin venta' }, { id: 'sin_minmax', label: 'Sin Min/Max' }]} /></FijoArriba>
+      <FijoArriba><Segmentos activa={pestana} onCambiar={(v) => { setExportar(null); setPestana(v); }} opciones={[{ id: 'parados', label: 'Sin venta' }, { id: 'sin_minmax', label: 'Sin Mín/Máx' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>

@@ -26,7 +26,7 @@ function CorregirMovimiento() {
   const valido = motivo.trim().length >= 5 && (que === 'ANULAR' || nuevo > 0);
 
   const pedir = () => Alert.alert('¿Pedir la corrección?',
-    `${que === 'ANULAR' ? 'Anular' : `Cambiar a ${formatMoney(nuevo)}`}: ${concepto} · ${formatMoney(monto)}.\nQueda pedido; alguien tiene que aprobarlo.`, [
+    `${que === 'ANULAR' ? 'Anular' : `Cambiar a ${formatMoney(nuevo)}`}: ${concepto} · ${formatMoney(monto)}.\nQueda pedido. Alguien tiene que aprobarlo.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Pedir', onPress: async () => {
         setOcupado(true);
@@ -55,7 +55,7 @@ function CorregirMovimiento() {
                     keyboardType="decimal-pad" placeholder="Monto correcto" style={{ textAlign: 'center' }} />
                 ) : null}
               </Seccion>
-              <Seccion titulo="Motivo" pie="Al menos cinco letras: es lo que lee quien aprueba.">
+              <Seccion titulo="Motivo" pie="Al menos cinco letras. Es lo que lee quien aprueba.">
                 <Campo value={motivo} onChangeText={setMotivo} maxLength={200} placeholder="Se anotó dos veces" />
               </Seccion>
               <BotonGrande texto={ocupado ? 'Pidiendo…' : 'Pedir'} color={MARCA.ambar} deshabilitado={ocupado || !valido} onPress={pedir} />

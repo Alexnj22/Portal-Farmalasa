@@ -77,14 +77,14 @@ export default function WidgetClientes({ openModal }) {
         <div className="flex flex-col gap-2 h-full min-h-0 p-3 pt-1">
             <SearchInput value={q} onChange={setQ}
                 placeholder="Nombre, DUI, NIT o teléfono"
-                ariaLabel="Buscar un cliente para abrir su ficha" />
+                ariaLabel="Buscar un cliente para ver sus datos" />
             {error && <Notice variant="danger" compact>{error}</Notice>}
             {parecidos && filas?.length > 0 && <AvisoParecidos texto={q} />}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1">
                 {filas?.map(c => (
                     <ListRow key={c.id} density="sm" icon={UserRound}
                         title={c.name}
-                        subtitle={[c.dui || c.nit, c.phone].filter(Boolean).join(' · ') || c.categoria || 'Sin documento'}
+                        subtitle={[c.dui || c.nit, c.phone].filter(Boolean).join(' · ') || c.categoria || 'Sin DUI ni NIT'}
                         trailing={<span className="flex items-center gap-1.5">
                             {!c.erp_id && <Badge variant="warning">Sin número</Badge>}
                             <ChevronRight size={14} className="text-content-3" />
@@ -98,7 +98,7 @@ export default function WidgetClientes({ openModal }) {
                 )}
                 {!buscando && (
                     <p className="text-caption text-content-3 px-1 py-2">
-                        Busca para abrir y corregir una ficha{canCrear ? ', o crea un cliente nuevo' : ''}.
+                        Busca un cliente para ver o corregir sus datos{canCrear ? ', o crea uno nuevo' : ''}.
                     </p>
                 )}
             </div>

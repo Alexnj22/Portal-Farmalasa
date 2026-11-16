@@ -126,7 +126,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
         try {
             await responderEncargo(e.id, accion, datos);
             // La app del cliente no recibe este aviso: lo da la sala (le llega una notificación).
-            showToast('Encargo actualizado', accion === 'confirmar' ? 'La sala recibe el aviso para confirmarlo con el cliente.' : '', 'success');
+            showToast('Encargo actualizado', accion === 'confirmar' ? 'La sucursal recibe el aviso para confirmarlo con el cliente.' : '', 'success');
             cargar();
             return true;
         } catch (err) {
@@ -175,7 +175,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
     const yaVendido = async (itemId, nota) => {
         try {
             const r = await encargoYaVendido(vendiendo.id, itemId, nota);
-            showToast('Encargo entregado', `Quedó amarrado a la venta ${r?.factura ?? ''}. No entra dinero al cajón: ya entró con esa venta.`, 'success');
+            showToast('Encargo entregado', `Quedó amarrado a la venta ${r?.factura ?? ''}. El dinero ya entró a la caja con esa venta.`, 'success');
             setVendiendo(null);
             cargar();
         } catch (err) {
@@ -208,7 +208,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
             const r = await proveedorNoEntregoEncargo(noEntrego.id, eleccion, nota);
             showToast(eleccion === 'devolucion' ? 'Devolución pedida' : 'Quedó como saldo a favor',
                 eleccion === 'devolucion'
-                    ? `${formatMoney(r?.monto)} por autorizar (${r?.reserva}). Cuando administración la autorice, se entrega desde Reservas.`
+                    ? `${formatMoney(r?.monto)} por autorizar (${r?.reserva}). Cuando un supervisor o administrador la autorice, se entrega desde Reservas.`
                     : `${formatMoney(r?.monto)} a favor del cliente (${r?.reserva}).`, 'success');
             setNoEntrego(null);
             cargar();
@@ -219,7 +219,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
     const guardarFecha = async (fecha, motivo) => {
         try {
             await cambiarFechaDeEncargo(cambiandoFecha.id, fecha, motivo);
-            showToast('Fecha cambiada', 'El cliente recibe el aviso en la app; la sala, para avisarle si no la tiene.', 'success');
+            showToast('Fecha cambiada', 'El cliente recibe el aviso en la app. La sucursal también, para avisarle si no tiene la app.', 'success');
             setCambiandoFecha(null);
             cargar();
         } catch (err) {
@@ -237,7 +237,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
     if (!filas?.length) return null;
     return (
         <div className="space-y-1.5">
-            <Encabezado titulo="Encargos" n={filas.length} ayuda="Lo que no hay en ninguna sucursal: Compras lo consigue y confirma el precio" />
+            <Encabezado titulo="Encargos" n={filas.length} ayuda="Lo que no hay en ninguna sucursal. Compras lo consigue y confirma el precio." />
             {completa ? (
             <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0">
                 {filas.map((e) => {
@@ -247,7 +247,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                     const probable = ventaProbable(e);
                     const vendible = !soloLectura && encargoVendibleAfuera(e);
                     const accVendido = { k: 'ya_vendido', label: ROT.ya_vendido, icon: Receipt,
-                        title: 'Se cobró en caja como una venta normal: se amarra a esa venta sin cobrar otra vez', onClick: () => setVendiendo(e) };
+                        title: 'Se cobró en caja como una venta normal. Se amarra a esa venta sin cobrar otra vez.', onClick: () => setVendiendo(e) };
                     const acc = [
                         // Si parece que ya se vendió, eso va antes que cobrar otra vez.
                         vendible && probable && accVendido,
@@ -256,7 +256,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                         !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: ROT.pedido, icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
                         // Vincular destraba «Llegó»: va delante sólo cuando ya está pagado.
                         puedeComprar && sinVincular(e) && ['aceptado', 'pedido'].includes(e.estado) && { k: 'vincular', label: ROT.vincular, icon: Link2,
-                            title: 'Elegir el producto ya creado en el catálogo: sin eso no se puede marcar «Llegó»', onClick: () => setVinculando(e) },
+                            title: 'Elige el producto ya creado en el catálogo. Sin eso no se puede marcar «Llegó».', onClick: () => setVinculando(e) },
                         !soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') && { k: 'llego', label: ROT.llego, icon: PackageCheck,
                             loading: ocupado === e.id, disabled: sinVincular(e),
                             title: sinVincular(e) ? 'Primero vincula el producto ya creado en el catálogo' : undefined, onClick: () => mover(e, 'listo') },
@@ -265,22 +265,22 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                             onClick: () => avisarPorWhatsapp(e, wa) },
                         !soloLectura && e.registrar_llamada && { k: 'llamada', label: ROT.llamada, icon: PhoneCall, onClick: () => setLlamando(e) },
                         !soloLectura && e.puede_cambiar_fecha && { k: 'fecha', label: ROT.fecha, icon: CalendarClock,
-                            title: 'El proveedor cambió la fecha: el cliente recibe el aviso', onClick: () => setCambiandoFecha(e) },
+                            title: 'El proveedor cambió la fecha. El cliente recibe el aviso.', onClick: () => setCambiandoFecha(e) },
                         !soloLectura && e.puede_no_entrego && { k: 'no_entrego', label: ROT.no_entrego, icon: PackageX,
                             title: 'El cliente elige la devolución completa o aplicarlo a otro producto', onClick: () => setNoEntrego(e) },
                         e.foto_url && { k: 'foto', label: ROT.foto, icon: ImageIcon, onClick: () => openStoredFile(e.foto_url) },
                         !soloLectura && modoDeProrroga(e, { encargo: true }) === 'directa' && { k: 'prorrogar', label: ROT.prorrogar, icon: CalendarPlus,
                             loading: ocupado === e.id, title: 'Una sola prórroga', onClick: () => prorrogar(e) },
                         !soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && { k: 'pedir_prorroga', label: ROT.pedir_prorroga, icon: CalendarPlus,
-                            title: 'La autoriza Talento Humano o Supervisión de ventas', onClick: () => setPidiendoProrroga(e) },
+                            title: 'La autoriza Talento Humano o el supervisor de ventas.', onClick: () => setPidiendoProrroga(e) },
                         !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: ROT.saldo,
-                            icon: Wallet, title: 'El cliente no lo retira o desiste: lo pagado queda a su favor', onClick: () => setASaldo(e) },
+                            icon: Wallet, title: 'El cliente no lo retira o desiste. Lo pagado queda a su favor.', onClick: () => setASaldo(e) },
                         puedeComprar && sinVincular(e) && !['aceptado', 'pedido'].includes(e.estado) && { k: 'vincular', label: ROT.vincular, icon: Link2,
-                            title: 'Elegir el producto ya creado en el catálogo: sin eso no se puede marcar «Llegó»', onClick: () => setVinculando(e) },
+                            title: 'Elige el producto ya creado en el catálogo. Sin eso no se puede marcar «Llegó».', onClick: () => setVinculando(e) },
                         puedeComprar && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
                         vendible && !probable && accVendido,
                         !soloLectura && encargoCancelableSinPago(e) && { k: 'cancelar', label: ROT.cancelar, icon: Ban,
-                            title: 'El cliente ya no lo quiere: se cancela sin cobrarle nada', onClick: () => setCancelando(e) },
+                            title: 'El cliente ya no lo quiere. Se cancela sin cobrarle nada.', onClick: () => setCancelando(e) },
                     ].filter(Boolean);
                     const estado = estadoDe(e);
                     const cifra = cifraDeEncargo(e);
@@ -293,12 +293,12 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                 titulo={`${e.cantidad} × ${e.producto}`}
                                 etiquetas={[
                                     e.producto_nuevo && { label: e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : 'Producto nuevo', variant: 'info',
-                                        title: e.product_id ? undefined : 'Todavía no está en el catálogo: Bodega lo crea y lo vincula' },
+                                        title: e.product_id ? undefined : 'Todavía no está en el catálogo. Bodega lo crea y lo vincula.' },
                                     sinVincular(e) && e.sugerido && { label: `¿Ya está como «${e.sugerido}»?`, variant: 'warning' },
                                     e.reserva && { label: `Resto de ${e.reserva}`, variant: 'neutral' },
                                     textoDeNivel(e.nivel) && { label: textoDeNivel(e.nivel), variant: 'neutral' },
                                     probable && { label: `Parece que ya se vendió · ${probable.factura} del ${fechaTexto(probable.fecha, { day: 'numeric', month: 'short' })}`, variant: 'warning',
-                                        title: 'Misma sala, mismo producto y mismo monto: no lo cobres otra vez' },
+                                        title: 'Misma sucursal, mismo producto y mismo monto. No lo cobres otra vez.' },
                                 ]}
                                 bloques={[pedido(e), respuesta(e)]}
                                 lineas={[ultimoAviso(e)].filter(Boolean)}
@@ -307,7 +307,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                     ...(e.fecha_estimada ? [{ rotulo: 'Llega', valor: fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' }) }] : []),
                                 ]}
                                 pasos={pasosDeEncargo(e).filter((p) => p.clave !== 'encargado' && p.clave !== 'confirmado')} ahora={siguientePasoDeEncargo(e, { cobraAqui: cobrable(e) })}
-                                aviso={vencido(e) ? 'No lo retiró a tiempo: llamar al cliente' : null}
+                                aviso={vencido(e) ? 'No lo retiró a tiempo. Llama al cliente.' : null}
                                 plazo={e.retirar_hasta ? `Retira hasta el ${dia(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : null}
                                 acciones={acc} />
                         </li>
@@ -348,15 +348,15 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                     {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'directa' && <Button variant="ghost" size="xs" icon={CalendarPlus} loading={ocupado === e.id}
                                         title="Una sola prórroga" onClick={() => prorrogar(e)}>{ROT.prorrogar}</Button>}
                                     {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && <Button variant="ghost" size="xs" icon={CalendarPlus}
-                                        title="La autoriza Talento Humano o Supervisión de ventas" onClick={() => setPidiendoProrroga(e)}>{ROT.pedir_prorroga}</Button>}
+                                        title="La autoriza Talento Humano o el supervisor de ventas." onClick={() => setPidiendoProrroga(e)}>{ROT.pedir_prorroga}</Button>}
                                     {!soloLectura && encargoVendibleAfuera(e) && !ventaProbable(e) && (
                                         <Button variant="ghost" size="xs" icon={Receipt} title="Se cobró en caja como una venta normal" onClick={() => setVendiendo(e)}>{ROT.ya_vendido}</Button>
                                     )}
                                     {!soloLectura && encargoCancelableSinPago(e) && (
-                                        <Button variant="ghost" size="xs" icon={Ban} title="El cliente ya no lo quiere: se cancela sin cobrarle nada" onClick={() => setCancelando(e)}>{ROT.cancelar}</Button>
+                                        <Button variant="ghost" size="xs" icon={Ban} title="El cliente ya no lo quiere. Se cancela sin cobrarle nada." onClick={() => setCancelando(e)}>{ROT.cancelar}</Button>
                                     )}
                                     {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && (
-                                        <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste: lo pagado queda a su favor" onClick={() => setASaldo(e)}>{ROT.saldo}</Button>
+                                        <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste. Lo pagado queda a su favor." onClick={() => setASaldo(e)}>{ROT.saldo}</Button>
                                     )}
                                 </>
                             )} />
@@ -468,7 +468,7 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
             <LiquidModal.Header titulo={`${encargo.codigo} a saldo a favor`} onClose={onClose} />
             <LiquidModal.Body>
                 <Notice variant="info" compact icon={Wallet}>
-                    Lo pagado ({formatMoney(encargo.anticipo)}) queda a favor del cliente por {vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sala.
+                    Lo pagado ({formatMoney(encargo.anticipo)}) queda a favor del cliente por {vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sucursal.
                     El producto queda para la venta. No se deshace.
                 </Notice>
                 <PortalTextarea label="Motivo" name="motivoASaldo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
@@ -498,8 +498,8 @@ function CancelarSinPago({ encargo, onClose, onConfirmar }) {
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <Notice variant="info" compact icon={Ban}>
-                        Todavía no lo pagó, así que no se le cobra ni se le devuelve nada, y no se le pide al proveedor.
-                        Si tiene la app, le llega el aviso. No se deshace: si después lo quiere, lo encarga de nuevo.
+                        Todavía no lo pagó. No se le cobra ni se le devuelve nada, y no se pide al proveedor.
+                        Si tiene la app, le llega el aviso. No se deshace. Si después lo quiere, lo encarga de nuevo.
                     </Notice>
                     <PortalTextarea label="Motivo" name="motivoCancelarEncargo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}
                         placeholder="Ej. Llamó y dijo que ya lo consiguió / el precio le pareció alto" />
@@ -541,14 +541,14 @@ function YaVendido({ encargo, onClose, onConfirmar }) {
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <Notice variant="info" compact icon={Receipt}>
-                        Elige la venta en la que se cobró. El encargo queda entregado y <b>no entra dinero al cajón</b>: ya entró con esa venta.
+                        Elige la venta en la que se cobró. El encargo queda entregado y <b>no entra dinero a la caja</b>. Ya entró con esa venta.
                     </Notice>
                     {lista == null && <p className="text-body-sm text-content-3">Buscando ventas…</p>}
                     {error && <Notice variant="error" compact>{mensajeAmigable(error, 'No se pudieron leer las ventas.')}</Notice>}
                     {lista && !lista.length && !error && (
                         <p className="text-body-sm text-content-3">
-                            No encontré ventas de este producto ni por {encargo.anticipo ? formatMoney(encargo.anticipo) : 'este monto'} en la sala desde el {desde}.
-                            Si se vendió en otra sala o con otro precio, avísale a administración.
+                            No encontré ventas de este producto ni por {encargo.anticipo ? formatMoney(encargo.anticipo) : 'este monto'} en la sucursal desde el {desde}.
+                            Si se vendió en otra sucursal o con otro precio, avisa a un supervisor o administrador.
                         </p>
                     )}
                     {!!lista?.length && (

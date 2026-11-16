@@ -70,7 +70,7 @@ function Hecha({ corte, d, puedeResolver, bajoMovimiento, hook, onCambio }) {
   const filaDe = (p, monto) => ({ persona_id: p.persona_id, monto: Number(monto), nombre: shortEmployeeName({ name: p.nombre }), saldoAntes: Number(p.saldo || 0) });
   const confirmarAbono = (filas) => {
     const total = filas.reduce((t, f) => t + f.monto, 0);
-    Alert.alert('¿Registrar el abono?', `${filas.map((f) => `${f.nombre}: ${formatMoney(f.monto)}`).join('\n')}\n\nEntra ${formatMoney(total)} a la caja de la sala y sale el comprobante.`, [
+    Alert.alert('¿Registrar el abono?', `${filas.map((f) => `${f.nombre}: ${formatMoney(f.monto)}`).join('\n')}\n\nEntra ${formatMoney(total)} a la caja de la sucursal y sale el comprobante.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Abonar', onPress: async () => { trabajando('Registrando el abono…'); if (await abonar(corte, d, filas)) { setMontos({}); onCambio(); } } },
     ]);
@@ -143,7 +143,7 @@ function Hecha({ corte, d, puedeResolver, bajoMovimiento, hook, onCambio }) {
               ) : null}
             </View>
           ))}
-          <Aviso texto="Es una reposición voluntaria: nunca se descuenta del salario. Cada abono entra a la caja de la sala y el siguiente corte ya lo cuenta." />
+          <Aviso texto="Es una reposición voluntaria. Nunca se descuenta del salario. Cada abono entra a la caja de la sucursal y el siguiente corte ya lo cuenta." />
         </View>
       ) : null}
 
@@ -237,7 +237,7 @@ export default function DiferenciaCorte() {
 
   const guardar = () => Alert.alert(via === 'REPONE' ? '¿Asignar responsables?' : '¿Guardar la causa?',
     via === 'REPONE'
-      ? `${marcadas.map((id) => `${shortEmployeeName(candidatos.find((c) => c.id === id) || {})}: ${formatMoney(montos[id])}`).join('\n')}\n\nCada uno queda con su saldo; después se abona.`
+      ? `${marcadas.map((id) => `${shortEmployeeName(candidatos.find((c) => c.id === id) || {})}: ${formatMoney(montos[id])}`).join('\n')}\n\nCada uno queda con su saldo. Después se abona.`
       : `Explica ${formatMoney(cuenta.montoExplica)} del ${falta ? 'faltante' : 'sobrante'}.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Guardar', onPress: async () => {
@@ -280,10 +280,10 @@ export default function DiferenciaCorte() {
                 <Hecha key={d.id} corte={corte} d={d} puedeResolver={puedeResolver} hook={hook}
                   bajoMovimiento={d.via === 'JUSTIFICA' && hayMovimiento} onCambio={recargar} />
               ))}
-              {parcial ? <Aviso texto={falta ? `${formatMoney(pendiente)} siguen sin causa: se explican con otro comprobante o se asignan responsables.` : `${formatMoney(pendiente)} siguen sin causa y quedan en el acumulado de la sala.`} /> : null}
+              {parcial ? <Aviso texto={falta ? `${formatMoney(pendiente)} siguen sin causa. Se explican con otro comprobante o se asignan responsables.` : `${formatMoney(pendiente)} siguen sin causa y quedan en el acumulado de la sucursal.`} /> : null}
 
               {puedeAbrir && !abriendo ? (
-                <BotonGrande texto={falta ? (parcial ? `Resolver lo que queda: ${formatMoney(pendiente)}` : `Resolver el faltante de ${formatMoney(pendiente)}`) : (parcial ? 'Explicar otra parte' : 'Tiene causa: explicarlo')}
+                <BotonGrande texto={falta ? (parcial ? `Resolver lo que queda: ${formatMoney(pendiente)}` : `Resolver el faltante de ${formatMoney(pendiente)}`) : (parcial ? 'Explicar otra parte' : 'Explicar la causa')}
                   onPress={() => { if (!falta) setVia('JUSTIFICA'); setAbriendo(true); }} />
               ) : null}
 
@@ -301,7 +301,7 @@ export default function DiferenciaCorte() {
                     </Seccion>
                   ) : null}
                   {via === 'JUSTIFICA' ? (
-                    <Seccion titulo="El comprobante" pie="El número del documento que se corrigió o una foto: uno de los dos.">
+                    <Seccion titulo="El comprobante" pie="Escribe el número del documento que se corrigió o toma una foto.">
                       <Campo multiline={false} value={montoCausa} onChangeText={(v) => setMontoCausa(dinero(v))} keyboardType="decimal-pad"
                         placeholder={`Cuánto explica (vacío = ${formatMoney(pendiente)})`} />
                       {cuenta.explicaInvalido ? <Aviso tono="freno" texto="Tiene que ser mayor que cero." /> : null}
@@ -334,7 +334,7 @@ export default function DiferenciaCorte() {
                       })}
                     </Seccion>
                   ) : null}
-                  {via === 'REPONE' ? <Aviso texto="Al guardar, cada responsable queda con su saldo. Después se abona por persona o todo junto, en uno o varios días; cada abono imprime su comprobante." /> : null}
+                  {via === 'REPONE' ? <Aviso texto="Al guardar, cada responsable queda con su saldo. Después se abona por persona o todo junto, en uno o varios días. Cada abono imprime su comprobante." /> : null}
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1 }}><BotonGrande texto="Volver" borde onPress={cerrar} /></View>
                     <View style={{ flex: 1 }}><BotonGrande texto={via === 'REPONE' ? 'Asignar' : 'Guardar'} color={MARCA.verde} deshabilitado={ocupado || cuenta.faltaGuardar} onPress={guardar} /></View>

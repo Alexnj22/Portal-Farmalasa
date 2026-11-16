@@ -75,7 +75,7 @@ export function VentasPorHora({ ctx }) {
     const nombres = salas.map((b) => b.name);
     if (Platform.OS !== 'web') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { title: 'Sala', options: [...nombres, 'Cancelar'], cancelButtonIndex: nombres.length },
+        { title: 'Sucursal', options: [...nombres, 'Cancelar'], cancelButtonIndex: nombres.length },
         (i) => { if (i < nombres.length) { setElegida(String(salas[i].id)); setDia(null); } },
       );
     } else {

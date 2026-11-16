@@ -225,8 +225,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             value={String(miSala ?? '')}
             onChange={elegirSala}
             options={salasDeVenta}
-            placeholder="Sala"
-            ariaLabel="Sala de ventas"
+            placeholder="Sucursal"
+            ariaLabel="Sucursal"
             icon={Building2}
             clearable={false}
             compact
@@ -237,7 +237,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const abiertasVistazo = reservasAbiertas(filas);
     const porRevisarVistazo = abiertasVistazo.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
     useResumenWidget(cargando ? null
-        : (!miSala && !todas) ? { texto: 'Sin sala asignada' }
+        : (!miSala && !todas) ? { texto: 'Sin sucursal asignada' }
         // Un fallo de lectura no es «Sin reservas»: el vistazo lo dice.
         : errorCarga ? { texto: 'No se pudo leer', tono: 'danger' }
         : porRevisarVistazo > 0 ? { valor: porRevisarVistazo, texto: porRevisarVistazo === 1 ? 'receta por revisar' : 'recetas por revisar', tono: 'warning', accion: { texto: 'Revisar' } }
@@ -335,7 +335,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             }
             setVentaFacturada(null);
             showToast('Reserva cancelada', anticipoEnVenta
-                ? 'El anticipo ya se había usado en la factura: no queda saldo a favor.'
+                ? 'El anticipo ya se usó en la factura. No queda saldo a favor.'
                 : 'Lo que el cliente ya pagó queda como saldo a favor.', 'success');
             cargar();
         } catch (err) {
@@ -360,7 +360,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             }
             appendAuditLog?.('RESERVA_PREVENTA', ids.join(','), { referencia: res.referencia ?? null, sala: r.branch_id ?? miSala })?.catch?.(() => {});
             const notas = [
-                res.cliente_generico ? 'Va como cliente frecuente: el código de la reserva viaja en la nota.' : '',
+                res.cliente_generico ? 'Va como cliente frecuente. El código de la reserva va en la nota.' : '',
                 ...(res.avisos ?? []),
                 res.externo_id ? 'Al facturarla, la reserva se cierra sola.' : 'Al facturarla, ciérrala con «Retirar».',
             ].filter(Boolean).join(' ');
@@ -473,7 +473,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
 
     if (cargando) return <SkeletonText lines={3} />;
     if (!miSala && !todas) {
-        return <EmptyState icon={ShoppingBag} compact title="Sin sala asignada" subtitle="Las reservas son de una sala de ventas." />;
+        return <EmptyState icon={ShoppingBag} compact title="Sin sucursal asignada" subtitle="Las reservas son de una sucursal." />;
     }
     if (!filas.length && !saldosDeFuera.length) {
         return (
@@ -569,7 +569,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             {delPedido.length > 0 && (
                 <p className="text-body-sm text-content break-words">
                     <b>Pedido {buscado}</b> · {delPedido.length} {delPedido.length === 1 ? 'producto' : 'productos'} · {String(delPedido[0].cliente ?? '').split(/\s+/)[0]} · total {formatMoney(totalPedido)}
-                    {delPedido.some(esPagoDePrueba) ? ' · PAGO DE PRUEBA — cobrar en caja'
+                    {delPedido.some(esPagoDePrueba) ? ' · PAGO DE PRUEBA · cobrar en caja'
                         : delPedido.every((r) => r.pago_estado === 'pagado') ? (delPedido[0].origen === 'sucursal' ? ' · pagado' : ' · pagado en línea')
                         : anticipoPedido > 0.004 ? ` · anticipo ${formatMoney(anticipoPedido)} · falta ${formatMoney(totalPedido - anticipoPedido)} al retirar`
                         : ' · se cobra en caja'}
@@ -583,7 +583,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     <p>{delPedido[0].datos_fiscales.giro} · {delPedido[0].datos_fiscales.direccion}</p>
                 </div>
             )}
-            {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código{todas ? '' : ' en esta sala'}.</p>}
+            {buscado && !visibles.length && <p className="text-body-sm text-content-3">No hay una reserva abierta con ese código{todas ? '' : ' en esta sucursal'}.</p>}
             {/* En la pantalla completa la lista se parte en lo que hay que hacer
                 y lo que espera al cliente (2026-10-22, «me pierdo»). */}
             {(completa && !buscado
@@ -620,7 +620,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     )}
                                     {!soloLectura && !porResolverDe && porTraerDe && (
                                         <Button variant="ghost" size="xs" icon={ArrowLeftRight} onClick={() => setResolviendo(porTraerDe)}
-                                            title={`Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega`}>Traer de otra sala</Button>
+                                            title={`Si esta sucursal no tiene ${porTraerDe.producto}, pídelo a otra sucursal o a Bodega.`}>Traer de otra sucursal</Button>
                                     )}
                                     {enRevision && r.receta_estado === 'otra_foto' && (
                                         <Badge variant="info" uppercase={false}
@@ -628,7 +628,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     )}
                                     {enRevision && r.receta_estado === 'pendiente' && (
                                         <Badge variant={urgente ? 'danger' : 'warning'} uppercase={false}
-                                            title={urgente ? `Lleva más de ${HORAS_RECETA_URGENTE} h: ya se avisó a supervisión` : 'Revísala antes de apartar la reserva'}>
+                                            title={urgente ? `Lleva más de ${HORAS_RECETA_URGENTE} h. Ya se avisó a un supervisor o administrador.` : 'Revísala antes de apartar la reserva'}>
                                             Receta por revisar · {espera.texto}
                                         </Badge>
                                     )}
@@ -636,7 +636,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         Si el cobro fue de PRUEBA (2026-10-19) no entró dinero: se cobra en caja. */}
                                     {esPagoDePrueba(r) ? (
                                         <Badge variant="danger" uppercase={false}
-                                            title="El cobro en línea fue de prueba: no entró dinero">PAGO DE PRUEBA — cobrar en caja</Badge>
+                                            title="El cobro en línea fue de prueba. No entró dinero.">PAGO DE PRUEBA · cobrar en caja</Badge>
                                     ) : !completa && filasDe.every((x) => x.pago_estado === 'pagado') && (
                                         <Badge variant="success" uppercase={false}>{r.origen === 'sucursal' ? 'Pagada' : 'Pagada en línea'}</Badge>
                                     )}
@@ -648,7 +648,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         nombre corto: es la persona, no un dato suelto. */}
                                     {responsableDe && anticipoDe <= 0.004 && (
                                         <Badge variant="warning" uppercase={false}
-                                            title={`Sin anticipo: responde ${shortEmployeeName(responsableDe)}. Se cobra ${formatMoney(totalDe)} al retirar.`}>
+                                            title={`Sin anticipo. Responde ${shortEmployeeName(responsableDe)}. Se cobra ${formatMoney(totalDe)} al retirar.`}>
                                             <span className="inline-flex items-center gap-1">
                                                 Sin anticipo · <AvatarConEstado emp={responsableDe} px={20} mostrarChip={false} />{shortEmployeeName(responsableDe)}
                                             </span>
@@ -658,7 +658,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         se factura con ESA lista para cobrar lo mismo. */}
                                     {listaDePrecio && (
                                         <Badge variant="info" uppercase={false}
-                                            title="Facturar con esta lista de precio: es la que se cobró al reservar">
+                                            title="Factura con esta lista de precio. Es la que se cobró al reservar.">
                                             {listaDePrecio}
                                         </Badge>
                                     )}
@@ -674,13 +674,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                 onClick={() => setReceta(r)}>Ver receta</Button>
                                         ) : (
                                             <Badge variant="neutral" uppercase={false}
-                                                title="Revisar recetas de la app pide su propio permiso">{quienRevisaLaReceta(r, { puedeRecetas })}</Badge>
+                                                title="Revisar recetas de la app necesita su propio permiso.">{quienRevisaLaReceta(r, { puedeRecetas })}</Badge>
                                         ))
                                     ) : soloLectura ? null : (
                                         <>
                                         {puedePreventa && (r.renglones ?? [r]).some(puedeEnviarPreventa) && (
                                             <Button variant="secondary" size="xs" icon={Send} loading={ocupada === r.id}
-                                                title="Deja la venta armada en caja: producto, cliente y tú como vendedor"
+                                                title="Deja la venta lista en caja con el producto, el cliente y tú como vendedor."
                                                 onClick={() => enviarACaja(r)}>Enviar a caja</Button>
                                         )}
                                         {hayPendiente && (
@@ -700,7 +700,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                                 ) : (r.renglones ?? [r]).some((x) => modoDeProrroga(x) === 'pedir')
                                                     && !(r.renglones ?? [r]).some((x) => modoDeProrroga(x) === 'pendiente') && (
                                                     <Button variant="ghost" size="xs" icon={CalendarPlus}
-                                                        title="La autoriza Talento Humano o Supervisión de ventas" onClick={() => setPidiendoProrroga(r)}>Pedir prórroga</Button>
+                                                        title="La autoriza Talento Humano o el supervisor de ventas." onClick={() => setPidiendoProrroga(r)}>Pedir prórroga</Button>
                                                 )}
                                                 <Button variant="secondary" size="xs" icon={CheckCircle2} loading={ocupada === r.id}
                                                     onClick={() => setRetirando((r.renglones ?? [r]).filter((x) => x.estado === 'lista')
@@ -732,7 +732,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                             titulo={r.renglones && r.renglones.length > 1
                                 ? `Pedido ${r.pedido} · ${r.renglones.length} productos · ${formatMoney(r.renglones.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0) + Number(r.costo_envio ?? 0))}`
                                 : `${r.cantidad} × ${r.producto}`}
-                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.estado === 'pendiente' && hayLista ? ' (en camino)' : ''}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} — ` : ''}${
+                            detalle={`${r.renglones && r.renglones.length > 1 ? `${r.renglones.map((x) => `${x.cantidad} × ${x.producto}${x.estado === 'pendiente' && hayLista ? ' (en camino)' : ''}${x.lista_precio && r.renglones.some((y) => !y.lista_precio) ? ' (a mayoreo)' : ''}`).join(' · ')} · ` : ''}${
                                 todas && r.sala ? `${r.sala} · ` : ''}${r.pedido && !(r.renglones?.length > 1) ? `${r.pedido} · ` : ''}${r.pedido ? '' : `${codigoDeReserva(r.id)} · `}${String(r.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}${
                                 r.entrega === 'domicilio' ? ` · A DOMICILIO: ${r.direccion_entrega ?? ''}${Number(r.costo_envio) > 0 ? ` (envío ${formatMoney(Number(r.costo_envio))})` : ''}` : ''}${
                                 r.estado === 'lista' ? ` · ${plazoDeRetiro(r)}` : ''}${
@@ -828,7 +828,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             )}
             {porEntregar.length > 0 && (
                 <div className="space-y-1.5">
-                    <Encabezado titulo="Devoluciones por entregar" n={porEntregar.length} ayuda="Autorizadas: se entregan en efectivo" />
+                    <Encabezado titulo="Devoluciones por entregar" n={porEntregar.length} ayuda="Ya autorizadas. Se entregan en efectivo." />
                     {completa ? (
                     <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0">
                         {porEntregar.map((r) => (
@@ -878,11 +878,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             )}
             {pidiendoDevolucion && (
                 <ConMotivo titulo={`Pedir ${formatMoney(Number(pidiendoDevolucion.saldo_favor))} en efectivo`}
-                    texto="Administración lo autoriza. Cuando lo autorice, aquí aparece para entregarlo con un vale de caja."
-                    etiqueta="Por qué lo quiere en efectivo" boton="Pedir a administración" onCerrar={() => setPidiendoDevolucion(null)}
+                    texto="Lo autoriza un supervisor o administrador. Cuando lo autorice, aparece aquí para entregarlo con un vale de caja."
+                    etiqueta="Por qué lo quiere en efectivo" boton="Pedir autorización" onCerrar={() => setPidiendoDevolucion(null)}
                     onConfirmar={async (motivo) => {
                         await pedirDevolucionEnEfectivo(pidiendoDevolucion.id, motivo);
-                        showToast('Devolución pedida', 'Administración recibe el aviso para autorizarla.', 'success');
+                        showToast('Devolución pedida', 'Un supervisor o administrador recibe el aviso para autorizarla.', 'success');
                         setPidiendoDevolucion(null); cargar();
                     }} />
             )}
@@ -894,10 +894,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             )}
             {negando && (
                 <ConMotivo titulo="No autorizar la devolución" texto="El saldo sigue a favor del cliente para usarlo en caja."
-                    etiqueta="Motivo (se le dice a la sala)" boton="No autorizar" onCerrar={() => setNegando(null)}
+                    etiqueta="Motivo (se le dice a la sucursal)" boton="No autorizar" onCerrar={() => setNegando(null)}
                     onConfirmar={async (motivo) => {
                         await negarDevolucionEnEfectivo(negando.id, motivo);
-                        showToast('Devolución no autorizada', 'La sala recibe el aviso.', 'success');
+                        showToast('Devolución no autorizada', 'La sucursal recibe el aviso.', 'success');
                         setNegando(null); cargar();
                     }} />
             )}
@@ -965,7 +965,7 @@ function AvisoWhatsapp({ reserva, onCerrar, onEnviado }) {
                     <PortalTextarea label="Mensaje" name="mensaje" rows={5} value={texto} onChange={(e) => setTexto(e.target.value)} />
                     {numero
                         ? <Badge variant="info" uppercase={false}>Al +{numero}</Badge>
-                        : <Badge variant="warning" uppercase={false}>La ficha no tiene un teléfono válido</Badge>}
+                        : <Badge variant="warning" uppercase={false}>Los datos del cliente no tienen un teléfono válido</Badge>}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
@@ -1001,7 +1001,7 @@ function UsarSaldo({ saldo, onCerrar, onUsado, buscarSaldoAFavor, usarSaldoAFavo
             const filas = await buscarSaldoAFavor(codigo, prueba);
             const f = (filas || []).find((x) => String(x.id) === String(saldo.id));
             if (!f) { setError('Ese saldo ya no está disponible.'); return; }
-            if (!f.confirmado) { setError('No coincide con el cliente de este saldo. Escanea su tarjeta de Puntos Salud o escribe el DUI o el teléfono de su ficha.'); return; }
+            if (!f.confirmado) { setError('No coincide con el cliente de este saldo. Escanea su tarjeta de Puntos Salud o escribe su DUI o su teléfono.'); return; }
             setFila(f);
             setMonto(Number(f.saldo_favor).toFixed(2));
         } catch (err) { setError(mensajeAmigable(err, 'Intenta de nuevo.')); }
@@ -1025,7 +1025,7 @@ function UsarSaldo({ saldo, onCerrar, onUsado, buscarSaldoAFavor, usarSaldoAFavo
                     {!fila ? (
                         <>
                             <p className="text-body-sm text-content-2">
-                                Primero confirma que es el cliente: escanea su tarjeta de Puntos Salud (o el QR de su app), o escribe el DUI o el teléfono de su ficha.
+                                Primero confirma que es el cliente. Escanea su tarjeta de Puntos Salud o el QR de su app, o escribe su DUI o su teléfono.
                             </p>
                             <PortalInput label="Tarjeta, DUI o teléfono" name="prueba" value={prueba} autoFocus
                                 onChange={(e) => setPrueba(e.target.value)} placeholder="Escanea o escribe" />
@@ -1034,7 +1034,7 @@ function UsarSaldo({ saldo, onCerrar, onUsado, buscarSaldoAFavor, usarSaldoAFavo
                         <>
                             <p className="text-body-sm text-content-2">
                                 {fila.cliente} tiene {formatMoney(disponible)} a favor (vale hasta el {fechaTexto(fila.saldo_favor_vence, { day: 'numeric', month: 'short' })}).
-                                Lo que uses pasa a sus puntos: en caja, factura a su nombre y descuéntalo con puntos.
+                                Lo que uses pasa a sus puntos. En caja, factura a su nombre y descuéntalo con puntos.
                             </p>
                             <PortalInput label="Cuánto usa" name="monto" inputMode="decimal" maskType="DECIMAL" prefix="$"
                                 value={monto} onChange={(e) => setMonto(e.target.value)}
@@ -1082,9 +1082,9 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
-                        {saldo.pedido ?? codigoDeReserva(saldo.id)} · {saldo.producto} · {origenDelSaldo(saldo)}. Al autorizarla, el saldo deja de
-                        poder usarse en caja. {saldo.devolucion_pedida_at
-                            ? `La sala lo pidió («${saldo.devolucion_pedida_motivo ?? ''}») y lo entrega con un vale de su caja.`
+                        {saldo.pedido ?? codigoDeReserva(saldo.id)} · {saldo.producto} · {origenDelSaldo(saldo)}. Al autorizarla, el saldo ya no se puede
+                        usar en caja. {saldo.devolucion_pedida_at
+                            ? `La sucursal lo pidió («${saldo.devolucion_pedida_motivo ?? ''}») y lo entrega con un vale de su caja.`
                             : 'La devolución del dinero se hace aparte.'}
                     </p>
                     <PortalTextarea label="Motivo" name="motivo" rows={3} maxLength={300} value={motivo}
@@ -1189,7 +1189,7 @@ function EntregarDevolucion({ reserva: r, sala, onCerrar, onEntregada }) {
             try {
                 await marcarDevolucionEntregada(r.id, res.movimiento_del_portal);
             } catch (err) {
-                showToast('El vale salió, pero no quedó amarrado', `${mensajeAmigable(err)} Avísale a administración: ${codigo}.`, 'warning');
+                showToast('El vale salió, pero no quedó amarrado', `${mensajeAmigable(err)} Avisa a Soporte con este código: ${codigo}.`, 'warning');
                 onEntregada();
                 return;
             }
@@ -1206,8 +1206,8 @@ function EntregarDevolucion({ reserva: r, sala, onCerrar, onEntregada }) {
             <LiquidModal.Header titulo={`Entregar ${formatMoney(monto)} en efectivo`} onClose={onCerrar} />
             <LiquidModal.Body>
                 <p className="text-body-sm text-content-2">
-                    {codigo} · {String(r.cliente ?? '').split(/\s+/)[0]}. Sale de la caja de esta sala como vale «Devolución a un cliente»:
-                    el corte ya lo descuenta. Entrega el dinero al cliente al confirmar.
+                    {codigo} · {String(r.cliente ?? '').split(/\s+/)[0]}. Sale de la caja de esta sucursal como vale «Devolución a un cliente».
+                    El corte ya lo descuenta. Entrega el dinero al cliente al confirmar.
                 </p>
             </LiquidModal.Body>
             <LiquidModal.Footer>

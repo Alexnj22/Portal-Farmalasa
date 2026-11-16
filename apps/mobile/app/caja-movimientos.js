@@ -141,8 +141,8 @@ export default function CajaMovimientos() {
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: '0', onCambiar: setPeriodo, opciones: PERIODOS },
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'TODOS', onCambiar: setEstado,
       opciones: [{ id: 'TODOS', label: 'Todos' }, { id: 'VIGENTES', label: 'Vigentes' }, { id: 'EDITADOS', label: 'Editados' }, { id: 'DESAPARECIDOS', label: 'Ya no están en la caja' }] },
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
 
   return (

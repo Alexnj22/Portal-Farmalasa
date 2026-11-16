@@ -52,7 +52,7 @@ export default function RevisarReceta({ reserva, onClose, onDecidida }) {
 
     const decidir = async (decision) => {
         if (decision !== 'aprobada' && !motivo.trim()) {
-            showToast('Falta el motivo', 'El cliente lo recibe en la app: dile qué pasó.', 'error');
+            showToast('Falta el motivo', 'El cliente lo recibe en la app. Dile qué pasó.', 'error');
             return;
         }
         setEnviando(decision);
@@ -62,7 +62,7 @@ export default function RevisarReceta({ reserva, onClose, onDecidida }) {
                 decision === 'aprobada' ? 'Receta aprobada' : decision === 'otra_foto' ? 'Se pidió otra foto' : 'Receta rechazada',
                 decision === 'aprobada' ? 'La reserva quedó confirmada y el cliente recibió el aviso.'
                     : decision === 'otra_foto' ? 'El cliente recibió el aviso para subir otra o quitar ese producto.'
-                    : Number(res?.siguen) > 0 ? 'Se quitaron los productos bajo receta; lo demás del pedido sigue y el cliente recibió el aviso.'
+                    : Number(res?.siguen) > 0 ? 'Se quitaron los productos bajo receta. Lo demás del pedido sigue. El cliente recibió el aviso.'
                     : 'La reserva se canceló y el cliente recibió el aviso.',
                 'success',
             );

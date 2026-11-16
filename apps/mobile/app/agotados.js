@@ -52,7 +52,7 @@ const Fila = memo(function Fila({ f, diasFoto, columnas }) {
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`de ${diasFoto} días sin existencia`}</Text>
           </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-            {[`Última venta ${fecha(f.ultima_venta)}`, f.max_units > 0 ? `Min·Máx ${formatQty(f.min_units)} · ${formatQty(f.max_units)}` : 'sin Min·Máx asignado'].join(' · ')}
+            {[`Última venta ${fecha(f.ultima_venta)}`, f.max_units > 0 ? `Mín/Máx ${formatQty(f.min_units)} · ${formatQty(f.max_units)}` : 'sin Mín/Máx asignado'].join(' · ')}
           </Text>
         </View>
       </Vidrio>
@@ -86,10 +86,10 @@ export default function Agotados() {
   }).filter((f) => estado !== 'reingreso' || f.hay_ahora), [resp, diasFoto, conMinMax, estado, texto]);
 
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: elegida, porDefecto: elegida, onCambiar: setElegida,
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: elegida, porDefecto: elegida, onCambiar: setElegida,
       opciones: SALAS.map((id) => ({ id: String(id), label: ERP_NAMES[id] })) }] : []),
-    { id: 'minmax', titulo: 'Min·Máx', activa: conMinMax, porDefecto: 'si', onCambiar: setConMinMax,
-      opciones: [{ id: 'si', label: 'Sólo con Min·Máx' }, { id: 'todos', label: 'También sin asignar' }] },
+    { id: 'minmax', titulo: 'Mín/Máx', activa: conMinMax, porDefecto: 'si', onCambiar: setConMinMax,
+      opciones: [{ id: 'si', label: 'Solo con Mín/Máx' }, { id: 'todos', label: 'También sin asignar' }] },
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todos', onCambiar: setEstado,
       opciones: [{ id: 'todos', label: 'Todos' }, { id: 'nunca', label: 'Nunca hubo' }, { id: 'reingreso', label: 'Ya reingresó' }] },
   ];

@@ -58,7 +58,7 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
     // hay que llamar al cliente, que no está enfrente.
     const opciones = [
         ...(precioDistinto ? [{ value: 'precio', label: 'Precio de Bodega' }] : []),
-        ...(falta > 0 && !precioDistinto ? [{ value: 'pedir', label: 'Pedir a otra sala' }, { value: 'bodega', label: 'A Bodega' }] : []),
+        ...(falta > 0 && !precioDistinto ? [{ value: 'pedir', label: 'Pedir a otra sucursal' }, { value: 'bodega', label: 'A Bodega' }] : []),
         { value: 'cliente', label: 'Lo decide el cliente' },
     ];
     const textoDeLaApp = textoDeResolverDeLaApp(r);
@@ -87,7 +87,7 @@ export default function ResolverReserva({ reserva: r, onClose, onListo }) {
                     {vista === 'bodega' && (
                         <div className="space-y-3">
                             <p className="text-body-sm text-content-2">
-                                Bodega confirma el precio y para cuándo. Si es el mismo precio sigue sola; si es otro, decide el cliente.
+                                Bodega confirma el precio y la fecha. Si el precio es el mismo, sigue sola. Si cambia, decide el cliente.
                                 Cuando llegue, la reserva queda lista sola.
                             </p>
                             {falta > 20 && <Notice variant="warning" compact>Bodega encarga hasta 20 por pedido y faltan {falta}.</Notice>}
@@ -113,7 +113,7 @@ function PrecioDeBodega({ reserva: r, ocupado, onDecidir }) {
     return (
         <div className="space-y-3">
             <p className="text-body-sm text-content">
-                Bodega consigue {e.cantidad} × {r.producto} a <b>{formatMoney(Number(e.precio))}</b> c/u; se reservó a {formatMoney(Number(r.precio))}.
+                Bodega consigue {e.cantidad} × {r.producto} a <b>{formatMoney(Number(e.precio))}</b> c/u. Se reservó a {formatMoney(Number(r.precio))}.
                 {e.fecha ? ` Llega aprox. el ${e.fecha.split('-').reverse().slice(0, 2).join('/')}.` : ''} Pregúntale al cliente.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -131,13 +131,13 @@ function PedirAOtraSala({ reserva: r, falta, ocupado, hacer }) {
     return (
         <div className="space-y-3">
             <DeOtraSala producto={producto} factor={Number(r.factor ?? 1)} cantidad={falta} apiRef={api} onCambio={setOrigen}
-                rotulo={`Faltan ${falta}: ¿quién los tiene?`} opcionNo={null} />
+                rotulo={`Faltan ${falta}. ¿Quién los tiene?`} opcionNo={null} />
             <Button variant="primary" icon={ArrowLeftRight} loading={ocupado} disabled={!origen?.lista}
                 onClick={() => hacer(() => api.current.enviar(`Reserva ${codigoDeReserva(r.id)} para ${shortEmployeeName(r.cliente ?? '')}`, { reserva_id: r.id }),
                     'Traslado pedido', `${origen.sala} manda ${falta}. Cuando llegue, la reserva queda lista sola.`)}>
                 {origen ? `Pedir ${falta} a ${origen.sala}` : 'Pedir'}
             </Button>
-            <p className="text-caption text-content-3">Si ninguna sala lo tiene, encárgalo a Bodega.</p>
+            <p className="text-caption text-content-3">Si ninguna sucursal lo tiene, encárgalo a Bodega.</p>
         </div>
     );
 }
@@ -173,7 +173,7 @@ function LoDecideElCliente({ reserva: r, ocupado, hacer }) {
     const falta = !Number.isFinite(n) || n < 0 || n > Number(r.cantidad) ? `Del original se queda de 0 a ${r.cantidad}.`
         : conAlternativa && !usaAlt ? 'Elige la alternativa, su presentación y cuántas.'
             : n === Number(r.cantidad) && !usaAlt ? 'Así no cambia nada.'
-                : n === 0 && !usaAlt ? 'Si no lleva nada, cancela la reserva desde la lista: lo pagado queda a su favor.'
+                : n === 0 && !usaAlt ? 'Si no lleva nada, cancela la reserva desde la lista. Lo pagado queda a su favor.'
                     : motivo.trim().length < 3 ? 'Escribe qué decidió el cliente.' : null;
 
     const confirmar = () => hacer(() => ajustarReserva(r.id, {
@@ -189,7 +189,7 @@ function LoDecideElCliente({ reserva: r, ocupado, hacer }) {
             <PortalInput label={`Del original se queda (de ${r.cantidad})`} type="number" value={queda} onChange={(e) => setQueda(e.target.value)}
                 helperText={yaViene ? `llegó o viene: ${yaViene}` : undefined} />
             <Button variant={conAlternativa ? 'secondary' : 'ghost'} size="sm" icon={Repeat} aria-pressed={conAlternativa}
-                onClick={() => setConAlternativa((v) => !v)}>{conAlternativa ? 'Quitar la alternativa' : 'Agregar una alternativa de esta sala'}</Button>
+                onClick={() => setConAlternativa((v) => !v)}>{conAlternativa ? 'Quitar la alternativa' : 'Agregar una alternativa de esta sucursal'}</Button>
             {conAlternativa && (alt ? (
                 <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
@@ -204,7 +204,7 @@ function LoDecideElCliente({ reserva: r, ocupado, hacer }) {
                         </div>
                         <PortalInput label="Cantidad" type="number" value={cantAlt} onChange={(e) => setCantAlt(e.target.value)} />
                     </div>
-                    <p className="text-caption text-content-3">Se aparta de lo que hay en esta sala, con el precio de hoy.</p>
+                    <p className="text-caption text-content-3">Se aparta de la existencia de esta sucursal, con el precio de hoy.</p>
                 </div>
             ) : (
                 <BuscadorDeProducto placeholder="La alternativa…" onElegir={(p) => setAlt({ id: Number(p.id), nombre: p.nombre })} />

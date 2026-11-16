@@ -129,7 +129,7 @@ export default function WidgetConsultaPrecios() {
             active={i === marcado}
             onMouseEnter={() => setCursor(i)}
             title={p.descripcion}
-            subtitle={p.principioActivo || `${p.salas.length} ${p.salas.length === 1 ? 'sala' : 'salas'} con existencia`}
+            subtitle={p.principioActivo || `${p.salas.length} ${p.salas.length === 1 ? 'sucursal' : 'sucursales'} con existencia`}
             trailing={<ChevronRight size={14} className="text-content-3" />}
             onClick={() => setAbierto(p.id)} />
         ))}

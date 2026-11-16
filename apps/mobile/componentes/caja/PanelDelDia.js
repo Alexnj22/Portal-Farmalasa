@@ -109,7 +109,7 @@ export default function PanelDelDia({ estado, ventas, veLosMontos, entregas, per
                 </View>
               ) : (
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-                  Los montos no se muestran antes del corte: el conteo se hace contando, y verlos de antemano sería copiarlos.
+                  Los montos se ven después del corte.
                 </Text>
               )}
             </View>

@@ -62,7 +62,7 @@ const HORAS_EN_CAMINO_ALERTA = 24;
 
 const SECCIONES_ENVIO = [
   { id: 'por_decidir', titulo: 'Te enviaron', get color() { return MARCA.azulClaro; } },
-  { id: 'por_despachar', titulo: 'Sin salir de tu sala', color: MARCA.ambar },
+  { id: 'por_despachar', titulo: 'Sin salir de tu sucursal', color: MARCA.ambar },
   { id: 'por_recibir_devolucion', titulo: 'Te devuelven', color: MARCA.rojo },
   { id: 'en_camino', titulo: 'Enviaste', color: MARCA.verde },
 ];
@@ -181,16 +181,16 @@ export default function Traslados() {
     const { bolsa } = await fetchBolsaAjena(codigo);
     if (!bolsa || bolsa.es_para_esta_sala) return false;
     setEscaneando(false); setAviso(null);
-    const titulo = `Este paquete es para ${bolsa.destino ?? 'otra sala'}`;
+    const titulo = `Este paquete es para ${bolsa.destino ?? 'otra sucursal'}`;
     if (bolsa.ya_reportada_aqui) {
-      Alert.alert(titulo, `Ya quedó anotado que está aquí. La próxima ruta que pase lo lleva a ${bolsa.destino ?? 'su sala'}.`);
+      Alert.alert(titulo, `Ya quedó anotado que está aquí. La próxima ruta lo lleva a ${bolsa.destino ?? 'su sucursal'}.`);
       return true;
     }
-    Alert.alert(titulo, `Ticket ${bolsa.codigo}, sale de ${bolsa.origen ?? 'otra sala'}. Si lo dejaron aquí, repórtalo: avisamos a Bodega y a quien lo entregó, y la próxima ruta que pase lo lleva a su sala.`, [
+    Alert.alert(titulo, `Ticket ${bolsa.codigo}, sale de ${bolsa.origen ?? 'otra sucursal'}. Si lo dejaron aquí, repórtalo. Avisamos a Bodega y a quien lo entregó, y la próxima ruta lo lleva a su sucursal.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Llegó aquí por error', onPress: async () => {
         const r = await reportarBolsaPorError(codigo);
-        if (r?.ok) listo('Reportada: Bodega ya sabe');
+        if (r?.ok) listo('Reportado. Bodega ya sabe.');
         else fallo('No se pudo reportar', r?.error);
       } },
     ]);
@@ -199,8 +199,8 @@ export default function Traslados() {
   const alEscanear = async (codigo) => {
     const { traslado, error } = await fetchTrasladoPorCodigo(codigo);
     if (!error && esInvisible(traslado) && await ofrecerAjena(codigo)) return true;
-    if (error || !traslado) { setAviso({ tono: 'error', texto: `No encontramos ${codigo}, o es de otra sala.` }); return false; }
-    if (traslado.es_de_un_pedido) { setAviso({ tono: 'info', texto: 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.' }); return false; }
+    if (error || !traslado) { setAviso({ tono: 'error', texto: `No encontramos ${codigo}. Puede ser de otra sucursal.` }); return false; }
+    if (traslado.es_de_un_pedido) { setAviso({ tono: 'info', texto: 'Esa caja es de un pedido de Bodega. Se recibe en Pedidos.' }); return false; }
     return abrirCaja(traslado, codigo);
   };
   // Escribir el número a mano, para cuando la cámara no lee el ticket (arrugado,
@@ -211,8 +211,8 @@ export default function Traslados() {
       if (!codigo) return;
       const { traslado, error } = await fetchTrasladoPorCodigo(codigo);
       if (!error && esInvisible(traslado) && await ofrecerAjena(codigo)) return;
-      if (error || !traslado) { fallo('No se encontró', `No encontramos ${codigo}, o es de otra sala.`); return; }
-      if (traslado.es_de_un_pedido) { fallo('Es de un pedido', 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.'); return; }
+      if (error || !traslado) { fallo('No se encontró', `No encontramos ${codigo}. Puede ser de otra sucursal.`); return; }
+      if (traslado.es_de_un_pedido) { fallo('Es de un pedido', 'Esa caja es de un pedido de Bodega. Se recibe en Pedidos.'); return; }
       abrirCaja(traslado, codigo);
     }, 'plain-text', '', 'number-pad');
   };
@@ -229,7 +229,7 @@ export default function Traslados() {
   const opciones = [
     decide && { id: 'piden', label: 'Te piden' },
     { id: 'recibir', label: 'Recibir' },
-    { id: 'envios', label: 'Envíos' },
+    { id: 'envios', label: 'A otra sucursal' },
     { id: 'historial', label: 'Historial' },
   ].filter(Boolean);
 
@@ -243,7 +243,7 @@ export default function Traslados() {
     if (!todas || salaFiltro) return null;
     const mapa = new Map();
     for (const f of historialVisto) {
-      const sala = f.metadata?.origen_branch_name || 'Sin sala';
+      const sala = f.metadata?.origen_branch_name || 'Sin sucursal';
       if (!mapa.has(sala)) mapa.set(sala, []);
       mapa.get(sala).push(f);
     }
@@ -274,15 +274,15 @@ export default function Traslados() {
   // al sistema de origen. Si una falla, las anteriores ya quedaron; esa se
   // reintenta desde su tarjeta.
   const recibirGrupo = (filas) => Alert.alert(`Ya llegaron las ${filas.length} completas`,
-    'Se reciben todas sin faltantes. Si a una le faltó algo, recíbela desde su propia tarjeta: ahí se dice qué no venía.', [
+    'Se reciben todas sin faltantes. Si a una le faltó algo, recíbela desde su tarjeta. Ahí anotas qué no venía.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Recibir todas', onPress: async () => {
         let hechas = 0;
         for (const f of filas) {
-          trabajando(`Recibiendo ${f.metadata?.origen_branch_name ?? 'la otra sala'}… (${hechas} de ${filas.length})`);
+          trabajando(`Recibiendo ${f.metadata?.origen_branch_name ?? 'la otra sucursal'}… (${hechas} de ${filas.length})`);
           const r = await recibirTraslado(f.id);
           if (!r?.ok && r?.codigo !== 'YA_RECIBIDO') {
-            fallo('No entraron todas', `Entraron ${hechas} de ${filas.length}. ${f.metadata?.origen_branch_name ?? 'Una sala'}: ${r?.error ?? 'no se pudo recibir'}. Vuelve a intentar sólo esa desde su tarjeta.`);
+            fallo('No entraron todas', `Entraron ${hechas} de ${filas.length}. ${f.metadata?.origen_branch_name ?? 'Una sucursal'}: ${r?.error ?? 'no se pudo recibir'}. Intenta de nuevo solo esa, desde su tarjeta.`);
             break;
           }
           hechas += 1;
@@ -310,14 +310,14 @@ export default function Traslados() {
   const escanear = () => { Haptics.selectionAsync().catch(() => {}); setAviso(null); setEscaneando(true); };
   // La sala de esta pestaña: sólo en Recibir y en Historial, y sólo con alcance de todas.
   const opcionesDeSala = (sucursales || []).filter((b) => b.type === 'FARMACIA' || b.type === 'BODEGA').map((b) => ({ id: String(b.id), label: b.name }));
-  const grupoDeSala = (activa, poner) => (todas ? [{ id: 'sala', titulo: 'Sala', activa: activa ?? '', porDefecto: '', onCambiar: (v) => poner(v || null), opciones: [{ id: '', label: 'Todas las salas' }, ...opcionesDeSala] }] : []);
+  const grupoDeSala = (activa, poner) => (todas ? [{ id: 'sala', titulo: 'Sucursal', activa: activa ?? '', porDefecto: '', onCambiar: (v) => poner(v || null), opciones: [{ id: '', label: 'Todas las sucursales' }, ...opcionesDeSala] }] : []);
   const filtrosDeVista = vista === 'recibir' ? grupoDeSala(salaRecibir, setSalaRecibir) : vista === 'historial' ? [...grupoDeSala(salaFiltro, setSalaFiltro), { id: 'desenlace', titulo: 'Desenlace', activa: desenlace, porDefecto: 'todos', onCambiar: setDesenlace,
     opciones: [{ id: 'todos', label: 'Todos' }, { id: 'APPROVED', label: 'Recibidos' }, { id: 'REJECTED', label: 'Rechazados' }] }] : [];
   // El «+» de la barra: la barra admite una sola acción junto al filtro.
   const abrirNuevo = () => {
     Haptics.selectionAsync().catch(() => {});
     const ops = [
-      [enLaSolicitud ? `Seguir la solicitud (${enLaSolicitud})` : 'Pedir a otra sala', () => router.push('/pedir-traslado')],
+      [enLaSolicitud ? `Seguir la solicitud (${enLaSolicitud})` : 'Pedir a otra sucursal', () => router.push('/pedir-traslado')],
       ['Recibir una caja', escanear],
       ['Recibir escribiendo el número', escribirNumero],
       ...(hasPermission('traslados', 'can_edit') ? [['Enviar producto', () => router.push('/enviar-producto')]] : []),
@@ -334,7 +334,7 @@ export default function Traslados() {
         ...BARRA_FIJA,
         title: 'Traslados',
         headerSearchBarOptions: {
-          placeholder: 'Producto, sala o persona…',
+          placeholder: 'Producto, sucursal o persona…',
           hideWhenScrolling: true,
           onChangeText: (e) => setBusqueda(e.nativeEvent.text),
           onCancelButtonPress: () => setBusqueda(''),
@@ -352,7 +352,7 @@ export default function Traslados() {
           piden.length ? piden.map((f) => (
             <TarjetaTraslado key={f.id} fila={f} persona={persona(f.employee_id)} onPress={() => abrir(f)}
               estado={{ texto: 'Por contestar', color: MARCA.ambar }} />
-          )) : datos ? <Vacio titulo="Nadie te está pidiendo nada" detalle="Lo que otra sala le pida a la tuya aparece aquí." /> : null
+          )) : datos ? <Vacio titulo="Nadie te está pidiendo nada" detalle="Lo que otra sucursal le pida a la tuya aparece aquí." /> : null
         ) : null}
 
         {vista === 'recibir' ? (
@@ -368,7 +368,7 @@ export default function Traslados() {
                   const sinResponder = g?.sinResponder ?? 0;
                   return (
                     <View key={grupoId} style={{ gap: 10 }}>
-                      <Titulo texto={`Lo pediste a ${salas} salas`} />
+                      <Titulo texto={`Lo pediste a ${salas} sucursales`} />
                       <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 32, marginTop: -6 }}>
                         {(sinResponder > 0 ? `${salas - sinResponder} de ${salas} respondieron · ${sinResponder} sin responder` : `Las ${salas} respondieron`)
                           + (g?.rechazadas > 0 ? ` · ${g.rechazadas} no pudo mandarlo` : '')}
@@ -377,7 +377,7 @@ export default function Traslados() {
                       {puedeRecibir && sinResponder === 0 ? (
                         <View style={{ marginHorizontal: 16, gap: 4 }}>
                           <BotonGrande texto={`Ya llegaron las ${filas.length} completas`} color={MARCA.verde} onPress={() => recibirGrupo(filas)} />
-                          <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>Si a una le faltó algo, recíbela desde su propia tarjeta: ahí se dice qué no venía.</Text>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>Si a una le faltó algo, recíbela desde su tarjeta. Ahí anotas qué no venía.</Text>
                         </View>
                       ) : null}
                     </View>
@@ -386,7 +386,7 @@ export default function Traslados() {
                 {bloques.grupos.length && bloques.sueltas.length ? <Titulo texto="Las demás" n={bloques.sueltas.length} /> : null}
                 {bloques.sueltas.map(tarjetaRecibir)}
               </>
-            ) : datos ? <Vacio titulo="Nada en camino" detalle="Cuando una sala despache lo que pediste, aparece aquí. También puedes escanear la caja." /> : null}
+            ) : datos ? <Vacio titulo="Nada en camino" detalle="Cuando una sucursal despache lo que pediste, aparece aquí. También puedes escanear la caja." /> : null}
           </>
         ) : null}
 
@@ -400,7 +400,7 @@ export default function Traslados() {
                 {lista.map((e) => <TarjetaEnvio key={e.id} envio={e} color={s.color} onPress={() => router.push({ pathname: '/envio/[id]', params: { id: String(e.id) } })} />)}
               </View>
             );
-          }) : datos ? <Vacio titulo="Sin envíos en curso" detalle="Lo que una sala manda sin que se lo pidan aparece aquí." /> : null
+          }) : datos ? <Vacio titulo="Nada en curso" detalle="Lo que una sucursal manda sin que se lo pidan aparece aquí." /> : null
         ) : null}
 
         {vista === 'historial' ? (
@@ -424,7 +424,7 @@ export default function Traslados() {
             ) : <Vacio titulo="Nada esa semana" detalle="Usa las flechas para mirar otra semana." />}
             {desenlace === 'todos' && enviosVistos.length ? (
               <>
-                <Titulo texto={enviosIncompletos ? 'Envíos cerrados · pueden faltar' : 'Envíos cerrados'} n={enviosVistos.length} />
+                <Titulo texto={enviosIncompletos ? 'Traslados a otra sucursal cerrados · pueden faltar' : 'Traslados a otra sucursal cerrados'} n={enviosVistos.length} />
                 {enviosVistos.map((e) => {
                   const devueltas = (e.lineas || []).filter((l) => String(l.estado).startsWith('devuelta')).length;
                   return <TarjetaEnvio key={e.id} envio={e} color={devueltas ? MARCA.rojo : MARCA.verde}

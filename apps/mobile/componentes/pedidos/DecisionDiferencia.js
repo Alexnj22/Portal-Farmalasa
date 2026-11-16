@@ -30,9 +30,9 @@ import Fotos, { subirFotos } from '../formulario/Fotos';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 
-const ESPERA = { sala: 'Esperando que la sala decida', bodega: 'Esperando la respuesta de bodega', supervision: 'Lo está viendo supervisión' };
-const TITULO = { propuesta: 'La sala propone', contrapropuesta: 'Bodega propone la otra', escalada: 'Sin acuerdo', acordada: 'Acordado', confirmada: 'Resuelto' };
-const ESTADO_DEV = { aceptada: 'Acordada, falta sacarlo', enviada: 'Salió, falta que entre', error: 'No salió', recibida: 'Entró', rechazada: 'Rechazada', solicitada: 'Pedida (circuito anterior)' };
+const ESPERA = { sala: 'Esperando que la sucursal decida', bodega: 'Esperando la respuesta de bodega', supervision: 'Lo está viendo un supervisor o administrador' };
+const TITULO = { propuesta: 'La sucursal propone', contrapropuesta: 'Bodega propone la otra', escalada: 'Sin acuerdo', acordada: 'Acordado', confirmada: 'Resuelto' };
+const ESTADO_DEV = { aceptada: 'Acordada, falta sacarlo', enviada: 'Salió, falta que entre', error: 'No salió', recibida: 'Entró', rechazada: 'Rechazada', solicitada: 'Pedida (pantalla anterior)' };
 
 function Boton({ texto, color = MARCA.azulClaro, lleno, onPress, deshabilitado }) {
   return (
@@ -88,9 +88,9 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
       anotar(`PEDIDO_DIFERENCIA_${String(accion).toUpperCase()}`, { opcion: data?.opcion ?? tipo, estado: data?.estado });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       if (movimiento) {
-        if (movimiento.ok) listo(movimiento.aLaSala ? 'Salió de bodega' : 'Salió de la sala', movimiento.aLaSala ? 'Falta confirmar la entrada en la sala.' : 'Falta que bodega confirme la entrada.');
+        if (movimiento.ok) listo(movimiento.aLaSala ? 'Salió de bodega' : 'Salió de la sucursal', movimiento.aLaSala ? 'Falta confirmar la entrada en la sucursal.' : 'Falta que bodega confirme la entrada.');
         else fallo('Quedaron de acuerdo, pero no salió', movimiento.error ?? 'Se puede reintentar.');
-      } else if (data?.estado === 'escalada') listo('Pasó a supervisión', 'No hubo acuerdo. Supervisión decide con qué salida se queda.');
+      } else if (data?.estado === 'escalada') listo('Pasó a un supervisor o administrador', 'No hubo acuerdo. Lo decide un supervisor o administrador.');
       else listo('Listo', '');
       setNota(''); setFotos([]);
       onCambio?.();
@@ -134,7 +134,7 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
     }
   };
 
-  const confirmarLlegada = () => Alert.alert('Confirmar llegada', 'Con el producto en la mano. No sale ningún traslado.', [
+  const confirmarLlegada = () => Alert.alert('Confirmar llegada', 'Confírmalo con el producto en la mano. No sale ningún traslado.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Confirmar', onPress: async () => {
       setOcupado(true);
@@ -148,7 +148,7 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
     } },
   ]);
 
-  const rechazar = () => Alert.prompt('No estoy de acuerdo', 'Por qué no (lo lee supervisión).', [
+  const rechazar = () => Alert.prompt('No estoy de acuerdo', 'Por qué no (lo lee un supervisor o administrador).', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Rechazar', style: 'destructive', onPress: (m) => { if (String(m ?? '').trim()) decidir('rechazar', null, String(m).trim()); else fallo('Falta el motivo', 'Escríbelo para poder rechazar.'); } },
   ], 'plain-text');
@@ -163,7 +163,7 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
       <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.6 }}>CÓMO SE ARREGLA</Text>
         <Segmentos margen={0} opciones={opcionesSeg} activa={elegida} onCambiar={setTocada} />
-        {sel ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}><Text style={{ fontWeight: '700', color: colorSistema.texto }}>{sel.rotulo}</Text>{` — ${ayudaPara(sel, { esSala, esSupervision }) ?? ''}`}</Text> : null}
+        {sel ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}><Text style={{ fontWeight: '700', color: colorSistema.texto }}>{sel.rotulo}</Text>{`. ${ayudaPara(sel, { esSala, esSupervision }) ?? ''}`}</Text> : null}
         {necesitaFoto(elegida) ? <Fotos fotos={fotos} onCambiar={setFotos} max={3} /> : null}
         {pideCaja(elegida) ? campoCaja : null}
         <Campo multiline={false} value={nota} onChangeText={setNota} placeholder="Nota (opcional)" />
@@ -204,7 +204,7 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
       {estado === 'acordada' && op?.mueve === 'ninguno' ? (
         (op.cierra_con === 'llegada_sala' ? esSala : !esSala) || esSupervision
           ? <Boton texto="Confirmar llegada" lleno color={MARCA.verde} deshabilitado={ocupado} onPress={confirmarLlegada} />
-          : <Espera texto={op.cierra_con === 'llegada_sala' ? 'Falta que la sala confirme que llegó' : 'Falta que bodega confirme que lo tiene'} />
+          : <Espera texto={op.cierra_con === 'llegada_sala' ? 'Falta que la sucursal confirme que llegó' : 'Falta que bodega confirme que lo tiene'} />
       ) : null}
 
       {dev ? (
@@ -213,15 +213,15 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
           {dev.error_msg ? <Text style={{ color: MARCA.rojo, fontSize: 12 }}>{dev.error_msg}</Text> : null}
           {(dev.estado === 'aceptada' || (dev.estado === 'error' && !dev.id_traslado && !dev.detalle?.revisar_a_mano)) && !esSala ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              <Boton texto={dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala') : `Pasar existencias a ${aLaSala ? 'la sala' : 'bodega'}`} lleno color={MARCA.violetaClaro} deshabilitado={ocupado}
-                onPress={() => Alert.alert(dev.viaja ? 'Mover el producto' : 'Pasar existencias', dev.viaja ? 'Se descuenta de donde sale para mandarlo.' : `El producto ya está donde debe: se descuentan ${dev.cantidad} de ${aLaSala ? 'bodega' : 'la sala'} y se suman en ${aLaSala ? 'la sala' : 'bodega'}.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Mover', onPress: () => conDevolucion(moverDevoluciones, aLaSala ? 'Salió de bodega' : 'Salió de la sala', 'Falta confirmar la entrada.', 'PEDIDO_DEVOLUCION_MOVIDA') }])} />
+              <Boton texto={dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sucursal') : `Pasar la existencia a ${aLaSala ? 'la sucursal' : 'bodega'}`} lleno color={MARCA.violetaClaro} deshabilitado={ocupado}
+                onPress={() => Alert.alert(dev.viaja ? 'Mover el producto' : 'Pasar la existencia', dev.viaja ? 'Se descuenta de donde sale para mandarlo.' : `El producto ya está donde debe. Se descuentan ${dev.cantidad} de ${aLaSala ? 'bodega' : 'la sucursal'} y se suman en ${aLaSala ? 'la sucursal' : 'bodega'}.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Mover', onPress: () => conDevolucion(moverDevoluciones, aLaSala ? 'Salió de bodega' : 'Salió de la sucursal', 'Falta confirmar la entrada.', 'PEDIDO_DEVOLUCION_MOVIDA') }])} />
             </View>
           ) : null}
           {(dev.estado === 'enviada' || dev.estado === 'error') && !esSala && dev.id_traslado ? (
             <Boton texto="Confirmar entrada" lleno color={MARCA.ambar} deshabilitado={ocupado}
-              onPress={() => Alert.alert('Confirmar entrada', dev.viaja ? 'Confírmalo cuando tengas el producto en la mano.' : 'Como no viaja nada, se puede confirmar ya.', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: () => conDevolucion(recibirDevoluciones, 'Entró', 'La diferencia queda cerrada.', 'PEDIDO_DEVOLUCION_RECIBIDA') }])} />
+              onPress={() => Alert.alert('Confirmar entrada', dev.viaja ? 'Confírmalo cuando tengas el producto en la mano.' : 'Como no viaja nada, puedes confirmarlo ya.', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: () => conDevolucion(recibirDevoluciones, 'Entró', 'La diferencia queda cerrada.', 'PEDIDO_DEVOLUCION_RECIBIDA') }])} />
           ) : null}
-          {dev.estado === 'error' && dev.detalle?.revisar_a_mano ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`Hay que revisarla a mano antes de volver a intentar — busca «${dev.clave}».`}</Text> : null}
+          {dev.estado === 'error' && dev.detalle?.revisar_a_mano ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '700' }}>{`Hay que revisarla a mano antes de intentar de nuevo. Busca «${dev.clave}».`}</Text> : null}
         </View>
       ) : null}
 

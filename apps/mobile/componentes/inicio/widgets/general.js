@@ -26,7 +26,7 @@ function Pedido({ p, onListo, primero }) {
     if (!r?.ok) { fallo('No se pudo guardar', r?.error || 'Intenta de nuevo.'); return; }
     // Se informa lo que pasó de verdad: el reintento puede volver a rechazarse.
     if (r.documento?.entro) listo('Listo', `${p.correlativo || 'La venta'} ya quedó completa.`);
-    else listo('Correo guardado', r.documento?.motivo ? `El documento sigue pendiente: ${r.documento.motivo}` : 'El documento se vuelve a intentar esta noche.');
+    else listo('Correo guardado', r.documento?.motivo ? `La factura sigue pendiente: ${r.documento.motivo}` : 'La factura se vuelve a enviar esta noche.');
     onListo();
   };
   return (

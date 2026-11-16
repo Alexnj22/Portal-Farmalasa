@@ -24,7 +24,7 @@ import { MAYUSCULAS } from '../../../tema/mayusculas';
 const AJUSTES = [
   { permiso: 'dash_annulment_req', ruta: '/nueva/facturas', icono: 'Receipt', titulo: 'Anular o cambiar una factura', detalle: 'Anulación, forma de pago, datos del cliente', color: MARCA.rojo },
   { permiso: 'dash_inv_movement', ruta: '/nueva/ajuste', icono: 'PackageMinus', titulo: 'Ajuste de inventario', detalle: 'Vencidos, dañados, faltantes o sobrantes', color: MARCA.ambar },
-  { permiso: 'dash_minmax_req', ruta: '/nueva/minmax', icono: 'BarChart2', titulo: 'Ajuste de Mín·Máx', detalle: 'Cambiar el par de un producto en la sala', get color() { return MARCA.azul; } },
+  { permiso: 'dash_minmax_req', ruta: '/nueva/minmax', icono: 'BarChart2', titulo: 'Ajuste de Mín/Máx', detalle: 'Cambiar el par de un producto en la sucursal', get color() { return MARCA.azul; } },
 ];
 export const PERMISOS_DE_AJUSTE = AJUSTES.map((a) => a.permiso);
 
@@ -74,7 +74,7 @@ export function ConsultaInventario({ ctx }) {
   const pedir = (f) => router.push({ pathname: '/pedir-traslado', params: { producto: String(f.erp_product_id), descripcion: f.descripcion } });
   return (
     <Widget titulo="Consulta de inventario" icono="Package" color={MARCA.azul} onAbrir={() => router.navigate('/buscar')} accion="Buscar">
-      <Renglon primero titulo="Busca un producto o su principio activo" detalle="Existencias por sala y por lote"
+      <Renglon primero titulo="Busca un producto o su principio activo" detalle="Existencia por sucursal y por lote"
         izquierda={<Chip icono="Search" color={MARCA.azul} tamano={30} />} onPress={() => router.navigate('/buscar')} />
       {miErp && cargando && !dato ? <Esqueleto lineas={2} /> : null}
       {faltantes.length ? (
@@ -110,12 +110,12 @@ export function Traslados({ ctx }) {
   });
   const d = dato || { porContestar: 0, porRecibir: 0 };
   return (
-    <Widget titulo="Traslados entre salas" icono="ArrowLeftRight" color={MARCA.azul} cuenta={d.porContestar} onAbrir={() => ctx.abrir('/traslados')}>
+    <Widget titulo="Traslados entre sucursales" icono="ArrowLeftRight" color={MARCA.azul} cuenta={d.porContestar} onAbrir={() => ctx.abrir('/traslados')}>
       {cargando && !dato ? <Esqueleto lineas={2} /> : (
         <>
-          <Renglon primero titulo="Por contestar" detalle="Lo que otra sala pide a la tuya" onPress={() => ctx.abrir('/traslados')}
+          <Renglon primero titulo="Por contestar" detalle="Lo que otra sucursal pide a la tuya" onPress={() => ctx.abrir('/traslados')}
             izquierda={<Chip icono="ClipboardList" color={MARCA.ambar} tamano={30} />} derecha={<Cuenta n={d.porContestar} color={MARCA.ambar} />} />
-          <Renglon titulo="En camino" detalle="Lo que viene para tu sala" onPress={() => ctx.abrir('/traslados')}
+          <Renglon titulo="En camino" detalle="Lo que viene para tu sucursal" onPress={() => ctx.abrir('/traslados')}
             izquierda={<Chip icono="Truck" color={MARCA.azul} tamano={30} />} derecha={d.porRecibir ? `${d.porRecibir}` : '—'} />
         </>
       )}
@@ -134,14 +134,14 @@ export function Bitacoras({ ctx }) {
   const ronda = p.abiertas + p.vencidas >= 2;
   const ir = () => ctx.abrir(ronda ? '/bitacoras?ronda=1' : '/bitacoras');
   return (
-    <Widget titulo="Bitácoras de mi sala" icono="Thermometer" color={MARCA.rojo} cuenta={p.vencidas} onAbrir={ir} accion={ronda ? 'Pasar la ronda' : 'Anotar'}>
+    <Widget titulo="Bitácoras de mi sucursal" icono="Thermometer" color={MARCA.rojo} cuenta={p.vencidas} onAbrir={ir} accion={ronda ? 'Pasar la ronda' : 'Anotar'}>
       {cargando && !dato ? <Esqueleto lineas={2} /> : (
         <View style={{ gap: 10 }}>
           {p.vencidas ? <Renglon primero titulo={`${p.vencidas} lectura${p.vencidas > 1 ? 's' : ''} vencida${p.vencidas > 1 ? 's' : ''}`} onPress={ir}
             izquierda={<Chip icono="AlertTriangle" color={MARCA.rojo} tamano={30} />} /> : null}
           {p.abiertas ? <Renglon primero={!p.vencidas} titulo={`${p.abiertas} por anotar ahora`} onPress={ir}
             izquierda={<Chip icono="Clock" color={MARCA.ambar} tamano={30} />} /> : null}
-          {!p.vencidas && !p.abiertas ? <Vacio texto={p.total ? `Al día: ${p.hechas} de ${p.total}` : 'Sin pendientes'} bien /> : null}
+          {!p.vencidas && !p.abiertas ? <Vacio texto={p.total ? `Al día. ${p.hechas} de ${p.total}` : 'Sin pendientes'} bien /> : null}
           {p.total ? <Avance parte={p.hechas} total={p.total} color={MARCA.verde} /> : null}
           {p.desvios ? <Vacio texto={`${p.desvios} fuera de rango hoy`} /> : null}
         </View>

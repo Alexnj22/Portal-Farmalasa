@@ -29,7 +29,7 @@ function Fila({ row, psp, onGuardado }) {
   const error = validarMinMax(val);
   const cambio = val.min !== original.min || val.max !== original.max;
 
-  const guardar = (min, max, titulo) => Alert.alert(titulo, `${row.products?.nombre ?? row.product_name ?? 'Producto'}: MIN ${original.min} / MAX ${original.max} → MIN ${min} / MAX ${max}.`, [
+  const guardar = (min, max, titulo) => Alert.alert(titulo, `${row.products?.nombre ?? row.product_name ?? 'Producto'}: Mín ${original.min} / Máx ${original.max} → Mín ${min} / Máx ${max}.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Guardar', onPress: async () => {
       setOcupado(true);
@@ -40,7 +40,7 @@ function Fila({ row, psp, onGuardado }) {
         });
         if (e) throw e;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        listo('MIN·MAX guardado', `MIN ${min} · MAX ${max}`);
+        listo('Mín/Máx guardado', `Mín ${min} · Máx ${max}`);
         onGuardado(row, min, max);
       } catch (e) {
         setVal(original);
@@ -56,16 +56,16 @@ function Fila({ row, psp, onGuardado }) {
       <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{row.products?.nombre ?? row.product_name}</Text>
       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Ventas 6 meses: ${psp === undefined ? '—' : `${psp?.units_sold_6m ?? 0} und.`}`}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700' }}>MIN</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700' }}>Mín</Text>
         <View style={{ width: 70 }}><Campo multiline={false} keyboardType="number-pad" editable={!ocupado} value={val.min} onChangeText={(t) => setVal((v) => ({ ...v, min: t.replace(/\D/g, '') }))} style={{ textAlign: 'center' }} /></View>
-        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700' }}>MAX</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700' }}>Máx</Text>
         <View style={{ width: 70 }}><Campo multiline={false} keyboardType="number-pad" editable={!ocupado} value={val.max} onChangeText={(t) => setVal((v) => ({ ...v, max: t.replace(/\D/g, '') }))} style={{ textAlign: 'center' }} /></View>
       </View>
       {cambio && error ? <Text style={{ color: MARCA.rojo, fontSize: 12 }}>{error}</Text> : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
-        <Accion texto="Guardar" color={MARCA.verde} deshabilitado={ocupado || !cambio || !!error} onPress={() => guardar(parseInt(val.min, 10), parseInt(val.max, 10), 'Guardar MIN·MAX')} />
+        <Accion texto="Guardar" color={MARCA.verde} deshabilitado={ocupado || !cambio || !!error} onPress={() => guardar(parseInt(val.min, 10), parseInt(val.max, 10), 'Guardar Mín/Máx')} />
         <Accion texto="Restaurar" deshabilitado={ocupado || !cambio} onPress={() => setVal(original)} />
-        <Accion texto="0 / 0" color={MARCA.rojo} deshabilitado={ocupado} onPress={() => guardar(0, 0, 'Dejar en 0 / 0 (sale del próximo pedido)')} />
+        <Accion texto="0 / 0" color={MARCA.rojo} deshabilitado={ocupado} onPress={() => guardar(0, 0, '¿Dejar el Mín/Máx en 0 / 0? No entra en el próximo pedido.')} />
       </View>
     </View>
   );
@@ -99,7 +99,7 @@ export default function RevisionMinMax({ items }) {
   const alGuardar = (row, min, max) => setPsp((m) => ({ ...m, [clave(row)]: { ...(m?.[clave(row)] ?? {}), min_units: min, max_units: max, manual_min: null, manual_max: null } }));
   return (
     <View style={{ gap: 4 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>No se despacharon por la regla o el stock de bodega: ajusta su MIN·MAX en esta sala.</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>No se despacharon por la regla o por la existencia de bodega. Ajusta su Mín/Máx en esta sucursal.</Text>
       {psp == null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Cargando…</Text>
         : revisar.map((r) => <Fila key={`${r.id}-${psp[clave(r)]?.min_units ?? ''}-${psp[clave(r)]?.max_units ?? ''}`} row={r} psp={psp[clave(r)]} onGuardado={alGuardar} />)}
     </View>

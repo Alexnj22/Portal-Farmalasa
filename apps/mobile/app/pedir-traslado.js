@@ -42,13 +42,13 @@ function Buscador({ onElegir, enLaSolicitud, onRevisar }) {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }}
       contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-      {enLaSolicitud ? <BotonGrande texto={`En la solicitud · ${enLaSolicitud} — revisar y enviar`} borde onPress={onRevisar} /> : null}
+      {enLaSolicitud ? <BotonGrande texto={`En la solicitud · ${enLaSolicitud} · revisar y enviar`} borde onPress={onRevisar} /> : null}
       <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Busca el producto o su principio activo" autoFocus autoCorrect={false} returnKeyType="search" />
       {corto ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Escribe al menos ${MIN_LETRAS_BUSQUEDA} letras.`}</Text> : null}
       {estado.cargando ? <Indicador /> : null}
       {estado.error ? <Aviso tono="freno" texto="No se pudo buscar. Intenta de nuevo." /> : null}
       {!estado.cargando && aplicado.length >= MIN_LETRAS_BUSQUEDA && !estado.productos.length && !estado.error
-        ? <Vacio titulo="Ninguna sala tiene un producto con ese nombre." /> : null}
+        ? <Vacio titulo="Ninguna sucursal tiene un producto con ese nombre." /> : null}
       {estado.productos.map((item) => (
         <Pressable key={String(item.erp_product_id ?? item.descripcion)} accessibilityRole="button"
           onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(item); }}
@@ -82,17 +82,17 @@ export default function PedirTraslado() {
 
   useEffect(() => {
     if (!listo) return;
-    avisoListo('Solicitud enviada', resumen?.solicitudes > 1 ? `${resumen.solicitudes} solicitudes: ${resumen.salas.join(', ')}` : `A ${resumen?.salas?.[0] ?? 'la sala'}`);
+    avisoListo('Solicitud enviada', resumen?.solicitudes > 1 ? `${resumen.solicitudes} solicitudes: ${resumen.salas.join(', ')}` : `A ${resumen?.salas?.[0] ?? 'la sucursal'}`);
   }, [listo, resumen]);
 
-  const pantalla = <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedir a otra sala' }} />;
+  const pantalla = <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedir a otra sucursal' }} />;
 
   if (!miErp) {
     return (
       <>
         {pantalla}
         <ScrollView contentContainerStyle={{ padding: 16 }} contentInsetAdjustmentBehavior="automatic">
-          <Aviso tono="cuidado" texto="Los traslados los pide una sala. Tu ficha no está asignada a ninguna." />
+          <Aviso tono="cuidado" texto="Los traslados los pide una sucursal. No tienes ninguna asignada." />
         </ScrollView>
       </>
     );
@@ -125,10 +125,10 @@ export default function PedirTraslado() {
             {esAntibiotico ? <Pildora texto="Bajo Receta" color={MARCA.ambar} /> : null}
           </Seccion>
 
-          <Seccion titulo="De qué sala">
+          <Seccion titulo="De qué sucursal">
             {!donde.length ? <Indicador /> : (
               <Opciones valor={String(origenId)} onCambiar={setOrigenId}
-                opciones={donde.map((d) => ({ id: claveOrigen(d), label: `${d.sala} — ${d.unidades}`, detalle: esAntibiotico && d.vence ? `Vence ${fmtVence(d.vence)}` : null }))} />
+                opciones={donde.map((d) => ({ id: claveOrigen(d), label: `${d.sala} · ${d.unidades}`, detalle: esAntibiotico && d.vence ? `Vence ${fmtVence(d.vence)}` : null }))} />
             )}
           </Seccion>
 

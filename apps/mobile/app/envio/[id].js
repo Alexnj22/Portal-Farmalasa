@@ -82,8 +82,8 @@ export default function Envio() {
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  if (envio === undefined) return <PantallaSinDato titulo="Envío" cargando />;
-  if (!envio) return <PantallaSinDato titulo="Envío" texto="No encontramos este envío, o no es de tu sala." />;
+  if (envio === undefined) return <PantallaSinDato titulo="Traslado" cargando />;
+  if (!envio) return <PantallaSinDato titulo="Traslado" texto="No encontramos este traslado, o no es de tu sucursal." />;
 
   const todas = getScope?.('traslados') === 'ALL';
   const momento = cerrado ? 'cerrado' : momentoDelEnvio(envio, todas ? null : salaDelUsuario(user));
@@ -110,7 +110,7 @@ export default function Envio() {
     if (r.fallos?.length) { fallo('Algunos productos no se pudieron mover', r.fallos.map((f) => `${f.producto}: ${f.error}`).join('\n')); cargar(); return; }
     const errSobrante = r.sobrante_error ?? (r.sobrante?.ok === false ? r.sobrante.error : null);
     if (errSobrante) { fallo('Guardado, pero lo de más no pasó', errSobrante); cargar(); return; }
-    terminar('Listo', [r.cerrado ? 'El envío quedó cerrado.' : '', r.sobrante?.ok ? 'Lo que vino de más ya está en tu inventario.' : ''].filter(Boolean).join(' ') || undefined);
+    terminar('Listo', [r.cerrado ? 'El traslado quedó cerrado.' : '', r.sobrante?.ok ? 'Lo que vino de más ya está en tu inventario.' : ''].filter(Boolean).join(' ') || undefined);
   };
 
   const aceptarTodo = () => confirmar(porDecidir.map((l) => ({ i: l.posicion, decision: DECISIONES_ENVIO.aceptar })));
@@ -136,7 +136,7 @@ export default function Envio() {
     const r = await cancelarEnvio(envio.id, motivoCancelar.trim());
     setOcupado(false);
     if (!r?.ok) { fallo('No se pudo cancelar', r?.error ?? 'Inténtalo de nuevo.'); return; }
-    terminar('Envío cancelado');
+    terminar('Traslado cancelado');
   };
 
   const salioAlgo = lineas.some((l) => l.enviado_at);
@@ -150,7 +150,7 @@ export default function Envio() {
     setOcupado(false);
     if (!r?.ok) { fallo('No se pudo cancelar', r?.error ?? 'Inténtalo de nuevo.'); return; }
     usePorDecidir.getState().quitar(`envio:${envio.id}`);
-    listo('Envío cancelado', 'Ármalo de nuevo con el vencimiento que trae la caja.');
+    listo('Traslado cancelado', 'Ármalo de nuevo con el vencimiento que trae la caja.');
     router.replace('/enviar-producto');
   };
   // Lo demás ya salió: no se cancela el envío, se le quita lo que quedó.
@@ -165,7 +165,7 @@ export default function Envio() {
   // El ticket de la bolsa, el mismo papel del portal, a la caja de quien lo pide.
   const imprimir = async () => {
     const papel = ticketDeEnvioParaImprimir({ envio, quien: user?.name ?? user?.nombre ?? null });
-    if (!papel) { fallo('Sin ticket', 'Este paquete no tiene número: se recibe buscándolo en la lista.'); return; }
+    if (!papel) { fallo('Sin ticket', 'Este paquete no tiene número. Se recibe buscándolo en la lista.'); return; }
     trabajando('Mandando a imprimir…');
     const r = await imprimirEnLaSala(papel.ticket, salaDelUsuario(user) ?? null, papel.titulo);
     if (r.ok) listo('Ticket', r.detalle); else fallo('No se pudo imprimir', r.detalle);
@@ -173,7 +173,7 @@ export default function Envio() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: envio.codigo_bolsa ? `Envío ${envio.codigo_bolsa}` : 'Envío' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: envio.codigo_bolsa ? `Traslado ${envio.codigo_bolsa}` : 'Traslado' }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
@@ -196,7 +196,7 @@ export default function Envio() {
             </View></Vidrio>
           ) : null}
 
-          {cerrado ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Este envío ya se cerró: así terminó cada producto.</Text> : null}
+          {cerrado ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Este traslado ya se cerró. Así terminó cada producto.</Text> : null}
           <Evidencia urls={envio.evidencia_urls} />
 
           {lineas.map((l) => {
@@ -284,7 +284,7 @@ export default function Envio() {
           {momento === 'por_despachar' ? (
             <View style={{ gap: 12 }}>
               {reenviables > 0 ? (
-                <BotonGrande texto={sinVence.length ? 'Enviar los otros productos' : 'Volver a intentar el envío'} color={MARCA.azul} deshabilitado={ocupado} onPress={reintentar} />
+                <BotonGrande texto={sinVence.length ? 'Enviar los otros productos' : 'Volver a intentar el traslado'} color={MARCA.azul} deshabilitado={ocupado} onPress={reintentar} />
               ) : null}
               {sinVence.length > 0 && reenviables === 0 && !salioAlgo ? (
                 <BotonGrande texto="Cancelar y armar de nuevo" color={MARCA.azul} deshabilitado={ocupado} onPress={cancelarYArmar} />
@@ -295,7 +295,7 @@ export default function Envio() {
               {!salioAlgo ? (
                 <>
                   <Campo value={motivoCancelar} onChangeText={setMotivoCancelar} placeholder="Para cancelar: ¿por qué? (obligatorio)" />
-                  <BotonGrande texto="Cancelar el envío" color={MARCA.rojo} borde deshabilitado={ocupado || !motivoCancelar.trim()} onPress={cancelar} />
+                  <BotonGrande texto="Cancelar el traslado" color={MARCA.rojo} borde deshabilitado={ocupado || !motivoCancelar.trim()} onPress={cancelar} />
                 </>
               ) : null}
             </View>

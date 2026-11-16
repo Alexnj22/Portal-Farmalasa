@@ -154,7 +154,7 @@ export default function MeterDinero() {
           : exigeDetalle && detalle.trim().length < 3 ? 'Escribe el detalle.'
             : esOtro && !detalleSuficiente(detalle) ? 'En «Otro» escribe de qué fue, con detalle.'
             : avisoOtro ? avisoOtro
-            : efectivoSinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué: quedará pendiente de autorización.'
+            : efectivoSinComprobante && motivoSinFoto.trim().length < 5 ? 'Sin foto del comprobante, explica por qué. Quedará pendiente de autorización.'
             : !noEfectivo && tipo.pide_boleta && !boleta.trim() ? 'Falta el número de boleta.'
               : !noEfectivo && problema?.bloquea ? problema.texto
                 : frenoMonto?.bloquea ? (frenoMonto.paso === 'OTRA_FOTO' ? 'Falta otra foto de la boleta.' : 'Falta comparar el monto con el papel.')
@@ -217,7 +217,7 @@ export default function MeterDinero() {
 
           {tipo && tipo.foto !== 'NO' && !noEfectivo ? (
             <Seccion titulo={tipo.foto === 'OBLIGATORIA' ? 'Foto de la boleta' : 'Foto de la boleta (opcional)'}
-              pie="La foto se lee sola: llena el monto, el número y el detalle.">
+              pie="La foto se lee sola y llena el monto, el número y el detalle.">
               <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} />
             </Seccion>
           ) : null}
@@ -251,7 +251,7 @@ export default function MeterDinero() {
               {tipo.pide_boleta && !noEfectivo ? <Campo multiline={false} value={boleta} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
               {tipo.pide_persona ? <Campo multiline={false} value={persona} onChangeText={setPersona} placeholder="Quién lo trae" autoCapitalize="words" /> : null}
               <Campo value={detalle} onChangeText={setDetalle}
-                placeholder={`Detalle${exigeDetalle ? '' : ' (opcional)'}${PISTA_DE_DETALLE[tipo.codigo] ? ` — p. ej. ${PISTA_DE_DETALLE[tipo.codigo]}` : ''}`} />
+                placeholder={`Detalle${exigeDetalle ? '' : ' (opcional)'}${PISTA_DE_DETALLE[tipo.codigo] ? ` (p. ej. ${PISTA_DE_DETALLE[tipo.codigo]})` : ''}`} />
               {efectivoSinComprobante ? (
                 <>
                   <Aviso tono="cuidado" texto="Sin foto del comprobante, este ingreso queda pendiente de autorización." />

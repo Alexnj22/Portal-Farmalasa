@@ -62,7 +62,7 @@ export default function WidgetVendedores({ selectedBranchId = null }) {
     useResumenWidget(loading ? null
         : error ? { texto: 'No se pudo cargar', tono: 'danger' }
         : !primero ? { texto: 'Sin ventas este mes' }
-        : miPuesto > 0 ? { valor: `#${miPuesto + 1}`, texto: `tu puesto de ${filas.length} · va primero ${shortEmployeeName(primero.nombre)}`, tono: 'brand' }
+        : miPuesto > 0 ? { valor: `#${miPuesto + 1}`, texto: `tu lugar de ${filas.length} · va primero ${shortEmployeeName(primero.nombre)}`, tono: 'brand' }
         : miPuesto === 0 ? { valor: '#1', texto: `vas primero de ${filas.length}`, tono: 'success' }
         : { valor: '#1', texto: shortEmployeeName(primero.nombre) });
 

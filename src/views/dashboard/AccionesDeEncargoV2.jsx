@@ -52,7 +52,7 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
                         <LiquidDatePicker value={fecha} onChange={setFecha} />
                     </div>
                     <PortalTextarea label="Motivo para el cliente (opcional)" rows={2} value={motivo} maxLength={200} onChange={(e) => setMotivo(e.target.value)}
-                        placeholder="Ej. El proveedor atrasó el envío" />
+                        placeholder="Ej. El proveedor atrasó la entrega" />
                 </div>
             </LiquidModal.Body>
             <PieDeModal izquierda={queFalta && !enviando
@@ -85,7 +85,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
                         options={[{ value: 'devolucion', label: 'Devolución completa' }, { value: 'saldo', label: 'Otro producto' }]} />
                     <Notice variant="info" compact icon={eleccion === 'devolucion' ? PackageX : Wallet}>
                         {eleccion === 'devolucion'
-                            ? `Se pide la devolución de ${formatMoney(encargo.anticipo)} en efectivo. Administración la autoriza o la niega; cuando esté autorizada, se entrega desde Reservas. Mientras tanto queda a su favor.`
+                            ? `Se pide la devolución de ${formatMoney(encargo.anticipo)} en efectivo. Un supervisor o administrador la autoriza o la niega. Cuando esté autorizada, se entrega desde Reservas. Mientras tanto, queda a su favor.`
                             : `Lo pagado queda a su favor por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal. No se deshace.`}
                     </Notice>
                     <PortalTextarea label="Nota (opcional)" rows={2} value={nota} maxLength={200} onChange={(e) => setNota(e.target.value)}

@@ -132,7 +132,7 @@ export function RegistrarLlamada({ reserva = null, encargo = null, titulo, telef
                     )}
                     <PortalTextarea name="respuestaAviso" label={exigeRespuesta ? 'Qué respondió' : 'Nota (opcional)'} rows={3} maxLength={300}
                         value={respuesta} onChange={(e) => setRespuesta(e.target.value)}
-                        placeholder={enPersona ? 'Ej. Estaba en la sala; paga el viernes' : contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó; se vuelve a llamar mañana'} />
+                        placeholder={enPersona ? 'Ej. Estaba en la sucursal. Paga el viernes' : contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó. Se le llama otra vez mañana'} />
                 </div>
             </LiquidModal.Body>
             <PieDeModal izquierda={queFalta && !enviando

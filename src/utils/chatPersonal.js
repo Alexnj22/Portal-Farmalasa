@@ -37,8 +37,8 @@ export function miReaccion(filas, miId) {
 /** El escalón más alto alcanzado, o `null`: `{ nivel: 'supervision'|'sala', at, texto }`. */
 export function escaladaDe(c) {
     if (!c) return null;
-    if (c.escalada_supervision_at) return { nivel: 'supervision', at: c.escalada_supervision_at, texto: 'Avisado a supervisión' };
-    if (c.escalada_sala_at) return { nivel: 'sala', at: c.escalada_sala_at, texto: 'Avisado a la sala' };
+    if (c.escalada_supervision_at) return { nivel: 'supervision', at: c.escalada_supervision_at, texto: 'Se avisó a supervisores y administradores' };
+    if (c.escalada_sala_at) return { nivel: 'sala', at: c.escalada_sala_at, texto: 'Se avisó a la sucursal' };
     return null;
 }
 

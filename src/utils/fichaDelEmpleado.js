@@ -222,8 +222,8 @@ export function motivoDelEnlace(form) {
     if (!form?.enlazar_con_id) return null;
     if (String(form._fichaCargada) === String(form.enlazar_con_id)) return null;
     return String(form._fichaFallo) === String(form.enlazar_con_id)
-        ? 'No se pudieron leer el sueldo, la cuenta y el código de la ficha que enlazas. Quítala y vuelve a elegirla.'
-        : 'Cargando los datos de la ficha que enlazas…';
+        ? 'No se pudieron leer el sueldo, la cuenta y el código de la persona que enlazas. Quítala y vuelve a elegirla.'
+        : 'Cargando los datos de la persona que enlazas…';
 }
 
 /**
@@ -232,7 +232,7 @@ export function motivoDelEnlace(form) {
  * Sólo al dar de alta: en edición la ficha ya es una.
  */
 export function fichasParaEnlazar(employees = [], branches = [], roles = []) {
-    const nombreDeSala = (id) => (branches || []).find(b => String(b.id) === String(id))?.name || 'Sin sala';
+    const nombreDeSala = (id) => (branches || []).find(b => String(b.id) === String(id))?.name || 'Sin sucursal';
     const nombreDeCargo = (id) => (roles || []).find(r => String(r.id) === String(id))?.name || 'Sin cargo';
     return [...(employees || [])]
         .filter(e => e.status !== 'INACTIVO')

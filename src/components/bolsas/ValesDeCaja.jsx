@@ -227,11 +227,7 @@ export default function ValesDeCaja({ sala = null }) {
                     <div>
                         <TituloDeSeccion nivel="tarjeta">Lo que la caja todavía cuenta</TituloDeSeccion>
                         <p className="text-body-sm text-content-2 mt-1">
-                            Un solo <b>vale de caja</b> por sala. El vale de papel y la etiqueta de
-                            cada bolsa ya salieron al sacar el dinero: esto es el movimiento que
-                            le falta al sistema. <b>Hacer el corte desde el portal lo escribe
-                            solo</b> — anotarlo aquí es para cuando el corte se vaya a hacer en la
-                            pantalla de la caja.
+                            Un solo <b>vale de caja</b> por sucursal. El vale de papel y la etiqueta de cada bolsa ya salieron. <b>Si haces el corte desde el portal, se anota solo.</b> Anótalo aquí solo si el corte se hace en la pantalla de la caja.
                         </p>
                     </div>
 

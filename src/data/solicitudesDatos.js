@@ -334,7 +334,7 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
     // una receta registrada. Un dato de SALUD. Buscar en menos sitios de los que
     // hay no devuelve un error: devuelve una respuesta falsa y con membrete.
     const donde = [
-        { clave: 'cliente', rotulo: 'ficha de cliente', tabla: 'customers',
+        { clave: 'cliente', rotulo: 'datos de cliente', tabla: 'customers',
           cols: 'id, erp_id, name, dui, nit, phone, email, direccion, fecha_nacimiento, acumula_puntos',
           docCols: ['dui', 'nit'], telCols: ['phone'], nombreCol: 'name' },
         // El personal NO se consulta con un `select`. `employees.dui` y
@@ -342,11 +342,11 @@ export async function buscarPersona({ numero, nombre, telefono } = {}) {
         // los NOMBRE falla entero —no devuelve la fila sin ellos—, incluido
         // filtrar por `dui`. Por eso va por función, que además exige el permiso
         // del módulo. Ver la migración `buscar_empleado_para_solicitud`.
-        { clave: 'empleado', rotulo: 'expediente de personal', rpc: 'buscar_empleado_para_solicitud' },
+        { clave: 'empleado', rotulo: 'datos de personal', rpc: 'buscar_empleado_para_solicitud' },
         { clave: 'practicante', rotulo: 'horas sociales o pasantía', tabla: 'practicantes',
           cols: 'id, first_names, last_names, dui, phone, birth_date, institucion_educativa, estado',
           docCols: ['dui'], telCols: ['phone'], nombreCol: 'last_names' },
-        { clave: 'proveedor', rotulo: 'ficha de proveedor', tabla: 'proveedores_maestro',
+        { clave: 'proveedor', rotulo: 'datos de proveedor', tabla: 'proveedores_maestro',
           cols: 'nit, nombre, dui, nrc, telefono, correo, direccion',
           docCols: ['dui', 'nit'], telCols: ['telefono'], nombreCol: 'nombre' },
         // Dato de SALUD. Va en la lista porque es el que más pesa si falta, no
@@ -459,7 +459,7 @@ export async function resumenDeCliente(customerId) {
 // misma hoja, las mismas validaciones y el mismo registro.
 
 export const VIAS_DE_RESPUESTA = [
-    { value: 'SALA',    label: 'En la sala de ventas' },
+    { value: 'SALA',    label: 'En la sucursal' },
     { value: 'CORREO',  label: 'Por correo electrónico' },
     { value: 'IMPRESA', label: 'Impresa' },
 ];
@@ -708,7 +708,7 @@ export const RUBROS_ANONIMIZACION = {
     },
     resguarda: {
         consentimientos: 'Consentimientos', solicitudes: 'Solicitudes de datos', reclamos: 'Reclamos',
-        encuestas: 'Encuestas', cambios_de_ficha: 'Historial de cambios de la ficha',
+        encuestas: 'Encuestas', cambios_de_ficha: 'Historial de cambios de los datos',
     },
     conserva: {
         facturas: 'Facturas', dispensaciones: 'Libro de recetas', creditos: 'Créditos',

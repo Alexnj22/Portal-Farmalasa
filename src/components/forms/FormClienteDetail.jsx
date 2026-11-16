@@ -86,7 +86,7 @@ function PanelActividad({ actividad, facturas, bitacora }) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Dato label="Facturas" value={(actividad?.facturas ?? 0).toLocaleString('es-SV')} />
                 <Dato label="Facturado" value={formatMoney(actividad?.total ?? 0)} />
-                <Dato label="CCF" value={(actividad?.facturas_ccf ?? 0).toLocaleString('es-SV')} />
+                <Dato label="Créditos fiscales" value={(actividad?.facturas_ccf ?? 0).toLocaleString('es-SV')} />
                 <Dato label="Anuladas"
                     value={(actividad?.facturas_anuladas ?? 0).toLocaleString('es-SV')}
                     valueCls={actividad?.facturas_anuladas ? 'text-danger-text' : 'text-content-2'} />
@@ -122,9 +122,9 @@ function PanelActividad({ actividad, facturas, bitacora }) {
                 </div>
             )}
 
-            <SectionHeader icon={History}>Cambios de la ficha</SectionHeader>
+            <SectionHeader icon={History}>Cambios en los datos</SectionHeader>
             {bitacora.length === 0 ? (
-                <p className="text-body-sm text-content-3">La ficha no se ha editado desde el portal.</p>
+                <p className="text-body-sm text-content-3">Los datos no se han editado desde el portal.</p>
             ) : (
                 <div className="space-y-1.5">
                     {bitacora.map((h, i) => (
@@ -187,7 +187,7 @@ const VARIANTES = {
 };
 const QUE_ES = {
     'Consumidor': 'Persona que compra. Lleva factura: basta su DUI (o su NIT), el teléfono y dónde vive.',
-    'Contribuyente': 'Inscrito en IVA: se le emite Crédito Fiscal. Pide NIT, NRC, giro, correo y dirección.',
+    'Contribuyente': 'Inscrito en IVA: se le emite crédito fiscal. Pide NIT, NRC, giro, correo y dirección.',
     'Gran Contribuyente': 'Como un contribuyente, y además es agente de retención: lleva su porcentaje.',
     'Contribuyente Exento': 'Inscrito en IVA pero exento del impuesto. Pide los mismos datos que un contribuyente.',
     'Extranjero': 'No tiene DUI: se identifica con su pasaporte.',
@@ -383,14 +383,14 @@ const FormClienteDetail = ({ formData }) => {
                 const toast = useToastStore.getState().showToast;
                 if (r.existente) {
                     toast('Ya estaba registrado',
-                        `${r.name} ya tenía ficha${r.por === 'nombre' ? ' con ese nombre' : ' con ese documento'}: se abrió ésa.`,
+                        `${r.name} ya estaba registrado${r.por === 'nombre' ? ' con ese nombre' : ' con ese documento'}. Se abrieron sus datos.`,
                         'info');
                 } else {
-                    toast('Cliente creado', 'Dándole su número de ficha…', 'success');
+                    toast('Cliente creado', 'Asignándole su número…', 'success');
                     // Como el empuje de una edición: la ficha ya está guardada, y
                     // si la caja no contesta se reintenta sola en unos minutos.
                     const a = await altaClienteEnCaja(r.id);
-                    if (a?.hecho) toast('Listo para facturar', `Ficha ${a.erp_id}.`, 'success');
+                    if (a?.hecho) toast('Listo para facturar', `Cliente número ${a.erp_id}.`, 'success');
                     else toast('Creado, falta el número',
                         a?.revisar ? 'Hay que revisarlo: aparece en «Sin número» de la lista de clientes.'
                             : 'Se le asigna solo en unos minutos.',
@@ -410,7 +410,7 @@ const FormClienteDetail = ({ formData }) => {
             await updateCustomerFiscal(id, cambios, { confirmarFiscal: confirmando }, { nombre: cliente?.name });
             const n = Object.keys(cambios).length;
             useToastStore.getState().showToast(
-                'Ficha actualizada',
+                'Datos actualizados',
                 `${n} campo${n !== 1 ? 's' : ''} guardado${n !== 1 ? 's' : ''}. Aplicando el cambio…`,
                 'success');
             setPideConfirmacion(false);
@@ -427,7 +427,7 @@ const FormClienteDetail = ({ formData }) => {
             const r = await pushClienteAlErp(id);
             if (r?.empujado) {
                 useToastStore.getState().showToast(
-                    'Cambio aplicado', `Se actualizó la ficha ${r.erp_id}.`, 'success');
+                    'Cambio aplicado', `Se actualizó el cliente número ${r.erp_id}.`, 'success');
             } else {
                 useToastStore.getState().showToast(
                     'Guardado, falta aplicarlo',
@@ -448,13 +448,13 @@ const FormClienteDetail = ({ formData }) => {
         }
     }, [id, cambios, cliente, formData, cargar, descartarBorrador, esNuevo, v.ok]);
 
-    if (cargando) return <LoadingState label="Cargando la ficha…" />;
+    if (cargando) return <LoadingState label="Cargando los datos…" />;
 
     // `!form`: una relectura que falló deja la ficha vieja pero sin formulario.
     if (!cliente || !form) {
         return (
             <Notice variant="danger" icon={AlertTriangle}>
-                {error || 'No se pudo cargar la ficha.'}
+                {error || 'No se pudieron cargar los datos.'}
             </Notice>
         );
     }
@@ -467,7 +467,7 @@ const FormClienteDetail = ({ formData }) => {
     // lo que la ficha realmente tiene, en vez de aparecer vacío y empujar a
     // reemplazarlo por otro distrito.
     if (form.distrito && !catalogoDistritos.includes(form.distrito)) {
-        distritoOpts.unshift({ value: form.distrito, label: `${form.distrito} (como está en la ficha)` });
+        distritoOpts.unshift({ value: form.distrito, label: `${form.distrito} (como está guardado)` });
     }
 
     return (
@@ -482,28 +482,26 @@ const FormClienteDetail = ({ formData }) => {
 
             {!esNuevo && <SegmentedControl
                 options={[
-                    { value: 'ficha', label: 'Ficha fiscal' },
+                    { value: 'ficha', label: 'Datos fiscales' },
                     { value: 'actividad', label: 'Actividad' },
                     // «Puntos» se fue a la vista Puntos (2026-09-25): ahí están
                     // el saldo, los movimientos y el código de acceso.
                 ]}
                 value={panel}
                 onChange={setPanel}
-                label="Sección de la ficha del cliente"
+                label="Sección de los datos del cliente"
             />}
 
             {cliente.mostrador && (
                 <Notice variant="warning" icon={Store}>
-                    Es un cliente genérico del mostrador, no una persona. El punto de venta
-                    le carga las ventas sin identificar, así que no lleva ficha fiscal y no
-                    se puede editar.
+                    Es el cliente genérico del mostrador. Lleva las ventas sin cliente.
+                    No se puede editar.
                 </Notice>
             )}
 
             {cliente.nombre_corrupto && (
                 <Notice variant="danger" icon={AlertTriangle}>
-                    El nombre tiene la codificación dañada (se importó leyendo mal las
-                    tildes). Corrígelo a mano para que la ficha quede bien escrita.
+                    El nombre tiene las tildes mal escritas. Corrígelo a mano.
                 </Notice>
             )}
 
@@ -578,7 +576,7 @@ const FormClienteDetail = ({ formData }) => {
                             />}
                             {!esNuevo && form.categoria === 'Menor de edad' && (
                                 <p className="sm:col-span-2 text-caption text-content-3 ml-1">
-                                    Un menor de edad no lleva documento: se identifica por nombre y teléfono.
+                                    Un menor de edad no lleva documento. Se identifica por nombre y teléfono.
                                 </p>
                             )}
                             {/* De SÓLO LECTURA a propósito. El guardado de esta
@@ -608,7 +606,7 @@ const FormClienteDetail = ({ formData }) => {
                                 required={requeridos.has('nrc')}
                                 value={form.nrc} readOnly={!editable}
                                 hasError={!!errorDe('nrc')} errorMessage={errorDe('nrc')}
-                                helperText={esContribuyente ? 'Requerido para facturarle con CCF' : undefined}
+                                helperText={esContribuyente ? 'Requerido para emitirle crédito fiscal' : undefined}
                                 onChange={e => setForm(p => ({ ...p, nrc: e.target.value }))}
                             />}
                             {ver('pasaporte') && <PortalInput
@@ -633,7 +631,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={v => setForm(p => ({ ...p, giro: v || '' }))}
                                     options={giroDelCatalogo(form.giro, giros) || !form.giro
                                         ? giros
-                                        : [{ value: form.giro, label: form.giro, sublabel: 'No está en el listado de Hacienda' }, ...giros]}
+                                        : [{ value: form.giro, label: form.giro, sublabel: 'No está en el listado del MH' }, ...giros]}
                                     placeholder={giros.length ? 'Busca la actividad económica' : 'Cargando actividades…'}
                                     clearable={!requeridos.has('giro')}
                                     disabled={!editable || !giros.length}
@@ -655,7 +653,7 @@ const FormClienteDetail = ({ formData }) => {
                                 maskType="PHONE" placeholder="0000-0000"
                                 value={form.phone} readOnly={!editable}
                                 hasError={!!errorDe('phone')} errorMessage={errorDe('phone')}
-                                helperText="El DTE lo pide en el receptor"
+                                helperText="La factura lo pide"
                                 onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
                             />
                             <PortalInput
@@ -736,7 +734,7 @@ const FormClienteDetail = ({ formData }) => {
                                     momento de facturar. */}
                                 {esContribuyente && !form.distrito && (
                                     <p className="text-caption text-warning-text mt-1 ml-1 font-bold">
-                                        El DTE de un contribuyente lo pide junto con departamento y municipio.
+                                        El crédito fiscal lo pide junto con departamento y municipio.
                                     </p>
                                 )}
                             </div>
@@ -762,8 +760,8 @@ const FormClienteDetail = ({ formData }) => {
                                 </p>
                                 <div className="flex items-center gap-2 h-10">
                                     {cliente.erp_id
-                                        ? <Badge variant="success" icon={Building2}>Ficha {cliente.erp_id}</Badge>
-                                        : <Badge variant="neutral">Sin número de ficha</Badge>}
+                                        ? <Badge variant="success" icon={Building2}>Cliente número {cliente.erp_id}</Badge>
+                                        : <Badge variant="neutral">Sin número</Badge>}
                                 </div>
                             </div>}
                             <div className="sm:col-span-2">
@@ -797,7 +795,7 @@ const FormClienteDetail = ({ formData }) => {
                         <Notice variant="warning" icon={AlertTriangle} compact>
                             Falta {v.faltan.length === 1 ? 'un dato' : `${v.faltan.length} datos`}{esNuevo
                                 ? ' para crear el cliente'
-                                : <> que el DTE exige{esContribuyente ? ' para un contribuyente' : ''}</>}:{' '}
+                                : <> que la factura exige{esContribuyente ? ' para un contribuyente' : ''}</>}:{' '}
                             <span className="font-black">
                                 {v.faltan.map(c => (esNuevo && FALTA_AL_NACER[c]) || ETIQUETA_CAMPO[c] || c).join(', ')}
                             </span>.
@@ -819,8 +817,8 @@ const FormClienteDetail = ({ formData }) => {
                                     Confirmar
                                 </Button>
                             }>
-                            Estás cambiando datos fiscales de un contribuyente: son los que se
-                            declaran a Hacienda. Confirma para guardar.
+                            Estás cambiando datos fiscales de un contribuyente. Son los que se
+                            declaran al MH. Confirma para guardar.
                         </Notice>
                     )}
                     <Button size="lg" icon={Check} loading={guardando} disabled={(!esNuevo && !hayCambios) || !v.ok}

@@ -798,7 +798,7 @@ function DetalleDelMovimiento({ ficha: f, historia, sala, onClose }) {
     const ido = f.tono === 'ido';
     const fotoDeEsta = foto?.de === f.clave ? foto : null;
     const datos = [
-        ['Sala', sala],
+        ['Sucursal', sala],
         ['Fecha', fechaLarga(f.fecha)],
         // Con la persona a la vista, la hora ya va en su renglón.
         ['Hora', f.hora && !(f.quien && f.horaExacta) ? (f.horaExacta ? f.hora : `se vio ${f.hora}`) : null],

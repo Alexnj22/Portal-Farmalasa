@@ -81,7 +81,7 @@ function EarlyExitForm({
     value={exitReason}
     onChange={val => onChangeReason?.(val)}
     options={EARLY_EXIT_OPTIONS.map(option => ({ value: option, label: option }))}
-    placeholder="Seleccione un motivo..."
+    placeholder="Elige un motivo..."
     disabled={isProcessing}
     clearable={false}
   />
@@ -102,7 +102,7 @@ function EarlyExitForm({
             </label>
             <PortalTextarea
                 textareaClassName="sm:p-3.5 sm:h-20 [@media(max-height:800px)]:!h-14 [@media(max-height:640px)]:!h-11"
-                placeholder="Detalle brevemente el motivo..."
+                placeholder="Explica brevemente el motivo..."
                 value={exitNotes}
                 onChange={(e) => onChangeNotes?.(e.target.value)}
                 readOnly={isProcessing}

@@ -8,7 +8,7 @@
 // ivaPerci1 > 0) o una corrección manual que congela el campo contra futuros
 // DTE. Un booleano plano lo fijaba en cualquier guardado.
 export const PERCIBE_OPTIONS = [
-    { value: 'auto', label: 'Automático (según sus DTE)' },
+    { value: 'auto', label: 'Automático (según sus facturas)' },
     { value: 'si',   label: 'Sí, percibe 1%' },
     { value: 'no',   label: 'No percibe' },
 ];

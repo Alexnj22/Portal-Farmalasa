@@ -61,7 +61,7 @@ function Editar({ lab, sala, nombreSala, inicial, onCerrar, onGuardado }) {
         <EncabezadoDeHoja titulo={lab.nombre} subtitulo={`Ubicación en ${nombreSala}`} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-            <Seccion titulo="En la sala">
+            <Seccion titulo="En la sucursal">
               <Segmentos activa={tipo} onCambiar={setTipo} opciones={[{ id: 'estante', label: 'Estante' }, { id: 'vitrina', label: 'Vitrina' }]} />
               <Campo multiline={false} value={tipo === 'vitrina' ? d.vitrina : d.estante} onChangeText={campo(tipo)} placeholder={tipo === 'vitrina' ? 'Número de vitrina' : 'Número de estante'} autoCapitalize="characters" />
               <Campo multiline={false} value={d.peldano} onChangeText={campo('peldano')} placeholder="Peldaño" autoCapitalize="characters" />
@@ -88,7 +88,7 @@ const TarjetaLab = memo(function TarjetaLab({ l, d, cubiertas, totalSalas, onAbr
         <View style={{ padding: 12, gap: 6 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{l.nombre}</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${cubiertas} de ${totalSalas} salas`}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${cubiertas} de ${totalSalas} sucursales`}</Text>
           </View>
           {tieneUbicacion(d) ? (
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
@@ -141,7 +141,7 @@ export default function Laboratorios() {
   const salasCubiertas = (labId) => Object.values(ubic[labId] || {}).filter(tieneUbicacion).length;
   const abrir = useCallback((l) => { Haptics.selectionAsync().catch(() => {}); setEditando(l); }, []);
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: String(user?.branchId ?? (sucursales || [])[0]?.id ?? ''), onCambiar: setSala,
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: String(user?.branchId ?? (sucursales || [])[0]?.id ?? ''), onCambiar: setSala,
       opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : []),
     ...(!q ? [{ id: 'seccion', titulo: 'Sección', activa: seccion, porDefecto: 'principales', onCambiar: setSeccion,
       opciones: SECCIONES_DE_LABORATORIO.map((s) => ({ id: s.key, label: s.key === 'principales' ? 'Principales' : s.key === 'insumos' ? 'Insumos' : 'Cosméticos' })) }] : []),
@@ -171,7 +171,7 @@ export default function Laboratorios() {
               {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
               {labs ? (
                 <FilaDeKpis>
-                  <Kpi icono="FlaskConical" rotulo="Laboratorios" valor={String(labs.length)} color={MARCA.azulClaro} apoyo={`${salas.length} salas`} />
+                  <Kpi icono="FlaskConical" rotulo="Laboratorios" valor={String(labs.length)} color={MARCA.azulClaro} apoyo={`${salas.length} sucursales`} />
                   <Kpi icono="Check" rotulo="Con ubicación" valor={String(conUbicacion)} color={conUbicacion === labs.length ? MARCA.verde : MARCA.ambar} apoyo={`en ${nombreSala}`} />
                 </FilaDeKpis>
               ) : null}

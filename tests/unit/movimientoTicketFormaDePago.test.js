@@ -20,7 +20,7 @@ describe('comprobante de un ingreso según cómo se pagó', () => {
         expect(t.totales[0][0]).toBe('Cobrado con tarjeta');
         expect(t.datos).toContainEqual(['Voucher', '4792']);
         expect(t.datos.some(([k]) => k === 'Total voucher')).toBe(true);
-        expect(t.bloques.some((b) => b.titulo === 'No entra al cajon')).toBe(true);
+        expect(t.bloques.some((b) => b.titulo === 'No entra a la caja')).toBe(true);
     });
     it('sin comprobante avisa que queda pendiente de autorización', () => {
         const t = armar({ forma_pago: 'TRANSFERENCIA', autorizacion: 'PENDIENTE' });

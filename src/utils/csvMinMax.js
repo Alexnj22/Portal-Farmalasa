@@ -18,8 +18,8 @@ export function csvDeMinMax(rows, sucursalName, isBodega = false, netStockMap = 
           })
         : rows;
     const headers = isBodega
-        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Cantidad a pedir','Proveedor','Alerta']
-        : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas 6 meses'];
+        ? ['Sucursal','Laboratorio','Producto','Clase','Mín','Máx','Presentación','Existencia actual','Cantidad a pedir','Proveedor','Alerta']
+        : ['Sucursal','Laboratorio','Producto','Clase','Mín (und)','Máx (und)','Ventas 6 meses'];
     const filas = sorted.map(r => {
         const abc  = (r.draft_abc_class || r.abc_class || '');
         const xyz  = normXyz(r.draft_demand_variability || r.demand_variability);
@@ -42,8 +42,8 @@ export function csvDeMinMax(rows, sucursalName, isBodega = false, netStockMap = 
             const daysCoverage = vel > 0 ? totalStock / vel : Infinity;
             const belowBodegaMin = minU > 0 && bodegaStock < minU;
             const alertLabel = (() => {
-                if (bodegaStock === 0) return 'SIN STOCK';
-                if (!hasVal) return 'SIN MIN/MAX';
+                if (bodegaStock === 0) return 'SIN EXISTENCIA';
+                if (!hasVal) return 'SIN MÍN/MÁX';
                 const hasVel = vel > 0 && isFinite(daysCoverage);
                 const d = hasVel ? Math.round(daysCoverage) : null;
                 if (belowBodegaMin) return d !== null ? `CRÍTICO (${d}d red)` : 'CRÍTICO';

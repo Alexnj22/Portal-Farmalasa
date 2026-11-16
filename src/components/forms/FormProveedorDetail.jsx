@@ -288,7 +288,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <FiscalRow icon={FileText} label={formData?.nit ? 'NIT' : 'DUI'} value={formData?.nit || formData?.dui} />
                 {formData?.nrc && <FiscalRow icon={FileText} label="NRC" value={formData.nrc} />}
                 <FiscalRow icon={FileText} label="Giro" value={formData?.desc_actividad} />
-                <FiscalRow icon={MapPin} label="Ubicación" value={[departamentoLabel(formData?.departamento), formData?.municipio ? `Mun. ${formData.municipio}` : null].filter(Boolean).join(' — ')} />
+                <FiscalRow icon={MapPin} label="Ubicación" value={[departamentoLabel(formData?.departamento), formData?.municipio ? `Mun. ${formData.municipio}` : null].filter(Boolean).join(' · ')} />
                 <FiscalRow icon={MapPin} label="Dirección" value={formData?.direccion} />
                 <FiscalRow icon={Phone} label="Teléfono" value={formData?.telefono} />
                 <FiscalRow icon={Mail} label="Correo" value={formData?.correo} />
@@ -299,7 +299,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                     <span>Primera vez: {fmtDate(formData?.primera_vez_visto)}</span>
                     <span>·</span>
                     <span>Última: {fmtDate(formData?.ultima_vez_visto)}</span>
-                    <Button variant="ghost" onClick={verDocumentos}>Ver documentos <ExternalLink size={11} /></Button>
+                    <Button variant="ghost" onClick={verDocumentos}>Ver facturas <ExternalLink size={11} /></Button>
                 </div>
             </div>
 
@@ -311,7 +311,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <SectionHeader icon={Tag}>Clasificación</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className={rotuloCampo('text-content-3')} title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
+                        <label className={rotuloCampo('text-content-3')} title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin facturas suficientes para determinarlo'}>
                             Tipo de Proveedor
                         </label>
                         <div className="h-[44px] flex items-center">
@@ -323,7 +323,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         </div>
                     </div>
                     <div>
-                        <label className={rotuloCampo('text-content-3')} title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
+                        <label className={rotuloCampo('text-content-3')} title="Sale de la categoría. No se edita aquí.">
                             Categoría Contable
                         </label>
                         <div className="h-[44px] flex items-center">
@@ -390,7 +390,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 {formData?.clasificacion_base_legal && (
                     <p className="text-caption text-content-3 leading-relaxed">
                         <span className="font-black text-content-2">{formData.clasificacion_base_legal}</span>
-                        {formData?.desc_actividad ? ` — derivado del giro «${formData.desc_actividad}»` : ''}
+                        {formData?.desc_actividad ? ` · según el giro «${formData.desc_actividad}»` : ''}
                     </p>
                 )}
                 {formData?.clasificacion_nota && (
@@ -402,7 +402,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className={rotuloCampo('text-content-3')}
-                            title="Art. 65 Ley de IVA — sólo es deducible el crédito fiscal de compras indispensables para el giro">
+                            title="Art. 65 Ley de IVA: sólo es deducible el crédito fiscal de compras indispensables para el giro">
                             ¿Da crédito fiscal?
                         </label>
                         <LiquidSelect
@@ -444,7 +444,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         </div>
                         <div>
                             <label className={rotuloCampo('text-content-3')}
-                                title="Se filtra según Costo o Gasto: el manual del F-07 no admite las mismas opciones para los dos">
+                                title="Las opciones cambian según sea costo o gasto.">
                                 Tipo de costo o gasto
                             </label>
                             <LiquidSelect
@@ -488,7 +488,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         name="dias_credito"
                         label="Días de crédito"
                         type="number"
-                        title="El plazo es el mismo en todas las facturas de un proveedor: se llena una vez"
+                        title="Es el mismo en todas las facturas del proveedor."
                         placeholder="30"
                         value={credito.dias}
                         readOnly={!canEdit}
@@ -498,7 +498,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         name="limite_credito"
                         label="Límite de crédito"
                         type="number"
-                        title="Lo que queda de este techo es lo que contesta «¿podemos comprarle?»"
+                        title="Lo que queda de este límite dice si todavía se le puede comprar."
                         placeholder="Sin límite"
                         value={credito.limite}
                         readOnly={!canEdit}
@@ -582,7 +582,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div>
-                        <label className={rotuloCampo('text-content-3')} title="Art. 163 CT — en Automático se enciende solo al observarlo en un DTE; elegir Sí/No lo fija a mano y deja de actualizarse desde los DTE">
+                        <label className={rotuloCampo('text-content-3')} title="Art. 163 CT. En Automático se enciende solo cuando aparece en una factura. Si eliges Sí o No, queda fijo.">
                             Percibe 1%
                         </label>
                         <LiquidSelect
@@ -594,7 +594,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                         {form.percibe_1_override === null && (
                             <p className="text-caption text-content-3 mt-1 ml-1">
-                                Hoy: {formData?.percibe_1 ? 'sí percibe' : 'no percibe'} (observado en sus DTE)
+                                Hoy: {formData?.percibe_1 ? 'sí percibe' : 'no percibe'} (según sus facturas)
                             </p>
                         )}
                     </div>
@@ -606,7 +606,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             marca a mano. Si no se retiene, la empresa responde
                             solidariamente por el impuesto no retenido. */}
                         <label className={rotuloCampo('text-content-3')}
-                            title="Art. 156 CT — 10% sobre servicios prestados por personas naturales. Marcarlo incluye a este proveedor en el anexo de retención de Renta">
+                            title="Art. 156 CT: 10% sobre servicios prestados por personas naturales. Marcarlo incluye a este proveedor en el anexo de retención de Renta">
                             Retención de Renta
                         </label>
                         <LiquidSelect

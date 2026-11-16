@@ -47,7 +47,7 @@ export function AnilloDeAperturas({ datos, isDark }) {
     return (
         <div className="relative w-9 h-9 flex-shrink-0 mt-0.5">
             <svg viewBox="0 0 46 46" className="w-full h-full" role="img"
-                aria-label={`${abiertas} de ${total} salas abrieron caja`}>
+                aria-label={`${abiertas} de ${total} sucursales abrieron caja`}>
                 <circle cx="23" cy="23" r={R} fill="none" strokeWidth="4"
                     className="stroke-border-card" />
                 {/* Arranca en las doce y gira como un reloj: `rotate(-90)` sobre

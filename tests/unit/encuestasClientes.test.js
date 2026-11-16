@@ -282,7 +282,7 @@ describe('campo — respuestas sin sucursal', () => {
             [{ fecha: '2026-11-07', sucursal: 'Campo', canal: 'campo', lugar: '=HYPERLINK("x")', lat: 13.7, lng: -89.2 }],
             { fechaHora: (x) => x });
         expect(headers.slice(0, 6)).toEqual(['Fecha', 'Sucursal', 'Canal', 'Lugar', 'Latitud', 'Longitud']);
-        expect(rows[0][2]).toBe('Campo (fuera de las salas)');
+        expect(rows[0][2]).toBe('Campo (fuera de las sucursales)');
         expect(String(rows[0][3]).startsWith('=')).toBe(false);
         expect(rows[0][4]).toBe(13.7);
     });

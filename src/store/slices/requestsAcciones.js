@@ -168,7 +168,7 @@ const hidratarPersonas = (fila, get) => {
 const avisarYaDecidida = (get) => {
     useToastStore.getState().showToast(
         'Ya estaba resuelta',
-        'Alguien la decidió antes —desde otra pestaña o desde otra cuenta—, así que no se volvió a aplicar. Se actualizó la pantalla.',
+        'Alguien la decidió antes, desde otra pestaña o desde otra cuenta. No se volvió a aplicar. Se actualizó la pantalla.',
         'error');
     get().fetchNotifications?.();
     emitir('requests-updated');
@@ -190,7 +190,7 @@ const avisarSinEscribir = async (get, requestId, desdeNivel = null) => {
         if (sigueIgual) {
             useToastStore.getState().showToast(
                 'No te toca decidirla',
-                'Tu cargo no puede aprobar este tipo de solicitud, así que no se cambió nada. Sigue pendiente para quien la decide.',
+                'Tu cargo no puede aprobar este tipo de solicitud. No se cambió nada. Sigue pendiente para quien la decide.',
                 'error');
             emitir('requests-updated');
             return YA_AVISADO;
@@ -1375,7 +1375,7 @@ export const createRequestsSlice = (set, get) => ({
             if (req.type === 'INVENTORY_TRANSFER_REQUEST') {
                 useToastStore.getState().showToast(
                     'Se resuelve en Traslados',
-                    'Este traslado se confirma en la pantalla de Traslados, que revisa la existencia de la sala antes de enviarlo.',
+                    'Este traslado se confirma en la pantalla de Traslados, que revisa la existencia de la sucursal antes de enviarlo.',
                     'error');
                 return YA_AVISADO;
             }
@@ -1473,7 +1473,7 @@ export const createRequestsSlice = (set, get) => ({
                 await notifyEmployees([String(nextApprover)], {
                     type: 'REQUEST_PENDING',
                     title: 'Solicitud pendiente de aprobación final',
-                    body: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final.`,
+                    body: `Cambio de turno de ${req.employee?.name} aprobado por el compañero. Falta tu aprobación final.`,
                     link: '/solicitudes-personales',
                     push: true,
                 });

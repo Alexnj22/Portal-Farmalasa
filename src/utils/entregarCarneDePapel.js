@@ -54,7 +54,7 @@ export async function entregarCarneDePapel({
         showToast(
             'Carné del día impreso',
             r.via === 'cola'
-                ? `Sale en la caja de ${sala || 'la sala'} en unos segundos. Vale hasta medianoche.`
+                ? `Sale en la caja de ${sala || 'la sucursal'} en unos segundos. Vale hasta medianoche.`
                 : 'Vale hasta medianoche de hoy.',
             'success',
         );

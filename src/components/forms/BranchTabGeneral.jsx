@@ -50,7 +50,7 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 // la sala queda incompleto sin él. Va en la ranura `labelAction` del canónico
 // —no pintando la caja de naranja con `!border-warning`—, así la etiqueta, el
 // alto y el foco siguen siendo los de todos los campos.
-const FaltaInfo = () => <Badge size="sm" variant="warning" uppercase={false}>Falta info</Badge>;
+const FaltaInfo = () => <Badge size="sm" variant="warning" uppercase={false}>Faltan datos</Badge>;
 
 const BranchTabGeneral = ({
     formData, setFormData, name, openingDate, location,
@@ -102,7 +102,7 @@ const BranchTabGeneral = ({
             const llenados = [cambios.department && 'departamento', cambios.municipality && 'municipio',
                 cambios.address && 'dirección'].filter(Boolean);
             const partes = [];
-            if (r.precision === 'vista') partes.push('El enlace no marca un lugar sino una vista del mapa: revisa que el pin quede sobre la sucursal.');
+            if (r.precision === 'vista') partes.push('El enlace no marca un lugar exacto. Revisa que el pin quede sobre la sucursal.');
             if (llenados.length) partes.push(`Se completó: ${llenados.join(', ')}.`);
             if (distintos.length) partes.push(`El mapa dice ${distintos.map(d => `${d.campo.toLowerCase()} «${d.mapa}»`).join(' y ')}; se dejó lo que ya tenía la sucursal.`);
             if (!hallado.municipio && !distintos.length) partes.push('No se reconoció el municipio del punto: elígelo de la lista.');

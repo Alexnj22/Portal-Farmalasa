@@ -303,7 +303,7 @@ export async function solicitarMinMax(payload, { aplicar = false } = {}, context
     }
     const { data, error } = await supabase.from('minmax_change_requests').insert(payload).select('id').single();
     if (error) return { ok: false, aplicado: false, error: error.message };
-    const r = await decidirMinMax(data.id, true, 'Aplicado desde Gestión de stock');
+    const r = await decidirMinMax(data.id, true, 'Aplicado desde Gestión de existencias');
     anotar('MINMAX_DESDE_GESTION_STOCK', data.id, { aplicado: r.ok, ...contexto });
     return { ok: true, aplicado: r.ok, error: r.ok ? null : r.error };
 }
@@ -322,7 +322,7 @@ export async function solicitarMinMax(payload, { aplicar = false } = {}, context
 export async function pedirQuitarMinMaxDeEnviados({ filas, enviados = [], sala, nombreSala, nombreDestino, user, desde = null }) {
     const porId = new Map((filas || []).map((r) => [Number(r.erp_product_id), r]));
     const conMinMax = enviados.map((e) => porId.get(Number(e.erp_product_id))).filter((r) => r?.en_minmax);
-    const nombre = nombreDestino || 'otra sala';
+    const nombre = nombreDestino || 'otra sucursal';
     const fallidas = [];
     for (const r of conMinMax) {
         const { error } = await insertMinMaxChangeRequest({
@@ -336,7 +336,7 @@ export async function pedirQuitarMinMaxDeEnviados({ filas, enviados = [], sala, 
             current_existencia:   Number(r.existencia) || 0,
             requested_min:        0,
             requested_max:        0,
-            reason: `Se envió a ${nombre} por baja rotación: sin venta en esta sala desde `
+            reason: `Se envió a ${nombre} por baja rotación: sin venta en esta sucursal desde `
                   + `${r.desde ?? 'hace más de 6 meses'} (${porQueDesde(r)}).`,
             requested_by:      user?.email ?? '',
             requested_by_id:   user?.id ?? null,

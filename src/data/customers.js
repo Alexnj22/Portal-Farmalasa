@@ -94,20 +94,20 @@ export async function fetchCustomerDetail(id) {
 // sola vez y del lado que sabe redactarlo (§34.8: qué pasó y qué hacer).
 const ERRORES = {
     FORBIDDEN:                    'No tienes permiso para editar clientes.',
-    NO_EXISTE:                    'Esa ficha ya no existe. Recarga la lista.',
-    ES_MOSTRADOR:                 'Es un cliente genérico del mostrador, no una persona: no lleva ficha fiscal.',
+    NO_EXISTE:                    'Ese cliente ya no existe. Recarga la lista.',
+    ES_MOSTRADOR:                 'Es un cliente genérico del mostrador. No lleva datos fiscales.',
     NOMBRE_VACIO:                 'El nombre no puede quedar vacío.',
-    NOMBRE_DUPLICADO:             'Ya existe otra ficha con ese nombre. Búscala y edita esa.',
+    NOMBRE_DUPLICADO:             'Ya existe otro cliente con ese nombre. Búscalo y edita ese.',
     CATEGORIA_INVALIDA:           'Esa categoría no es una de las seis válidas.',
     RETENCION_INVALIDA:           'La retención va de 0 a 100.',
     GEO_INCOHERENTE:              'El departamento, el municipio y el distrito no se corresponden.',
     DUI_INVALIDO:                 'El DUI no pasa el dígito verificador. Revisa los números.',
     NIT_INVALIDO:                 'El NIT no pasa el dígito verificador. Revisa los números.',
-    GIRO_INVALIDO:                'El giro no está en el catálogo de actividades de Hacienda. Elígelo de la lista.',
+    GIRO_INVALIDO:                'El giro no está en el catálogo de actividades del MH. Elígelo de la lista.',
     TELEFONO_INVALIDO:            'El teléfono debe tener 8 dígitos, o 503 + 8.',
-    REQUIERE_CONFIRMACION_FISCAL: 'Son datos que se declaran a Hacienda: confirma el cambio.',
+    REQUIERE_CONFIRMACION_FISCAL: 'Son datos que se declaran al MH. Confirma el cambio.',
     NOMBRE_INCOMPLETO:            'Escribe nombre y apellido.',
-    NOMBRE_DE_OTRA_PERSONA:       'Ya hay un cliente con ese nombre y otro DUI. Búscalo: si es la misma persona, corrige esa ficha; si no, agrega el segundo apellido.',
+    NOMBRE_DE_OTRA_PERSONA:       'Ya hay un cliente con ese nombre y otro DUI. Búscalo. Si es la misma persona, corrige sus datos; si no, agrega el segundo apellido.',
     FALTA_DOCUMENTO:              'Falta el documento: DUI o NIT (pasaporte si es extranjero).',
 };
 

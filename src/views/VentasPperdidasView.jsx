@@ -25,8 +25,8 @@ const TABS = [
 ];
 
 const TAB_HELP = {
-    pendiente: 'Productos que clientes buscaron y no teníamos — pendientes de revisar para compra.',
-    procesado: 'Reportes ya atendidos por logística (ordenados, descartados o anotados).',
+    pendiente: 'Productos que los clientes buscaron y no teníamos. Revísalos para la compra.',
+    procesado: 'Reportes ya atendidos.',
 };
 
 export default function VentasPperdidasView() {

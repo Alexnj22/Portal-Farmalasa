@@ -217,7 +217,7 @@ const WIDGET_SIZES = {
   // resto vacío.
   inv_search:    { minCols: 1, minRows: 1, label: 'Inventario'   },
   annulment_req: { minCols: 1, minRows: 1, label: 'Modificar facturación' },
-  minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
+  minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Mín/Máx' },
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste inventario' },
   // Dos renglones: arriba los avisos del día (hasta tres franjas) y abajo los
   // botones. Con uno solo, el aviso de lo vencido tapaba el de lo que toca ahora.
@@ -689,18 +689,18 @@ const WIDGET_DEFS = [
   { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
   { id: 'inv_search',   label: 'Consulta de inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
   { id: 'annulment_req',label: 'Modificar facturación',   permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
-  { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
+  { id: 'minmax_req',   label: 'Ajuste de Mín/Máx',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
-  { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
-  { id: 'bitacoras',    label: 'Bitácoras de mi sala',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
-  { id: 'recetas_pend', label: 'Recetas pendientes de mi sala', permission: 'dash_recetas_pendientes', icon: Pill, category: 'productos' },
-  { id: 'reservas',     label: 'Reservas de mi sala',     permission: 'dash_reservas',     icon: ShoppingBag,  category: 'ventas'    },
+  { id: 'traslados',    label: 'Traslados entre sucursales',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
+  { id: 'bitacoras',    label: 'Bitácoras de mi sucursal',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
+  { id: 'recetas_pend', label: 'Recetas pendientes de mi sucursal', permission: 'dash_recetas_pendientes', icon: Pill, category: 'productos' },
+  { id: 'reservas',     label: 'Reservas de mi sucursal',     permission: 'dash_reservas',     icon: ShoppingBag,  category: 'ventas'    },
   { id: 'clientes',     label: 'Clientes',                permission: 'dash_clientes',     icon: UserPlus,     category: 'ventas'    },
   { id: 'precios',      label: 'Consulta de precios',     permission: 'dash_consulta_precios', icon: Tag,      category: 'productos' },
   { id: 'meta_sala',    label: 'Meta del mes',            permission: 'dash_meta_sala',    icon: Target,       category: 'ventas'    },
   { id: 'vendedores',   label: 'Venta por vendedor',       permission: 'dash_vendedores',   icon: Users,        category: 'ventas'    },
-  { id: 'cortes_sala',  label: 'Cortes de caja de mi sala', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
-  { id: 'bolsas_sala',  label: 'Bolsas de efectivo de mi sala', permission: 'dash_bolsas_sala', icon: Package,  category: 'ventas'    },
+  { id: 'cortes_sala',  label: 'Cortes de caja de mi sucursal', permission: 'dash_cortes_sala', icon: Wallet,       category: 'ventas'    },
+  { id: 'bolsas_sala',  label: 'Bolsas de efectivo de mi sucursal', permission: 'dash_bolsas_sala', icon: Package,  category: 'ventas'    },
   { id: 'dato_pedido',  label: 'Datos que faltan',        permission: 'dash_dato_pedido',  icon: Mail,         category: 'ventas'    },
 ];
 
@@ -2812,7 +2812,7 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Tendencia de asistencia" icon={Activity} category="personal"
           resumen={attError ? { texto: 'No se pudo leer', tono: 'danger' }
             : !hayMarcaciones ? { texto: 'Aún sin marcaciones' }
-            : { valor: ['WORKING','LUNCH','LACTATION','BUSINESS'].reduce((n, k) => n + (shiftGroups[k] || []).length, 0), texto: 'en sala ahora' }}
+            : { valor: ['WORKING','LUNCH','LACTATION','BUSINESS'].reduce((n, k) => n + (shiftGroups[k] || []).length, 0), texto: 'trabajando ahora' }}
           action={
             <PeriodStepper
               size="sm"
@@ -3635,7 +3635,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación hoy" icon={FileText} category="ventas"
           resumen={factLoading ? null : factError ? { texto: 'No se pudo leer', tono: 'danger' }
-            : { valor: factStats.count, texto: `${factStats.count===1?'documento':'documentos'} · ${formatMoney(factStats.total)}${factStats.sinSello ? ` · ${factStats.sinSello} sin sello` : ''}`,
+            : { valor: factStats.count, texto: `${factStats.count===1?'factura':'facturas'} · ${formatMoney(factStats.total)}${factStats.sinSello ? ` · ${factStats.sinSello} sin sello` : ''}`,
                 tono: factStats.sinSello ? 'warning' : undefined,
                 accion: factStats.sinSello && puedeAbrir('/facturacion') ? { texto: 'Revisar', ir: '/facturacion?tab=pendiente_mh' } : undefined }}
           action={puedeAbrir('/facturacion')&&<Button variant="ghost" size="xs" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
@@ -3672,7 +3672,7 @@ const DashboardView = ({ openModal }) => {
             {factStats.sinSello > 0 && (
               <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2">
                 <AlertTriangle size={14} className="text-warning-text shrink-0" />
-                <p className="flex-1 min-w-0 text-label font-bold text-warning-text">{factStats.sinSello} {factStats.sinSello===1?'documento':'documentos'} de hoy sin sello de Hacienda</p>
+                <p className="flex-1 min-w-0 text-label font-bold text-warning-text">{factStats.sinSello} {factStats.sinSello===1?'factura':'facturas'} de hoy sin sello del MH</p>
                 {puedeAbrir('/facturacion') && <Button size="xs" variant="secondary" className="shrink-0" onClick={() => navigate('/facturacion?tab=pendiente_mh')}>Revisar</Button>}
               </div>
             )}
@@ -3681,7 +3681,7 @@ const DashboardView = ({ openModal }) => {
             <div className="grid grid-cols-1 @[18rem]/cuerpo:grid-cols-2 gap-3">
               <div className="bg-surface-card-hover/80 rounded-2xl p-3">
                 <p className="text-display font-black text-content leading-none">{factStats.count}</p>
-                <p className="text-caption font-semibold text-content-3 mt-1">documentos</p>
+                <p className="text-caption font-semibold text-content-3 mt-1">facturas</p>
               </div>
               <div className="bg-success/10 rounded-2xl p-3">
                 <p className="text-body-xl font-black text-success-text leading-none tabular-nums break-all">{fmt(factStats.total)}</p>
@@ -3716,7 +3716,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v, { decimales: 0 });
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
-        <WidgetCard title={getScope('dash_top_productos') === 'ALL' ? 'Top productos · mes actual' : 'Top productos · mi sala'} icon={Package} category="productos"
+        <WidgetCard title={getScope('dash_top_productos') === 'ALL' ? 'Top productos · mes actual' : 'Top productos · mi sucursal'} icon={Package} category="productos"
           resumen={topProdLoading ? null : topProdError ? { texto: 'No se pudo leer', tono: 'danger' }
             : topProductos[0] ? (() => {
                 const bajos = topProductos.filter(p => bajoMinimo[p.erp_product_id]).length;
@@ -4059,7 +4059,7 @@ const DashboardView = ({ openModal }) => {
               value={metaBranch}
               onChange={val => setMetaBranch(val ?? String(META_SALA_IDS[0]))}
               options={metaOpts}
-              placeholder="Sala..."
+              placeholder="Sucursal..."
               icon={Building2}
               clearable={false}
               compact
@@ -4095,7 +4095,7 @@ const DashboardView = ({ openModal }) => {
               value={vendBranch}
               onChange={val => setVendBranch(val ?? String(META_SALA_IDS[0]))}
               options={vendOpts}
-              placeholder="Sala..."
+              placeholder="Sucursal..."
               icon={Building2}
               clearable={false}
               compact
@@ -4308,8 +4308,8 @@ const DashboardView = ({ openModal }) => {
               ) : isSU ? (
                 <div className="space-y-3">
                   <Notice variant="info">
-                    Acomoda <b>{etiquetaTab}</b> como quieres que la vean todos y publícala. A cada cargo se le
-                    reacomoda sola, con los widgets que tiene permitidos.
+                    Acomoda <b>{etiquetaTab}</b> como quieres que la vean todos y publícala. Cada cargo la ve
+                    con los widgets que tiene permitidos.
                   </Notice>
 
                   {sinUbicar.length > 0 && (
@@ -4350,14 +4350,14 @@ const DashboardView = ({ openModal }) => {
 
                   {verComoRol != null && (
                     <Notice variant="neutral" compact icon={Eye}>
-                      Estás viendo el tablero con los permisos de otro cargo. Lo que falte es lo que ese cargo no tiene habilitado.
+                      Estás viendo el tablero con los permisos de otro cargo. Lo que no aparece, ese cargo no lo tiene habilitado.
                     </Notice>
                   )}
                 </div>
               ) : (
                 <Notice variant="neutral" icon={Lock}>
-                  El acomodo de <b>{etiquetaTab}</b> es el mismo para toda la empresa, y los widgets que ves
-                  son los de tu cargo. Para armar un tablero a tu gusto, usa <b>General</b>.
+                  El acomodo de <b>{etiquetaTab}</b> es el mismo para toda la empresa. Ves los widgets
+                  de tu cargo. Para armar un tablero a tu gusto, usa <b>General</b>.
                 </Notice>
               )}
             </div>
@@ -4416,11 +4416,11 @@ const DashboardView = ({ openModal }) => {
             <KpiCard icon={BarChart2}     label="Vendido hoy"           value={formatMoney(ventasKpi.total, { decimales: 0 })} color={ventasKpi.pct!=null&&ventasKpi.pct<0?'var(--warning)':'var(--success)'} pide={ventasKpi.pct!=null&&ventasKpi.pct<0} sub={ventasKpi.pct==null?'sin comparación':`${ventasKpi.pct>0?'+':''}${ventasKpi.pct}% vs. el ${ventasKpi.dia} pasado`}/>
             <KpiCard icon={FileText}      label="Tickets hoy"           value={ventasKpi.tickets}       color="var(--brand)" sub="transacciones"/>
             <KpiCard icon={Receipt}       label="Ticket promedio"       value={formatMoney(ventasKpi.promedio)} color="var(--brand-purple)" sub="por venta"/>
-            <KpiCard icon={TrendingUp}    label={ventasKpi.mejor?'Mejor sala hoy':'Facturado hoy'} value={ventasKpi.mejor ? (salesBranches.find(b=>String(b.id)===ventasKpi.mejor.id)?.name ?? '—') : formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub={ventasKpi.mejor ? formatMoney(ventasKpi.mejor.total, { decimales: 0 }) : 'total del día'}/>
+            <KpiCard icon={TrendingUp}    label={ventasKpi.mejor?'Mejor sucursal hoy':'Facturado hoy'} value={ventasKpi.mejor ? (salesBranches.find(b=>String(b.id)===ventasKpi.mejor.id)?.name ?? '—') : formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub={ventasKpi.mejor ? formatMoney(ventasKpi.mejor.total, { decimales: 0 }) : 'total del día'}/>
             </>) : (<>
             <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="vigentes" onClick={puedeAbrir('/cotizaciones')?()=>navigate('/cotizaciones'):undefined}/>
             <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="var(--success)" sub="en cotizaciones"/>
-            <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'documento':'documentos'} onClick={puedeAbrir('/facturacion')?()=>navigate('/facturacion'):undefined}/>
+            <KpiCard icon={FileText}      label="Facturas hoy"          value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'factura':'facturas'} onClick={puedeAbrir('/facturacion')?()=>navigate('/facturacion'):undefined}/>
             <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub="total del día"/>
             </>)}
           </div>

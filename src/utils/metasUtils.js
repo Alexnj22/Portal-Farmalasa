@@ -241,22 +241,22 @@ export function rankingDeVendedores(data, orden = 'total') {
 export function situacionDeMetaManual(estado, ym, ymActual) {
     if (!estado) {
         return { puede: true, tono: 'info',
-            texto: 'Este mes no tiene meta registrada para esta sala. Se guarda como meta oficial.' };
+            texto: 'Este mes no tiene meta registrada para esta sucursal. Se guarda como meta oficial.' };
     }
     if (estado === 'confirmada_supervisor') {
         return { puede: false, tono: 'warning',
-            texto: 'Esta meta ya fue confirmada y espera al gerente. Para cambiarle el monto, él tiene que devolverla primero.' };
+            texto: 'Esta meta ya fue confirmada y espera al gerente. Para cambiar el monto, el gerente tiene que devolverla primero.' };
     }
     if (estado === 'oficial' && ym >= ymActual) {
         return { puede: false, tono: 'warning',
-            texto: 'Esta meta ya está aprobada y la sala la está persiguiendo. Para corregirla, el gerente tiene que devolverla.' };
+            texto: 'Esta meta ya está aprobada y la sucursal está trabajando para cumplirla. Para corregirla, el gerente tiene que devolverla.' };
     }
     if (estado === 'oficial') {
         return { puede: true, tono: 'warning', pideNota: true,
-            texto: 'Este mes ya cerró con su meta. Corregirla cambia el cumplimiento y el bono que dio ese mes, así que hay que dejar dicho por qué.' };
+            texto: 'Este mes ya cerró con su meta. Corregirla cambia el cumplimiento y el bono de ese mes. Escribe el motivo.' };
     }
     return { puede: true, tono: 'info',
-        texto: 'Esta meta está en revisión. Se cambia el monto y sigue su camino normal: confirmar y aprobar.' };
+        texto: 'Esta meta está en revisión. Cambia el monto y sigue igual: confirmar y aprobar.' };
 }
 
 /** Un toque = 1% sobre la base, y el recorrido se topa en ±10%. */

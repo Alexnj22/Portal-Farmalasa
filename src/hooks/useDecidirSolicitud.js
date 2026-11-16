@@ -74,9 +74,9 @@ export async function decidirSolicitud({ req, modo, nota, aceptadas, userId }) {
         if (fila.requested_by_id) {
             notifyEmployees([String(fila.requested_by_id)], {
                 type: 'MINMAX_DECIDED',
-                title: `Ajuste de MIN·MAX · ${aprobo ? 'Aprobado' : 'Rechazado'}`,
+                title: `Ajuste de Mín/Máx · ${aprobo ? 'Aprobado' : 'Rechazado'}`,
                 body: aprobo
-                    ? `Tu propuesta para ${fila.product_name} (${ERP_NAMES[fila.erp_sucursal_id] ?? fila.erp_sucursal_id}) fue aplicada: MIN ${fila.requested_min} · MAX ${fila.requested_max}.`
+                    ? `Tu propuesta para ${fila.product_name} (${ERP_NAMES[fila.erp_sucursal_id] ?? fila.erp_sucursal_id}) fue aplicada: Mín ${fila.requested_min} · Máx ${fila.requested_max}.`
                     : `Tu propuesta para ${fila.product_name} fue rechazada.${nota ? ' Motivo: ' + nota : ''}`,
                 link: '/solicitudes',
                 push: true,
@@ -90,7 +90,7 @@ export async function decidirSolicitud({ req, modo, nota, aceptadas, userId }) {
                     // agrega `avisar_a_empleados` con la sesión.
                     decision: {
                         tipo: 'MINMAX',
-                        etiqueta: 'Ajuste de MIN·MAX',
+                        etiqueta: 'Ajuste de Mín/Máx',
                         estado: aprobo ? 'APPROVED' : 'REJECTED',
                         producto: fila.product_name,
                         sala: ERP_NAMES[fila.erp_sucursal_id] ?? null,
@@ -109,7 +109,7 @@ export async function decidirSolicitud({ req, modo, nota, aceptadas, userId }) {
         marcarAvisoResuelto(fila.id ?? String(req.id).replace('minmax:', ''),
             aprobo ? 'APPROVED' : 'REJECTED');
 
-        return { ok: true, mensaje: aprobo ? 'Ajuste de Min/Max aplicado.' : 'Ajuste de Min/Max rechazado.', minmax: fila };
+        return { ok: true, mensaje: aprobo ? 'Ajuste de Mín/Máx aplicado.' : 'Ajuste de Mín/Máx rechazado.', minmax: fila };
     }
 
     /* La fila VIAJA, no se vuelve a buscar. El store la buscaba en su lista
@@ -135,7 +135,7 @@ export async function decidirSolicitud({ req, modo, nota, aceptadas, userId }) {
             ok: true,
             aviso,
             mensaje: modo === 'approve'
-                ? (aceptadas ? `Se aplicaron ${aceptadas.length} líneas; el resto quedó rechazado.` : 'Solicitud aprobada.')
+                ? (aceptadas ? `Se aplicaron ${aceptadas.length} productos. El resto quedó rechazado.` : 'Solicitud aprobada.')
                 : 'Solicitud rechazada.',
         };
     }

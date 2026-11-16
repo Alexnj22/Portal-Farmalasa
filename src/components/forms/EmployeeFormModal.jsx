@@ -1106,7 +1106,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     ]);
     const documentCategories = useMemo(() => paraElPracticante([
         ...FIXED_DOCUMENT_CATEGORIES.map(c => (isNursingRegent && c.key === 'CONTRATO'
-            ? { ...c, label: `${ROTULOS.CONTRATO} — como dependiente` } : c)),
+            ? { ...c, label: `${ROTULOS.CONTRATO} (como dependiente)` } : c)),
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: ROTULOS.LICENCIA_MOTO }] : []),
         ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: ROTULOS.LICENCIA_CARRO }] : []),
         ...(isPharmacistRegent ? [{ key: 'SRS', label: ROTULOS.SRS }] : []),
@@ -1306,7 +1306,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         }));
         const sueltas = visibles.filter(c => !ubicadas.has(c.key));
         if (sueltas.length) {
-            secciones.push({ id: 'resto', titulo: 'Otros del expediente',
+            secciones.push({ id: 'resto', titulo: 'Otros documentos',
                 bajada: 'Documentos que todavía no tienen sección propia.', docs: sueltas });
         }
         return secciones.filter(sec => sec.docs.length > 0);
@@ -2271,8 +2271,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // persona. Hasta que lleguen, no se guarda.
         if (formData?.enlazar_con_id && String(formData._fichaCargada) !== String(formData.enlazar_con_id)) {
             return falta(String(formData._fichaFallo) === String(formData.enlazar_con_id)
-                ? 'No se pudieron leer el sueldo, la cuenta y el código de la ficha que enlazas. Quítala y vuelve a elegirla.'
-                : 'Cargando los datos de la ficha que enlazas…', null);
+                ? 'No se pudieron leer el sueldo, la cuenta y el código de la persona que enlazas. Quítala y vuelve a elegirla.'
+                : 'Cargando los datos de la persona que enlazas…', null);
         }
         // Lo único imprescindible: sin nombre no hay a quién nombrar la ficha.
         if (!formData?.first_names?.trim()) return falta('Falta el nombre.', 'first_names');
@@ -2283,7 +2283,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // ── De acá abajo, TODO es «si está, que esté bien» ──────────────────
         // Ninguna condición exige presencia: cada una se dispara sólo cuando
         // el campo tiene contenido y el contenido no cuadra.
-        if (!isMinor && isDuiDuplicate) return falta('Ese DUI ya está registrado en otra ficha.', 'dui');
+        if (!isMinor && isDuiDuplicate) return falta('Ese DUI ya está registrado a otra persona.', 'dui');
         if (!isMinor && (isDuiInvalid || isDuiIncomplete)) return falta('El DUI no está completo o su dígito verificador no cuadra.', 'dui');
         if (birthDateInvalid) return falta('La fecha de nacimiento no es válida.', 'birth_date');
 
@@ -2292,7 +2292,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         // puede haber puesto el portal al leer el DUI, el motivo tiene que
         // nombrar el municipio — que es lo que falta y lo que nadie tocó.
         if (formData?.department && !formData?.municipality) {
-            return falta(`Elegiste el departamento de ${formData.department}: falta el municipio. Una dirección a medias no se puede resolver después.`, 'municipality');
+            return falta(`Elegiste el departamento de ${formData.department}. Falta el municipio.`, 'municipality');
         }
         for (const addr of (formData?.extra_addresses || [])) {
             if (addr.department && !addr.municipality) return falta('Una dirección alterna tiene departamento pero no municipio.', null);
@@ -2388,7 +2388,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      */
     const fichasParaEnlazar = useMemo(() => {
         if (isEditMode) return [];
-        const nombreDeSala = (id) => branches?.find(b => String(b.id) === String(id))?.name || 'Sin sala';
+        const nombreDeSala = (id) => branches?.find(b => String(b.id) === String(id))?.name || 'Sin sucursal';
         const nombreDeCargo = (id) => roles?.find(r => String(r.id) === String(id))?.name || 'Sin cargo';
         return [...(employees || [])]
             .filter(e => e.status !== 'INACTIVO')
@@ -2598,7 +2598,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <Lock size={13} strokeWidth={2.5} className="mt-0.5 shrink-0" />
                     <span>
                         Sucursal, cargo, salario y contrato llevan <span className="font-black text-content-2">Acción RRHH</span>:
-                        se cambian con una acción de personal desde el perfil, para que quede en su historial.
+                        se cambian con una acción de personal desde el perfil.
                     </span>
                 </p>
             )}
@@ -2615,7 +2615,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <div>
                                     <h4 className="text-label font-black uppercase tracking-widest text-warning-text">Posible Duplicado</h4>
-                                    <p className="text-label text-warning-text font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Si es la misma persona, enlázala abajo en vez de crear una ficha nueva. Si es otra (homónimo), sigue adelante.</p>
+                                    <p className="text-label text-warning-text font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Si es la misma persona, enlázala abajo en vez de registrarla de nuevo. Si es otra (homónimo), sigue adelante.</p>
                                 </div>
                             </div>
                         )}
@@ -2633,7 +2633,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                     <div className="min-w-0">
                                         <h4 className="text-body-sm font-black uppercase tracking-widest text-content">¿Esta persona ya trabajaba aquí?</h4>
-                                        <p className="text-label font-medium text-content-3 leading-snug mt-0.5">Enlázala con su ficha para que conserve sus solicitudes, traslados y todo lo que ya hizo. Déjalo vacío si es alguien que entra por primera vez.</p>
+                                        <p className="text-label font-medium text-content-3 leading-snug mt-0.5">Enlázala para que conserve sus solicitudes, traslados y todo lo que ya hizo. Déjalo vacío si entra por primera vez.</p>
                                     </div>
                                 </div>
 
@@ -2661,11 +2661,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="mt-3 bg-brand/10 border border-brand/30 p-3 rounded-2xl flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2">
                                         <CheckCircle2 size={16} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <p className="text-label text-content font-medium leading-snug">
-                                            El formulario quedó lleno con lo que la ficha de{' '}
-                                            <span className="font-black">{fichaAEnlazar.name}</span> ya tenía guardado:
-                                            revísalo y cambia lo que haya cambiado. Al guardar,{' '}
-                                            <span className="font-black">no se crea un registro nuevo</span> — se
-                                            actualiza el suyo, y conserva su historial de solicitudes y traslados.
+                                            El formulario quedó lleno con lo que{' '}
+                                            <span className="font-black">{fichaAEnlazar.name}</span> ya tenía guardado.
+                                            Revísalo y cambia lo que haya cambiado. Al guardar,{' '}
+                                            <span className="font-black">no se crea un registro nuevo</span>. Se
+                                            actualiza el suyo y conserva su historial de solicitudes y traslados.
                                         </p>
                                     </div>
                                 )}
@@ -2689,10 +2689,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <Fingerprint size={16} strokeWidth={2.5} />
                                     </div>
                                     <div className="min-w-0">
-                                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">{isMinor ? altIdDocTypeLabel : 'DUI — los dos lados'}</h4>
+                                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">{isMinor ? altIdDocTypeLabel : 'DUI, los dos lados'}</h4>
                                         <p className="text-label font-medium text-content-3 leading-snug mt-0.5">
                                             {isMinor
-                                                ? 'Súbelo y después escribe los datos: un documento alterno no tiene formato fijo.'
+                                                ? 'Súbelo y después escribe los datos.'
                                                 : 'Sube las dos caras y el portal lee los datos. Si es una foto, la recortas antes para que entre sólo la tarjeta.'}
                                         </p>
                                     </div>
@@ -2812,8 +2812,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                        nada: lo que hay que decir es que vuelva a intentarlo, no
                                                        que estaba todo bien. */
                                                     : duiLeido.camposLeidos === 0
-                                                        ? <>El documento no aportó ningún dato. Vuelve a subirlo —o escribe los campos a mano.</>
-                                                        : <>Lo que dice el documento ya estaba escrito en la ficha.</>}
+                                                        ? <>El documento no aportó ningún dato. Vuelve a subirlo o escribe los campos a mano.</>
+                                                        : <>Lo que dice el documento ya estaba escrito.</>}
                                             </p>
 
                                             {/* ── Lo que el documento SUSTITUYÓ ───────────────────
@@ -2860,12 +2860,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <ul className="flex flex-col gap-0.5">
                                                         {duiLeido.numeroIlegible && (
                                                             <li className="text-label text-content-2 font-medium leading-snug">
-                                                                El número no se leyó bien —el dígito verificador no cuadra—: escríbelo a mano.
+                                                                El número no se leyó bien. Escríbelo a mano.
                                                             </li>
                                                         )}
                                                         {duiLeido.descartados.map(d => (
                                                             <li key={d} className="text-label text-content-2 font-medium leading-snug">
-                                                                No se usó el {d}: no coincide con ninguna opción del portal.
+                                                                No se usó el {d}. No coincide con ninguna opción.
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -2985,7 +2985,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 que es lo que hace falta cuando el diálogo
                                                 está esperando algo. */}
                                             <Button variant="secondary" size="sm" onClick={cerrarCaptura}>
-                                                Cerrar — la subo desde aquí
+                                                Cerrar y subirla desde aquí
                                             </Button>
                                         </div>
                                     </ModalShell>
@@ -3120,7 +3120,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="md:col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
                                         <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <p className="text-label text-warning-text font-medium leading-tight">
-                                            <span className="font-black">Menor de edad (16-17 años).</span> No se le puede asignar turno nocturno, y antes de admitirlo necesita examen médico previo gratuito, que se repite cada año hasta los 18. Tampoco puede hacer labores peligrosas o insalubres, ni un trabajo que le impida ir a la escuela — eso último lo agrega el reglamento interno de la empresa, no sólo la ley.</p>
+                                            <span className="font-black">Menor de edad (16-17 años).</span> No se le puede asignar turno nocturno, y antes de admitirlo necesita examen médico previo gratuito, que se repite cada año hasta los 18. Tampoco puede hacer labores peligrosas o insalubres. El reglamento interno tampoco permite un trabajo que le impida ir a la escuela.</p>
                                     </div>
                                 )}
 
@@ -3233,7 +3233,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Municipio</span>
                                         {formData.department && !formData.municipality && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
-                                    <LiquidSelect invalid={formData.department && !formData.municipality} value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Municipio...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                    <LiquidSelect invalid={formData.department && !formData.municipality} value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Municipio...' : 'Elige el departamento'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 {/* El TERCER nivel. Desde la Ley Especial para la
@@ -3247,7 +3247,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Distrito</span>
                                         {formData.municipality && !formData.distrito && <Badge size="sm" variant="warning" uppercase={false}>Pendiente</Badge>}
                                     </label>
-                                    <LiquidSelect value={formData.distrito} onChange={(val) => handleSelectChange('distrito', val)} options={distritoOpts} placeholder={formData.municipality ? 'Distrito...' : 'Elija municipio'} disabled={!formData.municipality} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                    <LiquidSelect value={formData.distrito} onChange={(val) => handleSelectChange('distrito', val)} options={distritoOpts} placeholder={formData.municipality ? 'Distrito...' : 'Elige el municipio'} disabled={!formData.municipality} icon={Navigation} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="md:col-span-2 -mt-2">
@@ -3276,7 +3276,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 <span>Municipio</span>
                                                                 {addr.department && !addr.municipality && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                                             </label>
-                                                            <LiquidSelect invalid={addr.department && !addr.municipality} value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Municipio...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                                            <LiquidSelect invalid={addr.department && !addr.municipality} value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Municipio...' : 'Elige el departamento'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                         </div>
                                                         <div className="md:col-span-2">
                                                             <PortalInput label="Dirección Detallada" name={`dir-alterna-${idx}`} icon={MapPin}
@@ -3316,7 +3316,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         faltaba. Decirlo es lo que lo vuelve corregible. */}
                                     {formData.education_level && !EDUCATION_OPTIONS.some(o => o.value === formData.education_level) && (
                                         <p className="mt-1 text-caption text-warning-text font-medium leading-snug">
-                                            La ficha trae «{formData.education_level}», que ya no está en la lista. Elige el nivel que corresponde para guardarlo bien.
+                                            El nivel guardado es «{formData.education_level}», que ya no está en la lista. Elige el nivel que corresponde para guardarlo bien.
                                         </p>
                                     )}
                                 </div>
@@ -3443,7 +3443,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         {estimatedStudyEnd && (
                                             <p className={`text-caption font-bold mt-2 ml-1 ${studyEndInPast ? 'text-danger' : 'text-chart-3-text'}`}>
                                                 {studyEndInPast
-                                                    ? `Finalizó en ${estimatedStudyEnd} — no puede seguir "actualmente estudiando"`
+                                                    ? `Finalizó en ${estimatedStudyEnd}. No puede seguir "actualmente estudiando"`
                                                     : `Finaliza aprox.: ${estimatedStudyEnd}`}
                                             </p>
                                         )}
@@ -3511,7 +3511,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         {estimatedMaestriaEnd && (
                                                             <p className={`text-caption font-bold mt-2 ml-1 ${maestriaStudyEndInPast ? 'text-danger' : 'text-chart-3-text'}`}>
                                                                 {maestriaStudyEndInPast
-                                                                    ? `Finalizó en ${estimatedMaestriaEnd} — no puede seguir "en curso"`
+                                                                    ? `Finalizó en ${estimatedMaestriaEnd}. No puede seguir "en curso"`
                                                                     : `Finaliza aprox.: ${estimatedMaestriaEnd}`}
                                                             </p>
                                                         )}
@@ -3632,7 +3632,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="min-w-0">
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Acreditaciones</h4>
                                     <p className="text-label font-medium text-content-3 leading-snug mt-0.5">
-                                        El comprobante se sube aquí: de él salen el número y el vencimiento.
+                                        Sube aquí el comprobante. De él salen el número y el vencimiento.
                                     </p>
                                 </div>
                             </div>
@@ -3644,7 +3644,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 contestado arriba. */}
                             {formData.is_studying && acreditacionesQueAplican.length > 0 && (
                                 <p className="text-label text-content-3 font-medium mb-4">
-                                    Esta persona todavía estudia: si aún no tiene el título, lo que puede tener es la acreditación provisional.
+                                    Esta persona todavía estudia. Si aún no tiene el título, puede tener la acreditación provisional.
                                 </p>
                             )}
 
@@ -4013,7 +4013,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             rótulo cruzado que ya se corrigió en la dirección
                                                             de la persona. Se arrastraba acá. */}
                                                         <label className={rotuloCampo('text-content-3')}>Municipio</label>
-                                                        <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Municipio...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                                        <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Municipio...' : 'Elige el departamento'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
                                                         <PortalInput label="Dirección Detallada" name={`dep-dir-${idx}`} icon={MapPin}
@@ -4283,7 +4283,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
                                     <Briefcase size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">El puesto</h4>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">El cargo</h4>
                             </div>
                             <div data-campo-grupo="branch_id role_id hire_date" className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {isEditMode ? (
@@ -4318,8 +4318,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-[var(--dur-slow)]">
                                                 <label className={rotuloCampo('text-chart-9-text')}>Áreas que cubre</label>
                                                 <p className="text-micro text-content-3 font-medium leading-snug mb-2 ml-1">
-                                                    {selectedBranch?.name} no es una sala, pero esta persona sí atiende salas.
-                                                    Toca las que le tocan: va a salir en el equipo de cada una.
+                                                    {selectedBranch?.name} no es una sucursal, pero esta persona atiende sucursales.
+                                                    Marca las que cubre. Va a salir en el equipo de cada una.
                                                 </p>
                                                 {/* Hay puestos que cubren TODAS —mantenimiento repara en
                                                     las ocho—, y marcarlas de a una es la forma más común de
@@ -4357,7 +4357,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 {/* «Se sobreentiende que las cubre todas» es indistinguible de
                                                     «nadie lo llenó», y el día que alguien cubra sólo tres no hay
                                                     forma de notar la diferencia. Se dice cuáles. */}
-                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-micro text-chart-9-text font-bold mt-1.5 ml-1">Sin áreas elegidas — sólo trabaja en su área de trabajo.</p>}
+                                                {(formData.assigned_branch_ids || []).length === 0 && <p className="text-micro text-chart-9-text font-bold mt-1.5 ml-1">Sin áreas elegidas. Sólo trabaja en su área de trabajo.</p>}
                                             </div>
                                         )}
                                         <div data-campo="hire_date" className="relative z-tabs">
@@ -4418,7 +4418,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="bg-chart-1/10 border border-chart-1/30 rounded-2xl p-3.5 flex items-start gap-3">
                                 <GraduationCap size={18} className="text-chart-1-text shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <p className="text-label text-chart-1-text font-medium leading-tight">
-                                    <span className="font-black">Contrato de Aprendizaje (Art. 61-70 CT).</span> Requiere forma escrita y aprobación/inscripción ante el Ministerio de Trabajo (Art. 61) para ser válido como tal — si no se tramita, se presume relación laboral ordinaria. Salario mínimo reducido: no menor al 50% del mínimo legal durante el primer año, 75% durante el segundo, 100% desde el tercero (Art. 69). Ninguna de las partes incurre en responsabilidad por la terminación del contrato al llegar a su fin (Art. 68).
+                                    <span className="font-black">Contrato de Aprendizaje (Art. 61-70 CT).</span> Requiere forma escrita y aprobación/inscripción ante el Ministerio de Trabajo (Art. 61) para ser válido como tal. Si no se tramita, se presume relación laboral ordinaria. Salario mínimo reducido: no menor al 50% del mínimo legal durante el primer año, 75% durante el segundo, 100% desde el tercero (Art. 69). Ninguna de las partes incurre en responsabilidad por la terminación del contrato al llegar a su fin (Art. 68).
                                 </p>
                             </div>
                         )}
@@ -4479,8 +4479,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </label>
                                             <LiquidSelect invalid={temporalBasisMissing} value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
                                         </div>
-                                        <PortalInput label="Motivo" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del puesto" required hasError={temporalReasonMissing} errorMessage="Requerido" />
-                                        <p className="md:col-span-2 text-caption text-warning-text/80 font-medium -mt-2 ml-1">La base legal es un catálogo cerrado (solo hay 2 según el Art. 25); el motivo concreto lo redacta la empresa caso por caso — queda como respaldo escrito si el plazo se disputa.</p>
+                                        <PortalInput label="Motivo" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del cargo" required hasError={temporalReasonMissing} errorMessage="Requerido" />
+                                        <p className="md:col-span-2 text-caption text-warning-text/80 font-medium -mt-2 ml-1">El Art. 25 sólo admite estas 2 bases legales. Escribe el motivo concreto de este caso.</p>
                                     </div>
                                 )}
                             </div>
@@ -4491,7 +4491,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-caption font-bold text-content-3 flex items-center gap-1.5"><ShieldCheck size={12} className="text-success" /> Recontratación antes de 1 año: no aplica período de prueba (Art. 28, último párrafo).</p>
                                     ) : probationInfo.inProbation ? (
                                         <p className="text-caption font-bold text-brand-text flex items-center gap-1.5 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 w-fit">
-                                            <Clock size={12} /> En Período de Prueba — vence el {probationInfo.probationEnd.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })} (Art. 28: 30 días desde la fecha de contratación)
+                                            <Clock size={12} /> En período de prueba. Vence el {probationInfo.probationEnd.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })} (Art. 28: 30 días desde la fecha de contratación)
                                         </p>
                                     ) : null}
                                 </div>
@@ -4531,8 +4531,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </p>
                                             <p className="text-micro text-content-3 font-medium mt-1.5 ml-1 leading-snug">
                                                 {h.fijo
-                                                    ? 'Esta área no rota, así que el contrato dice el horario completo.'
-                                                    : 'El contrato remite al reglamento en vez de fijar un horario: los turnos rotan, y uno escrito aquí sería falso a los quince días. Quién trabaja qué día se decide en Horarios.'}
+                                                    ? 'Esta área no rota. El contrato dice el horario completo.'
+                                                    : 'Los turnos rotan. El contrato remite al reglamento, y quién trabaja qué día se decide en Horarios.'}
                                             </p>
                                         </div>
                                     );
@@ -4687,15 +4687,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {(formData.contrato_prorrogas || []).length >= 2 && !esContratoCivil(formData.contract_type) && (
                                         <Notice variant="warning" icon={AlertTriangle} className="mb-3">
                                             Van {(formData.contrato_prorrogas || []).length} prórrogas. La ley no las limita en número,
-                                            pero el Art. 25 sólo acepta el plazo si la labor es transitoria: prorrogar no convierte en
-                                            temporal un puesto permanente, y encadenar plazos sobre uno lo presume indefinido.
+                                            pero el Art. 25 sólo acepta el plazo si la labor es transitoria. Prorrogar no vuelve
+                                            temporal un cargo permanente, y encadenar plazos lo presume indefinido.
                                         </Notice>
                                     )}
                                     {esContratoCivil(formData.contract_type) && (formData.contrato_prorrogas || []).length >= 2 && (
                                         <Notice variant="warning" icon={ShieldAlert} className="mb-3">
                                             Van {(formData.contrato_prorrogas || []).length} prórrogas. Cuanto más se extiende una
-                                            relación de servicios profesionales, más pesa la presunción del Art. 20: si además cumple
-                                            horario y tiene jefe, la figura correcta es un contrato de trabajo.
+                                            relación de servicios profesionales, más pesa la presunción del Art. 20. Si además cumple
+                                            horario y tiene jefe, corresponde un contrato de trabajo.
                                         </Notice>
                                     )}
                                     {(formData.contrato_prorrogas || []).length === 0 ? (
@@ -4776,7 +4776,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         ) : (
                                             <Notice variant={mtps.vencido ? 'danger' : 'warning'} icon={AlertTriangle}>
                                                 {mtps.vencido
-                                                    ? `El plazo venció hace ${Math.abs(mtps.diasRestantes)} día${Math.abs(mtps.diasRestantes) === 1 ? '' : 's'}. Se remite igual: no haberlo hecho a tiempo no invalida el contrato.`
+                                                    ? `El plazo venció hace ${Math.abs(mtps.diasRestantes)} día${Math.abs(mtps.diasRestantes) === 1 ? '' : 's'}. Remítelo igual. El contrato sigue siendo válido.`
                                                     : `Quedan ${mtps.diasRestantes} día${mtps.diasRestantes === 1 ? '' : 's'} para remitir el tercer ejemplar (hasta el ${fechaTexto(mtps.limite, { day: '2-digit', month: 'long' })}).`}
                                             </Notice>
                                         )}
@@ -4875,7 +4875,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     {incompleto && (
                                                         <p className="text-micro text-warning-text font-bold mt-2 leading-snug">
-                                                            Falta la cantidad, la descripción o el estado. Sin el estado de entrega no hay con qué comparar el día que se devuelve.
+                                                            Falta la cantidad, la descripción o el estado.
                                                         </p>
                                                     )}
                                                 </div>
@@ -4952,8 +4952,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div className="flex-1 min-w-0">
                                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Órdenes de descuento</h4>
                                                 <p className="text-micro text-content-3 font-medium">
-                                                    Se agregan cuando la ficha ya existe: guárdala y ábrela de nuevo para cargar el préstamo.
-                                                    Si esta persona ya trabajaba aquí, enlázala con su ficha en Personal y aparecen aquí mismo.
+                                                    Se agregan después de guardar a la persona. Guárdala y ábrela de nuevo para cargar el préstamo.
+                                                    Si ya trabajaba aquí, enlázala en Personal y aparecen aquí mismo.
                                                 </p>
                                             </div>
                                             <Button size="sm" variant="secondary" icon={Plus} disabled>Agregar orden</Button>
@@ -4968,7 +4968,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className={`${islandClass} ${islandHoverClass}`}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="p-2 bg-chart-8-solid text-white rounded-xl shadow-[var(--shadow-shine)]"><AtSign size={16} strokeWidth={2.5} /></div>
-                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Login de App Móvil</h4>
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Acceso a la app</h4>
                                 </div>
                                 <PortalInput label={formData?.id ? 'Usuario' : 'Usuario (Auto-generado)'} name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
                                 {usuarioQuedoViejo && (
@@ -5108,12 +5108,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 if (nuevo) setFormData(p => ({ ...p, code: nuevo }));
                                             }} />
                                     </div>
-                                    <p className="text-micro font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
+                                    <p className="text-micro font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números.</p>
 
                                     {/* PIN derivado del código (se recalcula en vivo al escribir) */}
                                     {formData.kiosk_pin && (
                                         <div className="mt-3 animate-in fade-in">
-                                            <label className={rotuloCampo('text-content-3')}>PIN del Carné (SHA-256)</label>
+                                            <label className={rotuloCampo('text-content-3')}>PIN del carné</label>
                                             <div className="flex items-center gap-2">
                                                 <div className="flex-1 h-[max(40px,var(--tap-min))] bg-chart-8-solid rounded-2xl flex items-center justify-center px-4 text-body-lg font-black tracking-[0.3em] text-white shadow-[var(--shadow-shine)] select-all">
                                                     {formData.kiosk_pin}
@@ -5147,7 +5147,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <FileText size={16} strokeWidth={2.5} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Documentación del Expediente</h4>
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Documentación</h4>
                                     <p className="text-label text-content-3 font-medium mt-0.5">
                                         {resumenDeDocumentos.listos} de {resumenDeDocumentos.total} entregados
                                         {resumenDeDocumentos.porVencer > 0 && ` · ${resumenDeDocumentos.porVencer} por vencer o vencido${resumenDeDocumentos.porVencer === 1 ? '' : 's'}`}
@@ -5168,7 +5168,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div data-campo-grupo="doc_dui doc_identidad" className="mb-5">
                                 <div className="mb-2">
                                     <p className="text-caption font-black uppercase tracking-widest text-content-2">Identidad</p>
-                                    <p className="text-micro text-content-3 font-medium leading-snug">De él salen el número, la fecha de nacimiento y la dirección de la ficha.</p>
+                                    <p className="text-micro text-content-3 font-medium leading-snug">De él salen el número, la fecha de nacimiento y la dirección.</p>
                                 </div>
                                 <TarjetaDeDocumento
                                     categoria={isMinor ? 'DOCUMENTO_IDENTIDAD' : 'DUI_FRENTE'}
@@ -5232,7 +5232,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
                                                 )}
                                                 {(cat.key === 'ANUALIDAD_JVPQF' || cat.key === 'ANUALIDAD_JVPE') && (
-                                                    <p className="text-micro text-content-3 font-bold">Comprobante de pago del año en curso (recibo o mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite: 31 de marzo, igual para todos los profesionales de salud inscritos. Se completa sola al subir el recibo si no escribes otra fecha.</p>
+                                                    <p className="text-micro text-content-3 font-bold">Comprobante de pago del año en curso (recibo o mandamiento de pago cancelado). Es distinto del carné y se renueva cada año. Fecha límite: 31 de marzo, igual para todos los profesionales de salud inscritos. Se completa sola al subir el recibo si no escribes otra fecha.</p>
                                                 )}
                                                 <div>{renderDocUploadArea(cat.key)}</div>
                                                 <HistorialDeDocumento entrada={getDocEntry(cat.key)} />
@@ -5312,8 +5312,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         alTerminar={({ asignados, pendientes, omitidos }) => {
                             setDocParaVarios(null);
                             const partes = [];
-                            if (asignados) partes.push(`${asignados} expediente${asignados === 1 ? '' : 's'}`);
-                            if (pendientes) partes.push(`${pendientes} en espera de su ficha`);
+                            if (asignados) partes.push(`${asignados} asignado${asignados === 1 ? '' : 's'}`);
+                            if (pendientes) partes.push(`${pendientes} en espera de que los registren`);
                             // Lo omitido se DICE: quien ya tenía uno no recibió
                             // éste, y callarlo dejaría creer que sí.
                             const yaTenian = (omitidos || []).filter(o => o.motivo === 'ya tiene uno');

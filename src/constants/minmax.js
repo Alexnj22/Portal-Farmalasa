@@ -7,7 +7,7 @@
 
 /** Nombre de cada estado de stock en la fila y en el título del filtro. */
 export const ALERTA_ETIQUETA = {
-    out_of_stock: 'Sin stock',
+    out_of_stock: 'Sin existencia',
     below_min:    'Bajo mínimo',
     approaching:  'Próx. mínimo',
     ok:           'OK',
@@ -18,7 +18,7 @@ export const ALERTA_ETIQUETA = {
 
 /** Los chips de conteo por estado, en el orden en que se muestran. */
 export const ESTADOS_DE_STOCK = [
-    { key: 'out_of_stock', label: 'Sin stock' },
+    { key: 'out_of_stock', label: 'Sin existencia' },
     { key: 'below_min',    label: 'Bajo mínimo' },
     { key: 'approaching',  label: 'Próx. mínimo' },
     { key: 'ok',           label: 'OK' },

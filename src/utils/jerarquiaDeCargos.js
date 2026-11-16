@@ -85,7 +85,7 @@ export function bloqueoParaEliminarCargo(rol, roles, empleados) {
         return { titulo: 'Operación prohibida', mensaje: `No puedes eliminar el cargo "${rol.name}" porque tiene ${gente.length} empleado(es) asignado(s). Reasígnalos primero.` };
     }
     if ((roles || []).some((r) => r.parent_role_id === rol.id || r.secondary_parent_role_id === rol.id)) {
-        return { titulo: 'Operación bloqueada', mensaje: `El cargo "${rol.name}" tiene otros puestos que dependen de él en el organigrama. Mueve los cargos dependientes antes de eliminarlo.` };
+        return { titulo: 'Operación bloqueada', mensaje: `El cargo "${rol.name}" tiene otros cargos que dependen de él en el organigrama. Mueve los cargos dependientes antes de eliminarlo.` };
     }
     return null;
 }

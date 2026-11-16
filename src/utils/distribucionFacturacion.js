@@ -43,16 +43,16 @@ export function gruposDeFacturacion(docs) {
 export function semaforoDeFacturacion(g) {
     const n = g.accion.length;
     if (!n) {
-        return { nivel: 'ok', titulo: 'Todo al día con Hacienda',
-            detalle: `Los ${g.sellados.length} documentos de los últimos ${DIAS_DE_FACTURACION} días tienen código de generación y sello de recepción.` };
+        return { nivel: 'ok', titulo: 'Todo al día con el MH',
+            detalle: `Las ${g.sellados.length} facturas de los últimos ${DIAS_DE_FACTURACION} días tienen código de generación y sello de recepción.` };
     }
     const grave = g.rechazados.length > 0 || g.invalidaciones.some(d => d.invalidacion_estado === 'rechazada');
     return {
         nivel: grave ? 'error' : 'pendiente',
-        titulo: `${n} documento${n === 1 ? '' : 's'} por resolver`,
+        titulo: `${n} factura${n === 1 ? '' : 's'} por resolver`,
         detalle: [
-            g.porEnviar.length && `${g.porEnviar.length} sin sello de Hacienda`,
-            g.rechazados.length && `${g.rechazados.length} rechazado${g.rechazados.length === 1 ? '' : 's'} por corregir`,
+            g.porEnviar.length && `${g.porEnviar.length} sin sello del MH`,
+            g.rechazados.length && `${g.rechazados.length} rechazada${g.rechazados.length === 1 ? '' : 's'} por corregir`,
             g.invalidaciones.length && `${g.invalidaciones.length} invalidación pendiente`,
             g.contingencia.length && `${g.contingencia.length} en contingencia`,
         ].filter(Boolean).join(' · '),
@@ -89,7 +89,7 @@ export function filaDeHacienda(d, estadoDocumento) {
 
 /** El resumen del reenvío en bloque, como lo anuncia la pantalla. */
 export function resumenDelReenvio(cuenta) {
-    return `${cuenta.sellado} recibidos por Hacienda · ${cuenta.rechazado} rechazados · ${cuenta.pendiente + cuenta.error} siguen pendientes`;
+    return `${cuenta.sellado} recibidas por el MH · ${cuenta.rechazado} rechazadas · ${cuenta.pendiente + cuenta.error} siguen pendientes`;
 }
 
 /** Sin certificado no hay nada que reintentar: los demás darían lo mismo. */
@@ -146,13 +146,13 @@ export function accionesDelDocumento(d, { puedeVender = false, plazo = null, fre
 /** @param {{ pedida?: any, conNota?: any }} [frenos] */
 export function avisoDeFreno({ pedida, conNota } = {}) {
     if (pedida) {
-        const que = pedida.accion === 'corregir' ? 'corregir este documento' : 'deshacer esta venta';
+        const que = pedida.accion === 'corregir' ? 'corregir esta factura' : 'deshacer esta venta';
         const quien = pedida.solicitante ? ` ${pedida.solicitante} la pidió` : ' Se pidió';
         const cuando = pedida.created_at ? ` el ${fechaNumerica(pedida.created_at)}` : '';
         return {
             tono: 'nota',
             titulo: `Solicitud pendiente: ${pedida.accion === 'corregir' ? 'corregir' : 'deshacer la venta'}`,
-            texto: `Hay una solicitud para ${que} esperando decisión.${quien}${cuando}. Mientras no la decidan, el documento sigue vigente y no se puede pedir otra.`,
+            texto: `Hay una solicitud para ${que} esperando decisión.${quien}${cuando}. Mientras no la decidan, la factura sigue vigente y no se puede pedir otra.`,
         };
     }
     if (conNota) {
@@ -169,16 +169,16 @@ export function avisoDeFreno({ pedida, conNota } = {}) {
 /** Qué hace «Corregir» según el estado, dicho antes de apretarlo. */
 export function queHaceCorregir(d) {
     if (!d) return '';
-    if (d.estado === 'rechazado') return 'El pedido vuelve a «por facturar» para corregir lo que dijo Hacienda y facturarlo de nuevo.';
+    if (d.estado === 'rechazado') return 'El pedido vuelve a «por facturar» para corregir lo que dijo el MH y facturarlo de nuevo.';
     if (d.estado === 'sellado') {
-        return 'Se manda una solicitud: cuando la aprueben se abre un pedido NUEVO con lo mismo, y al facturarlo éste se invalida ante Hacienda y el nuevo lo reemplaza. Lo abonado y lo pagado con saldo a favor pasan a la cuenta nueva.';
+        return 'Se manda una solicitud: cuando la aprueben se abre un pedido NUEVO con lo mismo, y al facturarlo éste se invalida ante el MH y el nuevo lo reemplaza. Lo abonado y lo pagado con saldo a favor pasan a la cuenta nueva.';
     }
-    return 'Se retira antes de llegar a Hacienda y el pedido vuelve a «por facturar» para cambiarle lo que haga falta.';
+    return 'Se retira antes de llegar al MH y el pedido vuelve a «por facturar» para cambiarle lo que haga falta.';
 }
 
 /** La ayuda de abajo del documento sellado: qué hace cada botón. */
 export function ayudaDelSellado(tipo) {
-    return 'Con sello, «Corregir» y «Deshacer la venta» se piden: los aprueba quien tenga permiso en las Solicitudes de Torogoz. Corregir emite un documento nuevo que reemplaza a éste; deshacer lo invalida y devuelve lo cobrado (el efectivo sale de tu caja; lo demás, y lo pagado con saldo a favor, queda a favor del cliente).'
+    return 'Con sello, «Corregir» y «Deshacer la venta» se piden: los aprueba quien tenga permiso en las Solicitudes de Torogoz. Corregir emite una factura nueva que reemplaza a ésta; deshacer lo invalida y devuelve lo cobrado (el efectivo sale de tu caja; lo demás, y lo pagado con saldo a favor, queda a favor del cliente).'
         + (tipo === '03'
             ? ' Si el cliente regresa sólo una parte, «Devolución» emite una nota de crédito por eso.'
             : ' A una Factura no se le hace nota de crédito: si el cliente regresa una parte, «Corregir» y deja sólo lo que se queda.');
@@ -195,16 +195,16 @@ export function avisoDelPlazo(plazo, tipo) {
     if (plazo.estado === 'vencido') {
         return { tono: 'freno', texto: `Venció el plazo para invalidarlo (${limite}).${tipo === '03'
             ? ' Si hay que corregirlo, usa «Devolución»: emite una nota de crédito.'
-            : ' Ya no se puede corregir ni deshacer ante Hacienda.'}` };
+            : ' Ya no se puede corregir ni deshacer ante el MH.'}` };
     }
     if (plazo.estado === 'gracia') {
-        return { tono: 'cuidado', texto: `El plazo para invalidarlo era el ${limite}. Puede que Hacienda todavía lo acepte si hubo asuetos; si lo rechaza, corrige con nota de crédito.` };
+        return { tono: 'cuidado', texto: `El plazo para invalidarlo era el ${limite}. Puede que el MH todavía lo acepte si hubo asuetos; si lo rechaza, corrige con nota de crédito.` };
     }
     if (plazo.estado === 'medicamentos') {
         return { tono: 'cuidado', texto: `Pasaron los 3 meses para invalidar una factura (${limite}). Sólo se puede si la venta es de medicamentos, hasta el ${fechaNumerica(plazo.limite_medicamentos)}.` };
     }
     const quedan = plazo.dias <= 3 ? ` · quedan ${plazo.dias === 0 ? 'horas' : `${plazo.dias} día${plazo.dias === 1 ? '' : 's'}`}` : '';
-    return { tono: plazo.dias <= 3 ? 'cuidado' : 'nota', texto: `Se puede corregir o deshacer ante Hacienda hasta el ${limite}${quedan}.` };
+    return { tono: plazo.dias <= 3 ? 'cuidado' : 'nota', texto: `Se puede corregir o deshacer ante el MH hasta el ${limite}${quedan}.` };
 }
 
 /** Lo que se le dice a quien acaba de mandar algo a Hacienda, según cómo volvió. */
@@ -222,8 +222,8 @@ export function avisoDeAccion(r, estadoDocumento) {
 /** El aviso de contingencia, contado como lo anuncia la pantalla. */
 export function resumenDeContingencia(r) {
     const rechazado = (r?.avisos ?? []).find(a => a.estado === 'rechazado');
-    if (rechazado) return { bien: false, titulo: 'Hacienda rechazó el aviso de contingencia', texto: rechazado.mensaje ?? '' };
-    return { bien: true, titulo: 'Aviso de contingencia enviado', texto: `${r?.sellados ?? 0} recibidos por Hacienda · ${r?.pendientes ?? 0} pendientes` };
+    if (rechazado) return { bien: false, titulo: 'El MH rechazó el aviso de contingencia', texto: rechazado.mensaje ?? '' };
+    return { bien: true, titulo: 'Aviso de contingencia enviado', texto: `${r?.sellados ?? 0} recibidas por el MH · ${r?.pendientes ?? 0} pendientes` };
 }
 
 // ── El correo al cliente ───────────────────────────────────────────────────
@@ -236,7 +236,7 @@ export function estadoDelCorreo(correo) {
     const c = Array.isArray(correo) ? correo[0] : correo;
     if (!c) return { clave: 'ninguno', texto: 'Todavía no se le envió', variant: 'neutral' };
     if (c.estado === 'enviado') return { clave: 'enviado', texto: `Enviado a ${c.destinatario}`, variant: 'success' };
-    if (c.estado === 'sin_correo') return { clave: 'sin_correo', texto: 'El cliente no tiene correo en su ficha', variant: 'warning' };
+    if (c.estado === 'sin_correo') return { clave: 'sin_correo', texto: 'El cliente no tiene correo en sus datos', variant: 'warning' };
     if (c.estado === 'fallido') return { clave: 'fallido', texto: `No se pudo enviar a ${c.destinatario}`, variant: 'danger' };
     return { clave: 'pendiente', texto: `Pendiente de enviar a ${c.destinatario}`, variant: 'warning' };
 }

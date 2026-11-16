@@ -98,8 +98,7 @@ function RenglonLectura({ item, valor, onCambio, errorServidor }) {
                 <div className="space-y-1.5 pl-1">
                     <p className="text-label font-bold text-danger-text flex items-start gap-1.5">
                         <AlertTriangle size={13} className="shrink-0 mt-px" />
-                        Fuera del rango. Hay que anotar qué se hizo: una lectura fuera de rango sin acción
-                        al lado prueba que se vio y no se actuó.
+                        Fuera del rango. Anota qué se hizo.
                     </p>
                     <PortalTextarea
                         name={`accion-${item.clave}`} rows={2}
@@ -278,7 +277,7 @@ export default function PasarLaRonda({ fecha, bloques, onCerrar }) {
             <LiquidModal.Body className="space-y-4">
                 {Object.keys(errores).length > 0 && (
                     <Notice variant="warning" compact icon={AlertTriangle}>
-                        <span className="font-bold">Quedaron renglones sin guardar.</span>
+                        <span className="font-bold">Quedaron registros sin guardar.</span>
                         <span className="block mt-0.5 font-normal text-content-2">
                             Lo demás ya está anotado. Aquí abajo está el motivo de cada uno.
                         </span>

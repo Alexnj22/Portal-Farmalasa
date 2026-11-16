@@ -103,7 +103,7 @@ export default class ErrorBoundary extends React.Component {
                             Algo salió mal
                         </h2>
                         <p className="text-body font-medium text-content-3 leading-relaxed">
-                            Ocurrió un error inesperado en esta vista. Puedes recargar la app para continuar.
+                            Algo falló en esta pantalla. Recarga el portal para seguir.
                         </p>
                     </div>
 

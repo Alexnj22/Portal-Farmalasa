@@ -200,9 +200,9 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
             onClose={ocupada ? undefined : onClose}
             maxWidth="max-w-2xl"
             className="h-fit"
-            ariaLabel="Registrar las diferencias en el sistema"
+            ariaLabel="Registrar las diferencias en la caja"
         >
-            <LiquidModal.Header titulo="Anotar en el sistema"
+            <LiquidModal.Header titulo="Anotar en la caja"
                 subtitulo="Dinero que ya se movió por una diferencia y no tiene su vale o ingreso"
                 onClose={ocupada ? undefined : onClose} />
 
@@ -211,7 +211,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                     textos enormes»). El «No lleva movimiento» se explica solo
                     en su propio botón. */}
                 <p className="text-caption text-content-2">
-                    Haz el vale o el ingreso en el sistema por el total de cada grupo y escribe aquí su número.
+                    Haz el vale o el ingreso en la pantalla de la caja por el total de cada grupo y escribe aquí su número.
                 </p>
 
                 {grupos.map((g) => {
@@ -278,7 +278,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                                 placeholder="De dónde salió la diferencia"
                                             />
                                             <PortalInput
-                                                label="Número del documento corregido"
+                                                label="Número del comprobante corregido"
                                                 name={`ref-corregir-${d.id}`}
                                                 value={refCorregir}
                                                 onChange={(e) => setRefCorregir(e.target.value)}

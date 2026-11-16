@@ -116,7 +116,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
         <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 bg-brand/5 border border-brand/15 rounded-2xl px-4 py-2.5">
                 <p className="text-label font-black text-brand-text">
-                    {shortEmployeeName(emp)} — Salario diario: {formatMoney(daily)}
+                    {shortEmployeeName(emp)} · Salario diario: {formatMoney(daily)}
                 </p>
             </div>
 
@@ -127,7 +127,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                         <Clock size={13} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                         <p className="text-micro font-black uppercase tracking-widest text-warning">Banco de Horas Extra</p>
                     </div>
-                    <p className="text-micro text-warning-text">Distribuye cada tipo — puedes pagar una parte y compensar el resto.</p>
+                    <p className="text-micro text-warning-text">Distribuye cada tipo. Puedes pagar una parte y compensar el resto.</p>
 
                     {/* Diurnal section */}
                     {otBank.diurnal > 0 && (
@@ -256,7 +256,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                 label="Detalle de Viáticos"
                 value={formData.viaticos_detail ?? entry.viaticos_detail ?? ''}
                 onChange={e => setFormData(f => ({ ...f, viaticos_detail: e.target.value }))}
-                placeholder="Ej: Por 1 visita de supervisión $10.00"
+                placeholder="Ej: Por 1 visita a otra sucursal $10.00"
             />
 
             <div className="col-span-2 pt-2">

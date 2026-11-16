@@ -46,7 +46,7 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
     const todas = salas.length > 0 && salas.every(s => elegidas.has(s.erp_sucursal_id));
     // Lo que falta, en orden y con su campo (2026-11-14): el botón se apaga por esto.
     const queFalta = !producto ? { texto: 'Elige el producto.', campo: 'productoAContar' }
-        : elegidas.size === 0 ? { texto: 'Elige al menos una sala.', campo: 'salasAContar' }
+        : elegidas.size === 0 ? { texto: 'Elige al menos una sucursal.', campo: 'salasAContar' }
         : null;
 
     const enviar = async () => {
@@ -60,7 +60,7 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
             return;
         }
         useToastStore.getState().showToast('Conteo pedido',
-            `${elegidas.size === 1 ? 'La sala recibió' : `Las ${elegidas.size} salas recibieron`} el aviso para contar.`, 'success');
+            `${elegidas.size === 1 ? 'La sucursal recibió' : `Las ${elegidas.size} sucursales recibieron`} el aviso para contar.`, 'success');
         onCreada?.();
         onCerrar();
     };
@@ -68,7 +68,7 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
     return (
         <LiquidModal open onClose={enviando ? undefined : onCerrar} maxWidth="max-w-lg" ariaLabel="Pedir que cuenten">
             <LiquidModal.Header titulo="Pedir que cuenten" icono={ScanSearch} tono="brand"
-                subtitulo="La sala cuenta sin ver lo que dice el sistema, y el portal le confirma si cuadra."
+                subtitulo="La sucursal cuenta sin ver la existencia registrada. El portal le dice si cuadra."
                 onClose={enviando ? undefined : onCerrar} />
             <LiquidModal.Body className="space-y-4">
                 {producto ? (
@@ -88,7 +88,7 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
 
                 <div className="space-y-1" data-campo="salasAContar">
                     <div className="flex items-center justify-between gap-2">
-                        <p className="text-label font-black uppercase tracking-widest text-content-3">Salas</p>
+                        <p className="text-label font-black uppercase tracking-widest text-content-3">Sucursales</p>
                         <Button variant="ghost" size="sm" disabled={!salas.length}
                             onClick={() => setElegidas(todas ? new Set() : new Set(salas.map(s => s.erp_sucursal_id)))}>
                             {todas ? 'Ninguna' : 'Todas'}
@@ -109,8 +109,7 @@ export default function NuevaConsultaExistencia({ producto: inicial = null, sala
                     placeholder="Ej.: cambió el tamaño de la caja" />
 
                 <Notice variant="info">
-                    Si no cuadra, la sala vuelve a contar una vez. Si tampoco cuadra, el ajuste lo hace quien
-                    aprueba inventario, y el resumen le llega a Talento Humano y a Supervisión.
+                    Si no cuadra, la sucursal vuelve a contar una vez. Si sigue sin cuadrar, un supervisor o administrador hace el ajuste. El resumen le llega al supervisor de ventas, a Bodega y a quien pidió el conteo.
                 </Notice>
             </LiquidModal.Body>
             <PieDeModal izquierda={queFalta && !enviando

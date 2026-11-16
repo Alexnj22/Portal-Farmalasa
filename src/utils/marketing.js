@@ -337,8 +337,8 @@ export function fraseDeHistorial(h) {
         case 'quitada':         return `quitó «${h.titulo}» del calendario`;
         case 'enviada':         return 'la envió a revisión';
         case 'version':         return `subió la ${h.a || 'versión nueva'}`;
-        case 'liberada':        return 'la liberó para las salas';
-        case 'retenida':        return h.a ? `se retuvo para las salas (${h.a})` : 'la retuvo para las salas';
+        case 'liberada':        return 'la liberó para las sucursales';
+        case 'retenida':        return h.a ? `se retuvo para las sucursales (${h.a})` : 'la retuvo para las sucursales';
         default:                return h.evento;
     }
 }

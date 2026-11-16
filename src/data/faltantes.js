@@ -114,8 +114,8 @@ export function renglonesDeLaBolsa(t) {
  * que es donde quedó el producto en el papel.
  */
 export const RESPONSABLES_DE_FALTANTE = [
-    { valor: 'origen',  rotulo: 'La sala que envió' },
-    { valor: 'destino', rotulo: 'La sala que recibió' },
+    { valor: 'origen',  rotulo: 'La sucursal que envió' },
+    { valor: 'destino', rotulo: 'La sucursal que recibió' },
     { valor: 'persona', rotulo: 'Una persona' },
 ];
 

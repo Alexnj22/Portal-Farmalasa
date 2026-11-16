@@ -88,7 +88,7 @@ export default function QrDeCaptura({ enlace, venceEl, alVencer, alRenovar, leye
 
             {vencido ? (
                 <Button variant="secondary" size="sm" icon={RefreshCw} onClick={alRenovar}>
-                    El código venció — pedir otro
+                    El código venció. Pide otro
                 </Button>
             ) : (
                 <p className="text-caption font-bold text-content-3">

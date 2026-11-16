@@ -230,13 +230,13 @@ function Cobertura({ conteo }) {
         <span className="inline-flex flex-col gap-0.5 items-start">
             <span className="inline-flex items-center gap-1.5 text-caption text-content-2 tabular-nums whitespace-nowrap">
                 <Building2 size={12} className="text-content-3 shrink-0" />
-                {salas} {salas === 1 ? 'sala' : 'salas'}
+                {salas} {salas === 1 ? 'sucursal' : 'sucursales'}
                 <span className="text-content-3">·</span>
                 {rangoDeDias(conteo.dia_desde, conteo.dia_hasta)}
             </span>
             {fuera.length > 0 && (
                 <Badge variant="danger" size="sm" icon={AlertTriangle} className="whitespace-nowrap">
-                    {fuera.length === 1 ? `Faltó ${fuera[0]}` : `Faltaron ${fuera.length} salas`}
+                    {fuera.length === 1 ? `Faltó ${fuera[0]}` : `Faltaron ${fuera.length} sucursales`}
                 </Badge>
             )}
         </span>

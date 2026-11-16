@@ -61,7 +61,7 @@ function Reportar({ abierto, onCerrar, onListo }) {
       <EncabezadoDeHoja titulo="Reportar una venta perdida" onCerrar={onCerrar} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que el cliente pidió y no tenemos. Logística lo revisa para compra.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que el cliente pidió y no tenemos. Se revisa para la compra.</Text>
           <Seccion titulo="Qué pidió">
             <Campo multiline={false} value={buscado} onChangeText={setBuscado} placeholder="Nombre del producto, como lo pidió" autoCapitalize="characters" autoFocus />
             <Campo multiline={false} value={laboratorio} onChangeText={setLaboratorio} placeholder="Laboratorio (si lo sabe)" autoCapitalize="characters" />
@@ -142,8 +142,8 @@ export default function VentasPerdidas() {
     && (quienFiltro === 'todos' || String(r.reportado_por) === quienFiltro)), [filas, sala, quienFiltro]);
   const top = useMemo(() => (estado === 'pendiente' ? masSolicitados(visibles) : []), [estado, visibles]);
   const grupos = [
-    { id: 'sala', titulo: 'Sala', activa: sala, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set((filas || []).map((r) => String(r.branch_id)).filter((x) => x && x !== 'null'))].map((id) => ({ id, label: nombreDeSala(id) ?? `Sala ${id}` }))] },
+    { id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set((filas || []).map((r) => String(r.branch_id)).filter((x) => x && x !== 'null'))].map((id) => ({ id, label: nombreDeSala(id) ?? `Sucursal ${id}` }))] },
     { id: 'quien', titulo: 'Reportó', activa: quienFiltro, porDefecto: 'todos', onCambiar: setQuienFiltro,
       opciones: [{ id: 'todos', label: 'Todos' }, ...[...new Set((filas || []).map((r) => String(r.reportado_por)).filter((x) => x && x !== 'null'))].map((id) => ({ id, label: porId.get(id) ? shortEmployeeName(porId.get(id)) : 'Alguien' }))] },
   ];

@@ -38,7 +38,7 @@ const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
  */
 const PESTANAS = [
     { key: 'parados',    label: 'Productos sin venta',  icon: Archive },
-    { key: 'sin_minmax', label: 'Vendidos sin Min/Max', icon: ListPlus },
+    { key: 'sin_minmax', label: 'Vendidos sin Mín/Máx', icon: ListPlus },
 ];
 
 export default function GestionStockView() {
@@ -69,7 +69,7 @@ export default function GestionStockView() {
     );
 
     return (
-        <GlassViewLayout icon={Activity} title="Gestión de stock" filtersContent={filtersContent}>
+        <GlassViewLayout icon={Activity} title="Gestión de existencias" filtersContent={filtersContent}>
             <Suspense fallback={<Cargando />}>
                 {pestana === 'parados'
                     ? <TabParados key={sala} sala={sala} onSala={setSala} searchTerm={debouncedSearch} />

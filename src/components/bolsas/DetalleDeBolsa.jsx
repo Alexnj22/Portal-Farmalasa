@@ -393,7 +393,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
 
                     {!enLaSala && (
                         <Notice variant="info" icon={Ban}>
-                            Esta bolsa ya salió de la sala: aquí no se corrige nada.
+                            Esta bolsa ya salió de la sucursal. Aquí no se corrige nada.
                             {' '}Si el dinero no cuadra, se resuelve en el conteo.
                         </Notice>
                     )}

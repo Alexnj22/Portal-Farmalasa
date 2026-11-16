@@ -21,7 +21,7 @@ const MENSAJE_DE_ESTADO = {
     INACTIVO: 'Usuario dado de baja.',
     BLOQUEADO: 'Usuario bloqueado.',
     SIN_ACCESO: 'Usuario sin acceso al portal.',
-    CUENTA_DESALINEADA: 'Usuario mal configurado. Avisa a Sistemas.',
+    CUENTA_DESALINEADA: 'Usuario mal configurado. Avisa a Soporte.',
     DEMASIADOS_INTENTOS: 'Demasiados intentos. Espera unos minutos.',
 };
 

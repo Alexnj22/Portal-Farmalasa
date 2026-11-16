@@ -117,8 +117,8 @@ export const ESTADOS_DE_LA_COLA = {
 
 /** El aviso al quitar una caja: no es lo mismo una que contesta que una que nunca dio señales. */
 export const avisoAlQuitarCaja = (caja, sala) => (caja?.ultimo_latido
-    ? `Esta caja está contestando: ${sala || 'esa sala'} deja de recibir papel hasta que la vuelvas a instalar. Lo que ya se imprimió por ella se conserva.`
-    : 'Nunca dio señales de vida, así que no está imprimiendo nada. Desaparece de la lista y no se puede deshacer.');
+    ? `Esta caja está contestando: ${sala || 'esa sucursal'} deja de recibir papel hasta que la vuelvas a instalar. Lo que ya se imprimió por ella se conserva.`
+    : 'Nunca dio señales de vida y no está imprimiendo nada. Desaparece de la lista y no se puede deshacer.');
 
 /** El código de vinculación partido en dos mitades, para leerlo desde el mostrador. */
 export const codigoPartido = (codigo) => `${String(codigo).slice(0, 4)}-${String(codigo).slice(4)}`;

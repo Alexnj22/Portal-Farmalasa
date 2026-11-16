@@ -224,7 +224,7 @@ export default function DiasConDiferencia({
                 title={signo === 'sobra' ? 'Sin sobrantes' : 'Sin faltantes pendientes'}
                 subtitle={signo === 'sobra'
                     ? 'Ningún corte quedó arriba de lo esperado.'
-                    : 'Todos tienen su causa, o están pagados y anotados en el sistema.'}
+                    : 'Todos tienen su causa, o están pagados y anotados en la caja.'}
                 action={onVerTodos && <Button variant="secondary" onClick={onVerTodos}>Ver todos los días</Button>}
             />
         ) : (

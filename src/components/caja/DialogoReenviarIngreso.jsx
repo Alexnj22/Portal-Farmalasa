@@ -40,7 +40,7 @@ export default function DialogoReenviarIngreso({ movimiento, sala, userId, onClo
         try {
             const url = foto ? await subirComprobante(foto, { salaId: sala, userId }) : null;
             await reenviarIngreso(movimiento.id, nota, url);
-            showToast('Reenviado', 'Supervisión o Talento Humano lo vuelven a revisar.', 'success');
+            showToast('Reenviado', 'Lo vuelve a revisar un supervisor, un administrador o Talento Humano.', 'success');
             onReenviado?.();
         } catch (e) {
             showToast('No se pudo reenviar', mensajeAmigable(e), 'error');

@@ -146,7 +146,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         </IconoEnCaja>
                         <div className="min-w-0">
                             <TituloDeSeccion nivel="modal" className="truncate">
-                                {document?.supplier_nombre || document?.emisor_nombre || 'Documento'}
+                                {document?.supplier_nombre || document?.emisor_nombre || 'Factura'}
                             </TituloDeSeccion>
                             <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5 truncate">
                                 {dteTypeLabel(document?.tipo_dte)} · {document?.numero_control || document?.codigo_generacion}
@@ -156,7 +156,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     <div className="flex flex-wrap items-center gap-2">
                         {document?.pdf_path && (
                             <SegmentedControl
-                                label="Vista del documento"
+                                label="Vista de la factura"
                                 size="sm"
                                 tone="neutro"
                                 value={tab}
@@ -183,7 +183,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2} />
                         <div className="min-w-0">
                             <p className="text-label font-bold text-danger-text leading-snug">
-                                Este documento está invalidado
+                                Esta factura está invalidada
                                 {document.invalidado_motivo ? `: ${document.invalidado_motivo}` : ''}
                                 {document.invalidado_at ? ` (${document.invalidado_at.slice(0, 10)})` : ''}.
                                 No ampara deducciones ni crédito fiscal (Art. 119-E Código Tributario).
@@ -267,7 +267,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-label text-content-3 mb-4">Sin ítems detallados en el documento.</p>
+                            <p className="text-label text-content-3 mb-4">Sin productos detallados en la factura.</p>
                         )}
 
                         <div className="flex flex-col items-end gap-1 text-body-sm pt-3 border-t border-divider">

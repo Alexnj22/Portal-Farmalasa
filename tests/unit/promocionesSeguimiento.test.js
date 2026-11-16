@@ -25,7 +25,7 @@ describe('promociones — lo que la app y el portal cuentan igual', () => {
             { sala: 'Salud 1', unidades: 2, bono: 9, sin_dueno: true },
             { unidades: 1, bono: 1 },
         ]);
-        expect(g.map((x) => x.sala)).toEqual(['Salud 1', 'Salud 2', 'Sin sala']);
+        expect(g.map((x) => x.sala)).toEqual(['Salud 1', 'Salud 2', 'Sin sucursal']);
         expect(g[0].bono).toBe(0);
         expect(g[1]).toMatchObject({ unidades: 6, bono: 4 });
         expect(g[1].gente[0].unidades).toBe(5);

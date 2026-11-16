@@ -63,7 +63,7 @@ export function avisoDeEnvioMinMax(minimo, pedidoMin, pedidoMax) {
     if (!minimo?.unidades || !parMinMaxValido(pedidoMin, pedidoMax)) return null;
     if ((pedidoMin === 0 && pedidoMax === 0) || pedidoMax >= minimo.unidades) return null;
     const n = minimo.unidades;
-    return `Bodega envía este producto de a ${minimo.texto} (${n} ${n === 1 ? 'unidad' : 'unidades'}): con MAX ${pedidoMax} no le llegaría a la sala. Sugerencia: pon MAX ${n} o más; si ya no debe reponerse, deja MIN 0 y MAX 0.`;
+    return `Bodega envía este producto de a ${minimo.texto} (${n} ${n === 1 ? 'unidad' : 'unidades'}). Con Máx ${pedidoMax} no le llegaría a la sucursal. Sugerencia: pon Máx ${n} o más. Si ya no debe reponerse, deja Mín 0 y Máx 0.`;
 }
 
 /**
@@ -129,10 +129,10 @@ export function motivosQueExigenExplicacion(actual, pedidoMin, pedidoMax) {
         return ['Se deja en cero: el producto deja de reponerse.'];
     }
     if (actual?.min == null || actual?.max == null) {
-        return ['El producto todavía no tiene MIN y MAX en esta sucursal.'];
+        return ['El producto todavía no tiene Mín y Máx en esta sucursal.'];
     }
     const motivos = [];
-    for (const [rotulo, hoy, pedido] of [['MIN', actual.min, pedidoMin], ['MAX', actual.max, pedidoMax]]) {
+    for (const [rotulo, hoy, pedido] of [['Mín', actual.min, pedidoMin], ['Máx', actual.max, pedidoMax]]) {
         if (!pedido) continue;                        // dejar un lado en 0 no es un salto
         if (hoy === 0) motivos.push(`El ${rotulo} de hoy es 0 y se propone ${pedido}.`);
         else if (pedido >= hoy * SALTO_QUE_EXIGE_MOTIVO) {
@@ -171,12 +171,12 @@ export function solicitudDeMinMax({ producto, erpSucursalId, actual, ventas, min
 
 /** Lo que dice la base cuando rechaza una solicitud de Min/Max, en palabras. */
 export function mensajeDeMinMax(msg = '', sala = 'la sucursal') {
-    if (msg.includes('row-level security')) return 'No tienes permiso para crear solicitudes (widget Ajuste de Min/Max).';
+    if (msg.includes('row-level security')) return 'No tienes permiso para crear solicitudes de Ajuste de Mín/Máx.';
     if (msg.includes('mmcr_reason_required')) return 'Este ajuste necesita un motivo.';
-    if (msg.includes('mmcr_pair_valid')) return 'Ese par de MIN y MAX no es válido.';
-    if (msg.includes('MMCR_PRODUCTO_OCULTO')) return `Este producto está oculto en ${sala}: primero hay que mostrarlo de nuevo en Min/Max.`;
-    if (msg.includes('MMCR_SIN_CAMBIO')) return `${sala} ya está así: esta solicitud no cambiaría nada.`;
-    if (msg.includes('MMCR_BODEGA')) return 'Bodega no admite estas solicitudes: su MIN y su MAX salen de la suma de las salas.';
+    if (msg.includes('mmcr_pair_valid')) return 'Ese par de Mín y Máx no es válido.';
+    if (msg.includes('MMCR_PRODUCTO_OCULTO')) return `Este producto está oculto en ${sala}. Primero hay que mostrarlo de nuevo en Mín/Máx.`;
+    if (msg.includes('MMCR_SIN_CAMBIO')) return `${sala} ya está así. Esta solicitud no cambiaría nada.`;
+    if (msg.includes('MMCR_BODEGA')) return 'Bodega no admite estas solicitudes. Su Mín y su Máx salen de la suma de las sucursales.';
     return msg || 'Error al enviar';
 }
 

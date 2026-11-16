@@ -20,7 +20,7 @@ export const PROGRAMAS = [
 export const ROTULO_PROGRAMA = Object.fromEntries(PROGRAMAS.map((p) => [p.value, p.label]));
 
 export const VIAS = [
-    { value: 'SALA', label: 'En la sala' },
+    { value: 'SALA', label: 'En la sucursal' },
     { value: 'TELEFONO', label: 'Por teléfono' },
     { value: 'CORREO', label: 'Por correo' },
     { value: 'APP', label: 'Por la app' },

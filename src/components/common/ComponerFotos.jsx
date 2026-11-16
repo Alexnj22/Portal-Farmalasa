@@ -189,7 +189,7 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
             }
             setError('No hay una imagen copiada. Copia la imagen (clic derecho › Copiar imagen) y vuelve a pegar.');
         } catch {
-            setError('Este navegador no deja leer lo copiado desde el botón: pega con ⌘V (o Ctrl+V).');
+            setError('Este navegador no deja pegar desde el botón. Pega con ⌘V (o Ctrl+V).');
         }
     };
 
@@ -200,7 +200,7 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
             let src = url;
             if (sinFondo) {
                 try { src = URL.createObjectURL(await quitarFondo(url)); }
-                catch { setError('No se pudo quitar el fondo de esa foto: se agregó como está. Retócala después.'); }
+                catch { setError('No se pudo quitar el fondo. La foto se agregó como está. Retócala después.'); }
             }
             await agregar(src);
         } catch {
@@ -358,7 +358,7 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                         </div>
                     </>
                 ) : (
-                    <p className="text-caption text-content-3">Toca una foto para moverla; arrastra sus esquinas azules para cambiarle el tamaño y girarla. También puedes pegar una imagen con ⌘V.</p>
+                    <p className="text-caption text-content-3">Toca una foto para moverla. Arrastra sus esquinas azules para cambiarle el tamaño y girarla. También puedes pegar una imagen con ⌘V.</p>
                 )}
                 {error && <Notice variant="warning" compact>{error}</Notice>}
             </div>

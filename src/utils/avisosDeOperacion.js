@@ -499,7 +499,7 @@ const CAMPO_DE_HACIENDA = {
     departamento: 'Departamento', municipio: 'Municipio', distrito: 'Distrito', codActividad: 'Actividad',
     subTotal: 'Subtotal', montoTotalOperacion: 'Total', totalPagar: 'Total a pagar',
 };
-const DE_QUIEN = { receptor: 'del cliente', emisor: 'de la sala', resumen: 'en los totales', cuerpoDocumento: 'en los productos' };
+const DE_QUIEN = { receptor: 'del cliente', emisor: 'de la sucursal', resumen: 'en los totales', cuerpoDocumento: 'en los productos' };
 export function motivoDeHacienda(texto) {
     const t = String(texto ?? '').trim();
     if (!t) return null;

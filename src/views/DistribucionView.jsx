@@ -63,7 +63,7 @@ const VISTAS_CAJA = [
 const VISTAS_INVENTARIO = [
     { key: 'lotes', label: 'Lotes', icon: Boxes },
     { key: 'reposicion', label: 'Reposición', icon: PackageSearch },
-    { key: 'conteo', label: 'Conteo y bajas', icon: ClipboardList },
+    { key: 'conteo', label: 'Conteo y descartes', icon: ClipboardList },
     { key: 'camiones', label: 'Camiones', icon: Truck },
 ];
 
@@ -156,7 +156,7 @@ export default function DistribucionView({ seccion = 'inicio' }) {
         inventario: 'Buscar producto o lote…',
         perdidas: 'Buscar producto o cliente…',
         cobros: 'Buscar cliente o ruta…',
-        compras: 'Proveedor o número del documento…',
+        compras: 'Proveedor o número de factura…',
         reportes: 'Buscar…',
     }[tab] ?? 'Buscar…'), [tab]);
 

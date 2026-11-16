@@ -109,7 +109,7 @@ export function textoDeDiferencias(c) {
         ? `${n} producto${n === 1 ? '' : 's'} con diferencia`
         : `${n} diferencia(s)`;
     const r = k.renglonesReacomodo;
-    return r > 0 ? `${base} · ${r} renglón${r === 1 ? '' : 'es'} sólo cambi${r === 1 ? 'a' : 'an'} de lote` : base;
+    return r > 0 ? `${base} · ${r} producto${r === 1 ? '' : 's'} sólo cambi${r === 1 ? 'a' : 'an'} de lote` : base;
 }
 
 /** «faltante $X · sobrante $Y · $Z sólo cambia de lote», o '' sin permiso. */

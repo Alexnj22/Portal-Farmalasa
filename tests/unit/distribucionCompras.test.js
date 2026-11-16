@@ -40,7 +40,7 @@ describe('compras: leer el documento del proveedor', () => {
         expect(Math.abs(productos - 20)).toBeLessThanOrEqual(0.02);
     });
     it('rechaza lo que no es un documento, o uno de otro tipo', () => {
-        expect(() => leerDteDelProveedor({ hola: 1 })).toThrow(/no es un documento/);
+        expect(() => leerDteDelProveedor({ hola: 1 })).toThrow(/no es una factura/);
         expect(() => leerDteDelProveedor({ ...ccf, identificacion: { ...ccf.identificacion, tipoDte: '05' } })).toThrow(/tipo 05/);
     });
     it('cambiar las unidades por empaque recalcula sin perder el neto', () => {

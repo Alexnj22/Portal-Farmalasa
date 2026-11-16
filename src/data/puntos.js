@@ -200,16 +200,16 @@ export const asignarCuentaAnterior = async ({ idCliente, customerId, nota, simul
 
 /** Por qué una cuenta no pasó sola, dicho para quien atiende el reclamo. */
 export const QUE_HACER_POR_MOTIVO = {
-    'ninguna ficha del portal tiene ese DUI':
-        'Buscar la ficha del cliente por nombre o teléfono. Si no tiene, crearla en caja con su DUI.',
+    'ningún cliente del portal tiene ese DUI':
+        'Busca al cliente por nombre o teléfono. Si no existe, créalo en caja con su DUI.',
     'DUI mal escrito en el sistema anterior':
-        'El DUI de la cuenta vieja no es válido. Confirmar con el documento del cliente antes de asignar.',
-    'el DUI está en varias fichas del portal':
-        'Hay fichas repetidas con ese DUI. Elegir la correcta o fusionarlas primero.',
+        'El DUI de la cuenta vieja no es válido. Confírmalo con el documento de identidad del cliente antes de asignar.',
+    'el DUI está en varios clientes del portal':
+        'Hay clientes repetidos con ese DUI. Elige el correcto o fusiónalos primero.',
     'el mismo DUI está en varias cuentas del sistema anterior':
-        'El cliente tenía dos cuentas. Se pueden asignar las dos a la misma ficha.',
+        'El cliente tenía dos cuentas. Puedes asignar las dos al mismo cliente.',
     'sin DUI':
-        'La cuenta vieja no tiene documento. Confirmar identidad por nombre y teléfono.',
+        'La cuenta vieja no tiene documento de identidad. Confirma quién es por nombre y teléfono.',
 };
 
 // ── La pestaña Consulta ─────────────────────────────────────────────────────

@@ -138,9 +138,9 @@ async function leerPropuesta(documentId, manualId) {
             ? { manual_id: manualId, modo: 'propuesta', max_items: 300 }
             : { document_ids: [documentId], modo: 'propuesta', max_items: 300 },
     });
-    if (error) return { propuesta: null, error: error.message ?? 'No se pudo leer el documento.' };
+    if (error) return { propuesta: null, error: error.message ?? 'No se pudo leer la factura.' };
     const doc = data?.documentos?.[0];
-    if (!doc) return { propuesta: null, error: 'El documento no devolvió nada.' };
+    if (!doc) return { propuesta: null, error: 'La factura no trae nada.' };
     if (doc.error) return { propuesta: null, error: doc.error };
     return { propuesta: doc, error: null };
 }
@@ -235,7 +235,7 @@ export async function barrerDocumentos({ dias = 90, tanda = 40 } = {}) {
     const { data, error } = await supabase.functions.invoke('leer-dte-json', {
         body: { modo: 'barrido', dias, tanda },
     });
-    if (error) return { resultado: null, error: error.message ?? 'No se pudo leer los documentos.' };
+    if (error) return { resultado: null, error: error.message ?? 'No se pudieron leer las facturas.' };
     return { resultado: data, error: null };
 }
 

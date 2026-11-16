@@ -195,7 +195,7 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         if (await salaConCajaAbierta(corte.branch_id) === false) {
             setOcupado(false);
             showToast?.('La caja está cerrada',
-                `${sala || 'La sala'} no tiene la caja abierta. El abono se hace cuando esté abierta.`, 'error');
+                `${sala || 'La sucursal'} no tiene la caja abierta. El abono se hace cuando esté abierta.`, 'error');
             return null;
         }
 

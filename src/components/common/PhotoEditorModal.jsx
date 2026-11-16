@@ -285,7 +285,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
         } catch (err) {
             console.error('PhotoEditorModal: quitar fondo falló', err);
             setBgError(navigator.onLine === false
-                ? 'Sin conexión: la primera vez hay que descargar el modelo.'
+                ? 'Sin conexión. La primera vez necesita internet.'
                 : err?.message === 'tardo'
                 ? 'Tardó demasiado en esta computadora. Usa «Encuadrar producto» o una foto con fondo liso.'
                 : 'No se pudo quitar el fondo en este navegador. Prueba «Encuadrar» o usa una foto con fondo blanco.');
@@ -735,7 +735,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                                 </Button>
                             )}
                             {bgError && <Notice variant="danger" compact>{bgError}</Notice>}
-                            {sinProducto && <Notice variant="warning" compact>No se distingue el producto del fondo: encuádralo a mano con el zoom.</Notice>}
+                            {sinProducto && <Notice variant="warning" compact>No se distingue el producto del fondo. Encuádralo a mano con el zoom.</Notice>}
                             {producto && calidad?.map((p) => (
                                 <Notice key={p.clave} variant={p.bloquea ? 'danger' : 'warning'} compact>{p.texto}</Notice>
                             ))}

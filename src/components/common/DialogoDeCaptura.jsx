@@ -60,9 +60,9 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                     {esQr
                         ? ` Después escanea el QR de ${etiqueta ? `«${etiqueta}»` : 'tu documento'} y su enlace va a aparecer aquí solo.`
                         : esDui
-                            ? ' Te va a pedir el frente y el reverso; cuando mandes las dos caras, aparecen aquí y se leen solas.'
+                            ? ' Te va a pedir el frente y el reverso. Cuando mandes las dos caras, aparecen aquí y se leen solas.'
                             : esDosCaras
-                                ? ` Te va a pedir el frente y el reverso${etiqueta ? ` de «${etiqueta}»` : ''}; cuando mandes las dos caras, aparecen aquí solas.`
+                                ? ` Te va a pedir el frente y el reverso${etiqueta ? ` de «${etiqueta}»` : ''}. Cuando mandes las dos caras, aparecen aquí solas.`
                             : (etiqueta ? ` La foto de «${etiqueta}» va a aparecer aquí sola.` : ' La foto va a aparecer aquí sola.')}
                 </p>
 
@@ -72,7 +72,7 @@ export default function DialogoDeCaptura({ captura, etiqueta, alCerrar, alRenova
                     alRenovar={alRenovar} />
 
                 <Button variant="secondary" size="sm" onClick={alCerrar}>
-                    {esQr ? 'Cerrar' : 'Cerrar — la subo desde aquí'}
+                    {esQr ? 'Cerrar' : 'Mejor la subo desde aquí'}
                 </Button>
             </div>
         </ModalShell>

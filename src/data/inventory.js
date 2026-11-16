@@ -213,7 +213,7 @@ export async function fetchExistenciasDeProductos(erpSucursalId, productIds) {
     // `fetchAllRows` devuelve null si la primera página falla. Acá eso NO puede
     // volverse `[]`: se leería como «no hay existencia» y el envío saldría
     // vacío sin decir por qué.
-    if (filas === null) throw new Error('No se pudo leer la existencia de la sala.');
+    if (filas === null) throw new Error('No se pudo leer la existencia de la sucursal.');
     return filas;
 }
 

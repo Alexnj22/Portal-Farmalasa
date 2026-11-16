@@ -310,7 +310,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
     // Helper: header subtitle text
     const subtitle = () => {
-        if (dayPhase === 'picking-end') return `Desde ${formatDisplay(dayDraftStart)} — elige la fecha final`;
+        if (dayPhase === 'picking-end') return `Desde ${formatDisplay(dayDraftStart)} · elige la fecha final`;
         return rangeLabel || 'Elige un acceso rápido o selecciona manualmente';
     };
 

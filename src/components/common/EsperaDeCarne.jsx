@@ -50,7 +50,7 @@ export default function EsperaDeCarne({ teclas = 0, manual = false, ocupado = fa
             {manual && (
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text">
                     <ShieldAlert size={14} className="shrink-0 text-danger" />
-                    Solo se acepta escaneo. No se permite ingreso manual del teclado.
+                    Solo con el escáner. No se puede escribir a mano.
                 </div>
             )}
         </div>

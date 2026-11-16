@@ -67,13 +67,13 @@ export function problemasDeCompra(c, { hoy = hoySV() } = {}) {
     const out = [];
     const items = c.items ?? [];
     if (!c.proveedor_id) out.push({ campo: 'proveedor', texto: 'Elige el proveedor.' });
-    if (!String(c.numero ?? '').trim()) out.push({ campo: 'numero', texto: 'Escribe el número del documento.' });
-    if (!c.fecha) out.push({ campo: 'fecha', texto: 'Escribe la fecha del documento.' });
-    else if (c.fecha > hoy) out.push({ campo: 'fecha', texto: 'La fecha del documento está en el futuro.' });
+    if (!String(c.numero ?? '').trim()) out.push({ campo: 'numero', texto: 'Escribe el número de la factura.' });
+    if (!c.fecha) out.push({ campo: 'fecha', texto: 'Escribe la fecha de la factura.' });
+    else if (c.fecha > hoy) out.push({ campo: 'fecha', texto: 'La fecha de la factura está en el futuro.' });
     if (Number(c.condicion) === 2 && !c.vence) out.push({ campo: 'vence', texto: 'Una compra al crédito necesita la fecha en que vence.' });
     if (!items.length) out.push({ campo: 'items', texto: 'Agrega los productos que llegaron.' });
     items.forEach((it, i) => {
-        const n = `Renglón ${i + 1}`;
+        const n = `Producto ${i + 1}`;
         if (!it.product_id) out.push({ campo: `item-${i}`, texto: `${n}: elige el producto del catálogo.` });
         if (!(num(it.cantidad) > 0) || !Number.isInteger(num(it.cantidad))) out.push({ campo: `item-${i}`, texto: `${n}: las unidades tienen que ser un número entero.` });
         if (!(num(it.costo_unitario) > 0)) out.push({ campo: `item-${i}`, texto: `${n}: falta el costo.` });
@@ -83,7 +83,7 @@ export function problemasDeCompra(c, { hoy = hoySV() } = {}) {
     const { productos } = totalesCalculados(items, c.tipo_doc);
     const base = r2(num(c.gravada) + num(c.exenta));
     if (items.length && Math.abs(productos - base) > toleranciaDeCuadre(items.length)) {
-        out.push({ campo: 'gravada', texto: `Los productos suman ${productos.toFixed(2)} y el documento dice ${base.toFixed(2)} (gravado + exento).` });
+        out.push({ campo: 'gravada', texto: `Los productos suman ${productos.toFixed(2)} y la factura dice ${base.toFixed(2)} (gravado + exento).` });
     }
     if (c.tipo_doc === '03' && Math.abs(num(c.iva) - r2(num(c.gravada) * IVA)) > 0.02) {
         out.push({ campo: 'iva', texto: `El IVA de un Crédito Fiscal es el 13 % de lo gravado: ${r2(num(c.gravada) * IVA).toFixed(2)}.` });
@@ -122,13 +122,13 @@ function hallarDte(obj, prof = 0) {
  */
 export function leerDteDelProveedor(json, { memoria = {} } = {}) {
     const dte = hallarDte(json);
-    if (!dte) throw new Error('El archivo no es un documento electrónico: no trae identificación ni productos.');
+    if (!dte) throw new Error('El archivo no es una factura electrónica. No trae identificación ni productos.');
     const id = dte.identificacion ?? {};
     const tipo = String(id.tipoDte ?? '');
-    if (!['01', '03'].includes(tipo)) throw new Error(`Ese documento es de tipo ${tipo || 'desconocido'}: aquí se cargan Créditos Fiscales y Facturas.`);
+    if (!['01', '03'].includes(tipo)) throw new Error(`Ese archivo es de tipo ${tipo || 'desconocido'}. Aquí se cargan créditos fiscales y facturas.`);
     const res = dte.resumen ?? {};
     const cuerpo = Array.isArray(dte.cuerpoDocumento) ? dte.cuerpoDocumento : [];
-    if (!cuerpo.length) throw new Error('El documento no trae productos.');
+    if (!cuerpo.length) throw new Error('La factura no trae productos.');
 
     const totalGravada = num(res.totalGravada);
     const descGravada = num(res.descuGravada);
@@ -214,7 +214,7 @@ export function evaluarPrecioRelacionada(pagado, ref) {
     const venta = Number(ref.precio_torogoz_sin_iva) || 0;
     const $ = (n) => formatMoney(n);
     if (costoF > 0 && p < costoF - 0.005) {
-        out.push({ nivel: 'danger', clave: 'bajo_costo', texto: `Farmalasa lo vendería bajo su costo (${$(costoF)}): es lo primero que revisa Hacienda entre relacionadas.` });
+        out.push({ nivel: 'danger', clave: 'bajo_costo', texto: `Farmalasa lo vendería bajo su costo (${$(costoF)}): es lo primero que revisa el MH entre relacionadas.` });
     } else if (mayoreo > 0 && p < mayoreo * (1 - TOLERANCIA_MAYOREO)) {
         out.push({ nivel: 'warning', clave: 'bajo_mayoreo', texto: `Más barato que lo que Farmalasa cobra a terceros (mayoreo ${$(mayoreo)} sin IVA).` });
     }

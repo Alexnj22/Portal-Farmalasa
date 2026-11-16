@@ -96,7 +96,7 @@ export const plazoDeRetiro = (r) => `retira hasta el ${fechaTexto(r.vence_at, { 
 
 /** En qué va una reserva que viene de otra sala o de Bodega. `tono`: info, warning o danger. */
 export const TRASLADO_DE_RESERVA = {
-    pedido: { texto: 'Pedida a otra sala', tono: 'info' },
+    pedido: { texto: 'Pedida a otra sucursal', tono: 'info' },
     enviado: { texto: 'En camino', tono: 'info' },
     parcial: { texto: 'Viene una parte', tono: 'warning' },
     rechazado: { texto: 'No la mandan', tono: 'danger' },
@@ -135,7 +135,7 @@ export const faltanEnSala = (x) => (x?.estado === 'lista' ? Math.max(0, Number(x
 export function textoDeFaltante(x) {
     if (!faltanEnSala(x)) return '';
     const hay = Math.max(0, Number(x.hay_en_sala) || 0);
-    return `El inventario de la sala tiene ${hay} de ${x.cantidad}. Antes de que llegue el cliente: si están en el estante, pide una carga de inventario; si no, pídelas a otra sala desde Inventario.`;
+    return `La existencia de la sucursal es ${hay} de ${x.cantidad}. Antes de que llegue el cliente: si están en el estante, pide una carga de inventario; si no, pídelas a otra sucursal desde Inventario.`;
 }
 
 /**
@@ -154,7 +154,7 @@ export function estadoDeReserva(r) {
     const conFalta = filas.filter((x) => faltanEnSala(x) > 0);
     if (conFalta.length) {
         const n = conFalta.length === 1 ? faltanEnSala(conFalta[0]) : 0;
-        return { label: n ? `${n === 1 ? 'Falta' : 'Faltan'} ${n} en la sala` : 'Falta producto en la sala', variant: 'danger', tono: 'danger' };
+        return { label: n ? `${n === 1 ? 'Falta' : 'Faltan'} ${n} en la sucursal` : 'Falta producto en la sucursal', variant: 'danger', tono: 'danger' };
     }
     const pendientes = filas.filter((x) => x.estado === 'pendiente');
     if (pendientes.length && pendientes.length < filas.length) return { label: 'Una parte en camino', variant: 'info' };
@@ -203,8 +203,8 @@ export function detalleDelRenglonDeReserva(x) {
         const llegaron = Number(x.traslado_llegaron ?? 0);
         return `${x.traslado_nota || `En camino${de}`}${llegaron > 0 ? ` · llegaron ${llegaron} de ${x.cantidad}` : ''}`;
     }
-    if (x.estado === 'pendiente') return 'Por apartar en la sala';
-    if (faltanEnSala(x)) return `En la sala hay ${Math.max(0, Number(x.hay_en_sala) || 0)} de ${x.cantidad}`;
+    if (x.estado === 'pendiente') return 'Por apartar en la sucursal';
+    if (faltanEnSala(x)) return `En la sucursal hay ${Math.max(0, Number(x.hay_en_sala) || 0)} de ${x.cantidad}`;
     if (x.estado === 'lista' && x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Lista · precio Mayoreo Plus' : 'Lista · precio Mayoreo';
     if (x.estado === 'lista') return 'Lista';
     if (x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Precio Mayoreo Plus' : 'Precio Mayoreo';
@@ -295,17 +295,17 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
     const porTraerDe = filas.find(reservaPorTraer);
     const enCamino = filas.some((x) => x.estado === 'pendiente' && x.traslado_estado);
     if (porResolverDe) lista.push({ k: 'resolver', label: 'Resolver', renglon: porResolverDe,
-        title: 'La otra sala no la manda, llega una parte o Bodega cambió el precio: decide qué hacer' });
+        title: 'La otra sucursal no la manda, llega una parte o Bodega cambió el precio. Decide qué hacer' });
     if (hayPendiente) lista.push({ k: 'apartar', label: enCamino ? 'Ya llegó: apartar' : 'Apartar y avisar',
         title: enCamino ? 'Si el traslado ya llegó y no quedó lista sola: déjala lista y avisa al cliente' : 'Déjala lista para retirar y avisa al cliente' });
     const conFalta = filas.some((x) => faltanEnSala(x) > 0);
     if (hayLista) lista.push({ k: 'retirar', label: 'Retirar', title: conFalta
-        ? 'Sólo si el producto está completo en el estante: el inventario de la sala no alcanza'
+        ? 'Sólo si el producto está completo en el estante. La existencia de la sucursal no alcanza'
         : 'El cliente vino: cobra lo que falta y entrégala' });
     if (puedePreventa && filas.some(puedeEnviarPreventa)) lista.push({ k: 'caja', label: 'Enviar a caja',
         title: 'Deja la venta armada en caja: producto, cliente y tú como vendedor' });
-    if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', renglon: porTraerDe,
-        title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega` });
+    if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sucursal', renglon: porTraerDe,
+        title: `Si esta sucursal no tiene ${porTraerDe.producto}, pídelo a otra sucursal o a Bodega` });
     // Avisarle que está lista cuando no lo está es mandarlo a la sala por nada.
     if (hayLista && !conFalta && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp' });
     // La prórroga (`modoDeProrroga`): la directa de 7 días de las condiciones
@@ -392,7 +392,7 @@ export const esPorPreparar = (g) => g.estado === 'en_revision' || (g.renglones ?
 /** La lista partida en lo que hay que hacer y lo que espera al cliente («me pierdo», 2026-10-22). */
 export function seccionesDeReservas(grupos) {
     return [
-        { clave: 'preparar', titulo: 'Por preparar', ayuda: 'Llegan de otra sala, esperan receta o hay que apartarlas', lista: (grupos || []).filter(esPorPreparar) },
+        { clave: 'preparar', titulo: 'Por preparar', ayuda: 'Llegan de otra sucursal, esperan receta o hay que apartarlas', lista: (grupos || []).filter(esPorPreparar) },
         { clave: 'listas', titulo: 'Listas para retirar', ayuda: 'Apartadas: el cliente ya puede pasar', lista: (grupos || []).filter((g) => !esPorPreparar(g)) },
     ].filter((s) => s.lista.length);
 }
@@ -538,7 +538,7 @@ export function pasosDeEncargo(e) {
         resto ? { clave: 'cobrado', titulo: 'Pagado con la reserva', hecho: true, at: null, persona: null, quien: null }
             : paso('cobrado', 'El cliente pagó', 'aceptado', 'En línea'),
         paso('pedido', 'Se le pidió al proveedor', 'pedido'),
-        paso('llego', 'Llegó a la sala', 'listo'),
+        paso('llego', 'Llegó a la sucursal', 'listo'),
         paso('entregado', 'Se le entregó al cliente', 'entregado'),
     ];
 }
@@ -559,7 +559,7 @@ export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
         case 'aceptado':
             return 'Ya está pagado. Compras le hace el pedido al proveedor y aprieta «Ya se pidió», para que nadie lo pida dos veces.';
         case 'pedido':
-            return `Esperar a que llegue${llega ? ` (aprox. ${llega})` : ''}. Cuando esté en la sala, apretar «Llegó»: el cliente recibe el aviso.`;
+            return `Esperar a que llegue${llega ? ` (aprox. ${llega})` : ''}. Cuando esté en la sucursal, aprieta «Llegó». El cliente recibe el aviso.`;
         case 'listo':
             return `El cliente pasa a retirarlo${e?.retirar_hasta ? ` hasta el ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'long' })}` : ''}. Al dárselo, apretar «Entregar».`;
         default:
@@ -582,7 +582,7 @@ export function pedidoDelEncargo(e) {
     const resto = !!(e?.reserva || e?.reserva_id);
     return {
         cliente: e?.cliente || 'Sin cliente',
-        canal: resto ? `Es el resto de la reserva ${e?.reserva ?? ''}`.trim() : persona ? 'Lo anotó en la sala' : 'Lo pidió desde su app',
+        canal: resto ? `Es el resto de la reserva ${e?.reserva ?? ''}`.trim() : persona ? 'Lo anotó en la sucursal' : 'Lo pidió desde su app',
         persona,
         at: h?.at ?? e?.creado ?? null,
         nota: String(e?.nota_cliente ?? '').trim() || null,

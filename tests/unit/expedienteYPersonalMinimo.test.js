@@ -297,7 +297,7 @@ describe('las píldoras de «Áreas que cubre»', () => {
 
     it('el campo explica qué es antes de pedir que se toque', () => {
         // La explicación va ARRIBA de las píldoras, no dentro del `map`.
-        expect(form).toMatch(/no es una sala, pero esta persona sí atiende salas/);
+        expect(form).toMatch(/no es una sucursal, pero esta persona atiende sucursales/);
     });
 
     it('se pueden marcar todas de una vez', () => {

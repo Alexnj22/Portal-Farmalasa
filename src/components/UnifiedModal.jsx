@@ -163,7 +163,7 @@ const getEmployeeValidationError = (formData, type) => {
             return "Los Nombres y Apellidos son obligatorios.";
         }
         if (!formData?.code?.trim()) {
-            return "El Código es obligatorio — es la credencial del carné para iniciar sesión.";
+            return "Falta el código. Es el que usa el carné para entrar.";
         }
         // Misma regla que el alta: pasar un contrato a Temporal al editar
         // también exige su base legal y su motivo (Art. 25).
@@ -443,7 +443,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "newPayrollPeriod": return "Nueva quincena";
             case "editPayrollEntry": return "Editar entrada";
             case "editProveedor": return formData?.nombre || "Detalle del proveedor";
-            case "editCliente": return formData?.nombre || "Ficha del Cliente";
+            case "editCliente": return formData?.nombre || "Datos del cliente";
             default: return "Gestión administrativa";
         }
     };
@@ -461,7 +461,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "newPayrollPeriod") return "Período de nómina";
         if (type === "editPayrollEntry") return shortEmployeeName(formData?._entry?.employee);
         if (type === "editProveedor") return formData?.nit || formData?.dui || 'Proveedor';
-        if (type === "editCliente") return "Ficha fiscal";
+        if (type === "editCliente") return "Datos fiscales";
         if (BRANCH_SUBTITLES.has(type)) return `Sucursal: ${formData?.branch?.name || formData?.name || formData?.branchName || 'nueva'}`;
         if (type === "viewDocument") return "Vista previa del archivo";
         return "Panel de configuración";
@@ -515,7 +515,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 let idDeLaFicha = formData.id || null;
                 if (type === "editEmployee" || (formData.id)) {
                     await updateEmployee(formData.id, finalData);
-                    if (showToast) showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
+                    if (showToast) showToast("Personal Actualizado", "Los datos del empleado se guardaron.", "success");
                 } else {
                     const created = await addEmployee(finalData);
                     idDeLaFicha = created?.id || null;
@@ -526,7 +526,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     // Registrado» después de enlazar sonaría a que se creó una
                     // segunda ficha, que es justo la duda que enlazar resuelve.
                     const enlazado = created?.enlazadoCon
-                        ? `Quedó sobre la ficha de ${created.enlazadoCon}, que conserva su historial.`
+                        ? `Se unió con los datos de ${created.enlazadoCon}. Su historial se conserva.`
                         : null;
                     /* ── La guarda ya NO es la contraseña temporal ───────────
                      *
@@ -632,10 +632,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                         if (showToast) showToast(
                             doc.omitido
-                                ? (enlazado ? "Expediente Enlazado" : "Empleado Creado")
-                                : (enlazado ? "Expediente Enlazado — Documento de Bienvenida" : "Empleado Creado — Documento de Bienvenida"),
+                                ? (enlazado ? "Datos enlazados" : "Empleado creado")
+                                : (enlazado ? "Datos enlazados · Documento de bienvenida" : "Empleado creado · Documento de bienvenida"),
                             doc.ok
-                                ? `${enlazado ? enlazado + ' ' : ''}Se descargó el documento: sus accesos y su carné para recortar. Entrégaselo o imprímelo.`
+                                ? `${enlazado ? enlazado + ' ' : ''}Se descargó el documento con sus accesos y su carné para recortar. Entrégaselo o imprímelo.`
                                 /* Sin contraseña temporal no se la nombra: al enlazar
                                    la persona conserva la suya, y escribir «Contraseña:
                                    undefined» convertiría un caso normal en una alarma. */
@@ -643,8 +643,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                   + (created.tempPassword
                                       ? ` · Contraseña: ${created.tempPassword} (copiada al portapapeles). `
                                         + (doc.omitido
-                                            ? 'No se pidió el documento — anótala antes de cerrar, no se puede volver a ver.'
-                                            : 'No se pudo generar el documento — anótala antes de cerrar.')
+                                            ? 'Anota la contraseña antes de cerrar. Después ya no se puede ver.'
+                                            : 'No se pudo generar el documento. Anota la contraseña antes de cerrar.')
                                       : (created.accesoFallo
                                           ? ' · todavía no tiene acceso al portal (mira el aviso).'
                                           : ' · entra con la contraseña que ya tenía.')
@@ -660,8 +660,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             ? `Entra igual que siempre, con el usuario ${created.username} y la contraseña que ya tenía.`
                             : null;
                         showToast(
-                            enlazado ? "Expediente Enlazado" : "Personal Registrado",
-                            [enlazado, conserva].filter(Boolean).join(' ') || "La ficha del empleado se guardó exitosamente.",
+                            enlazado ? "Datos enlazados" : "Empleado registrado",
+                            [enlazado, conserva].filter(Boolean).join(' ') || "Los datos del empleado se guardaron.",
                             "success",
                             enlazado ? 12000 : undefined
                         );
@@ -674,7 +674,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     // cierto (2026-10-14).
                     if (created?.avisos?.length && showToast) {
                         showToast(
-                            "La ficha se guardó, pero falta algo",
+                            "Los datos se guardaron, pero falta algo",
                             created.avisos.join(' '),
                             "warning",
                             30000
@@ -687,7 +687,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     if (created?.avisoDeUsuario && showToast) {
                         showToast(
                             "El usuario quedó como estaba",
-                            `La ficha se guardó, pero esa persona sigue entrando como ${created.username}: ${created.avisoDeUsuario}`,
+                            `Los datos se guardaron, pero esa persona sigue entrando como ${created.username}: ${created.avisoDeUsuario}`,
                             "warning",
                             15000
                         );
@@ -722,7 +722,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     } catch (errPasantia) {
                         console.error('guardarPasantiaDeFicha:', errPasantia);
                         if (showToast) showToast(
-                            'La ficha se guardó, pero la práctica no del todo',
+                            'Los datos se guardaron, pero la práctica no del todo',
                             `${mensajeAmigable(errPasantia)} Ábrela desde Practicantes y vuelve a guardar.`,
                             'warning', 20000);
                     }
@@ -738,7 +738,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 } else {
                     // `err.message` pelado acá mostraba el error de Postgres dentro
                     // del formulario, donde el guardia del toast no llega.
-                    setValidationError(mensajeAmigable(err, "No se pudo guardar la ficha. Verifica que no falten datos."));
+                    setValidationError(mensajeAmigable(err, "No se pudo guardar. Revisa que no falten datos."));
                 }
             } finally {
                 setIsSaving(false);
@@ -989,7 +989,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 const { showToast } = useToastStore.getState();
                 showToast(
                     "Ingreso Autorizado",
-                    `${shortEmployeeName(formData.employee)} — ${result.hoursWorked}h trabajadas. Total debidas: ${result.newOwed}h`,
+                    `${shortEmployeeName(formData.employee)} · ${result.hoursWorked}h trabajadas. Total debidas: ${result.newOwed}h`,
                     "success"
                 );
                 onClose();

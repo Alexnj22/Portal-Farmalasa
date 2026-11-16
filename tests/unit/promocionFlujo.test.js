@@ -182,7 +182,7 @@ describe('descSalaFuera', () => {
     });
     it('entra en los problemas del descuento de la promoción', () => {
         const l = problemasDelDescuentoDeLaPromocion(renglones, desc, { alcanceTodo: true, salas, marcadas: { 1: true, 2: true } });
-        expect(l).toContain('La sala del descuento ya no está entre las salas de la promoción.');
+        expect(l).toContain('La sucursal del descuento ya no está entre las sucursales de la promoción.');
         expect(problemasDelDescuentoDeLaPromocion(renglones, { ...desc, monto: '0' }, { salas, marcadas: { 1: true, 3: true } }))
             .toEqual(['El descuento tiene que ser mayor que cero.']);
     });

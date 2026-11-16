@@ -407,7 +407,7 @@ export const createBranchSlice = (set, get) => ({
                     await get().appendAuditLog('EMPLEADO_ASIGNADO', empId, {
                         type: 'REASSIGNMENT', previous_branch_id: persona.branchId ?? null, target_branch_id: id,
                         branch_id: id, target_branch_name: updated.name,
-                        note: `Asignado a ${updated.name} al cargarlo en el expediente de la sucursal`,
+                        note: `Asignado a ${updated.name} al cargarlo en los datos de la sucursal`,
                     });
                 } catch (e) {
                     console.error("No se pudo mover al empleado a la sucursal:", empId, e);
@@ -417,7 +417,7 @@ export const createBranchSlice = (set, get) => ({
             if (noMovidos.length > 0) {
                 useToastStore.getState().showToast(
                     'Falta mover personal',
-                    `La sucursal se guardó, pero no se pudo asignar a ${noMovidos.map(p => shortEmployeeName(p)).join(', ')} a esta sala. Hazlo desde Personal.`,
+                    `La sucursal se guardó, pero no se pudo asignar a ${noMovidos.map(p => shortEmployeeName(p)).join(', ')} a esta sucursal. Hazlo desde Personal.`,
                     'error'
                 );
             }
@@ -488,7 +488,7 @@ export const createBranchSlice = (set, get) => ({
                     'Datos tomados del documento',
                     fechasLeidas.map(f => `${f.rotulo}: ${f.tipo === 'numero' ? `número ${f.valor}`
                         : `${f.tipo === 'emision' || f.lee === 'issueDate' ? 'emitido el' : 'vence el'} ${fechaTexto(f.valor, { day: 'numeric', month: 'long', year: 'numeric' })}`}`).join(' · ')
-                        + '. Revísalos en el expediente.',
+                        + '. Revísalos en los datos de la sucursal.',
                     'success'
                 );
             }
@@ -526,7 +526,7 @@ export const createBranchSlice = (set, get) => ({
                 await appendAuditLog('EMPLEADO_RELEVADO', datos.currentAssignee, {
                     type: 'REASSIGNMENT', previous_branch_id: branchId, previous_branch_name: branchName,
                     target_branch_id: datos.outgoingBranch, previous_role: datos.targetRole, new_role: salida.name,
-                    note: `Relevado de jefatura en ${branchName}`,
+                    note: `Relevado como jefe de sucursal en ${branchName}`,
                 });
             } else {
                 await updateEmployee(datos.currentAssignee, { branchId: null, role_id: null });
@@ -748,7 +748,7 @@ export const createBranchSlice = (set, get) => ({
             if (existingRecord) {
                 timelineTitle = receiptUrl ? `Comprobante Adjuntado: ${srvName}` : `Actualización de Pago: ${srvName}`;
                 oldVal = `Mes: ${expenseData.billing_month}`;
-                newVal = receiptUrl ? `Recibo guardado en expediente` : `Monto actualizado a ${formatMoney(expenseData.amount)}`;
+                newVal = receiptUrl ? `Recibo guardado en los datos de la sucursal` : `Monto actualizado a ${formatMoney(expenseData.amount)}`;
                 actionType = 'EDITAR_SUCURSAL'; // Cambiamos el tipo para que no salga el icono de pago duplicado
             }
 

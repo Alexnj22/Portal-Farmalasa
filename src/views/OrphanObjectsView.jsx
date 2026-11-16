@@ -69,9 +69,8 @@ const OrphanObjectsView = () => {
             <div className="p-4 md:p-6">
                 <div className="mb-4 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                     <p className="text-label text-content-2 font-medium leading-snug">
-                        Tablero de seguimiento de candidatos a código muerto (componentes/funciones/edge
-                        functions sin caller real). No es detección automática — cada fila se agrega vía
-                        migración cuando se confirma un caso real; aquí solo se marca su estado.
+                        Código que quizá ya nadie usa: componentes y funciones sin nadie que los llame.
+                        Cada fila se agrega a mano cuando se confirma el caso. Aquí solo se marca su estado.
                     </p>
                 </div>
                 <DataTable

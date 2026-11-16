@@ -569,8 +569,8 @@ export function estadoDeDiferencia(item) {
     const s = item?.resolucion_status;
     if (s === 'confirmada')      return 'Resuelta';
     if (s === 'propuesta')       return 'Contesta bodega';
-    if (s === 'contrapropuesta') return 'Contesta la sala';
-    if (s === 'escalada')        return 'Lo ve supervisión';
+    if (s === 'contrapropuesta') return 'Contesta la sucursal';
+    if (s === 'escalada')        return 'Lo decide un supervisor o administrador';
     return 'Sin resolver';
 }
 
@@ -671,8 +671,8 @@ export const EVENTO_DE_DIFERENCIA = {
     diferencia_proponer:     'propuso qué hacer',
     diferencia_contraproponer:'propuso la otra salida',
     diferencia_aceptar:      'aceptó la propuesta',
-    diferencia_escalada:     'no estuvo de acuerdo — pasó a supervisión',
-    diferencia_supervisar:   'lo decidió supervisión',
+    diferencia_escalada:     'no estuvo de acuerdo y pasó a un supervisor o administrador',
+    diferencia_supervisar:   'lo decidió un supervisor o administrador',
     diferencia_llegada:      'confirmó que lo tiene',
     devolucion_solicitada:   'pidió la devolución',
     devolucion_aceptada:     'aceptó la devolución',

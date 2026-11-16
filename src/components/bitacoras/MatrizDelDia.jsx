@@ -348,8 +348,7 @@ export default function MatrizDelDia({
 
             {cerrado && (
                 <Notice variant="info" compact icon={AlertTriangle}>
-                    Este mes ya está cerrado y firmado. Para anotar o corregir hay que reabrirlo
-                    desde Cierre de mes, y esa reapertura queda registrada.
+                    Este mes ya está cerrado y firmado. Para anotar o corregir, reábrelo desde Cierre de mes. La reapertura queda registrada.
                 </Notice>
             )}
 

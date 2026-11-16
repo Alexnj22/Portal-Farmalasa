@@ -202,8 +202,8 @@ export function construirTicketDeTraslado({
     // Los rótulos van cortos porque el ancho manda: en dos columnas media línea
     // son 27 caracteres, y lo que se recorta es el rótulo, nunca el dato.
     const datos = [
-        ['De',   recortar(origen  || 'Sin sala', 22)],
-        ['Para', recortar(destino || 'Sin sala', 22)],
+        ['De',   recortar(origen  || 'Sin sucursal', 22)],
+        ['Para', recortar(destino || 'Sin sucursal', 22)],
         // Un envío no lo pidió nadie —ese es justamente su significado—, así que
         // el renglón no se imprime vacío: se omite. Un rótulo con la nada al
         // lado se lee como un dato que se perdió.
@@ -217,7 +217,7 @@ export function construirTicketDeTraslado({
     // levanta la bolsa la busca en un mostrador concreto, y el traslado dice que
     // es de otra sala. Sin esta línea, el papel y la realidad se contradicen.
     if (aplicado?.por_respaldo) {
-        bloques.push({ texto: `Despachado por ${soloAscii(origen)} mientras la sala del producto estaba cerrada.` });
+        bloques.push({ texto: `Despachado por ${soloAscii(origen)} mientras la sucursal del producto estaba cerrada.` });
     }
     if (motivo) bloques.push({ texto: `Motivo: ${soloAscii(motivo)}` });
     // Sin número no hay código de barras, y el papel tiene que DECIRLO. El

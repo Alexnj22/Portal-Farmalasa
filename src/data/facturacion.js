@@ -133,7 +133,7 @@ export function anotarEntregaDeDte(accion, invoiceId, seEnvio) {
 
 /** El texto que se le muestra a quien lo pidió, el mismo en la web y en la app. */
 export function avisoDeEntregaDeDte({ accion, correo, seEnvio }) {
-    const envio = seEnvio ? ' Se envió a Hacienda en este momento.' : '';
+    const envio = seEnvio ? ' Se envió al MH en este momento.' : '';
     return accion === 'correo' ? `Enviado a ${String(correo ?? '').trim()}.${envio}` : `Documento descargado.${envio}`;
 }
 

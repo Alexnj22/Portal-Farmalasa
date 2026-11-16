@@ -92,14 +92,14 @@ export function avisosDelPedido(t) {
         }
     }
     const ninguna = ningunaAlcanza && sala
-        ? { tono: 'danger', texto: `${sala.sala} tiene ${sala.unidades} ${u(sala.unidades)}, y no alcanzan para una sola de las presentaciones de este producto. Elige otra sala.` }
+        ? { tono: 'danger', texto: `${sala.sala} tiene ${sala.unidades} ${u(sala.unidades)}, y no alcanzan para una sola de las presentaciones de este producto. Elige otra sucursal.` }
         : null;
     let lotes = null;
     if (faltan > 0 && descartados?.size > 0) {
         lotes = { tono: 'danger', texto: `Con los lotes que dejaste fuera faltan ${faltan} ${u(faltan)}. Vuelve a incluir alguno o baja la cantidad.` };
     } else if (faltan > 0 && !descartados?.size && unidades <= Number(sala?.unidades ?? 0)) {
         const suman = lotesDeSala.reduce((s, l) => s + Number(l.unidades ?? 0), 0);
-        lotes = { tono: 'danger', texto: `Los lotes de ${sala?.sala ?? 'esa sala'} suman ${suman} unidades, menos que las ${unidades} que pides. Baja la cantidad.` };
+        lotes = { tono: 'danger', texto: `Los lotes de ${sala?.sala ?? 'esa sucursal'} suman ${suman} unidades, menos que las ${unidades} que pides. Baja la cantidad.` };
     }
     let minimo = null;
     if (reglaBodegaFallo) {
@@ -107,7 +107,7 @@ export function avisosDelPedido(t) {
     } else if (bajoMinimoBodega && pres) {
         const minimoCant = Math.ceil(minimoBodega.unidades / (Number(pres.factor) || 1));
         const noHay = Number(sala?.unidades ?? 0) < minimoBodega.unidades
-            ? ` Hoy tiene ${sala?.unidades ?? 0}: no alcanza para un envío.` : '';
+            ? ` Hoy tiene ${sala?.unidades ?? 0}: no alcanza para un traslado.` : '';
         minimo = { tono: 'danger', texto: `${envioDeBodega(minimoBodega)}. Lo mínimo que puedes pedir es ${minimoCant} ${String(pres.tipo ?? '').trim()}.${noHay}` };
     }
     return {
@@ -122,6 +122,6 @@ export function avisosDelPedido(t) {
         conProblema: conProblema.length
             ? { tono: 'danger', texto: `${conProblema.length === 1 ? `${conProblema[0].item.descripcion} no se puede mandar así.` : `${conProblema.length} productos no se pueden mandar así.`} Corrígelo en «En la solicitud».` } : null,
         paraQue: faltaElParaQue
-            ? { tono: 'warning', texto: 'Falta decir para qué se pide: es lo único que queda escrito en el movimiento de las dos salas.' } : null,
+            ? { tono: 'warning', texto: 'Falta decir para qué se pide. Queda escrito en el movimiento de las dos sucursales.' } : null,
     };
 }

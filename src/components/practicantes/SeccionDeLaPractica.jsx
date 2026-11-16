@@ -254,7 +254,7 @@ export default function SeccionDeLaPractica({ formData, setFormData }) {
                     </div>
                     <div className="relative z-tabs">
                         <label className={fieldLabel}>
-                            <span>Fecha Fin {fechasInvalidas && <span className="text-danger font-bold ml-1">— debe ser posterior</span>}</span>
+                            <span>Fecha Fin {fechasInvalidas && <span className="text-danger font-bold ml-1">Debe ser posterior</span>}</span>
                             {!pasantia.fecha_fin && reqBadge}
                         </label>
                         <LiquidDatePicker hasError={fechasInvalidas || !pasantia.fecha_fin} value={pasantia.fecha_fin} onChange={(v) => set('fecha_fin', v)} highlightRangeStart={pasantia.fecha_inicio || null} />
@@ -291,7 +291,7 @@ export default function SeccionDeLaPractica({ formData, setFormData }) {
                         url={convenioFile ? null : convenioUrl}
                         onChange={(f) => setFormData((prev) => ({ ...prev, pasantia_convenio_file: f }))}
                     />
-                    <p className="text-micro text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
+                    <p className="text-micro text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio. Es el respaldo legal del Art. 20 del Código de Trabajo.</p>
                 </div>
                 <div className="mt-4">
                     <label className={fieldLabel}>Notas</label>

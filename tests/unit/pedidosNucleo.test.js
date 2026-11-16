@@ -49,7 +49,7 @@ describe('pedidos — núcleo compartido con la app', () => {
         const r = resumenDeRecepcion({ llegada_tipo: 'caja_danada', reenvios_historial: [{}] }, [{ resolucion_status: 'confirmada' }, {}]);
         expect(r).toMatchObject({ llegada: 'Caja dañada', reenvios: 1, difResueltas: 1, difPendientes: 1 });
         expect(cifrasDelRenglon({ cantidad_asignada: 5, cantidad_recibida: 3 }).delta).toBe(-2);
-        expect(estadoDeDiferencia({ resolucion_status: 'escalada' })).toBe('Lo ve supervisión');
+        expect(estadoDeDiferencia({ resolucion_status: 'escalada' })).toBe('Lo decide un supervisor o administrador');
     });
 
     it('indicadores promedian sin los negativos y agrupan por sucursal', () => {

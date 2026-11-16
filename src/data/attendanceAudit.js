@@ -154,7 +154,7 @@ export async function resolverTurnoExtra(req, aprobar, {
         // solicitud vuelve a PENDING para que se pueda confirmar de nuevo.
         const { data: empRow, error: exErr } = await fetchEmployeeExceptions(req.employee_id);
         if (exErr || !empRow) {
-            return devolverAPendiente(req.id, exErr || new Error('No se encontró la ficha de la persona.'));
+            return devolverAPendiente(req.id, exErr || new Error('No se encontraron los datos de la persona.'));
         }
         {
             const existing = Array.isArray(empRow.exceptions) ? empRow.exceptions : [];

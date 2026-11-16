@@ -669,7 +669,7 @@ const BarraPortal = ({
                             icon={Search}
                             label="Buscar"
                             aria={campoAbierto ? 'Cerrar el campo de búsqueda'
-                                : conTexto ? `Abrir la búsqueda — filtrando por "${buscador.value}"`
+                                : conTexto ? `Abrir la búsqueda (filtrando por «${buscador.value}»)`
                                     : 'Buscar'}
                             expandido={campoAbierto}
                             rotulo={rotulos}

@@ -215,7 +215,7 @@ export default function CargadorDeFoto({
                     {!esTactil && <Button variant="ghost" size="sm" icon={ClipboardPaste} onClick={pegarImagen}>Pegar imagen</Button>}
                     {busqueda && (
                         <Button variant="ghost" size="sm" icon={Globe} onClick={buscarEnInternet}
-                            title="Abre la búsqueda de imágenes: copia una y pégala aquí">
+                            title="Abre la búsqueda de imágenes. Copia una y pégala aquí.">
                             Buscar en internet
                         </Button>
                     )}

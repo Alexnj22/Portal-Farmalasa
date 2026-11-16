@@ -114,11 +114,11 @@ test.describe('lo diferido llega cuando se lo pide', () => {
         expect(errores.deCarga(), `el módulo diferido no cargó:\n${errores.deCarga().join('\n')}`).toEqual([]);
     });
 
-    test('la pestaña Envíos abre el modal de enviar producto, que también es diferido', async ({ page }) => {
+    test('la pestaña A otra sucursal abre el modal de enviar producto, que también es diferido', async ({ page }) => {
         const errores = vigilarConsola(page);
         await page.goto('/traslados?tab=envios');
 
-        const boton = page.getByRole('button', { name: /Enviar producto a otra sala/i });
+        const boton = page.getByRole('button', { name: /Traslado a otra sucursal/i });
         // El botón depende del permiso de la cuenta: si no está, no hay nada que
         // verificar acá y la prueba lo dice en vez de fallar por algo ajeno.
         if (await boton.count() === 0) {

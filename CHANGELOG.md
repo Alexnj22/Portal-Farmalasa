@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.6 — Lenguaje: componentes, núcleo y menú
+
+- Tanda 11 de la revisión del lenguaje: el Tablero, Facturación, Ventas,
+  Preventa, las vistas sueltas, los componentes compartidos, los formularios
+  y los textos del núcleo (mensajes, estados, menú y permisos). Unos 800
+  textos. Menú: «Traslados entre sucursales», «Mín/Máx», «Gestión de
+  existencias», «de mi sucursal». Los avisos del chat dicen a quién llegan
+  (la sucursal; supervisores y administradores); sin permiso → «un
+  supervisor o administrador»; cuenta suspendida → Talento Humano.
+- Traslados: el botón «Enviar producto» → «Traslado a otra sucursal».
+
 ## v2.1554.5 — Lenguaje: Marketing, Metas, Bolsas, Inyecciones y Cumplimiento
 
 - Décima tanda de la revisión del lenguaje, web y app: Marketing, Metas,

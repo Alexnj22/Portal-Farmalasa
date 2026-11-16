@@ -65,9 +65,9 @@ export function estadoDeLaCaja(cajaAbierta) {
     return cajaAbierta === 'cargando' ? 'cargando' : 'desconocido';
 }
 export const MOTIVO_SIN_ANULAR = {
-    cerrada:     'La sala ya sacó su cierre del día — espera a mañana, o a que abra caja',
-    cargando:    'Verificando si la sala tiene caja abierta…',
-    desconocido: 'No se pudo verificar si la sala tiene caja abierta',
+    cerrada:     'La sucursal ya hizo su cierre del día. Espera a mañana o a que abra caja',
+    cargando:    'Revisando si la sucursal tiene caja abierta…',
+    desconocido: 'No se pudo revisar si la sucursal tiene caja abierta',
 };
 
 /* ── La ventana que el filtro de fecha admite ───────────────────────────────

@@ -28,24 +28,24 @@ export const FAMILIAS_OPERATIVAS = [
     {
         key: 'inventario', icono: 'PackageMinus',
         label: 'Ajuste de inventario',
-        desc: 'Cargar o descargar producto de la sala',
+        desc: 'Cargar o descargar producto de la sucursal',
         permiso: 'dash_inv_movement',
     },
     {
         key: 'facturacion', icono: 'Receipt',
         label: 'Modificar facturación',
-        desc: 'Anular una factura, cambiar su cliente, vendedor o forma de pago, o entregarle el documento electrónico al cliente',
+        desc: 'Anular una factura, cambiar su cliente, vendedor o forma de pago, o entregarle la factura electrónica al cliente',
         permiso: 'dash_annulment_req',
     },
     {
         key: 'minmax', icono: 'TrendingUp',
-        label: 'Ajuste de Min/Max',
+        label: 'Ajuste de Mín/Máx',
         desc: 'Proponer un mínimo o un máximo distinto para un producto',
         permiso: 'dash_minmax_req',
     },
     {
         key: 'traslado', icono: 'ArrowLeftRight',
-        label: 'Pedir a otra sala',
+        label: 'Pedir a otra sucursal',
         // Sin la palabra «traslado» a propósito: quien lo pide está pensando en
         // que le falta un producto, no en el nombre del movimiento. El módulo
         // sigue llamándose Traslados donde se administra.
@@ -53,7 +53,7 @@ export const FAMILIAS_OPERATIVAS = [
         // Y la descripción anuncia el BUSCADOR, que es la primera pantalla que
         // aparece: decir sólo «pedile a otra sala» y abrir una búsqueda se lee
         // como que se abrió lo que no era.
-        desc: 'Buscar el producto y ver qué salas lo tienen',
+        desc: 'Buscar el producto y ver qué sucursales lo tienen',
         // La misma llave que la consulta de inventario, que es la pantalla que
         // esto abre. Es la MISMA capacidad —«puede pedirle producto a otra
         // sala»— y una llave nueva sería un segundo interruptor para una puerta

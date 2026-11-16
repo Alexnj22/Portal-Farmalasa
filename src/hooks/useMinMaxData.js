@@ -471,7 +471,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                     _manual_motivo: motivo, _manual_nota: nota, _manual_at: ahora, _manual_cliente_unidades: null, _manual_cliente_dias: null }
                 : r
         ));
-        useToastStore.getState().showToast(row.product_name, 'Quedó en 0 en todas las salas', 'success');
+        useToastStore.getState().showToast(row.product_name, 'Quedó en 0 en todas las sucursales', 'success');
         useStaff.getState().appendAuditLog('MINMAX_ZERO_ALL_BRANCHES', String(row.erp_product_id), {
             field: 'min+max', product: row.product_name,
             new_min: 0, new_max: 0,
@@ -512,7 +512,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const floor = edit.field === 'min' ? (edit.bodegaPubMin ?? targetRow?.pub_min ?? 0) : (edit.bodegaPubMax ?? targetRow?.pub_max ?? 0);
             if (floor > 0 && numVal < floor) {
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto',
-                    `${edit.field === 'min' ? 'MIN' : 'MAX'} de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString('es-SV')})`, 'error');
+                    `El ${edit.field === 'min' ? 'Mín' : 'Máx'} de Bodega no puede ser menor que la suma de las sucursales (${floor.toLocaleString('es-SV')})`, 'error');
                 return;
             }
             const col    = edit.field === 'min' ? 'manual_min' : 'manual_max';
@@ -733,7 +733,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 ? { ...r, effective_min: cMin, effective_max: cMax, has_manual: false, alert_status: newAlert }
                 : { ...r, draft_min: cMin, draft_max: cMax, draft_status: 'pending', alert_status: newAlert };
         }));
-        useToastStore.getState().showToast(row.product_name, `Restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, 'success');
+        useToastStore.getState().showToast(row.product_name, `Restaurado a Mín ${cMin} / Máx ${cMax} (calculado)`, 'success');
         useStaff.getState().appendAuditLog('MINMAX_RESET_CALC', String(row.erp_product_id), {
             field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id, mode: saveLive ? 'live' : 'draft',
             old_min: saveLive ? (row.effective_min ?? 0) : (row.draft_min ?? row.effective_min ?? 0),
@@ -1108,7 +1108,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         // propio arriba; los botones de la fila no se alcanzaban de ninguna forma.
         { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]', hideBelow: '2xl' },
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14',    hideBelow: 'sm' },
-        { key: 'effective_min', label: 'MIN · MAX',   align: 'center', sortable: true, className: 'w-[150px]' },
+        { key: 'effective_min', label: 'Mín/Máx',     align: 'center', sortable: true, className: 'w-[150px]' },
         { key: 'presentacion',  label: 'Presentación', align: 'center', className: 'w-[130px]', hideBelow: 'md' },
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
@@ -1137,8 +1137,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             ));
         }
         const toastMsg = (freshFloorMin > 0 || freshFloorMax > 0)
-            ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString('es-SV')} · MAX ${freshFloorMax.toLocaleString('es-SV')} — ingresa el total de bodega (sum + excedente).`
-            : 'Sin MIN/MAX en salas. Ingresa el excedente que debe quedar en bodega.';
+            ? `Suma de las sucursales: Mín ${freshFloorMin.toLocaleString('es-SV')} · Máx ${freshFloorMax.toLocaleString('es-SV')}. Ingresa el total de bodega con el excedente.`
+            : 'Las sucursales no tienen Mín/Máx. Ingresa el excedente que debe quedar en bodega.';
         useToastStore.getState().showToast('Bodega', toastMsg, 'info');
         setInlineDraftEdit({
             productId: row.erp_product_id, sucursalId: row._erp_sucursal_id,

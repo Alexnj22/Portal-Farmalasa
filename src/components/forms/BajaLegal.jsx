@@ -26,7 +26,7 @@ const MINIMO_INICIAL = SALARIO_MINIMO_INICIAL;
 
 const FUERO = [
     { value: 'NO', label: 'No' },
-    { value: 'SI', label: 'Sí — embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical' },
+    { value: 'SI', label: 'Sí: embarazada o en los 6 meses después del postnatal, incapacitada o directiva sindical' },
 ];
 
 const DEVOLUCION = [
@@ -313,7 +313,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             <Campo campo="intentoDeContacto" siguiente={falta('intentoDeContacto')}>
                                 <PortalTextarea label="Cómo se le intentó contactar" rows={2} value={formData?.intentoDeContacto || ''}
                                     onChange={(e) => poner('intentoDeContacto', e.target.value)}
-                                    placeholder="Llamadas, mensajes, visita al domicilio — con fechas" />
+                                    placeholder="Llamadas, mensajes, visita al domicilio, con fechas" />
                             </Campo>
                         )}
 
@@ -335,7 +335,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             <div className="space-y-1 pt-1">
                                 <Button variant="secondary" size="sm" icon={Printer} onClick={imprimirActaYCarta}>Imprimir acta y carta</Button>
                                 <p className="text-caption text-content-3">
-                                    La persona no tiene que firmar: la carta la firma el patrono o su representante, y se entrega o se envía a su domicilio (Art. 55 CT).
+                                    La persona no firma. La carta la firma el patrono o su representante, y se entrega o se envía a su domicilio (Art. 55 CT).
                                 </p>
                                 {errorPapel && <p className="text-caption text-warning-text">{errorPapel}</p>}
                             </div>
@@ -358,7 +358,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                         ) : (
                             <>
                                 {!ingreso || !formData?.date ? (
-                                    <p className="text-caption text-content-3">Para calcularla faltan la fecha de ingreso de la ficha o la fecha de la baja.</p>
+                                    <p className="text-caption text-content-3">Para calcularla faltan la fecha de ingreso o la fecha de la baja.</p>
                                 ) : !minimoValido ? (
                                     <p className="text-caption text-warning-text">Escribe el salario mínimo para calcularla.</p>
                                 ) : liquidacion && (
@@ -393,7 +393,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                                         placeholder={liquidacion ? String(liquidacion.total) : 'Opcional'} />
                                 </div>
                                 <p className="text-caption text-content-3">
-                                    El mínimo de comercio y servicios es ${MINIMO_INICIAL.toFixed(2)}; cámbialo si es otro. Si se pagará un total distinto al estimado —porque se negoció o porque el contador lo calculó—, escríbelo en «Total que se pagará». Si lo dejas vacío, se toma el estimado.
+                                    El mínimo de comercio y servicios es ${MINIMO_INICIAL.toFixed(2)}. Cámbialo si es otro. Si se pagará un total distinto al estimado, escríbelo en «Total que se pagará». Si lo dejas vacío, se toma el estimado.
                                 </p>
                                 {acordado > 0 && liquidacion && Math.abs(acordado - liquidacion.total) >= 0.01 && (
                                     <p className="text-caption text-content-2">
@@ -413,7 +413,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             estado={<Badge variant={cierreListos === cierreTotal ? 'success' : 'neutral'} size="sm" uppercase={false}>{cierreListos} de {cierreTotal}</Badge>}>
                             Cierre
                         </TituloSeccion>
-                        <p className="text-caption text-content-3 -mt-1">No impide guardar: se puede completar después, corrigiendo la baja desde el historial.</p>
+                        <p className="text-caption text-content-3 -mt-1">Puedes guardar sin esto y completarlo después desde el historial.</p>
 
                         <div data-campo="activosDevueltos" className="rounded-2xl border border-border-card p-3 space-y-2">
                             <div className="flex items-center gap-2">

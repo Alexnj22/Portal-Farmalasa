@@ -13,7 +13,7 @@ export function porQueDesde(row) {
     if (row.desde === row.ultima_entrada) {
         return {
             traslado: 'llegó por traslado', pedido: 'llegó en pedido',
-            envio: 'llegó en un envío', compra: 'se compró',
+            envio: 'llegó en un traslado', compra: 'se compró',
         }[row.entrada_via] || 'llegó';
     }
     if (row.desde === row.reingreso) return 'reingreso a la empresa';

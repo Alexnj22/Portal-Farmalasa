@@ -48,7 +48,7 @@ const FUENTE_OPTIONS = FUENTES_DE_CONTEO.map((o) => ({ ...o, icon: o.value === '
 // lote real—, y por eso sólo existe por lote y en vivo.
 const CAJA_OPTIONS = [
     { value: 'NO', label: 'Sólo medir', icon: Eye },
-    { value: 'SI', label: 'Ajusta el inventario', icon: Wrench },
+    { value: 'SI', label: 'Ajusta la existencia', icon: Wrench },
 ];
 
 const TAMANO_DEFAULT = TAMANO_CICLICO_DEFAULT;
@@ -198,7 +198,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 fuenteSistema,
                 aplicaEnCaja,
             });
-            showToast('Conteo iniciado', 'Se generó el snapshot de inventario', 'success');
+            showToast('Conteo iniciado', 'Ya se puede empezar a contar.', 'success');
             onCreated?.(conteoId);
             onClose();
         } catch (err) {
@@ -283,9 +283,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                     Entran <strong>todos</strong> los Bajo Receta. El resto se sortea 60% clase A · 25% B · 15% C.
                                 </Notice>
                                 <p className="text-caption text-content-3 leading-snug -mt-1">
-                                    Elige primero lo que lleva más tiempo sin contarse y desempata al azar, así nada queda sin
-                                    contarse nunca y nadie puede predecir qué cae. Una sucursal sin clasificación ABC publicada
-                                    rota por antigüedad.
+                                    Primero entra lo que lleva más tiempo sin contarse. Si la sucursal no tiene clasificación ABC, entra por antigüedad.
                                 </p>
 
                                 {/* El mismo recuadro mientras carga y ya cargado: el
@@ -374,15 +372,14 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 </Notice>
                             ) : (
                                 <Notice variant="info" icon={Layers}>
-                                    Un renglón por <strong>cada lote</strong>, con su fecha de vencimiento — es el detalle que
-                                    hace falta para corregir la existencia lote por lote.
+                                    Se anota <strong>cada lote</strong> con su fecha de vencimiento. Así se corrige la existencia lote por lote.
                                 </Notice>
                             )}
                         </div>
                         <p className="text-caption text-content-3 leading-snug mt-2">
                             {modo === 'SIMPLE'
-                                ? 'Un mismo producto sigue separado por presentación cuando cambia el tamaño del empaque (la caja de 10 y la unidad se cuentan aparte, como están en el estante). Dos nombres distintos para el mismo empaque van en un solo renglón.'
-                                : 'Es la forma más detallada y la que permite ver qué está vencido o por vencer mientras se cuenta. En una sucursal completa son bastantes más renglones que contar.'}
+                                ? 'La caja de 10 y la unidad se cuentan aparte, como están en el estante. Dos nombres distintos para el mismo empaque se cuentan juntos.'
+                                : 'Es la forma más detallada. Muestra lo vencido o por vencer mientras se cuenta. En una sucursal completa hay mucho más que contar.'}
                         </p>
                     </div>
 
@@ -405,15 +402,14 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 </Notice>
                             ) : (
                                 <Notice variant="warning" icon={Radio}>
-                                    La existencia <strong>se sigue actualizando</strong>: cada renglón se compara contra
-                                    la que haya en el momento de teclearlo.
+                                    La existencia <strong>se sigue actualizando</strong>: cada producto se compara contra la que haya al teclearlo.
                                 </Notice>
                             )}
                         </div>
                         <p className="text-caption text-content-3 leading-snug mt-2">
                             {fuenteSistema === 'HOJA'
-                                ? 'Lo que se venda mientras se cuenta no aparece como faltante. Es lo que hay que elegir cuando se cuenta con hoja impresa: la hoja se imprime una vez y se llena después.'
-                                : 'Sirve para contar con la sucursal abierta y vendiendo, tecleando en el momento. Contra una hoja impresa hace ruido: cada venta hecha entre imprimirla y teclearla sale como diferencia.'}
+                                ? 'Lo que se venda mientras se cuenta no aparece como faltante. Elígelo si cuentas con hoja impresa.'
+                                : 'Sirve para contar con la sucursal abierta, tecleando en el momento. Con hoja impresa, cada venta entre imprimir y teclear sale como diferencia.'}
                         </p>
                     </div>
 
@@ -426,8 +422,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         <div className="mt-3">
                             {aplicaEnCaja ? (
                                 <Notice variant="warning" icon={Wrench}>
-                                    Al aprobarlo, la existencia queda <strong>como se contó, lote por lote</strong>: lo que
-                                    falta se da de baja y lo que sobra entra con su lote. Lo que no tiene lote asignado
+                                    Al aprobarlo, la existencia queda <strong>como se contó, lote por lote</strong>: lo que falta se resta y lo que sobra entra con su lote. Lo que no tiene lote asignado
                                     se cuenta en el lote que trae la caja.
                                 </Notice>
                             ) : (
@@ -438,7 +433,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         </div>
                         <p className="text-caption text-content-3 leading-snug mt-2">
                             {aplicaEnCaja
-                                ? 'Se cuenta por lote y en vivo, así lo que se venda mientras se cuenta no se da de baja dos veces. Lo que quede sin contar al finalizar no se toca.'
+                                ? 'Se cuenta por lote y en vivo. Lo que se venda mientras se cuenta no se resta dos veces. Lo que quede sin contar al finalizar no se toca.'
                                 : 'Para corregir la existencia después, hay que hacerlo aparte.'}
                         </p>
                     </div>
@@ -451,7 +446,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <Button variant="secondary" size="lg" disabled={saving} onClick={onClose}>Cancelar</Button>
                 <Button size="lg" onClick={handleCreate} icon={Check}
                     disabled={saving || !isValid || !canEdit} loading={saving}>
-                    {saving ? 'Generando snapshot…' : 'Iniciar Conteo'}
+                    {saving ? 'Preparando el conteo…' : 'Iniciar Conteo'}
                 </Button>
             </PieDeModal>
         </LiquidModal>

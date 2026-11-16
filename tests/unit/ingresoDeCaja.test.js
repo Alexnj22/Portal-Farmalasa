@@ -52,12 +52,12 @@ describe('ingresoDeCaja', () => {
             const l = lecturaDeBoleta({ leido, montoConfianza: 'CONFIRMADO' });
             expect(l.puesto.monto).toBe(true);
             expect(l.concepto).toBe('AGUA FRIA · Orden de despacho 0801');
-            expect(l.aviso).toMatch(/renglones lo confirman/);
+            expect(l.aviso).toMatch(/el detalle lo confirma/);
         });
         it('sin comprobar va directo a cotejar, sin pedir otra foto', () => {
             const f = frenoDelMonto({ lectura: { montoConfianza: 'UNICO', leido }, monto: '6', intentos: 0 });
             expect(f).toMatchObject({ paso: 'COTEJAR', bloquea: true });
-            expect(f.texto).toMatch(/documento/);
+            expect(f.texto).toMatch(/papel/);
         });
     });
 });

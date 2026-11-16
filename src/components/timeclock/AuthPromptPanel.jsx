@@ -57,7 +57,7 @@ const AuthPromptPanel = ({
             {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : promptType === 'IN_EARLY_EXTRA' ? `Tiempo extra: ${employeeName}` : `Turno Extra: ${employeeName}`}
           </p>
           <p className="text-white/40 text-caption sm:text-body-sm [@media(max-height:800px)]:hidden leading-relaxed mt-2.5 px-2">
-            {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Solicite a su supervisor autorizar el movimiento.'}
+            {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Pide a un supervisor que lo autorice.'}
           </p>
           {requiresSuPin && (
             <div className="mt-2.5 [@media(max-height:800px)]:mt-1 flex items-center justify-center gap-1.5 px-4 py-2 [@media(max-height:800px)]:py-1 rounded-2xl bg-chart-3/10 border border-chart-3/25">
@@ -109,7 +109,7 @@ const AuthPromptPanel = ({
               <Button variant="secondary" onClick={forceNormalOutHandler}>No, guardar según horario</Button>
             )}
             {skipPinHandler && (
-              <Button tone="warning" icon={SkipForward} onClick={skipPinHandler}>Omitir PIN — Notificar a TH</Button>
+              <Button tone="warning" icon={SkipForward} onClick={skipPinHandler}>Omitir PIN y avisar a Talento Humano</Button>
             )}
             <Button variant="destructive" icon={XCircle} onClick={cancelHandler}>Cancelar / Atrás</Button>
           </div>

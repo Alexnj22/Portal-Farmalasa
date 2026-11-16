@@ -848,7 +848,7 @@ export const createSystemSlice = (set, get) => ({
                 if (protegido) await guardarDatosProtegidos(employeeId, protegido);
                 const { error: updErr } = await updateEmployeeFields(employeeId, camposPlanos);
                 if (updErr) {
-                    throw usuario(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
+                    throw usuario(`El evento quedó registrado pero el cambio no se aplicó a sus datos: ${updErr.message}`);
                 }
             }
 

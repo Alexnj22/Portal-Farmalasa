@@ -96,7 +96,7 @@ export function cuentaADescartar(rows, erpId) {
 export function motivoDeSaltoDelCalculo(res) {
     if (!res?.skipped) return null;
     if (res.reason === 'branch_has_pending_drafts') return 'Tiene borradores sin revisar. Publícalos o descártalos antes de recalcular.';
-    if (res.reason === 'module_locked') return `Min·Max está en mantenimiento${res.locked_by ? ` por ${res.locked_by}` : ''}.`;
+    if (res.reason === 'module_locked') return `Mín/Máx está en mantenimiento${res.locked_by ? ` por ${res.locked_by}` : ''}.`;
     return 'No se recalculó.';
 }
 
@@ -155,8 +155,8 @@ export const ORDENES_DE_MINMAX = [
     { key: 'abc_xyz',       label: 'Clase ABC·XYZ' },
     { key: 'current_stock', label: 'Existencia' },
     { key: 'coverage',      label: 'Cobertura' },
-    { key: 'effective_min', label: 'MIN' },
-    { key: 'effective_max', label: 'MAX' },
+    { key: 'effective_min', label: 'Mín' },
+    { key: 'effective_max', label: 'Máx' },
     { key: 'revenue_6m',    label: 'Ingreso 6 meses' },
     { key: 'ventas',        label: 'Venta por día' },
 ];

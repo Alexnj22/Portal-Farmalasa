@@ -409,8 +409,7 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
 
             {!plegada && (<>
             <p className="text-caption text-content-3 px-1">
-                Cada cierre del efectivo contado: lo que fue al banco —para cuadrar contra el
-                estado de cuenta— y lo que se entregó en mano.
+                Cada cierre del efectivo contado: lo que fue al banco y lo que se entregó en mano.
                 {totales.efectivo >= 0.01 && ` En mano: ${formatMoney(totales.efectivo)}.`}
             </p>
 

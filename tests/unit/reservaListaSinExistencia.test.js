@@ -19,13 +19,13 @@ describe('reserva lista sin existencia en la sala', () => {
 
     it('le faltan 2: lo dice el estado, el renglón y el texto', () => {
         const r = lista({ faltan_en_sala: 2, hay_en_sala: 1 });
-        expect(estadoDeReserva(r)).toEqual({ label: 'Faltan 2 en la sala', variant: 'danger', tono: 'danger' });
-        expect(detalleDelRenglonDeReserva(r)).toBe('En la sala hay 1 de 3');
-        expect(textoDeFaltante(r)).toMatch(/tiene 1 de 3/);
+        expect(estadoDeReserva(r)).toEqual({ label: 'Faltan 2 en la sucursal', variant: 'danger', tono: 'danger' });
+        expect(detalleDelRenglonDeReserva(r)).toBe('En la sucursal hay 1 de 3');
+        expect(textoDeFaltante(r)).toMatch(/es 1 de 3/);
     });
 
     it('una sola: en singular', () => {
-        expect(estadoDeReserva(lista({ faltan_en_sala: 1, hay_en_sala: 2 })).label).toBe('Falta 1 en la sala');
+        expect(estadoDeReserva(lista({ faltan_en_sala: 1, hay_en_sala: 2 })).label).toBe('Falta 1 en la sucursal');
     });
 
     it('no le avisa al cliente que está lista; Retirar queda con la advertencia', () => {
@@ -38,7 +38,7 @@ describe('reserva lista sin existencia en la sala', () => {
         const r = { id: 1, pedido: 'P-1', estado: 'lista', renglones: [
             lista({ id: 1, faltan_en_sala: 1 }), lista({ id: 2, faltan_en_sala: 2 }),
         ] };
-        expect(estadoDeReserva(r).label).toBe('Falta producto en la sala');
+        expect(estadoDeReserva(r).label).toBe('Falta producto en la sucursal');
     });
 
     it('un renglón pendiente nunca cuenta como faltante (todavía no se apartó)', () => {

@@ -86,17 +86,17 @@ const ModuleLockNotice = memo(({ moduleKey: moduleKeyProp }) => {
                     {bloqueado ? (
                         <>
                             <strong className="font-black">{lock.locked_by_name}</strong> lo tiene en mantenimiento
-                            {lock.reason ? ` — ${lock.reason}` : ''}
+                            {lock.reason ? ` · ${lock.reason}` : ''}
                             {lock.locked_at ? <span className="tabular-nums"> · desde {hora(lock.locked_at)}</span> : null}
                             {lock.expires_at ? <span className="tabular-nums"> · vence {hora(lock.expires_at)}</span> : null}
-                            . Puedes consultar; guardar está desactivado.
+                            . Puedes consultar, pero no guardar.
                         </>
                     ) : (
                         <>
                             <strong className="font-black">Lo tienes tú en mantenimiento</strong>
-                            {lock.reason ? ` — ${lock.reason}` : ''}
+                            {lock.reason ? ` · ${lock.reason}` : ''}
                             {lock.expires_at ? <span className="tabular-nums"> · vence {hora(lock.expires_at)}</span> : null}
-                            . El resto del equipo está en solo lectura; los syncs automáticos siguen corriendo.
+                            . El resto del equipo solo puede consultar.
                         </>
                     )}
                 </span>

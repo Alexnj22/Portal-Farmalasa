@@ -261,7 +261,7 @@ export default function PreventaView({ openModal }) {
                             </div>
 
                             <aside data-surface="card" className="p-3 space-y-3 lg:sticky lg:top-3">
-                                <SegmentedControl label="Documento" value={venta.documento} options={DOCUMENTOS}
+                                <SegmentedControl label="Comprobante" value={venta.documento} options={DOCUMENTOS}
                                     onChange={(v) => cambiar({ documento: v })} />
                                 {faltanCcf.length > 0 && (
                                     <Notice variant="warning">
@@ -404,7 +404,7 @@ function Cliente({ cliente, cotizacion, puedeEditar, puedeCrear, onElegir, onEdi
                                         <span className="min-w-0 flex-1">
                                             <span className="block text-body-sm font-semibold text-content truncate">{x.name}</span>
                                             <span className="block text-micro text-content-3 truncate">
-                                                {[x.nit && `NIT ${x.nit}`, !x.nit && x.dui && `DUI ${x.dui}`, x.nrc && `NRC ${x.nrc}`, x.phone].filter(Boolean).join(' · ') || 'Sin documento'}
+                                                {[x.nit && `NIT ${x.nit}`, !x.nit && x.dui && `DUI ${x.dui}`, x.nrc && `NRC ${x.nrc}`, x.phone].filter(Boolean).join(' · ') || 'Sin datos'}
                                             </span>
                                         </span>
                                         {x.categoria && x.categoria !== 'Consumidor' && <Badge size="sm" variant="info" uppercase={false}>{x.categoria}</Badge>}

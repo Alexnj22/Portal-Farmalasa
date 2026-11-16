@@ -37,7 +37,7 @@ const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 const MOTIVO_ANULADA = {
     devolucion:     'Anulado por devolución del paciente.',
     error_de_carga: 'Anulado: se había cargado por error.',
-    dte_invalidado: 'Anulado: el documento de venta fue invalidado ante Hacienda.',
+    dte_invalidado: 'Anulado: la factura se anuló ante el Ministerio de Hacienda.',
     otro:           'Anulado.',
 };
 
@@ -150,9 +150,9 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
 
             {detalle.estado === 'anulada' && (
                 <Notice variant="neutral" icon={Ban}>
-                    <span className="font-bold">{MOTIVO_ANULADA[detalle.motivo_anulacion] || 'Este renglón está anulado.'}</span>
+                    <span className="font-bold">{MOTIVO_ANULADA[detalle.motivo_anulacion] || 'Este folio está anulado.'}</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        {detalle.detalle_anulacion || 'El renglón NO se borra: un libro foliado anota, no borra.'}
+                        {detalle.detalle_anulacion || 'El folio queda en el libro. No se borra.'}
                     </span>
                     {detalle.anulada_por && (
                         <span className="block mt-1 font-normal text-content-3">
@@ -168,7 +168,7 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                     <span className="font-bold">El lote ya estaba vencido el día que se dispensó.</span>
                     <span className="block mt-0.5 font-normal text-content-2">
                         Venció el {fmtFecha(producto.vence)} y se entregó el {fmtFecha(detalle.fecha)}.
-                        Es un hallazgo crítico en una inspección: hay que revisar ese lote en existencia.
+                        Revisa ese lote en existencia.
                     </span>
                 </Notice>
             )}
@@ -188,11 +188,11 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
 
             <Seccion icon={Store} titulo="La venta">
                 <div className="grid grid-cols-2 gap-3">
-                    <Dato label="Documento" mono>{venta?.correlativo}</Dato>
+                    <Dato label="Número" mono>{venta?.correlativo}</Dato>
                     <Dato label="Tipo">{venta?.tipo_documento}</Dato>
                     <Dato label="Cliente" ancho>{venta?.cliente}</Dato>
                     <Dato label="Vendió">{venta?.vendedor}</Dato>
-                    {puedeVerMontos && <Dato label="Total del documento" mono>{money(venta?.total)}</Dato>}
+                    {puedeVerMontos && <Dato label="Total de la venta" mono>{money(venta?.total)}</Dato>}
                     <Dato label="Código de generación" mono ancho>{venta?.codigo_generacion}</Dato>
                 </div>
                 {venta?.pdf_path ? (
@@ -212,8 +212,7 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                     <Notice variant="warning" icon={AlertTriangle}>
                         <span className="font-bold">Todavía no se ligó a una receta.</span>
                         <span className="block mt-0.5 font-normal text-content-2">
-                            Falta el paciente, el médico y la foto de la receta — que es lo único
-                            que no sale de la venta.
+                            Falta el paciente, el médico y la foto de la receta.
                         </span>
                     </Notice>
                 )}>
@@ -233,8 +232,8 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                             className="p-3 space-y-2">
                             <p className="text-body-sm font-black text-content">
                                 {Number(receta.pendiente) > 0
-                                    ? `Dispensación parcial — faltan ${num(receta.pendiente)} de ${num(receta.prescrito?.cantidad_prescrita)}`
-                                    : `Dispensación total — se entregó todo lo prescrito (${num(receta.prescrito?.cantidad_prescrita)})`}
+                                    ? `Dispensación parcial: faltan ${num(receta.pendiente)} de ${num(receta.prescrito?.cantidad_prescrita)}`
+                                    : `Dispensación total: se entregó todo lo prescrito (${num(receta.prescrito?.cantidad_prescrita)})`}
                             </p>
                             {(receta.entregas || []).length > 1 && (
                                 <ul className="space-y-1">
@@ -248,7 +247,7 @@ export default function DetalleDeFolio({ renglon, branchId, onCambio }) {
                             )}
                             {receta.motivo_pendiente === 'agotamiento_inventario' && (
                                 <p className="text-label text-content-3">
-                                    Pendiente por agotamiento de inventario — la copia de la receta queda retenida.
+                                    Pendiente por falta de existencia. La copia de la receta queda retenida.
                                 </p>
                             )}
                         </div>

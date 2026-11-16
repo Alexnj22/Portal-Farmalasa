@@ -96,9 +96,9 @@ export function detalleDeSolicitud(s) {
     const sala = m.branch_name ?? '';
     switch (s?.type) {
         case 'INVENTORY_TRANSFER_REQUEST':
-            return { contexto: `Pide ${sala} a ${m.origen_branch_name ?? 'tu sala'}`, renglones: renglonesDeItems(m.items, m), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
+            return { contexto: `Pide ${sala} a ${m.origen_branch_name ?? 'tu sucursal'}`, renglones: renglonesDeItems(m.items, m), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
         case 'INVENTORY_TRANSFER_PUSH':
-            return { contexto: `${m.origen_branch_name ?? 'Otra sala'} envía a ${sala}`, renglones: renglonesDeItems(m.items, m), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
+            return { contexto: `${m.origen_branch_name ?? 'Otra sucursal'} envía a ${sala}`, renglones: renglonesDeItems(m.items, m), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
         case 'INVENTORY_DISCARD_REQUEST':
             return { contexto: `Descarte en ${sala}`, renglones: renglonesDeItems(m.items), pie: m.motivo_label ?? m.reason };
         case 'INVENTORY_LOAD_REQUEST':
@@ -141,10 +141,10 @@ export function detalleDeSolicitud(s) {
         // quién y qué pasa con el dinero si se aprueba.
         case 'DIST_INVALIDACION':
             return {
-                contexto: `${m.accion === 'corregir' ? 'Corregir' : 'Deshacer'} ${m.numero_control ?? 'un documento'} · ${m.cliente ?? 'un cliente'}`,
+                contexto: `${m.accion === 'corregir' ? 'Corregir' : 'Deshacer'} ${m.numero_control ?? 'una factura'} · ${m.cliente ?? 'un cliente'}`,
                 renglones: m.accion === 'corregir'
-                    ? [['Total del documento', dinero(m.total)], ['Abonado (pasa a la cuenta nueva)', dinero(m.abonado ?? 0)]]
-                    : [['Total del documento', dinero(m.total)], ['Efectivo que se devuelve', dinero(m.devolver_efectivo ?? 0)],
+                    ? [['Total de la factura', dinero(m.total)], ['Abonado (pasa a la cuenta nueva)', dinero(m.abonado ?? 0)]]
+                    : [['Total de la factura', dinero(m.total)], ['Efectivo que se devuelve', dinero(m.devolver_efectivo ?? 0)],
                         ['Queda a favor del cliente', dinero(m.a_favor ?? 0)]],
                 pie: s?.note ?? undefined,
             };
@@ -156,7 +156,7 @@ export function detalleDeSolicitud(s) {
 /** El detalle de una fila de `minmax_change_requests`. */
 export function detalleDeMinMax(f) {
     return {
-        contexto: 'Ajuste de Min/Max',
+        contexto: 'Ajuste de Mín/Máx',
         renglones: [
             [String(f?.product_name ?? 'Producto'), ''],
             ['Mínimo', `${f?.current_min ?? '—'} → ${f?.requested_min ?? '—'}`],

@@ -362,7 +362,7 @@ export function CuerpoDeTraslados({ datos, claseTenue, isDark, buscarEmpleado, e
             <Panel claseTenue={claseTenue} datos={[
                 { etiqueta: traslados.length === 1 ? 'traslado' : 'traslados', valor: traslados.length },
                 { etiqueta: unidades === 1 ? 'unidad' : 'unidades', valor: unidades },
-                { etiqueta: salas === 1 ? 'sala' : 'salas', valor: salas },
+                { etiqueta: salas === 1 ? 'sucursal' : 'sucursales', valor: salas },
             ]} />
             <ul className="rounded-xl bg-surface-card-hover divide-y divide-border-card">
                 {visibles.map((t, i) => (
@@ -444,7 +444,7 @@ const CeldaPersona = ({ emp, rotulo, respaldo, claseTenue }) => (
  * tarjeta general, debajo. */
 const minmax = (min, max) => (min == null && max == null
     ? 'Sin definir'
-    : `MIN ${min ?? '—'} · MAX ${max ?? '—'}`);
+    : `Mín ${min ?? '—'} · Máx ${max ?? '—'}`);
 
 const unidades = (n) => (n == null ? '—' : Number(n).toLocaleString('es-SV', { maximumFractionDigits: 2 }));
 
@@ -470,7 +470,7 @@ function Ventas({ meses, mesCurso, existencia, claseTenue, azul }) {
                     <p className={`text-caption font-semibold ${claseTenue}`}>
                         {mesCurso != null && <>Este mes van <b className="font-black">{unidades(mesCurso)} u.</b></>}
                         {mesCurso != null && existencia != null && ' · '}
-                        {existencia != null && <>Hay <b className="font-black">{unidades(existencia)} u.</b> en la sala</>}
+                        {existencia != null && <>Hay <b className="font-black">{unidades(existencia)} u.</b> en la sucursal</>}
                     </p>
                 </div>
             )}
@@ -534,8 +534,7 @@ function Presentaciones({ datos, claseTenue, isDark }) {
                     style={{ gridColumn: '1 / -1' }}>
                     <PackageX className={`w-4 h-4 flex-shrink-0 mt-px ${rojo.texto}`} aria-hidden="true" />
                     <p className={`text-caption font-bold leading-snug break-words ${rojo.texto}`}>
-                        MAX {unidades(datos.maxNuevo)} es menos de lo que se despacha
-                        ({despacho.etiqueta}, {unidades(despacho.unidades)} u.): el pedido no mandará nada.
+                        Máx {unidades(datos.maxNuevo)} es menos de lo que se despacha ({despacho.etiqueta}, {unidades(despacho.unidades)} u.). El pedido no mandará nada.
                     </p>
                 </div>
             )}
@@ -1173,11 +1172,11 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
                     no entiendo de qué es»): es un envío que ESTA sala mandó, y
                     la otra se quedó con una parte y devuelve el resto. */}
                 {esEnvio && datos.estado === 'APARECIO' && (
-                    <Bloque rotulo={`Tu envío a ${datos.sala ?? 'la otra sala'}`} claseTenue={claseTenue}>
+                    <Bloque rotulo={`Tu traslado a ${datos.sala ?? 'la otra sucursal'}`} claseTenue={claseTenue}>
                         Apareció lo que faltaba: {datos.aceptados === 1
                             ? 'recibió el producto que había marcado como no llegado'
                             : `recibió los ${datos.aceptados} productos que había marcado como no llegados`}.
-                        Ya no hay que buscarlo en tu sala.
+                        Ya no hay que buscarlo en tu sucursal.
                     </Bloque>
                 )}
                 {esEnvio && datos.estado === 'APARECIO' && datos.productos.length > 0 && (
@@ -1190,14 +1189,14 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
                     </ul>
                 )}
                 {esEnvio && datos.estado !== 'APARECIO' && (
-                    <Bloque rotulo={`Tu envío a ${datos.sala ?? 'la otra sala'}`} claseTenue={claseTenue}>
+                    <Bloque rotulo={`Tu traslado a ${datos.sala ?? 'la otra sucursal'}`} claseTenue={claseTenue}>
                         {[
                             datos.aceptados > 0 && `Se quedó con ${datos.aceptados === 1 ? 'un producto' : `${datos.aceptados} productos`}`,
                             datos.devueltos.length > 0 && `te devuelve ${datos.devueltos.length === 1 ? 'uno' : datos.devueltos.length}`,
                         ].filter(Boolean).join(' y ').replace(/^t/, 'T')}.
                         {datos.noLlegaron > 0 && (
                             <span className={t.rojo.texto}>
-                                {' '}{datos.noLlegaron === 1 ? 'Un producto no llegó' : `${datos.noLlegaron} productos no llegaron`} en la caja: revisa si quedó en tu sala.
+                                {' '}{datos.noLlegaron === 1 ? 'Un producto no llegó' : `${datos.noLlegaron} productos no llegaron`} en la caja. Revisa si quedó en tu sucursal.
                             </span>
                         )}
                     </Bloque>
@@ -1219,7 +1218,7 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
                 )}
                 {esEnvio && datos.estado === 'DEVUELVE' && (
                     <Bloque rotulo="Qué sigue" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
-                        Confirma en Envíos cuando la caja esté de vuelta en tu sala.
+                        Cuando la caja vuelva a tu sucursal, confírmalo en Traslados.
                     </Bloque>
                 )}
 
@@ -1440,7 +1439,7 @@ export function AccionesDeDiferencia({ datos }) {
     if (hecho) {
         return (
             <p className="text-caption font-bold text-success-text px-0.5">
-                {hecho === 'aceptar' ? 'Aceptaste la salida.' : hecho === 'rechazar' ? 'La mandaste a supervisión.' : 'Listo: se avisó a la otra parte.'}
+                {hecho === 'aceptar' ? 'Aceptaste la salida.' : hecho === 'rechazar' ? 'La mandaste a un supervisor o administrador.' : 'Listo: se avisó a la otra parte.'}
             </p>
         );
     }
@@ -1463,7 +1462,7 @@ export function AccionesDeDiferencia({ datos }) {
             <div className="flex gap-2" onClick={alto}>
                 <PortalInput aria-label="Por qué no" className="flex-1" tono="danger" compact autoFocus
                     value={motivo} onChange={(e) => setMotivo(e.target.value)}
-                    placeholder="Por qué no… (lo lee supervisión)" />
+                    placeholder="Por qué no… (lo lee un supervisor o administrador)" />
                 <Button size="xs" tone="danger" soft loading={ocupado} disabled={!motivo.trim()}
                     onClick={(e) => decidir(e, 'rechazar', null, motivo.trim())}>Rechazar</Button>
                 <Button size="xs" variant="ghost" icon={X} iconOnly title="Cancelar"
@@ -1524,7 +1523,7 @@ export function CuerpoDeConteo({ datos, claseTenue }) {
                 )}
             </div>
             <Bloque rotulo="Cómo se cuenta" claseTenue={claseTenue}>
-                A ciegas: anota lo que ves en el estante, sin mirar lo que dice el sistema.
+                A ciegas: anota lo que ves en el estante, sin ver la existencia.
             </Bloque>
         </Grilla>
     );
@@ -1541,7 +1540,7 @@ export function CuerpoDeHacienda({ datos, claseTenue, isDark }) {
         return (
             <Grilla columnas="1fr">
                 <Bloque rotulo="Qué pasó" claseTenue={claseTenue} claseRotulo={t.rojo.texto}>
-                    El envío automático de las {hora12('22:30')} no dejó registro.
+                    El envío automático al MH de las {hora12('22:30')} no dejó registro.
                     {datos.esperando != null && (datos.esperando === 0
                         ? ' Ahora no hay ninguna factura esperando.'
                         : ` ${datos.esperando === 1 ? 'Hay 1 factura esperando' : `Hay ${datos.esperando} facturas esperando`} y no se van a mandar hasta que vuelva a correr.`)}
@@ -1577,7 +1576,7 @@ export function CuerpoDeHacienda({ datos, claseTenue, isDark }) {
                             </div>
                             {f.motivo && (
                                 <p className="text-caption mt-1">
-                                    <span className={`font-black uppercase tracking-wide ${t.rojo.texto}`}>Hacienda dice</span>{' '}
+                                    <span className={`font-black uppercase tracking-wide ${t.rojo.texto}`}>El MH dice</span>{' '}
                                     <span className="font-semibold">{f.motivo}</span>
                                 </p>
                             )}
@@ -1710,7 +1709,7 @@ export function CuerpoDePromo({ datos, claseTenue, isDark }) {
                 <Bloque rotulo="Todavía hay en" claseTenue={claseTenue} claseRotulo={t.azul.texto}>
                     {/* Los avisos anteriores traen «Salud 1 12»: se lee como un
                         solo número, así que la cantidad va entre paréntesis. */}
-                    {datos.donde ? datos.donde.replace(/([^\s(]) (\d+)(?=\s*·|$)/g, '$1 ($2)') : 'Ya no queda en ninguna otra sala.'}
+                    {datos.donde ? datos.donde.replace(/([^\s(]) (\d+)(?=\s*·|$)/g, '$1 ($2)') : 'Ya no queda en ninguna otra sucursal.'}
                 </Bloque>
             </Grilla>
         );
@@ -1817,7 +1816,7 @@ export function CuerpoDeReinicio({ datos, claseTenue }) {
                 <Celda rotulo="Volvió a arrancar" claseTenue={claseTenue}>{cuando}</Celda>
             )}
             <Bloque rotulo="Qué significa" claseTenue={claseTenue}>
-                Si poco antes el portal estuvo lento o no dejaba entrar, fue esto. No hay que hacer nada: ya está funcionando.
+                Si el portal estuvo lento o no dejaba entrar, fue por esto. Ya funciona. No tienes que hacer nada.
             </Bloque>
         </Grilla>
     );
@@ -1884,7 +1883,7 @@ export function CuerpoDeProductosSinVenta({ datos, claseTenue, isDark }) {
                 </ul>
             )}
             <Bloque rotulo="Qué sigue" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
-                Abre Gestión de stock y aprieta «Armar envío» en cada destino: el envío sale cargado y lo puedes cambiar antes de transferir.
+                Abre Gestión de stock y arma el traslado de cada destino. Sale cargado y lo puedes cambiar antes de mandarlo.
             </Bloque>
         </Grilla>
     );

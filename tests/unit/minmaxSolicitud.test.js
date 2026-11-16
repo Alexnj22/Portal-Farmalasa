@@ -40,7 +40,7 @@ describe('motivosQueExigenExplicacion — igual que la guarda de la base', () =>
 
     it('nombra el lado y el múltiplo, para que el pedido no parezca un capricho', () => {
         expect(motivosQueExigenExplicacion({ min: 16, max: 24 }, 20, 72))
-            .toEqual(['El MAX propuesto (72) es 3× el de hoy (24).']);
+            .toEqual(['El Máx propuesto (72) es 3× el de hoy (24).']);
     });
 
     it('un par imposible no exige motivo: primero falla el par', () => {
@@ -108,8 +108,8 @@ describe('ajusteSinCambio — «— · —» y «0 · 0» son el mismo número',
 describe('avisoDeEnvioMinMax — el MAX no puede quedar bajo lo que Bodega envía', () => {
     const minimo = { unidades: 10, texto: '1 CAJA' };
     it('frena y sugiere el MAX mínimo', () => {
-        expect(avisoDeEnvioMinMax(minimo, 2, 8)).toContain('Sugerencia: pon MAX 10 o más');
-        expect(avisoDeEnvioMinMax(minimo, 0, 1)).toContain('con MAX 1');
+        expect(avisoDeEnvioMinMax(minimo, 2, 8)).toContain('Sugerencia: pon Máx 10 o más');
+        expect(avisoDeEnvioMinMax(minimo, 0, 1)).toContain('Con Máx 1');
     });
     it('deja pasar el MAX que alcanza, el 0 · 0 y lo que no tiene regla', () => {
         expect(avisoDeEnvioMinMax(minimo, 2, 10)).toBeNull();

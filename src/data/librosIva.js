@@ -45,7 +45,7 @@ export async function descargarPaqueteDteVenta(row) {
         const res = await fetch(url);
         if (res.ok) entradas.push({ name: `${base}.${ext}`, input: await res.blob() });
     }
-    if (entradas.length === 0) throw new Error('Este documento no tiene archivos guardados.');
+    if (entradas.length === 0) throw new Error('Esta factura no tiene archivos guardados.');
 
     const blob = await downloadZip(entradas).blob();
     descargarArchivo(blob, `${base}.zip`);

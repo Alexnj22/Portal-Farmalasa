@@ -595,8 +595,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                 anterior la deja fijada y ya no se ofrece cambiarla. */}
                                             {porMl && r.dosis_ml != null && (
                                                 <p className="text-caption text-content-2">
-                                                    Se pone <b className="text-content">{fmtMl(r.dosis_ml)} ml</b> por aplicación
-                                                    — así se cobró la primera vez.
+                                                    Se pone <b className="text-content">{fmtMl(r.dosis_ml)} ml</b> por aplicación. Así se cobró la primera vez.
                                                 </p>
                                             )}
                                             {porMl && r.dosis_ml == null && (r.opciones_ml || []).length > 1 && (

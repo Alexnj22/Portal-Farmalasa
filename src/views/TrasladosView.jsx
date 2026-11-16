@@ -507,7 +507,7 @@ export default function TrasladosView() {
     const limpiarTodo = () => { setSala(''); setTipo(''); setSemana(semanaActual); };
 
     return (
-        <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre salas" filtersContent={filtersContent}>
+        <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre sucursales" filtersContent={filtersContent}>
             <PropuestasDeLote />
             {/* La píldora §17: TODO el filtro de la vista en un solo lugar. El
                 tipo sólo se ofrece en Historial —en las otras dos pestañas no
@@ -637,7 +637,7 @@ export default function TrasladosView() {
                             <Button variant="secondary" icon={Send}
                                 className="min-h-[var(--tap-min)]"
                                 onClick={() => setAbrirEnvio(true)}>
-                                Enviar producto
+                                Traslado a otra sucursal
                             </Button>
                         </div>
                     )}

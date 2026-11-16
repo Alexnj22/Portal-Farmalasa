@@ -48,7 +48,7 @@ function ultimaVenta(r, nombreDeSala) {
   if (!r.ultima_venta) return 'sin ventas antes';
   const dias = Math.max(0, diasEntre(String(r.ultima_venta).slice(0, 10), hoySV()));
   const salas = (r.ultima_venta_por_suc || []).filter((s) => s.fecha);
-  const donde = salas.length === 1 ? ` en ${nombreDeSala(salas[0].branch_id)}` : salas.length > 1 ? ` (${salas.length} salas)` : '';
+  const donde = salas.length === 1 ? ` en ${nombreDeSala(salas[0].branch_id)}` : salas.length > 1 ? ` (${salas.length} sucursales)` : '';
   return `última venta ${fechaTexto(String(r.ultima_venta).slice(0, 10), { day: 'numeric', month: 'short', year: '2-digit' })}, hace ${dias} d${donde}`;
 }
 
@@ -59,7 +59,7 @@ export default function Productos({ fini, ffin, sala, busqueda, verCifras, orden
   const [error, setError] = useState(null);
   const [cuantos, setCuantos] = useState(POR_PAGINA);
   const sucursales = useStaffStore((s) => s.branches);
-  const nombreDeSala = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sala ${id}`;
+  const nombreDeSala = (id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sucursal ${id}`;
 
   useEffect(() => {
     let vivo = true;

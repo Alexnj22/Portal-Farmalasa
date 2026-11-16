@@ -104,7 +104,7 @@ export function construirComprobanteDeMovimiento({
     // Con tarjeta o transferencia: dicho en palabras, para que nadie lo busque
     // en el cajón al contar.
     if (noEfectivo) {
-        bloques.push({ titulo: 'No entra al cajon', texto: `El dinero llega por el ${forma === 'TARJETA' ? 'POS' : 'banco'}.` });
+        bloques.push({ titulo: 'No entra a la caja', texto: `El dinero llega por el ${forma === 'TARJETA' ? 'POS' : 'banco'}.` });
     }
     if (noEfectivo && movimiento?.autorizacion === 'PENDIENTE') {
         bloques.push({ titulo: 'Pendiente', texto: 'Sin comprobante del pago: queda pendiente de autorizacion.' });

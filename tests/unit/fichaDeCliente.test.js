@@ -85,7 +85,7 @@ describe('los errores llegan como CÓDIGO, y el texto se escribe una vez', () =>
     });
 
     it('cada código tiene su frase, y dice qué hacer', () => {
-        expect(mensajeDeError(err('NOMBRE_DUPLICADO'))).toContain('Búscala y edita esa');
+        expect(mensajeDeError(err('NOMBRE_DUPLICADO'))).toContain('Búscalo y edita ese');
         expect(mensajeDeError(err('TELEFONO_INVALIDO'))).toContain('8 dígitos');
         expect(mensajeDeError(err('GEO_INCOHERENTE'))).toContain('no se corresponden');
     });

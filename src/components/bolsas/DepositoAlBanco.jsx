@@ -393,8 +393,7 @@ export default function DepositoAlBanco({ abierto, bolsas, personas, onClose, on
                 {remanente >= 0.01 && !noAlcanza && (
                     <Notice variant="info" icon={Banknote}>
                         Quedan <b className="font-bold">{formatMoney(remanente)}</b> sin salir por
-                        {' '}el portal. Se anotan en el cierre para que la cuenta cuadre; de ahí en
-                        {' '}adelante son efectivo del dueño y el portal no les sigue la pista.
+                        {' '}el portal. Se anotan en el cierre como efectivo del dueño.
                     </Notice>
                 )}
 

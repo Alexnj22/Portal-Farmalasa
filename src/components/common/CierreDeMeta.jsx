@@ -107,7 +107,7 @@ function PuestoDelVendedor({ datos, claseTenue, isDark }) {
     const contraPromedio = promedio == null ? null
         : miParte >= promedio ? `sobre el promedio (${promedio}%)`
                               : `bajo el promedio (${promedio}%)`;
-    const parte = `${miParte}% de la venta de la sala`;
+    const parte = `${miParte}% de la venta de la sucursal`;
 
     if (podio) {
         const Icono = podio.Icono;

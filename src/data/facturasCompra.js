@@ -230,7 +230,7 @@ export async function archivosDelPaqueteDeCompra(row) {
         }
     }
 
-    if (entradas.length === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
+    if (entradas.length === 0) throw new Error('No se pudo descargar ningún archivo de esta factura.');
     return { baseName, entradas };
 }
 

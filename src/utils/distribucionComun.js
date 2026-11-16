@@ -19,12 +19,12 @@ export const TIPO_DOCUMENTO = {
 // cuenta» con distinto motivo, y el rótulo dice cuál.
 export const ESTADO_DOCUMENTO = {
     sin_firmar:   { variant: 'warning', label: 'Falta la firma',  ayuda: 'Guardado. Se firma y se envía cuando esté el certificado.' },
-    firmado:      { variant: 'warning', label: 'Por enviar',      ayuda: 'Firmado y todavía sin sello de Hacienda.' },
-    contingencia: { variant: 'warning', label: 'Sin conexión',    ayuda: 'Se emitió sin poder enviarlo; va en el próximo aviso de contingencia.' },
-    sellado:      { variant: 'success', label: 'Sellado',         ayuda: 'Hacienda lo recibió y lo selló.' },
-    rechazado:    { variant: 'danger',  label: 'Rechazado',       ayuda: 'Hacienda no lo aceptó. Se corrige y se emite uno nuevo.' },
-    invalidado:   { variant: 'neutral', label: 'Invalidado',      ayuda: 'Anulado ante Hacienda.' },
-    descartado:   { variant: 'neutral', label: 'Descartado',      ayuda: 'Nunca llegó a Hacienda y se retiró para corregir el pedido.' },
+    firmado:      { variant: 'warning', label: 'Por enviar',      ayuda: 'Firmada y todavía sin sello del MH.' },
+    contingencia: { variant: 'warning', label: 'Sin conexión',    ayuda: 'Se emitió sin poder enviarla. Va en el próximo aviso de contingencia.' },
+    sellado:      { variant: 'success', label: 'Sellado',         ayuda: 'El MH la recibió y la selló.' },
+    rechazado:    { variant: 'danger',  label: 'Rechazado',       ayuda: 'El MH no la aceptó. Se corrige y se emite una nueva.' },
+    invalidado:   { variant: 'neutral', label: 'Invalidado',      ayuda: 'Anulada ante el MH.' },
+    descartado:   { variant: 'neutral', label: 'Descartado',      ayuda: 'Nunca llegó al MH y se retiró para corregir el pedido.' },
 };
 
 export const ESTADO_PEDIDO = {
@@ -158,40 +158,40 @@ export function revisionHacienda(d) {
         { clave: 'numero', rotulo: 'Número de control', ok: String(d.numero_control ?? '').length === 31, valor: d.numero_control },
         { clave: 'codigo', rotulo: 'Código de generación', ok: UUID.test(codigo), valor: codigo },
         { clave: 'firma', rotulo: 'Firmado', ok: firmado },
-        { clave: 'sello', rotulo: 'Recibido por Hacienda (sello)', ok: sello, valor: sello ? d.sello_recibido : undefined },
+        { clave: 'sello', rotulo: 'Recibida por el MH (sello)', ok: sello, valor: sello ? d.sello_recibido : undefined },
     ];
     const base = { pasos, accion: null };
     if (d.estado === 'descartado') {
-        return { ...base, nivel: 'info', titulo: 'Retirado antes de llegar a Hacienda', detalle: 'El pedido volvió a «por facturar» para corregirlo.' };
+        return { ...base, nivel: 'info', titulo: 'Retirada antes de llegar al MH', detalle: 'El pedido volvió a «por facturar» para corregirlo.' };
     }
     if (d.estado === 'invalidado') {
-        return { ...base, nivel: 'info', titulo: 'Invalidado ante Hacienda', detalle: 'Quedó anulado y sus unidades volvieron al inventario.' };
+        return { ...base, nivel: 'info', titulo: 'Invalidada ante el MH', detalle: 'Quedó anulado y sus unidades volvieron al inventario.' };
     }
     if (d.invalidacion_estado === 'rechazada') {
-        return { ...base, nivel: 'error', accion: 'invalidacion', titulo: 'Hacienda rechazó la invalidación', detalle: 'El documento sigue vigente. Revisa el motivo y vuelve a enviarla.' };
+        return { ...base, nivel: 'error', accion: 'invalidacion', titulo: 'El MH rechazó la invalidación', detalle: 'La factura sigue vigente. Revisa el motivo y vuelve a enviarla.' };
     }
     if (d.invalidacion_estado === 'pendiente') {
         return { ...base, nivel: 'pendiente', accion: 'invalidacion', titulo: 'Invalidación por enviar',
-            detalle: d.reemplazo_id ? 'Sale sola cuando el documento que lo reemplaza tenga sello.' : 'Está firmada y todavía no llega a Hacienda.' };
+            detalle: d.reemplazo_id ? 'Sale sola cuando la factura que la reemplaza tenga sello.' : 'Está firmada y todavía no llega al MH.' };
     }
     if (d.estado === 'rechazado') {
-        return { ...base, nivel: 'error', accion: 'corregir', titulo: 'Hacienda lo rechazó',
-            detalle: 'No tiene validez. Corrige lo que dice Hacienda (casi siempre la ficha del cliente) y vuelve a facturar el pedido.' };
+        return { ...base, nivel: 'error', accion: 'corregir', titulo: 'El MH la rechazó',
+            detalle: 'No tiene validez. Corrige lo que dice el MH, casi siempre los datos del cliente, y vuelve a facturar el pedido.' };
     }
     if (d.estado === 'contingencia') {
         // Emitido sin poder transmitirlo (sin señal, o Hacienda caída). Primero
         // va el AVISO de contingencia; con el aviso recibido, el documento.
         return d.contingencia_id
             ? { ...base, nivel: 'pendiente', accion: 'reenviar', titulo: 'Aviso de contingencia recibido: falta transmitirlo',
-                detalle: 'Hacienda ya conoce la contingencia; reenvíalo para que lo selle.' }
+                detalle: 'El MH ya conoce la contingencia. Reenvíala para que la selle.' }
             : { ...base, nivel: 'pendiente', accion: 'contingencia', titulo: 'Emitido en contingencia',
-                detalle: 'Es válido para entregar. Falta enviar el aviso de contingencia a Hacienda (hasta 72 horas).' };
+                detalle: 'Es válida para entregar. Falta enviar el aviso de contingencia al MH (hasta 72 horas).' };
     }
     if (!sello) {
-        return { ...base, nivel: 'pendiente', accion: 'reenviar', titulo: firmado ? 'Falta que Hacienda lo reciba' : 'Falta firmarlo y enviarlo',
-            detalle: d.intentos > 0 ? `Se intentó ${d.intentos} ${d.intentos === 1 ? 'vez' : 'veces'} y no hubo respuesta. Reenvíalo.` : 'Todavía no se ha enviado.' };
+        return { ...base, nivel: 'pendiente', accion: 'reenviar', titulo: firmado ? 'Falta que el MH la reciba' : 'Falta firmarla y enviarla',
+            detalle: d.intentos > 0 ? `Se intentó ${d.intentos} ${d.intentos === 1 ? 'vez' : 'veces'} y no hubo respuesta. Reenvíala.` : 'Todavía no se ha enviado.' };
     }
-    return { ...base, nivel: 'ok', titulo: 'Todo bien con Hacienda', detalle: 'Tiene código de generación y sello de recepción.' };
+    return { ...base, nivel: 'ok', titulo: 'Todo bien con el MH', detalle: 'Tiene código de generación y sello de recepción.' };
 }
 
 /** ¿Pide que alguien haga algo? (un rechazo ya refacturado o anulado es constancia). */

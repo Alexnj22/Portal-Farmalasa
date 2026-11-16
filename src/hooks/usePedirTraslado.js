@@ -330,7 +330,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
             return {
                 grave: dias <= 30,
                 texto: `Lo de ${sala.sala} vence ${fmtVence(sala.vence)}`
-                     + (mejor ? ` — ${mejor.sala} lo tiene ${mejor.vence ? `hasta ${fmtVence(mejor.vence)}` : 'sin fecha de vencimiento'}.` : '.'),
+                     + (mejor ? `. ${mejor.sala} lo tiene ${mejor.vence ? `hasta ${fmtVence(mejor.vence)}` : 'sin fecha de vencimiento'}.` : '.'),
             };
         }
         if (mejor?.vence && new Date(mejor.vence).getTime() - new Date(sala.vence).getTime() > 180 * 86400000) {
@@ -576,7 +576,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
         if (e) {
             const msg = String(e?.message ?? '');
             throw new Error(msg.includes('approval_requests_un_traslado_pendiente')
-                ? 'Ya hay una solicitud de ese producto a esa sala esperando respuesta.'
+                ? 'Ya hay una solicitud de ese producto a esa sucursal esperando respuesta.'
                 : msg.includes('row-level security') ? 'No tienes permiso para solicitar traslados.' : (e?.message ?? 'No se pudo pedir el traslado.'));
         }
     };
@@ -644,8 +644,8 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
             const msg = String(e?.message ?? '');
             setError(
                 msg.includes('approval_requests_un_traslado_pendiente')
-                    ? 'Ya hay una solicitud de ese producto a esa sala esperando respuesta. '
-                      + 'Si necesitas más, súbele la cantidad a esa solicitud o pídeselo a otra sala.'
+                    ? 'Ya hay una solicitud de ese producto a esa sucursal esperando respuesta. '
+                      + 'Si necesitas más, súbele la cantidad a esa solicitud o pídeselo a otra sucursal.'
                 : msg.includes('row-level security')
                     ? 'No tienes permiso para solicitar traslados.'
                 : (e?.message ?? 'No se pudo enviar la solicitud.'),

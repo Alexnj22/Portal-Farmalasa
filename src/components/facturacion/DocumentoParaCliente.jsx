@@ -71,7 +71,7 @@ export default function DocumentoParaCliente({ inv }) {
         </div>
       )}
       {trabajando && (
-        <LoadingState variant="inline" label="Puede tardar hasta un minuto si hay que enviarlo a Hacienda." />
+        <LoadingState variant="inline" label="Puede tardar hasta un minuto si hay que enviarlo al MH." />
       )}
       {aviso && (
         <p role="status" className={`text-label font-bold leading-snug ${aviso.ok ? 'text-success-text' : 'text-danger-text'}`}>

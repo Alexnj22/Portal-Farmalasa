@@ -26,7 +26,7 @@ export async function fetchSyncHealthRecent(limit = 200) {
 }
 
 /** Cómo se llama cada dominio en pantalla. */
-export const ROTULO_DE_DOMINIO = { products: 'Productos', minmax: 'Min / Max', purchases: 'Compras', backup: 'Respaldo' };
+export const ROTULO_DE_DOMINIO = { products: 'Productos', minmax: 'Mín/Máx', purchases: 'Compras', backup: 'Respaldo' };
 
 /** A qué alcanza una corrida: una sucursal del origen, una del portal, o todo. */
 export function alcanceDeCorrida(row, nombreDeSala = {}, nombreDeOrigen = {}) {

@@ -136,7 +136,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         value={currentData.paidThrough && currentData.paidThrough.split('-').length === 2 ? `${currentData.paidThrough}-01` : currentData.paidThrough}
                         onChange={(val) => handleChange('paidThrough', val)}
                         />
-                    <p className="mt-2 text-caption font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
+                    <p className="mt-2 text-caption font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. Los avisos se calculan con esto y con el día de pago.</p>
                 </div>
             </div>
         </div>

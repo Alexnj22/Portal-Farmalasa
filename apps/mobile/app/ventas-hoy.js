@@ -50,13 +50,13 @@ export default function VentasHoy() {
   useEffect(() => { cargar(); }, [cargar]);
 
   const visibles = soloMiSala ? hoy.filter((s) => s.branchId === miSala) : hoy;
-  const nombre = (id) => (sucursales || []).find((b) => String(b.id) === id)?.name ?? `Sala ${id}`;
+  const nombre = (id) => (sucursales || []).find((b) => String(b.id) === id)?.name ?? `Sucursal ${id}`;
   // La sala va en el menú de filtros de la barra (regla de la app: lo
   // secundario no ocupa pantalla). Con alcance de una sola sala no hay nada
   // que elegir y el menú no aparece.
   const grupos = soloMiSala ? [] : [{
-    id: 'sala', titulo: 'Sala', activa: elegida, porDefecto: 'todas', onCambiar: setElegida,
-    opciones: [{ id: 'todas', label: 'Todas las salas' }, ...visibles.map((s) => ({ id: s.branchId, label: nombre(s.branchId) }))],
+    id: 'sala', titulo: 'Sucursal', activa: elegida, porDefecto: 'todas', onCambiar: setElegida,
+    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...visibles.map((s) => ({ id: s.branchId, label: nombre(s.branchId) }))],
   }];
 
   const s = useMemo(() => (elegida === 'todas' ? sumarSalas(visibles) : visibles.find((x) => x.branchId === elegida)) ?? sumarSalas([]),
@@ -91,7 +91,7 @@ export default function VentasHoy() {
                 extra={(s.ticketsPorHora ?? []).map((t) => `${t} ticket${t === 1 ? '' : 's'}`)}
                 resumen={(
                   <View>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{elegida === 'todas' ? 'Todas las salas' : nombre(elegida)}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{elegida === 'todas' ? 'Todas las sucursales' : nombre(elegida)}</Text>
                     <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }}>{formatMoney(s.total)}</Text>
                   </View>
                 )} />

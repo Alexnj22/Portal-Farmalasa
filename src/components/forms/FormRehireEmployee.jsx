@@ -105,7 +105,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                                     value={formData.rehire_temporal_reason || ''}
                                     onChange={e => set('rehire_temporal_reason', e.target.value)}
                                     hasError={!String(formData.rehire_temporal_reason || '').trim()} errorMessage="Requerido"
-                                    placeholder="Ej. Cobertura de incapacidad de la titular del puesto"
+                                    placeholder="Ej. Cobertura de incapacidad de la titular del cargo"
                                 />
                             </div>
                         </>

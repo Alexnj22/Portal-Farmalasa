@@ -86,13 +86,13 @@ export default function MinMaxView() {
             onSearchChange={setRawSearch}
             placeholder={
             activeTab === 'agotados' ? 'Buscar producto agotado…'
-                                     : 'Buscar producto en Min/Max…'
+                                     : 'Buscar producto en Mín/Máx…'
         }
         />
     );
 
     return (
-        <GlassViewLayout icon={BarChart2} title="Min / Max" filtersContent={filtersContent}>
+        <GlassViewLayout icon={BarChart2} title="Mín/Máx" filtersContent={filtersContent}>
             {configLoaded && activeTab === 'sucursal' && (
                 <TabMinMax
                     searchTerm={debouncedSearch}

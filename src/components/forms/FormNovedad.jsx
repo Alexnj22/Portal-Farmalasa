@@ -166,7 +166,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     value={formData?.type || ''}
                     onChange={(val) => setFormData(prev => ({ ...prev, type: val }))} 
                     options={actionOptions}
-                    placeholder="-- Seleccione un evento --"
+                    placeholder="Elige el tipo de acción"
                     icon={GitPullRequest}
                     menuPosition="fixed"
                 />
@@ -178,7 +178,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <AlertTriangle className="text-danger shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-label font-black uppercase tracking-widest text-danger">Alerta de Desvinculación</p>
-                        <p className="text-body-sm text-danger-text/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del empleado a <b>INACTIVO</b> y le revocará accesos al sistema.</p>
+                        <p className="text-body-sm text-danger-text/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del empleado a <b>INACTIVO</b> y le quitará el acceso al portal.</p>
                     </div>
                 </div>
             )}
@@ -218,7 +218,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         placeholder="Mantiene su cargo"
                         clearable
                     />
-                    <p className="text-caption text-content-3 mt-1.5 ml-1">Esos días tendrá sólo los permisos de este cargo. Los demás días, los de su ficha.</p>
+                    <p className="text-caption text-content-3 mt-1.5 ml-1">Esos días tendrá sólo los permisos de este cargo. Los demás días, los de su cargo principal.</p>
                 </div>
             )}
 
@@ -229,7 +229,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div>
                         <p className="text-label font-black uppercase tracking-widest text-danger-text">Límite de Organigrama Excedido</p>
                         <p className="text-body-sm font-medium text-danger-text mt-1 leading-snug">
-                            No puedes asignar este cargo. El puesto de <b>{headcountWarning.role}</b> tiene un límite estricto de {headcountWarning.limit} por {headcountWarning.scope === 'GLOBAL' ? 'empresa' : 'sucursal'}.
+                            No puedes asignar este cargo. El cargo de <b>{headcountWarning.role}</b> tiene un límite estricto de {headcountWarning.limit} por {headcountWarning.scope === 'GLOBAL' ? 'empresa' : 'sucursal'}.
                         </p>
                         <div className="mt-2 pt-2 border-t border-danger/30 text-label text-danger-text font-bold">
                             Actualmente ocupado por: <span className="underline">{headcountWarning.occupants.map(o => o.name).join(', ')}</span>
@@ -246,7 +246,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div>
                         <p className="text-label font-black uppercase tracking-widest text-chart-3-text">Acción Programada</p>
                         <p className="text-body-sm text-chart-3-text/80 font-medium leading-tight mt-1">
-                            La fecha efectiva es futura: el evento se registra hoy pero el cambio se aplicará automáticamente el <b>{formatDate(formData.date)}</b> a las 5:00 a.m. Puedes cancelarlo antes desde el historial.
+                            La fecha efectiva es futura. El cambio se aplica solo el <b>{formatDate(formData.date)}</b> a las 5:00 a.m. Puedes cancelarlo antes desde el historial.
                         </p>
                     </div>
                 </div>
@@ -265,7 +265,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div>
                         <p className={`text-label font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
                         <p className={`text-body-sm font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-danger-text' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success-text'}`}>
-                            {getHolidayInfo ? <b>¡Día Inhábile: {getHolidayInfo.name}!</b> : <b>Días calculados: {periodDaysCount}.</b>}
+                            {getHolidayInfo ? <b>¡Día inhábil: {getHolidayInfo.name}!</b> : <b>Días calculados: {periodDaysCount}.</b>}
                             {getHolidayInfo ? " La ley prohíbe iniciar este tipo de licencia en asueto." : 
                              isVacation && periodDaysCount !== 15 && formData?.endDate ? " Precaución: El código de trabajo dicta 15 días continuos." : 
                              isDisability && formData?.disabilityType === 'MATERNIDAD' && periodDaysCount !== 112 && formData?.endDate ? " Precaución: El Art. 309 dicta 112 días (16 semanas) para maternidad." :
@@ -432,7 +432,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 {isTransfer && (
                     <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in">
                         <label className={labelClasses}>Sucursal Destino</label>
-                        <LiquidSelect value={formData?.targetBranchId || ''} onChange={(val) => setFormData(prev => ({ ...prev, targetBranchId: val }))} options={branchOptions} placeholder="Buscar farmacia..." icon={MapPin} menuPosition="fixed" />
+                        <LiquidSelect value={formData?.targetBranchId || ''} onChange={(val) => setFormData(prev => ({ ...prev, targetBranchId: val }))} options={branchOptions} placeholder="Buscar sucursal..." icon={MapPin} menuPosition="fixed" />
                     </div>
                 )}
 
@@ -592,7 +592,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
  <PortalTextarea
      rows="3"
      textareaClassName="hide-scrollbar"
-     placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."}
+     placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Escribe los motivos de esta acción..."}
      value={formData?.note || ''}
      onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
  />
@@ -605,13 +605,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         de abrir un modal encima del formulario. */}
                     <div data-campo="file">
                     <FileField
-                        label={`Soporte Digital ${respaldoObligatorio(formData?.type, formData) ? '(Obligatorio)' : '(Opcional)'}`}
+                        label={`Respaldo ${respaldoObligatorio(formData?.type, formData) ? '(Obligatorio)' : '(Opcional)'}`}
                         accept=".pdf,image/jpeg,image/png,image/webp"
                         maxSizeMB={10}
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
                         file={formData?.file}
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
-                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (DOCUMENTO_DE_BAJA[formData?.terminationReason] || 'el respaldo de la baja') : 'el respaldo'} — PDF, JPG o PNG`}
+                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (DOCUMENTO_DE_BAJA[formData?.terminationReason] || 'el respaldo de la baja') : 'el respaldo'} (PDF, JPG o PNG)`}
                     />
                     </div>
                 </>

@@ -53,7 +53,7 @@ export function papelDeRespuesta({ solicitud, cliente, empleado, resumen, donde 
     if (cliente) {
         bloques.push(`
         <section>
-          <h2>Su ficha de cliente</h2>
+          <h2>Sus datos de cliente</h2>
           <table class="datos">
             ${fila('Nombre', cliente.name)}
             ${fila('Documento de identidad', cliente.dui)}
@@ -112,7 +112,7 @@ export function papelDeRespuesta({ solicitud, cliente, empleado, resumen, donde 
     if (empleado) {
         bloques.push(`
         <section>
-          <h2>Su expediente de personal</h2>
+          <h2>Sus datos de personal</h2>
           <table class="datos">
             ${fila('Nombre', empleado.name)}
             ${fila('Código', empleado.code)}
@@ -165,7 +165,7 @@ export function papelDeRespuesta({ solicitud, cliente, empleado, resumen, donde 
             const x = d.filas[0] ?? {};
             bloques.push(`
         <section>
-          <h2>Su ficha de proveedor</h2>
+          <h2>Sus datos de proveedor</h2>
           <table class="datos">
             ${fila('Nombre', x.nombre)}
             ${fila('Documento de identidad', x.dui)}

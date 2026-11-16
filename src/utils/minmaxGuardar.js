@@ -37,8 +37,8 @@ export function planDeGuardadoMinMax({ row, productId, sucursalId, min, max, hay
         if (minNum === (row?.effective_min ?? 0) && maxNum === (row?.effective_max ?? 0)) return { sinCambio: true };
         const floorMin = row?.pub_min ?? 0;
         const floorMax = row?.pub_max ?? 0;
-        if (floorMin > 0 && (minNum ?? 0) < floorMin) return { error: `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString('es-SV')})` };
-        if (floorMax > 0 && (maxNum ?? 0) < floorMax) return { error: `MAX de Bodega no puede ser menor a la Σ sucursales (${floorMax.toLocaleString('es-SV')})` };
+        if (floorMin > 0 && (minNum ?? 0) < floorMin) return { error: `El Mín de Bodega no puede ser menor que la suma de las sucursales (${floorMin.toLocaleString('es-SV')})` };
+        if (floorMax > 0 && (maxNum ?? 0) < floorMax) return { error: `El Máx de Bodega no puede ser menor que la suma de las sucursales (${floorMax.toLocaleString('es-SV')})` };
         const deltaMin = minNum - floorMin > 0 ? minNum - floorMin : null;
         const deltaMax = maxNum - floorMax > 0 ? maxNum - floorMax : null;
         return {
@@ -53,7 +53,7 @@ export function planDeGuardadoMinMax({ row, productId, sucursalId, min, max, hay
         };
     }
 
-    if (minNum > 0 && maxNum > 0 && minNum >= maxNum) return { error: 'MAX debe ser mayor al MIN' };
+    if (minNum > 0 && maxNum > 0 && minNum >= maxNum) return { error: 'El Máx debe ser mayor que el Mín' };
     const vivo = hayPublicado && row?.draft_status !== 'pending' && row?.draft_status !== 'sparse_data';
     return {
         tipo: vivo ? 'vivo' : 'borrador', minNum, maxNum,

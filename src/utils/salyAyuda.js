@@ -132,7 +132,7 @@ export function avisoDeFaltante(c, { umbral = 1, enMiCaja = false } = {}) {
         ancla: `corte-${c.id}`,
         oferta: [{ tipo: 'titular', texto: `Veo un faltante de ${dinero(c.diferencia)}`, sub: lugar }],
         explicacion: [
-            { tipo: 'titular', texto: `Faltan ${dinero(c.diferencia)} en el cajón`, sub: lugar },
+            { tipo: 'titular', texto: `Faltan ${dinero(c.diferencia)} en la caja`, sub: lugar },
             { tipo: 'cifras', items: [
                 { rotulo: 'Esperado', valor: dinero(c.esperado) },
                 { rotulo: 'Contado', valor: dinero(c.contado) },
@@ -160,7 +160,7 @@ export function avisoDeFaltaPorContar(falta, { sala } = {}) {
             oferta: [{ tipo: 'titular', texto: 'No pude medir lo que falta contar', sub: sala }],
             explicacion: [
                 { tipo: 'titular', texto: 'Aún no se puede cerrar el día', sub: 'El último corte no trae su comprobante completo' },
-                { tipo: 'pasos', items: ['Haz un corte y cuenta el cajón.', 'Confírmalo.', 'Ya podrás cerrar el día.'] },
+                { tipo: 'pasos', items: ['Haz un corte y cuenta la caja.', 'Confírmalo.', 'Ya podrás cerrar el día.'] },
             ],
         };
     }
@@ -184,7 +184,7 @@ export function avisoDeFaltaPorContar(falta, { sala } = {}) {
                     { hora: `+${dinero(monto)}`, texto: 'sin contar', tono: 'mal' },
                     { hora: 'ahora', texto: 'cierre' },
                 ] },
-            { tipo: 'pasos', items: ['Haz un corte y cuenta el cajón.', 'Confírmalo.', 'Ya podrás cerrar el día.'] },
+            { tipo: 'pasos', items: ['Haz un corte y cuenta la caja.', 'Confírmalo.', 'Ya podrás cerrar el día.'] },
         ],
     };
 }
@@ -252,7 +252,7 @@ const CORTE = {
         { tipo: 'titular', texto: 'Así se hace un corte', sub: 'Mi caja · Hoy' },
         { tipo: 'pasos', items: [
             'Toca **Corte** (Hacer corte).',
-            'Cuenta **sólo el efectivo del cajón** y escríbelo. Lo que ya está en las bolsas de hoy lo suma el portal.',
+            'Cuenta **sólo el efectivo de la caja** y escríbelo. Lo que ya está en las bolsas de hoy lo suma el portal.',
             'Toca **Hacer el corte**: el portal te dice si cuadró, sobró o faltó.',
             '**Confírmalo** si el conteo está bien, o **descártalo** si contaste mal y vuelve a contar.',
         ] },
@@ -260,7 +260,7 @@ const CORTE = {
     ],
     guia: [
         { boton: ['Hacer corte', 'Corte'], texto: 'Toca **Corte**, arriba.' },
-        { campo: 'Efectivo en el cajón', texto: 'Cuenta **sólo el efectivo del cajón** y escríbelo aquí. Lo de las bolsas lo suma el portal.' },
+        { campo: 'Efectivo en la caja', texto: 'Cuenta **sólo el efectivo de la caja** y escríbelo aquí. Lo de las bolsas lo suma el portal.' },
         { boton: ['Hacer el corte'], texto: 'Toca **Hacer el corte**: te digo si cuadró, sobró o faltó.' },
         { boton: ['Confirmar'], texto: 'Si el conteo es el real, **Confirmar**. Si contaste mal, **Descartar** y vuelve a contar.' },
     ],
@@ -275,7 +275,7 @@ const CERRAR = {
             '**Entró efectivo después del último conteo**: haz otro corte y confírmalo.',
             '**Preventas sin finalizar** en la caja: finalízalas o elimínalas en la caja.',
         ] },
-        { tipo: 'nota', texto: 'Cerrar el día emite el Z y no se deshace. Si nadie cierra, el portal lo cierra solo una hora después de la hora de cierre.' },
+        { tipo: 'nota', texto: 'El cierre del día no se deshace. Si nadie cierra, el portal lo cierra solo una hora después de la hora de cierre.' },
     ],
     guia: [
         { boton: ['Cerrar el día', 'Cerrar'], texto: 'Toca **Cerrar**, arriba. Si algo frena el cierre, la ventana te dice qué.' },
@@ -284,7 +284,7 @@ const CERRAR = {
 const SALIDA = {
     id: 'salida', pregunta: '¿Cómo anoto un gasto o una salida?', claves: [['salida'], ['gasto'], ['vale'], ['pago', 'proveedor'], ['anticipo'], ['compra', 'urgente']],
     piezas: [
-        { tipo: 'titular', texto: 'Para sacar efectivo del cajón', sub: 'Mi caja · Hoy → Salida' },
+        { tipo: 'titular', texto: 'Para sacar efectivo de la caja', sub: 'Mi caja · Hoy → Salida' },
         { tipo: 'pasos', items: [
             'Toca **Salida** y elige el tipo: compra o gasto urgente, pago a proveedor, anticipo, bonificación, devolución, cambio por monedas…',
             'Escribe el monto y el detalle. Si hay boleta o factura, tómale **foto**: es el respaldo.',
@@ -320,10 +320,10 @@ const FALTANTE = {
     piezas: [
         { tipo: 'titular', texto: 'Cuando el conteo no cuadra', sub: 'Faltante = menos de lo esperado · Sobrante = más' },
         { tipo: 'pasos', items: [
-            'Vuelve a contar el cajón. Si contaste mal, **descarta** el corte y haz otro.',
+            'Vuelve a contar la caja. Si contaste mal, **descarta** el corte y haz otro.',
             'Busca lo que no se anotó: un gasto o pago sin **Salida**, un cobro con tarjeta marcado como efectivo, un vuelto mal dado.',
             'Anótalo en **Mi caja** y haz otro corte: la diferencia se corrige sola.',
-            'Si no aparece, confirma el corte: lo resuelve supervisión en **Efectivo → Diferencias**.',
+            'Si no aparece, confirma el corte. Lo resuelve un supervisor o administrador en **Efectivo → Diferencias**.',
         ] },
         { tipo: 'nota', texto: 'Los cobros de crédito en efectivo hechos desde el portal ya están sumados en lo esperado.' },
     ],

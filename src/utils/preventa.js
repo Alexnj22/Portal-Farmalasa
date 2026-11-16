@@ -101,7 +101,7 @@ export function armarVenta(datos) {
         if (!(r.precio > 0)) throw new Error(`«${r.nombre}» no tiene precio.`);
     }
     const vendedor = codigoDeVendedor(datos?.vendedor);
-    if (!vendedor) throw new Error('Tu ficha no tiene código de vendedor.');
+    if (!vendedor) throw new Error('Tus datos no tienen código de vendedor.');
     const cliente = clienteDeLaVenta(datos?.cliente);
     const total = centavos(renglones.reduce((t, r) => t + r.subtotal, 0));
     const faltaPagar = datos?.falta_pagar == null ? total : centavos(datos.falta_pagar);

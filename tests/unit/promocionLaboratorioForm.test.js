@@ -18,7 +18,7 @@ describe('problemasDePromocionLaboratorio', () => {
     });
     it('frena sin umbrales y proveedor sin elegir', () => {
         const p = problemasDePromocionLaboratorio({ ...base, umbrales: {}, paga: 'proveedor' });
-        expect(p).toContain('Ninguna sala tiene umbral: nadie podría alcanzar un nivel.');
+        expect(p).toContain('Ninguna sucursal tiene umbral. Nadie podría alcanzar un nivel.');
         expect(p).toContain('Elige el proveedor que paga.');
     });
 });

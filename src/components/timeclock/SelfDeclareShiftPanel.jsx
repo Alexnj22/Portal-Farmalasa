@@ -29,7 +29,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                         Declara tu Horario
                     </h1>
                     <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-black uppercase tracking-widest text-warning/80">
-                        Turno Extra — {shortEmployeeName(employee)}
+                        Turno Extra · {shortEmployeeName(employee)}
                     </p>
                     <p className="text-white/40 text-caption sm:text-body-sm [@media(max-height:800px)]:text-micro leading-relaxed mt-2.5 [@media(max-height:800px)]:mt-1.5 px-2">
                         Indica el horario que trabajarás hoy. Talento Humano lo revisará y confirmará.
@@ -67,7 +67,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                 </form>
 
                 <div className="mt-3 [@media(max-height:800px)]:mt-2">
-                    <Button variant="secondary" icon={SkipForward} onClick={() => onSubmit(null, null)}>No sé mi horario — Solo registrar entrada</Button>
+                    <Button variant="secondary" icon={SkipForward} onClick={() => onSubmit(null, null)}>No sé mi horario. Solo registrar entrada</Button>
                 </div>
             </div>
         </div>

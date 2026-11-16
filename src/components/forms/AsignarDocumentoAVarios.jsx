@@ -162,8 +162,7 @@ export default function AsignarDocumentoAVarios({
 
                 <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-2">
                     <p className="text-label text-content-2 font-medium leading-snug">
-                        Es el mismo papel para todos. Marca a quiénes se les debe adjuntar —
-                        el archivo no se duplica, las fichas comparten el mismo documento.
+                        Es el mismo papel para todos. Marca a quiénes se les debe adjuntar.
                     </p>
 
                     {filas.map((f) => {
@@ -199,10 +198,10 @@ export default function AsignarDocumentoAVarios({
                                     <span className="min-w-0 flex-1">
                                         <span className="block text-label font-black text-content truncate">{f.nombre}</span>
                                         <span className="block text-micro text-content-3 font-medium truncate">
-                                            {puesto ? 'Es la ficha que estás editando — ya lo tiene'
-                                                : f.empleado ? `Tiene ficha: ${f.empleado.name}`
-                                                    : elegida ? `Ficha elegida: ${elegida.name}`
-                                                        : 'Sin ficha todavía — se le adjunta cuando la creen'}
+                                            {puesto ? 'Es la persona que estás editando. Ya lo tiene.'
+                                                : f.empleado ? `Ya registrada: ${f.empleado.name}`
+                                                    : elegida ? `Persona elegida: ${elegida.name}`
+                                                        : 'Todavía no está registrada. Se le adjunta cuando la registren.'}
                                         </span>
                                     </span>
                                     {/* La duda se dice, no se resuelve sola: dos fichas
@@ -227,7 +226,7 @@ export default function AsignarDocumentoAVarios({
                                                 <Button variant="secondary" size="sm" icon={Check}
                                                     disabled={guardando}
                                                     onClick={() => elegir(f.nombre, f.posible)}>
-                                                    Sí, es esa ficha
+                                                    Sí, es esa persona
                                                 </Button>
                                             </div>
                                         )}
@@ -236,9 +235,9 @@ export default function AsignarDocumentoAVarios({
                                             onChange={(id) => elegir(f.nombre,
                                                 (sinDocumento || []).find(e => e.id === id) || null)}
                                             options={opciones}
-                                            placeholder={sinDocumento === null ? 'Cargando fichas…'
-                                                : proponer ? 'No es esa — elegir otra ficha'
-                                                    : 'Elegir su ficha (si ya la tiene)'}
+                                            placeholder={sinDocumento === null ? 'Cargando el personal…'
+                                                : proponer ? 'No es esa. Elegir otra persona'
+                                                    : 'Elegir a la persona (si ya está registrada)'}
                                             clearLabel="Dejar en espera"
                                             disabled={guardando || sinDocumento === null}
                                             compact
@@ -251,13 +250,13 @@ export default function AsignarDocumentoAVarios({
 
                     {falloLista && (
                         <Notice variant="warning" compact>
-                            No se pudo cargar la lista de fichas. Los que no tienen ficha quedan en espera.
+                            No se pudo cargar el personal. Los que no están registrados quedan en espera.
                         </Notice>
                     )}
                     {filas.some(f => f.ambiguo) && (
                         <Notice variant="warning" compact>
-                            Hay más de una ficha con el mismo nombre. Revisa esa persona en su
-                            expediente antes de darlo por adjuntado.
+                            Hay más de una persona con el mismo nombre. Revisa sus datos
+                            antes de darlo por adjuntado.
                         </Notice>
                     )}
                     {fallo && (
@@ -271,7 +270,7 @@ export default function AsignarDocumentoAVarios({
 
                 <div className="shrink-0 p-4 pt-3 border-t border-divider flex flex-wrap items-center gap-2">
                     <p className="flex-1 min-w-[10rem] text-micro text-content-3 font-medium leading-snug">
-                        {conFicha.length} con ficha
+                        {conFicha.length} ya registradas
                         {sinFicha.length ? ` · ${sinFicha.length} en espera` : ''}
                     </p>
                     <Button variant="ghost" size="sm" onClick={alCerrar} disabled={guardando}>

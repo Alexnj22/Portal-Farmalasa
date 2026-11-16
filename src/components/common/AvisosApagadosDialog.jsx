@@ -99,7 +99,7 @@ export default function AvisosApagadosDialog() {
         activar: {
             icono: BellOff,
             titulo: 'No vas a recibir avisos',
-            prosa: 'Cuando alguien apruebe o rechace lo que pediste, sólo lo verás si entras al portal a mirar.',
+            prosa: 'Si alguien aprueba o rechaza lo que pediste, solo lo verás al entrar al portal.',
             accion: 'Activar avisos',
         },
         'otro-equipo': {
@@ -111,7 +111,7 @@ export default function AvisosApagadosDialog() {
         desbloquear: {
             icono: Lock,
             titulo: 'Los avisos están bloqueados',
-            prosa: 'Este equipo tiene los avisos bloqueados para el portal, así que no te llega ninguno. Se desbloquean así:',
+            prosa: 'Este equipo tiene bloqueados los avisos del portal. Para desbloquearlos:',
             accion: null,
         },
         instalar: {

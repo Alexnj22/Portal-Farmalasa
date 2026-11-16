@@ -19,11 +19,11 @@ const RESPUESTA = { si: 'Cumple', no: 'No cumple', na: 'No aplica' };
 const FIRMAS = {
     farmacovigilancia: ['Referente de farmacovigilancia', 'Regente'],
     reporte_cero: ['Referente de farmacovigilancia', 'Regente'],
-    vencido: ['Responsable de la sala', 'Regente'],
+    vencido: ['Responsable de la sucursal', 'Regente'],
     destruccion: ['Regente', 'Representante de la gestora', 'Testigo'],
-    retiro: ['Responsable de la sala', 'Regente'],
-    autoinspeccion: ['Regente', 'Responsable de la sala'],
-    a_la_vista: ['Regente', 'Responsable de la sala'],
+    retiro: ['Responsable de la sucursal', 'Regente'],
+    autoinspeccion: ['Regente', 'Responsable de la sucursal'],
+    a_la_vista: ['Regente', 'Responsable de la sucursal'],
     capacitacion: ['Facilitador', 'Regente'],
 };
 

@@ -108,7 +108,7 @@ export const evaluarCoberturaDelDia = (dNum, horarios, turnos, ventasDelDia) => 
         if (activos.length === 0) {
             avisos.push({
                 tipo: 'danger',
-                texto: `El almuerzo de ${formatNames(new Set(comiendo))} a las ${formatMins12h(desde)} deja la sala SIN NADIE por ${duracion} min.`,
+                texto: `El almuerzo de ${formatNames(new Set(comiendo))} a las ${formatMins12h(desde)} deja la sucursal SIN NADIE por ${duracion} min.`,
             });
         } else if (activos.length === 1 && duracion >= 30) {
             avisos.push({

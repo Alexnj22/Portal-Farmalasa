@@ -240,7 +240,7 @@ export const ESTADO_DE_PREMIO = {
  * apartado se retira en la suya; uno pedido espera el envío.
  */
 export const dondeSeRetiraElPremio = (p, nombreSala) => (p.reserva_branch ? `Apartado en ${nombreSala(p.reserva_branch)}`
-    : p.espera_envio ? `Pedido para ${nombreSala(p.branch_id)} · esperando el envío`
+    : p.espera_envio ? `Pedido para ${nombreSala(p.branch_id)} · esperando el traslado`
         : p.estado === 'ENTREGADO' ? `Entregado en ${nombreSala(p.entregado_branch)}`
             : 'Se retira en cualquier sucursal');
 

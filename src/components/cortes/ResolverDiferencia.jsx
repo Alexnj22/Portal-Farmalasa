@@ -141,7 +141,7 @@ function ResolucionHecha({ corte, diferencia, nombreSala, puedeResolver, origen,
                     <Badge variant="info" size="sm">Registrado {diferencia.asentado_ref}</Badge>
                 )}
                 {!diferencia.asentado_at && diferencia.via === 'RETIRA' && (
-                    <Badge variant="warning" size="sm" dot>Falta registrarlo en el sistema</Badge>
+                    <Badge variant="warning" size="sm" dot>Falta registrarlo en la caja</Badge>
                 )}
             </div>
 
@@ -457,7 +457,7 @@ export default function ResolverDiferencia({
             <span className="font-bold tabular-nums">{formatMoney(pendiente)}</span>
             {falta
                 ? ' siguen sin causa: se explican con otro comprobante o se asignan responsables.'
-                : ' siguen sin causa y quedan en el acumulado de la sala.'}
+                : ' siguen sin causa y quedan en el acumulado de la sucursal.'}
         </p>
     );
 
@@ -592,7 +592,7 @@ export default function ResolverDiferencia({
                                 : `Hasta ${formatMoney(aMonto(objetivo))}. Si el comprobante explica solo una parte, escribe cuánto.`}
                         />
                         <PortalInput
-                            label="Número del documento corregido"
+                            label="Número del comprobante corregido"
                             name="evidencia-ref"
                             value={evidenciaRef}
                             onChange={(e) => setEvidenciaRef(e.target.value)}
@@ -606,12 +606,12 @@ export default function ResolverDiferencia({
                             onChange={(f) => { setErrorFoto(''); setFoto(f || null); }}
                             emptyState="neutral"
                             tipoDeDocumento="comprobante"
-                            hint="El documento que muestra la causa. Basta con el número o con la foto."
+                            hint="El comprobante que muestra la causa. Basta con el número o con la foto."
                         />
                         {errorFoto && <Notice variant="danger">{errorFoto}</Notice>}
                         {faltaComprobante && !mapfre && (
                             <p className="text-caption text-content-3">
-                                Para dar la causa por encontrada hace falta el número del documento o una foto.
+                                Para dar la causa por encontrada hace falta el número del comprobante o una foto.
                             </p>
                         )}
                     </div>
@@ -633,7 +633,7 @@ export default function ResolverDiferencia({
                         </div>
 
                         {!candidatos.length && (
-                            <div className="text-caption text-content-3">Cargando la sala…</div>
+                            <div className="text-caption text-content-3">Cargando la sucursal…</div>
                         )}
 
                         {candidatos.map((c) => {

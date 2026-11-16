@@ -293,7 +293,7 @@ export function reparosDelDia(resuelto, { horaDeApertura = null, horaDeCierre = 
         let ini = aMinutos(resuelto.inicio);
         let fin = aMinutos(resuelto.fin); if (fin < ini) fin += 1440;
         if (ini < horaDeApertura || fin > horaDeCierre) {
-            reparos.push('El turno se sale del horario de atención de la sala.');
+            reparos.push('El turno se sale del horario de atención de la sucursal.');
         }
     }
 

@@ -77,7 +77,7 @@ export default function ObjetosHuerfanos() {
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso texto="Candidatos a código muerto (componentes, funciones o procesos sin quien los use). No se detectan solos: cada fila se agrega cuando se confirma un caso real; aquí sólo se marca su estado." />
+          <Aviso texto="Código que quizá ya nadie usa: componentes, funciones o procesos sin nadie que los use. Cada fila se agrega a mano cuando se confirma el caso. Aquí solo se marca su estado." />
         </View>
         {filas && !visibles.length ? <Vacio titulo="Sin objetos para este filtro." /> : null}
         {visibles.map((f) => (

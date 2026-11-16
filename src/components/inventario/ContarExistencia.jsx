@@ -134,7 +134,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
                     <>
                         {ronda === 2 ? (
                             <Notice variant="warning" icon={RotateCcw}>
-                                No coincide con lo que dice el sistema. Vuelve a contar con calma, presentación por
+                                No coincide con la existencia registrada. Vuelve a contar con calma, presentación por
                                 presentación{datos.regulado ? ' y lote por lote' : ''}.
                             </Notice>
                         ) : (
@@ -146,7 +146,7 @@ export default function ContarExistencia({ salaId, onCerrar, onContada }) {
 
                         {datos.regulado && grupos.length === 0 && (
                             <p className="text-label text-content-3">
-                                La sala no tiene lotes de este producto en el sistema. Si hay en el estante, agrega el lote.
+                                La sucursal no tiene lotes registrados de este producto. Si hay en el estante, agrega el lote.
                             </p>
                         )}
 
@@ -220,15 +220,14 @@ function Resultado({ resultado: r }) {
     if (r.estado === 'CUADRA') {
         return (
             <Notice variant="success" icon={CheckCircle2}>
-                Cuadra. Lo que contaste coincide con el sistema; no hay que ajustar nada.
+                Cuadra. No hay que ajustar nada.
             </Notice>
         );
     }
     const falta = Number(r.diferencia) < 0;
     return (
         <Notice variant={falta ? 'danger' : 'warning'} icon={AlertTriangle}>
-            No cuadra: {falta ? 'faltan' : 'sobran'} {r.texto}. Quien aprueba inventario lo revisa y hace el ajuste;
-            tú no tienes que hacer nada más.
+            No cuadra: {falta ? 'faltan' : 'sobran'} {r.texto}. Un supervisor o administrador lo revisa y hace el ajuste. No tienes que hacer nada más.
         </Notice>
     );
 }

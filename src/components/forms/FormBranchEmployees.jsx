@@ -49,7 +49,7 @@ const Puesto = ({ slot, onAbrir, grande = false }) => {
         );
     }
     return (
-        <div data-surface="card" {...clickable(() => onAbrir(emp), { label: `Ver la ficha de ${shortEmployeeName(emp)}` })}
+        <div data-surface="card" {...clickable(() => onAbrir(emp), { label: `Ver los datos de ${shortEmployeeName(emp)}` })}
             className={`relative flex items-center gap-3 cursor-pointer ${grande ? 'p-4' : 'p-3'}`}>
             <AvatarConEstado emp={emp} px={grande ? 48 : 36} />
             <div className="flex-1 min-w-0">

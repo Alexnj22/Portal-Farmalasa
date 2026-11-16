@@ -732,7 +732,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 explique, es un documento mal hecho — no un descuento. */}
                             {descuadre !== 0 && (
                                 <Notice variant="danger" icon={AlertTriangle} className="mb-2">
-                                    <span className="block font-bold">Error en la factura: los productos no cuadran con el total.</span>
+                                    <span className="block font-bold">Error en la factura. Los productos no cuadran con el total.</span>
                                     <span className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 tabular-nums">
                                         <span>Según los productos: <strong>{fmt(cobroEsperado)}</strong></span>
                                         <span>Se facturó: <strong>{fmt(r.total)}</strong></span>
@@ -1343,7 +1343,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
             {isVendSearchFuzzy && searchTerm && (
                 <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    Resultados similares para &ldquo;{searchTerm}&rdquo;. No hay coincidencias exactas.
                 </Notice>
             )}
 
@@ -1444,7 +1444,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <IconoEnCaja tamano="sm" forma="circulo" tono="warning">
                                     <Users size={14} className="text-warning-text" />
                                 </IconoEnCaja>
-                                <p className="font-semibold text-warning-text text-body">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
+                                <p className="font-semibold text-warning-text text-body">Código incorrecto · {getBranchName(u.branch_id)}</p>
                             </div>
                         </DataCell>
                         <DataCell hideBelow="md" className="text-body-sm">—</DataCell>
@@ -2505,7 +2505,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             {isProdFuzzy && searchTerm && (
                 <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    Resultados similares para &ldquo;{searchTerm}&rdquo;. No hay coincidencias exactas.
                 </div>
             )}
             {!error && (

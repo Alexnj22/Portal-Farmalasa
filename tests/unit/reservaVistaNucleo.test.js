@@ -11,7 +11,7 @@ import * as vista from '../../src/views/dashboard/reservaVista';
 describe('tarjeta de reserva: lógica del núcleo', () => {
     it('TRASLADO derivado = la tabla que tenía el portal', () => {
         expect(TRASLADO).toEqual({
-            pedido: { label: 'Pedida a otra sala', variant: 'info' },
+            pedido: { label: 'Pedida a otra sucursal', variant: 'info' },
             enviado: { label: 'En camino', variant: 'info' },
             parcial: { label: 'Viene una parte', variant: 'warning' },
             rechazado: { label: 'No la mandan', variant: 'danger' },

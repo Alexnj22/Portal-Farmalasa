@@ -161,7 +161,7 @@ export default function FotosProductosView() {
         // lo tiene otra persona, se avisa (guardar igual no la pisaría).
         const renovar = setInterval(() => {
             tomarProducto(actual.id).then((r) => {
-                if (vivo && r && !r.ok) avisar('Ya lo están trabajando', `${shortEmployeeName(r.tomado_por) || 'Otra persona'} abrió este producto: si guardas, no se guardará para no pisar lo suyo.`, 'warning');
+                if (vivo && r && !r.ok) avisar('Ya lo están trabajando', `${shortEmployeeName(r.tomado_por) || 'Otra persona'} abrió este producto. Si guardas, tus cambios no se guardan.`, 'warning');
             }).catch((err) => console.error('FotosProductos: no se pudo renovar la toma', err));
         }, 5 * 60 * 1000);
         return () => { vivo = false; clearInterval(renovar); };
@@ -242,7 +242,7 @@ export default function FotosProductosView() {
 
                         {enHechos && !elegido ? (
                             <section data-surface="card" className="p-3 md:p-4 space-y-1">
-                                <p className="text-label font-semibold text-content-2 px-1 pb-1">Lo último que se completó — ábrelo para corregirlo</p>
+                                <p className="text-label font-semibold text-content-2 px-1 pb-1">Lo último que se completó. Ábrelo para corregirlo.</p>
                                 {recientes == null ? <SkeletonText lines={6} /> : recientes.length === 0 ? (
                                     <p className="text-caption text-content-3 px-1">Todavía no se ha completado ningún producto.</p>
                                 ) : recientes.map((r) => {
@@ -520,7 +520,7 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                                         </div>
                                         {it.crudo && !it.cantidad && (
                                             <p className="col-span-full text-micro text-warning-text pl-5">
-                                                {`Estaba escrito «${it.crudo}»: pon la cantidad y la unidad para corregirlo.`}
+                                                {`Estaba escrito «${it.crudo}». Pon la cantidad y la unidad para corregirlo.`}
                                             </p>
                                         )}
                                     </div>
@@ -544,7 +544,7 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                         )}
                         {deSrs?.corregido && !preset && (
                             <Notice variant="warning" compact>
-                                {`El registro dice ${deSrs.corregido.srs}, pero el nombre del producto dice ${deSrs.corregido.nombre}: se dejó ${deSrs.corregido.nombre}. Confírmalo en el empaque.`}
+                                {`El registro dice ${deSrs.corregido.srs} y el nombre del producto dice ${deSrs.corregido.nombre}. Se dejó ${deSrs.corregido.nombre}. Confírmalo en el empaque.`}
                             </Notice>
                         )}
                     </div>

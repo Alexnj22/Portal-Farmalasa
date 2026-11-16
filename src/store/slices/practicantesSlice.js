@@ -94,7 +94,7 @@ export const createPracticantesSlice = (set, get) => ({
             const status = quedaActivo ? 'ACTIVO' : 'INACTIVO';
             const { error: errFicha } = await updateEmployeeRow(updated.employee_id, { status });
             if (errFicha) {
-                avisoDeCuenta = new Error(`La práctica se guardó, pero su ficha no cambió de estado (${errFicha.message}).`);
+                avisoDeCuenta = new Error(`La práctica se guardó, pero su estado no cambió (${errFicha.message}).`);
             } else {
                 set((state) => ({
                     employees: (state.employees || []).map((e) => (String(e.id) === String(updated.employee_id) ? { ...e, status } : e)),

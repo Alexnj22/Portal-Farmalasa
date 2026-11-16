@@ -98,7 +98,7 @@ export const rotuloMotivoBaja = (m) => MOTIVOS_BAJA.find(x => x.value === m)?.la
 
 /** El estado de una baja en palabras (la aprobada lleva su valor al costo). */
 export const estadoDeBaja = (b, dinero) => (b.estado === 'pendiente' ? 'Por aprobar'
-    : b.estado === 'aprobada' ? `Aprobada · ${dinero(b.unidades * Number(b.costo_unitario || 0))}` : 'Rechazada');
+    : b.estado === 'aprobada' ? `Aprobado · ${dinero(b.unidades * Number(b.costo_unitario || 0))}` : 'Rechazado');
 
 /** Lo aprobado en bajas, al costo. */
 export const valorDeBajas = (bajas) => (bajas ?? []).filter(b => b.estado === 'aprobada')

@@ -49,8 +49,8 @@ export const totalesDelConteo = (items = []) => ({
 export function avisoDeConteoParcial(conteo) {
     if (!conteo?.total_pendientes) return null;
     return conteo.pendientes_como_cero
-        ? `Al cerrar, ${conteo.total_pendientes} renglón(es) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.`
-        : `CONTEO PARCIAL: ${conteo.total_pendientes} renglón(es) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.`;
+        ? `Al cerrar, ${conteo.total_pendientes} producto(s) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.`
+        : `CONTEO PARCIAL: ${conteo.total_pendientes} producto(s) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.`;
 }
 
 /** El CSV del ajuste: `{ headers, rows, nombre }`. */

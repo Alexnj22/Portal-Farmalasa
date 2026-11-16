@@ -191,7 +191,7 @@ export function cuentaDelCobro({ modo, precios, items, mezcla, veces, cantidad, 
         return { texto: motivoDelLote({ ...i, parecido: lotes[i.linea_num]?.parecido }), campo: `lote-${i.linea_num}` };
     };
     const falta = precio == null ? { texto: 'Faltan los precios de la aplicación.', campo: null }
-        : !sala ? { texto: 'Falta la sala de esta caja.', campo: null }
+        : !sala ? { texto: 'Falta la sucursal de esta caja.', campo: null }
         : origen === 'COMPRADA' && !venta ? { texto: 'Elige la venta.', campo: 'venta' }
         : origen === 'COMPRADA' && !(items || []).length ? { texto: 'Elige cuántas se pagan.', campo: 'cuantas' }
         : origen === 'COMPRADA' && faltaDosis ? { texto: 'Elige cuánto se pone.', campo: 'cuantas' }

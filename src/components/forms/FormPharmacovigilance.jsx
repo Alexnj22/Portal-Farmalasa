@@ -23,7 +23,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const referentOptions = useMemo(() => {
         return possibleReferents.map(emp => ({
             value: emp.id,
-            label: `${emp.name} ${emp.branchId && String(emp.branchId) !== String(formData.id) ? '(En otra sede)' : ''}`
+            label: `${emp.name} ${emp.branchId && String(emp.branchId) !== String(formData.id) ? '(En otra sucursal)' : ''}`
         }));
     }, [possibleReferents, formData.id]);
 

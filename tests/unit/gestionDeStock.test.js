@@ -64,7 +64,7 @@ describe('gestionDeStock · envío sugerido', () => {
         expect(fuera).toEqual([{ descripcion: 'C', motivo: 'ya no hay existencia' }]);
     });
     it('la nota dice por qué, según el destino', () => {
-        expect(notaDeEnvioSugerido(6, 6, 'Salud 1', 'Bodega')).toMatch(/ninguna sala/);
+        expect(notaDeEnvioSugerido(6, 6, 'Salud 1', 'Bodega')).toMatch(/ninguna sucursal/);
         expect(notaDeEnvioSugerido(2, 6, 'Salud 1', 'Salud 2')).toMatch(/en Salud 2 sí se vende/);
     });
 });

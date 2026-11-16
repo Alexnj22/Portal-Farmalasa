@@ -79,8 +79,7 @@ export default function AvisoVersionNueva() {
                     <>
                         Esta pantalla no puede abrirse hasta que actualices el portal.
                         <br />
-                        Si estás llenando algo, guardalo primero: al actualizar,
-                        lo que no esté guardado se pierde.
+                        Si estás llenando algo, guárdalo primero. Al actualizar se pierde lo que no esté guardado.
                     </>
                 }
                 confirmText="Actualizar"

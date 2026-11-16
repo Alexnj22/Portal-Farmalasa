@@ -26,7 +26,7 @@ export const MODULE_MAP = {
     requests:            { path: '/solicitudes',             label: 'Solicitudes de sucursal', icono: 'ClipboardList' },
     requests_personales: { path: '/solicitudes-personales',  label: 'Solicitudes personales',  icono: 'Palmtree' },
     vacation_plan:     { path: '/vacaciones',   label: 'Plan de vacaciones',       icono: 'Palmtree'      },
-    traslados:         { path: '/traslados',       label: 'Traslados entre salas',    icono: 'ArrowLeftRight' },
+    traslados:         { path: '/traslados',       label: 'Traslados entre sucursales', icono: 'ArrowLeftRight' },
     payroll:           { path: '/nomina',          label: 'Nómina',                   icono: 'DollarSign'    },
     branches:          { path: '/sucursales',        label: 'Sucursales',               icono: 'Building2'     },
     roles:             { path: '/cargos',           label: 'Cargos y organigrama',     icono: 'ShieldCheck'   },
@@ -107,9 +107,9 @@ export const MODULE_MAP = {
     // Las dos salieron de ser pestañas de Productos (v2.521.0). El catálogo
     // describe QUÉ es un producto; estas dos describen CUÁNTO hay y qué hacer
     // con eso, así que su vecindario es Min/Max y el Conteo, no la ficha.
-    gestion_stock:     { path: '/gestion-stock',   label: 'Gestión de stock',         icono: 'Activity'      },
+    gestion_stock:     { path: '/gestion-stock',   label: 'Gestión de existencias',   icono: 'Activity'      },
     inventario:        { path: '/inventario',       label: 'Inventario',               icono: 'Boxes'         },
-    minmax:            { path: '/minmax',           label: 'Min / Max',                icono: 'BarChart2'     },
+    minmax:            { path: '/minmax',           label: 'Mín/Máx',                  icono: 'BarChart2'     },
     ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas perdidas',          icono: 'PackageMinus'  },
     compras:           { path: '/compras',           label: 'Compras',                  icono: 'ShoppingCart'  },
     cuentas_por_pagar: { path: '/cuentas-por-pagar', label: 'Cuentas por pagar',        icono: 'Landmark'      },

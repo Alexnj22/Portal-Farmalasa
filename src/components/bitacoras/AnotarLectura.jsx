@@ -144,8 +144,7 @@ export default function AnotarLectura({ area, franja, lectura, fecha, valores, o
                         <Notice variant="danger" compact icon={AlertTriangle}>
                             <span className="font-bold">Fuera del rango de {rotularRango(area)}.</span>
                             <span className="block mt-0.5 font-normal text-content-2">
-                                Hay que anotar qué se hizo: una lectura fuera de rango sin acción al
-                                lado prueba que se vio y no se actuó.
+                                Anota qué se hizo.
                             </span>
                         </Notice>
                         <PortalTextarea

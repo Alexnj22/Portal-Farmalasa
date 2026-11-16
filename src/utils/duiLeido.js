@@ -355,7 +355,7 @@ export function avisoDeCaras(r, unArchivo = false) {
         const cual = sola === 'ANVERSO' ? 'el frente' : 'el reverso';
         return {
             grave: false,
-            texto: `El archivo trae sólo ${cual}. Faltan los datos de la otra cara — súbelo completo o usa las dos imágenes.`,
+            texto: `El archivo trae sólo ${cual}. Faltan los datos de la otra cara. Súbelo completo o usa las dos imágenes.`,
         };
     }
 

@@ -175,7 +175,7 @@ export default function OrdenesDeDescuento({ empleado, canEdit }) {
 
             <ConfirmModal isOpen={!!aBorrar} onClose={() => setABorrar(null)} onConfirm={confirmarBorrar}
                 title="Borrar orden de descuento"
-                message={`¿Borrar la orden de ${aBorrar?.banco || 'este banco'}? Si ya terminó de pagarse, mejor márcala como finalizada para que quede el historial.`}
+                message={`¿Borrar la orden de ${aBorrar?.banco || 'este banco'}? Si ya terminó de pagarse, mejor márcala como finalizada.`}
                 confirmText="Borrar" cancelText="Cancelar" isProcessing={borrando} isDestructive />
         </div>
     );
@@ -274,7 +274,7 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
                 <Notice variant={cruce === 'distinto' ? 'warning' : 'success'} compact icon={cruce === 'distinto' ? AlertTriangle : UserCheck}>
                     {cruce === 'distinto'
                         ? <>El documento nombra a <strong>{f.nombre_en_documento}</strong>, que no parece ser esta persona. Revísalo antes de guardar.</>
-                        : <>El documento es de <strong>{f.nombre_en_documento}</strong> — coincide con la ficha.</>}
+                        : <>El documento es de <strong>{f.nombre_en_documento}</strong>. Coincide con sus datos.</>}
                 </Notice>
             )}
             {aviso && <Notice variant="info" compact>{aviso}</Notice>}

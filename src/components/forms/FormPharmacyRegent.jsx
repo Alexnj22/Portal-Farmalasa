@@ -24,7 +24,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     const regentOptions = useMemo(() => {
         return possibleRegents.map(emp => ({
             value: emp.id,
-            label: `${emp.name} ${emp.branchId && String(emp.branchId) !== String(formData.id) ? '(En otra sede)' : ''}`
+            label: `${emp.name} ${emp.branchId && String(emp.branchId) !== String(formData.id) ? '(En otra sucursal)' : ''}`
         }));
     }, [possibleRegents, formData.id]);
 
@@ -100,14 +100,14 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                 {/* Horas al mes que el regente está en ESTA sala. La guía del
                     regente de la SRS fija el mínimo por categoría (tercera: 20 h). */}
                 <LazyInput
-                    label="Horas al mes en esta sala"
+                    label="Horas al mes en esta sucursal"
                     type="number"
                     inputMode="numeric"
                     value={legalData.regentHorasMes ?? ''}
                     onChange={(v) => updateLegalField('regentHorasMes', v === '' ? null : Math.max(0, parseInt(v, 10) || 0))}
                     placeholder={horasMinimasDeRegencia(legalData.srsCategoria) ? `Mínimo ${horasMinimasDeRegencia(legalData.srsCategoria)}` : 'Ej: 20'}
                     hasError={!!legalData.regentHorasMes && horasMinimasDeRegencia(legalData.srsCategoria) !== null && Number(legalData.regentHorasMes) < horasMinimasDeRegencia(legalData.srsCategoria)}
-                    errorMessage={`La categoría de esta sala pide al menos ${horasMinimasDeRegencia(legalData.srsCategoria)} horas al mes.`}
+                    errorMessage={`La categoría de esta sucursal pide al menos ${horasMinimasDeRegencia(legalData.srsCategoria)} horas al mes.`}
                 />
 
                 {/* Lo que va en el rótulo de la entrada (Bitácoras → Regencia). */}
@@ -119,7 +119,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         placeholder="Ej: 1234"
                     />
                     <LazyInput
-                        label="Horario de asistencia en esta sala"
+                        label="Horario de asistencia en esta sucursal"
                         value={legalData.regentHorario ?? ''}
                         onChange={(v) => updateLegalField('regentHorario', v.trim() || null)}
                         placeholder="Ej: Martes y jueves, 8:00 a. m. – 12:30 p. m."

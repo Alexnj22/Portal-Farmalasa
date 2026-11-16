@@ -109,7 +109,7 @@ const CarnesDelDiaView = () => {
             // `CARNE_TEMPORAL_ANULADO` lo anota `anularCarneTemporal`.
             const r = await anularCarneTemporal(aAnular.id, { employeeId: aAnular.employee_id });
             if (r?.ok) {
-                showToast('Carné anulado', `El papel de ${aAnular.nombre} ya no sirve para nada.`, 'success');
+                showToast('Carné anulado', `El carné de ${aAnular.nombre} ya no sirve.`, 'success');
             } else {
                 showToast('No se anuló', r?.motivo || 'Intenta de nuevo.', 'error');
             }
@@ -154,12 +154,12 @@ const CarnesDelDiaView = () => {
                         {candidatos.length === 0 && employees.length === 0 && (
                             <EmptyState compact icon={Ban} iconClass="text-warning"
                                 title="Todavía no se cargó el personal"
-                                subtitle="Vuelve a entrar a la pantalla en unos segundos. Si sigue igual, no tienes permiso para ver el listado de personal." />
+                                subtitle="Vuelve a entrar en unos segundos. Si sigue igual, no tienes permiso para ver al personal." />
                         )}
                         {candidatos.length === 0 && employees.length > 0 && (
                             <EmptyState compact icon={Search}
                                 title="Nadie con ese nombre"
-                                subtitle="Revisa cómo está escrito en su ficha." />
+                                subtitle="Revisa cómo está escrito en sus datos." />
                         )}
 
                         {/* Tarjetas y no renglones: una fila con la foto chica a
@@ -309,7 +309,7 @@ const CarnesDelDiaView = () => {
                 title="Anular el carné de papel"
                 confirmText="Anular"
                 isProcessing={anulando}
-                message={`El papel de ${aAnular?.nombre ?? 'esta persona'} deja de servir en el acto: no abre el portal, no marca en el kiosco y no firma nada. Si tiene una sesión abierta con él, se le cierra. Para darle otro hay que imprimirlo de nuevo.`}
+                message={`El carné de ${aAnular?.nombre ?? 'esta persona'} deja de servir ahora mismo. No abre el portal, no marca en el kiosco y no firma nada. Si tiene una sesión abierta con él, se cierra. Para darle otro, imprímelo de nuevo.`}
             />
         </GlassViewLayout>
     );

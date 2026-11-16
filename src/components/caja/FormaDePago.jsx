@@ -117,7 +117,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                         <>
                             <Notice variant="warning" icon={Lock}>
                                 Sin el total y el {nombreDelNumero(v.forma)}, el ingreso se anota pero
-                                queda <b>pendiente de autorización</b>. Lo revisa Supervisión o Talento Humano.
+                                queda <b>pendiente de autorización</b>. Lo revisa un supervisor, un administrador o Talento Humano.
                             </Notice>
                             <PortalTextarea name="pagoMotivo" label={`Por qué no hay total o ${nombreDelNumero(v.forma)}`} rows={2}
                                 value={v.motivo} onChange={(e) => poner({ motivo: e.target.value })}
@@ -151,7 +151,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                         <>
                             <Notice variant="warning" icon={Lock}>
                                 Sin el {papel}, el ingreso se anota pero queda <b>pendiente de autorización</b>.
-                                Lo revisa Supervisión o Talento Humano.
+                                Lo revisa un supervisor, un administrador o Talento Humano.
                             </Notice>
                             <PortalTextarea name="pagoMotivo" label={`Por qué no hay ${papel}`} rows={2} value={v.motivo}
                                 onChange={(e) => poner({ motivo: e.target.value })}

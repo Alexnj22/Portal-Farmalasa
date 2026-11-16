@@ -19,7 +19,7 @@ const ERRORES = {
     // Dos códigos y no uno: el motivo del rechazo es distinto y es lo único
     // que le dice a quien lo intenta si vale la pena pedir el permiso.
     ELIMINAR_REQUIERE_PERMISO_FINALIZADO: 'Este conteo ya está finalizado: es evidencia firmada. Borrarlo necesita el permiso de eliminar conteos.',
-    ELIMINAR_REQUIERE_PERMISO_INICIADO: 'Este conteo ya tiene renglones contados. Borrarlo necesita el permiso de eliminar conteos.',
+    ELIMINAR_REQUIERE_PERMISO_INICIADO: 'Este conteo ya tiene productos contados. Para borrarlo necesitas el permiso de eliminar conteos.',
     FUERA_DE_ALCANCE: 'Ese conteo pertenece a otra sucursal.',
     ALCANCE_INVALIDO: 'El alcance del conteo no es válido.',
     SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no tiene inventario asociado: no se le puede tomar un conteo.',
@@ -35,8 +35,8 @@ const ERRORES = {
     CONTEO_NO_ENCONTRADO_O_NO_FINALIZADO: 'El conteo no está finalizado todavía.',
     CONTEO_NO_ENCONTRADO: 'No se encontró el conteo.',
     APROBADOR_ES_QUIEN_FINALIZO: 'No puedes aprobar un conteo que finalizaste tú mismo: debe firmarlo otra persona.',
-    ITEM_NO_ENCONTRADO: 'No se encontró el renglón.',
-    ESTADO_INVALIDO: 'Estado de renglón inválido.',
+    ITEM_NO_ENCONTRADO: 'No se encontró el producto.',
+    ESTADO_INVALIDO: 'Estado de producto inválido.',
     PRESENTACION_Y_LOTE_REQUERIDOS: 'Elige presentación y lote antes de agregar.',
     PRESENTACION_REQUERIDA: 'Elige la presentación antes de agregar.',
     PRODUCTO_NO_ENCONTRADO: 'Ese producto no existe o está inactivo.',
@@ -49,13 +49,13 @@ const ERRORES = {
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
     AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado.',
     CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
-    RECUENTO_MISMO_CONTADOR: 'No puedes recontar una línea que contaste tú mismo: el recuento lo hace otra persona.',
+    RECUENTO_MISMO_CONTADOR: 'No puedes recontar un producto que contaste tú. El recuento lo hace otra persona.',
     CANTIDAD_INVALIDA: 'La cantidad del recuento debe ser un número entero de 0 o más.',
     CAJA_REQUIERE_LOTE_EN_VIVO: 'Un conteo que ajusta el inventario se hace por lote y en vivo.',
     // Conteo que ajusta el inventario + lote y vencimiento según el producto
     // (2026-11-06). Ninguno es prefijo de otro.
     CONTEO_POR_APLICAR_EN_SUCURSAL: 'En esta sucursal hay otro conteo que ajusta el inventario sin aprobar o todavía aplicándose. Espera a que termine: los dos medirían contra la misma existencia y la diferencia entraría dos veces.',
-    AJUSTE_NO_CORRIGE_LOTE_DEL_SISTEMA: 'En un conteo que ajusta el inventario, el lote del sistema no se corrige: toca «Agregar», anota el lote real con su vencimiento y cuenta 0 en este renglón.',
+    AJUSTE_NO_CORRIGE_LOTE_DEL_SISTEMA: 'En un conteo que ajusta el inventario, el lote del sistema no se corrige: toca «Agregar», anota el lote real con su vencimiento y cuenta 0 en el lote del sistema.',
     AJUSTE_CON_PRODUCTOS_POR_RESOLVER: 'Hay productos que no se podrían ajustar así como están. Resuélvelos antes de finalizar.',
     LOTE_GENERICO_NO_VALE: 'Este producto lleva lote: escribe el número impreso en la caja, no «sin lote».',
     LOTE_REQUERIDO: 'Este producto lleva lote: elige o escribe el lote.',
@@ -146,7 +146,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             severity: 'CRITICAL',
             branch_id: data?.branch_id,
             old_value: [
-                `${data?.total_items ?? 0} renglón(es)`,
+                `${data?.total_items ?? 0} producto(s)`,
                 `${data?.total_contados ?? 0} contado(s)`,
                 `estado ${data?.status || '—'}`,
                 `${data?.total_diferencias ?? 0} diferencia(s)`,
@@ -440,7 +440,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             }
         } catch (err) {
             if (!hechos) throw err;
-            const e = new Error(`Se guardaron ${hechos} lote(s), pero no todo: ${err?.message || 'error'}. Revisa los renglones de este producto.`);
+            const e = new Error(`Se guardaron ${hechos} lote(s), pero no todo: ${err?.message || 'error'}. Revisa los lotes de este producto.`);
             e.cause = err;
             throw e;
         }

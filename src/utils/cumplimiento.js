@@ -68,8 +68,8 @@ export const TIPOS = Object.freeze({
         ],
     },
     vencido: {
-        titulo: 'Producto dado de baja',
-        corto: 'Baja',
+        titulo: 'Producto descartado',
+        corto: 'Descarte',
         campos: [
             { key: 'producto', label: 'Producto', tipo: 'texto', requerido: true },
             { key: 'lote', label: 'Lote', tipo: 'texto', requerido: true },
@@ -100,7 +100,7 @@ export const TIPOS = Object.freeze({
             { key: 'producto', label: 'Producto', tipo: 'texto', requerido: true },
             { key: 'lote', label: 'Lote', tipo: 'texto', requerido: true },
             { key: 'motivo', label: 'Motivo del retiro', tipo: 'area' },
-            { key: 'existencia', label: 'Unidades que había en la sala', tipo: 'numero', alCerrar: true, requerido: true },
+            { key: 'existencia', label: 'Unidades que había en la sucursal', tipo: 'numero', alCerrar: true, requerido: true },
             { key: 'devuelto_a', label: 'A quién se devolvió', tipo: 'texto', alCerrar: true },
         ],
     },
@@ -199,7 +199,7 @@ export const AUTOINSPECCION = Object.freeze([
         items: [
             { id: 'r1', texto: 'Procedimientos escritos y al alcance del personal', peso: 'M' },
             { id: 'r2', texto: 'Farmacovigilancia: notificaciones o reporte cero del semestre', peso: 'M' },
-            { id: 'r3', texto: 'Actas de destrucción y bajas archivadas', peso: 'M' },
+            { id: 'r3', texto: 'Actas de destrucción y descartes archivados', peso: 'M' },
             { id: 'r4', texto: 'Retiros de lote atendidos y documentados', peso: 'M' },
         ],
     },
@@ -379,7 +379,7 @@ export function pendientesDeSala(s, hoyIso, fechaTexto = (f) => f) {
     else if (dAuto > 365) r.push({ clave: 'autoinspeccion', tono: 'warning', texto: `La última autoinspección fue el ${fechaTexto(s.ultima_autoinspeccion)} (toca una por año)`, detalle: `última ${fechaTexto(s.ultima_autoinspeccion)}`, tab: 'autoinspeccion', crea: 'autoinspeccion' });
     if (farmacia && !s.ultima_revision_a_la_vista) r.push({ clave: 'a_la_vista', tono: 'info', texto: 'Falta revisar lo que debe estar a la vista', detalle: '', tab: 'autoinspeccion', crea: 'a_la_vista' });
     if (s.capacitaciones_del_anio === 0) r.push({ clave: 'capacitacion', tono: 'warning', texto: 'Sin capacitaciones anotadas este año', detalle: '', tab: 'capacitacion', crea: 'capacitacion' });
-    if (s.vencidos_por_destruir > 0) r.push({ clave: 'destruir', tono: 'info', texto: `${s.vencidos_por_destruir} producto(s) de baja esperando destrucción`, detalle: `${s.vencidos_por_destruir}`, tab: 'vencidos', crea: 'destruccion' });
+    if (s.vencidos_por_destruir > 0) r.push({ clave: 'destruir', tono: 'info', texto: `${s.vencidos_por_destruir} producto(s) descartados esperando destrucción`, detalle: `${s.vencidos_por_destruir}`, tab: 'vencidos', crea: 'destruccion' });
     return r;
 }
 
@@ -449,19 +449,19 @@ export const FILAS_DEL_MAPA = Object.freeze([
     { clave: 'reacciones', claves: ['fv_fuera_de_plazo', 'fv_por_notificar'], titulo: 'Reacciones adversas', icono: 'AlertOctagon', tab: 'farmacovigilancia', aplica: 'todas',
       porQue: 'Cada sospecha se notifica al Centro Nacional de Farmacovigilancia dentro de su plazo.' },
     { clave: 'retiros', claves: ['retiros'], titulo: 'Retiros de lote', icono: 'Undo2', tab: 'retiros', aplica: 'todas',
-      porQue: 'Un lote retirado se separa y se devuelve; cada sala anota lo que tenía.' },
+      porQue: 'Un lote retirado se separa y se devuelve. Cada sucursal anota lo que tenía.' },
     { clave: 'acreditacion', claves: ['acreditacion'], titulo: 'Acreditación del mostrador', icono: 'BadgeCheck', tab: 'dependientes', aplica: 'todas',
       porQue: 'Quien despacha necesita su acreditación de dependiente vigente.' },
     { clave: 'fv_semestre', claves: ['fv_semestre'], titulo: 'Reporte semestral', icono: 'FileCheck2', tab: 'farmacovigilancia', aplica: 'farmacias', crea: 'reporte_cero',
       porQue: 'Cada semestre se reporta, aunque no haya habido ninguna reacción (reporte cero).' },
     { clave: 'autoinspeccion', claves: ['autoinspeccion'], titulo: 'Autoinspección', icono: 'ClipboardCheck', tab: 'autoinspeccion', aplica: 'todas', crea: 'autoinspeccion',
-      porQue: 'Una al año en cada sala, con la guía de la SRS y su plan de acción.' },
+      porQue: 'Una al año en cada sucursal, con la guía de la SRS y su plan de acción.' },
     { clave: 'capacitacion', claves: ['capacitacion'], titulo: 'Capacitación', icono: 'GraduationCap', tab: 'capacitacion', aplica: 'todas', crea: 'capacitacion',
       porQue: 'El personal se capacita según un programa anual, y cada sesión se registra.' },
     { clave: 'a_la_vista', claves: ['a_la_vista'], titulo: 'A la vista del público', icono: 'Eye', tab: 'autoinspeccion', aplica: 'farmacias', crea: 'a_la_vista',
       porQue: 'Permisos, regente y horarios tienen que estar a la vista; se revisa con su lista.' },
     { clave: 'destruir', claves: ['destruir'], titulo: 'Bajas por destruir', icono: 'PackageX', tab: 'vencidos', aplica: 'todas', crea: 'destruccion',
-      porQue: 'Lo dado de baja se destruye con aviso a la SRS y una gestora autorizada.' },
+      porQue: 'Lo descartado se destruye con aviso a la SRS y una gestora autorizada.' },
 ]);
 
 /**
@@ -518,19 +518,19 @@ export const REGISTROS_DE_CUMPLIMIENTO = Object.freeze({
         vacio: { titulo: 'Sin sospechas anotadas', subtitulo: 'Si un cliente cuenta una reacción a un medicamento, se anota aquí el mismo día.' },
     },
     vencidos: {
-        tipos: [{ tipo: 'vencido', boton: 'Dar de baja un producto', principal: true }, { tipo: 'destruccion', boton: 'Acta de destrucción' }],
+        tipos: [{ tipo: 'vencido', boton: 'Descartar un producto', principal: true }, { tipo: 'destruccion', boton: 'Acta de destrucción' }],
         aviso: 'Lo vencido o dañado sale del área de venta, se separa en el área rotulada de no aptos y se anota. Para destruirlo se avisa a la SRS 72 horas antes y lo retira una gestora autorizada por el MARN, que entrega su certificado.',
-        vacio: { titulo: 'Sin bajas anotadas' },
+        vacio: { titulo: 'Sin descartes anotados' },
     },
     retiros: {
-        tipos: [{ tipo: 'retiro', boton: 'Anotar retiro en esta sala', principal: true }],
-        aviso: 'Cuando la SRS o un laboratorio ordena retirar un lote, cada sala dice cuántas unidades tenía, las separa y anota a quién las devolvió.',
+        tipos: [{ tipo: 'retiro', boton: 'Anotar retiro en esta sucursal', principal: true }],
+        aviso: 'Cuando la SRS o un laboratorio ordena retirar un lote, cada sucursal dice cuántas unidades tenía, las separa y anota a quién las devolvió.',
         vacio: { titulo: 'Sin retiros de lote' },
     },
     autoinspeccion: {
         tipos: [{ tipo: 'autoinspeccion', boton: 'Hacer autoinspección', principal: true }, { tipo: 'a_la_vista', boton: 'Revisar lo que debe estar a la vista' }],
         aviso: 'Una autoinspección al año con la guía de la SRS, con su informe y su plan de acción. Un punto crítico sin cumplir basta para no aprobar.',
-        vacio: { titulo: 'Sin autoinspecciones', subtitulo: 'La norma pide una al año en cada sala.' },
+        vacio: { titulo: 'Sin autoinspecciones', subtitulo: 'La norma pide una al año en cada sucursal.' },
     },
     capacitacion: {
         tipos: [{ tipo: 'capacitacion', boton: 'Anotar capacitación', principal: true }],

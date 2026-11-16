@@ -15,7 +15,7 @@ describe('planDeGuardadoMinMax', () => {
         expect(p.payload).toMatchObject({ draft_min: 3, draft_max: 6, draft_status: 'pending' });
     });
     it('MAX tiene que ser mayor que MIN', () => {
-        expect(planDeGuardadoMinMax({ ...base, row: {}, min: '6', max: '6' }).error).toMatch(/MAX/);
+        expect(planDeGuardadoMinMax({ ...base, row: {}, min: '6', max: '6' }).error).toMatch(/Máx/);
     });
     it('poner A en 0 pide confirmación', () => {
         expect(planDeGuardadoMinMax({ ...base, row: { abc_class: 'A', effective_min: 2 }, min: '0', max: '0' }).confirmarCero).toBe(true);

@@ -33,7 +33,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                 { employeeId: formData?.id ?? null });
 
             if (fnErr) {
-                setError('Error de red: la función no respondió.');
+                setError('No hubo respuesta. Revisa tu conexión y vuelve a intentar.');
             } else if (!data?.ok) {
                 setError(`${data?.error || 'Error'}${data?.details ? ': ' + data.details : ''}`);
             } else {

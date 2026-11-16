@@ -9,13 +9,13 @@ import { esLoteGenerico, unidadesEnSala } from './unidadesInventario';
 
 export const OPERACIONES_AJUSTE = [
     { key: 'VENCIMIENTO',     movimiento: 'DESCARTE', icono: 'CalendarX2',    tono: 'peligro',
-      label: 'Descargar por vencimiento',     desc: 'Producto vencido que se retira de la sala' },
+      label: 'Descargar por vencimiento',     desc: 'Producto vencido que se retira de la sucursal' },
     { key: 'DESCARTE',        movimiento: 'DESCARTE', icono: 'Trash2',        tono: 'aviso',
       label: 'Descargar por descarte',        desc: 'Producto que se retira sin estar vencido' },
     { key: 'PRODUCTO DAÑADO', movimiento: 'DESCARTE', icono: 'AlertTriangle', tono: 'dano',
       label: 'Descargar por daño',            desc: 'Producto roto, golpeado o inservible' },
     { key: 'CONSUMO INTERNO', movimiento: 'DESCARTE', icono: 'Stethoscope',   tono: 'interno',
-      label: 'Descargar por consumo interno', desc: 'Usado en inyecciones, curaciones o la sala' },
+      label: 'Descargar por consumo interno', desc: 'Usado en inyecciones, curaciones o la sucursal' },
     { key: 'CARGA',           movimiento: 'CARGA',    icono: 'PackagePlus',   tono: 'exito',
       label: 'Cargar producto',               desc: 'Ingresar existencia que no entró por compra' },
 ];
@@ -32,7 +32,7 @@ export const MOTIVOS_AJUSTE = {
     'CONSUMO INTERNO': [
         { value: 'ENFERMERIA',  label: 'Enfermería — inyecciones' },
         { value: 'CURACIONES',  label: 'Curaciones' },
-        { value: 'INSUMO',      label: 'Insumo de la sala' },
+        { value: 'INSUMO',      label: 'Insumo de la sucursal' },
         { value: 'MUESTRA',     label: 'Muestra o demostración' },
         { value: 'PERSONAL',    label: 'Uso del personal' },
         { value: 'OTRO',        label: 'Otro' },
@@ -217,7 +217,7 @@ export function solicitudDeAjuste({ op, motivo, causa, evidencia = [], lineas, u
             items,
             total_unidades: items.reduce((s, i) => s + (Number(i.cantidad) || 0), 0),
             notified_employee_id: aprobador?.id ?? null,
-            notified_employee: aprobador?.name ?? 'Sin supervisión asignada',
+            notified_employee: aprobador?.name ?? 'Sin aprobador asignado',
         },
     };
 }

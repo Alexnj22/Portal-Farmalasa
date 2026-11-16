@@ -208,8 +208,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 <Notice variant="danger" icon={AlertTriangle}>
                     <span className="font-bold">No se pudo leer la lista de cajas</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Esto NO significa que no haya ninguna: significa que la consulta falló.
-                        Las cajas registradas pueden estar imprimiendo igual.
+                        La consulta falló. Las cajas registradas pueden estar imprimiendo igual.
                         {' '}<span className="text-content-3">{mensajeAmigable(falloLaLista, '')}</span>
                     </span>
                 </Notice>
@@ -217,10 +216,9 @@ export default function CajasDeImpresion({ puedeEditar }) {
 
             {!cajas.length && !falloLaLista && (
                 <Notice variant="info" icon={Printer}>
-                    <span className="font-bold">Ninguna sala imprime todavía</span>
+                    <span className="font-bold">Ninguna sucursal imprime todavía</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Sin una caja registrada, un documento que se manda desde el teléfono o
-                        desde la oficina no tiene dónde salir. La instalación está en
+                        Sin una caja registrada, lo que se manda a imprimir desde el teléfono o la oficina no tiene dónde salir. La instalación está en
                         <code> scripts/agente-impresion/README.md</code>.
                     </span>
                 </Notice>
@@ -230,9 +228,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                 <Notice variant="warning" icon={AlertTriangle}>
                     <span className="font-bold">Hay cajas que hay que poner al día</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        En la computadora de esa caja, abre una terminal y pega esta línea. No
-                        pide nada más y no cambia la configuración de la caja — sólo el programa.
-                        Después de esto, cada caja se actualiza sola.
+                        En la computadora de esa caja, abre una terminal y pega esta línea. No pide nada más y no cambia la configuración de la caja. Después de esto, cada caja se actualiza sola.
                     </span>
                     <code className="block mt-2 p-2 text-caption break-all bg-surface-card-hover border border-border-card">
                         {LINEA_DE_ACTUALIZAR}
@@ -299,7 +295,7 @@ export default function CajasDeImpresion({ puedeEditar }) {
                     <LiquidSelect
                         value={sala} onChange={setSala}
                         options={branches.map((b) => ({ value: String(b.id), label: b.name }))}
-                        placeholder="¿De qué sala es?" ariaLabel="Sucursal de la caja"
+                        placeholder="¿De qué sucursal es?" ariaLabel="Sucursal de la caja"
                     />
                     <PortalInput
                         label="Nombre" name="nombre" value={nombre}

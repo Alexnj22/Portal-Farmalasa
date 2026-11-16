@@ -31,7 +31,7 @@ export function revisarCalidad({ ancho, alto, nitidez = null, contraste = null }
     if (lado < LADO_MINIMO) {
         problemas.push({ clave: 'pequena', bloquea: true, texto: `Muy pequeña (${ancho}×${alto} px): en la app se vería pixelada. Busca una de al menos ${LADO_RECOMENDADO} px.` });
     } else if (lado < LADO_RECOMENDADO) {
-        problemas.push({ clave: 'justa', bloquea: false, texto: `Algo pequeña (${ancho}×${alto} px): sirve, pero en la ficha de la app se notará. Si hay una más grande, mejor.` });
+        problemas.push({ clave: 'justa', bloquea: false, texto: `Algo pequeña (${ancho}×${alto} px): sirve, pero en la app se notará. Si hay una más grande, mejor.` });
     }
     if (nitidez != null && nitidez < NITIDEZ_MINIMA && !problemas.some((p) => p.clave === 'vacia')) {
         problemas.push({ clave: 'borrosa', bloquea: false, texto: 'Se ve borrosa o desenfocada. Si es foto propia, tómala de nuevo con buena luz.' });

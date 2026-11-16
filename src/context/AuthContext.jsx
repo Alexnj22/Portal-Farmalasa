@@ -44,7 +44,7 @@ const withTimeout = (promise, ms, label = "timeout") =>
 
 // Transient DNS/network failures (ERR_NAME_NOT_RESOLVED, etc.) surface as "Failed to fetch"
 // from the browser's fetch API, regardless of which Supabase client (auth/postgrest/functions) made the call.
-const NETWORK_ERROR_MSG = 'No se pudo conectar a internet. Revisa tu WiFi/datos e intenta de nuevo.';
+const NETWORK_ERROR_MSG = 'No hay conexión a internet. Revisa tu WiFi o tus datos e intenta de nuevo.';
 const isNetworkError = (err) => {
   if (!err) return false;
   const text = String(err.message || err.name || '');
@@ -1374,9 +1374,9 @@ export const AuthProvider = ({ children }) => {
     // Empleado dado de baja: la cuenta Auth queda baneada por disable-employee-auth,
     // pero esto cubre bajas previas al ban.
     if (data?.error === 'INACTIVE') {
-      return { error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.', motivo: 'bloqueado' };
+      return { error: 'Tu cuenta está desactivada. Habla con Talento Humano.', motivo: 'bloqueado' };
     }
-    if (data?.error === 'NOT_FOUND') return { error: 'Usuario no encontrado en el sistema.', motivo: 'credenciales' };
+    if (data?.error === 'NOT_FOUND') return { error: 'Ese usuario no existe.', motivo: 'credenciales' };
     if (error || !data?.ok || !data?.user?.id) return { error: 'Error de conexión. Intenta de nuevo.', motivo: 'otro' };
     return { u: await withSignedPhoto(data.user) };
   };
@@ -1429,7 +1429,7 @@ export const AuthProvider = ({ children }) => {
           return await fallar({ ok: false, error: await motivoDeLoginFallido(cleanUsername), motivo: 'credenciales' });
         }
         if (error.code === 'user_banned') {
-          return await fallar({ ok: false, error: 'Usuario bloqueado.', motivo: 'bloqueado' });
+          return await fallar({ ok: false, error: 'Usuario bloqueado. Habla con Talento Humano.', motivo: 'bloqueado' });
         }
         if (error.status === 429 || String(error.code || '').startsWith('over_')) {
           return await fallar({ ok: false, error: 'Demasiados intentos. Espera unos minutos.', motivo: 'limite' });

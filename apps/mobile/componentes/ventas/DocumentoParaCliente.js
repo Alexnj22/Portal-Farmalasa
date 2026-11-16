@@ -37,7 +37,7 @@ function bytesDeBase64(b64) {
 
 /** Los archivos que devolvió el servidor, en un ZIP, a la hoja de compartir. */
 async function compartirArchivos(archivos, invoiceId) {
-  if (!archivos.length) throw new Error('El servidor no devolvió archivos.');
+  if (!archivos.length) throw new Error('No llegaron los archivos. Intenta de nuevo.');
   const zip = zipSync(Object.fromEntries(archivos.map((a) => [a.nombre, bytesDeBase64(a.base64)])));
   const nombre = limpio(`${(archivos[0]?.nombre || 'documento').replace(/\.[^.]+$/, '')}.zip`);
   const f = new File(Paths.cache, nombre);
@@ -83,12 +83,12 @@ export default function DocumentoParaCliente({ invoiceId }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setAviso({ ok: true, texto: accion === 'correo'
       ? avisoDeEntregaDeDte({ accion, correo, seEnvio: r.se_envio })
-      : `Documento listo.${r.se_envio ? ' Se envió a Hacienda en este momento.' : ''}` });
+      : `Documento listo.${r.se_envio ? ' Se envió al MH en este momento.' : ''}` });
     if (accion === 'correo') setPorCorreo(false);
   };
 
   return (
-    <Seccion titulo="Documento electrónico" pie="El PDF y el JSON para el cliente. Si la venta no tiene sello, se envía a Hacienda primero.">
+    <Seccion titulo="Documento electrónico" pie="El PDF y el JSON para el cliente. Si la venta no tiene sello, se envía al MH primero.">
       <View style={{ gap: 8 }}>
         <BotonGrande texto={trabajando === 'descargar' ? 'Preparando…' : 'Compartir PDF y JSON'} borde color={MARCA.azulClaro}
           deshabilitado={!!trabajando} onPress={() => pedir('descargar')} />
@@ -105,7 +105,7 @@ export default function DocumentoParaCliente({ invoiceId }) {
         {trabajando ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Indicador size="small" />
-            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>Puede tardar hasta un minuto si hay que enviarlo a Hacienda.</Text>
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>Puede tardar hasta un minuto si hay que enviarlo al MH.</Text>
           </View>
         ) : null}
         {aviso ? (

@@ -304,7 +304,7 @@ function firmas(cierre) {
     const cerrado = cierre?.accion === 'cerrar';
     return `<div class="firmas">
         <div><div class="linea">
-            <div class="rol">Jefe de sala</div>
+            <div class="rol">Jefe de sucursal</div>
             <div class="que">Nombre y firma</div>
         </div></div>
         <div><div class="linea">

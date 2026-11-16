@@ -28,16 +28,16 @@ export const CAUSAS_CORTE_Z = {
     // es justo al revés. Se dice el HECHO sin atribuirlo.
     origen_perdio_fila: {
         que: 'Venta que ya no está registrada',
-        hacer: 'Tiene sello de Hacienda y sigue siendo válida, pero su registro se perdió. Volver a traerla no la recupera: hay que reportarlo para que la restauren.',
+        hacer: 'Tiene sello del MH y sigue siendo válida, pero su registro se perdió. Volver a traerla no la recupera. Repórtalo a Soporte para que la restauren.',
     },
     anulado_sin_invalidar: {
-        que: 'Venta anulada que nunca se invalidó ante Hacienda',
-        hacer: 'Tiene sello y no está en el anexo de anulados, así que para Hacienda sigue vigente. Hay que invalidarla como corresponde, o el libro tiene que llevarla.',
+        que: 'Venta anulada que nunca se invalidó ante el MH',
+        hacer: 'Tiene sello y no está en el anexo de anulados. Para el MH sigue vigente. Hay que invalidarla o llevarla en el libro.',
     },
     falta_en_portal: { que: 'Falta esta venta', hacer: 'Se recupera volviendo a traer ese día.' },
-    sin_sello: { que: 'Todavía sin el sello de Hacienda', hacer: 'Sin sello no entra al libro. Se resuelve solo cuando el sello llega.' },
-    anulado: { que: 'Documento anulado', hacer: 'El libro lo excluye con razón.' },
-    dte_inexistente: { que: 'El documento no existe en Hacienda', hacer: 'Hay que revisarlo: el libro no puede llevar una venta sin documento.' },
+    sin_sello: { que: 'Todavía sin el sello del MH', hacer: 'Sin sello no entra al libro. Se resuelve solo cuando el sello llega.' },
+    anulado: { que: 'Factura anulada', hacer: 'El libro lo excluye con razón.' },
+    dte_inexistente: { que: 'La factura no existe en el MH', hacer: 'Hay que revisarla. El libro no puede llevar una venta sin factura.' },
     monto_distinto: { que: 'El monto no coincide', hacer: 'Se corrige volviendo a traer ese día.' },
     sin_clasificar: { que: 'Sin causa determinada', hacer: 'Hay que revisarlo a mano.' },
 };

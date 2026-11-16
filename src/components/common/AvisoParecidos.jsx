@@ -13,7 +13,7 @@ export default function AvisoParecidos({ texto, className }) {
     if (!texto?.trim()) return null;
     return (
         <Notice variant="warning" icon={Search} className={className}>
-            Resultados similares para &ldquo;{texto.trim()}&rdquo; — no se encontraron coincidencias exactas
+            No hay coincidencias exactas para &ldquo;{texto.trim()}&rdquo;. Estos se parecen.
         </Notice>
     );
 }

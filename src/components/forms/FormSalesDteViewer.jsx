@@ -38,7 +38,7 @@ const FormSalesDteViewer = ({ formData }) => {
     const [errorDescarga, setErrorDescarga] = useState('');
 
     useEffect(() => {
-        if (!document?.json_path) { setLoading(false); setError('Este documento no tiene el JSON guardado.'); return; }
+        if (!document?.json_path) { setLoading(false); setError('Esta factura no tiene el JSON guardado.'); return; }
         let vivo = true;
         setLoading(true);
         setError(null);
@@ -101,7 +101,7 @@ const FormSalesDteViewer = ({ formData }) => {
                             {/* El receptor, no el emisor: en una venta el emisor
                                 somos nosotros y sería el mismo nombre siempre. */}
                             <TituloDeSeccion nivel="modal">
-                                {dte?.receptor?.nombre || document?.cliente || 'Documento'}
+                                {dte?.receptor?.nombre || document?.cliente || 'Factura'}
                             </TituloDeSeccion>
                             <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">
                                 {esCCF ? 'CCF' : 'COF'}
@@ -112,7 +112,7 @@ const FormSalesDteViewer = ({ formData }) => {
                     <div className="flex items-center gap-2 shrink-0">
                         {document?.pdf_path && (
                             <SegmentedControl
-                                label="Vista del documento" size="sm" tone="neutro"
+                                label="Vista de la factura" size="sm" tone="neutro"
                                 value={tab} onChange={setTab}
                                 options={[{ value: 'detalle', label: 'Detalle' }, { value: 'pdf', label: 'PDF' }]}
                             />
@@ -134,8 +134,8 @@ const FormSalesDteViewer = ({ formData }) => {
                     <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3">
                         <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2} />
                         <p className="text-label font-bold text-danger-text leading-snug">
-                            Este documento está invalidado ante Hacienda. Su retención no se acredita
-                            al declarar, aunque el Corte Z del período sí la incluya.
+                            Esta factura está invalidada ante el MH. Su retención no se acredita
+                            al declarar, aunque el cierre del día sí la incluya.
                         </p>
                     </div>
                 )}
@@ -191,7 +191,7 @@ const FormSalesDteViewer = ({ formData }) => {
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-label text-content-3 mb-4">Sin ítems detallados en el documento.</p>
+                            <p className="text-label text-content-3 mb-4">Sin productos detallados en la factura.</p>
                         )}
 
                         {/* El desglose respeta la forma de CADA tipo. En la factura

@@ -100,7 +100,7 @@ export function mensajeDeEncargo(e, sala) {
     return `${hola}Conseguimos su encargo ${e.codigo} (${e.cantidad} × ${e.producto}): `
         + `${formatMoney(Number(e.precio_unitario ?? 0))} c/u, total ${formatMoney(Number(e.anticipo ?? 0))}`
         + (e.fecha_estimada ? `, llega aproximadamente el ${fechaTexto(e.fecha_estimada, { weekday: 'long', day: 'numeric', month: 'long' })}` : '')
-        + '. Para pedirlo se paga completo en la sala. ¿Le confirmamos?';
+        + '. Para pedirlo se paga completo en la sucursal. ¿Le confirmamos?';
 }
 
 /** El mensaje con el enlace de pago que manda la sala (reglamento v3). */

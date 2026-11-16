@@ -152,7 +152,7 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
                             <div data-campo="asegurado">
                                 <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">Asegurado</p>
                                 <BuscarFicha ficha={asegurado} onElegir={setAsegurado} rotulo="Asegurado"
-                                    ayuda="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes." />
+                                    ayuda="Búscalo en el listado de clientes. Si no está registrado, regístralo primero en Clientes." />
                             </div>
                             <FormaDePago valor={pago} onCambiar={setPago} monto={monto} montoFijo />
                         </>

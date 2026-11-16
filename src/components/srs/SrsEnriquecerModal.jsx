@@ -238,13 +238,13 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <p className="text-subtitle font-black text-content">Matching automático con SRS</p>
                                 <p className="text-body-sm text-content-3 mt-1 max-w-sm">
                                     Busca hasta {BATCH_SIZE} productos en el Registro Sanitario de El Salvador,
-                                    aplica los matches seguros automáticamente y te consulta los dudosos.
+                                    aplica solos los que coinciden seguro y te pregunta los dudosos.
                                 </p>
                             </div>
                             <div className="flex gap-4 text-label font-bold">
-                                <span className="flex items-center gap-1.5 text-success"><PuntoDeEstado className="bg-success" /> ≥ 70% — auto-aplica</span>
-                                <span className="flex items-center gap-1.5 text-warning"><PuntoDeEstado className="bg-warning" /> {'< 70%'} — te consulta</span>
-                                <span className="flex items-center gap-1.5 text-content-3"><PuntoDeEstado className="bg-content-3" /> Sin resultados SRS — descarta</span>
+                                <span className="flex items-center gap-1.5 text-success"><PuntoDeEstado className="bg-success" /> ≥ 70%: se aplica solo</span>
+                                <span className="flex items-center gap-1.5 text-warning"><PuntoDeEstado className="bg-warning" /> {'< 70%'}: te pregunta</span>
+                                <span className="flex items-center gap-1.5 text-content-3"><PuntoDeEstado className="bg-content-3" /> Sin resultados en SRS: se descarta</span>
                             </div>
                             <Button tone="chart-3" onClick={handleStart}>Iniciar escaneo</Button>
                         </div>
@@ -361,7 +361,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 <div className="border border-divider rounded-2xl overflow-hidden">
                                     <div className="bg-surface-card-hover px-4 py-2.5 flex items-center justify-between border-b border-divider">
                                         <p className="text-caption font-black text-content-3 uppercase tracking-widest">
-                                            Revisar — {reviewIdx + 1} / {reviewQueue.length}
+                                            Revisar · {reviewIdx + 1} / {reviewQueue.length}
                                         </p>
                                         <ConfBadge score={currentReview.score} />
                                     </div>

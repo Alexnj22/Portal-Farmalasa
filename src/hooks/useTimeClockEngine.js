@@ -293,10 +293,10 @@ export function useTimeClockEngine(props = {}) {
                 message: sinAcceso ? 'SIN ACCESO'
                        : rechazo === 'DUPLICADO' ? 'MARCAJE YA REGISTRADO'
                        : 'NO SE PUDO REGISTRAR',
-                subtext: sinAcceso ? 'Tu acceso está suspendido. Habla con tu jefatura.'
+                subtext: sinAcceso ? 'Tu acceso está suspendido. Habla con Talento Humano.'
                     : rechazo === 'DUPLICADO'
                         ? 'Ese mismo marcaje acaba de quedar guardado.'
-                        : 'Avisa a tu jefatura para que lo registre.',
+                        : 'Avisa a un supervisor o administrador para que lo registre.',
                 color: 'orange',
                 iconKey: 'shield',
             });
@@ -951,8 +951,8 @@ const submitEarlyExit = useCallback((e) => {
                        : 'CARNÉ NO RECONOCIDO',
                 subtext: identidad.rateLimited ? 'Espera unos minutos antes de volver a intentar.'
                        : sinRed                ? 'No se pudo confirmar tu carné. Intenta de nuevo en un momento.'
-                       : sinAcceso             ? 'Tu acceso está suspendido. Habla con tu jefatura.'
-                       : 'Vuelve a pasar tu carné. Si sigue igual, avisa a tu jefatura.',
+                       : sinAcceso             ? 'Tu acceso está suspendido. Habla con Talento Humano.'
+                       : 'Vuelve a pasar tu carné. Si sigue igual, avisa a Soporte.',
                 color: sinAcceso ? 'orange' : 'red',
                 iconKey: sinAcceso ? 'shield' : 'x',
             });

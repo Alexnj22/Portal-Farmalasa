@@ -82,7 +82,7 @@ describe('Conteos · lo justificado', () => {
 describe('Conteos · cobertura', () => {
     it('dice cuántas salas entraron, no sólo el rango de días', () => {
         pintar([INCOMPLETA]);
-        expect(screen.getByText(/5 salas/)).toBeTruthy();
+        expect(screen.getByText(/5 sucursales/)).toBeTruthy();
     });
 
     it('nombra a la sala que se quedó esperando', () => {
@@ -94,7 +94,7 @@ describe('Conteos · cobertura', () => {
 
     it('no señala a la tanda que sí cubrió todo', () => {
         pintar([COMPLETA]);
-        expect(screen.getByText(/6 salas/)).toBeTruthy();
+        expect(screen.getByText(/6 sucursales/)).toBeTruthy();
         expect(screen.queryByText(/Faltó/)).toBeNull();
     });
 });

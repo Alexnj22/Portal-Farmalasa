@@ -69,7 +69,7 @@ export function lecturaDeBoleta(r, { pideBoleta = false } = {}) {
                 : !seguro
                     ? `Leí ${formatMoney(montoLeido)}, pero no lo pude comprobar en la foto.${cola}`
                     : leido.clase === 'PROVEEDOR'
-                        ? `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, documento ${leido.numero_boleta}` : ''}, y los renglones lo confirman.${cola}`
+                        ? `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, documento ${leido.numero_boleta}` : ''}, y el detalle lo confirma.${cola}`
                         : `La foto leyó ${formatMoney(montoLeido)}${leido.numero_boleta ? `, boleta ${leido.numero_boleta}` : ''}, y la boleta lo confirma.${cola}`;
     return { ...salida, puesto, aviso, aMano: nada };
 }
@@ -120,7 +120,7 @@ export function frenoDelMonto({ lectura, monto, intentos = 0, unaSolaVez = false
     return {
         paso: 'COTEJAR', bloquea: !cotejado,
         texto: deProveedor
-            ? 'La foto no comprueba el total. Compáralo con el documento antes de anotar.'
+            ? 'La foto no comprueba el total. Compáralo con el papel antes de anotar.'
             : 'La foto no comprueba el monto. Compáralo con el papel antes de anotar.',
         casilla: `Lo comparé con el papel: dice ${formatMoney(leido)}`,
     };
@@ -156,7 +156,7 @@ export function problemaDeBoleta(repetidas, entra, boleta = '') {
     if (r.bloquea) {
         return {
             tono: 'danger', bloquea: true,
-            texto: `La boleta ${m.numero_boleta || String(boleta).trim()} ya se anotó en esta sala`
+            texto: `La boleta ${m.numero_boleta || String(boleta).trim()} ya se anotó en esta sucursal`
                 + `${cuando ? ` el ${cuando}` : ''} por ${cuanto}`
                 + `${m.concepto ? ` (${m.concepto})` : ''}.`,
         };

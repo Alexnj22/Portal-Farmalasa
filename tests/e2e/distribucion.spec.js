@@ -537,7 +537,7 @@ test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del docume
     await page.locator('table tbody tr').first().click();
     const estado = page.locator('[data-testid="estado-hacienda"]');
     await expect(estado).toHaveAttribute('data-nivel', 'error', { timeout: 15_000 });
-    await expect(estado).toContainText('Hacienda lo rechazó');
+    await expect(estado).toContainText(/El MH la rechazó|Hacienda lo rechazó/);
     await expect(estado).toContainText(/NRC/);
     await expect(estado.getByRole('button', { name: 'Corregir y facturar' })).toBeVisible();
     // Lo vendido, como información (no como papel): abre en «Detalle». En un

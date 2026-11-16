@@ -447,7 +447,7 @@ export default function GestionStock() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_FIJA, title: 'Gestión de stock',
+        ...BARRA_FIJA, title: 'Gestión de existencias',
         headerSearchBarOptions: {
           placeholder: 'Producto o laboratorio', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

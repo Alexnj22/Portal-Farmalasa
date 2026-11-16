@@ -106,7 +106,7 @@ const REGLAS = [
     // abre y la anulación entra—, así que el mensaje dice cuándo volver y no
     // sólo que no se puede. Un «no se puede» a secas se lee como definitivo.
     [/CAJA_CERRADA/i,
-        'Esa sala ya sacó su cierre del día, así que no hay caja de dónde descontar. Espera a mañana —o a que la sala abra caja— para anularla.'],
+        'Esa sucursal ya hizo su cierre del día y no hay caja de dónde descontar. Para anularla, espera a mañana o a que la sucursal abra caja.'],
     [/approval_requests_una_pendiente_por_factura|una_pendiente_por_factura/i,
         'Esa factura ya tiene una solicitud pendiente. Espera a que se resuelva.'],
     [/FACTURA_NO_EXISTE/i,
@@ -122,7 +122,7 @@ const REGLAS = [
 
     // — Permisos —
     [/row-level security|permission denied|insufficient_privilege|must be owner/i,
-        'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+        'No tienes permiso para hacer esto. Consulta con un supervisor o administrador.'],
 
     // — Metas: el flujo de confirmación —
     // Van ANTES del genérico porque son estados del flujo, no fallas: quien los
@@ -131,12 +131,12 @@ const REGLAS = [
     [/META_EN_APROBACION/i,
         'Esta meta ya fue confirmada y espera al gerente. Si hay que cambiarle el monto, el gerente tiene que devolverla primero.'],
     [/META_YA_OFICIAL/i,
-        'Esta meta ya está aprobada y la sala la está persiguiendo. Para corregirla, el gerente tiene que devolverla.'],
+        'Esta meta ya está aprobada y la sucursal está trabajando para cumplirla. Para corregirla, el gerente tiene que devolverla.'],
     [/META_NO_EXISTE/i, 'Esa meta ya no existe. Recarga la pantalla.'],
     [/ESTADO_INVALIDO/i, 'Esa meta cambió de estado mientras la tenías abierta. Recarga la pantalla.'],
     [/AUTORIZANTE_INVALIDO/i,
         'Quien autoriza tiene que ser un gerente activo, y no puedes registrarte a ti mismo.'],
-    [/NOTA_REQUERIDA/i, 'Falta escribir el motivo: esta acción siempre lleva su porqué.'],
+    [/NOTA_REQUERIDA/i, 'Falta escribir el motivo.'],
     [/SUCURSAL_INVALIDA/i, 'Esa sucursal no lleva meta de venta.'],
     [/MONTO_INVALIDO/i, 'El monto tiene que ser mayor que cero.'],
     [/MES_INVALIDO/i, 'Ese mes no es válido.'],
@@ -154,14 +154,14 @@ const REGLAS = [
     // `FORBIDDEN` viaja igual de crudo y no lo atrapa `esTextoTecnico` (es una
     // sola palabra en mayúsculas, sin `:` detrás): lo lanzan, entre otras,
     // `identificar_por_carne` y `get_kiosk_auth_code`.
-    [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+    [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con un supervisor o administrador.'],
     // `guardar_carga_producto` (2026-10-31): la toma del producto venció y otra
     // persona lo abrió; guardar encima pisaría lo suyo.
     [/TOMADO_POR_OTRO/, 'Otra persona abrió este producto mientras lo tenías y lo está trabajando: no se guardó para no pisar lo suyo. Ábrelo de nuevo cuando lo suelte.'],
     // La ficha de quien pidió anonimizar sus datos no se edita: se reactiva
     // primero (Solicitudes sobre datos → Anonimizados). Lo lanza
     // `update_customer_fiscal` desde el 2026-10-26.
-    [/CLIENTE_ANONIMIZADO/, 'Esta persona pidió anonimizar sus datos: la ficha no se edita. Si volvió, reactívala en Solicitudes sobre datos.'],
+    [/CLIENTE_ANONIMIZADO/, 'Esta persona pidió anonimizar sus datos y no se pueden editar. Si volvió, reactívala en Solicitudes sobre datos.'],
     // `BRANCH_SCOPE_DENIED` = tiene el permiso, pero de UNA sala, y lo pedido es
     // de otra o es de Bodega. Lo lanzan MIN·MAX y, desde el 2026-10-02, los
     // pedidos (sólo Bodega crea y despacha; la sala recibe lo suyo). Con la
@@ -170,9 +170,9 @@ const REGLAS = [
     // — Pasos del pedido en una sola transacción (2026-10-08) —
     // Los YA_… casi siempre son un doble clic y la pantalla los toma como
     // éxito; si alguno llega hasta acá es porque otra persona se adelantó.
-    [/NO_INICIADO/, 'Esa sala todavía no empezó a prepararse: no se puede finalizar.'],
-    [/YA_FINALIZADO/, 'Esa sala ya estaba finalizada. Recarga la pantalla.'],
-    [/YA_CONFIRMADA/, 'La llegada de esa sala ya se había confirmado. Recarga la pantalla.'],
+    [/NO_INICIADO/, 'Esa sucursal todavía no empezó a prepararse. No se puede finalizar.'],
+    [/YA_FINALIZADO/, 'Esa sucursal ya estaba finalizada. Recarga la pantalla.'],
+    [/YA_CONFIRMADA/, 'La llegada de esa sucursal ya se había confirmado. Recarga la pantalla.'],
     [/YA_CONFIRMADO/, 'La llegada de ese reenvío ya se había confirmado. Recarga la pantalla.'],
     [/PAGINA_ITEMS_REQUERIDO/, 'No se pudo saber qué productos venían en las cajas que faltan. Intenta de nuevo.'],
     [/INVALID: el reenvío no lleva nada/, 'Marca al menos una caja, Electrolit o caja especial para reenviar.'],
@@ -191,14 +191,14 @@ const REGLAS = [
     [/LIQUIDACION_VACIA/i,
         'Esa hoja no tiene ni un concepto. Hay que calcularla antes de aprobarla.'],
     [/FALTA_METAS/i,
-        'Para armar la liquidación hay que poder ver las metas de todas las salas, y tu cargo no tiene ese alcance. Consulta con tu jefatura.'],
+        'Para armar la liquidación hay que ver las metas de todas las sucursales, y tu cargo no tiene ese alcance. Consulta con un supervisor o administrador.'],
     // Los dos siguientes NO son culpa de quien aprieta el botón: el primero es
     // un permiso que se movió, el segundo un cambio en cómo Metas resuelve la
     // sala. Los dos frenan ANTES de escribir, así que nada quedó a medias.
     [/META_ILEGIBLE/i,
-        'No se pudo leer el bono de meta de una de las salas, así que no se escribió nada. Avisa al equipo de sistemas.'],
+        'No se pudo leer el bono de meta de una de las sucursales. No se guardó nada. Avisa a Soporte.'],
     [/META_DE_OTRA_SALA/i,
-        'El bono de meta llegó con la sala equivocada y la liquidación se detuvo sin escribir nada. Avisa al equipo de sistemas.'],
+        'El bono de meta llegó con la sucursal equivocada. La liquidación se detuvo sin guardar nada. Avisa a Soporte.'],
     // — Pago de bonos en la caja (H20) —
     // `EN_CURSO` lo lanzan también los pedidos con otro sentido: por eso se
     // ata a la frase del bono y no al código solo.
@@ -213,11 +213,11 @@ const REGLAS = [
         'Ese bono ya no está por pagar. Recarga la lista.'],
     [/BONO_OTRA_PERSONA/, 'El efectivo lo tiene que recibir la persona que ganó el bono.'],
     [/BONO_OTRO_MONTO/, 'El monto del bono cambió. Recarga la lista y vuelve a pagarlo.'],
-    [/BONO_SIN_JEFATURA/, 'El bono lo paga la jefatura de la sala.'],
+    [/BONO_SIN_JEFATURA/, 'El bono lo paga el jefe de sucursal.'],
     [/BONO_SIN_RECEPTOR/, 'Falta identificar a quien recibe el efectivo.'],
-    [/BONO_OTRA_CAJA/, 'El bono se paga desde la caja de su sala.'],
+    [/BONO_OTRA_CAJA/, 'El bono se paga desde la caja de su sucursal.'],
     [/MOTIVO_REQUERIDO/i,
-        'Falta escribir el motivo: esta acción siempre lleva su porqué.'],
+        'Falta escribir el motivo.'],
 
     // — Promociones —
     // Los códigos de este módulo llegaban CRUDOS a la pantalla: ni el prefijo
@@ -226,17 +226,17 @@ const REGLAS = [
     // mostraba tal cual. El texto de la función queda como está —le sirve a
     // quien depura— y acá se dice lo mismo en palabras del portal.
     [/UMBRAL_NO_SUBE/i,
-        'Un nivel más alto tiene que pedir más venta que el anterior. Revisa los umbrales de esa sala.'],
+        'Un nivel más alto tiene que pedir más venta que el anterior. Revisa los umbrales de esa sucursal.'],
     [/NIVEL_INEXISTENTE/i,
         'Hay un umbral escrito para un nivel que no existe. Agrega el nivel o borra ese umbral.'],
     [/SIN_NIVELES/i, 'La promoción necesita al menos un nivel con su monto.'],
-    [/SIN_UMBRALES/i, 'Falta decir cuánto tiene que vender cada sala.'],
+    [/SIN_UMBRALES/i, 'Falta decir cuánto tiene que vender cada sucursal.'],
     [/SIN_LABORATORIOS/i, 'Elige al menos un laboratorio.'],
     [/MES_CERRADO/i,
         'Ese mes ya cerró y sus números están congelados. No se puede cambiar lo que ya se pagó.'],
     [/OTRO_TIPO/i, 'Esa promoción es de otro tipo. Recarga la pantalla.'],
     [/REPARTO_NO_CUADRA/i,
-        'Lo repartido entre las salas no suma el lote. Ajusta las cantidades para que cuadren.'],
+        'Lo repartido entre las sucursales no suma el lote. Ajusta las cantidades para que cuadren.'],
     [/REPARTO_SIN_LOTE/i,
         'Estás repartiendo unidades sin un lote que las respalde. Escribe el lote primero.'],
     [/LOTE_AGOTADO/i,
@@ -247,7 +247,7 @@ const REGLAS = [
         'Si el producto paga bono, hay que decir si lo cancela la empresa o un proveedor.'],
     [/FALTA_EL_PROVEEDOR/i, 'Lo paga un proveedor: falta decir cuál.'],
     [/RENGLON_CERRADO/i,
-        'Ese producto ya terminó su promoción, así que sus montos no se tocan.'],
+        'Ese producto ya terminó su promoción. Sus montos no se tocan.'],
     [/YA_FINALIZADA/i,
         'Esa promoción ya terminó. Para que vuelva a contar, reactívala desde Histórico.'],
     [/NADA_QUE_REABRIR/i,
@@ -268,7 +268,7 @@ const REGLAS = [
 
     // — Reglas de negocio MIN/MAX (F1.2/F1.3) —
     [/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i,
-        'MIN y MAX no forman un par válido: con MIN ≥ 1, el MAX debe ser mayor; con MIN 0, el MAX solo puede ser 0 o 1.'],
+        'Mín y Máx no forman un par válido. Con Mín 1 o más, el Máx debe ser mayor. Con Mín 0, el Máx solo puede ser 0 o 1.'],
 
     // — Conexión y tiempo —
     [/statement timeout|canceling statement|query timeout|57014/i,
@@ -285,8 +285,8 @@ const REGLAS = [
     // no dice ni qué registro ni qué hacer, y acá la salida es concreta. Pasó
     // el 2-sep en Salud 3 y el aviso mandó a mirar el corte, no el vale.
     [/caja_vales_portal_abierto_unico/i,
-        'Esta sala ya tiene un vale de caja abierto de un corte anterior. '
-        + 'Avisa al equipo de sistemas para cerrarlo antes de volver a cortar.'],
+        'Esta sucursal ya tiene un vale de caja abierto de un corte anterior. '
+        + 'Avisa a Soporte para cerrarlo antes de volver a cortar.'],
     [/duplicate key|unique constraint|23505/i, 'Ya existe un registro con esos datos.'],
     [/foreign key constraint|23503/i, 'No se puede completar: hay otros registros que dependen de este.'],
     // Los campos que la persona tiene que llenar los valida el formulario
@@ -294,8 +294,8 @@ const REGLAS = [
     // un dato que el portal debió poner y no puso: decir «falta llenar un
     // campo» mandaba a buscar algo que no existe (alta de empleado, 22-oct).
     [/not-null constraint|null value in column|23502/i,
-        'No se pudo guardar por un error del sistema, no por algo que hayas llenado. '
-        + 'Lo escrito sigue en pantalla: avisa al equipo de sistemas.'],
+        'No se pudo guardar por un error del sistema. '
+        + 'Lo escrito sigue en pantalla. Avisa a Soporte.'],
     [/check constraint|23514/i, 'Uno de los valores está fuera del rango permitido.'],
     [/invalid input syntax|22P02|out of range|22003/i, 'Uno de los valores tiene un formato incorrecto.'],
 

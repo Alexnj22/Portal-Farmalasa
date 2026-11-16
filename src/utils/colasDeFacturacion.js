@@ -133,14 +133,14 @@ export const tonoDeDiasQuedan = (d) => (d <= 2 ? 'danger' : d <= 5 ? 'warning' :
  */
 export function resumenDeRegularizacion(r) {
     const partes = [`${r.resueltas} de ${r.revisadas}`];
-    if (r.fichas_corregidas) partes.push(`${r.fichas_corregidas} ficha${r.fichas_corregidas !== 1 ? 's' : ''} de cliente corregida${r.fichas_corregidas !== 1 ? 's' : ''}`);
-    if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones de Hacienda`);
+    if (r.fichas_corregidas) partes.push(`${r.fichas_corregidas} cliente${r.fichas_corregidas !== 1 ? 's' : ''} con datos corregidos`);
+    if (r.con_observaciones) partes.push(`${r.con_observaciones} con observaciones del MH`);
     if (r.fallidas)          partes.push(`${r.fallidas} sin resolver`);
     if (r.restantes > 0)     partes.push(`quedan ${r.restantes} para la próxima tanda`);
     return {
         titulo: r.revisadas === 0 ? 'No había nada pendiente'
-              : r.restantes > 0 ? 'Tanda enviada a Hacienda'
-              : 'Trámite enviado a Hacienda',
+              : r.restantes > 0 ? 'Tanda enviada al MH'
+              : 'Trámite enviado al MH',
         texto: partes.join(' · '),
         tono: (r.fallidas || r.restantes > 0) ? 'warning' : 'success',
     };
@@ -150,12 +150,12 @@ export function resumenDeRegularizacion(r) {
 export function resumenDeRegularizarUna(res, correlativo) {
     if (res.resueltas > 0) {
         const partes = [correlativo];
-        if (res.fichas_corregidas) partes.push('se corrigió la ficha del cliente');
-        if (res.con_observaciones) partes.push('Hacienda la recibió con observaciones');
-        return { titulo: 'Enviado a Hacienda', texto: partes.filter(Boolean).join(' · '), tono: 'success' };
+        if (res.fichas_corregidas) partes.push('se corrigieron los datos del cliente');
+        if (res.con_observaciones) partes.push('El MH la recibió con observaciones');
+        return { titulo: 'Enviada al MH', texto: partes.filter(Boolean).join(' · '), tono: 'success' };
     }
     const fallo = (res.detalle || []).find((d) => !d.ok);
-    return { titulo: 'Hacienda no la aceptó', texto: fallo?.error || 'No quedó registrado el motivo.', tono: 'warning' };
+    return { titulo: 'El MH no la aceptó', texto: fallo?.error || 'No quedó registrado el motivo.', tono: 'warning' };
 }
 
 // ── Saltos de correlativo y campos nulos (pestaña Saltos) ───────────────────

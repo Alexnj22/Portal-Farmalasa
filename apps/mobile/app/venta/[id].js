@@ -109,16 +109,16 @@ export default function Venta() {
                   textDecorationLine: anulada ? 'line-through' : 'none' }}>{formatMoney(v.total)}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                   {anulada ? <Pildora texto="Anulada" color={MARCA.rojo} /> : null}
-                  {tieneSelloMh(v.recibido_mh) ? <Pildora texto="Sellada por Hacienda" color={MARCA.verde} />
+                  {tieneSelloMh(v.recibido_mh) ? <Pildora texto="Sellada por el MH" color={MARCA.verde} />
                     : deLaNoche ? <Pildora texto="Después de las 6:00 p. m. · no se envía" color={colorSistema.texto2} />
-                    : <Pildora texto="Sin sello de Hacienda" color={MARCA.ambar} />}
+                    : <Pildora texto="Sin sello del MH" color={MARCA.ambar} />}
                   {puntos ? <Pildora texto={`Puntos ${puntos.label.toLowerCase()}`} color={MARCA.ambar} /> : null}
                 </View>
               </View>
             </Vidrio>
             <Seccion titulo="La venta">
               <Dato primero rotulo="Cuándo" valor={`${fechaTexto(v.fecha, { day: 'numeric', month: 'long', year: 'numeric' })} · ${hora12(v.hora)}`} />
-              <Dato rotulo="Sala" valor={sala} />
+              <Dato rotulo="Sucursal" valor={sala} />
               <Dato rotulo="Vendedor" valor={emp ? shortEmployeeName(emp) : v.cod_vendedor} />
               <Dato rotulo="Forma de pago" valor={ROTULO_PAGO[v.tipo_pago] ?? v.tipo_pago} />
               <Dato rotulo="Documento" valor={[v.tipo_documento, v.correlativo].filter(Boolean).join(' ')} />
@@ -146,7 +146,7 @@ export default function Venta() {
                   </View>
                 ) : null}
               </View>
-            ); }) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Esta sala todavía no tiene el detalle de productos.</Text>}
+            ); }) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Esta sucursal todavía no tiene el detalle de productos.</Text>}
             {descuento > 0 ? (
               <View style={{ flexDirection: 'row', paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
                 <Text style={{ flex: 1, color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>Descuento por puntos</Text>

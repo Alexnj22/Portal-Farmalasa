@@ -610,7 +610,7 @@ const RangeDatePicker = ({
                             badgeText = `⚠ Faltan ${defaultDays - daysCount} días (mínimo ${defaultDays})`;
                         } else {
                             cls += 'bg-warning/10 text-warning border border-warning/30 animate-pulse';
-                            badgeText = `⚠ ${daysCount} días — máximo recomendado: ${defaultDays}`;
+                            badgeText = `⚠ ${daysCount} días · máximo recomendado: ${defaultDays}`;
                         }
                         return <div className={cls}>{badgeText}</div>;
                     })()}

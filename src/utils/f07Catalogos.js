@@ -46,7 +46,7 @@ export const DEDUCIBLE_OPTIONS = [
 // sistema proponga no es que el sistema decida.
 export const ESTADO_CLASIF = {
     pendiente:  { label: 'Sin clasificar', tone: 'text-warning-text bg-warning/10 border-warning/25' },
-    propuesta:  { label: 'Propuesta — falta confirmar', tone: 'text-brand-text bg-brand/10 border-brand/25' },
+    propuesta:  { label: 'Propuesta, falta confirmar', tone: 'text-brand-text bg-brand/10 border-brand/25' },
     confirmada: { label: 'Confirmada', tone: 'text-success-text bg-success/10 border-success/25' },
 };
 

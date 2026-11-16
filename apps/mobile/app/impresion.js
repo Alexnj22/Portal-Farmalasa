@@ -91,7 +91,7 @@ export default function Impresion() {
   const cambiarAncho = (mm) => { const n = Number(mm); setAncho(n); guardarAjustesDeImpresion({ ...leerAjustesDeImpresion(), ancho: n }); };
 
   const aLaSala = async () => {
-    if (!user?.branchId) { fallo('Sin sala', 'Tu ficha no tiene una sala asignada: no hay a qué caja mandarlo.'); return; }
+    if (!user?.branchId) { fallo('Sin sucursal', 'Tus datos no tienen una sucursal asignada. No hay a qué caja mandarlo.'); return; }
     setMandando(true);
     const r = await imprimirEnLaSala(ticket, user.branchId, 'Prueba de impresión');
     setMandando(false);
@@ -129,7 +129,7 @@ export default function Impresion() {
 
   const registrar = () => {
     if (!sala || !nombre.trim() || guardando) return;
-    Alert.alert('Generar el código', `Para «${nombre.trim()}» en ${nombreSala[sala] || 'esa sala'}. Dura 15 minutos y se usa una sola vez.`, [
+    Alert.alert('Generar el código', `Para «${nombre.trim()}» en ${nombreSala[sala] || 'esa sucursal'}. Dura 15 minutos y se usa una sola vez.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Generar', onPress: async () => {
         setGuardando(true);
@@ -148,12 +148,12 @@ export default function Impresion() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Prueba de impresión', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 16 }} keyboardShouldPersistTaps="handled"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Seccion titulo="El rollo" pie="Es un ajuste de este teléfono: el ancho del papel con el que se arma lo que imprime.">
+        <Seccion titulo="El rollo" pie="El ancho del papel. Vale solo para este teléfono.">
           <Opciones opciones={ANCHOS_ROLLO.map((a) => ({ id: String(a.mm), label: `${a.mm} mm` }))} valor={String(ancho)} onCambiar={cambiarAncho} />
         </Seccion>
 
-        <Seccion titulo="Imprimir el ticket de prueba" pie="A la caja: sale por la ticketera de tu sala (recibido no es lo mismo que impreso: abajo dice qué contestó). Imprimir y PDF: desde este teléfono.">
-          <BotonGrande texto={mandando ? 'Mandando…' : `Mandar a la caja de ${sucursal?.name || 'mi sala'}`} onPress={aLaSala} deshabilitado={mandando} />
+        <Seccion titulo="Imprimir el ticket de prueba" pie="A la caja: sale por la ticketera de tu sucursal. Abajo dice qué contestó. Imprimir y PDF: desde este teléfono.">
+          <BotonGrande texto={mandando ? 'Mandando…' : `Mandar a la caja de ${sucursal?.name || 'mi sucursal'}`} onPress={aLaSala} deshabilitado={mandando} />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1 }}><BotonGrande texto={Platform.OS === 'ios' ? 'AirPrint' : 'Imprimir'} borde onPress={airprint} deshabilitado={!html} /></View>
             <View style={{ flex: 1 }}><BotonGrande texto="Compartir PDF" borde onPress={comoPdf} deshabilitado={!html} /></View>
@@ -163,9 +163,9 @@ export default function Impresion() {
         <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Cómo va a salir</Text>
         <VistaPapel html={html} alto={520} ancho={ancho >= 76 ? 320 : 240} />
 
-        <Seccion titulo="Cajas de las salas" pie="«Registrada» no es «funciona»: lo que dice si va a salir papel es cuándo preguntó la caja por última vez. «Probar» gasta un papel en esa caja.">
-          {falloLaLista ? <Aviso tono="freno" texto={`No se pudo leer la lista de cajas. Esto NO significa que no haya ninguna: las registradas pueden estar imprimiendo igual. ${mensajeAmigable(falloLaLista, '')}`} /> : null}
-          {!cajas.length && !falloLaLista ? <Vacio enSeccion>Ninguna sala imprime todavía: sin una caja registrada, un documento mandado desde el teléfono no tiene dónde salir.</Vacio> : null}
+        <Seccion titulo="Cajas de las sucursales" pie="Para saber si va a salir papel, mira cuándo preguntó la caja por última vez. «Probar» gasta un papel en esa caja.">
+          {falloLaLista ? <Aviso tono="freno" texto={`No se pudo leer la lista de cajas. Las registradas pueden estar imprimiendo igual. ${mensajeAmigable(falloLaLista, '')}`} /> : null}
+          {!cajas.length && !falloLaLista ? <Vacio enSeccion>Ninguna sucursal imprime todavía. Registra una caja para imprimir desde el teléfono.</Vacio> : null}
           {cajas.map((c, i) => {
             const latido = latidoMostrado(c);
             const agente = estadoDelAgente(c, publicada);
@@ -187,7 +187,7 @@ export default function Impresion() {
         </Seccion>
 
         {hayAtrasadas ? (
-          <Seccion titulo="Hay cajas que poner al día" pie="En la computadora de esa caja, abre una terminal y pega esta línea. No cambia la configuración de la caja, sólo el programa; después se actualiza sola.">
+          <Seccion titulo="Hay cajas que poner al día" pie="En la computadora de esa caja, abre una terminal y pega esta línea. Solo cambia el programa, no la configuración. Después se actualiza sola.">
             <Text selectable style={{ color: colorSistema.texto, fontSize: 12, fontFamily: 'Menlo' }}>{LINEA_DE_ACTUALIZAR}</Text>
             <Enlace texto="Compartir la línea" onPress={() => Share.share({ message: LINEA_DE_ACTUALIZAR }).catch(() => {})} />
           </Seccion>
@@ -204,7 +204,7 @@ export default function Impresion() {
         ) : null}
 
         {puedeEditar ? (
-          <Seccion titulo="Agregar una caja" pie="La ticketera no se pregunta aquí: la encuentra el instalador en la propia computadora.">
+          <Seccion titulo="Agregar una caja" pie="La ticketera no se elige aquí. El instalador la encuentra en la computadora.">
             <Opciones opciones={sucursales.map((b) => ({ id: String(b.id), label: b.name }))} valor={sala} onCambiar={setSala} />
             <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="Nombre (p. ej. Caja Salud 3)" />
             <BotonGrande texto={guardando ? 'Generando…' : 'Generar el código'} onPress={registrar} deshabilitado={!sala || !nombre.trim() || guardando} />

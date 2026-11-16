@@ -188,7 +188,7 @@ describe('nivelesDePuntos — premios por entregar y regalos', () => {
 
     it('dónde se retira: apartado, esperando envío, entregado o en cualquier sucursal', () => {
         expect(dondeSeRetiraElPremio({ reserva_branch: 2 }, sala)).toBe('Apartado en Salud 2');
-        expect(dondeSeRetiraElPremio({ espera_envio: true, branch_id: 4 }, sala)).toBe('Pedido para Salud 4 · esperando el envío');
+        expect(dondeSeRetiraElPremio({ espera_envio: true, branch_id: 4 }, sala)).toBe('Pedido para Salud 4 · esperando el traslado');
         expect(dondeSeRetiraElPremio({ estado: 'ENTREGADO', entregado_branch: 1 }, sala)).toBe('Entregado en Salud 1');
         expect(dondeSeRetiraElPremio({ estado: 'POR_RETIRAR' }, sala)).toBe('Se retira en cualquier sucursal');
     });

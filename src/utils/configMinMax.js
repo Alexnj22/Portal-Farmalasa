@@ -9,10 +9,10 @@
 /** Los campos, agrupados como en el panel del portal. */
 export const SECCIONES_CONFIG_MINMAX = [
     { titulo: 'Ciclo de reposición', campos: [
-        { k: 'cycle_days', label: 'MAX — días de cobertura objetivo', unit: 'días', min: 1 },
+        { k: 'cycle_days', label: 'Máx: días de cobertura objetivo', unit: 'días', min: 1 },
         { k: 'analysis_days', label: 'Ventana histórica de ventas', unit: 'días', min: 30 },
     ] },
-    { titulo: 'MIN — días de reorden por clase XYZ', campos: [
+    { titulo: 'Mín: días de reorden por clase XYZ', campos: [
         { k: 'reorder_x_days', label: 'Clase X — demanda estable', unit: 'días', min: 1 },
         { k: 'reorder_y_days', label: 'Clase Y — demanda moderada', unit: 'días', min: 1 },
         { k: 'reorder_z_days', label: 'Clase Z — demanda errática', unit: 'días', min: 1 },
@@ -25,10 +25,10 @@ export const SECCIONES_CONFIG_MINMAX = [
         { k: 'abc_a_pct', label: 'A = top', unit: '%', min: 1 },
         { k: 'abc_b_pct', label: 'B = hasta', unit: '%', min: 1 },
     ] },
-    { titulo: 'Alerta «próximo a mínimo»', nota: 'Ej: 25% → alerta si stock < MIN × 1.25', campos: [
-        { k: 'approaching_pct', label: 'Umbral (stock < MIN × (1 + X%))', unit: '%', min: 1, max: 100 },
+    { titulo: 'Alerta «próximo a mínimo»', nota: 'Ej: 25% → alerta si la existencia < Mín × 1.25', campos: [
+        { k: 'approaching_pct', label: 'Umbral (existencia < Mín × (1 + X%))', unit: '%', min: 1, max: 100 },
     ] },
-    { titulo: 'Buffer de seguridad (días extra al MIN)', nota: 'MIN = velocidad × (reorden + buffer). Recalcula para aplicar.', campos: [
+    { titulo: 'Buffer de seguridad (días extra al Mín)', nota: 'Mín = velocidad × (reorden + buffer). Recalcula para aplicar.', campos: [
         { k: 'buffer_x_days', label: 'Clase X — demanda estable', unit: 'días', min: 0 },
         { k: 'buffer_y_days', label: 'Clase Y — demanda moderada', unit: 'días', min: 0 },
         { k: 'buffer_z_days', label: 'Clase Z — demanda errática', unit: 'días', min: 0 },

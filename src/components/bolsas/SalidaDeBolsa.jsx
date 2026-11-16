@@ -868,7 +868,7 @@ export default function SalidaDeBolsa({
         if (mismaEnt) {
             return {
                 tono: 'danger', bloquea: true,
-                texto: `La boleta ${o.numero_boleta} de ${o.entidad} ya se registró en esta sala `
+                texto: `La boleta ${o.numero_boleta} de ${o.entidad} ya se registró en esta sucursal `
                      + `el ${cuando} por ${formatMoney(o.monto)} (${o.folio}).`,
             };
         }
@@ -929,7 +929,7 @@ export default function SalidaDeBolsa({
              * si el problema fueran las monedas. */
             if (eleccion.redondo) {
                 return `${puedeSalirDelCajon ? 'Ni sumando la caja alcanza. ' : ''}`
-                     + `En billetes de ${formatMoney(eleccion.paso)} la sala tiene `
+                     + `En billetes de ${formatMoney(eleccion.paso)} la sucursal tiene `
                      + `${formatMoney(eleccion.disponible)}: no alcanza. `
                      + `Los ${formatMoney(totalDisponible(lista) - eleccion.disponible)} `
                      + 'que faltan son monedas y se quedan en las bolsas.';
@@ -938,7 +938,7 @@ export default function SalidaDeBolsa({
             // es todo el control, y esta pantalla no puede ser la puerta de al
             // lado por donde se sabe el número (regla del usuario, 1-sep).
             return `${puedeSalirDelCajon ? 'Ni sumando la caja alcanza: en' : 'En'} `
-                 + `la sala hay ${formatMoney(totalDisponible(lista))} en bolsas${puedeSalirDelCajon ? '.' : ': no alcanza.'}`;
+                 + `la sucursal hay ${formatMoney(totalDisponible(lista))} en bolsas${puedeSalirDelCajon ? '.' : ': no alcanza.'}`;
         }
         if (t.etiqueta_entidad && !t.entidad_la_dice_el_papel && !entidad.trim()) {
             return `Falta ${t.etiqueta_entidad.toLowerCase()}.`;
@@ -1327,7 +1327,7 @@ export default function SalidaDeBolsa({
                 </span>
             </div>
             <p className="text-caption text-content-3 pt-1">
-                Ninguna bolsa se abre: el efectivo sale del cajón.
+                Ninguna bolsa se abre. El efectivo sale de la caja.
             </p>
         </div>
     );
@@ -1424,8 +1424,8 @@ export default function SalidaDeBolsa({
                 subtitulo={enIdentidad
                     ? `${t.etiqueta} · ${formatMoney(n)}`
                     : lista.length
-                        ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sala · ${formatMoney(totalDisponible(lista))}`
-                        : 'Sin bolsas con efectivo en la sala'}
+                        ? `${lista.length} ${lista.length === 1 ? 'bolsa' : 'bolsas'} en la sucursal · ${formatMoney(totalDisponible(lista))}`
+                        : 'Sin bolsas con efectivo en la sucursal'}
                 onClose={guardando ? undefined : onClose} />
 
             <LiquidModal.Body className="space-y-4">
@@ -1585,7 +1585,7 @@ export default function SalidaDeBolsa({
                                 onChange={alElegirFoto}
                                 emptyState={t.foto === 'OPCIONAL' ? 'neutral' : 'pending'}
                                 hint={t.foto === 'OPCIONAL'
-                                    ? 'Si te dieron comprobante, adjuntalo. Antes de guardarlo vas a poder recortarlo.'
+                                    ? 'Si te dieron comprobante, adjúntalo. Antes de guardarlo vas a poder recortarlo.'
                                     : laFotoManda
                                         ? 'La boleta que imprimió el POS. De ahí salen el monto y el número; antes de guardarla vas a poder recortarla.'
                                         : 'La boleta que imprimió el POS. Antes de guardarla vas a poder recortarla.'}

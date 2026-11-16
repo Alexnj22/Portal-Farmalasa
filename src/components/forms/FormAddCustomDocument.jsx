@@ -153,7 +153,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                     >
                         <div>
                             <p className="text-body font-black text-content-2 group-hover:text-warning transition-colors">¿Tiene fecha de vencimiento?</p>
-                            <p className="text-caption font-bold text-content-3 mt-0.5">El sistema te alertará antes de que caduque.</p>
+                            <p className="text-caption font-bold text-content-3 mt-0.5">Se avisa antes de que venza.</p>
                         </div>
                         {/* Indicador: la fila entera ya es clickeable. */}
                         <Switch checked={data.hasExpiration} size="md" variant="warning" />

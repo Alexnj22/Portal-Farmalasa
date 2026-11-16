@@ -80,7 +80,7 @@ const ORDENES = [
   { id: 'fecha|desc', label: 'Más recientes' }, { id: 'fecha|asc', label: 'Más antiguas' },
   { id: 'total|desc', label: 'Total mayor' }, { id: 'total|asc', label: 'Total menor' },
   { id: 'cliente|asc', label: 'Cliente (A–Z)' }, { id: 'vendedor|asc', label: 'Vendedor' },
-  { id: 'sucursal|asc', label: 'Sala' }, { id: 'tipo|asc', label: 'Tipo de documento' },
+  { id: 'sucursal|asc', label: 'Sucursal' }, { id: 'tipo|asc', label: 'Tipo de documento' },
   { id: 'metodo|asc', label: 'Forma de pago' }, { id: 'id|desc', label: 'Número' },
 ];
 const PUNTOS = OPCIONES_FILTRO_PUNTOS.map((o) => ({ id: o.value || 'todos', label: o.label }));
@@ -281,8 +281,8 @@ export default function Ventas() {
   const salas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const grupos = [
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'mes', onCambiar: setPeriodo, opciones: PERIODOS },
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: buscando && mostrar === 'canjeo' ? 'todas' : mostrar, porDefecto: 'todas', onCambiar: setMostrar,
       opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }, { id: 'canjeo', label: 'Canjeó puntos' }] },
     // El estado de los puntos va por la lista paginada (como el portal): con búsqueda o receta no aplica.
@@ -352,7 +352,7 @@ export default function Ventas() {
           </>
         ) : null}
         {corta ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Escribe al menos ${MIN_LETRAS} letras para buscar.`} /></View> : null}
-        {buscando && parecidas && datos.filas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran ventas de productos parecidos." /></View> : null}
+        {buscando && parecidas && datos.filas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta. Se muestran ventas de productos parecidos." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos.filas.map((r) => {
           const emp = porCodigo.get(r.cod_vendedor);

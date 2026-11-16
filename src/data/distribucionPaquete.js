@@ -55,7 +55,7 @@ export function archivosDelPaquete({ ventas, compras, relacionadas }) {
         ['IVA que nos retuvieron clientes (anticipo)', d2(r.retenidoNos)],
         ['IVA que nos percibieron proveedores (anticipo)', d2(r.percibidoNos)],
         ['IVA percibido a clientes (a enterar)', d2(r.percibidoAClientes)],
-        ['Documentos sin sello de Hacienda (fuera de los libros)', `${ventas?.sin_sello?.documentos ?? 0} por ${d2(ventas?.sin_sello?.total)}`],
+        ['Facturas sin sello del MH (fuera de los libros)', `${ventas?.sin_sello?.documentos ?? 0} por ${d2(ventas?.sin_sello?.total)}`],
     ]);
     return entradas;
 }

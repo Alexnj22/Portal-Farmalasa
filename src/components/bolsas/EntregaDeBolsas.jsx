@@ -215,8 +215,8 @@ export default function EntregaDeBolsas({
                 subtitulo={<>
                     {nombreSala ? `${nombreSala} · ` : ''}
                     {porDia.length
-                        ? `${porDia.length} ${porDia.length === 1 ? 'día' : 'días'} en la sala`
-                        : 'No hay bolsas en la sala'}
+                        ? `${porDia.length} ${porDia.length === 1 ? 'día' : 'días'} en la sucursal`
+                        : 'No hay bolsas en la sucursal'}
                 </>}
                 onClose={guardando ? undefined : onClose} />
 

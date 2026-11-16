@@ -36,7 +36,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
   const sucursales = useStaffStore((s) => s.branches);
   const empleados = useStaffStore((s) => s.employees);
   const porCodigo = useMemo(() => new Map((empleados || []).map((e) => [e.code, e])), [empleados]);
-  const nombreDeSala = useCallback((id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sala ${id}`, [sucursales]);
+  const nombreDeSala = useCallback((id) => (sucursales || []).find((b) => Number(b.id) === Number(id))?.name ?? `Sucursal ${id}`, [sucursales]);
   const [filas, setFilas] = useState(null);
   const [previo, setPrevio] = useState(null);
   const [puestos, setPuestos] = useState(new Map());
@@ -58,7 +58,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
       const p = ant.data?.[0] || {};
       setPrevio({ total: +p.total_sum || 0, facturas: +p.total_count || 0, dias: diasDelRango(prevFini, prevFfin) });
       setPuestos(puestosDelMesAnterior(mes.data));
-    }).catch(() => { if (vivo) { setError('No se pudo cargar el ranking.'); setFilas([]); } });
+    }).catch(() => { if (vivo) { setError('No se pudo cargar la lista de vendedores.'); setFilas([]); } });
     return () => { vivo = false; };
   }, [fini, ffin, sala]);
 
@@ -101,7 +101,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{nombreDeVendedor(v)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
-                      {[nombreDeSala(base), otras.length ? `+${otras.length} sala${otras.length > 1 ? 's' : ''}` : null, `${v.count} fact.`].filter(Boolean).join(' · ')}
+                      {[nombreDeSala(base), otras.length ? `+${otras.length} sucursal${otras.length > 1 ? 'es' : ''}` : null, `${v.count} fact.`].filter(Boolean).join(' · ')}
                     </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
@@ -122,7 +122,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
           <Vidrio radio={20} tinte="rgba(247,144,9,0.14)">
             <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>{`Código sin ficha · ${nombreDeSala(u.branch_id)}`}</Text>
+                <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '700' }}>{`Código incorrecto · ${nombreDeSala(u.branch_id)}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${u.count} fact. con un vendedor que no existe`}</Text>
               </View>
               <Text style={{ color: MARCA.ambar, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{montoPrivado(formatMoney(u.total, { decimales: 0 }), privado)}</Text>

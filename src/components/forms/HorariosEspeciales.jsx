@@ -116,7 +116,7 @@ export default function HorariosEspeciales({ branchId, weeklyHours }) {
                 <CalendarClock size={18} className="text-brand-text shrink-0" />
                 <div className="min-w-0">
                     <h4 className="text-body-sm font-black text-content">Horarios especiales (feriados y días puntuales)</h4>
-                    <p className="text-caption text-content-3">Mandan sobre el horario semanal ese día. Se guardan al momento, aparte del botón «Guardar».</p>
+                    <p className="text-caption text-content-3">Ese día reemplazan el horario semanal. Se guardan al momento, sin el botón «Guardar».</p>
                 </div>
             </div>
 
@@ -154,7 +154,7 @@ export default function HorariosEspeciales({ branchId, weeklyHours }) {
                         <Notice variant="warning">La hora de cierre tiene que ser después de la de apertura.</Notice>
                     )}
                     {reemplaza && (
-                        <Notice variant="info">Ese día ya tiene un horario especial: se va a reemplazar.</Notice>
+                        <Notice variant="info">Ese día ya tiene un horario especial. Se va a reemplazar.</Notice>
                     )}
                     <div className="flex flex-wrap justify-end gap-2">
                         {(f.fecha || f.motivo || f.abre || f.cierra || f.cerrada) && (

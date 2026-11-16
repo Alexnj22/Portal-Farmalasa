@@ -56,12 +56,12 @@ export default function CarnesDelDia() {
     ? (empleados || []).filter((e) => (e.status ?? 'ACTIVO') === 'ACTIVO' && tokenMatch(texto.trim(), e.name, e.first_names, e.last_names, e.role, e.username)).slice(0, 12)
     : []), [texto, empleados]);
 
-  const anular = (c) => Alert.alert('¿Anular este carné?', `El papel de ${c.nombre} deja de servir de inmediato. Si lo necesita, se imprime otro.`, [
+  const anular = (c) => Alert.alert('¿Anular este carné?', `El carné de ${c.nombre} deja de servir ahora mismo. Si lo necesita, imprime otro.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Anular', style: 'destructive', onPress: async () => {
       trabajando('Anulando…');
       const r = await anularCarneTemporal(c.id, { employeeId: c.employee_id });
-      if (r?.ok) listo('Carné anulado', `El papel de ${c.nombre} ya no sirve.`); else fallo('No se anuló', r?.motivo || 'Intenta de nuevo.');
+      if (r?.ok) listo('Carné anulado', `El carné de ${c.nombre} ya no sirve.`); else fallo('No se anuló', r?.motivo || 'Intenta de nuevo.');
       cargar();
     } },
   ]);
@@ -71,7 +71,7 @@ export default function CarnesDelDia() {
       <Stack.Screen options={{
         ...BARRA_NATIVA, title: 'Carnés del día', headerLargeTitle: true,
         headerSearchBarOptions: {
-          placeholder: 'Persona, sala o quién lo entregó', hideWhenScrolling: false,
+          placeholder: 'Persona, sucursal o quién lo entregó', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -79,7 +79,7 @@ export default function CarnesDelDia() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {vigentes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{vigentes.length ? `${vigentes.length} carné${vigentes.length === 1 ? '' : 's'} de papel vivo${vigentes.length === 1 ? '' : 's'} · vencen solos a medianoche` : ''}</Text> : null}
+        {vigentes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{vigentes.length ? `${vigentes.length} carné${vigentes.length === 1 ? '' : 's'} de papel vigente${vigentes.length === 1 ? '' : 's'} · vencen a medianoche` : ''}</Text> : null}
         {vigentes == null ? <Cargando /> : grupos.map((g) => (
           <View key={g.sala} style={{ gap: 8 }}>
             {grupos.length > 1 ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{`${g.sala} · ${g.items.length}`}</Text> : null}
@@ -102,11 +102,11 @@ export default function CarnesDelDia() {
             ))}
           </View>
         ))}
-        {vigentes && !filas.length ? <Vacio>{texto.trim() ? 'Nadie con ese nombre tiene un carné vivo' : 'Nadie tiene un carné de papel hoy'}</Vacio> : null}
+        {vigentes && !filas.length ? <Vacio>{texto.trim() ? 'Nadie con ese nombre tiene un carné vigente' : 'Nadie tiene un carné de papel hoy'}</Vacio> : null}
         {texto.trim() ? (
           <View style={{ gap: 8, marginTop: 8 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>Imprimir un carné</Text>
-            {!candidatos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{(empleados || []).length ? 'Nadie con ese nombre. Revisa cómo está escrito en su ficha.' : 'Todavía no se cargó el personal.'}</Text> : null}
+            {!candidatos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{(empleados || []).length ? 'Nadie con ese nombre. Revisa cómo está escrito en sus datos.' : 'Todavía no se cargó el personal.'}</Text> : null}
             {candidatos.map((e) => (
               <View key={e.id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={20}>

@@ -165,12 +165,12 @@ describe('minmaxDesdePedido', () => {
     });
 
     it('rechaza cada caso con su motivo en palabras', () => {
-        expect(validarMinMax({ min: '', max: '3' })).toBe('MIN inválido');
-        expect(validarMinMax({ min: '-1', max: '3' })).toBe('MIN inválido');
-        expect(validarMinMax({ min: '1', max: 'x' })).toBe('MAX inválido');
-        expect(validarMinMax({ min: '0', max: '2' })).toBe('Con MIN=0, MAX debe ser 0 o 1');
-        expect(validarMinMax({ min: '3', max: '3' })).toBe('MAX debe ser mayor que MIN');
-        expect(validarMinMax({ min: '4', max: '2' })).toBe('MAX debe ser mayor que MIN');
+        expect(validarMinMax({ min: '', max: '3' })).toBe('Mín inválido');
+        expect(validarMinMax({ min: '-1', max: '3' })).toBe('Mín inválido');
+        expect(validarMinMax({ min: '1', max: 'x' })).toBe('Máx inválido');
+        expect(validarMinMax({ min: '0', max: '2' })).toBe('Con Mín 0, el Máx debe ser 0 o 1');
+        expect(validarMinMax({ min: '3', max: '3' })).toBe('El Máx debe ser mayor que el Mín');
+        expect(validarMinMax({ min: '4', max: '2' })).toBe('El Máx debe ser mayor que el Mín');
     });
 
     it('traduce el «check constraint» de la base y deja pasar otros mensajes', () => {

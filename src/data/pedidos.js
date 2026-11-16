@@ -185,7 +185,7 @@ export function fetchRutaLocationSingle(rutaId) {
 // escritura que sí ocurrió. Falla del lado seguro —y hoy no alcanza a nadie: no
 // se ve la ruta, no se ve el botón— mientras que el silencio de antes era del
 // lado caro.
-const MSG_RUTA_SIN_EFECTO = 'No se pudo guardar el cambio en la ruta. Puede que ya no tengas permiso para gestionar rutas: vuelve a iniciar sesión y, si sigue igual, consulta con tu jefatura.';
+const MSG_RUTA_SIN_EFECTO = 'No se pudo guardar el cambio en la ruta. Puede que ya no tengas permiso para gestionar rutas: vuelve a iniciar sesión. Si sigue igual, consulta con un supervisor o administrador.';
 
 // El mecanismo, ya sin nombre de ruta: pide el `RETURNING` y trata "cero
 // filas" como el fallo que es. Lo comparten las rutas y la recepción — ver
@@ -213,7 +213,7 @@ function escrituraDeRuta(builder) {
 // llevó al camino de al lado. Por eso ahora el mecanismo está aparte y las dos
 // puertas lo usan. De la recepción hoy sólo queda `guardarPaginasDeSala`: el
 // resto se mudó a funciones de la base (2026-10-09).
-const MSG_RECEPCION_SIN_EFECTO = 'No se pudo guardar el avance de la recepción. Puede que ya no tengas permiso para gestionar pedidos: vuelve a iniciar sesión y, si sigue igual, consulta con tu jefatura.';
+const MSG_RECEPCION_SIN_EFECTO = 'No se pudo guardar el avance de la recepción. Puede que ya no tengas permiso para gestionar pedidos: vuelve a iniciar sesión. Si sigue igual, consulta con un supervisor o administrador.';
 
 function escrituraDeRecepcion(builder) {
     return escrituraQueDebeTocarFilas(builder, MSG_RECEPCION_SIN_EFECTO);

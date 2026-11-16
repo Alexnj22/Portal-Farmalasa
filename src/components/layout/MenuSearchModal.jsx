@@ -108,7 +108,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Buscar en el portal… (ej. venta de productos, fichas de empleados)"
+                        placeholder="Buscar en el portal… (ej. venta de productos, datos de empleados)"
                         /* `text-body-xl` (16px) y no `body-lg` (14): por debajo de
                            16 iOS hace ZOOM al enfocar y descuadra la vista entera.
                            La regla ya estaba escrita —DESIGN.md §32, y la tabla de

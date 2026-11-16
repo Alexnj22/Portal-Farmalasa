@@ -117,7 +117,7 @@ export function CuerpoDeFaltanteDeCaja({ datos, claseTenue, isDark }) {
                 forma de dato. */}
             {proporcion != null && proporcion * 100 >= 0.5 && (
                 <p className={`text-caption font-semibold ${tonoTexto}`}>
-                    {(proporcion * 100).toFixed(1)}% de lo que debía haber en el cajón
+                    {(proporcion * 100).toFixed(1)}% de lo que debía haber en la caja
                 </p>
             )}
 

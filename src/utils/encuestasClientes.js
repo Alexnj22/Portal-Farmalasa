@@ -71,8 +71,8 @@ export const GRUPOS = {
 export const CANALES = [
     { value: 'qr',         label: 'QR o enlace',  icono: 'QrCode',     ayuda: 'El cliente responde desde su teléfono, sin iniciar sesión.' },
     { value: 'entrevista', label: 'Entrevista',   icono: 'Mic',        ayuda: 'Alguien del equipo la aplica desde el portal.' },
-    { value: 'kiosco',     label: 'Tablet en sala', icono: 'Tablet',   ayuda: 'Un dispositivo en el mostrador donde el cliente responde.' },
-    { value: 'campo',      label: 'Campo (fuera de las salas)', icono: 'MapPin', ayuda: 'Un encuestador la aplica fuera de las sucursales —mercados, parques, la calle— y se guarda dónde.' },
+    { value: 'kiosco',     label: 'Tablet en la sucursal', icono: 'Tablet',   ayuda: 'Un dispositivo en el mostrador donde el cliente responde.' },
+    { value: 'campo',      label: 'Campo (fuera de las sucursales)', icono: 'MapPin', ayuda: 'Un encuestador la aplica fuera de las sucursales, en mercados, parques o la calle. Se guarda dónde.' },
     { value: 'app',        label: 'App de clientes', icono: 'Smartphone', ayuda: 'Aparece en la app Puntos Salud; una respuesta por cliente, y los puntos se acreditan solos.' },
 ];
 /**

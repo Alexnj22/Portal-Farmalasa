@@ -258,7 +258,7 @@ export default function CapturaDeFotoView() {
                         </>
                     ) : (
                         <p className="text-caption text-content-3 font-medium leading-snug">
-                            Toma una foto del código QR, de cerca y nítida. El portal lo lee aquí y manda el enlace a la computadora.
+                            Toma una foto del código QR, de cerca y nítida. El enlace aparece en la computadora.
                         </p>
                     )}
                     <label className={enVivo
@@ -532,7 +532,7 @@ export default function CapturaDeFotoView() {
                         {hojas.length === 0
                             ? 'Puedes recortarla y enderezarla aquí mismo. Si son varias, las vas agregando y se mandan todas juntas.'
                             : (hojas.length === 1
-                                ? 'Puedes agregar más fotos o mandar ésta ya. Aparece sola en la computadora: no tienes que hacer nada allá.'
+                                ? 'Puedes agregar más fotos o mandar esta ya. Aparece sola en la computadora.'
                                 : 'Se mandan juntas. Acomódalas con las flechas antes de mandar.')}
                     </p>
                 </>

@@ -435,7 +435,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
 
     return (
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
-            maxWidth="max-w-2xl" ariaLabel="Completar el renglón del libro">
+            maxWidth="max-w-2xl" ariaLabel="Completar el folio del libro">
 
             {/* ── El encabezado ES la comparación contra el papel ────────────
                 Lo que se entregó vivía en una tarjeta dentro del cuerpo, o sea
@@ -628,8 +628,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                                         </Button>
                                     </div>
                                     <p className="text-label text-content-3">
-                                        Van separados, como en el registro del Consejo. Con sólo el apellido
-                                        también busca.
+                                        Van separados, como en el registro del Consejo. También puedes buscar solo por el apellido.
                                     </p>
                                 </>
                             )}
@@ -640,7 +639,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                             {candidatos.length > 0 && (
                                 <div className="space-y-1.5">
                                     <p className="text-label font-black uppercase tracking-widest text-content-3">
-                                        {candidatos.length} coinciden — elige cuál
+                                        {candidatos.length} coinciden. Elige uno.
                                     </p>
                                     <ul className="space-y-1.5 max-h-56 overflow-y-auto">
                                         {candidatos.map((c) => (
@@ -672,10 +671,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                                         Ese profesional no está en el registro del Consejo.
                                     </span>
                                     <span className="block mt-0.5 font-normal text-content-2">
-                                        Revisa el número o el apellido del sello: un dígito de más no
-                                        encuentra a nadie. Si de verdad no está, esa receta no la firmó un
-                                        profesional inscrito y no se puede registrar como tal; hay que
-                                        hablarlo con el regente.
+                                        Revisa el número o el apellido del sello. Si de verdad no está, la receta no se puede registrar. Habla con el regente.
                                     </span>
                                 </Notice>
                             )}
@@ -693,15 +689,15 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     <div className="space-y-3">
                         {compatibles.length > 0 && (
                             <Rotulo texto="¿Es de una receta que ya existe?"
-                                ayuda="Una receta con dos medicamentos es UNA receta. De ahí sale que la dispensación sea parcial o total.">
+                                ayuda="Si la receta trae dos medicamentos, sigue siendo una sola receta.">
                                 <LiquidSelect
                                     value={recetaId ? String(recetaId) : ''}
                                     onChange={elegirReceta}
                                     options={compatibles.map(r => ({
                                         value: String(r.id),
                                         label: r.continuacion
-                                            ? `${r.correlativo_txt} · ${r.paciente} — faltan ${num(r.pendiente)} de este medicamento`
-                                            : `${r.correlativo_txt} · ${r.paciente} — otro medicamento de esta receta`,
+                                            ? `${r.correlativo_txt} · ${r.paciente} · faltan ${num(r.pendiente)} de este medicamento`
+                                            : `${r.correlativo_txt} · ${r.paciente} · otro medicamento de esta receta`,
                                     }))}
                                     placeholder="Es una receta nueva"
                                 />
@@ -732,9 +728,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                                     Se entregaron {num(renglon.cantidad)} y la receta dice {num(prescrita)}.
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
-                                    No se puede entregar más de lo recetado. Revisa la receta: si el médico
-                                    recetó {num(renglon.cantidad)} o más, corregí el número; si de verdad se
-                                    entregó de más, el renglón se anula y se rehace la venta.
+                                    No se puede entregar más de lo recetado. Revisa la receta. Si el médico recetó {num(renglon.cantidad)} o más, corrige el número. Si se entregó de más, el folio se anula y se rehace la venta.
                                 </span>
                             </Notice>
                         ) : Number(prescrita) > 0 && (
@@ -773,7 +767,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                         }}
                         accept="image/*,application/pdf"
                         maxSizeMB={10}
-                        hint="Se recorta y se endereza antes de guardarla, y todas salen del mismo tamaño. La norma manda retener una copia por al menos un año."
+                        hint="Se recorta y se endereza antes de guardarla. La copia se guarda al menos un año."
                     />
                 </Seccion>
 

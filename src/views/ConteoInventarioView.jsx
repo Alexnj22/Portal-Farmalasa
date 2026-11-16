@@ -74,7 +74,7 @@ const COLS = [
     // laboratorio— es contexto y está en el detalle; los botones de la fila no
     // se alcanzaban de ninguna forma.
     { key: 'alcance', label: 'Alcance', align: 'left', hideBelow: '2xl' },
-    { key: 'items', label: 'Ítems', align: 'center', hideBelow: 'md' },
+    { key: 'items', label: 'Productos', align: 'center', hideBelow: 'md' },
     { key: 'diferencias', label: 'Diferencias', align: 'center' },
     { key: 'valor', label: 'Valor neto', align: 'right', hideBelow: 'lg' },
     { key: 'estado', label: 'Estado', align: 'center' },
@@ -210,7 +210,7 @@ export default function ConteoInventarioView() {
         setBorrando(true);
         try {
             const res = await eliminarConteoInventario(aBorrar.id);
-            showToast('Conteo eliminado', `Se borraron ${formatQty(res?.total_items ?? 0)} renglón(es)`, 'success');
+            showToast('Conteo eliminado', `Se borraron ${formatQty(res?.total_items ?? 0)} producto(s)`, 'success');
             setABorrar(null);
         } catch (err) {
             showToast('No se pudo eliminar', mensajeAmigable(err), 'error');
@@ -384,7 +384,7 @@ export default function ConteoInventarioView() {
 
             {isSearchFuzzy && search && (
                 <Notice variant="warning" icon={Search}>
-                    Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
+                    No hay coincidencias exactas para &ldquo;{search}&rdquo;. Estos se parecen.
                 </Notice>
             )}
             {/* Teléfono: una fila por conteo. La tabla son 8 columnas y aun con 4
@@ -482,7 +482,7 @@ export default function ConteoInventarioView() {
                 icon: ClipboardCheck,
                 message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí',
                 subtext: foco === 'TODOS'
-                    ? 'Un conteo compara el inventario del sistema con lo que hay en vitrinas y estantes.'
+                    ? 'Un conteo compara la existencia registrada con lo que hay en vitrinas y estantes.'
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
                 action: foco !== 'TODOS'
                     ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }
@@ -624,8 +624,8 @@ export default function ConteoInventarioView() {
                                 // sola opción y ningún motivo. Es justo lo que un
                                 // deslizamiento no puede hacer: fallar en silencio.
                                 <p className="text-caption text-content-3 px-1">
-                                    Este conteo ya está {(ESTADO_CFG[opciones.status] || ESTADO_CFG.BORRADOR).label.toLowerCase()};
-                                    para borrarlo hace falta el permiso de eliminar conteos.
+                                    Este conteo ya está {(ESTADO_CFG[opciones.status] || ESTADO_CFG.BORRADOR).label.toLowerCase()}.
+                                    Para borrarlo necesitas el permiso de eliminar conteos.
                                 </p>
                             )}
                         </div>

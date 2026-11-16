@@ -278,7 +278,7 @@ export default function DistribucionVentaView() {
                 const ctxAlAbrir = contextoLotes(ix, li);
                 if (ped) {
                     if (ped.pedido.estado !== 'confirmado') {
-                        setErrorCarga(`El pedido ${ped.pedido.id} ya está ${ped.pedido.estado}: no se puede corregir.`);
+                        setErrorCarga(`El pedido ${ped.pedido.id} ya está ${ped.pedido.estado}. No se puede corregir.`);
                         return;
                     }
                     const p = ped.pedido;
@@ -617,7 +617,7 @@ export default function DistribucionVentaView() {
             }
             useStaff.getState().appendAuditLog('DISTRIBUCION_VENTA_SIN_SENAL', entrada.codigo_generacion, { cliente: cliente.id, total: venta.total });
             showToast('Venta guardada sin señal',
-                `Se factura en contingencia sola al volver la señal. Código de generación ${entrada.codigo_generacion.slice(0, 8)}…`, 'warning');
+                `Se factura sola cuando vuelva la señal. Código de generación ${entrada.codigo_generacion.slice(0, 8)}…`, 'warning');
             descartar();
             empezarOtra();
             setVerCobro(false);
@@ -672,7 +672,7 @@ export default function DistribucionVentaView() {
                 try {
                     pedida = !!(await pedirDescuento(pedidoId, motivoDescuento));
                 } catch (e) {
-                    showToast('No se pudo pedir el descuento', `${mensajeDeDistribucion(e)} La venta quedó guardada: vuelve a abrirla para pedirlo.`, 'warning');
+                    showToast('No se pudo pedir el descuento', `${mensajeDeDistribucion(e)} La venta quedó guardada. Ábrela otra vez para pedirlo.`, 'warning');
                 }
             }
             useStaff.getState().appendAuditLog(corrigiendo ? 'DISTRIBUCION_PEDIDO_CORREGIDO' : 'DISTRIBUCION_PEDIDO_CREADO',
@@ -696,17 +696,17 @@ export default function DistribucionVentaView() {
                 // Lo primero que se dice: ¿lo recibió Hacienda? El documento se
                 // abre con la lista de chequeo completa y el botón para reenviar.
                 if (factura.estado === 'sellado') {
-                    showToast('Recibido por Hacienda', `Código de generación y sello listos · ${factura.numero_control}`, 'success');
+                    showToast('Recibido por el MH', `Código de generación y sello listos · ${factura.numero_control}`, 'success');
                     // Con el sello, se le manda al cliente sin esperar a nadie (borrador
                     // 0019). Si no tiene correo o falla, queda pendiente en Facturación.
                     fetchDocumento(factura.dte_id)
                         .then(doc => (doc?.dist_clientes?.correo ? enviarDocumentoPorCorreo(doc) : null))
-                        .then(r => { if (r?.enviado) showToast('Documento enviado al cliente', r.destinatario, 'success'); })
+                        .then(r => { if (r?.enviado) showToast('Factura enviada al cliente', r.destinatario, 'success'); })
                         .catch(e => console.error('correo al facturar', e));
                 } else if (factura.estado === 'rechazado') {
-                    showToast('Hacienda lo rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.', 'error');
+                    showToast('El MH la rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.', 'error');
                 } else {
-                    showToast('Facturado, falta el sello de Hacienda', factura.aviso ?? 'Quedó guardado: reenvíalo desde el documento o desde Facturación.', 'warning');
+                    showToast('Facturada. Falta el sello del MH', factura.aviso ?? 'Quedó guardada. Reenvíala desde la factura o desde Facturación.', 'warning');
                 }
                 navigate(rutaDocumento(factura.dte_id, { imprimir }), { replace: true });
             } catch (e) {
@@ -873,7 +873,7 @@ export default function DistribucionVentaView() {
     }, [corrigiendo, releerPendientes]);
 
     const titulo = corrigiendo
-        ? (pedido?.pedido.reemplaza_dte_id ? `Corregir documento (pedido ${pedidoIdParam})` : `Finalizar venta ${pedidoIdParam}`)
+        ? (pedido?.pedido.reemplaza_dte_id ? `Corregir factura (pedido ${pedidoIdParam})` : `Finalizar venta ${pedidoIdParam}`)
         : 'Nueva venta';
 
     const headerLeft = (
@@ -1318,7 +1318,7 @@ export default function DistribucionVentaView() {
                                     {porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-70">F2</kbd>
                                 </Button>
                                 <Button variant="secondary" icon={guardando === 'preventa' ? Loader2 : Save} disabled={!puedeGuardar}
-                                    data-accion-preventa title="Guardar sin facturar: queda en Pendientes (F8)" onClick={() => guardar('preventa')} className="w-full justify-center">
+                                    data-accion-preventa title="Guardar sin facturar. Queda en Pendientes (F8)" onClick={() => guardar('preventa')} className="w-full justify-center">
                                     Guardar preventa <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-60">F8</kbd>
                                 </Button>
                             </div>
@@ -1388,7 +1388,7 @@ export default function DistribucionVentaView() {
                                             <Tag size={16} className="text-warning-text shrink-0 mt-0.5" />
                                             <span>
                                                 <b>{formatMoney(montoPorAprobar)}</b> de descuento necesita{porAprobar.length === 1 ? '' : 'n'} aprobación
-                                                {puedeDescontar ? ` (pasa del tope de ${topeDescuento}%)` : ''}. Se guarda como preventa, sin el descuento, y se actualiza sola al aprobarse.
+                                                {puedeDescontar ? ` (pasa del tope de ${topeDescuento}%)` : ''}. Se guarda como preventa sin el descuento. Al aprobarlo, se actualiza sola.
                                             </span>
                                         </p>
                                         <PortalInput label="¿Por qué el descuento? (lo ve quien aprueba)" name="motivo-descuento" value={motivoDescuento}
@@ -1402,12 +1402,12 @@ export default function DistribucionVentaView() {
                                 )}
                                 {excedeCredito && (
                                     <Notice variant="danger" compact>
-                                        Ya debe {formatMoney(credito?.saldo ?? 0)} de un límite de {formatMoney(cliente.limite_credito)}: a crédito puede llevar hasta {formatMoney(disponibleCredito)}.
+                                        Ya debe {formatMoney(credito?.saldo ?? 0)} de un límite de {formatMoney(cliente.limite_credito)}. A crédito puede llevar hasta {formatMoney(disponibleCredito)}.
                                     </Notice>
                                 )}
                                 {verNotas ? (
                                     <PortalTextarea label="Observaciones" name="notas" value={notas} rows={2} compact
-                                        onChange={(e) => setNotas(e.target.value)} placeholder="Sale impresa en el documento." />
+                                        onChange={(e) => setNotas(e.target.value)} placeholder="Sale impresa en la factura." />
                                 ) : (
                                     <div><Button size="sm" variant="ghost" icon={Plus} tabIndex={-1} onClick={() => setVerNotas(true)}>Observaciones</Button></div>
                                 )}

@@ -137,7 +137,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`} title={emp.name}>{shortEmployeeName(emp)}</p>
-                                        <p className="text-micro font-black text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
+                                        <p className="text-micro font-black text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin cargo'}</p>
                                     </div>
                                     {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                 </div>
@@ -174,7 +174,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex-1">
                                     <TituloDeSeccion nivel="modal">{shortEmployeeName(selectedEmp)}</TituloDeSeccion>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <Badge variant="chart-1" size="sm">{selectedEmp.role || 'Sin Rol'}</Badge>
+                                        <Badge variant="chart-1" size="sm">{selectedEmp.role || 'Sin cargo'}</Badge>
                                         <span className="text-caption font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
                                     </div>
                                 </div>
@@ -236,7 +236,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                             <span className="text-label font-black uppercase tracking-widest text-danger">Relevo de Personal</span>
                                         </div>
                                         <p className="text-label font-bold text-danger-text/80 leading-relaxed mb-4">
-                                            <strong className="text-danger-text font-black">{shortEmployeeName(currentAssigneeObj)}</strong> dejará la jefatura. ¿Qué deseas hacer con su perfil operativo?
+                                            <strong className="text-danger-text font-black">{shortEmployeeName(currentAssigneeObj)}</strong> dejará el cargo. ¿Qué deseas hacer con su perfil operativo?
                                         </p>
                                         
                                         <div className="space-y-3">
@@ -262,13 +262,13 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                                     </div>
                                                                 </div>
                                                                 <div className="space-y-1.5">
-                                                                    <label className={rotuloCampo('text-content-3', { denso: true })}>Nuevo Rol</label>
+                                                                    <label className={rotuloCampo('text-content-3', { denso: true })}>Nuevo cargo</label>
                                                                     <div className="rounded-2xl transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-card)] hover:shadow-md border border-transparent">
                                                                         <LiquidSelect
                                                                             options={opcionesSalida}
                                                                             value={formData.outgoingRole || ''}
                                                                             onChange={(val) => setFormData({...formData, outgoingRole: val?.target ? val.target.value : val})}
-                                                                            placeholder="Selecciona el rol..."
+                                                                            placeholder="Selecciona el cargo..."
                                                                             clearable={false}
                                                                         />
                                                                     </div>
@@ -283,7 +283,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-warning" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
                                                 <div className="flex flex-col">
                                                     <span className="text-label font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>
-                                                    <span className="text-caption font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente «{SIN_ASIGNAR}» a disposición de RRHH.</span>
+                                                    <span className="text-caption font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente «{SIN_ASIGNAR}» a disposición de Talento Humano.</span>
                                                 </div>
                                             </label>
                                         </div>

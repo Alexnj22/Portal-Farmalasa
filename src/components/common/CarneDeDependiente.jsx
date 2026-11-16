@@ -175,8 +175,7 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
             ) : (
                 <>
                     <p className="text-micro text-content-3 font-medium leading-snug">
-                        Ya no es una tarjeta: el Consejo entrega un código QR que lleva a la ficha
-                        en línea. Escanéalo y el portal guarda su dirección.
+                        El Consejo entrega un código QR. Escanéalo y el portal guarda el enlace.
                     </p>
                     <div className="flex flex-wrap gap-2">
                         {enVivo && (
@@ -294,7 +293,7 @@ export default function CarneDeDependiente({ url, onChange, soloLectura = false 
 
                         <Button variant="secondary" size="sm" icon={ExternalLink}
                             onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}>
-                            Abrir la ficha del Consejo
+                            Abrir el carné en el Consejo
                         </Button>
                     </div>
                 </ModalShell>

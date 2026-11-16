@@ -59,9 +59,9 @@ function Dialogo({ empleado, onClose, obligatorio }) {
     // Lo que falta, al lado del botón (2026-11-14). Una ficha sin nombres no
     // tiene nada que elegir acá: no hay campo al que llevar.
     const queFalta = !nombre
-        ? (nombres.length ? { texto: 'Elige tu nombre.', campo: 'nombre' } : { texto: 'Tu ficha no tiene nombre: pide que la completen en Talento Humano.', campo: null })
+        ? (nombres.length ? { texto: 'Elige tu nombre.', campo: 'nombre' } : { texto: 'Falta tu nombre en tus datos. Pide a Talento Humano que lo complete.', campo: null })
         : !apellido
-            ? (apellidos.length ? { texto: 'Elige tu apellido.', campo: 'apellido' } : { texto: 'Tu ficha no tiene apellido: pide que la completen en Talento Humano.', campo: null })
+            ? (apellidos.length ? { texto: 'Elige tu apellido.', campo: 'apellido' } : { texto: 'Falta tu apellido en tus datos. Pide a Talento Humano que lo complete.', campo: null })
             : null;
 
     const opciones = (lista) => lista.map(x => ({ value: x, label: x }));
@@ -95,7 +95,7 @@ function Dialogo({ empleado, onClose, obligatorio }) {
                         <p className="text-title-sm font-black text-content mt-1">{`${nombre} ${apellido}`.trim()}</p>
                     </div>
                     <p className="text-caption text-content-3">
-                        Tu nombre completo no cambia: planilla, contratos y documentos lo siguen usando. Puedes cambiar esto cuando quieras desde Mi perfil.
+                        Tu nombre completo no cambia en planilla, contratos ni documentos. Puedes cambiar esto cuando quieras desde Mi perfil.
                     </p>
                 </div>
             </LiquidModal.Body>

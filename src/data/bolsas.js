@@ -1363,7 +1363,7 @@ export async function cerrarElDia(sala, { reconocer = null } = {}) {
      * y si acá se devolviera error, el día quedaría abierto para siempre, con su
      * Z hecho y sin forma de terminar desde el portal. */
     if (z && z.ok === false && !z.ya_estaba) {
-        return { error: new Error(z.error || 'No se pudo emitir el corte Z. El día sigue abierto.') };
+        return { error: new Error(z.error || 'No se pudo hacer el cierre del día. El día sigue abierto.') };
     }
     /* ── Si el Z no salió Z, NO se cierra el turno ─────────────────────────
      *

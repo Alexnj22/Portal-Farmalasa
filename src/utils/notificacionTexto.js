@@ -106,7 +106,7 @@ export const etiquetaDeAccion = (n) => {
     // Un envío no es una solicitud que se aprueba: se revisa la caja y se
     // acepta o devuelve cada producto (usuario, 24-sep).
     if (n.type === 'REQUEST_PENDING' && n.metadata?.request_type === 'INVENTORY_TRANSFER_PUSH') {
-        return 'Revisar envío';
+        return 'Revisar traslado';
     }
     if (n.type === 'REQUEST_PENDING' && n.metadata?.request_type === 'INVENTORY_TRANSFER_REQUEST') {
         return 'Revisar traslado';

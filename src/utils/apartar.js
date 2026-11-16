@@ -170,7 +170,7 @@ export function planDeApartar({
         : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
         : cant < 1 || cant > TOPE_APARTADO ? `La cantidad va de 1 a ${TOPE_APARTADO}.` : !opciones ? 'Revisando la existencia…'
             : soloEncargo && modo !== 'encargo' ? 'Éste sí se puede apartar: quítalo y apártalo aparte, después del encargo.'
-            : enPedido && !seAparta ? 'Éste no hay en la sala ni viene en camino: quítalo del pedido y encárgalo aparte.'
+            : enPedido && !seAparta ? 'Éste no hay en la sucursal ni viene en camino. Quítalo del pedido y encárgalo aparte.'
             : enPedido && apartados.some((a) => a.productoId === producto.id) ? 'Ese producto ya está en el pedido: quítalo y agrégalo con la cantidad total.'
             : modo === 'viene' && restoABodega > TOPE_ENCARGO ? `Bodega encarga hasta ${TOPE_ENCARGO} por pedido y faltan ${restoABodega}.`
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`

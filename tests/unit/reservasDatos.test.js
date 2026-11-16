@@ -74,7 +74,7 @@ describe('los mensajes que manda la sala', () => {
         const conseguido = sinDuros(r.mensajeDeEncargo({ cliente: 'LUIS', codigo: 'E-000003', cantidad: 3, producto: 'Y',
             precio_unitario: 2.5, anticipo: 7.5, estado: 'confirmado' }, 'Salud 2'));
         expect(conseguido).toMatch(/\$\s?2\.50 c\/u, total \$\s?7\.50/);
-        expect(conseguido).toContain('se paga completo en la sala');
+        expect(conseguido).toContain('se paga completo en la sucursal');
         const listo = r.mensajeDeEncargo({ cliente: 'LUIS', codigo: 'E-000003', cantidad: 3, producto: 'Y', estado: 'listo', sala: 'Salud 9' });
         expect(listo).toContain('ya llegó');
         expect(listo).toContain('Farmacia Salud Salud 9');

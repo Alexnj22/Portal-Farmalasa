@@ -164,7 +164,7 @@ export function pendientesPrevisionales(datos = {}) {
  */
 export const TIPO_ACREDITACION_OPTIONS = [
     { value: 'DEFINITIVA',  label: 'Definitiva' },
-    { value: 'PROVISIONAL', label: 'Provisional — todavía sin el título' },
+    { value: 'PROVISIONAL', label: 'Provisional, todavía sin el título' },
 ];
 
 /**

@@ -24,7 +24,7 @@
  * qué elegir, que es exactamente la regla de §14.
  */
 export const ETAPAS_DE_BOLSA = [
-    { key: 'sala',        label: 'En la sala',          icono: 'Package',     estado: 'ABIERTA'   },
+    { key: 'sala',        label: 'En la sucursal',      icono: 'Package',     estado: 'ABIERTA'   },
     /* ── «Diferencias» NO es una etapa del circuito, y por eso va aparte ────
      *
      * Es la única pestaña que la sala comparte con administración, y existe

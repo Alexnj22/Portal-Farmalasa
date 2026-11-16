@@ -17,20 +17,20 @@ export const INTERRUPTOR = {
         reanuda: 'La mercadería vuelve a salir al finalizar un pedido.',
     },
     recibir: {
-        titulo:  'Recibir en la sala',
+        titulo:  'Recibir en la sucursal',
         detalle: 'Al confirmar una caja, la mercadería entra sola.',
         pausa:   'No se va a poder recibir hasta que lo reanudes.',
-        reanuda: 'Las salas ya pueden recibir.',
+        reanuda: 'Las sucursales ya pueden recibir.',
     },
     devolver_enviar: {
-        titulo:  'Sacar una devolución de la sala',
-        detalle: 'Cuando bodega acepta una devolución, el producto sale de la sala.',
-        pausa:   'Las devoluciones aceptadas no van a salir de la sala.',
+        titulo:  'Sacar una devolución de la sucursal',
+        detalle: 'Cuando bodega acepta una devolución, el producto sale de la sucursal.',
+        pausa:   'Las devoluciones aceptadas no van a salir de la sucursal.',
         reanuda: 'Las devoluciones aceptadas vuelven a salir.',
     },
     devolver_recibir: {
         titulo:  'Recibir una devolución en bodega',
-        detalle: 'Bodega confirma la entrada de lo que la sala devolvió.',
+        detalle: 'Bodega confirma la entrada de lo que la sucursal devolvió.',
         pausa:   'Lo devuelto no va a poder entrar a bodega: queda en el camino.',
         reanuda: 'Bodega ya puede confirmar lo devuelto.',
     },
@@ -40,16 +40,16 @@ export const INTERRUPTOR = {
     // pantalla con su llave de base de datos —`sobrante_enviar`— por no estar
     // en este mapa.
     sobrante_enviar: {
-        titulo:  'Mandar el sobrante a la sala',
+        titulo:  'Mandar el sobrante a la sucursal',
         detalle: 'Cuando se acuerda un sobrante, bodega manda la unidad.',
         pausa:   'Los sobrantes acordados no van a salir de bodega.',
         reanuda: 'Bodega vuelve a mandar los sobrantes acordados.',
     },
     sobrante_recibir: {
-        titulo:  'Recibir el sobrante en la sala',
-        detalle: 'La sala confirma la entrada de la unidad que le mandaron.',
-        pausa:   'El sobrante no va a poder entrar a la sala: queda en el camino.',
-        reanuda: 'Las salas ya pueden recibir el sobrante.',
+        titulo:  'Recibir el sobrante en la sucursal',
+        detalle: 'La sucursal confirma la entrada de la unidad que le mandaron.',
+        pausa:   'El sobrante no va a poder entrar a la sucursal. Queda en el camino.',
+        reanuda: 'Las sucursales ya pueden recibir el sobrante.',
     },
     // «No reenviar» de Pedidos (2026-09-17): anula el traslado de una caja
     // especial que no llegó y el producto regresa a Bodega. Nació en el CHECK

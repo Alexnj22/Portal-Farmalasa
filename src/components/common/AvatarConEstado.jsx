@@ -158,7 +158,7 @@ function GloboDePendientes({ pendientes }) {
   return (
     <div className="flex flex-col gap-2 text-left">
       <p className="flex items-baseline justify-between gap-4">
-        <span className="font-black">Expediente incompleto</span>
+        <span className="font-black">Datos incompletos</span>
         <span className="text-micro font-bold opacity-75 tabular-nums whitespace-nowrap">
           {pendientes.length} {pendientes.length === 1 ? 'dato' : 'datos'}
         </span>
@@ -367,7 +367,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // (2026-10-26, *«dale mejor estructura»*). Va en su propio globo, agrupado,
   // sobre el «!». Al lector de pantalla le basta la cuenta.
   const tituloPendientes = pendientes.length
-    ? `Expediente incompleto: ${pendientes.length} ${pendientes.length === 1 ? 'dato' : 'datos'}`
+    ? `Datos incompletos: ${pendientes.length === 1 ? 'falta 1' : `faltan ${pendientes.length}`}`
     : '';
   const titulo = [deCumple ? '¡Hoy cumple años! 🎂' : '', tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
   const etiqueta = [titulo, tituloPendientes].filter(Boolean).join(' · ') || undefined;

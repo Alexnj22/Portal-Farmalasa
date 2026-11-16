@@ -17,7 +17,7 @@ import { anotar } from './audit';
 
 /** Los códigos que lanzan los triggers de la base, en lenguaje de la pantalla. */
 const MENSAJES = {
-    DIST_SIN_LICENCIA: 'Ese cliente no tiene autorización de la SRS vigente. Complétala en su ficha antes de venderle.',
+    DIST_SIN_LICENCIA: 'Ese cliente no tiene autorización de la SRS vigente. Complétala en sus datos antes de venderle.',
     DIST_NO_VENTA_LIBRE: 'A una tienda o un supermercado sólo se le venden productos de venta libre.',
     DIST_FUERA_DE_CATALOGO: 'Ese producto no está en el catálogo de distribución.',
     DIST_SIN_CREDITO: 'Ese cliente no tiene crédito aprobado.',
@@ -26,17 +26,17 @@ const MENSAJES = {
     DIST_PEDIDO_CERRADO: 'El pedido ya se facturó o se anuló.',
     // El del tope va ANTES: `DIST_DESCUENTO` también está adentro de su código.
     DIST_DESCUENTO_TOPE: 'Ese descuento pasa del tope que fijó la empresa. Pídele a quien administra Distribución que lo autorice.',
-    DIST_DESCUENTO: 'El descuento pasa del importe del renglón.',
+    DIST_DESCUENTO: 'El descuento pasa del importe del producto.',
     DIST_SIN_PRECIO: 'Esa presentación no tiene precio cargado. Revisa el catálogo.',
     DIST_CCF_SIN_NRC: 'Ese cliente no tiene NRC: sólo se le puede emitir Factura.',
     DIST_SIN_PERMISO: 'No tienes permiso para esto en Distribución.',
     DIST_AUTOAPROBAR: 'No puedes decidir una solicitud que pediste tú: la decide otra persona con permiso.',
-    DIST_INVALIDACION_PEDIDA: 'Ya hay una solicitud esperando decisión para este documento.',
-    DIST_RECIBO_REINTEGRADO: 'Ese cobro ya se devolvió o quedó a favor del cliente cuando se invalidó su documento: no se puede anular.',
+    DIST_INVALIDACION_PEDIDA: 'Ya hay una solicitud esperando decisión para esta factura.',
+    DIST_RECIBO_REINTEGRADO: 'Ese cobro ya se devolvió o quedó a favor del cliente cuando se invalidó su factura. No se puede anular.',
     DIST_SOLICITUD_RESUELTA: 'Esa solicitud ya se resolvió.',
     DIST_LOTE_AJENO: 'Ese lote no es de ese producto. Vuelve a elegirlo.',
     DIST_RESERVA_AJENA: 'Esta venta la tiene abierta otra persona: sus productos siguen reservados a su nombre.',
-    DIST_PAGO_FACTURADO: 'La forma y el monto ya están en el documento: sólo se puede adjuntar el comprobante.',
+    DIST_PAGO_FACTURADO: 'La forma y el monto ya están en la factura. Sólo se puede adjuntar el comprobante.',
 };
 
 export function mensajeDeDistribucion(error) {
@@ -369,12 +369,12 @@ export async function resolverSolicitudDistribucion(solicitudId, tipo, aprobar, 
 /** Qué decir al decidir una solicitud de la distribuidora (toast de la pantalla y del celular). */
 export function avisoDeDecision(tipo, accion, aprobar, resultado = null) {
     if (tipo === 'DIST_INVALIDACION') {
-        if (!aprobar) return { titulo: 'Solicitud rechazada', texto: 'El documento queda como estaba. Se le avisó al vendedor.', tono: 'info' };
+        if (!aprobar) return { titulo: 'Solicitud rechazada', texto: 'La factura queda como estaba. Se le avisó al vendedor.', tono: 'info' };
         if (accion === 'corregir') {
             return { titulo: 'Corrección aprobada', texto: 'Se abrió una venta nueva con lo mismo. Se le avisó al vendedor para que la revise y la facture.', tono: 'success' };
         }
         if (resultado?.estado === 'invalidado') {
-            return { titulo: 'Venta deshecha', texto: 'Hacienda aceptó la invalidación. Se le avisó al vendedor.', tono: 'success' };
+            return { titulo: 'Venta deshecha', texto: 'El MH aceptó la invalidación. Se le avisó al vendedor.', tono: 'success' };
         }
         return { titulo: 'Aprobada', texto: resultado?.aviso || 'La invalidación quedó pendiente de enviar.', tono: 'warning' };
     }
@@ -404,7 +404,7 @@ export async function fetchDocumentos({ desde } = {}) {
         if (desde) q = q.gte('fec_emi', desde);
         return q;
     });
-    if (rows === null) throw new Error('No se pudieron cargar los documentos.');
+    if (rows === null) throw new Error('No se pudieron cargar las facturas.');
     return rows;
 }
 

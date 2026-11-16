@@ -43,7 +43,7 @@ describe('lo que rechaza', () => {
     it('EL CASO QUE IMPORTA: un DUI que no es el de esta ficha', () => {
         const r = revisarNup('09876543-2', DUI);
         expect(r.ok).toBe(false);
-        expect(r.motivo).toMatch(/no es el DUI de esta ficha/i);
+        expect(r.motivo).toMatch(/no es el DUI de esta persona/i);
     });
 
     it('cualquier otro largo, y dice cuántos dígitos escribió', () => {

@@ -47,7 +47,7 @@ describe('planDeApartar — la regla de Apartar del portal y de la app', () => {
         expect(p.totalCobro).toBe(14);
         expect(p.renglonesDelPedido).toHaveLength(2);
         const q = planDeApartar({ ...base, apartados, opciones: { modo: 'encargo' } });
-        expect(q.falta).toMatch(/quítalo del pedido/);
+        expect(q.falta).toMatch(/quítalo del pedido/i);
     });
 
     it('un encargo va de 1 a 20 unidades', () => {

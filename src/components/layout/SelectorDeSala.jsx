@@ -46,15 +46,15 @@ export default function SelectorDeSala() {
         setCambiando(true);
         const { error } = await cambiarSala(v);
         setCambiando(false);
-        if (error) { showToast('No se pudo cambiar de sala', mensajeDeSala(error), 'error'); return; }
+        if (error) { showToast('No se pudo cambiar de sucursal', mensajeDeSala(error), 'error'); return; }
         showToast('Trabajando en', opciones.find((o) => o.value === v)?.label, 'success');
     };
 
     return (
         <div className="px-1" aria-busy={cambiando}>
             <LiquidSelect compact value={opciones.some((o) => o.value === actual) ? actual : ''} onChange={elegir}
-                options={opciones} placeholder="¿En qué sala trabajas?" clearable={false} icon={Building2}
-                disabled={cambiando} ariaLabel="Sala con la que trabajas" />
+                options={opciones} placeholder="¿En qué sucursal trabajas?" clearable={false} icon={Building2}
+                disabled={cambiando} ariaLabel="Sucursal en la que trabajas" />
         </div>
     );
 }

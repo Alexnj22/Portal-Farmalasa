@@ -969,7 +969,7 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
             {yaVendida && (
                 <Notice variant="warning" compact>
                     <b>Parece que ya se vendió</b> en {yaVendida.factura} ({fechaTexto(yaVendida.fecha, { day: 'numeric', month: 'short' })}, {formatMoney(yaVendida.total)}):
-                    misma sala, mismo producto y mismo monto. No lo cobres otra vez; en la tarjeta del encargo usa «Ya se vendió».
+                    misma sucursal, mismo producto y mismo monto. No lo cobres otra vez; en la tarjeta del encargo usa «Ya se vendió».
                 </Notice>
             )}
             {elegido && (

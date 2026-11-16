@@ -172,7 +172,7 @@ export default function ReservasDeSala() {
     // Lo que se dice aparte de los cuatro bloques: cada cosa en UNA línea.
     const marcas = (
       <>
-        {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}${urgente ? ' · ya se avisó a supervisión' : ''}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
+        {enRevision && r.receta_estado === 'pendiente' ? <Pildora texto={`Receta por revisar · ${espera.texto}${urgente ? ' · ya se avisó a un supervisor o administrador' : ''}`} color={urgente ? MARCA.rojo : MARCA.ambar} /> : null}
         {quienRevisa ? <Pildora texto={quienRevisa} color={colorSistema.texto2} /> : null}
         {/* Mayoreo: se cobró a precio de mayoreo en la app; en caja se factura con ESA lista. */}
         {listaDePrecio ? <Pildora texto={listaDePrecio} color={MARCA.azulClaro} /> : null}
@@ -187,8 +187,8 @@ export default function ReservasDeSala() {
     );
   };
 
-  const filtrosSala = todas && salasDeVenta.length ? [{ id: 'sala', titulo: 'Sala', activa: salaFija, porDefecto: 'todas', onCambiar: setSalaFija,
-    opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salasDeVenta.map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
+  const filtrosSala = todas && salasDeVenta.length ? [{ id: 'sala', titulo: 'Sucursal', activa: salaFija, porDefecto: 'todas', onCambiar: setSalaFija,
+    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salasDeVenta.map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
 
   return (
     <>
@@ -199,7 +199,7 @@ export default function ReservasDeSala() {
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={filtrosSala} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
-          {!sala && !verTodas ? 'Las reservas son de una sala de ventas.' : `${verTodas ? 'Todas las salas' : nombreSala}${recetas ? ` · ${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : ''}`}
+          {!sala && !verTodas ? 'Las reservas son de una sucursal de ventas.' : `${verTodas ? 'Todas las sucursales' : nombreSala}${recetas ? ` · ${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : ''}`}
         </Text>
         {conteo && (sala || verTodas) && !esBodega ? (
           <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16 }}>
@@ -220,13 +220,13 @@ export default function ReservasDeSala() {
           </View>
         ) : null}
         {pedido.renglones.length ? (
-          <Seccion titulo={`Pedido ${pedido.pedido}`} pie={pedido.prueba ? 'PAGO DE PRUEBA — cobrar en caja.' : pedido.pagado ? (pedido.renglones[0].origen === 'sucursal' ? 'Pagado.' : 'Pagado en línea: en caja NO se cobra.')
+          <Seccion titulo={`Pedido ${pedido.pedido}`} pie={pedido.prueba ? 'PAGO DE PRUEBA. Cóbralo en caja.' : pedido.pagado ? (pedido.renglones[0].origen === 'sucursal' ? 'Pagado.' : 'Pagado en línea. En caja NO se cobra.')
             : anticipoPedido > 0.004 ? `Anticipo ${formatMoney(anticipoPedido)} · falta ${formatMoney(pedido.total - anticipoPedido)} al retirar.` : 'Se cobra en caja.'}>
             <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{`${pedido.renglones.length} ${pedido.renglones.length === 1 ? 'producto' : 'productos'} · ${pilaDelCliente(pedido.renglones[0])} · total ${formatMoney(pedido.total)}${pedido.renglones.some((r) => r.estado === 'pendiente') && pedido.renglones.some((r) => r.estado === 'lista') ? ' · una parte todavía en camino' : ''}`}</Text>
             {pedido.fiscal ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Facturar con crédito fiscal: ${pedido.fiscal.nombre} · NIT ${pedido.fiscal.nit} · NRC ${pedido.fiscal.nrc} · ${pedido.fiscal.giro} · ${pedido.fiscal.direccion}`}</Text> : null}
           </Seccion>
         ) : null}
-        {filas && buscado && !visibles.length && !saldosDeFuera.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`No hay una reserva abierta con ese código${verTodas ? '' : ' en esta sala'}.`} /></View> : null}
+        {filas && buscado && !visibles.length && !saldosDeFuera.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`No hay una reserva abierta con ese código${verTodas ? '' : ' en esta sucursal'}.`} /></View> : null}
         {filas && !abiertas.length && !saldos.length && (sala || verTodas) && !esBodega ? <Vacio titulo="Sin reservas" detalle="Cuando un cliente aparte algo desde la app, aparece aquí." /> : null}
 
         {secciones.map((s) => (

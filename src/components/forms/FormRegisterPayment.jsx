@@ -81,7 +81,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     <div>
                         <TituloDeSeccion nivel="modal" tono="success" className="mb-1.5">Pago de {serviceName}</TituloDeSeccion>
                         <div className="flex items-center gap-2">
-                            <Badge size="sm">Sede: {formData.name}</Badge>
+                            <Badge size="sm">Sucursal: {formData.name}</Badge>
                             {currentPaidThrough && (
                                 <span className="text-caption font-black text-success/80 uppercase tracking-widest">
                                     Último: {currentPaidThrough}
@@ -164,7 +164,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         accept="application/pdf,image/*"
                         file={paymentData.receiptFile}
                         onChange={f => handleUpdate('receiptFile', f)}
-                        hint="Si no lo subís hoy, el pago queda como PENDIENTE"
+                        hint="Si no lo subes hoy, el pago queda pendiente."
                     />
                 </div>
 

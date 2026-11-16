@@ -629,7 +629,7 @@ export const CLASE_CLIENTE = {
     },
     sin_ficha: {
         sirve: false,
-        titulo: 'Esta venta no tiene una ficha de cliente ligada.',
+        titulo: 'Esta venta no tiene un cliente ligado.',
         aviso: 'Escribe el nombre del paciente tal como está en la receta.',
     },
 };
@@ -795,7 +795,7 @@ export async function completarRenglon({
         p_motivo_pendiente: motivoPendiente || null,
         p_notas: notas || null,
     });
-    if (error) return { resultado: null, error: error.message ?? 'No se pudo completar el renglón.' };
+    if (error) return { resultado: null, error: error.message ?? 'No se pudo completar el registro.' };
     return { resultado: data, error: null };
 }
 

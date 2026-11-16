@@ -81,7 +81,7 @@ const GRUPOS_CRUDOS = [
             // policies de `approval_requests` piden un módulo u otro según de
             // qué lado caiga el tipo. Un tipo nuevo sin clasificar cae en
             // PERSONAL, que es el lado cerrado.
-            { key: 'requests',     label: 'Solicitudes de sucursal', desc: 'El centro de solicitudes de la sala: descartes y cargas de inventario, traslados, Min/Max y cambios a facturación. Ver = estar al día de lo que pidió la sala y cómo se resolvió; Aprobar = decidirlas', icono: 'ClipboardList', hasApprove: true,  hasScope: true },
+            { key: 'requests',     label: 'Solicitudes de sucursal', desc: 'El centro de solicitudes de la sucursal: descartes y cargas de inventario, traslados, Mín/Máx y cambios a facturación. Ver = estar al día de lo que pidió la sucursal y cómo se resolvió; Aprobar = decidirlas', icono: 'ClipboardList', hasApprove: true,  hasScope: true },
             // ── Las cuatro familias de «decidir» de la bandeja de sucursal ──
             // Aprobar dejó de ser un solo interruptor en v2.576.0: «Ver» sigue
             // siendo uno —abrir la bandeja, arriba— pero DECIDIR se reparte,
@@ -94,8 +94,8 @@ const GRUPOS_CRUDOS = [
             // mismo permiso escrito dos veces se contradice en cuanto alguien
             // toca uno solo.
             { key: 'requests_facturacion', label: 'Decidir: facturación', desc: 'Resolver las solicitudes que tocan una factura ya emitida: anularla, cambiarle la forma de pago, el vendedor o el cliente', icono: 'Receipt', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
-            { key: 'requests_inventario',  label: 'Decidir: inventario',  desc: 'Resolver las solicitudes de carga y de descarte de existencia: son las que mueven el inventario de la sala', icono: 'PackageMinus', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
-            { key: 'requests_minmax',      label: 'Decidir: Min/Max',     desc: 'Resolver las solicitudes de ajuste de stock mínimo y máximo. Distinto de publicar cambios de Min/Max, que vive en su propio módulo', icono: 'BarChart2', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
+            { key: 'requests_inventario',  label: 'Decidir: inventario',  desc: 'Resolver las solicitudes de carga y de descarte de existencia: son las que mueven el inventario de la sucursal', icono: 'PackageMinus', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
+            { key: 'requests_minmax',      label: 'Decidir: Mín/Máx',     desc: 'Resolver las solicitudes de ajuste de mínimo y máximo. Publicar cambios de Mín/Máx está en su propio módulo', icono: 'BarChart2', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
             { key: 'requests_caja',        label: 'Decidir: caja',        desc: 'Resolver los pedidos de anular o corregir el monto de un movimiento de caja ya anotado. Quien lo anotó no puede deshacerlo: un movimiento ya contado es dinero', icono: 'Wallet', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
             /* Módulo aparte de `requests_caja` y no una capacidad suya, por pedido
              * del usuario (2-sep): «para asignarle a otras personas también el
@@ -103,7 +103,7 @@ const GRUPOS_CRUDOS = [
              * necesariamente quien decide sobre la cartera de créditos—, y con un
              * solo interruptor dar uno regala el otro. */
             { key: 'requests_cuentas_por_cobrar', label: 'Decidir: cuentas por cobrar', desc: 'Resolver los pedidos de anular o corregir un abono ya cobrado. Quien lo cobró no puede deshacerlo: un abono aplicado es dinero. Corregirlo se aplica borrando el abono y volviendo a hacerlo, que es lo único que el sistema de la caja permite', icono: 'HandCoins', hasApprove: true, hasScope: true, soloAprobar: true, familiaDe: 'requests', enTarjetaAparte: true },
-            { key: 'requests_personales', label: 'Solicitudes personales', desc: 'Las que hablan de una persona y no de la sala: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver aquí es ver datos sensibles del expediente ajeno', icono: 'Palmtree', hasApprove: true, hasScope: true },
+            { key: 'requests_personales', label: 'Solicitudes personales', desc: 'Las que hablan de una persona y no de la sucursal: vacaciones, permiso, incapacidad, anticipo salarial y constancias. Ver aquí es ver datos sensibles de otras personas', icono: 'Palmtree', hasApprove: true, hasScope: true },
             // Módulo aparte de `requests` a propósito: acá `can_approve` habilita
             // confirmar un traslado de la propia sala y NADA más. Metido dentro de
             // Solicitudes, dárselo a una jefatura de sala le entregaría de arrastre
@@ -113,7 +113,7 @@ const GRUPOS_CRUDOS = [
             // tiene vista propia (`/traslados`, 2026-08-07) también abre el
             // historial, y buscarlo en esta pantalla por «vista» o «historial»
             // no daba nada — reportado así: «¿no está en permisos?».
-            { key: 'traslados',    label: 'Traslados entre salas',  desc: 'Abrir la vista de traslados —lo que está en camino y el historial con sus motivos— y confirmar el envío de producto que otra sala pide',  icono: 'Truck',         hasApprove: true,  hasScope: true },
+            { key: 'traslados',    label: 'Traslados entre sucursales',  desc: 'Abrir la vista de traslados, con lo que está en camino y el historial con sus motivos. Confirmar el traslado de producto que otra sucursal pide',  icono: 'Truck',         hasApprove: true,  hasScope: true },
             { key: 'vacation_plan',label: 'Plan de vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icono: 'Palmtree',      hasApprove: false, hasScope: true },
             { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icono: 'DollarSign',    hasApprove: true,  hasScope: true, sub: [
                 // La boleta y la planilla impresas se llevan el salario de cada
@@ -152,7 +152,7 @@ const GRUPOS_CRUDOS = [
             // Cortes de caja va pegado a Ventas: es el dinero de esas mismas
             // ventas. `hasScope` porque la sala mira la suya y la supervisión
             // mira todas — el mismo alcance que ya tiene Ventas.
-            { key: 'cortes_caja',   label: 'Cortes de caja', desc: 'Confirmar o descartar los cortes de cada sala, con la diferencia de cada tramo y qué revisar cuando no cuadra', icono: 'Wallet', hasApprove: false, hasScope: true, sub: [
+            { key: 'cortes_caja',   label: 'Cortes de caja', desc: 'Confirmar o descartar los cortes de cada sucursal, con la diferencia de cada tramo y qué revisar cuando no cuadra', icono: 'Wallet', hasApprove: false, hasScope: true, sub: [
                 // Capacidad y no pestaña: gatea la ACCIÓN, no la vista. La
                 // pestaña Diferencias la ve quien ve Cortes; resolver —dar la
                 // causa, asignar responsables, abonar y anotar— sólo quien
@@ -177,7 +177,7 @@ const GRUPOS_CRUDOS = [
              * tenía el permiso abría, anotaba, cortaba y cerraba la caja de
              * todas — y un corte no se deshace. Sin el selector acá tampoco
              * había forma de acotarlo aunque alguien quisiera. */
-            { key: 'caja_vales',    label: 'Mi caja (operar desde el portal)', desc: 'Abrir la caja, anotar ingresos y vales, hacer el corte con el conteo a ciegas y cerrar el día — todo sin entrar al sistema de la caja. Ver muestra el estado; editar es lo que opera. El alcance decide si es solo su sala o todas', icono: 'Wallet', hasApprove: false, hasScope: true },
+            { key: 'caja_vales',    label: 'Mi caja (operar desde el portal)', desc: 'Abrir la caja, anotar ingresos y vales, hacer el corte con el conteo a ciegas y cerrar el día desde el portal. Ver muestra el estado; editar es lo que opera. El alcance decide si es solo su sucursal o todas', icono: 'Wallet', hasApprove: false, hasScope: true },
             /* Vista propia y no una capacidad de `caja_vales`, porque son dos
              * preguntas distintas: `caja_vales` es *operar mi caja HOY* y esto
              * es *quién nos debe de los últimos dos años*. La cartera se revisa
@@ -205,8 +205,8 @@ const GRUPOS_CRUDOS = [
                 { key: 'inyecciones_confirmar', label: 'Confirmar en la bitácora las aplicaciones que hizo (enfermería)', tipo: 'cap' },
                 { key: 'inyecciones_ver_todas', label: 'Ver también las aplicaciones que enfermería no confirmó', tipo: 'cap' },
             ]},
-            { key: 'cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Quién debe, desde cuándo y cuánto, en las seis salas. Ver es mirar la cartera y el plazo del mes; editar es abonar — el efectivo entra al cajón, cuenta para el corte del día y no se puede deshacer', icono: 'HandCoins', hasApprove: false, hasScope: true },
-            { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sala guarda al confirmar un corte: cuánto hay en sala, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icono: 'Package', hasApprove: false, hasScope: true, sub: [
+            { key: 'cuentas_por_cobrar', label: 'Cuentas por cobrar', desc: 'Quién debe, desde cuándo y cuánto, en las seis sucursales. Ver es mirar la cartera y el plazo del mes; editar es abonar. El efectivo entra a la caja, cuenta para el corte del día y no se puede deshacer', icono: 'HandCoins', hasApprove: false, hasScope: true },
+            { key: 'bolsas',        label: 'Bolsas de efectivo', desc: 'El efectivo que la sucursal guarda al confirmar un corte: cuánto hay en la sucursal, cuántos días lleva esperando el retiro, la etiqueta que va pegada a cada bolsa, y marcarlas como entregadas', icono: 'Package', hasApprove: false, hasScope: true, sub: [
                 // Módulo aparte y no una capacidad de `bolsas` porque son dos
                 // públicos: la sala entrega, administración recibe y cuenta. Con
                 // un solo permiso, darle a la sala lo suyo le daría también el
@@ -241,13 +241,13 @@ const GRUPOS_CRUDOS = [
             // Tampoco lleva `_ver_montos`: una cotización sin precios no es nada.
             // (2026-10-21) La pantalla de Reservas del menú. El widget del Inicio
             // sigue con su propio permiso (`dash_reservas`).
-            { key: 'reservas',       label: 'Reservas',      desc: 'Los productos que los clientes apartaron —desde la app Puntos Salud o con anticipo en la caja—, los pedidos a domicilio, los saldos a favor y los encargos. Ver = mirar las reservas; editar = apartar y avisar, entregar, cancelar y aplicar un saldo a favor. Con alcance «su sala», sólo las de la propia; con «todas», las de todas las salas', icono: 'ShoppingBag', hasApprove: false, hasScope: true },
+            { key: 'reservas',       label: 'Reservas',      desc: 'Los productos que los clientes apartaron (desde la app Puntos Salud o con anticipo en la caja), los pedidos a domicilio, los saldos a favor y los encargos. Ver = mirar las reservas; editar = apartar y avisar, entregar, cancelar y aplicar un saldo a favor. Con alcance «su sucursal», sólo las de la propia; con «todas», las de todas las sucursales', icono: 'ShoppingBag', hasApprove: false, hasScope: true },
             // (2026-11-16) Vender desde el portal: la venta llega armada a caja.
-            { key: 'preventa',       label: 'Preventa',      desc: 'Armar una venta en el portal y mandarla a caja con el precio que le toca al cliente: Público sin datos, Preferente con datos, el suyo al mayorista y Mayoreo Plus al personal. Ver = mirar las preventas; editar = enviarlas, corregirlas y anularlas mientras no se facturen; aprobar = autorizar otro precio, con motivo. Con alcance «su sala», sólo en la propia; con «todas», en cualquiera', icono: 'Receipt', hasApprove: true, hasScope: true },
+            { key: 'preventa',       label: 'Preventa',      desc: 'Armar una venta en el portal y mandarla a caja con el precio que le toca al cliente: Público sin datos, Preferente con datos, el suyo al mayorista y Mayoreo Plus al personal. Ver = mirar las preventas; editar = enviarlas, corregirlas y anularlas mientras no se facturen; aprobar = autorizar otro precio, con motivo. Con alcance «su sucursal», sólo en la propia; con «todas», en cualquiera', icono: 'Receipt', hasApprove: true, hasScope: true },
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icono: 'Receipt',       hasApprove: false, hasScope: true, sub: [
                 { key: 'cotizaciones_descargar', label: 'Imprimir / guardar PDF', tipo: 'cap' },
             ]},
-            { key: 'clientes',       label: 'Clientes',      desc: 'Ficha fiscal del cliente: identidad (DUI/NIT/NRC), categoría, contacto y ubicación con la cascada departamento-municipio-distrito. Muestra la facturación de cada cliente para saber qué ficha vale la pena completar. Editar = corregir la ficha; los datos de un contribuyente exigen confirmación aparte', icono: 'Contact', hasApprove: false, sub: [
+            { key: 'clientes',       label: 'Clientes',      desc: 'Datos fiscales del cliente: identidad (DUI/NIT/NRC), categoría, contacto y ubicación con la cascada departamento-municipio-distrito. Muestra la facturación de cada cliente para saber qué datos vale la pena completar. Editar = corregir los datos; los datos de un contribuyente exigen confirmación aparte', icono: 'Contact', hasApprove: false, sub: [
                 // Acá el monto SÍ es una columna más: la ficha fiscal se completa
                 // igual sin ver cuánto factura cada cliente.
                 { key: 'clientes_ver_montos', label: 'Ver la facturación por cliente', tipo: 'cap' },
@@ -255,9 +255,9 @@ const GRUPOS_CRUDOS = [
                 // portal y el portal los da de alta en la caja (lo tiene todo cargo que ve Clientes).
                 { key: 'clientes_crear', label: 'Crear clientes nuevos', tipo: 'cap' },
             ]},
-            { key: 'mayoristas',     label: 'Clientes Mayoristas', desc: 'Las solicitudes para ser Cliente Mayorista (del cliente en la app o del dependiente), los candidatos —quien compró a precio de mayoreo en 6 meses— con su historial, y los aprobados con su precio y su rango. Ver = mirar; editar = proponer un cliente; aprobar = aprobar, rechazar, cambiar el precio o retirar (quien aprueba no puede ser quien pidió)', icono: 'Gem', hasApprove: true },
-            { key: 'reclamos_clientes', label: 'Reclamos de clientes', desc: 'Los reclamos que un cliente presenta en sala sobre el programa de puntos, las reservas o su condición de Cliente Mayorista. Los tres reglamentos dan diez días hábiles para responder y el portal avisa antes de que venzan. Editar = registrar el reclamo en la sala; aprobar = responderlo', icono: 'MessageSquareWarning', hasApprove: true },
-            { key: 'puntos',         label: 'Puntos',        desc: 'El programa de puntos entero: lo acumulado y canjeado por día y por sala, los avisos de canjes sin saldo y anulaciones con puntos ya gastados, cuándo vencen, y las cuentas del sistema anterior que quedaron por asignar. Editar = asignar una de esas cuentas a la ficha de un cliente', icono: 'Star', hasApprove: false, sub: [
+            { key: 'mayoristas',     label: 'Clientes Mayoristas', desc: 'Las solicitudes para ser Cliente Mayorista (del cliente en la app o del dependiente), los candidatos (quien compró a precio de mayoreo en 6 meses) con su historial, y los aprobados con su precio y su rango. Ver = mirar; editar = proponer un cliente; aprobar = aprobar, rechazar, cambiar el precio o retirar (quien aprueba no puede ser quien pidió)', icono: 'Gem', hasApprove: true },
+            { key: 'reclamos_clientes', label: 'Reclamos de clientes', desc: 'Los reclamos que un cliente presenta en la sucursal sobre el programa de puntos, las reservas o su condición de Cliente Mayorista. Los tres reglamentos dan diez días hábiles para responder y el portal avisa antes de que venzan. Editar = registrar el reclamo en la sucursal; aprobar = responderlo', icono: 'MessageSquareWarning', hasApprove: true },
+            { key: 'puntos',         label: 'Puntos',        desc: 'El programa de puntos entero: lo acumulado y canjeado por día y por sucursal, los avisos de canjes sin saldo y anulaciones con puntos ya gastados, cuándo vencen, y las cuentas del sistema anterior que quedaron por asignar. Editar = asignar una de esas cuentas a un cliente', icono: 'Star', hasApprove: false, sub: [
                 // Una por pestaña (pedido del usuario, 2026-09-25). Avisos es sólo
                 // de administración; Consulta la ve también la caja.
                 { key: 'puntos_tab_resumen',     label: 'Resumen',             tipo: 'tab' },
@@ -272,8 +272,8 @@ const GRUPOS_CRUDOS = [
                 // (pedido del usuario, 2026-10-01).
                 { key: 'puntos_tarjetas',        label: 'Ver las tarjetas de cifras', tipo: 'cap' },
             ]},
-            { key: 'metas',          label: 'Metas',         desc: 'Metas mensuales de venta por sala: cumplimiento en vivo, proyección de cierre e histórico con el tramo del bono', icono: 'Target', hasApprove: true, hasScope: true },
-            { key: 'promociones',    label: 'Promociones',   desc: 'Campañas de laboratorio que pagan por unidad vendida —el lote repartido por sala, su avance y lo que habría ganado cada persona— y los descuentos que la venta le rebaja al renglón', icono: 'DollarSign', hasApprove: true, hasScope: true },
+            { key: 'metas',          label: 'Metas',         desc: 'Metas mensuales de venta por sucursal: cumplimiento en vivo, proyección de cierre e histórico con el tramo del bono', icono: 'Target', hasApprove: true, hasScope: true },
+            { key: 'promociones',    label: 'Promociones',   desc: 'Campañas de laboratorio que pagan por unidad vendida (el lote repartido por sucursal, su avance y lo que habría ganado cada persona) y los descuentos que la venta le rebaja al producto', icono: 'DollarSign', hasApprove: true, hasScope: true },
             { key: 'marketing',      label: 'Marketing',     desc: 'Planificador de contenido para redes: el calendario del mes, el flujo de cada pieza con el diseñador, las solicitudes, la revisión del calendario y la pauta. Ver = mirar, comentar y pedir; editar = planificar y subir diseños; aprobar = revisar el calendario', icono: 'Megaphone', hasApprove: true },
             { key: 'encuestas_clientes', label: 'Encuestas a clientes', desc: 'Encuestas de satisfacción, NPS y percepción: se diseñan, gerencia las aprueba, se publican y se aplican por QR, entrevista o tablet. Ver = mirar encuestas y resultados; editar = diseñar, publicar y cerrar; aprobar = aprobar o devolver antes de publicar', icono: 'ClipboardCheck', hasApprove: true },
             // (2026-10-19) Revisar la receta que el cliente sube en la app. Antes la
@@ -281,10 +281,10 @@ const GRUPOS_CRUDOS = [
             // permiso propio. Aprobar = aprobar, pedir otra foto o rechazar; con
             // alcance «su sala», sólo las de su sala.
             { key: 'recetas_app', label: 'Recetas de la app', desc: 'Revisar la foto de la receta que el cliente sube al reservar un producto bajo receta desde la app Puntos Salud: aprobarla (la reserva se confirma y ya se puede pagar y retirar), pedir otra foto o rechazarla. Ver = mirar la foto; Aprobar = decidir. Queda anotado quién la revisó', icono: 'FileCheck', hasApprove: true, hasScope: true },
-            { key: 'ofertas_clientes', label: 'Ofertas para clientes', desc: 'La vitrina de la app Puntos Salud: ofertas con imagen, fechas, salas y si son exclusivas para socios. Ver = mirar; editar = crear, publicar y retirar. Los pre-registros de la app se ven con el permiso de Clientes', icono: 'Smartphone', hasApprove: false },
+            { key: 'ofertas_clientes', label: 'Ofertas para clientes', desc: 'La vitrina de la app Puntos Salud: ofertas con imagen, fechas, sucursales y si son exclusivas para socios. Ver = mirar; editar = crear, publicar y retirar. Los pre-registros de la app se ven con el permiso de Clientes', icono: 'Smartphone', hasApprove: false },
             { key: 'chat_clientes', label: 'Chat con clientes', desc: 'Las conversaciones que los clientes abren desde la app Puntos Salud: ver quién escribió, su tipo de cliente y su nivel. Ver = leer; editar = responder (texto, foto, producto u oferta), marcar como resuelta, guardar respuestas rápidas y quitar una foto de perfil que no corresponde. El cliente ve la foto y el nombre de quien le responde', icono: 'MessageCircle', hasApprove: false },
-            { key: 'encuestas_aplicar', label: 'Aplicar encuestas', desc: 'Entrevistar clientes desde el portal y abrir la tablet de sala en una encuesta publicada. No da acceso al diseño ni a los resultados', icono: 'Mic', hasApprove: false },
-            { key: 'galeria',        label: 'Galería',       desc: 'El material de redes liberado para las salas: descargar las piezas aprobadas, copiar su texto y publicarlas en WhatsApp. Sólo ve lo liberado', icono: 'FolderOpen', hasApprove: false },
+            { key: 'encuestas_aplicar', label: 'Aplicar encuestas', desc: 'Entrevistar clientes desde el portal y abrir la tablet de la sucursal en una encuesta publicada. No da acceso al diseño ni a los resultados', icono: 'Mic', hasApprove: false },
+            { key: 'galeria',        label: 'Galería',       desc: 'El material de redes liberado para las sucursales: descargar las piezas aprobadas, copiar su texto y publicarlas en WhatsApp. Sólo ve lo liberado', icono: 'FolderOpen', hasApprove: false },
         ],
     },
     {
@@ -300,7 +300,7 @@ const GRUPOS_CRUDOS = [
         modules: [
             // `distribucion_config` va aparte porque cambiar el NIT, el ambiente
             // o un precio no es lo mismo que vender.
-            { key: 'distribucion',   label: 'Vender y operar',  desc: 'Venta en ruta de la S.A.S. a tiendas, supermercados y farmacias: pedidos de preventa, facturación electrónica propia, clientes con su licencia de la SRS. Editar = tomar pedidos, facturarlos y mantener las fichas de clientes', icono: 'Truck', hasApprove: false, sub: [
+            { key: 'distribucion',   label: 'Vender y operar',  desc: 'Venta en ruta de la S.A.S. a tiendas, supermercados y farmacias: pedidos de preventa, facturación electrónica propia, clientes con su licencia de la SRS. Editar = tomar pedidos, facturarlos y mantener los datos de los clientes', icono: 'Truck', hasApprove: false, sub: [
                 { key: 'distribucion_config', label: 'Precios y datos de la empresa', tipo: 'cap' },
                 // Dar descuentos hasta el tope de la empresa sin pedirle a nadie.
                 // Sin esto —o pasando el tope— el descuento se PIDE y la venta
@@ -314,7 +314,7 @@ const GRUPOS_CRUDOS = [
         group: 'Inventario',
         color: 'text-chart-9-text',
         modules: [
-            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos con su ficha, precios y ubicaciones, y el maestro de presentaciones en que se venden', icono: 'Package', hasApprove: false, sub: [
+            { key: 'productos', label: 'Productos', desc: 'Catálogo de productos con sus datos, precios y ubicaciones, y el maestro de presentaciones en que se venden', icono: 'Package', hasApprove: false, sub: [
                 { key: 'productos_tab_catalogo',   label: 'Catálogo',   tipo: 'tab' },
                 // Las pestañas «Inventario» y «Sin Venta» dejaron de vivir acá
                 // el 2026-08-08: son los módulos `inventario` y `gestion_stock`
@@ -345,9 +345,9 @@ const GRUPOS_CRUDOS = [
             // Permisos sería prometer un recorte que el código no hace — es lo
             // mismo que heredan de haber sido pestañas de `productos`, que
             // tampoco lo declara.
-            { key: 'gestion_stock', label: 'Gestión de stock', desc: 'Qué se está vendiendo sin parámetros de reposición y qué existencia lleva medio año sin moverse, con la sugerencia de qué hacer con cada caso', icono: 'Activity', hasApprove: false },
+            { key: 'gestion_stock', label: 'Gestión de existencias', desc: 'Qué se está vendiendo sin parámetros de reposición y qué existencia lleva medio año sin moverse, con la sugerencia de qué hacer con cada caso', icono: 'Activity', hasApprove: false },
             { key: 'inventario', label: 'Inventario', desc: 'Existencia por sucursal en tiempo real con desglose de lotes, vencimientos y productos ya vencidos', icono: 'Boxes', hasApprove: false },
-            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icono: 'BarChart2', hasApprove: true, hasScope: true, sub: [
+            { key: 'minmax', label: 'Mín/Máx', desc: 'Análisis de mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icono: 'BarChart2', hasApprove: true, hasScope: true, sub: [
                 { key: 'minmax_tab_sucursal',    label: 'Sucursal',    tipo: 'tab' },
                 { key: 'minmax_tab_agotados',    label: 'Agotados',    tipo: 'tab' },
                 { key: 'minmax_ver_costos',      label: 'Ver costos de compra y venta', tipo: 'cap' },
@@ -355,12 +355,12 @@ const GRUPOS_CRUDOS = [
                 // Retirar un producto de las siete salas sin tener alcance total:
                 // la jefa de Compras y Logística lo necesita y el usuario no
                 // quiere darle el MIN·MAX de cada sala (2026-09-28).
-                { key: 'minmax_cero_en_todas',   label: 'Poner 0 en todas las salas',   tipo: 'cap' },
+                { key: 'minmax_cero_en_todas',   label: 'Poner 0 en todas las sucursales',   tipo: 'cap' },
             ]},
-            { key: 'ventas_perdidas', label: 'Ventas perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icono: 'PackageMinus', hasApprove: false, sub: [
+            { key: 'ventas_perdidas', label: 'Ventas perdidas', desc: 'Registro de productos solicitados sin existencia; alertas de compra para logística con seguimiento de estado', icono: 'PackageMinus', hasApprove: false, sub: [
                 { key: 'ventas_perdidas_descargar', label: 'Descargar el registro (CSV)', tipo: 'cap' },
             ]},
-            { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icono: 'ShoppingCart', hasApprove: false, sub: [
+            { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de productos y resumen por producto', icono: 'ShoppingCart', hasApprove: false, sub: [
                 { key: 'compras_tab_facturas',  label: 'Facturas',   tipo: 'tab' },
                 { key: 'compras_tab_productos', label: 'Productos',  tipo: 'tab' },
                 { key: 'compras_ver_montos',    label: 'Ver montos', tipo: 'cap' },
@@ -374,10 +374,10 @@ const GRUPOS_CRUDOS = [
             // confirmación se guarda para siempre en el diccionario, así que no
             // es un permiso de sólo mirar. Ver sin editar sirve para revisar la
             // compra armada sin poder enseñarle nada al portal.
-            { key: 'cargar_compra', label: 'Cargar compra', desc: 'Arma la compra desde el documento del proveedor —producto, cantidad, costo, lote y vencimiento— para revisarla antes de registrarla. Editar confirma a qué producto nuestro corresponde cada renglón, y esa confirmación no se vuelve a preguntar', icono: 'PackagePlus', hasApprove: false },
+            { key: 'cargar_compra', label: 'Cargar compra', desc: 'Arma la compra desde la factura del proveedor (producto, cantidad, costo, lote y vencimiento) para revisarla antes de registrarla. Editar confirma a qué producto nuestro corresponde cada uno, y esa confirmación no se vuelve a preguntar', icono: 'PackagePlus', hasApprove: false },
             { key: 'cuentas_por_pagar', label: 'Cuentas por pagar', desc: 'Cuánto le debemos a cada proveedor, qué está vencido y cuánto queda de su límite de crédito. Editar registra el pago; aprobar es lo que lo hace contar contra el saldo', icono: 'Landmark', hasApprove: true },
-            { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icono: 'Truck', hasApprove: false },
-            { key: 'conteo_inventario', label: 'Conteo de inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icono: 'ClipboardCheck', hasApprove: true, hasScope: true, sub: [
+            { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde las facturas de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icono: 'Truck', hasApprove: false },
+            { key: 'conteo_inventario', label: 'Conteo de inventario', desc: 'Auditoría física de existencia por sucursal/bodega: existencia registrada, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icono: 'ClipboardCheck', hasApprove: true, hasScope: true, sub: [
                 // El conteo es CIEGO mientras está abierto: sin este permiso la
                 // existencia del sistema NO SALE de la base (no es un switch en
                 // la vista, que era lo de antes). Con el conteo ya finalizado los
@@ -409,7 +409,7 @@ const GRUPOS_CRUDOS = [
             // alcance es ALL aunque no sea un cargo de dirección — es el
             // responsable de la Dirección Técnica (RTS 5.2.2) y cubre varias
             // salas a la vez.
-            { key: 'bitacoras', label: 'Bitácoras', desc: 'Los registros que exige la Superintendencia de Regulación Sanitaria en cada sala: temperatura y humedad, limpieza y orden, refrigerador, y el libro foliado de dispensación bajo receta. Editar = anotar la lectura o completar un renglón del libro', icono: 'Thermometer', hasApprove: false, hasScope: true, sub: [
+            { key: 'bitacoras', label: 'Bitácoras', desc: 'Los registros que exige la Superintendencia de Regulación Sanitaria en cada sucursal: temperatura y humedad, limpieza y orden, refrigerador, y el libro foliado de dispensación bajo receta. Editar = anotar la lectura o completar un registro del libro', icono: 'Thermometer', hasApprove: false, hasScope: true, sub: [
                 // No hay pestaña «Historial»: mirar otro día es la MISMA
                 // pantalla con otra fecha, o sea un filtro (§16.9). La pestaña
                 // que existe de verdad es el libro — otras filas, otro trabajo.
@@ -422,7 +422,7 @@ const GRUPOS_CRUDOS = [
                 // «GENERICO», vencido al vender) lo corrige quien tiene la caja
                 // en la mano y lo firma el regente: dos permisos, por el mismo
                 // motivo que el cierre de mes.
-                { key: 'bitacoras_corregir_lote',  label: 'Corregir el lote de un renglón del libro (encargado de sala)', tipo: 'cap' },
+                { key: 'bitacoras_corregir_lote',  label: 'Corregir el lote de un registro del libro (encargado de sucursal)', tipo: 'cap' },
                 { key: 'bitacoras_confirmar_lote', label: 'Confirmar la corrección de un lote del libro (regente)', tipo: 'cap' },
                 { key: 'bitacoras_editar_antibioticos', label: 'Editar el listado de antibióticos: qué producto es de qué molécula, su vía, o sacarlo', tipo: 'cap' },
                 // Firmar el mes es del regente, no de quien anota. Con un solo
@@ -506,7 +506,7 @@ const GRUPOS_CRUDOS = [
             // Cada pestaña es un libro distinto, no un corte del mismo dato: por
             // eso acá `_tab_` sí corresponde. Un contador externo puede necesitar
             // Compras y no las ventas, o al revés.
-            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icono: 'BookOpen', hasApprove: false, hasScope: true, sub: [
+            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello del MH. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icono: 'BookOpen', hasApprove: false, hasScope: true, sub: [
                 { key: 'libros_iva_tab_consumidor',    label: 'Consumidor',     tipo: 'tab' },
                 { key: 'libros_iva_tab_contribuyente', label: 'Contribuyentes', tipo: 'tab' },
                 { key: 'libros_iva_tab_compras',       label: 'Compras',        tipo: 'tab' },
@@ -517,7 +517,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'libros_iva_descargar',         label: 'Exportar los libros (CSV)', tipo: 'cap' },
                 { key: 'libros_iva_ver_montos',        label: 'Ver montos',                tipo: 'cap' },
             ]},
-            { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por Hacienda, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
+            { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por el MH, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
                 { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
                 { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
                 // El libro y el cotejo son sólo lo enviado para TODOS. Esta
@@ -587,19 +587,19 @@ const GRUPOS_CRUDOS = [
             { key: 'dash_top_productos',  label: 'Widget: Top productos del mes', desc: 'Ranking de los 10 productos más vendidos en el mes actual',               icono: 'Package',         hasApprove: false, hasScope: true },
             { key: 'dash_inv_search',     label: 'Widget: Consulta de inventario',desc: 'Buscar productos en inventario multi-sucursal con desglose de lotes y vencimientos', icono: 'Package',    hasApprove: false, hasScope: true },
             { key: 'dash_annulment_req',  label: 'Widget: Modificar facturación', desc: 'Pedir que se anule una factura o se cambie su cliente, vendedor o forma de pago',  icono: 'Receipt',    hasApprove: false, hasScope: true },
-            { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Min/Max',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación del supervisor', icono: 'BarChart2', hasApprove: false, hasScope: true },
-            { key: 'dash_inv_movement',   label: 'Widget: Ajuste de inventario',  desc: 'Solicitar que se cargue o se descargue producto —vencimiento, descarte, producto dañado o consumo interno—; el inventario se mueve al aprobarla', icono: 'PackageMinus', hasApprove: false, hasScope: true },
-            { key: 'dash_traslados',      label: 'Widget: Traslados entre salas', desc: 'Ver lo que otra sala pide del inventario propio y lo que uno pidió y viene en camino', icono: 'Truck', hasApprove: false, hasScope: true },
+            { key: 'dash_minmax_req',     label: 'Widget: Ajuste de Mín/Máx',     desc: 'Proponer cambios de mínimo/máximo por producto y sucursal; se envían a aprobación', icono: 'BarChart2', hasApprove: false, hasScope: true },
+            { key: 'dash_inv_movement',   label: 'Widget: Ajuste de inventario',  desc: 'Solicitar que se cargue o se descargue producto: vencimiento, descarte, producto dañado o consumo interno. El inventario se mueve al aprobarla', icono: 'PackageMinus', hasApprove: false, hasScope: true },
+            { key: 'dash_traslados',      label: 'Widget: Traslados entre sucursales', desc: 'Ver lo que otra sucursal te pide y lo que pediste y viene en camino', icono: 'Truck', hasApprove: false, hasScope: true },
             // `can_view` lista y descarga; `can_edit` es lo que habilita TOMAR
             // una factura. El alcance importa de verdad acá: con scope BRANCH la
             // base rechaza cualquier pedido sobre otra sala, no solo lo esconde.
-            { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sala', desc: 'Los cortes de caja que quedan sin confirmar en la sala —de los últimos 7 días, no sólo de hoy— con la diferencia de cada tramo, más cómo va el mes: cuántos cuadraron, cuántos tuvieron exceso y cuántos faltante', icono: 'Wallet', hasApprove: false, hasScope: true },
-            { key: 'dash_bolsas_sala',    label: 'Widget: Bolsas de efectivo de mi sala', desc: 'El efectivo que espera el retiro en la sala y los cortes confirmados a los que todavía no se les guardó el dinero, con la alarma de la bolsa que lleva 4 días o más', icono: 'Package', hasApprove: false, hasScope: true },
-            { key: 'dash_dato_pedido',    label: 'Widget: Datos que faltan', desc: 'El dato que el portal le pide a la sala para poder terminar una venta ante Hacienda —hoy, el correo de un cliente contribuyente que fue rechazado y no es un error de tipeo— con el campo para escribirlo. Al confirmarlo el portal lo guarda en la ficha del cliente y vuelve a enviar el documento; la sala no necesita permiso sobre Clientes', icono: 'Mail', hasApprove: false, hasScope: true },
-            { key: 'dash_bitacoras',      label: 'Widget: Bitácoras de mi sala', desc: 'Las lecturas de temperatura y humedad que están abiertas ahora mismo y las que se pasaron de hora, la limpieza del turno, y cuántos renglones del libro bajo receta esperan que se les agregue el paciente y la receta', icono: 'Thermometer', hasApprove: false, hasScope: true },
+            { key: 'dash_cortes_sala',    label: 'Widget: Cortes de caja de mi sucursal', desc: 'Los cortes de caja sin confirmar en la sucursal en los últimos 7 días, con la diferencia de cada tramo. Y cómo va el mes: cuántos cuadraron, cuántos tuvieron exceso y cuántos faltante', icono: 'Wallet', hasApprove: false, hasScope: true },
+            { key: 'dash_bolsas_sala',    label: 'Widget: Bolsas de efectivo de mi sucursal', desc: 'El efectivo que espera el retiro en la sucursal y los cortes confirmados a los que todavía no se les guardó el dinero, con la alarma de la bolsa que lleva 4 días o más', icono: 'Package', hasApprove: false, hasScope: true },
+            { key: 'dash_dato_pedido',    label: 'Widget: Datos que faltan', desc: 'El dato que el portal le pide a la sucursal para terminar una venta ante el MH, con el campo para escribirlo. Hoy es el correo de un cliente contribuyente que fue rechazado. Al confirmarlo, el portal lo guarda en los datos del cliente y vuelve a enviar la factura. La sucursal no necesita permiso sobre Clientes', icono: 'Mail', hasApprove: false, hasScope: true },
+            { key: 'dash_bitacoras',      label: 'Widget: Bitácoras de mi sucursal', desc: 'Las lecturas de temperatura y humedad que están abiertas ahora mismo y las que se pasaron de hora, la limpieza del turno, y cuántos registros del libro bajo receta esperan que se les agregue el paciente y la receta', icono: 'Thermometer', hasApprove: false, hasScope: true },
             { key: 'dash_consulta_precios', label: 'Widget: Consulta de precios', desc: 'Buscar un producto y ver sus precios por presentación y lote —Regular, Público, Preferente, Mayoreo y Mayoreo Plus—, sin el costo', icono: 'Tag', hasApprove: false },
-            { key: 'dash_clientes', label: 'Widget: Clientes', desc: 'Buscar un cliente por nombre, DUI, NIT o teléfono para abrir su ficha, y crear uno nuevo sin salir del Inicio. Corregir la ficha sigue pidiendo el permiso de editar Clientes, y crear, el de crear clientes nuevos', icono: 'UserPlus', hasApprove: false },
-            { key: 'dash_reservas', label: 'Widget: Reservas de mi sala', desc: 'Los productos que los clientes apartaron desde la app Puntos Salud en la sala: apartarlos y avisar (la app avisa sola; a quien no la tiene, por WhatsApp desde el portal), marcarlos retirados o cancelarlos, y aplicar en caja el saldo a favor de un cliente de cualquier sala', icono: 'ShoppingBag', hasApprove: false, hasScope: true, sub: [
+            { key: 'dash_clientes', label: 'Widget: Clientes', desc: 'Buscar un cliente por nombre, DUI, NIT o teléfono para abrir sus datos, y crear uno nuevo sin salir del Inicio. Corregir los datos sigue pidiendo el permiso de editar Clientes, y crear, el de crear clientes nuevos', icono: 'UserPlus', hasApprove: false },
+            { key: 'dash_reservas', label: 'Widget: Reservas de mi sucursal', desc: 'Los productos que los clientes apartaron desde la app Puntos Salud en la sucursal: apartarlos y avisar (la app avisa sola; a quien no la tiene, por WhatsApp desde el portal), marcarlos retirados o cancelarlos, y aplicar en caja el saldo a favor de un cliente de cualquier sucursal', icono: 'ShoppingBag', hasApprove: false, hasScope: true, sub: [
                 // (2026-10-19) Lo pagado en línea que no se entregó queda a favor
                 // del cliente; devolverlo en DINERO es decisión de administración.
                 { key: 'dash_reservas_devolver_saldo', label: 'Devolver en dinero un saldo a favor (queda anotado quién, cuándo, cuánto y por qué)', tipo: 'cap' },
@@ -607,7 +607,7 @@ const GRUPOS_CRUDOS = [
                 // retirar se pide con días y motivo; la autoriza quien tenga esto.
                 { key: 'dash_reservas_prorroga', label: 'Autorizar o negar las prórrogas del plazo para retirar una reserva o un encargo', tipo: 'cap' },
             ]},
-            { key: 'dash_recetas_pendientes', label: 'Widget: Recetas pendientes de mi sala', desc: 'Las ventas bajo receta que todavía esperan el paciente, el médico y la foto de la receta, las más viejas primero, y el formulario para completarlas ahí mismo. Un renglón se confirma cuando se le agrega toda esa información', icono: 'Pill', hasApprove: false, hasScope: true },
+            { key: 'dash_recetas_pendientes', label: 'Widget: Recetas pendientes de mi sucursal', desc: 'Las ventas bajo receta que todavía esperan el paciente, el médico y la foto de la receta, las más viejas primero, y el formulario para completarlas ahí mismo. Un registro se confirma cuando se le agrega toda esa información', icono: 'Pill', hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el
             // widget sigue estando —la sala necesita saber cómo va— pero habla
@@ -615,10 +615,10 @@ const GRUPOS_CRUDOS = [
             // ritmo diario que hace falta y el ticket promedio. Es lo que se le
             // puede dejar puesto a una sala sin publicarle a cada quien cuánto
             // vendió el de al lado.
-            { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sala con el avance del mes, lo vendido hoy y la proyección de cierre (scope BRANCH la limita a su propia sala)', icono: 'Target', hasApprove: false, hasScope: true, sub: [
+            { key: 'dash_meta_sala',      label: 'Widget: Meta del mes',          desc: 'Ver la meta de la sucursal con el avance del mes, lo vendido hoy y la proyección de cierre. Con alcance de sucursal, sólo la propia', icono: 'Target', hasApprove: false, hasScope: true, sub: [
                 { key: 'dash_meta_sala_vista_completa', label: 'Vista completa (con los montos vendidos)', tipo: 'cap' },
             ]},
-            { key: 'dash_vendedores',     label: 'Widget: Venta por vendedor',    desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sala (scope BRANCH lo limita a su propia sala)', icono: 'Users', hasApprove: false, hasScope: true, sub: [
+            { key: 'dash_vendedores',     label: 'Widget: Venta por vendedor',    desc: 'Ranking de vendedores del mes con su ticket promedio y sus días trabajados; muestra en rojo a quien está bajo el promedio de la sucursal. Con alcance de sucursal, sólo la propia', icono: 'Users', hasApprove: false, hasScope: true, sub: [
                 { key: 'dash_vendedores_vista_completa', label: 'Vista completa (con lo vendido por cada quien)', tipo: 'cap' },
             ]},
         ],
@@ -651,7 +651,7 @@ const GRUPOS_CRUDOS = [
             // columnas, un nombre largo y una barra de control del cabezal, para
             // saber qué ancho tiene la ticketera y si imprime parejo.
             { key: 'impresion',    label: 'Prueba de impresión',    desc: 'Imprime una hoja de prueba en la ticketera para medir el ancho del rollo y verificar la alineación de las columnas', icono: 'Printer', hasApprove: false },
-            { key: 'sync_health',  label: 'Actualización de datos', desc: 'Historial de cuándo se actualizaron productos, Min/Max, compras y respaldos, y aviso cuando alguna falla', icono: 'RadioTower', hasApprove: false },
+            { key: 'sync_health',  label: 'Actualización de datos', desc: 'Historial de cuándo se actualizaron productos, Mín/Máx, compras y respaldos, y aviso cuando alguna falla', icono: 'RadioTower', hasApprove: false },
             { key: 'orphan_objects', label: 'Objetos huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icono: 'Ghost', hasApprove: false },
             // Ver a qué hora y desde dónde se conecta cada persona es dato
             // sensible: se reparte con cuidado. `can_edit` es el que cierra.

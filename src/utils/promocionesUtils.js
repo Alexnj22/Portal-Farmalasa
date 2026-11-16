@@ -307,7 +307,7 @@ export function descSalaFuera(salas, marcadas, desc) {
 export function problemasDelDescuentoDeLaPromocion(renglones, desc, { alcanceTodo = false, salas = [], marcadas = {} } = {}) {
     return [
         ...problemasDelDescuento(renglones, desc, alcanceTodo),
-        ...(descSalaFuera(salas, marcadas, desc) ? ['La sala del descuento ya no está entre las salas de la promoción.'] : []),
+        ...(descSalaFuera(salas, marcadas, desc) ? ['La sucursal del descuento ya no está entre las sucursales de la promoción.'] : []),
     ];
 }
 
@@ -321,7 +321,7 @@ export function problemasDelDescuento(renglones, valor, alcanceTodo) {
     if (!Number.isFinite(monto) || monto <= 0) l.push('El descuento tiene que ser mayor que cero.');
     if (valor.tipo === '%' && monto > 100) l.push('Un porcentaje no puede pasar de 100.');
     if (!hayFin && !valor.finPropio) l.push('Dile hasta cuándo descuenta.');
-    if (alcanceTodo && !valor.todas && !valor.branchId) l.push('Elige la sala del descuento.');
+    if (alcanceTodo && !valor.todas && !valor.branchId) l.push('Elige la sucursal del descuento.');
     return l;
 }
 
@@ -442,7 +442,7 @@ export function resumenDeSeguimiento(detalle) {
 export function vendedoresPorSala(vendedores = []) {
     const mapa = new Map();
     for (const v of vendedores) {
-        const sala = v.sala || 'Sin sala';
+        const sala = v.sala || 'Sin sucursal';
         if (!mapa.has(sala)) mapa.set(sala, { sala, gente: [], unidades: 0, bono: 0 });
         const g = mapa.get(sala);
         g.gente.push(v);
@@ -481,7 +481,7 @@ export function problemasDePromocionLaboratorio({ nombre, mes, labs, niveles, um
     const u = umbrales || {};
     const conUmbral = (salas || []).filter((s) =>
         (niveles || []).some((n) => numeroEscrito(u[`${s.id}:${n.nivel}`]) > 0));
-    if (!conUmbral.length) out.push('Ninguna sala tiene umbral: nadie podría alcanzar un nivel.');
+    if (!conUmbral.length) out.push('Ninguna sucursal tiene umbral. Nadie podría alcanzar un nivel.');
     for (const s of conUmbral) {
         let previo = null;
         for (const n of niveles) {
@@ -708,7 +708,7 @@ export function renglonesParaAgregar(promo, prods, proveedores = []) {
 
 /** Los dos tipos, dichos como los aplica la venta: el monto es POR UNIDAD. */
 export const TIPOS_DE_DESCUENTO = [
-    { value: '%', label: 'Porcentaje del renglón' },
+    { value: '%', label: 'Porcentaje del producto' },
     { value: '$', label: 'Monto por cada unidad' },
 ];
 
@@ -737,7 +737,7 @@ export function problemasAlCorregirDescuento(f, alcanceTodo) {
     if (!f.fin) l.push('Falta la fecha de fin.');
     if (f.inicio && f.fin && f.fin < f.inicio) l.push('La fecha de fin es anterior a la de inicio.');
     if (!(f.productos || []).length) l.push('Agrega al menos un producto.');
-    if (alcanceTodo && !f.todas && !f.branchId) l.push('Elige la sala.');
+    if (alcanceTodo && !f.todas && !f.branchId) l.push('Elige la sucursal.');
     return l;
 }
 
@@ -792,8 +792,8 @@ export const ofertaDesdeDescuento = (d, foto, previa) => (previa
 /** A quién le llega el resumen diario de una promoción (7:30 a. m.). Los íconos los pone cada pantalla. */
 export const OPCIONES_RESUMEN_DIARIO = [
     { key: 'no', rotulo: 'Sin avisar', detalle: 'No manda resumen.' },
-    { key: 'supervision', rotulo: 'Supervisión', detalle: 'Todas las salas.' },
-    { key: 'salas', rotulo: 'Salas', detalle: 'Cada una, lo suyo.' },
+    { key: 'supervision', rotulo: 'Quien ve Promociones', detalle: 'Todas las sucursales.' },
+    { key: 'salas', rotulo: 'Sucursales', detalle: 'Cada una, lo suyo.' },
 ];
 export const resumenElegido = (valor, key) => (key === 'no' ? !valor?.supervision && !valor?.salas : !!valor?.[key]);
 /** «Sin avisar» apaga los dos; los otros dos se prenden y apagan cada uno. */
@@ -958,7 +958,7 @@ export async function guardarPromocionNueva(p, datos) {
     if (!p.desc?.activo) return res;
     if (!res.id) {
         res.descuento = 'error';
-        res.errorDescuento = Object.assign(new Error('el portal no supo con qué número quedó la promoción, así que no se pudo ligar; créalo desde Descuentos'), { userFacing: true });
+        res.errorDescuento = Object.assign(new Error('No se pudo ligar la promoción. Créalo desde Descuentos'), { userFacing: true });
         return res;
     }
     try {

@@ -160,7 +160,7 @@ describe('csvDeMinMax', () => {
             fila(),
             fila({ product_name: 'Sin par', effective_min: 0, effective_max: 0, units_sold_6m: null }),
         ], 'Salud 1');
-        expect(headers).toEqual(['Sucursal', 'Laboratorio', 'Producto', 'Clase', 'MIN (und)', 'MAX (und)', 'Ventas 6 meses']);
+        expect(headers).toEqual(['Sucursal', 'Laboratorio', 'Producto', 'Clase', 'Mín (und)', 'Máx (und)', 'Ventas 6 meses']);
         expect(filas[0]).toEqual(['Salud 1', 'Lab B', 'Ibuprofeno', 'AX', 10, 30, 120]);
         expect(filas[1]).toEqual(['Salud 1', 'Lab B', 'Sin par', 'AX', '', '', 0]);
     });
@@ -193,8 +193,8 @@ describe('csvDeMinMax', () => {
 
     it('bodega: la alerta mira la cobertura de la RED, no sólo la de bodega', () => {
         const alerta = (extra, red = {}) => csvDeMinMax([fila(extra)], 'Bodega', true, red).filas[0][10];
-        expect(alerta({ current_stock: 0 })).toBe('SIN STOCK');
-        expect(alerta({ effective_min: 0, effective_max: 0 })).toBe('SIN MIN/MAX');
+        expect(alerta({ current_stock: 0 })).toBe('SIN EXISTENCIA');
+        expect(alerta({ effective_min: 0, effective_max: 0 })).toBe('SIN MÍN/MÁX');
         // bajo el MIN de bodega: crítico con los días de la red
         expect(alerta({ current_stock: 5 }, { P1: 15 })).toBe('CRÍTICO (20d red)');
         expect(alerta({ current_stock: 5, daily_velocity: 0 })).toBe('CRÍTICO');

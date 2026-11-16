@@ -309,8 +309,8 @@ export async function cuentaDeAcceso(employeeId, action) {
     if (error || data?.ok === false) {
         const motivo = error?.message || data?.error || 'sin respuesta';
         throw Object.assign(new Error(action === 'disable'
-            ? `La baja quedó registrada, pero no se pudo cerrar su acceso al portal (${motivo}). Avísale a soporte.`
-            : `El cambio quedó registrado, pero no se pudo reabrir su acceso al portal (${motivo}). Avísale a soporte.`), { userFacing: true });
+            ? `La baja quedó registrada, pero no se pudo cerrar su acceso al portal (${motivo}). Avisa a Soporte.`
+            : `El cambio quedó registrado, pero no se pudo reabrir su acceso al portal (${motivo}). Avisa a Soporte.`), { userFacing: true });
     }
 }
 

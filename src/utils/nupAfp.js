@@ -49,7 +49,7 @@ export function revisarNup(nup, dui) {
         if (d === n) return { ok: true, motivo: null, esElDui: true };
         return {
             ok: false, esElDui: false,
-            motivo: 'Ese número tiene forma de DUI pero no es el DUI de esta ficha. '
+            motivo: 'Ese número tiene forma de DUI pero no es el DUI de esta persona. '
                   + 'Desde enero de 2023 el NUP ES el documento de identidad de la persona.',
         };
     }

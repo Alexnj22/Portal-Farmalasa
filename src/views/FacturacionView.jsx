@@ -63,7 +63,7 @@ function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
         'No se pudo solventar',
-        'No quedó registrado. Si el problema sigue, es que tu rol no tiene permiso de edición en Facturación.',
+        'No quedó registrado. Si sigue igual, tu cargo no tiene permiso para editar en Facturación.',
         'error',
     );
 }
@@ -327,7 +327,7 @@ function BotonCopiarId({ erpId, copiado, visitado, onCopiar }) {
             onClick={onCopiar}
             disabled={!erpId}
             aria-label={copiado ? 'Copiado' : `Copiar ${erpId ? `#${erpId}` : 'el número'}`}
-            title={visitado ? 'Ya copiado — tocar de nuevo quita la marca' : 'Copiar el número interno'}
+            title={visitado ? 'Ya copiado. Tócalo otra vez para quitar la marca.' : 'Copiar el número interno'}
             className="font-mono"
         >
             {erpId ? `#${erpId}` : '—'}
@@ -418,7 +418,7 @@ const TarjetaDocumento = memo(({
                         porque es justo el caso que no se puede corregir solo. */}
                     {traeCategoria && (
                         <Badge variant={CATEGORIA_CLIENTE_VARIANTE[categoria] || 'neutral'} size="sm">
-                            {categoria || 'Sin ficha'}
+                            {categoria || 'Sin datos del cliente'}
                         </Badge>
                     )}
                     {r.tipo_pago && (
@@ -951,11 +951,11 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
                 <div className="space-y-6">
                     {isAnuladasFuzzy && searchTerm && (
                         <Notice variant="warning" icon={Search}>
-                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                            Resultados similares para &ldquo;{searchTerm}&rdquo;. No hay coincidencias exactas.
                         </Notice>
                     )}
                     <Notice variant="info" icon={Info}>
-                        Copia el número para buscar la factura en la caja. Cuando la anulación se resuelve allá, sale sola de esta lista.
+                        Copia el número para buscar la factura en la caja. Cuando se resuelva, sale sola de esta lista.
                     </Notice>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
                         const docs = Object.values(byFecha).flat();
@@ -1165,7 +1165,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         } catch (e) {
             console.error('loadData (pendiente MH):', e?.message || e);
             useToastStore.getState().showToast(
-                'No se pudo cargar la cola de Hacienda',
+                'No se pudo cargar lo pendiente del MH',
                 mensajeAmigable(e, 'Inténtalo de nuevo en un momento.'),
                 'error',
             );
@@ -1314,11 +1314,11 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         <div className="p-5 md:p-6 space-y-5">
             {/* Carril de métricas + píldora en UNA fila (§17.0). */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                <CarrilCards className="flex-1" ariaLabel="Resumen de pendientes de Hacienda">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de pendientes del MH">
                     <StatCard
                         loading={loading}
                         icon={Clock} label="Sin sello" value={filtered.length}
-                        sub={filtered.length > 0 ? 'Esperan a Hacienda' : 'Todo sellado'}
+                        sub={filtered.length > 0 ? 'Esperan al MH' : 'Todo sellado'}
                         iconBg={filtered.length > 0 ? 'bg-warning/10' : 'bg-surface-card-hover'}
                         iconCls={filtered.length > 0 ? 'text-warning-text' : 'text-content-3'}
                         valueCls={filtered.length > 0 ? 'text-warning-text' : 'text-content'}
@@ -1370,7 +1370,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                 <div className="space-y-6">
                     {isPendienteFuzzy && searchTerm && (
                         <Notice variant="warning" icon={Search}>
-                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                            Resultados similares para &ldquo;{searchTerm}&rdquo;. No hay coincidencias exactas.
                         </Notice>
                     )}
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
@@ -1430,7 +1430,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                                                         icon={ShieldCheck}
                                                                         loading={enviandoId === r.id}
                                                                         onClick={() => handleRegularizarUna(r)}
-                                                                        title="Corregir lo que haga falta y enviar este documento a Hacienda"
+                                                                        title={r.tipo_documento === 'CCF' ? 'Corregir lo que haga falta y enviar este crédito fiscal al MH' : 'Corregir lo que haga falta y enviar esta factura al MH'}
                                                                     >
                                                                         {enviandoId === r.id ? 'Enviando…' : 'Solventar'}
                                                                     </Button>
@@ -1466,7 +1466,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                     // El número del mes es el del SERVIDOR; el de la lista, lo
                     // que se está mostrando. Son dos cosas distintas y se dicen
                     // las dos (el encabezado llegó a anunciar «1000» sobre 10,770).
-                    titulo={`${(confirmadasMes ?? resolvedThisMonth.length).toLocaleString('es-SV')} confirmada${confirmadasMes === 1 ? '' : 's'} por Hacienda este mes`}
+                    titulo={`${(confirmadasMes ?? resolvedThisMonth.length).toLocaleString('es-SV')} confirmada${confirmadasMes === 1 ? '' : 's'} por el MH este mes`}
                     subtitulo={`Historial de envíos · se muestran ${resolvedDisplay.length.toLocaleString('es-SV')}`}
                     abierta={showResolved}
                     onToggle={() => setShowResolved(v => !v)}
@@ -1486,7 +1486,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                         return (
                             <FilaHistorial key={r.id} primera={i === 0}
                                 quien={resolvedBy ? (empPhotoMap[resolvedBy] || null) : null}
-                                nombre={resolvedBy} sinNombre="Recibida por Hacienda"
+                                nombre={resolvedBy} sinNombre="Recibida por el MH"
                                 cuando={r.resolution?.resolved_at}
                                 cuandoTexto={!r.resolution ? fechaLegible(r.fecha) : undefined}
                                 comentario={r.resolution?.comment}>
@@ -1752,8 +1752,8 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros,
                                                 </span>
                                                 <span className="block mt-0.5 font-normal">
                                                     {d.con_sello
-                                                        ? 'Hacienda la tiene recibida: hay que invalidarla o restituirla. Ya no cuenta como venta en el portal.'
-                                                        : 'No llegó a Hacienda. Ya no cuenta como venta en el portal.'}
+                                                        ? 'El MH la tiene recibida. Hay que invalidarla o restituirla. Ya no cuenta como venta en el portal.'
+                                                        : 'No llegó al MH. Ya no cuenta como venta en el portal.'}
                                                 </span>
                                             </Notice>
                                         ))}
@@ -2063,7 +2063,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
             console.error('handleConfirm: insert confirmation failed:', error.message);
             useToastStore.getState().showToast(
                 'No se pudo confirmar',
-                'El pago no quedó registrado. Si el problema sigue, es que tu rol no tiene permiso de edición en Facturación.',
+                'El pago no quedó registrado. Si sigue igual, tu cargo no tiene permiso para editar en Facturación.',
                 'error',
             );
             setConfirmSaving(false); return;
@@ -2180,7 +2180,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                 <div className="p-4 md:p-6 space-y-5">
                     {isNoEfectivoFuzzy && searchTerm && (
                         <Notice variant="warning" icon={Search}>
-                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                            Resultados similares para &ldquo;{searchTerm}&rdquo;. No hay coincidencias exactas.
                         </Notice>
                     )}
                     {/* ── Pagos inmediatos ── */}
@@ -2198,8 +2198,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                             notas={confirmNotes} setNotas={setConfirmNotes}
                             archivo={confirmFile} setArchivo={setConfirmFile}
                             guardando={confirmSaving} onConfirmar={handleConfirm}
-                            textoNotas="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
-                            textoArchivo="Comprobante del pago — imagen o PDF"
+                            textoNotas="Notas del pago. Ej.: referencia, últimos 4 dígitos, nombre del emisor…"
+                            textoArchivo="Comprobante del pago (imagen o PDF)"
                         />
                     ))}
 
@@ -2225,8 +2225,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                     notas={confirmNotes} setNotas={setConfirmNotes}
                                     archivo={confirmFile} setArchivo={setConfirmFile}
                                     guardando={confirmSaving} onConfirmar={handleConfirm}
-                                    textoNotas="Notas del crédito — ej: referencia, plazo acordado, responsable…"
-                                    textoArchivo="Documento del crédito — imagen o PDF"
+                                    textoNotas="Notas del crédito. Ej.: referencia, plazo acordado, responsable…"
+                                    textoArchivo="Comprobante del crédito (imagen o PDF)"
                                 />
                             ))}
                         </>
@@ -2823,7 +2823,7 @@ export default function FacturacionView() {
         // puntos suspensivos no nombra nada, y el nombre completo sigue estando
         // en el tooltip y en el panel de «Otros».
         rotulo: 'Enviar',
-        title: `Corregir lo que haga falta y enviar a Hacienda lo pendiente de ${
+        title: `Corregir lo que haga falta y enviar al MH lo pendiente de ${
             filterBranch ? (branches.find(b => String(b.id) === String(filterBranch))?.name || 'esta sucursal')
                          : 'todas las sucursales'}`,
         disabled: solventando,

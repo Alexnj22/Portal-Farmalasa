@@ -252,7 +252,7 @@ function partirPorArea(items) {
 function bandaArea(texto, n, ncols) {
     return [
         {
-            text: `${texto} — ${n} línea(s)`,
+            text: `${texto} · ${n} producto(s)`,
             colSpan: ncols, fillColor: '#4b5563', color: '#fff',
             bold: true, fontSize: 8.5, margin: [4, 4, 4, 4],
         },
@@ -415,7 +415,7 @@ function buildHojaTableCompacta(conteo, items, ciego, area = null) {
 // una la habría impreso 318 veces.
 function bloqueArea(texto, n) {
     return {
-        text: `  ${texto} — ${n} línea(s)  `,
+        text: `  ${texto} · ${n} producto(s)  `,
         fontSize: 9, bold: true, color: '#ffffff', background: '#4b5563',
         margin: [0, 0, 0, 5],
     };
@@ -528,7 +528,7 @@ export async function printHojaConteo(conteo, items, { ciego = false, compacta =
         info: { title: `Hoja de Conteo — ${conteo.branches?.name || ''}` },
         defaultStyle: { fontSize: 9 },
         content: [
-            headerBlock(conteo, `Hoja de conteo${ciego ? ' (ciego)' : ''}${compacta ? ' compacta' : ''} — ${items.length} línea(s)`),
+            headerBlock(conteo, `Hoja de conteo${ciego ? ' (ciego)' : ''}${compacta ? ' compacta' : ''} · ${items.length} producto(s)`),
             ...content,
         ],
         // «Sucursal: ____» estaba preguntando lo que el encabezado ya contesta,
@@ -591,11 +591,11 @@ function buildTotalesBlock(conteo, items) {
     // El valorizado llega null sin «Ver el valorizado» (la base no lo entrega):
     // en ese caso las dos casillas no van, en vez de imprimir un $0.00 falso.
     const celdas = [
-        { text: `${items.length} ítems`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
+        { text: `${items.length} productos`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
         // Por producto cuando el conteo lo trae sellado (2026-11-07): un renglón
         // que sólo cambió de lote no es una diferencia, y se dice aparte.
         { text: k.porProducto ? `${k.conDiferencia} producto(s) con diferencia` : `${conDiferencia} con diferencia`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
-        ...(k.renglonesReacomodo > 0 ? [{ text: `${k.renglonesReacomodo} renglón(es) sólo cambian de lote`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] }] : []),
+        ...(k.renglonesReacomodo > 0 ? [{ text: `${k.renglonesReacomodo} producto(s) sólo cambian de lote`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] }] : []),
         { text: `${noUbicados} no ubicados`, fontSize: 8, bold: true, color: '#92400e', fillColor: '#fffbeb', margin: [6, 4, 6, 4] },
         { text: `${sinContar} sin contar`, fontSize: 8, bold: true, color: '#92400e', fillColor: '#fffbeb', margin: [6, 4, 6, 4] },
     ];
@@ -623,8 +623,8 @@ function buildTotalesBlock(conteo, items) {
 function avisoParcialBlock(conteo) {
     if (!conteo.total_pendientes) return null;
     const texto = conteo.pendientes_como_cero
-        ? `Al cerrar, ${conteo.total_pendientes} renglón(es) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.`
-        : `CONTEO PARCIAL: ${conteo.total_pendientes} renglón(es) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.`;
+        ? `Al cerrar, ${conteo.total_pendientes} producto(s) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.`
+        : `CONTEO PARCIAL: ${conteo.total_pendientes} producto(s) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.`;
     return {
         margin: [0, 8, 0, 0],
         table: {
@@ -720,7 +720,7 @@ function buildAjusteSection(titulo, color, fill, items, simple = false) {
 
     return [
         {
-            text: `${titulo} — ${items.length} línea(s)`,
+            text: `${titulo} · ${items.length} producto(s)`,
             fontSize: 9.5, bold: true, color, margin: [0, 12, 0, 4],
         },
         {
@@ -750,7 +750,7 @@ function buildAjusteSection(titulo, color, fill, items, simple = false) {
 function ajusteHeaderBlock(conteo, faltantes, sobrantes) {
     const lineas = [
         { text: 'AJUSTE DE INVENTARIO', fontSize: 13, bold: true, color: '#111' },
-        { text: 'Documento para aplicar en el sistema — el portal no modifica existencias', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
+        { text: 'Documento para aplicar en el sistema. El portal no modifica existencias', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
     ];
     return {
         margin: [0, 0, 0, 6],

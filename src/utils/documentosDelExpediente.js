@@ -321,7 +321,7 @@ export const SECCIONES_DE_DOCUMENTOS = [
          * una condición de la persona con efectos legales propios. */
         id: 'siaplica',
         titulo: 'Sólo si aplica',
-        bajada: 'Dependen de la persona: aparecen cuando su ficha dice que los tiene.',
+        bajada: 'Dependen de la persona. Aparecen cuando sus datos dicen que los tiene.',
         claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD'],
     },
 ];
@@ -362,7 +362,7 @@ export const SECCIONES_DEL_PRACTICANTE = [
     {
         id: 'siaplica',
         titulo: 'Sólo si aplica',
-        bajada: 'Dependen de la persona: aparecen cuando su ficha dice que los tiene.',
+        bajada: 'Dependen de la persona. Aparecen cuando sus datos dicen que los tiene.',
         claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD'],
     },
 ];

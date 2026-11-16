@@ -37,7 +37,7 @@ export const ESTADOS = {
     // Un candidato que Administración decidió no aprobar (2026-10-19). No se le avisa: no pidió nada.
     descartado: { label: 'No aprobado', variant: 'neutral' },
 };
-export const ORIGENES = { app: 'Desde la app', sala: 'Propuesto en sala', portal: 'Administración' };
+export const ORIGENES = { app: 'Desde la app', sala: 'Propuesto en la sucursal', portal: 'Administración' };
 
 export async function fetchMayoristas() {
     return sinError(await supabase.rpc('mayoristas_listado')) ?? [];

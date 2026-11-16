@@ -54,8 +54,8 @@ export const FORMAS_DE_PAGO_COTIZACION = [
     { value: 'CHEQUE', label: 'Cheque' },
 ];
 export const TIPOS_DE_DOCUMENTO_COTIZACION = [
-    { value: 'COF', label: 'COF' },
-    { value: 'CCF', label: 'CCF' },
+    { value: 'COF', label: 'Factura' },
+    { value: 'CCF', label: 'Crédito fiscal' },
 ];
 
 /** Los niveles que el cargo puede ofrecer: hasta su `maxPriceLevel`, todos si no tiene. */

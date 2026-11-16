@@ -86,7 +86,7 @@ export function sugerenciaMinMax(row) {
 }
 
 export const FILTROS_MINMAX = [
-    { value: 'agregar',   label: 'Agregar Min/Max' },
+    { value: 'agregar',   label: 'Agregar Mín/Máx' },
     { value: 'evaluar',   label: 'Evaluar' },
     { value: 'encargo',   label: 'Posible encargo' },
     { value: 'mayorista', label: 'Mayorista' },
@@ -116,7 +116,7 @@ export function problemaDeMinMax(min, max) {
 /** El motivo que acompaña la solicitud, para quien la aprueba. */
 export function motivoDeMinMax(row) {
     const s = sugerenciaMinMax(row);
-    return `Se vende sin Min/Max (Gestión de stock): ${s.reason.toLowerCase()}, `
+    return `Se vende sin Mín/Máx (Gestión de existencias): ${s.reason.toLowerCase()}, `
         + `${Number(row.units_sold) || 0} unidades en 6 meses en ${s.months} de 6 meses.`;
 }
 
@@ -164,7 +164,7 @@ export function productosDeEnvioSugerido(grupo, despacho, bodega, porEnvio = POR
 /** El «por qué» del envío sugerido: obligatorio, el mismo para todos, editable. */
 export function notaDeEnvioSugerido(destino, bodega, nombreSala, nombreDestino) {
     return Number(destino) === Number(bodega)
-        ? `Seis meses sin venderse en ${nombreSala}, y ninguna sala vendió 3 o más.`
+        ? `Seis meses sin venderse en ${nombreSala}, y ninguna sucursal vendió 3 o más.`
         : `Seis meses sin venderse en ${nombreSala}; en ${nombreDestino} sí se vende.`;
 }
 

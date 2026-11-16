@@ -655,7 +655,7 @@ export const createEmployeeSlice = (set, get) => ({
                 ? get().employees.find(e => String(e.id) === String(absorbeA)) || null
                 : null;
             if (absorbeA && !fichaAbsorbida) {
-                throw new Error('La ficha que quieres enlazar ya no está en la lista. Recarga la pantalla y vuelve a elegirla.');
+                throw new Error('La persona que quieres enlazar ya no está en la lista. Recarga la pantalla y vuelve a elegirla.');
             }
             // El formulario marca `_fichaCargada` cuando ya leyó el sueldo, la
             // cuenta, el ISSS y el código de esa ficha. Sin eso, lo que viaja
@@ -665,7 +665,7 @@ export const createEmployeeSlice = (set, get) => ({
             // segunda llave, por si alguien llega acá por otro camino.
             if (absorbeA && formData._fichaCargada !== undefined
                 && String(formData._fichaCargada) !== String(absorbeA)) {
-                throw new Error('Todavía no se leyeron los datos de la ficha que enlazas. Espera un momento y vuelve a guardar.');
+                throw new Error('Todavía no se leen los datos de la persona que enlazas. Espera un momento y vuelve a guardar.');
             }
 
             /* Lo que no salió bien DESPUÉS de crear la ficha. Antes cada paso
@@ -953,7 +953,7 @@ export const createEmployeeSlice = (set, get) => ({
                 await guardarDatosProtegidos(newEmp.id, protegido);
             } catch (errProtegido) {
                 console.error('guardarDatosProtegidos:', errProtegido);
-                avisos.push(`No se guardaron el sueldo, la cuenta ni los documentos de identidad (${mensajeDeFallo(errProtegido)}). Complétalos editando la ficha.`);
+                avisos.push(`No se guardaron el sueldo, la cuenta ni los documentos de identidad (${mensajeDeFallo(errProtegido)}). Complétalos editando sus datos.`);
             }
             registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
             registerSkillCatalogEntries(dbPayload.additional_skills);
@@ -1029,7 +1029,7 @@ export const createEmployeeSlice = (set, get) => ({
                 const { error: errSucursales } = await insertEmployeeBranches(
                     assignedBranches.map(branch_id => ({ employee_id: newEmp.id, branch_id }))
                 );
-                if (errSucursales) avisos.push(`No se guardaron las sucursales que cubre (${mensajeDeFallo(errSucursales)}). Asígnalas editando la ficha.`);
+                if (errSucursales) avisos.push(`No se guardaron las sucursales que cubre (${mensajeDeFallo(errSucursales)}). Asígnalas editando sus datos.`);
             }
 
             // ── El usuario nuevo se MUEVE, no se escribe ───────────────────
@@ -1090,17 +1090,17 @@ export const createEmployeeSlice = (set, get) => ({
                         });
                     if (authError) {
                         console.warn('Auth creation error:', authError);
-                        avisos.push(`No se pudo crear su acceso al portal (${mensajeDeFallo(authError)}). Dale una contraseña desde su ficha.`);
+                        avisos.push(`No se pudo crear su acceso al portal (${mensajeDeFallo(authError)}). Dale una contraseña desde sus datos.`);
                     } else if (!authResult?.ok) {
                         console.warn('Auth creation failed:', authResult);
-                        avisos.push(`No se pudo crear su acceso al portal (${authResult?.details || authResult?.error || 'sin motivo'}). Dale una contraseña desde su ficha.`);
+                        avisos.push(`No se pudo crear su acceso al portal (${authResult?.details || authResult?.error || 'sin motivo'}). Dale una contraseña desde sus datos.`);
                     } else {
                         tempPassword = authResult.tempPassword || null;
                         contrasenaConservada = authResult.conservada === true;
                     }
                 } catch (authErr) {
                     console.warn('No se pudo crear usuario Auth:', authErr);
-                    avisos.push(`No se pudo crear su acceso al portal (${mensajeDeFallo(authErr)}). Dale una contraseña desde su ficha.`);
+                    avisos.push(`No se pudo crear su acceso al portal (${mensajeDeFallo(authErr)}). Dale una contraseña desde sus datos.`);
                 }
             }
 
@@ -1110,14 +1110,14 @@ export const createEmployeeSlice = (set, get) => ({
             // sin esta línea la absorción sería indistinguible de una edición.
             await get().appendAuditLog(absorbeA ? 'PERSONAL_ENLAZADO' : 'PERSONAL_ASIGNADO', newEmp.id, {
                 timeline_title: absorbeA
-                    ? `Expediente enlazado: ${fichaAbsorbida.name} → ${newEmp.name}`
+                    ? `Datos enlazados: ${fichaAbsorbida.name} → ${newEmp.name}`
                     : `Nuevo Ingreso: ${newEmp.name}`,
                 dimension: 'HR',
                 branch_id: newEmp.branch_id,
                 old_value: absorbeA ? `${fichaAbsorbida.name}${fichaAbsorbida.code ? ` · ${fichaAbsorbida.code}` : ''}` : undefined,
                 new_value: absorbeA
-                    ? 'Expediente rehecho sobre la ficha existente — historial conservado'
-                    : 'Expediente creado'
+                    ? 'Datos rehechos sobre la persona existente. Se conserva el historial.'
+                    : 'Datos creados'
             });
             await anotarCambiosDelDui(get, newEmp.id, newEmp.name, newEmp.branch_id, formData);
             
@@ -1425,7 +1425,7 @@ export const createEmployeeSlice = (set, get) => ({
                 );
                 if (errRenombre || !res?.ok) {
                     throw new Error(res?.details || res?.error || errRenombre?.message
-                        || 'No se pudo cambiar el usuario de acceso. La ficha no se guardó.');
+                        || 'No se pudo cambiar el usuario de acceso. Los datos no se guardaron.');
                 }
             }
 
@@ -1553,7 +1553,7 @@ export const createEmployeeSlice = (set, get) => ({
                 return { employees: next };
             });
             if (errSalas) {
-                throw Object.assign(new Error(`La ficha se guardó, pero sus sucursales adicionales no: ${errSalas.message}. Vuelve a guardarlas.`), { userFacing: true });
+                throw Object.assign(new Error(`Los datos se guardaron, pero sus sucursales adicionales no: ${errSalas.message}. Vuelve a guardarlas.`), { userFacing: true });
             }
             return true;
         } catch (err) {

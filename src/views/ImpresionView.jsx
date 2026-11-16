@@ -144,10 +144,10 @@ const ImpresionView = () => {
         <GlassViewLayout icon={Printer} title="Prueba de impresión">
             <div className="p-4 md:p-6 space-y-4">
                 <Notice variant="info" icon={Ruler}>
-                    Imprime esta hoja en la ticketera y mira cuatro cosas: cuál es el renglón más
-                    largo de la regla que NO se parte en dos (ese es el ancho real), si el nombre
-                    largo se acomoda sin correr los precios, si la columna de la derecha queda
-                    alineada, y si la barra negra sale pareja de un extremo al otro.
+                    Imprime esta hoja en la ticketera y revisa cuatro cosas. La fila más larga de la
+                    regla que no se parte en dos es el ancho real. El nombre largo no corre los precios.
+                    La columna de la derecha sale alineada. La barra negra sale pareja de un extremo
+                    al otro.
                 </Notice>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -188,9 +188,9 @@ const ImpresionView = () => {
                                         </div>
                                     ))}
                                     <p className="text-caption text-content-3 pt-1 leading-snug">
-                                        «Contesta» significa que hay algo escuchando ahí, no que esté bien
-                                        configurado. Si <strong>ninguna</strong> contesta, o el navegador está
-                                        bloqueando la red local de este equipo, o no hay nada instalado.
+                                        «Contesta» quiere decir que hay algo escuchando. Puede faltar
+                                        configurarlo. Si <strong>ninguna</strong> contesta, el navegador bloquea
+                                        la red local de este equipo o no hay nada instalado.
                                         {chequeo.permiso && (
                                             <> Permiso de red local: <strong>{
                                                 { granted: 'concedido', denied: 'bloqueado', prompt: 'sin decidir' }[chequeo.permiso]
@@ -208,9 +208,9 @@ const ImpresionView = () => {
                             ahí se elige una hoja, sale en hoja. */}
                         <Tarjeta titulo="Imprimir el ticket">
                             <p className="text-body text-content-2 leading-snug">
-                                Sale directo por la ticketera de esta computadora, sin abrir ninguna
-                                ventana y sin preguntar el papel. Funciona en las computadoras de las
-                                salas, que son las que tienen la ticketera conectada.
+                                Sale directo por la ticketera de esta computadora, sin abrir ventanas
+                                ni preguntar el papel. Funciona en las computadoras de las sucursales
+                                con ticketera conectada.
                             </p>
                             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                                 <div>
@@ -221,7 +221,7 @@ const ImpresionView = () => {
                                         value={sistema}
                                         onChange={(v) => cambiarAjuste({ sistema: v })}
                                         options={[
-                                            { value: 'linux', label: 'Linux (las salas)' },
+                                            { value: 'linux', label: 'Linux (las sucursales)' },
                                             { value: 'windows', label: 'Windows' },
                                         ]}
                                         clearable={false}
@@ -235,10 +235,9 @@ const ImpresionView = () => {
                             </div>
                             <p className="text-caption text-content-3 mt-2 leading-snug">
                                 Ábrelo en el <strong>mismo navegador</strong> donde ya se imprimen los
-                                tickets en esa computadora: el permiso para hablarle a la impresora se
-                                da por navegador y por sitio, así que uno distinto empieza sin él.
-                                Y la computadora no devuelve si la impresión salió bien — sólo si
-                                recibió el pedido. La prueba de verdad es el papel.
+                                tickets en esa computadora. Otro navegador no tiene permiso para usar
+                                la impresora. La computadora solo avisa que recibió el pedido. La prueba
+                                de verdad es el papel.
                             </p>
                         </Tarjeta>
 
@@ -253,7 +252,7 @@ const ImpresionView = () => {
                                             className="underline font-bold">
                                             {resultado.direccion}
                                         </a>
-                                        {' '}— ábrela en una pestaña de esta misma computadora para ver
+                                        . Ábrela en una pestaña de esta misma computadora para ver
                                         si el programa responde.
                                     </span>
                                 )}
@@ -268,21 +267,20 @@ const ImpresionView = () => {
                         {/* Las cajas de las salas: lo que hace que un documento
                             mandado desde el teléfono o desde la oficina salga
                             impreso DONDE tiene que salir. */}
-                        <Tarjeta titulo="Cajas de las salas">
+                        <Tarjeta titulo="Cajas de las sucursales">
                             <p className="text-body text-content-2 leading-snug mb-3">
-                                Una caja registrada imprime lo que se le manda desde cualquier
-                                lado — el teléfono incluido. Sin ninguna registrada, sólo sale
-                                papel en la computadora que tenga la ticketera conectada.
+                                Una caja registrada imprime lo que se le manda desde cualquier lugar,
+                                también desde el teléfono. Si no hay ninguna registrada, solo imprime
+                                la computadora que tiene la ticketera conectada.
                             </p>
                             <CajasDeImpresion puedeEditar={puedeRegistrarCaja} />
                         </Tarjeta>
 
                         <Tarjeta titulo="Si no hay impresión directa">
                             <p className="text-body text-content-2 leading-snug">
-                                Este camino abre el diálogo del navegador, así que sirve desde
-                                cualquier computadora o desde el teléfono. Ojo: ahí <strong>hay que
-                                elegir la ticketera y su papel</strong> — si queda seleccionada una
-                                impresora de hoja, el ticket sale en hoja.
+                                Esto abre el diálogo del navegador. Sirve desde cualquier computadora
+                                o desde el teléfono. Ahí <strong>elige la ticketera y su papel</strong>.
+                                Si queda elegida una impresora de hoja, el ticket sale en hoja.
                             </p>
                             <div className="mt-3 flex flex-wrap items-end gap-2">
                                 <div className="min-w-[220px] flex-1">

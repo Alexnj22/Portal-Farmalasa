@@ -66,6 +66,7 @@ export const CONTEO_INVENTARIO = {
     'agregarProductoManualConteo', 'finalizarConteoInventario', 'aprobarConteoInventario', 'fetchConteoCaja',
     'fetchConteoCajaPlan', 'fetchReguladosSinLote', 'reintentarConteoCaja', 'marcarAjusteErp',
     'fetchTodosLosItemsConteo', 'anotarLotesRealesConteo', 'anotarLoteEnLineaConteo',
+    'fetchConteoPagina', 'fetchLotesConocidosDelProducto',
   ],
 };
 

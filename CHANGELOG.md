@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1556.4 — Conteo en la app: vuelve a cargar
+
+La v2.1556.2 dejó el conteo de la app sin cargar: «undefined is not a function / No se pudo cargar el conteo».
+
+La parte del conteo en el núcleo se carga diferida, y la tienda sólo expone las acciones que están en la lista `CONTEO_INVENTARIO` de `src/store/porcionesDiferidas.js`. Faltaban `fetchConteoPagina`, que es la página en un viaje, y `fetchLotesConocidosDelProducto`, que son los lotes ya registrados de «Corregir lote». La segunda fallaba en silencio: la hoja salía sin sugerencias. `tests/unit/porcionesDiferidas.test.js` lo detecta; no se corrió antes de publicar.
+
+- Las dos acciones están en la lista.
+
 ## v2.1556.3 — Lenguaje: rótulos guardados
 
 - Rótulos que viven a la vez en el frente y en la base, cambiados juntos:

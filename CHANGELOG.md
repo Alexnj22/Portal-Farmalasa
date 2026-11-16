@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.10 — Conteo en la app: un producto que sólo está en vencidos ya no se queda cargando
+
+En Bodega, KISS CHOCOLATE se quedaba con la rueda de carga. Sólo tiene lotes en el área de vencidos, y la lista lo pedía antes de saber que el conteo tiene esa área: traía productos de los dos estantes y lotes de uno solo.
+
+- La lista espera a saber si hay área de vencidos y pide productos y lotes del mismo estante.
+- Si un producto no tiene lotes en el estante que estás viendo, lo dice en lugar de quedarse cargando.
+
 ## v2.1554.9 — Lenguaje: lo que quedó entre módulos
 
 - Barrido final de la revisión del lenguaje: 44 archivos que quedaron entre

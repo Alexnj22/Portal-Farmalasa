@@ -206,11 +206,17 @@ export default function Conteo() {
   const pedido = useRef(0);
   // Si el conteo tiene área de vencidos, la lista se pide por estante.
   const hayVencidosRef = useRef(false);
+  // La lista espera a saber si hay área de vencidos: sin esto pedía los
+  // productos de los dos estantes y los renglones de uno solo, y un producto
+  // que sólo está en vencidos (KISS en Bodega) se quedaba cargando.
+  const listoRef = useRef(null);
+  if (!listoRef.current) { let soltar; listoRef.current = { promesa: new Promise((r) => { soltar = r; }), soltar: () => soltar() }; }
 
   const cargarConteo = useCallback(async () => {
     const [c, r] = await Promise.all([fetchConteoDetalle(id).catch(() => null), fetchConteoResumen(id).catch(() => null)]);
     setConteo(c); setResumen(r);
     hayVencidosRef.current = (r?.productos_vencidos ?? 0) > 0;
+    listoRef.current.soltar();
   }, [id, fetchConteoDetalle, fetchConteoResumen]);
   useEffect(() => { cargarConteo(); }, [cargarConteo]);
 
@@ -247,16 +253,21 @@ export default function Conteo() {
     setCargando(true);
     try {
       const [orderBy, orderDir] = orden ? orden.split(':') : [null, 'asc'];
+      await listoRef.current.promesa;
+      if (yo !== pedido.current) return;
+      const estante = hayVencidosRef.current ? area : null;
       const r = await fetchConteoProductsPage(id, { page: pagina, pageSize: POR_PAGINA, search: busqueda, filtro, laboratorioId: laboratorioId === 'todos' ? null : Number(laboratorioId),
-        area: hayVencidosRef.current ? area : null, orderBy, orderDir });
+        area: estante, orderBy, orderDir });
       if (yo !== pedido.current) return;
       setProductos((p) => ({ filas: pagina === 1 ? r.rows : [...p.filas, ...r.rows], total: r.total, aproximado: r.aproximado }));
       // Los renglones de toda la página, en un viaje: ningún producto se abre
       // a mano (era un toque por producto antes de poder teclear).
       const ids = r.rows.map((x) => x.erp_product_id);
-      const lineas = ids.length ? await fetchConteoItemsForProducts(id, ids, { area: hayVencidosRef.current ? area : null }) : [];
+      const lineas = ids.length ? await fetchConteoItemsForProducts(id, ids, { area: estante }) : [];
       if (yo !== pedido.current) return;
-      const porProducto = {};
+      // Todo producto de la página queda con su lista, aunque venga vacía:
+      // un hueco aquí es una rueda que gira para siempre.
+      const porProducto = Object.fromEntries(ids.map((x) => [x, []]));
       for (const it of lineas) (porProducto[it.erp_product_id] ||= []).push(it);
       setItems((m) => (pagina === 1 ? porProducto : { ...m, ...porProducto }));
     } catch (e) {
@@ -641,6 +652,7 @@ export default function Conteo() {
                   </View>
                   <View style={{ paddingHorizontal: 14, paddingBottom: 6 }}>
                     {!items[p.erp_product_id] ? <Indicador style={{ marginVertical: 10 }} />
+                      : !items[p.erp_product_id].length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, paddingVertical: 10 }}>Sin lotes en este estante.</Text>
                       : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} aCiegas={recuento} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
                         registrar={registrar} onSiguiente={siguienteCampo} onEnfocar={enfocar}
                         // En un conteo que ajusta, el lote de un renglón del sistema no se

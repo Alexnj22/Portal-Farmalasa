@@ -68,7 +68,7 @@ export default function TabRentabilidad({ searchTerm = '' }) {
         <div className="p-5 md:p-6 space-y-4">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <Notice variant="info" icon={TrendingDown}>
-                Productos cuya viñeta deja menos de 15 % sobre el costo, o cuyo margen bajó 5 puntos o más en el período.
+                Productos con una viñeta que deja menos de 15 % sobre el costo. También los que bajaron 5 puntos o más de margen en el período.
                 «Sugerida» es la viñeta que recupera el margen de antes. El historial de costos empieza el 13-ago-2026.
                 {filas && <> Hoy: <b>{cuenta.perdida}</b> en pérdida · <b>{cuenta.bajo}</b> con margen bajo · <b>{cuenta.bajo5}</b> que bajaron.</>}
             </Notice>

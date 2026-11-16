@@ -33,7 +33,7 @@ export default function EstadoHacienda({ documento, ocupado = null, puedeActuar 
                 </div>
                 {puedeActuar && r.accion === 'reenviar' && onReenviar && (
                     <Button size="sm" variant="primary" icon={ocupado === 'reintentar' ? Loader2 : RefreshCw} disabled={!!ocupado} onClick={onReenviar}>
-                        Reenviar a Hacienda
+                        Reenviar al MH
                     </Button>
                 )}
                 {puedeActuar && r.accion === 'contingencia' && onContingencia && (
@@ -69,7 +69,7 @@ export default function EstadoHacienda({ documento, ocupado = null, puedeActuar 
             </ul>
             {obs.length > 0 && (
                 <div data-surface="card" className="px-3 py-2">
-                    <p className="text-caption font-bold text-content-2">Lo que dice Hacienda{documento.descripcion_msg ? ` · ${documento.descripcion_msg}` : ''}</p>
+                    <p className="text-caption font-bold text-content-2">Lo que dice el MH{documento.descripcion_msg ? ` · ${documento.descripcion_msg}` : ''}</p>
                     <ul className="list-disc pl-4 text-caption text-content-2 space-y-0.5">
                         {obs.map((o, i) => <li key={i}>{o}</li>)}
                     </ul>

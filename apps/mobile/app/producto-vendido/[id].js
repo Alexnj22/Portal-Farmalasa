@@ -115,7 +115,7 @@ export default function ProductoVendido() {
         <View style={{ gap: 4, marginHorizontal: 4 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{nombre}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-            {[sala ? nombreDeSala(sala) : 'Todas las salas', `${fechaTexto(fini, { day: 'numeric', month: 'short' })} – ${fechaTexto(ffin, { day: 'numeric', month: 'short' })}`].join(' · ')}
+            {[sala ? nombreDeSala(sala) : 'Todas las sucursales', `${fechaTexto(fini, { day: 'numeric', month: 'short' })} – ${fechaTexto(ffin, { day: 'numeric', month: 'short' })}`].join(' · ')}
           </Text>
         </View>
         {error ? <Aviso tono="freno" texto={error} /> : null}
@@ -136,7 +136,7 @@ export default function ProductoVendido() {
           </Seccion>
         ) : null}
         {!sala && salas.length > 1 ? (
-          <Seccion titulo="Por sala">
+          <Seccion titulo="Por sucursal">
             {salas.map((s) => (
               <Barra key={s.branch_id} rotulo={nombreDeSala(s.branch_id)} valor={formatMoney(s.neto, { decimales: 0 })}
                 apoyo={`${Number(s.cantidad_base || 0).toLocaleString('es-SV')} u.`} parte={parseFloat(s.neto || 0) / totalSalas} />

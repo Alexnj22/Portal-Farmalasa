@@ -51,7 +51,7 @@ function Parametros({ puede }) {
       if (error) throw error;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setOrig({ ...orig, ...payload });
-      listo('Configuración guardada', 'Recalcula las salas para aplicarla.');
+      listo('Configuración guardada', 'Recalcula las sucursales para aplicarla.');
     } catch (e) { fallo('No se pudo guardar', mensajeAmigable(e)); } finally { setGuardando(false); }
   };
   const guardar = () => {
@@ -59,15 +59,15 @@ function Parametros({ puede }) {
     const cambios = SECCIONES_CONFIG_MINMAX.flatMap((s) => s.campos).filter((c) => Number(form[c.k]) !== Number(orig[c.k]))
       .map((c) => `${c.label}: ${orig[c.k]} → ${form[c.k]}`).join('\n');
     Alert.alert(todo ? '⚠️ Esto reescribe TODO el catálogo' : 'Guardar la configuración',
-      `${todo ? 'El reorden es el mismo para todos los productos: este cambio reescribe el MIN·MAX de TODOS los productos, en TODAS las salas, en el próximo cálculo. No se deshace solo.\n\n' : ''}${cambios}`,
+      `${todo ? 'Este cambio reescribe el Mín/Máx de TODOS los productos en TODAS las sucursales en el próximo cálculo. No se deshace solo.\n\n' : ''}${cambios}`,
       [{ text: 'Cancelar', style: 'cancel' }, { text: todo ? 'Sí, reescribir el catálogo' : 'Guardar', style: todo ? 'destructive' : 'default', onPress: todo
-        ? () => Alert.alert('¿Seguro?', 'Confirma otra vez: el MIN·MAX de todo el catálogo va a cambiar.', [{ text: 'No', style: 'cancel' }, { text: 'Sí, guardar', style: 'destructive', onPress: escribir }])
+        ? () => Alert.alert('¿Seguro?', 'Confirma otra vez. El Mín/Máx de todo el catálogo va a cambiar.', [{ text: 'No', style: 'cancel' }, { text: 'Sí, guardar', style: 'destructive', onPress: escribir }])
         : escribir }]);
   };
 
   return (
     <View style={{ gap: 16, marginHorizontal: 16 }}>
-      <Aviso tono="cuidado" texto="Estos números valen para todo el catálogo y todas las salas: el MIN·MAX de cada producto se recalcula con ellos." />
+      <Aviso tono="cuidado" texto="Estos números valen para todo el catálogo y todas las sucursales. El Mín/Máx de cada producto se recalcula con ellos." />
       {SECCIONES_CONFIG_MINMAX.map((s) => (
         <Seccion key={s.titulo} titulo={s.titulo} pie={s.nota ?? null}>
           {s.campos.map((c, i) => (
@@ -81,7 +81,7 @@ function Parametros({ puede }) {
         </Seccion>
       ))}
       {cambio && motivo ? <Aviso tono="freno" texto={motivo} /> : null}
-      {puede ? <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.rojo} deshabilitado={guardando || !cambio || !!motivo} onPress={guardar} /> : <Aviso texto="Cambiar la configuración pide Mín·Máx con alcance de toda la red." />}
+      {puede ? <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.rojo} deshabilitado={guardando || !cambio || !!motivo} onPress={guardar} /> : <Aviso texto="Solo quien tiene Mín/Máx para todas las sucursales puede cambiar la configuración." />}
     </View>
   );
 }
@@ -102,21 +102,21 @@ function Laboratorios({ puede }) {
   const ocultos = labs.filter((l) => l.ocultar_en_minmax).length;
   const alternar = (lab) => {
     const ocultar = !lab.ocultar_en_minmax;
-    Alert.alert(ocultar ? 'Ocultar de Mín·Máx' : 'Mostrar en Mín·Máx', `${lab.nombre}${ocultar ? ': sus productos dejan de verse en Mín·Máx.' : ': sus productos vuelven a verse, también los ocultos uno por uno.'}`, [
+    Alert.alert(ocultar ? 'Ocultar de Mín/Máx' : 'Mostrar en Mín/Máx', `${lab.nombre}${ocultar ? ': sus productos dejan de verse en Mín/Máx.' : ': sus productos vuelven a verse, también los ocultos uno por uno.'}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: ocultar ? 'Ocultar' : 'Mostrar', onPress: async () => {
         setOcupado(lab.id);
         const { error, errorDesocultar } = await cambiarVisibilidadLaboratorioMinMax(lab.id, ocultar, { lab: lab.nombre, desde: 'app' });
         setOcupado(null);
         if (error) { fallo('No se pudo', mensajeAmigable(error)); return; }
-        if (errorDesocultar) fallo('A medias', `Algunos productos no se pudieron desocultar: ${errorDesocultar.message}`);
+        if (errorDesocultar) fallo('A medias', `Algunos productos no se pudieron volver a mostrar: ${errorDesocultar.message}`);
         setLabs((ls) => ls.map((l) => (l.id === lab.id ? { ...l, ocultar_en_minmax: ocultar } : l)));
       } },
     ]);
   };
   return (
     <View style={{ gap: 12, marginHorizontal: 16 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>{`${ocultos} de ${labs.length} laboratorios ocultos en Mín·Máx`}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>{`${ocultos} de ${labs.length} laboratorios ocultos en Mín/Máx`}</Text>
       <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar laboratorio" />
       <Seccion>
         {visibles.map((l, i) => (
@@ -139,7 +139,7 @@ export default function ConfiguracionMinMax() {
   const [vista, setVista] = useState('parametros');
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Configuración Mín·Máx', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Configuración de Mín/Máx', headerLargeTitle: false }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'parametros', label: 'Parámetros' }, { id: 'labs', label: 'Laboratorios' }]} />

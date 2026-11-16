@@ -216,13 +216,13 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                             ))}
                         </div>
                         {saldo > Number(cr.limite ?? 0) && (
-                            <Notice variant="warning" compact>Debe más que su límite de crédito: no se le puede vender a crédito hasta que abone.</Notice>
+                            <Notice variant="warning" compact>Debe más que su límite de crédito. No se le puede vender a crédito hasta que abone.</Notice>
                         )}
 
                         {/* ── Cuentas abiertas: qué documento, cuánto y cuánto le toca de este cobro ── */}
                         <div data-surface="card" className="overflow-hidden">
                             <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-divider">
-                                <p className="text-micro font-black uppercase tracking-widest text-content-3">{abiertas.length} documento{abiertas.length === 1 ? '' : 's'} por cobrar</p>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3">{abiertas.length} factura{abiertas.length === 1 ? '' : 's'} por cobrar</p>
                                 {puedeCobrar && abiertas.length > 1 && (
                                     <Button size="sm" variant="ghost" icon={SlidersHorizontal} onClick={() => { setAMano(v => !v); setManual({}); }}>
                                         {aMano ? 'Repartir automático' : 'Repartir a mano'}
@@ -393,7 +393,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                                     {r.anulado_at && <Badge size="sm" variant="neutral" uppercase={false} className="ml-2">Anulado</Badge>}
                                                 </p>
                                                 <p className="text-caption text-content-3">
-                                                    {fechaHora12(r.created_at)} · {shortEmployeeName(r.recibido_por) || '—'} · {(r.abonos ?? []).length} documento{(r.abonos ?? []).length === 1 ? '' : 's'}
+                                                    {fechaHora12(r.created_at)} · {shortEmployeeName(r.recibido_por) || '—'} · {(r.abonos ?? []).length} factura{(r.abonos ?? []).length === 1 ? '' : 's'}
                                                     {r.anulado_at ? ` · ${r.anulado_motivo}` : ''}
                                                 </p>
                                             </div>

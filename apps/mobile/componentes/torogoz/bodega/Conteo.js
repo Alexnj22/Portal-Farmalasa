@@ -53,7 +53,7 @@ function Renglon({ it, veSistema, abierto, onContar }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
             {`Lote ${it.lote}${it.vence ? ` · vence ${fechaNumerica(it.vence)}` : ''}${it.contado_por ? ` · contó ${shortEmployeeName(it.contado_por)}` : ''}`}
           </Text>
-          {veSistema && it.sistema != null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Sistema ${formatQty(it.sistema)}`}</Text> : null}
+          {veSistema && it.sistema != null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Existencia ${formatQty(it.sistema)}`}</Text> : null}
         </View>
         <View style={{ alignItems: 'flex-end', gap: 4 }}>
           {it.contado != null
@@ -142,7 +142,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
   const audit = (accion, id, det) => useStaffStore.getState().appendAuditLog?.(accion, String(id), { ...det, desde: 'app' });
 
   const iniciar = () => correr({
-    clave: 'iniciar', titulo: '¿Iniciar el conteo?', mensaje: 'Se congela lo que dice el sistema de cada lote y se cuenta a ciegas.', boton: 'Iniciar',
+    clave: 'iniciar', titulo: '¿Iniciar el conteo?', mensaje: 'Se guarda la existencia de cada lote y se cuenta sin verla.', boton: 'Iniciar',
     fn: () => iniciarConteo(null, nota.trim()),
     ok: (id) => { audit('DISTRIBUCION_CONTEO_INICIADO', id, { nota: nota.trim() }); setNota(''); listo('Conteo iniciado'); },
   });
@@ -163,19 +163,19 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
     ok: () => { audit('DISTRIBUCION_CONTEO_ANULADO', conteo.id, { motivo: nota.trim() }); setNota(''); listo('Conteo anulado'); },
   });
   const aprobarBaja = (b) => correr({
-    clave: `res-${b.id}`, titulo: '¿Aprobar la baja?', mensaje: `${b.products?.nombre} · lote ${b.dist_lotes?.lote} · ${b.unidades} u. Sale del lote.`, boton: 'Aprobar baja', destructivo: true,
+    clave: `res-${b.id}`, titulo: '¿Aprobar el descarte?', mensaje: `${b.products?.nombre} · lote ${b.dist_lotes?.lote} · ${b.unidades} u. Sale del lote.`, boton: 'Aprobar descarte', destructivo: true,
     fn: () => resolverBaja(b.id, true, ''),
-    ok: () => { audit('DISTRIBUCION_BAJA_APROBADA', b.id, { unidades: b.unidades }); listo('Baja aprobada'); },
+    ok: () => { audit('DISTRIBUCION_BAJA_APROBADA', b.id, { unidades: b.unidades }); listo('Descarte aprobado'); },
   });
   const rechazarBaja = async (b) => {
-    const motivo = await pedirTexto('Rechazar la baja', `${b.products?.nombre} · ${b.unidades} u. Escribe por qué (obligatorio).`, 'Rechazar');
+    const motivo = await pedirTexto('Rechazar el descarte', `${b.products?.nombre} · ${b.unidades} u. Escribe por qué (obligatorio).`, 'Rechazar');
     if (motivo == null) return;
-    if (!motivo.trim()) { fallo('Falta el motivo', 'Para rechazar hay que decir por qué.'); return; }
+    if (!motivo.trim()) { fallo('Falta el motivo', 'Escribe por qué lo rechazas.'); return; }
     setOcupado(`res-${b.id}`);
     try {
       await resolverBaja(b.id, false, motivo.trim());
       audit('DISTRIBUCION_BAJA_RECHAZADA', b.id, { unidades: b.unidades });
-      listo('Baja rechazada');
+      listo('Descarte rechazado');
       await cargar();
     } catch (e) { fallo('No se pudo', mensajeDeDistribucion(e)); } finally { setOcupado(''); }
   };
@@ -194,7 +194,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
       <FilaDeKpis>
         <Kpi icono="ClipboardCheck" rotulo="Conteo" color={PETROLEO} valor={conteo ? `${formatQty(dif.contados)} / ${formatQty(dif.total)}` : 'Sin abrir'}
           apoyo={conteo ? 'lotes contados' : 'Nadie está contando'} />
-        <Kpi icono="PackageMinus" rotulo="Bajas por aprobar" color={MARCA.rojo} valor={formatQty(pendientes.length)} pide={pendientes.length > 0}
+        <Kpi icono="PackageMinus" rotulo="Descartes por aprobar" color={MARCA.rojo} valor={formatQty(pendientes.length)} pide={pendientes.length > 0}
           apoyo={`aprobadas: ${formatMoney(valorDeBajas(bajas))}`} />
       </FilaDeKpis>
       {conteo?.ve_sistema ? (
@@ -211,9 +211,9 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
               <Campo multiline={false} value={nota} onChangeText={setNota} placeholder="Nota (opcional): conteo de fin de mes" />
               <BotonGrande texto={ocupado === 'iniciar' ? 'Iniciando…' : 'Iniciar conteo'} color={PETROLEO} onPress={iniciar} deshabilitado={!!ocupado} />
             </>
-          ) : <Aviso texto="No hay conteo abierto. Lo inicia quien administra." />) : (
+          ) : <Aviso texto="No hay conteo abierto. Lo inicia un administrador." />) : (
             <>
-              {!conteo.ve_sistema ? <Aviso texto="Cuenta lo que hay en cada lote. No se muestra lo que dice el sistema, a propósito." /> : null}
+              {!conteo.ve_sistema ? <Aviso texto="Cuenta lo que hay en cada lote." /> : null}
               <Aviso texto={(puedeVender || puedeConfigurar) ? 'Toca un lote para anotar lo contado, o escanea la caja con el botón de arriba.' : 'Sólo lectura.'} />
             </>
           )}
@@ -248,13 +248,13 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
         </View>
       ) : null}
 
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 32, marginTop: 8 }}>Bajas</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 32, marginTop: 8 }}>Descartes</Text>
       {(puedeVender || puedeConfigurar) ? (
         <View style={{ marginHorizontal: 16 }}>
-          <BotonGrande borde texto="Pedir una baja" color={MARCA.rojo} onPress={() => setPidiendoBaja(true)} deshabilitado={!lotes.length} />
+          <BotonGrande borde texto="Pedir un descarte" color={MARCA.rojo} onPress={() => setPidiendoBaja(true)} deshabilitado={!lotes.length} />
         </View>
       ) : null}
-      {bajas.length === 0 ? <Vacio enSeccion>Sin bajas.</Vacio> : bajas.slice(0, 20).map((b) => (
+      {bajas.length === 0 ? <Vacio enSeccion>Sin descartes.</Vacio> : bajas.slice(0, 20).map((b) => (
         <Ficha key={b.id}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{b.products?.nombre}</Text>
@@ -270,7 +270,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
                 <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>Rechazar</Text>
               </Pressable>
               <Pressable disabled={!!ocupado} onPress={() => aprobarBaja(b)} style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 22, backgroundColor: MARCA.rojo, alignItems: 'center', justifyContent: 'center', opacity: pressed || ocupado ? 0.6 : 1 })}>
-                {ocupado === `res-${b.id}` ? <Indicador color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Aprobar baja</Text>}
+                {ocupado === `res-${b.id}` ? <Indicador color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Aprobar descarte</Text>}
               </Pressable>
             </View>
           ) : null}

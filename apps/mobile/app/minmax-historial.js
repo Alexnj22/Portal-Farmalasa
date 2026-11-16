@@ -115,7 +115,7 @@ export default function MinMaxHistorial() {
     const meta = HISTORIAL_MINMAX_META[log.action] || { label: log.action, variante: 'neutral' };
     const persona = quienEs(datos.indice, log.user_id, log.user_name);
     const sol = d.request_id ? datos.sols.find((s) => s.id === d.request_id) : null;
-    const salaTxt = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas las salas' : (ERP_NAMES[d.sucursal_id] || '');
+    const salaTxt = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas las sucursales' : (ERP_NAMES[d.sucursal_id] || '');
     const fmt = (v) => (v == null ? '—' : String(v));
     const vigenteId = datos.fila?.ajuste_solicitud_id;
     return (
@@ -140,8 +140,8 @@ export default function MinMaxHistorial() {
                 </Text>
               ) : (
                 <Text style={{ color: colorSistema.texto, fontSize: 14, fontVariant: ['tabular-nums'] }}>
-                  {`MIN ${d.old_min !== d.new_min ? `${fmt(d.old_min)} → ` : ''}`}<Text style={{ fontWeight: '800' }}>{fmt(d.new_min)}</Text>
-                  {`   MAX ${d.old_max !== d.new_max ? `${fmt(d.old_max)} → ` : ''}`}<Text style={{ fontWeight: '800' }}>{fmt(d.new_max)}</Text>
+                  {`Mín ${d.old_min !== d.new_min ? `${fmt(d.old_min)} → ` : ''}`}<Text style={{ fontWeight: '800' }}>{fmt(d.new_min)}</Text>
+                  {`   Máx ${d.old_max !== d.new_max ? `${fmt(d.old_max)} → ` : ''}`}<Text style={{ fontWeight: '800' }}>{fmt(d.new_max)}</Text>
                 </Text>
               )}
               {salaTxt ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginLeft: 'auto' }}>{salaTxt}</Text> : null}
@@ -160,7 +160,7 @@ export default function MinMaxHistorial() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Historial MIN·MAX' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Historial de Mín/Máx' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>

@@ -45,7 +45,7 @@ export default function DescargarCamion() {
 
   const descargar = () => {
     Alert.alert('Descargar y cerrar la carga',
-      cuenta.faltan > 0 ? `Faltan ${formatQty(cuenta.faltan)} unidades: quedan anotadas como faltante del camión.` : 'Lo contado vuelve a bodega.', [
+      cuenta.faltan > 0 ? `Faltan ${formatQty(cuenta.faltan)} unidades. Quedan anotadas como faltante del camión.` : 'Lo contado vuelve a bodega.', [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Descargar',
@@ -91,9 +91,9 @@ export default function DescargarCamion() {
                       onChangeText={(t) => setContado((c) => ({ ...c, [l.lote_id]: t.replace(/\D/g, '') }))} />
                   </View>
                 );
-              }) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>El camión volvió vacío: se cierra la carga.</Text>}
+              }) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>El camión volvió vacío. Se cierra la carga.</Text>}
             </Seccion>
-            {cuenta.faltan > 0 ? <Aviso tono="cuidado" texto={`Faltan ${formatQty(cuenta.faltan)} unidades: quedan anotadas como faltante del camión.`} /> : null}
+            {cuenta.faltan > 0 ? <Aviso tono="cuidado" texto={`Faltan ${formatQty(cuenta.faltan)} unidades. Quedan anotadas como faltante del camión.`} /> : null}
             <Seccion titulo={cuenta.faltan > 0 ? '¿Qué pasó con lo que falta?' : 'Nota (opcional)'}>
               <Campo value={nota} onChangeText={setNota} placeholder={cuenta.faltan > 0 ? 'Obligatorio con faltante' : ''} />
             </Seccion>

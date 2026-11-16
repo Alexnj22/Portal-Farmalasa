@@ -31,13 +31,13 @@ export function LotesPorVencer({ lotes, politica }) {
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
               <Text style={{ width: 52, color: a.urgente ? MARCA.rojo : MARCA.ambar, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{`${a.dias} d`}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`${formatQty(l.cantidad)} u. · ${ERP_NAMES[l.erp_sucursal_id] ?? `Sala ${l.erp_sucursal_id}`}`}</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`${formatQty(l.cantidad)} u. · ${ERP_NAMES[l.erp_sucursal_id] ?? `Sucursal ${l.erp_sucursal_id}`}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Lote ${l.lote || '—'} · vence ${fecha(l.fecha_vencimiento)}`}</Text>
               </View>
             </View>
             {a.limite ? (
               <Text style={{ marginLeft: 62, color: a.fueraDePlazo ? MARCA.rojo : colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>
-                {`${a.fueraDePlazo ? 'Fuera de plazo — el límite era el' : 'Enviar a Bodega antes del'} ${fechaTexto(a.limite, { day: '2-digit', month: 'short' })}`}
+                {`${a.fueraDePlazo ? 'Fuera de plazo. El límite era el' : 'Enviar a Bodega antes del'} ${fechaTexto(a.limite, { day: '2-digit', month: 'short' })}`}
               </Text>
             ) : null}
             {a.reportarND ? <Text style={{ marginLeft: 62, color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>ND — reportar a jefe inmediato (6-7 meses antes de vencer)</Text> : null}

@@ -135,12 +135,12 @@ function ReporteUtilidad({ buscar }) {
             {!cargando && Number(r.sin_costo) > 0 && (
                 <Notice variant="warning" icon={AlertTriangle}>
                     {formatMoney(Number(r.sin_costo))} de venta son de {formatQty(Number(r.productos_sin_costo))} productos que todavía no
-                    tienen costo (nunca entraron por una compra). No se cuentan en la utilidad: con costo cero la inflarían.
+                    tienen costo. No se cuentan en la utilidad.
                 </Notice>
             )}
             {!cargando && Number(r.estimado) > 0 && (
                 <Notice variant="info" icon={Info}>
-                    {formatMoney(Number(r.estimado))} de venta son de antes de que se guardara el costo al vender: usan el costo
+                    {formatMoney(Number(r.estimado))} de venta usan el costo
                     promedio de hoy y se marcan «estimado».
                 </Notice>
             )}
@@ -252,7 +252,7 @@ function LibroCompras({ buscar }) {
 
             {!cargando && fuera > 0 && (
                 <Notice variant="info" icon={Info}>
-                    {fuera} compra{fuera === 1 ? '' : 's'} con Factura o Sujeto excluido se listan abajo pero no entran al libro: no dan crédito fiscal.
+                    {fuera} compra{fuera === 1 ? '' : 's'} con factura o sujeto excluido se listan abajo. No entran al libro porque no dan crédito fiscal.
                 </Notice>
             )}
 
@@ -286,7 +286,7 @@ function LibroCompras({ buscar }) {
 // los libros de las farmacias (`construirLibro`).
 const COLS_CONTRIB = [
     { key: 'fecha', label: 'Fecha', align: 'left' },
-    { key: 'documento', label: 'Documento', align: 'left', className: 'w-[260px]' },
+    { key: 'documento', label: 'Cliente', align: 'left', className: 'w-[260px]' },
     { key: 'gravadas', label: 'Gravado', align: 'right', hideBelow: 'md' },
     { key: 'debito', label: 'Débito', align: 'right', hideBelow: 'sm' },
     { key: 'percibido', label: 'Percibido', align: 'right', hideBelow: 'lg' },
@@ -294,12 +294,12 @@ const COLS_CONTRIB = [
 ];
 const COLS_CONSUMIDOR = [
     { key: 'fecha', label: 'Día', align: 'left' },
-    { key: 'rango', label: 'Del — al', align: 'left', className: 'w-[300px]' },
-    { key: 'documentos', label: 'Documentos', align: 'right', hideBelow: 'sm' },
+    { key: 'rango', label: 'Números', align: 'left', className: 'w-[300px]' },
+    { key: 'documentos', label: 'Facturas', align: 'right', hideBelow: 'sm' },
     { key: 'total', label: 'Total', align: 'right' },
 ];
 const COLS_ANULADOS = [
-    { key: 'documento', label: 'Documento', align: 'left', className: 'w-[260px]' },
+    { key: 'documento', label: 'Cliente', align: 'left', className: 'w-[260px]' },
     { key: 'anulado', label: 'Anulado el', align: 'left', hideBelow: 'sm' },
     { key: 'motivo', label: 'Motivo', align: 'left', hideBelow: 'md' },
     { key: 'total', label: 'Total', align: 'right' },
@@ -349,22 +349,22 @@ function LibrosVentas({ buscar }) {
                 <CarrilCards className="flex-1" key={libro} ariaLabel={`Totales del libro: ${LIBROS_VENTAS.find(l => l.key === libro)?.label ?? ''}`}>
                     {libro === 'contribuyente' ? (<>
                             <StatCard icon={Receipt} label="Ventas gravadas" value={formatMoney(tc.gravadas)} loading={cargando}
-                                iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tc.documentos)} Créditos Fiscales${tc.notas ? ` · ${formatQty(tc.notas)} notas restan` : ''}`} />
+                                iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tc.documentos)} créditos fiscales${tc.notas ? ` · ${formatQty(tc.notas)} notas restan` : ''}`} />
                             <StatCard icon={Landmark} label="Débito fiscal" value={formatMoney(tc.debito)} loading={cargando}
                                 iconBg="bg-success/10" iconCls="text-success" sub="IVA 13 % neto de notas" />
                             <StatCard icon={Percent} label="IVA percibido" value={formatMoney(tc.percibido)} loading={cargando}
                                 iconBg="bg-warning/10" iconCls="text-warning" sub="Percepción 1 %" />
                             <StatCard icon={Percent} label="IVA retenido" value={formatMoney(tc.retenido)} loading={cargando}
-                                iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="No va en el libro: en la declaración" />
+                                iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="No va en el libro. Va en la declaración." />
                     </>) : libro === 'consumidor' ? (<>
                             <StatCard icon={Receipt} label="Ventas del mes" value={formatMoney(tf.total)} loading={cargando}
-                                iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tf.documentos)} Facturas en ${formatQty(tf.dias)} días`} />
+                                iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(tf.documentos)} facturas en ${formatQty(tf.dias)} días`} />
                             <StatCard icon={Landmark} label="IVA contenido" value={formatMoney(tf.debito)} loading={cargando}
                                 iconBg="bg-success/10" iconCls="text-success" sub="Débito fiscal de consumidor final" />
                             <StatCard icon={Receipt} label="Exentas" value={formatMoney(tf.exentas)} loading={cargando}
                                 iconBg="bg-chart-3/10" iconCls="text-chart-3" sub="Ventas exentas" />
                     </>) : (
-                        <StatCard icon={FileX2} label="Documentos anulados" value={formatQty(filas.length)} loading={cargando}
+                        <StatCard icon={FileX2} label="Facturas anuladas" value={formatQty(filas.length)} loading={cargando}
                             iconBg="bg-danger/10" iconCls="text-danger" sub="Invalidados en el mes" />
                     )}
                 </CarrilCards>
@@ -385,18 +385,18 @@ function LibrosVentas({ buscar }) {
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             {!cargando && Number(datos?.sin_sello?.documentos) > 0 && (
                 <Notice variant="warning" icon={AlertTriangle} data-testid="libro-sin-sello">
-                    {formatQty(Number(datos.sin_sello.documentos))} documentos del mes ({formatMoney(Number(datos.sin_sello.total))}) todavía no tienen sello de
-                    Hacienda y no entran al libro. Envíalos desde Facturación antes de declarar.
+                    {formatQty(Number(datos.sin_sello.documentos))} facturas del mes ({formatMoney(Number(datos.sin_sello.total))}) todavía no tienen sello del
+                    MH y no entran al libro. Envíalas desde Facturación antes de declarar.
                 </Notice>
             )}
             {!cargando && sinArchivo && (
-                <Notice variant="info" icon={Info}>Algunas filas son datos de muestra sin su archivo: sus montos se derivaron del total.</Notice>
+                <Notice variant="info" icon={Info}>Algunas filas son datos de muestra sin archivo. Sus montos salen del total.</Notice>
             )}
 
 
             {libro === 'contribuyente' && (
                 <DataTable columns={COLS_CONTRIB} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
-                    empty={{ icon: BookOpen, message: 'Sin documentos', subtext: 'No hay Créditos Fiscales sellados este mes.' }}>
+                    empty={{ icon: BookOpen, message: 'Sin créditos fiscales', subtext: 'No hay créditos fiscales sellados este mes.' }}>
                     {filas.map((f, i) => (
                         <DataRow key={f.id} index={i}>
                             <DataCell><span className="text-caption tabular-nums text-content-2">{fechaNumerica(f.fecha)}</span></DataCell>
@@ -420,7 +420,7 @@ function LibrosVentas({ buscar }) {
             )}
             {libro === 'consumidor' && (
                 <DataTable columns={COLS_CONSUMIDOR} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
-                    empty={{ icon: BookOpen, message: 'Sin ventas', subtext: 'No hay Facturas selladas este mes.' }}>
+                    empty={{ icon: BookOpen, message: 'Sin ventas', subtext: 'No hay facturas selladas este mes.' }}>
                     {filas.map((f, i) => (
                         <DataRow key={f.fecha} index={i}>
                             <DataCell><span className="text-caption tabular-nums text-content-2">{fechaNumerica(f.fecha)}</span></DataCell>
@@ -436,7 +436,7 @@ function LibrosVentas({ buscar }) {
             )}
             {libro === 'anulados' && (
                 <DataTable columns={COLS_ANULADOS} movil={{ usarAccionDeFila: false }} loading={cargando} minWidth="320px"
-                    empty={{ icon: FileX2, message: 'Sin anulados', subtext: 'No se invalidó ningún documento este mes.' }}>
+                    empty={{ icon: FileX2, message: 'Sin anulados', subtext: 'No se invalidó ninguna factura este mes.' }}>
                     {filas.map((f, i) => (
                         <DataRow key={f.id} index={i}>
                             <DataCell>
@@ -567,7 +567,7 @@ function usePaquete(mes) {
                 if (!p) { showToast('Sin datos', 'No hay libros con datos en este mes.', 'warning'); return; }
                 descargarArchivo(p.blob, p.nombre);
                 registrarEgreso('distribucion', { formato: 'zip', filas: p.archivos, detalle: { mes, paquete: 'torogoz-mes' } });
-                showToast('Paquete del mes', `${p.archivos} archivos${p.sinSello ? ` · ojo: ${p.sinSello} documentos sin sello quedaron fuera` : ''}`, p.sinSello ? 'warning' : 'success');
+                showToast('Paquete del mes', `${p.archivos} archivos${p.sinSello ? ` · ${p.sinSello} facturas sin sello quedaron fuera` : ''}`, p.sinSello ? 'warning' : 'success');
             })
             .catch(e => showToast('No se pudo armar el paquete', mensajeDeDistribucion(e), 'error'))
             .finally(() => setArmando(false));
@@ -621,7 +621,7 @@ function ReporteRetenciones() {
                     <StatCard icon={Receipt} label="Crédito fiscal" value={formatMoney(r.credito)} loading={cargando}
                         iconBg="bg-success/10" iconCls="text-success" sub="De las compras del mes" />
                     <StatCard icon={Percent} label="Impuesto (referencial)" value={formatMoney(r.impuesto)} loading={cargando}
-                        iconBg="bg-warning/10" iconCls="text-warning" sub="Débito − crédito; lo liquida el contador" />
+                        iconBg="bg-warning/10" iconCls="text-warning" sub="Débito menos crédito. Lo liquida el contador." />
                 </CarrilCards>
                 <div className="flex justify-end min-w-0">
                     <FilterBar onClear={() => setMes(meses[0].key)} activeCount={mes !== meses[0].key ? 1 : 0} acciones={[paquete]}>
@@ -643,7 +643,7 @@ function ReporteRetenciones() {
                             </div>
                             <span className="text-title font-black tabular-nums text-content">{formatMoney(l.total)}</span>
                         </div>
-                        {l.n === 0 ? <p className="text-caption text-content-3">Sin documentos este mes.</p> : (
+                        {l.n === 0 ? <p className="text-caption text-content-3">Sin facturas este mes.</p> : (
                             <ul className="divide-y divide-divider text-body-sm">
                                 {l.filas.slice(0, 6).map((f, i) => (
                                     <li key={i} className="py-1.5 flex items-center justify-between gap-2">

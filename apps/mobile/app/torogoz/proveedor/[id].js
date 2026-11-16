@@ -34,7 +34,7 @@ export default function ProveedorTorogoz() {
     return () => { vivo = false; };
   }, [id, nuevo, inicial]);
 
-  const espera = !puede ? 'Sólo quien configura la distribuidora edita proveedores.' : error;
+  const espera = !puede ? 'Sólo un administrador edita proveedores.' : error;
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: nuevo ? 'Nuevo proveedor' : inicial?.nombre ?? 'Proveedor' }} />

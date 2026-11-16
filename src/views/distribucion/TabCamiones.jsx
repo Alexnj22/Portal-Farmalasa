@@ -202,7 +202,7 @@ function DescargarModal({ camion, onClose, onListo }) {
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
                     <p className="text-caption text-content-3">Cuenta lo que quedó en el camión. Lo contado vuelve a bodega.</p>
                     {lotesConAlgo.length === 0 ? (
-                        <Notice variant="info" compact>El camión volvió vacío: se cierra la carga.</Notice>
+                        <Notice variant="info" compact>El camión volvió vacío. Se cierra la carga.</Notice>
                     ) : (
                         <ul className="divide-y divide-divider rounded-xl border border-divider">
                             {lotesConAlgo.map(l => (

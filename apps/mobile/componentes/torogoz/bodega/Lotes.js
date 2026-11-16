@@ -55,7 +55,7 @@ export default function Lotes({ emisor, puedeVender, puedeConfigurar, buscar }) 
       setCuarentena(cua);
       setCostos(costosDelCatalogo(cat));
     } catch {
-      if (mio === pedido.current) setError('No se pudo cargar el inventario. Revisa la conexión e intenta de nuevo.');
+      if (mio === pedido.current) setError('No se pudieron cargar los lotes. Revisa la conexión e intenta de nuevo.');
     }
   }, [puedeConfigurar]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
@@ -87,7 +87,7 @@ export default function Lotes({ emisor, puedeVender, puedeConfigurar, buscar }) 
         <Kpi icono="CalendarClock" rotulo="Por vencer" color={MARCA.ambar} valor={cargando ? '…' : formatQty(stats.porVencer)}
           apoyo={filtro === 'porVencer' ? 'Filtrando · tocar quita' : `Lotes en ${POR_VENCER} días o menos`} pide={filtro === 'porVencer'} onPress={() => alternar('porVencer')} />
         <Kpi icono="AlertTriangle" rotulo="Vencidos" color={MARCA.rojo} valor={cargando ? '…' : formatQty(stats.vencidos)}
-          apoyo={filtro === 'vencidos' ? 'Filtrando · tocar quita' : 'Con existencia: no se venden'} pide={filtro === 'vencidos' || stats.vencidos > 0} onPress={() => alternar('vencidos')} />
+          apoyo={filtro === 'vencidos' ? 'Filtrando · tocar quita' : 'Con existencia. No se venden'} pide={filtro === 'vencidos' || stats.vencidos > 0} onPress={() => alternar('vencidos')} />
       </FilaDeKpis>
       {puedeConfigurar ? (
         <FilaDeKpis>

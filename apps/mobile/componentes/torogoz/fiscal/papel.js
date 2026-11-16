@@ -70,7 +70,7 @@ export async function compartirJson(dte) {
  */
 export async function enviarDocumentoPorCorreo(dte, { destinatario = null } = {}) {
   const { base64 } = await Print.printToFileAsync({ html: htmlDelDocumento(dte), base64: true });
-  if (!base64) throw new Error('No se pudo armar el PDF del documento.');
+  if (!base64) throw new Error('No se pudo armar el PDF de la factura.');
   return enviarCorreoDocumento(dte.id, base64, { destinatario });
 }
 

@@ -98,7 +98,7 @@ export default function VentasPerdidas() {
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
-          Lo que los clientes pidieron y no se les pudo vender: la lista de lo que hay que comprar.
+          Lo que los clientes pidieron y no se les pudo vender. Es la lista de lo que hay que comprar.
         </Text>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas == null ? <Cargando /> : filtrados.length === 0 ? (

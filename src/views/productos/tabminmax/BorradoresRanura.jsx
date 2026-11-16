@@ -142,7 +142,7 @@ const BorradoresRanura = memo(({
 
     // ── Escritorio: el botón compacto y su panel ──────────────────────────
     const resumen = changesCount > 0
-        ? `${draftCount.toLocaleString('es-SV')} borrador${draftCount !== 1 ? 'es' : ''} · ${changesCount.toLocaleString('es-SV')} cambia${changesCount !== 1 ? 'n' : ''} el MIN/MAX`
+        ? `${draftCount.toLocaleString('es-SV')} borrador${draftCount !== 1 ? 'es' : ''} · ${changesCount.toLocaleString('es-SV')} cambia${changesCount !== 1 ? 'n' : ''} el Mín/Máx`
         : `${draftCount.toLocaleString('es-SV')} borrador${draftCount !== 1 ? 'es' : ''} sin publicar`;
 
     return (
@@ -155,7 +155,7 @@ const BorradoresRanura = memo(({
                 <button ref={btnRef} type="button"
                     onClick={() => setAbierto(v => !v)}
                     aria-expanded={abierto} aria-haspopup="dialog"
-                    aria-label={`Borradores — ${resumen}`}
+                    aria-label={`Borradores: ${resumen}`}
                     className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0
                         text-body-sm font-bold text-content-2 whitespace-nowrap
                         hover:bg-surface-card-hover hover:text-content
@@ -167,7 +167,7 @@ const BorradoresRanura = memo(({
                 </button>
             </LiquidTooltip>
 
-            <Popover abierto={abierto} caja={caja} id={id} ariaLabel="Borradores de MIN y MAX"
+            <Popover abierto={abierto} caja={caja} id={id} ariaLabel="Borradores de Mín y Máx"
                     className="w-[280px] p-2 flex flex-col gap-2">
                     <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
                         <Punto />

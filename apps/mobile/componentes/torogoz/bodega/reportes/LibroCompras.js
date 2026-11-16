@@ -62,7 +62,7 @@ export default function LibroCompras({ buscar }) {
       </FilaDeKpis>
       {!cargando && fuera > 0 ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso texto={`${fuera} compra${fuera === 1 ? '' : 's'} con Factura o Sujeto excluido se listan abajo pero no entran al libro: no dan crédito fiscal.`} />
+          <Aviso texto={`${fuera} compra${fuera === 1 ? '' : 's'} con Factura o Sujeto excluido se listan abajo pero no entran al libro.`} />
         </View>
       ) : null}
       {cargando ? <Cargando /> : visibles.length === 0 ? (

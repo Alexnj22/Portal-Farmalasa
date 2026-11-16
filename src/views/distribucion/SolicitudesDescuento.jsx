@@ -152,13 +152,13 @@ export default function SolicitudesDescuento() {
                                     <div className="flex items-baseline justify-between gap-3 px-3 py-2 border-b border-divider">
                                         <span className="text-caption text-content-3 flex items-center gap-1.5">
                                             {m.accion === 'corregir' ? <Undo2 size={12} /> : <Ban size={12} />}
-                                            {m.tipo_documento === '03' ? 'Crédito Fiscal' : 'Factura'} · total del documento
+                                            {m.tipo_documento === '03' ? 'Crédito fiscal' : 'Factura'} · total
                                         </span>
                                         <span className="text-body font-black text-content tabular-nums">{formatMoney(m.total)}</span>
                                     </div>
                                     {m.accion === 'corregir' ? (
                                         <p className="px-3 py-2 text-caption text-content-3">
-                                            Se abre una venta nueva con lo mismo; al facturarla, ésta se invalida ante Hacienda con tu nombre.
+                                            Se abre una venta nueva con lo mismo. Al facturarla, esta se invalida ante el MH con tu nombre.
                                             {Number(m.abonado) > 0 ? ` Lo abonado (${formatMoney(m.abonado)}) pasa a la cuenta nueva.` : ''}
                                         </p>
                                     ) : (<>
@@ -199,7 +199,7 @@ export default function SolicitudesDescuento() {
                             {f.status !== 'PENDING' && (
                                 <p className="text-caption text-content-3">
                                     {est.label} por {shortEmployeeName(f.decidio?.name) || '—'} · {fechaHora12(f.updated_at)}
-                                    {f.approver_note ? ` — «${f.approver_note}»` : ''}
+                                    {f.approver_note ? ` · «${f.approver_note}»` : ''}
                                 </p>
                             )}
 
@@ -225,7 +225,7 @@ export default function SolicitudesDescuento() {
                                     </>
                                 ))}
                                 {f.status === 'PENDING' && mia && puedeDecidir && (
-                                    <span className="text-caption text-content-3">La pediste tú: la decide otra persona.</span>
+                                    <span className="text-caption text-content-3">La pediste tú. La decide otra persona.</span>
                                 )}
                             </div>
                         </article>

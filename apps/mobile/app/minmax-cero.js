@@ -32,7 +32,7 @@ export default function MinMaxCero() {
   const altaRotacion = clase === 'A' || clase === 'B';
   const falta = !nota.trim() ? 'Escribe por qué se pone en 0.' : null;
 
-  const confirmar = () => Alert.alert('¿Poner 0 en todas las salas?', `${nombre} queda en 0 · 0 en todas las sucursales y en Bodega, y se publica ahora.`, [
+  const confirmar = () => Alert.alert('¿Poner en 0 en todas las sucursales?', `${nombre} queda en 0 · 0 en todas las sucursales y en Bodega. Se publica ahora.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Poner 0 en todas', style: 'destructive', onPress: async () => {
       setOcupado(true);
@@ -43,28 +43,28 @@ export default function MinMaxCero() {
       useStaffStore.getState().appendAuditLog?.('MINMAX_ZERO_ALL_BRANCHES', String(producto), {
         field: 'min+max', product: nombre, new_min: 0, new_max: 0, motivo, nota: nota.trim(), desde: 'app',
       });
-      listo(nombre || 'Producto', 'Quedó en 0 en todas las salas');
+      listo(nombre || 'Producto', 'Quedó en 0 en todas las sucursales');
       router.back();
     } },
   ]);
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: '0 en todas las salas' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: '0 en todas las sucursales' }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>
-          {!puede ? <Aviso tono="freno" texto="Poner un producto en 0 en todas las salas es de quien decide sobre todas, o de quien tiene esa función." /> : (
+          {!puede ? <Aviso tono="freno" texto="Solo puede poner un producto en 0 en todas las sucursales quien decide sobre todas o tiene ese permiso." /> : (
             <>
-              <Aviso tono="cuidado" texto={`Quedará en 0 / 0 en todas las sucursales y en Bodega, y se publica en este momento.${altaRotacion ? ` Es clase ${clase} y vende ${Number(velocidad ?? 0).toFixed(1)} und/día.` : ''}`} />
+              <Aviso tono="cuidado" texto={`Quedará en 0 / 0 en todas las sucursales y en Bodega. Se publica ahora.${altaRotacion ? ` Es clase ${clase} y vende ${Number(velocidad ?? 0).toFixed(1)} und/día.` : ''}`} />
               {puedeYaNoRota ? (
                 <Seccion titulo="Motivo">
                   <Opciones opciones={[{ id: 'otro', label: 'Otro motivo' }, { id: 'ya_no_rota', label: MOTIVO_AJUSTE.ya_no_rota.label, detalle: MOTIVO_AJUSTE.ya_no_rota.detalle }]}
                     valor={motivo} onCambiar={setMotivo} />
                 </Seccion>
               ) : null}
-              <Seccion titulo="¿Por qué?" pie="Obligatorio: queda en el historial del producto.">
+              <Seccion titulo="¿Por qué?" pie="Obligatorio. Queda en el historial del producto.">
                 <Campo value={nota} onChangeText={setNota} maxLength={300} placeholder="Descontinuado, lo retiró el proveedor, sólo se trae por encargo…" />
               </Seccion>
               <BotonGrande texto={ocupado ? 'Guardando…' : 'Poner 0 en todas'} color={MARCA.rojo} deshabilitado={ocupado || !!falta} onPress={confirmar} />

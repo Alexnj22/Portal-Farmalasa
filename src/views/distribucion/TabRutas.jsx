@@ -294,7 +294,7 @@ function Armar() {
                     {sel.id && (
                         <div>
                             <p className="text-caption font-bold text-content-2 mb-1">Orden de visita ({clientes.length} clientes)</p>
-                            {clientes.length === 0 ? <p className="text-caption text-content-3">Sin clientes. Se asignan desde la ficha del cliente (campo Ruta).</p> : (
+                            {clientes.length === 0 ? <p className="text-caption text-content-3">Sin clientes. Se asignan en los datos del cliente, campo Ruta.</p> : (
                                 <ol className="divide-y divide-divider">
                                     {clientes.map((c, i) => (
                                         <li key={c.id} className="py-1.5 flex items-center gap-2" data-orden-cliente={c.id}>

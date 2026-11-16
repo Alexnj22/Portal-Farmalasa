@@ -92,7 +92,7 @@ function Cliente({ c }) {
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{c.nombre}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
-                  {`${rotuloTipoCliente(c.tipo)} · ${c.ruta ?? 'sin ruta'} · ${c.cuentas} documento${Number(c.cuentas) === 1 ? '' : 's'}`}
+                  {`${rotuloTipoCliente(c.tipo)} · ${c.ruta ?? 'sin ruta'} · ${c.cuentas} factura${Number(c.cuentas) === 1 ? '' : 's'}`}
                 </Text>
               </View>
               {vencido ? <Pildora texto={`${c.dias_atraso} días`} color={Number(c.dias_atraso) > 60 ? MARCA.rojo : MARCA.ambar} /> : <Pildora texto="Al día" color={MARCA.verde} />}

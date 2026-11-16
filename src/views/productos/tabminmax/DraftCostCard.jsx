@@ -29,11 +29,11 @@ export default function DraftCostCard({ draftCost, isBodega }) {
     return (
         <StatCard
             icon={Target}
-            label={isBodega ? 'Σ red al MAX' : 'Catálogo al MAX'}
+            label={isBodega ? 'Σ red al Máx' : 'Catálogo al Máx'}
             value={fmtMoney(hasDraft ? effMax : pubMax)}
             sub={hasAnyDelta
                 ? `Borrador ${deltaMax >= 0 ? '+' : ''}${fmtMoney(deltaMax)}`
-                : 'Techo al MAX'}
+                : 'Techo al Máx'}
         />
     );
 }

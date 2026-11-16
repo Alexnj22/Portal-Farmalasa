@@ -102,13 +102,13 @@ export default function TabRevisionFactor() {
                     iconBg={porProducto.length ? 'bg-warning/10' : 'bg-success/10'}
                     iconCls={porProducto.length ? 'text-warning-text' : 'text-success-text'}
                     label="Por corregir" value={formatQty(porProducto.length)}
-                    sub={porProducto.length ? `${formatQty(existencias.length)} ${existencias.length === 1 ? 'sala' : 'salas'} con existencia vieja` : 'Todo en orden'}
+                    sub={porProducto.length ? `${formatQty(existencias.length)} ${existencias.length === 1 ? 'sucursal' : 'sucursales'} con existencia vieja` : 'Todo en orden'}
                     onClick={porProducto.length ? () => irA('rf-corregir') : undefined} loading={cargando} />
                 <StatCard icon={AlertTriangle}
                     iconBg={sospechosos.length ? 'bg-warning/10' : 'bg-success/10'}
                     iconCls={sospechosos.length ? 'text-warning-text' : 'text-success-text'}
                     label="Factor que no cuadra" value={formatQty(sospechosos.length)}
-                    sub={sospechosos.length ? 'Se corrige en la ficha' : 'Todo en orden'}
+                    sub={sospechosos.length ? 'Se corrige en los datos del producto' : 'Todo en orden'}
                     onClick={sospechosos.length ? () => irA('rf-sospechosos') : undefined} loading={cargando} />
                 <StatCard icon={History} iconBg="bg-brand/10" iconCls="text-brand-text"
                     label="Cambios" value={formatQty(cambios.length)} sub="Últimos 120 días"
@@ -119,7 +119,7 @@ export default function TabRevisionFactor() {
 
             {!cargando && porProducto.length > 0 && (
                 <Seccion id="rf-corregir" icono={PackageX} titulo="Existencia por corregir" cuenta={porProducto.length}
-                    bajada="La caja cambió el tamaño de la presentación y no convirtió la existencia: quedó contada en la unidad vieja.">
+                    bajada="La caja cambió el tamaño de la presentación. La existencia quedó contada en la unidad vieja.">
                     <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                         {porProducto.map(g => (
                             <TarjetaProducto key={g.erp_product_id} grupo={g}
@@ -131,7 +131,7 @@ export default function TabRevisionFactor() {
 
             {!cargando && sospechosos.length > 0 && (
                 <Seccion id="rf-sospechosos" icono={AlertTriangle} titulo="Factor que no cuadra" cuenta={sospechosos.length}
-                    bajada="El tamaño de la presentación no coincide entre el catálogo, la existencia o las ventas. Se corrige en la ficha del producto; el portal convierte lo demás solo.">
+                    bajada="El tamaño de la presentación no coincide entre el catálogo, la existencia o las ventas. Se corrige en los datos del producto.">
                     <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                         {sospechosos.map(s => <FilaSospechoso key={s.clave} s={s} />)}
                     </ul>
@@ -140,7 +140,7 @@ export default function TabRevisionFactor() {
 
             {!cargando && (
                 <Seccion id="rf-cambios" icono={History} titulo="Cambios de presentación" cuenta={cambios.length}
-                    bajada="Lo que el portal convirtió solo: las ventas y el MIN·MAX de cada sala.">
+                    bajada="El portal convirtió las ventas y el Mín/Máx de cada sucursal.">
                     {cambios.length === 0
                         ? <EmptyState linea icon={CheckCircle2} title="Sin cambios de presentación recientes" />
                         : (
@@ -202,7 +202,7 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
                     </Badge>
                     {consulta?.abierta && (
                         <Badge size="sm" uppercase={false} variant={respondidas === (consulta.salas?.length ?? 0) ? 'success' : 'info'} icon={ScanSearch}>
-                            Contaron {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)} salas
+                            Contaron {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)} sucursales
                         </Badge>
                     )}
                 </div>
@@ -220,7 +220,7 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
                 que corregir: un descuadre ahí es otra cosa que revisar. */}
             {otras.length > 0 && (
                 <div className="space-y-1.5">
-                    <p className="text-label font-bold text-content-3">Conteo en las demás salas</p>
+                    <p className="text-label font-bold text-content-3">Conteo en las demás sucursales</p>
                     <ul className="flex flex-wrap gap-1.5">
                         {otras.map(s => <ConteoDeOtraSala key={s.id} s={s}
                             corregida={corregidaDespuesDelConteo(corregidas, s, g.erp_product_id)} />)}
@@ -232,7 +232,7 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
                 todas las salas del producto; las salas cuentan a ciegas. */}
             {puedePreguntar && !consulta?.abierta && sinCorregir && (
                 <Button size="sm" variant="secondary" icon={ScanSearch} onClick={() => setPreguntar(true)}>
-                    {salas.length === 1 ? `Pedir conteo a ${salas[0][1]}` : `Pedir conteo a las ${salas.length} salas`}
+                    {salas.length === 1 ? `Pedir conteo a ${salas[0][1]}` : `Pedir conteo a las ${salas.length} sucursales`}
                 </Button>
             )}
             {preguntar && (
@@ -313,15 +313,15 @@ function ResultadoDelConteo({ conteo: s, fila: f }) {
         <div className={`rounded-lg border px-2.5 py-1.5 text-label font-bold ${confirma ? 'border-success/30 bg-success/[0.08] text-success-text' : 'border-warning/30 bg-warning/[0.08] text-warning-text'}`}>
             <p className="flex items-center gap-1">
                 {confirma ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-                La sala contó {enPresentaciones(s.contado_texto, s.final?.contado)}; el sistema dice {enPresentaciones(s.sistema_texto, s.final?.sistema)}
+                La sucursal contó {enPresentaciones(s.contado_texto, s.final?.contado)}; el sistema dice {enPresentaciones(s.sistema_texto, s.final?.sistema)}
                 {s.recontada ? ' (contado dos veces)' : ''}.
             </p>
             <p className="text-content-2 font-bold">
                 {confirma
-                    ? 'Confirma la corrección: se puede corregir.'
+                    ? 'El conteo confirma la corrección. Puedes corregir.'
                     : s.diferencia === 0
-                        ? 'Cuadra con lo que hay hoy: no corrijas, la existencia ya está bien.'
-                        : `No coincide con la corrección (${textoDeDiferencia(s)}): revisar con la sala antes de corregir.`}
+                        ? 'Cuadra con lo que hay hoy. La existencia ya está bien. No corrijas.'
+                        : `No coincide con la corrección (${textoDeDiferencia(s)}). Revisa con la sucursal antes de corregir.`}
             </p>
         </div>
     );
@@ -384,12 +384,12 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
 
             if (!puedeAplicar) {
                 useToastStore.getState().showToast('Corrección pedida',
-                    'Quien aprueba inventario recibió el aviso. La existencia cambia al aprobarla.', 'success');
+                    'Un supervisor o administrador recibió el aviso. La existencia cambia cuando la aprueba.', 'success');
             } else {
                 const r = await aplicarMovimientoInventarioEnErp(id, notaDeCorreccion(f, conteo));
                 if (!r?.ok) {
                     useToastStore.getState().showToast('No se aplicó',
-                        `La caja no la aceptó: ${r?.error ?? 'sin respuesta'}. Puedes reintentarla desde esta misma tarjeta.`, 'warning');
+                        `La caja no la aceptó: ${r?.error ?? 'sin respuesta'}. Reintenta desde esta tarjeta.`, 'warning');
                 } else {
                     useToastStore.getState().showToast('Existencia corregida', carga
                         ? `${f.nombre} en ${f.sala}: se cargaron ${formatQty(f.cargar)} ${enCarga}.`
@@ -468,7 +468,7 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                 <p className="flex items-center gap-1.5 text-label font-bold text-warning-text">
                     <AlertTriangle size={13} strokeWidth={2.5} className="shrink-0" />
                     {sinFecha
-                        ? 'La caja no la aceptó: falta la fecha de vencimiento. Escríbela y reintenta.'
+                        ? 'La caja no la aceptó. Falta la fecha de vencimiento. Escríbela y reintenta.'
                         : 'Se pidió y no entró en la caja. Reintenta para aplicarla.'}
                 </p>
             )}
@@ -494,15 +494,15 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                         </span>
                         {conteo && POR_CONTAR.includes(conteo.estado) && (
                             <span className="block text-warning-text font-bold">
-                                {f.sala} todavía no ha contado: corriges sin su confirmación.
-                                {' '}Si en la sala no hay lo que supone el cambio, la existencia queda mal.
+                                {f.sala} todavía no ha contado. Vas a corregir sin su confirmación.
+                                {' '}Si en la sucursal no hay lo que supone el cambio, la existencia queda mal.
                             </span>
                         )}
                         {resto !== 0 && (
                             <span className="block text-warning-text font-bold">
                                 {resto > 0
-                                    ? `La sala contó ${restoEnPresentaciones(f, resto)} más: eso no se ajusta aquí. El aviso le pide a la sala que solicite la carga y explique de dónde salió.`
-                                    : `La sala contó ${restoEnPresentaciones(f, resto)} menos: eso no se descuenta aquí. El aviso le pide a la sala que solicite el descarte y explique por qué.`}
+                                    ? `La sucursal contó ${restoEnPresentaciones(f, resto)} más. Eso no se ajusta aquí. El aviso le pide a la sucursal que solicite la carga y explique de dónde salió.`
+                                    : `La sucursal contó ${restoEnPresentaciones(f, resto)} menos. Eso no se descuenta aquí. El aviso le pide a la sucursal que solicite el descarte y explique por qué.`}
                             </span>
                         )}
                         {pideVence && (
@@ -510,10 +510,10 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                         )}
                         <span className="block text-content-3">
                             {carga
-                                ? `Sólo si en la sala hay ${formatQty(f.muestra)} ${pres} ${f.muestra === 1 ? 'entera' : 'enteras'}.`
-                                : 'Si en la sala hay más, no corrijas: avisa.'}
+                                ? `Sólo si en la sucursal hay ${formatQty(f.muestra)} ${pres} ${f.muestra === 1 ? 'entera' : 'enteras'}.`
+                                : 'Si en la sucursal hay más, no corrijas y avisa.'}
                             {' '}
-                            {puedeAplicar ? 'Se aplica enseguida.' : 'La aplica quien aprueba inventario.'}
+                            {puedeAplicar ? 'Se aplica enseguida.' : 'La aplica un supervisor o administrador.'}
                         </span>
                     </span>
                 )}
@@ -574,7 +574,7 @@ function FilaCambio({ c, salasPorCorregir, onVer }) {
                     ) : salasPorCorregir > 0 ? (
                         <button type="button" onClick={onVer} className="rounded-full active:scale-[0.97] min-h-[var(--tap-min)]">
                             <Badge size="sm" uppercase={false} variant="warning" icon={AlertTriangle}>
-                                {salasPorCorregir === 1 ? 'Falta corregir 1 sala' : `Faltan corregir ${salasPorCorregir} salas`}
+                                {salasPorCorregir === 1 ? 'Falta corregir 1 sucursal' : `Faltan corregir ${salasPorCorregir} sucursales`}
                             </Badge>
                         </button>
                     ) : (
@@ -589,13 +589,13 @@ function FilaCambio({ c, salasPorCorregir, onVer }) {
             </div>
             {(r.ventas_sin_convertir ?? 0) > 0 && (
                 <p className="text-label font-bold text-warning-text">
-                    Entraron con otro tamaño de caja y quedaron como estaban: revisar si es la misma caja.
+                    Entraron con otro tamaño de caja y quedaron como estaban. Revisa si es la misma caja.
                 </p>
             )}
 
             {minmax.length > 0 && (
                 <div className="space-y-1">
-                    <p className="text-label font-bold text-content-3">MIN·MAX por sala</p>
+                    <p className="text-label font-bold text-content-3">Mín/Máx por sucursal</p>
                     <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                         {minmax.map(m => (
                             <li key={m.sala} className="rounded-lg bg-surface-card-hover px-2.5 py-1.5">

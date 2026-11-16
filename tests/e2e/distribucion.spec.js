@@ -81,7 +81,7 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     const c = await cobrar(page);
     await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
     await c.getByRole('button', { name: /^Facturar$/ }).click();
-    const doc = page.getByRole('dialog', { name: 'Documento' });
+    const doc = page.getByRole('dialog', { name: 'Factura' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
     // Abre en «Detalle» (lo vendido como información); el papel, en «Ticket».
     await expect(doc.locator('[data-testid="detalle-venta"]')).toBeVisible({ timeout: 15_000 });
@@ -90,7 +90,7 @@ test('venta a una tienda: buscar, agregar, facturar, ver ticket y PDF', async ({
     await page.screenshot({ path: `${SALIDA}/ticket.png`, fullPage: true });
 
     await doc.getByText('PDF', { exact: true }).click();
-    await expect(doc.locator('iframe[title="Documento en PDF"]')).toBeVisible({ timeout: 20_000 });
+    await expect(doc.locator('iframe[title="Factura en PDF"]')).toBeVisible({ timeout: 20_000 });
     await expect(doc.getByRole('button', { name: /Descargar PDF/ })).toBeEnabled();
     // El visor de PDF no existe en el navegador sin pantalla: se baja el archivo
     // y se guarda para mirarlo (y para convertirlo a imagen si hace falta).
@@ -123,7 +123,7 @@ test('a un contribuyente se le puede emitir Factura si la pide', async ({ page }
     const c = await cobrar(page);
     await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
     await c.getByRole('button', { name: /^Facturar$/ }).click();
-    const doc = page.getByRole('dialog', { name: 'Documento' });
+    const doc = page.getByRole('dialog', { name: 'Factura' });
     await expect(doc.getByRole('heading', { name: /^Factura/ })).toBeVisible({ timeout: 30_000 });
 });
 
@@ -149,7 +149,7 @@ test('pago dividido: $2 en efectivo y el resto con tarjeta, comprobante después
     await page.screenshot({ path: `${SALIDA}/pago-dividido.png`, fullPage: true });
     await c.getByRole('button', { name: /^Facturar$/ }).click();
 
-    const doc = page.getByRole('dialog', { name: 'Documento' });
+    const doc = page.getByRole('dialog', { name: 'Factura' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
     await doc.getByText('Datos', { exact: true }).click();
     await expect(doc.getByText('Falta el comprobante')).toBeVisible({ timeout: 15_000 });
@@ -198,7 +198,7 @@ test('venta como en la caja: presentación, lista, descuento; F2 cobra con el fo
     // ser EXACTAMENTE el que Hacienda recibe, no «uno parecido».
     const totalPantalla = (await c.getByTestId('total-venta').innerText()).trim();
     await entrega.press('Enter');
-    const doc = page.getByRole('dialog', { name: 'Documento' });
+    const doc = page.getByRole('dialog', { name: 'Factura' });
     await expect(doc).toBeVisible({ timeout: 30_000 });
     await doc.getByText('Datos', { exact: true }).click();
     await expect(doc.getByText(totalPantalla).first()).toBeVisible({ timeout: 15_000 });
@@ -544,7 +544,7 @@ test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del docume
     // branch recién rehecho el rechazado sale del historial sembrado, que no
     // guarda su archivo: ahí lo correcto es decirlo (pasó el 2026-10-01).
     const detalle = page.locator('[data-testid="detalle-venta"]');
-    const sinArchivo = page.getByText('Este documento no tiene guardado su archivo');
+    const sinArchivo = page.getByText('Esta factura no tiene su archivo guardado');
     await expect(detalle.or(sinArchivo).first()).toBeVisible();
     if (await detalle.isVisible()) await expect(detalle).toContainText(/Total/);
     await page.screenshot({ path: `${SALIDA}/facturacion-rechazado.png` });
@@ -553,7 +553,7 @@ test('facturación: semáforo con Hacienda, cubetas, lista de chequeo del docume
     await page.getByRole('button', { name: /Sin sello/ }).first().click();
     await page.locator('table tbody tr').first().click();
     await expect(estado).toHaveAttribute('data-nivel', 'pendiente', { timeout: 15_000 });
-    await expect(estado.getByRole('button', { name: 'Reenviar a Hacienda' })).toBeVisible();
+    await expect(estado.getByRole('button', { name: 'Reenviar al MH' })).toBeVisible();
     await page.keyboard.press('Escape');
     // En bloque: sin certificado en este entorno, se detiene al primero y lo dice.
     await page.locator('[data-reenviar-todos]').click();
@@ -812,7 +812,7 @@ test('correo al cliente: el documento se envía (simulado en pruebas) y queda an
     await expect(correo.getByRole('button', { name: /^(Enviar|Reenviar)$/ })).toBeDisabled();
     await correo.locator('input[name="correo-destino"]').fill('cliente.prueba@example.com');
     await correo.getByRole('button', { name: /^(Enviar|Reenviar)$/ }).click();
-    await expect(page.getByText('Documento enviado').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('Factura enviada').first()).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('section[data-correo="enviado"]')).toContainText('cliente.prueba@example.com', { timeout: 15_000 });
     await page.screenshot({ path: `${SALIDA}/correo.png`, fullPage: true });
     expect(errores).toEqual([]);
@@ -1030,7 +1030,7 @@ test('conteo físico con diferencia valorizada y cierre, y una baja pedida y rec
     await sec.getByRole('button', { name: 'Iniciar conteo' }).click();
     await expect(sec).toHaveAttribute('data-conteo', 'abierto', { timeout: 15_000 });
     const filas = sec.locator('[data-renglon-conteo]');
-    const leerSistema = async (r) => Number((await r.innerText()).match(/sistema ([\d,]+)/)[1].replace(/,/g, ''));
+    const leerSistema = async (r) => Number((await r.innerText()).match(/existencia ([\d,]+)/)[1].replace(/,/g, ''));
     const r1 = filas.nth(0), r2 = filas.nth(1);
     const s1 = await leerSistema(r1), s2 = await leerSistema(r2);
     await r1.locator('input').fill(String(s1)); await r1.locator('input').press('Enter');
@@ -1045,13 +1045,13 @@ test('conteo físico con diferencia valorizada y cierre, y una baja pedida y rec
     await expect(page.getByText('Conteo cerrado').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/0 lotes ajustados/).first()).toBeVisible();
 
-    const bajas = page.locator('section[aria-label="Bajas"]');
-    await bajas.getByRole('combobox', { name: 'Lote de la baja' }).click();
+    const bajas = page.locator('section[aria-label="Descartes"]');
+    await bajas.getByRole('combobox', { name: 'Lote del descarte' }).click();
     await page.getByRole('option').first().click();
     await page.locator('input[name="unidades-baja"]').fill('1');
     await page.locator('input[name="detalle-baja"]').fill('prueba automática: golpeado');
-    await bajas.getByRole('button', { name: 'Pedir baja' }).click();
-    await expect(page.getByText('Baja pedida').first()).toBeVisible({ timeout: 15_000 });
+    await bajas.getByRole('button', { name: 'Pedir descarte' }).click();
+    await expect(page.getByText('Descarte pedido').first()).toBeVisible({ timeout: 15_000 });
     const pend = bajas.locator('[data-baja="pendiente"]').first();
     await pend.locator('input[name^="nota-baja-"]').fill('prueba automática');
     await pend.getByRole('button', { name: 'Rechazar' }).click();
@@ -1104,7 +1104,7 @@ test('descuento del catálogo: se asigna por producto, entra solo en la venta y 
     // El plazo de invalidación (Normativa DTE v2.0) se dice antes de intentarlo.
     await page.goto('/torogoz/documentos?cubeta=sellados');
     await page.locator('table tbody tr', { hasText: 'Crédito Fiscal' }).first().click();
-    await expect(page.getByRole('dialog', { name: 'Documento' }).locator('[data-plazo]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('dialog', { name: 'Factura' }).locator('[data-plazo]')).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press('Escape');
 
     // Asignar 5 % a un producto del catálogo.
@@ -1178,7 +1178,7 @@ test('autoventa: cargar el camión con su Nota de Remisión, vender desde el cam
         const c = await cobrar(page);
         await c.getByRole('switch', { name: /Imprimir el ticket/ }).click();
         await c.getByRole('button', { name: /^Facturar$/ }).click();
-        await expect(page.getByRole('dialog', { name: 'Documento' })).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByRole('dialog', { name: 'Factura' })).toBeVisible({ timeout: 30_000 });
         await page.keyboard.press('Escape');
 
         // En Camiones: vendido 1, quedan 2.

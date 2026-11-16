@@ -241,7 +241,7 @@ export default function Producto() {
                 ))}
               </View></Vidrio>
             )) : (
-              <Text style={{ color: colorSistema.texto2, textAlign: 'center' }}>Sin existencias en ninguna sala.</Text>
+              <Text style={{ color: colorSistema.texto2, textAlign: 'center' }}>Sin existencia en ninguna sucursal.</Text>
             )}
             {vencidosDeBodega.length ? (
               <Vidrio radio={20} tinte={`${MARCA.rojo}14`}><View style={{ paddingHorizontal: 14 }}>
@@ -262,7 +262,7 @@ export default function Producto() {
             {salas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>{uds(total)} · lo que vence primero va primero</Text> : null}
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/minmax-producto', params: { producto: String(productId), nombre: titulo } }); }}
               hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>
-              <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Ver su Mín·Máx por sala</Text>
+              <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Ver su Mín/Máx por sucursal</Text>
             </Pressable>
           </>
         )}
@@ -317,7 +317,7 @@ export default function Producto() {
         {ubicaciones.length || puedeEditar ? (
           <Seccion titulo="Ubicaciones">
             {ubicaciones.map((u, i) => <Dato key={u.branch_id} primero={i === 0} rotulo={nombreSala.get(Number(u.branch_id)) ?? `Sala ${u.branch_id}`} valor={textoUbicacion(u)} />)}
-            {!ubicaciones.length ? <Vacio enSeccion>Sin ubicación en ninguna sala.</Vacio> : null}
+            {!ubicaciones.length ? <Vacio enSeccion>Sin ubicación en ninguna sucursal.</Vacio> : null}
             {puedeEditar ? (
               <Pressable onPress={() => router.push({ pathname: '/producto/ubicaciones', params: { id: String(productId), nombre: titulo } })} style={{ minHeight: 40, justifyContent: 'center' }}>
                 <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Editar las ubicaciones</Text>

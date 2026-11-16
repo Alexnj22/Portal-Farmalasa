@@ -122,7 +122,7 @@ export default function TorogozLayout({ children, handleLogout }) {
             showToast(r.facturadas ? 'Ventas sin señal enviadas' : 'Ventas sin señal con problemas',
                 [r.facturadas && `${r.facturadas} facturada${r.facturadas === 1 ? '' : 's'} en contingencia`,
                  r.errores && `${r.errores} con error (revísalas en la venta)`,
-                 r.aviso && `Aviso a Hacienda: ${r.aviso}`].filter(Boolean).join(' · '),
+                 r.aviso && `Aviso al MH: ${r.aviso}`].filter(Boolean).join(' · '),
                 r.errores || r.aviso ? 'warning' : 'success');
         },
     });

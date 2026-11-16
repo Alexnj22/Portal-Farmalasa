@@ -178,7 +178,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                 return;
             }
             useStaff.getState().appendAuditLog('DISTRIBUCION_COMPRA_BORRADOR', String(id), { numero: c.numero.trim() });
-            showToast?.('Borrador guardado', 'Puedes seguir después: queda en Borradores.', 'success');
+            showToast?.('Borrador guardado', 'Puedes seguir después. Queda en Borradores.', 'success');
             onCambio();
         } catch (e) {
             setError(mensajeDeDistribucion(e));
@@ -237,7 +237,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                 <div className="p-3 flex flex-wrap items-center gap-3 w-full">
                                     <FileJson size={18} className="text-brand-text shrink-0" />
                                     <p className="text-body-sm text-content-2 flex-1 min-w-[200px]">
-                                        ¿Tienes el JSON del documento del proveedor? Se llena solo: número, fecha, montos y productos.
+                                        ¿Tienes el JSON de la factura del proveedor? Se llenan solos el número, la fecha, los montos y los productos.
                                     </p>
                                     <input ref={archivo} type="file" accept="application/json,.json" className="sr-only" onChange={cargarArchivo} data-testid="json-proveedor" />
                                     <Button size="sm" variant="secondary" icon={FileJson} onClick={() => archivo.current?.click()}>Cargar JSON</Button>
@@ -247,7 +247,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                         {editable && emisorDelJson && (
                             <Notice variant="warning" icon={Truck} bloque>
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span>{emisorDelJson.nombre || 'El proveedor del documento'} (NIT {emisorDelJson.nit ?? '—'}) todavía no está registrado.</span>
+                                    <span>{emisorDelJson.nombre || 'El proveedor de la factura'} (NIT {emisorDelJson.nit ?? '—'}) todavía no está registrado.</span>
                                     <Button size="sm" variant="secondary" icon={Plus} onClick={() => setAltaProveedor(emisorDelJson)}>Registrarlo</Button>
                                 </div>
                             </Notice>
@@ -267,19 +267,19 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                 </div>
                                 {proveedor?.relacionada && (
                                     <p className="text-caption text-content-3 mt-1">
-                                        Empresa relacionada: es una venta de ella y una compra de Torogoz, y el precio tiene que ser el de mercado.
+                                        Empresa relacionada. El precio tiene que ser el de mercado.
                                     </p>
                                 )}
                             </div>
                             <div>
-                                <span className={ROTULO}>Documento</span>
+                                <span className={ROTULO}>Tipo</span>
                                 <LiquidSelect value={c.tipo_doc} onChange={(v) => set('tipo_doc')(v ?? '03')} options={TIPOS_COMPRA} clearable={false}
-                                    icon={FileJson} disabled={!editable} ariaLabel="Tipo de documento" />
+                                    icon={FileJson} disabled={!editable} ariaLabel="Tipo de factura" />
                             </div>
                             <PortalInput label="Número de control" name="numero" value={c.numero} readOnly={!editable}
                                 onChange={(e) => set('numero')(e.target.value.toUpperCase())} placeholder="DTE-03-…" />
                             <div>
-                                <span className={ROTULO}>Fecha del documento</span>
+                                <span className={ROTULO}>Fecha de la factura</span>
                                 {editable ? <LiquidDatePicker value={c.fecha} onChange={(v) => set('fecha')(v || '')} max={hoySV()} />
                                     : <p className="text-body-sm text-content-2 tabular-nums">{c.fecha ? fechaNumerica(c.fecha) : '—'}</p>}
                             </div>
@@ -324,7 +324,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                                     {editable ? (
                                                         <LiquidSelect value={it.product_id ? String(it.product_id) : ''} onChange={(v) => setItem(i, { product_id: v ? Number(v) : null })}
                                                             options={opcionesProducto} placeholder="Producto del catálogo…" icon={ShoppingCart} compact
-                                                            invalid={!it.product_id} ariaLabel={`Producto del renglón ${i + 1}`} />
+                                                            invalid={!it.product_id} ariaLabel={`Producto ${i + 1}`} />
                                                     ) : (
                                                         <p className="text-body-sm font-bold text-content-2 truncate">{it.nombre ?? catalogo.find(p => p.product_id === it.product_id)?.nombre ?? `Producto ${it.product_id}`}</p>
                                                     )}
@@ -332,7 +332,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                                 {it.cantidad_doc > 0 && editable ? (
                                                     <PortalInput label="Por caja" name={`upe-${i}`} inputMode="numeric" value={String(it.unidades_por ?? 1)}
                                                         onChange={(e) => setItem(i, cambiarUnidadesPor(it, e.target.value))} className="md:col-span-1"
-                                                        title={`${it.cantidad_doc} en el documento del proveedor`} />
+                                                        title={`${it.cantidad_doc} en la factura del proveedor`} />
                                                 ) : <span className="hidden md:block md:col-span-1" />}
                                                 <PortalInput label="Unidades" name={`cant-${i}`} inputMode="numeric" value={it.cantidad} readOnly={!editable}
                                                     onChange={(e) => setItem(i, { cantidad: e.target.value })} className="md:col-span-1" />
@@ -348,7 +348,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                                 </div>
                                                 <div className="flex items-center justify-end gap-1 md:col-span-1">
                                                     <span className="text-body-sm font-black tabular-nums text-content">{formatMoney(subtotalRenglon(it))}</span>
-                                                    {editable && <Button size="sm" variant="ghost" iconOnly icon={Trash2} title="Quitar renglón"
+                                                    {editable && <Button size="sm" variant="ghost" iconOnly icon={Trash2} title="Quitar producto"
                                                         onClick={() => setC(x => ({ ...x, items: x.items.filter((_, j) => j !== i) }))} />}
                                                 </div>
                                                 {avisosPrecio[i]?.length > 0 && (
@@ -365,15 +365,15 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
 
                         {conAviso > 0 && (
                             <Notice variant="warning" icon={AlertTriangle} bloque data-testid="aviso-relacionada">
-                                {conAviso} producto{conAviso === 1 ? '' : 's'} con precio fuera de lo razonable entre empresas del mismo grupo. Se puede recibir
-                                igual, pero conviene que el contador lo revise: entre relacionadas el precio tiene que ser el que se le cobraría a un tercero.
+                                {conAviso} producto{conAviso === 1 ? '' : 's'} con precio fuera de lo razonable entre empresas del mismo grupo. Puedes recibir
+                                igual. Pídele al contador que lo revise.
                             </Notice>
                         )}
 
                         {/* ── Montos del documento contra lo calculado ── */}
-                        <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Montos del documento">
+                        <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Montos de la factura">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                                <TituloDeSeccion nivel="tarjeta">Montos del documento</TituloDeSeccion>
+                                <TituloDeSeccion nivel="tarjeta">Montos de la factura</TituloDeSeccion>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-caption font-bold flex items-center gap-1 ${cuadra ? 'text-success-text' : 'text-content-3'}`} data-cuadre={cuadra ? 'si' : 'no'}>
                                         {cuadra ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
@@ -382,7 +382,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                                     {editable && c.items.length > 0 && <Button size="sm" variant="ghost" icon={Wand2} onClick={copiarCalculado}>Copiar de los productos</Button>}
                                 </div>
                             </div>
-                            <p className="text-caption text-content-3">Escríbelos como vienen en el papel: la compra sólo se recibe si cuadran con los productos.</p>
+                            <p className="text-caption text-content-3">Escríbelos como vienen en el papel. La compra solo se recibe si cuadran con los productos.</p>
                             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                                 <CampoMonto label="Gravado" name="gravada" value={c.gravada} onChange={set('gravada')} disabled={!editable} />
                                 <CampoMonto label="Exento" name="exenta" value={c.exenta} onChange={set('exenta')} disabled={!editable} />

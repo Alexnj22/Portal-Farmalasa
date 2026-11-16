@@ -23,7 +23,7 @@ import { totalDePedido } from './motor';
 const COLS = [
     { key: 'cliente',   label: 'Cliente',   align: 'left', className: 'w-[220px]' },
     { key: 'estado',    label: 'Estado',    align: 'left' },
-    { key: 'documento', label: 'Documento', align: 'left', hideBelow: 'md' },
+    { key: 'documento', label: 'Factura', align: 'left', hideBelow: 'md' },
     { key: 'vendedor',  label: 'Tomó',      align: 'left', hideBelow: 'lg' },
     { key: 'fecha',     label: 'Fecha',     align: 'left', hideBelow: 'sm' },
     { key: 'total',     label: 'Total',     align: 'right' },
@@ -104,7 +104,7 @@ export default function TabPedidos({ emisor, puedeVender, buscar, vista = 'pendi
                         iconBg="bg-success/10" iconCls="text-success" sub="Pedidos facturados hoy" />
                     <StatCard icon={Clock} label="Sin sello" value={stats.sinSello} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls={stats.sinSello ? 'text-warning-text' : undefined}
-                        sub="Todavía no cuentan ante Hacienda" />
+                        sub="Todavía no cuentan ante el MH" />
                     <StatCard icon={Paperclip} label="Sin comprobante" value={sinComprobante} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls={sinComprobante ? 'text-warning-text' : undefined}
                         sub="Pagos con tarjeta, transferencia o cheque" />

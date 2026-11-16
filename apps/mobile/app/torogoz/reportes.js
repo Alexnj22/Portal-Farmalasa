@@ -51,7 +51,7 @@ export default function Reportes() {
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         {!puede ? (
-          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Los reportes de la distribuidora los ve quien la administra." /></View>
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Los reportes de la distribuidora los ve un administrador." /></View>
         ) : (
           <>
             {vista === 'ventas' ? <LibrosVentas buscar={buscar} />

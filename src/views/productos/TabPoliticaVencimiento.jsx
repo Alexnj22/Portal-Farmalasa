@@ -350,7 +350,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
                                     <span className="text-caption font-black uppercase tracking-widest text-content-2">Proveedores</span>
-                                    <Button tone="warning" icon={Ban} loading={markingND} title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos" onClick={onMarkND}>
+                                    <Button tone="warning" icon={Ban} loading={markingND} title="Marca todos los productos de este laboratorio como No Devolutivo (ND). Es poco común." onClick={onMarkND}>
                                         Marcar todo como ND</Button>
                                 </div>
                             )}
@@ -511,7 +511,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         value={draft.vineta}
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
-                        title="Precio regular: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio regular vigente del producto para resolver la política automáticamente"
+                        title="Precio regular de este proveedor. Sirve para distinguirlo cuando el laboratorio tiene varios."
                         tono="chart-9"
                         compact
                         inputClassName="text-body-xl font-semibold text-content-2 text-center"
@@ -529,7 +529,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     soft
                     icon={!draft.devolutivo ? Ban : RotateCcw}
                     className="shrink-0"
-                    title={draft.devolutivo ? 'Marcar como No Devolutivo (ND)' : 'No Devolutivo (ND) — no acepta devolución'}
+                    title={draft.devolutivo ? 'Marcar como No Devolutivo (ND)' : 'No Devolutivo (ND). No acepta devolución.'}
                     onClick={() => setDraft(d => ({ ...d, devolutivo: !d.devolutivo, meses_devolucion: d.devolutivo ? '' : d.meses_devolucion }))}
                 />
 

@@ -22,7 +22,7 @@ import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 const VISTAS = [
   { id: 'lotes', label: 'Lotes' },
   { id: 'reposicion', label: 'Reposición' },
-  { id: 'conteo', label: 'Conteo y bajas' },
+  { id: 'conteo', label: 'Conteo y descartes' },
   { id: 'camiones', label: 'Camiones' },
 ];
 const BUSCAR = { lotes: 'Producto o lote', reposicion: 'Producto o proveedor', conteo: 'Producto o lote' };
@@ -68,8 +68,8 @@ export default function Inventario() {
         {emisor === null && puedeVender ? (
           <View style={{ marginHorizontal: 20 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {puedeConfigurar ? 'Todavía no están los datos de la empresa que factura: complétalos en Empresa para registrar entradas.'
-                : 'Todavía no están los datos de la empresa que factura. Pídele a quien administra la distribuidora que los complete.'}
+              {puedeConfigurar ? 'Faltan los datos de la empresa que factura. Complétalos en Empresa para registrar entradas.'
+                : 'Todavía no están los datos de la empresa que factura. Pídele a un administrador que los complete.'}
             </Text>
           </View>
         ) : null}

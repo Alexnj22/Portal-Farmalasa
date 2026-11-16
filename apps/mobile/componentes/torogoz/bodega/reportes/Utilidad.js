@@ -75,7 +75,7 @@ export default function Utilidad({ buscar }) {
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <FilaDeKpis>
         <Kpi icono="Receipt" rotulo="Venta sin IVA" color={PETROLEO} valor={cargando && !datos ? '…' : formatMoney(venta)}
-          apoyo={`${formatQty(Number(r.documentos ?? 0))} documentos${Number(r.devuelto) > 0 ? ` · ${formatMoney(Number(r.devuelto))} devuelto` : ''}`} />
+          apoyo={`${formatQty(Number(r.documentos ?? 0))} facturas${Number(r.devuelto) > 0 ? ` · ${formatMoney(Number(r.devuelto))} devuelto` : ''}`} />
         <Kpi icono="DollarSign" rotulo="Costo de lo vendido" color={MARCA.violetaClaro} valor={cargando && !datos ? '…' : formatMoney(costo)} apoyo="Al costo del día de la venta" />
       </FilaDeKpis>
       <FilaDeKpis>

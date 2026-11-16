@@ -48,7 +48,7 @@ export default function LabsPanel({ onClose, onChanged }) {
         const { error, errorDesocultar } = await cambiarVisibilidadLaboratorioMinMax(lab.id, newVal, { lab: lab.nombre });
         if (!error) {
             if (errorDesocultar) {
-                setErr(`Algunos productos no se pudieron desocultar: ${errorDesocultar.message}`);
+                setErr(`Algunos productos no se pudieron volver a mostrar: ${errorDesocultar.message}`);
                 setSaving(null);
                 return;
             }
@@ -100,7 +100,7 @@ export default function LabsPanel({ onClose, onChanged }) {
         // antipatrón que el paso a hojas vino a quitar. Este no es una paleta
         // de comandos, es un formulario.
         <ModalShell open onClose={onClose} maxWidthClass="max-w-sm"
-            zClass="z-modal" ariaLabel="Laboratorios ocultos en Min/Max"
+            zClass="z-modal" ariaLabel="Laboratorios ocultos en Mín/Máx"
             surface={enTactil ? null : undefined}
             // SIN `animacionPropia`: significa "el hijo se anima solo", y este
             // panel no se animaba — solo apagaba la de `ModalShell`. Sin la gota
@@ -136,7 +136,7 @@ export default function LabsPanel({ onClose, onChanged }) {
 
                 {/* Hint */}
                 <p className="px-4 pb-1.5 text-caption text-content-3 leading-relaxed">
-                    Ocultos: no aparecen en MinMax ni en el cálculo. No se cuentan como productos ocultos individualmente.
+                    Los ocultos no aparecen en Mín/Máx ni entran al cálculo. No cuentan como productos ocultos uno por uno.
                 </p>
 
                 {err && (

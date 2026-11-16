@@ -30,15 +30,15 @@ export default function CostCards({ summary, isBodega }) {
 
     const STATS = [
         { label: 'Inventario', value: fmtMoney(total), icon: DollarSign,
-            sub: 'Stock total' },
+            sub: 'Existencia total' },
         ...(!isBodega ? [
             { label: 'Útil', value: fmtMoney(useful), icon: TrendingUp,
-                sub: 'Bajo MAX' },
+                sub: 'Bajo el Máx' },
             { label: 'Excedente', value: fmtMoney(excess), icon: TrendingDown,
-                sub: 'Sobre MAX' },
+                sub: 'Sobre el Máx' },
         ] : []),
         { label: 'Sin movimiento', value: fmtMoney(dead), icon: Layers,
-            sub: 'Sin MIN/MAX' },
+            sub: 'Sin Mín/Máx' },
     ];
 
     return STATS.map(s => <StatCard key={s.label} {...s} />);

@@ -42,7 +42,7 @@ import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // movimiento ese día, cuenta el efectivo y cierra: una diferencia exige motivo.
 
 const COLS_VENTAS = [
-    { key: 'documento', label: 'Documento', align: 'left' },
+    { key: 'documento', label: 'Factura', align: 'left' },
     { key: 'cliente', label: 'Cliente', align: 'left', hideBelow: 'sm' },
     { key: 'hora', label: 'Hora', align: 'left', hideBelow: 'md' },
     { key: 'total', label: 'Total', align: 'right' },
@@ -179,7 +179,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                 {liq ? (
                     <CarrilCards className="flex-1" ariaLabel="Resumen de la liquidación">
                         <StatCard icon={Receipt} label="Vendido" value={formatMoney(Number(liq.ventas.total))} loading={cargando}
-                            iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(liq.ventas.documentos))} documentos · ${formatMoney(Number(liq.credito))} a crédito`} />
+                            iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(Number(liq.ventas.documentos))} facturas · ${formatMoney(Number(liq.credito))} a crédito`} />
                         <StatCard icon={HandCoins} label="Cobrado de cartera" value={formatMoney(Number(liq.cobros.total))} loading={cargando}
                             iconBg="bg-success/10" iconCls="text-success" sub={`${formatQty(liq.cobros.lista.length)} cobros`} />
                         <StatCard icon={Undo2} label="Devuelto" value={formatMoney(Number(liq.devoluciones.total))} loading={cargando}
@@ -241,13 +241,13 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                 {Number(liq.devoluciones.a_favor) > 0 && (
                     <Notice variant="info" icon={Undo2}>
                         Hay {formatMoney(Number(liq.devoluciones.a_favor))} de devoluciones a favor de clientes. Quedan como su saldo a favor
-                        —lo usan como pago parcial de sus cuentas— y no se restan del efectivo.
+                        y no se restan del efectivo.
                     </Notice>
                 )}
                 {(Number(liq.reintegros?.total) > 0 || Number(liq.correcciones?.total) > 0) && (
                     <Notice variant="info" icon={Undo2}>
-                        {Number(liq.reintegros?.total) > 0 && <>Se devolvieron {formatMoney(Number(liq.reintegros.total))} en efectivo por ventas deshechas o corregidas: ya están restados del efectivo a entregar. </>}
-                        {Number(liq.correcciones?.total) > 0 && <>Las correcciones cobraron {formatMoney(Number(liq.correcciones.total))} más en efectivo que los documentos que reemplazan: ya están sumados.</>}
+                        {Number(liq.reintegros?.total) > 0 && <>Se devolvieron {formatMoney(Number(liq.reintegros.total))} en efectivo por ventas deshechas o corregidas. Ya están restados del efectivo a entregar. </>}
+                        {Number(liq.correcciones?.total) > 0 && <>Las correcciones cobraron {formatMoney(Number(liq.correcciones.total))} más en efectivo que las facturas que reemplazan. Ya están sumados.</>}
                     </Notice>
                 )}
 
@@ -296,7 +296,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                             <p className="text-caption text-content-3">Cerró {shortEmployeeName(c.cerrada_por)} a las {hora12(c.cerrada_at)}.</p>
                             {c.cambio_despues && (
                                 <Notice variant="warning" icon={AlertTriangle} bloque>
-                                    Hubo ventas o cobros después del cierre: el efectivo a entregar ahora es {formatMoney(esperado)}. Reábrela para volver a contar.
+                                    Hubo ventas o cobros después del cierre. El efectivo a entregar ahora es {formatMoney(esperado)}. Reábrela para volver a contar.
                                 </Notice>
                             )}
                             {liq.puede_cerrar && (reabriendo ? (

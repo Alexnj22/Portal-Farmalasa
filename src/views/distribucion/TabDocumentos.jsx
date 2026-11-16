@@ -36,9 +36,9 @@ import { rutaVenta } from './rutas';
 // La cubeta vive en la dirección (`?cubeta=`), como toda pestaña del portal.
 
 const COLS = [
-    { key: 'documento', label: 'Documento', align: 'left', className: 'w-[200px]' },
+    { key: 'documento', label: 'Tipo y número', align: 'left', className: 'w-[200px]' },
     { key: 'cliente',   label: 'Cliente',   align: 'left', hideBelow: 'md' },
-    { key: 'hacienda',  label: 'Hacienda',  align: 'left' },
+    { key: 'hacienda',  label: 'MH',  align: 'left' },
     { key: 'fecha',     label: 'Emitido',   align: 'left', hideBelow: 'sm' },
     { key: 'total',     label: 'Total',     align: 'right' },
 ];
@@ -67,7 +67,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
         } catch (e) {
             if (mio !== pedidoRef.current) return;
             console.error('TabDocumentos', e);
-            setError('No se pudieron cargar los documentos. Revisa la conexión e intenta de nuevo.');
+            setError('No se pudieron cargar las facturas. Revisa la conexión e intenta de nuevo.');
         } finally {
             if (mio === pedidoRef.current) setCargando(false);
         }
@@ -175,13 +175,13 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                             : <AlertTriangle size={26} className={`${grupos.rechazados.length ? 'text-danger-text' : 'text-warning-text'} shrink-0`} />}
                         <div className="min-w-0">
                             <p className={`text-title font-black ${todoBien ? 'text-success-text' : grupos.rechazados.length ? 'text-danger-text' : 'text-warning-text'}`}>
-                                {todoBien ? 'Todo al día con Hacienda' : `${formatQty(grupos.accion.length)} documento${grupos.accion.length === 1 ? '' : 's'} por resolver`}
+                                {todoBien ? 'Todo al día con el MH' : `${formatQty(grupos.accion.length)} factura${grupos.accion.length === 1 ? '' : 's'} por resolver`}
                             </p>
                             <p className="text-caption text-content-2">
                                 {todoBien
-                                    ? `Los ${formatQty(grupos.sellados.length)} documentos de los últimos ${DIAS_DE_FACTURACION} días tienen código de generación y sello de recepción.`
+                                    ? `Las ${formatQty(grupos.sellados.length)} facturas de los últimos ${DIAS_DE_FACTURACION} días tienen código de generación y sello de recepción.`
                                     : [
-                                        grupos.porEnviar.length && `${formatQty(grupos.porEnviar.length)} sin sello de Hacienda`,
+                                        grupos.porEnviar.length && `${formatQty(grupos.porEnviar.length)} sin sello del MH`,
                                         grupos.rechazados.length && `${formatQty(grupos.rechazados.length)} rechazado${grupos.rechazados.length === 1 ? '' : 's'} por corregir`,
                                         grupos.invalidaciones.length && `${formatQty(grupos.invalidaciones.length)} invalidación pendiente`,
                                         grupos.contingencia.length && `${formatQty(grupos.contingencia.length)} en contingencia`,
@@ -205,9 +205,9 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                 <Notice variant="warning" icon={Mail} data-testid="sin-entregar">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <span>
-                            {formatQty(grupos.sinEntregar.length)} documento{grupos.sinEntregar.length === 1 ? '' : 's'} sellado{grupos.sinEntregar.length === 1 ? '' : 's'} todavía no le
+                            {formatQty(grupos.sinEntregar.length)} factura{grupos.sinEntregar.length === 1 ? '' : 's'} sellada{grupos.sinEntregar.length === 1 ? '' : 's'} todavía no le
                             {grupos.sinEntregar.length === 1 ? ' llegó' : ' llegaron'} al cliente por correo
-                            {grupos.sinEntregar.length > enviables.length ? ` (${formatQty(grupos.sinEntregar.length - enviables.length)} sin correo en la ficha)` : ''}.
+                            {grupos.sinEntregar.length > enviables.length ? ` (${formatQty(grupos.sinEntregar.length - enviables.length)} sin correo en los datos del cliente)` : ''}.
                         </span>
                         {puedeVender && enviables.length > 0 && (
                             <Button size="sm" variant="secondary" icon={enviandoCorreos ? Loader2 : Send} disabled={!!enviandoCorreos} onClick={enviarCorreos}>
@@ -219,16 +219,16 @@ export default function TabDocumentos({ puedeVender, buscar }) {
             )}
             {avisoFirma && (
                 <Notice variant="warning" icon={AlertTriangle}>
-                    {avisoFirma} Sin el certificado de la empresa no se puede firmar: hay que cargar las credenciales de Hacienda.
+                    {avisoFirma} Sin el certificado de la empresa no se puede firmar. Carga las credenciales del MH.
                 </Notice>
             )}
 
             {/* ── Las cubetas: tocar una filtra la lista ── */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                <CarrilCards className="flex-1" ariaLabel="Qué falta con Hacienda">
+                <CarrilCards className="flex-1" ariaLabel="Qué falta con el MH">
                     <StatCard icon={Clock} label="Sin sello" value={formatQty(grupos.porEnviar.length)} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls={grupos.porEnviar.length ? 'text-warning-text' : undefined}
-                        sub="Firmar o reenviar a Hacienda" active={cubeta === 'accion' && sub === 'por_enviar'} tono="warning"
+                        sub="Firmar o reenviar al MH" active={cubeta === 'accion' && sub === 'por_enviar'} tono="warning"
                         onClick={() => { setCubeta('accion'); setSub(v => (v === 'por_enviar' ? '' : 'por_enviar')); }} />
                     <StatCard icon={XCircle} label="Rechazados" value={formatQty(grupos.rechazados.length)} loading={cargando}
                         iconBg="bg-danger/10" iconCls="text-danger" valueCls={grupos.rechazados.length ? 'text-danger-text' : undefined}
@@ -258,10 +258,10 @@ export default function TabDocumentos({ puedeVender, buscar }) {
                 loading={cargando}
                 minWidth="320px"
                 empty={buscar || tipo
-                    ? { icon: Search, message: 'Sin resultados', subtext: 'Ningún documento coincide con la búsqueda o el filtro.' }
+                    ? { icon: Search, message: 'Sin resultados', subtext: 'Ninguna factura coincide con la búsqueda o el filtro.' }
                     : cubeta === 'accion'
-                        ? { icon: ShieldCheck, message: 'Sin pendientes', subtext: 'Todo lo facturado está recibido por Hacienda.' }
-                        : { icon: FileCheck2, message: 'Sin documentos', subtext: 'Se crean al facturar un pedido.' }}
+                        ? { icon: ShieldCheck, message: 'Sin pendientes', subtext: 'Todo lo facturado está recibido por el MH.' }
+                        : { icon: FileCheck2, message: 'Sin facturas', subtext: 'Se crean al facturar un pedido.' }}
             >
                 {pagina.map((d, i) => {
                     const r = revisionHacienda(d);
@@ -308,7 +308,7 @@ export default function TabDocumentos({ puedeVender, buscar }) {
 
             {!cargando && filtrados.length > 0 && (
                 <TablePagination pageSize={pageSize} onPageSizeChange={setPageSize} page={page}
-                    totalPages={totalPages} onPageChange={setPage} total={filtrados.length} unit="documentos" />
+                    totalPages={totalPages} onPageChange={setPage} total={filtrados.length} unit="facturas" />
             )}
 
             {abierto && (

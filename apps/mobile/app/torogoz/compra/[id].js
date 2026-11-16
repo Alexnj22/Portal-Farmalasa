@@ -178,9 +178,9 @@ export default function CompraTorogoz() {
       const json = JSON.parse(textoJson);
       await aplicarJson(json);
       setJsonCrudo(json); setPegando(false); setTextoJson('');
-      listo('Documento leído', 'Revisa los productos, el lote y el vencimiento.');
+      listo('Factura leída', 'Revisa los productos, el lote y el vencimiento.');
     } catch (e) {
-      fallo('No se pudo leer', e instanceof SyntaxError ? 'El texto no es un JSON válido.' : (e?.message || 'No se pudo leer el documento.'));
+      fallo('No se pudo leer', e instanceof SyntaxError ? 'El texto no es un JSON válido.' : (e?.message || 'No se pudo leer la factura.'));
     }
   };
 
@@ -194,16 +194,16 @@ export default function CompraTorogoz() {
       const json = JSON.parse(texto);
       await aplicarJson(json);
       setJsonCrudo(json);
-      listo('Documento leído', 'Revisa los productos, el lote y el vencimiento.');
+      listo('Factura leída', 'Revisa los productos, el lote y el vencimiento.');
     } catch (e) {
-      fallo('No se pudo leer', e instanceof SyntaxError ? 'El archivo no es un JSON válido.' : (e?.message || 'No se pudo leer el documento.'));
+      fallo('No se pudo leer', e instanceof SyntaxError ? 'El archivo no es un JSON válido.' : (e?.message || 'No se pudo leer la factura.'));
     }
   };
 
   const guardar = (recibir) => {
     const p = payloadDeCompra(c);
     const mensaje = recibir
-      ? `${p.items.length} productos entran a bodega con su costo. Esto mueve el inventario y no se deshace: sólo se puede anular mientras todo siga en bodega.`
+      ? `${p.items.length} productos entran a bodega con su costo. No se deshace. Sólo se puede anular mientras todo siga en bodega.`
       : 'Queda en Borradores para seguir después.';
     Alert.alert(recibir ? 'Recibir en bodega' : 'Guardar borrador', `${proveedor?.nombre ?? ''} · ${c.numero.trim()}\n\n${mensaje}`, [
       { text: 'Cancelar', style: 'cancel' },
@@ -222,7 +222,7 @@ export default function CompraTorogoz() {
             return;
           }
           anotar('DISTRIBUCION_COMPRA_BORRADOR', String(nuevoId), { numero: c.numero.trim() });
-          listo('Borrador guardado', 'Puedes seguir después: queda en Borradores.');
+          listo('Borrador guardado', 'Puedes seguir después. Queda en Borradores.');
         } catch (e) {
           const m = mensajeDeDistribucion(e);
           setError(m); fallo(recibir ? 'No se recibió' : 'No se guardó', m);
@@ -290,34 +290,34 @@ export default function CompraTorogoz() {
 
         {editable ? (
           <Seccion pie="Se llena solo: número, fecha, montos y productos.">
-            <Text style={{ color: colorSistema.texto, fontSize: 15 }}>¿Tienes el JSON del documento del proveedor?</Text>
+            <Text style={{ color: colorSistema.texto, fontSize: 15 }}>¿Tienes el JSON de la factura del proveedor?</Text>
             <BotonGrande texto="Elegir el archivo" color={PETROLEO} onPress={elegirArchivo} />
             <BotonGrande texto="Pegar el JSON" borde color={PETROLEO} onPress={() => setPegando(true)} />
           </Seccion>
         ) : null}
         {editable && emisorDelJson ? (
           <View style={{ gap: 8 }}>
-            <Nota tono="warning" texto={`${emisorDelJson.nombre || 'El proveedor del documento'} (NIT ${emisorDelJson.nit ?? '—'}) todavía no está registrado.`} />
+            <Nota tono="warning" texto={`${emisorDelJson.nombre || 'El proveedor de la factura'} (NIT ${emisorDelJson.nit ?? '—'}) todavía no está registrado.`} />
             <BotonGrande texto="Registrarlo" borde color={PETROLEO} onPress={() => setAltaProveedor(emisorDelJson)} />
           </View>
         ) : null}
 
-        <Seccion titulo="Documento">
+        <Seccion titulo="Factura">
           <ElegirLargo rotulo="Proveedor" valor={c.proveedor_id} opciones={opcionesProveedor} deshabilitado={!editable} textoBoton="Elegir proveedor…"
             error={editable && conProblema.has('proveedor') && !!c.numero ? 'Elige el proveedor.' : undefined}
             onCambiar={(v) => set('proveedor_id')(v)} />
           {editable ? <Text onPress={() => setAltaProveedor({})} style={{ color: PETROLEO, fontSize: 15, fontWeight: '600' }}>+ Nuevo proveedor</Text> : null}
           {proveedor?.relacionada ? (
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              Empresa relacionada: es una venta de ella y una compra de Torogoz, y el precio tiene que ser el de mercado.
+              Empresa relacionada. El precio tiene que ser el de mercado.
             </Text>
           ) : null}
-          <ElegirLargo rotulo="Tipo de documento" valor={c.tipo_doc} opciones={TIPOS_COMPRA.map((t) => ({ id: t.value, label: t.label }))}
+          <ElegirLargo rotulo="Tipo de factura" valor={c.tipo_doc} opciones={TIPOS_COMPRA.map((t) => ({ id: t.value, label: t.label }))}
             deshabilitado={!editable} onCambiar={(v) => set('tipo_doc')(v || '03')} />
           <CampoConRotulo rotulo="Número de control" value={c.numero} editable={editable} autoCapitalize="characters" placeholder="DTE-03-…"
             onChangeText={(v) => set('numero')(v.toUpperCase())} />
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Fecha del documento</Text>
+            <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Fecha de la factura</Text>
             {editable ? <Fecha valor={c.fecha} hasta={hoySV()} onCambiar={set('fecha')} />
               : <Text style={{ color: colorSistema.texto2, fontSize: 16 }}>{c.fecha ? fechaNumerica(c.fecha) : '—'}</Text>}
           </View>
@@ -349,10 +349,10 @@ export default function CompraTorogoz() {
         ))}
         {editable ? <BotonGrande texto="Agregar producto" borde color={PETROLEO} onPress={() => { Haptics.selectionAsync().catch(() => {}); setC((x) => ({ ...x, items: [...x.items, renglonDeCompraVacio()] })); }} /> : null}
         {conAviso > 0 ? (
-          <Nota tono="warning" texto={`${conAviso} producto${conAviso === 1 ? '' : 's'} con precio fuera de lo razonable entre empresas del mismo grupo. Se puede recibir igual, pero conviene que el contador lo revise: entre relacionadas el precio tiene que ser el que se le cobraría a un tercero.`} />
+          <Nota tono="warning" texto={`${conAviso} producto${conAviso === 1 ? '' : 's'} con precio fuera de lo razonable entre empresas del mismo grupo. Se puede recibir igual. Pídele al contador que lo revise.`} />
         ) : null}
 
-        <Seccion titulo="Montos del documento" pie="Escríbelos como vienen en el papel: la compra sólo se recibe si cuadran con los productos.">
+        <Seccion titulo="Montos de la factura" pie="Escríbelos como vienen en el papel. La compra sólo se recibe si cuadran con los productos.">
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: cuadra ? MARCA.verde : colorSistema.texto2, fontSize: 15, fontWeight: '700' }}>
               {`${cuadra ? '✓ ' : ''}Productos: ${formatMoney(calc.productos)}`}
@@ -415,7 +415,7 @@ export default function CompraTorogoz() {
           </Text>
           <Campo value={textoJson} onChangeText={setTextoJson} placeholder="Pega aquí el JSON" autoCorrect={false} autoCapitalize="none"
             style={{ minHeight: 200, fontSize: 13, textAlignVertical: 'top' }} />
-          <BotonGrande texto="Leer el documento" color={PETROLEO} deshabilitado={!textoJson.trim()} onPress={leerPegado} />
+          <BotonGrande texto="Leer la factura" color={PETROLEO} deshabilitado={!textoJson.trim()} onPress={leerPegado} />
         </Hoja>
       ) : null}
 

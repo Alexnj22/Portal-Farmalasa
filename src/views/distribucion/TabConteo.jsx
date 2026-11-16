@@ -55,7 +55,7 @@ function RenglonConteo({ it, veSistema, abierto, onGuardado }) {
                 <p className="text-caption text-content-3">Lote {it.lote}{it.vence ? ` · vence ${fechaNumerica(it.vence)}` : ''}{it.contado_por ? ` · contó ${shortEmployeeName(it.contado_por)}` : ''}</p>
                 {error && <Notice variant="danger">{error}</Notice>}
             </div>
-            {veSistema && <span className="sm:col-span-2 text-caption text-content-3 tabular-nums sm:text-right">sistema {formatQty(it.sistema)}</span>}
+            {veSistema && <span className="sm:col-span-2 text-caption text-content-3 tabular-nums sm:text-right">existencia {formatQty(it.sistema)}</span>}
             <div className={veSistema ? 'sm:col-span-2' : 'sm:col-span-4'}>
                 <PortalInput name={`contado-${it.id}`} aria-label={`Contado de ${it.nombre} lote ${it.lote}`} inputMode="numeric" value={valor} readOnly={!abierto}
                     onChange={(e) => setValor(e.target.value)} onBlur={guardar} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
@@ -136,7 +136,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
     const nBaja = entero(baja.unidades);
     const pedirBaja = () => correr('baja', () => solicitarBaja(Number(baja.lote), nBaja, baja.motivo, baja.detalle.trim()), (id) => {
         useStaff.getState().appendAuditLog('DISTRIBUCION_BAJA_SOLICITADA', String(id), { lote: Number(baja.lote), unidades: nBaja, motivo: baja.motivo });
-        showToast('Baja pedida', puedeConfigurar ? 'Apruébala abajo para que salga del lote.' : 'Queda esperando la aprobación de quien administra.', 'success');
+        showToast('Descarte pedido', puedeConfigurar ? 'Apruébalo abajo para que salga del lote.' : 'Queda esperando la aprobación de quien administra.', 'success');
         setBaja({ lote: '', unidades: '', motivo: 'vencido', detalle: '' });
         descartar();
     });
@@ -150,14 +150,14 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
         <div className="p-5 md:p-6 space-y-5">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                <CarrilCards className="flex-1" ariaLabel="Resumen de conteo y bajas">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de conteo y descartes">
                     <StatCard icon={ClipboardCheck} label="Conteo" value={conteo ? `${formatQty(contados)} / ${formatQty(total)}` : 'Sin abrir'} loading={cargando}
                         iconBg="bg-brand/10" iconCls="text-brand-text" sub={conteo ? 'lotes contados' : 'Nadie está contando'} />
                     {conteo?.ve_sistema && (
                         <StatCard icon={AlertTriangle} label="Diferencias" value={formatQty(dif.conDif)} loading={cargando}
                             iconBg="bg-warning/10" iconCls="text-warning" sub={`faltante ${formatMoney(dif.faltante)} · sobrante ${formatMoney(dif.sobrante)}`} />
                     )}
-                    <StatCard icon={PackageMinus} label="Bajas por aprobar" value={formatQty(pendientes.length)} loading={cargando}
+                    <StatCard icon={PackageMinus} label="Descartes por aprobar" value={formatQty(pendientes.length)} loading={cargando}
                         iconBg="bg-danger/10" iconCls="text-danger" sub={`aprobadas: ${formatMoney(valorBajas)} al costo`} />
                 </CarrilCards>
                 {conteo && (
@@ -185,7 +185,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
                     </div>
                 ) : <p className="text-caption text-content-3">No hay conteo abierto. Lo inicia quien administra.</p>)}
                 {conteo && (<>
-                    {!conteo.ve_sistema && <Notice variant="info" compact>Cuenta lo que hay en cada lote. No se muestra lo que dice el sistema, a propósito.</Notice>}
+                    {!conteo.ve_sistema && <Notice variant="info" compact>Cuenta lo que hay en cada lote.</Notice>}
                     {items.length === 0 ? (
                         <p className="text-caption text-content-3 flex items-center gap-1.5"><Search size={14} /> {soloSinContar ? 'Todo está contado.' : 'Ningún lote coincide.'}</p>
                     ) : (
@@ -218,12 +218,12 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
             </section>
 
             {/* ── Bajas ── */}
-            <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Bajas">
-                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><PackageMinus size={16} className="text-danger-text" /> Bajas</TituloDeSeccion>
+            <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Descartes">
+                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><PackageMinus size={16} className="text-danger-text" /> Descartes</TituloDeSeccion>
                 {(puedeVender || puedeConfigurar) && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
                         <Campo label="Lote" className="md:col-span-5">
-                            <LiquidSelect value={baja.lote} onChange={(v) => setBaja(b => ({ ...b, lote: v ?? '' }))} placeholder="Lote…" icon={PackageMinus} ariaLabel="Lote de la baja"
+                            <LiquidSelect value={baja.lote} onChange={(v) => setBaja(b => ({ ...b, lote: v ?? '' }))} placeholder="Lote…" icon={PackageMinus} ariaLabel="Lote del descarte"
                                 options={lotes.map(l => ({ value: String(l.id), label: `${l.nombre} · ${l.lote}`, sublabel: `${l.existencia} unidades${l.vence ? ` · vence ${fechaNumerica(l.vence)}` : ''}` }))} />
                         </Campo>
                         <PortalInput label="Unidades" name="unidades-baja" inputMode="numeric" value={baja.unidades} onChange={(e) => setBaja(b => ({ ...b, unidades: e.target.value }))}
@@ -234,11 +234,11 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
                         <PortalInput label="Qué pasó" name="detalle-baja" value={baja.detalle} onChange={(e) => setBaja(b => ({ ...b, detalle: e.target.value }))} className="md:col-span-3" />
                         <div className="md:col-span-12 flex justify-end">
                             <Button variant="secondary" icon={ocupado === 'baja' ? Loader2 : PackageMinus}
-                                disabled={!baja.lote || !(nBaja > 0) || (loteSel && nBaja > loteSel.existencia) || !baja.detalle.trim() || !!ocupado} onClick={pedirBaja}>Pedir baja</Button>
+                                disabled={!baja.lote || !(nBaja > 0) || (loteSel && nBaja > loteSel.existencia) || !baja.detalle.trim() || !!ocupado} onClick={pedirBaja}>Pedir descarte</Button>
                         </div>
                     </div>
                 )}
-                {bajas.length === 0 ? <p className="text-caption text-content-3">Sin bajas.</p> : (
+                {bajas.length === 0 ? <p className="text-caption text-content-3">Sin descartes.</p> : (
                     <ul className="divide-y divide-divider">
                         {bajas.slice(0, 20).map(b => (
                             <li key={b.id} className="py-2 flex flex-col gap-1" data-baja={b.estado}>
@@ -253,7 +253,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
                                     <div className="flex flex-wrap items-end gap-2">
                                         <PortalInput label="Nota (obligatoria para rechazar)" name={`nota-baja-${b.id}`} value={rechazo[b.id] ?? ''} onChange={(e) => setRechazo(r => ({ ...r, [b.id]: e.target.value }))} className="flex-1 min-w-[180px]" compact />
                                         <Button size="sm" variant="ghost" icon={X} disabled={!(rechazo[b.id] ?? '').trim() || !!ocupado} onClick={() => resolver(b, false)}>Rechazar</Button>
-                                        <Button size="sm" variant="secondary" tone="danger" icon={ocupado === `res-${b.id}` ? Loader2 : Check} disabled={!!ocupado} onClick={() => resolver(b, true)}>Aprobar baja</Button>
+                                        <Button size="sm" variant="secondary" tone="danger" icon={ocupado === `res-${b.id}` ? Loader2 : Check} disabled={!!ocupado} onClick={() => resolver(b, true)}>Aprobar descarte</Button>
                                     </div>
                                 )}
                             </li>

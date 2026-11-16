@@ -44,7 +44,7 @@ export function useColaSinSenal({ automatico = true } = {}) {
     try {
       const r = await enviarVentasSinSenal();
       if (r.facturadas) listo(`${r.facturadas} venta${r.facturadas === 1 ? '' : 's'} sin señal facturada${r.facturadas === 1 ? '' : 's'}`, 'En contingencia, con la hora de la venta.');
-      if (r.aviso) fallo('Falta el aviso de contingencia', `${r.aviso} Las ventas ya quedaron facturadas: el aviso sale desde Facturación.`);
+      if (r.aviso) fallo('Falta el aviso de contingencia', `${r.aviso} Las ventas ya quedaron facturadas. El aviso sale desde Facturación.`);
       else if (r.errores) fallo('Una venta sin señal no entró', 'Revisa el motivo en la lista y vuelve a facturarla.');
       else if (avisar && !r.facturadas) fallo('Sigue sin señal', 'Las ventas quedan guardadas en el teléfono y se mandan solas al volver.');
       return r;
@@ -89,9 +89,9 @@ export function AvisoSinSenal({ lista, enviando, onEnviar }) {
         ))}
         {/* Sin `onEnviar` (sólo consulta, soloConsulta.js) la app no las manda: sólo las muestra. */}
         {!onEnviar ? (
-          <SeHaceEnElPortal texto="Por ahora la app no las envía. Avisa a quien administra: Hacienda da 72 horas desde la venta." />
+          <SeHaceEnElPortal texto="Por ahora la app no las envía. Avisa a un administrador. El MH da 72 horas desde la venta." />
         ) : null}
-        {onEnviar ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se facturan en contingencia al volver la señal. Hacienda da 72 horas desde la venta.</Text> : null}
+        {onEnviar ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Se facturan en contingencia al volver la señal. El MH da 72 horas desde la venta.</Text> : null}
         {onEnviar ? <Pressable onPress={() => onEnviar({ avisar: true })} disabled={enviando} accessibilityRole="button" hitSlop={6}
           style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', opacity: enviando ? 0.5 : pressed ? 0.6 : 1 })}>
           <Text style={{ color: colorSistema.acento, fontSize: 16, fontWeight: '700' }}>{enviando ? 'Enviando…' : 'Enviar ahora'}</Text>

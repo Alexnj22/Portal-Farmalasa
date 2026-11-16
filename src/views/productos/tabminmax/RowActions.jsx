@@ -97,7 +97,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                 cls: `${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover disabled:pointer-events-none`,
                 dropCls: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
-        isBodegaRow && puedeCeroEnTodas && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en todas las salas',
+        isBodegaRow && puedeCeroEnTodas && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en todas las sucursales',
             cls: `${B} text-danger-text hover:text-danger-text hover:bg-danger/10`,
             dropCls: 'text-danger-text hover:text-danger-text hover:bg-danger/10',
             onClick: () => onZeroAllBranches() },

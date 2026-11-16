@@ -55,8 +55,8 @@ export function GraficaVentasDiarias({ serie, metrica = 'ventas' }) {
                 <XAxis dataKey="etiqueta" interval="preserveStartEnd" minTickGap={28} tickLine={false} axisLine={false} tick={EJE} />
                 <YAxis tickLine={false} axisLine={false} width={52} tick={EJE} tickFormatter={esDinero ? dineroCorto : formatQty} />
                 <Tooltip contentStyle={TOOLTIP} cursor={{ stroke: TEXTO, strokeDasharray: '4 4' }}
-                    formatter={(v, nombre) => [esDinero ? dinero(v) : `${formatQty(v)} documentos`, nombre]} />
-                <Area type="monotone" dataKey={metrica} name={esDinero ? 'Ventas' : 'Documentos'} stroke="var(--chart-1)"
+                    formatter={(v, nombre) => [esDinero ? dinero(v) : `${formatQty(v)} facturas`, nombre]} />
+                <Area type="monotone" dataKey={metrica} name={esDinero ? 'Ventas' : 'Facturas'} stroke="var(--chart-1)"
                     strokeWidth={2} fill="url(#tableroVentas)" dot={false}
                     activeDot={{ r: 5, strokeWidth: 2, stroke: 'var(--surface-card)' }} isAnimationActive={false} />
                 {esDinero && (
@@ -132,7 +132,7 @@ export function GraficaSemana({ datos }) {
                 <XAxis dataKey="etiqueta" tickLine={false} axisLine={false} tick={EJE} />
                 <YAxis tickLine={false} axisLine={false} width={46} tick={EJE} tickFormatter={dineroCorto} />
                 <Tooltip contentStyle={TOOLTIP} cursor={{ fill: REJILLA, opacity: 0.35 }}
-                    formatter={(v, _n, p) => [`${dinero(v)} · ${formatQty(p?.payload?.documentos)} documentos`, 'Ventas']} />
+                    formatter={(v, _n, p) => [`${dinero(v)} · ${formatQty(p?.payload?.documentos)} facturas`, 'Ventas']} />
                 <Bar dataKey="ventas" radius={[4, 4, 0, 0]} maxBarSize={34} isAnimationActive={false}>
                     {/* El mejor día resalta: es lo que se busca en esta gráfica. */}
                     {filas.map(f => <Cell key={f.etiqueta} fill={f.mejor ? 'var(--success)' : 'var(--chart-1)'} />)}
@@ -152,7 +152,7 @@ export function GraficaHoras({ datos }) {
                 <XAxis dataKey="etiqueta" tickLine={false} axisLine={false} tick={EJE} interval={1} />
                 <YAxis tickLine={false} axisLine={false} width={40} tick={EJE} allowDecimals={false} />
                 <Tooltip contentStyle={TOOLTIP} cursor={{ fill: REJILLA, opacity: 0.35 }}
-                    formatter={(v, _n, p) => [`${formatQty(v)} documentos · ${dinero(p?.payload?.ventas)}`, 'A esa hora']} />
+                    formatter={(v, _n, p) => [`${formatQty(v)} facturas · ${dinero(p?.payload?.ventas)}`, 'A esa hora']} />
                 <Bar dataKey="documentos" fill="var(--chart-3)" radius={[4, 4, 0, 0]} maxBarSize={22} isAnimationActive={false} />
             </BarChart>
         </ChartContainer>

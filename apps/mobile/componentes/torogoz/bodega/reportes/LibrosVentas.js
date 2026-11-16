@@ -97,26 +97,26 @@ export default function LibrosVentas({ buscar }) {
         </>
       ) : (
         <FilaDeKpis>
-          <Kpi icono="Ban" rotulo="Documentos anulados" color={MARCA.rojo} valor={formatQty(filas.length)} apoyo="Invalidados en el mes" />
+          <Kpi icono="Ban" rotulo="Facturas anuladas" color={MARCA.rojo} valor={formatQty(filas.length)} apoyo="Invalidados en el mes" />
         </FilaDeKpis>
       )}
       {!cargando && Number(datos?.sin_sello?.documentos) > 0 ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso tono="cuidado" texto={`${formatQty(Number(datos.sin_sello.documentos))} documentos del mes (${formatMoney(Number(datos.sin_sello.total))}) todavía no tienen sello de Hacienda y no entran al libro. Envíalos desde Facturación antes de declarar.`} />
+          <Aviso tono="cuidado" texto={`${formatQty(Number(datos.sin_sello.documentos))} facturas del mes (${formatMoney(Number(datos.sin_sello.total))}) todavía no tienen sello del MH y no entran al libro. Envíalas desde Facturación antes de declarar.`} />
         </View>
       ) : null}
       {!cargando && sinArchivo ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Algunas filas son datos de muestra sin su archivo: sus montos se derivaron del total." /></View> : null}
 
       {cargando ? <Cargando /> : filas.length === 0 ? (
-        <Vacio titulo={libro === 'anulados' ? 'Sin anulados' : libro === 'consumidor' ? 'Sin ventas' : 'Sin documentos'}
-          texto={libro === 'anulados' ? 'No se invalidó ningún documento este mes.' : libro === 'consumidor' ? 'No hay Facturas selladas este mes.' : 'No hay Créditos Fiscales sellados este mes.'} />
+        <Vacio titulo={libro === 'anulados' ? 'Sin anulados' : libro === 'consumidor' ? 'Sin ventas' : 'Sin créditos fiscales'}
+          texto={libro === 'anulados' ? 'No se invalidó ninguna factura este mes.' : libro === 'consumidor' ? 'No hay Facturas selladas este mes.' : 'No hay Créditos Fiscales sellados este mes.'} />
       ) : libro === 'contribuyente' ? filas.map((f) => (
         <Fila key={f.id} izquierda={f.cliente} rojo={f.tipo_dte === '05'}
           abajo={`${fechaNumerica(f.fecha)} · ${TIPO_DOCUMENTO[f.tipo_dte]?.corto ?? f.tipo_dte} · ${f.numero_control} · NRC ${f.nrc}\nGravado ${formatMoney(Number(f.ventas_gravadas))} · débito ${formatMoney(Number(f.debito_fiscal))}${Number(f.percibido) ? ` · percibido ${formatMoney(Number(f.percibido))}` : ''}`}
           derecha={`${f.tipo_dte === '05' ? '−' : ''}${formatMoney(Number(f.ventas_gravadas) + Number(f.ventas_exentas))}`} />
       )) : libro === 'consumidor' ? filas.map((f) => (
         <Fila key={f.fecha} izquierda={fechaNumerica(f.fecha)}
-          abajo={`${formatQty(Number(f.documentos))} documentos\nDel ${f.numero_control_del}\nal ${f.numero_control_al}`} derecha={formatMoney(Number(f.total_diario))} />
+          abajo={`${formatQty(Number(f.documentos))} facturas\nDel ${f.numero_control_del}\nal ${f.numero_control_al}`} derecha={formatMoney(Number(f.total_diario))} />
       )) : filas.map((f) => (
         <Fila key={f.id} izquierda={f.cliente}
           abajo={`${TIPO_DOCUMENTO[f.tipo_dte]?.corto ?? f.tipo_dte} · ${f.numero_control}\nAnulado el ${fechaNumerica(f.anulado_el)}${f.motivo ? ` · ${f.motivo}` : ''}`}

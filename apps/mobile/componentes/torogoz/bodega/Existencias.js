@@ -75,7 +75,7 @@ export default function Existencias({ visible = true, terminoInicial = '', onCer
             );
           }) : null}
           {!corto && total > productos.length && productos.length > 0
-            ? <Aviso texto={`Se muestran ${productos.length} de ${total}: escribe más para acotar.`} /> : null}
+            ? <Aviso texto={`Se muestran ${productos.length} de ${total}. Escribe más para acotar.`} /> : null}
         </ScrollView>
       </ConAurora>
     </Modal>

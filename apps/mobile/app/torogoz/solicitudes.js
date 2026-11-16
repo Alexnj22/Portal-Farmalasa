@@ -76,7 +76,7 @@ function Tarjeta({ f, mia, puedeDecidir, destacada, ocupado, onDecidir }) {
 
           {invalida ? (
             <View style={{ borderRadius: 14, borderWidth: 0.5, borderColor: colorSistema.separador, overflow: 'hidden' }}>
-              {filaDinero(`${m.tipo_documento === '03' ? 'Crédito Fiscal' : 'Factura'} · total del documento`, m.total)}
+              {filaDinero(`${m.tipo_documento === '03' ? 'Crédito Fiscal' : 'Factura'} · total de la factura`, m.total)}
               {m.accion === 'corregir'
                 ? filaDinero('Abonado (pasa a la cuenta nueva)', m.abonado, true)
                 : (<>
@@ -135,7 +135,7 @@ function Tarjeta({ f, mia, puedeDecidir, destacada, ocupado, onDecidir }) {
               </>
             )) : null}
           </View>
-          {pendiente && mia && puedeDecidir ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>La pediste tú: la decide otra persona.</Text> : null}
+          {pendiente && mia && puedeDecidir ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>La pediste tú. La decide otra persona.</Text> : null}
         </View>
       </Vidrio>
     </View>
@@ -178,9 +178,9 @@ export default function SolicitudesTorogoz() {
     const queHace = invalida
       ? (aprobar
         ? (m.accion === 'corregir'
-          ? 'Se abre una venta nueva con lo mismo; al facturarla, este documento se invalida ante Hacienda con tu nombre.'
-          : 'Se invalida ante Hacienda con tu nombre y el pedido queda anulado. El efectivo sale de la caja del vendedor; lo demás queda a favor del cliente.')
-        : 'El documento queda como estaba y se le avisa al vendedor.')
+          ? 'Se abre una venta nueva con lo mismo. Al facturarla, esta factura se invalida ante el MH con tu nombre.'
+          : 'Se invalida ante el MH con tu nombre y el pedido queda anulado. El efectivo sale de la caja del vendedor. Lo demás queda a favor del cliente.')
+        : 'La factura queda como estaba y se le avisa al vendedor.')
       : (aprobar ? 'La venta se podrá facturar con el descuento y se le avisa al vendedor.' : 'La venta queda sin el descuento y se le avisa al vendedor.');
     Alert.alert(aprobar ? (invalida ? 'Aprobar la solicitud' : 'Aprobar el descuento') : (invalida ? 'Rechazar la solicitud' : 'Rechazar el descuento'),
       `${m.cliente || 'Cliente'} · ${formatMoney(m.total)}\n\n${queHace}`, [
@@ -214,7 +214,7 @@ export default function SolicitudesTorogoz() {
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         {!puedeDecidir ? (
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Ves las que pediste. Las decide quien tiene permiso para aprobar solicitudes de Distribución.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Ves las que pediste. Las decide un supervisor o administrador.</Text>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas === null ? <Cargando /> : null}

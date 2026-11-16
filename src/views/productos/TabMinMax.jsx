@@ -112,28 +112,28 @@ const validateEditForRow = (edit, row) => {
         if (edit.field === 'min') {
             const floor = edit.bodegaPubMin ?? row.pub_min ?? 0;
             if (floor > 0 && numVal < floor)
-                return `MIN de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString('es-SV')})`;
+                return `El Mín de Bodega no puede ser menor que la suma de las sucursales (${floor.toLocaleString('es-SV')}).`;
         }
         if (edit.field === 'max') {
             const floor = edit.bodegaPubMax ?? row.pub_max ?? 0;
             if (floor > 0 && numVal < floor)
-                return `MAX de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString('es-SV')})`;
+                return `El Máx de Bodega no puede ser menor que la suma de las sucursales (${floor.toLocaleString('es-SV')}).`;
             if (edit.pendingMin !== undefined) {
                 const pendMinNum = parseInt(edit.pendingMin, 10) || 0;
                 const floorMin = edit.bodegaPubMin ?? row.pub_min ?? 0;
                 if (floorMin > 0 && pendMinNum < floorMin)
-                    return `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString('es-SV')})`;
+                    return `El Mín de Bodega no puede ser menor que la suma de las sucursales (${floorMin.toLocaleString('es-SV')}).`;
             }
         }
     }
     if (edit.field === 'max') {
-        if (numVal === 0 && other > 0)     return 'MAX no puede ser 0 cuando MIN > 0';
-        if (numVal > 0 && numVal <= other) return 'MAX debe ser mayor al MIN';
-        if (other === 0 && numVal > 1)     return 'Con MIN=0 solo se permite MAX=0 o MAX=1';
+        if (numVal === 0 && other > 0)     return 'El Máx no puede ser 0 si el Mín es mayor que 0.';
+        if (numVal > 0 && numVal <= other) return 'El Máx debe ser mayor que el Mín.';
+        if (other === 0 && numVal > 1)     return 'Con Mín 0, el Máx solo puede ser 0 o 1.';
     } else {
-        if (numVal > 0 && other === 0)                   return 'Con MAX=0 el MIN también debe ser 0';
-        if (numVal > 0 && other > 0 && numVal >= other)  return 'MIN debe ser menor al MAX';
-        if (numVal === 0 && other > 1)                   return 'Con MIN=0 el MAX no puede ser mayor a 1';
+        if (numVal > 0 && other === 0)                   return 'Con Máx 0, el Mín también debe ser 0.';
+        if (numVal > 0 && other > 0 && numVal >= other)  return 'El Mín debe ser menor que el Máx.';
+        if (numVal === 0 && other > 1)                   return 'Con Mín 0, el Máx no puede ser mayor que 1.';
     }
     return null;
 };
@@ -671,8 +671,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         icon={Package}
                         title={`Sin datos para ${ERP_NAMES[selectedErp]}`}
                         subtitle={isBodega
-                            ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Selecciona una sucursal para calcular.'
-                            : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los MIN/MAX.`}
+                            ? 'Bodega se actualiza sola cuando las sucursales publican su Mín/Máx. Elige una sucursal para calcular.'
+                            : `Toca Calcular para revisar ${config?.analysis_days ?? 180} días de ventas y generar el Mín/Máx.`}
                         action={!isBodega ? (
                             <Button loading={calculating} onClick={handleRecalcular}>
                                 Calcular {ERP_NAMES[selectedErp]}</Button>
@@ -698,7 +698,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                  boxShadow: 'var(--shadow-glass-1)',
                              }}>
                             <Info size={10} className="text-chart-3-text shrink-0" />
-                            <span className="text-caption text-content-2 whitespace-nowrap">MIN/MAX = Σ sucursales publicadas</span>
+                            <span className="text-caption text-content-2 whitespace-nowrap">Mín/Máx = suma de las sucursales publicadas</span>
                             {bodegaPendingCount > 0 ? (
                                 <>
                                     <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
@@ -726,7 +726,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 >
                 {isSearchFuzzy && searchTerm && (
                     <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    No hay coincidencias exactas para &ldquo;{searchTerm}&rdquo;. Estos son los más parecidos.
                 </Notice>
                 )}
                 <DataTable
@@ -766,7 +766,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     empty={{
                         icon: Package,
                         message: searchHiddenByFilter
-                            ? `"${searchTerm}" existe pero está fuera del filtro activo`
+                            ? `"${searchTerm}" existe, pero está fuera del filtro activo`
                             : 'Sin productos con ese filtro',
                         action: searchHiddenByFilter
                             ? { label: 'Quitar filtros y ver resultado', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } }
@@ -813,8 +813,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         const reglaAyuda = dispatchRisk
                             ? `Se despacha de a ${reglaPack.toLocaleString('es-SV')} und`
                               + `${row.dispatch_tipo ? ` (${row.dispatch_tipo}${Number(row.dispatch_multiplo ?? 1) > 1 ? ` ×${row.dispatch_multiplo}` : ''})` : ''}`
-                              + `, y el MAX${hasDraft ? ' del borrador' : ''} de ${Number(vistaMax ?? 0).toLocaleString('es-SV')} no llega ni a una. `
-                              + 'Así este producto nunca va a entrar en un pedido: hay que subir el MAX o cambiar la regla.'
+                              + `. El Máx${hasDraft ? ' del borrador' : ''} de ${Number(vistaMax ?? 0).toLocaleString('es-SV')} no llega ni a una. `
+                              + 'Este producto nunca va a entrar en un pedido. Sube el Máx o cambia la regla.'
                               + (puedeVerReglas ? ' Toca para ver la regla.' : '')
                             : '';
 
@@ -873,7 +873,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         const detalle = [
                                                             cfg?.ayuda,
                                                             row._manual_por ? `Lo puso ${row._manual_por}${cuando ? ` el ${cuando}` : ''}` : null,
-                                                            est ? (motivo ? `Motivo: ${motivo}` : 'Sin motivo declarado') : null,
+                                                            est ? (motivo ? `Motivo: ${motivo}` : 'Sin motivo') : null,
                                                             row._manual_nota || null,
                                                             'Toca para ver quién y por qué',
                                                         ].filter(Boolean).join(' · ');
@@ -922,7 +922,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
                                                         (!hasDraft && Number(row.pub_min ?? 0) === 0 && Number(row.pub_max ?? 0) === 0 && row.has_manual)
-                                                    ) && <Badge title="Retirado de MIN·MAX en todas las salas" variant="danger" size="sm" uppercase={false}>SIN SALAS</Badge>}
+                                                    ) && <Badge title="Fuera de Mín/Máx en todas las sucursales" variant="danger" size="sm" uppercase={false}>SIN SUCURSALES</Badge>}
                                                     {limitedData && (
                                                         <Badge title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`} variant="warning" size="sm" uppercase={false}>{row.draft_data_days}d DATOS</Badge>
                                                     )}
@@ -1070,7 +1070,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         <div data-surface={hasDraft ? undefined : 'card'} className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover'}`}>{vistaMax > 0 ? vistaMax.toLocaleString('es-SV') : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-micro font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-warning-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
-                                                    {(dead || noHistory) && <div className="text-micro text-warning-text font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
+                                                    {(dead || noHistory) && <div className="text-micro text-warning-text font-semibold mt-0.5">⚠ Sin ventas en 6 meses</div>}
                                                 </div>
                                             );
 
@@ -1168,7 +1168,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     )}
                                                     <Badge
                                                         variant="warning" size="sm" uppercase={false}
-                                                        title="Hover para ver sucursales pendientes"
+                                                        title="Pasa el mouse para ver las sucursales pendientes"
                                                         className="gap-1 cursor-help select-none"
                                                         onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                         onMouseLeave={closeBodegaTooltip}
@@ -1210,7 +1210,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const pendingBadge = isBodega && row.has_pending_branches ? (
                                                 <Badge
                                                     variant="warning" size="sm" uppercase={false}
-                                                    title="Hover para ver sucursales pendientes"
+                                                    title="Pasa el mouse para ver las sucursales pendientes"
                                                     className="gap-1 cursor-help select-none"
                                                     onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                     onMouseLeave={closeBodegaTooltip}
@@ -1300,7 +1300,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         </>}
                                                     </Badge>
                                                     {hasRule && hasPres && (
-                                                        <LiquidTooltip content="MIN · MAX ya redondeado a la regla de despacho">
+                                                        <LiquidTooltip content="Mín/Máx ya redondeado a la regla de despacho">
                                                             <span className="text-micro font-semibold text-content-3 tabular-nums">
                                                                 {applyRule(dispMin).toLocaleString('es-SV')} · {applyRule(dispMax).toLocaleString('es-SV')}
                                                             </span>
@@ -1479,7 +1479,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 maxWidthClass="max-w-md"
                 zClass="z-tooltip"
                 surface={null}
-                ariaLabel="Historial de MIN/MAX">
+                ariaLabel="Historial de Mín/Máx">
                 {/* `CuerpoDialogo` en vez del envoltorio a mano: traía su propio
                     `max-h`, su propio `rounded-modal` y su fila de título con la ✕.
                     El botón de cerrar pasa al pie —explícito, porque en un teléfono
@@ -1488,7 +1488,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     trata sin competir con el título. */}
                 <CuerpoDialogo
                     titulo={historyRow.product_name}
-                    subtitulo={`${ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN·MAX`}
+                    subtitulo={`${ERP_NAMES[historyRow._erp_sucursal_id]} · Historial de Mín/Máx`}
                     icono={History}
                     anchoEscritorio="max-w-md"
                     pie={<Button variant="secondary" onClick={() => setHistoryRow(null)}>Cerrar</Button>}
@@ -1608,7 +1608,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const sol = d.request_id
                                     ? historySolicitudes.find(s => s.id === d.request_id)
                                     : null;
-                                const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas las salas' : (ERP_NAMES[d.sucursal_id] || '');
+                                const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas las sucursales' : (ERP_NAMES[d.sucursal_id] || '');
                                 // El `badge:` del fallback viejo no lo leía nadie —`Badge` va
                                 // por `variante`— así que una acción sin entrada salía con el
                                 // código crudo Y sin color. Ahora al menos sale neutra.
@@ -1655,12 +1655,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     </span>
                                                 ) : (<>
                                                 <span className="text-label text-content-2 tabular-nums">
-                                                    <span className="text-micro text-content-3 font-bold mr-0.5">MIN</span>
+                                                    <span className="text-micro text-content-3 font-bold mr-0.5">Mín</span>
                                                     {d.old_min !== d.new_min && <span className="text-content-3">{fmt(d.old_min)} → </span>}
                                                     <strong className="text-content">{fmt(d.new_min)}</strong>
                                                 </span>
                                                 <span className="text-label text-content-2 tabular-nums">
-                                                    <span className="text-micro text-content-3 font-bold mr-0.5">MAX</span>
+                                                    <span className="text-micro text-content-3 font-bold mr-0.5">Máx</span>
                                                     {d.old_max !== d.new_max && <span className="text-content-3">{fmt(d.old_max)} → </span>}
                                                     <strong className="text-content">{fmt(d.new_max)}</strong>
                                                 </span>
@@ -1773,7 +1773,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 message={
                     <div className="flex flex-col gap-3 text-left">
                         <p className="text-body font-medium leading-relaxed text-content-3">
-                            Se aplicarán los valores MIN/MAX en {ERP_NAMES[selectedErp]}. Tendrás 5 segundos para cancelar.
+                            Se aplicará el Mín/Máx en {ERP_NAMES[selectedErp]}. Tienes 5 segundos para cancelar.
                         </p>
                         {publishConfirm.ajustadas > 0 && (
                             <>
@@ -1781,11 +1781,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     <strong className="text-content-1">
                                         {publishConfirm.ajustadas} de ellos
                                     </strong>{' '}
-                                    tienen hoy un MIN/MAX que salió de una solicitud aprobada
+                                    tienen hoy un Mín/Máx que salió de una solicitud aprobada
                                     {/* Crudo, igual que el badge AJUSTADO de la fila: `manual_por`
                                         guarda lo que devolvió `auth.email()`, que a veces es un
                                         nombre y a veces una cuenta — no es `employees.name`. */}
-                                    {publishConfirm.ajustePor ? ` — el último, ${publishConfirm.ajustePor}` : ''}
+                                    {publishConfirm.ajustePor ? `. El último, ${publishConfirm.ajustePor}` : ''}
                                     {publishConfirm.ajusteAt
                                         ? ` el ${fechaTexto(publishConfirm.ajusteAt, { day: '2-digit', month: 'short', year: 'numeric' })}`
                                         : ''}.
@@ -1819,7 +1819,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 isOpen={calcularConfirm.open}
                 onClose={() => setCalcularConfirm({ open: false, mode: null })}
                 onConfirm={() => { const m = calcularConfirm.mode; setCalcularConfirm({ open: false, mode: null }); m === 'all' ? handleRecalcularAll() : handleRecalcular(); }}
-                title="¿Recalcular MIN/MAX?"
+                title="¿Recalcular el Mín/Máx?"
                 // El ALCANCE se elige acá, no con dos botones distintos afuera.
                 // "Calcular esta sucursal" y "calcular todas" son la misma acción
                 // con distinto alcance: dos botones gemelos obligaban a leerlos
@@ -1839,8 +1839,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         />
                         <p className="text-body font-medium leading-relaxed text-content-3">
                             {calcularConfirm.mode === 'all'
-                                ? 'Se generarán nuevos borradores para todas las sucursales. Los borradores existentes no publicados serán reemplazados.'
-                                : `Se generarán nuevos borradores para ${ERP_NAMES[selectedErp]}. Los borradores actuales no publicados serán reemplazados.`}
+                                ? 'Se crean borradores nuevos para todas las sucursales. Reemplazan a los borradores sin publicar.'
+                                : `Se crean borradores nuevos para ${ERP_NAMES[selectedErp]}. Reemplazan a los borradores sin publicar.`}
                         </p>
                     </div>
                 }
@@ -1855,7 +1855,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 onClose={() => setDescartarYCalcular(false)}
                 onConfirm={handleDescartarYRecalcular}
                 title={`${ERP_NAMES[selectedErp]} tiene ${draftCount} borrador${draftCount !== 1 ? 'es' : ''} sin revisar`}
-                message={`Para recalcular hay que descartarlos primero: volverán al MIN/MAX publicado actual y el cálculo nuevo generará los suyos. Esta acción no se puede deshacer.`}
+                message={`Para recalcular, primero hay que descartarlos. Vuelven al Mín/Máx publicado y el cálculo nuevo crea los suyos. No se puede deshacer.`}
                 confirmText="Descartar y recalcular"
                 cancelText="Cancelar"
                 isDestructive={true}
@@ -1867,7 +1867,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 onClose={() => setDiscardRowConfirm({ open: false, row: null })}
                 onConfirm={() => { const r = discardRowConfirm.row; setDiscardRowConfirm({ open: false, row: null }); discardDraft(r); }}
                 title="¿Descartar borrador?"
-                message={`"${discardRowConfirm.row?.product_name ?? ''}" volverá al MIN·MAX publicado actual. Esta acción no se puede deshacer.`}
+                message={`"${discardRowConfirm.row?.product_name ?? ''}" vuelve al Mín/Máx publicado. No se puede deshacer.`}
                 confirmText="Descartar"
                 cancelText="Cancelar"
                 isDestructive={true}
@@ -1885,7 +1885,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     else zeroOutRow(row);
                 }}
                 title="¿Poner 0 en producto de alta rotación?"
-                message={`"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
+                message={`"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Pones el Mín/Máx en 0?`}
                 confirmText="Poner 0"
                 cancelText="Cancelar"
                 isDestructive={true}
@@ -1916,8 +1916,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 message={
                     <div className="flex flex-col gap-3 text-left">
                         <p className="text-body font-medium leading-relaxed text-content-3">
-                            Los valores calculados de {ERP_NAMES[selectedErp]} se descartarán y volverán
-                            al MIN/MAX publicado actual. Esta acción no se puede deshacer.
+                            Se descartan los valores calculados de {ERP_NAMES[selectedErp]} y vuelven
+                            al Mín/Máx publicado. No se puede deshacer.
                         </p>
                         {aDescartar.sinDatos > 0 && (
                             <p className="text-body font-medium leading-relaxed text-content-3">
@@ -1925,8 +1925,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <strong className="text-content-1">
                                     {aDescartar.sinDatos.toLocaleString('es-SV')} productos sin ventas suficientes
                                 </strong>{' '}
-                                para calcular. No salen en esta lista y vuelven solos en el próximo cálculo,
-                                así que el total será {aDescartar.total.toLocaleString('es-SV')}.
+                                para calcular. No salen en esta lista y vuelven solos en el próximo cálculo.
+                                El total será {aDescartar.total.toLocaleString('es-SV')}.
                             </p>
                         )}
                     </div>
@@ -1943,7 +1943,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 onClose={() => setHideFilteredConfirm(false)}
                 onConfirm={hideFiltered}
                 title={`¿Ocultar ${filtered.length} producto${filtered.length !== 1 ? 's' : ''}?`}
-                message={`Los productos de "${filterLabel}" en ${ERP_NAMES[selectedErp]} quedarán ocultos con MIN/MAX en borrador 0/0. Puedes revertirlo desde el filtro de ocultos.`}
+                message={`Los productos de "${filterLabel}" en ${ERP_NAMES[selectedErp]} quedarán ocultos, con el Mín/Máx en borrador 0/0. Puedes revertirlo desde el filtro de ocultos.`}
                 confirmText="Ocultar"
                 cancelText="Cancelar"
                 isDestructive={true}

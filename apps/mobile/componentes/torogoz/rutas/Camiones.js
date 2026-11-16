@@ -71,7 +71,7 @@ export default function Camiones({ puedeConfigurar }) {
   const visibles = useMemo(() => (camiones ?? []).map((c) => ({ ...c, lotes: (c.lotes ?? []).filter((l) => !q || tokenMatch(q, l.nombre, l.lote)) })), [camiones, q]);
 
   const emitir = (c) => {
-    Alert.alert('Emitir la Nota de Remisión', `Ampara ante Hacienda la mercadería del camión de ${shortEmployeeName(c.vendedor)}.`, [
+    Alert.alert('Emitir la Nota de Remisión', `Ampara ante el MH la mercadería del camión de ${shortEmployeeName(c.vendedor)}.`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Emitir',

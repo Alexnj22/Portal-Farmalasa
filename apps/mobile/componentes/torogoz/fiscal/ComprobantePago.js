@@ -60,13 +60,13 @@ export default function ComprobantePago({ forma, montoEsperado, puedeCambiarMont
       ) : null}
       {fotos.length && rev.estado === 'sin_comparar' ? (
         <View style={{ gap: 8 }}>
-          <Aviso tono="nota" texto={`El comprobante dice ${formatMoney(rev.montoLeido)}. Esta forma de pago es «el resto»: se compara al facturar.`} />
+          <Aviso tono="nota" texto={`El comprobante dice ${formatMoney(rev.montoLeido)}. Esta forma de pago es «el resto». Se compara al facturar.`} />
           <BotonGrande color={PETROLEO} texto="Adjuntar" onPress={() => terminar({ verificacion: rev.verificacion, notaFinal: rev.notaSinLectura })} />
         </View>
       ) : null}
       {fotos.length && rev.estado === 'coincide' ? (
         <View style={{ gap: 8 }}>
-          <Text style={{ color: colorSistema.verde, fontSize: 15, fontWeight: '700' }}>{`El comprobante dice ${formatMoney(rev.montoLeido)}: coincide con el pago.`}</Text>
+          <Text style={{ color: colorSistema.verde, fontSize: 15, fontWeight: '700' }}>{`El comprobante dice ${formatMoney(rev.montoLeido)}. Coincide con el pago.`}</Text>
           <BotonGrande color={PETROLEO} texto="Adjuntar" onPress={() => terminar({ verificacion: rev.verificacion, notaFinal: rev.notaSinLectura })} />
         </View>
       ) : null}

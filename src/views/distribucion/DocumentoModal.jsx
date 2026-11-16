@@ -168,7 +168,7 @@ function VistaTicket({ dte, pagos }) {
 function VistaPdf({ url, error }) {
     if (error) return <Notice variant="danger" compact>{error}</Notice>;
     if (!url) return <p className="text-caption text-content-3">Armando el PDF…</p>;
-    return <iframe title="Documento en PDF" src={url} className="block w-full h-[60vh] border border-border-card" />;
+    return <iframe title="Factura en PDF" src={url} className="block w-full h-[60vh] border border-border-card" />;
 }
 
 // El plazo para invalidar, dicho antes de que alguien lo intente. Los estados
@@ -339,10 +339,10 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const freno = avisoDeFreno({ pedida, conNota });
 
     return (
-        <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-4xl" ariaLabel="Documento">
+        <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-4xl" ariaLabel="Factura">
             <LiquidModal.Header icono={FileCheck2} tono="brand" onClose={ocupado ? undefined : onClose}
                 titulo={<>
-                    {d ? TIPO_DOCUMENTO[d.tipo]?.largo : 'Documento'}
+                    {d ? TIPO_DOCUMENTO[d.tipo]?.largo : 'Factura'}
                     {d && <span className="text-content-3"> · {formatMoney(d.total_pagar)}</span>}
                 </>}
                 subtitulo={d ? `${d.dist_clientes?.nombre} · ${d.numero_control}` : undefined}
@@ -353,7 +353,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                     {error && <Notice variant="danger" bloque>{error}</Notice>}
                     {!d && !error && <p className="text-caption text-content-3">Cargando…</p>}
                     {d && (<>
-                        {d.ambiente === '00' && <Notice variant="info" compact>Documento de PRUEBA: no tiene validez fiscal.</Notice>}
+                        {d.ambiente === '00' && <Notice variant="info" compact>Factura de PRUEBA. No tiene validez fiscal.</Notice>}
                         {/* Lo primero: ¿está bien con Hacienda? Y si falta algo, el botón. */}
                         <EstadoHacienda documento={d} ocupado={ocupado} puedeActuar={puedeVender}
                             onReenviar={reintentar} onCorregir={corregir} onInvalidacion={reenviarInv} onContingencia={avisoContingencia} />
@@ -363,7 +363,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         {/* Sin el archivo del documento (datos de muestra sembrados a mano)
                             no hay qué pintar: se dice, en vez de reventar la vista entera. */}
                         {!conArchivo && vista !== 'datos' && (
-                            <Notice variant="info" bloque>Este documento no tiene guardado su archivo: sólo se pueden ver sus datos.</Notice>
+                            <Notice variant="info" bloque>Esta factura no tiene su archivo guardado. Solo puedes ver sus datos.</Notice>
                         )}
                         {conArchivo && vista === 'detalle' && <VistaDetalle dte={d} pagos={pagos} />}
                         {conArchivo && vista === 'ticket' && <VistaTicket dte={d} pagos={pagos ?? []} />}
@@ -383,7 +383,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                                 <dd className="text-content-2">{fechaTexto(d.fec_emi, { day: 'numeric', month: 'long', year: 'numeric' })}, {hora12(d.hor_emi)}</dd>
                                 <dt className="text-content-3">Total</dt>
                                 <dd className="font-black text-content tabular-nums">{formatMoney(d.total_pagar)}</dd>
-                                {d.intentos > 0 && (<><dt className="text-content-3">Envíos a Hacienda</dt><dd className="text-content-2">{d.intentos}</dd></>)}
+                                {d.intentos > 0 && (<><dt className="text-content-3">Envíos al MH</dt><dd className="text-content-2">{d.intentos}</dd></>)}
                             </dl>
                         )}
                         {d.estado === 'sellado' && !invalidando && plazo && <AvisoPlazo plazo={plazo} tipo={d.tipo} />}
@@ -398,7 +398,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                         )}
                         {deshaciendo && (
                             <PortalInput
-                                label={pidiendo === 'corregir' ? '¿Qué hay que corregir? (lo lee quien aprueba)' : '¿Por qué se deshace la venta? (lo lee Hacienda)'}
+                                label={pidiendo === 'corregir' ? '¿Qué hay que corregir? (lo lee quien aprueba)' : '¿Por qué se deshace la venta? (lo lee el MH)'}
                                 name="motivo-invalidacion" value={motivo}
                                 placeholder={pidiendo === 'corregir' ? 'Ej.: el NIT del cliente está mal escrito' : 'Ej.: el cliente devolvió toda la mercadería'}
                                 onChange={(e) => setMotivo(e.target.value)} />
@@ -426,7 +426,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
                     {d && vista === 'datos' && (<>
                         <Button variant="secondary" icon={Download} onClick={descargarJson}>Archivo JSON</Button>
                         {d.estado === 'sellado' && (
-                            <Button variant="secondary" icon={ExternalLink} onClick={() => abrirEnPestanaNueva(urlConsultaPublica(d))}>Ver en Hacienda</Button>
+                            <Button variant="secondary" icon={ExternalLink} onClick={() => abrirEnPestanaNueva(urlConsultaPublica(d))}>Ver en el MH</Button>
                         )}
                     </>)}
                     {puedeDevolver && !deshaciendo && (

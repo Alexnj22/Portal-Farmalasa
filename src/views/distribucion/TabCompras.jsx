@@ -123,7 +123,7 @@ export default function TabCompras({ emisor, puedeConfigurar, buscar, vista = 'r
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de compras">
                     <StatCard icon={ShoppingCart} label="Comprado este mes" value={formatMoney(resumen.comprado)} loading={cargando}
-                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(resumen.documentos)} documentos recibidos`} />
+                        iconBg="bg-brand/10" iconCls="text-brand-text" sub={`${formatQty(resumen.documentos)} facturas recibidas`} />
                     <StatCard icon={Landmark} label="Crédito fiscal del mes" value={formatMoney(resumen.credito)} loading={cargando}
                         iconBg="bg-success/10" iconCls="text-success" sub="IVA de los Créditos Fiscales" />
                     <StatCard icon={FilePen} label="Borradores" value={formatQty(resumen.borradores)} loading={cargando}

@@ -97,10 +97,10 @@ export default function RevisionDeFactor() {
       const { error: e } = await pedirCorreccionDeExistencia({ id, fila: f, usuarioId: user?.id, aprobador: supervisorQueResuelve(empleados) });
       if (e) throw e;
       if (!puedeAplicar) {
-        listo('Corrección pedida', 'Quien aprueba inventario recibió el aviso. La existencia cambia al aprobarla.');
+        listo('Corrección pedida', 'Un supervisor o administrador recibió el aviso. La existencia cambia cuando la aprueba.');
       } else {
         const r = await aplicarMovimientoInventarioEnErp(id, 'Corrección por cambio de presentación');
-        if (!r?.ok) fallo('La corrección quedó pedida', `No se pudo aplicar todavía: ${r?.error ?? 'sin respuesta'}. Queda en Solicitudes para reintentar.`);
+        if (!r?.ok) fallo('La corrección quedó pedida', `No se pudo aplicar todavía: ${r?.error ?? 'sin respuesta'}. Queda en Solicitudes para reintentarla.`);
         else {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           listo('Existencia corregida', `${f.nombre} en ${f.sala}: ${formatQty(f.muestra)} → ${formatQty(f.quedan)}.`);
@@ -115,12 +115,12 @@ export default function RevisionDeFactor() {
   };
 
   const confirmar = (f) => Alert.alert(`Corregir ${f.nombre}`, [
-    `Qué pasó: la presentación cambió de tamaño: antes 1 ${f.presentacion} = ${formatQty(f.de)}, ahora 1 ${f.presentacion} = ${formatQty(f.a)}. La caja no convierte la existencia, así que en ${f.sala}${f.lote ? ` (lote ${f.lote})` : ''} quedó mostrando ${formatQty(f.muestra)}.`,
+    `Qué pasó: la presentación cambió de tamaño. Antes 1 ${f.presentacion} = ${formatQty(f.de)}, ahora 1 ${f.presentacion} = ${formatQty(f.a)}. En ${f.sala}${f.lote ? ` (lote ${f.lote})` : ''} quedó mostrando ${formatQty(f.muestra)}.`,
     `Qué se hace: se descartan ${formatQty(f.descartar)} y quedan ${formatQty(f.quedan)}.${f.sueltas > 0 ? ` Las ${formatQty(f.sueltas)} unidades sueltas no alcanzan para una ${String(f.presentacion).toLowerCase()} y también salen.` : ''}`,
     `Lo que queda escrito en el movimiento: «${causaDeCorreccion(f)}»`,
     puedeAplicar
-      ? 'Se aplica en la caja enseguida. Si en la sala de verdad hay más, no corrijas: avisa para revisarlo.'
-      : 'Se manda a quien aprueba inventario; la existencia cambia cuando la apruebe.',
+      ? 'Se aplica en la caja enseguida. Si en la sucursal hay más, no corrijas y avisa.'
+      : 'Le llega a un supervisor o administrador. La existencia cambia cuando la aprueba.',
   ].join('\n\n'), [
     { text: 'Cancelar', style: 'cancel' },
     { text: puedeAplicar ? 'Corregir ahora' : 'Pedir la corrección', onPress: () => corregir(f) },
@@ -138,7 +138,7 @@ export default function RevisionDeFactor() {
         {datos === null ? <Cargando /> : (
           <>
             <Seccion titulo={`Existencia por corregir${cuenta(existencias.length)}`}
-              pie="La caja no convierte la existencia cuando cambia el tamaño de la presentación: queda contada en la unidad vieja.">
+              pie="Cuando cambia el tamaño de la presentación, la caja no convierte la existencia. Queda contada en la unidad vieja.">
               {existencias.length ? existencias.map((f, i) => (
                 <FilaExistencia key={`${f.cambio_id}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`} f={f} primero={!i}
                   puedeAplicar={puedeAplicar} ocupado={!!ocupado} onCorregir={confirmar} />
@@ -146,7 +146,7 @@ export default function RevisionDeFactor() {
             </Seccion>
 
             <Seccion titulo={`Factor que no cuadra${cuenta(sospechosos.length)}`}
-              pie="Productos cuyo tamaño de presentación no coincide entre el catálogo, la existencia o las ventas recientes. Se corrigen en la ficha del producto de la caja; al corregirlo, el portal convierte lo demás solo.">
+              pie="Productos cuyo tamaño de presentación no coincide entre el catálogo, la existencia o las ventas recientes. Se corrigen en los datos del producto.">
               {sospechosos.length ? sospechosos.map((s, i) => (
                 <Renglon key={s.clave} primero={!i}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
@@ -158,7 +158,7 @@ export default function RevisionDeFactor() {
               )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin factores que no cuadren.</Text>}
             </Seccion>
 
-            <Seccion titulo={`Cambios de presentación${cuenta(cambios.length)}`} pie="Lo que cambió en los últimos 120 días y lo que el portal convirtió solo.">
+            <Seccion titulo={`Cambios de presentación${cuenta(cambios.length)}`} pie="Lo que cambió en los últimos 120 días y lo que el portal convirtió.">
               {cambios.length ? cambios.map((c, i) => {
                 const r = c.resultado ?? {};
                 const mm = minmaxDelCambio(r);
@@ -173,10 +173,10 @@ export default function RevisionDeFactor() {
                         {`Antes ${formatQty(r.factor_antes)} por unidad de venta, ahora ${formatQty(r.factor_ahora)}. Se convirtieron ${formatQty(r.ventas_convertidas ?? 0)} ventas.`}
                       </Text>
                     ) : null}
-                    {mm ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`MIN·MAX: ${mm}`}</Text> : null}
+                    {mm ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Mín/Máx: ${mm}`}</Text> : null}
                     {(r.ventas_sin_convertir ?? 0) > 0 ? (
                       <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>
-                        {`${formatQty(r.ventas_sin_convertir)} ventas con otro tamaño de caja quedaron como estaban: revisar si es la misma caja.`}
+                        {`${formatQty(r.ventas_sin_convertir)} ventas con otro tamaño de caja quedaron como estaban. Revisa si es la misma caja.`}
                       </Text>
                     ) : null}
                   </Renglon>

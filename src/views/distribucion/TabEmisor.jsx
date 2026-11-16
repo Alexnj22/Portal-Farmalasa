@@ -54,7 +54,7 @@ function PuntosDeVenta({ emisorId, oficina }) {
                 ))}
             </ul>
             <p className="text-caption text-content-3">
-                Cada vendedor recibe su punto de venta la primera vez que factura. El número de los documentos es uno solo por establecimiento, como pide Hacienda.
+                Cada vendedor recibe su punto de venta la primera vez que factura. La numeración de las facturas es una sola por establecimiento.
             </p>
         </div>
     );
@@ -113,18 +113,18 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
         <div className="p-5 md:p-6 space-y-5 max-w-4xl">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <Notice variant="info" icon={KeyRound}>
-                El certificado de firma y la contraseña de Hacienda no se escriben aquí: los carga quien administra el servidor.
-                Sin ellos, los documentos se guardan pero no salen hacia Hacienda.
+                El certificado de firma y la contraseña del MH no se escriben aquí. Los carga Soporte.
+                Sin ellos, las facturas se guardan pero no llegan al MH.
             </Notice>
             {f.ambiente === '00' && (
                 <Notice variant="warning" icon={FlaskConical}>
-                    Ambiente de PRUEBAS: lo que se emita no tiene validez fiscal. Sirve para la certificación ante Hacienda.
+                    Ambiente de PRUEBAS. Lo que se emita no tiene validez fiscal. Sirve para la certificación ante el MH.
                 </Notice>
             )}
             {pasaAProduccion && (
                 <Notice variant="danger" icon={AlertTriangle}>
-                    Vas a pasar a PRODUCCIÓN: desde que guardes, cada documento es fiscal y cuenta ante Hacienda.
-                    Hazlo sólo con la autorización de Hacienda ya recibida.
+                    Vas a pasar a PRODUCCIÓN. Desde que guardes, cada factura es fiscal y cuenta ante el MH.
+                    Hazlo sólo con la autorización del MH ya recibida.
                 </Notice>
             )}
 
@@ -188,10 +188,10 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                             onChange={(v) => set('tipo_establecimiento', v || '04')} />
                     </div>
                     <div />
-                    <PortalInput label="Código de establecimiento en Hacienda" name="cod_estable_mh" value={f.cod_estable_mh} readOnly={ro}
+                    <PortalInput label="Código de establecimiento en el MH" name="cod_estable_mh" value={f.cod_estable_mh} readOnly={ro}
                         hasError={!!errores.cod_estable_mh} errorMessage={errores.cod_estable_mh}
-                        helperText="Lo asigna Hacienda al registrar la bodega." onChange={(e) => set('cod_estable_mh', e.target.value.toUpperCase())} />
-                    <PortalInput label="Código de punto de venta en Hacienda" name="cod_punto_venta_mh" value={f.cod_punto_venta_mh} readOnly={ro}
+                        helperText="Lo asigna el MH al registrar la bodega." onChange={(e) => set('cod_estable_mh', e.target.value.toUpperCase())} />
+                    <PortalInput label="Código de punto de venta en el MH" name="cod_punto_venta_mh" value={f.cod_punto_venta_mh} readOnly={ro}
                         hasError={!!errores.cod_punto_venta_mh} errorMessage={errores.cod_punto_venta_mh}
                         onChange={(e) => set('cod_punto_venta_mh', e.target.value.toUpperCase())} />
                 </div>

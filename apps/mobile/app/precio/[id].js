@@ -77,7 +77,7 @@ export default function PrecioDeProducto() {
         if (!vivo) return;
         const lotes = (inv || [])
           .filter((l) => !l.is_vencidos && (miErp == null || l.erp_sucursal_id === miErp))
-          .map((l) => ({ ...l, _sala: ERP_NAMES[l.erp_sucursal_id] ?? `Sala ${l.erp_sucursal_id}` }))
+          .map((l) => ({ ...l, _sala: ERP_NAMES[l.erp_sucursal_id] ?? `Sucursal ${l.erp_sucursal_id}` }))
           .sort((a, b) => ERP_ORDEN.indexOf(a.erp_sucursal_id) - ERP_ORDEN.indexOf(b.erp_sucursal_id));
         setDatos({ precios: error ? [] : (data ?? []), lotes, error: error ? mensajeAmigable(error) : null });
       });
@@ -114,7 +114,7 @@ export default function PrecioDeProducto() {
 
             <View style={{ gap: 8, marginTop: 4 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{miErp != null ? 'En tu sala' : 'En las salas'}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{miErp != null ? 'En tu sucursal' : 'En las sucursales'}</Text>
                 {grupo.existencia > 0 ? <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatQty(grupo.existencia)}</Text> : null}
               </View>
               {grupo.lotes.length ? (

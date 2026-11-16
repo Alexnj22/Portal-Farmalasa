@@ -28,7 +28,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
   const sellado = dte.estado === 'sellado';
   const valido = correoValido(destino);
 
-  const enviar = () => Alert.alert(vigente?.estado === 'enviado' ? '¿Reenviar el documento?' : '¿Enviar el documento?',
+  const enviar = () => Alert.alert(vigente?.estado === 'enviado' ? '¿Reenviar la factura?' : '¿Enviar la factura?',
     `Le llega a ${destino.trim()} con el PDF y el archivo JSON.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Enviar', onPress: async () => {
@@ -36,7 +36,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
         try {
           const r = await enviarDocumentoPorCorreo(dte, { destinatario: destino.trim() });
           useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_DTE_CORREO', String(dte.id), { destinatario: r?.destinatario, simulado: !!r?.simulado, via: 'app' });
-          listo('Documento enviado', `${r?.destinatario ?? destino.trim()}${r?.simulado ? ' (envío simulado del entorno de pruebas)' : ''}`);
+          listo('Factura enviada', `${r?.destinatario ?? destino.trim()}${r?.simulado ? ' (envío simulado del entorno de pruebas)' : ''}`);
           onEnviado?.();
         } catch (e) {
           fallo('No se pudo enviar', mensajeDeDistribucion(e));
@@ -60,7 +60,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
             deshabilitado={!valido || enviando} onPress={enviar} />
         </View>
       ) : !sellado ? (
-        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Se envía cuando Hacienda lo selle: el cliente tiene que recibir el sello.</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Se envía cuando el MH la selle.</Text>
       ) : null}
     </Seccion>
   );

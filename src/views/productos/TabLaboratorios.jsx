@@ -541,7 +541,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                             {!filled ? (
                                 <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-dashed border-divider bg-surface-card-hover/50">
                                     <MapPin className="w-3 h-3 text-content-3 flex-shrink-0" />
-                                    <span className="text-label text-content-3 italic">Sin ubicación — clic para agregar</span>
+                                    <span className="text-label text-content-3 italic">Sin ubicación. Clic para agregar.</span>
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">

@@ -86,7 +86,7 @@ export default function Cuarentena({ filas, puedeResolver, onCerrar, onCambio })
               ) : null}
             </Seccion>
           ))}
-          {!puedeResolver && visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>Lo decide quien administra la distribuidora.</Text> : null}
+          {!puedeResolver && visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>Lo decide un administrador.</Text> : null}
         </ScrollView>
       </ConAurora>
     </Modal>

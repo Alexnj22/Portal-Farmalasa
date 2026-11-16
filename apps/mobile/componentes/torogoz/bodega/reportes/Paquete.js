@@ -19,7 +19,7 @@ export async function compartirPaquete(mes) {
   cerrarProgreso();
   if (!p) { Alert.alert('Paquete del mes', 'Este mes no tiene nada que declarar.'); return; }
   if (p.sinSello) {
-    await new Promise((resolve) => Alert.alert('Paquete del mes', `Ojo: ${p.sinSello} documentos sin sello de Hacienda quedaron fuera de los libros.`, [{ text: 'Seguir', onPress: resolve }]));
+    await new Promise((resolve) => Alert.alert('Paquete del mes', `${p.sinSello} facturas sin sello del MH quedaron fuera de los libros.`, [{ text: 'Seguir', onPress: resolve }]));
   }
   const compartido = await compartirZip({ entradas: p.entradas, nombre: p.nombre, modulo: 'distribucion', detalle: { mes, paquete: 'torogoz-mes' } });
   if (compartido) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

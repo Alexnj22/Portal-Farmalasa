@@ -121,7 +121,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
             {/* ── Multi-branch grid ── */}
             <div className="px-4 pt-3 pb-2">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Stock en red</span>
+                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Existencia en la red</span>
                     {netStock !== null && (
                         <div className="flex items-center gap-3 text-micro text-content-3">
                             <span>Red: <strong className="text-content-2 tabular-nums">{netStock.toLocaleString('es-SV')} und</strong></span>
@@ -226,14 +226,14 @@ export default function ExpandedPanel({ row, cycleDays }) {
             {/* Sin stock indicator */}
             {branchReady && stock === 0 && (
                 <div className="px-4 py-3 flex items-center gap-2 text-label text-content-3 italic" style={glassSection}>
-                    <Package size={13} className="shrink-0 text-content-3" /> Sin existencias en esta sucursal
+                    <Package size={13} className="shrink-0 text-content-3" /> Sin existencia en esta sucursal
                 </div>
             )}
 
             {/* ── Referencia pedido (sucursal actual) ── */}
             {!row.is_dead_stock && (minN > 0 || coverDays) && (
                 <div className="px-4 py-2.5 flex items-center gap-5 flex-wrap" style={glassSection}>
-                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Referencia pedido</span>
+                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Referencia para el pedido</span>
                     {coverDays && (
                         <span className="flex items-center gap-1.5 text-label">
                             <PuntoDeEstado className="bg-content-3" />
@@ -246,13 +246,13 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         <>
                             <span className="flex items-center gap-1.5 text-label">
                                 <PuntoDeEstado className="bg-chart-4" />
-                                <span className="text-content-3 font-semibold">MIN</span>
+                                <span className="text-content-3 font-semibold">Mín</span>
                                 <span className="font-black text-chart-4-text">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString('es-SV')} und`}</span>
                                 {hasDominant && <span className="text-content-3 text-caption">({minN.toLocaleString('es-SV')} und)</span>}
                             </span>
                             <span className="flex items-center gap-1.5 text-label">
                                 <PuntoDeEstado className="bg-chart-1" />
-                                <span className="text-content-3 font-semibold">MAX</span>
+                                <span className="text-content-3 font-semibold">Máx</span>
                                 <span className="font-black text-chart-1-text">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString('es-SV')} und`}</span>
                                 {hasDominant && <span className="text-content-3 text-caption">({maxN.toLocaleString('es-SV')} und)</span>}
                             </span>
@@ -339,7 +339,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             </div>
                                             {sendDeadline && (
                                                 <span className={`text-micro pl-11 font-semibold ${pastDeadline ? 'text-danger' : 'text-content-3'}`}>
-                                                    {pastDeadline ? 'FUERA DE PLAZO — límite era el ' : 'Enviar a bodega antes del '}
+                                                    {pastDeadline ? 'Fuera de plazo. El límite era el ' : 'Enviar a Bodega antes del '}
                                                     {fechaTexto(sendDeadline, { day: '2-digit', month: 'short' })}
                                                 </span>
                                             )}
@@ -452,7 +452,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     if (!bd) return true;
                                                     return Number(bd.effective_min ?? 0) === 0 && Number(bd.effective_max ?? 0) === 0 && bd.draft_status !== 'pending';
                                                 }) && (
-                                                    <span className="text-micro text-danger-text font-semibold italic">Sin MIN·MAX en ninguna sala</span>
+                                                    <span className="text-micro text-danger-text font-semibold italic">Sin Mín/Máx en ninguna sucursal</span>
                                                 )}
                                             </div>
                                         }
@@ -525,7 +525,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                             <div className="grid grid-cols-1 sm:grid-cols-2">
                                 {/* Proyección de stock */}
                                 <div className="px-4 py-2.5 flex flex-col gap-2 border-b sm:border-b-0 sm:border-r border-border-card">
-                                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Proyección de stock</span>
+                                    <span className="text-micro font-black uppercase tracking-widest text-content-2">Proyección de existencia</span>
                                     {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) ? (
                                         <div className="flex items-center gap-6 flex-wrap">
                                             {[30, 60, 90].map(days => {
@@ -585,7 +585,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                             {deadAction ? (
                                 <div className="flex items-center gap-2 text-label text-success-text font-semibold">
                                     <CheckCircle2 size={12} />
-                                    {deadAction === 'transfer' ? 'Marcado para traslado' : 'Marcado para liquidación'} — registrado en auditoría
+                                    {deadAction === 'transfer' ? 'Marcado para traslado.' : 'Marcado para liquidación.'} Quedó registrado.
                                 </div>
                             ) : (
                                 <div className="flex flex-wrap gap-2">

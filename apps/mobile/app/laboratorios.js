@@ -66,7 +66,7 @@ function Editar({ lab, sala, nombreSala, inicial, onCerrar, onGuardado }) {
               <Campo multiline={false} value={tipo === 'vitrina' ? d.vitrina : d.estante} onChangeText={campo(tipo)} placeholder={tipo === 'vitrina' ? 'Número de vitrina' : 'Número de estante'} autoCapitalize="characters" />
               <Campo multiline={false} value={d.peldano} onChangeText={campo('peldano')} placeholder="Peldaño" autoCapitalize="characters" />
             </Seccion>
-            <Seccion titulo="En la bodega de la sala">
+            <Seccion titulo="En la bodega de la sucursal">
               <Campo multiline={false} value={d.bodega_numero} onChangeText={campo('bodega_numero')} placeholder="Estante" autoCapitalize="characters" />
               <Campo multiline={false} value={d.bodega_peldano} onChangeText={campo('bodega_peldano')} placeholder="Peldaño" autoCapitalize="characters" />
             </Seccion>
@@ -95,7 +95,7 @@ const TarjetaLab = memo(function TarjetaLab({ l, d, cubiertas, totalSalas, onAbr
               {r.sala ? <Pildora texto={r.sala} color={MARCA.azulClaro} /> : null}
               {r.bodega ? <Pildora texto={`Bodega · ${r.bodega}`} color={MARCA.ambar} /> : null}
             </View>
-          ) : <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }}>Sin ubicación — tocar para agregar</Text>}
+          ) : <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }}>Sin ubicación. Toca para agregar.</Text>}
         </View>
       </Vidrio>
     </Pressable>
@@ -128,7 +128,7 @@ export default function Laboratorios() {
   }, []);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const nombreSala = (sucursales || []).find((b) => String(b.id) === sala)?.name ?? 'la sala';
+  const nombreSala = (sucursales || []).find((b) => String(b.id) === sala)?.name ?? 'la sucursal';
   const q = texto.trim();
   const visibles = useMemo(() => (labs || []).filter((l) => (q ? true : seccionDeLaboratorio(l.nombre) === seccion))
     .filter((l) => {

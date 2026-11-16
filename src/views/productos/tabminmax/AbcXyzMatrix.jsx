@@ -107,7 +107,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                     <button key={xyz} type="button"
                                         onClick={() => toggle(abc, xyz)}
                                         aria-pressed={activo}
-                                        aria-label={`${abc}${xyz} — demanda ${XYZ_DESC[xyz]}: ${n} producto${n === 1 ? '' : 's'}`}
+                                        aria-label={`${abc}${xyz}, demanda ${XYZ_DESC[xyz]}: ${n} producto${n === 1 ? '' : 's'}`}
                                         title={`${abc}${xyz} · ${n}`}
                                         style={{
                                             flex: `0 0 ${pct}%`,

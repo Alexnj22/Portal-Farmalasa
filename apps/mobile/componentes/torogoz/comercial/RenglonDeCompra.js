@@ -25,10 +25,10 @@ export default function RenglonDeCompra({ it, i, editable, tipoDoc, opcionesProd
     <Vidrio radio={20} tinte={mal ? `${MARCA.rojo}1F` : undefined}>
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{`Renglón ${i + 1}`}</Text>
+          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{`Producto ${i + 1}`}</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(subtotalRenglon(it))}</Text>
           {editable ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={`Quitar renglón ${i + 1}`} hitSlop={8}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Quitar producto ${i + 1}`} hitSlop={8}
               onPress={() => { Haptics.selectionAsync().catch(() => {}); onQuitar(); }}
               style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 10, borderRadius: 17, justifyContent: 'center', backgroundColor: `${MARCA.rojo}26`, opacity: pressed ? 0.7 : 1 })}>
               <Text style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '700' }}>Quitar</Text>
@@ -49,7 +49,7 @@ export default function RenglonDeCompra({ it, i, editable, tipoDoc, opcionesProd
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {it.cantidad_doc > 0 && editable ? (
             <Medio>
-              <CampoConRotulo rotulo={`Por caja (${it.cantidad_doc} en el doc.)`} value={String(it.unidades_por ?? 1)} keyboardType="number-pad"
+              <CampoConRotulo rotulo={`Por caja (${it.cantidad_doc} en la factura)`} value={String(it.unidades_por ?? 1)} keyboardType="number-pad"
                 onChangeText={(v) => onCambiar(cambiarUnidadesPor(it, v), true)} />
             </Medio>
           ) : null}

@@ -57,7 +57,7 @@ import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torog
 const VISTAS = [
   { id: 'detalle', label: 'Detalle' },
   { id: 'ticket', label: 'Ticket' },
-  { id: 'hoja', label: 'Documento' },
+  { id: 'hoja', label: 'Factura' },
   { id: 'datos', label: 'Datos' },
 ];
 const TONO_PLAZO = { freno: 'freno', cuidado: 'cuidado', nota: 'nota' };
@@ -128,7 +128,7 @@ export default function Documento() {
   const ante = (titulo, mensaje, boton, fn, auditoria, despues) => Alert.alert(titulo, mensaje, [
     { text: 'Cancelar', style: 'cancel' },
     { text: boton, style: boton.startsWith('Deshacer') || boton.startsWith('Invalidar') ? 'destructive' : 'default', onPress: async () => {
-      setOcupado(true); trabajando('Hablando con Hacienda…');
+      setOcupado(true); trabajando('Enviando al MH…');
       try {
         const r = await fn();
         anotar(auditoria, { estado: r?.estado });
@@ -142,11 +142,11 @@ export default function Documento() {
     } },
   ]);
 
-  const reintentar = () => ante('¿Reenviar a Hacienda?', 'Se firma (si falta) y se manda otra vez.', 'Reenviar',
+  const reintentar = () => ante('¿Reenviar al MH?', 'Se firma (si falta) y se manda otra vez.', 'Reenviar',
     () => reintentarDocumento(id), 'DISTRIBUCION_DTE_REINTENTO');
-  const reenviarInv = () => ante('¿Enviar la invalidación?', 'Hacienda anula este documento.', 'Enviar',
+  const reenviarInv = () => ante('¿Enviar la invalidación?', 'El MH anula esta factura.', 'Enviar',
     () => reenviarInvalidacion(id), 'DISTRIBUCION_INVALIDACION_REENVIO');
-  const contingencia = () => Alert.alert('¿Enviar el aviso de contingencia?', 'Le avisa a Hacienda de lo emitido sin poder transmitirlo, y después lo manda.', [
+  const contingencia = () => Alert.alert('¿Enviar el aviso de contingencia?', 'Le avisa al MH de lo emitido sin poder enviarlo. Después lo manda.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Enviar', onPress: async () => {
       setOcupado(true); trabajando('Enviando el aviso…');
@@ -162,23 +162,23 @@ export default function Documento() {
   const corregir = () => {
     if (d.estado === 'rechazado') { router.push(`/torogoz/venta/${d.pedido_id}`); return; }
     if (d.estado === 'sellado') { setMotivo(''); setPidiendo('corregir'); return; }
-    ante('¿Corregir el documento?', queHaceCorregir(d), 'Corregir', () => descartarDocumento(id), 'DISTRIBUCION_DTE_DESCARTADO',
+    ante('¿Corregir la factura?', queHaceCorregir(d), 'Corregir', () => descartarDocumento(id), 'DISTRIBUCION_DTE_DESCARTADO',
       (r) => { if (r?.estado === 'descartado') router.push(`/torogoz/venta/${d.pedido_id}`); });
   };
   // Un sellado no se invalida desde acá: se pide, y lo decide otra persona.
   const pedir = () => (pidiendo === 'corregir'
     ? ante('¿Pedir la corrección?', queHaceCorregir(d), 'Pedir', () => corregirDocumentoSellado(id, motivo.trim()), 'DISTRIBUCION_CORRECCION_PEDIDA',
       () => { setPidiendo(null); setMotivo(''); })
-    : ante('¿Pedir que se deshaga la venta?', `${nombre}. Cuando la aprueben se invalida ante Hacienda, el pedido queda anulado y las unidades vuelven al inventario. El efectivo cobrado sale de tu caja; lo demás queda a favor del cliente.`,
+    : ante('¿Pedir que se deshaga la venta?', `${nombre}. Cuando la aprueben, se invalida ante el MH, el pedido queda anulado y las unidades vuelven a bodega. El efectivo cobrado sale de tu caja. Lo demás queda a favor del cliente.`,
       'Pedir', () => anularVenta(id, motivo.trim()), 'DISTRIBUCION_INVALIDACION_PEDIDA', () => { setPidiendo(null); setMotivo(''); }));
 
-  const papeles = () => elegir('Papeles del documento', [
-    { texto: 'Compartir el documento (PDF)', accion: () => compartirDocumento(d).catch((e) => fallo('No se pudo armar el PDF', e?.message ?? '')) },
-    { texto: 'Imprimir el documento', accion: () => imprimirDocumentoCarta(d).catch((e) => fallo('No se pudo imprimir', e?.message ?? '')) },
+  const papeles = () => elegir('Papeles de la factura', [
+    { texto: 'Compartir la factura (PDF)', accion: () => compartirDocumento(d).catch((e) => fallo('No se pudo armar el PDF', e?.message ?? '')) },
+    { texto: 'Imprimir la factura', accion: () => imprimirDocumentoCarta(d).catch((e) => fallo('No se pudo imprimir', e?.message ?? '')) },
     { texto: 'Imprimir el ticket', accion: () => imprimirTicket(ticket).then((salio) => { if (salio) anotar('DISTRIBUCION_TICKET_IMPRESO', { ok: true }); }).catch((e) => fallo('No se pudo imprimir', e?.message ?? '')) },
     { texto: 'Compartir el ticket', accion: () => compartirTicket(ticket, `Ticket ${nombre}`).catch((e) => fallo('No se pudo compartir', e?.message ?? '')) },
     { texto: 'Archivo JSON', accion: () => compartirJson(d).catch((e) => fallo('No se pudo compartir', e?.message ?? '')) },
-    ...(d.estado === 'sellado' ? [{ texto: 'Ver en Hacienda', accion: () => WebBrowser.openBrowserAsync(urlConsultaPublica(d)).catch(() => {}) }] : []),
+    ...(d.estado === 'sellado' ? [{ texto: 'Ver en el MH', accion: () => WebBrowser.openBrowserAsync(urlConsultaPublica(d)).catch(() => {}) }] : []),
   ]);
 
   const est = d ? ESTADO_DOCUMENTO[d.estado] : null;
@@ -186,7 +186,7 @@ export default function Documento() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: d ? (TIPO_DOCUMENTO[d.tipo]?.largo ?? 'Documento') : 'Documento' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: d ? (TIPO_DOCUMENTO[d.tipo]?.largo ?? 'Factura') : 'Factura' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 16, gap: 16, paddingBottom: 56 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -206,7 +206,7 @@ export default function Documento() {
                 </View>
               </Vidrio>
             </View>
-            {d.ambiente === '00' ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Documento de PRUEBA: no tiene validez fiscal." /></View> : null}
+            {d.ambiente === '00' ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Factura de PRUEBA. No tiene validez fiscal." /></View> : null}
             <View style={{ marginHorizontal: 16 }}>
               <EstadoHacienda documento={d} ocupado={ocupado} puedeActuar={puedeVender}
                 onReenviar={reintentar} onCorregir={corregir} onInvalidacion={reenviarInv} onContingencia={contingencia} />
@@ -215,7 +215,7 @@ export default function Documento() {
             {/* seccion-en-linea: paneles de una ficha de detalle, debajo de su encabezado (como un perfil del iPhone); fijos arriba quedarían antes del nombre (2026-11-12) */}
             <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS} />
 
-            {!a.conArchivo && vista !== 'datos' ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este documento no tiene guardado su archivo: sólo se pueden ver sus datos." /></View> : null}
+            {!a.conArchivo && vista !== 'datos' ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Esta factura no tiene guardado su archivo. Sólo se pueden ver sus datos." /></View> : null}
             {a.conArchivo && vista === 'detalle' ? (
               <View style={{ marginHorizontal: 16, gap: 16 }}>
                 <DetalleDeVenta dte={d} pagos={pagos} />
@@ -232,7 +232,7 @@ export default function Documento() {
                   <Dato rotulo="Sello de recepción" valor={d.sello_recibido ?? '—'} />
                   <Dato rotulo="Emitido" valor={`${fechaTexto(d.fec_emi, { day: 'numeric', month: 'long', year: 'numeric' })}, ${hora12(d.hor_emi)}`} />
                   <Dato rotulo="Total" valor={formatMoney(d.total_pagar)} fuerte />
-                  {d.intentos > 0 ? <Dato rotulo="Envíos a Hacienda" valor={String(d.intentos)} /> : null}
+                  {d.intentos > 0 ? <Dato rotulo="Envíos al MH" valor={String(d.intentos)} /> : null}
                 </Seccion>
                 {d.pedido_id ? <PagosDelPedido pedidoId={d.pedido_id} puedeEditar={puedeVender} onCambio={cargar} /> : null}
               </View>
@@ -249,7 +249,7 @@ export default function Documento() {
               {a.puedeCorregir && d.estado !== 'rechazado' && !deshaciendo ? <BotonGrande borde color={PETROLEO} texto="Corregir" deshabilitado={ocupado} onPress={corregir} /> : null}
               {a.puedeDeshacer && !deshaciendo ? <BotonGrande borde color={MARCA.rojo} texto="Deshacer la venta" deshabilitado={ocupado} onPress={() => { setMotivo(''); setPidiendo('anular'); }} /> : null}
               {deshaciendo ? (
-                <Seccion titulo={pidiendo === 'corregir' ? '¿Qué hay que corregir? (lo lee quien aprueba)' : '¿Por qué se deshace la venta? (lo lee Hacienda)'}>
+                <Seccion titulo={pidiendo === 'corregir' ? '¿Qué hay que corregir? (lo lee quien aprueba)' : '¿Por qué se deshace la venta? (lo lee el MH)'}>
                   <Campo value={motivo} onChangeText={setMotivo}
                     placeholder={pidiendo === 'corregir' ? 'Ej.: el NIT del cliente está mal escrito' : 'Ej.: el cliente devolvió toda la mercadería'} />
                   <BotonGrande color={pidiendo === 'corregir' ? PETROLEO : MARCA.rojo} texto={pidiendo === 'corregir' ? 'Pedir la corrección' : 'Pedir que se deshaga'}

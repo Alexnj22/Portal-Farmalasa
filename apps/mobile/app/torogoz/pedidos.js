@@ -128,7 +128,7 @@ export default function TorogozPedidos() {
           <Kpi icono="Check" rotulo="Hoy" color={MARCA.verde} valor={v(stats.facturadosHoy)} apoyo="Facturados hoy" />
         </FilaDeKpis>
         <FilaDeKpis>
-          <Kpi icono="Clock" rotulo="Sin sello" color={MARCA.ambar} pide={stats.sinSello > 0} valor={v(stats.sinSello)} apoyo="Aún no cuentan ante Hacienda" />
+          <Kpi icono="Clock" rotulo="Sin sello" color={MARCA.ambar} pide={stats.sinSello > 0} valor={v(stats.sinSello)} apoyo="Aún no cuentan ante el MH" />
           <Kpi icono="AlertTriangle" rotulo="Rechazados" color={MARCA.rojo} pide={stats.rechazados > 0} valor={v(stats.rechazados)} apoyo="Hay que volver a facturar" />
         </FilaDeKpis>
         <FilaDeKpis>

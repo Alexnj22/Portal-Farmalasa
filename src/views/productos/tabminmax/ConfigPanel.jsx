@@ -69,7 +69,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     // pliegue y se veía cortado. `HojaMovil` ya tiene la ranura `pie`, que lo
     // ancla y le pone su área segura.
     const envolver = (cuerpo, pie) => enTactil
-        ? <HojaMovil titulo="Configuración Min/Max" icono={Settings2} pie={pie}>{cuerpo}</HojaMovil>
+        ? <HojaMovil titulo="Configuración de Mín/Máx" icono={Settings2} pie={pie}>{cuerpo}</HojaMovil>
         : <div>{cuerpo}<div className="px-4 py-3 border-t border-divider flex items-center gap-2">{pie}</div></div>;
 
     // Las acciones, SUELTAS y no dentro de un envoltorio. `HojaMovil` estila
@@ -96,7 +96,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         // antipatrón que el paso a hojas vino a quitar. Este no es una paleta
         // de comandos, es un formulario.
         <ModalShell open onClose={onClose} maxWidthClass="max-w-sm"
-            zClass="z-modal" ariaLabel="Configuración de Min/Max"
+            zClass="z-modal" ariaLabel="Configuración de Mín/Máx"
             surface={enTactil ? null : undefined}
             // SIN `animacionPropia`. La tenía, y `animacionPropia` significa "el
             // hijo se anima solo" — pero este panel no se animaba: solo apagaba
@@ -112,7 +112,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                     <div className="flex items-center gap-2">
                         <Settings2 size={14} className="text-brand-text" />
-                        <span className="text-body-sm font-black text-content">Configuración Min/Max</span>
+                        <span className="text-body-sm font-black text-content">Configuración de Mín/Máx</span>
                     </div>
                     <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
@@ -128,7 +128,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Ciclo */}
                     <section className="flex flex-col gap-2">
                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Ciclo de reposición</span>
-                        <Field form={form} set={set} label="MAX — días de cobertura objetivo" k="cycle_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Máx: días de cobertura objetivo" k="cycle_days" unit="días" min={1} />
                         <Field form={form} set={set} label="Ventana histórica de ventas"       k="analysis_days" unit="días" min={30} />
                     </section>
 
@@ -136,10 +136,10 @@ export default function ConfigPanel({ config, onSave, onClose }) {
 
                     {/* Reorden por XYZ */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-micro font-black uppercase tracking-widest text-content-2">MIN — días de reorden por clase XYZ</span>
-                        <Field form={form} set={set} label="Clase X — demanda estable"   k="reorder_x_days" unit="días" min={1} />
-                        <Field form={form} set={set} label="Clase Y — demanda moderada"  k="reorder_y_days" unit="días" min={1} />
-                        <Field form={form} set={set} label="Clase Z — demanda errática"  k="reorder_z_days" unit="días" min={1} />
+                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Mín: días de reorden por clase XYZ</span>
+                        <Field form={form} set={set} label="Clase X: demanda estable"   k="reorder_x_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Clase Y: demanda moderada"  k="reorder_y_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Clase Z: demanda errática"  k="reorder_z_days" unit="días" min={1} />
                     </section>
 
                     <div className="h-px bg-divider" />
@@ -150,7 +150,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         <Field form={form} set={set} label="X = percentil ≤" k="xyz_x_percentile" unit="%" min={1} max={99} step={1} />
                         <Field form={form} set={set} label="Y = percentil ≤" k="xyz_y_percentile" unit="%" min={1} max={100} step={1} />
                         <p className="text-micro text-content-3 leading-snug">
-                            Z = el resto. Relativo: compara cada producto contra sus propios vecinos DENTRO de la misma sucursal, no contra un % de CV fijo — así sucursales de bajo volumen (todo CV alto) también obtienen diferenciación real.
+                            Z = el resto. Cada producto se compara con los demás de su sucursal, no con un % de CV fijo.
                         </p>
                     </section>
 
@@ -158,7 +158,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
 
                     {/* Umbrales ABC */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Umbrales ABC (% revenue acumulado)</span>
+                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Umbrales ABC (% de ingresos acumulados)</span>
                         <Field form={form} set={set} label="A = top" k="abc_a_pct" unit="%" min={1} step={1} />
                         <Field form={form} set={set} label="B = hasta" k="abc_b_pct" unit="%" min={1} step={1} />
                         <p className="text-micro text-content-3">C y D = resto. Recalcula para aplicar.</p>
@@ -169,29 +169,29 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Alerta próximo mínimo */}
                     <section className="flex flex-col gap-2">
                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Alerta "próximo a mínimo"</span>
-                        <Field form={form} set={set} label="Umbral (stock &lt; MIN × (1 + X%))" k="approaching_pct" unit="%" min={1} max={100} step={1} />
-                        <p className="text-micro text-content-3">Ej: 25% → alerta si stock &lt; MIN × 1.25</p>
+                        <Field form={form} set={set} label="Umbral (existencia &lt; Mín × (1 + X%))" k="approaching_pct" unit="%" min={1} max={100} step={1} />
+                        <p className="text-micro text-content-3">Ej.: 25% → alerta si la existencia &lt; Mín × 1.25</p>
                     </section>
 
                     <div className="h-px bg-divider" />
 
                     {/* Buffer de seguridad */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Buffer de seguridad (días extra al MIN)</span>
-                        <Field form={form} set={set} label="Clase X — demanda estable"  k="buffer_x_days" unit="días" min={0} />
-                        <Field form={form} set={set} label="Clase Y — demanda moderada" k="buffer_y_days" unit="días" min={0} />
-                        <Field form={form} set={set} label="Clase Z — demanda errática" k="buffer_z_days" unit="días" min={0} />
-                        <p className="text-micro text-content-3">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
+                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Margen de seguridad (días extra al Mín)</span>
+                        <Field form={form} set={set} label="Clase X: demanda estable"  k="buffer_x_days" unit="días" min={0} />
+                        <Field form={form} set={set} label="Clase Y: demanda moderada" k="buffer_y_days" unit="días" min={0} />
+                        <Field form={form} set={set} label="Clase Z: demanda errática" k="buffer_z_days" unit="días" min={0} />
+                        <p className="text-micro text-content-3">Mín = velocidad × (reorden + margen). Recalcula para aplicar.</p>
                     </section>
 
                     <div className="h-px bg-divider" />
 
                     {/* Filtrado de demanda mayorista */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Filtrado de outliers (winsorización)</span>
+                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Filtro de ventas atípicas</span>
                         <Field form={form} set={set} label="Percentil de corte" k="outlier_percentile" unit="%" min={50} max={100} step={1} />
                         <p className="text-micro text-content-3 leading-snug">
-                            Capea ventas diarias al percentil indicado antes de calcular velocidad y CV. P95 = estándar industria. P100 = sin filtro. Recalculá para aplicar.
+                            Recorta las ventas diarias al percentil indicado antes de calcular la velocidad y el CV. P95 = lo usual. P100 = sin filtro. Recalcula para aplicar.
                         </p>
                     </section>
 

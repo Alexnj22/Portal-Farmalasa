@@ -32,7 +32,7 @@ export function BarraDeExistencia({ existencia, min, max, alto = 8 }) {
   const pct = (v) => Math.min(100, (v / techo) * 100);
   const color = c === 0 ? MARCA.rojo : c < mn ? MARCA.ambar : c > mx ? MARCA.azulClaro : MARCA.verde;
   return (
-    <View style={{ height: alto + 6, justifyContent: 'center' }} accessibilityLabel={`Existencia ${c}, MIN ${mn}, MAX ${mx}`}>
+    <View style={{ height: alto + 6, justifyContent: 'center' }} accessibilityLabel={`Existencia ${c}, Mín ${mn}, Máx ${mx}`}>
       <View style={{ height: alto, borderRadius: alto / 2, backgroundColor: 'rgba(127,127,127,0.2)', overflow: 'hidden' }}>
         <Relleno pct={pct(c)} color={color} />
       </View>

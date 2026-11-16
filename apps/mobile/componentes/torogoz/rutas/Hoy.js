@@ -36,9 +36,9 @@ import { iniciarRuta, terminarRuta, useRastreoDeRuta } from './rastreo';
 import AvisoUbicacionSiempre from '../../AvisoUbicacionSiempre';
 
 const PROBLEMA_GPS = {
-  denegado: 'El teléfono no da permiso de ubicación: la ruta sigue, pero sin recorrido. Se activa en Ajustes › FarmaSalud › Ubicación.',
-  'sin-senal': 'Sin señal de GPS por ahora: el recorrido sigue en cuanto vuelva.',
-  'sin-gps': 'El GPS del teléfono no respondió: la ruta sigue, pero sin recorrido.',
+  denegado: 'El teléfono no da permiso de ubicación. La ruta sigue, pero sin recorrido. Actívalo en Ajustes › FarmaSalud › Ubicación.',
+  'sin-senal': 'Sin señal de GPS por ahora. El recorrido sigue en cuanto vuelva.',
+  'sin-gps': 'El GPS del teléfono no respondió. La ruta sigue, pero sin recorrido.',
 };
 
 

@@ -70,8 +70,8 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                     </div>
 
                     <p className="text-body font-medium leading-relaxed text-content-3">
-                        El MAX {esBorrador ? 'del borrador' : 'de hoy'} es <strong className="text-content-1">{maxHoy.toLocaleString('es-SV')}</strong>, y
-                        aunque la sala quede en cero eso no llega a pedir ni un paquete: el pedido
+                        El Máx {esBorrador ? 'del borrador' : 'de hoy'} es <strong className="text-content-1">{maxHoy.toLocaleString('es-SV')}</strong>.
+                        Aunque la sucursal quede en cero, no alcanza para pedir un paquete. El pedido
                         redondea a cero y este producto <strong className="text-content-1">nunca entra</strong>.
                     </p>
 
@@ -84,16 +84,15 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                                 <span className="text-content">{sug.minNuevo.toLocaleString('es-SV')} · {sug.maxNuevo.toLocaleString('es-SV')}</span>
                             </div>
                             <p className="text-caption leading-relaxed text-content-3">
-                                {sug.maxNuevo.toLocaleString('es-SV')} es el MAX más chico que alcanza el umbral —
-                                el 40% del paquete, el mismo que usa el armado del pedido. El MIN mantiene la
-                                proporción que ya tenía el par.
+                                {sug.maxNuevo.toLocaleString('es-SV')} es el Máx más chico que llega al 40% del paquete.
+                                El Mín mantiene la proporción que ya tenía.
                             </p>
                         </div>
                     )}
 
                     <p className="text-caption leading-relaxed text-content-3">
-                        Si este producto de verdad no se pide de a {(factor * multiplo).toLocaleString('es-SV')} unidades,
-                        lo que hay que cambiar es la regla y no el MAX.
+                        Si este producto no se pide de a {(factor * multiplo).toLocaleString('es-SV')} unidades,
+                        cambia la regla, no el Máx.
                         {onVerReglas && <> <button type="button" onClick={onVerReglas}
                             className="font-bold text-content-2 underline underline-offset-2">Ver la regla</button>.</>}
                     </p>

@@ -153,7 +153,7 @@ export default function useVenta({ pedidoId = null, desde = null, clienteInicial
         const ctxAlAbrir = contextoLotes(indexarPrecios(lp.precios, lp.listas), li);
         if (ped) {
           if (ped.pedido.estado !== 'confirmado') {
-            setErrorCarga(`El pedido ${ped.pedido.id} ya está ${ped.pedido.estado}: no se puede corregir.`);
+            setErrorCarga(`El pedido ${ped.pedido.id} ya está ${ped.pedido.estado}. No se puede corregir.`);
             return;
           }
           const p = ped.pedido;
@@ -436,7 +436,7 @@ export default function useVenta({ pedidoId = null, desde = null, clienteInicial
         try {
           pedida = !!(await pedirDescuento(id, motivoDescuento));
         } catch (e) {
-          aviso('No se pudo pedir el descuento', `${mensajeDeDistribucion(e)} La venta quedó guardada: vuelve a abrirla para pedirlo.`);
+          aviso('No se pudo pedir el descuento', `${mensajeDeDistribucion(e)} La venta quedó guardada. Vuelve a abrirla para pedirlo.`);
         }
       }
       anotar(corrigiendo ? 'DISTRIBUCION_PEDIDO_CORREGIDO' : 'DISTRIBUCION_PEDIDO_CREADO', id, { modo, descuento_pedido: pedida });
@@ -450,17 +450,17 @@ export default function useVenta({ pedidoId = null, desde = null, clienteInicial
       try {
         const factura = await facturarPedido(id);
         if (factura.estado === 'sellado') {
-          listo('Recibido por Hacienda', `Sello listo · ${factura.numero_control}`);
+          listo('Recibida por el MH', `Sello listo · ${factura.numero_control}`);
           // Con el sello, se le manda al cliente sin esperar a nadie. Si no
           // tiene correo o falla, queda pendiente en Facturación.
           fetchDocumento(factura.dte_id)
             .then(doc => (doc?.dist_clientes?.correo ? enviarDocumentoPorCorreo(doc) : null))
-            .then(r => { if (r?.enviado) listo('Documento enviado al cliente', r.destinatario ?? ''); })
+            .then(r => { if (r?.enviado) listo('Factura enviada al cliente', r.destinatario ?? ''); })
             .catch(e => console.error('correo al facturar', e));
         } else if (factura.estado === 'rechazado') {
-          aviso('Hacienda lo rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.');
+          aviso('El MH la rechazó', 'Corrige lo que indica y vuelve a facturar. La mercadería sigue apartada para este pedido.');
         } else {
-          aviso('Facturado, falta el sello de Hacienda', factura.aviso ?? 'Quedó guardado: reenvíalo desde el documento o desde Facturación.');
+          aviso('Facturado, falta el sello del MH', factura.aviso ?? 'Quedó guardado. Reenvíalo desde la factura o desde Facturación.');
         }
         return { documento: factura.dte_id };
       } catch (e) {

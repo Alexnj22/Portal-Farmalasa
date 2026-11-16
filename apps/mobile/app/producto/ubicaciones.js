@@ -35,7 +35,7 @@ export default function UbicacionesDelProducto() {
   const set = (i, campo, v) => setLocs((ls) => ls.map((l, j) => (j === i ? { ...l, [campo]: v } : l)));
   const guardar = () => {
     const { toUpsert, toDelete } = ubicacionesParaGuardar(productId, locs);
-    Alert.alert('Guardar ubicaciones', `${toUpsert.length} sala${toUpsert.length === 1 ? '' : 's'} con ubicación${toDelete.length ? ` · ${toDelete.length} sin ubicación` : ''}.`, [
+    Alert.alert('Guardar ubicaciones', `${toUpsert.length} ${toUpsert.length === 1 ? 'sucursal' : 'sucursales'} con ubicación${toDelete.length ? ` · ${toDelete.length} sin ubicación` : ''}.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Guardar', onPress: async () => {
         setGuardando(true);

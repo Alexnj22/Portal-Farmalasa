@@ -128,7 +128,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                                 onChange={(e) => set('num_documento', e.target.value)} />
                             <PortalInput label="NRC" name="nrc" value={f.nrc} readOnly={ro}
                                 hasError={!!errores.nrc} errorMessage={errores.nrc}
-                                helperText={contribuyente ? 'Contribuyente: se le emite Crédito Fiscal.' : 'Sin NRC se le emite Factura.'}
+                                helperText={contribuyente ? 'Es contribuyente. Se le emite Crédito Fiscal.' : 'Sin NRC se le emite Factura.'}
                                 onChange={(e) => set('nrc', e.target.value)} />
                             <div className="flex items-end">
                                 <Interruptor checked={f.gran_contribuyente} disabled={ro || !contribuyente}
@@ -164,7 +164,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                             <PortalInput label="Teléfono" name="telefono" maskType="PHONE" value={f.telefono} readOnly={ro}
                                 hasError={!!errores.telefono} errorMessage={errores.telefono} onChange={(e) => set('telefono', e.target.value)} />
                             <PortalInput label="Correo" name="correo" type="email" value={f.correo} readOnly={ro}
-                                helperText="Ahí le llega el documento electrónico." onChange={(e) => set('correo', e.target.value)} />
+                                helperText="Ahí le llega la factura electrónica." onChange={(e) => set('correo', e.target.value)} />
                         </div>
                     </div>
 

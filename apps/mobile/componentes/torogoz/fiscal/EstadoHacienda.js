@@ -22,7 +22,7 @@ const NIVEL = {
 };
 
 const BOTON = {
-  reenviar: ['Reenviar a Hacienda', 'onReenviar'],
+  reenviar: ['Reenviar al MH', 'onReenviar'],
   contingencia: ['Enviar aviso de contingencia', 'onContingencia'],
   corregir: ['Corregir y facturar', 'onCorregir'],
   invalidacion: ['Enviar invalidación', 'onInvalidacion'],
@@ -62,7 +62,7 @@ export default function EstadoHacienda({ documento, ocupado = false, puedeActuar
         {obs.length ? (
           <View style={{ gap: 4, padding: 12, borderRadius: 14, backgroundColor: 'rgba(127,127,127,0.12)' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>
-              {`Lo que dice Hacienda${documento.descripcion_msg ? ` · ${documento.descripcion_msg}` : ''}`}
+              {`Lo que dice el MH${documento.descripcion_msg ? ` · ${documento.descripcion_msg}` : ''}`}
             </Text>
             {obs.map((o, i) => <Text key={i} style={{ color: colorSistema.texto2, fontSize: 13 }}>{`• ${o}`}</Text>)}
           </View>

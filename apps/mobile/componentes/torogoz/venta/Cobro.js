@@ -123,7 +123,7 @@ export default function Cobro({ venta: s, imprimir, setImprimir, onCerrar, onPro
     if (bloqueo) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); return; }
     const formas = pagos.map((f, i) => `${opciones.find(o => o.value === f.forma)?.label ?? f.forma} ${formatMoney(montos[i])}`).join(' · ');
     Alert.alert(`Facturar ${formatMoney(venta.total)}`,
-      `${TIPO_DOCUMENTO[tipoDoc]?.largo ?? 'Documento'} a ${cliente.nombre}.\n${formas}${cambio > 0 ? `\nCambio: ${formatMoney(cambio)}` : ''}\n\nSe transmite a Hacienda y no se deshace.`, [
+      `${TIPO_DOCUMENTO[tipoDoc]?.largo ?? 'Documento'} a ${cliente.nombre}.\n${formas}${cambio > 0 ? `\nCambio: ${formatMoney(cambio)}` : ''}\n\nSe envía al MH y no se deshace.`, [
         { text: 'Revisar', style: 'cancel' },
         { text: 'Facturar', style: 'destructive', onPress: () => onProcesar('facturar') },
       ]);
@@ -141,7 +141,7 @@ export default function Cobro({ venta: s, imprimir, setImprimir, onCerrar, onPro
             <Campo value={motivoDescuento} onChangeText={setMotivoDescuento} placeholder="¿Por qué el descuento? (lo ve quien aprueba)" style={{ minHeight: 64 }} />
           </Seccion>
         ) : (
-          <Seccion titulo="Formas de pago" pie={pagos.length > 1 ? 'La última se calcula sola: es lo que falta.' : undefined}>
+          <Seccion titulo="Formas de pago" pie={pagos.length > 1 ? 'La última se calcula sola con lo que falta.' : undefined}>
             {pagos.map((f, i) => (
               <FilaDePago key={f.clave} f={f} i={i} ultima={i === pagos.length - 1} monto={montos[i]} opciones={opciones}
                 varias={pagos.length > 1} onCambiar={(c) => set(f.clave, c)} onQuitar={() => quitar(f.clave)} />
@@ -161,10 +161,10 @@ export default function Cobro({ venta: s, imprimir, setImprimir, onCerrar, onPro
           <Aviso tono="freno" texto={`Ya debe ${formatMoney(credito?.saldo ?? 0)} de un límite de ${formatMoney(cliente.limite_credito)}: a crédito puede llevar hasta ${formatMoney(disponibleCredito)}.`} />
         ) : null}
         {miCaja === null && pagos.some(p => p.forma === '01') ? (
-          <Aviso tono="cuidado" texto="No tienes caja abierta hoy: pide a quien administra que te la abra con el fondo de cambio." />
+          <Aviso tono="cuidado" texto="No tienes caja abierta hoy. Pide a un administrador que te la abra con el fondo de cambio." />
         ) : null}
         <Seccion titulo="Observaciones">
-          <Campo value={notas} onChangeText={setNotas} placeholder="Sale impresa en el documento." style={{ minHeight: 56 }} />
+          <Campo value={notas} onChangeText={setNotas} placeholder="Sale impresa en la factura." style={{ minHeight: 56 }} />
         </Seccion>
         <Seccion titulo={TIPO_DOCUMENTO[tipoDoc]?.largo ?? 'Resumen'}>
           <Desglose venta={venta} conIva={conIva} porAprobar={montoPorAprobar} />
@@ -185,7 +185,7 @@ export default function Cobro({ venta: s, imprimir, setImprimir, onCerrar, onPro
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {/* Sólo consulta (soloConsulta.js): facturar se hace en el portal; acá queda la preventa. */}
         {!aprobacion && !ACCIONES_DE_DINERO ? (
-          <SeHaceEnElPortal texto="Facturar se hace desde el portal. Guarda la venta como preventa para facturarla allá." />
+          <SeHaceEnElPortal texto="Facturar se hace desde el portal. Guarda la venta como preventa y factúrala en el portal." />
         ) : (
           <BotonGrande color={aprobacion ? MARCA.ambar : PETROLEO} deshabilitado={!!guardando || (!aprobacion && !!bloqueo)} onPress={procesar}
             texto={guardando ? (guardando === 'facturar' ? 'Facturando…' : 'Guardando…') : aprobacion ? 'Enviar a aprobación' : `Facturar ${formatMoney(venta.total)}`} />

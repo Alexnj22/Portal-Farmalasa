@@ -45,7 +45,7 @@ function BuscadorSrs({ inicial, onUsar }) {
   useEffect(() => () => clearTimeout(espera.current), []);
   const escribir = (t) => { setQ(t); clearTimeout(espera.current); espera.current = setTimeout(() => buscar(t, 1), 450); };
   return (
-    <Seccion titulo="Registro sanitario (SRS)" pie="Consulta el principio y la concentración registrados. Tocar uno lo copia arriba: revísalo antes de guardar.">
+    <Seccion titulo="Registro sanitario (SRS)" pie="Consulta el principio y la concentración registrados. Toca uno para copiarlo arriba. Revísalo antes de guardar.">
       <Campo multiline={false} value={q} onChangeText={escribir} placeholder="Buscar en el registro SRS" autoCorrect={false} returnKeyType="search" onSubmitEditing={() => buscar(q, 1)} />
       {!res && !cargando && q.trim() ? (
         <Pressable onPress={() => buscar(q, 1)} style={{ minHeight: 44, justifyContent: 'center' }}>
@@ -152,7 +152,7 @@ export default function PrincipiosDelProducto() {
             return { ...e, items: [...e.items, { ...nuevo, orden: e.items.length, _key: Date.now() }] };
           })} />
         ) : null}
-        <Aviso texto={text ? `Quedará: ${text}` : 'Sin principios: el producto sale de la clasificación regulada hasta que se le ponga uno.'} />
+        <Aviso texto={text ? `Quedará: ${text}` : 'Sin principios activos, el producto sale de la clasificación regulada.'} />
         <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.violetaClaro} deshabilitado={guardando} onPress={guardar} />
       </ScrollView>
     </>

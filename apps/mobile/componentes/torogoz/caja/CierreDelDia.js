@@ -107,7 +107,7 @@ export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recar
         <>
           <FilaDeKpis>
             <Kpi icono="Receipt" rotulo="Vendido" valor={formatMoney(Number(d.ventas.total), { decimales: 0 })} color={PETROLEO}
-              apoyo={`${Number(d.ventas.documentos)} documentos${Number(d.devoluciones) > 0 ? ` · ${formatMoney(Number(d.devoluciones))} devuelto` : ''}`} />
+              apoyo={`${Number(d.ventas.documentos)} facturas${Number(d.devoluciones) > 0 ? ` · ${formatMoney(Number(d.devoluciones))} devuelto` : ''}`} />
             <Kpi icono="Wallet" rotulo="Efectivo recibido" valor={formatMoney(recibido, { decimales: 0 })} color={MARCA.verde}
               apoyo={`Fondos ${formatMoney(Number(d.fondos), { decimales: 0 })} · gastos ${formatMoney(Number(d.gastos), { decimales: 0 })}`} />
           </FilaDeKpis>
@@ -184,7 +184,7 @@ export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recar
                 <SeHaceEnElPortal texto="El día se cierra desde el portal." />
               ) : (
                 <>
-                  {queda !== 0 ? <Campo value={nota} onChangeText={setNota} placeholder={`${preguntaDelCierre(queda, formatMoney)} — caja fuerte, fondo de mañana…`} /> : null}
+                  {queda !== 0 ? <Campo value={nota} onChangeText={setNota} placeholder={`${preguntaDelCierre(queda, formatMoney)} Ej.: caja fuerte, fondo de mañana…`} /> : null}
                   {queda === 0 && d.pendientes === 0 ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>Todo lo recibido está depositado.</Text> : null}
                   <BotonGrande color={PETROLEO} texto="Cerrar el día" deshabilitado={!puedeCerrar.listo || ocupado} onPress={cerrar} />
                 </>

@@ -82,7 +82,7 @@ export default function CargarCamion() {
 
   const cargar = () => {
     const quien = shortEmployeeName(vendedores.find((v) => v.id === vendedor));
-    Alert.alert('Cargar el camión', `${items.length} lotes al camión de ${quien}. Al cargar se emite la Nota de Remisión ante Hacienda.`, [
+    Alert.alert('Cargar el camión', `${items.length} lotes al camión de ${quien}. Al cargar se emite la Nota de Remisión ante el MH.`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Cargar y emitir',
@@ -173,7 +173,7 @@ export default function CargarCamion() {
             {ACCIONES_DE_DINERO ? (
               <BotonGrande texto={ocupado ? 'Cargando…' : `Cargar${items.length ? ` (${items.length})` : ''}`} color={PETROLEO}
                 deshabilitado={!vendedor || !items.length || ocupado} onPress={cargar} />
-            ) : <SeHaceEnElPortal texto="Cargar el camión emite la Nota de Remisión: se hace desde el portal." />}
+            ) : <SeHaceEnElPortal texto="Cargar el camión se hace desde el portal." />}
           </>
         ) : null}
       </ScrollView>

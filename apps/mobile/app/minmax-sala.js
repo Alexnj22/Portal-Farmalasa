@@ -87,7 +87,7 @@ function Fila({ r, esBodega, onAbrir, onMantener }) {
           {r.laboratorio_nombre ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{r.laboratorio_nombre}</Text> : null}
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`Hay ${formatQty(stock)}`}</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`MIN·MAX ${r.effective_min ?? 0} · ${r.effective_max ?? 0}`}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Mín/Máx ${r.effective_min ?? 0} · ${r.effective_max ?? 0}`}</Text>
             {pendiente ? (
               <Text style={{ color: cambia ? MARCA.azulClaro : colorSistema.texto2, fontSize: 14, fontWeight: '700' }}>
                 {cambia ? `→ ${r.draft_min ?? 0} · ${r.draft_max ?? 0}` : 'borrador sin cambio'}
@@ -95,7 +95,7 @@ function Fila({ r, esBodega, onAbrir, onMantener }) {
             ) : null}
           </View>
           {stock > 0 && sortedPres(pres).length ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`≈ ${formatUnits(stock, pres)}`}</Text> : null}
-          {esBodega && (r.pub_min || r.pub_max) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Σ salas ${(r.pub_min ?? 0).toLocaleString()} · ${(r.pub_max ?? 0).toLocaleString()}`}</Text> : null}
+          {esBodega && (r.pub_min || r.pub_max) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Σ sucursales ${(r.pub_min ?? 0).toLocaleString()} · ${(r.pub_max ?? 0).toLocaleString()}`}</Text> : null}
           {ajuste || regla || r.draft_status === 'sparse_data' ? (
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
               {ajuste ? <Pildora texto={r._manual_motivo ? `${ETIQUETA_AJUSTE[ajuste]} · ${MOTIVO_AJUSTE[r._manual_motivo]?.label ?? r._manual_motivo}` : ETIQUETA_AJUSTE[ajuste]} color={COLOR_AJUSTE[ajuste]} /> : null}
@@ -199,7 +199,7 @@ export default function MinMaxSala() {
     ...ESTADOS_DE_AJUSTE.filter((a) => conteos.ajustes[a.key]).map((a) => ({ id: `ajuste:${a.key}`, label: `${conteos.ajustes[a.key]} · ${a.label}` })),
   ];
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: String(sala), porDefecto: String(miErp ?? ERP_ORDEN[0]), onCambiar: (v) => setSala(Number(v)),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: String(sala), porDefecto: String(miErp ?? ERP_ORDEN[0]), onCambiar: (v) => setSala(Number(v)),
       opciones: ERP_ORDEN.map((e) => ({ id: String(e), label: ERP_NAMES[e] })) }] : []),
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: '', onCambiar: setEstado, opciones: opcionesEstado },
     { id: 'abc', titulo: 'ABC', activa: abc, porDefecto: 'all', onCambiar: setAbc, opciones: [{ id: 'all', label: 'Todas las clases' }, ...['A', 'B', 'C', 'D'].map((x) => ({ id: x, label: `Clase ${x}` }))] },
@@ -237,7 +237,7 @@ export default function MinMaxSala() {
   };
   const recalcular = async () => {
     setOcupado(true);
-    trabajando('Calculando la sala…');
+    trabajando('Calculando la sucursal…');
     try {
       const { data: res, error: e } = await calcularMinMaxDeSala({ p_erp_sucursal_id: sala });
       if (e) throw e;
@@ -256,7 +256,7 @@ export default function MinMaxSala() {
   const ofrecerDescartarYRecalcular = () => {
     const n = aDescartar?.borradores ?? 0;
     Alert.alert(n ? `${ERP_NAMES[sala]} tiene ${n} borrador${n === 1 ? '' : 'es'} sin revisar` : `${ERP_NAMES[sala]} tiene borradores sin revisar`,
-      'Para recalcular hay que descartarlos primero: volverán al MIN·MAX publicado y el cálculo nuevo generará los suyos. No se puede deshacer.',
+      'Para recalcular, primero hay que descartarlos. Vuelven al Mín/Máx publicado y el cálculo nuevo crea los suyos. No se puede deshacer.',
       [{ text: 'Cancelar', style: 'cancel' }, { text: 'Descartar y recalcular', style: 'destructive', onPress: descartarYRecalcular }]);
   };
   // Dos llamadas, como el portal: el descarte es el mismo de «Descartar todo»,
@@ -321,14 +321,14 @@ export default function MinMaxSala() {
   const ocultarUno = async (r) => {
     const { error: e } = await ocultarProductoMinMax(r.erp_product_id, sala, { product: r.product_name, desde: 'app' });
     if (e) { fallo('No se pudo ocultar', mensajeAmigable(e)); return; }
-    listo('Oculto en la sala', r.product_name);
+    listo('Oculto en la sucursal', r.product_name);
     await cargar();
   };
   const mostrarUno = async (r) => {
     const { error: e } = await updateStockParams(r.erp_product_id, sala, { is_hidden: false, updated_at: new Date().toISOString() });
     if (e) { fallo('No se pudo mostrar', mensajeAmigable(e)); return; }
     useStaffStore.getState().appendAuditLog?.('MINMAX_UNHIDE', String(r.erp_product_id), { sucursal_id: sala, desde: 'app' });
-    listo('Vuelve a la sala', r.product_name);
+    listo('Vuelve a la sucursal', r.product_name);
     await cargar();
   };
   // La regla de despacho: el paquete, el MAX de hoy, y el número más chico que
@@ -342,20 +342,20 @@ export default function MinMaxSala() {
     const { min: minHoy, max: maxHoy, esBorrador } = parParaLaRegla(r, esBodega);
     const sug = sugerenciaParaLaRegla(minHoy, maxHoy, factor, multiplo);
     const como = r.dispatch_tipo ? `${r.dispatch_tipo}${multiplo > 1 ? ` ×${multiplo}` : ''}` : `${paquete.toLocaleString()} und`;
-    const texto = `Se despacha de a ${paquete.toLocaleString()} und (${como}).\n\nEl MAX ${esBorrador ? 'del borrador' : 'de hoy'} es ${maxHoy.toLocaleString()}, y aunque la sala quede en cero eso no llega a pedir ni un paquete: el pedido redondea a cero y este producto nunca entra.`
-      + (sug ? `\n\nSugerencia: ${minHoy} · ${maxHoy} → ${sug.minNuevo} · ${sug.maxNuevo}. ${sug.maxNuevo} es el MAX más chico que alcanza el 40% del paquete, el umbral del armado del pedido.` : '')
-      + `\n\nSi de verdad no se pide de a ${paquete.toLocaleString()} unidades, lo que hay que cambiar es la regla (Pedidos → Reglas de despacho) y no el MAX.`;
+    const texto = `Se despacha de a ${paquete.toLocaleString()} und (${como}).\n\nEl Máx ${esBorrador ? 'del borrador' : 'de hoy'} es ${maxHoy.toLocaleString()}. Aunque la sucursal quede en cero, no alcanza para pedir un paquete. El pedido redondea a cero y este producto nunca entra.`
+      + (sug ? `\n\nSugerencia: ${minHoy} · ${maxHoy} → ${sug.minNuevo} · ${sug.maxNuevo}. ${sug.maxNuevo} es el Máx más chico que llega al 40% del paquete.` : '')
+      + `\n\nSi no se pide de a ${paquete.toLocaleString()} unidades, cambia la regla en Pedidos → Reglas de despacho, no el Máx.`;
     Alert.alert(r.product_name, texto, [
       { text: 'Cerrar', style: 'cancel' },
       ...(sug && puede ? [{ text: 'Aceptar sugerencia', onPress: async () => {
         const plan = planDeGuardadoMinMax({ row: r, productId: r.erp_product_id, sucursalId: sala, min: String(sug.minNuevo), max: String(sug.maxNuevo), hayPublicado: conteos.publicado, confirmado: true });
         if (plan.sinCambio) return;
         if (plan.error) { fallo('No se puede guardar', plan.error); return; }
-        trabajando('Guardando el MIN·MAX…');
+        trabajando('Guardando el Mín/Máx…');
         const { error: e } = await upsertStockParams(plan.payload);
         if (e) { fallo('No se pudo guardar', mensajeAmigable(e)); return; }
         useStaffStore.getState().appendAuditLog?.(plan.accion, String(r.erp_product_id), { ...plan.detalle, product: r.product_name, desde: 'app' });
-        listo(plan.tipo === 'borrador' ? 'Quedó en el borrador' : 'MIN·MAX actualizado', `${sug.minNuevo} · ${sug.maxNuevo}`);
+        listo(plan.tipo === 'borrador' ? 'Quedó en el borrador' : 'Mín/Máx actualizado', `${sug.minNuevo} · ${sug.maxNuevo}`);
         await cargar();
       } }] : []),
     ]);
@@ -370,8 +370,8 @@ export default function MinMaxSala() {
     if (puede) opciones.push([r._manual_motivo ? 'Ver motivo del ajuste' : 'Poner motivo del ajuste', 'motivo']);
     if (puede && borrador && !esBodega) opciones.push(['Publicar este borrador', 'pub'], ['Descartar el borrador', 'desc']);
     if (regla) opciones.push(['Regla de despacho', 'regla']);
-    if (puede && !esBodega) opciones.push([r.is_hidden ? 'Mostrar en la sala' : 'Ocultar en la sala', r.is_hidden ? 'mostrar' : 'ocultar']);
-    if (esBodega && puedeCeroEnTodas) opciones.push(['0 en todas las salas', 'cero']);
+    if (puede && !esBodega) opciones.push([r.is_hidden ? 'Mostrar en la sucursal' : 'Ocultar en la sucursal', r.is_hidden ? 'mostrar' : 'ocultar']);
+    if (esBodega && puedeCeroEnTodas) opciones.push(['0 en todas las sucursales', 'cero']);
     const destructivos = opciones.map((o, i) => (['desc', 'ocultar', 'cero'].includes(o[1]) ? i : -1)).filter((i) => i >= 0);
     ActionSheetIOS.showActionSheetWithOptions({
       title: r.product_name, options: [...opciones.map((o) => o[0]), 'Cancelar'],
@@ -384,7 +384,7 @@ export default function MinMaxSala() {
       else if (accion === 'mostrar') mostrarUno(r);
       else if (accion === 'cero') router.push({ pathname: '/minmax-cero', params: { producto: params.producto, nombre: r.product_name, clase: r.draft_abc_class || r.abc_class || '', velocidad: String(r.daily_velocity ?? 0) } });
       else if (accion === 'pub') {
-        Alert.alert('Publicar este borrador', `${r.product_name} pasa a ${r.draft_min ?? 0} · ${r.draft_max ?? 0} como MIN·MAX vigente de ${ERP_NAMES[sala]}.`, [
+        Alert.alert('Publicar este borrador', `${r.product_name} pasa a ${r.draft_min ?? 0} · ${r.draft_max ?? 0} como Mín/Máx vigente de ${ERP_NAMES[sala]}.`, [
           { text: 'Cancelar', style: 'cancel' }, { text: 'Publicar', onPress: () => publicar([r.erp_product_id]) },
         ]);
       } else if (accion === 'desc') {
@@ -392,7 +392,7 @@ export default function MinMaxSala() {
           { text: 'Cancelar', style: 'cancel' }, { text: 'Descartar', style: 'destructive', onPress: () => descartarUno(r) },
         ]);
       } else if (accion === 'ocultar') {
-        Alert.alert('Ocultar en esta sala', `${r.product_name} deja de tener Mín·Máx en ${ERP_NAMES[sala]} y no se le vuelve a calcular.`, [
+        Alert.alert('Ocultar en esta sucursal', `${r.product_name} deja de tener Mín/Máx en ${ERP_NAMES[sala]} y no se le vuelve a calcular.`, [
           { text: 'Cancelar', style: 'cancel' }, { text: 'Ocultar', style: 'destructive', onPress: () => ocultarUno(r) },
         ]);
       }
@@ -426,7 +426,7 @@ export default function MinMaxSala() {
     const opciones = [];
     if (aDescartar.borradores) opciones.push([hayFiltro && idsFiltrados.length ? `Publicar lo filtrado (${idsFiltrados.length})` : `Publicar todo (${aDescartar.borradores})`, 'publicar']);
     if (aDescartar.total) opciones.push([`Descartar todo (${aDescartar.total})`, 'descartar']);
-    opciones.push(['Recalcular la sala', 'recalcular']);
+    opciones.push(['Recalcular la sucursal', 'recalcular']);
     if (todas) opciones.push(['Recalcular todas las sucursales', 'recalcularTodas']);
     if (hayFiltro && visibles.length && !esBodega) opciones.push([`Ocultar lo filtrado (${visibles.length})`, 'ocultarFiltrados']);
     if (estado === 'ocultos' && ocultos.size) opciones.push([`Restaurar ${ocultos.size} oculto${ocultos.size === 1 ? '' : 's'}`, 'restaurar']);
@@ -445,15 +445,15 @@ export default function MinMaxSala() {
       if (accion === 'restaurar') { restaurarOcultos(); return; }
       if (accion === 'publicar') {
         const ids = hayFiltro && idsFiltrados.length ? idsFiltrados : null;
-        Alert.alert('Publicar borradores', `${ids ? ids.length : aDescartar.borradores} borradores pasan a ser el MIN·MAX vigente de ${ERP_NAMES[sala]}. Los que vienen de una solicitud aprobada no se tocan.`, [
+        Alert.alert('Publicar borradores', `${ids ? ids.length : aDescartar.borradores} borradores pasan a ser el Mín/Máx vigente de ${ERP_NAMES[sala]}. Los que vienen de una solicitud aprobada no se tocan.`, [
           { text: 'Cancelar', style: 'cancel' }, { text: 'Publicar', onPress: () => publicar(ids) },
         ]);
       } else if (accion === 'descartar') {
-        Alert.alert('Descartar todo', `Se descartan ${aDescartar.borradores} borradores${aDescartar.sinDatos ? ` y ${aDescartar.sinDatos} productos sin ventas para calcular (vuelven solos)` : ''}. El MIN·MAX vigente no cambia.`, [
+        Alert.alert('Descartar todo', `Se descartan ${aDescartar.borradores} borradores${aDescartar.sinDatos ? ` y ${aDescartar.sinDatos} productos sin ventas para calcular (vuelven solos)` : ''}. El Mín/Máx vigente no cambia.`, [
           { text: 'Cancelar', style: 'cancel' }, { text: 'Descartar', style: 'destructive', onPress: descartarTodo },
         ]);
       } else if (accion === 'recalcular') {
-        Alert.alert('Recalcular la sala', `Se calcula de nuevo el MIN·MAX de ${ERP_NAMES[sala]} y queda como borrador para revisar.${aDescartar.borradores ? ' Primero hay que publicar o descartar los borradores que ya tiene.' : ''}`, [
+        Alert.alert('Recalcular la sucursal', `Se calcula de nuevo el Mín/Máx de ${ERP_NAMES[sala]} y queda como borrador para revisar.${aDescartar.borradores ? ' Primero hay que publicar o descartar los borradores que ya tiene.' : ''}`, [
           { text: 'Cancelar', style: 'cancel' }, { text: 'Recalcular', onPress: recalcular },
         ]);
       } else if (accion === 'recalcularTodas') {
@@ -461,7 +461,7 @@ export default function MinMaxSala() {
           { text: 'Cancelar', style: 'cancel' }, { text: 'Recalcular', onPress: recalcularTodas },
         ]);
       } else if (accion === 'ocultarFiltrados') {
-        Alert.alert(`¿Ocultar ${visibles.length} producto${visibles.length !== 1 ? 's' : ''}?`, `Los productos filtrados en ${ERP_NAMES[sala]} quedan ocultos y sin MIN·MAX. Se revierte desde el estado «Ocultos».`, [
+        Alert.alert(`¿Ocultar ${visibles.length} producto${visibles.length !== 1 ? 's' : ''}?`, `Los productos filtrados en ${ERP_NAMES[sala]} quedan ocultos y sin Mín/Máx. Se revierte desde el estado «Ocultos».`, [
           { text: 'Cancelar', style: 'cancel' }, { text: 'Ocultar', style: 'destructive', onPress: ocultarFiltrados },
         ]);
       }
@@ -479,43 +479,43 @@ export default function MinMaxSala() {
     const hay = Number(borrador.draft_count ?? 0) > 0;
     if (!pubMax && !effMax) return null;
     const delta = effMax - pubMax;
-    return { valor: hay ? effMax : pubMax, apoyo: hay && Math.abs(delta) > 0.01 ? `Borrador ${delta >= 0 ? '+' : ''}${fmtMoney(delta)}` : 'Techo al MAX' };
+    return { valor: hay ? effMax : pubMax, apoyo: hay && Math.abs(delta) > 0.01 ? `Borrador ${delta >= 0 ? '+' : ''}${fmtMoney(delta)}` : 'Techo al Máx' };
   })();
 
   const encabezado = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 6 }}>
       <FiltrosActivos grupos={grupos} />
       {todas ? null : <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{ERP_NAMES[sala]}</Text>}
-      {candado ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Min·Máx está en mantenimiento${candado.locked_by_name ? ` (${candado.locked_by_name})` : ''}: se puede mirar, no cambiar.`} /></View> : null}
+      {candado ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Mín/Máx está en mantenimiento${candado.locked_by_name ? ` (${candado.locked_by_name})` : ''}. Puedes mirar, pero no cambiar.`} /></View> : null}
       {esBodega && filas ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso tono={conteos.bodegaPendientes ? 'cuidado' : 'nota'} texto={`En Bodega, MIN/MAX = Σ sucursales publicadas.${conteos.bodegaPendientes ? ` ${conteos.bodegaPendientes} pendiente${conteos.bodegaPendientes !== 1 ? 's' : ''} de que las salas publiquen.` : ''}`} />
+          <Aviso tono={conteos.bodegaPendientes ? 'cuidado' : 'nota'} texto={`En Bodega, Mín/Máx = suma de las sucursales publicadas.${conteos.bodegaPendientes ? ` ${conteos.bodegaPendientes} pendiente${conteos.bodegaPendientes !== 1 ? 's' : ''} de que las sucursales publiquen.` : ''}`} />
         </View>
       ) : null}
       {filas ? (
         <FilaDeKpis>
           <Kpi icono="FileText" rotulo="Borradores" valor={aDescartar.borradores.toLocaleString('es-SV')} color={MARCA.azulClaro}
             apoyo={aDescartar.sinDatos ? `${aDescartar.sinDatos} sin datos` : 'por revisar'} onPress={() => setVista(vista === 'borradores' ? 'todos' : 'borradores')} />
-          <Kpi icono="AlertTriangle" rotulo="Sin stock o bajo" valor={alertas.toLocaleString('es-SV')} color={alertas ? MARCA.rojo : MARCA.verde}
+          <Kpi icono="AlertTriangle" rotulo="Sin existencia o baja" valor={alertas.toLocaleString('es-SV')} color={alertas ? MARCA.rojo : MARCA.verde}
             apoyo="productos" onPress={() => setAlerta(alerta === 'below_min' ? 'all' : 'below_min')} />
         </FilaDeKpis>
       ) : null}
       {resumen ? (
         <>
           <FilaDeKpis>
-            <Kpi icono="DollarSign" rotulo="Inventario" valor={fmtMoney(Number(resumen.total_cost) || 0)} color={MARCA.azulClaro} apoyo="Stock total" />
-            <Kpi icono="Archive" rotulo="Sin movimiento" valor={fmtMoney(Number(resumen.dead_cost) || 0)} color={colorSistema.texto2} apoyo="Sin MIN/MAX" />
+            <Kpi icono="DollarSign" rotulo="Inventario" valor={fmtMoney(Number(resumen.total_cost) || 0)} color={MARCA.azulClaro} apoyo="Existencia total" />
+            <Kpi icono="Archive" rotulo="Sin movimiento" valor={fmtMoney(Number(resumen.dead_cost) || 0)} color={colorSistema.texto2} apoyo="Sin Mín/Máx" />
           </FilaDeKpis>
           {!esBodega || techo ? (
             <FilaDeKpis>
-              {!esBodega ? <Kpi icono="TrendingUp" rotulo="Útil" valor={fmtMoney(Number(resumen.useful_cost) || 0)} color={MARCA.verde} apoyo="Bajo MAX" /> : null}
-              {!esBodega ? <Kpi icono="TrendingDown" rotulo="Excedente" valor={fmtMoney(Number(resumen.excess_cost) || 0)} color={MARCA.ambar} apoyo="Sobre MAX" /> : null}
-              {esBodega && techo ? <Kpi icono="Target" rotulo="Σ red al MAX" valor={fmtMoney(techo.valor)} color={MARCA.violetaClaro} apoyo={techo.apoyo} /> : null}
+              {!esBodega ? <Kpi icono="TrendingUp" rotulo="Útil" valor={fmtMoney(Number(resumen.useful_cost) || 0)} color={MARCA.verde} apoyo="Bajo el Máx" /> : null}
+              {!esBodega ? <Kpi icono="TrendingDown" rotulo="Excedente" valor={fmtMoney(Number(resumen.excess_cost) || 0)} color={MARCA.ambar} apoyo="Sobre el Máx" /> : null}
+              {esBodega && techo ? <Kpi icono="Target" rotulo="Σ red al Máx" valor={fmtMoney(techo.valor)} color={MARCA.violetaClaro} apoyo={techo.apoyo} /> : null}
             </FilaDeKpis>
           ) : null}
           {!esBodega && techo ? (
             <FilaDeKpis>
-              <Kpi icono="Target" rotulo="Catálogo al MAX" valor={fmtMoney(techo.valor)} color={MARCA.violetaClaro} apoyo={techo.apoyo} />
+              <Kpi icono="Target" rotulo="Catálogo al Máx" valor={fmtMoney(techo.valor)} color={MARCA.violetaClaro} apoyo={techo.apoyo} />
             </FilaDeKpis>
           ) : null}
         </>
@@ -528,10 +528,10 @@ export default function MinMaxSala() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_FIJA, title: todas ? `Min·Máx · ${ERP_NAMES[sala] ?? ''}` : 'Min·Máx de la sala',
+        ...BARRA_FIJA, title: todas ? `Mín/Máx · ${ERP_NAMES[sala] ?? ''}` : 'Mín/Máx de la sucursal',
         headerSearchBarOptions: { placeholder: 'Producto o laboratorio', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
-      <MenuDeFiltros grupos={grupos} extra={puede && filas ? { icono: 'ellipsis.circle', etiqueta: 'Acciones de la sala', onPress: ocupado ? () => {} : menuDeSala } : null} />
+      <MenuDeFiltros grupos={grupos} extra={puede && filas ? { icono: 'ellipsis.circle', etiqueta: 'Acciones de la sucursal', onPress: ocupado ? () => {} : menuDeSala } : null} />
       <FijoArriba><Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'borradores', label: 'Borradores' }, { id: 'cambios', label: 'Cambios' }]} /></FijoArriba>
       {filas == null ? <Cargando /> : (
         <FlatList data={visibles} keyExtractor={(r) => String(r.erp_product_id)} ListHeaderComponent={encabezado}

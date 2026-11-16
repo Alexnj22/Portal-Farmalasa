@@ -44,14 +44,14 @@ export default function PedirBaja({ lotes, puedeConfigurar, onCerrar, onGuardado
   const pedir = async () => {
     if (falta || guardando) return;
     const motivo = MOTIVOS_BAJA.find((m) => m.value === baja.motivo)?.label;
-    const ok = await confirmar('¿Pedir la baja?', `${loteSel?.nombre} · lote ${loteSel?.lote} · ${n} u · ${motivo}.`, 'Pedir baja');
+    const ok = await confirmar('¿Pedir el descarte?', `${loteSel?.nombre} · lote ${loteSel?.lote} · ${n} u · ${motivo}.`, 'Pedir descarte');
     if (!ok) return;
     setGuardando(true);
     try {
       const id = await solicitarBaja(Number(baja.lote), n, baja.motivo, baja.detalle.trim());
       useStaffStore.getState().appendAuditLog?.('DISTRIBUCION_BAJA_SOLICITADA', String(id), { lote: Number(baja.lote), unidades: n, motivo: baja.motivo, desde: 'app' });
       clearDraft(BORRADOR);
-      listo('Baja pedida', puedeConfigurar ? 'Apruébala en la lista para que salga del lote.' : 'Queda esperando la aprobación de quien administra.');
+      listo('Descarte pedido', puedeConfigurar ? 'Apruébalo en la lista para que salga del lote.' : 'Queda esperando la aprobación de un administrador.');
       onGuardado();
     } catch (e) {
       fallo('No se pudo pedir', mensajeDeDistribucion(e));
@@ -63,7 +63,7 @@ export default function PedirBaja({ lotes, puedeConfigurar, onCerrar, onGuardado
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
-        <EncabezadoDeHoja titulo="Pedir una baja" onCerrar={onCerrar} ocupado={guardando} />
+        <EncabezadoDeHoja titulo="Pedir un descarte" onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
           <Seccion titulo="Lote">
             {loteSel ? (
@@ -90,7 +90,7 @@ export default function PedirBaja({ lotes, puedeConfigurar, onCerrar, onGuardado
             <Campo value={baja.detalle} onChangeText={(t) => setBaja((b) => ({ ...b, detalle: t }))} placeholder="Caja mojada, vencido en la bodega…" />
           </Seccion>
           {falta ? <Aviso texto={falta} /> : null}
-          <BotonGrande texto={guardando ? 'Pidiendo…' : 'Pedir baja'} color={MARCA.rojo} onPress={pedir} deshabilitado={!!falta || guardando} />
+          <BotonGrande texto={guardando ? 'Pidiendo…' : 'Pedir descarte'} color={MARCA.rojo} onPress={pedir} deshabilitado={!!falta || guardando} />
         </ScrollView>
       </ConAurora>
     </Modal>

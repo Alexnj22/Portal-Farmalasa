@@ -45,7 +45,7 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
     const falta = queFalta?.texto ?? null;
 
     const opciones = [
-        { value: '', label: 'Sin motivo — se revisa a mano' },
+        { value: '', label: 'Sin motivo. Se revisa a mano' },
         ...Object.entries(MOTIVO_AJUSTE)
             .filter(([key]) => key !== 'ya_no_rota' || puedeYaNoRota)
             .map(([key, cfg]) => ({ value: key, label: cfg.label })),
@@ -80,8 +80,7 @@ export default function MotivoAjusteModal({ open, row, puedeYaNoRota, guardando,
                         )}
                         {!puedeYaNoRota && (
                             <p className="text-body-sm text-content-3">
-                                «Ya no rota» lo pone quien decide sobre todas las salas: es el que hace
-                                que el cálculo deje de contar lo que este producto vendió antes.
+                                «Ya no rota» solo lo puede poner quien decide sobre todas las sucursales.
                             </p>
                         )}
                     </div>

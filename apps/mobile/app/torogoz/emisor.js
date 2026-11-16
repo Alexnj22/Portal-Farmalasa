@@ -42,7 +42,7 @@ function PuntosDeVenta({ emisorId, oficina }) {
   }, [emisorId]);
   return (
     <Seccion titulo="Puntos de venta"
-      pie="Cada vendedor recibe su punto de venta la primera vez que factura. El número de los documentos es uno solo por establecimiento, como pide Hacienda.">
+      pie="Cada vendedor recibe su punto de venta la primera vez que factura. La numeración de las facturas es una sola por establecimiento.">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40 }}>
         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'], minWidth: 52 }}>{oficina}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Oficina</Text>
@@ -110,12 +110,12 @@ export default function EmisorTorogoz() {
   const guardar = () => {
     setIntento(true);
     if (lista.length) { fallo('Falta algo', lista[0]); return; }
-    Alert.alert('Guardar los datos de la empresa', 'Salen impresos en cada documento que se emita.', [
+    Alert.alert('Guardar los datos de la empresa', 'Salen impresos en cada factura que se emita.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Guardar', onPress: () => {
         if (!pasaAProduccion) { escribir(); return; }
         // Segunda confirmación: desde aquí cada documento cuenta ante Hacienda.
-        Alert.alert('Pasar a Producción', 'Desde que guardes, cada documento es fiscal y cuenta ante Hacienda. Hazlo sólo con la autorización de Hacienda ya recibida.', [
+        Alert.alert('Pasar a Producción', 'Desde que guardes, cada factura es fiscal y cuenta ante el MH. Hazlo sólo con la autorización del MH ya recibida.', [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Pasar a Producción', style: 'destructive', onPress: escribir },
         ]);
@@ -137,9 +137,9 @@ export default function EmisorTorogoz() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Empresa', headerLargeTitle: true }} />
       <Formulario contentContainerStyle={{ paddingHorizontal: 16, gap: 18, paddingBottom: 60 }}>
         {error ? <Nota tono="danger" texto={error} /> : null}
-        <Nota texto="El certificado de firma y la contraseña de Hacienda no se escriben aquí: los carga quien administra el servidor. Sin ellos, los documentos se guardan pero no salen hacia Hacienda." />
-        {f.ambiente === '00' ? <Nota tono="warning" titulo="Ambiente de PRUEBAS" texto="Lo que se emita no tiene validez fiscal. Sirve para la certificación ante Hacienda." /> : null}
-        {pasaAProduccion ? <Nota tono="danger" titulo="Vas a pasar a PRODUCCIÓN" texto="Desde que guardes, cada documento es fiscal y cuenta ante Hacienda. Hazlo sólo con la autorización de Hacienda ya recibida." /> : null}
+        <Nota texto="El certificado de firma y la contraseña del MH no se escriben aquí. Los carga Soporte. Sin ellos, las facturas se guardan pero no llegan al MH." />
+        {f.ambiente === '00' ? <Nota tono="warning" titulo="Ambiente de PRUEBAS" texto="Lo que se emita no tiene validez fiscal. Sirve para la certificación ante el MH." /> : null}
+        {pasaAProduccion ? <Nota tono="danger" titulo="Vas a pasar a PRODUCCIÓN" texto="Desde que guardes, cada factura es fiscal y cuenta ante el MH. Hazlo sólo con la autorización del MH ya recibida." /> : null}
 
         <Seccion titulo="Empresa">
           <CampoConRotulo rotulo="Razón social" requerido value={f.nombre} editable={!ro} error={ver('nombre')} onChangeText={(v) => set('nombre', v)} />
@@ -166,10 +166,10 @@ export default function EmisorTorogoz() {
             autoCapitalize="characters" onChangeText={(v) => set('punto_venta', v.toUpperCase())} />
           <ElegirLargo rotulo="Tipo de establecimiento" valor={f.tipo_establecimiento} deshabilitado={ro}
             opciones={TIPO_ESTABLECIMIENTO.map((t) => ({ id: t.value, label: t.label }))} onCambiar={(v) => set('tipo_establecimiento', v || '04')} />
-          <CampoConRotulo rotulo="Código de establecimiento en Hacienda" value={f.cod_estable_mh} editable={!ro} error={ver('cod_estable_mh')}
+          <CampoConRotulo rotulo="Código de establecimiento en el MH" value={f.cod_estable_mh} editable={!ro} error={ver('cod_estable_mh')}
             autoCapitalize="characters" onChangeText={(v) => set('cod_estable_mh', v.toUpperCase())} />
-          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Lo asigna Hacienda al registrar la bodega.</Text>
-          <CampoConRotulo rotulo="Código de punto de venta en Hacienda" value={f.cod_punto_venta_mh} editable={!ro} error={ver('cod_punto_venta_mh')}
+          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Lo asigna el MH al registrar la bodega.</Text>
+          <CampoConRotulo rotulo="Código de punto de venta en el MH" value={f.cod_punto_venta_mh} editable={!ro} error={ver('cod_punto_venta_mh')}
             autoCapitalize="characters" onChangeText={(v) => set('cod_punto_venta_mh', v.toUpperCase())} />
         </Seccion>
 

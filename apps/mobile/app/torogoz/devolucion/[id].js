@@ -57,7 +57,7 @@ export default function Devolucion() {
   const doc = datos?.documento;
 
   const emitir = () => Alert.alert('¿Emitir la nota de crédito?',
-    `${renglones.length} renglón${renglones.length === 1 ? '' : 'es'} por ${formatMoney(total)} (con IVA). Se transmite a Hacienda y no se deshace.`, [
+    `${renglones.length} producto${renglones.length === 1 ? '' : 's'} por ${formatMoney(total)} (con IVA). Se envía al MH y no se deshace.`, [
       { text: 'Revisar', style: 'cancel' },
       { text: 'Emitir', onPress: async () => {
         setEmitiendo(true); trabajando('Emitiendo la nota de crédito…');

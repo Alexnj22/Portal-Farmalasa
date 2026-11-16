@@ -28,7 +28,7 @@ const COLS = [
     { key: 'producto', label: 'Producto', align: 'left', className: 'w-[260px]' },
     { key: 'disponible', label: 'Disponible', align: 'right' },
     { key: 'ritmo', label: 'Venta / día', align: 'right', hideBelow: 'md' },
-    { key: 'minmax', label: 'Mín · Máx', align: 'right', hideBelow: 'sm' },
+    { key: 'minmax', label: 'Mín/Máx', align: 'right', hideBelow: 'sm' },
     { key: 'sugerido', label: 'Comprar', align: 'right' },
     { key: 'proveedor', label: 'Proveedor habitual', align: 'left', hideBelow: 'lg' },
 ];

@@ -332,7 +332,7 @@ export default function TabInventario({ emisor, puedeVender, puedeConfigurar, bu
                         iconBg="bg-warning/10" iconCls="text-warning" sub={`Lotes en ${POR_VENCER} días o menos`}
                         active={filtro === 'porVencer'} tono="warning" onClick={() => alternar('porVencer')} />
                     <StatCard icon={CalendarX2} label="Vencidos" value={stats.vencidos} loading={cargando}
-                        iconBg="bg-danger/10" iconCls="text-danger" sub="Con existencia: no se venden"
+                        iconBg="bg-danger/10" iconCls="text-danger" sub="Con existencia. No se venden."
                         active={filtro === 'vencidos'} tono="danger" onClick={() => alternar('vencidos')} />
                     <StatCard icon={ShieldAlert} label="En cuarentena" value={cuarentena.reduce((t, q) => t + q.unidades, 0)} loading={cargando}
                         iconBg="bg-warning/10" iconCls="text-warning" sub={cuarentena.length ? `${cuarentena.length} devoluciones por decidir` : 'Nada por decidir'}

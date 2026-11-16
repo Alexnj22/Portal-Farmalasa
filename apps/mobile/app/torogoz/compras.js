@@ -88,8 +88,8 @@ export default function ComprasTorogoz() {
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FilaDeKpis>
           <Kpi icono="ShoppingCart" rotulo="Comprado este mes" valor={formatMoney(resumen.comprado)} color={PETROLEO}
-            apoyo={`${formatQty(resumen.documentos)} documentos recibidos`} />
-          <Kpi icono="Landmark" rotulo="Crédito fiscal" valor={formatMoney(resumen.credito)} color={MARCA.verde} apoyo="IVA de los CCF del mes" />
+            apoyo={`${formatQty(resumen.documentos)} facturas recibidas`} />
+          <Kpi icono="Landmark" rotulo="Crédito fiscal" valor={formatMoney(resumen.credito)} color={MARCA.verde} apoyo="IVA de los Créditos Fiscales del mes" />
         </FilaDeKpis>
         <FilaDeKpis>
           <Kpi icono="FileText" rotulo="Borradores" valor={formatQty(resumen.borradores)} color={MARCA.ambar} pide={resumen.borradores > 0}

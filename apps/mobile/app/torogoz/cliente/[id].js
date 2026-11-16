@@ -98,11 +98,11 @@ export default function FichaClienteTorogoz() {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Guardar', onPress: async () => {
         setGuardando(true); setError('');
-        trabajando('Guardando la ficha…');
+        trabajando('Guardando los datos…');
         try {
           const idGuardado = await guardarCliente(clienteParaGuardar(f, { id: cliente?.id, emisorId: emisor.id }));
           descartar();
-          listo(nuevo ? 'Cliente agregado' : 'Ficha guardada', f.nombre.trim());
+          listo(nuevo ? 'Cliente agregado' : 'Datos guardados', f.nombre.trim());
           if (nuevo && paraVenta && router.canGoBack()) { dejarClienteNuevo(idGuardado); router.back(); return; }
           volver('/torogoz/clientes');
         } catch (e) {
@@ -139,7 +139,7 @@ export default function FichaClienteTorogoz() {
             placeholder={f.tipo_documento === '13' ? '00000000-0' : undefined} onChangeText={(v) => set('num_documento', v)} />
           <CampoConRotulo rotulo="NRC" value={f.nrc} editable={!ro} error={ver('nrc')} keyboardType="number-pad" onChangeText={(v) => set('nrc', v)} />
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-            {contribuyente ? 'Contribuyente: se le emite Crédito Fiscal.' : 'Sin NRC se le emite Factura.'}
+            {contribuyente ? 'Es contribuyente. Se le emite Crédito Fiscal.' : 'Sin NRC se le emite Factura.'}
           </Text>
           <Interruptor rotulo="Gran contribuyente" ayuda="Nos retiene el 1%." valor={f.gran_contribuyente}
             deshabilitado={ro || !contribuyente} onCambiar={(v) => set('gran_contribuyente', v)} />
@@ -147,7 +147,7 @@ export default function FichaClienteTorogoz() {
             onCambiar={(v, desc) => setF((p) => ({ ...p, cod_actividad: v, desc_actividad: desc }))} />
         </Seccion>
 
-        <Seccion titulo="Dirección" pie="Ahí le llega el documento electrónico al correo.">
+        <Seccion titulo="Dirección" pie="Ahí le llega la factura electrónica al correo.">
           <ElegirUbicacion f={f} setF={setF} deshabilitado={ro} />
           <CampoConRotulo rotulo="Complemento" value={f.complemento} editable={!ro} error={intento ? errores.direccion : undefined}
             placeholder="Barrio, calle, número, referencia" onChangeText={(v) => set('complemento', v)} />

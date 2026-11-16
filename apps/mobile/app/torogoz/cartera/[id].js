@@ -175,7 +175,7 @@ export default function CuentaDelCliente() {
 
   const usarSaldoAFavor = () => {
     if (usoFavor.problema || !puedeCobrar) return;
-    Alert.alert('¿Usar el saldo a favor?', `${formatMoney(usoFavor.monto)} a ${cuentaFavor.numero_control}. No entra a la caja: baja lo que debe esa cuenta.`, [
+    Alert.alert('¿Usar el saldo a favor?', `${formatMoney(usoFavor.monto)} a ${cuentaFavor.numero_control}. No entra a la caja. Baja lo que debe esa cuenta.`, [
       { text: 'Revisar', style: 'cancel' },
       { text: 'Usar', onPress: async () => {
         trabajando('Aplicando…');
@@ -232,10 +232,10 @@ export default function CuentaDelCliente() {
                 <Cifra rotulo="Atraso máximo" valor={cr.dias_atraso > 0 ? `${cr.dias_atraso} días` : 'Al día'} color={cr.dias_atraso > 0 ? MARCA.rojo : MARCA.verde} />
                 <Cifra rotulo="Disponible" valor={formatMoney(cr.disponible)} color={Number(cr.disponible) <= 0 ? MARCA.ambar : undefined} />
               </View>
-              {saldo > Number(cr.limite ?? 0) ? <Aviso tono="cuidado" texto="Debe más que su límite de crédito: no se le puede vender a crédito hasta que abone." /> : null}
+              {saldo > Number(cr.limite ?? 0) ? <Aviso tono="cuidado" texto="Debe más que su límite de crédito. No se le puede vender a crédito hasta que abone." /> : null}
 
-              <Seccion titulo={`${abiertas.length} documento${abiertas.length === 1 ? '' : 's'} por cobrar`}
-                pie={puedeCobrar && abiertas.length > 1 ? (aMano ? 'Repartido a mano: escribe cuánto va a cada documento.' : 'Se reparte solo: primero lo que vence antes.') : undefined}>
+              <Seccion titulo={`${abiertas.length} factura${abiertas.length === 1 ? '' : 's'} por cobrar`}
+                pie={puedeCobrar && abiertas.length > 1 ? (aMano ? 'Repartido a mano. Escribe cuánto va a cada factura.' : 'Se reparte solo, primero lo que vence antes.') : undefined}>
                 {abiertas.length === 0 ? <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '600' }}>No debe nada.</Text> : null}
                 {abiertas.map((x, i) => {
                   const r = porCuenta.get(x.id);
@@ -255,7 +255,7 @@ export default function CuentaDelCliente() {
                         </View>
                       </View>
                       {aMano ? (
-                        <Campo multiline={false} value={manual[x.id] ?? ''} keyboardType="decimal-pad" placeholder="$0.00 a este documento"
+                        <Campo multiline={false} value={manual[x.id] ?? ''} keyboardType="decimal-pad" placeholder="$0.00 a esta factura"
                           onChangeText={(v) => setManual((m) => ({ ...m, [x.id]: soloMonto(v) }))} />
                       ) : r ? (
                         <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '600' }}>{`−${formatMoney(r.monto)} · queda ${formatMoney(r.queda)}`}</Text>
@@ -333,7 +333,7 @@ export default function CuentaDelCliente() {
                     ) : (
                       <Campo multiline={false} value={referencia} onChangeText={setReferencia} placeholder="Número" autoCapitalize="characters" />
                     )}
-                    <Campo value={nota} onChangeText={setNota} placeholder="Nota (opcional) — p. ej. abono acordado por teléfono" />
+                    <Campo value={nota} onChangeText={setNota} placeholder="Nota (opcional). Ej.: abono acordado por teléfono" />
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Imprimir el recibo</Text>
                       <Interruptor value={imprimir} onValueChange={setImprimir} />
@@ -353,7 +353,7 @@ export default function CuentaDelCliente() {
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`Recibo ${r.id} · ${nombreFormaPago(r.forma)}${r.referencia ? ` ${r.referencia}` : ''}`}</Text>
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                          {`${fechaHora12(r.created_at)} · ${shortEmployeeName(r.recibido_por) || '—'} · ${(r.abonos ?? []).length} documento${(r.abonos ?? []).length === 1 ? '' : 's'}${r.anulado_at ? ` · ${r.anulado_motivo}` : ''}`}
+                          {`${fechaHora12(r.created_at)} · ${shortEmployeeName(r.recibido_por) || '—'} · ${(r.abonos ?? []).length} factura${(r.abonos ?? []).length === 1 ? '' : 's'}${r.anulado_at ? ` · ${r.anulado_motivo}` : ''}`}
                         </Text>
                       </View>
                       <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(r.monto)}</Text>
@@ -366,7 +366,7 @@ export default function CuentaDelCliente() {
                     ) : null}
                     {anulando === r.id ? (
                       <View style={{ gap: 8 }}>
-                        <Campo value={motivo} onChangeText={setMotivo} placeholder="¿Por qué se anula? — p. ej. el cheque rebotó" />
+                        <Campo value={motivo} onChangeText={setMotivo} placeholder="¿Por qué se anula? Ej.: el cheque rebotó" />
                         <View style={{ flexDirection: 'row', gap: 10 }}>
                           <View style={{ flex: 1 }}><BotonGrande borde color={colorSistema.texto2} texto="Cancelar" onPress={() => setAnulando(null)} /></View>
                           <View style={{ flex: 1 }}><BotonGrande color={MARCA.rojo} texto="Anular cobro" deshabilitado={!motivo.trim()} onPress={() => confirmarAnulacion(r.id)} /></View>

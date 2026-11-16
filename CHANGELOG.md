@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1553.3 — Lenguaje: Productos, Mín/Máx y Distribución
+
+- Sexta tanda de la revisión del lenguaje, web y app: Productos (catálogo,
+  revisión de factor, laboratorios, vencimientos, rentabilidad), Mín/Máx y
+  Quiebres, y la Distribuidora (Torogoz). Unos 540 textos. Mín/Máx se escribe
+  igual en todos lados; «stock» → existencia; «Hacienda» → MH; en la
+  Distribuidora sólo cambia el tono, no sus palabras propias.
+
 ## v2.1553.2 — Conteo: corregir la etiqueta de un lote ya no duplica renglones ni recarga la página
 
 Bodega, conteo en vivo por lote: «BEBELAC 1 X 900 dice 8 y en inventario

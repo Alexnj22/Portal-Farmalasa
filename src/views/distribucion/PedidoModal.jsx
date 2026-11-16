@@ -171,7 +171,7 @@ export default function PedidoModal({ pedido, puedeVender, onClose, onCambio, on
                     {puedeReintentar && (
                         <Button variant="secondary" icon={ocupado === 'reintentar' ? Loader2 : RefreshCw} disabled={!!ocupado}
                             onClick={() => accion('reintentar', () => reintentarDocumento(pedido.dte_id), 'DISTRIBUCION_DTE_REINTENTO')}>
-                            Enviar a Hacienda
+                            Enviar al MH
                         </Button>
                     )}
                     {puedeFacturar && !anulando && (

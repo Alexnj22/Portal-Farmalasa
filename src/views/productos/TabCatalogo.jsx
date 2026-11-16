@@ -893,14 +893,14 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 ? <ShieldAlert size={14} className="shrink-0 text-danger-text" />
                                 : <AlertTriangle size={13} className="shrink-0 text-warning-text" />}
                             {worstOverall < 0
-                                ? <><strong>Pérdida detectada</strong> — alguna presentación tiene precio de venta por debajo del costo.</>
-                                : <><strong>Margen bajo</strong> — alguna presentación tiene margen inferior al 15 %. Estándar farmacéutico: 20–35 %.</>}
+                                ? <><strong>Pérdida detectada.</strong> Alguna presentación tiene precio de venta por debajo del costo.</>
+                                : <><strong>Margen bajo.</strong> Alguna presentación tiene margen menor al 15 %. Estándar farmacéutico: 20–35 %.</>}
                         </div>
                     )}
                     {specialLossSet.size > 0 && (
                         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-label font-medium bg-chart-4/10 border-chart-4/30 text-chart-4-text">
                             <TrendingDown size={13} className="shrink-0 text-chart-4-text" />
-                            <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
+                            <><strong>Pérdida en precio especial.</strong> {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
                         </div>
                     )}
 
@@ -955,8 +955,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             icon={PackageSearch}
                             onClick={toggleInsumo}
                             title={insumo
-                                ? 'Es insumo: en la sala no se aparta, se encarga y Compras confirma el precio. Clic para quitar la marca.'
-                                : 'No es insumo: si hay en la sala, se puede apartar con anticipo. Clic para marcarlo como insumo.'}
+                                ? 'Es insumo. En la sucursal no se aparta: se encarga y Compras confirma el precio. Clic para quitar la marca.'
+                                : 'No es insumo. Si hay en la sucursal, se puede apartar con anticipo. Clic para marcarlo como insumo.'}
                         >
                             {insumo ? 'Insumo · se encarga' : 'No es insumo'}
                         </Button>
@@ -1721,7 +1721,7 @@ export default function TabCatalogo({
                                                         <Badge key={k} variant="chart-4" size="sm" icon={TrendingDown} uppercase={false}>Pérd. {specialLossLabel(k)}</Badge>
                                                     ))}
                                                     {hasChanges && <Badge variant="warning" size="sm" icon={AlertTriangle} uppercase={false}>cambios</Badge>}
-                                                    {!p.devolutivo && <Badge title="No devolutivo — no se puede devolver al proveedor" variant="warning" size="sm" icon={Ban} uppercase={false}>ND</Badge>}
+                                                    {!p.devolutivo && <Badge title="No devolutivo. No se puede devolver al proveedor." variant="warning" size="sm" icon={Ban} uppercase={false}>ND</Badge>}
                                                 </div>
                                                 {p.principio_activo && <p className="text-caption flex items-center gap-1 mt-0.5 text-chart-3-text"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>

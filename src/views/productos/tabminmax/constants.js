@@ -42,9 +42,9 @@ export const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];
 
 // ABC — revenue contribution class (extracted from TabMinMax.jsx, Bloque 6.C)
 export const ABC_CFG = {
-    A: { bg: 'bg-surface-card-hover text-content-2 border-border-card',       title: 'Clase A — top 70% ingresos', color: 'var(--chart-8)' },
-    B: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Clase B — siguiente 20%',    color: 'var(--chart-8-muted)' },
-    C: { bg: 'bg-warning/10 text-warning-text border-warning/30',       title: 'Clase C — restante 10%',     color: 'var(--warning)' },
+    A: { bg: 'bg-surface-card-hover text-content-2 border-border-card',       title: 'Clase A: el 70% de los ingresos', color: 'var(--chart-8)' },
+    B: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Clase B: el siguiente 20%', color: 'var(--chart-8-muted)' },
+    C: { bg: 'bg-warning/10 text-warning-text border-warning/30',       title: 'Clase C: el 10% restante', color: 'var(--warning)' },
     D: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Sin ventas en período',      color: 'var(--chart-8-muted)' },
 };
 

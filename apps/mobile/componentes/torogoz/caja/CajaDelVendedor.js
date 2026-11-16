@@ -103,12 +103,12 @@ export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, o
         <View style={{ gap: 8 }}>
           <Campo multiline={false} value={fondo} onChangeText={(v) => setFondo(soloMonto(v))} keyboardType="decimal-pad" placeholder="Fondo de cambio $0.00" />
           {fondo !== '' && nFondo == null ? <Aviso tono="freno" texto="Escribe un monto." /> : null}
-          <Campo multiline={false} value={notaFondo} onChangeText={setNotaFondo} placeholder="Nota (opcional) — monedas y billetes de $1" />
+          <Campo multiline={false} value={notaFondo} onChangeText={setNotaFondo} placeholder="Nota (opcional). Ej.: monedas y billetes de $1" />
           <BotonGrande color={PETROLEO} texto="Abrir caja" deshabilitado={ocupado || (fondo !== '' && nFondo == null)} onPress={abrir} />
         </View>
       ) : !caja ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-          {`${esHoy ? 'Todavía no tiene caja: quien administra la abre al entregarle el fondo de cambio.' : 'Ese día no se abrió caja.'} Las ventas y cobros cuentan igual en la liquidación.`}
+          {`${esHoy ? 'Todavía no tiene caja. Un administrador la abre al entregarle el fondo de cambio.' : 'Ese día no se abrió caja.'} Las ventas y cobros cuentan igual en la liquidación.`}
         </Text>
       ) : null}
 

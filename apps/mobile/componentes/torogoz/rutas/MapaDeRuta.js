@@ -65,7 +65,7 @@ export default function MapaDeRuta({ clientes = [], recorrido = null, alto = 280
       </Vidrio>
       {sinUbicacion > 0 ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 4 }}>
-          {`${sinUbicacion} ${sinUbicacion === 1 ? 'cliente no tiene' : 'clientes no tienen'} ubicación todavía: se guarda sola en su primera visita.`}
+          {`${sinUbicacion} ${sinUbicacion === 1 ? 'cliente no tiene' : 'clientes no tienen'} ubicación todavía. Se guarda sola en su primera visita.`}
         </Text>
       ) : null}
     </View>

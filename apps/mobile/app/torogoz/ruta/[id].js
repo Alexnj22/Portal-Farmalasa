@@ -114,7 +114,7 @@ export default function EditarRuta() {
                 opciones={[{ id: '', label: 'Sin vendedor' }, ...vendedores.map((v) => ({ id: v.id, label: shortEmployeeName(v) }))]} />
             </Seccion>
             {sel.id ? (
-              <Seccion titulo={`Orden de visita (${clientes.length} clientes)`} pie={clientes.length ? null : 'Sin clientes. Se asignan desde la ficha del cliente (campo Ruta).'}>
+              <Seccion titulo={`Orden de visita (${clientes.length} clientes)`} pie={clientes.length ? null : 'Sin clientes. Se asignan en los datos del cliente (campo Ruta).'}>
                 {clientes.length ? clientes.map((c, i) => (
                   <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                     <Text style={{ width: 22, color: colorSistema.texto2, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{i + 1}</Text>

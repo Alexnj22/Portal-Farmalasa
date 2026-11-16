@@ -96,7 +96,7 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
                         </Notice>
                     )}
                     {datos?.puede && (<>
-                        <ul className="flex flex-col divide-y divide-divider" aria-label="Productos del documento">
+                        <ul className="flex flex-col divide-y divide-divider" aria-label="Productos de la factura">
                             {pedidos.map(it => {
                                 const sinQueda = it.disponibles <= 0;
                                 const mal = errores.includes(it.clave);

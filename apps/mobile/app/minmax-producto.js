@@ -111,7 +111,7 @@ function Historial({ producto, sucursal }) {
 function StockMuerto({ fila, productoId }) {
   const [hecho, setHecho] = useState(null);
   const marcar = (accion) => Alert.alert(accion === 'transfer' ? 'Marcar para traslado' : 'Marcar para liquidación',
-    `${ERP_NAMES[fila.erp_sucursal_id] ?? 'Sala'} · ${Number(fila.current_stock ?? 0)} en existencia. Queda registrado en la bitácora.`, [
+    `${ERP_NAMES[fila.erp_sucursal_id] ?? 'Sucursal'} · ${Number(fila.current_stock ?? 0)} en existencia. Queda registrado.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Marcar', onPress: async () => {
         await Promise.resolve(marcarAccionStockMuerto(productoId, accion, { product: fila.product_name, stock: Number(fila.current_stock), erp_sucursal_id: fila.erp_sucursal_id, desde: 'app' })).catch(() => {});
@@ -121,7 +121,7 @@ function StockMuerto({ fila, productoId }) {
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 }}>SIN MOVIMIENTO</Text>
-      {hecho ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{hecho === 'transfer' ? 'Marcado para traslado — registrado' : 'Marcado para liquidación — registrado'}</Text> : (
+      {hecho ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{hecho === 'transfer' ? 'Marcado para traslado. Quedó registrado.' : 'Marcado para liquidación. Quedó registrado.'}</Text> : (
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}><BotonGrande texto="Para traslado" borde color={MARCA.ambar} onPress={() => marcar('transfer')} /></View>
           <View style={{ flex: 1 }}><BotonGrande texto="Para liquidación" borde color={MARCA.azulClaro} onPress={() => marcar('liquidate')} /></View>
@@ -161,12 +161,12 @@ function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, on
             <BarraDeExistencia existencia={stock} min={fila.effective_min} max={fila.effective_max} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Cifra rotulo="Existencia" valor={formatQty(stock)} color={stock === 0 ? MARCA.rojo : undefined} />
-              <Cifra rotulo="MIN · MAX" valor={`${fila.effective_min ?? '—'} · ${fila.effective_max ?? '—'}`} />
+              <Cifra rotulo="Mín/Máx" valor={`${fila.effective_min ?? '—'} · ${fila.effective_max ?? '—'}`} />
               {borrador ? <Cifra rotulo="Borrador" valor={`${fila.draft_min ?? '—'} · ${fila.draft_max ?? '—'}`} color={MARCA.ambar} />
                 : <Cifra rotulo="Venta/día" valor={vel ? vel.toFixed(2) : '—'} />}
             </View>
             {fila.vencidos_stock > 0 ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{`${formatQty(fila.vencidos_stock)} u. en el área de vencidos (no cuentan)`}</Text> : null}
-            {fila.is_hidden ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Oculto en esta sala: no se le calcula Mín·Máx.</Text> : null}
+            {fila.is_hidden ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Oculto en esta sucursal. No se le calcula Mín/Máx.</Text> : null}
           </View>
         </Vidrio>
       </Pressable>
@@ -183,11 +183,11 @@ function Sala({ fila, productoId, ciclo, puedeEditar, onGuardar, onRestaurar, on
               <View style={{ gap: 10 }}>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1, gap: 4 }}>
-                    <Text style={{ color: COLOR_MIN, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>MIN</Text>
+                    <Text style={{ color: COLOR_MIN, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>Mín</Text>
                     <Campo multiline={false} value={min} onChangeText={(v) => setMin(v.replace(/\D/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 22, fontWeight: '800' }} />
                   </View>
                   <View style={{ flex: 1, gap: 4 }}>
-                    <Text style={{ color: COLOR_BARRAS.max, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>MAX</Text>
+                    <Text style={{ color: COLOR_BARRAS.max, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>Máx</Text>
                     <Campo multiline={false} value={max} onChangeText={(v) => setMax(v.replace(/\D/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 22, fontWeight: '800' }} />
                   </View>
                 </View>
@@ -319,11 +319,11 @@ export default function MinMaxProducto() {
         { text: 'Poner en 0', style: 'destructive', onPress: async () => resolve(await guardar(fila, min, max, true)) },
       ]));
     }
-    trabajando('Guardando el MIN·MAX…');
+    trabajando('Guardando el Mín/Máx…');
     const { error } = await upsertStockParams(plan.payload);
     if (error) { fallo('No se pudo guardar', mensajeAmigable(error)); return false; }
     anotar(plan.accion, plan.detalle);
-    listo(plan.tipo === 'borrador' ? 'Quedó en el borrador' : 'MIN·MAX actualizado', `${ERP_NAMES[fila.erp_sucursal_id]} · ${plan.minNum ?? 0} · ${plan.maxNum ?? 0}`);
+    listo(plan.tipo === 'borrador' ? 'Quedó en el borrador' : 'Mín/Máx actualizado', `${ERP_NAMES[fila.erp_sucursal_id]} · ${plan.minNum ?? 0} · ${plan.maxNum ?? 0}`);
     await cargar();
     return true;
   };
@@ -331,23 +331,23 @@ export default function MinMaxProducto() {
   const restaurar = async (fila) => {
     const { publicado } = await salaTieneMinMaxPublicado(fila.erp_sucursal_id);
     const plan = planDeRestaurarMinMax({ row: fila, productId: producto.id, sucursalId: fila.erp_sucursal_id, hayPublicado: !!publicado });
-    if (plan.sinCambio) { listo('Nada que restaurar', 'Bodega ya sigue la suma de las salas.'); return; }
+    if (plan.sinCambio) { listo('Nada que restaurar', 'Bodega ya sigue la suma de las sucursales.'); return; }
     trabajando('Restaurando…');
     const { error } = plan.patch
       ? await updateStockParams(producto.id, fila.erp_sucursal_id, plan.patch)
       : await upsertStockParams(plan.payload);
     if (error) { fallo('No se pudo restaurar', mensajeAmigable(error)); return; }
     anotar(plan.accion, plan.detalle);
-    listo('Restaurado', plan.tipo === 'bodega' ? 'Bodega vuelve a la suma de las salas.' : plan.tipo === 'limpiar' ? 'Sin calculado: el par queda en —.' : `MIN ${plan.min} · MAX ${plan.max} (calculado)${plan.tipo === 'borrador' ? ', en el borrador' : ''}`);
+    listo('Restaurado', plan.tipo === 'bodega' ? 'Bodega vuelve a la suma de las sucursales.' : plan.tipo === 'limpiar' ? 'No hay valor calculado. Queda sin Mín/Máx.' : `Mín ${plan.min} · Máx ${plan.max} (calculado)${plan.tipo === 'borrador' ? ', en el borrador' : ''}`);
     await cargar();
   };
 
-  const ocultar = (fila) => Alert.alert('Ocultar en esta sala', `${producto.nombre} deja de tener Mín·Máx en ${ERP_NAMES[fila.erp_sucursal_id]} y no se le vuelve a calcular.`, [
+  const ocultar = (fila) => Alert.alert('Ocultar en esta sucursal', `${producto.nombre} deja de tener Mín/Máx en ${ERP_NAMES[fila.erp_sucursal_id]} y no se le vuelve a calcular.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Ocultar', style: 'destructive', onPress: async () => {
       const { error } = await ocultarProductoMinMax(producto.id, fila.erp_sucursal_id, { product: producto.nombre, desde: 'app' });
       if (error) { fallo('No se pudo ocultar', mensajeAmigable(error)); return; }
-      listo('Oculto en la sala', ERP_NAMES[fila.erp_sucursal_id]);
+      listo('Oculto en la sucursal', ERP_NAMES[fila.erp_sucursal_id]);
       cargar();
     } },
   ]);
@@ -355,13 +355,13 @@ export default function MinMaxProducto() {
     const { error } = await updateStockParams(producto.id, fila.erp_sucursal_id, { is_hidden: false, updated_at: new Date().toISOString() });
     if (error) { fallo('No se pudo mostrar', mensajeAmigable(error)); return; }
     anotar('MINMAX_UNHIDE', { sucursal_id: fila.erp_sucursal_id });
-    listo('Vuelve a la sala', ERP_NAMES[fila.erp_sucursal_id]);
+    listo('Vuelve a la sucursal', ERP_NAMES[fila.erp_sucursal_id]);
     cargar();
   };
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Mín·Máx', headerLargeTitle: !producto }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Mín/Máx', headerLargeTitle: !producto }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
@@ -386,7 +386,7 @@ export default function MinMaxProducto() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Pressable style={{ flex: 1 }} onPress={() => router.push({ pathname: '/producto/[id]', params: { id: String(producto.id), nombre: producto.nombre } })}>
                   <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{producto.nombre}</Text>
-                  <Text style={{ color: colorSistema.acento, fontSize: 13 }}>Ver la ficha del producto</Text>
+                  <Text style={{ color: colorSistema.acento, fontSize: 13 }}>Ver los datos del producto</Text>
                 </Pressable>
                 {!productoParam ? (
                   <Pressable onPress={() => { setProducto(null); setFilas(null); setExtra(null); }} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
@@ -397,7 +397,7 @@ export default function MinMaxProducto() {
               {red ? (
                 <Vidrio radio={20}>
                   <View style={{ padding: 14, flexDirection: 'row', gap: 10 }}>
-                    <Cifra rotulo="En la red (salas)" valor={formatQty(red.sinBodega)} />
+                    <Cifra rotulo="En las sucursales" valor={formatQty(red.sinBodega)} />
                     <Cifra rotulo="Con Bodega" valor={formatQty(red.total)} />
                   </View>
                 </Vidrio>
@@ -410,18 +410,18 @@ export default function MinMaxProducto() {
                   </View>
                 </Vidrio>
               ) : null}
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{canManage ? 'Toca una sala para ver su análisis y ajustar su MIN·MAX.' : 'Toca una sala para ver su análisis.'}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{canManage ? 'Toca una sucursal para ver su análisis y ajustar su Mín/Máx.' : 'Toca una sucursal para ver su análisis.'}</Text>
               {filas == null ? null : filas.length ? filas.map((f) => (
                 <Sala key={f.erp_sucursal_id} fila={f} productoId={producto.id} ciclo={ciclo}
                   onGuardar={guardar} onRestaurar={restaurar} onOcultar={ocultar} onMostrar={mostrar}
                   onHistorial={(f) => router.push({ pathname: '/minmax-historial', params: { producto: String(producto.id), sala: String(f.erp_sucursal_id), nombre: producto.nombre } })}
                   onMotivo={(f) => router.push({ pathname: '/minmax-motivo', params: { producto: String(producto.id), sala: String(f.erp_sucursal_id), nombre: producto.nombre } })}
                   puedeEditar={canManage && (todas || Number(f.erp_sucursal_id) === Number(miErp))} />
-              )) : <Aviso tono="nota" texto="Este producto no tiene MIN·MAX en ninguna sala." />}
+              )) : <Aviso tono="nota" texto="Este producto no tiene Mín/Máx en ninguna sucursal." />}
               {/* «0 en todas las salas», con su motivo obligatorio: lo tiene
                   quien decide sobre todas o quien recibió esa función sola. */}
               {filas?.length && canManage && (todas || hasPermission('minmax_cero_en_todas')) ? (
-                <BotonGrande texto="0 en todas las salas" borde color={MARCA.rojo}
+                <BotonGrande texto="0 en todas las sucursales" borde color={MARCA.rojo}
                   onPress={() => {
                     const ref = filas.find((f) => f.erp_sucursal_id === ERP_BODEGA) ?? filas[0];
                     router.push({ pathname: '/minmax-cero', params: { producto: String(producto.id), nombre: producto.nombre, clase: ref?.draft_abc_class || ref?.abc_class || '', velocidad: String(ref?.daily_velocity ?? 0) } });
@@ -437,7 +437,7 @@ export default function MinMaxProducto() {
             </>
           )}
           {canManage ? (
-            <BotonGrande texto="Revisar la sala completa" borde
+            <BotonGrande texto="Revisar la sucursal completa" borde
               onPress={() => router.push({ pathname: '/minmax-sala', params: miErp != null ? { sala: String(miErp) } : {} })} />
           ) : null}
         </ScrollView>

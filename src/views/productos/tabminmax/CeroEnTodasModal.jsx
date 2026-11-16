@@ -48,10 +48,10 @@ export default function CeroEnTodasModal({ open, row, puedeYaNoRota, onConfirmar
 
     return (
         <ModalShell open onClose={onClose} maxWidthClass="max-w-md" zClass="z-tooltip"
-                    surface={null} ariaLabel="Poner en 0 en todas las salas">
+                    surface={null} ariaLabel="Poner en 0 en todas las sucursales">
             <CuerpoDialogo
                 titulo={row.product_name}
-                subtitulo="Poner 0 en todas las salas"
+                subtitulo="Poner en 0 en todas las sucursales"
                 icono={XCircle}
                 anchoEscritorio="max-w-md"
                 pie={
@@ -65,7 +65,7 @@ export default function CeroEnTodasModal({ open, row, puedeYaNoRota, onConfirmar
             >
                 <div className="flex flex-col gap-4 text-left">
                     <p className="text-body-sm text-content-2">
-                        Quedará en 0 / 0 en todas las sucursales y en Bodega, y se publica en este momento.
+                        Quedará en 0 / 0 en todas las sucursales y en Bodega. Se publica ahora.
                         {altaRotacion && (
                             <> Es clase {cls} y vende {Number(row.daily_velocity ?? 0).toFixed(1)} und/día.</>
                         )}

@@ -136,7 +136,7 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
                     <PortalInput label="Precio con IVA ($)" name="precio" inputMode="decimal" value={precio}
                         onChange={(e) => setPrecio(e.target.value)} hasError={precio !== '' && precioNum === null}
                         errorMessage="Escribe un monto, por ejemplo 1.95"
-                        helperText={precioNum !== null ? `Lo que paga el cliente con Factura. En Crédito Fiscal: ${formatMoney(precioNum / 1.13)} + IVA.` : undefined} />
+                        helperText={precioNum !== null ? `Lo que paga el cliente con factura. Con crédito fiscal, ${formatMoney(precioNum / 1.13)} + IVA.` : undefined} />
                     <Interruptor checked={libre && !controlado} disabled={controlado} onChange={setLibre}
                         label="Venta libre (se puede vender a tiendas y supermercados)" />
                     {controlado && (
@@ -154,7 +154,7 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
                             <PortalInput label="Tope para dar más (%)" name="descuento_max_pct" inputMode="decimal" value={tope}
                                 placeholder={`Empresa: ${Number(emisorTope ?? 0)}`} onChange={(e) => setTope(e.target.value)}
                                 hasError={topeMalo} errorMessage="Entre 0 y 100"
-                                helperText="Hasta ahí lo da quien tiene permiso; más, pide aprobación." />
+                                helperText="Hasta ese tope lo da quien tiene permiso. Para dar más, se pide aprobación." />
                             {pctNum > 0 && (<>
                                 <Campo label="Desde (opcional)">
                                     <LiquidDatePicker value={descDesde} onChange={(v) => setDescDesde(v || '')} />

@@ -159,7 +159,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
         <>
           <FilaDeKpis>
             <Kpi icono="Receipt" rotulo="Vendido" valor={formatMoney(Number(liq.ventas.total), { decimales: 0 })} color={PETROLEO}
-              apoyo={`${Number(liq.ventas.documentos)} documentos · ${formatMoney(Number(liq.credito), { decimales: 0 })} a crédito`} />
+              apoyo={`${Number(liq.ventas.documentos)} facturas · ${formatMoney(Number(liq.credito), { decimales: 0 })} a crédito`} />
             <Kpi icono="HandCoins" rotulo="Cobrado de cartera" valor={formatMoney(Number(liq.cobros.total), { decimales: 0 })} color={MARCA.verde}
               apoyo={`${liq.cobros.lista.length} cobros`} />
           </FilaDeKpis>
@@ -188,7 +188,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
             ) : null}
 
             {Number(liq.devoluciones.a_favor) > 0 ? (
-              <Aviso tono="nota" texto={`Hay ${formatMoney(Number(liq.devoluciones.a_favor))} de devoluciones a favor de clientes. No se restan del efectivo: si el vendedor se lo devolvió en la ruta, anótalo como motivo de la diferencia.`} />
+              <Aviso tono="nota" texto={`Hay ${formatMoney(Number(liq.devoluciones.a_favor))} de devoluciones a favor de clientes. No se restan del efectivo. Si el vendedor se lo devolvió en la ruta, anótalo como motivo de la diferencia.`} />
             ) : null}
 
             <Seccion titulo="Por forma de pago">
@@ -220,7 +220,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
                   <Dato rotulo="Diferencia" valor={rotuloDiferencia(c.diferencia, formatMoney)} fuerte />
                   {c.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Motivo: ${c.nota}`}</Text> : null}
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Cerró ${shortEmployeeName(c.cerrada_por)} a las ${hora12(c.cerrada_at)}.`}</Text>
-                  {c.cambio_despues ? <Aviso tono="cuidado" texto={`Hubo ventas o cobros después del cierre: el efectivo a entregar ahora es ${formatMoney(esperado)}. Reábrela para volver a contar.`} /> : null}
+                  {c.cambio_despues ? <Aviso tono="cuidado" texto={`Hubo ventas o cobros después del cierre. El efectivo a entregar ahora es ${formatMoney(esperado)}. Reábrela para volver a contar.`} /> : null}
                   {liq.puede_cerrar && ACCIONES_DE_DINERO ? (reabriendo ? (
                     <View style={{ gap: 8 }}>
                       <Campo value={motivo} onChangeText={setMotivo} placeholder="¿Por qué se reabre?" />
@@ -242,12 +242,12 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
                     </Text>
                   ) : null}
                   {cuenta.diferencia != null && cuenta.diferencia !== 0 ? (
-                    <Campo value={nota} onChangeText={setNota} placeholder="Motivo de la diferencia — p. ej. devolvió $5 al cliente de la nota de crédito" />
+                    <Campo value={nota} onChangeText={setNota} placeholder="Motivo de la diferencia. Ej.: devolvió $5 al cliente de la nota de crédito" />
                   ) : null}
                   <BotonGrande color={PETROLEO} texto="Cerrar liquidación" deshabilitado={!cuenta.listo || ocupado} onPress={cerrar} />
                 </>
               ) : liq.puede_cerrar ? <SeHaceEnElPortal texto="La liquidación se cierra desde el portal." />
-                : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>La cierra quien recibe el efectivo.</Text>}
+                : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>La cierra un administrador.</Text>}
             </Seccion>
 
             <Seccion titulo={`Ventas · ${liq.ventas.lista.length}`}>

@@ -101,7 +101,7 @@ export default function Facturacion() {
       const r = await fetchDocumentos({ desde: sumarDias(hoySV(), -DIAS_DE_FACTURACION) });
       if (mio === pedido.current) { setDocs(r); setError(null); }
     } catch {
-      if (mio === pedido.current) setError('No se pudieron cargar los documentos. Revisa la conexión e intenta de nuevo.');
+      if (mio === pedido.current) setError('No se pudieron cargar las facturas. Revisa la conexión e intenta de nuevo.');
     }
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
@@ -121,7 +121,7 @@ export default function Facturacion() {
   const reenviarPendientes = () => {
     const lista = g.porEnviar;
     if (!lista.length) return;
-    Alert.alert('¿Reenviar a Hacienda?', `${lista.length} documento${lista.length === 1 ? '' : 's'} sin sello se mandan otra vez, de a uno.`, [
+    Alert.alert('¿Reenviar al MH?', `${lista.length} factura${lista.length === 1 ? '' : 's'} sin sello se mandan otra vez, una por una.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Reenviar', onPress: async () => {
         setOcupado(true); setAvisoFirma('');
@@ -146,7 +146,7 @@ export default function Facturacion() {
   };
 
   const avisoContingencia = () => {
-    Alert.alert('¿Enviar el aviso de contingencia?', `Le avisa a Hacienda de los ${g.sinAvisoDeContingencia.length} documentos emitidos sin poder transmitirlos, y después los manda.`, [
+    Alert.alert('¿Enviar el aviso de contingencia?', `Le avisa al MH de las ${g.sinAvisoDeContingencia.length} facturas emitidas sin poder enviarlas. Después las manda.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Enviar', onPress: async () => {
         setOcupado(true); trabajando('Enviando el aviso…');
@@ -165,7 +165,7 @@ export default function Facturacion() {
   const enviarCorreos = () => {
     const lista = g.enviables;
     if (!lista.length) return;
-    Alert.alert('¿Enviar los correos?', `${lista.length} cliente${lista.length === 1 ? '' : 's'} reciben su documento sellado (PDF y JSON).`, [
+    Alert.alert('¿Enviar los correos?', `${lista.length} cliente${lista.length === 1 ? '' : 's'} reciben su factura sellada (PDF y JSON).`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Enviar', onPress: async () => {
         setOcupado(true);
@@ -188,7 +188,7 @@ export default function Facturacion() {
   };
 
   const filtrar = (s) => { setCubeta('accion'); setSub((v) => (v === s ? '' : s)); };
-  const grupos = [{ id: 'tipo', titulo: 'Tipo de documento', activa: tipo, porDefecto: '', onCambiar: setTipo,
+  const grupos = [{ id: 'tipo', titulo: 'Tipo de factura', activa: tipo, porDefecto: '', onCambiar: setTipo,
     opciones: [{ id: '', label: 'Todos los tipos' }, ...Object.entries(TIPO_DOCUMENTO).map(([id, t]) => ({ id, label: t.largo }))] }];
   const colorSemaforo = COLOR_NIVEL[semaforo.nivel];
   // Lo que se tocó en una cifra de arriba (`sub`) también se ve y se puede quitar.
@@ -219,7 +219,7 @@ export default function Facturacion() {
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{semaforo.detalle}</Text>
                 {/* Contingencia y reenvío le hablan a Hacienda: en sólo consulta, desde el portal. */}
                 {!ACCIONES_DE_DINERO && puedeVender && (g.sinAvisoDeContingencia.length || g.porEnviar.length) ? (
-                  <SeHaceEnElPortal texto="Reenviarlos a Hacienda y el aviso de contingencia se hacen desde el portal." />
+                  <SeHaceEnElPortal texto="Reenviar al MH y el aviso de contingencia se hacen desde el portal." />
                 ) : null}
                 {ACCIONES_DE_DINERO && puedeVender && g.sinAvisoDeContingencia.length ? (
                   <BotonGrande texto={`Enviar aviso de contingencia (${g.sinAvisoDeContingencia.length})`} color={PETROLEO} deshabilitado={ocupado} onPress={avisoContingencia} />
@@ -233,11 +233,11 @@ export default function Facturacion() {
         ) : null}
         {docs && g.sinEntregar.length ? (
           <View style={{ marginHorizontal: 16, gap: 8 }}>
-            <Aviso tono="cuidado" texto={`${g.sinEntregar.length} documento${g.sinEntregar.length === 1 ? '' : 's'} sellado${g.sinEntregar.length === 1 ? '' : 's'} todavía no le ${g.sinEntregar.length === 1 ? 'llegó' : 'llegaron'} al cliente por correo${g.sinEntregar.length > g.enviables.length ? ` (${g.sinEntregar.length - g.enviables.length} sin correo en la ficha)` : ''}.`} />
+            <Aviso tono="cuidado" texto={`${g.sinEntregar.length} factura${g.sinEntregar.length === 1 ? '' : 's'} sellada${g.sinEntregar.length === 1 ? '' : 's'} todavía no le ${g.sinEntregar.length === 1 ? 'llegó' : 'llegaron'} al cliente por correo${g.sinEntregar.length > g.enviables.length ? ` (${g.sinEntregar.length - g.enviables.length} sin correo en la ficha)` : ''}.`} />
             {puedeVender && g.enviables.length ? <BotonGrande borde color={PETROLEO} texto={`Enviar correos (${g.enviables.length})`} deshabilitado={ocupado} onPress={enviarCorreos} /> : null}
           </View>
         ) : null}
-        {avisoFirma ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${avisoFirma} Sin el certificado de la empresa no se puede firmar: hay que cargar las credenciales de Hacienda.`} /></View> : null}
+        {avisoFirma ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${avisoFirma} Sin el certificado de la empresa no se puede firmar. Carga las credenciales del MH.`} /></View> : null}
         {docs ? (
           <>
             <FilaDeKpis>
@@ -256,7 +256,7 @@ export default function Facturacion() {
         ) : null}
         {docs ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
-            {`${visibles.length} documento${visibles.length === 1 ? '' : 's'}${sub ? ` · ${sub === 'por_enviar' ? 'sin sello' : sub}` : ''}`}
+            {`${visibles.length} factura${visibles.length === 1 ? '' : 's'}${sub ? ` · ${sub === 'por_enviar' ? 'sin sello' : sub}` : ''}`}
           </Text>
         ) : null}
         {docs == null && !error ? <Cargando /> : visibles.slice(0, cuantos).map((d) => <Documento key={d.id} d={d} />)}
@@ -267,8 +267,8 @@ export default function Facturacion() {
         ) : null}
         {docs && !visibles.length ? (
           <Vacio tono={!(texto || tipo) && cubeta === 'accion' ? 'bien' : 'neutro'} icono={texto || tipo ? 'Search' : undefined}
-            titulo={texto || tipo ? 'Sin resultados' : cubeta === 'accion' ? 'Sin pendientes' : 'Sin documentos'}
-            detalle={texto || tipo ? 'Ningún documento coincide con la búsqueda o el filtro.' : cubeta === 'accion' ? 'Todo lo facturado está recibido por Hacienda.' : 'Se crean al facturar un pedido.'} />
+            titulo={texto || tipo ? 'Sin resultados' : cubeta === 'accion' ? 'Sin pendientes' : 'Sin facturas'}
+            detalle={texto || tipo ? 'Ninguna factura coincide con la búsqueda o el filtro.' : cubeta === 'accion' ? 'Todo lo facturado está recibido por el MH.' : 'Se crean al facturar un pedido.'} />
         ) : null}
       </ScrollView>
     </>

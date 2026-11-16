@@ -70,7 +70,7 @@ export default function MatrizAbcXyz() {
             </View>
           </Vidrio>
         )}
-        <Aviso texto="A·B·C: cuánto pesa el producto en la venta de la sala. X·Y·Z: qué tan pareja es su demanda. Sólo clasifican: no cambian el MIN·MAX." />
+        <Aviso texto="A·B·C: cuánto pesa el producto en la venta de la sucursal. X·Y·Z: qué tan pareja es su demanda. Solo clasifican. No cambian el Mín/Máx." />
       </ScrollView>
     </>
   );

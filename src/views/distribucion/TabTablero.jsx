@@ -163,7 +163,7 @@ export default function TabTablero({ periodo = '30d' }) {
                 <CarrilCards className="flex-1" ariaLabel="Indicadores del período">
                     <StatCard icon={Wallet} label="Ventas" value={formatMoney(num(r.ventas))} loading={cargando}
                         iconBg="bg-brand/10" iconCls="text-brand-text" sub={<Variacion actual={r.ventas} antes={a.ventas} />} />
-                    <StatCard icon={Receipt} label="Documentos" value={formatQty(num(r.documentos))} loading={cargando}
+                    <StatCard icon={Receipt} label="Facturas" value={formatQty(num(r.documentos))} loading={cargando}
                         sub={<Variacion actual={r.documentos} antes={a.documentos} />} />
                     <StatCard icon={ShoppingBasket} label="Ticket promedio" value={formatMoney(num(r.ticket))} loading={cargando}
                         sub={<Variacion actual={r.ticket} antes={a.ticket} />} />
@@ -202,9 +202,9 @@ export default function TabTablero({ periodo = '30d' }) {
 
             {/* ── Tendencia y rutas ── */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                <Tarjeta titulo={metrica === 'ventas' ? 'Ventas por día' : 'Documentos por día'} icon={TrendingUp} className="xl:col-span-2"
+                <Tarjeta titulo={metrica === 'ventas' ? 'Ventas por día' : 'Facturas por día'} icon={TrendingUp} className="xl:col-span-2"
                     accion={<SegmentedControl value={metrica} onChange={setMetrica} size="sm" label="Qué mirar"
-                        options={[{ value: 'ventas', label: 'Ventas' }, { value: 'documentos', label: 'Documentos' }]} />}>
+                        options={[{ value: 'ventas', label: 'Ventas' }, { value: 'documentos', label: 'Facturas' }]} />}>
                     {metrica === 'ventas' && num(r.devuelto) > 0 && (
                         <p className="text-caption text-content-3 -mt-1 mb-2" data-testid="devuelto">
                             Ya descuenta {formatMoney(num(r.devuelto))} en devoluciones (notas de crédito).
@@ -234,7 +234,7 @@ export default function TabTablero({ periodo = '30d' }) {
                                 onClick={() => filtrar('ruta', ruta === x.ruta ? '' : x.ruta)}
                                 izquierda={<PuntoDeEstado className={PUNTOS[i % PUNTOS.length]} />}
                                 titulo={x.ruta} valor={formatMoneyCorto(num(x.ventas))} proporcion={num(x.ventas) / maxDe(rutas)}
-                                detalle={`${formatQty(num(x.documentos))} documentos · ${formatQty(num(x.clientes))} clientes`} />
+                                detalle={`${formatQty(num(x.documentos))} facturas · ${formatQty(num(x.clientes))} clientes`} />
                         ))}
                     </div>
                 </Tarjeta>
@@ -254,7 +254,7 @@ export default function TabTablero({ periodo = '30d' }) {
                                 </span>}
                                 titulo={shortEmployeeName(v) || nombreVendedor(v.id)} valor={formatMoneyCorto(num(v.ventas))}
                                 proporcion={num(v.ventas) / maxDe(vendedores)}
-                                detalle={`${formatQty(num(v.documentos))} documentos · ${formatQty(num(v.clientes))} clientes`} />
+                                detalle={`${formatQty(num(v.documentos))} facturas · ${formatQty(num(v.clientes))} clientes`} />
                         ))}
                     </div>
                 </Tarjeta>
@@ -266,7 +266,7 @@ export default function TabTablero({ periodo = '30d' }) {
                             <FilaRanking key={p.product_id} tono="bg-success"
                                 izquierda={<span className="w-5 text-caption font-black text-content-3 tabular-nums text-right shrink-0">{i + 1}</span>}
                                 titulo={p.nombre} valor={formatMoneyCorto(num(p.ventas))} proporcion={num(p.ventas) / maxDe(productos)}
-                                detalle={`${formatQty(num(p.unidades))} unidades · en ${formatQty(num(p.documentos))} documentos`} />
+                                detalle={`${formatQty(num(p.unidades))} unidades · en ${formatQty(num(p.documentos))} facturas`} />
                         ))}
                     </div>
                 </Tarjeta>
@@ -294,7 +294,7 @@ export default function TabTablero({ periodo = '30d' }) {
                             : cuando === 'dia' ? <GraficaSemana datos={datos?.por_dia_semana} /> : <GraficaHoras datos={datos?.por_hora} />}
                     </Suspense>
                     <p className="text-caption text-content-3">
-                        {cuando === 'dia' ? 'En verde, el día que más se vende.' : 'Documentos emitidos a cada hora.'}
+                        {cuando === 'dia' ? 'En verde, el día que más se vende.' : 'Facturas emitidas a cada hora.'}
                     </p>
                 </Tarjeta>
 

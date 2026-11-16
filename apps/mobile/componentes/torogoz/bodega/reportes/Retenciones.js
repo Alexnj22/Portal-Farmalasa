@@ -54,7 +54,7 @@ export default function Retenciones() {
         <Kpi icono="Receipt" rotulo="Crédito fiscal" color={MARCA.verde} valor={formatMoney(r.credito)} apoyo="De las compras del mes" />
       </FilaDeKpis>
       <FilaDeKpis>
-        <Kpi icono="Percent" rotulo="Impuesto (referencial)" color={MARCA.ambar} valor={formatMoney(r.impuesto)} apoyo="Débito − crédito; lo liquida el contador" />
+        <Kpi icono="Percent" rotulo="Impuesto (referencial)" color={MARCA.ambar} valor={formatMoney(r.impuesto)} apoyo="Débito − crédito. Lo liquida el contador" />
       </FilaDeKpis>
       {cargando ? <Cargando /> : listados.map((l) => (
         <View key={l.clave} style={{ marginHorizontal: 16 }}>
@@ -66,7 +66,7 @@ export default function Retenciones() {
               </View>
               <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(l.total)}</Text>
             </View>
-            {l.n === 0 ? <Vacio enSeccion>Sin documentos este mes.</Vacio> : (
+            {l.n === 0 ? <Vacio enSeccion>Sin facturas este mes.</Vacio> : (
               <>
                 {l.filas.slice(0, 6).map((f, i) => (
                   <View key={i} style={{ flexDirection: 'row', gap: 8, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>

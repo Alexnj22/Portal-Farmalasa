@@ -83,7 +83,7 @@ export default function TabQuiebres({ searchTerm = '', lockedErpId = null }) {
         { key: 'descripcion', label: 'Producto' },
         { key: 'dias_sin',    label: 'Sin existencia', align: 'right' },
         { key: 'ultima_venta',label: 'Última venta',   align: 'right', hideBelow: 'md' },
-        { key: 'minmax',      label: 'Min / Max',      align: 'right', hideBelow: 'lg' },
+        { key: 'minmax',      label: 'Mín/Máx',        align: 'right', hideBelow: 'lg' },
         { key: 'estado',      label: 'Estado',         align: 'right' },
     ];
 
@@ -124,7 +124,7 @@ export default function TabQuiebres({ searchTerm = '', lockedErpId = null }) {
                             que vendieron sin estar asignados a la sala, que es otra
                             conversación (¿debería tenerlos?). */}
                         <FilterBar.Chip tone="brand" active={soloConMinMax}
-                            onToggle={() => { setSoloConMinMax(v => !v); setPagina(1); }}>Con Min/Max</FilterBar.Chip>
+                            onToggle={() => { setSoloConMinMax(v => !v); setPagina(1); }}>Con Mín/Máx</FilterBar.Chip>
                         <FilterBar.Chip tone="danger" active={soloSinNada}
                             onToggle={() => { setSoloSinNada(v => !v); setPagina(1); }}>Nunca hubo</FilterBar.Chip>
                     </FilterBar.Section>

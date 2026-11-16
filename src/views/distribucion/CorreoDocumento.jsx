@@ -34,7 +34,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
         try {
             const r = await enviarDocumentoPorCorreo(dte, { destinatario: destino.trim() });
             useStaff.getState().appendAuditLog('DISTRIBUCION_DTE_CORREO', String(dte.id), { destinatario: r?.destinatario, simulado: !!r?.simulado });
-            showToast('Documento enviado', `${r?.destinatario}${r?.simulado ? ' (envío simulado del entorno de pruebas)' : ''}`, 'success');
+            showToast('Factura enviada', `${r?.destinatario}${r?.simulado ? ' (envío simulado del entorno de pruebas)' : ''}`, 'success');
             onEnviado?.();
         } catch (e) {
             setError(mensajeDeDistribucion(e));
@@ -63,7 +63,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
                     </Button>
                 </div>
             ) : !sellado && (
-                <p className="text-caption text-content-3">Se envía cuando Hacienda lo selle: el cliente tiene que recibir el sello.</p>
+                <p className="text-caption text-content-3">Se envía cuando el MH la selle.</p>
             )}
         </section>
     );

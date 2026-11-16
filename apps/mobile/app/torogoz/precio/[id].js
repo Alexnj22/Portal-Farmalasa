@@ -200,7 +200,7 @@ export default function PrecioTorogoz() {
           ) : null}
           <Interruptor rotulo="Venta libre" ayuda="Se puede vender a tiendas y supermercados." valor={libre && !controlado}
             deshabilitado={!puede || controlado} onCambiar={setLibre} />
-          {controlado ? <Nota texto="Es antibiótico o con receta: sólo se le vende a farmacias." /> : null}
+          {controlado ? <Nota texto="Es antibiótico o con receta. Sólo se le vende a farmacias." /> : null}
           {!nuevo ? <Interruptor rotulo="Se ofrece en los pedidos" valor={activo} deshabilitado={!puede} onCambiar={setActivo} /> : null}
         </Seccion>
 
@@ -210,7 +210,7 @@ export default function PrecioTorogoz() {
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Entra solo al vender y no pide aprobación.</Text>
           <CampoConRotulo rotulo="Tope para dar más (%)" value={tope} placeholder={`Empresa: ${Number(emisor?.descuento_max_pct ?? 0)}`} editable={puede}
             keyboardType="decimal-pad" onChangeText={setTope} error={l.topeMalo ? 'Entre 0 y 100' : undefined} />
-          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Hasta ahí lo da quien tiene permiso; más, pide aprobación.</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Hasta ahí lo da quien tiene permiso. Si es más, pide aprobación.</Text>
           {l.pctNum > 0 && puede ? (
             <>
               <FechaOpcional rotulo="Desde (opcional)" valor={descDesde} onCambiar={setDescDesde} />

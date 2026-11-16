@@ -102,7 +102,7 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
   }, [buscar, catalogo, cliente, permitido]);
 
   const titulo = corrigiendo
-    ? (pedido?.pedido.reemplaza_dte_id ? `Corregir documento` : `Finalizar venta ${pedidoId}`)
+    ? (pedido?.pedido.reemplaza_dte_id ? `Corregir factura` : `Finalizar venta ${pedidoId}`)
     : 'Nueva venta';
 
   const agregar = (p) => {
@@ -257,8 +257,8 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
               </View>
             ) : null}
 
-            <Seccion titulo="Documento y pago">
-              <Eleccion rotulo="Documento" valor={s.tipoDoc} opciones={opcionesDoc} onCambiar={s.setTipoDoc} />
+            <Seccion titulo="Factura y pago">
+              <Eleccion rotulo="Tipo de factura" valor={s.tipoDoc} opciones={opcionesDoc} onCambiar={s.setTipoDoc} />
               <Eleccion rotulo="Lista de precios" valor={listaEfectiva != null ? String(listaEfectiva) : ''} opciones={opcionesListas}
                 mensaje="Cambia el precio de todos los productos." onCambiar={s.cambiarLista} deshabilitado={!opcionesListas.length} />
               {s.pagos.length > 1 ? (

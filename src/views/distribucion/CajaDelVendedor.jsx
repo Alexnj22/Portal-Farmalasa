@@ -118,7 +118,7 @@ export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, o
                 </div>
             ) : (
                 <p className="text-caption text-content-3">
-                    {esHoy ? 'Todavía no tiene caja: quien administra la abre al entregarle el fondo de cambio.' : 'Ese día no se abrió caja.'}
+                    {esHoy ? 'Todavía no tiene caja. Un administrador la abre al entregarle el fondo de cambio.' : 'Ese día no se abrió caja.'}
                     {' '}Las ventas y cobros cuentan igual en la liquidación.
                 </p>
             ))}

@@ -122,7 +122,7 @@ export default function TorogozInicio() {
 
         <FilaDeKpis>
           <Kpi icono="Wallet" rotulo="Ventas" color={PETROLEO} valor={cargando ? '…' : formatMoneyCorto(num(r.ventas))} apoyo={<Variacion actual={r.ventas} antes={a.ventas} />} />
-          <Kpi icono="Receipt" rotulo="Documentos" color={MARCA.azulClaro} valor={cargando ? '…' : formatQty(num(r.documentos))} apoyo={<Variacion actual={r.documentos} antes={a.documentos} />} />
+          <Kpi icono="Receipt" rotulo="Facturas" color={MARCA.azulClaro} valor={cargando ? '…' : formatQty(num(r.documentos))} apoyo={<Variacion actual={r.documentos} antes={a.documentos} />} />
         </FilaDeKpis>
         <FilaDeKpis>
           <Kpi icono="ShoppingCart" rotulo="Ticket promedio" color={MARCA.violetaClaro} valor={cargando ? '…' : formatMoney(num(r.ticket))} apoyo={<Variacion actual={r.ticket} antes={a.ticket} />} />
@@ -135,9 +135,9 @@ export default function TorogozInicio() {
             onPress={() => router.push('/torogoz/pedidos?vista=pendientes')} />
         </FilaDeKpis>
 
-        <Widget titulo={metrica === 'ventas' ? 'Ventas por día' : 'Documentos por día'} icono="TrendingUp" color={PETROLEO}>
+        <Widget titulo={metrica === 'ventas' ? 'Ventas por día' : 'Facturas por día'} icono="TrendingUp" color={PETROLEO}>
           <View style={{ gap: 10 }}>
-            <Segmentos margen={0} opciones={[{ id: 'ventas', label: 'Ventas' }, { id: 'documentos', label: 'Documentos' }]} activa={metrica} onCambiar={setMetrica} />
+            <Segmentos margen={0} opciones={[{ id: 'ventas', label: 'Ventas' }, { id: 'documentos', label: 'Facturas' }]} activa={metrica} onCambiar={setMetrica} />
             {metrica === 'ventas' && num(r.devuelto) > 0 ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Ya descuenta ${formatMoney(num(r.devuelto))} en devoluciones (notas de crédito).`}</Text>
             ) : null}
@@ -145,11 +145,11 @@ export default function TorogozInicio() {
               <Grafica key={`${metrica}-${periodo}-${ruta}-${vendedor}`} datos={serie} alto={170}
                 series={metrica === 'ventas'
                   ? [{ clave: 'ventas', rotulo: 'Este período', color: PETROLEO, tipo: 'area' }, { clave: 'anterior', rotulo: `Período anterior (${formatMoneyCorto(num(a.ventas))})`, color: MARCA.gris, tipo: 'linea' }]
-                  : [{ clave: 'documentos', rotulo: 'Documentos', color: PETROLEO, tipo: 'barra' }]}
-                formato={(v) => (metrica === 'ventas' ? formatMoney(v) : `${formatQty(v)} documentos`)}
+                  : [{ clave: 'documentos', rotulo: 'Facturas', color: PETROLEO, tipo: 'barra' }]}
+                formato={(v) => (metrica === 'ventas' ? formatMoney(v) : `${formatQty(v)} facturas`)}
                 formatoEje={metrica === 'ventas' ? formatMoneyCorto : (v) => formatQty(v)}
-                detalle={(f) => (metrica === 'ventas' ? `${formatQty(f.documentos)} documentos` : formatMoney(f.ventas))}
-                resumen={<Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{metrica === 'ventas' ? formatMoney(num(r.ventas)) : `${formatQty(num(r.documentos))} documentos`}</Text>} />
+                detalle={(f) => (metrica === 'ventas' ? `${formatQty(f.documentos)} facturas` : formatMoney(f.ventas))}
+                resumen={<Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{metrica === 'ventas' ? formatMoney(num(r.ventas)) : `${formatQty(num(r.documentos))} facturas`}</Text>} />
             )}
           </View>
         </Widget>
@@ -163,7 +163,7 @@ export default function TorogozInicio() {
                   onPress={() => filtrar('ruta', ruta === x.ruta ? '' : x.ruta)}
                   izquierda={<Punto color={colorDe(i)} />} titulo={x.ruta} valor={formatMoneyCorto(num(x.ventas))}
                   proporcion={num(x.ventas) / maximoDe(rutas)}
-                  detalle={`${formatQty(num(x.documentos))} documentos · ${formatQty(num(x.clientes))} clientes`} />
+                  detalle={`${formatQty(num(x.documentos))} facturas · ${formatQty(num(x.clientes))} clientes`} />
               ))}
             </View>
           ) : <Vacio texto="Sin ventas en el período." />}
@@ -181,7 +181,7 @@ export default function TorogozInicio() {
               )}
               titulo={shortEmployeeName(v) || 'Vendedor'} valor={formatMoneyCorto(num(v.ventas))}
               proporcion={num(v.ventas) / maximoDe(vendedores)}
-              detalle={`${formatQty(num(v.documentos))} documentos · ${formatQty(num(v.clientes))} clientes`} />
+              detalle={`${formatQty(num(v.documentos))} facturas · ${formatQty(num(v.clientes))} clientes`} />
           )) : <Vacio texto="Sin ventas en el período." />}
         </Widget>
 
@@ -189,7 +189,7 @@ export default function TorogozInicio() {
           {cargando && !datos ? <Esqueleto /> : productos.length ? recorte('productos', productos).map((p, i) => (
             <FilaRanking key={p.product_id} primero={i === 0} color={MARCA.verde} izquierda={<Puesto n={i + 1} />}
               titulo={p.nombre} valor={formatMoneyCorto(num(p.ventas))} proporcion={num(p.ventas) / maximoDe(productos)}
-              detalle={`${formatQty(num(p.unidades))} unidades · en ${formatQty(num(p.documentos))} documentos`} />
+              detalle={`${formatQty(num(p.unidades))} unidades · en ${formatQty(num(p.documentos))} facturas`} />
           )) : <Vacio texto="Sin ventas en el período." />}
         </Widget>
 
@@ -206,12 +206,12 @@ export default function TorogozInicio() {
             <Segmentos margen={0} opciones={[{ id: 'dia', label: 'Por día' }, { id: 'hora', label: 'Por hora' }]} activa={cuando} onCambiar={setCuando} />
             {cargando && !datos ? <Esqueleto /> : cuando === 'dia' ? (
               <Grafica key="semana" datos={semana} alto={140} series={[{ clave: 'ventas', rotulo: 'Ventas', color: MARCA.verde, tipo: 'barra' }]}
-                formato={(v) => formatMoney(v)} formatoEje={formatMoneyCorto} detalle={(f) => `${formatQty(f.documentos)} documentos`}
+                formato={(v) => formatMoney(v)} formatoEje={formatMoneyCorto} detalle={(f) => `${formatQty(f.documentos)} facturas`}
                 resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Resaltado, el día que más se vende. Desliza para ver cada día.</Text>} />
             ) : (
-              <Grafica key="horas" datos={horas} alto={140} series={[{ clave: 'documentos', rotulo: 'Documentos', color: MARCA.violeta, tipo: 'barra' }]}
-                formato={(v) => `${formatQty(v)} documentos`} formatoEje={(v) => formatQty(v)} detalle={(f) => formatMoney(f.ventas)}
-                resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Documentos emitidos a cada hora.</Text>} />
+              <Grafica key="horas" datos={horas} alto={140} series={[{ clave: 'documentos', rotulo: 'Facturas', color: MARCA.violeta, tipo: 'barra' }]}
+                formato={(v) => `${formatQty(v)} facturas`} formatoEje={(v) => formatQty(v)} detalle={(f) => formatMoney(f.ventas)}
+                resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Facturas emitidas a cada hora.</Text>} />
             )}
           </View>
         </Widget>

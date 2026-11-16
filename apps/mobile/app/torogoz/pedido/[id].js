@@ -104,7 +104,7 @@ export default function DetallePedido() {
       const titulo = r?.estado ? (ESTADO_DOCUMENTO[r.estado]?.label ?? 'Listo') : 'Listo';
       const texto = r?.aviso ?? r?.mensaje ?? (r?.numero_control ? `Número de control ${r.numero_control}.` : '');
       if (clave === 'facturar' && r?.dte_id) {
-        Alert.alert(titulo, texto, [{ text: 'Ver documento', onPress: () => router.replace(rutaDocumento(r.dte_id)) }]);
+        Alert.alert(titulo, texto, [{ text: 'Ver factura', onPress: () => router.replace(rutaDocumento(r.dte_id)) }]);
       } else {
         Alert.alert(titulo, texto, [{ text: 'OK', onPress: () => router.back() }]);
       }
@@ -116,11 +116,11 @@ export default function DetallePedido() {
   };
 
   const facturar = () => Alert.alert('Facturar el pedido',
-    `Se emite ${TIPO_DOCUMENTO[docPedido]?.largo ?? 'el documento'} por ${formatMoney(venta.total)} a ${pedido.dist_clientes?.nombre ?? 'el cliente'} y se envía a Hacienda.`, [
+    `Se emite ${TIPO_DOCUMENTO[docPedido]?.largo ?? 'la factura'} por ${formatMoney(venta.total)} a ${pedido.dist_clientes?.nombre ?? 'el cliente'} y se envía al MH.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Facturar', onPress: () => accion('facturar', () => facturarPedido(pedido.id), 'DISTRIBUCION_PEDIDO_FACTURADO') },
     ]);
-  const reintentar = () => Alert.alert('Enviar a Hacienda', `${TIPO_DOCUMENTO[dte.tipo]?.largo ?? 'Documento'} ${dte.numero_control}`, [
+  const reintentar = () => Alert.alert('Enviar al MH', `${TIPO_DOCUMENTO[dte.tipo]?.largo ?? 'Factura'} ${dte.numero_control}`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Enviar', onPress: () => accion('reintentar', () => reintentarDocumento(pedido.dte_id), 'DISTRIBUCION_DTE_REINTENTO') },
   ]);
@@ -147,7 +147,7 @@ export default function DetallePedido() {
           <Dato rotulo="Por" valor={shortEmployeeName(pedido.employees) || '—'} />
           <Dato rotulo="Condición" valor={pedido.condicion === 2 ? `Crédito a ${pedido.plazo_dias} días`
             : `Contado · ${FORMA_PAGO.find((f) => f.value === pedido.forma_pago)?.label ?? pedido.forma_pago}`} />
-          <Dato rotulo="Documento" valor={TIPO_DOCUMENTO[docPedido]?.largo} />
+          <Dato rotulo="Tipo de factura" valor={TIPO_DOCUMENTO[docPedido]?.largo} />
           {pedido.observaciones ? <Dato rotulo="Observaciones" valor={pedido.observaciones} /> : null}
         </Seccion>
 
@@ -188,13 +188,13 @@ export default function DetallePedido() {
 
         <View style={{ gap: 10 }}>
           {enElPortal && !anulando ? (
-            <SeHaceEnElPortal texto={base.facturar ? 'Facturar este pedido se hace desde el portal.' : 'Enviarlo a Hacienda se hace desde el portal.'} />
+            <SeHaceEnElPortal texto={base.facturar ? 'Facturar este pedido se hace desde el portal.' : 'Enviarlo al MH se hace desde el portal.'} />
           ) : null}
           {puede.facturar && !anulando ? (
             <BotonGrande texto={ocupado === 'facturar' ? 'Facturando…' : 'Facturar'} color={PETROLEO} deshabilitado={!!ocupado || !items?.length} onPress={facturar} />
           ) : null}
           {puede.reintentar ? (
-            <BotonGrande texto={ocupado === 'reintentar' ? 'Enviando…' : 'Enviar a Hacienda'} color={MARCA.ambar} deshabilitado={!!ocupado} onPress={reintentar} />
+            <BotonGrande texto={ocupado === 'reintentar' ? 'Enviando…' : 'Enviar al MH'} color={MARCA.ambar} deshabilitado={!!ocupado} onPress={reintentar} />
           ) : null}
           {puede.verDocumento ? (
             <BotonGrande borde texto="Ver ticket y PDF" color={PETROLEO} deshabilitado={!!ocupado} onPress={() => router.push(rutaDocumento(pedido.dte_id))} />

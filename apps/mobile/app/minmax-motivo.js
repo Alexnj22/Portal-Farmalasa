@@ -87,12 +87,12 @@ export default function MinMaxMotivo() {
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4, marginTop: -10 }}>{`${ERP_NAMES[Number(sala)] ?? ''} · Por qué está puesto a mano`}</Text>
           {fila == null ? <Cargando /> : !puede ? (
             <>
-              <Aviso tono="nota" texto={fila.manual_motivo ? `Motivo: ${MOTIVO_AJUSTE[fila.manual_motivo]?.label ?? fila.manual_motivo}${fila.manual_nota ? ` · ${fila.manual_nota}` : ''}` : 'Sin motivo declarado.'} />
-              <Aviso tono="freno" texto="Poner el motivo es de quien edita el MIN·MAX de esta sala." />
+              <Aviso tono="nota" texto={fila.manual_motivo ? `Motivo: ${MOTIVO_AJUSTE[fila.manual_motivo]?.label ?? fila.manual_motivo}${fila.manual_nota ? ` · ${fila.manual_nota}` : ''}` : 'Sin motivo.'} />
+              <Aviso tono="freno" texto="Solo quien edita el Mín/Máx de esta sucursal puede poner el motivo." />
             </>
           ) : (
             <>
-              <Seccion titulo="Motivo" pie={puedeYaNoRota ? undefined : '«Ya no rota» lo pone quien decide sobre todas las salas: es el que hace que el cálculo deje de contar lo que este producto vendió antes.'}>
+              <Seccion titulo="Motivo" pie={puedeYaNoRota ? undefined : '«Ya no rota» solo lo puede poner quien decide sobre todas las sucursales.'}>
                 <Opciones opciones={opciones} valor={motivo} onCambiar={setMotivo} />
               </Seccion>
               {motivo === 'cliente_fijo' ? (

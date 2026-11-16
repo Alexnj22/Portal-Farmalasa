@@ -169,7 +169,7 @@ export default function FotosProductos() {
           <Ficha key={actual.id} producto={actual} puedeEditar={puedeEditar} nombres={nombres} quedan={elegido ? null : cola.length}
             onGuardado={() => { cargarResumen(); pasar(actual.id); }} onSaltar={() => pasar(actual.id, true)} />
         ) : (
-          <Aviso texto={saltados.current.size ? 'Sin productos pendientes; los que saltaste vuelven al recargar.' : 'Sin productos pendientes en esta lista.'} />
+          <Aviso texto={saltados.current.size ? 'Sin productos pendientes. Los que saltaste vuelven al recargar.' : 'Sin productos pendientes en esta lista.'} />
         )}
         {!actual && saltados.current.size ? (
           <BotonGrande texto="Volver a los saltados" color={MARCA.azulClaro} onPress={() => { saltados.current = new Set(); setCola(null); cargarCola(); }} />
@@ -265,7 +265,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
         </View>
       </Seccion>
       {!ed.preset ? (
-        <Seccion titulo="Principio activo" pie={principios?.text ? `Quedará: ${principios.text}` : 'Elige el principio del catálogo; la cantidad y la unidad, como dice el empaque.'}>
+        <Seccion titulo="Principio activo" pie={principios?.text ? `Quedará: ${principios.text}` : 'Elige el principio del catálogo. Escribe la cantidad y la unidad como dice el empaque.'}>
           {ed.items.map((p, i) => {
             const sugeridos = enfocado === i && p.nombre.trim().length >= 2
               ? nombres.filter((n) => claveDePrincipio(n).includes(claveDePrincipio(p.nombre)) && n !== p.nombre).slice(0, 5) : [];
@@ -292,7 +292,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
                     ))}
                   </ScrollView>
                 </View>
-                {p.crudo && !p.cantidad ? <Aviso tono="cuidado" texto={`Estaba escrito «${p.crudo}»: pon la cantidad y la unidad para corregirlo.`} /> : null}
+                {p.crudo && !p.cantidad ? <Aviso tono="cuidado" texto={`Estaba escrito «${p.crudo}». Pon la cantidad y la unidad para corregirlo.`} /> : null}
                 {ed.items.length > 1 ? (
                   <Pressable hitSlop={8} onPress={() => cambiar((e) => ({ ...e, items: e.items.filter((_, j) => j !== i) }))} style={{ minHeight: 44, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar este principio</Text>
@@ -310,7 +310,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
       ) : null}
       {deSrs && !ed.preset ? <Aviso texto={`Tomado del registro ${deSrs.noregistro || 'sanitario'} (${deSrs.nombre}). Revísalo contra el empaque antes de guardar.`} /> : null}
       {deSrs?.corregido && !ed.preset ? (
-        <Aviso tono="cuidado" texto={`El registro dice ${deSrs.corregido.srs}, pero el nombre del producto dice ${deSrs.corregido.nombre}: se dejó ${deSrs.corregido.nombre}. Confírmalo en el empaque.`} />
+        <Aviso tono="cuidado" texto={`El registro dice ${deSrs.corregido.srs} y el nombre del producto dice ${deSrs.corregido.nombre}. Se dejó ${deSrs.corregido.nombre}. Confírmalo en el empaque.`} />
       ) : null}
       <SugerenciasSrs producto={producto} onUsar={usarSrs} autoAplicar={puedeEditar && producto.falta_principio && !toco} />
 
@@ -357,7 +357,7 @@ function SugerenciasSrs({ producto, onUsar, autoAplicar }) {
   }, [producto.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Seccion titulo="Registro sanitario" pie={estado.error ? 'No se pudo consultar el registro.' : !estado.cargando && !estado.lista.length ? 'Sin coincidencias con principio activo: escríbelo del empaque.' : null}>
+    <Seccion titulo="Registro sanitario" pie={estado.error ? 'No se pudo consultar el registro.' : !estado.cargando && !estado.lista.length ? 'Sin coincidencias con principio activo. Escríbelo como dice el empaque.' : null}>
       {estado.cargando ? <Indicador style={{ marginVertical: 8 }} /> : estado.lista.map(({ srs, score }, i) => {
         const r = resultadoDeSrs(srs);
         const titulo = principiosDeSrs(srs).map((p) => [normalizarPrincipio(p.nombre), normalizarConcentracion(p.concentracion)].filter(Boolean).join(' ')).join(' + ');

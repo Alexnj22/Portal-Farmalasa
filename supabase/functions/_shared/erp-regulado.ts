@@ -174,7 +174,7 @@ export async function fijarCosto(cookie: string, id: number, idPrp: string, cost
   if (k < 0) throw new Error(`La presentación ${idPrp} no está en la ficha de ${antes.nombre}.`);
   const actual = parseFloat(antes.presentaciones[k].costo);
   if (actual > 0)
-    throw new Error(`${antes.nombre} ya tiene costo (${antes.presentaciones[k].costo}); no se cambia desde acá.`);
+    throw new Error(`${antes.nombre} ya tiene costo (${antes.presentaciones[k].costo}); no se cambia desde aquí.`);
 
   const texto = costo.toFixed(4);
   const nueva: Ficha = {

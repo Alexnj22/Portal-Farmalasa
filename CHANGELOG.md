@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.1 — Carga pendiente: los avisos dicen «aquí»
+
+- Los avisos de `aplicar-movimiento-inventario` y `fijarCosto` decían «desde
+  acá»; el portal dice «aquí». Probado sobre una carga de prueba en Bodega:
+  `revisar` detectó lote, vencimiento, costo 0 y producto deshabilitado;
+  `corregir_linea` completó el renglón y anotó la corrección, y frenó lote con
+  otra fecha, dato ya escrito, costo 0 y vencimiento pasado.
+
 ## v2.1550.0 — Completar desde la solicitud lo que le falta a una carga
 
 - Al abrir una carga pendiente, quien decide ve «Falta antes de aprobar» con

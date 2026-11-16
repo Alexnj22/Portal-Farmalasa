@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
         if (!pideLote && !pideVence)
           return json({ ok: false, error: "Escribe el lote o el vencimiento." }, 422);
         if ((pideLote && ya.lote) || (pideVence && ya.vence))
-          return json({ ok: false, error: `${nombreDe(l)} ya tiene ese dato; no se cambia desde acá.` }, 409);
+          return json({ ok: false, error: `${nombreDe(l)} ya tiene ese dato; no se cambia desde aquí.` }, 409);
 
         // Un lote en un producto que NO lleva control le inventa uno.
         if (pideLote) {

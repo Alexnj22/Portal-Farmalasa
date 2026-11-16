@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.3 — Conteo: la lista ya no tarda 7 s desde la sexta consulta
+
+Seguía lento después de juntar las llamadas. La causa real: `get_conteo_products_page` pasaba al plan **genérico** de Postgres en la sexta llamada sobre la misma conexión (PostgREST las reusa). Medido: 186 ms las primeras cinco veces y **6,725 ms** desde la sexta (con búsqueda, 297 → 1,681 ms). Eso eran las llamadas de 5 a 29 s en producción.
+
+- `get_conteo_products_page` lleva `plan_cache_mode = force_custom_plan`, como ya llevaba `get_conteo_products_count`. Diez llamadas seguidas de `get_conteo_pagina` en la misma conexión: **246 a 407 ms** todas.
+- `get_conteo_items_search` con ids lee sólo el inventario de esos productos: de 130 a 92 ms. Resultado idéntico en los 3,987 renglones del conteo de Bodega (comparado con md5).
+
 ## v2.1557.2 — Preventa: últimas compras en un modal y «Suele llevar» en una fila
 
 Ajustes pedidos al verla en pantalla:

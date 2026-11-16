@@ -148,7 +148,7 @@ export default function TabConsultasExistencia() {
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-body-sm text-content-2 max-w-2xl">
-                    Pregunta a una o varias sucursales cuánto tienen de un producto. Cuentan sin ver lo que dice la caja. Si no cuadra, vuelven a contar una vez. Si sigue sin cuadrar, lo ajusta quien aprueba inventario.
+                    Pregunta a una o varias sucursales cuánto tienen de un producto. Cuentan sin ver el sistema. Si no cuadra, vuelven a contar una vez. Si sigue sin cuadrar, lo ajusta quien aprueba inventario.
                 </p>
                 {puedePedir && (
                     <Button variant="primary" icon={Plus} onClick={() => setNueva(true)}>Pedir conteo</Button>

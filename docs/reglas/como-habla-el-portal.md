@@ -52,6 +52,7 @@ exportados. Los comentarios del código y los nombres de variables o columnas
 | **factura** (en la Distribuidora) | documento | Vale como genérico aunque la lista mezcle notas. |
 | **jefe de Compras y Logística** | el gerente | Con quien Bodega confirma un encargo caro que no se puede devolver. |
 | **ND: repórtalo al jefe de sucursal** | reportar a jefe inmediato | El jefe de sucursal lo pasa al supervisor de ventas. |
+| **Sistema** / **Físico** (en conteos) | caja | En los conteos de inventario la existencia registrada se llama «Sistema» y lo contado «Físico». «No verás el sistema hasta guardar». |
 | **Productos de la factura** | Líneas de factura | En Cargar compra. |
 | **jefe inmediato** (sólo en la encuesta de clima laboral) | — | Única excepción: ahí cada quien evalúa a su propio jefe. |
 | **la farmacia** (en lo que lee el cliente) | la sala | «la visita a la farmacia». |

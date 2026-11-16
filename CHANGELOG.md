@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1559.5 — Lenguaje: conteos dicen Sistema
+
+- Conteos de inventario: vuelven a decir «el sistema» (columna Sistema / Físico), como decidió el usuario. Anotado en la tabla de vocabulario.
+
 ## v2.1559.4 — Lenguaje: app del personal
 
 - Barrido del texto de las dos apps (la de clientes salió limpia). En la del

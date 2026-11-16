@@ -80,7 +80,7 @@ export default function HacerCorte() {
     const contado = Number(efectivo.replace(',', '.')) || 0;
     const total = declaradoDelCorte(contado, yaEmbolsado);
     Alert.alert('¿Hacer el corte?',
-      `${formatMoney(contado)} en el cajón${yaEmbolsado > 0 ? ` + ${formatMoney(yaEmbolsado)} ya embolsado = ${formatMoney(total)} declarado` : ''}.\n\nEl corte queda registrado en la caja y después hay que confirmarlo o descartarlo.`, [
+      `${formatMoney(contado)} en la caja${yaEmbolsado > 0 ? ` + ${formatMoney(yaEmbolsado)} ya embolsado = ${formatMoney(total)} declarado` : ''}.\n\nEl corte queda registrado en la caja y después hay que confirmarlo o descartarlo.`, [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Hacer el corte', onPress: async () => {
           setOcupado(true);
@@ -171,9 +171,9 @@ export default function HacerCorte() {
   } else {
     cuerpo = (
       <>
-        <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal.</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>Cuenta solo el efectivo que hay en la caja ahora. Lo de las bolsas de hoy lo suma el portal.</Text>
         {vales > 0 ? <Aviso texto={`Antes del corte se anota un vale de caja con ${vales} salida${vales === 1 ? '' : 's'} del día.`} /> : null}
-        <Seccion titulo="Efectivo en el cajón">
+        <Seccion titulo="Efectivo en la caja">
           <Campo multiline={false} value={efectivo} onChangeText={(v) => setEfectivo(v.replace(/[^\d.,]/g, ''))}
             keyboardType="decimal-pad" placeholder="$0.00" autoFocus style={{ fontSize: 28, fontWeight: '700', textAlign: 'center', minHeight: 60 }} />
           {yaEmbolsado > 0 ? (

@@ -89,9 +89,7 @@ export default function EntregaDeCaja({
                 {/* Qué significa firmar acá, dicho antes de firmar. Sin esto la
                     pantalla pide un carné y no dice para qué queda registrado. */}
                 <Notice variant="info" icon={Info}>
-                    Confirmar este corte deja el efectivo contado en una bolsa. Quien
-                    la reciba se hace cargo de ese dinero desde este momento. Descartarlo
-                    no genera bolsa y no se entrega nada.
+                    Al confirmar, el efectivo contado queda en una bolsa. Quien la recibe se hace cargo de ese dinero desde ahora. Si lo descartas, no hay bolsa ni entrega.
                 </Notice>
 
                 {!saltando ? (
@@ -127,7 +125,7 @@ export default function EntregaDeCaja({
                             name="motivo-sin-entrega"
                             value={motivo}
                             onChange={(e) => setMotivo(e.target.value)}
-                            placeholder="Ej.: quedó sola en la sala"
+                            placeholder="Ej.: quedó sola en la sucursal"
                             rows={3}
                         />
                         {queFalta && !ocupado && <AvisoDeFalta motivo={queFalta.texto} onIr={() => irAlCampo(queFalta.campo)} />}

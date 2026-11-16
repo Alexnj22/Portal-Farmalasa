@@ -100,7 +100,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
     const { total, monto, saldo, excede, valido, conNombre, falta } = estadoDelApartado({ cliente, renglones, abonado });
     // Lo que el pie dice que falta, y a qué campo lleva (2026-11-14). La sala
     // va después: el botón también se apaga sin ella.
-    const queFalta = falta ?? (!sala ? { texto: 'Falta la sala de esta caja.', campo: null } : null);
+    const queFalta = falta ?? (!sala ? { texto: 'Falta la sucursal de esta caja.', campo: null } : null);
 
     /* El día se calcula UNA vez, al abrir, y no en cada render: el reloj no es
      * una función pura, y con el diálogo abierto pasada la medianoche el
@@ -176,7 +176,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
             console.error('guardar abono:', e);
             useToastStore.getState().showToast(
                 'El abono quedó anotado, pero algo falló después',
-                mensajeAmigable(e, 'Revisa si salió el comprobante; si no, vuelve a imprimirlo desde la lista.'),
+                mensajeAmigable(e, 'Revisa si salió el comprobante. Si no, imprímelo de nuevo desde la lista.'),
                 'warning',
             );
         } finally {
@@ -323,8 +323,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
                 {total == null && conNombre.length > 0 && (
                     <Notice variant="info">
                         Algún producto no tiene precio, así que el comprobante dirá
-                        <b> «por definir»</b> y no promete un saldo. El precio se acuerda al
-                        confirmarlo, y el cliente puede desistir con devolución completa.
+                        <b> «por definir»</b> y no tendrá saldo. El precio se acuerda al confirmarlo. Si el cliente desiste, se le devuelve todo.
                     </Notice>
                 )}
 

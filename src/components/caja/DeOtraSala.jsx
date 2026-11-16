@@ -34,25 +34,25 @@ export default function DeOtraSala({ producto, factor, cantidad, disponibles = n
         onCambio(elegido ? { branch_id: elegido.branch_id, sala: elegido.sala, lista } : null);
     }, [elegido, lista, onCambio]);
 
-    const aqui = disponibles == null ? 'Ninguna sala' : disponibles > 0 ? `En esta sala hay sólo ${disponibles} y ninguna otra` : 'En esta sala no hay y ninguna otra';
+    const aqui = disponibles == null ? 'Ninguna' : disponibles > 0 ? `En esta sucursal hay solo ${disponibles} y ninguna otra` : 'En esta sucursal no hay y ninguna otra';
     // Sin sala asignada no se pregunta a las demás (usePedirTraslado): decir
     // «ninguna lo tiene» ahí sería afirmar algo que no se miró.
     if (!h.miErp) {
-        return <p className="text-caption text-content-3">Pedir a otra sala lo hace alguien asignado a una sala.</p>;
+        return <p className="text-caption text-content-3">Para pedir a otra sucursal tienes que estar asignado a una sucursal.</p>;
     }
     if (h.dondeCargando) {
-        return <p className="text-caption text-content-3">Revisando qué salas lo tienen…</p>;
+        return <p className="text-caption text-content-3">Revisando qué sucursales lo tienen…</p>;
     }
     if (h.dondeError) {
-        return <p className="text-caption text-warning-text">No se pudo revisar qué salas lo tienen.</p>;
+        return <p className="text-caption text-warning-text">No se pudo revisar qué sucursales lo tienen.</p>;
     }
     if (!candidatos.length) {
-        return <p className="text-caption text-content-3">{aqui} sala tiene {necesita}.</p>;
+        return <p className="text-caption text-content-3">{aqui} sucursal tiene {necesita}.</p>;
     }
     return (
         <div className="space-y-1.5">
             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                {rotulo ?? `${disponibles > 0 ? `Aquí hay sólo ${disponibles}` : 'Aquí no hay'} · ¿Lo pedimos a otra sala?`}
+                {rotulo ?? `${disponibles > 0 ? `Aquí hay solo ${disponibles}` : 'Aquí no hay'} · ¿Lo pedimos a otra sucursal?`}
             </p>
             <ul className="space-y-1.5">
                 {[...candidatos.map((d) => ({ value: String(d.erp_sucursal_id), titulo: `Pedir a ${d.sala}${disponibles == null ? '' : ' y apartar'}`, detalle: `Tiene ${Number(d.unidades)} unidades` })),

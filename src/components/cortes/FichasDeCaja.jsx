@@ -321,8 +321,7 @@ export default function FichasDeCaja({
 
             {!pudeLeerAsistencia && (
                 <Notice variant="info" icon={UserX}>
-                    No se puede leer la asistencia con este permiso, así que las fichas no dicen
-                    quién marcó entrada. No significa que nadie haya marcado.
+                    Con tu permiso no se ve la asistencia, así que aquí no sale quién marcó entrada.
                 </Notice>
             )}
 
@@ -334,8 +333,7 @@ export default function FichasDeCaja({
                             : `${sinPersona} cajas abrieron con una cuenta compartida`}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        Sus cortes no quedan a nombre de nadie. Se arregla dándole a cada persona
-                        su propio usuario en la caja.
+                        Sus cortes no quedan a nombre de nadie. Cada persona tiene que tener su propio usuario en la caja.
                     </span>
                 </Notice>
             )}

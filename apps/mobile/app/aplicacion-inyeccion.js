@@ -214,7 +214,7 @@ export default function AplicacionInyeccion() {
   };
 
   const cobrar = () => Alert.alert(`¿Cobrar ${formatMoney(c.monto)}?`,
-    `${c.total} ${c.total === 1 ? 'aplicación' : 'aplicaciones'}${c.quedan > 0 ? `; ${c.quedan} quedan pendientes a nombre de ${aNombreDe.trim()}` : ''}. ${estadoPago.noEfectivo ? `Con ${pago.forma === 'TARJETA' ? 'tarjeta' : 'transferencia'}: no entra al cajón${estadoPago.pideAutorizacion ? ' y queda pendiente de autorización' : ''}.` : `Entra a la caja de ${nombreSala}.`}`, [
+    `${c.total} ${c.total === 1 ? 'aplicación' : 'aplicaciones'}${c.quedan > 0 ? `; ${c.quedan} quedan pendientes a nombre de ${aNombreDe.trim()}` : ''}. ${estadoPago.noEfectivo ? `Con ${pago.forma === 'TARJETA' ? 'tarjeta' : 'transferencia'}: no entra a la caja${estadoPago.pideAutorizacion ? ' y queda pendiente de autorización' : ''}.` : `Entra a la caja de ${nombreSala}.`}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cobrar', onPress: async () => {
         setEnviando(true); trabajando('Cobrando…');

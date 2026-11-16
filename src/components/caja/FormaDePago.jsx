@@ -54,7 +54,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
         setLeyendo(false);
         const l = lecturaDeBoleta(r, { pideBoleta: true });
         if (l.error) {
-            setAviso('No se pudo leer la foto. Escribe el total y el número a mano.');
+            setAviso('No se pudo leer la foto. Escribe el total y el número.');
             onCambiar({ ...v, foto: f, sinComprobante: false, sinDatos: false });
             return;
         }
@@ -65,7 +65,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
         if (l.monto != null) onMontoLeido?.(l.monto);
         setAviso(l.monto != null
             ? `La foto leyó ${formatMoney(Number(l.monto))}${l.boleta ? `, número ${l.boleta}` : ''}. Compáralo con el papel.`
-            : 'La foto no leyó el total: escríbelo.');
+            : 'La foto no leyó el total. Escríbelo.');
     };
 
     return (
@@ -135,8 +135,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                     {v.foto && estado.resto > 0 && (
                         <Notice variant="info" compact icon={ReceiptText}>
                             El {papel} es por más que este cobro: los <b>{formatMoney(estado.resto)}</b> que
-                            sobran tienen que ser una venta con tarjeta de hoy. Si no aparece, queda marcado
-                            para revisar.
+                            de más tienen que ser una venta con tarjeta de hoy. Si no aparece, queda para revisar.
                             {montoFijo && ' El cobro de este ingreso no cambia.'}
                         </Notice>
                     )}
@@ -165,7 +164,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                     )}
 
                     <p className="text-caption text-content-3">
-                        No entra al cajón: {v.forma === 'TARJETA' ? 'el dinero llega por el POS' : 'el dinero llega al banco'}.
+                        No entra a la caja: {v.forma === 'TARJETA' ? 'el dinero llega por el POS' : 'el dinero llega al banco'}.
                     </p>
                 </>
             )}

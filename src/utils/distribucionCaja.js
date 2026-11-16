@@ -52,7 +52,7 @@ export function efectivoDelCierre(esperado, formatMoney) {
     if (n < 0) {
         return {
             negativo: true, rotulo: 'Hay que devolver', monto: -n, sugerido: '0.00',
-            aviso: `Hay que devolverle ${formatMoney(-n)} al vendedor: devolvió en efectivo más de lo que cobró este día. Si no le queda efectivo, el conteo es $0.00.`,
+            aviso: `Hay que devolverle ${formatMoney(-n)} al vendedor. Devolvió en efectivo más de lo que cobró hoy. Si no le queda efectivo, el conteo es $0.00.`,
         };
     }
     return { negativo: false, rotulo: 'Efectivo a entregar', monto: n, sugerido: n.toFixed(2), aviso: null };
@@ -160,7 +160,7 @@ export function formasDelDia(d) {
 export function cierreDelDiaListo(d, queda, nota) {
     if (!d || d.cierre) return { listo: false, motivo: null };
     if (d.pendientes > 0) {
-        return { listo: false, motivo: `${d.pendientes === 1 ? 'Falta 1 vendedor por liquidar' : `Faltan ${d.pendientes} vendedores por liquidar`}: el día se cierra cuando todos entregaron.` };
+        return { listo: false, motivo: `${d.pendientes === 1 ? 'Falta 1 vendedor por liquidar' : `Faltan ${d.pendientes} vendedores por liquidar`}. El día se cierra cuando todos entreguen.` };
     }
     if (queda !== 0 && !String(nota ?? '').trim()) return { listo: false, motivo: null };
     return { listo: true, motivo: null };

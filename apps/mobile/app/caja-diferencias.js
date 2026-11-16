@@ -111,7 +111,7 @@ export default function CajaDiferencias() {
               <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${porAnotar.length} ${porAnotar.length === 1 ? 'movimiento' : 'movimientos'} por anotar en el sistema`}</Text>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Dinero que ya entró o salió del cajón por una diferencia.</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Dinero que ya entró o salió de la caja por una diferencia.</Text>
                 </View>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Anotar ›</Text>
               </View>

@@ -72,7 +72,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
 
   return (
     <Seccion titulo="Cómo pagó"
-      pie={estado.noEfectivo ? `No entra al cajón: ${v.forma === 'TARJETA' ? 'el dinero llega por el POS' : 'el dinero llega al banco'}.` : null}>
+      pie={estado.noEfectivo ? `No entra a la caja: ${v.forma === 'TARJETA' ? 'el dinero llega por el POS' : 'el dinero llega al banco'}.` : null}>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {FORMAS_DE_PAGO.map((f) => {
           const activa = v.forma === f.value;

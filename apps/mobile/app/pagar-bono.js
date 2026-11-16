@@ -42,7 +42,7 @@ export default function PagarBono() {
   const otraPersona = !esBodega && persona && persona.id !== item.employee_id;
 
   const pagar = () => Alert.alert(`¿Pagar ${formatMoney(item.monto)} a ${nombre}?`,
-    `Sale del cajón de ${nombreSala} y lo recibe ${shortEmployeeName(persona)}.`, [
+    `Sale de la caja de ${nombreSala} y lo recibe ${shortEmployeeName(persona)}.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Pagar', onPress: async () => {
         setGuardando(true);
@@ -92,7 +92,7 @@ export default function PagarBono() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
-          {`${item.promocion || ''}${item.tipo === 'excedente' ? ' (excedente aprobado)' : ''}. Saca ${formatMoney(item.monto)} del cajón y entrégalo ${esBodega ? 'a quien recibe por bodega' : `a ${nombre}`}.`}
+          {`${item.promocion || ''}${item.tipo === 'excedente' ? ' (excedente aprobado)' : ''}. Saca ${formatMoney(item.monto)} de la caja y entrégalo ${esBodega ? 'a quien recibe por bodega' : `a ${nombre}`}.`}
         </Text>
         {!puedeOperar ? <Aviso tono="freno" texto="Pagar bonos es de quien opera la caja." /> : (
           <>

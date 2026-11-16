@@ -479,8 +479,8 @@ export default function ResolverDiferencia({
                     <div className="space-y-1.5">
                         <p className="text-caption text-content-3">
                             {parcial
-                                ? `Quedan ${formatMoney(pendiente)} en el acumulado de la sala. Si tienen causa, explícalo y salen del acumulado.`
-                                : 'Queda en el acumulado de la sala. Si tiene causa, explícalo y sale del acumulado.'}
+                                ? `Quedan ${formatMoney(pendiente)} en el acumulado de la sucursal. Si tienen causa, explícala y salen del acumulado.`
+                                : 'Queda en el acumulado de la sucursal. Si tiene causa, explícala y sale del acumulado.'}
                         </p>
                         <Button variant="ghost" size="sm" icon={ShieldCheck} className="w-full"
                             onClick={() => { setVia('JUSTIFICA'); setAbriendo(true); }}>
@@ -568,8 +568,7 @@ export default function ResolverDiferencia({
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
                                     El asegurado pagó {formatMoney(Number(mapfre.asegurado))} y ese dinero ya está en
-                                    este corte: no se cobra otra vez en la caja. Si la causa explica otro monto
-                                    —por ejemplo, el pago menos algo que faltó descartar—, escríbelo abajo.
+                                    este corte. No se cobra otra vez. Si la causa explica otro monto, escríbelo abajo.
                                 </span>
                             </Notice>
                         )}
@@ -588,9 +587,9 @@ export default function ResolverDiferencia({
                             errorMessage={explicaInvalido ? 'Tiene que ser mayor que cero.' : undefined}
                             helperText={quedaTrasCausa > 0
                                 ? (falta
-                                    ? `Quedan ${formatMoney(aMonto(quedaTrasCausa))} sin causa: después se explican o se asignan responsables.`
-                                    : `Quedan ${formatMoney(aMonto(quedaTrasCausa))} en el acumulado de la sala.`)
-                                : `Hasta ${formatMoney(aMonto(objetivo))}. Si el comprobante explica sólo una parte, escribe cuánto.`}
+                                    ? `Quedan ${formatMoney(aMonto(quedaTrasCausa))} sin causa. Después se explican o se asignan responsables.`
+                                    : `Quedan ${formatMoney(aMonto(quedaTrasCausa))} en el acumulado de la sucursal.`)
+                                : `Hasta ${formatMoney(aMonto(objetivo))}. Si el comprobante explica solo una parte, escribe cuánto.`}
                         />
                         <PortalInput
                             label="Número del documento corregido"
@@ -688,8 +687,7 @@ export default function ResolverDiferencia({
                     <Notice variant="info">
                         <span className="font-bold">Al guardar, cada responsable queda con su saldo</span>
                         <span className="block mt-0.5 font-normal text-content-2">
-                            Después se abona por persona o todo junto, en uno o varios días. Cada abono
-                            imprime su comprobante. Es una reposición voluntaria: nunca se descuenta del salario.
+                            Después se abona por persona o todo junto, en uno o varios días. Cada abono imprime su comprobante. Es una reposición voluntaria. Nunca se descuenta del salario.
                         </span>
                     </Notice>
                 )}

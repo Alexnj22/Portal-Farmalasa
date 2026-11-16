@@ -109,7 +109,7 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
         datos: otraVia ? [
             ['Comprobante', m.numero_boleta || null],
             ['Total del comprobante', m.comprobante_total != null ? Number(m.comprobante_total).toFixed(2) : null],
-            ['En la caja', 'no va a la caja: el dinero llegó por otra vía'],
+            ['En la caja', 'no va a la caja. El dinero llegó por otra vía'],
             ['Autorización', m.autorizacion
                 ? `${ESTADO_DE_AUTORIZACION[m.autorizacion]}${m.autorizacion_nota ? ` · ${m.autorizacion_nota}` : ''}`
                 : null, m.autorizacion === 'PENDIENTE' || m.autorizacion === 'RECHAZADA'],
@@ -165,7 +165,7 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
             sinEfectivo: !efvo,
             detalle: [
                 `crédito ${c.credito_erp}`,
-                efvo ? 'en efectivo' : `${String(c.forma || 'otra forma').toLowerCase()} · no entra al cajón`,
+                efvo ? 'en efectivo' : `${String(c.forma || 'otra forma').toLowerCase()} · no entra a la caja`,
                 c.documento ? `documento ${c.documento}` : null,
                 Number(c.saldo_despues) > 0.004
                     ? `queda debiendo ${formatMoney(c.saldo_despues)}`
@@ -180,7 +180,7 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
                 ['Crédito', c.credito_erp ? `n.º ${c.credito_erp}` : null],
                 ['Factura', c.factura_erp || null],
                 ['Forma de pago', conMayuscula(c.forma || 'otra forma')],
-                ['Al cajón', efvo ? 'sí, en efectivo' : 'no entra al cajón', !efvo],
+                ['A la caja', efvo ? 'sí, en efectivo' : 'no entra a la caja', !efvo],
                 ['Documento', c.documento || null],
                 ['Debía', c.saldo_antes != null ? formatMoney(c.saldo_antes) : null],
                 ['Queda debiendo', Number(c.saldo_despues) > 0.004
@@ -216,7 +216,7 @@ export function tituloDeCorreccion(dato) {
     return pendiente
         ? (anula ? 'Se pidió anularlo' : `Se pidió cambiarlo a ${formatMoney(dato.monto_despues)}`)
         : rechazada
-            ? (anula ? 'No se anuló: la corrección se rechazó'
+            ? (anula ? 'No se anuló. La corrección se rechazó'
                 : `No se cambió a ${formatMoney(dato.monto_despues)}: se rechazó`)
             : (anula ? `Se anuló · eran ${formatMoney(dato.monto_antes)}`
                 : `Se corrigió el monto · antes decía ${formatMoney(dato.monto_antes)}`);

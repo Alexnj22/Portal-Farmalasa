@@ -340,7 +340,7 @@ export default function DiasConDiferencia({
                                 <BarraDelDia desglose={desgloseDelDia(visible, signo)} signo={signo} />
                                 <p className="text-caption text-content-2">
                                     {signo === 'sobra'
-                                        ? 'Queda en el acumulado de la sala para el inventario. Si tiene causa, explícalo con su comprobante y sale del acumulado.'
+                                        ? 'Queda en el acumulado de la sucursal para el inventario. Si tiene causa, explícala con su comprobante y sale del acumulado.'
                                         : 'Cada corte se paga o se explica con su comprobante. El sobrante de otro corte no lo compensa.'}
                                 </p>
                             </div>
@@ -367,8 +367,7 @@ export default function DiasConDiferencia({
 
                                         {c.estado === 'PENDIENTE' && (
                                             <Notice variant="warning">
-                                                Este corte todavía no se confirmó. Revísalo en la pestaña Cortes:
-                                                si el conteo estuvo mal, se descarta y la diferencia desaparece.
+                                                Este corte todavía no se confirmó. Revísalo en la pestaña Cortes. Si el conteo estuvo mal, descártalo y la diferencia desaparece.
                                             </Notice>
                                         )}
 
@@ -383,7 +382,7 @@ export default function DiasConDiferencia({
 
                                         {!puedeResolver && c.estadoDif === 'sin_resolver' && (
                                             <p className="text-caption text-content-3 px-1">
-                                                Sin resolver. Quien opera la caja de la sala lo resuelve desde aquí.
+                                                Sin resolver. Lo resuelve quien atiende la caja de la sucursal.
                                             </p>
                                         )}
                                     </section>

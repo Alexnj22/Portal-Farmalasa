@@ -152,7 +152,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                                     <Notice variant="info" icon={Wallet}>
                                         1. Factura <b>al contado</b> por {formatMoney(Number(v.total))}
                                         {Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.<br />
-                                        2. Aprieta «Hacer el vale»: saca del cajón los {formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.
+                                        2. Aprieta «Hacer el vale». Saca de la caja los {formatMoney(Number(v.efectivo))} del anticipo, porque la factura los vuelve a contar.
                                     </Notice>
                                 ) : (
                                     <Notice variant="info" icon={CreditCard}>
@@ -174,7 +174,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                                     </ul>
                                 ) : (
                                     <Notice variant="warning" compact>
-                                        No hay un crédito de {v.cliente} de estos días que lo pueda recibir. Una factura recién hecha tarda hasta un minuto: vuelve a buscar.
+                                        No hay un crédito de {v.cliente} de estos días que lo pueda recibir. Una factura recién hecha tarda hasta un minuto. Vuelve a buscar.
                                     </Notice>
                                 ))}
                             </>

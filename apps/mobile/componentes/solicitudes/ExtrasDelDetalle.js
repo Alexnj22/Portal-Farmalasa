@@ -137,7 +137,7 @@ export function QueSignificaDecidir({ req }) {
     <Text style={{ color: colorSistema.texto2, fontSize: 13, lineHeight: 18, marginHorizontal: 4 }}>
       {sale
         ? 'El dinero ya salió. Autorizarlo dice que la salida está bien; rechazarlo la anula y el dinero vuelve a contar donde estaba.'
-        : 'No entra al cajón. Autorizarlo dice que el dinero sí llegó; si no, explica qué prueba hace falta y la sala lo puede volver a mandar.'}
+        : 'Este dinero no entra a la caja. Apruébalo si el dinero sí llegó. Si no, recházalo y escribe qué prueba falta para que la sucursal lo mande de nuevo.'}
     </Text>
   );
 }

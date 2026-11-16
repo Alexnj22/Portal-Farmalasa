@@ -304,7 +304,7 @@ export default function CobrarCredito() {
             </Seccion>
           ) : null}
           {e.descuadre ? <Aviso tono="cuidado" texto={e.descuadre.faltan != null ? `Faltan ${formatMoney(e.descuadre.faltan)} por aplicar.` : `Sobran ${formatMoney(e.descuadre.sobran)} sobre el comprobante.`} /> : null}
-          {forma === 'Efectivo' ? <Aviso tono="nota" texto="El efectivo entra al cajón y cuenta para el corte del día." /> : null}
+          {forma === 'Efectivo' ? <Aviso tono="nota" texto="El efectivo entra a la caja y cuenta para el corte del día." /> : null}
 
           {reserva === 'ocupado' ? <Aviso tono="freno" texto="Este crédito ya tiene un cobro esperando aprobación." /> : null}
           {reserva === 'sin-leer' ? <Aviso tono="freno" texto="No se pudo comprobar qué créditos están en aprobación. Por precaución no se puede cobrar: vuelve a entrar en un momento." /> : null}

@@ -89,7 +89,7 @@ export default function MapfreAsegurado() {
   const falta = !elegida ? 'Elige la factura de Mapfre.' : !asegurado ? 'Busca al asegurado en el listado de clientes.' : estadoPago.falta;
 
   const cobrar = () => Alert.alert(`¿Cobrar ${formatMoney(monto)}?`,
-    `Pago del asegurado de la factura ${factura(elegida.correlativo)} · ${asegurado.name}. ${estadoPago.noEfectivo ? 'No entra al cajón.' : `Entra a la caja de ${nombreSala}.`}`, [
+    `Pago del asegurado de la factura ${factura(elegida.correlativo)} · ${asegurado.name}. ${estadoPago.noEfectivo ? 'No entra a la caja.' : `Entra a la caja de ${nombreSala}.`}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cobrar', onPress: async () => {
         setEnviando(true); trabajando('Cobrando…');

@@ -93,7 +93,7 @@ export default function DevolucionDeSaldo() {
             <Seccion titulo={m.rotulo}>
               <Campo value={motivo} onChangeText={setMotivo} maxLength={300} autoFocus />
             </Seccion>
-          ) : <Aviso tono="cuidado" texto="El dinero sale del cajón al confirmar." />}
+          ) : <Aviso tono="cuidado" texto="El dinero sale de la caja al confirmar." />}
           <BotonGrande texto={ocupado ? 'Un momento…' : m.boton} color={m.color}
             deshabilitado={ocupado || (m.rotulo && motivo.trim().length < 3)} onPress={hacer} />
         </ScrollView>

@@ -46,14 +46,12 @@ export default function CerrarElDiaAhora({ sala = '', hora = '', ocupado = false
 
             <LiquidModal.Body className="space-y-3">
                 <Notice variant="info" icon={Lock}>
-                    Es la hora de cierre de esta sala y el conteo ya quedó firmado. Cerrar el
-                    día emite el cierre y termina la jornada de esta caja.
+                    Ya es la hora de cierre y el conteo está firmado. Al cerrar el día, termina la jornada de esta caja.
                 </Notice>
                 <Notice variant="danger" icon={AlertTriangle}>
                     <span className="font-bold">No se puede deshacer.</span>
                     <span className="block mt-0.5 font-normal">
-                        La caja de este día no se vuelve a abrir: lo que quede sin anotar ya no se
-                        podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
+                        La caja de hoy no se vuelve a abrir. Lo que no esté anotado ya no se podrá anotar. Las bolsas de hoy quedan en un día cerrado.
                     </span>
                 </Notice>
                 {/* El motivo del rechazo se dice acá y no en un aviso que se va

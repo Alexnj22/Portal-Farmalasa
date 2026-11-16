@@ -72,7 +72,7 @@ function RetirarApartado() {
   });
 
   const hacerVale = () => Alert.alert(`¿Hacer el vale de ${formatMoney(Number(v.efectivo))}?`,
-    'Primero factura al contado por el total. El vale saca del cajón el anticipo, que la factura vuelve a contar.', [
+    'Primero factura al contado por el total. El vale saca de la caja el anticipo, que la factura vuelve a contar.', [
       { text: 'Volver', style: 'cancel' },
       { text: 'Hacer el vale', onPress: () => correr('Haciendo el vale…', async () => {
         const r = await anotarSalida({ sala, monto: Number(v.efectivo), concepto: `Aplica anticipo ${v.codigo}`,
@@ -134,7 +134,7 @@ function RetirarApartado() {
                 ) : null}
                 {alContado ? (
                   <>
-                    <Aviso texto={`1. Factura AL CONTADO por ${formatMoney(Number(v.total))}${Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.\n2. Haz el vale: saca del cajón los ${formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.`} />
+                    <Aviso texto={`1. Factura AL CONTADO por ${formatMoney(Number(v.total))}${Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.\n2. Haz el vale: saca de la caja los ${formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.`} />
                     <BotonGrande texto={ocupado ? 'Haciendo el vale…' : 'Hacer el vale'} color={MARCA.verde} deshabilitado={ocupado} onPress={hacerVale} />
                   </>
                 ) : (

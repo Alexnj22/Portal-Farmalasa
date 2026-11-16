@@ -302,9 +302,7 @@ export default function AbonosDeDiferencia({
             )}
 
             <p className="text-caption text-content-3">
-                Al abonar, el portal hace el ingreso en la caja de la sala: el siguiente corte ya lo
-                cuenta. Con la caja cerrada no se puede abonar. Es una reposición voluntaria y nunca
-                se descuenta del salario.
+                Al abonar, el ingreso entra a la caja de la sucursal y el siguiente corte ya lo cuenta. Con la caja cerrada no se puede abonar. Es una reposición voluntaria. Nunca se descuenta del salario.
             </p>
         </div>
     );

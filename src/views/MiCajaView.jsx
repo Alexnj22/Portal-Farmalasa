@@ -708,7 +708,7 @@ export default function MiCajaView({ comoPestana = false }) {
         // «anotado» a secas haría creer que no falta nada.
         else if (r.movimiento?.autorizacion === 'PENDIENTE') {
             showToast('Anotado, falta autorizarlo',
-                'No hay comprobante: lo revisa Supervisión o Talento Humano.', 'warning');
+                'No hay comprobante. Lo revisa Supervisión o Talento Humano.', 'warning');
         } else if (exito) showToast(exito, '', 'success');
         setDialogo(null);
         cargar();
@@ -730,7 +730,7 @@ export default function MiCajaView({ comoPestana = false }) {
             const r = await subirComprobanteOEncolar(pago.foto, { salaId: sala, userId: idDeUsuario });
             if (r.pendiente) {
                 showToast('La foto se sube sola',
-                    'El servicio de archivos no respondió: la foto del comprobante quedó en este equipo y se sube sola. No hace falta repetir nada.', 'warning');
+                    'La foto del comprobante quedó guardada en este equipo y se sube sola. No tienes que repetir nada.', 'warning');
             }
             return { url: r.url };
         } catch (e) {
@@ -1098,7 +1098,7 @@ export default function MiCajaView({ comoPestana = false }) {
                             value={!sala ? '—' : noSePudo ? 'No se pudo leer'
                                 : turnoParado ? 'Hay que iniciarlo'
                                     : estado?.abierta ? (estado.desde || 'Abierta')
-                                        : diaCerrado ? 'Ya salió el corte Z' : 'Sin turno'}
+                                        : diaCerrado ? 'Ya se cerró el día' : 'Sin turno'}
                             sub={!sala || noSePudo ? undefined
                                 : turnoParado ? 'La caja sigue abierta'
                                     : estado?.abierta
@@ -1175,23 +1175,23 @@ export default function MiCajaView({ comoPestana = false }) {
                 </div>
 
                 {!sala && alcance === 'ALL' && (conCaja === null || !branches.length) && (
-                    <EmptyState compact icon={Wallet} title="Buscando las salas…"
-                        subtitle="Un momento: estoy viendo qué salas tienen caja." />
+                    <EmptyState compact icon={Wallet} title="Buscando las sucursales…"
+                        subtitle="Buscando qué sucursales tienen caja." />
                 )}
                 {!sala && !(alcance === 'ALL' && (conCaja === null || !branches.length)) && (
                     <EmptyState compact icon={Wallet}
-                        title={salas.length ? 'Elige una sala'
-                            : alcance !== 'ALL' ? 'Tu ficha no está en una sala'
-                                : 'Sin salas con caja'}
+                        title={salas.length ? 'Elige una sucursal'
+                            : alcance !== 'ALL' ? 'No tienes una sucursal asignada'
+                                : 'No hay sucursales con caja'}
                         subtitle={salas.length
-                            ? 'Tu ficha no está en una sala con caja: elige arriba cuál quieres mirar.'
+                            ? 'No tienes una sucursal con caja asignada. Elige arriba cuál quieres ver.'
                             /* Con alcance de una sola sala y sin sala en la ficha no hay
                                NADA que ofrecer, y decir «todavía no se ha visto ninguna
                                caja abierta» manda a mirar la caja cuando lo que falta es
                                la ficha. Son dos vacíos distintos y se leían igual. */
                             : alcance !== 'ALL'
-                                ? 'Solo puedes operar la caja de tu sala, y tu ficha no tiene ninguna asignada. Pídeselo a Talento Humano.'
-                                : 'Todavía no se ha visto ninguna caja abierta, así que no hay nada que mostrar.'} />
+                                ? 'Solo puedes operar la caja de tu sucursal, y no tienes ninguna asignada. Pídesela a Talento Humano.'
+                                : 'Todavía no hay ninguna caja abierta.'} />
                 )}
 
                 {/* Cómo va la sala contra la meta de HOY. Va acá arriba y no
@@ -1205,10 +1205,9 @@ export default function MiCajaView({ comoPestana = false }) {
 
                 {sala && !cargando && noSePudo && (
                     <Notice variant="danger" icon={AlertTriangle}>
-                        <span className="font-bold">No se pudo leer la caja de esta sala.</span>
+                        <span className="font-bold">No se pudo leer la caja de esta sucursal.</span>
                         <span className="block mt-0.5 font-normal">
-                            {noSePudo} — no se sabe si está abierta, así que no se ofrece ninguna
-                            acción: abrir una caja que ya está abierta la deja partida en dos.
+                            {noSePudo}. No se sabe si está abierta, así que por ahora no puedes hacer nada aquí.
                         </span>
                         <span className="block mt-2">
                             <Button variant="secondary" size="sm" onClick={cargar}>Volver a intentar</Button>
@@ -1505,8 +1504,7 @@ export default function MiCajaView({ comoPestana = false }) {
                     );
                     if (!mio) {
                         showToast('Todavía no aparece el corte',
-                            'Se registró en la caja y llega al portal en unos minutos. '
-                            + 'Confírmalo desde Cortes.', 'warning');
+                            'Ya se registró. Aparece en el portal en unos minutos. ' + 'Confírmalo desde Cortes.', 'warning');
                         return;
                     }
                     /* ── LOS DOS PAPELES LOS MANDA `resolver`, no esta vista ─
@@ -1579,8 +1577,7 @@ export default function MiCajaView({ comoPestana = false }) {
                      * con haber cerrado un diálogo. */
                     if (resultado?.ok) {
                         showToast('El corte quedó sin resolver',
-                            'No se confirmó ni se descartó. Mientras siga así no se puede '
-                            + 'hacer otro corte ni cerrar el día.', 'warning', 9000);
+                            'No se confirmó ni se descartó. Hasta resolverlo, no puedes ' + 'hacer otro corte ni cerrar el día.', 'warning', 9000);
                     }
                     setDialogo(null); setResultado(null);
                 }}
@@ -1873,7 +1870,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                             Efectivo en caja
                                         </TituloDeSeccion>
                                         <p className="text-caption text-content-3">
-                                            {puedeSumar ? 'lo que debería haber en el cajón' : 'sin la cuenta completa todavía'}
+                                            {puedeSumar ? 'lo que debería haber en la caja' : 'sin la cuenta completa todavía'}
                                         </p>
                                     </div>
                                     {puedeSumar && (
@@ -1905,7 +1902,7 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                                 Mezclarlo arriba sería contar
                                                 billetes que nadie va a encontrar. */}
                                             {Number(pz.entradas_no_efectivo || 0) > 0.005 && (
-                                                <Renglon rotulo="Ingresos con tarjeta o transferencia (no están en el cajón)"
+                                                <Renglon rotulo="Ingresos con tarjeta o transferencia (no están en la caja)"
                                                     monto={Number(pz.entradas_no_efectivo)} apagado />
                                             )}
                                         </>
@@ -2135,7 +2132,7 @@ function Movimiento({ l, corte, saly, abierto, onAlternar, quien, puedeOperar, o
                             {l.sinCaja && <Marca tono="aviso">No llegó a la caja</Marca>}
                             {pendiente && <Marca tono="aviso">Corrección pendiente</Marca>}
                             {!pendiente && corregido && <Marca tono="apagada">Corregido</Marca>}
-                            {l.sinEfectivo && <Marca tono="apagada">No entra al cajón</Marca>}
+                            {l.sinEfectivo && <Marca tono="apagada">No entra a la caja</Marca>}
                             {l.autorizacion === 'PENDIENTE' && <Marca tono="aviso">Falta autorizarlo</Marca>}
                             {l.autorizacion === 'RECHAZADA' && <Marca tono="aviso">No se autorizó</Marca>}
                             {ROTULO_DE_ORIGEN[l.montoOrigen] && (
@@ -2973,9 +2970,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             titulo={entra ? 'Anotar un ingreso' : 'Anotar una salida'}
             bajada={entra
                 ? (noEfectivo
-                    ? 'Queda anotado en el portal. No entra al cajón ni a la caja: el dinero llega por otra vía.'
-                    : 'Dinero que entra a la caja y no es una venta: el pago de un recibo, un depósito a cuenta.')
-                : 'Sale del cajón porque ninguna bolsa de cortes anteriores alcanza. Esto sí se le anota a la caja.'}
+                    ? 'Queda anotado en el portal. Este dinero no entra a la caja.'
+                    : 'Dinero que entra a la caja y no es una venta. Por ejemplo, el pago de un recibo o un abono.')
+                : 'Sale de la caja porque no alcanza ninguna bolsa de cortes anteriores.'}
             pie={<>
                 {/* Lo que falta, al lado del botón, y lleva al campo (2026-11-14). */}
                 {queFaltaEnDatos && !enviando && <AvisoDeFalta motivo={queFaltaEnDatos.texto} onIr={queFaltaEnDatos.campo ? () => irAlCampo(queFaltaEnDatos.campo) : null} />}
@@ -3184,7 +3181,7 @@ function AvisoDePreventas({ preventas, que }) {
                     : `Hay ${preventas.length} preventas guardadas sin finalizar`}
             </span>
             <span className="block mt-0.5 font-normal text-content-2">
-                Puede ser dinero que ya está en el cajón y todavía no es venta. Finalízala o
+                Puede ser dinero que ya está en la caja y todavía no es venta. Finalízala o
                 elimínala en la caja antes de {que}.
             </span>
             <span className="block mt-1 font-normal">
@@ -3232,13 +3229,11 @@ function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsa
         return (
             <Marco abierto={abierto} onClose={onClose}
                 titulo={cuantos === 1 ? 'Hay un corte sin resolver' : 'Hay cortes sin resolver'}
-                bajada="Antes de hacer otro corte hay que decir qué pasa con el que quedó a medias."
+                bajada="Antes de hacer otro corte, hay que resolver el que quedó pendiente."
                 pie={<Button variant="ghost" onClick={onClose}>Cerrar</Button>}
             >
                 <Notice variant="warning" icon={AlertTriangle}>
-                    Los cortes del día se <b>suman</b>: el de la noche contiene al de la
-                    mañana. Mientras uno quede sin confirmar ni descartar, el que venga
-                    después tampoco se va a poder confirmar.
+                    Los cortes del día se <b>suman</b>. Si uno queda sin confirmar ni descartar, el siguiente tampoco se puede confirmar.
                 </Notice>
                 {firmables.length === 0 ? (
                     <p className="text-body-sm text-content-2">
@@ -3375,7 +3370,7 @@ function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsa
                     )}
                     {!resultado.ok && (
                         <p className="text-caption text-danger-text">
-                            El corte no quedó registrado: {resultado.respuesta || 'el sistema lo rechazó'}
+                            El corte no quedó registrado: {resultado.respuesta || 'no se aceptó'}
                         </p>
                     )}
                     {/* El corte se registró pero NO del tipo que se pidió, o no
@@ -3416,14 +3411,14 @@ function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsa
         return (
             <Marco abierto={abierto} onClose={NADA} titulo="Haciendo el corte">
                 <EsperaDeLaCaja pasos={PASOS_DEL_CORTE}
-                    aviso="El corte ya se está registrando en la caja. Si cierras ahora, queda hecho pero sin resolver." />
+                    aviso="El corte se está registrando. Si cierras ahora, queda hecho pero sin resolver." />
             </Marco>
         );
     }
 
     return (
         <Marco abierto={abierto} onClose={onClose} titulo="Hacer el corte"
-            bajada="Cuenta SÓLO el efectivo que hay en el cajón ahora. Lo que ya está en las bolsas de hoy lo suma el portal."
+            bajada="Cuenta solo el efectivo que hay en la caja ahora. Lo de las bolsas de hoy lo suma el portal."
             pie={<>
                 <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                 <Button variant="primary" disabled={ocupado || !valido || preventas.length > 0}
@@ -3436,7 +3431,7 @@ function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsa
                     Antes del corte se anota un <b>vale de caja</b> con {pendientes} salida{pendientes === 1 ? '' : 's'} del día.
                 </Notice>
             )}
-            <PortalInput label="Efectivo en el cajón" inputMode="decimal" value={efectivo}
+            <PortalInput label="Efectivo en la caja" inputMode="decimal" value={efectivo}
                 onChange={(e) => setEfectivo(e.target.value)} placeholder="0.00" autoFocus />
 
             {/* La suma, a la vista.
@@ -3459,8 +3454,7 @@ function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsa
                         <span className="tabular-nums font-black text-content">{formatMoney(declarado)}</span>
                     </div>
                     <p className="text-caption text-content-3">
-                        El sistema de la caja cuenta el día entero, así que el corte declara todo
-                        lo del día — no sólo lo del cajón.
+                        El corte declara todo lo del día, no solo lo que hay en la caja ahora.
                     </p>
                 </div>
             )}
@@ -3503,9 +3497,7 @@ function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VA
                     ? `El corte de las ${horas} no está confirmado ni descartado.`
                     : `Quedaron ${sinResolver.length} cortes sin confirmar ni descartar (${horas}).`}>
                 <Notice variant="warning" icon={AlertTriangle}>
-                    Los cortes del día se <b>suman</b> entre sí, así que uno sin resolver deja
-                    sin base a los que vienen después. Resuélvelo en <b>Cortes</b> antes de
-                    cerrar — el cierre no se deshace.
+                    Los cortes del día se <b>suman</b>. Si uno queda sin resolver, los siguientes no cuadran. Resuélvelo en <b>Cortes</b> antes de cerrar. El cierre no se deshace.
                 </Notice>
                 <div className="flex justify-end">
                     <Button variant="primary" onClick={onClose}>Entendido</Button>
@@ -3527,11 +3519,8 @@ function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VA
                     : 'Esta caja todavía no tiene ningún corte del día.'}>
                 <Notice variant="warning" icon={AlertTriangle}>
                     {sinConfirmar
-                        ? <>Un corte descartado o sin revisar no cuenta como conteo del día:
-                            si fue una prueba, no es final. Confírmalo en <b>Cortes</b> antes de
-                            cerrar — el cierre no se deshace.</>
-                        : <>Si cierras ahora, el efectivo de toda la jornada queda sin contar ni una vez,
-                            y el cierre no se deshace. Haz el corte primero.</>}
+                        ? <>Un corte descartado o sin revisar no cuenta. Confírmalo en <b>Cortes</b> antes de cerrar. El cierre no se deshace.</>
+                        : <>Si cierras ahora, el efectivo de todo el día queda sin contar. El cierre no se deshace. Haz el corte primero.</>}
                 </Notice>
                 <div className="flex justify-end">
                     <Button variant="primary" onClick={onClose}>Entendido</Button>
@@ -3570,8 +3559,7 @@ function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VA
                 titulo="No se pudo revisar la caja"
                 bajada="No se pudo comprobar si quedó dinero sin contar.">
                 <Notice variant="warning" icon={AlertTriangle}>
-                    El día no se cierra sin saberlo: el cierre no se deshace y la caja
-                    no vuelve a abrir hasta mañana. Vuelve a intentarlo en un momento.
+                    Sin saberlo no se puede cerrar el día. Vuelve a intentarlo en un momento.
                 </Notice>
                 <div className="flex justify-end">
                     <Button variant="primary" onClick={onClose}>Entendido</Button>
@@ -3606,7 +3594,7 @@ function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VA
         return (
             <Marco abierto onClose={NADA} titulo="Cerrando el día">
                 <EsperaDeLaCaja pasos={PASOS_DEL_CIERRE} estimadoSeg={12}
-                    aviso="El cierre ya se está registrando en la caja y no se deshace. Espera a que confirme." />
+                    aviso="El cierre se está registrando y no se deshace. Espera a que termine." />
             </Marco>
         );
     }
@@ -3624,8 +3612,7 @@ function DialogoCerrar({ sala, ocupado, sinCorte, sinConfirmar, sinResolver = VA
             <Notice variant="danger" icon={AlertTriangle}>
                 <span className="font-bold">No se puede deshacer.</span>
                 <span className="block mt-0.5 font-normal">
-                    La caja de este día no se vuelve a abrir: lo que quede sin anotar ya no se
-                    podrá anotar, y las bolsas de hoy pasan a ser de un día cerrado.
+                    La caja de hoy no se vuelve a abrir. Lo que no anotaste ya no se podrá anotar.
                 </span>
             </Notice>
         </Marco>
@@ -3705,7 +3692,7 @@ function FrenoDeEfectivoSinContar({ sala, falta, pendiente, ocupado, onClose, on
                 <>
                     <Notice variant="danger" icon={AlertTriangle}>
                         El día se cierra con <b>{formatMoney(pendiente)}</b> que ningún corte contó.
-                        Queda anotado con tu nombre y el motivo, y le avisa a supervisión.
+                        Queda anotado con tu nombre y el motivo, y se avisa a tu jefe inmediato.
                         El cierre no se deshace.
                     </Notice>
                     <LiquidSelect label="Motivo" placeholder="Elige el motivo" value={motivo}
@@ -3714,8 +3701,7 @@ function FrenoDeEfectivoSinContar({ sala, falta, pendiente, ocupado, onClose, on
             ) : (
                 <>
                     <Notice variant="warning" icon={AlertTriangle}>
-                        Si cierras ahora, ese dinero queda <b>fuera de todo conteo</b>: la caja
-                        no vuelve a abrir hasta mañana y el cierre no se deshace. Haz el corte
+                        Si cierras ahora, ese dinero queda <b>sin contar</b>. El cierre no se deshace. Haz el corte
                         primero.
                     </Notice>
                     <div className="flex justify-end">
@@ -3775,7 +3761,7 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
                 <p className={`text-caption ${movimiento.erp_movimiento_id ? 'text-content-2' : 'text-warning-text font-semibold'}`}>
                     {movimiento.erp_movimiento_id
                         ? `Este está en la caja (n.º ${movimiento.erp_movimiento_id}).`
-                        : 'Este no llegó a la caja: anularlo sólo lo quita del portal.'}
+                        : 'Este no llegó a la caja. Si lo anulas, solo se quita del portal.'}
                 </p>
             )}
             <div className="flex gap-2">
@@ -3807,10 +3793,10 @@ function DialogoCorregir({ movimiento, ocupado, onClose, onPedir }) {
                     {formaNueva && (
                         <p className="text-caption text-content-3">
                             {formaNueva === 'EFECTIVO'
-                                ? 'Al aprobarse, el monto entra a la caja del día: el cajón tiene que tenerlo.'
+                                ? 'Al aprobarse, el monto se suma a la caja del día. El dinero tiene que estar en la caja.'
                                 : formaActual === 'EFECTIVO'
-                                    ? 'Al aprobarse, el monto sale de la caja: el cajón deja de esperarlo.'
-                                    : 'No toca la caja: sólo cambia el comprobante.'}
+                                    ? 'Al aprobarse, el monto sale de la caja del día.'
+                                    : 'No cambia la caja. Solo cambia el comprobante.'}
                         </p>
                     )}
                 </>

@@ -186,7 +186,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
             return;
         }
         showToast?.('Diferencia corregida',
-            'Queda como causa encontrada: no mueve dinero, así que sale de esta lista.', 'success');
+            'Queda como causa encontrada y sale de esta lista.', 'success');
         setCorrigiendo(null);
         setMotivoCorregir('');
         setCausaCorregir('');
@@ -225,7 +225,7 @@ export default function AsentarDiferencias({ abierto, diferencias = [], nombreSa
                                     {nombreSala[g.branchId] || `Sucursal ${g.branchId}`}
                                 </span>
                                 <span className="text-caption text-content-2">
-                                    {g.entra ? 'Ingreso · entró al cajón' : 'Vale · salió del cajón'}
+                                    {g.entra ? 'Ingreso · entró a la caja' : 'Vale · salió de la caja'}
                                 </span>
                             </div>
 

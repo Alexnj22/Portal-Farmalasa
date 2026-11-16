@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.12 — Lenguaje: Caja con frases cortas
+
+- Tercera tanda de la revisión del lenguaje: Caja (Mi Caja, cortes, cobros,
+  diferencias, bonos y los textos que arman `cajaDelDia`, `cortesDiagnostico`
+  y `distribucionCaja`), unos 140 textos. Frases cortas, sin rayas, y el
+  vocabulario de `docs/reglas/como-habla-el-portal.md`: «cajón» → caja (también
+  en toda la app), «corte Z» → cierre del día, «sala» → sucursal, «ficha» →
+  datos/registrado, «jefatura» → jefe inmediato.
+- Arreglo de paso: «Ninguna sala sala tiene N» decía la palabra dos veces.
+
 ## v2.1551.11 — Datos de mercado: más parejas en alta
 
 El emparejador deja de tomar por variante el genérico que la SRS escribe en

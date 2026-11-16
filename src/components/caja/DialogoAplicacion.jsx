@@ -79,7 +79,7 @@ import { irAlCampo } from '../../plataforma/irAlCampo';
  * cobrar, frena en vez de cobrar otro número del que se le dijo al cliente.
  */
 
-const AYUDA_FICHA_TRAIDA = 'Obligatorio: la aplicación queda en su historial y la ve en su app. Si no tiene ficha, créala aquí.';
+const AYUDA_FICHA_TRAIDA = 'Obligatorio. La aplicación queda en su historial y la ve en su app. Si no está registrado, regístralo aquí.';
 const MODOS = [
     { value: 'COMPRADA', label: 'Compró aquí' },
     // Arriba, a la par de «Compró aquí» (usuario, 2026-10-03): antes era un enlace
@@ -477,7 +477,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         </>) : (
                         <div className="space-y-2">
                             <p className="text-body-sm text-content-2">
-                                Escribe el número de control del ticket (el final, por ejemplo 47959) o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal.
+                                Escribe el número de control del ticket (el final, por ejemplo 47959) o, si no lo trae, el nombre del cliente. Solo así aparece una venta de otra sucursal.
                             </p>
                                 <>
                                     <div className="flex items-end gap-2">
@@ -497,7 +497,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                         <p className="text-body-sm text-content-3">
                                             {esNombre(comprobante)
                                                 ? 'Ningún cliente con ese nombre tiene una venta con inyección en los últimos 90 días. Revisa cómo se escribió.'
-                                                : 'No hay una venta con ese número en los últimos 90 días. Revisa el número de control del ticket; una venta de hoy puede tardar unos minutos en aparecer.'}
+                                                : 'No hay una venta con ese número en los últimos 90 días. Revisa el número de control del ticket. Una venta de hoy puede tardar unos minutos en aparecer.'}
                                         </p>
                                     )}
                                     {encontradas && encontradas.length > 0 && (
@@ -513,7 +513,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                             {numeroDeTicket(v)} · {v.sala}{v.cliente ? ` · ${v.cliente}` : ''}
                                                         </p>
                                                         <p className="text-caption text-content-2">
-                                                            {v.estado === 'sin_inyeccion' ? 'Esa venta no tiene inyecciones: no corresponde a una aplicación.'
+                                                            {v.estado === 'sin_inyeccion' ? 'Esa venta no tiene inyecciones.'
                                                                 : v.estado === 'pagada' ? 'Esa venta ya tiene todas sus aplicaciones pagadas.'
                                                                     : 'Esa venta está anulada.'}
                                                         </p>
@@ -546,7 +546,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 {(venta.renglones || []).filter((r) => r.disponibles > 0).length >= 2 && (
                                     <Checkbox checked={mezcla} onChange={(v) => setMezcla(v)}
                                         label="Se mezclan en la misma jeringa"
-                                        description="Cuenta y se cobra como una sola aplicación; cada producto descuenta lo suyo." />
+                                        description="Se cobra como una sola aplicación. Cada producto descuenta lo suyo." />
                                 )}
                                 {(venta.renglones || []).filter((r) => r.disponibles > 0).map((r) => {
                                     const saldo = saldoDelRenglon(r, dosis[r.linea_num]);
@@ -637,7 +637,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                 {renglonesSinLote.length > 0 && (
                                     <div className="space-y-3 pt-2 border-t border-border-card">
                                         <p className="text-caption text-content-3">
-                                            La factura no dice qué ampolla es: escribe el lote y el vencimiento impresos en ella.
+                                            La factura no dice qué ampolla es. Escribe el lote y el vencimiento que trae.
                                         </p>
                                         {renglonesSinLote.map((r) => (
                                             <LoteDeAmpolla key={r.linea_num} campo={`lote-${r.linea_num}`} titulo={r.descripcion} producto={r.descripcion}

@@ -92,19 +92,19 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Apartar o encargar">
             <LiquidModal.Header titulo="Apartar o encargar"
-                subtitulo="Si hay en la sala se aparta con anticipo; si no hay, se encarga y Compras confirma el precio."
+                subtitulo="Si hay en la sucursal, se aparta con anticipo. Si no hay, se encarga y Compras confirma el precio."
                 onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <SegmentedControl label="Qué hacer" value={vista} onChange={setVista}
                         options={[{ value: 'nuevo', label: 'Nuevo' }, { value: 'cobrar', label: 'Por cobrar' }]} />
                     {salas?.length > 1 && onCambiarSala && (
-                        <LiquidSelect label="Sala donde retira" value={String(sala ?? '')} options={salas}
+                        <LiquidSelect label="Sucursal donde retira" value={String(sala ?? '')} options={salas}
                             onChange={(v) => v && onCambiarSala(v)} />
                     )}
                     {!cobraEnCaja && (
                         <p className="text-caption text-content-3 ml-1">
-                            No es tu sala: el anticipo se cobra por enlace de pago, o se aparta sin anticipo.
+                            No es tu sucursal. El anticipo se cobra por enlace de pago o se aparta sin anticipo.
                         </p>
                     )}
                     {vista === 'nuevo'
@@ -387,7 +387,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
         <div className="space-y-6">
             <Seccion titulo="Cliente" campo="cliente">
                 <BuscarFicha ficha={cliente} onElegir={(c) => { setCliente(c); setTelOk(false); }} rotulo="Cliente"
-                    ayuda="Búscalo en el listado de clientes. Si no tiene ficha, créala primero en Clientes." />
+                    ayuda="Búscalo en el listado de clientes. Si no está registrado, regístralo primero en Clientes." />
                 {cliente && (
                     <TelefonoDelCliente cliente={cliente} confirmado={telOk} onConfirmar={() => setTelOk(true)}
                         onCambiado={(phone) => { setCliente((c) => ({ ...c, phone })); setTelOk(true); }} />
@@ -484,7 +484,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                         </Notice>
                     ) : modo === 'reserva' ? (
                         <Notice variant="success" compact icon={PackageSearch}>
-                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta{sinAnticipo ? '' : ` ${plazoAlApartar(reglasDeReserva)}`}</b> con el precio de hoy.
+                            Hay {Number(opciones.disponibles)} en esta sucursal: <b>se aparta{sinAnticipo ? '' : ` ${plazoAlApartar(reglasDeReserva)}`}</b> con el precio de hoy.
                         </Notice>
                     ) : modo === 'traslado' ? (
                         <Notice variant="info" compact icon={ArrowLeftRight}>
@@ -498,7 +498,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                     ) : null}
                     {conAnticipo && opciones.baja_rotacion && (
                         <p className="text-caption text-warning-text ml-1">
-                            Es de muy baja rotación: se sugiere cobrarlo completo, pero <b>puede dejar menos</b> con «Otro monto».
+                            Se vende muy poco. Se sugiere cobrarlo completo, pero <b>puede dejar menos</b> con «Otro monto».
                         </p>
                     )}
                     {puedeApartarOtro && (
@@ -540,7 +540,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                         </>)}
                         {enPedido && !sinAnticipo && (
                             <p className="text-caption text-content-3">
-                                Un solo cobro: cada producto queda apartado con su parte y se retira con el código del pedido.
+                                Un solo cobro. Cada producto queda apartado con su parte y se retira con el código del pedido.
                             </p>
                         )}
                     </div>
@@ -594,7 +594,7 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
             };
         }),
         { value: 'no', activa: elegidos.length === 0, onClick: () => elegir([]),
-            titulo: 'No: pedirlo a otra sala o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
+            titulo: 'No: pedirlo a otra sucursal o encargarlo', detalle: 'Lo que viene queda para quien lo pidió' },
     ];
     const elegidosV = vienen.filter((v) => elegidos.includes(v.id));
     // Plegada: una sola fila con lo elegido; tocarla vuelve a abrir la lista.
@@ -605,7 +605,7 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
                 title={elegidosV.length ? `Viene de ${elegidosV.map((v) => v.origen).join(' y ')}` : 'No se toma lo que viene en camino'}
                 subtitle={elegidosV.length
                     ? `${Math.min(Math.floor(tomadas / f), cantidad)} de ${cantidad} · ${elegidosV.every((v) => v.estado === 'enviado') ? 'ya salió' : 'pedido, todavía no sale'}`
-                    : 'Se pide a otra sala o se encarga'}
+                    : 'Se pide a otra sucursal o se encarga'}
                 trailing={<span className="text-caption font-semibold text-brand-text">Cambiar</span>} />
         );
     }
@@ -733,7 +733,7 @@ function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoApa
 
             {enCatalogo.length > 0 && (
                 <div className="space-y-1.5">
-                    <Notice variant="success" compact icon={Check}><b>Ya lo tenemos en el catálogo.</b> Elige el que es para apartarlo o encargarlo.</Notice>
+                    <Notice variant="success" compact icon={Check}><b>Ya está registrado.</b> Elige el que es para apartarlo o encargarlo.</Notice>
                     <ul className="space-y-1.5">
                         {enCatalogo.map((p) => (
                             <li key={p.id}>
@@ -813,7 +813,7 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
             await updateCustomerFiscal(cliente.id, { phone: tel }, {}, { nombre: cliente.name });
             const r = await pushClienteAlErp(cliente.id);
             if (!r?.empujado) showToast('Teléfono guardado', motivoSinAplicar(r), 'info');
-            else showToast('Teléfono actualizado', 'Quedó en la ficha del cliente.', 'success');
+            else showToast('Teléfono actualizado', 'Quedó en los datos del cliente.', 'success');
             setEditando(false);
             onCambiado(tel);
         } catch (e) {
@@ -849,7 +849,7 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
                     <span className="font-semibold tabular-nums">{actual}</span>
                     {confirmado && <Check size={14} className="text-success-text shrink-0" aria-label="Confirmado" />}
                 </p>
-                {!confirmado && <p className="text-caption text-warning-text">Pregúntale al cliente si este número es correcto: ahí le llega el aviso.</p>}
+                {!confirmado && <p className="text-caption text-warning-text">Pregúntale al cliente si este número es correcto. Ahí le llega el aviso.</p>}
             </div>
             <div className="flex items-center gap-1">
                 {!confirmado && <Button variant="primary" size="sm" icon={Check} onClick={onConfirmar}>Es correcto</Button>}
@@ -941,7 +941,7 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
 
     if (enlace) return <EnlaceListo enlace={enlace} onListo={() => { setEnlace(null); setElegido(null); setVuelta((v) => v + 1); }} />;
     if (filas == null) return <p className="text-body-sm text-content-3">Cargando…</p>;
-    if (!filas.length) return <p className="text-body-sm text-content-3">No hay encargos confirmados ni reservas con saldo en esta sala.</p>;
+    if (!filas.length) return <p className="text-body-sm text-content-3">No hay encargos confirmados ni reservas con saldo en esta sucursal.</p>;
     const visibles = soloLaPedida && elegido ? filas.filter((f) => f.clave === elegido.clave) : filas;
     return (
         <div className="space-y-3">
@@ -1015,7 +1015,7 @@ function SinAnticipo({ total, confirmado, onConfirmar, atiende, enCamino }) {
         <div className="space-y-3">
             <Notice variant="warning" compact>
                 <b>No se cobra nada ahora.</b> El cliente paga {formatMoney(total)} completo al retirar.
-                {enCamino ? ' El plazo para retirar empieza cuando llegue a la sala.' : ' Sin anticipo el plazo para retirar es más corto: la fecha sale al apartar.'}
+                {enCamino ? ' El plazo para retirar empieza cuando llegue a la sucursal.' : ' Sin anticipo, el plazo para retirar es más corto. La fecha sale al apartar.'}
             </Notice>
             <Checkbox checked={confirmado} onChange={onConfirmar}
                 label={`Quedo como responsable de esta reserva${atiende ? ` (${shortEmployeeName(atiende)})` : ''}`}
@@ -1047,9 +1047,9 @@ function EnlaceListo({ enlace, nombreSala = null, onListo }) {
         <div className="space-y-4">
             <Notice variant={enlace.prueba ? 'warning' : 'success'} compact icon={Link2}>
                 <b>{enlace.codigo}</b> · enlace por {formatMoney(Number(enlace.monto))} para {shortEmployeeName(enlace.cliente ?? '')}.
-                {enlace.nueva && ' El producto queda separado 3 días mientras paga; al pagar, el plazo pasa a 7.'}
-                {' '}Cuando pague, la sala recibe el aviso y se suma solo.
-                {enlace.prueba && ' Este enlace es de PRUEBA: no cobra dinero.'}
+                {enlace.nueva && ' El producto queda separado 3 días mientras paga. Al pagar, el plazo pasa a 7.'}
+                {' '}Cuando pague, la sucursal recibe el aviso y se suma solo.
+                {enlace.prueba && ' Este enlace es de prueba. No cobra dinero.'}
             </Notice>
             <PortalInput label="Enlace" value={enlace.url} readOnly onFocus={(e) => e.target.select()} />
             <div className="flex flex-wrap justify-end gap-2">

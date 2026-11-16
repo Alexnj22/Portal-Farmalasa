@@ -437,9 +437,7 @@ export default function CorteDetalleModal({
                             <div data-surface="card" className="p-4 space-y-1">
                                 <div className="text-caption font-bold text-content">Esto es una lectura, no un corte</div>
                                 <p className="text-caption text-content-2">
-                                    Sólo imprime las ventas del turno: no cuenta el efectivo, así que no
-                                    tiene diferencia ni hay nada que confirmar. El efectivo lo cuenta el
-                                    corte de caja del mismo turno.
+                                    Solo imprime las ventas del turno. No cuenta el efectivo, así que no hay nada que confirmar. El efectivo lo cuenta el corte del mismo turno.
                                 </p>
                             </div>
                         ) : sinConteo ? (
@@ -453,14 +451,10 @@ export default function CorteDetalleModal({
                                 <div className="text-caption font-bold text-content">Este corte no contó el efectivo</div>
                                 <p className="text-caption text-content-2">
                                     Este corte quedó con <span className="tabular-nums">$0.00</span> de
-                                    efectivo contado y aun así se dio por exacto, así que no hay diferencia
-                                    que firmar. Suele pasar cuando el corte se manda sin escribir cuánto
-                                    se contó. Lo que corresponde es descartarlo y volver a hacerlo.
+                                    efectivo contado. Pasa cuando se manda sin escribir cuánto se contó. Descártalo y hazlo de nuevo.
                                 </p>
                                 <p className="text-caption text-content-3 pt-1">
-                                    El efectivo del día lo cuenta el corte que sí se hizo. Su cifra no se
-                                    repite en esta pantalla a propósito: dos números del mismo día en dos
-                                    pantallas es justo lo que hace dudar del bueno.
+                                    El efectivo del día lo cuenta el corte que sí se hizo.
                                 </p>
                             </div>
                         ) : (
@@ -477,7 +471,7 @@ export default function CorteDetalleModal({
                                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-divider">
                                     <Badge variant="neutral" size="sm" icon={Ban}>Descartado</Badge>
                                     <span className="text-caption text-content-3">
-                                        Este conteo se tiró: no cuenta para el día ni para los cortes que siguen.
+                                        Este conteo se descartó. No cuenta para el día ni para los cortes que siguen.
                                     </span>
                                 </div>
                             )}
@@ -550,9 +544,7 @@ export default function CorteDetalleModal({
                         {esZ && (
                             <p className="text-caption text-content-2 -mt-2 px-1">
                                 <span className="font-bold text-content">La tarjeta y el crédito no pasan por la caja.</span>{' '}
-                                La tarjeta se cobra por el POS, y el crédito entra recién cuando el
-                                cliente paga — ahí aparece como cobro de crédito en un corte
-                                posterior. Los cortes del día sólo cuentan el efectivo.
+                                La tarjeta se cobra por el POS. El crédito entra cuando el cliente paga, y aparece como cobro de crédito en un corte posterior. Los cortes del día solo cuentan el efectivo.
                             </p>
                         )}
 
@@ -569,7 +561,7 @@ export default function CorteDetalleModal({
                                 <span className="block mt-0.5 font-normal text-content-2">
                                     {modo === 'confirmar'
                                         ? 'Queda firmado a tu nombre y con la hora. Si sabes qué pasó, escríbelo abajo.'
-                                        : 'Sale de la cuenta del día y los cortes siguientes ya no lo toman en cuenta. Es para un conteo mal hecho, no para una diferencia que no cuadra.'}
+                                        : 'Sale de la cuenta del día y los cortes siguientes ya no lo toman en cuenta. Úsalo solo si el conteo se hizo mal.'}
                                 </span>
                             </Notice>
                         )}
@@ -686,8 +678,7 @@ export default function CorteDetalleModal({
                                         Vas a reabrir un corte que ya está {visible.estado === 'CONFIRMADO' ? 'confirmado' : 'descartado'}
                                     </span>
                                     <span className="block mt-0.5 font-normal text-content-2">
-                                        Vuelve a quedar pendiente y los cortes siguientes de la sala
-                                        se recalculan. Queda registrado quién lo reabrió y por qué.
+                                        Vuelve a quedar pendiente y los cortes siguientes de la sucursal se recalculan. Queda anotado quién lo reabrió y por qué.
                                     </span>
                                 </Notice>
                                 <div>
@@ -799,13 +790,11 @@ export default function CorteDetalleModal({
                                     revisa un descuadre se quedaría sin buscar. */}
                                 {abonos && !abonos.pude ? (
                                     <p className="text-caption text-content-2">
-                                        No puedes ver el detalle de estos cobros. El total ya está sumado,
-                                        pero para verlos uno por uno hace falta el permiso de la caja.
+                                        El total ya está sumado. Para ver cada cobro necesitas el permiso de la caja.
                                     </p>
                                 ) : cobros.antes.length === 0 && cobros.despues.length === 0 ? (
                                     <p className="text-caption text-content-2">
-                                        Ninguno se cobró desde el portal, así que no se sabe a qué hora entró
-                                        cada uno. Los que se cobren desde el portal sí quedan con su hora.
+                                        Ninguno se cobró desde el portal, así que no tienen hora. Los que se cobran desde el portal sí la tienen.
                                     </p>
                                 ) : (
                                     <ul className="space-y-1.5">
@@ -850,8 +839,7 @@ export default function CorteDetalleModal({
                                                 <span className="font-bold text-content">
                                                     {formatMoney(cobros.sinContar)} entraron en efectivo por cobros de crédito.
                                                 </span>{' '}
-                                                Ese dinero está en el cajón, así que se le sumó a lo que
-                                                debía haber en caja.{' '}
+                                                Ese dinero está en la caja, así que se sumó a lo que debía haber.{' '}
                                                 {/* ── La última frase depende de si QUEDÓ diferencia ──
                                                     «Sin sumarlo, el conteo aparece como un sobrante que
                                                     nadie hizo» describe lo que pasaría si NO se corrigiera,
@@ -867,8 +855,8 @@ export default function CorteDetalleModal({
                                                     `cifra`, la misma que pinta el encabezado — nombrar acá
                                                     otro número sería el defecto que se viene a corregir. */}
                                                 {sev === 'ok'
-                                                    ? 'Sin sumarlo, el conteo aparecería como un sobrante que nadie hizo.'
-                                                    : `El ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))} que dice arriba es aparte: no es de este cobro, y hay que buscarlo.`}
+                                                    ? 'Si no se sumara, el conteo saldría con un sobrante.'
+                                                    : `El ${sev === 'falta' ? 'faltante' : 'sobrante'} de ${formatMoney(Math.abs(cifra ?? 0))} de arriba es aparte. No es de este cobro y hay que buscarlo.`}
                                             </p>
                                         )}
                                         {cobros.noEfectivo > 0.005 && (
@@ -876,8 +864,7 @@ export default function CorteDetalleModal({
                                                 <span className="font-bold text-content">
                                                     {formatMoney(cobros.noEfectivo)} no entraron en efectivo.
                                                 </span>{' '}
-                                                Ese dinero no pasó por la caja ni entra en la cuenta del día,
-                                                así que no hay que buscarlo en el cajón.
+                                                Ese dinero no pasó por la caja. No hay que buscarlo ahí.
                                             </p>
                                         )}
                                         {cobros.despues.length > 0 && (
@@ -888,7 +875,7 @@ export default function CorteDetalleModal({
                                                         : `${cobros.despues.length} cobros más entraron después de este corte`}
                                                     {' '}({formatMoney(cobros.despues.reduce((t, a) => t + Number(a.monto || 0), 0))}).
                                                 </span>{' '}
-                                                Pertenecen al corte siguiente, no a éste.
+                                                Son del corte siguiente.
                                             </p>
                                         )}
                                         {cobros.antes.length > 0 && cobros.brecha < -0.005 && (

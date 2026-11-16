@@ -22,7 +22,7 @@ import Notice from '../common/Notice';
 /* `crear` (2026-10-28): si el cliente no aparece, se le crea la ficha ahí
  * mismo —nombre y apellido más teléfono o DUI—. La base devuelve la que ya
  * existía si el DUI o el nombre coinciden, en vez de duplicarla. */
-const AYUDA = 'Con su ficha, la aplicación queda en su historial y la ve en su app. Si no tiene, se cobra igual.';
+const AYUDA = 'Si está registrado, la aplicación queda en su historial y la ve en su app. Si no, se cobra igual.';
 const NUEVA = { nombre: '', telefono: '', dui: '' };
 
 export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = 'Queda en el historial de', crear = false }) {
@@ -66,7 +66,7 @@ export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = '
             // y si no llega ahora se asigna solo en unos minutos (2026-11-15).
             if (!c.existente) altaClienteEnCaja(c.id);
         } catch (e) {
-            setErrorNueva(mensajeAmigable(e, 'No se pudo crear la ficha'));
+            setErrorNueva(mensajeAmigable(e, 'No se pudo registrar al cliente'));
         } finally {
             setCreando(false);
         }
@@ -78,7 +78,7 @@ export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = '
                 <div className="min-w-0">
                     <p className="text-caption text-content-3">{rotulo}</p>
                     <p className="text-body-sm font-semibold text-content truncate">{ficha.name}</p>
-                    {yaExistia && <p className="text-caption text-content-3">Ya tenía ficha: se usa ésa.</p>}
+                    {yaExistia && <p className="text-caption text-content-3">Ya estaba registrado. Se usan sus datos.</p>}
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => { onElegir(null); setTexto(''); setYaExistia(false); }}>Cambiar</Button>
             </div>
@@ -109,7 +109,7 @@ export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = '
     return (
         <div className="space-y-1.5">
             <SearchInput value={texto} onChange={setTexto} placeholder="Cliente: nombre, DUI o teléfono"
-                ariaLabel="Buscar la ficha del cliente" />
+                ariaLabel="Buscar al cliente" />
             {ayuda && <p className="text-caption text-content-3">{ayuda}</p>}
             {buscando && <p className="text-caption text-content-3">Buscando…</p>}
             {resultados.length > 0 && (

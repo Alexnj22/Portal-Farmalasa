@@ -114,7 +114,7 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
             {l.anulado ? <Pildora texto="Anulado" color={colorSistema.texto2} /> : null}
             {pendiente ? <Pildora texto="Corrección pendiente" color={MARCA.ambar} /> : null}
             {!pendiente && corregido ? <Pildora texto="Corregido" color={colorSistema.texto2} /> : null}
-            {l.sinEfectivo ? <Pildora texto="No entra al cajón" color={colorSistema.texto2} /> : null}
+            {l.sinEfectivo ? <Pildora texto="No entra a la caja" color={colorSistema.texto2} /> : null}
             {ROTULO_DE_ORIGEN[l.montoOrigen] ? <Pildora texto={ROTULO_DE_ORIGEN[l.montoOrigen]} color={MARCA.ambar} /> : null}
           </View>
         ) : null}

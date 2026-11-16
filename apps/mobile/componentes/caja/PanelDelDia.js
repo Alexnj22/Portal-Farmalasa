@@ -87,7 +87,7 @@ export default function PanelDelDia({ estado, ventas, veLosMontos, entregas, per
                 <View style={{ flex: 1 }}>
                   <Text style={titulo}>Efectivo en caja</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                    {!veLosMontos ? 'se cuenta al cortar' : c.puedeSumar ? 'lo que debería haber en el cajón' : 'sin la cuenta completa todavía'}
+                    {!veLosMontos ? 'se cuenta al cortar' : c.puedeSumar ? 'lo que debería haber en la caja' : 'sin la cuenta completa todavía'}
                   </Text>
                 </View>
                 {veLosMontos && c.puedeSumar ? <Text style={{ color: MARCA.verde, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(c.enCaja)}</Text> : null}

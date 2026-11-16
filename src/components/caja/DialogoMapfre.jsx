@@ -93,7 +93,7 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
     return (
         <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Pago de asegurado Mapfre">
             <LiquidModal.Header titulo="Pago de asegurado Mapfre"
-                subtitulo="Elige la factura de Mapfre: lo que paga el asegurado sale del descuento de la factura."
+                subtitulo="Elige la factura de Mapfre. Lo que paga el asegurado sale del descuento de la factura."
                 onClose={enviando ? undefined : onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
@@ -113,7 +113,7 @@ export default function DialogoMapfre({ abierto, ocupado, sala, onClose, onCobra
 
                     {facturas == null ? <LoadingState /> : facturas.length === 0 ? (
                         <p className="text-body-sm text-content-3">
-                            {buscar ? 'Ninguna factura de Mapfre por cobrar coincide.' : 'No hay facturas de Mapfre por cobrar en esta sala. Una venta recién hecha tarda hasta un minuto en llegar.'}
+                            {buscar ? 'Ninguna factura de Mapfre por cobrar coincide.' : 'No hay facturas de Mapfre por cobrar en esta sucursal. Una venta recién hecha tarda hasta un minuto en llegar.'}
                         </p>
                     ) : (
                         <ul className="space-y-2 max-h-[40vh] overflow-y-auto">

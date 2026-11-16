@@ -312,7 +312,7 @@ function CuerpoDeFaltanteDeCaja({ d }) {
     <View style={{ gap: 8 }}>
       <CifraDe valor={`−${$(falta)}`} color={MARCA.rojo} de={esperado != null ? `de ${$(esperado)} que debía haber` : null} />
       {proporcion != null && proporcion * 100 >= 0.5 ? (
-        <Texto color={MARCA.rojo}>{`${(proporcion * 100).toFixed(1)}% de lo que debía haber en el cajón`}</Texto>
+        <Texto color={MARCA.rojo}>{`${(proporcion * 100).toFixed(1)}% de lo que debía haber en la caja`}</Texto>
       ) : null}
       {avance != null ? (
         <View style={{ gap: 4 }}>

@@ -280,10 +280,10 @@ function Nuevo({ sala, nombreSala, user }) {
     const metodo = FORMAS_DE_PAGO.find((f) => f.value === pago.forma)?.label ?? 'Efectivo';
     const quien = shortEmployeeName(cliente?.name ?? '');
     const texto = sinCatalogo ? `${quien} consulta ${cant} × ${nombreNuevo.trim()}. Bodega responde el precio y para cuándo.`
-      : enPedido ? `${quien} aparta ${renglonesDelPedido.length} productos en un pedido.\nTotal ${formatMoney(totalCobro)} · anticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${estadoPago.noEfectivo ? ' No entra al cajón.' : ` Entra a la caja de ${nombreSala}.`}`
+      : enPedido ? `${quien} aparta ${renglonesDelPedido.length} productos en un pedido.\nTotal ${formatMoney(totalCobro)} · anticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${estadoPago.noEfectivo ? ' No entra a la caja.' : ` Entra a la caja de ${nombreSala}.`}`
         : !conAnticipo ? `${quien} encarga ${soloEncargo ? `${lineas.length + (lineaActual ? 1 : 0)} productos` : `${cant} × ${nombreProducto}`}. Compras confirma el precio y la fecha; ahora no se cobra nada.`
           : cobroEn === 'enlace' ? `${quien} aparta ${cant} × ${nombreProducto}. Queda separado 3 días mientras paga; al pagar, el plazo pasa a 7.${modo === 'traslado' ? ` Se pide a ${traslado.sala}.` : ''}`
-            : `${quien} aparta ${cant} × ${nombreProducto}.\nAnticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${modo === 'traslado' ? ` Se pide a ${traslado.sala}.` : modo === 'viene' ? ' Queda en camino.' : ' 7 días.'}${estadoPago.noEfectivo ? ' No entra al cajón.' : ` Entra a la caja de ${nombreSala}.`}`;
+            : `${quien} aparta ${cant} × ${nombreProducto}.\nAnticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${modo === 'traslado' ? ` Se pide a ${traslado.sala}.` : modo === 'viene' ? ' Queda en camino.' : ' 7 días.'}${estadoPago.noEfectivo ? ' No entra a la caja.' : ` Entra a la caja de ${nombreSala}.`}`;
     Alert.alert(`¿${etiqueta}?`, texto, [{ text: 'Volver', style: 'cancel' }, { text: 'Sí', onPress: hacer }]);
   };
 

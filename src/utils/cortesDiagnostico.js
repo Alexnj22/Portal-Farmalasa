@@ -886,7 +886,7 @@ export function notaDeCifra(corte) {
              * mismo número (ver la nota de `porCobrosCredito` más abajo). Lo
              * único que hay que entender es que lo que se ve YA viene
              * corregido. */
-            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo y están en el cajón, así que se sumaron a lo que debía haber en caja: ${formatMoney(c.esperado)}. La diferencia que se muestra ya los tiene en cuenta.`,
+            detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo y están en la caja, así que se sumaron a lo que debía haber: ${formatMoney(c.esperado)}. La diferencia que se muestra ya los tiene en cuenta.`,
         };
     }
 
@@ -908,7 +908,7 @@ export function notaDeCifra(corte) {
         return {
             alerta: false,
             titulo: 'Los cobros de crédito se contaron de más',
-            detalle: `La otra cifra dice ${conSigno(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Es una falla al sumarlos, no algo que pasó en la caja. Vale ${conSigno(valor)}, que es lo que dan las ventas y los movimientos del día.`,
+            detalle: `La otra cifra dice ${conSigno(c.difErp)} porque suma ${cobros} ${veces} ${veces === 1 ? 'vez' : 'veces'} de más. Fue un error al sumarlos. La cifra buena es ${conSigno(valor)}, la que dan las ventas y los movimientos del día.`,
         };
     }
     return {
@@ -916,7 +916,7 @@ export function notaDeCifra(corte) {
         // conviene firmar. Por eso es la única que la vista pinta como aviso.
         alerta: true,
         titulo: 'Revisa los movimientos del día',
-        detalle: `Hay dos cifras (${conSigno(c.difErp)} y ${conSigno(c.difTicket)}) y ${formatMoney(Math.abs(c.brecha))} sin explicar. No conviene dar por bueno un faltante así.`,
+        detalle: `Hay dos cifras (${conSigno(c.difErp)} y ${conSigno(c.difTicket)}) y ${formatMoney(Math.abs(c.brecha))} sin explicar. No des por bueno un faltante así.`,
     };
 }
 
@@ -1108,7 +1108,7 @@ export function sugerenciasDeCorte(corte, movimientos = [], invisibles = [], cob
             if (Math.abs(Math.abs(f.total) - objetivo) > CENTAVO) continue;
             out.push({
                 titulo: `El sobrante es igual a ${formatMoney(Math.abs(f.total))} de ${f.tipo}`,
-                detalle: `Ese cobro no pasa por la caja, así que no entra en la cuenta del día. Si se contó como efectivo al hacer el corte, ahí está el sobrante.`,
+                detalle: `Ese cobro no pasa por la caja. Si se contó como efectivo en el corte, ahí está el sobrante.`,
             });
         }
     }

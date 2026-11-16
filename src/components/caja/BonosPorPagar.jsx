@@ -69,10 +69,10 @@ export default function BonosPorPagar({ sala, cajaAbierta, puedeOperar, onSalida
                     <p className="text-body-sm font-black text-content">Bonos de promoción por pagar</p>
                     <p className="text-label font-semibold text-content-3 mt-0.5">
                         {!datos?.puedo_pagar
-                            ? 'Los paga la jefatura de la sala.'
+                            ? 'Los paga el jefe inmediato.'
                             : !cajaAbierta
-                                ? 'Abre la caja para pagarlos: el efectivo sale del cajón.'
-                                : 'Cada pago sale del cajón y la persona tiene que identificarse para recibirlo.'}
+                                ? 'Abre la caja para pagarlos. El efectivo sale de la caja.'
+                                : 'Cada pago sale de la caja. Quien lo recibe tiene que identificarse.'}
                     </p>
                 </div>
                 <span className="text-body-sm font-black tabular-nums text-content">{formatMoney(total)}</span>
@@ -213,8 +213,7 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado, onSinConfirmar, o
                     <TituloDeSeccion nivel="tarjeta">Pagar bono · {nombre}</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         {item.promocion}{item.tipo === 'excedente' ? ' (excedente aprobado)' : ''}.
-                        Saca <b className="text-content">{formatMoney(monto)}</b> del cajón y
-                        entrégalo {esBodega ? 'a quien recibe por bodega' : `a ${nombre}`}.
+                        Saca <b className="text-content">{formatMoney(monto)}</b> de la caja y entrégalo {esBodega ? 'a quien recibe por bodega' : `a ${nombre}`}.
                     </p>
                 </div>
 
@@ -290,7 +289,7 @@ function DialogoSinConfirmar({ item, onClose, onResuelto }) {
                     <TituloDeSeccion nivel="tarjeta">Pago sin confirmar · {nombre}</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         Se mandó la salida de <b className="text-content">{formatMoney(item.monto)}</b> y la caja
-                        no confirmó. Revisa en la caja si el movimiento salió antes de repetirlo.
+                        no lo confirmó. Revisa si la salida se hizo antes de repetirla.
                     </p>
                 </div>
                 <PortalTextarea

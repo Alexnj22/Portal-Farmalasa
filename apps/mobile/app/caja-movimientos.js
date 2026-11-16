@@ -193,7 +193,7 @@ export default function CajaMovimientos() {
             return (
               <Renglon key={it.clave} entra tachado={!!c.anulado_at} sala={salaTxt} monto={c.monto}
                 titulo={`Cobro de crédito · ${c.cliente || 'Sin nombre'}`}
-                detalle={[`crédito ${c.credito_erp}`, app ? 'tarjeta en la app (Wompi), no en el cajón' : String(c.forma || '').toLowerCase(), horaDeIso(c.created_at),
+                detalle={[`crédito ${c.credito_erp}`, app ? 'pagado con tarjeta en la app' : String(c.forma || '').toLowerCase(), horaDeIso(c.created_at),
                   Number(c.saldo_despues) > 0.004 ? `queda ${formatMoney(c.saldo_despues)}` : 'saldado'].filter(Boolean).join(' · ')}
                 pildoras={[app ? ['Pagado en la app', MARCA.azulClaro] : ['Del portal', MARCA.azulClaro], ...(c.anulado_at ? [['Anulado', MARCA.rojo]] : [])]}
                 quien={app ? null : personas.get(c.abonado_por)} />
@@ -207,7 +207,7 @@ export default function CajaMovimientos() {
               <Renglon key={it.clave} entra tachado={!!a.anulado_at} sala={salaTxt} monto={a.monto}
                 titulo={a.detalle || a.concepto || 'Ingreso'}
                 detalle={[forma, a.numero_boleta ? `voucher ${a.numero_boleta}` : null, horaDeIso(a.registrado_at)].filter(Boolean).join(' · ')}
-                pildoras={[['No entra al cajón', MARCA.azulClaro],
+                pildoras={[['No entra a la caja', MARCA.azulClaro],
                   ...(a.autorizacion === 'PENDIENTE' ? [['Pendiente de autorización', MARCA.ambar]] : []),
                   ...(a.anulado_at ? [['Anulado', MARCA.rojo]] : [])]}
                 quien={personas.get(a.registrado_por)} />

@@ -388,8 +388,7 @@ export default function MovimientosDeCaja({
                             : `${tardios} movimientos se vieron después del corte de su día`}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        No significa que esté mal. Significa que no se distingue por el monto —hay que
-                        mirar cuándo entró—, y por eso queda arriba de la línea del corte.
+                        No quiere decir que esté mal. Revisa a qué hora entró. Por eso sale arriba de la línea del corte.
                     </span>
                 </Notice>
             )}
@@ -534,12 +533,12 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
             marcas: [
                 app && ['info', 'Pagado en la app', Smartphone],
                 anulado && ['danger', 'Anulado'],
-                !anulado && (entra ? ['warning', 'Todavía no aparece en la caja'] : ['neutral', 'No entra al cajón']),
+                !anulado && (entra ? ['warning', 'Todavía no aparece en la caja'] : ['neutral', 'No entra a la caja']),
             ].filter(Boolean),
             datos: [
                 ...datosDelCobro(cb),
                 app && ['Se pagó', 'el cliente, desde la app con tarjeta'],
-                app && ['Dónde está el dinero', 'en la cuenta de pagos en línea, no en el cajón'],
+                app && ['Dónde está el dinero', 'en la cuenta de pagos en línea, no en la caja'],
             ].filter(Boolean),
         };
     }
@@ -589,7 +588,7 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
             foto: an.foto_url || null,
             marcas: [
                 anulado && ['danger', 'Anulado'],
-                !anulado && ['neutral', 'No entra al cajón'],
+                !anulado && ['neutral', 'No entra a la caja'],
                 !anulado && an.autorizacion === 'PENDIENTE' && ['warning', 'Pendiente de autorización'],
                 !anulado && an.autorizacion === 'RECHAZADA' && ['danger', 'Autorización rechazada'],
             ].filter(Boolean),
@@ -598,7 +597,7 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
                 [an.forma_pago === 'TARJETA' ? 'Voucher' : 'Referencia', an.numero_boleta],
                 [an.forma_pago === 'TARJETA' ? 'Total del voucher' : 'Total del comprobante',
                     an.comprobante_total != null ? formatMoney(an.comprobante_total) : null],
-                ['Dónde está el dinero', an.forma_pago === 'TARJETA' ? 'en el POS, no en el cajón' : 'en el banco, no en el cajón'],
+                ['Dónde está el dinero', an.forma_pago === 'TARJETA' ? 'en el POS, no en la caja' : 'en el banco, no en la caja'],
                 ['Se anotó', 'desde el portal'],
             ],
         };

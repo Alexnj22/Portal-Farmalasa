@@ -29,7 +29,7 @@ const COLS = [
     { key: 'fecha',    label: 'Fecha',      align: 'left' },
     { key: 'sucursal', label: 'Sucursal',   align: 'left' },
     { key: 'horas',    label: 'Horario',    align: 'left', hideBelow: 'lg' },
-    { key: 'docs',     label: 'Documentos', align: 'right' },
+    { key: 'docs',     label: 'Facturas',   align: 'right' },
     { key: 'iva',      label: 'IVA',        align: 'right', hideBelow: 'md' },
     { key: 'monto',    label: 'Total',      align: 'right' },
 ];
@@ -62,21 +62,21 @@ export default function CofNocheSinEnvio({ resumen, loading, mes, desde, hasta, 
                         <Moon size={16} aria-hidden="true" /> Consumidor final después de las 6:00 p. m.
                     </TituloDeSeccion>
                     <p className="text-caption text-content-3">
-                        Desde el 19 de octubre de 2026, los consumidores finales emitidos de las 6:00 p. m.
-                        en adelante no se envían a Hacienda. Los que no tienen sello no entran a este libro.
+                        Desde el 19 de octubre de 2026, las facturas de consumidor final de las 6:00 p. m.
+                        en adelante no se envían al MH. Las que no tienen sello no entran a este libro.
                     </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                     <Button variant="secondary" size="sm" icon={Download}
                         disabled={loading || bajando || !(total?.documentos > 0)}
-                        title={`Exportar los ${total?.documentos ?? 0} documentos de ${etiquetaMes(mes)} en CSV`}
+                        title={`Exportar las ${total?.documentos ?? 0} facturas de ${etiquetaMes(mes)} en CSV`}
                         onClick={descargar}>
                         Exportar
                     </Button>
                     <div className="text-right">
                         <p className="font-mono text-title tabular-nums font-black">{formatMoney(total?.monto ?? 0)}</p>
                         <p className="text-micro text-content-3">
-                            {total?.documentos ?? 0} documento{total?.documentos === 1 ? '' : 's'} en {etiquetaMes(mes)}
+                            {total?.documentos ?? 0} factura{total?.documentos === 1 ? '' : 's'} en {etiquetaMes(mes)}
                             {' '}· IVA {formatMoney(total?.iva ?? 0)}
                             {/* El portal no los manda, pero la caja puede haberlos
                                 transmitido igual: ésos sí tienen sello y sí entran

@@ -88,7 +88,7 @@ export default function Proveedores() {
     { id: 'activos', titulo: 'Estado', activa: activos, porDefecto: 'activos', onCambiar: setActivos,
       opciones: [{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Incluir inactivos' }] },
     { id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'docs', onCambiar: setOrden,
-      opciones: [{ id: 'docs', label: 'Más documentos' }, { id: 'ultima', label: 'Última compra' }, { id: 'nombre', label: 'Nombre' }, { id: 'categoria', label: 'Categoría' }] },
+      opciones: [{ id: 'docs', label: 'Más facturas' }, { id: 'ultima', label: 'Última compra' }, { id: 'nombre', label: 'Nombre' }, { id: 'categoria', label: 'Categoría' }] },
   ];
 
   // Al llegar abajo se pinta la página siguiente sola; «Ver más» queda de respaldo.

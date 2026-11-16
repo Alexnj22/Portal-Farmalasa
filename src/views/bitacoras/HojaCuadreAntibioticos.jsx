@@ -89,13 +89,13 @@ export default function HojaCuadreAntibioticos({ cuadre, onClose }) {
                 <div className="space-y-3">
                     {cuadre.sin_saldo_inicial && (
                         <Notice variant="warning" compact>
-                            No hay foto de existencias de antes de este mes, así que el saldo inicial y
-                            «Otros» no se pueden calcular.
+                            No hay existencia guardada de antes de este mes. El saldo inicial y «Otros»
+                            no se pueden calcular.
                         </Notice>
                     )}
                     <p className="text-caption text-content-3">
-                        «Otros» son los movimientos que no son compra, traslado recibido ni venta: traslados
-                        enviados a otras salas, ajustes y bajas. Las cantidades van en unidades.
+                        «Otros» son los movimientos que no son compra, traslado recibido ni venta. Por ejemplo,
+                        traslados a otras sucursales, ajustes y descartes. Las cantidades van en unidades.
                     </p>
 
                     <div className="flex flex-wrap items-center justify-between gap-2">

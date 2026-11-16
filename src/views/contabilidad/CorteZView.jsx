@@ -175,8 +175,8 @@ const ParaDeclarar = ({ declaracion }) => {
                 // tiene— pero sí entra en la declaración, así que se dice dónde
                 // va en vez de dejarlo en una fila sin destino.
                 <p className="text-micro text-content-3 leading-relaxed pt-1">
-                    El IVA retenido no es una columna del libro: va en la declaración como
-                    anticipo ya pagado, respaldado con el comprobante de retención.
+                    El IVA retenido va en la declaración como anticipo ya pagado.
+                    Se respalda con el comprobante de retención.
                 </p>
             )}
         </div>
@@ -272,7 +272,7 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                                     </span>
                                 </div>
                                 <p className="text-micro text-content-3 mt-0.5">
-                                    {d.fecha} · documento {d.correlativo || d.erp_invoice_id}
+                                    {d.fecha} · N.º {d.correlativo || d.erp_invoice_id}
                                 </p>
                                 <p className="text-micro text-content-2 mt-1 leading-relaxed">{c.hacer}</p>
                             </div>
@@ -283,21 +283,19 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                         // declara «ya está» sobre una diferencia todavía abierta es
                         // peor que no diagnosticar.
                         <p className="text-micro leading-relaxed">
-                            Quedan <b>{formatMoney(sinExplicar)}</b> sin explicar: hay que revisarlos
-                            a mano contra el reporte del día.
+                            Quedan <b>{formatMoney(sinExplicar)}</b> sin explicar. Revísalos
+                            contra el reporte del día.
                         </p>
                     )}
                 </div>
             ) : (
                 <p className="text-micro leading-relaxed">
-                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z, y no es
-                    por la retención: esa se coteja en su propia línea. Todavía no hay un
-                    diagnóstico de este período — se genera con el cuadre diario, que corre cada
-                    mañana.
+                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z. No viene de la
+                    retención. Todavía no hay diagnóstico de este período. Sale cada mañana.
                     {!cuadra(fila.dif_ccf) && (
                         <> Parte de la diferencia está en los créditos fiscales
-                        ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
-                        contribuyentes, que los lista uno por uno.</>
+                        ({formatMoney(fila.dif_ccf)}). Revísalos uno por uno en el libro de
+                        contribuyentes.</>
                     )}
                 </p>
             )}
@@ -311,13 +309,13 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
             {dias && (
                 <div className="max-h-64 overflow-y-auto rounded-card bg-surface-card-hover border border-divider">
                     <p className="px-2 pt-2 text-micro text-content-3">
-                        Ventas con factura, día por día — para enfrentarlo al reporte diario.
+                        Ventas con factura, día por día.
                     </p>
                     <table className="w-full text-micro">
                         <thead className="sticky top-0 bg-surface-modal">
                             <tr className="text-content-3 text-left">
                                 <th className="px-2 py-1 font-semibold">Día</th>
-                                <th className="px-2 py-1 font-semibold text-right">Docs</th>
+                                <th className="px-2 py-1 font-semibold text-right">Facturas</th>
                                 <th className="px-2 py-1 font-semibold text-right">Total</th>
                                 <th className="px-2 py-1 font-semibold">N.º de control</th>
                             </tr>
@@ -435,14 +433,14 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 netea nada, duplica. */}
             {!cuadra(fila.retencion) && (
                 <p className="text-micro text-content-3 leading-relaxed">
-                    El Corte Z resta la retención <b>dos veces</b>: sus ventas gravadas
-                    ({formatMoney(fila.z_total)}) ya vienen netas de
-                    los <b>{formatMoney(fila.retencion)}</b> retenidos, y su línea de total se los
-                    vuelve a restar hasta {formatMoney(fila.total_general)} — una cifra que no
-                    corresponde a ninguna venta. La que vale es la de ventas gravadas, que es la
-                    que coincide con el libro. La retención es el 1% que el cliente retiene y
-                    entera él mismo (Art. 162 del Código Tributario): no es una venta menos, es un
-                    anticipo ya pagado.
+                    El Corte Z resta la retención <b>dos veces</b>. Sus ventas gravadas
+                    ({formatMoney(fila.z_total)}) ya traen restados
+                    los <b>{formatMoney(fila.retencion)}</b> retenidos, y su línea de total los
+                    vuelve a restar hasta {formatMoney(fila.total_general)}. Esa cifra no
+                    corresponde a ninguna venta. La que vale es la de ventas gravadas, que
+                    coincide con el libro. La retención es el 1% que el cliente retiene y
+                    entera él mismo (Art. 162 del Código Tributario). Cuenta como anticipo
+                    ya pagado.
                 </p>
             )}
 
@@ -627,7 +625,7 @@ export default function CorteZView() {
                                 <StatCard icon={FileText} label="Total general" value={formatMoney(totales.total)}
                                     sub="Del período" loading={loading} />
                                 <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.ccf)}
-                                    sub="Ventas con CCF" loading={loading} />
+                                    sub="Ventas con crédito fiscal" loading={loading} />
                             </>
                         )}
                         {/* El recuento y nada más. El detalle —cuánto, por qué, y
@@ -671,8 +669,8 @@ export default function CorteZView() {
                         </p>
                         <p className="text-caption text-content-3 max-w-md mx-auto">
                             {mes >= mesSV()
-                                ? 'El mes en curso todavía no se cierra. El Corte Z se trae el día 1 del mes siguiente, cuando el período ya no cambia.'
-                                : 'Este período no se ha traído todavía. No es un mes sin ventas: es que nadie lo procesó.'}
+                                ? 'El mes en curso todavía no se cierra. El Corte Z aparece el día 1 del mes siguiente.'
+                                : 'Este período todavía no está cargado. Sus ventas no aparecen hasta que se cargue.'}
                         </p>
                     </div>
                 ) : (

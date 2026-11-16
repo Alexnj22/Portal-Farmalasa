@@ -177,7 +177,7 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
   const cerrar = () => {
     if (guardando) return;
     if (!items.length) { onCerrar(huboCambio); return; }
-    Alert.alert('¿Salir sin anotar?', items.length === 1 ? 'Hay 1 renglón escrito que todavía no se guardó.' : `Hay ${items.length} renglones escritos que todavía no se guardaron.`, [
+    Alert.alert('¿Salir sin anotar?', items.length === 1 ? 'Hay 1 registro escrito que todavía no se guardó.' : `Hay ${items.length} registros escritos que todavía no se guardaron.`, [
       { text: 'Seguir anotando', style: 'cancel' },
       { text: 'Salir sin guardar', style: 'destructive', onPress: () => onCerrar(huboCambio) },
     ]);
@@ -193,7 +193,7 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 14 }} keyboardShouldPersistTaps="handled"
               automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
               {Object.keys(errores).length ? (
-                <Aviso tono="cuidado" texto="Quedaron renglones sin guardar. Lo demás ya está anotado; abajo está el motivo de cada uno." />
+                <Aviso tono="cuidado" texto="Quedaron registros sin guardar. Lo demás ya está anotado. Abajo está el motivo de cada uno." />
               ) : null}
               {momentos.map((m) => (
                 <Vidrio key={m.clave} radio={20}>

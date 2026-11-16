@@ -80,7 +80,7 @@ import { TrasLaTransicion } from '../componentes/trasLaTransicion';
 
 const PAGINA = 40;
 const COLAS = [
-  { id: 'mh', tab: 'pendiente_mh', label: 'Hacienda' },
+  { id: 'mh', tab: 'pendiente_mh', label: 'MH' },
   { id: 'obs', tab: 'observaciones', label: 'Observaciones' },
   { id: 'nulas', tab: 'anuladas', label: 'Anuladas' },
   { id: 'saltos', tab: 'saltos', label: 'Saltos' },
@@ -171,8 +171,8 @@ export default function Facturacion() {
   const salasOrdenadas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const marcadas = useMemo(() => (datos?.[cola] || []).filter((r) => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length, [datos, cola, visitedIds]);
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-      opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
+      opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(cola === 'obs' && conteos.length ? [{ id: 'obs', titulo: 'Observación', activa: obsCode, porDefecto: 'todos', onCambiar: setObsCode,
       opciones: [{ id: 'todos', label: 'Todas' }, ...conteos.map(([c, k]) => ({ id: c, label: `${metaObs(c).label} · ${k}` }))] }] : []),
   ];
@@ -194,15 +194,15 @@ export default function Facturacion() {
     const payload = { invoice_id: r.id, comment: nota.trim() || null, resolved_by: por };
     const { error: e } = await insertInvoiceResolution(payload, undefined, { accion: cola === 'mh' ? 'SOLVENTAR_PENDIENTE_MH' : 'SOLVENTAR_ANULACION', correlativo: r.correlativo, resolved_by: por, desde: 'app' });
     setOcupado(null);
-    if (e) { fallo('No se pudo solventar', 'No quedó registrado. Si sigue, tu rol no tiene permiso de edición en Facturación.'); return; }
+    if (e) { fallo('No se pudo solventar', 'No quedó guardado. Si sigue igual, tu cargo no tiene permiso para editar en Facturación.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     listo(cola === 'mh' ? 'Pendiente solventado' : 'Anulación solventada', r.correlativo || '');
     setAbierta(null); setNota('');
     cargar();
   };
   const solventarTodas = () => {
-    const donde = sala ? nombreSala(sala) || 'esta sala' : 'todas las salas';
-    Alert.alert('Solventar todas', `Corrige lo que haga falta y envía a Hacienda lo pendiente de ${donde}. Es lo mismo que corre solo cada noche.`, [
+    const donde = sala ? nombreSala(sala) || 'esta sucursal' : 'todas las sucursales';
+    Alert.alert('Solventar todas', `Corrige lo que haga falta y envía al MH lo pendiente de ${donde}. Esto también se hace solo cada noche.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Enviar', onPress: async () => {
         setOcupado('todas');
@@ -250,7 +250,7 @@ export default function Facturacion() {
         <FiltrosActivos grupos={grupos} />
         {!colas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu cargo no tiene ninguna cola de Facturación." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {ocupado === 'todas' ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Enviando a Hacienda… puede tardar un par de minutos." /></View> : null}
+        {ocupado === 'todas' ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Enviando al MH… Puede tardar un par de minutos." /></View> : null}
 
         {cola === 'saltos' ? <Saltos sala={sala} nombreSala={nombreSala} recarga={recargaHija} canEdit={canEdit} user={user} onCuenta={contarSaltos} /> : null}
         {cola === 'noef' ? <NoEfectivo sala={sala} nombreSala={nombreSala} salas={salasOrdenadas} texto={texto} canEdit={canEdit} user={user} verMontos={verMontos} onCuenta={contarNoEf} /> : null}
@@ -260,7 +260,7 @@ export default function Facturacion() {
             {cola === 'mh' ? (
               <>
                 <FilaDeKpis>
-                  <Kpi icono="Clock" rotulo="Sin sello" valor={String(n('mh'))} color={n('mh') ? MARCA.ambar : MARCA.verde} apoyo={n('mh') ? 'esperan a Hacienda' : 'todo sellado'} />
+                  <Kpi icono="Clock" rotulo="Sin sello" valor={String(n('mh'))} color={n('mh') ? MARCA.ambar : MARCA.verde} apoyo={n('mh') ? 'esperan al MH' : 'todo sellado'} />
                   <Kpi icono="AlertTriangle" rotulo="Vencidas" valor={String(vencidas)} color={vencidas ? MARCA.rojo : MARCA.verde} pide={vencidas > 0} apoyo={`más de ${GRACIA_SELLO_DIAS} días`} />
                 </FilaDeKpis>
                 <FilaDeKpis>
@@ -268,9 +268,9 @@ export default function Facturacion() {
                   <Kpi icono="Hourglass" rotulo="Al cierre" valor={textoDias} color={colorDeVariante(tonoDeDiasQuedan(diasQuedan))} pide={diasQuedan <= 2} apoyo={diasQuedan === 0 ? 'hoy cierra el mes' : `día${diasQuedan === 1 ? '' : 's'} del mes`} />
                 </FilaDeKpis>
                 <FilaDeKpis>
-                  <Kpi icono="CheckCircle2" rotulo="Selladas" valor={datos.confirmadasMes == null ? '—' : String(datos.confirmadasMes)} color={MARCA.verde} apoyo="por Hacienda este mes" />
+                  <Kpi icono="CheckCircle2" rotulo="Selladas" valor={datos.confirmadasMes == null ? '—' : String(datos.confirmadasMes)} color={MARCA.verde} apoyo="por el MH este mes" />
                 </FilaDeKpis>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Sin sello de Hacienda. El envío nocturno las reintenta solo.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Sin sello del MH. Cada noche se vuelven a enviar solas.</Text>
               </>
             ) : null}
             {cola === 'obs' ? (
@@ -296,7 +296,7 @@ export default function Facturacion() {
             {marcadas ? (
               <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${marcadas} marcada${marcadas === 1 ? '' : 's'} como visitada${marcadas === 1 ? '' : 's'}`}</Text>
-                <Tocable onPress={() => Alert.alert('Limpiar marcas', 'Quita la marca de visitado de todos los documentos.', [
+                <Tocable onPress={() => Alert.alert('Limpiar marcas', 'Quita la marca de visitado de todas las facturas.', [
                   { text: 'Cancelar', style: 'cancel' }, { text: 'Limpiar', style: 'destructive', onPress: clearVisited },
                 ])} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                   <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Limpiar marcas</Text>

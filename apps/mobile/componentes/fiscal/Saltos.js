@@ -91,7 +91,7 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
           apoyo={pendientes.length ? `${faltan} número${faltan === 1 ? '' : 's'} faltante${faltan === 1 ? '' : 's'} · ${nulos.length} con campos nulos` : `correlativos en orden · ${nulos.length} con campos nulos`} />
       </FilaDeKpis>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {pendientes.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Cada salto indica correlativos que faltan entre dos documentos consecutivos. Solventarlo es decir que se revisó el talonario." /></View> : null}
+      {pendientes.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Cada salto son correlativos que faltan entre dos facturas seguidas. Solvéntalo cuando hayas revisado el talonario." /></View> : null}
       {pendientes.map((g) => {
         const n = Number(g.gap_count ?? (Number(g.gap_to) - Number(g.gap_from) + 1));
         return (

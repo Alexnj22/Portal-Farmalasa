@@ -37,7 +37,7 @@ export function Llegaron({ total, valor, onChange, puedeEditar }) {
             )}
             {falto && n != null && n < total && (
                 <p className="mt-1 text-caption font-bold text-warning-text tabular-nums">
-                    Faltan {total - n}: quedan «por llegar».
+                    Faltan {total - n}. Quedan «por llegar».
                 </p>
             )}
         </div>

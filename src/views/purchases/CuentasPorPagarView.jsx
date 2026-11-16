@@ -152,7 +152,7 @@ function PanelProveedor({ fila, puedeEditar, onCerrar, onHecho }) {
         [montos]);
 
     const guardarCondiciones = async () => {
-        if (!fila.proveedor_id) { setError('Este proveedor todavía no tiene ficha en el portal.'); return; }
+        if (!fila.proveedor_id) { setError('Este proveedor todavía no está registrado en el portal.'); return; }
         setOcupado(true);
         const { error: e } = await guardarCondicionesProveedor(fila.proveedor_id, {
             diasCredito: dias, limiteCredito: limite, formaPago: forma,
@@ -403,16 +403,15 @@ export default function CuentasPorPagarView() {
                     cero porque no sabe, no porque esté al día. */}
                 {!cargando && totales.sinPlazo > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
-                        <b>{totales.sinPlazo}</b> proveedor(es) no tienen días de crédito definidos, así que
-                        de sus facturas <b>no se puede saber si están vencidas</b>. Abre el proveedor y
-                        ponlos: el plazo es el mismo en todas sus facturas, se llena una vez.
+                        <b>{totales.sinPlazo}</b> proveedor(es) no tienen días de crédito. Sin eso <b>no se sabe si sus
+                        facturas están vencidas</b>. Abre el proveedor y escríbelos. Se llenan una sola vez.
                     </Notice>
                 )}
 
                 {puedeAprobar && pendientes.length > 0 && tab !== 'pagos' && (
                     <Notice variant="info" icon={Clock}>
-                        <b>{pendientes.length}</b> pago(s) esperando tu aprobación
-                        {' '}— <b>{formatMoney(pendientes.reduce((a, p) => a + Number(p.monto || 0), 0))}</b>.
+                        <b>{pendientes.length}</b> pago(s) esperan tu aprobación:
+                        {' '}<b>{formatMoney(pendientes.reduce((a, p) => a + Number(p.monto || 0), 0))}</b>.
                     </Notice>
                 )}
 

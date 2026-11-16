@@ -94,7 +94,7 @@ export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = fa
         setOcupado(null);
         if (e) { showToast('No se pudo devolver', mensajeAmigable(e), 'error'); return; }
         useStaff.getState().appendAuditLog('BITACORA_LOTE_DEVUELTO', String(f.dispensacion_id), { revision_id: f.id, folio: f.folio_txt, motivo });
-        showToast('Devuelto a la sala', f.folio_txt, 'success');
+        showToast('Devuelto a la sucursal', f.folio_txt, 'success');
         setDevolviendo(null);
         cargar();
     };
@@ -120,7 +120,7 @@ export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = fa
 
             <DataTable
                 columns={[
-                    { key: 'renglon', label: 'Renglón' },
+                    { key: 'renglon', label: 'Producto' },
                     { key: 'lote',    label: 'Lote' },
                     { key: 'estado',  label: 'Estado' },
                     { key: 'accion',  label: '' },
@@ -223,8 +223,8 @@ export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = fa
 
             <PromptModal isOpen={Boolean(devolviendo)} onClose={() => setDevolviendo(null)}
                 onConfirm={devolver} required isProcessing={Boolean(ocupado)}
-                title="Devolver a la sala"
-                message={devolviendo ? `${devolviendo.folio_txt} · ${devolviendo.producto_nombre}. Di qué está mal para que la sala lo vuelva a mirar.` : ''}
+                title="Devolver a la sucursal"
+                message={devolviendo ? `${devolviendo.folio_txt} · ${devolviendo.producto_nombre}. Escribe qué está mal.` : ''}
                 placeholder="Por ejemplo: el vencimiento no coincide con la caja."
                 confirmText="Devolver" />
         </div>

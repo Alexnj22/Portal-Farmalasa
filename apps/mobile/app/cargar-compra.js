@@ -68,12 +68,12 @@ function Facturas({ busca, dias }) {
   return (
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16 }}>
-        <Cuenta rotulo="Sin cargar" valor={filas?.length} sub={`${t.renglones} renglones`} />
+        <Cuenta rotulo="Sin cargar" valor={filas?.length} sub={`${t.renglones} productos`} />
         <Cuenta rotulo="Monto" valor={filas ? formatMoney(t.monto) : null} sub="que esperan" color={MARCA.ambar} />
         <Cuenta rotulo="+15 días" valor={filas ? t.viejos : null} sub="documentos" color={t.viejos ? MARCA.ambar : undefined} />
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      <View style={{ marginHorizontal: 16 }}><Aviso texto="El portal arma la compra desde el documento y dice de dónde salió cada dato. Todavía no registra nada en el sistema: es para revisarla. Lo que queda guardado es cada producto que confirmes." /></View>
+      <View style={{ marginHorizontal: 16 }}><Aviso texto="El portal arma la compra desde la factura. Aquí la revisas. Cada producto que confirmes queda guardado." /></View>
       {filas == null ? <Indicador /> : !visibles.length ? <Vacio titulo="Sin facturas esperando carga en este período." /> : (
         <View style={{ marginHorizontal: 16 }}>
           <Vidrio radio={20}>
@@ -84,7 +84,7 @@ function Facturas({ busca, dias }) {
                     borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, backgroundColor: pressed ? 'rgba(127,127,127,0.15)' : 'transparent' })}>
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{f.proveedor_ficha ?? f.emisor_nombre}</Text>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{[fmtFecha(f.fecha_emision), plural(f.renglones, 'renglón', 'renglones'), !f.tiene_pdf ? 'sin archivo impreso' : null].filter(Boolean).join(' · ')}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{[fmtFecha(f.fecha_emision), plural(f.renglones, 'producto', 'productos'), !f.tiene_pdf ? 'sin archivo impreso' : null].filter(Boolean).join(' · ')}</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 4 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(f.monto_total)}</Text>
@@ -125,7 +125,7 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
   }, [filas, estado]);
 
   const barrer = async () => {
-    trabajando('Leyendo los documentos…');
+    trabajando('Leyendo las facturas…');
     for (let vuelta = 0; vuelta < 30; vuelta++) {
       const { resultado, error: e } = await barrerDocumentos({ dias: 90, tanda: 40 });
       if (e) { fallo('No se pudo actualizar', String(e?.message ?? e)); return; }
@@ -135,7 +135,7 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
     cerrarProgreso();
     await cargar();
   };
-  const confirmar = (f, producto) => Alert.alert('Confirmar el producto', `«${f.descripcion}» de ${f.proveedor} es ${producto.nombre}. Resuelve las ${plural(f.renglones, 'línea', 'líneas')} donde aparece, hoy y en adelante.`, [
+  const confirmar = (f, producto) => Alert.alert('Confirmar el producto', `«${f.descripcion}» de ${f.proveedor} es ${producto.nombre}. Se resuelve en todas las facturas donde aparece, hoy y en adelante.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Confirmar', onPress: async () => {
       setOcupado(f.id);
@@ -160,12 +160,12 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16 }}>
         <Cuenta rotulo={ESTADOS.find((e) => e.id === estado)?.label} valor={filas ? t.preguntas : null} sub="productos distintos" />
-        <Cuenta rotulo="Renglones" valor={filas ? t.renglones : null} sub="que destraban" />
+        <Cuenta rotulo="Líneas de factura" valor={filas ? t.renglones : null} sub="que destraban" />
         {estado === 'pendientes' ? <Cuenta rotulo="Sin candidato" valor={filas ? t.sinCandidato : null} sub="a mano" color={t.sinCandidato ? MARCA.ambar : undefined} /> : null}
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <View style={{ marginHorizontal: 16 }}>
-        <Aviso texto={estado === 'apartados' ? 'Lo marcado como que no es un producto. Si fue un error, «Devolver a la lista» lo pone otra vez a la cola.' : 'Cada línea es un producto de un proveedor: confirmarla resuelve todas las facturas donde aparece, las de hoy y las que vengan.'} />
+        <Aviso texto={estado === 'apartados' ? 'Lo que se marcó como que no es un producto. Si fue un error, toca «Devolver a la lista».' : 'Cada fila es un producto de un proveedor. Al confirmarla se resuelven todas las facturas donde aparece, las de hoy y las que vengan.'} />
       </View>
       {puedeEditar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Actualizar la lista" borde onPress={barrer} /></View> : null}
       {filas == null ? <Cargando /> : !visibles.length ? (estado === 'pendientes' ? <Vacio titulo="Sin productos por confirmar" detalle="Si llegaron facturas nuevas, toca «Actualizar la lista»." tono="bien" /> : <Vacio titulo="Nada en esta lista." />) : (
@@ -175,9 +175,9 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
             <View key={f.id} style={{ marginHorizontal: 16, opacity: f.ignorado ? 0.65 : 1 }}>
               <Vidrio radio={20}>
                 <View style={{ padding: 14, gap: 6 }}>
-                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{f.sugerido_nombre ?? '— sin candidato —'}</Text>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{f.sugerido_nombre ?? 'Sin candidato'}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.descripcion}</Text>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[f.proveedor, f.codigo_proveedor ? `código ${f.codigo_proveedor}` : null, `${plural(f.renglones, 'renglón', 'renglones')} en ${plural(f.documentos, 'factura', 'facturas')}`].filter(Boolean).join(' · ')}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[f.proveedor, f.codigo_proveedor ? `código ${f.codigo_proveedor}` : null, `${plural(f.renglones, 'vez', 'veces')} en ${plural(f.documentos, 'factura', 'facturas')}`].filter(Boolean).join(' · ')}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {f.ignorado ? <Pildora texto="Apartado" color={colorSistema.texto2} /> : null}
                     {f.resuelto ? <Pildora texto="Confirmado" color={MARCA.verde} /> : null}

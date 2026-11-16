@@ -53,14 +53,14 @@ import { MARCA } from '../componentes/inicio/marca';
 // `tab` es la pestaña del portal que da el permiso (`libros_iva_tab_<tab>`).
 const LIBROS = [
   { k: 'consumidor', tab: 'consumidor', t: 'Ventas a consumidor', imp: 'Débito fiscal', docs: 'días' },
-  { k: 'contribuyente', tab: 'contribuyente', t: 'Ventas a contribuyentes', imp: 'Débito fiscal', docs: 'CCF' },
+  { k: 'contribuyente', tab: 'contribuyente', t: 'Ventas a contribuyentes', imp: 'Débito fiscal', docs: 'créditos fiscales' },
   { k: 'compras', tab: 'compras', t: 'Compras', imp: 'Crédito fiscal', docs: 'documentos' },
-  { k: 'anulados', tab: 'anulados', t: 'Anulados', imp: null, docs: 'documentos' },
+  { k: 'anulados', tab: 'anulados', t: 'Anulados', imp: null, docs: 'anuladas' },
   { k: 'percepcion', tab: 'percepcion', t: 'Percepción', imp: 'Percepción', docs: 'documentos', base: 'Sujeto' },
   { k: 'retencion', tab: 'retencion', t: 'Retención', imp: 'Retención', docs: 'documentos', base: 'Sujeto' },
-  { k: 'retencionVentas', tab: 'retencion', t: 'Retención que nos hicieron', imp: 'Retenido', docs: 'documentos', base: 'Sujeto' },
+  { k: 'retencionVentas', tab: 'retencion', t: 'Retención que nos hicieron', imp: 'Retenido', docs: 'ventas', base: 'Sujeto' },
   { k: 'renta', tab: 'renta', t: 'Retención de renta', imp: 'Retención 10%', docs: 'documentos', base: 'Base' },
-  { k: 'notas', tab: 'notas', t: 'Notas de crédito y débito', imp: 'IVA neto', docs: 'documentos', base: 'Monto neto' },
+  { k: 'notas', tab: 'notas', t: 'Notas de crédito y débito', imp: 'IVA neto', docs: 'notas', base: 'Monto neto' },
 ];
 
 export default function LibrosIva() {
@@ -165,7 +165,7 @@ export default function LibrosIva() {
                     <View style={{ padding: 12, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{l.t}</Text>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${x.docs} ${l.k === 'consumidor' && !sala ? 'renglones (día · sala)' : l.docs}  ${open ? '▴' : '›'}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${x.docs} ${l.k === 'consumidor' && !sala ? 'filas (día · sucursal)' : l.docs}  ${open ? '▴' : '›'}`}</Text>
                       </View>
                       {x.exentas ? <Dato rotulo="Exentas" valor={formatMoney(x.exentas)} primero /> : null}
                       {l.k !== 'anulados' ? <Dato rotulo={l.base ?? 'Gravadas'} valor={formatMoney(x.gravadas)} primero={!x.exentas} /> : null}

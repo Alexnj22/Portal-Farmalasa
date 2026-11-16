@@ -561,10 +561,10 @@ export default function BitacorasView() {
                         {!sala
                             ? 'Elige una sucursal para ver su bitácora.'
                             : enLibro
-                                ? `${nombreSalaCruda || 'Esa sucursal'} no dispensa: el libro bajo receta es de las salas de venta.`
+                                ? `${nombreSalaCruda || 'Esa sucursal'} no vende medicamentos bajo receta. No lleva este libro.`
                                 : enLotes
-                                    ? `${nombreSalaCruda || 'Esa sucursal'} no guarda medicamentos, así que no tiene lotes que registrar.`
-                                    : `${nombreSalaCruda || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`}
+                                    ? `${nombreSalaCruda || 'Esa sucursal'} no guarda medicamentos. No tiene lotes que registrar.`
+                                    : `${nombreSalaCruda || 'Esa sucursal'} no guarda medicamentos. No lleva bitácora de ambiente.`}
                     </Notice>
                 ) : tab === 'hoy' ? (
                     <div className="space-y-6">

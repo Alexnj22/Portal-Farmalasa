@@ -35,8 +35,8 @@ export default function PausaDeEscrituras({ estado, onCambio }) {
                 <Notice variant="danger" icon={PauseCircle}>
                     <span className="flex items-center gap-2 flex-wrap">
                         <span className="flex-1 min-w-[14rem]">
-                            <b>Escrituras al sistema pausadas</b>{estado.motivo ? `: ${estado.motivo}` : ''}.
-                            {' '}No se registran compras, ni productos nuevos, ni envíos a salas.
+                            <b>Cargar compra está en pausa</b>{estado.motivo ? `: ${estado.motivo}` : ''}.
+                            {' '}No se registran compras, productos nuevos ni traslados a sucursales.
                             {estado.por_nombre && ` Lo pausó ${shortEmployeeName(estado.por_nombre)}`}
                             {estado.desde && ` el ${fechaNumerica(estado.desde.slice(0, 10))}`}.
                         </span>
@@ -47,20 +47,20 @@ export default function PausaDeEscrituras({ estado, onCambio }) {
                 </Notice>
             ) : (
                 <div className="flex justify-end">
-                    <Button size="xs" variant="ghost" icon={PauseCircle} onClick={() => setAbierto(true)}>Pausar escrituras</Button>
+                    <Button size="xs" variant="ghost" icon={PauseCircle} onClick={() => setAbierto(true)}>Pausar compras</Button>
                 </div>
             )}
             {abierto && (
                 <ConfirmModal isOpen onClose={() => !guardando && setAbierto(false)} onConfirm={cambiar}
                     isProcessing={guardando} isDestructive={!pausada}
-                    title={pausada ? 'Reanudar escrituras' : 'Pausar escrituras'}
+                    title={pausada ? 'Reanudar compras' : 'Pausar compras'}
                     confirmText={pausada ? 'Reanudar' : 'Pausar'}
                     confirmDisabled={!pausada && !motivo.trim()}
                     message={pausada ? (
-                        <>Cargar compra vuelve a escribir en el sistema.{error && <Notice variant="danger" className="mt-2">{error}</Notice>}</>
+                        <>Se vuelven a registrar compras.{error && <Notice variant="danger" className="mt-2">{error}</Notice>}</>
                     ) : (
                         <div className="space-y-2 text-left">
-                            <p>Mientras esté pausado no se registran compras, ni productos nuevos, ni envíos a salas, ni salidas de erróneos. Se puede seguir revisando.</p>
+                            <p>En pausa no se registran compras, productos nuevos, traslados a sucursales ni salidas de erróneos. Puedes seguir revisando.</p>
                             <PortalInput compact labelDenso label="Motivo" value={motivo} onChange={e => setMotivo(e.target.value)}
                                 placeholder="Ej.: revisando una carga con diferencias" />
                             {error && <Notice variant="danger">{error}</Notice>}

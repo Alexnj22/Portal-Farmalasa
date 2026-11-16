@@ -69,7 +69,7 @@ function ListaProveedores({ rows, excluidos, onToggle, seleccionable, onAbrirFic
                 <span />
                 <span>Proveedor</span>
                 <span className="hidden sm:block">Giro</span>
-                <span className="text-right">Docs</span>
+                <span className="text-right">Facturas</span>
                 <span className="text-right">Crédito</span>
             </div>
             {rows.map(r => (
@@ -91,7 +91,7 @@ function ListaProveedores({ rows, excluidos, onToggle, seleccionable, onAbrirFic
                     {/* La salida para el caso que no entra en la regla — y la
                         única acción del grupo que no se decide en tanda. */}
                     <Button variant="ghost" size="xs" className="shrink-0 mr-2" onClick={() => onAbrirFicha(r)}>
-                        Abrir ficha
+                        Ver datos
                     </Button>
                 </div>
             ))}
@@ -134,10 +134,10 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                 <div className="min-w-0 flex-1">
                     <h4 className="text-body-lg font-black text-content text-balance">{grupo.titulo}</h4>
                     <p className="text-caption font-black text-content-2">
-                        {grupo.baseLegal || 'Sin giro registrado en la ficha'}
+                        {grupo.baseLegal || 'Sin giro registrado'}
                     </p>
                     <p className="text-caption text-content-3 tabular-nums mt-0.5">
-                        {grupo.rows.length} proveedor{grupo.rows.length === 1 ? '' : 'es'} · {grupo.ccf} documento{grupo.ccf === 1 ? '' : 's'}
+                        {grupo.rows.length} proveedor{grupo.rows.length === 1 ? '' : 'es'} · {grupo.ccf} {grupo.ccf === 1 ? 'crédito fiscal' : 'créditos fiscales'}
                     </p>
                 </div>
                 <div className="text-right shrink-0">
@@ -171,7 +171,7 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                     {grupo.dominante && grupo.rows.length > 1 && grupo.credito > 0 && (
                         <p className="text-caption text-content-3 tabular-nums mt-1.5">
                             El más grande del grupo es <span className="font-black text-content-2">{grupo.dominante.nombre}</span>
-                            {` — ${fmtMoneda(grupo.dominante.credito_fiscal)}, el ${pct(grupo.dominante.credito_fiscal, grupo.credito)}% de lo que está en juego aquí.`}
+                            {`: ${fmtMoneda(grupo.dominante.credito_fiscal)}, el ${pct(grupo.dominante.credito_fiscal, grupo.credito)}% del grupo.`}
                         </p>
                     )}
                 </Notice>
@@ -184,8 +184,8 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                         icon={busy ? Loader2 : Check}
                         disabled={busy || n === 0}
                         title={n === 0
-                            ? 'Quitaste a todos de la lista — no queda nada que confirmar'
-                            : 'Queda confirmada con tu nombre y la fecha. Sólo desde ahí el libro de compras la usa'}
+                            ? 'Quitaste a todos de la lista. No queda nada que confirmar'
+                            : 'Queda confirmada con tu nombre y la fecha. El libro de compras sólo usa las confirmadas'}
                         onClick={() => onConfirmarPropuesta(ids)}
                     >
                         Confirmar {cuantos(n)}
@@ -246,7 +246,7 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                             </div>
                             <div>
                                 <label className={rotuloCampo('text-content-3', { denso: true })}
-                                    title="Se filtra según Costo o Gasto: el manual del F-07 no admite las mismas opciones para los dos">
+                                    title="Las opciones cambian según sea costo o gasto">
                                     Tipo de costo o gasto
                                 </label>
                                 <LiquidSelect
@@ -260,7 +260,7 @@ function TarjetaRegla({ grupo, canEdit, busy, onConfirmarPropuesta, onResolver, 
                         </div>
                     ) : (
                         <Notice variant="neutral">
-                            Quedan como <span className="font-black">no deducibles</span>: su IVA no entra al libro de compras
+                            Quedan como <span className="font-black">no deducibles</span>. Su IVA no entra al libro de compras
                             como crédito fiscal. Son {fmtMoneda(grupo.credito)}.
                         </Notice>
                     )}
@@ -311,12 +311,12 @@ function BloqueSinGiro({ grupo, decisiones, onAbrirFicha }) {
             <div className="flex items-baseline gap-3 flex-wrap">
                 <h4 className="text-body font-black text-content-2">Sin giro registrado</h4>
                 <span className="ml-auto text-body-sm text-content-3 tabular-nums">
-                    {grupo.rows.length} proveedores · {grupo.ccf} documento{grupo.ccf === 1 ? '' : 's'} · {fmtMoneda(grupo.credito)}
+                    {grupo.rows.length} proveedores · {grupo.ccf} {grupo.ccf === 1 ? 'crédito fiscal' : 'créditos fiscales'} · {fmtMoneda(grupo.credito)}
                 </span>
             </div>
             <p className="text-body-sm text-content-3 max-w-[68ch]">
-                Nunca llegó un documento suyo con el giro adentro, así que no hay regla que derivar.
-                No entran al conteo de las {decisiones} decisiones.
+                Ninguna factura suya trae el giro.
+                No entran en las {decisiones} decisiones.
             </p>
             <Button size="sm" variant="ghost" aria-expanded={abierto} onClick={() => setAbierto(a => !a)}>
                 {abierto ? 'Ocultar' : `Ver los ${grupo.rows.length}`}
@@ -375,7 +375,7 @@ export default function PanelDeducibilidad({ rows, loading, canEdit, busy, onCon
             {propuestas.length > 0 && (
                 <section className="space-y-3">
                     <header className="flex items-baseline gap-3 flex-wrap pb-2 border-b border-divider">
-                        <TituloDeSeccion nivel="seccion">Propuestas del sistema</TituloDeSeccion>
+                        <TituloDeSeccion nivel="seccion">Propuestas</TituloDeSeccion>
                         <span className="ml-auto text-body-sm text-content-3 tabular-nums">
                             <b className="text-content-2">{totales.prop.provs}</b> proveedores · <b className="text-content-2">{fmtMoneda(totales.prop.credito)}</b>
                         </span>

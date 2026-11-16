@@ -106,7 +106,7 @@ export default function TabRegencia({ branchId, periodo }) {
             {faltaEnExpediente.length > 0 && (
                 <Notice variant="warning" icon={ShieldCheck}
                     action={<Button variant="secondary" size="sm" onClick={irAlExpediente}>Completar</Button>}>
-                    {`Falta en el expediente: ${faltaEnExpediente.join(', ')}.`}
+                    {`Falta en los datos de la sucursal: ${faltaEnExpediente.join(', ')}.`}
                 </Notice>
             )}
 
@@ -166,7 +166,7 @@ export default function TabRegencia({ branchId, periodo }) {
                         </div>
                     )}
                     {minimo === null && (
-                        <p className="text-caption text-content-3 mt-1">La sala no tiene categoría en su expediente: no se puede calcular el mínimo.</p>
+                        <p className="text-caption text-content-3 mt-1">La sucursal no tiene categoría en sus datos. No se puede calcular el mínimo.</p>
                     )}
                 </div>
                 {error && <Notice variant="danger">{error}</Notice>}
@@ -211,7 +211,7 @@ export default function TabRegencia({ branchId, periodo }) {
                     onHecho={() => { setAnotando(false); cargar(); }} />
             )}
             <PromptModal isOpen={!!anulando} onClose={() => setAnulando(null)} onConfirm={anular}
-                title="Anular visita" message="La visita no se borra: queda anulada con este motivo."
+                title="Anular visita" message="La visita queda anulada con este motivo."
                 placeholder="¿Por qué se anula?" confirmText="Anular" required isProcessing={procesando} />
         </div>
     );

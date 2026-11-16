@@ -87,7 +87,7 @@ export default function ProveedorPorPagar() {
   const condicionesIguales = String(dias ?? '') === String(fila?.dias_credito ?? '') && String(limite ?? '') === String(fila?.limite_credito ?? '');
 
   const guardarCondiciones = async () => {
-    if (!fila?.proveedor_id) { fallo('Sin ficha', 'Este proveedor todavía no tiene ficha en el portal.'); return; }
+    if (!fila?.proveedor_id) { fallo('No está registrado', 'Este proveedor todavía no está registrado en el portal.'); return; }
     setOcupado(true);
     const { error: e } = await guardarCondicionesProveedor(fila.proveedor_id, { diasCredito: dias, limiteCredito: limite, formaPago: forma }, { proveedor: fila.proveedor, desde: 'app' });
     setOcupado(false);
@@ -102,7 +102,7 @@ export default function ProveedorPorPagar() {
       .filter((a) => a.monto > 0);
     if (!aplicaciones.length) { fallo('Falta el reparto', 'Marca a qué facturas se aplica el pago.'); return; }
     const formaTexto = FORMAS_DE_PAGO.find((x) => x.value === forma)?.label ?? forma;
-    Alert.alert('¿Registrar el pago?', `${formatMoney(totalAplicado)} a ${aplicaciones.length} factura${aplicaciones.length === 1 ? '' : 's'} · ${formaTexto}${referencia ? ` ${referencia}` : ''}. Queda esperando la aprobación de Gerencia.`, [
+    Alert.alert('¿Registrar el pago?', `${formatMoney(totalAplicado)} a ${aplicaciones.length} factura${aplicaciones.length === 1 ? '' : 's'} · ${formaTexto}${referencia ? ` ${referencia}` : ''}. Queda esperando la aprobación de un supervisor o administrador.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Registrar', onPress: async () => {
         setOcupado(true);
@@ -112,7 +112,7 @@ export default function ProveedorPorPagar() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         descartar();
         setMontos({}); setRef('');
-        listo('Pago registrado', 'Espera la aprobación de Gerencia.');
+        listo('Pago registrado', 'Espera la aprobación de un supervisor o administrador.');
         cargar();
       } },
     ]);
@@ -139,7 +139,7 @@ export default function ProveedorPorPagar() {
               </Seccion>
 
               {puedeEditar ? (
-                <Seccion titulo="Condiciones del proveedor" pie="Sin el plazo, ninguna factura puede decir si está vencida.">
+                <Seccion titulo="Condiciones del proveedor" pie="Sin el plazo no se sabe si una factura está vencida.">
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Días de crédito</Text>
                   <Campo multiline={false} keyboardType="number-pad" value={String(dias ?? '')} onChangeText={setDias} placeholder="30" />
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Límite de crédito</Text>

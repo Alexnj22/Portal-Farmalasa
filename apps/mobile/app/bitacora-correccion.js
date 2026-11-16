@@ -102,9 +102,9 @@ export default function BitacoraCorreccion() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           {error ? <Aviso tono="freno" texto={error} /> : !dia ? <Cargando /> : !area || !registro ? (
-            <Aviso tono="cuidado" texto="Ese registro ya no está: puede que alguien lo haya quitado o cambiado. Vuelve y recarga." />
+            <Aviso tono="cuidado" texto="Ese registro ya no está. Puede que alguien lo haya quitado o cambiado. Vuelve y recarga." />
           ) : !puedeAnotar || dia.cerrado ? (
-            <Aviso tono="freno" texto={dia.cerrado ? 'Este mes ya está cerrado y firmado. Para corregir hay que reabrirlo desde el Cierre de mes.' : 'Corregir la bitácora es de quien la anota.'} />
+            <Aviso tono="freno" texto={dia.cerrado ? 'Este mes ya está cerrado y firmado. Para corregir, reábrelo desde Cierre de mes.' : 'Sólo quien anota la bitácora puede corregirla.'} />
           ) : (
             <>
               <View style={{ marginHorizontal: 4 }}>
@@ -116,7 +116,7 @@ export default function BitacoraCorreccion() {
               {quitando ? (
                 <Aviso tono="cuidado" texto="El registro se va del libro y el turno vuelve a aparecer como pendiente. Queda anotado quién lo quitó y por qué." />
               ) : (
-                <Aviso tono="nota" texto={tipo === 'lectura' ? 'El valor anterior no se borra: queda junto al nuevo, con tu nombre y el motivo.' : 'Queda dicho que se corrigió, con tu nombre y el motivo.'} />
+                <Aviso tono="nota" texto={tipo === 'lectura' ? 'El valor anterior queda junto al nuevo, con tu nombre y el motivo.' : 'Queda registrada la corrección, con tu nombre y el motivo.'} />
               )}
               {tipo === 'lectura' ? (
                 <Seccion titulo={area.mide_humedad ? 'Temperatura °C · Humedad % HR (informativa)' : 'Temperatura °C'}>
@@ -135,7 +135,7 @@ export default function BitacoraCorreccion() {
                 </Seccion>
               ) : null}
               {fuera ? (
-                <Seccion titulo="Qué se hizo" pie="Fuera de rango: una lectura sin acción al lado prueba que se vio y no se actuó.">
+                <Seccion titulo="Qué se hizo" pie="Anota qué se hizo con la temperatura fuera de rango.">
                   <Campo value={accion} onChangeText={setAccion} maxLength={300} placeholder="Se encendió el aire y se bajó la persiana. Recontrolado a las 13:40 en 28.1 °C." />
                 </Seccion>
               ) : null}
@@ -157,9 +157,9 @@ export default function BitacoraCorreccion() {
                   </Seccion>
                 </>
               ) : null}
-              <Seccion titulo={quitando ? 'Por qué se quita' : 'Motivo de la corrección'}>
+              <Seccion titulo={quitando ? 'Por qué la quitas' : 'Motivo de la corrección'}>
                 <Campo value={motivo} onChangeText={setMotivo} maxLength={300}
-                  placeholder={quitando ? 'Se marcó por error: la limpieza todavía no se había hecho.' : tipo === 'lectura' ? 'Se anotó 26 en vez de 28 por error de tipeo.' : 'Faltó marcar el estante del fondo.'} />
+                  placeholder={quitando ? 'Se marcó por error. La limpieza todavía no se había hecho.' : tipo === 'lectura' ? 'Se anotó 26 en vez de 28 por error de tipeo.' : 'Faltó marcar el estante del fondo.'} />
               </Seccion>
               {falta && motivo ? <Aviso tono="cuidado" texto={falta} /> : null}
               <BotonGrande texto={ocupado ? 'Guardando…' : quitando ? 'Quitar' : 'Guardar la corrección'} color={quitando ? MARCA.rojo : MARCA.azul}

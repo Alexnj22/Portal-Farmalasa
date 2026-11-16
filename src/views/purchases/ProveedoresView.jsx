@@ -73,7 +73,7 @@ const BASE_COLS = [
     // marco y **Última compra se salía 69px**. `Docs` es un conteo y además
     // ordena, así que el dato se sigue alcanzando por el encabezado; la fecha
     // de la última compra no se alcanzaba de ninguna forma.
-    { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: '2xl', sortable: true },
+    { key: 'docs',       label: 'Facturas',       align: 'right', hideBelow: '2xl', sortable: true },
     { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg', sortable: true },
 ];
 
@@ -99,11 +99,11 @@ function CategoriaCell({ row }) {
                 subtexto no puede volver a estirarla. El texto completo vive en
                 el title, junto con el giro que justifica la sugerencia. */}
             {row.categoria_sugerida_nombre ? (
-                <span className="text-caption text-brand-text truncate block max-w-[132px]" title={`Sugerida: ${row.categoria_sugerida_nombre} — por el giro "${row.desc_actividad || '—'}"`}>
+                <span className="text-caption text-brand-text truncate block max-w-[132px]" title={`Sugerida: ${row.categoria_sugerida_nombre}, por el giro "${row.desc_actividad || '—'}"`}>
                     Sugerida: {row.categoria_sugerida_nombre}
                 </span>
             ) : (
-                <span className="text-caption text-content-3 truncate block max-w-[132px]" title={`Giro ambiguo o ausente ("${row.desc_actividad || '—'}") — la categoría la decides tú`}>
+                <span className="text-caption text-content-3 truncate block max-w-[132px]" title={`Giro ambiguo o sin giro ("${row.desc_actividad || '—'}"). La categoría la decides tú.`}>
                     Sin sugerencia
                 </span>
             )}
@@ -134,18 +134,18 @@ function IvaCell({ row }) {
     if (estado === 'confirmada') {
         clave = 'confirmada';
         titulo = `Confirmada: ${deducible ? 'sí da' : 'no da'} crédito fiscal`
-            + (row.clasificado_por_nombre ? ` — por ${row.clasificado_por_nombre}` : '')
+            + (row.clasificado_por_nombre ? `. La confirmó ${row.clasificado_por_nombre}` : '')
             + (row.clasificado_at ? ` el ${fmtDate(row.clasificado_at)}` : '');
     } else if (estado === 'propuesta') {
         clave = 'propuesta';
-        titulo = `Propuesta: sí da crédito fiscal — ${row.clasificacion_base_legal || 'derivada del giro'}. Falta confirmarla.`;
+        titulo = `Propuesta: sí da crédito fiscal (${row.clasificacion_base_legal || 'por el giro'}). Falta confirmarla.`;
     } else if (row.clasificacion_base_legal) {
         clave = 'condicion';
-        titulo = `La ley lo condiciona — ${row.clasificacion_base_legal}`
+        titulo = `La ley lo condiciona: ${row.clasificacion_base_legal}`
             + (row.clasificacion_nota ? `. ${row.clasificacion_nota}` : '');
     } else {
         clave = 'sinGiro';
-        titulo = 'Sin giro registrado en la ficha — no se puede derivar la regla';
+        titulo = 'Sus datos no tienen giro. No se puede saber la regla.';
     }
 
     const { Icono, clase } = IVA_MARCAS[clave];
@@ -184,7 +184,7 @@ function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, 
                 icon={CheckCircle2}
                 disabled={busy || conSugerencia === 0}
                 title={conSugerencia === 0
-                    ? 'Ninguno de los seleccionados tiene sugerencia — asignales una a mano'
+                    ? 'Ninguno de los seleccionados tiene sugerencia. Asígnales una a mano.'
                     : `Aplica a cada proveedor la categoría sugerida por su propio giro`}
                 onClick={onAceptarSugerencia}
             >
@@ -413,7 +413,7 @@ export default function ProveedoresView({ openModal }) {
             useToastStore.getState().showToast(
                 'Categorías actualizadas',
                 cambiados === 0
-                    ? 'Ninguno cambió — ya tenían esa categoría.'
+                    ? 'Ninguno cambió. Ya tenían esa categoría.'
                     : `${cambiados} proveedor${cambiados !== 1 ? 'es' : ''} actualizado${cambiados !== 1 ? 's' : ''}.`,
                 cambiados === 0 ? 'info' : 'success',
             );
@@ -444,7 +444,7 @@ export default function ProveedoresView({ openModal }) {
             useToastStore.getState().showToast(
                 'Clasificación confirmada',
                 cambiados === 0
-                    ? 'Ninguna cambió — ya estaban confirmadas.'
+                    ? 'Ninguna cambió. Ya estaban confirmadas.'
                     : `${cambiados} proveedor${cambiados !== 1 ? 'es' : ''} ${cambiados !== 1 ? 'quedan' : 'queda'} con su deducibilidad confirmada.`,
                 cambiados === 0 ? 'info' : 'success',
             );

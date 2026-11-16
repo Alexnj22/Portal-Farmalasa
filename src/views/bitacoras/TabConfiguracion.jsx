@@ -213,7 +213,7 @@ function Area({ area, puedeEditar, onGuardado }) {
                             onChange={setActiva}
                             label={activa
                                 ? 'El área lleva bitácora'
-                                : 'Apagada — no cuenta como faltante'}
+                                : 'Apagada. No cuenta como faltante'}
                         />
                         {sucio && (
                             <Button variant="primary" size="sm" icon={Check} onClick={guardar}
@@ -305,8 +305,8 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
             </header>
 
             <p className="text-label text-content-3">
-                Valen para todas las áreas: la vuelta se camina una sola vez.
-                {rango && ` Las horas van entre las que abre y cierra la sucursal (${rotularHora12(rango.abre)} a ${rotularHora12(rango.cierra)}).`}
+                Valen para todas las áreas.
+                {rango && ` Van entre la apertura y el cierre de la sucursal (${rotularHora12(rango.abre)} a ${rotularHora12(rango.cierra)}).`}
             </p>
 
 
@@ -319,11 +319,10 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
 
             {sucio && (
                 <Notice variant="warning" compact bloque>
-                    <span className="font-bold">El horario nuevo rige también para los días de este
+                    <span className="font-bold">El horario nuevo también cambia los días de este
                     mes que ya pasaron.</span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        La grilla y el mes impreso se arman con la configuración de hoy. Lo ya
-                        anotado no se toca, y el resumen de un mes cerrado y firmado tampoco.
+                        Lo ya anotado no cambia. Un mes cerrado y firmado tampoco.
                     </span>
                 </Notice>
             )}
@@ -395,7 +394,7 @@ function Refrigerador({ branchId, areas, puedeEditar, onCambio }) {
             </header>
 
             <p className="text-label text-content-3">
-                Encendido, pide termómetro calibrado y dos lecturas al día entre 2 y 8 °C.
+                Si lo enciendes, pide termómetro calibrado y dos lecturas al día entre 2 y 8 °C.
             </p>
 
             {!puedeEditar ? (
@@ -433,7 +432,7 @@ function Refrigerador({ branchId, areas, puedeEditar, onCambio }) {
                     </Button>
                     {!fecha && (
                         <p className="text-label text-content-3">
-                            Hace falta la fecha del certificado para encenderlo.
+                            Para encenderlo, anota la fecha del certificado.
                         </p>
                     )}
                 </div>
@@ -491,8 +490,8 @@ function AgregarArea({ branchId, areas, onCreada }) {
                 <Plus size={16} /> Agregar un área
             </h4>
             <p className="text-label text-content-3">
-                Nace encendida y con los horarios de las áreas que esta sucursal ya lleva. El
-                refrigerador no se agrega por aquí: tiene su propio interruptor arriba.
+                Se crea encendida y con los horarios de esta sucursal. El refrigerador se
+                enciende arriba.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3">
                 <div className="space-y-1.5">
@@ -562,8 +561,8 @@ export default function TabConfiguracion({ branchId, sucursalNombre, puedeEditar
                 Un aviso que hay que rodar para pasar de largo no se lee: se
                 aprende a saltar. */}
             <p className="text-label text-content-3">
-                Apaga el área que esta sucursal no tenga: deja de contar como faltante al cerrar
-                el mes.
+                Apaga las áreas que esta sucursal no tenga. Así no cuentan como faltantes al
+                cerrar el mes.
             </p>
 
             {/* Dos columnas desde `xl`. En una pantalla de escritorio ancha,

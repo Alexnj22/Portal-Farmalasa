@@ -197,13 +197,13 @@ export default function Bitacoras() {
         {!esHoy ? <Pressable onPress={() => setFecha(hoySV())} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Volver a hoy</Text></Pressable> : null}
 
         {!salaValida ? (
-          <Aviso tono="cuidado" texto={!sala ? 'Elige una sucursal para ver su bitácora.' : `${nombreSala || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`} />
+          <Aviso tono="cuidado" texto={!sala ? 'Elige una sucursal para ver su bitácora.' : `${nombreSala || 'Esa sucursal'} no guarda medicamentos. No lleva bitácora de ambiente.`} />
         ) : cargando && !dia ? (
           <Cargando />
         ) : error ? (
-          <Aviso tono="freno" texto={error.code === '42501' ? 'Tu cargo no tiene el módulo de bitácoras. Hay que otorgarlo en Permisos.' : (error.message || 'No se pudo cargar la bitácora.')} />
+          <Aviso tono="freno" texto={error.code === '42501' ? 'Tu cargo no tiene acceso a Bitácoras. Se activa en Permisos.' : (error.message || 'No se pudo cargar la bitácora.')} />
         ) : !areas.length ? (
-          <Aviso tono="cuidado" texto="Esta sucursal todavía no tiene áreas. Se definen en Configuración." />
+          <Aviso tono="cuidado" texto="Esta sucursal todavía no tiene áreas. Agrégalas en Configuración." />
         ) : (
           <>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
@@ -218,7 +218,7 @@ export default function Bitacoras() {
                 </View>
               ))}
             </View>
-            {cerrado ? <Aviso tono="cuidado" texto="El mes de este día ya se cerró: no se puede anotar." /> : null}
+            {cerrado ? <Aviso tono="cuidado" texto="El mes de este día ya se cerró. No se puede anotar." /> : null}
             {puedeAnotar && !cerrado ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>Toca lo anotado para corregirlo.</Text> : null}
             {puedeAnotar && !cerrado && ronda.length > 0 ? <BotonGrande texto={`Pasar la ronda · ${ronda.length}`} color={MARCA.azul} onPress={() => setEnRonda(true)} /> : null}
             {momentos.map((m) => (
@@ -226,7 +226,7 @@ export default function Bitacoras() {
             ))}
             {enPausa.length ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>
-                {`Hoy no se lleva bitácora en ${enPausa.map((a) => a.nombre).join(', ')} — así está configurada el área. No cuentan como faltantes al cerrar el mes.`}
+                {`Hoy no se lleva bitácora en ${enPausa.map((a) => a.nombre).join(', ')} . No cuentan como faltantes al cerrar el mes.`}
               </Text>
             ) : null}
           </>

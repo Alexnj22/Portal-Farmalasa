@@ -154,7 +154,7 @@ const LIBRO_PAPEL = {
     pendiente: null,
     enviando: 'registrándose en el libro…',
     registrada: 'ya está en el libro de compras',
-    sin_verificar: 'se mandó al libro pero no se pudo comprobar: revisarla',
+    sin_verificar: 'se mandó al libro y no se pudo comprobar. Revísala',
     fallida: 'el libro no la aceptó',
 };
 
@@ -185,11 +185,11 @@ export function TabRegistro({ busca }) {
     const exportar = () => {
         const n = (v) => (v == null ? '' : v);
         exportCsv(
-            ['Fecha', 'Tipo doc', 'Documento', 'Numero de control', 'NIT proveedor', 'Proveedor', 'Uso', 'Tipo',
+            ['Fecha', 'Tipo de factura', 'Numero de factura', 'Numero de control', 'NIT proveedor', 'Proveedor', 'Uso', 'Tipo',
              'ID producto', 'Producto', 'Codigo proveedor', 'Descripcion proveedor', 'Presentacion', 'Unidades por presentacion',
-             'Cantidad', 'Unidades', 'Precio lista', 'Descuento renglon', 'Descuento pie %', 'Costo presentacion',
+             'Cantidad', 'Unidades', 'Precio lista', 'Descuento producto', 'Descuento pie %', 'Costo presentacion',
              'Costo unidad', 'Costo anterior', 'Variacion costo %', 'Regular', 'Regular anterior', 'Lote', 'Vence',
-             'Enviado a salas', 'Comprobado', 'Cargado por', 'Cargado el', 'Carga', 'Compra en el sistema'],
+             'Enviado a sucursales', 'Comprobado', 'Cargado por', 'Cargado el', 'Carga', 'Numero de compra'],
             vista.map(f => [
                 f.fecha_documento, n(f.tipo_documento), n(f.numero_documento), n(f.numero_control), n(f.proveedor_nit), n(f.proveedor_nombre),
                 n(f.uso), f.tipo, n(f.erp_product_id), n(f.producto), n(f.codigo_proveedor), n(f.descripcion_proveedor), n(f.presentacion),
@@ -213,7 +213,7 @@ export function TabRegistro({ busca }) {
             </div>
             {difieren > 0 && (
                 <Notice variant="danger" icon={AlertTriangle}>
-                    {difieren === 1 ? 'Un renglón no cuadra' : `${difieren} renglones no cuadran`} con la compra registrada en Bodega: cantidad o costo distintos. Revísalo.
+                    {difieren === 1 ? 'Un producto tiene' : `${difieren} productos tienen`} cantidad o costo distintos a la compra registrada en Bodega. Revísalo.
                 </Notice>
             )}
             <DataTable columns={COLS_REGISTRO} dense loading={filas === null}
@@ -254,7 +254,7 @@ export function TabRegistro({ busca }) {
                             </DataCell>
                             <DataCell>
                                 <p>{f.lote ?? '—'}</p>
-                                <p className="text-micro text-content-3 tabular-nums">{f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sala' : '—')}</p>
+                                <p className="text-micro text-content-3 tabular-nums">{f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sucursal' : '—')}</p>
                             </DataCell>
                             <DataCell align="center">{sis ? <Badge size="sm" variant={sis.variant}>{sis.label}</Badge> : '—'}</DataCell>
                             <DataCell>
@@ -305,7 +305,7 @@ export function TabPorLlegar({ puedeEditar, busca }) {
         const { resultado, error: e } = await darSalidaFaltante(f.id);
         setG(null); setConfSal(null);
         if (e) setError(e);
-        else if (!resultado?.comprobado) setError('Se le dio salida, pero la existencia de Bodega no bajó lo esperado: revísalo.');
+        else if (!resultado?.comprobado) setError('Se le dio salida, pero la existencia de Bodega no bajó lo esperado. Revísala.');
         cargar();
     };
     const vista = (filas ?? []).filter(f => !busca
@@ -318,9 +318,8 @@ export function TabPorLlegar({ puedeEditar, busca }) {
         <div className="space-y-3">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <Notice variant="info" icon={HelpCircle}>
-                Lo que el proveedor cobró y no mandó. La factura se cargó completa; esto se queda aquí hasta que llegue o
-                llegue su nota de crédito. Con la nota, «Dar salida» la registra en el libro de compras y descarga de Bodega
-                lo que faltó. A los {DIAS_PARA_RECLAMAR} días sin llegar se marca para reclamar.
+                Lo que el proveedor cobró y no mandó. Se queda aquí hasta que llegue el producto o su nota de
+                crédito. Con la nota, «Dar salida» la registra en el libro de compras y descarga de Bodega lo que faltó. A los {DIAS_PARA_RECLAMAR} días sin llegar se marca para reclamar.
                 {abiertos.length > 0 && <> Pendiente: <b>{abiertos.length}</b> {abiertos.length === 1 ? 'producto' : 'productos'} · <b>{formatMoney(monto)}</b>.</>}
             </Notice>
             {confirmaSalida && (
@@ -478,7 +477,7 @@ export function TabErroneos({ puedeEditar }) {
         const { resultado, error: e } = await darSalidaErroneo(fila.id);
         setG(null); setConfSal(null);
         if (e) setError(e);
-        else if (!resultado?.comprobado) setError('Se le dio salida, pero la existencia de vencidos no bajó lo esperado: revísalo.');
+        else if (!resultado?.comprobado) setError('Se le dio salida, pero la existencia de vencidos no bajó lo esperado. Revísala.');
         cargar();
     };
 
@@ -488,7 +487,7 @@ export function TabErroneos({ puedeEditar }) {
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <Notice variant="info" icon={HelpCircle}>
                 Lo que un proveedor mandó por error. Entra con su compra, pasa a Bodega de vencidos y espera la nota de
-                crédito. Si no lo tenemos en el catálogo, en Bodega figura como «PRODUCTO ERRONEO DE PROVEEDOR»; aquí queda lo que era.
+                crédito. Si no está en el catálogo, en Bodega sale como «PRODUCTO ERRONEO DE PROVEEDOR». Aquí ves qué era.
             </Notice>
             {!filas.length && <p className="text-label text-content-3">No hay productos erróneos.</p>}
             {confirmaSalida && (
@@ -636,7 +635,7 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
     // una tanda no avance**: un archivo ilegible no se marca leído, así que
     // sin ese segundo freno el bucle no terminaría nunca.
     const barrer = async () => {
-        setError(''); setBarr('Leyendo los documentos…');
+        setError(''); setBarr('Leyendo las facturas…');
         for (let vuelta = 0; vuelta < 30; vuelta++) {
             const { resultado, error: e } = await barrerDocumentos({ dias: 90, tanda: 40 });
             if (e) { setError(e); break; }
@@ -705,7 +704,7 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
                 <StatCard icon={RESUMEN[estado].icon} label={RESUMEN[estado].label}
                     value={totales.preguntas} sub="productos distintos"
                     loading={filas === null} tono="brand" />
-                <StatCard icon={Layers} label="Renglones" value={totales.renglones}
+                <StatCard icon={Layers} label="Líneas de factura" value={totales.renglones}
                     sub={RESUMEN[estado].renglones} loading={filas === null} tono="brand" />
                 {/* «Sin candidato» sólo dice algo de lo que falta contestar. En
                     los otros estados sería un número que nadie va a accionar. */}
@@ -747,16 +746,14 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
 
         {estado === 'apartados' ? (
             <Notice variant="info" icon={EyeOff} compact>
-                Lo que alguien marcó como <b>que no es un producto</b> —un flete, un servicio, un
-                descuento—. Está aquí para poder revisarlo: si fue un error, o si desde entonces
-                el producto empezó a existir, <b>Devolver a la lista</b> lo pone otra vez a la cola.
+                Lo que alguien marcó como <b>que no es un producto</b>, como un flete, un servicio o un
+                descuento. Si fue un error, o si el producto ya existe, toca <b>Devolver a la lista</b>.
             </Notice>
         ) : (
             <Notice variant="info" icon={ListChecks} compact>
-                Cada línea es <b>un producto de un proveedor</b>, no un renglón: confirmarla resuelve
-                todas las facturas donde aparece, las de hoy y las que vengan. Está ordenada por
-                cuánto destraba cada una. Si la lista se ve corta o vieja, <b>Actualizar lista</b> lee
-                los documentos nuevos.
+                Cada fila es <b>un producto de un proveedor</b>. Al confirmarla se resuelven todas las facturas
+                donde aparece, las de hoy y las que vengan. Primero van las que más destraban. Si la lista se ve
+                corta o vieja, toca <b>Actualizar lista</b>.
             </Notice>
         )}
 
@@ -765,13 +762,11 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
             {filas !== null && visibles.length === 0 && (
                 estado === 'apartados' ? (
                     <Notice variant="info" icon={EyeOff}>
-                        Nadie apartó nada todavía. Aquí van a aparecer los renglones que se marquen
-                        como <b>que no son un producto</b>, por si hay que revisarlos.
+                        Nadie apartó nada todavía. Aquí aparece lo que se marque como <b>que no es un producto</b>.
                     </Notice>
                 ) : estado === 'resueltos' ? (
                     <Notice variant="info" icon={BookMarked}>
-                        Todavía no hay ningún producto confirmado. Cada uno que confirmes queda aquí,
-                        y desde aquí se corrige si te equivocaste.
+                        Todavía no hay productos confirmados. Los que confirmes quedan aquí, y aquí los puedes corregir.
                     </Notice>
                 ) : (
                     <Notice variant="success" icon={CheckCircle2}>
@@ -789,7 +784,7 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
                         <div className="flex items-start gap-3 flex-wrap">
                             <div className="flex-1 min-w-[16rem]">
                                 <p className="text-label font-black text-content">
-                                    {f.sugerido_nombre ?? '— sin candidato —'}
+                                    {f.sugerido_nombre ?? 'Sin candidato'}
                                 </p>
                                 <p className="text-micro text-content-3">
                                     {f.descripcion}
@@ -801,7 +796,7 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
                             </div>
                             <div className="text-right shrink-0">
                                 <p className="text-label font-black text-content tabular-nums">
-                                    {plural(f.renglones, 'renglón', 'renglones')}
+                                    {plural(f.renglones, 'vez', 'veces')}
                                 </p>
                                 <p className="text-micro text-content-3">
                                     en {plural(f.documentos, 'factura', 'facturas')}
@@ -957,7 +952,7 @@ export function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-4xl" ariaLabel="Factura en papel">
             <LiquidModal.Header icono={FileText} tono="brand" onClose={onCerrar}
                 titulo={inicial ? 'Corregir factura en papel' : 'Factura en papel'}
-                subtitulo="Para proveedores que no mandan factura electrónica: copia el papel tal como viene." />
+                subtitulo="Para proveedores que no mandan factura electrónica. Copia el papel tal como viene." />
             <LiquidModal.Body>
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                     <div className="md:col-span-4">
@@ -985,7 +980,7 @@ export function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
                 </div>
 
                 <p className="mt-5 mb-2 text-caption font-black text-content-2 uppercase tracking-widest">
-                    Productos · el importe de cada línea{f.tipo_doc === 'COF' ? ', con IVA' : ', sin IVA'}, como en el papel
+                    Productos · el importe de cada uno{f.tipo_doc === 'COF' ? ', con IVA' : ', sin IVA'}, como en el papel
                 </p>
                 <div className="flex flex-col gap-2">
                     {f.renglones.map((r, i) => (
@@ -1019,7 +1014,7 @@ export function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
                     <Button size="sm" variant="ghost" icon={Plus} onClick={agregar}>Otro producto</Button>
                     <p className={`text-label tabular-nums ${descuadre ? 'text-warning-text font-bold' : 'text-content-2'}`}>
                         Suma de los productos{f.tipo_doc === 'CCF' ? ' con IVA' : ''}: {formatMoney(estimado)}
-                        {descuadre && ` · el papel dice ${formatMoney(total)}: revisa`}
+                        {descuadre && ` · el papel dice ${formatMoney(total)}. Revisa`}
                     </p>
                 </div>
                 {error && <Notice variant="danger" icon={AlertTriangle} className="mt-3">{error}</Notice>}
@@ -1027,7 +1022,7 @@ export function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
             <LiquidModal.Footer>
                 <div className="flex items-center gap-2 w-full flex-wrap">
                     <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
-                        Al guardar se abre la carga: ahí se eligen los productos, el lote y el vencimiento, igual que con una factura electrónica.
+                        Al guardar se abre la carga. Ahí eliges los productos, el lote y el vencimiento.
                     </p>
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
                     <Button size="sm" loading={guardando} onClick={guardar}>Guardar y seguir</Button>

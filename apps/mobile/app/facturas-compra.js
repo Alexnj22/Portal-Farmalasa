@@ -91,14 +91,14 @@ export default function FacturasCompra() {
     return String(b.fecha_emision).localeCompare(String(a.fecha_emision));
   }), [filas, estado, tipo, texto, orden, soloSinProv]);
   // El ZIP del período (JSON + PDF de lo que se ve, y lo pendiente de revisión).
-  const zipDelMes = () => Alert.alert('ZIP del mes', `${visibles.length} documentos con sus JSON y PDF, más lo pendiente de revisión. Se descarga en el teléfono: con muchos documentos tarda.`, [
+  const zipDelMes = () => Alert.alert('ZIP del mes', `${visibles.length} facturas con sus JSON y PDF, más lo pendiente de revisión. Se descarga en el teléfono. Con muchas facturas tarda.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Armar', onPress: async () => {
       trabajando('Bajando los archivos…');
       try {
         const r = await compartirZipDeFacturas(visibles.map((d) => d.id), { onProgress: (p) => trabajando(`Bajando ${p.hechos} de ${p.total}…`), contexto: { mes } });
         cerrarProgreso();
-        if (r.fallidos.length) fallo('Faltaron archivos', `${r.fallidos.length} no se pudieron incluir (van listados dentro del ZIP).`);
+        if (r.fallidos.length) fallo('Faltaron archivos', `${r.fallidos.length} no se pudieron incluir. Van listados dentro del ZIP.`);
       } catch (e) { fallo('No se pudo armar el ZIP', mensajeAmigable(e)); }
     } },
   ]);
@@ -108,7 +108,7 @@ export default function FacturasCompra() {
   const grupos = [
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todos', onCambiar: setEstado,
       opciones: [{ id: 'todos', label: 'Todos' }, { id: 'vigente', label: 'Sin anular' }, { id: 'anulado', label: 'Anulados por el proveedor' }] },
-    { id: 'tipo', titulo: 'Tipo de documento', activa: tipo, porDefecto: 'todos', onCambiar: setTipo,
+    { id: 'tipo', titulo: 'Tipo', activa: tipo, porDefecto: 'todos', onCambiar: setTipo,
       opciones: [{ id: 'todos', label: 'Todos' }, ...tipos.map((x) => ({ id: x, label: dteTypeLabel(x) }))] },
     { id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'fecha', onCambiar: setOrden,
       opciones: [{ id: 'fecha', label: 'Más recientes' }, { id: 'proveedor', label: 'Proveedor' }, { id: 'tipo', label: 'Tipo' }, { id: 'monto', label: 'Mayor monto' }] },
@@ -137,7 +137,7 @@ export default function FacturasCompra() {
         {filas && verMontos ? (
           <>
             <FilaDeKpis>
-              <Kpi icono="FileText" rotulo="Total compras" valor={formatMoney(t.totalCompras)} color={MARCA.azul} apoyo={`${(filas || []).length.toLocaleString('es-SV')} documentos`} />
+              <Kpi icono="FileText" rotulo="Total compras" valor={formatMoney(t.totalCompras)} color={MARCA.azul} apoyo={`${(filas || []).length.toLocaleString('es-SV')} facturas`} />
               <Kpi icono="Receipt" rotulo="Crédito IVA" valor={formatMoney(t.creditoFiscal)} color={MARCA.verde} apoyo="excluye invalidados" />
             </FilaDeKpis>
             <FilaDeKpis>
@@ -150,7 +150,7 @@ export default function FacturasCompra() {
         ) : null}
         {filas ? (
           <FilaDeKpis>
-            {!verMontos ? <Kpi icono="FileText" rotulo="Documentos" valor={visibles.length.toLocaleString('es-SV')} color={MARCA.azul} apoyo={`${t.invalidadosCount} invalidados`} /> : null}
+            {!verMontos ? <Kpi icono="FileText" rotulo="Facturas" valor={visibles.length.toLocaleString('es-SV')} color={MARCA.azul} apoyo={`${t.invalidadosCount} invalidados`} /> : null}
             <Kpi icono="UserX" rotulo="Sin proveedor" valor={String(t.sinProveedorCount)} color={t.sinProveedorCount ? MARCA.ambar : MARCA.verde} pide={soloSinProv}
               apoyo={soloSinProv ? 'filtrando · tocar para quitar' : 'pendiente de emparejar'}
               onPress={t.sinProveedorCount ? () => setSoloSinProv((v) => !v) : undefined} />

@@ -120,11 +120,11 @@ export default function CuentasPorPagar() {
           </>
         ) : null}
         {tab === 'proveedores' && pendientes.length ? (
-          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${pendientes.length} pago${pendientes.length === 1 ? '' : 's'} esperan la aprobación de Gerencia: su monto está en trámite y no baja la deuda todavía.`} /></View>
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${pendientes.length} pago${pendientes.length === 1 ? '' : 's'} esperan la aprobación de un supervisor o administrador. Hasta entonces la deuda no baja.`} /></View>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas && t.sinPlazo > 0 && tab === 'proveedores' ? (
-          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinPlazo} proveedor(es) sin días de crédito: sus facturas no pueden decir si están vencidas. Se definen tocando al proveedor.`} /></View>
+          <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinPlazo} proveedor(es) no tienen días de crédito. Sin eso no se sabe si sus facturas están vencidas. Toca el proveedor para escribirlos.`} /></View>
         ) : null}
         {filas == null ? <Cargando /> : tab === 'proveedores' ? provVisibles.map((f) => (
           <Pressable key={f.emisor_nit} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/cxp-proveedor/[nit]', params: { nit: f.emisor_nit, nombre: f.proveedor } }); }}

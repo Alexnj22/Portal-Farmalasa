@@ -130,7 +130,7 @@ export default function TabBajoReceta({
         return (
             <Notice variant="danger" icon={AlertTriangle}>
                 {error.code === '42501'
-                    ? 'Tu cargo no tiene el módulo de bitácoras. Hay que otorgarlo en Permisos.'
+                    ? 'Tu cargo no tiene acceso a Bitácoras. Se activa en Permisos.'
                     : (error.message || 'No se pudo cargar el libro.')}
             </Notice>
         );
@@ -164,13 +164,13 @@ export default function TabBajoReceta({
                     </TituloDeSeccion>
                     <p className="text-caption text-content-3 mt-0.5">
                         {periodo ? `${periodo} · ` : ''}
-                        {renglones.length} {renglones.length === 1 ? 'renglón' : 'renglones'}
+                        {renglones.length} {renglones.length === 1 ? 'folio' : 'folios'}
                         {completos > 0 && ` · ${completos} con receta`}
                         {pendientes > 0 && (
                             <span className="text-warning-text font-bold"> · {pendientes} sin completar</span>
                         )}
                         {sinCopia > 0 && (
-                            <span className="text-danger-text font-bold"> · {sinCopia} sin la copia</span>
+                            <span className="text-danger-text font-bold"> · {sinCopia} sin copia de receta</span>
                         )}
                     </p>
                 </div>
@@ -192,8 +192,8 @@ export default function TabBajoReceta({
                 empty={{
                     icon: BookOpen,
                     message: clase === CLASE_ANTIBIOTICO
-                        ? 'Sin renglones en este período — el libro de antibióticos se llena solo con cada venta'
-                        : 'Sin renglones en este período — aquí entran los productos bajo receta que no son antibióticos',
+                        ? 'Sin folios este mes. El libro de antibióticos se llena solo con cada venta.'
+                        : 'Sin folios este mes. Aquí entran los productos bajo receta que no son antibióticos.',
                 }}
             >
                 {ordenadas.map((r, i) => {
@@ -293,7 +293,7 @@ export default function TabBajoReceta({
                                     {r.estado === 'completa' && (
                                         r.tiene_foto
                                             ? <Badge variant="success" size="sm" uppercase={false} icon={Check}>Completa</Badge>
-                                            : <Badge variant="danger" size="sm" uppercase={false} icon={ImageOff}>Sin la copia</Badge>
+                                            : <Badge variant="danger" size="sm" uppercase={false} icon={ImageOff}>Sin copia de receta</Badge>
                                     )}
                                     {pendiente && puedeCompletar && (
                                         <Button variant="primary" size="xs" icon={PenLine}

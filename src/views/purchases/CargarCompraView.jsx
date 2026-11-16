@@ -68,8 +68,8 @@ const TABS = [
 const COLS = [
     { key: 'fecha',      label: 'Fecha',      align: 'left'   },
     { key: 'proveedor',  label: 'Proveedor',  align: 'left'   },
-    { key: 'documento',  label: 'Documento',  align: 'left',   hideBelow: 'lg' },
-    { key: 'renglones',  label: 'Renglones',  align: 'center', hideBelow: 'md' },
+    { key: 'documento',  label: 'Código',     align: 'left',   hideBelow: 'lg' },
+    { key: 'renglones',  label: 'Productos',  align: 'center', hideBelow: 'md' },
     { key: 'total',      label: 'Total',      align: 'right'  },
     { key: 'espera',     label: 'Esperando',  align: 'center' },
     { key: 'estado',     label: 'Estado',     align: 'center' },
@@ -256,7 +256,7 @@ export default function CargarCompraView() {
             searchValue={tab === 'confirmar' ? buscaConfirmar : busca}
             onSearchChange={tab === 'confirmar' ? setBuscaConfirmar : setBusca}
             showSearch={tab === 'facturas' || tab === 'confirmar' || tab === 'registro' || tab === 'por_llegar'}
-            placeholder={tab === 'confirmar' ? 'Buscar proveedor, producto o código…' : 'Buscar proveedor o número de documento…'} />
+            placeholder={tab === 'confirmar' ? 'Buscar proveedor, producto o código…' : 'Buscar proveedor o número de factura…'} />
     );
 
     return (
@@ -273,11 +273,11 @@ export default function CargarCompraView() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen de lo que falta cargar">
                         <StatCard icon={PackagePlus} label="Sin cargar" value={filas?.length ?? 0}
-                            sub={`${totales.renglones} renglones`} loading={filas === null} tono="brand" />
+                            sub={`${totales.renglones} productos`} loading={filas === null} tono="brand" />
                         <StatCard icon={AlertTriangle} label="Monto" value={formatMoney(totales.monto)}
                             sub="de facturas que esperan" loading={filas === null} tono="warning" />
                         <StatCard icon={CalendarRange} label="De más de 15 días" value={totales.viejos}
-                            sub="documentos" loading={filas === null} tono="warning"
+                            sub="facturas" loading={filas === null} tono="warning"
                             valueCls={totales.viejos ? 'text-warning-text' : 'text-content'} />
                     </CarrilCards>
 
@@ -315,11 +315,10 @@ export default function CargarCompraView() {
                     onAbrir={m => setSel(docDePapel(m))} onDescartada={cargarPapeles} />
 
                 <Notice variant="info" icon={PackagePlus} compact>
-                    El portal arma la compra desde el documento —producto, cantidad, costo, lote y
-                    vencimiento— y cada renglón dice de dónde salió su dato. Se revisa con «Revisar
-                    carga» y entra a <b>Bodega</b> con «Cargar en Bodega»; desde ahí el producto se
-                    mueve a las salas. Cada producto que confirmes queda guardado y ese proveedor no
-                    vuelve a preguntar.
+                    El portal arma la compra desde la factura: producto, cantidad, costo, lote y vencimiento.
+                    Revísala con «Revisar carga» y súbela a <b>Bodega</b> con «Cargar en Bodega». Desde ahí el
+                    producto pasa a las sucursales. Cada producto que confirmes queda guardado y ese proveedor
+                    no vuelve a preguntar.
                 </Notice>
 
                 {(() => {
@@ -388,7 +387,7 @@ export default function CargarCompraView() {
                     page={pagina} totalPages={totalPaginas} onPageChange={setPagina}
                     pageSize={porPagina} onPageSizeChange={setPorPagina}
                     total={filas?.length ?? 0} filteredTotal={visibles.length}
-                    unit="documentos" />
+                    unit="facturas" />
             </>)}
             </Suspense>
             </div>

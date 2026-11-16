@@ -126,14 +126,14 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
         setOcupado(true);
         const { error: e } = await sacarDelLibro(sacandoDelLibro.product_id, motivo);
         setOcupado(false);
-        if (e) { showToast('No se pudo', mensajeAmigable(e), 'error'); return; }
+        if (e) { showToast('No se pudo sacar del libro', mensajeAmigable(e), 'error'); return; }
         showToast('Ya no va al libro', sacandoDelLibro.producto, 'success');
         setSacandoDelLibro(null);
         cargar();
     };
     const volverAlLibro = async (p) => {
         const { error: e } = await devolverAlLibro(p.product_id);
-        if (e) { showToast('No se pudo', mensajeAmigable(e), 'error'); return; }
+        if (e) { showToast('No se pudo devolver al libro', mensajeAmigable(e), 'error'); return; }
         showToast('Vuelve al libro', p.producto, 'success');
         cargar();
     };
@@ -181,7 +181,7 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
                     )}
                     {libroDistinto.length > 0 && (
                         <p>
-                            {`${libroDistinto.length} con la marca del libro distinta a la regla. `}
+                            {`${libroDistinto.length} productos con la marca del libro distinta a la regla. `}
                             <button type="button" className="underline font-semibold" onClick={() => setVerDistintos(v => !v)}>
                                 {verDistintos ? 'Ocultar' : 'Ver cuáles'}
                             </button>
@@ -216,7 +216,7 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
                             <DataRow key="sin-molecula" index={i}>
                                 <DataCell className="text-body-sm">
                                     <p className="font-semibold">Sin molécula asignada</p>
-                                    <p className="text-caption text-content-3">Van al libro; falta decir de qué molécula son</p>
+                                    <p className="text-caption text-content-3">Van al libro. Falta asignarles la molécula.</p>
                                 </DataCell>
                                 <DataCell><Badge variant="danger">Por asignar · {m.productos.length}</Badge></DataCell>
                                 <DataCell className="text-body-sm">

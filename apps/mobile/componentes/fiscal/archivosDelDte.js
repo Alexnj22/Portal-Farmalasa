@@ -16,7 +16,7 @@ async function bajar(ruta) {
   const url = await getSignedFileUrl(ruta);
   if (!url) throw new Error('No se pudo abrir el archivo guardado.');
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`No se pudo bajar el archivo (HTTP ${res.status}).`);
+  if (!res.ok) throw new Error(`No se pudo descargar el archivo (HTTP ${res.status}).`);
   return new Uint8Array(await res.arrayBuffer());
 }
 
@@ -32,7 +32,7 @@ async function compartirBytes(bytes, nombre) {
 /** Uno de los dos archivos: `ext` es 'json' o 'pdf'. */
 export async function compartirArchivoDelDte(r, ext) {
   const ruta = ext === 'json' ? r?.json_path : r?.pdf_path;
-  if (!ruta) throw new Error(`El ${ext.toUpperCase()} de este documento no está guardado.`);
+  if (!ruta) throw new Error(`El ${ext.toUpperCase()} de esta factura no está guardado.`);
   const nombre = `${baseDelDte(r)}.${ext}`;
   if (await compartirBytes(await bajar(ruta), nombre)) {
     registrarEgreso('dte_venta', { formato: ext, filas: 1, detalle: { documento: baseDelDte(r), via: 'app' } });
@@ -46,7 +46,7 @@ export async function compartirPaqueteDelDte(r) {
   for (const [ext, ruta] of [['json', r?.json_path], ['pdf', r?.pdf_path]]) {
     if (ruta) entradas[`${base}.${ext}`] = await bajar(ruta);
   }
-  if (!Object.keys(entradas).length) throw new Error('Este documento no tiene archivos guardados.');
+  if (!Object.keys(entradas).length) throw new Error('Esta factura no tiene archivos guardados.');
   if (await compartirBytes(zipSync(entradas), `${base}.zip`)) {
     registrarEgreso('dte_venta', { formato: 'zip', filas: Object.keys(entradas).length, detalle: { documento: base, via: 'app' } });
   }

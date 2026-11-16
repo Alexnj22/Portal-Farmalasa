@@ -82,7 +82,7 @@ function Tarjeta({ grupo, puede, onHecho }) {
       setOcupado(false);
     }
   };
-  const confirmarPropuesta = () => Alert.alert(grupo.titulo, `Confirmar ${cuantos(n)} como deducibles con la propuesta del sistema. Queda con tu nombre y la fecha, y desde ahí el libro de compras la usa.`, [
+  const confirmarPropuesta = () => Alert.alert(grupo.titulo, `Confirmar ${cuantos(n)} como deducibles con la propuesta. Queda con tu nombre y la fecha. Desde ahí el libro de compras la usa.`, [
     { text: 'Cancelar', style: 'cancel' }, { text: 'Confirmar', onPress: () => correr(() => confirmarClasificacionPropuesta(ids), 'Clasificación confirmada') },
   ]);
   const resolver = () => Alert.alert(grupo.titulo, `Confirmar ${cuantos(n)} como ${respuesta ? 'deducibles' : 'NO deducibles'}.${respuesta ? '' : ' Su IVA no entra al libro de compras como crédito fiscal.'}`, [
@@ -103,8 +103,8 @@ function Tarjeta({ grupo, puede, onHecho }) {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>{grupo.titulo}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{grupo.baseLegal || 'Sin giro registrado en la ficha'}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${grupo.rows.length} proveedor${grupo.rows.length === 1 ? '' : 'es'} · ${grupo.ccf} documento${grupo.ccf === 1 ? '' : 's'}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{grupo.baseLegal || 'Sus datos no tienen giro'}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${grupo.rows.length} proveedor${grupo.rows.length === 1 ? '' : 'es'} · ${grupo.ccf} factura${grupo.ccf === 1 ? '' : 's'}`}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{fmtMoneda(grupo.credito)}</Text>
@@ -123,7 +123,7 @@ function Tarjeta({ grupo, puede, onHecho }) {
               <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '800' }}>{pregunta.q}</Text>
               {grupo.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{grupo.nota}</Text> : null}
               {grupo.dominante && grupo.rows.length > 1 && grupo.credito > 0 ? (
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`El más grande del grupo es ${grupo.dominante.nombre} — ${fmtMoneda(grupo.dominante.credito_fiscal)}, el ${Math.round((grupo.dominante.credito_fiscal / grupo.credito) * 100)}% de lo que está en juego.`}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`El más grande del grupo es ${grupo.dominante.nombre}, con ${fmtMoneda(grupo.dominante.credito_fiscal)}. Es el ${Math.round((grupo.dominante.credito_fiscal / grupo.credito) * 100)}% de lo que está en juego.`}</Text>
               ) : null}
             </View>
           ) : null}
@@ -146,7 +146,7 @@ function Tarjeta({ grupo, puede, onHecho }) {
                   <Opciones titulo="SECTOR" opciones={SECTOR_OPTIONS} valor={anexo.f07_sector || ''} onCambiar={(v) => setAnexo((a) => ({ ...a, f07_sector: v }))} />
                   {anexo.f07_clasificacion ? <Opciones titulo="TIPO DE COSTO O GASTO" opciones={tiposCostoGasto(anexo.f07_clasificacion)} valor={anexo.f07_tipo_costo_gasto || ''} onCambiar={(v) => setAnexo((a) => ({ ...a, f07_tipo_costo_gasto: v }))} /> : null}
                 </>
-              ) : <Aviso texto={`Quedan como no deducibles: su IVA no entra al libro de compras como crédito fiscal. Son ${fmtMoneda(grupo.credito)}.`} />}
+              ) : <Aviso texto={`Quedan como no deducibles. Su IVA no entra al libro de compras como crédito fiscal. Son ${fmtMoneda(grupo.credito)}.`} />}
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 <Boton texto={`Confirmar ${cuantos(n)} como ${respuesta ? 'deducibles' : 'no deducibles'}`} lleno deshabilitado={ocupado || !n || (respuesta && !anexo.f07_tipo_costo_gasto)} onPress={resolver} />
                 <Boton texto="Cancelar" color={colorSistema.texto2} onPress={() => setRespuesta(null)} />
@@ -162,7 +162,7 @@ function Tarjeta({ grupo, puede, onHecho }) {
               ) : null}
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>{r.nombre}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 11 }} numberOfLines={1}>{[r.desc_actividad, `${r.ccf} docs`].filter(Boolean).join(' · ')}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 11 }} numberOfLines={1}>{[r.desc_actividad, `${r.ccf} facturas`].filter(Boolean).join(' · ')}</Text>
               </View>
               <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '700' }}>{fmtMoneda(r.credito_fiscal)}</Text>
               <Pressable hitSlop={6} onPress={() => router.push({ pathname: '/proveedor/[id]', params: { id: String(r.id) } })} style={{ minHeight: 44, justifyContent: 'center' }}>
@@ -204,18 +204,18 @@ export default function DeducibilidadDeProveedores() {
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas == null ? <Cargando /> : !filas.length ? (
-          <View style={{ marginHorizontal: 16 }}><Aviso texto="Todo clasificado: cada proveedor tiene su deducibilidad confirmada. El libro de compras ya puede usarlas." /></View>
+          <View style={{ marginHorizontal: 16 }}><Aviso texto="Todo clasificado. Cada proveedor tiene su deducibilidad confirmada." /></View>
         ) : (
           <>
             <View style={{ marginHorizontal: 20, gap: 2 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{fmtMoneda(totales.credito)}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`de crédito fiscal esperando una decisión, en ${totales.decisiones} decisiones. El libro de compras sólo usa las confirmadas.`}</Text>
             </View>
-            {propuestas.length ? <><Seccion titulo="PROPUESTAS DEL SISTEMA" t={totales.prop} />{propuestas.map((g) => <Tarjeta key={g.key} grupo={g} puede={puede} onHecho={cargar} />)}</> : null}
+            {propuestas.length ? <><Seccion titulo="PROPUESTAS" t={totales.prop} />{propuestas.map((g) => <Tarjeta key={g.key} grupo={g} puede={puede} onHecho={cargar} />)}</> : null}
             {condicionadas.length ? <><Seccion titulo="LAS QUE LA LEY CONDICIONA" t={totales.cond} />{condicionadas.map((g) => <Tarjeta key={g.key} grupo={g} puede={puede} onHecho={cargar} />)}</> : null}
             {sinGiro ? (
               <View style={{ marginHorizontal: 16 }}>
-                <Aviso texto={`Sin giro registrado: ${sinGiro.rows.length} proveedores · ${sinGiro.ccf} documentos · ${fmtMoneda(sinGiro.credito)}. Nunca llegó un documento suyo con el giro, así que no hay regla que derivar: se clasifican desde su ficha.`} />
+                <Aviso texto={`Sin giro: ${sinGiro.rows.length} proveedores · ${sinGiro.ccf} facturas · ${fmtMoneda(sinGiro.credito)}. Ninguna de sus facturas trae el giro. Clasifícalos desde sus datos.`} />
               </View>
             ) : null}
           </>

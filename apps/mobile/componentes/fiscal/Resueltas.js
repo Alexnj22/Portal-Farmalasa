@@ -89,7 +89,7 @@ export default function Resueltas({ cola, sala, nombreSala, verMontos, recarga }
                     </View>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[f?.cliente, f ? nombreSala(f.branch_id) : null].filter(Boolean).join(' · ')}</Text>
                     <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                      {r.sellada ? <Pildora texto="Sellada por Hacienda" color={MARCA.verde} /> : <Pildora texto="Resuelta a mano" color={MARCA.azulClaro} />}
+                      {r.sellada ? <Pildora texto="Sellada por el MH" color={MARCA.verde} /> : <Pildora texto="Resuelta a mano" color={MARCA.azulClaro} />}
                       {r.excluida ? <Pildora texto="Solventado internamente" color={MARCA.ambar} /> : null}
                     </View>
                     {r.comment ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`«${r.comment}»`}</Text> : null}

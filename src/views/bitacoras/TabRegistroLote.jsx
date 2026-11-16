@@ -138,7 +138,7 @@ function DetalleLote({ fila, registro, onClose }) {
 
                     {fila.aproximado && (
                         <p className="text-caption text-content-3">
-                            * En ese traslado los lotes anotados no suman lo enviado: la cantidad se repartió entre ellos.
+                            * En ese traslado los lotes anotados no suman lo enviado. La cantidad se repartió entre ellos.
                         </p>
                     )}
                     {cp && (
@@ -146,7 +146,7 @@ function DetalleLote({ fila, registro, onClose }) {
                             El producto entero ({registro?.desde ? `desde el ${fmtDia(registro.desde)}` : 'este mes'}):
                             {' '}inicial {fmtNum(cp.inicial)}, movimientos {fmtSigno(Number(cp.neto))}, hay {fmtNum(cp.existencia)}
                             {cp.diferencia !== null && cp.diferencia !== undefined
-                                ? (Number(cp.diferencia) === 0 ? ' — cuadra.' : ` — diferencia ${fmtSigno(Number(cp.diferencia))}.`)
+                                ? (Number(cp.diferencia) === 0 ? '. Cuadra.' : `. Diferencia ${fmtSigno(Number(cp.diferencia))}.`)
                                 : '.'}
                         </p>
                     )}
@@ -198,9 +198,9 @@ export default function TabRegistroLote({ registro, cargando, error, filtro, bus
                 <Notice variant="danger">{error}</Notice>
             ) : registro && (primerMes || registro.existencia_de !== 'foto' || r?.sin_lote_unidades > 0) && (
                 <Notice variant="info" compact>
-                    {primerMes && 'Primer mes del registro: sólo cuadran los lotes que entraron desde el 11 de agosto. '}
+                    {primerMes && 'Primer mes del registro. Sólo cuadran los lotes que entraron desde el 11 de agosto. '}
                     {registro.existencia_de === 'ahora' && '«Hay» es la existencia de este momento. '}
-                    {!registro.existencia_de && 'De ese mes no quedó inventario al cierre, así que no se puede comparar. '}
+                    {!registro.existencia_de && 'De ese mes no quedó la existencia al cierre. No se puede comparar. '}
                     {r?.sin_lote_unidades > 0 && `${fmtNum(r.sin_lote_unidades)} unidades entraron sin lote anotado.`}
                 </Notice>
             )}

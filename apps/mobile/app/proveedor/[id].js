@@ -129,7 +129,7 @@ export default function Proveedor() {
         percibe_1_override: optionToPercibe(form.percibe), retiene_renta: form.retiene_renta,
       }, { nombre: p.nombre, desde: 'app' });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      listo('Ficha guardada', p.alias || p.nombre);
+      listo('Datos guardados', p.alias || p.nombre);
       setEditando(false);
       cargar(true);
     } catch (e) { fallo('No se guardó', mensajeAmigable(e)); }
@@ -249,7 +249,7 @@ export default function Proveedor() {
               </Seccion>
 
               <Seccion titulo="Compras">
-                <Dato primero rotulo="Documentos recibidos" valor={Number(p.docs_count || 0).toLocaleString('es-SV')} />
+                <Dato primero rotulo="Facturas recibidas" valor={Number(p.docs_count || 0).toLocaleString('es-SV')} />
                 <Dato rotulo="Primera compra" valor={fecha(p.primera_vez_visto)} />
                 <Dato rotulo="Última compra" valor={fecha(p.ultima_vez_visto)} />
                 {deuda ? <Dato rotulo="Le debemos" valor={formatMoney(deuda.saldo)} fuerte /> : null}
@@ -261,17 +261,17 @@ export default function Proveedor() {
 
               {p.nit ? (
                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={{ flex: 1 }}><BotonGrande texto="Sus documentos" borde color={MARCA.azulClaro}
+                  <View style={{ flex: 1 }}><BotonGrande texto="Sus facturas" borde color={MARCA.azulClaro}
                     onPress={() => router.push({ pathname: '/facturas-compra', params: { busca: p.nit } })} /></View>
                   <View style={{ flex: 1 }}><BotonGrande texto={deuda ? 'Pagar / crédito' : 'Crédito'} color={MARCA.azul}
                     onPress={() => router.push({ pathname: '/cxp-proveedor/[nit]', params: { nit: p.nit, nombre: p.alias || p.nombre } })} /></View>
                 </View>
               ) : null}
 
-              {canEdit && !editando ? <BotonGrande texto="Editar la ficha" borde color={MARCA.azulClaro} onPress={abrirEdicion} /> : null}
+              {canEdit && !editando ? <BotonGrande texto="Editar los datos" borde color={MARCA.azulClaro} onPress={abrirEdicion} /> : null}
               {editando && form ? (
                 <>
-                  <Seccion titulo="Editar la ficha">
+                  <Seccion titulo="Editar los datos">
                     {[['alias', 'Alias (como se le conoce)'], ['contacto_nombre', 'Persona de contacto'], ['telefono2', 'Teléfono 2'], ['nombre_cheques', 'Nombre para cheques']].map(([k, r]) => (
                       <View key={k} style={{ gap: 4 }}>
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{r}</Text>

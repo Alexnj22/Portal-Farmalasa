@@ -120,7 +120,7 @@ export default function EditarAntibioticoModal({ producto: inicial = null, onClo
                             {!nueva && (
                                 <Button variant="ghost" size="xs" icon={Plus}
                                     onClick={() => setNueva({ molecula: '', grupo: '', atc: '' })}>
-                                    No está la molécula: agregarla
+                                    Agregar una molécula nueva
                                 </Button>
                             )}
                         </div>

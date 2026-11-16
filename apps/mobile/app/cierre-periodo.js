@@ -58,7 +58,7 @@ export default function CierrePeriodo() {
   const t = totalesDeLaCadena(cadena);
 
   const cerrar = (f) => Alert.alert(`¿Cerrar ${etiquetaMes(f.periodo)}?`,
-    `Congela estas cifras con tu nombre y la fecha. ${f.aPagar > 0 ? `A pagar ${formatMoney(f.aPagar)}.` : `El mes siguiente arranca de ${formatMoney(f.remanente)} a favor.`}`, [
+    `Guarda estas cifras con tu nombre y la fecha. ${f.aPagar > 0 ? `A pagar ${formatMoney(f.aPagar)}.` : `El mes siguiente arranca de ${formatMoney(f.remanente)} a favor.`}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Cerrar', onPress: async () => {
         setBusy(true);
@@ -73,10 +73,10 @@ export default function CierrePeriodo() {
     ]);
   // El motivo lo exige el servidor: se pide con el cuadro de texto del sistema.
   const reabrir = (f) => Alert.prompt(`Reabrir ${etiquetaMes(f.periodo)}`,
-    'Vuelve a quedar abierto y sus cifras dejan de estar congeladas. El motivo queda en la bitácora del período.', [
+    'El período vuelve a quedar abierto y sus cifras pueden cambiar. El motivo queda guardado.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Reabrir', style: 'destructive', onPress: async (motivo) => {
-        if (!motivo?.trim()) { fallo('Falta el motivo', 'Escribe por qué se reabre.'); return; }
+        if (!motivo?.trim()) { fallo('Falta el motivo', 'Escribe el motivo.'); return; }
         setBusy(true);
         try {
           await reabrirPeriodoFiscal(f.periodo, motivo.trim());
@@ -123,7 +123,7 @@ export default function CierrePeriodo() {
                 );
               })}
             </ScrollView>
-            {t.perdido > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`Hoy ese arrastre no ocurre: el mes siguiente se declara como si el anterior no hubiera existido. Son ${formatMoney(t.perdido)} que se pierden.`} /></View> : null}
+            {t.perdido > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`Si un mes no se cierra, su remanente no pasa al siguiente. Hoy se pierden ${formatMoney(t.perdido)}.`} /></View> : null}
           </View>
         ) : null}
         {filas == null ? <Cargando /> : !cadena.length ? (
@@ -153,8 +153,8 @@ export default function CierrePeriodo() {
                     <Dato rotulo="Retención sufrida" valor={`− ${formatMoney(f.retencion_sufrida)}`} />
                     <Dato rotulo="Remanente que entra" valor={`− ${formatMoney(f.entra)}`} />
                   </View>
-                  {f.es_inicial ? <Aviso tono="cuidado" texto="Es el primer mes que lleva el portal: su remanente que entra es cero por definición, no un resultado." /> : null}
-                  {derivoDelCierre(f) ? <Aviso tono="freno" texto={`El libro se movió después de cerrarlo: débito ${formatMoney(f.deriva_debito)} · crédito ${formatMoney(f.deriva_credito)}. Si ya se presentó, esta diferencia no está declarada.`} /> : null}
+                  {f.es_inicial ? <Aviso tono="cuidado" texto="Es el primer mes que lleva el portal. Su remanente que entra es cero. Lo anterior se declaró fuera del portal." /> : null}
+                  {derivoDelCierre(f) ? <Aviso tono="freno" texto={`El libro se movió después de cerrarlo. Débito ${formatMoney(f.deriva_debito)} · crédito ${formatMoney(f.deriva_credito)}. Si ya presentaste el período, esta diferencia no está declarada.`} /> : null}
                   {!cerrado && !f.en_curso && !f.puede_cerrarse && f.motivo_no_puede ? <Aviso texto={f.motivo_no_puede} /> : null}
                   {canEdit && cerrado ? <BotonGrande texto="Reabrir" borde color={MARCA.ambar} deshabilitado={busy} onPress={() => reabrir(f)} /> : null}
                   {canEdit && !cerrado && f.puede_cerrarse ? <BotonGrande texto={`Cerrar ${mesCorto(f.periodo)}`} deshabilitado={busy} onPress={() => cerrar(f)} /> : null}

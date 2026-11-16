@@ -40,8 +40,8 @@ import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '@nucl
 import Notice from '../../components/common/Notice';
 
 const CLASIFICAR_TIPO_OPTIONS = [
-    { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
-    { value: 'otro', label: 'Otro documento relacionado — solo vincula' },
+    { value: 'anulacion', label: 'Aviso de anulación. Marca la factura como invalidada' },
+    { value: 'otro', label: 'Otro archivo relacionado. Solo se vincula' },
 ];
 
 // «Anulado» y no «invalidado»: es la palabra que usa el proveedor en su correo
@@ -54,7 +54,7 @@ const ESTADO_OPTIONS = [
 ];
 
 const TABS = [
-    { key: 'documentos', label: 'Documentos' },
+    { key: 'documentos', label: 'Facturas' },
     { key: 'revision',   label: 'Revisión' },
 ];
 
@@ -192,7 +192,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
         return (
             <div className="min-w-0">
                 <span className="text-content-2 text-body-sm block truncate">{row.emisor_nombre || '—'}</span>
-                <LiquidTooltip content={`${dteTypeLabel(row.tipo_dte)}: el emisor es un intermediario financiero, no un proveedor de compras`}><span className="text-caption text-content-3">No aplica</span></LiquidTooltip>
+                <LiquidTooltip content={`${dteTypeLabel(row.tipo_dte)}: lo emite un banco o procesador de tarjetas`}><span className="text-caption text-content-3">No aplica</span></LiquidTooltip>
             </div>
         );
     }
@@ -298,7 +298,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
             await onFound(result.match);
         } catch (e) {
             console.error('FacturasCompraView: aplicar el match fallo:', e);
-            useToastStore.getState().showToast('No se pudo aplicar', 'El documento no quedo enlazado. Intenta de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo aplicar', 'La factura no quedó enlazada. Intenta de nuevo.', 'error');
         } finally {
             setApplying(false);
         }
@@ -316,7 +316,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         if (state === 'error') return <LiquidTooltip content={result.error}><span className="text-micro text-danger-text whitespace-nowrap">Error al detectar</span></LiquidTooltip>;
         if (state === 'not_found') return <LiquidTooltip content={`Código completo: ${result.code}`}><span className="text-micro text-content-3 whitespace-nowrap">Código sin registrar</span></LiquidTooltip>;
         return (
-            <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'el documento'}`}</Button>
+            <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'la factura'}`}</Button>
         );
     }
 
@@ -343,7 +343,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
             <ActionButton
                 icon={ScanSearch}
                 label="Reintentar"
-                title="El PDF no tiene capa de texto legible o no se encontró el patrón de código — reintentar"
+                title="No se encontró el código en el PDF. Intenta de nuevo"
                 onClick={(e) => { e.stopPropagation(); detect(); }}
             />
         );
@@ -358,7 +358,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'not_found') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" role="img" title={`Código completo: ${result.code} — todavía no aparece entre los documentos`}>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" role="img" title={`Código completo: ${result.code}. Todavía no aparece entre las facturas`}>
                 <ScanSearch size={15} />
                 <span className="text-micro font-black uppercase tracking-widest leading-none mt-0.5">Sin hallar</span>
             </div>
@@ -370,7 +370,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
             label={applying ? 'Aplicando' : 'Emparejar'}
             color="emerald"
             disabled={applying}
-            title={`Encontrado: ${result.match.proveedor_nombre || 'el documento'} — ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
+            title={`Encontrado: ${result.match.proveedor_nombre || 'la factura'} — ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
             onClick={(e) => { e.stopPropagation(); apply(); }}
         />
     );
@@ -388,7 +388,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                 <ActionButton
                     icon={Link2}
                     label="Emparejar"
-                    title="Emparejar a un documento existente"
+                    title="Emparejar con una factura existente"
                     color="blue"
                     onClick={() => { onOpen(); setError(''); }}
                 />
@@ -419,7 +419,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                         value: d.id,
                         label: `${fmtDate(d.fecha_emision)} · ${d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
                     }))}
-                    placeholder={saving ? 'Guardando…' : 'Buscar documento…'}
+                    placeholder={saving ? 'Guardando…' : 'Buscar factura…'}
                     compact
                     clearable={false}
                 />
@@ -468,7 +468,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                 <ActionButton
                     icon={Tag}
                     label="Clasificar"
-                    title="Clasificar este archivo (ej. aviso de anulación) y vincularlo al DTE que afecta"
+                    title="Clasificar el archivo (ej. aviso de anulación) y vincularlo a la factura que afecta"
                     color="slate"
                     onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
                 />
@@ -510,7 +510,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                         value: d.id,
                         label: `${fmtDate(d.fecha_emision)} · ${d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
                     }))}
-                    placeholder="Documento DTE…"
+                    placeholder="Factura…"
                     compact
                     clearable={false}
                 />
@@ -582,7 +582,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                         value: d.id,
                         label: `${fmtDate(d.fecha_emision)} · ${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
                     }))}
-                    placeholder={saving ? 'Guardando…' : 'Buscar documento duplicado…'}
+                    placeholder={saving ? 'Guardando…' : 'Buscar factura duplicada…'}
                     compact
                     clearable={false}
                 />
@@ -634,7 +634,7 @@ function TabDocumentos({
             setRows(data);
         } catch (e) {
             console.error('FacturasCompraView.jsx: ', e);
-            useToastStore.getState().showToast('No se pudieron cargar los documentos', 'Revisa la conexión e intenta de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudieron cargar las facturas', 'Revisa la conexión e intenta de nuevo.', 'error');
         } finally {
             setLoading(false);
         }
@@ -833,7 +833,7 @@ function TabDocumentos({
                 fallidos > 0 ? 'Descarga completa, con faltantes' : 'Descarga completa',
                 fallidos > 0
                     ? `${incluidos.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} archivos. Los ${fallidos.toLocaleString('es-SV')} que faltan están listados en manifest-errores.txt.`
-                    : `${filtered.length.toLocaleString('es-SV')} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`,
+                    : `${filtered.length.toLocaleString('es-SV')} factura${filtered.length !== 1 ? 's' : ''} en el ZIP.`,
                 fallidos > 0 ? 'warning' : 'success',
             );
         } catch (e) {
@@ -860,7 +860,7 @@ function TabDocumentos({
                 <CarrilCards className="flex-1" ariaLabel="Resumen de facturas">
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
-                        sub={`${rows.length.toLocaleString('es-SV')} documento${rows.length !== 1 ? 's' : ''}`}
+                        sub={`${rows.length.toLocaleString('es-SV')} factura${rows.length !== 1 ? 's' : ''}`}
                         iconBg="bg-chart-1/10" iconCls="text-chart-1-text" valueCls="text-chart-1-text"
                         loading={loading}
                     />
@@ -930,7 +930,7 @@ function TabDocumentos({
                             // El del pulgar es fijo y de una palabra: "DESCARGAR"
                             // (66,8px) y "DESCARGANDO…" no entran en la columna.
                             rotulo: 'Descarga',
-                            title: 'Descargar todos los filtrados en un ZIP — los anulados van en su propia carpeta',
+                            title: 'Descargar los filtrados en un ZIP. Los anulados van en su propia carpeta',
                             disabled: bulkDownloading, onClick: downloadBulk,
                         }] : []),
                         ...(canEdit ? [{
@@ -1029,7 +1029,7 @@ function TabDocumentos({
                     </div>
                     {bulkProgress?.fallidos > 0 && (
                         <div className="text-caption text-warning-text tabular-nums">
-                            {bulkProgress.fallidos.toLocaleString('es-SV')} archivo{bulkProgress.fallidos !== 1 ? 's' : ''} sin poder descargar — van listados dentro del ZIP.
+                            {bulkProgress.fallidos.toLocaleString('es-SV')} archivo{bulkProgress.fallidos !== 1 ? 's' : ''} sin poder descargar. Van listados dentro del ZIP.
                         </div>
                     )}
                 </div>
@@ -1064,14 +1064,14 @@ function TabDocumentos({
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <Badge size="sm" uppercase={false}>{dteTypeLabel(row.tipo_dte)}</Badge>
                                 {row.invalidado && (
-                                    <Badge title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`} variant="danger" size="sm" icon={XCircle} uppercase={false}>Invalidado</Badge>
+                                    <Badge title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''}. No ampara deducciones (Art. 119-E CT)`} variant="danger" size="sm" icon={XCircle} uppercase={false}>Invalidado</Badge>
                                 )}
                                 {/* Mismo patrón que "Ver original" (NC/ND) — a pedido del usuario,
                                     caso Jamilu: poder ver el PDF que justificó la anulación sin
                                     tener que abrir el detalle primero (invalidacion_source viene de
                                     classify_purchase_dte_review vía review_queue.matched_document_id). */}
                                 {canOpen && row.invalidado && row.invalidacion_source?.file_path && (
-                                    <Button variant="destructive" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver documento</Button>
+                                    <Button variant="destructive" icon={Link2} title="Ver el PDF que justificó la anulación" onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}>Ver aviso</Button>
                                 )}
                                 {canOpen && row.notas_credito?.length > 0 && (
                                     <Button tone="warning" icon={Link2} title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`} onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}>NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}</Button>
@@ -1085,7 +1085,7 @@ function TabDocumentos({
                                     TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}
                                 {!row.json_path && (
                                     <>
-                                        <Badge size="sm" title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)">Sin JSON</Badge>
+                                        <Badge size="sm" title="Se confirmó a mano desde Revisión, sin JSON. No cumple la conservación del Art. 147 CT">Sin JSON</Badge>
                                         {canEdit && (
                                             <>
                                                 {/* Detectar el código BAJA el PDF y lo parsea en el
@@ -1144,7 +1144,7 @@ function TabDocumentos({
                     totalPages={totalPages}
                     onPageChange={setPage}
                     total={filtered.length}
-                    unit="documentos"
+                    unit="facturas"
                 />
             )}
         </div>
@@ -1182,7 +1182,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             .catch((e) => {
                 console.error('FacturasCompraView.jsx: loadDocuments', e);
                 setDocumentsLoaded(false);
-                useToastStore.getState().showToast('No se pudieron cargar los documentos', 'No se pudo emparejar ahora. Intenta de nuevo en un momento.', 'error');
+                useToastStore.getState().showToast('No se pudieron cargar las facturas', 'No se pudo emparejar ahora. Intenta de nuevo en un momento.', 'error');
             });
     }, [documentsLoaded, dateStart, dateEnd]);
 
@@ -1344,7 +1344,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                                 icon={CheckCircle2}
                                                 label="Sin JSON"
                                                 color="emerald"
-                                                title="Guarda este PDF como documento aunque nunca llegue su JSON"
+                                                title="Guarda este PDF como factura aunque no llegue su JSON"
                                                 onClick={() => confirmSinJson(row)}
                                             />
                                         )}
@@ -1444,12 +1444,12 @@ export default function FacturasCompraView({ openModal }) {
             });
             useToastStore.getState().showToast(
                 'Búsqueda completa',
-                `${totalInserted} documento${totalInserted !== 1 ? 's' : ''} nuevo${totalInserted !== 1 ? 's' : ''}${hasMore ? ` (tope de ${MAX_SYNC_BATCHES} tandas alcanzado, quedó más — corré de nuevo)` : ''}`,
+                `${totalInserted} factura${totalInserted !== 1 ? 's' : ''} nueva${totalInserted !== 1 ? 's' : ''}.${hasMore ? ' Quedan más. Busca de nuevo.' : ''}`,
                 'success',
             );
             bumpRefresh();
         } catch (e) {
-            useToastStore.getState().showToast('No se pudieron buscar', mensajeAmigable(e), 'error');
+            useToastStore.getState().showToast('No se pudo buscar', mensajeAmigable(e), 'error');
         } finally {
             setSyncing(false);
             setSyncProgress(null);

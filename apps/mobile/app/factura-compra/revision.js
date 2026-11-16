@@ -38,7 +38,7 @@ import { fallo, listo, trabajando, cerrarProgreso } from '../../componentes/Prog
 import DetectarCodigo from '../../componentes/compras/DetectarCodigo';
 
 const TIPO = { get orphan_pdf() { return ['PDF sin JSON', MARCA.azulClaro]; }, invalidacion_pendiente: ['Invalidación pendiente', MARCA.violetaClaro], orphan_zip: ['ZIP sin abrir', MARCA.ambar] };
-const CLASIFICAR = [{ id: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' }, { id: 'otro', label: 'Otro documento relacionado — sólo vincula' }];
+const CLASIFICAR = [{ id: 'anulacion', label: 'Aviso de anulación. Marca la factura como invalidada' }, { id: 'otro', label: 'Otro archivo relacionado. Solo se vincula' }];
 const isoHaceDias = (d) => { const x = new Date(); x.setDate(x.getDate() - d); return x.toISOString().slice(0, 10); };
 
 function Accion({ texto, color = MARCA.azulClaro, onPress }) {
@@ -83,7 +83,7 @@ export default function RevisionDeFacturas() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   useEffect(() => {
     if (!abierta || documentos.length) return;
-    Promise.resolve(fetchPurchaseDteDocuments(isoHaceDias(90), isoHaceDias(-1))).then(setDocumentos).catch((e) => fallo('No se pudieron traer los documentos', mensajeAmigable(e)));
+    Promise.resolve(fetchPurchaseDteDocuments(isoHaceDias(90), isoHaceDias(-1))).then(setDocumentos).catch((e) => fallo('No se pudieron traer las facturas', mensajeAmigable(e)));
   }, [abierta, documentos.length]);
 
   const visibles = useMemo(() => (busca.trim() ? (filas ?? []).filter((r) => tokenMatch(busca, r.from_email, r.subject, r.filename, r.reason)) : (filas ?? [])), [filas, busca]);
@@ -99,7 +99,7 @@ export default function RevisionDeFacturas() {
     try {
       const { insertados, quedaMas } = await buscarCorreosDeCompras({ maxTandas: 10, onTanda: (n) => { if (n > 1) trabajando(`Buscando… tanda ${n}`); } });
       cerrarProgreso();
-      listo('Búsqueda completa', `${insertados} documento${insertados === 1 ? '' : 's'} nuevo${insertados === 1 ? '' : 's'}${quedaMas ? ' (quedó más: corre de nuevo)' : ''}.`);
+      listo('Búsqueda completa', `${insertados} factura${insertados === 1 ? '' : 's'} nueva${insertados === 1 ? '' : 's'}.${quedaMas ? ' Quedan más. Busca de nuevo.' : ''}`);
       await cargar();
     } catch (e) { fallo('No se pudo buscar', mensajeAmigable(e)); }
   };
@@ -131,7 +131,7 @@ export default function RevisionDeFacturas() {
                     {puede && r.kind === 'orphan_pdf' ? <Accion texto="Emparejar" onPress={() => setAbierta({ id: r.id, modo: 'emparejar' })} /> : null}
                     {puede && (r.kind === 'orphan_pdf' || r.kind === 'invalidacion_pendiente') ? <Accion texto="Clasificar" color={MARCA.violetaClaro} onPress={() => setAbierta({ id: r.id, modo: 'clasificar', tipo: 'anulacion' })} /> : null}
                     {puede && r.kind === 'orphan_pdf' ? <Accion texto="Confirmar sin JSON" color={MARCA.verde}
-                      onPress={() => confirmar('Confirmar sin JSON', 'Crea el documento aunque nunca llegue su JSON (queda con la insignia «Sin JSON»).', 'Confirmar', () => resolvePurchaseDteReview(r.id, 'confirmado', null, { kind: r.kind, filename: r.filename, desde: 'app' }))} /> : null}
+                      onPress={() => confirmar('Confirmar sin JSON', 'Crea la factura aunque no llegue su JSON. Queda marcada «Sin JSON».', 'Confirmar', () => resolvePurchaseDteReview(r.id, 'confirmado', null, { kind: r.kind, filename: r.filename, desde: 'app' }))} /> : null}
                     {puede ? <Accion texto="Descartar" color={MARCA.rojo}
                       onPress={() => confirmar('Descartar', r.filename, 'Descartar', () => resolvePurchaseDteReview(r.id, 'descartado', null, { kind: r.kind, filename: r.filename, desde: 'app' }))} /> : null}
                   </View>

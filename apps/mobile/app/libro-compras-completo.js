@@ -99,7 +99,7 @@ export default function LibroComprasCompleto() {
         {filas && !esDecl ? (
           <>
             <FilaDeKpis>
-              <Kpi icono="BookOpen" rotulo="Documentos" valor={String(t.docs)} color={MARCA.azul} apoyo={`${t.docs - t.sinCompra} registradas · ${t.sinCompra} sin registrar`} />
+              <Kpi icono="BookOpen" rotulo="Facturas" valor={String(t.docs)} color={MARCA.azul} apoyo={`${t.docs - t.sinCompra} registradas · ${t.sinCompra} sin registrar`} />
               <Kpi icono="SearchX" rotulo="Sin registrar" valor={String(t.sinCompra)} color={t.sinCompra ? MARCA.ambar : MARCA.verde} apoyo={`crédito ${m(t.creditoSinCompra)}`} onPress={t.sinCompra ? () => setPestana('sin_compra') : undefined} />
             </FilaDeKpis>
             {verMontos ? (
@@ -108,7 +108,7 @@ export default function LibroComprasCompleto() {
                 <Kpi icono="Percent" rotulo="Crédito fiscal" valor={m(t.credito)} color={MARCA.verde} apoyo="del período" />
               </FilaDeKpis>
             ) : null}
-            {t.sinCompra > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinCompra} documento(s) del proveedor todavía no están registrados como compra — ${m(t.creditoSinCompra)} de crédito fiscal que no entra al libro del Art. 86. La Ley de IVA da tres períodos para reclamarlo.`} /></View> : null}
+            {t.sinCompra > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinCompra} factura(s) del proveedor todavía no están registradas como compra. Son ${m(t.creditoSinCompra)} de crédito fiscal que no entra al libro del Art. 86. La Ley de IVA da tres períodos para reclamarlo.`} /></View> : null}
           </>
         ) : null}
         {filas && td ? (
@@ -122,7 +122,7 @@ export default function LibroComprasCompleto() {
                 {[...td.motivos.entries()].sort((a, b) => b[1] - a[1]).map(([mot, k]) => <Text key={mot ?? 'x'} style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${k} · ${mot ?? 'Sin motivo'}`}</Text>)}
               </View>
             ) : null}
-            {td.repRenglones ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${Math.round(td.repDocs)} documento(s) aparecen repetidos en el libro (${td.repRenglones} renglones): ${m(td.repCredito)} de crédito contado de más.`} /></View> : null}
+            {td.repRenglones ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${Math.round(td.repDocs)} documento(s) están registrados más de una vez (${td.repRenglones} filas). Hay ${m(td.repCredito)} de crédito fiscal contado de más.`} /></View> : null}
           </>
         ) : null}
         {filas && filas.length && puedeDescargar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={esDecl ? 'Exportar el declarable (CSV)' : 'Exportar el libro (CSV)'} borde color={MARCA.azulClaro} onPress={exportar} /></View> : null}
@@ -154,7 +154,7 @@ export default function LibroComprasCompleto() {
               </Vidrio>
             </Pressable>
           );
-        }) : <Vacio>Sin documentos este mes</Vacio>}
+        }) : <Vacio>Sin compras este mes</Vacio>}
         {vistas.length > paginas * PAGINA ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${vistas.length - paginas * PAGINA}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View> : null}
       </ScrollView>
     </>

@@ -82,7 +82,7 @@ function HorarioDeLaSucursal({ sala, areas, puedeEditar, onCambio }) {
   const sucio = JSON.stringify(franjas) !== JSON.stringify(horariosUnidos(areas, 'franjas')) || JSON.stringify(limpiezas) !== JSON.stringify(horariosUnidos(areas, 'limpiezas'));
   if (!franjas.length && !limpiezas.length) return null;
 
-  const guardar = () => Alert.alert('Guardar el horario', 'Vale para todas las áreas, y también para los días de este mes que ya pasaron (lo ya anotado no se toca, ni un mes cerrado).', [
+  const guardar = () => Alert.alert('Guardar el horario', 'Vale para todas las áreas y también cambia los días de este mes que ya pasaron. Lo ya anotado no cambia. Un mes cerrado tampoco.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Guardar', onPress: async () => {
       const { error } = await Promise.resolve(aplicarHorarios(sala, franjas, limpiezas)).catch((e) => ({ error: e }));
@@ -92,7 +92,7 @@ function HorarioDeLaSucursal({ sala, areas, puedeEditar, onCambio }) {
   ]);
 
   return (
-    <Seccion titulo="Horarios de la sucursal" pie={`Valen para todas las áreas: la vuelta se camina una sola vez.${rango ? ` Las horas van entre las que abre y cierra la sucursal (${hora12(rango.abre)} a ${hora12(rango.cierra)}).` : ''}`}>
+    <Seccion titulo="Horarios de la sucursal" pie={`Valen para todas las áreas.${rango ? ` Van entre la apertura y el cierre de la sucursal (${hora12(rango.abre)} a ${hora12(rango.cierra)}).` : ''}`}>
       <Horario titulo="Lecturas de temperatura" filas={franjas} horas={horas} onCambiar={puedeEditar ? setFranjas : null} />
       <Horario titulo="Limpieza" filas={limpiezas} horas={horas} onCambiar={puedeEditar ? setLimpiezas : null} />
       {puedeEditar && sucio ? <BotonGrande texto="Guardar el horario" onPress={guardar} /> : null}
@@ -104,7 +104,7 @@ function Refrigerador({ sala, areas, puedeEditar, onCambio }) {
   const refri = areas.find((a) => a.tipo === 'refrigerador');
   const activo = Boolean(refri?.activa);
   const [fecha, setFecha] = useState('');
-  const encender = () => Alert.alert('Encender el refrigerador', `Pide dos lecturas al día entre 2 y 8 °C. Calibrado el ${fecha}, vence el ${unAnoDespues(fecha)} (se puede corregir en su tarjeta).`, [
+  const encender = () => Alert.alert('Encender el refrigerador', `Pide dos lecturas al día entre 2 y 8 °C. Calibrado el ${fecha}, vence el ${unAnoDespues(fecha)}. Puedes corregirlo en su tarjeta.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Encender', onPress: async () => {
       const { error } = await Promise.resolve(encenderRefrigerador({ refri, nueva: refri ? null : areaNueva('refrigerador', sala, areas), branchId: sala, calibradoEl: fecha, calibradoHasta: unAnoDespues(fecha) })).catch((e) => ({ error: e }));
@@ -121,7 +121,7 @@ function Refrigerador({ sala, areas, puedeEditar, onCambio }) {
     } },
   ]);
   return (
-    <Seccion titulo="Refrigerador con medicamentos" pie="Encendido, pide termómetro calibrado y dos lecturas al día entre 2 y 8 °C.">
+    <Seccion titulo="Refrigerador con medicamentos" pie="Si lo enciendes, pide termómetro calibrado y dos lecturas al día entre 2 y 8 °C.">
       {!puedeEditar ? <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{activo ? 'Encendido.' : 'Esta sucursal no lleva refrigerador.'}</Text> : activo ? (
         <>
           <Text style={{ color: colorSistema.texto, fontSize: 15 }}>
@@ -135,7 +135,7 @@ function Refrigerador({ sala, areas, puedeEditar, onCambio }) {
             <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Última calibración</Text>
             <Fecha valor={fecha} onCambiar={setFecha} hasta={hoySV()} />
           </View>
-          {!fecha ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Hace falta la fecha del certificado para encenderlo.</Text> : null}
+          {!fecha ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Para encenderlo, anota la fecha del certificado.</Text> : null}
           <BotonGrande texto="Encender" onPress={encender} deshabilitado={!fecha} />
         </>
       )}
@@ -175,7 +175,7 @@ function Area({ area, puedeEditar, onGuardado }) {
   const vencida = area.calibrado_hasta && area.calibrado_hasta < hoySV();
   const receta = puntosDelArea(area.tipo, puntos);
 
-  const guardar = () => Alert.alert('Guardar el área', `«${area.nombre}»${!activa && area.activa ? ` deja de pedir ${sinTemperatura ? 'registros' : 'lecturas'} desde hoy (lo ya anotado no se toca)` : ''}.`, [
+  const guardar = () => Alert.alert('Guardar el área', `«${area.nombre}»${!activa && area.activa ? ` deja de pedir ${sinTemperatura ? 'registros' : 'lecturas'} desde hoy. Lo ya anotado no se toca` : ''}.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Guardar', onPress: async () => {
       const { error } = await Promise.resolve(guardarArea(area.id, { activa, instrumento: instrumento.trim() || null, calibrado_hasta: calibrado || null, calibrado_el: calibradoEl || null, puntos }, { area: area.nombre ?? null }))
@@ -205,7 +205,7 @@ function Area({ area, puedeEditar, onGuardado }) {
                 <Fecha valor={calibradoEl} onCambiar={(v) => { setCalibradoEl(v || ''); if (v && !calibrado) setCalibrado(unAnoDespues(v)); }} />
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Vence (vencida, invalida las lecturas)</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Vence (vencida, las lecturas no valen)</Text>
                 <Fecha valor={calibrado} onCambiar={(v) => setCalibrado(v || '')} />
               </View>
             </>
@@ -218,7 +218,7 @@ function Area({ area, puedeEditar, onGuardado }) {
             </View>
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{activa ? 'El área lleva bitácora' : 'Apagada — no cuenta como faltante'}</Text>
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{activa ? 'El área lleva bitácora' : 'Apagada. No cuenta como faltante'}</Text>
             <Interruptor value={activa} onValueChange={setActiva} />
           </View>
           {sucio ? <BotonGrande texto="Guardar" onPress={guardar} /> : null}
@@ -235,7 +235,7 @@ function AgregarArea({ sala, areas, onCreada }) {
   const [tipo, setTipo] = useState('');
   const [nombre, setNombre] = useState('');
   if (!disponibles.length) return null;
-  const crear = () => Alert.alert('Agregar el área', `«${nombre.trim() || PLANTILLA_AREA[tipo]?.nombre}» nace encendida y con los horarios de las áreas que la sucursal ya lleva.`, [
+  const crear = () => Alert.alert('Agregar el área', `«${nombre.trim() || PLANTILLA_AREA[tipo]?.nombre}» se crea encendida y con los horarios de esta sucursal.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Agregar', onPress: async () => {
       const base = areaNueva(tipo, sala, areas);
@@ -246,7 +246,7 @@ function AgregarArea({ sala, areas, onCreada }) {
     } },
   ]);
   return (
-    <Seccion titulo="Agregar un área" pie="El refrigerador no se agrega por aquí: tiene su propio interruptor arriba.">
+    <Seccion titulo="Agregar un área" pie="El refrigerador se enciende arriba.">
       <Pressable onPress={() => hoja('Qué área', disponibles, setTipo)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Qué área</Text>
         <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{tipo ? TIPO_AREA[tipo] || tipo : 'Elegir'}</Text>
@@ -282,7 +282,7 @@ export default function ConfiguracionDeBitacoras() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 60, gap: 14 }} keyboardShouldPersistTaps="handled"
           refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{`${nombreSala}: apaga el área que esta sucursal no tenga; deja de contar como faltante al cerrar el mes.`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{`${nombreSala}: apaga las áreas que esta sucursal no tenga. Así no cuentan como faltantes al cerrar el mes.`}</Text>
           {areas == null ? <Cargando /> : error ? (
             <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={textoDelError(error)} /></View>
           ) : (

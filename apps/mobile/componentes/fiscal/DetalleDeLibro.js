@@ -35,7 +35,7 @@ const PAGINA = 40;
 
 // Cómo se llama cada columna del mapa en el menú de orden.
 const ROTULO = {
-  n: 'N.º', fecha: 'Fecha', sucursal: 'Sala', del: 'Del N.º', al: 'Al N.º', docs: 'Documentos', exentas: 'Exentas',
+  n: 'N.º', fecha: 'Fecha', sucursal: 'Sucursal', del: 'Del N.º', al: 'Al N.º', docs: 'Facturas', exentas: 'Exentas',
   gravadas: 'Gravadas', debito: 'Débito', total: 'Total', ccf: 'N.º CCF', cliente: 'Cliente', nrc: 'NRC', nit: 'NIT',
   tipo: 'Tipo', corr: 'Correlativo', cg: 'Código de generación', doc: 'Documento', proveedor: 'Proveedor',
   credito: 'Crédito', sujeto: 'Monto sujeto', impuesto: 'Impuesto', corrige: 'Corrige a', compra: 'Compra', monto: 'Monto', iva: 'IVA',
@@ -45,10 +45,10 @@ function elegirOrden(claves, orden, alElegir) {
   const ops = [{ id: null, label: 'Orden del libro' }, ...claves.map((k) => ({ id: k, label: ROTULO[k] ?? k }))];
   const textos = ops.map((o) => (o.id && o.id === orden.key ? `${o.label} ${orden.dir === 'asc' ? '↑' : '↓'}` : o.label));
   if (Platform.OS !== 'web') { // en Android lo dibuja HojasAndroid: Alert sólo muestra 3 botones
-    ActionSheetIOS.showActionSheetWithOptions({ title: 'Ordenar por', message: 'Tocar la misma columna invierte el orden.', options: [...textos, 'Cancelar'], cancelButtonIndex: textos.length },
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Ordenar por', message: 'Toca la misma columna para invertir el orden.', options: [...textos, 'Cancelar'], cancelButtonIndex: textos.length },
       (i) => { if (i < ops.length) alElegir(ops[i].id); });
   } else {
-    Alert.alert('Ordenar por', 'Tocar la misma columna invierte el orden.', [...ops.map((o, i) => ({ text: textos[i], onPress: () => alElegir(o.id) })), { text: 'Cancelar', style: 'cancel' }]);
+    Alert.alert('Ordenar por', 'Toca la misma columna para invertir el orden.', [...ops.map((o, i) => ({ text: textos[i], onPress: () => alElegir(o.id) })), { text: 'Cancelar', style: 'cancel' }]);
   }
 }
 
@@ -96,7 +96,7 @@ function renglon(tab, r, nombreSala) {
     case 'retencionVentas': return {
       titulo: `${r.tipo_documento ?? ''} ${soloNumero(r.correlativo) || '—'} · ${r.cliente || '—'}`,
       detalle: [fmtFecha(r.fecha), r.nrc ? `NRC ${r.nrc}` : null].filter(Boolean).join(' · '),
-      montos: [['Sujeto', m(r.monto_sujeto)], ['Retenido', m(r.retencion_iva)], ['Total', m(r.total)]], falta: r.anulada ? 'anulado' : null,
+      montos: [['Sujeto', m(r.monto_sujeto)], ['Retenido', m(r.retencion_iva)], ['Total', m(r.total)]], falta: r.anulada ? 'anulada' : null,
     };
     default: return {
       titulo: `${r.cliente || r.proveedor || '—'}`, detalle: [fmtFecha(r.fecha), r.nrc ? `NRC ${r.nrc}` : null].filter(Boolean).join(' · '),
@@ -130,19 +130,19 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
 
   return (
     <View style={{ gap: 10 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>{`${titulo} · ${filas.length} renglones`}</Text>
-      {tab === 'contribuyente' && falt.ccfSinNrc > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${falt.ccfSinNrc} de ${filas.length} documentos van sin NRC del cliente, que el Art. 85 exige: el libro se puede revisar, pero no presentar hasta completarlo.`} /></View> : null}
-      {tab === 'compras' && falt.comprasSinSincronizar > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${falt.comprasSinSincronizar} de ${filas.length} documentos no tienen registrado su número ni la percepción. Hay que completar ${etiquetaMes(mes)} antes de presentar este libro — en blanco no es cero.`} /></View> : null}
-      {tab === 'compras' && falt.comprasSinNrc > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${falt.comprasSinNrc} de ${filas.length} documentos van sin NRC del proveedor, que el Art. 86 exige. Falta completarlo en la ficha del proveedor.`} /></View> : null}
-      {tab === 'notas' && filas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Estas ${filas.length} notas no están dentro del libro de compras: llegaron por correo y nunca se registraron como documento de compra.`} /></View> : null}
-      {sinNumero > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${sinNumero} de ${filas.length} filas van sin número de control. Es columna obligatoria del libro: ${etiquetaMes(mes)} todavía no se puede presentar.`} /></View> : null}
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>{`${titulo} · ${filas.length} filas`}</Text>
+      {tab === 'contribuyente' && falt.ccfSinNrc > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${falt.ccfSinNrc} de ${filas.length} créditos fiscales van sin NRC del cliente, que el Art. 85 exige. El libro se puede revisar, pero no presentar hasta completarlo.`} /></View> : null}
+      {tab === 'compras' && falt.comprasSinSincronizar > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${falt.comprasSinSincronizar} de ${filas.length} documentos no tienen registrado su número ni la percepción. Hay que completar ${etiquetaMes(mes)} antes de presentar este libro. En blanco no es cero.`} /></View> : null}
+      {tab === 'compras' && falt.comprasSinNrc > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${falt.comprasSinNrc} de ${filas.length} documentos van sin NRC del proveedor, que el Art. 86 exige. Complétalo en los datos del proveedor.`} /></View> : null}
+      {tab === 'notas' && filas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Estas ${filas.length} notas no están dentro del libro de compras. Nunca se registraron como compra.`} /></View> : null}
+      {sinNumero > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${sinNumero} de ${filas.length} filas van sin número de control. Es una columna obligatoria, así que ${etiquetaMes(mes)} todavía no se puede presentar. Se completa solo. Si en unas horas sigue igual, avisa a Soporte.`} /></View> : null}
       {puedeExportar && filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Exportar CSV" borde color={MARCA.azulClaro} onPress={exportar} /></View> : null}
       {filas.length > 1 ? (
         <View style={{ marginHorizontal: 16, gap: 6 }}>
           <Campo multiline={false} value={busqueda} onChangeText={setBusqueda} placeholder="Buscar en este libro" clearButtonMode="while-editing" />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
-              {busqueda.trim() ? `${vistas.length} de ${filas.length} renglones` : ''}
+              {busqueda.trim() ? `${vistas.length} de ${filas.length} filas` : ''}
             </Text>
             <Tocable onPress={() => elegirOrden(Object.keys(acceso), orden, ordenarPor)} hitSlop={8} style={{ minHeight: 40, justifyContent: 'center' }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>
@@ -173,7 +173,7 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
                   <View style={{ flexDirection: 'row', gap: 18, flexWrap: 'wrap' }}>
                     {[['JSON', () => compartirArchivoDelDte(r, 'json'), !r.json_path], ['PDF', () => compartirArchivoDelDte(r, 'pdf'), !r.pdf_path], ['Los dos (ZIP)', () => compartirPaqueteDelDte(r), false]].map(([t, fn, off]) => (
                       <Tocable key={t} disabled={off} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: off ? 0.4 : 1 }}
-                        onPress={async () => { trabajando('Bajando el archivo…'); try { await fn(); cerrarProgreso(); } catch (e) { fallo('No se pudo compartir', e?.message || ''); } }}>
+                        onPress={async () => { trabajando('Descargando el archivo…'); try { await fn(); cerrarProgreso(); } catch (e) { fallo('No se pudo compartir', e?.message || ''); } }}>
                         <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{t}</Text>
                       </Tocable>
                     ))}
@@ -185,7 +185,7 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
         );
       })}
       {vistas.length > paginas * PAGINA ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${vistas.length - paginas * PAGINA}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View> : null}
-      {!filas.length ? <Vacio enSeccion>Sin renglones este mes</Vacio> : null}
+      {!filas.length ? <Vacio enSeccion>Sin movimiento este mes</Vacio> : null}
       {filas.length > 0 && !vistas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>{`Sin coincidencias para «${busqueda.trim()}»`}</Text> : null}
     </View>
   );

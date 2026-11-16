@@ -162,7 +162,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
         return (
             <Notice variant="danger" icon={AlertTriangle}>
                 {error.code === '42501'
-                    ? 'Tu cargo no tiene el módulo de bitácoras. Hay que otorgarlo en Permisos.'
+                    ? 'Tu cargo no tiene acceso a Bitácoras. Se activa en Permisos.'
                     : (error.message || 'No se pudo cargar la bitácora.')}
             </Notice>
         );
@@ -172,7 +172,7 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
         return (
             <EmptyState icon={Thermometer}
                 title="Sin áreas configuradas"
-                subtitle="Esta sucursal todavía no tiene áreas. Se definen en la pestaña Configuración." />
+                subtitle="Esta sucursal todavía no tiene áreas. Agrégalas en Configuración." />
         );
     }
 
@@ -212,8 +212,8 @@ export default function TabHoy({ dia, cargando, error, puedeAnotar, onRecargar }
             {enPausa.length > 0 && (
                 <p className="text-label text-content-3 flex items-center gap-1.5">
                     <Sparkles size={12} />
-                    Hoy no se lleva bitácora en {enPausa.map(a => a.nombre).join(', ')} — así está
-                    configurada el área. No cuentan como faltantes al cerrar el mes.
+                    Hoy no se lleva bitácora en {enPausa.map(a => a.nombre).join(', ')}. No cuentan
+                    como faltantes al cerrar el mes.
                 </p>
             )}
 

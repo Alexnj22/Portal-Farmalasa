@@ -34,7 +34,7 @@ import PartirRenglon from './PartirRenglon';
 const VisorDte = lazy(() => import('../../components/forms/FormPurchaseDteViewer'));
 const VISTAS = [
     { value: 'carga',     label: 'La carga' },
-    { value: 'documento', label: 'El documento' },
+    { value: 'documento', label: 'La factura' },
 ];
 
 const USOS = [
@@ -287,7 +287,7 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
             <LiquidModal.Footer>
                 <div className="flex items-center gap-2 w-full flex-wrap">
                     <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
-                        {res?.listo ? 'Se crea en el sistema y queda elegido en este renglón.' : 'Revisa los datos antes de crearlo.'}
+                        {res?.listo ? 'Se crea y queda elegido aquí.' : 'Revisa los datos antes de crearlo.'}
                     </p>
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
                     {res?.listo ? (
@@ -554,7 +554,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         if (r?.enviada === true && !e) {
             clearDraft(claveBorrador);
             useToastStore.getState().showToast('Compra cargada',
-                `${doc.emisor_nombre} · ${formatMoney(doc.monto_total)} ${r.verificada ? 'entró a Bodega.' : 'se mandó a Bodega; se confirma en unos minutos.'}`,
+                `${doc.emisor_nombre} · ${formatMoney(doc.monto_total)} ${r.verificada ? 'entró a Bodega.' : 'se mandó a Bodega. Se confirma en unos minutos.'}`,
                 'success');
             onCerrar();
             return;
@@ -666,7 +666,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
             <LiquidModal.Header icono={PackagePlus} tono="brand" titulo={doc.emisor_nombre} onClose={() => !enviando && onCerrar()}
                 subtitulo={<>
                     {fmtFecha(doc.fecha_emision)} · {formatMoney(doc.monto_total)}
-                    {resumen && ` · ${resumen.renglones} renglones`}
+                    {resumen && ` · ${resumen.renglones} productos`}
                     {(() => {
                         // Lo que acaba de pasar en este modal manda sobre lo que trajo la lista.
                         const e = envio?.enviada === true ? (envio.verificada ? ESTADO_CARGA.verificada : ESTADO_CARGA.sin_verificar)
@@ -724,7 +724,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         mercadería. Si no es para el inventario, quítala con «No es mercadería».
                     </Notice>
                 )}
-                {!p && !error && <p className="text-label text-content-3">Leyendo el documento y su archivo…</p>}
+                {!p && !error && <p className="text-label text-content-3">Leyendo la factura…</p>}
 
                 {p && (<>
                     {/* El encabezado: lo que iría en la parte de arriba del
@@ -733,7 +733,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         <Dato titulo="Proveedor"        valor={p.encabezado.proveedor} />
                         <Dato titulo="Número"           valor={p.documento.codigo_generacion} mono />
                         <Dato titulo="Fecha de la factura" valor={fmtFecha(p.documento.fecha)} nota="con ésta entra a Bodega" />
-                        <Dato titulo="Sello de Hacienda" valor={(revision?.sello || p.documento.sello) ? 'Sí' : 'No lo trae'} />
+                        <Dato titulo="Sello de MH" valor={(revision?.sello || p.documento.sello) ? 'Sí' : 'No lo trae'} />
                     </div>
 
                     {/* Una sola barra: qué se mira a la izquierda; cómo se carga a
@@ -755,7 +755,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
 
                     {vista === 'documento' && !papel ? (
                         <div data-surface="card" className="h-[70vh] flex flex-col overflow-hidden">
-                            <Suspense fallback={<p className="p-4 text-label text-content-3">Abriendo el documento…</p>}>
+                            <Suspense fallback={<p className="p-4 text-label text-content-3">Abriendo la factura…</p>}>
                                 <VisorDte formData={{ document: {
                                     id: p.documento.id, json_path: p.documento.json_path, pdf_path: p.documento.pdf_path,
                                     fecha_emision: p.documento.fecha, codigo_generacion: p.documento.codigo_generacion,
@@ -768,8 +768,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         libro, pero como gasto y sin sumar existencias. */}
                     {uso === 'consumo' && (
                         <Notice variant="info" icon={HelpCircle}>
-                            Se registra en el libro de compras como <b>gasto</b>: no suma existencias y cada renglón
-                            entra con su descripción. Lo de consumo no se reparte a las salas.
+                            Se registra en el libro de compras como <b>gasto</b>. No suma existencias y cada producto
+                            entra con su descripción. No se reparte a las sucursales.
                         </Notice>
                     )}
 
@@ -777,14 +777,14 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         <Notice variant={envio.verificada ? 'success' : 'warning'} icon={envio.verificada ? CheckCircle2 : AlertTriangle}>
                             <b>Cargada en Bodega{envio.erp_compra_id ? ` (compra ${envio.erp_compra_id})` : ''}.</b>{' '}
                             {envio.verificada
-                                ? 'Se leyó de vuelta y cuadra renglón por renglón.'
-                                : <>Entró, pero al leerla de vuelta algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
+                                ? 'Se comprobó y cuadra producto por producto.'
+                                : <>Entró, pero al comprobarla algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
                             {envio.reparto && (envio.reparto.enviando
-                                ? <> Se está enviando a {envio.reparto.salas === 1 ? '1 sala' : `${envio.reparto.salas} salas`}: lo reciben en Traslados → En camino.</>
-                                : <> <b>No se envió a las salas</b> porque la carga no se pudo comprobar: hay que enviarlo a mano.</>)}
+                                ? <> Se está enviando a {envio.reparto.salas === 1 ? '1 sucursal' : `${envio.reparto.salas} sucursales`}. Lo reciben en Traslados → En camino.</>
+                                : <> <b>No se envió a las sucursales.</b> La carga no se pudo comprobar. Envíalo a mano.</>)}
                             {envio.vencidos && (envio.vencidos.en_curso
-                                ? <> Lo marcado como error se está pasando a Bodega de vencidos: se ve en la pestaña «Por error».</>
-                                : <> <b>Lo marcado como error NO se pasó a vencidos</b> porque la carga no se pudo comprobar: hay que pasarlo a mano.</>)}
+                                ? <> Lo marcado como error se está pasando a Bodega de vencidos. Lo ves en la pestaña «Por error».</>
+                                : <> <b>Lo marcado como error no se pasó a vencidos.</b> La carga no se pudo comprobar. Pásalo a mano.</>)}
                         </Notice>
                     ) : envio.enviada === false ? (
                         <Notice variant="danger" icon={AlertTriangle}>
@@ -792,18 +792,18 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         </Notice>
                     ) : (
                         <Notice variant="danger" icon={AlertTriangle}>
-                            <b>No se sabe si entró.</b> {envio.error} No la mandes de nuevo: avisa a Bodega para que la busque.
+                            <b>No se sabe si entró.</b> {envio.error} No la mandes de nuevo. Avisa a Bodega para que la busque.
                         </Notice>
                     ))}
 
                     {revision && (revision.listo ? (
                         <Notice variant="success" icon={CheckCircle2}>
-                            <b>Lista para cargar.</b> {revision.renglones.length} renglones · total{' '}
-                            {formatMoney(revision.total_armado)}, igual al del documento.
+                            <b>Lista para cargar.</b> {revision.renglones.length} productos · total{' '}
+                            {formatMoney(revision.total_armado)}, igual al de la factura.
                             {pendientesDeVence > 0 && (
                                 <span className="block mt-1">
-                                    {pendientesDeVence === 1 ? 'Un renglón va' : `${pendientesDeVence} renglones van`} sin
-                                    vencimiento: la sala que lo reciba la va a tener que poner.
+                                    {pendientesDeVence === 1 ? 'Un producto va' : `${pendientesDeVence} productos van`} sin
+                                    vencimiento. Lo pone la sucursal que lo reciba.
                                 </span>
                             )}
                             {(subenDeCosto > 0 || bajanDeCosto > 0 || conMargenMalo > 0) && (
@@ -818,10 +818,10 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             {revision.regalos > 0 && (
                                 <span className="block mt-1">
                                     Trae {revision.regalos === 1 ? 'un producto' : `${revision.regalos} productos`} de
-                                    regalo: su costo se reparte entre todas las unidades, como lo carga Bodega.
+                                    regalo. Su costo se reparte entre todas las unidades.
                                 </span>
                             )}
-                            <span className="block text-micro mt-1">Todavía no se manda: esto fue una revisión.</span>
+                            <span className="block text-micro mt-1">Todavía no se carga. Esto fue una revisión.</span>
                         </Notice>
                     ) : (
                         <Notice variant="warning" icon={AlertTriangle}>
@@ -829,7 +829,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             <ul className="list-disc pl-5 mt-1">
                                 {revision.problemas.map((x, k) => (
                                     <li key={k}>
-                                        {x.renglon != null ? `Renglón ${x.renglon + 1}: ` : ''}{x.texto}
+                                        {x.renglon != null ? `Producto ${x.renglon + 1}: ` : ''}{x.texto}
                                         {x.pistas?.length > 0 && (
                                             <>
                                                 <span className="block mt-1 font-bold">Qué revisar:</span>
@@ -849,7 +849,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                     {/* Lo que hay que mirar antes de nada. */}
                     {!revision && uso === 'venta' && faltan > 0 && (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            <b>{faltan}</b> de {resumen.renglones} renglones necesitan un ojo:{' '}
+                            <b>{faltan}</b> de {resumen.renglones} productos necesitan revisión:{' '}
                             {/* Sólo lo que de verdad falta. Enumerar las cuatro
                                 categorías siempre —incluso en cero— hacía leer
                                 «0 sin producto» como si fuera un hallazgo. */}
@@ -873,7 +873,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                     )}
                     {!revision && uso === 'venta' && faltan === 0 && (
                         <Notice variant="success" icon={CheckCircle2}>
-                            Los {resumen.renglones} renglones están completos.
+                            Los {resumen.renglones} productos están completos.
                         </Notice>
                     )}
 
@@ -911,7 +911,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                 <p className="text-body font-black text-content">
                                                     {uso === 'consumo' || aj.servicio ? r.descripcion
                                                         : aj.erroneo && !conProducto ? 'PRODUCTO ERRONEO DE PROVEEDOR'
-                                                        : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
+                                                        : (elegido?.nombre ?? r.producto ?? 'Sin producto')}
                                                 </p>
                                                 {uso === 'venta' && !aj.servicio && o && (
                                                     <Badge variant={elegido ? 'success' : o.variant} size="sm">
@@ -1061,8 +1061,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                             <Notice variant="info" icon={HelpCircle} className="mt-2">
                                                 <span className="flex items-center gap-2 flex-wrap">
                                                     <span className="flex-1 min-w-[14rem]">
-                                                        <b>Sugerencia</b> — revisa que cuadre con la factura: el saldo se carga
-                                                        en unidades de $1, y la factura no dice cuántos dólares trae.
+                                                        <b>Sugerencia.</b> Revisa que cuadre con la factura. El saldo se carga
+                                                        en unidades de $1 y la factura no dice cuántos dólares trae.
                                                         Con lo pagado ({formatMoney(s.pagado)}) y el costo de la última compra
                                                         {s.de?.mismo_proveedor ? ' a este proveedor' : ` (${s.de?.proveedor ?? 'otro proveedor'})`}
                                                         {' '}({formatMoney(s.costo_referencia, { decimales: 4 })} por cada $1, {fmtFecha(s.de?.fecha)}),
@@ -1119,7 +1119,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                 )}
                                                 {!aj.servicio && !aj.erroneo && (r.parte?.llave || r.llave || r.codigo_proveedor) && (!r.parte || r.parte.indice === 1) && (
                                                     <Button size="xs" variant="ghost" icon={Split} onClick={() => setPartiendo(i)}>
-                                                        {r.parte ? 'Cambiar partición' : 'Partir renglón'}
+                                                        {r.parte ? 'Cambiar partición' : 'Partir producto'}
                                                     </Button>
                                                 )}
                                                 {!aj.servicio && !conProducto && !aj.erroneo && (
@@ -1187,7 +1187,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                 nombre: producto.nombre, documento: doc.document_id, notas,
                             });
                             await confirmar(p.renglones[i], i, producto);
-                            if (notas.length) setError(`Se creó ${producto.nombre} (${producto.id}), pero revisa su ficha: ${notas.join(' · ')}.`);
+                            if (notas.length) setError(`Se creó ${producto.nombre} (${producto.id}). Revisa sus datos: ${notas.join(' · ')}.`);
                         }} />
                 )}
             </LiquidModal.Body>
@@ -1200,9 +1200,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                 // lo que tiene que decir antes del clic.
                 <div className="flex flex-col gap-2 w-full">
                     <Notice variant="warning" icon={AlertTriangle}>
-                        <b>Esta factura no se carga en ningún inventario</b> — ni en Bodega ni en las salas. Sólo sale
+                        <b>Esta factura no entra a Bodega ni a ninguna sucursal.</b> Solo sale
                         de esta lista. Úsalo si es un gasto o servicio (luz, ferretería, papelería) o si ya se cargó.
-                        <br />¿Querías mandar productos a una sala? Eso es <b>«Enviar a sucursales»</b>, en cada producto.
+                        <br />¿Querías mandar productos a una sucursal? Usa <b>«Enviar a sucursales»</b> en cada producto.
                     </Notice>
                     <div className="flex items-center gap-2 flex-wrap justify-end">
                         <Button size="sm" variant="primary" disabled={resolviendo} onClick={() => setSaliendo(false)}>No, volver</Button>
@@ -1220,7 +1220,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         </p>
                     ) : (
                         <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
-                            «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
+                            «Revisar carga» compara la compra con la factura. Se registra solo con «Cargar en Bodega».
                         </p>
                     )}
                     {puedeEditar && !papel && !envio?.enviada && !estadoCarga && (
@@ -1260,7 +1260,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
             <ConfirmModal isOpen={confirmando} onClose={() => !enviando && setConf(false)} onConfirm={enviar}
                 isProcessing={enviando} isDestructive={false}
                 title="¿Cargar esta compra en Bodega?"
-                message={`Se registra la compra de ${doc.emisor_nombre} por ${formatMoney(revision?.total_armado)} en Bodega. Sólo se deshace anulándola allá.`}
+                message={`Se registra la compra de ${doc.emisor_nombre} por ${formatMoney(revision?.total_armado)} en Bodega. Solo se deshace anulando la compra.`}
                 confirmText="Sí, cargar" />
         </LiquidModal>
     );
@@ -1386,7 +1386,7 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
         <>
             {contestado && (
                 <Notice variant="success" icon={CheckCircle2}>
-                    <b>{contestado.sala} contestó las fechas</b> y ya están puestas en los renglones.
+                    <b>{contestado.sala} contestó las fechas</b> y ya están puestas en los productos.
                     <span className="flex items-center gap-2 mt-1 text-micro">
                         <AvatarConEstado emp={{ id: contestado.respondido_por, name: contestado.respondido_nombre }} px={20} marco="" />
                         {shortEmployeeName(contestado.respondido_nombre)}
@@ -1396,10 +1396,10 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
             {sinFecha.length > 0 && puedeEditar && (
                 <Notice variant="warning" icon={CalendarRange}>
                     <b>{sinFecha.length === 1 ? 'Un producto no trae' : `${sinFecha.length} productos no traen`} fecha de vencimiento.</b>{' '}
-                    Si la mercadería llegó a una sala, pídele las fechas:
+                    Si la mercadería llegó a una sucursal, pídele las fechas:
                     <span className="flex items-center gap-2 mt-2 flex-wrap">
                         <span className="w-[12rem]">
-                            <LiquidSelect value={sala} onChange={v => setSala(v || '')} placeholder="¿Qué sala la recibió?"
+                            <LiquidSelect value={sala} onChange={v => setSala(v || '')} placeholder="¿Qué sucursal la recibió?"
                                 options={salas.map(b => ({ value: String(b.id), label: b.name }))} compact />
                         </span>
                         <Button size="sm" icon={CalendarRange} disabled={!sala || ocupado} loading={ocupado} onClick={pedir}>
@@ -1529,7 +1529,7 @@ function RepartoASalas({ salas, total, valor, presentaciones, onChange, puedeEdi
             {suma > 0 && (
                 <p className={`mt-1 text-micro font-bold tabular-nums ${quedan < 0 ? 'text-danger' : quedan > 0 ? 'text-warning' : 'text-content-2'}`}>
                     {quedan < 0 ? `Se envían ${enPres(cuantas)} y entran ${total}: no se puede enviar más de lo que entra.`
-                        : quedan > 0 ? `Se envían ${enPres(cuantas)} · quedan ${quedan} unidades en el inventario de Bodega.`
+                        : quedan > 0 ? `Se envían ${enPres(cuantas)} · quedan ${quedan} unidades en Bodega.`
                         : `Se envían ${enPres(cuantas)}: no queda nada en Bodega.`}
                 </p>
             )}
@@ -1641,9 +1641,9 @@ function SeCargaComo({ r, aj, presentaciones, juicio, puedeEditar, onCargar, rec
                 }
                 return (
                     <p className="mt-1 text-caption font-bold text-danger-text">
-                        No se puede cargar así: en el sistema este producto sólo se vende como{' '}
+                        No se puede cargar así. Este producto solo se vende como{' '}
                         {pres.map(x => `${nombreDe(x)} (${x.factor})`).join(', ')}, y {u} unidades no caben en ninguna.
-                        Elige una de la lista, o pide que le creen la presentación de 1 unidad.
+                        Elige una de la lista o pide que creen la presentación de 1 unidad.
                     </p>
                 );
             })()}
@@ -1687,7 +1687,7 @@ function PresentacionComparada({ tam, presentaciones, nombre, juicio }) {
             {cambio && (
                 <Notice variant="warning" icon={AlertTriangle} className="mt-2">
                     {confirmado ? (
-                        <><b>Cambió la presentación.</b> La factura trae caja de {tam}, no de {juicio.tamanoBodega}: cargada así, cada
+                        <><b>Cambió la presentación.</b> La factura trae caja de {tam}, no de {juicio.tamanoBodega}. Cargada así, cada
                         unidad queda {Math.round(Math.abs(juicio.sube))} % más {juicio.sube > 0 ? 'cara' : 'barata'}, justo lo que da {tam} ÷ {juicio.tamanoBodega}.</>
                     ) : (
                         <><b>¿Cambió la presentación?</b> La factura trae caja de {tam} y Bodega no la tiene.</>
@@ -1712,7 +1712,7 @@ function ComoEntra({ sim, costo }) {
     return (
         <div className="mt-3 pt-3 border-t border-divider grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
             <Dato titulo="Entran al inventario" valor={`${sim.existencias} unidades`}
-                nota={sim.vence_pendiente ? 'el vencimiento lo pone la sala' : null} />
+                nota={sim.vence_pendiente ? 'el vencimiento lo pone la sucursal' : null} />
             {costo && (
                 <div className="min-w-0">
                     <p className="text-caption font-black text-content-3 uppercase tracking-widest">Costo por unidad</p>

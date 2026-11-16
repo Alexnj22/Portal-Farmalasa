@@ -276,8 +276,8 @@ export default function LibroComprasCompletoView({ openModal }) {
                 label: 'Exportar',
                 soloIcono: true,
                 title: esDecl
-                    ? `Exportar el libro declarable en CSV — ${filas.length} filas, con el motivo de cada una que no cuenta`
-                    : `Exportar el libro de compras completo en CSV — ${filas.length} filas, con el número de documento completo`,
+                    ? `Exportar el libro declarable en CSV. ${filas.length} filas, con el motivo de las que no cuentan.`
+                    : `Exportar el libro de compras completo en CSV. ${filas.length} filas, con el número de documento completo.`,
                 onClick: exportar,
                 disabled: loading || filas.length === 0,
             }]}>
@@ -311,17 +311,17 @@ export default function LibroComprasCompletoView({ openModal }) {
     const vacio = error
         ? { icon: AlertTriangle,
             message: 'No se pudo generar el libro',
-            subtext: 'Es un fallo de la consulta, no un mes sin movimiento. No presentes nada de esta pantalla.' }
+            subtext: 'Hubo un error al cargarlo. No presentes nada de esta pantalla.' }
         : busqueda.trim()
             ? { icon: SearchX,
                 message: `Sin coincidencias para «${busqueda.trim()}»`,
-                subtext: 'La búsqueda recorta lo que ves; el CSV sigue saliendo con el libro completo.' }
+                subtext: 'La búsqueda sólo filtra lo que ves. El CSV sale con el libro completo.' }
             : { icon: BookOpen,
                 message: `Sin compras en ${etiquetaMes(mes)}`,
                 subtext: activeTab === 'sin_compra'
-                    ? 'Todos los documentos del mes ya están registrados como compra.'
+                    ? 'Todas las facturas del mes ya están registradas como compra.'
                     : esDecl
-                        ? 'No hay documentos de compra en el período.'
+                        ? 'No hay compras en el período.'
                         : undefined };
 
     return (
@@ -349,7 +349,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                                     sub="Se libera al confirmar el proveedor" loading={loading} />
                             )}
                         </>) : (<>
-                            <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
+                            <StatCard icon={BookOpen} label="Facturas" value={totales.docs} loading={loading}
                                 sub={`${totales.docs - totales.sinCompra} registradas · ${totales.sinCompra} sin registrar`} />
                             {/* Documentos queda siempre: es lo que dice si el libro está
                                 completo (cuántas sin registrar), y no revela cifras. */}
@@ -358,7 +358,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                                     <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
                                         sub="Del período" loading={loading} />
                                     <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
-                                        sub="Documentado" loading={loading} />
+                                        sub="Según las facturas" loading={loading} />
                                 </>
                             )}
                         </>)}
@@ -372,17 +372,17 @@ export default function LibroComprasCompletoView({ openModal }) {
 
                 {esDecl ? (
                     <Notice variant="info" icon={Scale} compact>
-                        Lo que de estas compras puede reclamarse como crédito fiscal: las notas
-                        de crédito <b>restan</b> y las de débito <b>suman</b> (Art. 62), una factura
-                        no da crédito por más IVA que traiga (Art. 65), y sólo cuenta el proveedor
-                        con su deducibilidad <b>confirmada</b>. Lo que no cuenta <b>igual aparece</b>,
+                        Lo que de estas compras se puede reclamar como crédito fiscal. Las notas
+                        de crédito <b>restan</b> y las de débito <b>suman</b> (Art. 62). Una factura
+                        no da crédito aunque traiga IVA (Art. 65). Sólo cuenta el proveedor
+                        con su deducibilidad <b>confirmada</b>. Lo que no cuenta <b>también aparece</b>,
                         con su motivo.
                     </Notice>
                 ) : (
                     <Notice variant="info" icon={BookOpen} compact>
-                        Todas las compras del período, incluidas las que llegaron como documento
-                        del proveedor y todavía no se registraron. El número de documento va
-                        completo. Para presentar, el libro del Art. 86 sigue siendo el de <b>Libros IVA</b>.
+                        Todas las compras del período, también las facturas del proveedor que
+                        todavía no se registraron. El número de documento va completo.
+                        Para presentar, usa el libro del Art. 86 en <b>Libros IVA</b>.
                     </Notice>
                 )}
 
@@ -395,16 +395,16 @@ export default function LibroComprasCompletoView({ openModal }) {
                 {esDecl && !loading && totDecl.repRenglones > 0 && (
                     <Notice variant="danger" icon={AlertTriangle}>
                         <b>{Math.round(totDecl.repDocs)}</b> documento(s) están registrados más
-                        de una vez — <b>{totDecl.repRenglones}</b> renglón(es) del libro.
+                        de una vez, en <b>{totDecl.repRenglones}</b> fila(s) del libro.
                         {/* El monto sólo si lo hay: un documento repetido que no
                             computaba crédito igual está mal anotado, pero decir
                             «$0.00 de crédito repetido» sería ruido. */}
                         {canVerMontos && totDecl.repCredito > 0 && <> Se está
                         contando <b>{formatMoney(totDecl.repCredito)}</b> de crédito fiscal repetido.</>}
                         {' '}Van marcados <b>«Repetido»</b> en la tabla y en el CSV. Deja
-                        <b> uno solo</b> antes de declarar: una factura que trae productos de dos
-                        salas se registra <b>completa una vez</b> y lo que es de la otra se
-                        traslada por inventario.
+                        <b> uno solo</b> antes de declarar. Una factura con productos de dos
+                        sucursales se registra <b>completa una vez</b>. Lo de la otra sucursal
+                        se manda con un traslado.
                     </Notice>
                 )}
 
@@ -419,7 +419,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                                 .sort((a, b) => b[1] - a[1])
                                 .map(([motivo, n]) => (
                                     <li key={motivo} className="text-body-sm">
-                                        <b className="tabular-nums">{n}</b> — {motivo}
+                                        <b className="tabular-nums">{n}</b>: {motivo}
                                     </li>
                                 ))}
                         </ul>
@@ -428,8 +428,8 @@ export default function LibroComprasCompletoView({ openModal }) {
 
                 {!esDecl && !loading && totales.sinCompra > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
-                        <b>{totales.sinCompra}</b> documento(s) del proveedor todavía no están
-                        registrados como compra — <b>{formatMoney(totales.creditoSinCompra)}</b> de
+                        <b>{totales.sinCompra}</b> factura(s) del proveedor todavía no están
+                        registradas como compra. Son <b>{formatMoney(totales.creditoSinCompra)}</b> de
                         crédito fiscal que no entra al libro del Art. 86. La Ley de IVA da tres
                         períodos para reclamarlo.
                     </Notice>
@@ -468,7 +468,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                                     ancho de la pantalla. */}
                                 {Number(r.veces_en_el_libro || 1) > 1 && (
                                     <Badge variant="danger" size="sm"
-                                        title="Este mismo documento está en más de un renglón del libro: su crédito fiscal se está contando repetido.">
+                                        title="Este documento está en más de una fila del libro. Su crédito fiscal se cuenta repetido.">
                                         Repetido ×{r.veces_en_el_libro}
                                     </Badge>
                                 )}
@@ -518,7 +518,7 @@ export default function LibroComprasCompletoView({ openModal }) {
                                     no reacciona. Decirlo evita que se lea como
                                     un clic que falla. */}
                                 {!r.json_path && (
-                                    <span className="block text-micro text-content-3 mt-0.5">Sin documento</span>
+                                    <span className="block text-micro text-content-3 mt-0.5">Sin archivo</span>
                                 )}
                             </DataCell>
                             <DataCell className="max-w-[16rem]">

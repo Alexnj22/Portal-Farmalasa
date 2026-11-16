@@ -61,7 +61,7 @@ export default function ResumenFiscal() {
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <PasoDeMes mes={mes} onCambiar={setMes} />
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso tono="cuidado" texto="Es un indicador, no una declaración. No incluye el saldo a favor del mes anterior ni decide qué compras dan derecho a crédito." />
+          <Aviso tono="cuidado" texto="Este resumen es sólo un indicador. No incluye el saldo a favor del mes anterior. Tampoco decide qué compras dan derecho a crédito." />
         </View>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos == null ? <Cargando /> : datos ? (
@@ -86,11 +86,11 @@ export default function ResumenFiscal() {
             </Seccion>
             <Seccion titulo="Pago a cuenta">
               <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{formatMoney(pac.monto)}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${tasaEnTexto(pac.tasa)} sobre ${formatMoney(pac.base)} de ventas del mes. Se paga siempre, no depende del IVA. ${pac.fundamento ?? ''}.`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${tasaEnTexto(pac.tasa)} sobre ${formatMoney(pac.base)} de ventas del mes. Se paga siempre, haya o no IVA a pagar. ${pac.fundamento ?? ''}.`}</Text>
             </Seccion>
             <Seccion titulo="Anticipo por tarjeta · estimado">
               <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{formatMoney(tar.monto)}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${tasaEnTexto(tar.tasa)} de ${formatMoney(tar.base)} cobrados con tarjeta. Lo retiene el procesador: se confirma en el estado de cuenta. ${tar.fundamento ?? ''}.`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${tasaEnTexto(tar.tasa)} de ${formatMoney(tar.base)} cobrados con tarjeta. Lo retiene el procesador de tarjetas. El monto real sale en el estado de cuenta. ${tar.fundamento ?? ''}.`}</Text>
             </Seccion>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Las dos declaraciones se presentan dentro de los primeros diez días hábiles del mes siguiente.</Text>
           </>

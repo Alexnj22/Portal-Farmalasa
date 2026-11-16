@@ -44,7 +44,7 @@ export default function PropuestaDeCompra() {
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
 
-  const confirmar = (r, producto) => Alert.alert('Confirmar el producto', `«${r.descripcion}» es ${producto.nombre}. El proveedor no vuelve a preguntar por este código.`, [
+  const confirmar = (r, producto) => Alert.alert('Confirmar el producto', `«${r.descripcion}» es ${producto.nombre}. No se vuelve a preguntar por este código del proveedor.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Confirmar', onPress: async () => {
       setOcupado(r.codigo_proveedor);
@@ -65,28 +65,28 @@ export default function PropuestaDeCompra() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
         <View style={{ marginHorizontal: 4, gap: 2 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{proveedor}</Text>
-          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[fechaNumerica(fecha, { anio: 'corto', vacio: '' }), total ? formatMoney(Number(total)) : null, resumen ? `${resumen.renglones} renglones` : null].filter(Boolean).join(' · ')}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[fechaNumerica(fecha, { anio: 'corto', vacio: '' }), total ? formatMoney(Number(total)) : null, resumen ? `${resumen.renglones} productos` : null].filter(Boolean).join(' · ')}</Text>
         </View>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {!p && !error ? <View style={{ alignItems: 'center', gap: 8, marginTop: 20 }}><Indicador /><Text style={{ color: colorSistema.texto2 }}>Leyendo el documento y su archivo…</Text></View> : null}
+        {!p && !error ? <View style={{ alignItems: 'center', gap: 8, marginTop: 20 }}><Indicador /><Text style={{ color: colorSistema.texto2 }}>Leyendo la factura…</Text></View> : null}
         {p ? (
           <>
             <Seccion titulo="Encabezado">
               <Dato primero rotulo="Proveedor" valor={p.encabezado.proveedor ?? '—'} />
               <Dato rotulo="Número" valor={p.documento.codigo_generacion ?? '—'} />
-              <Dato rotulo="Sello" valor={p.documento.sello ? 'sí' : 'no lo trae'} />
-              <Dato rotulo="Días de crédito" valor={p.encabezado.dias_credito != null ? `${p.encabezado.dias_credito} días` : 'lo pone la persona'} />
+              <Dato rotulo="Sello de MH" valor={p.documento.sello ? 'sí' : 'no lo trae'} />
+              <Dato rotulo="Días de crédito" valor={p.encabezado.dias_credito != null ? `${p.encabezado.dias_credito} días` : 'sin definir'} />
             </Seccion>
             {faltan > 0 ? (
-              <Aviso tono="cuidado" texto={`${faltan} de ${resumen.renglones} renglones necesitan un ojo: ${[[resumen.sin_producto, 'sin producto'], [resumen.a_confirmar, 'con el producto por confirmar'], [resumen.sin_lote, 'sin lote'], [resumen.sin_vencimiento, 'sin vencimiento']].filter(([n]) => n > 0).map(([n, t]) => `${n} ${t}`).join(' · ')}.`} />
-            ) : <Aviso texto={`Los ${resumen.renglones} renglones están completos.`} />}
+              <Aviso tono="cuidado" texto={`${faltan} de ${resumen.renglones} productos necesitan revisión: ${[[resumen.sin_producto, 'sin producto'], [resumen.a_confirmar, 'con el producto por confirmar'], [resumen.sin_lote, 'sin lote'], [resumen.sin_vencimiento, 'sin vencimiento']].filter(([n]) => n > 0).map(([n, t]) => `${n} ${t}`).join(' · ')}.`} />
+            ) : <Aviso texto={`Los ${resumen.renglones} productos están completos.`} />}
             {p.renglones.map((r, i) => {
               const elegido = elegidos[r.codigo_proveedor];
               const o = ORIGEN[elegido ? 'aprendido' : r.match_origen];
               return (
                 <Vidrio key={`${r.codigo_proveedor}-${i}`} radio={20}>
                   <View style={{ padding: 12, gap: 5 }}>
-                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{elegido?.nombre ?? r.producto ?? '— sin producto —'}</Text>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{elegido?.nombre ?? r.producto ?? 'Sin producto'}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{r.descripcion}</Text>
                     <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{`${r.cantidad} × ${formatMoney(r.costo)}`}</Text>
                     <Text style={{ color: !r.lote || !r.vence ? MARCA.ambar : colorSistema.texto2, fontSize: 12 }}>{`${r.lote ? `lote ${r.lote}` : 'sin lote'} · ${r.vence ? `vence ${r.vence.slice(0, 7)}` : 'sin vencimiento'}`}</Text>
@@ -108,7 +108,7 @@ export default function PropuestaDeCompra() {
                 </Vidrio>
               );
             })}
-            <Aviso texto="Esto no registra nada todavía: es la compra armada para revisarla." />
+            <Aviso texto="Todavía no se registra nada. Es la compra armada para revisarla." />
           </>
         ) : null}
       </ScrollView>

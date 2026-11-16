@@ -48,7 +48,7 @@ const FACTURA_COLS = [
     { key: 'fecha',     label: 'Fecha',      align: 'left'   },
     { key: 'proveedor', label: 'Proveedor',  align: 'left'   },
     { key: 'estado',    label: 'Estado',     align: 'center', hideBelow: 'md' },
-    { key: 'items',     label: 'Ítems',      align: 'center' },
+    { key: 'items',     label: 'Productos',  align: 'center' },
     { key: 'subtotal',  label: 'Subtotal',   align: 'right',  hideBelow: 'md' },
     { key: 'iva',       label: 'IVA',        align: 'right',  hideBelow: 'lg' },
     { key: 'total',     label: 'Total',      align: 'right'  },
@@ -133,7 +133,7 @@ function ItemsExpand({ receiptId, carga, comoPanel = false }) {
         <div className="px-6 py-4"><SkeletonText lines={3} /></div>
     );
     if (!items?.length) return (
-        <div className="px-6 py-4 text-label text-content-3">Sin ítems registrados.</div>
+        <div className="px-6 py-4 text-label text-content-3">Sin productos registrados.</div>
     );
 
     // ── En el teléfono, una lista y no una tabla ───────────────────────────
@@ -184,7 +184,7 @@ function ItemsExpand({ receiptId, carga, comoPanel = false }) {
         { key: 'cant',   label: 'Cant.', align: 'center' },
         ...(canVerMontos ? [
             { key: 'unit',  label: 'P. Unit.',    align: 'right' },
-            { key: 'total', label: 'Total línea', align: 'right' },
+            { key: 'total', label: 'Total', align: 'right' },
         ] : []),
         { key: 'lote',   label: 'Lote',        align: 'center', hideBelow: 'md' },
         { key: 'vence',  label: 'Vencimiento', align: 'center', hideBelow: 'md' },

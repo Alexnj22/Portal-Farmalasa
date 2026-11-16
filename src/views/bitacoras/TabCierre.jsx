@@ -63,10 +63,10 @@ function ResumenDelCierre({ L, Li, cuadre, libroPend, calibracionVencida }) {
     const cuadreListo = c && (c.status === 'FINALIZADO' || c.status === 'CERRADO');
     const falta = [
         L.sin_accion > 0 && `${L.sin_accion} ${L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva`,
-        libroPend > 0 && `${libroPend} ${libroPend === 1 ? 'renglón' : 'renglones'} del libro sin receta`,
+        libroPend > 0 && `${libroPend} ${libroPend === 1 ? 'folio' : 'folios'} del libro sin receta`,
         calibracionVencida > 0 && `${calibracionVencida} ${calibracionVencida === 1 ? 'termómetro' : 'termómetros'} con la calibración vencida`,
         !cuadreListo && (c ? 'terminar el conteo de antibióticos' : 'hacer el conteo de antibióticos'),
-        L.faltantes + Li.faltantes > 0 && `${L.faltantes + Li.faltantes} registros sin anotar (se puede firmar igual; queda guardado)`,
+        L.faltantes + Li.faltantes > 0 && `${L.faltantes + Li.faltantes} registros sin anotar. Puedes firmar igual.`,
     ].filter(Boolean);
     return (
         <section className="space-y-3">
@@ -136,12 +136,12 @@ function CuadreAntibioticos({ cuadre, cargando, error, onVerHoja }) {
                         )}
                         <p className="text-caption text-content-3 mt-1.5">
                             {!c
-                                ? 'En las salas, los antibióticos van dentro del conteo cíclico del día 15. En la Bodega: Conteo de inventario → «Nuevo conteo» → «Bajo receta».'
+                                ? 'En las sucursales, los antibióticos van en el conteo cíclico del día 15. En la Bodega: Conteo de inventario → «Nuevo conteo» → «Bajo receta».'
                                 : terminado
                                     ? (c.diferencias > 0
                                         ? `${c.diferencias} ${c.diferencias === 1 ? 'producto quedó' : 'productos quedaron'} con diferencia entre lo contado y lo registrado.`
                                         : 'Lo contado coincide con lo registrado en todos los productos.')
-                                    : 'Hay que terminarlo para que el cuadre del mes quede completo.'}
+                                    : 'Termínalo para completar el cuadre del mes.'}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -166,7 +166,7 @@ function CuadreAntibioticos({ cuadre, cargando, error, onVerHoja }) {
                         tono={!cuadre.sin_saldo_inicial && conOtros > 0 ? 'warning' : undefined} />
                 </div>
                 <p className="text-caption text-content-3">
-                    La norma no fija cada cuánto se cuadra; la empresa lo hace cada mes.
+                    El cuadre se hace cada mes.
                 </p>
             </div>
         </section>
@@ -337,7 +337,7 @@ export default function TabCierre({ branchId, periodo }) {
             {cargando ? <LoadingState label="Calculando el mes…" /> : !resumen ? (
                 <Notice variant="danger" icon={AlertTriangle}>No se pudo calcular el resumen del mes.</Notice>
             ) : resumen.sin_dias ? (
-                <Notice variant="info">Ese mes es anterior a la puesta en marcha de las bitácoras.</Notice>
+                <Notice variant="info">Las bitácoras empezaron después de ese mes.</Notice>
             ) : (
                 <>
                     <ResumenDelCierre L={L} Li={Li} cuadre={cuadre} libroPend={libroPend}
@@ -370,8 +370,7 @@ export default function TabCierre({ branchId, periodo }) {
                                     {L.sin_accion} {L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva anotada.
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
-                                    Hay que completarlas antes de firmar: la norma pide investigar la
-                                    desviación y dejar constancia de qué se hizo.
+                                    Complétalas antes de firmar. Anota qué se hizo con cada una.
                                 </span>
                             </Notice>
                         )}
@@ -379,8 +378,8 @@ export default function TabCierre({ branchId, periodo }) {
                         {L.fuera_de_plan > 0 && (
                             <Notice variant="info" compact>
                                 {L.fuera_de_plan} {L.fuera_de_plan === 1 ? 'lectura quedó' : 'lecturas quedaron'} fuera
-                                del plan del área (otro día u otra franja). Se anotaron y cuentan como trabajo hecho,
-                                pero no cierran un hueco del plan.
+                                del plan del área (otro día u otra franja). Cuentan como hechas, pero no cubren
+                                ningún faltante.
                             </Notice>
                         )}
                     </section>
@@ -423,7 +422,7 @@ export default function TabCierre({ branchId, periodo }) {
                             <span className="font-bold">Hay instrumentos con la calibración vencida.</span>
                             <span className="block mt-0.5 font-normal text-content-2">
                                 {resumen.calibracion_vencida.map(c => `${c.area}${c.instrumento ? ` (${c.instrumento})` : ''}`).join(', ')}.
-                                Un termómetro sin certificado vigente invalida las lecturas que tomó.
+                                Las lecturas de un termómetro sin certificado vigente no valen.
                             </span>
                         </Notice>
                     )}
@@ -459,16 +458,11 @@ export default function TabCierre({ branchId, periodo }) {
                         permiso, por estar el mes en curso o por estar ya cerrado. */}
                     {!cerrado && !enCurso && puedeFirmar && (
                         <section data-surface="card" className="p-4 space-y-3">
-                            <h4 className="text-body font-black text-content">Dar por finalizado {nombreMes(periodo).toLowerCase()}</h4>
+                            <h4 className="text-body font-black text-content">Cerrar {nombreMes(periodo).toLowerCase()}</h4>
                             {L.faltantes + Li.faltantes > 0 && (
                                 <Notice variant="warning" icon={AlertTriangle} bloque>
                                     <span className="font-bold">
-                                        El mes se puede cerrar así, y el cierre va a guardar que quedaron {L.faltantes + Li.faltantes} registros sin anotar.
-                                    </span>
-                                    <span className="block mt-0.5 font-normal text-content-2">
-                                        Es a propósito: un cierre que exige perfección enseña a inventar las
-                                        lecturas que faltan. Lo que está medido y anotado es un hallazgo menor;
-                                        lo que se esconde es lo que hunde una inspección.
+                                        Puedes cerrar el mes así. Quedan guardados los {L.faltantes + Li.faltantes} registros sin anotar.
                                     </span>
                                 </Notice>
                             )}
@@ -482,24 +476,23 @@ export default function TabCierre({ branchId, periodo }) {
                             {libroPend > 0 && (
                                 <Notice variant="danger" icon={AlertTriangle} bloque>
                                     <span className="font-bold">
-                                        En el libro quedan {libroPend} {libroPend === 1 ? 'renglón' : 'renglones'} esperando la receta.
+                                        En el libro quedan {libroPend} {libroPend === 1 ? 'folio' : 'folios'} sin receta.
                                     </span>
                                     <span className="block mt-0.5 font-normal text-content-2">
-                                        Al cerrar el mes ya no se pueden completar sin volver a abrirlo. Si todavía
-                                        se pueden completar, conviene hacerlo antes; si la receta no va a llegar,
-                                        hay que escribir abajo por qué se cierra así.
+                                        Después de cerrar ya no se pueden completar sin reabrir el mes. Complétalos
+                                        antes. Si la receta no va a llegar, escribe abajo el motivo.
                                     </span>
                                 </Notice>
                             )}
                             <PortalTextarea
                                 label={libroPend > 0
-                                    ? 'Por qué se cierra con renglones sin completar'
+                                    ? 'Por qué cierras con folios sin completar'
                                     : 'Observaciones del regente (opcional)'}
                                 name="observaciones" required={libroPend > 0}
                                 value={obs} onChange={(e) => setObs(e.target.value)} rows={3}
                                 placeholder={libroPend > 0
-                                    ? 'Por ejemplo: los tres renglones del 12 son de pacientes que no volvieron con la receta.'
-                                    : 'Por ejemplo: las cuatro lecturas faltantes son del 12 y 13, cuando la sala cerró por el corte de energía.'}
+                                    ? 'Por ejemplo: los tres folios del 12 son de pacientes que no volvieron con la receta.'
+                                    : 'Por ejemplo: las cuatro lecturas faltantes son del 12 y 13, cuando la sucursal cerró por falta de energía.'}
                             />
                             <Button variant="primary" icon={CalendarCheck} onClick={firmar} loading={guardando}
                                 disabled={!puedeFirmarElCierre(libroPend, obs)}>
@@ -523,14 +516,10 @@ export default function TabCierre({ branchId, periodo }) {
                             ) : (
                                 <>
                                     <Notice variant="warning" icon={AlertTriangle} bloque>
-                                        <span className="font-bold">Reabrir un mes firmado queda registrado.</span>
-                                        <span className="block mt-0.5 font-normal text-content-2">
-                                            Con quién, cuándo y por qué. Un mes que se reabrió tres veces cuenta
-                                            esa historia, y eso también es información.
-                                        </span>
+                                        <span className="font-bold">Queda registrado quién reabrió el mes, cuándo y por qué.</span>
                                     </Notice>
                                     <PortalTextarea
-                                        label="Por qué se reabre" name="motivo" required
+                                        label="Por qué lo reabres" name="motivo" required
                                         value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2}
                                         placeholder="Apareció el registro en papel de las lecturas del 12."
                                     />

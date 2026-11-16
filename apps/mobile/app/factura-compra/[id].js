@@ -97,7 +97,7 @@ export default function FacturaCompra() {
   useEffect(() => {
     if (!adjuntando || delMes) return;
     const [desde, hasta] = rangoDelMes(String(doc?.fecha_emision || fecha || '').slice(0, 7));
-    Promise.resolve(fetchPurchaseDteDocuments(desde, hasta)).then((l) => setDelMes(l || [])).catch((e) => { setDelMes([]); fallo('No se pudieron traer los documentos', mensajeAmigable(e)); });
+    Promise.resolve(fetchPurchaseDteDocuments(desde, hasta)).then((l) => setDelMes(l || [])).catch((e) => { setDelMes([]); fallo('No se pudieron traer las facturas', mensajeAmigable(e)); });
   }, [adjuntando, delMes, doc?.fecha_emision, fecha]);
   const candidatosJson = useMemo(() => {
     const ancla = doc?.received_at ? new Date(doc.received_at).getTime() : null;
@@ -121,7 +121,7 @@ export default function FacturaCompra() {
     setAdjuntando(false); setDelMes(null);
     await releer().catch(() => {});
   };
-  const adjuntar = (d) => Alert.alert('Adjuntar el JSON', `Une este documento con ${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || 'el duplicado'} · ${formatMoney(d.monto_total)}`, [
+  const adjuntar = (d) => Alert.alert('Adjuntar el JSON', `Une esta factura con ${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || 'el duplicado'} · ${formatMoney(d.monto_total)}`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Unir', onPress: () => unir(d).catch((e) => fallo('No se pudo fusionar', mensajeAmigable(e))) },
   ]);
@@ -195,17 +195,17 @@ export default function FacturaCompra() {
             ) : <BotonGrande texto="Vincular a un proveedor" borde color={MARCA.ambar} onPress={() => setVinculando(true)} />) : null}
 
             {doc.invalidado && puedeAbrir && doc.invalidacion_source?.file_path ? (
-              <BotonGrande texto="Ver el documento de la anulación" borde color={MARCA.rojo} onPress={() => abrir(doc.invalidacion_source.file_path)} />
+              <BotonGrande texto="Ver el aviso de anulación" borde color={MARCA.rojo} onPress={() => abrir(doc.invalidacion_source.file_path)} />
             ) : null}
 
             {!doc.json_path && puedeVincular ? (
-              <Seccion titulo="Sin JSON" pie="Se confirmó sólo con el PDF. Únelo con el documento que sí trae el JSON.">
+              <Seccion titulo="Sin JSON" pie="Se confirmó solo con el PDF. Únela con la factura que trae el JSON.">
                 {puedeAbrir && doc.pdf_path ? <DetectarCodigo pdfPath={doc.pdf_path} accion="Unir" onEncontrado={(m) => unir(m, 'detect_code')} /> : null}
                 {adjuntando ? (
                   <View style={{ gap: 6 }}>
-                    <Campo multiline={false} autoFocus value={qJson} onChangeText={setQJson} placeholder="Buscar el documento duplicado" />
+                    <Campo multiline={false} autoFocus value={qJson} onChangeText={setQJson} placeholder="Buscar la factura duplicada" />
                     {delMes == null ? <Indicador /> : !candidatosJson.length ? (
-                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ningún documento con JSON en el mes.</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ninguna factura con JSON en el mes.</Text>
                     ) : candidatosJson.map((d) => (
                       <Pressable key={d.id} onPress={() => adjuntar(d)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
                         <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || '—'} · ${formatMoney(d.monto_total)}`}</Text>
@@ -233,7 +233,7 @@ export default function FacturaCompra() {
 
             <Seccion titulo={json === undefined ? 'Productos' : `Productos · ${renglones.length}`}>
               {json === undefined ? <Indicador /> : !renglones.length ? (
-                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{doc.items_text || 'No se pudo leer el detalle del documento.'}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{doc.items_text || 'No se pudo leer el detalle de la factura.'}</Text>
               ) : renglones.map((r, i) => (
                 <View key={`${r.numero}-${i}`} style={{ flexDirection: 'row', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 9 : 0 }}>
                   <View style={{ flex: 1, gap: 2 }}>
@@ -256,7 +256,7 @@ export default function FacturaCompra() {
               </Seccion>
             ) : null}
 
-            <Seccion titulo="El documento">
+            <Seccion titulo="La factura">
               <Dato primero rotulo="Número de control" valor={doc.numero_control || '—'} />
               <Dato rotulo="Código de generación" valor={doc.codigo_generacion || '—'} />
               <Dato rotulo="NIT del emisor" valor={doc.emisor_nit || '—'} />

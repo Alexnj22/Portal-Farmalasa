@@ -116,7 +116,7 @@ const COLS_CONSUMIDOR = [
     // `2xl`: a 1280 las ocho columnas pedían 1,009px contra 886 y **Total del
     // día se salía 123px**. `Docs` es un conteo —contexto— y su total ya está
     // en el carril de arriba.
-    { key: 'docs',      label: 'Docs',       align: 'center', hideBelow: '2xl' },
+    { key: 'docs',      label: 'Facturas',   align: 'center', hideBelow: '2xl' },
     // `Exentas` sale de la pantalla, igual que en compras: con `lg` estaba
     // visible a 1440 y empujaba "Total del día" fuera del marco (medido: 1128
     // contra 1046), y devolverla a `2xl` la traía de vuelta justo en 1536,
@@ -409,9 +409,9 @@ const dispararDescarga = descargarArchivo;
 
 async function bajarArchivo(path, nombre) {
     const url = await getSignedFileUrl(path);
-    if (!url) throw new Error('No se pudo firmar el enlace del archivo.');
+    if (!url) throw new Error('No se pudo abrir el archivo.');
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`No se pudo bajar el archivo (HTTP ${res.status}).`);
+    if (!res.ok) throw new Error(`No se pudo descargar el archivo (HTTP ${res.status}).`);
     dispararDescarga(await res.blob(), nombre);
 }
 
@@ -444,7 +444,7 @@ const COLS_RET_VENTAS = [
     // CSV. La base además es el retenido por cien.
     { key: 'doc',    label: 'Documento', align: 'left', hideBelow: '2xl' },
     { key: 'ret',    label: 'Retenido',  align: 'right' },
-    { key: 'dte',    label: 'DTE',       align: 'center' },
+    { key: 'dte',    label: 'Archivos',  align: 'center' },
 ];
 
 function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nombreSucursal, onAbrir, onError }) {
@@ -467,13 +467,13 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                     <TituloDeSeccion nivel="tarjeta">IVA que nos retuvieron</TituloDeSeccion>
                     <p className="text-caption text-content-3">
                         Ventas en las que el cliente retuvo el 1% y lo entera él mismo (Art. 162
-                        del Código Tributario). Es impuesto ya pagado: se acredita al declarar.
+                        del Código Tributario). Es impuesto ya pagado y se acredita al declarar.
                     </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                     <Button variant="secondary" size="sm" icon={Download}
                         disabled={loading || filas.length === 0}
-                        title={`Exportar los ${filas.length} documentos con retención de ${etiquetaMes(mes)} en CSV`}
+                        title={`Exportar las ${filas.length} ventas con retención de ${etiquetaMes(mes)} en CSV`}
                         onClick={() => exportCsv(CSV_RET_VENTAS_HEADERS, csvRetencionVentas(filas),
                             `iva-retenido-sobre-ventas_${sufijoArchivo}.csv`, 'libros_iva_retencion')}>
                         Exportar
@@ -481,11 +481,11 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                 <div className="text-right">
                     <p className="font-mono text-title tabular-nums font-black">{formatMoney(vigente)}</p>
                     <p className="text-micro text-content-3">
-                        {filas.length} documento{filas.length === 1 ? '' : 's'} en {etiquetaMes(mes)}
+                        {filas.length} venta{filas.length === 1 ? '' : 's'} en {etiquetaMes(mes)}
                         {/* La anulada no se acredita, pero su retención SÍ aparece en el
                             Corte Z del período. Decirlo es lo que hace que la resta se
                             entienda en vez de parecer un descuadre. */}
-                        {anuladas > 0 && <> · {anuladas} anulado{anuladas === 1 ? '' : 's'} por {formatMoney(total - vigente)}, que no se acredita{anuladas === 1 ? '' : 'n'}</>}
+                        {anuladas > 0 && <> · {anuladas} anulada{anuladas === 1 ? '' : 's'} por {formatMoney(total - vigente)}, que no se acredita{anuladas === 1 ? '' : 'n'}</>}
                     </p>
                 </div>
                 </div>
@@ -550,12 +550,12 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
                             <div className="flex items-center justify-center gap-1">
                                 <Button tone="chart-1" size="sm" iconOnly icon={FileJson}
                                     disabled={!r.json_path || bajando != null}
-                                    title={r.json_path ? 'Descargar el JSON del documento' : 'El JSON de este documento no está guardado'}
+                                    title={r.json_path ? 'Descargar el JSON de la factura' : 'El JSON de esta factura no está guardado'}
                                     onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-json`,
                                         () => bajarArchivo(r.json_path, `${String(r.codigo_generacion).toUpperCase()}.json`)); }} />
                                 <Button tone="chart-1" size="sm" iconOnly icon={FileText}
                                     disabled={!r.pdf_path || bajando != null}
-                                    title={r.pdf_path ? 'Descargar el PDF del documento' : 'El PDF de este documento no está guardado'}
+                                    title={r.pdf_path ? 'Descargar el PDF de la factura' : 'El PDF de esta factura no está guardado'}
                                     onClick={(e) => { e.stopPropagation(); correr(`${r.codigo_generacion}-pdf`,
                                         () => bajarArchivo(r.pdf_path, `${String(r.codigo_generacion).toUpperCase()}.pdf`)); }} />
                                 <Button tone="chart-1" size="sm" iconOnly icon={Archive}
@@ -844,11 +844,11 @@ export default function LibrosIvaView({ openModal }) {
         error
             ? { icon: AlertTriangle,
                 message: 'No se pudo generar el libro',
-                subtext: 'Es un fallo de la consulta, no un mes sin movimiento. No presentes nada de esta pantalla.' }
+                subtext: 'Hubo un error al cargarlo. No presentes nada de esta pantalla.' }
             : busqueda.trim()
                 ? { icon: SearchX,
                     message: `Sin coincidencias para «${busqueda.trim()}»`,
-                    subtext: 'La búsqueda recorta lo que ves; el CSV sigue saliendo con el libro completo.' }
+                    subtext: 'La búsqueda sólo filtra lo que ves. El CSV sale con el libro completo.' }
                 : { icon, message, subtext });
 
     const propsTabla = (cols) => ({
@@ -896,7 +896,7 @@ export default function LibrosIvaView({ openModal }) {
                 // de encogerlo. El ícono `Download` ya es el de exportar en
                 // todo el portal, y el rótulo sigue vivo en el aria y en táctil.
                 soloIcono: true,
-                title: `Exportar el libro de ${TABS.find(x => x.key === activeTab)?.label} en CSV — ${filas.length} filas, completo y en orden legal (no lo recortan la búsqueda ni el orden de pantalla)`,
+                title: `Exportar el libro de ${TABS.find(x => x.key === activeTab)?.label} en CSV. ${filas.length} filas, completo y en orden legal, sin la búsqueda ni el orden de la pantalla.`,
                 onClick: exportar,
                 disabled: loading || filas.length === 0,
             }, {
@@ -909,7 +909,7 @@ export default function LibrosIvaView({ openModal }) {
                 // v2.349.1 con el avance de la descarga. El estado se muestra
                 // deshabilitando el botón, que no toca la medida.
                 label: 'Paquete del mes',
-                title: `Descargar TODOS los libros de ${etiquetaMes(mes)} en un ZIP, con una carpeta por libro y un archivo por sucursal adentro`,
+                title: `Descargar TODOS los libros de ${etiquetaMes(mes)} en un ZIP. Una carpeta por libro y un archivo por sucursal.`,
                 onClick: descargarZip,
                 disabled: loading || zipeando,
             }]}>
@@ -958,7 +958,9 @@ export default function LibrosIvaView({ openModal }) {
                             fiscal "cero" es una afirmación, no un placeholder.
                             La tabla ya mostraba esqueleto — eran las tarjetas
                             las que se quedaron afirmando. */}
-                        <StatCard icon={FileText} label="Documentos" value={t.docs} loading={loading}
+                        <StatCard icon={FileText}
+                            label={activeTab === 'consumidor' ? 'Facturas' : activeTab === 'contribuyente' ? 'Créditos fiscales' : 'Documentos'}
+                            value={t.docs} loading={loading}
                             sub={activeTab === 'consumidor'
                                 ? `${consumidor.length} ${filterBranch ? 'días' : 'filas'}`
                                 : undefined} />
@@ -972,7 +974,7 @@ export default function LibrosIvaView({ openModal }) {
                                     value={formatMoney(t.total)} sub="Del período" loading={loading} />
                                 <StatCard icon={Percent} label={ETIQUETAS[activeTab].impuesto}
                                     value={formatMoney(t.debito)} loading={loading}
-                                    sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Documentado'} />
+                                    sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Según las facturas'} />
                             </>
                         )}
                         {/* Solo cuando el período la tiene: es un número que el
@@ -1008,31 +1010,30 @@ export default function LibrosIvaView({ openModal }) {
                     encima de una tabla de ventas. */}
                 {activeTab === 'retencion' ? (
                     <Notice variant="info" icon={BookOpen} compact>
-                        Dos cosas opuestas en la misma pantalla: arriba, el IVA que los clientes
-                        retuvieron sobre nuestras ventas —impuesto ya pagado, que se acredita al
-                        declarar—; abajo, el que la empresa habría retenido como agente. Los
-                        documentos anulados van incluidos y marcados, y no se acreditan.
+                        Arriba, el IVA que los clientes retuvieron sobre nuestras ventas. Es impuesto
+                        ya pagado y se acredita al declarar. Abajo, el que la empresa retuvo como
+                        agente. Las ventas anuladas van incluidas y marcadas, y no se acreditan.
                     </Notice>
                 ) : ES_DE_VENTAS.has(activeTab) ? (
                     <Notice variant="info" icon={BookOpen} compact>
-                        Solo entran las facturas con sello de Hacienda y estado FINALIZADA; los
-                        anulados son los documentos invalidados ante Hacienda.
+                        Solo entran las facturas con sello del MH y estado FINALIZADA. Las anuladas
+                        son las invalidadas ante el MH.
                         {/* La explicación va acá y no en un `title` por documento:
                             se lee una vez y alcanza para las 44 filas de la
                             historia que la tienen. Y hace falta, porque sin ella
                             la fila parece una suma mal hecha. */}
-                        {activeTab === 'contribuyente' && hayRetencion && <> En los documentos
-                        que lo indican, el cliente retuvo el 1% del IVA y lo entera él mismo
-                        (Art. 162 del Código Tributario): por eso el total cobrado es menor que
-                        gravadas más débito. Es impuesto ya pagado, no una venta menos.</>}
+                        {activeTab === 'contribuyente' && hayRetencion && <> En las ventas
+                        marcadas, el cliente retuvo el 1% del IVA y lo entera él mismo
+                        (Art. 162 del Código Tributario). El total cobrado es menor que
+                        gravadas más débito. Esa diferencia es impuesto ya pagado.</>}
                     </Notice>
                 ) : (
                     <Notice variant="info" icon={BookOpen} compact>
                         Incluye las 7 sucursales. Las compras anuladas van incluidas y marcadas,
-                        como pide el libro. Sin columna de sello: el Art. 86 no la exige para
+                        como pide el libro. El Art. 86 no exige la columna de sello para
                         compras.{activeTab === 'compras' && <> En pantalla, el documento se muestra
-                        con su número de control cuando se pudo identificar; el archivo lleva el
-                        número tal como está registrado, para poder cotejarlo.</>}
+                        con su número de control cuando existe. El archivo lleva el
+                        número tal como está registrado.</>}
                     </Notice>
                 )}
 
@@ -1049,7 +1050,7 @@ export default function LibrosIvaView({ openModal }) {
                     <Notice variant="warning" icon={AlertTriangle}>
                         <strong>{formatMoney(fuera.monto)}</strong> en {fuera.documentos} ventas
                         cobradas de {etiquetaMes(mes)} <strong>no entran a este libro</strong> porque
-                        les falta el sello de Hacienda. Se resuelven en Facturación:{' '}
+                        les falta el sello del MH. Se resuelven en Facturación:{' '}
                         {fuera.sin_sello > 0 && <>{fuera.sin_sello} en <strong>Pendiente MH</strong></>}
                         {fuera.sin_sello > 0 && fuera.sello_invalido > 0 && ' y '}
                         {fuera.sello_invalido > 0 && <>{fuera.sello_invalido} en <strong>Observaciones</strong></>}.
@@ -1058,9 +1059,9 @@ export default function LibrosIvaView({ openModal }) {
 
                 {activeTab === 'contribuyente' && ccfSinNrc > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
-                        <strong>{ccfSinNrc} de {contribuyente.length}</strong> documentos van sin NRC del
-                        cliente, que el Art. 85 exige. El portal todavía no captura el receptor del DTE:
-                        el libro se puede revisar, pero no presentar hasta completarlo.
+                        <strong>{ccfSinNrc} de {contribuyente.length}</strong> créditos fiscales van sin NRC del
+                        cliente, que el Art. 85 exige. El libro se puede revisar, pero no presentar
+                        hasta completarlo.
                     </Notice>
                 )}
 
@@ -1071,24 +1072,23 @@ export default function LibrosIvaView({ openModal }) {
                     <Notice variant="danger" icon={AlertTriangle}>
                         <strong>{comprasSinSincronizar} de {compras.length}</strong> documentos no tienen
                         registrado su número ni la percepción. Hay que completar {etiquetaMes(mes)} antes
-                        de presentar este libro — en blanco no es cero.
+                        de presentar este libro. En blanco no es cero.
                     </Notice>
                 )}
 
                 {activeTab === 'compras' && comprasSinNrc > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         <strong>{comprasSinNrc} de {compras.length}</strong> documentos van sin NRC del
-                        proveedor, que el Art. 86 exige. Falta completarlo en la ficha del proveedor.
+                        proveedor, que el Art. 86 exige. Complétalo en los datos del proveedor.
                     </Notice>
                 )}
 
                 {activeTab === 'notas' && notas.length > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         Estas <strong>{notas.length}</strong> notas <strong>no están dentro del libro
-                        de compras</strong> — llegaron por correo y nunca se registraron como
-                        documento de compra. El libro de {etiquetaMes(mes)} declara{' '}
+                        de compras</strong>. Nunca se registraron como compra. El libro de {etiquetaMes(mes)} declara{' '}
                         <strong>{formatMoney(Math.abs(t.debito))}</strong> de crédito fiscal{' '}
-                        {t.debito >= 0 ? 'de más' : 'de menos'}. Van sin sucursal porque el documento
+                        {t.debito >= 0 ? 'de más' : 'de menos'}. Van sin sucursal porque la nota
                         no la trae.
                     </Notice>
                 )}
@@ -1096,8 +1096,8 @@ export default function LibrosIvaView({ openModal }) {
                 {sinNumeroControl > 0 && (
                     <Notice variant="danger" icon={AlertTriangle}>
                         <strong>{sinNumeroControl} de {filas.length}</strong> filas van sin número de
-                        control. Es columna obligatoria del libro, así que {etiquetaMes(mes)} todavía no
-                        se puede presentar — se completa solo, y si no baja en unas horas hay que revisarlo.
+                        control. Es una columna obligatoria, así que {etiquetaMes(mes)} todavía no se puede
+                        presentar. Se completa solo. Si en unas horas sigue igual, avisa a Soporte.
                     </Notice>
                 )}
 
@@ -1194,7 +1194,7 @@ export default function LibrosIvaView({ openModal }) {
 
                 {activeTab === 'anulados' && (
                     <DataTable {...propsTabla(COLS_ANULADOS)}
-                        empty={vacioDe(Ban, `Sin documentos anulados en ${etiquetaMes(mes)}`)}>
+                        empty={vacioDe(Ban, `Sin facturas anuladas en ${etiquetaMes(mes)}`)}>
                         {filasPagina.map((r, i) => (
                             <DataRow key={r.codigo_generacion || `${r.correlativo}-${r._n}`} index={i}>
                                 <DataCell align="right">{r._n}</DataCell>
@@ -1258,9 +1258,8 @@ export default function LibrosIvaView({ openModal }) {
                     <div className="pt-1">
                         <TituloDeSeccion nivel="tarjeta">IVA que retuvo la empresa</TituloDeSeccion>
                         <p className="text-caption text-content-3">
-                            El anexo del Art. 162: las retenciones practicadas como agente. Es la
-                            mitad opuesta de la de arriba y por eso va aparte — sumarlas sería
-                            declarar un impuesto por otro.
+                            El anexo del Art. 162: las retenciones practicadas como agente. Va aparte
+                            de la de arriba. No se suman.
                         </p>
                     </div>
                 )}
@@ -1279,7 +1278,7 @@ export default function LibrosIvaView({ openModal }) {
                                 ? `Sin percepción de IVA en ${etiquetaMes(mes)}`
                                 : `Sin retención de IVA en ${etiquetaMes(mes)}`,
                             activeTab === 'retencion'
-                                ? 'La empresa no es agente de retención: no hay ninguna operación registrada en todo el histórico.'
+                                ? 'La empresa no es agente de retención. No hay ninguna operación registrada.'
                                 : undefined)}>
                         {filasPagina.map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
@@ -1305,7 +1304,7 @@ export default function LibrosIvaView({ openModal }) {
                         empty={vacioDe(
                             ShoppingCart,
                             `Sin retención de Renta en ${etiquetaMes(mes)}`,
-                            'Ningún proveedor está marcado como sujeto a retención del Art. 156. Se marca en su ficha, en Proveedores.')}>
+                            'Ningún proveedor está marcado como sujeto a retención del Art. 156. Se marca en sus datos, en Proveedores.')}>
                         {filasPagina.map((r, i) => (
                             <DataRow key={`${r.codigo_generacion}-${r._n}`} index={i}>
                                 <DataCell align="right">{r._n}</DataCell>
@@ -1325,7 +1324,7 @@ export default function LibrosIvaView({ openModal }) {
                         empty={vacioDe(
                             FileText,
                             `Sin notas de crédito ni débito en ${etiquetaMes(mes)}`,
-                            'Ningún proveedor envió documentos que corrijan una compra del período.')}>
+                            'Ningún proveedor envió notas que corrijan una compra del período.')}>
                         {filasPagina.map((r, i) => (
                             <DataRow key={r.codigo_generacion || `${r.numero_control}-${r._n}`} index={i}>
                                 <DataCell align="right">{r._n}</DataCell>

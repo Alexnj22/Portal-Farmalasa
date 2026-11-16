@@ -44,11 +44,11 @@ export default function CofNocheSinEnvio({ resumen, mes, desde, hasta, sala, suf
   return (
     <View style={{ marginHorizontal: 16 }}>
       <Seccion titulo="Consumidor final después de las 6:00 p. m."
-        pie="Desde el 19 de octubre de 2026, los consumidores finales emitidos de las 6:00 p. m. en adelante no se envían a Hacienda. Los que no tienen sello no entran al libro.">
+        pie="Desde el 19 de octubre de 2026, las facturas de consumidor final de las 6:00 p. m. en adelante no se envían al MH. Las que no tienen sello no entran a este libro.">
         <View style={{ gap: 2 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(total.monto ?? 0)}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-            {`${total.documentos} documento${total.documentos === 1 ? '' : 's'} en ${etiquetaMes(mes)} · IVA ${formatMoney(total.iva ?? 0)}`}
+            {`${total.documentos} factura${total.documentos === 1 ? '' : 's'} en ${etiquetaMes(mes)} · IVA ${formatMoney(total.iva ?? 0)}`}
             {total.sin_sello !== total.documentos ? ` · ${total.sin_sello} sin sello` : ''}
           </Text>
         </View>
@@ -57,7 +57,7 @@ export default function CofNocheSinEnvio({ resumen, mes, desde, hasta, sala, suf
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`${fmtFecha(r.fecha)} · ${r.sucursal}`}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-                {[rango12(r.primera, r.ultima), `${r.documentos} doc${r.documentos === 1 ? '' : 's'}`, `IVA ${formatMoney(r.iva)}`].filter(Boolean).join(' · ')}
+                {[rango12(r.primera, r.ultima), `${r.documentos} factura${r.documentos === 1 ? '' : 's'}`, `IVA ${formatMoney(r.iva)}`].filter(Boolean).join(' · ')}
               </Text>
             </View>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(r.monto)}</Text>

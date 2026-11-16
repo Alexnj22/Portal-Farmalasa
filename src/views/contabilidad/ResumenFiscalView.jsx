@@ -162,10 +162,9 @@ export default function ResumenFiscalView() {
                 {/* El aviso va antes del desglose a propósito: quien abra esto
                     tiene que leer qué NO es antes de leer los números. */}
                 <Notice variant="warning" icon={AlertTriangle}>
-                    <b>Es un indicador, no una declaración.</b> No incluye el saldo a favor
-                    que viene del mes anterior, porque el portal no guarda todavía lo que se
-                    declaró cada mes. Tampoco decide qué compras dan derecho a crédito: eso
-                    depende de que el gasto sea indispensable para el giro.
+                    <b>Este resumen es sólo un indicador.</b> No incluye el saldo a favor
+                    del mes anterior. Tampoco decide qué compras dan derecho a crédito.
+                    Eso depende de que el gasto sea indispensable para el giro.
                 </Notice>
 
                 {!loading && datos && (
@@ -188,7 +187,7 @@ export default function ResumenFiscalView() {
                             <p className="text-heading font-black text-content tabular-nums">{formatMoney(pac.monto)}</p>
                             <p className="text-caption text-content-3 mt-1">
                                 {pct(pac.tasa)} sobre {formatMoney(pac.base)} de ventas del mes.
-                                Se paga <b>siempre</b>, no depende del IVA. {pac.fundamento}.
+                                Se paga <b>siempre</b>, haya o no IVA a pagar. {pac.fundamento}.
                             </p>
                         </div>
 
@@ -200,8 +199,8 @@ export default function ResumenFiscalView() {
                             <p className="text-heading font-black text-content tabular-nums">{formatMoney(tar.monto)}</p>
                             <p className="text-caption text-content-3 mt-1">
                                 {pct(tar.tasa)} de {formatMoney(tar.base)} cobrados con tarjeta. Lo retiene
-                                el procesador, así que <b>aquí es estimado</b>: se confirma en el estado de
-                                cuenta. {tar.fundamento}.
+                                el procesador de tarjetas. <b>Aquí es estimado</b>. El monto real sale en el
+                                estado de cuenta. {tar.fundamento}.
                             </p>
                         </div>
                     </div>

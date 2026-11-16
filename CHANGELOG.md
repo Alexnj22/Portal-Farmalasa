@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.1 — Lenguaje: Compras, Contabilidad y Bitácoras
+
+- Séptima tanda de la revisión del lenguaje, web y app: Compras (propuesta,
+  facturas de compra, cargar compra, proveedores, cuentas por pagar),
+  Contabilidad (libros de IVA, cierre de período, resumen fiscal) y
+  Bitácoras. Unos 450 textos. «documento» → factura; «renglón» → producto
+  (folio en el libro bajo receta); los pagos los aprueba «un supervisor o
+  administrador», como dicen los permisos.
+
 ## v2.1554.0 — Preventa más práctica: cliente, pago y filas compactas
 
 - El cliente se edita y se crea desde la misma vista, con sus datos a la vista.

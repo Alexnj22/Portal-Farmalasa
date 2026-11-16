@@ -99,7 +99,7 @@ export default function CierreDeBitacoras() {
 
   const firmar = () => {
     const faltan = (L?.faltantes ?? 0) + (Li?.faltantes ?? 0);
-    Alert.alert('Firmar y cerrar el mes', `${nombreMes} de ${nombreSala || 'la sucursal'} queda cerrado${faltan ? ` con ${faltan} registros sin anotar` : ''}.${libroPend ? ` Los ${libroPend} renglones del libro sin receta ya no se podrán completar sin reabrirlo.` : ''}`, [
+    Alert.alert('Firmar y cerrar el mes', `${nombreMes} de ${nombreSala || 'la sucursal'} queda cerrado${faltan ? ` con ${faltan} registros sin anotar` : ''}.${libroPend ? ` Los ${libroPend} folios del libro sin receta ya no se podrán completar sin reabrirlo.` : ''}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Firmar', onPress: async () => {
         setGuardando(true);
@@ -113,7 +113,7 @@ export default function CierreDeBitacoras() {
     ]);
   };
 
-  const reabrir = () => Alert.alert('Reabrir el mes', 'Queda registrado con quién, cuándo y por qué.', [
+  const reabrir = () => Alert.alert('Reabrir el mes', 'Queda registrado quién lo reabrió, cuándo y por qué.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Reabrir', style: 'destructive', onPress: async () => {
       setGuardando(true);
@@ -157,7 +157,7 @@ export default function CierreDeBitacoras() {
           {cargando ? <Cargando /> : !resumen ? (
             <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="No se pudo calcular el resumen del mes." /></View>
           ) : resumen.sin_dias ? (
-            <View style={{ marginHorizontal: 16 }}><Aviso texto="Ese mes es anterior a la puesta en marcha de las bitácoras." /></View>
+            <View style={{ marginHorizontal: 16 }}><Aviso texto="Las bitácoras empezaron después de ese mes." /></View>
           ) : (
             <>
               <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Lecturas de temperatura y humedad</Text>
@@ -165,8 +165,8 @@ export default function CierreDeBitacoras() {
                 <Kpi icono="Thermometer" rotulo="Cumplimiento" valor={rotularCumplimiento(cumplimiento(L.hechas, L.esperadas))} color={TONO[tonoDelCumplimiento(cumplimiento(L.hechas, L.esperadas))] || MARCA.azulClaro} apoyo={`${L.hechas}/${L.esperadas} anotadas`} />
                 <Kpi icono="AlertTriangle" rotulo="Faltantes" valor={String(L.faltantes)} color={L.faltantes > 0 ? MARCA.rojo : MARCA.verde} apoyo={`${L.tarde} fuera de hora · ${L.fuera_de_rango} fuera de rango`} />
               </FilaDeKpis>
-              {L.sin_accion > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${L.sin_accion} ${L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva anotada. Hay que completarlas antes de firmar: la norma pide investigar la desviación y dejar constancia de qué se hizo.`} /></View> : null}
-              {L.fuera_de_plan > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`${L.fuera_de_plan} ${L.fuera_de_plan === 1 ? 'lectura quedó' : 'lecturas quedaron'} fuera del plan del área (otro día u otra franja). Se anotaron y cuentan como trabajo hecho, pero no cierran un hueco del plan.`} /></View> : null}
+              {L.sin_accion > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${L.sin_accion} ${L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva anotada. Complétalas antes de firmar. Anota qué se hizo con cada una.`} /></View> : null}
+              {L.fuera_de_plan > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`${L.fuera_de_plan} ${L.fuera_de_plan === 1 ? 'lectura quedó' : 'lecturas quedaron'} fuera del plan del área (otro día u otra franja). Cuentan como hechas, pero no cubren ningún faltante.`} /></View> : null}
 
               <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Limpieza y orden</Text>
               <FilaDeKpis>
@@ -176,25 +176,25 @@ export default function CierreDeBitacoras() {
               {(resumen.limpieza_por_area || []).length > 1 ? <PorArea titulo="Limpieza por área" filas={resumen.limpieza_por_area} sinRegistrar="sin registrar" /> : null}
 
               {(resumen.calibracion_vencida || []).length ? (
-                <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`Hay instrumentos con la calibración vencida: ${resumen.calibracion_vencida.map((c) => `${c.area}${c.instrumento ? ` (${c.instrumento})` : ''}`).join(', ')}. Un termómetro sin certificado vigente invalida las lecturas que tomó.`} /></View>
+                <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`Hay instrumentos con la calibración vencida: ${resumen.calibracion_vencida.map((c) => `${c.area}${c.instrumento ? ` (${c.instrumento})` : ''}`).join(', ')}. Las lecturas de un termómetro sin certificado vigente no valen.`} /></View>
               ) : null}
               <PorArea titulo="Por área" filas={resumen.por_area} sinRegistrar="sin anotar" />
 
               {!cerrado && !enCurso && puedeFirmar ? (
-                <Seccion titulo={`Dar por finalizado ${nombreMes.toLowerCase()}`}>
-                  {L.faltantes + Li.faltantes > 0 ? <Aviso tono="cuidado" texto={`El mes se puede cerrar así, y el cierre va a guardar que quedaron ${L.faltantes + Li.faltantes} registros sin anotar. Es a propósito: un cierre que exige perfección enseña a inventar las lecturas que faltan.`} /> : null}
-                  {libroPend > 0 ? <Aviso tono="freno" texto={`En el libro quedan ${libroPend} ${libroPend === 1 ? 'renglón' : 'renglones'} esperando la receta. Al cerrar el mes ya no se pueden completar sin volver a abrirlo; si la receta no va a llegar, escribe abajo por qué se cierra así.`} /> : null}
-                  <Campo value={obs} onChangeText={setObs} placeholder={libroPend > 0 ? 'Por qué se cierra con renglones sin completar' : 'Observaciones del regente (opcional)'} />
+                <Seccion titulo={`Cerrar ${nombreMes.toLowerCase()}`}>
+                  {L.faltantes + Li.faltantes > 0 ? <Aviso tono="cuidado" texto={`Puedes cerrar el mes así. Quedan guardados los ${L.faltantes + Li.faltantes} registros sin anotar.`} /> : null}
+                  {libroPend > 0 ? <Aviso tono="freno" texto={`En el libro quedan ${libroPend} ${libroPend === 1 ? 'folio' : 'folios'} sin receta. Después de cerrar ya no se pueden completar sin reabrir el mes. Complétalos antes. Si la receta no va a llegar, escribe abajo el motivo.`} /> : null}
+                  <Campo value={obs} onChangeText={setObs} placeholder={libroPend > 0 ? 'Por qué cierras con folios sin completar' : 'Observaciones del regente (opcional)'} />
                   <BotonGrande texto={guardando ? 'Cerrando…' : 'Firmar y cerrar el mes'} onPress={firmar} deshabilitado={guardando || !puedeFirmarElCierre(libroPend, obs)} />
                 </Seccion>
               ) : null}
               {!cerrado && !enCurso && !puedeFirmar ? <View style={{ marginHorizontal: 16 }}><Aviso texto="El mes lo da por finalizado el regente. Aquí puedes revisar cómo va." /></View> : null}
 
               {cerrado && puedeFirmar ? (
-                <Seccion titulo="Reabrir" pie="Reabrir un mes firmado queda registrado: con quién, cuándo y por qué.">
+                <Seccion titulo="Reabrir" pie="Queda registrado quién reabrió el mes, cuándo y por qué.">
                   {reabriendo ? (
                     <>
-                      <Campo value={motivo} onChangeText={setMotivo} placeholder="Por qué se reabre (p. ej. apareció el registro en papel del 12)" />
+                      <Campo value={motivo} onChangeText={setMotivo} placeholder="Por qué lo reabres (p. ej. apareció el registro en papel del 12)" />
                       <View style={{ flexDirection: 'row', gap: 10 }}>
                         <View style={{ flex: 1 }}><BotonGrande texto="Cancelar" borde onPress={() => setReabriendo(false)} deshabilitado={guardando} /></View>
                         <View style={{ flex: 1 }}><BotonGrande texto="Reabrir" color={MARCA.ambar} onPress={reabrir} deshabilitado={guardando || !motivo.trim()} /></View>

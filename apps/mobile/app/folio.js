@@ -31,7 +31,7 @@ const num = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
 const MOTIVO_ANULADA = {
   devolucion: 'Anulado por devolución del paciente.',
   error_de_carga: 'Anulado: se había cargado por error.',
-  dte_invalidado: 'Anulado: el documento de venta fue invalidado ante Hacienda.',
+  dte_invalidado: 'Anulado: la factura de la venta se invalidó ante el MH.',
   otro: 'Anulado.',
 };
 
@@ -79,9 +79,9 @@ export default function Folio() {
                 onPress={() => router.push({ pathname: '/receta/[id]', params: { id: String(d.id ?? id), sala: String(sala), fecha: String(d.fecha ?? fecha ?? '').slice(0, 10) } })} />
             ) : null}
             {d.estado === 'anulada' ? (
-              <Aviso tono="nota" texto={`${MOTIVO_ANULADA[d.motivo_anulacion] || 'Este renglón está anulado.'} ${d.detalle_anulacion || 'El renglón no se borra: un libro foliado anota, no borra.'}${d.anulada_por ? ` · ${d.anulada_por}${d.anulada_at ? ` · ${new Date(d.anulada_at).toLocaleString('es-SV')}` : ''}` : ''}`} />
+              <Aviso tono="nota" texto={`${MOTIVO_ANULADA[d.motivo_anulacion] || 'Este folio está anulado.'} ${d.detalle_anulacion || 'El folio no se borra. Queda anotado como anulado.'}${d.anulada_por ? ` · ${d.anulada_por}${d.anulada_at ? ` · ${new Date(d.anulada_at).toLocaleString('es-SV')}` : ''}` : ''}`} />
             ) : null}
-            {vencido ? <Aviso tono="freno" texto={`El lote ya estaba vencido el día que se dispensó: venció el ${fmtFecha(producto.vence)} y se entregó el ${fmtFecha(d.fecha)}. Hay que revisar ese lote en existencia.`} /> : null}
+            {vencido ? <Aviso tono="freno" texto={`El lote ya estaba vencido cuando se dispensó. Venció el ${fmtFecha(producto.vence)} y se entregó el ${fmtFecha(d.fecha)}. Revisa ese lote en existencia.`} /> : null}
 
             <Seccion titulo="Medicamento">
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{producto?.nombre ?? '—'}</Text>
@@ -93,11 +93,11 @@ export default function Folio() {
             </Seccion>
 
             <Seccion titulo="La venta">
-              <Dato primero rotulo="Documento" valor={venta?.correlativo} />
+              <Dato primero rotulo="Número" valor={venta?.correlativo} />
               <Dato rotulo="Tipo" valor={venta?.tipo_documento} />
               <Dato rotulo="Cliente" valor={venta?.cliente} />
               <Dato rotulo="Vendió" valor={venta?.vendedor} />
-              {verMontos ? <Dato rotulo="Total del documento" valor={venta?.total == null ? '—' : formatMoney(venta.total)} /> : null}
+              {verMontos ? <Dato rotulo="Total de la venta" valor={venta?.total == null ? '—' : formatMoney(venta.total)} /> : null}
               <Dato rotulo="Código de generación" valor={venta?.codigo_generacion} />
             </Seccion>
             {venta?.pdf_path ? <BotonGrande texto="Ver el comprobante" borde color={MARCA.azulClaro} onPress={() => abrir(venta.pdf_path)} />
@@ -113,8 +113,8 @@ export default function Folio() {
                   <Dato rotulo="Documento" valor={receta.paciente?.documento} />
                   <Text style={{ color: Number(receta.pendiente) > 0 ? MARCA.ambar : MARCA.verde, fontSize: 15, fontWeight: '700', paddingTop: 8 }}>
                     {Number(receta.pendiente) > 0
-                      ? `Dispensación parcial — faltan ${num(receta.pendiente)} de ${num(receta.prescrito?.cantidad_prescrita)}`
-                      : `Dispensación total — se entregó todo lo prescrito (${num(receta.prescrito?.cantidad_prescrita)})`}
+                      ? `Dispensación parcial. Faltan ${num(receta.pendiente)} de ${num(receta.prescrito?.cantidad_prescrita)}`
+                      : `Dispensación total. Se entregó todo lo prescrito (${num(receta.prescrito?.cantidad_prescrita)})`}
                   </Text>
                   {(receta.entregas || []).length > 1 ? receta.entregas.map((e) => (
                     <Text key={e.folio_txt} style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>
@@ -122,10 +122,10 @@ export default function Folio() {
                     </Text>
                   )) : null}
                   {receta.motivo_pendiente === 'agotamiento_inventario'
-                    ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Pendiente por agotamiento de inventario — la copia de la receta queda retenida.</Text> : null}
+                    ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Pendiente por falta de existencia. La copia de la receta queda retenida.</Text> : null}
                 </>
               ) : d.estado !== 'anulada' ? (
-                <Aviso tono="cuidado" texto="Todavía no se ligó a una receta: falta el paciente, el médico y la foto de la receta — que es lo único que no sale de la venta." />
+                <Aviso tono="cuidado" texto="Todavía no tiene receta. Falta el paciente, el médico y la foto de la receta." />
               ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>—</Text>}
             </Seccion>
             {receta ? (receta.foto_url

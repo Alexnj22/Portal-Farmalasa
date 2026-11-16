@@ -57,7 +57,7 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
     const queFalta = filas.some(f => !f.producto)
             ? { texto: 'Elige el producto de cada parte.', campo: enParte(filas.findIndex(f => !f.producto)) }
         : new Set(ids).size !== ids.length
-            ? { texto: 'El mismo producto está dos veces: súmalo en una sola parte.', campo: enParte(repetida) }
+            ? { texto: 'El mismo producto está dos veces. Súmalo en una sola parte.', campo: enParte(repetida) }
         : filas.some(f => !Number.isInteger(Number(f.unidades)) || Number(f.unidades) < 1)
             ? { texto: 'Las unidades tienen que ser números enteros.', campo: enParte(filas.findIndex(f => !Number.isInteger(Number(f.unidades)) || Number(f.unidades) < 1), 'unidades') }
         : filas.length === 1 && Number(filas[0].unidades) < 2
@@ -82,8 +82,8 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
     })));
 
     return (
-        <LiquidModal open onClose={() => !guardando && onCerrar()} maxWidth="max-w-2xl" ariaLabel="Partir renglón">
-            <LiquidModal.Header titulo="Partir renglón" subtitulo={renglon.descripcion} icono={Split} onClose={() => !guardando && onCerrar()} />
+        <LiquidModal open onClose={() => !guardando && onCerrar()} maxWidth="max-w-2xl" ariaLabel="Partir producto">
+            <LiquidModal.Header titulo="Partir producto" subtitulo={renglon.descripcion} icono={Split} onClose={() => !guardando && onCerrar()} />
             <LiquidModal.Body>
                 <p className="text-label text-content-2 tabular-nums">
                     La factura cobra {facturadas} × {formatMoney(cobrado / (facturadas || 1))} = <b>{formatMoney(cobrado)}</b>. Di qué trae cada una que factura el proveedor.

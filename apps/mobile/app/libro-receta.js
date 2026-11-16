@@ -146,7 +146,7 @@ export default function LibroReceta() {
             </Pressable>
           );
         }) : (
-          <Vacio titulo={vista === 'pendiente' ? 'No hay renglones pendientes este mes.' : 'Sin renglones este mes.'} />
+          <Vacio titulo={vista === 'pendiente' ? 'No hay folios pendientes este mes.' : 'Sin folios este mes.'} />
         )}
       </ScrollView>
     </>

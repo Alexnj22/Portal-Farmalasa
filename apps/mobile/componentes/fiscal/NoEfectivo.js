@@ -150,7 +150,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
       notes: nota.trim() || null, proof_url: proofUrl, tipo_pago: r.tipo_pago, branch_id: r.branch_id,
     }, { correlativo: r.correlativo, desde: 'app' });
     setGuardando(false);
-    if (e) { fallo('No se pudo confirmar', 'El pago no quedó registrado. Si sigue, tu rol no tiene permiso de edición en Facturación.'); return; }
+    if (e) { fallo('No se pudo confirmar', 'El pago no quedó guardado. Si sigue igual, tu cargo no tiene permiso para editar en Facturación.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     listo('Pago confirmado', r.correlativo || '');
     setConfirmadas((s) => new Set([...s, r.id]));
@@ -218,9 +218,9 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
                   style={{ minHeight: 44, justifyContent: 'center' }}>
                   <Pildora texto={`${confTipo ? ROTULO[confTipo] ?? confTipo : 'Todas las formas'} ▾`} color={confTipo ? MARCA.azulClaro : colorSistema.texto2} />
                 </Tocable>
-                <Tocable onPress={() => elegirUna('Sala', [{ id: '', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))], setConfSala)}
+                <Tocable onPress={() => elegirUna('Sucursal', [{ id: '', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))], setConfSala)}
                   style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Pildora texto={`${confSala ? nombreSala(confSala) : 'Todas las salas'} ▾`} color={confSala ? MARCA.azulClaro : colorSistema.texto2} />
+                  <Pildora texto={`${confSala ? nombreSala(confSala) : 'Todas las sucursales'} ▾`} color={confSala ? MARCA.azulClaro : colorSistema.texto2} />
                 </Tocable>
                 {confTipo || confSala ? (
                   <Tocable onPress={() => { setConfTipo(''); setConfSala(''); }} style={{ minHeight: 44, justifyContent: 'center' }}>

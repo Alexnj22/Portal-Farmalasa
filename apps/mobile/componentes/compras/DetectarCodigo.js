@@ -128,11 +128,11 @@ export default function DetectarCodigo({ pdfPath, detectado = null, revisado = f
 
   const aplicar = () => {
     const m = res.match;
-    Alert.alert(`${accion} con el documento`, `${m.proveedor_nombre || 'Documento'} · ${fechaNumerica(m.fecha_emision, { anio: 'corto' })} · ${formatMoney(m.monto_total)}`, [
+    Alert.alert(`${accion} con la factura`, `${m.proveedor_nombre || 'Factura'} · ${fechaNumerica(m.fecha_emision, { anio: 'corto' })} · ${formatMoney(m.monto_total)}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: accion, onPress: async () => {
         setAplicando(true);
-        try { await onEncontrado(m); } catch (e) { Alert.alert('No se pudo aplicar', mensajeAmigable(e, 'El documento no quedó enlazado. Intenta de nuevo.')); }
+        try { await onEncontrado(m); } catch (e) { Alert.alert('No se pudo aplicar', mensajeAmigable(e, 'La factura no quedó enlazada. Intenta de nuevo.')); }
         finally { setAplicando(false); }
       } },
     ]);
@@ -149,5 +149,5 @@ export default function DetectarCodigo({ pdfPath, detectado = null, revisado = f
   if (estado === 'sin_codigo') return enlace('Sin código en el PDF · reintentar', detectar, colorSistema.texto2);
   if (estado === 'error') return enlace(`Error al detectar · reintentar`, detectar, MARCA.rojo);
   if (estado === 'no_registrado') return <Text selectable style={{ color: colorSistema.texto2, fontSize: 13, paddingVertical: 8 }}>{`Código sin registrar: ${res.codigo}`}</Text>;
-  return enlace(aplicando ? 'Aplicando…' : `Encontrado: ${res.match.proveedor_nombre || 'el documento'} · ${accion.toLowerCase()} ›`, aplicar, MARCA.verde);
+  return enlace(aplicando ? 'Aplicando…' : `Encontrado: ${res.match.proveedor_nombre || 'la factura'} · ${accion.toLowerCase()} ›`, aplicar, MARCA.verde);
 }

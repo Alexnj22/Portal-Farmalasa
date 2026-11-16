@@ -101,7 +101,7 @@ function Periodo({ fila, usarDeclarable, canEdit, busy, onCerrar, onReabrir }) {
                     <p className="text-caption text-content-3 mt-0.5">
                         {cerrado
                             ? `Cerrado${fila.cerrado_por ? ` por ${fila.cerrado_por}` : ''}${fila.cerrado_at ? ` el ${String(fila.cerrado_at).slice(0, 10).split('-').reverse().join('/')}` : ''}`
-                            : fila.en_curso ? 'En curso — se cierra cuando termine el mes' : 'Abierto · nunca se cerró'}
+                            : fila.en_curso ? 'En curso. Se cierra al terminar el mes.' : 'Abierto · nunca se cerró'}
                     </p>
                 </div>
                 <Badge variant={cerrado ? 'success' : fila.en_curso ? 'neutral' : 'info'} size="sm">
@@ -135,8 +135,8 @@ function Periodo({ fila, usarDeclarable, canEdit, busy, onCerrar, onReabrir }) {
                         {etiquetaMes(fila.periodo)} es el primer mes que lleva el portal.
                     </p>
                     <p className="text-body-sm text-content-2">
-                        Su remanente que entra es <b>cero por definición</b>, no un resultado: lo
-                        anterior se declaró por fuera y no se reclama por esta vía.
+                        Su remanente que entra es <b>cero</b>. Lo anterior se declaró fuera del portal
+                        y no se reclama aquí.
                     </p>
                 </Notice>
             )}
@@ -146,8 +146,8 @@ function Periodo({ fila, usarDeclarable, canEdit, busy, onCerrar, onReabrir }) {
                 <Notice variant="danger" icon={TrendingDown}>
                     <p className="text-body font-black text-content mb-1">El libro se movió después de cerrarlo.</p>
                     <p className="text-body-sm text-content-2 tabular-nums">
-                        Débito {formatMoney(fila.deriva_debito)} · Crédito {formatMoney(fila.deriva_credito)} respecto
-                        de lo que se congeló. Si el período ya se presentó, esta diferencia no está declarada.
+                        Débito {formatMoney(fila.deriva_debito)} · Crédito {formatMoney(fila.deriva_credito)} de diferencia
+                        con lo cerrado. Si ya presentaste el período, esta diferencia no está declarada.
                     </p>
                 </Notice>
             )}
@@ -161,7 +161,7 @@ function Periodo({ fila, usarDeclarable, canEdit, busy, onCerrar, onReabrir }) {
                         </Button>
                     ) : fila.puede_cerrarse ? (
                         <Button size="sm" icon={Check} disabled={busy} onClick={() => onCerrar(fila)}
-                            title="Congela estas cifras con tu nombre y la fecha. El mes siguiente arranca del remanente que salga de aquí.">
+                            title="Guarda estas cifras con tu nombre y la fecha. El mes siguiente arranca de este remanente.">
                             Cerrar {mesCorto(fila.periodo)}
                         </Button>
                     ) : (
@@ -287,8 +287,8 @@ export default function CierrePeriodoView() {
                         </div>
                         {totales.perdido > 0 && (
                             <p className="text-body-sm text-content-2 max-w-[74ch] mt-2.5">
-                                Hoy ese arrastre <b>no ocurre</b>: el mes siguiente se declara como si el
-                                anterior no hubiera existido. Son <b>{formatMoney(totales.perdido)}</b> que se pierden.
+                                Si un mes no se cierra, su remanente no pasa al siguiente.
+                                Hoy se pierden <b>{formatMoney(totales.perdido)}</b>.
                             </p>
                         )}
                     </div>
@@ -308,8 +308,8 @@ export default function CierrePeriodoView() {
                 onClose={() => setReabriendo(null)}
                 onConfirm={confirmarYReabrir}
                 title={reabriendo ? `Reabrir ${etiquetaMes(reabriendo.periodo)}` : 'Reabrir período'}
-                message="Vuelve a quedar abierto y sus cifras dejan de estar congeladas. El motivo queda en la bitácora del período."
-                placeholder="Por qué se reabre"
+                message="El período vuelve a quedar abierto y sus cifras pueden cambiar. El motivo queda guardado."
+                placeholder="Motivo"
                 confirmText="Reabrir"
                 isProcessing={busy}
                 required

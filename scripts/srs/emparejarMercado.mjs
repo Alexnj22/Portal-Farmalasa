@@ -137,8 +137,11 @@ export function analizarPortal(producto) {
     const fuerzas = fuerzasDe(nombre);
     const sueltos = new Set([...nombre.replace(/\bC?X\s*\d+(\.\d+)?/g, ' ').matchAll(/(?<![\d./])(\d+(?:\.\d+)?)(?![\d./]|\s*(?:ML|GR|G|OZ|ONZ|YDS|YDAS)\b)/g)]
         .map(m => Number(m[1])).filter(v => v > 0 && !fuerzas.has(v)));
+    // El genérico del producto («QUETIAPINA», «CABERGOLINA»): si la SRS lo
+    // escribe en el nombre comercial no es una variante (2026-11-16).
+    const genericos = normalizar(producto?.principio_activo).split(' ').filter(w => w.length >= 4);
     return {
-        nombre, marca, resto, lab, sueltos,
+        nombre, marca, resto, lab, sueltos, genericos,
         fuerzas,
         unidades, volumen,
         forma: formaDe(nombre),
@@ -150,8 +153,11 @@ export function analizarSrs(fila) {
     const nombre = normalizar(fila?.nombre_comercial);
     const pres = normalizar(fila?.presentacion);
     const palabras = nombre.split(' ');
+    // Lo que va entre paréntesis es el genérico («XUMER (ETORICOXIB) 90 mg»):
+    // no forma parte de la marca.
+    const sinParentesis = normalizar(String(fila?.nombre_comercial ?? '').replace(/\([^)]*\)/g, ' ')).split(' ');
     const marca = [];
-    for (const w of palabras) {
+    for (const w of sinParentesis) {
         if (CONECTORES.has(w)) continue;
         if (!w || /\d/.test(w) || FORMA_DE.has(w) || NO_MARCA.has(w) && marca.length) break;
         if (NO_MARCA.has(w)) continue;
@@ -220,7 +226,8 @@ export function juzgar(portal, fila) {
     const faltanEnSrs = juntas ? [] : portal.marca.filter(w => !contiene(s.marca, w) && !contiene(s.palabrasNombre, w));
     const sobranEnSrs = juntas ? [] : s.marca.filter(w => !contiene(portal.marca, w));
     // Lo que sobra en la SRS puede ser el laboratorio («ALOPURINOL SAIMED»).
-    const sobranVariante = sobranEnSrs.filter(w => !contiene(portal.resto, w) && !contiene(portal.lab, w) && !contiene(s.lab, w));
+    const sobranVariante = sobranEnSrs.filter(w => !contiene(portal.resto, w) && !contiene(portal.lab, w) && !contiene(s.lab, w)
+        && !contiene(portal.genericos ?? [], w));
     // Lo que sobra y es el laboratorio de la fila de la SRS («ACETAMINOFEN MEDIKEM»
     // contra un portal que dice MK) no es una variante, pero tampoco una
     // coincidencia: impide «alta».
@@ -374,7 +381,12 @@ export function decidir(producto, filasCatalogo) {
         const fuerzaOk = mejor.fuerza === 'igual' || (mejor.fuerza === 'sin_dato');
         const empaqueOk = mejor.empaque === 'igual';
         // Otra opción sin choques con el mismo puntaje = no se puede distinguir.
-        const empate = segundo && !segundo.choques.length && segundo.puntos >= mejor.puntos - 2;
+        // Salvo que sea el mismo producto con otro material de empaque: mismo
+        // nombre comercial y mismo empaque contado (ODICA en blíster de
+        // aluminio o de PVC). Para la declaración da igual cuál (2026-11-16).
+        const mismoProducto = (j) => j.s.nombre === mejor.s.nombre && j.empaque === mejor.empaque && j.s.unidades === mejor.s.unidades
+            && JSON.stringify(j.s.volumen) === JSON.stringify(mejor.s.volumen);
+        const empate = juicios.slice(1).some(j => !j.choques.length && j.puntos >= mejor.puntos - 2 && !mismoProducto(j));
         // Sin dato de empaque en el portal: sólo es «alta» si la marca tiene una sola presentación posible.
         const unica = juicios.filter(j => !j.choques.length).length === 1;
         // Tres dudas que impiden «alta» aunque no haya choque (revisión del

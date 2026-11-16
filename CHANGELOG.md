@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.11 — Datos de mercado: más parejas en alta
+
+El emparejador deja de tomar por variante el genérico que la SRS escribe en
+el nombre comercial (`XUMER (ETORICOXIB)`, `QUETIDIN QUETIAPINA`), y deja de
+ver un empate cuando las dos opciones son el mismo producto en otro material
+de empaque (mismo nombre y mismo empaque contado). Crema contra ungüento sigue
+siendo empate. Sobre las pendientes: 113 pasan a «alta».
+
+
 ## v2.1551.10 — Lenguaje: Inventario con frases cortas
 
 - Segunda tanda de la revisión del lenguaje: Inventario (conteos, ajustes,

@@ -130,4 +130,28 @@ describe('decidir', () => {
             fila('D-1', 'DICLO K SUPOSITORIOS PEDIATRICOS', 'CAJA X 5 SUPOSITORIO'),
         ]).confianza).toBe('media');
     });
+
+    it('el genérico entre paréntesis o escrito en el nombre no es una variante', () => {
+        const r = decidir({ product_id: 1, nombre: 'XUMER 90MG X 14 TAB.', principio_activo: 'ETORICOXIB' }, [
+            fila('X-1', 'XUMER (ETORICOXIB) 90 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 2 BLISTER X 7 COMPRIMIDOS RECUBIERTOS'),
+        ]);
+        expect(r.crp).toBe('X-1');
+        expect(r.confianza).toBe('alta');
+        expect(decidir({ product_id: 2, nombre: 'QUETIDIN 25MG X 30 TAB', principio_activo: 'QUETIAPINA' }, [
+            fila('Q-1', 'QUETIDIN QUETIAPINA 25 mg TABLETAS RECUBIERTAS', 'CAJA X 2 BLISTER X 15 TABLETAS RECUBIERTAS'),
+        ]).confianza).toBe('alta');
+    });
+
+    it('el mismo producto en dos materiales de empaque no es un empate', () => {
+        const r = decidir({ product_id: 1, nombre: 'ODICA 75MG X 28 CAPS' }, [
+            fila('O-1', 'ODICA 75 MG CAPSULA DURA', 'CAJA X 2 BLISTERES DE ALUMINIO X 14 CAPSULAS'),
+            fila('O-2', 'ODICA 75 MG CAPSULA DURA', 'CAJA X 2 BLISTERES DE PVC X 14 CAPSULAS'),
+        ]);
+        expect(r.confianza).toBe('alta');
+        // Crema contra ungüento con el mismo puntaje sí es un empate.
+        expect(decidir({ product_id: 2, nombre: 'DERMOVATE 0.05% X 30 GR' }, [
+            fila('D-1', 'DERMOVATE 0.05% CREMA', 'TUBO X 30 G'),
+            fila('D-2', 'DERMOVATE 0.05% UNGUENTO TOPICO', 'CAJA X 1 TUBO X 30 G'),
+        ]).confianza).toBe('media');
+    });
 });

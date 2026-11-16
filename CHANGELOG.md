@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.5 — Corregir lote: búsqueda con foco, vencimiento vacío y en mes/año
+
+Visto al recorrer la pantalla en producción con el ZALDIAR de Salud 2:
+
+- El buscador toma el foco al abrir.
+- El vencimiento correcto empieza **vacío**: precargar el malo encendía de
+  entrada «no hay nada que corregir» y «ya pasó».
+- Los vencimientos se muestran como mes/año (`10/2026`), no `01/10/26`, y el
+  lote ya vencido se marca «Venció» en rojo.
+
 ## v2.1551.4 — Lenguaje: Solicitudes con frases cortas
 
 - Primera tanda de la revisión del lenguaje: los textos de Solicitudes

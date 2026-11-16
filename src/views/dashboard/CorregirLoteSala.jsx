@@ -31,7 +31,13 @@ import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 // función del servidor, y acá sólo se adelanta la primera para no hacer
 // esperar a nadie por un «no».
 
-const fmtVence = (d) => fechaNumerica(d, { anio: 'corto', vacio: null });
+// El vencimiento se guarda como día 1 del mes (`loteVencimiento.ts`): «01/10/26»
+// se leía como un día. Se muestra como en el empaque, mes y año.
+const fmtVence = (d) => {
+    const m = /^(\d{4})-(\d{2})/.exec(String(d ?? ''));
+    return m ? `${m[2]}/${m[1]}` : fechaNumerica(d, { vacio: null });
+};
+const yaVencio = (d) => !!d && String(d).slice(0, 10) <= hoySV();
 const rotulo = (l) => esLoteGenerico(l.lote) ? 'Sin lote asignado' : `Lote ${l.lote}`;
 const norm = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
 
@@ -96,7 +102,10 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
         setOrigen(l);
         setUnidades(l.unidades);
         setLoteNuevo(esLoteGenerico(l.lote) ? '' : l.lote);
-        setVenceNuevo(l.vence ? String(l.vence).slice(0, 7) : '');
+        // El vencimiento va VACÍO: casi siempre es lo que está mal, y
+        // precargarlo encendía de entrada «no hay nada que corregir» y «ya
+        // pasó» antes de que la persona escribiera nada (visto en la pantalla).
+        setVenceNuevo('');
         setError('');
     };
 
@@ -172,7 +181,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
             <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto overscroll-contain -mx-1 px-1">
                 {!producto ? (
                     <>
-                        <SearchInput value={busqueda} onChange={setBusqueda}
+                        <SearchInput autoFocus value={busqueda} onChange={setBusqueda}
                             placeholder="Buscar el producto…" ariaLabel="Buscar el producto" />
                         {busqueda.trim().length >= 2 ? (
                             cargando ? <SkeletonText lines={3} /> :
@@ -211,8 +220,8 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                                 title={rotulo(l)}
                                 trailing={<span className="text-caption font-black text-content-3 tabular-nums">{l.unidades} u.</span>}
                             >
-                                <span className="block text-micro text-content-3">
-                                    {l.vence ? `Vence ${fmtVence(l.vence)}` : 'Sin vencimiento'}
+                                <span className={`block text-micro ${yaVencio(l.vence) ? 'text-danger-text font-bold' : 'text-content-3'}`}>
+                                    {l.vence ? `${yaVencio(l.vence) ? 'Venció' : 'Vence'} ${fmtVence(l.vence)}` : 'Sin vencimiento'}
                                 </span>
                             </ListRow>
                          ))}

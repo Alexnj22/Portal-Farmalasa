@@ -387,6 +387,14 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "app_preregistro_al_vincular": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
+  "app_preregistro_completar_ficha": {
+   "area": "app-clientes",
+   "por": "trigger"
+  },
   "app_preregistro_resolver": {
    "area": "app-clientes",
    "por": "código"

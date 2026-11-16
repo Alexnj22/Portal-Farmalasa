@@ -32701,6 +32701,10 @@ export type Database = {
         }[]
       }
       app_precios_para_cobro: { Args: { p_ids: number[] }; Returns: Json }
+      app_preregistro_completar_ficha: {
+        Args: { p_pre: string }
+        Returns: Json
+      }
       app_preregistro_resolver: {
         Args: { p_accion: string; p_customer_id?: number; p_id: string }
         Returns: Json

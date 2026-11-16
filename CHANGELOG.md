@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.2 — La ficha del cliente se completa con lo que dio en la app
+
+- Al vincularse un pre-registro de la app a una ficha existente, el correo y
+  la fecha de nacimiento del formulario pasan a la ficha **si ahí están
+  vacíos** (nunca se pisa). Si la ficha ya tiene otro correo, el de la app va a
+  la libreta de correos de la persona. Exige que el teléfono del pre-registro
+  sea de la ficha. El correo entra a `customers_changelog`, así viaja al
+  sistema de origen y el espejo no lo borra.
+- Trigger `app_preregistro_al_vincular` → `app_preregistro_completar_ficha`
+  (migración `20261116145602`). Cubre la vinculación automática y la de sala.
+  Rellenó la única vinculada (11447: correo y nacimiento). Probado con tres
+  casos (ficha vacía, teléfono ajeno, correo distinto) en transacciones
+  revertidas.
+
 ## v2.1550.1 — Carga pendiente: los avisos dicen «aquí»
 
 - Los avisos de `aplicar-movimiento-inventario` y `fijarCosto` decían «desde

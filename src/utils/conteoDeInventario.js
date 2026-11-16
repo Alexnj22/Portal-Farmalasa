@@ -216,6 +216,40 @@ export function unidadDeConteo(item) {
     return { nombre, factor, texto };
 }
 
+/**
+ * Los totales de un producto a partir de sus renglones, con el mismo criterio
+ * que `get_conteo_products_page`: si algún grupo mezcla paquetes y unidades,
+ * todo el producto se suma en unidades (`factor`). `diferencia` es null si el
+ * conteo es ciego para quien lo mira o si no se contó nada.
+ */
+export function totalesDelProducto(lines = []) {
+    const mixto = lines.some((l) => l.grupo_mixto);
+    const mult = (l) => (mixto ? (Number(l.factor) || 1) : 1);
+    const contadas = lines.filter((l) => l.fisico_cantidad != null);
+    const ciego = lines.some((l) => l.ver_sistema === false);
+    return {
+        item_count: lines.length,
+        contados_count: lines.filter((l) => l.estado_item !== 'PENDIENTE').length,
+        diferencia_total: ciego || !contadas.length ? null
+            : contadas.reduce((t, l) => t + (Number(l.diferencia) || 0) * mult(l), 0),
+    };
+}
+
+/**
+ * Qué dice la píldora de un producto en la lista del conteo (2026-11-16, Bodega:
+ * «3/3 ¿qué es? ¿no debería decir si hay diferencia?»). Mientras falten
+ * renglones, cuántos faltan; contado entero, si cuadra o cuánto sobra o falta.
+ * En un conteo ciego la diferencia no viaja: sólo «Contado».
+ */
+export function estadoDelProducto({ item_count = 0, contados_count = 0, diferencia_total = null } = {}) {
+    const faltan = Math.max(0, Number(item_count) - Number(contados_count));
+    if (faltan > 0) return { texto: `Faltan ${faltan}`, tono: 'pendiente' };
+    if (diferencia_total == null) return { texto: 'Contado', tono: 'ok' };
+    const d = Number(diferencia_total);
+    if (d === 0) return { texto: 'Cuadra', tono: 'ok' };
+    return d > 0 ? { texto: `+${d}`, tono: 'sobra' } : { texto: `${d}`, tono: 'falta' };
+}
+
 /** «Sin lote asignado»: vacío o GENERICO. */
 export const esLoteGenerico = (lote) => {
     const t = String(lote ?? '').trim();

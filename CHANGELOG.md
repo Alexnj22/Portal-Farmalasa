@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.8 — El conteo en la app: menos toques y la diferencia a la vista
+
+Bodega preguntó qué era el «3/3» al lado de cada producto y pidió menos toques para llenar el conteo en la app.
+
+- La píldora del producto ya no dice renglones contados: dice **Faltan N** mientras quedan lotes, y al terminar **Cuadra**, **+N** o **-N** contra el sistema. En un conteo ciego dice **Contado**.
+- Todos los lotes de la página se ven listos para escribir: ya no hay que abrir cada producto.
+- El teclado trae **Siguiente**: guarda el lote y salta al próximo sin contar, también al del producto de abajo. El campo enfocado se sube solo para que el teclado no lo tape.
+- Cada lote contado muestra su diferencia junto al número. Quién contó, «No lo encuentro» y las acciones del lote van en una sola línea.
+- Los botones Escanear y Agregar van uno al lado del otro.
+
 ## v2.1554.7 — Lenguaje: mensajes del servidor
 
 - Tanda 12 de la revisión del lenguaje: los mensajes que devuelven las

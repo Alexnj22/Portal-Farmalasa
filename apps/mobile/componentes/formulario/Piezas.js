@@ -120,13 +120,22 @@ export function Seccion({ titulo, pie, children }) {
 const NUMERICOS = new Set(['number-pad', 'decimal-pad', 'numeric', 'phone-pad']);
 let siguiente = 0;
 
-function BarraListo({ id }) {
+// `onSiguiente`: el teclado numérico del iPhone no tiene tecla de avance, y
+// llenar una lista de cantidades (el conteo) era tocar afuera para cerrar y
+// tocar el campo siguiente, por cada renglón. Con él, la barra ofrece
+// «Siguiente» además de «Listo».
+function BarraListo({ id, onSiguiente }) {
   return (
     <InputAccessoryView nativeID={id}>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 6,
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 24, paddingHorizontal: 16, paddingVertical: 6,
         backgroundColor: colorSistema.fila, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+        {onSiguiente ? (
+          <Pressable onPress={onSiguiente} hitSlop={10} style={{ minHeight: 36, justifyContent: 'center' }}>
+            <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: '600' }}>Siguiente</Text>
+          </Pressable>
+        ) : null}
         <Pressable onPress={() => Keyboard.dismiss()} hitSlop={10} style={{ minHeight: 36, justifyContent: 'center' }}>
-          <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: '600' }}>Listo</Text>
+          <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: onSiguiente ? '400' : '600' }}>Listo</Text>
         </Pressable>
       </View>
     </InputAccessoryView>
@@ -149,17 +158,21 @@ function CampoAndroid({ multiline, style, onFocus, onBlur, ...props }) {
   );
 }
 
-export function Campo({ multiline = true, style, ...props }) {
+export function Campo({ multiline = true, style, onSiguiente, ...props }) {
   const numerico = Platform.OS === 'ios' && NUMERICOS.has(props.keyboardType);
   const [id] = useState(() => `listo-${siguiente++}`);
-  if (ANDROID) return <CampoAndroid multiline={multiline} style={style} {...props} />;
+  // Android: la tecla de acción del teclado hace de «Siguiente».
+  if (ANDROID) {
+    return <CampoAndroid multiline={multiline} style={style} {...props}
+      {...(onSiguiente ? { returnKeyType: 'next', submitBehavior: 'submit', onSubmitEditing: (e) => { props.onSubmitEditing?.(e); onSiguiente(); } } : null)} />;
+  }
   return (
     <>
       <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline}
         inputAccessoryViewID={numerico ? id : undefined} {...props}
         style={[{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colorSistema.texto,
           backgroundColor: FONDO_CONTROL }, style]} />
-      {numerico ? <BarraListo id={id} /> : null}
+      {numerico ? <BarraListo id={id} onSiguiente={onSiguiente} /> : null}
     </>
   );
 }

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1556.3 — Lenguaje: rótulos guardados
+
+- Rótulos que viven a la vez en el frente y en la base, cambiados juntos:
+  «Traslado entre sucursales», «Traslado a otra sucursal» (antes «Envío
+  entre salas» / «Envío de producto»), «Ajuste de Mín/Máx», «Invalidar una
+  factura»; el motivo «No lo vendo en mi sucursal»; y los textos que se
+  guardan del marcador («Marcador vinculado», «Marcador autorizado», «PIN
+  omitido en el marcador», «Almuerzo (marcador)»). Lo ya guardado conserva
+  su texto viejo.
+
 ## v2.1556.2 — Conteo en la app: la página en un solo viaje y al instante al volver
 
 Seguimiento de «tardó 1 a 3 s en cargar los productos» (Bodega).

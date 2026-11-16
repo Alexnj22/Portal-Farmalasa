@@ -145,9 +145,9 @@ describe('normalizar de dónde vino un marcaje', () => {
             .toMatchObject({ branch_id: '4', employee_name: 'Ana' });
     });
 
-    it('sin nombre de equipo dice «Kiosco Autorizado», no queda vacío', () => {
+    it('sin nombre de equipo dice «Marcador autorizado», no queda vacío', () => {
         // Una entrada sin equipo no se puede rastrear a una tablet.
-        expect(normalizeKioskAuditInfo({}).device_name).toBe('Kiosco Autorizado');
+        expect(normalizeKioskAuditInfo({}).device_name).toBe('Marcador autorizado');
     });
 
     it('el método de entrada se guarda en MAYÚSCULA, y sin dato es «desconocido»', () => {

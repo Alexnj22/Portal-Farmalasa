@@ -44,9 +44,9 @@ export const REQUEST_TYPES = {
     // que un traslado pendiente encabezaba su sección con la clave cruda
     // `INVENTORY_TRANSFER_REQUEST`. Su pantalla propia es `/traslados` —acá se
     // ve para saber que existe, no para resolverlo.
-    INVENTORY_TRANSFER_REQUEST:{ label: 'Traslado entre salas',   color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    INVENTORY_TRANSFER_REQUEST:{ label: 'Traslado entre sucursales', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     // Una sala manda producto a otra sin que se lo pidan. También faltaba.
-    INVENTORY_TRANSFER_PUSH:   { label: 'Envío entre salas',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    INVENTORY_TRANSFER_PUSH:   { label: 'Traslado a otra sucursal', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     // Anular o corregir el monto de un movimiento de caja ya anotado. Sin este
     // rótulo la bandeja agrupaba la sección bajo la clave cruda
     // `CAJA_MOVIMIENTO_CHANGE` — el mismo defecto que arriba, y por eso va con
@@ -58,14 +58,14 @@ export const REQUEST_TYPES = {
     CAJA_INGRESO_AUTORIZACION: { label: 'Movimiento sin comprobante', color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Vive en otra tabla (`minmax_change_requests`) pero se muestra en el mismo
     // centro: para quien mira la sala es una solicitud más. Ver `adaptarMinMax`.
-    MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Min/Max',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
+    MINMAX_CHANGE_REQUEST:     { label: 'Ajuste de Mín/Máx',      color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
     // Un vendedor de Distribución pide un descuento que no puede dar solo
     // (borrador distribucion/0008). La venta queda como preventa hasta que se
     // decida.
     DIST_DESCUENTO:            { label: 'Descuento en una venta', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
     // Corregir o deshacer un documento sellado de Distribución (auditoría H3):
     // el vendedor ya no invalida solo, lo pide.
-    DIST_INVALIDACION:         { label: 'Invalidar un documento', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
+    DIST_INVALIDACION:         { label: 'Invalidar una factura',  color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };
 
 /**

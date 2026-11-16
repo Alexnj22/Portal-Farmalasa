@@ -593,7 +593,7 @@ export const createBranchSlice = (set, get) => ({
             if (error) throw error;
 
             await get().appendAuditLog('VINCULAR_KIOSCO', newDevice.id, {
-                timeline_title: `Nuevo Kiosco Vinculado`,
+                timeline_title: `Marcador vinculado`,
                 dimension: 'OPERATIVE',
                 branch_id: branchId,
                 new_value: `Dispositivo: ${deviceName}`
@@ -620,7 +620,7 @@ export const createBranchSlice = (set, get) => ({
             if (error) throw error;
             
             await get().appendAuditLog('REVOCAR_KIOSCO', deviceId, {
-                timeline_title: `Kiosco Desvinculado`,
+                timeline_title: `Marcador desvinculado`,
                 dimension: 'OPERATIVE',
                 ...(branchId ? { branch_id: branchId } : {}),
                 old_value: deviceName,

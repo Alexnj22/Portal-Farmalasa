@@ -183,7 +183,7 @@ export function motivosEnvioPorDireccion(origenEsBodega, destinoEsBodega) {
  * Mismo trato: la base los valida (`motivos_rechazo_envio()`).
  */
 export const MOTIVOS_RECHAZO_ENVIO = [
-    'No lo vendo en mi sala',
+    'No lo vendo en mi sucursal',
     'Ya tengo suficiente',
     'Producto dañado',
     'Muy próximo a vencer',

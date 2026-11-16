@@ -93,7 +93,7 @@ export const normalizeKioskAuditInfo = (raw) => {
 
   const branch_id = asText(r.branch_id ?? r.branchId);
   const branch_name = asText(r.branch_name ?? r.branchName);
-  const device_name = asText(r.device_name ?? r.deviceName) || 'Kiosco Autorizado';
+  const device_name = asText(r.device_name ?? r.deviceName) || 'Marcador autorizado';
   const input_method = asUpper(r.input_method ?? r.inputMethod) || INPUT_METHOD.UNKNOWN;
 
   const employee_name = asText(r.employee_name ?? r.employeeName);

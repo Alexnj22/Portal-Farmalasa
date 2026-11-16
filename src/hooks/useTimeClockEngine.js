@@ -427,7 +427,7 @@ export function useTimeClockEngine(props = {}) {
     const handleSkipPin = useCallback(() => {
         if (!authPrompt) return;
         const { employee, type, customConfig, kioskData } = authPrompt;
-        const skipMetadata = { pinOmitido: true, pendingHRReview: true, skipReason: 'PIN omitido en kiosko', accionOriginal: type };
+        const skipMetadata = { pinOmitido: true, pendingHRReview: true, skipReason: 'PIN omitido en el marcador', accionOriginal: type };
 
         anotarEnBitacora('MARCAJE_SIN_PIN', employee?.id || null, {
             empleado: employee?.name,

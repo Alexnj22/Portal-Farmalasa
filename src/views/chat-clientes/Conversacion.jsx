@@ -447,7 +447,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                     <Button variant="ghost" size="sm" iconOnly icon={ArrowLeft} title="Volver a las conversaciones" onClick={barraPanel.onVolver} />
                 )}
                 <button type="button" disabled={!conPanelCliente || lateral} onClick={() => setPestana(verCliente ? 'mensajes' : 'cliente')}
-                    aria-label={verCliente ? 'Volver a los mensajes' : `Ver la ficha de ${nombre}`}
+                    aria-label={verCliente ? 'Volver a los mensajes' : `Ver los datos de ${nombre}`}
                     className={`flex items-center gap-2.5 min-w-0 flex-1 text-left rounded-btn ${conPanelCliente && !lateral ? 'hover:bg-content/5 active:scale-[0.99]' : ''} ${barraPanel?.onVolver ? '' : 'pl-1'} py-0.5`}>
                     <ClienteAvatar conversacion={c} size={comoPanel ? 'md' : 'lg'} animado />
                     <span className="min-w-0 flex-1 flex flex-col gap-0.5">
@@ -468,7 +468,7 @@ export default function Conversacion({ conversacion: c, puedeResponder, equipo, 
                 <div className="flex-none flex items-center gap-0.5">
                     {conPanelCliente && !lateral && (
                         <Button variant={verCliente ? 'secondary' : 'ghost'} size="sm" iconOnly icon={verCliente ? MessageCircle : UserRound} aria-pressed={verCliente}
-                            title={verCliente ? 'Volver a los mensajes' : 'Ver la ficha del cliente'}
+                            title={verCliente ? 'Volver a los mensajes' : 'Ver los datos del cliente'}
                             onClick={() => setPestana(verCliente ? 'mensajes' : 'cliente')} />
                     )}
                     {puedeResponder && c.estado === 'abierta' && (

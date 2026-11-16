@@ -163,14 +163,14 @@ export default function PuntosCliente() {
                   <Pressable accessibilityRole="button" hitSlop={6}
                     onPress={() => { Haptics.selectionAsync().catch(() => {}); anotar('CLIENTES_VER_FICHA', String(d.cliente.id), { nombre: d.cliente.nombre, desde: 'puntos' }); router.push({ pathname: '/cliente/[id]', params: { id: String(d.cliente.id) } }); }}
                     style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${MARCA.azul}2E`, opacity: pressed ? 0.7 : 1, marginTop: 4 })}>
-                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{hasPermission('clientes', 'can_edit') ? 'Editar cliente' : 'Ver ficha'}</Text>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{hasPermission('clientes', 'can_edit') ? 'Editar cliente' : 'Ver cliente'}</Text>
                   </Pressable>
                 ) : null}
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginTop: 6 }}>Puede canjear hoy</Text>
                 <Text style={{ color: colorSistema.texto, fontSize: 40, fontWeight: '800' }}>{dolaresDePuntos(saldo)}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${puntosTexto(saldo)} puntos de descuento`}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                  {d.cliente?.acumula === false ? <Pildora texto="Esta ficha no acumula" color={colorSistema.texto2} />
+                  {d.cliente?.acumula === false ? <Pildora texto="No acumula" color={colorSistema.texto2} />
                     : saldo >= MINIMO ? <Pildora texto="Puede canjear" color={MARCA.verde} />
                       : <Pildora texto={`Le faltan ${puntosTexto(MINIMO - saldo)} para canjear`} color={MARCA.ambar} />}
                 </View>
@@ -240,7 +240,7 @@ export default function PuntosCliente() {
               <Seccion titulo="Del sistema anterior">
                 {d.cuentas_anteriores.map((a) => (
                   <Text key={a.id} style={{ color: colorSistema.texto, fontSize: 14 }}>
-                    {`Cuenta ${a.id}${a.como === 'manual' ? ` · asignada a mano el ${fechaNumerica(a.cuando)}${a.nota ? ` — «${a.nota}»` : ''}` : ' · pasó por su DUI'}`}
+                    {`Cuenta ${a.id}${a.como === 'manual' ? ` · asignada a mano el ${fechaNumerica(a.cuando)}${a.nota ? `: «${a.nota}»` : ''}` : ' · pasó por su DUI'}`}
                   </Text>
                 ))}
               </Seccion>

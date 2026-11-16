@@ -132,7 +132,7 @@ export default function ExpedienteDelCliente({ exp, onVerPuntos, onVerFicha, pue
                         Puntos y movimientos
                     </Button>
                     <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onVerFicha?.(c)}>
-                        {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                        {puedeEditarFicha ? 'Editar cliente' : 'Ver cliente'}
                     </Button>
                 </div>
             </section>
@@ -265,7 +265,7 @@ export default function ExpedienteDelCliente({ exp, onVerPuntos, onVerFicha, pue
                     {(exp.compras ?? []).length === 0 ? <Nada>Sin compras registradas.</Nada> : (
                         <div className="flex flex-col divide-y divide-divider">
                             {exp.compras.map((f) => (
-                                <Renglon key={f.id} titulo={f.sala || 'Sala'}
+                                <Renglon key={f.id} titulo={f.sala || 'Sucursal'}
                                     detalle={`${fechaNumerica(f.fecha)} · ${f.tipo_documento || ''}`.trim()}
                                     cifra={formatMoney(f.total)} />
                             ))}

@@ -99,7 +99,7 @@ export default function Reservas({ sala, todas = false, recarga }) {
   const verReceta = (r) => router.push({ pathname: '/reserva-receta', params: todas ? { id: String(r.id), todas: '1' } : { id: String(r.id), sala: String(sala) } });
 
   if (filas == null) return <Cargando />;
-  if (!sala && !todas) return <View style={{ marginHorizontal: 16 }}><Aviso texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /></View>;
+  if (!sala && !todas) return <View style={{ marginHorizontal: 16 }}><Aviso texto="Las reservas son de una sucursal, y tu usuario no tiene sucursal asignada." /></View>;
   return (
     <>
       <View style={{ marginHorizontal: 16, gap: 8 }}>

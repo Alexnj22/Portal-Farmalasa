@@ -111,7 +111,7 @@ export default function Expediente({ exp }) {
 
       <Seccion titulo="Últimas compras">
         {(exp.compras ?? []).length ? exp.compras.map((f, i) => (
-          <Renglon key={f.id} primero={!i} titulo={f.sala || 'Sala'}
+          <Renglon key={f.id} primero={!i} titulo={f.sala || 'Sucursal'}
             detalle={`${fechaNumerica(f.fecha)} · ${f.tipo_documento || ''}`.trim()} cifra={formatMoney(f.total)} />
         )) : <Nada texto="Sin compras registradas." />}
       </Seccion>

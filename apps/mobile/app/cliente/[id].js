@@ -106,20 +106,20 @@ export default function FichaCliente() {
 
   const guardar = async (confirmando = false) => {
     setIntento(true);
-    if (!v.ok) { fallo('Falta completar la ficha', [...Object.entries(v.errores).map(([c, m]) => `${ETIQUETA_CAMPO[c]}: ${m}`), ...v.faltan.map((c) => `${ETIQUETA_CAMPO[c]}: requerido`)].join('\n')); return; }
-    setGuardando(true); trabajando('Guardando la ficha…');
+    if (!v.ok) { fallo('Faltan datos del cliente', [...Object.entries(v.errores).map(([c, m]) => `${ETIQUETA_CAMPO[c]}: ${m}`), ...v.faltan.map((c) => `${ETIQUETA_CAMPO[c]}: requerido`)].join('\n')); return; }
+    setGuardando(true); trabajando('Guardando los datos…');
     try {
       await updateCustomerFiscal(id, cambios, { confirmarFiscal: confirmando }, { desde: 'app' });
       clearDraft(clave);
       setIntento(false);
       await cargar();
       const r = await pushClienteAlErp(id);
-      if (r?.empujado) listo('Cambio aplicado', `Se actualizó la ficha ${r.erp_id ?? ''}`.trim());
+      if (r?.empujado) listo('Cambio aplicado', `Se actualizaron los datos del cliente ${r.erp_id ?? ''}`.trim());
       else fallo('Guardado, falta aplicarlo', motivoSinAplicar(r));
       await cargar();
     } catch (e) {
       if (codigoDeError(e) === 'REQUIERE_CONFIRMACION_FISCAL') {
-        Alert.alert('Son datos que se declaran a Hacienda', 'Confirma que el cambio es correcto.', [
+        Alert.alert('Son datos que se declaran al Ministerio de Hacienda', 'Confirma que el cambio es correcto.', [
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Confirmar', onPress: () => guardar(true) },
         ]);
@@ -131,7 +131,7 @@ export default function FichaCliente() {
 
   if (!d) return <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cliente' }} />;
   if (d.error || !cliente) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cliente' }} /><View style={{ padding: 16, paddingTop: 120 }}><Aviso tono="freno" texto={d.error || 'Esa ficha ya no existe.'} /></View></>);
+    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cliente' }} /><View style={{ padding: 16, paddingTop: 120 }}><Aviso tono="freno" texto={d.error || 'Ese cliente ya no existe.'} /></View></>);
   }
 
   const act = d.actividad ?? {};
@@ -161,11 +161,11 @@ export default function FichaCliente() {
             </View>
           </Vidrio>
 
-          {cliente.mostrador ? <Aviso tono="nota" texto="Es un cliente genérico del mostrador, no una persona: no lleva ficha fiscal." /> : null}
+          {cliente.mostrador ? <Aviso tono="nota" texto="Es el cliente genérico del mostrador. No lleva datos fiscales." /> : null}
           {cliente.nombre_corrupto ? <Aviso tono="cuidado" texto="El nombre llegó dañado. Corrígelo con el que aparece en el documento." /> : null}
 
           {/* seccion-en-linea: paneles de una ficha de detalle, debajo de su encabezado (como un perfil del iPhone); fijos arriba quedarían antes del nombre (2026-11-12) */}
-          <Segmentos margen={0} activa={panel} onCambiar={setPanel} opciones={[{ id: 'ficha', label: 'Ficha' }, { id: 'actividad', label: 'Actividad' }]} />
+          <Segmentos margen={0} activa={panel} onCambiar={setPanel} opciones={[{ id: 'ficha', label: 'Datos' }, { id: 'actividad', label: 'Actividad' }]} />
 
           {panel === 'ficha' ? (
             <>
@@ -201,7 +201,7 @@ export default function FichaCliente() {
               {editable && hay ? (
                 <>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>{`Cambian: ${Object.keys(cambios).map((c) => ETIQUETA_CAMPO[c] ?? c).join(', ')}`}</Text>
-                  <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar la ficha'} color={MARCA.azul} deshabilitado={guardando} onPress={() => guardar(false)} />
+                  <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar los datos'} color={MARCA.azul} deshabilitado={guardando} onPress={() => guardar(false)} />
                   <BotonGrande texto="Descartar los cambios" borde color={MARCA.rojo} onPress={() => { clearDraft(clave); setIntento(false); setForm(Object.fromEntries(CAMPOS_FICHA.map((c) => [c, cliente?.[c] ?? '']))); }} />
                 </>
               ) : null}
@@ -227,7 +227,7 @@ export default function FichaCliente() {
                   </View>
                 )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin facturas registradas.</Text>}
               </Seccion>
-              <Seccion titulo="Cambios en la ficha">
+              <Seccion titulo="Cambios en los datos">
                 {(d.bitacora ?? []).length ? d.bitacora.map((h, i) => (
                   <View key={i} style={{ gap: 2, paddingVertical: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -242,7 +242,7 @@ export default function FichaCliente() {
                     </Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${corta(h.changed_at)}${h.changed_at ? `, ${hora12(h.changed_at) || ''}` : ''}${h.changed_by_nombre ? ` · ${h.changed_by_nombre}` : ''}`}</Text>
                   </View>
-                )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>La ficha no se ha editado desde el portal.</Text>}
+                )) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Los datos no se han editado desde el portal.</Text>}
               </Seccion>
             </>
           )}

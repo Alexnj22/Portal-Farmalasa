@@ -173,7 +173,7 @@ export default function ReclamosClientes() {
                             <Opciones opciones={OP_VIAS} valor={via} onCambiar={setVia} />
                             <BotonGrande texto="Guardar la respuesta" deshabilitado={!respuesta.trim()} onPress={() => responder(r)} />
                           </>
-                        ) : <Aviso texto={`Lo responde administración a más tardar el ${dia(r.vence)}.`} />}
+                        ) : <Aviso texto={`Lo responde un supervisor o administrador a más tardar el ${dia(r.vence)}.`} />}
                       </View>
                     ) : null}
                   </View>

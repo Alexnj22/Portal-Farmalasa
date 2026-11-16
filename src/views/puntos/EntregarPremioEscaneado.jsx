@@ -105,7 +105,7 @@ export default function EntregarPremioEscaneado({ codigo, miSala, puedeAdministr
     if (sinRegalo) {
         const hay = (sinRegalo.hay_en ?? []).filter((x) => Number(x.branch_id) !== Number(miSala));
         return (
-            <LiquidModal open onClose={ocupado ? undefined : onCerrar} maxWidth="max-w-md" ariaLabel="Regalo sin existencia en esta sala">
+            <LiquidModal open onClose={ocupado ? undefined : onCerrar} maxWidth="max-w-md" ariaLabel="Regalo sin existencia en esta sucursal">
                 <LiquidModal.Header titulo={`Aquí no hay ${sinRegalo.nombre}`}
                     subtitulo={`Premio ${sinRegalo.codigo} de ${sinRegalo.cliente?.nombre ?? 'el cliente'}. Pregúntale qué prefiere.`}
                     onClose={ocupado ? undefined : onCerrar} />
@@ -140,8 +140,8 @@ export default function EntregarPremioEscaneado({ codigo, miSala, puedeAdministr
             onClose={() => { if (!ocupado) onCerrar?.(); }}
             title={`¿Entregar ${cantidad}${premio.nombre}?`}
             message={`Premio ${premio.codigo} de ${premio.cliente?.nombre ?? 'el cliente'}${premio.cliente?.documento ? ` (${premio.cliente.documento})` : ''}. ${premio.tipo === 'producto'
-                ? 'Al confirmar se descarga del inventario de esta sucursal.'
-                : 'Al confirmar sale del inventario de regalos de esta sucursal.'} Confirma con su documento que es la persona.`}
+                ? 'Al confirmar se descuenta de la existencia de esta sucursal.'
+                : 'Al confirmar sale de los regalos de esta sucursal.'} Confirma con su documento que es la persona.`}
             confirmText="Entregar" onConfirm={entregar} />
     );
 }

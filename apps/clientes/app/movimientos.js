@@ -134,7 +134,7 @@ function textoVence(f) {
   const vence = finDeMes(f);
   const dias = diasHasta(vence);
   if (vence == null || dias == null) return null;
-  return { vigente: dias >= 0, texto: dias >= 0 ? `Vencen el ${fechaLarga(vence)} — úsalos este mes` : `Vencieron el ${fechaLarga(vence)}` };
+  return { vigente: dias >= 0, texto: dias >= 0 ? `Vencen el ${fechaLarga(vence)}. Úsalos este mes` : `Vencieron el ${fechaLarga(vence)}` };
 }
 function VenceCupon({ fecha: f }) {
   const t = useTema();

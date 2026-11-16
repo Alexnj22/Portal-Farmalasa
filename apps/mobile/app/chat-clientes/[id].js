@@ -414,7 +414,7 @@ export default function ConversacionDelChat() {
         title: c ? nombreDeCliente(c.cliente) : 'Conversación',
         headerTitle: c ? () => (
           <Pressable onPress={() => setPestana((p) => (p === 'cliente' ? 'mensajes' : 'cliente'))} accessibilityRole="button"
-            accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : `Ver la ficha de ${nombreDeCliente(c.cliente)}`}
+            accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : `Ver los datos de ${nombreDeCliente(c.cliente)}`}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 9, maxWidth: 240 }}>
             <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={36} conversacion={c} animado />
             <View style={{ flexShrink: 1 }}>
@@ -426,7 +426,7 @@ export default function ConversacionDelChat() {
         headerRight: c ? () => (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Tocable onPress={() => setPestana((p) => (p === 'cliente' ? 'mensajes' : 'cliente'))} hitSlop={8} accessibilityRole="button"
-              accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : 'Ver la ficha del cliente'}
+              accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : 'Ver los datos del cliente'}
               style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: pestana === 'cliente' ? 'rgba(127,127,127,0.18)' : 'transparent' }}>
               <IconoFijo name={iconoDe(pestana === 'cliente' ? 'MessageCircle' : 'User')} size={20} color={colorSistema.acento} />
             </Tocable>

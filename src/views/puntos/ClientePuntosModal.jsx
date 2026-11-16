@@ -223,13 +223,13 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                             su propio `inline-flex` le ganaba y salían los dos. */}
                         <span className="hidden sm:block shrink-0">
                             <Button variant="secondary" size="sm" icon={Pencil} onClick={() => onEditar(cliente)}>
-                                {puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
+                                {puedeEditarFicha ? 'Editar cliente' : 'Ver cliente'}
                             </Button>
                         </span>
                         <span className="sm:hidden shrink-0">
                             <Button variant="secondary" size="sm" icon={Pencil} iconOnly onClick={() => onEditar(cliente)}
-                                title={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'}
-                                aria-label={puedeEditarFicha ? 'Editar cliente' : 'Ver ficha'} />
+                                title={puedeEditarFicha ? 'Editar cliente' : 'Ver cliente'}
+                                aria-label={puedeEditarFicha ? 'Editar cliente' : 'Ver cliente'} />
                         </span>
                     </>
                 )} />
@@ -245,7 +245,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                         )}
                         {!cliente.acumula && (
                             <Notice variant="info" bloque>
-                                Esta ficha es de un convenio: sus compras no acumulan puntos.
+                                Este cliente es de un convenio. Sus compras no acumulan puntos.
                             </Notice>
                         )}
                         <AvisoDeUniones fusionadaEn={fusionadaEn} recibidas={recibidas} />
@@ -424,7 +424,7 @@ function Cuerpo({ customerId, puedeEditarFicha, puedeAjustar, enPortal, onEditar
                                     <p key={a.id} className="text-caption text-content-2">
                                         Cuenta <span className="font-bold tabular-nums">{a.id}</span>
                                         {a.como === 'manual'
-                                            ? <> · asignada a mano el {fechaNumerica(a.cuando)}{a.nota ? ` — «${a.nota}»` : ''}</>
+                                            ? <> · asignada a mano el {fechaNumerica(a.cuando)}{a.nota ? `: «${a.nota}»` : ''}</>
                                             : <> · pasó por su DUI</>}
                                     </p>
                                 ))}
@@ -684,7 +684,7 @@ function TipoDePersona({ customerId, nombre, puedeCambiar }) {
             await guardarTipoDePersona({ customerId, tipo }, { nombre });
             setFicha({ tipo_persona: tipo, tipo_persona_revisar: false, tipo_persona_manual_at: new Date().toISOString() });
             showToast('Tipo de persona guardado',
-                tipo === 'juridica' ? 'Desde el 15 de noviembre esta ficha no acumula puntos.' : 'La ficha acumula puntos como persona natural.', 'success');
+                tipo === 'juridica' ? 'Desde el 15 de noviembre este cliente no acumula puntos.' : 'El cliente acumula puntos como persona natural.', 'success');
         } catch (e) {
             showToast('No se pudo guardar', mensajeAmigable(e), 'error');
         } finally {

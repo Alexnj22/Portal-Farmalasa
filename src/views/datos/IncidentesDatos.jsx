@@ -151,7 +151,7 @@ function Ficha({ inc, onClose, onGuardado }) {
             if (cerrar) campos.cerrado_at = new Date().toISOString();
             const fila = await guardarIncidente(inc.id ?? null, campos);
             clearDraft(claveBorrador);
-            showToast('Guardado', nuevo ? 'Incidente registrado: corre el plazo de 72 horas' : 'Incidente actualizado', 'success');
+            showToast('Guardado', nuevo ? 'Incidente registrado. Corre el plazo de 72 horas.' : 'Incidente actualizado', 'success');
             onGuardado(fila);
         } catch (e) {
             showToast('No se pudo guardar', mensajeAmigable(e), 'error');

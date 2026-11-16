@@ -100,7 +100,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                     {deDescuento && (
                         <Notice variant="info" icon={Info}>
                             Sale del descuento <span className="font-semibold">{etiquetaDeDescuento(oferta.descuento_tipo, oferta.descuento_monto)}</span>.
-                            Las fechas, las salas y los precios siguen al descuento solos: si lo corriges o lo borras, la app se entera.
+                            Las fechas, las sucursales y los precios siguen al descuento. Si lo corriges o lo borras, la app se actualiza sola.
                         </Notice>
                     )}
                     {deDescuento && oferta.sin_receta > 0 && (
@@ -124,7 +124,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                         <div className="rounded-lg bg-surface-card-hover p-3 space-y-2">
                             <p className="text-body-sm text-content-2">
                                 Del {fechaTexto(oferta.inicio, { day: 'numeric', month: 'short' })} al {fechaTexto(oferta.fin, { day: 'numeric', month: 'short' })}
-                                {' · '}{oferta.branch_ids?.length ? oferta.branch_ids.map(nombreSala).filter(Boolean).join(', ') : 'Todas las salas'}
+                                {' · '}{oferta.branch_ids?.length ? oferta.branch_ids.map(nombreSala).filter(Boolean).join(', ') : 'Todas las sucursales'}
                             </p>
                             <ul className="space-y-1 max-h-48 overflow-y-auto">
                                 {productos.map((p) => (
@@ -168,11 +168,11 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                         </div>
                     </div>
                     <FileField label="Imagen (opcional)" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                        hint={oferta.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Horizontal, 16:9, hasta 3 MB'} />
+                        hint={oferta.imagen_path && !archivo ? 'Ya tiene imagen. Sube otra para reemplazarla.' : 'Horizontal, 16:9, hasta 3 MB'} />
                     {!deDescuento && (
                         <div>
-                            <span className="block text-label font-semibold text-content-2 mb-1">Salas</span>
-                            <p className="text-micro text-content-3 mb-2">Sin marcar ninguna, vale en todas.</p>
+                            <span className="block text-label font-semibold text-content-2 mb-1">Sucursales</span>
+                            <p className="text-micro text-content-3 mb-2">Si no marcas ninguna, vale en todas.</p>
                             <div className="flex flex-wrap gap-2">
                                 {salas.map((s) => (
                                     <Button key={s.id} size="sm" variant={f.branch_ids.includes(s.id) ? 'primary' : 'secondary'}
@@ -185,7 +185,7 @@ export default function OfertaModal({ oferta, salas, onClose, onGuardada, onErro
                         <LiquidSelect label="Exclusiva para" value={f.nivel_minimo ?? ''} clearable={false}
                             onChange={(v) => cambiar('nivel_minimo')(v ?? '')}
                             options={NIVELES_DE_OFERTA.map((n) => ({ value: n.value, label: n.label }))} />
-                        <p className="text-micro text-content-3 mt-1">Todos la ven; sólo quien llega a ese nivel la puede reservar.</p>
+                        <p className="text-micro text-content-3 mt-1">Todos la ven. Sólo quien llega a ese nivel la puede reservar.</p>
                     </div>
                     <label className="flex items-center justify-between gap-3">
                         <span>

@@ -81,7 +81,7 @@ function TarjetaPromocion({ p, puedeEditar, onAbrir, onMenu }) {
           <TresDatos datos={lab ? [
             { rotulo: 'Laboratorios', valor: fmtUnidades(labs.length) },
             { rotulo: 'Niveles', valor: fmtUnidades(p.niveles) },
-            { rotulo: 'Salas', valor: fmtUnidades(p.salas) },
+            { rotulo: 'Sucursales', valor: fmtUnidades(p.salas) },
           ] : [
             { rotulo: 'Productos', valor: fmtUnidades(p.renglones) },
             { rotulo: 'Abiertos', valor: fmtUnidades(p.abiertos) },
@@ -146,12 +146,12 @@ export default function Promociones() {
     ] : []),
     ...(pestana === 'descuentos' ? [
       ...(alcanceTodo ? [{ id: 'dsala', titulo: 'Sucursal', activa: fDescSala, porDefecto: 'todas', onCambiar: setFDescSala,
-        opciones: [{ id: 'todas', label: 'Todas las salas' }, ...SALAS_VENTA.map((id) => (branches || []).find((b) => Number(b.id) === id)).filter(Boolean).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+        opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...SALAS_VENTA.map((id) => (branches || []).find((b) => Number(b.id) === id)).filter(Boolean).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
       { id: 'destado', titulo: 'Estado', activa: fDescEstado, porDefecto: 'todos', onCambiar: setFDescEstado,
         opciones: [{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Descontando' }, { id: 'programados', label: 'Programados' }, { id: 'terminados', label: 'Terminados' }] },
     ] : []),
     ...(pestana === 'rebajas' ? [{ id: 'rsala', titulo: 'Sucursal', activa: fRebSala, porDefecto: 'todas', onCambiar: setFRebSala,
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...SALAS_VENTA.map((id) => (branches || []).find((b) => Number(b.id) === id)).filter(Boolean).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...SALAS_VENTA.map((id) => (branches || []).find((b) => Number(b.id) === id)).filter(Boolean).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(pestana === 'pagos' ? [{ id: 'pagos', titulo: 'Pagos', activa: fPagos, porDefecto: 'pendientes', onCambiar: setFPagos,
       opciones: [{ id: 'pendientes', label: 'Sólo con algo por pagar' }, { id: 'todas', label: 'Todas' }] }] : []),
   ];
@@ -180,7 +180,7 @@ export default function Promociones() {
       <Stack.Screen options={{
         ...BARRA_FIJA, title: 'Promociones',
         headerSearchBarOptions: {
-          placeholder: pestana === 'excedentes' ? 'Persona, producto o sala' : 'Nombre, laboratorio o nota', hideWhenScrolling: false,
+          placeholder: pestana === 'excedentes' ? 'Persona, producto o sucursal' : 'Nombre, laboratorio o nota', hideWhenScrolling: false,
           onChangeText: (ev) => setTexto(ev.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />

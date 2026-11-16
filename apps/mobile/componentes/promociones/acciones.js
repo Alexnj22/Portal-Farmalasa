@@ -42,8 +42,8 @@ export function duplicarConPreguntas(promo, branches, onListo) {
       onPress: (nombre) => {
         const limpio = String(nombre ?? '').trim();
         if (limpio.length < 3) { fallo('Falta el nombre', 'Escribe al menos 3 letras.'); return; }
-        const opciones = ['Mismas salas que el original', ...salas.map((s) => `Sólo ${s.name}`), 'Cancelar'];
-        ActionSheetIOS.showActionSheetWithOptions({ title: '¿Para qué salas?', options: opciones, cancelButtonIndex: opciones.length - 1 }, async (i) => {
+        const opciones = ['Mismas sucursales que el original', ...salas.map((s) => `Sólo ${s.name}`), 'Cancelar'];
+        ActionSheetIOS.showActionSheetWithOptions({ title: '¿Para qué sucursales?', options: opciones, cancelButtonIndex: opciones.length - 1 }, async (i) => {
           if (i === opciones.length - 1) return;
           try {
             await duplicarPromocion({ id: promo.id, nombre: limpio, branchId: i === 0 ? null : salas[i - 1].id });

@@ -328,7 +328,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         name="nombre"
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
-                        placeholder="El nombre que va a ver la sala"
+                        placeholder="El nombre que va a ver la sucursal"
                         required
                     />
 
@@ -479,9 +479,8 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                                 {vencidos.length === 1
                                     ? `Termina el ${fechaLegible(vencidos[0].fin)} y hoy es ${fechaLegible(hoySV())}.`
                                     : `El último termina el ${fechaLegible(vencidos.map((r) => r.fin).sort().pop())} y hoy es ${fechaLegible(hoySV())}.`}
-                                {' '}Se puede guardar igual —sirve para el histórico y la
-                                liquidación— pero el cierre diario la va a dar por terminada
-                                apenas la actives.
+                                {' '}Puedes guardarla igual. Al activarla, el cierre diario
+                                la da por terminada.
                             </span>
                         </Notice>
                     )}
@@ -504,7 +503,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
             ) : (
                 <span className="text-caption text-content-3">
                     {creada
-                        ? (descPendiente ? 'La promoción ya quedó: falta el descuento.' : 'La promoción ya quedó creada.')
+                        ? (descPendiente ? 'La promoción ya quedó. Falta el descuento.' : 'La promoción ya quedó creada.')
                         : 'En borrador no cuenta ventas hasta activarla.'}
                 </span>
             )}>
@@ -548,7 +547,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                 onClose={() => setVaciando(false)}
                 onConfirm={() => { setRenglones([]); setVaciando(false); }}
                 title="¿Quitar todos los productos?"
-                message={`Se van los ${renglones.length} productos de la lista. La promoción todavía no se ha guardado, así que no toca nada de la base — pero volver a agregarlos es rehacer la búsqueda.`}
+                message={`Se quitan los ${renglones.length} productos de la lista. Para volver a agregarlos, hay que buscarlos de nuevo.`}
                 confirmText="Quitar todos"
                 isDestructive
             />
@@ -620,16 +619,16 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, prov
                 es opcional. */}
             <div className="space-y-1">
                 <span className="text-label uppercase tracking-widest font-black text-content-2">
-                    Salas donde aplica
+                    Sucursales donde aplica
                 </span>
                 <p className="text-caption text-content-3">
                     {!hayMarcadas
-                        ? 'Sin marcar ninguna, aplica en todas las salas.'
+                        ? 'Si no marcas ninguna, aplica en todas las sucursales.'
                         : (repartoPuesto === 0
-                            ? `Aplica sólo en ${cuantasMarcadas} ${cuantasMarcadas === 1 ? 'sala' : 'salas'}. Las unidades son opcionales.`
+                            ? `Aplica sólo en ${cuantasMarcadas} ${cuantasMarcadas === 1 ? 'sucursal' : 'sucursales'}. Las unidades son opcionales.`
                             : (loteNum && repartoPuesto === loteNum
                                 ? `Reparte las ${loteNum} unidades del lote.`
-                                : `Repartes ${repartoPuesto}${loteNum ? ` de ${loteNum}` : ''} — si repartes, tiene que sumar exactamente el lote.`))}
+                                : `Repartes ${repartoPuesto}${loteNum ? ` de ${loteNum}` : ''}. Tiene que sumar exactamente el lote.`))}
                 </p>
                 <div className="grid gap-2 sm:grid-cols-2">
                     {salas.map((s) => {
@@ -668,7 +667,7 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, prov
                     onChange={(v) => onCambiar('tiene_bono', v === 'si')}
                     options={[
                         { value: 'si', label: 'Sí, paga por unidad vendida' },
-                        { value: 'no', label: 'No — sólo mide las ventas' },
+                        { value: 'no', label: 'No, sólo mide las ventas' },
                     ]}
                     clearable={false}
                     ariaLabel="¿Paga bono?"
@@ -678,7 +677,7 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, prov
             {valor.tiene_bono && (
                 <>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <Campo rotulo="¿Quién lo cancela?">
+                        <Campo rotulo="¿Quién lo paga?">
                             <LiquidSelect
                                 value={valor.paga}
                                 onChange={(v) => onCambiar('paga', v)}
@@ -859,7 +858,7 @@ function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, 
                         onChange={(v) => onCambiar('tiene_bono', v === 'si')}
                         options={[
                             { value: 'si', label: 'Sí, paga por unidad vendida' },
-                            { value: 'no', label: 'No — sólo medir cuánto se vende' },
+                            { value: 'no', label: 'No, sólo mide cuánto se vende' },
                         ]}
                         clearable={false}
                         ariaLabel="Paga bono"
@@ -872,7 +871,7 @@ function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, 
                 {r.tiene_bono && (
                     <>
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <Campo rotulo="¿Quién lo cancela?">
+                            <Campo rotulo="¿Quién lo paga?">
                                 <LiquidSelect
                                     value={r.paga || ''}
                                     onChange={(v) => onCambiar('paga', v)}
@@ -920,7 +919,7 @@ function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, 
                 <div>
                     <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
                         <span className="text-label uppercase tracking-widest text-content-3 font-black">
-                            Reparto por sala
+                            Reparto por sucursal
                         </span>
                         <span className="text-caption text-content-3">opcional</span>
                         <span className="flex-1" />
@@ -945,8 +944,7 @@ function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, 
                     </div>
                     {!repartoOk && (
                         <p className="text-caption text-warning-text mt-1.5">
-                            Si repartes, tiene que sumar exactamente el lote — si no, alguna sala
-                            vendería contra un número que no es suyo. Déjalo todo vacío para no repartir.
+                            Si repartes, tiene que sumar exactamente el lote. Déjalo todo vacío para no repartir.
                         </p>
                     )}
                 </div>

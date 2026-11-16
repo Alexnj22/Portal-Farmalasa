@@ -304,7 +304,7 @@ export default function PuntosView({ openModal }) {
                             { key: 'cuando',    label: 'Cuándo' },
                             { key: 'que',       label: 'Qué pasó' },
                             { key: 'cliente',   label: 'Cliente' },
-                            { key: 'sala',      label: 'Sala' },
+                            { key: 'sala',      label: 'Sucursal' },
                             { key: 'vendio',    label: 'Vendió' },
                             { key: 'documento', label: 'Documento' },
                             { key: 'puntos',    label: 'Puntos' },
@@ -356,9 +356,7 @@ export default function PuntosView({ openModal }) {
                 {pestana === 'por_asignar' && (
                     <>
                         <Notice variant="info" bloque>
-                            Son cuentas del sistema anterior que no se pudieron pasar solas a una ficha. Sus
-                            puntos no se perdieron: están guardados con todo su historial. Cuando un cliente
-                            reclame, se busca su cuenta aquí y se asigna a su ficha.
+                            Son cuentas del programa anterior que no se pudieron unir solas a un cliente. Sus puntos están guardados con todo su historial. Si un cliente reclama, busca su cuenta aquí y asígnala a sus datos.
                         </Notice>
                         <div className="flex justify-end min-w-0">
                             <FilterBar onClear={() => filtrarMotivo('TODOS')} activeCount={motivo !== 'TODOS' ? 1 : 0}>
@@ -586,7 +584,7 @@ function Resumen({ resumen, serie, tablero, cargando, irA, onAbrirCliente, veTar
                         <GraficaDiaria serie={serie} unidad={unidad} />
                     </Suspense>
                 </Panel>
-                <Panel icono={Store} titulo="Este mes, por sala" nota="Acumulado · canjeado">
+                <Panel icono={Store} titulo="Este mes, por sucursal" nota="Acumulado · canjeado">
                     {(resumen?.por_sala ?? []).length === 0 && !cargando
                         ? <p className="text-body-sm text-content-3 py-6 text-center">Sin movimientos este mes</p>
                         : <SalasDelMes salas={resumen?.por_sala ?? []} unidad={unidad} />}

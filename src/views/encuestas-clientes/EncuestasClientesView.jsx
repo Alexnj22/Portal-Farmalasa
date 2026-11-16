@@ -293,7 +293,7 @@ function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError, onAviso })
                             options={plantillas.map((p) => ({ value: p.id, label: p.nombre, sublabel: p.objetivo || undefined }))} />
                     </div>
                     <PortalInput label="Nombre" name="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)}
-                        placeholder={base ? 'Si lo dejas vacío, usa el de la plantilla' : 'Ej. Satisfacción en sala — octubre'} />
+                        placeholder={base ? 'Si lo dejas vacío, usa el de la plantilla' : 'Ej. Satisfacción en sucursal, octubre'} />
                     <div>
                         <span className="block text-label font-semibold text-content-2 mb-1">Es</span>
                         <LiquidSelect value={tipo} clearable={false} onChange={(v) => setTipo(v || 'encuesta')} ariaLabel="Tipo"

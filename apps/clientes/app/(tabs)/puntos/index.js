@@ -142,7 +142,7 @@ export default function Puntos() {
         <Tarjeta tono={t.color.verde}>
           <Titulo>¡Ya casi!</Titulo>
           <Texto>
-            Tu registro está guardado. En tu próxima compra en cualquiera de nuestras salas di que te uniste desde la
+            Tu registro está guardado. En tu próxima compra en cualquiera de nuestras sucursales di que te uniste desde la
             app y muestra tu DUI: desde esa compra empiezas a acumular.
           </Texto>
           <Texto nivel={3}>Mientras tanto ya puedes ver las ofertas.</Texto>
@@ -282,7 +282,7 @@ export default function Puntos() {
                 <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>
                   {resumen.inyecciones_pendientes === 1 ? 'Tienes 1 inyección pagada' : `Tienes ${resumen.inyecciones_pendientes} inyecciones pagadas`}
                 </Text>
-                <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{resumen.inyecciones_pendientes === 1 ? 'Aplícatela' : 'Aplícatelas'} en cualquiera de nuestras salas</Text>
+                <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{resumen.inyecciones_pendientes === 1 ? 'Aplícatela' : 'Aplícatelas'} en cualquiera de nuestras sucursales</Text>
               </View>
               <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
             </Tarjeta>
@@ -353,7 +353,7 @@ export default function Puntos() {
             <Icono sf="clock.badge.exclamationmark.fill" respaldo="⏰" tam={22} color={colorSistema.naranja} />
             <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto }}>
               <Text style={{ fontWeight: '800' }}>{entero(resumen.cupon.restantes)} puntos son del cupón del mes. </Text>
-              {`Vencen el ${fechaLarga(resumen.cupon.vence)} — úsalos este mes: si no los canjeas, se pierden.`}
+              {`Vencen el ${fechaLarga(resumen.cupon.vence)}. Úsalos este mes o se pierden.`}
             </Text>
           </Tarjeta>
         </Entrada>

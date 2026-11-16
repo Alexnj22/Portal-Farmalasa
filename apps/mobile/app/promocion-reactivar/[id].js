@@ -128,9 +128,9 @@ export default function ReactivarPromocion() {
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{fmtVigencia(promo.inicio, promo.fin)}</Text>
         </View>
         {soloDescuento ? (
-          <Aviso texto={`La promoción sigue activa hasta el ${fechaLarga(promo.fin)}, pero su descuento ya venció: el precio en caja no está bajando. Se lleva el descuento hasta esa misma fecha.`} />
+          <Aviso texto={`La promoción sigue activa hasta el ${fechaLarga(promo.fin)}, pero su descuento ya venció. El precio en caja no está bajando. El descuento se mueve hasta esa misma fecha.`} />
         ) : (
-          <Seccion titulo="Hasta cuándo" pie="Todos sus productos vuelven a contar hasta esa fecha, con el mismo lote, reparto y bono. Los que cerraron porque se vendió el lote no se reabren: mover la fecha no agrega producto.">
+          <Seccion titulo="Hasta cuándo" pie="Todos sus productos vuelven a contar hasta esa fecha, con el mismo lote, reparto y bono. Los que cerraron porque se vendió el lote no se reabren.">
             {reactivada ? <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{fechaLarga(fin)}</Text> : (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Fin</Text>
@@ -159,13 +159,13 @@ export default function ReactivarPromocion() {
               <Text key={d.id} style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 <Text style={{ fontWeight: '700', color: colorSistema.texto }}>{d.descripcion}</Text>
                 {` · ${comoDescuenta(d)} · ${d.productos?.length ?? 0} producto(s) · hoy ${fmtVigencia(d.inicio, d.fin)}`}
-                {d.ligado === false ? ' · se cargó aparte; queda ligado a esta promoción' : ''}
+                {d.ligado === false ? ' · se creó aparte. Queda ligado a esta promoción' : ''}
               </Text>
             ))}
           </Seccion>
         ) : null}
         {dudosos.length && !pendientes.length ? (
-          <Aviso tono="cuidado" texto={`${dudosos.map((d) => d.descripcion).join(', ')}: podría ser de esta promoción o de otra que arrancó igual, así que no se mueve solo. Si es de esta, cambia su fecha en la pestaña Descuentos.`} />
+          <Aviso tono="cuidado" texto={`${dudosos.map((d) => d.descripcion).join(', ')}: podría ser de esta promoción o de otra que empezó igual. No se mueve solo. Si es de esta, cambia su fecha en la pestaña Descuentos.`} />
         ) : null}
         {soloDescuento && descuentos != null && !hayDescuentos && !falloDescuentos ? (
           <Aviso texto="No se encontró un descuento que mover. Revisa la pestaña Descuentos." />

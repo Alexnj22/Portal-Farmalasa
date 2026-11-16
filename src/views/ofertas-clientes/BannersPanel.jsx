@@ -98,7 +98,7 @@ export default function BannersPanel({ busqueda, puedeEditar, showToast }) {
                     ...(puedeEditar ? [{ key: 'acciones', label: '', align: 'right' }] : []),
                 ]}
                 movil={{ usarAccionDeFila: true, acciones: 'mantener' }}
-                empty={{ icon: GalleryHorizontal, message: 'Sin banners. Mientras no haya, la app muestra las ofertas publicadas.' }}
+                empty={{ icon: GalleryHorizontal, message: 'Sin banners. La app muestra las ofertas publicadas.' }}
                 minWidth="560px">
                 {filas.map((b, i) => {
                     const est = estadoDeOferta(b, hoy);
@@ -207,7 +207,7 @@ function BannerModal({ banner, onClose, onGuardado, onError }) {
                 <div className="space-y-4">
                     <div data-campo="imagen">
                         <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                            hint={banner.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Horizontal, 1200 × 500 px'} />
+                            hint={banner.imagen_path && !archivo ? 'Ya tiene imagen. Sube otra para reemplazarla.' : 'Horizontal, 1200 × 500 px'} />
                     </div>
                     <FormatoImagen tipo="banner" archivo={archivo} />
                     <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={60}

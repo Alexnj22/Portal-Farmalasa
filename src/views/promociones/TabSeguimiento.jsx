@@ -96,7 +96,7 @@ export default function TabSeguimiento({
         if (!detalle) { onResumen?.([]); return; }
         onResumen?.([
             { key: 'u', icon: Package, label: 'Unidades vendidas', value: fmtUnidades(resumen.unidades) },
-            { key: 'd', icon: FileText, label: 'Documentos', value: fmtUnidades(resumen.documentos) },
+            { key: 'd', icon: FileText, label: 'Ventas', value: fmtUnidades(resumen.documentos) },
             { key: 'v', icon: Users, label: 'Vendedores', value: resumen.vendedores },
             { key: 'b', icon: DollarSign, label: 'Bono ganado',
               value: fmtMoneda(resumen.bono),
@@ -111,7 +111,7 @@ export default function TabSeguimiento({
         const salas = Array.isArray(d.salas) ? d.salas : [];
         onResumen?.([
             { key: 'v', icon: DollarSign, label: 'Venta del mes', value: fmtMoneda(d.venta_total) },
-            { key: 'n', icon: Store, label: 'Salas con nivel',
+            { key: 'n', icon: Store, label: 'Sucursales con nivel',
               value: `${salas.filter((x) => x.nivel != null).length} de ${salas.length}` },
             { key: 'p', icon: Users, label: 'Cobran bono', value: fmtUnidades(d.personas_pagadas) },
             { key: 'c', icon: DollarSign, label: 'Costo del bono', value: fmtMoneda(d.costo_total),
@@ -126,7 +126,7 @@ export default function TabSeguimiento({
                     ? `Ninguna promoción coincide con "${busqueda.trim()}".`
                     : 'Ninguna promoción coincide con los filtros puestos.'} />
             : <EmptyState icon={Layers} title="Sin promociones activas"
-                subtitle="Cuando haya una en marcha, aquí se ve cuánto lleva vendido cada sala." />;
+                subtitle="Cuando haya una en marcha, aquí ves cuánto lleva vendido cada sucursal." />;
     }
 
     const exportar = () => {
@@ -222,7 +222,7 @@ export default function TabSeguimiento({
                         {sinDueno?.unidades > 0 && (
                             <Notice variant="warning" icon={AlertTriangle} compact>
                                 <span className="font-semibold">{fmtUnidades(sinDueno.unidades)} unidades</span>{' '}
-                                ({fmtMoneda(sinDueno.monto)}) se vendieron con un código que no da con nadie activo.
+                                ({fmtMoneda(sinDueno.monto)}) se vendieron con un código que no es de ningún vendedor activo.
                                 Ese bono <span className="font-semibold">no se paga</span> y no se reparte entre los demás.
                             </Notice>
                         )}
@@ -334,7 +334,7 @@ function BarrasPorSala({ reparto }) {
     return (
         <div className="pt-3 border-t border-border-muted space-y-2">
             <p className="text-micro uppercase tracking-widest text-content-3 font-black">
-                {conCupo ? 'Por sala, contra su cupo' : 'Por sala'}
+                {conCupo ? 'Por sucursal, contra su cupo' : 'Por sucursal'}
             </p>
             <ul className="space-y-2">
                 {reparto.map((s) => {

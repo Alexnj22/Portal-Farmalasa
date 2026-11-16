@@ -97,7 +97,7 @@ export default function TabPorRevisar({ openModal }) {
                 que no tiene al lado. El layout equivocado no falla: le roba
                 314px a la píldora en silencio. Canónico: `StaffManagementView`. */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                <CarrilCards className="flex-1" ariaLabel="Resumen de fichas por revisar">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de clientes por revisar">
                     <StatCard icon={FileWarning} label="Por revisar"
                         value={(datos.congelado + datos.repetido).toLocaleString('es-SV')}
                         iconBg="bg-warning/10" iconCls="text-warning"
@@ -117,10 +117,8 @@ export default function TabPorRevisar({ openModal }) {
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
             <Notice variant="info">
-                Estas fichas no se completaron solas a propósito. Las <strong>fiscales</strong>
-                {' '}se congelan porque cada dato que se declara a Hacienda necesita una persona
-                que lo confirme. Las de <strong>posible repetido</strong> no se crearon porque
-                ya hay un cliente con ese nombre, DUI o NIT, y crearlas partiría al cliente en dos.
+                Los <strong>fiscales</strong> los confirma una persona antes de ir al Ministerio de Hacienda.
+                {' '}Los <strong>posibles repetidos</strong> tienen el nombre, DUI o NIT de otro cliente.
             </Notice>
 
             <DataTable columns={COLS} loading={loading} minWidth="320px"
@@ -137,7 +135,7 @@ export default function TabPorRevisar({ openModal }) {
                 empty={familia
                     ? { icon: Check, message: 'Sin pendientes en este grupo',
                         subtext: 'Prueba con el otro grupo o quita el filtro.' }
-                    : { icon: Check, message: 'Sin fichas por revisar',
+                    : { icon: Check, message: 'Sin clientes por revisar',
                         subtext: 'Todas las pendientes fueron resueltas o descartadas.' }}
             >
                 {datos.rows.map((fila, i) => {
@@ -153,7 +151,7 @@ export default function TabPorRevisar({ openModal }) {
                                     </div>
                                     {!fila.customer_id && (
                                         <div className="text-caption text-content-3">
-                                            Sin ficha en el portal
+                                            Sin datos en el portal
                                         </div>
                                     )}
                                 </div>

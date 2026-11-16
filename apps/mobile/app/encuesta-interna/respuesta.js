@@ -172,7 +172,7 @@ export default function RespuestaInterna() {
                 )}
               </Seccion>
               <Segmentos activa={jefe ? 'jefe' : 'empleado'} onCambiar={(v) => setJefe(v === 'jefe')} margen={0}
-                opciones={[{ id: 'empleado', label: 'Empleado/a' }, { id: 'jefe', label: 'Jefe/a de sala' }]} />
+                opciones={[{ id: 'empleado', label: 'Empleado/a' }, { id: 'jefe', label: 'Jefe de sucursal' }]} />
               {formPreguntas.length ? (
                 <View style={{ gap: 4 }}>
                   <View style={{ height: 6, borderRadius: 3, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>

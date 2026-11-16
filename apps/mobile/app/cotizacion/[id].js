@@ -115,7 +115,7 @@ export default function Cotizacion() {
           </Seccion>
         ) : null}
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        <Seccion titulo={items ? `Productos · ${items.length}` : 'Productos'} pie={esCCF ? 'Desglose de CCF por línea: precios sin IVA y el IVA de cada renglón.' : null}>
+        <Seccion titulo={items ? `Productos · ${items.length}` : 'Productos'} pie={esCCF ? 'Desglose de crédito fiscal por producto. Precios sin IVA y el IVA de cada uno.' : null}>
           {items == null ? <Indicador /> : items.map((it, i) => {
             const d = esCCF ? desgloseConIva(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1)) : null;
             return (

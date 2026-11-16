@@ -118,7 +118,7 @@ export default function EditarOferta() {
             </View>
           </Tocable>
 
-          {deDescuento ? <Aviso texto="Las fechas, las salas y los precios siguen al descuento solos: si lo corriges o lo borras en la caja, la app se entera." /> : null}
+          {deDescuento ? <Aviso texto="Las fechas, las sucursales y los precios siguen al descuento. Si lo corriges o lo borras, la app se actualiza sola." /> : null}
           {deDescuento && oferta.sin_receta > 0 ? <Aviso tono="cuidado" texto={`${oferta.sin_receta === 1 ? 'Un producto bajo receta no se muestra' : `${oferta.sin_receta} productos bajo receta no se muestran`} en la app. El descuento sigue valiendo en caja.`} /> : null}
           {deDescuento && !productos.length ? <Aviso tono="cuidado" texto="Todos los productos de este descuento van bajo receta: no hay nada que anunciar." /> : null}
 
@@ -146,7 +146,7 @@ export default function EditarOferta() {
           {deDescuento ? (
             <Seccion titulo="Sigue al descuento">
               <Dato primero rotulo="Fechas" valor={`${fechaTexto(oferta.inicio, { day: 'numeric', month: 'short' })} – ${fechaTexto(oferta.fin, { day: 'numeric', month: 'short' })}`} />
-              <Dato rotulo="Salas" valor={oferta.branch_ids?.length ? oferta.branch_ids.map(nombreSala).filter(Boolean).join(', ') : 'Todas'} />
+              <Dato rotulo="Sucursales" valor={oferta.branch_ids?.length ? oferta.branch_ids.map(nombreSala).filter(Boolean).join(', ') : 'Todas'} />
               {oferta.descuento_tipo ? <Dato rotulo="Descuento" valor={etiquetaDeDescuento(oferta.descuento_tipo, oferta.descuento_monto)} /> : null}
               {/* El precio de antes tachado y el de ahora, como lo verá el cliente. */}
               {productos.map((p, i) => (
@@ -174,7 +174,7 @@ export default function EditarOferta() {
                 </View>
                 {f.fin < f.inicio ? <Aviso tono="cuidado" texto="La fecha final es anterior a la inicial." /> : null}
               </Seccion>
-              <Seccion titulo="Salas" pie={f.branch_ids.length ? null : 'Sin ninguna elegida, vale en todas.'}>
+              <Seccion titulo="Sucursales" pie={f.branch_ids.length ? null : 'Si no eliges ninguna, vale en todas.'}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {salas.map((s) => <Ficha key={s.id} texto={s.name} activa={f.branch_ids.includes(s.id)} onPress={() => alternarSala(s.id)} />)}
                 </View>
@@ -182,7 +182,7 @@ export default function EditarOferta() {
             </>
           )}
 
-          <Seccion titulo="Exclusiva para" pie="Todos la ven; sólo quien llega a ese nivel de Puntos Salud la puede reservar.">
+          <Seccion titulo="Exclusiva para" pie="Todos la ven. Sólo quien llega a ese nivel de Puntos Salud la puede reservar.">
             <Opciones valor={f.nivel_minimo} onCambiar={cambiar('nivel_minimo')} opciones={NIVELES_DE_OFERTA.map((n) => ({ id: n.value, label: n.label }))} />
           </Seccion>
 
@@ -190,7 +190,7 @@ export default function EditarOferta() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Exclusiva para socios</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Todos la ven anunciada; el detalle, sólo los del programa de puntos.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Todos la ven anunciada. El detalle lo ven sólo los socios.</Text>
               </View>
               <Interruptor value={f.exclusiva} onValueChange={cambiar('exclusiva')} />
             </View>

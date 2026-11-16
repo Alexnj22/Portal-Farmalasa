@@ -194,7 +194,7 @@ export default function PromocionLaboratorio() {
               <Buscador catalogo={catalogo} excluir={labIds} placeholder="Agregar un laboratorio…" onElegir={(l) => setLabs((xs) => [...xs, l])} />
             </Seccion>
 
-            <Seccion titulo="Niveles" pie="El monto de cada nivel es el mismo para todas las salas; lo que cambia por sala es la venta que hay que alcanzar.">
+            <Seccion titulo="Niveles" pie="El monto de cada nivel es el mismo para todas las sucursales. Lo que cambia por sucursal es cuánto tiene que vender para alcanzarlo.">
               {niveles.map((n) => (
                 <View key={n.nivel} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{`Nivel ${n.nivel}`}</Text>
@@ -217,7 +217,7 @@ export default function PromocionLaboratorio() {
                 ))}
                 {salaTiene(s.id) && hayVacias ? (
                   <Tocable hitSlop={6} onPress={() => { Haptics.selectionAsync().catch(() => {}); setUmbrales((u) => copiarUmbralesDeSala(u, salas, niveles, s.id)); }}>
-                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Copiar a las salas vacías</Text>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Copiar a las sucursales vacías</Text>
                   </Tocable>
                 ) : null}
               </Seccion>

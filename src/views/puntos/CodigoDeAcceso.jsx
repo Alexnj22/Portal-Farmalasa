@@ -138,7 +138,7 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
 
         if (!andaPorVariasSalas && miSala != null) {
             await imprimir({ salaId: Number(miSala) })();
-            const nombre = branches.find(b => String(b.id) === String(miSala))?.name || 'tu sala';
+            const nombre = branches.find(b => String(b.id) === String(miSala))?.name || 'tu sucursal';
             aviso('Enviado a imprimir', `El papel sale por la ticketera de ${nombre}.`, 'success');
             return;
         }

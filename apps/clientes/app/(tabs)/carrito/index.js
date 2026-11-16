@@ -451,7 +451,7 @@ function Carrito() {
       ) : null}
 
       {/* Qué documento quieres. */}
-      <Seccion texto="Documento" />
+      <Seccion texto="Comprobante" />
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Opcion sf="doc.text.fill" titulo="Consumidor final" detalle="Factura normal" elegida={documento === 'consumidor_final'} alTocar={() => setDocumento('consumidor_final')} />
         <Opcion sf="building.2.fill" titulo="Crédito fiscal" detalle="Para tu negocio (CCF)" elegida={documento === 'credito_fiscal'} alTocar={() => setDocumento('credito_fiscal')} />
@@ -471,7 +471,7 @@ function Carrito() {
           ) : (
             <>
               <Texto nivel={2} estilo={{ fontSize: 13 }}>
-                {fiscales.completos ? 'Escribe los datos del contribuyente.' : 'Tu ficha no tiene los datos completos del crédito fiscal. Escríbelos como aparecen en tu tarjeta de IVA:'}
+                {fiscales.completos ? 'Escribe los datos del contribuyente.' : 'Faltan datos del crédito fiscal. Escríbelos como aparecen en tu tarjeta de IVA:'}
               </Texto>
               <Campo etiqueta="Nombre o razón social" valor={f.nombre} alCambiar={(v) => setF((x) => ({ ...x, nombre: v }))} />
               <Campo etiqueta="NIT" valor={f.nit} teclado="number-pad" alCambiar={(v) => setF((x) => ({ ...x, nit: nitEscrito(v) }))} />

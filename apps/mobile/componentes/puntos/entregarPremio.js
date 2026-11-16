@@ -39,7 +39,7 @@ export async function entregarPremioPorCodigo({ codigo, sala, nombreSala, alTerm
     }
     const cuantos = Number(p.cantidad) > 1 ? `${p.cantidad} × ` : '';
     Alert.alert(`¿Entregar ${cuantos}${p.nombre}?`,
-      `Premio ${p.codigo} de ${p.cliente?.nombre ?? 'el cliente'}. ${p.tipo === 'producto' ? 'Se descarga del inventario de esta sucursal.' : 'Sale del inventario de regalos de esta sucursal.'} Confirma con su documento que es la persona.`,
+      `Premio ${p.codigo} de ${p.cliente?.nombre ?? 'el cliente'}. ${p.tipo === 'producto' ? 'Se descuenta de la existencia de esta sucursal.' : 'Sale de los regalos de esta sucursal.'} Confirma con su documento que es la persona.`,
       [{ text: 'Cancelar', style: 'cancel' }, { text: 'Entregar', onPress: async () => {
         trabajando('Entregando…');
         try { await entregarPremio(p.id, sala); listo('Premio entregado', `${p.codigo} · ${p.nombre}`); alTerminar?.(); }

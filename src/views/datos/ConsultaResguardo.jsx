@@ -19,15 +19,15 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { leerResguardo } from '@nucleo/data/solicitudesDatos';
 
 const TABLAS = {
-    customers: 'Ficha del cliente',
+    customers: 'Datos del cliente',
     solicitudes_datos: 'Solicitud de datos',
     consentimientos_cliente: 'Consentimientos',
     app_cliente_aceptaciones: 'Aceptaciones en la app',
     reclamos_clientes: 'Reclamos',
     encuesta_cliente_respuestas: 'Encuestas',
-    customers_changelog: 'Historial de cambios de la ficha',
-    espejo_conflictos: 'Diferencias de ficha por revisar',
-    clientes_por_revisar: 'Fichas por revisar',
+    customers_changelog: 'Historial de cambios de los datos',
+    espejo_conflictos: 'Diferencias de datos por revisar',
+    clientes_por_revisar: 'Clientes por revisar',
     app_chat_conversaciones: 'Conversaciones del chat',
     app_chat_mensajes: 'Mensajes del chat',
     app_cliente_fotos: 'Fotos',
@@ -57,7 +57,7 @@ function Fila({ fila }) {
         <div className="rounded-lg border border-border-subtle px-3 py-2">
             {fila.tabla === 'customers' ? (
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                    <div className="sm:col-span-2 text-caption text-content-3">Ficha #{d.id}</div>
+                    <div className="sm:col-span-2 text-caption text-content-3">Cliente #{d.id}</div>
                     {CAMPOS_FICHA.filter(([k]) => d[k] != null && d[k] !== '').map(([k, rotulo]) => (
                         <div key={k} className="min-w-0">
                             <dt className="text-caption text-content-3">{rotulo}</dt>
@@ -102,8 +102,7 @@ export default function ConsultaResguardo({ anonimizacionId }) {
         return (
             <div className="flex flex-col gap-3">
                 <Notice variant="info" icon={Lock} compact>
-                    El resguardo sólo se consulta con un motivo (un requerimiento de autoridad, una reclamación, la
-                    propia persona). Queda registrado quién lo consultó, cuándo y por qué.
+                    El resguardo sólo se consulta con un motivo: un requerimiento de autoridad, una reclamación o la propia persona. Queda registrado quién lo consultó, cuándo y por qué.
                 </Notice>
                 <PortalTextarea label="Motivo de la consulta" rows={2} maxLength={500}
                     value={motivo} onChange={(e) => setMotivo(e.target.value)} />

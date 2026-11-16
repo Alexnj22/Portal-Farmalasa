@@ -115,7 +115,7 @@ export function Descuentos({ busqueda, salaDe, sala = '', estado = '', onAlcance
         <Kpi icono="Package" rotulo="Productos" valor={fmtUnidades(new Set(filas.flatMap((d) => (d.productos || []).map((p) => p.id))).size)} color={MARCA.azulClaro}
           apoyo="distintos con descuento" />
       </FilaDeKpis>
-      <View style={{ marginHorizontal: 16 }}><Aviso texto="Los descuentos nacen al crear la promoción. Aquí se ven todos —incluidos los que se cargaron sin promoción— y se corrigen o se quitan." /></View>
+      <View style={{ marginHorizontal: 16 }}><Aviso texto="Los descuentos nacen al crear la promoción. Aquí ves todos, también los que no tienen promoción, y puedes corregirlos o quitarlos." /></View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {SECCIONES_DE_DESCUENTOS.map(({ clave, titulo, sub }) => (porEstado[clave].length ? (
         <View key={clave} style={{ gap: 10 }}>
@@ -130,7 +130,7 @@ export function Descuentos({ busqueda, salaDe, sala = '', estado = '', onAlcance
                   <Pildora texto={e.rotulo} color={colorDeVariante(e.variant)} />
                 </View>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                  {[d.monto != null ? comoDescuenta(d) : null, fmtVigencia(d.inicio, d.fin), d.todas_las_salas ? 'Todas las salas' : (salaDe(d.branch_id) ?? d.sala_rotulo), `${productos.length} producto${productos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+                  {[d.monto != null ? comoDescuenta(d) : null, fmtVigencia(d.inicio, d.fin), d.todas_las_salas ? 'Todas las sucursales' : (salaDe(d.branch_id) ?? d.sala_rotulo), `${productos.length} producto${productos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
                 </Text>
                 {d.promocion ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>{`De la promoción «${d.promocion}»`}</Text> : null}
                 {/* `en_app`: null = sin oferta; true publicada; false armada sin publicar. */}
@@ -186,7 +186,7 @@ export function Excedentes({ busqueda, puedeAprobar }) {
   const aprobar = (f) => Alert.alert('Aprobar el excedente', `${shortEmployeeName(f.persona)} cobra ${fmtMoneda(f.monto)} por ${fmtUnidades(f.unidades)} unidades de más. No está acordado con el laboratorio.`, [
     { text: 'Cancelar', style: 'cancel' }, { text: 'Aprobar', onPress: () => decidir(f, true, null) },
   ]);
-  const negar = (f) => Alert.prompt('Negar el excedente', 'El motivo es obligatorio: es lo único que le queda a quien vendió para reclamar.', [
+  const negar = (f) => Alert.prompt('Negar el excedente', 'Escribe por qué no se paga. Quien vendió lo va a leer.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Negar', style: 'destructive', onPress: (m) => { const t = String(m ?? '').trim(); if (!t) { fallo('Falta el motivo', ''); return; } decidir(f, false, t); } },
   ], 'plain-text');
@@ -203,7 +203,7 @@ export function Excedentes({ busqueda, puedeAprobar }) {
       ) : null}
       {filas.length ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Aviso tono="cuidado" texto="Ese bono no está acordado con el laboratorio: no se paga hasta que alguien lo apruebe, y mientras tanto no suma a lo de nadie." />
+          <Aviso tono="cuidado" texto="Ese bono no está acordado con el laboratorio. No se paga ni suma a nadie hasta que se apruebe." />
         </View>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -255,11 +255,11 @@ export function Pagos({ busqueda, soloPendientes }) {
   return (
     <>
       <View style={{ marginHorizontal: 16 }}>
-        <Aviso texto="El bono de los vendedores se paga en «Mi caja» de cada sala; el de bodega, desde la caja de Salud 3; el de administración va a la planilla." />
+        <Aviso texto="El bono de los vendedores se paga en «Mi caja» de cada sucursal. El de bodega, desde la caja de Salud 3. El de administración va a la planilla." />
       </View>
       {promos.length ? (
         <FilaDeKpis>
-          <Kpi icono="Wallet" rotulo="Por pagar en salas" valor={fmtMoneda(pendiente)} color={pendiente > 0 ? MARCA.ambar : MARCA.verde} pide={pendiente > 0} apoyo={`${promos.length} promoción${promos.length === 1 ? '' : 'es'}`} />
+          <Kpi icono="Wallet" rotulo="Por pagar en sucursales" valor={fmtMoneda(pendiente)} color={pendiente > 0 ? MARCA.ambar : MARCA.verde} pide={pendiente > 0} apoyo={`${promos.length} promoción${promos.length === 1 ? '' : 'es'}`} />
           <Kpi icono="Landmark" rotulo="A planilla" valor={fmtMoneda(planilla)} color={MARCA.azulClaro} apoyo="administración" />
         </FilaDeKpis>
       ) : null}
@@ -349,7 +349,7 @@ export function Rebajas({ busqueda, sala = '', salaDe }) {
           </FilaDeKpis>
           <Subfiltro activa={vista} onCambiar={setVista} opciones={[{ id: 'campana', label: 'De campaña' }, { id: 'a_mano', label: 'A mano' }]} />
           <Text style={{ marginHorizontal: 20, color: colorSistema.texto2, fontSize: 12 }}>
-            Es de campaña cuando ese día el producto tenía un descuento vigente en la sala y la rebaja es exactamente la del descuento. Lo demás es un precio cambiado al vender.
+            Es de campaña cuando ese día el producto tenía un descuento vigente en la sucursal y la rebaja es exactamente la del descuento. Lo demás es un precio cambiado al vender.
           </Text>
           {lista.length ? (
             <DescargarCsv cuenta={vista === 'campana' ? `${campanas.length} campaña${campanas.length === 1 ? '' : 's'}` : `${aMano.length} rebaja${aMano.length === 1 ? '' : 's'} a mano`}
@@ -379,7 +379,7 @@ export function Rebajas({ busqueda, sala = '', salaDe }) {
               </View>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fechaTexto(r.fecha)} · ${r.correlativo} · ${Number(r.cantidad)} ${r.presentacion || ''}`}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>
-                {[r.vendedor ? shortEmployeeName({ name: r.vendedor }) : 'Sin ficha', nombreSala(r.branch_id), `${fmtMoneda(r.precio)} → ${fmtMoneda(r.cobrado)}`].filter(Boolean).join(' · ')}
+                {[r.vendedor ? shortEmployeeName({ name: r.vendedor }) : 'Sin vendedor', nombreSala(r.branch_id), `${fmtMoneda(r.precio)} → ${fmtMoneda(r.cobrado)}`].filter(Boolean).join(' · ')}
               </Text>
               {r.campana_cercana ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{porQueNoEsDeCampana(r)}</Text> : null}
             </Tarjeta>

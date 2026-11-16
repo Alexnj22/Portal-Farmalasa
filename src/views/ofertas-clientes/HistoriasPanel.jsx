@@ -222,14 +222,14 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
                 <div className="space-y-4">
                     <div data-campo="imagen">
                         <FileField label="Imagen" accept="image/jpeg,image/png,image/webp" file={archivo} onChange={setArchivo}
-                            hint={historia.imagen_path && !archivo ? 'Ya tiene imagen; sube otra para reemplazarla' : 'Vertical, 1080 × 1920 px'} />
+                            hint={historia.imagen_path && !archivo ? 'Ya tiene imagen. Sube otra para reemplazarla.' : 'Vertical, 1080 × 1920 px'} />
                     </div>
                     <FormatoImagen tipo="historia" archivo={archivo} />
                     <PortalInput label="Título" name="titulo" value={f.titulo} maxLength={60}
                         onChange={(e) => cambiar('titulo')(e.target.value)} placeholder="Ej. Semana del bebé" />
                     <PortalInput label="Rótulo corto" name="rotulo" value={f.rotulo} maxLength={12}
                         onChange={(e) => cambiar('rotulo')(e.target.value)} placeholder="Ej. Bebé"
-                        helperText="Va debajo del círculo en la app. Una o dos palabras; si lo dejas vacío, se usa la primera del título." />
+                        helperText="Va debajo del círculo en la app. Una o dos palabras. Si lo dejas vacío, se usa la primera del título." />
                     <PortalTextarea label="Texto (opcional)" name="texto" rows={2} value={f.texto} maxLength={240}
                         onChange={(e) => cambiar('texto')(e.target.value)} placeholder="Una o dos líneas: se leen sobre la foto." />
                     <div>

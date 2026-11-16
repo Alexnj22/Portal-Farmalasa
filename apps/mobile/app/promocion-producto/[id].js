@@ -89,7 +89,7 @@ function CrearDescuento({ promo, salas, alcanceTodo, onHecho }) {
   const sinFin = !renglones.some((x) => x.fin);
   const poner = (k) => (v) => { setAvisos([]); setDesc((d) => ({ ...d, [k]: v })); };
   const elegirSala = () => ActionSheetIOS.showActionSheetWithOptions(
-    { title: 'Sala del descuento', options: [...marcadas.map((x) => x.name), 'Cancelar'], cancelButtonIndex: marcadas.length },
+    { title: 'Sucursal del descuento', options: [...marcadas.map((x) => x.name), 'Cancelar'], cancelButtonIndex: marcadas.length },
     (i) => { if (i < marcadas.length) poner('branchId')(String(marcadas[i].id)); });
 
   const crear = async (forzar) => {
@@ -112,19 +112,19 @@ function CrearDescuento({ promo, salas, alcanceTodo, onHecho }) {
 
   return (
     <Seccion titulo="Precio en la venta">
-      <FilaConSwitch titulo="Además baja el precio en la venta" detalle="La venta le descuenta al renglón cuando se vende cualquiera de estos productos." valor={desc.activo} onCambiar={poner('activo')} />
+      <FilaConSwitch titulo="Además baja el precio en la venta" detalle="Les baja el precio a estos productos al venderlos." valor={desc.activo} onCambiar={poner('activo')} />
       {desc.activo ? (
         <>
-          <Opciones valor={desc.tipo} onCambiar={poner('tipo')} opciones={[{ id: '%', label: 'Porcentaje del renglón' }, { id: '$', label: 'Monto por unidad' }]} />
+          <Opciones valor={desc.tipo} onCambiar={poner('tipo')} opciones={[{ id: '%', label: 'Porcentaje del precio' }, { id: '$', label: 'Monto por unidad' }]} />
           <Linea titulo={desc.tipo === '%' ? 'Porcentaje' : 'Monto por unidad ($)'}><Numero valor={desc.monto} onCambiar={(v) => poner('monto')(v.replace(/[^0-9.]/g, ''))} placeholder={desc.tipo === '%' ? '25' : '1.50'} /></Linea>
           {desc.tipo === '$' && Number(desc.monto) > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Se descuenta ${formatMoney(Number(desc.monto))} por cada unidad: en una venta de 3 son ${formatMoney(Number(desc.monto) * 3)}.`}</Text> : null}
           {sinFin ? <Linea titulo="Hasta"><Fecha valor={desc.finPropio || null} onCambiar={poner('finPropio')} /></Linea> : null}
           {marcadas.length > 1 ? (
             <>
-              <FilaConSwitch titulo="En todas las salas" detalle="La caja acepta un descuento en una sala o en todas, nunca en varias." valor={desc.todas} onCambiar={poner('todas')} />
+              <FilaConSwitch titulo="En todas las sucursales" detalle="Un descuento vale en una sucursal o en todas, nunca en varias." valor={desc.todas} onCambiar={poner('todas')} />
               {!desc.todas ? (
                 <Tocable onPress={elegirSala}>
-                  <Text style={{ color: colorSistema.acento, fontSize: 15 }}>{salas.find((x) => String(x.id) === String(desc.branchId))?.name || 'Elegir la sala…'} ›</Text>
+                  <Text style={{ color: colorSistema.acento, fontSize: 15 }}>{salas.find((x) => String(x.id) === String(desc.branchId))?.name || 'Elegir la sucursal…'} ›</Text>
                 </Tocable>
               ) : null}
             </>
@@ -263,7 +263,7 @@ function Renglon({ r, salas, proveedores, onHecho, preguntarDescuento }) {
       {lote !== '' && Number(lote) > 0 && salas.length ? (
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>REPARTO POR SALA</Text>
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>REPARTO POR SUCURSAL</Text>
             {sumaReparto > 0 ? <Text style={{ color: sumaReparto === Number(lote) ? MARCA.verde : MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{`${fmtUnidades(sumaReparto)} de ${fmtUnidades(Number(lote))}`}</Text> : null}
           </View>
           {salas.map((x) => (
@@ -276,7 +276,7 @@ function Renglon({ r, salas, proveedores, onHecho, preguntarDescuento }) {
       {loteIlegible ? <Aviso tono="cuidado" texto="El lote tiene que ser un número entero mayor que cero, o quedar vacío." /> : null}
       {declaradoCambio ? (
         <BotonGrande borde texto={ocupado === 'declarado' ? 'Guardando…' : 'Guardar lote, presentación y reparto'} deshabilitado={!!ocupado || loteIlegible}
-          onPress={() => confirmar('Lote, presentación y reparto', 'Corrige el acuerdo: el cálculo vuelve a leer las ventas con el dato nuevo.', 'declarado',
+          onPress={() => confirmar('Lote, presentación y reparto', 'Lo vendido se vuelve a contar desde el inicio con el dato corregido.', 'declarado',
             () => editarRenglon({
               renglonId: r.id, loteTotal: lote === '' ? null : numeroEscrito(lote), factorUnidades: factor === '' ? null : factor,
               tieneBono, paga: tieneBono ? paga : null, supplierId: prov || null,
@@ -366,7 +366,7 @@ export default function EditarPromocionProducto() {
     const hacer = (tambien) => (que === 'agregar' ? agregarYa(dato, tambien) : quitarYa(dato, tambien));
     const titulo = que === 'agregar' ? `Agregar ${dato.length} producto${dato.length === 1 ? '' : 's'}` : `Quitar «${dato.producto}»`;
     if (!conDescuento) {
-      Alert.alert(titulo, que === 'agregar' ? 'Heredan la vigencia, las salas y el bono de la promoción.' : 'No se puede si ya se decidió algún excedente suyo.', [
+      Alert.alert(titulo, que === 'agregar' ? 'Heredan la vigencia, las sucursales y el bono de la promoción.' : 'No se puede si ya se decidió algún excedente suyo.', [
         { text: 'Cancelar', style: 'cancel' }, { text: que === 'agregar' ? 'Agregar' : 'Quitar', style: que === 'agregar' ? 'default' : 'destructive', onPress: () => hacer(false) },
       ]);
       return;
@@ -403,7 +403,7 @@ export default function EditarPromocionProducto() {
           {promo ? <ResumenDiario promocionId={promo.id} /> : null}
           {promo?.estado === 'borrador' ? (
             <BotonGrande texto="Borrar promoción" borde color={MARCA.rojo} onPress={() => Alert.alert('Borrar la promoción',
-              `«${promo.nombre}» se borra con todos sus productos. Sólo se puede porque sigue en borrador: una que ya corrió es historia y no se borra.`, [
+              `«${promo.nombre}» se borra con todos sus productos.`, [
                 { text: 'Cancelar', style: 'cancel' },
                 { text: 'Borrar', style: 'destructive', onPress: async () => {
                   try { await borrarPromocion(promo.id); listo('Promoción borrada', ''); volver('/promociones'); }

@@ -157,7 +157,7 @@ export default function Entrar() {
       )}
       {motivo === 'vencida' ? <Aviso tipo="aviso">Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Aviso> : null}
       {modo === 'dui' ? (
-        <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo.'}>
+        <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'Los dos datos que diste al registrarte. Escribe sólo números. El guion se pone solo.'}>
           {/* Nombres explícitos para el lector de pantalla (2026-11-04): ver FilaCampo. */}
           <FilaCampo
             placeholder="DUI"
@@ -210,7 +210,7 @@ export default function Entrar() {
         </>
       ) : null}
       <Texto nivel={2} estilo={{ textAlign: 'center', marginHorizontal: 32, color: colorSistema.texto2, fontSize: 13 }}>
-        ¿No te reconoce? Pregunta en cualquiera de nuestras salas: revisamos tu ficha.
+        ¿No te reconoce? Pregunta en cualquiera de nuestras sucursales y revisamos tus datos.
       </Texto>
     </Formulario>
   );

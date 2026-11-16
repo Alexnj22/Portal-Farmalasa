@@ -52,7 +52,7 @@ export default function TabPagos({ busqueda = '', soloPendientes = false, onResu
             .reduce((b, s) => b + Number(s.total || 0) - Number(s.pagado || 0), 0), 0);
         const planilla = promos.reduce((a, p) => a + Number(p.administracion || 0), 0);
         onResumen?.(promos.length ? [
-            { key: 'p', icon: Clock, label: 'Por pagar en salas', value: fmtMoneda(pendiente),
+            { key: 'p', icon: Clock, label: 'Por pagar en sucursales', value: fmtMoneda(pendiente),
               iconBg: 'bg-warning/10', iconCls: 'text-warning-text' },
             { key: 'a', icon: Briefcase, label: 'A planilla', value: fmtMoneda(planilla) },
         ] : []);
@@ -89,7 +89,7 @@ export default function TabPagos({ busqueda = '', soloPendientes = false, onResu
             <EmptyState
                 icon={Wallet}
                 title="Sin promociones con bono terminadas"
-                subtitle="Cuando termine una, cada sala la verá en «Mi caja» para pagarla."
+                subtitle="Cuando termine una, cada sucursal la verá en «Mi caja» para pagarla."
             />
         );
     }
@@ -97,15 +97,15 @@ export default function TabPagos({ busqueda = '', soloPendientes = false, onResu
     return (
         <div className="space-y-6">
             <p className="text-caption text-content-3">
-                El bono de los vendedores se paga en «Mi caja» de cada sala; el de bodega, desde la
-                caja de Salud 3; el de administración va a la planilla.
+                El bono de los vendedores se paga en «Mi caja» de cada sucursal. El de bodega, desde
+                la caja de Salud 3. El de administración va a la planilla.
             </p>
             {promos.map((p) => (
                 <section key={p.promocion_id} className="space-y-2">
                     <TituloSeccion titulo={p.promocion} />
                     <DataTable
                         columns={[
-                            { key: 'sala', label: 'Sala' },
+                            { key: 'sala', label: 'Sucursal' },
                             { key: 'personas', label: 'Personas', align: 'right', hideBelow: 'md' },
                             { key: 'total', label: 'Bono', align: 'right', hideBelow: 'md' },
                             { key: 'pagado', label: 'Pagado', align: 'right' },

@@ -59,7 +59,7 @@ export default function Inyecciones() {
   if (datos.pendiente) {
     return (
       <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
-        <Vacio titulo="Disponible al completar tu ficha" icono="syringe.fill" respaldo="✚">Cuando completes tu registro en sala verás aquí tus inyecciones.</Vacio>
+        <Vacio titulo="Disponible al completar tu registro" icono="syringe.fill" respaldo="✚">Cuando completes tu registro en una sucursal verás aquí tus inyecciones.</Vacio>
       </Pantalla>
     );
   }
@@ -84,7 +84,7 @@ export default function Inyecciones() {
           </Text>
           <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 15 }}>
             {pendientes.length
-              ? 'Ya están pagadas. Pasa a cualquiera de nuestras salas y te la aplicamos.'
+              ? 'Ya están pagadas. Pasa a cualquiera de nuestras sucursales y te la aplicamos.'
               : 'No tienes inyecciones pendientes. Cuando compres una aparece aquí.'}
           </Texto>
         </Tarjeta>

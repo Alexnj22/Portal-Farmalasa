@@ -55,13 +55,13 @@ export default function VentaDelAviso({ aviso }) {
       {aviso.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{aviso.nota}</Text> : null}
       {anuladaSinAviso ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-          {`Esta venta se anuló después del canje (${aviso.venta_estado}). Si la sala la rehízo, la venta nueva aparece en los movimientos del cliente.`}
+          {`Esta venta se anuló después del canje (${aviso.venta_estado}). Si la sucursal la rehízo, la venta nueva aparece en los movimientos del cliente.`}
         </Text>
       ) : null}
       <Grilla celdas={[
         { rotulo: 'Documento', valor: aviso.documento || '—' },
         { rotulo: 'Fecha', valor: cuando || '—' },
-        { rotulo: 'Sala', valor: aviso.sala || '—' },
+        { rotulo: 'Sucursal', valor: aviso.sala || '—' },
         { rotulo: 'Total cobrado', valor: aviso.venta_total != null ? formatMoney(aviso.venta_total) : '—' },
       ]} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

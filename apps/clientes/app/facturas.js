@@ -194,7 +194,7 @@ export default function Facturas() {
   // guardado (o la firma ya venció), una nueva.
   const pedirUrl = async (f, formato) => {
     const r = await pedir('factura_documento', { id: f.id, formato });
-    if (!r?.ok) throw new Error(r?.mensaje ?? 'El documento todavía no está disponible. Intenta más tarde.');
+    if (!r?.ok) throw new Error(r?.mensaje ?? 'El archivo todavía no está disponible. Intenta más tarde.');
     return r.url;
   };
   const bajar = async (f, formato, nombre = nombreArchivo(f)) => {
@@ -202,14 +202,14 @@ export default function Facturas() {
       const lista = formato === 'pdf' ? f.pdf : f.json;
       let res = await fetch(lista ?? await pedirUrl(f, formato));
       if (!res.ok && lista) res = await fetch(await pedirUrl(f, formato));
-      if (!res.ok) throw new Error('El documento todavía no está disponible. Intenta más tarde.');
+      if (!res.ok) throw new Error('El archivo todavía no está disponible. Intenta más tarde.');
       return URL.createObjectURL(await res.blob());
     }
     const destino = `${FS.cacheDirectory}${nombre}.${formato}`;
     const lista0 = formato === 'pdf' ? f.pdf : f.json;
     let r = await FS.downloadAsync(lista0 ?? await pedirUrl(f, formato), destino);
     if (r.status !== 200 && lista0) r = await FS.downloadAsync(await pedirUrl(f, formato), destino);
-    if (r.status !== 200) throw new Error('El documento todavía no está disponible. Intenta más tarde.');
+    if (r.status !== 200) throw new Error('El archivo todavía no está disponible. Intenta más tarde.');
     return r.uri;
   };
   const conEspera = async (clave, fn) => {
@@ -291,7 +291,7 @@ export default function Facturas() {
       for (const r of tanda) if (r.status === 'fulfilled') listos.push(r.value); else faltan++;
       avisar('bajando', Math.min(tareas.length, i + 4) / 2);
     }
-    if (!listos.length) throw new Error('Los documentos todavía no están disponibles. Intenta más tarde.');
+    if (!listos.length) throw new Error('Los archivos todavía no están disponibles. Intenta más tarde.');
     if (listos.length === 1) {
       await entregar(listos[0].uri, listos[0].nombre, listos[0].ext, { guardar });
     } else {
@@ -313,7 +313,7 @@ export default function Facturas() {
         await entregar(destino, nombreZip, 'zip', { guardar });
       }
     }
-    if (faltan) Alert.alert('Faltó algún documento', `${faltan === 1 ? 'Un archivo no estaba' : `${faltan} archivos no estaban`} disponible todavía. Intenta con ${faltan === 1 ? 'ése' : 'ésos'} más tarde.`);
+    if (faltan) Alert.alert('Faltó algún archivo', `${faltan === 1 ? 'Un archivo no estaba' : `${faltan} archivos no estaban`} disponible todavía. Intenta con ${faltan === 1 ? 'ése' : 'ésos'} más tarde.`);
   };
   const descargarAmbos = (f, guardar = false) => conEspera(`${f.id}ambos`, () => bajarEnZip([f], nombreArchivo(f), { guardar }));
 
@@ -345,7 +345,7 @@ export default function Facturas() {
     Haptics.selectionAsync().catch(() => {});
     // En Android, «Compartir» y «Guardar» son dos cosas (2026-11-04).
     const opciones = [
-      ['Archivo para Hacienda (JSON)', () => compartirJson(f)],
+      ['Archivo para el Ministerio de Hacienda (JSON)', () => compartirJson(f)],
       ['Enviar por correo', () => abrirCorreo([f])],
       [enAndroid ? 'Compartir PDF y JSON' : 'Descargar PDF y JSON', () => descargarAmbos(f)],
       ...(enAndroid ? [['Guardar PDF y JSON en el teléfono', () => descargarAmbos(f, true)]] : []),
@@ -763,11 +763,11 @@ function Documento({ f, ocupada, acciones, seleccion, alternar, anidada = false 
     <>
       {fila}
       {f.sin_documento ? (
-        <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Ejemplo sin documento.</Text>
+        <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Ejemplo sin archivos.</Text>
       ) : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Accion sf="doc.richtext.fill" texto="Ver PDF" cargando={ocupada === `${f.id}pdf`} alTocar={() => acciones.verPdf(f)} />
-          <Accion sf="ellipsis" respaldo="…" etiqueta="Más opciones: archivo para Hacienda (JSON), enviar por correo o descargar"
+          <Accion sf="ellipsis" respaldo="…" etiqueta="Más opciones: archivo para el Ministerio de Hacienda (JSON), enviar por correo o descargar"
             cargando={ocupada === `${f.id}json` || ocupada === `${f.id}ambos`} alTocar={() => acciones.masOpciones(f)} />
         </View>
       )}

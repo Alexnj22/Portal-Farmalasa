@@ -201,16 +201,14 @@ function ComoFunciona() {
                         <p className="text-body-lg text-content-2 leading-relaxed">
                             Identifícate en caja <strong className="text-content-1">antes de pagar</strong>:
                             con tu registro de cliente frecuente esa compra ya cuenta. Después ya no
-                            se puede. La compra tiene que valer $1.00 o más, ser al precio normal de la
-                            sala e incluir al menos un producto de farmacia o cuidado personal.
+                            se puede. La compra tiene que valer $1.00 o más, ser al precio normal de la sucursal e incluir al menos un producto de farmacia o cuidado personal.
                         </p>
                     </section>
 
                     <section>
                         <Rotulo>Para usarlos</Rotulo>
                         <p className="text-body-lg text-content-2 leading-relaxed">
-                            Desde <strong className="text-content-1">100 puntos</strong>, en cualquiera
-                            de nuestras salas, mostrando tu documento. De ahí para arriba usas los que
+                            Desde <strong className="text-content-1">100 puntos</strong>, en cualquiera de nuestras sucursales, mostrando tu documento. De ahí para arriba usas los que
                             quieras. Se gastan primero los más viejos, para que no se te venzan. No se
                             cambian por efectivo ni se devuelven en dinero.
                         </p>
@@ -479,7 +477,7 @@ export default function MisPuntosView() {
                                 usa casi todo el mundo. */}
                             <div className="pt-1">
                                 <p className="text-body-sm text-content-3 mb-2">
-                                    ¿La sala te dio un código? Úsalo aquí y no hace
+                                    ¿La sucursal te dio un código? Úsalo aquí y no hace
                                     falta lo de arriba.
                                 </p>
                                 <PortalInput
@@ -500,7 +498,7 @@ export default function MisPuntosView() {
                             </Button>
 
                             <p className="text-caption text-content-3 text-center">
-                                Si no aparece tu registro, pregunta en cualquiera de nuestras salas.
+                                Si no aparece tu registro, pregunta en cualquiera de nuestras sucursales.
                             </p>
                         </form>
 
@@ -755,7 +753,7 @@ function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
                         </div>
                         <p className="text-body-lg text-content-2 leading-snug">
                             <strong className="text-content-1">Ya puedes canjearlos.</strong>{' '}
-                            En cualquiera de nuestras salas, mostrando tu documento.
+                            En cualquiera de nuestras sucursales, mostrando tu documento.
                         </p>
                     </div>
                 ) : (

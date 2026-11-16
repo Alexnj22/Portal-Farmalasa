@@ -120,9 +120,9 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
         <>
             {esCandidatos && (
                 <Notice variant="info">
-                    Les vendieron a precio de mayoreo en los últimos 6 meses, o tienen «(4)»/«(5)» en el nombre de la ficha. Cada uno se aprueba o no
-                    a mano: nadie entra solo. La cláusula 2.3 pide <b>promedio de $100 al mes</b> en los últimos 3 meses o <b>una factura de $500</b>,
-                    con la ficha completa.
+                    Les vendieron a precio de mayoreo en los últimos 6 meses, o tienen «(4)»/«(5)» en el nombre. Cada uno se aprueba a mano.
+                    La cláusula 2.3 pide <b>promedio de $100 al mes</b> en los últimos 3 meses o <b>una factura de $500</b>,
+                    con los datos completos.
                 </Notice>
             )}
             <div className="flex justify-end">
@@ -134,9 +134,9 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                         </FilterBar.Section>
                     )}
                     {esCandidatos && (
-                        <FilterBar.Section label="ficha" active={soloConNombre} onClear={() => setSoloConNombre(false)}>
-                            <FilterBar.Opciones value={soloConNombre ? 'nombre' : 'todas'} onChange={(v) => setSoloConNombre(v === 'nombre')} label="Ficha" umbral={0}
-                                options={[{ value: 'todas', label: 'Todas las fichas' }, { value: 'nombre', label: 'Con «(4)» o «(5)» en el nombre' }]} />
+                        <FilterBar.Section label="nombre" active={soloConNombre} onClear={() => setSoloConNombre(false)}>
+                            <FilterBar.Opciones value={soloConNombre ? 'nombre' : 'todas'} onChange={(v) => setSoloConNombre(v === 'nombre')} label="Nombre" umbral={0}
+                                options={[{ value: 'todas', label: 'Todos los clientes' }, { value: 'nombre', label: 'Con «(4)» o «(5)» en el nombre' }]} />
                         </FilterBar.Section>
                     )}
                     {esCandidatos && (
@@ -176,7 +176,7 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                                 <p className="text-body-sm font-semibold text-content truncate">{f.nombre}</p>
                                 <p className="text-micro text-content-3 truncate">
                                     {[f.documento, f.precio_en_nombre ? `${PRECIOS[f.precio_en_nombre]} en el nombre` : null,
-                                        f.a_mayoreo > 0 ? `${formatMoney(f.a_mayoreo)} a mayoreo` : null, f.ficha_completa ? null : 'Ficha incompleta'].filter(Boolean).join(' · ') || '—'}
+                                        f.a_mayoreo > 0 ? `${formatMoney(f.a_mayoreo)} a mayoreo` : null, f.ficha_completa ? null : 'Datos incompletos'].filter(Boolean).join(' · ') || '—'}
                                 </p>
                             </div>
                         </DataCell>
@@ -197,7 +197,7 @@ function Lista({ tab, filas, busqueda, onAbrir }) {
                             <div className="min-w-0">
                                 <p className="text-body-sm font-semibold text-content truncate">{f.nombre}</p>
                                 <p className="text-micro text-content-3 truncate">
-                                    {[f.documento, f.estado === 'solicitado' ? ORIGENES[f.origen] : null, f.ficha_completa ? null : 'Ficha incompleta'].filter(Boolean).join(' · ') || '—'}
+                                    {[f.documento, f.estado === 'solicitado' ? ORIGENES[f.origen] : null, f.ficha_completa ? null : 'Datos incompletos'].filter(Boolean).join(' · ') || '—'}
                                 </p>
                             </div>
                         </DataCell>
@@ -244,7 +244,7 @@ function Historial({ busqueda, onAbrir }) {
                     <DataCell><span className="text-body-sm text-content-2">{fechaHora12(h.created_at, { day: 'numeric', month: 'short' })}</span></DataCell>
                     <DataCell><span className="text-body-sm font-semibold text-content">{h.customers?.name ?? '—'}</span></DataCell>
                     <DataCell>
-                        <span className="text-body-sm text-content-2">{textoDeAccion(h)}{h.nota ? ` — «${h.nota}»` : ''}</span>
+                        <span className="text-body-sm text-content-2">{textoDeAccion(h)}{h.nota ? `: «${h.nota}»` : ''}</span>
                     </DataCell>
                     <DataCell>
                         {h.employees?.name ? <PersonaConFoto id={h.employees.id} nombre={h.employees.name} px={20} />
@@ -301,8 +301,8 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                     {!cliente.ficha_completa && cliente.ficha_completa !== undefined && (
                         <Notice variant="warning">
                             {cliente.falta_correo
-                                ? 'A una empresa o institución le falta el correo electrónico en su ficha (Condiciones §2.4). Hay que completarlo antes de aprobar.'
-                                : 'La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar.'}
+                                ? 'A esta empresa o institución le falta el correo electrónico (Condiciones §2.4). Complétalo antes de aprobar.'
+                                : 'Le falta el documento o el teléfono. Complétalo antes de aprobar.'}
                         </Notice>
                     )}
                     {cliente.resuelto_por && est && est !== 'solicitado' && (
@@ -310,7 +310,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                             <span>{est === 'aprobado' ? 'Última decisión' : ESTADOS[est]?.label}:</span>
                             <PersonaConFoto id={cliente.resuelto_por_id} nombre={cliente.resuelto_por} px={20}
                                 detalle={cliente.resuelto_at ? fechaTexto(cliente.resuelto_at, { day: 'numeric', month: 'short', year: 'numeric' }) : null} />
-                            {cliente.motivo && est !== 'aprobado' ? <span className="text-content-3">— «{cliente.motivo}»</span> : null}
+                            {cliente.motivo && est !== 'aprobado' ? <span className="text-content-3">«{cliente.motivo}»</span> : null}
                         </div>
                     )}
                     {est === 'aprobado' && (cliente.retiro_programado || cliente.precio_programado_el) && (
@@ -319,16 +319,16 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                                 ? `Retiro avisado: deja de ser Cliente Mayorista el ${fechaTexto(cliente.retiro_programado, { day: 'numeric', month: 'long' })}.`
                                 : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`}
                             {' '}{cliente.retiro_por_inactividad
-                                ? 'Es por seis meses sin compras (Condiciones §2.5): si vuelve a comprar antes, se cancela solo.'
-                                : 'Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.'}
+                                ? 'Lleva seis meses sin compras (Condiciones §2.5). Si vuelve a comprar antes, se cancela solo.'
+                                : 'Rige 15 días después del aviso (Condiciones §6). Hasta entonces se puede cancelar.'}
                         </Notice>
                     )}
                     {est === 'solicitado' && (
                         <Notice variant="info">
                             {ORIGENES[cliente.origen]} el {fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}
-                            {cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.
+                            {cliente.nota_solicitud ? `: «${cliente.nota_solicitud}»` : ''}.
                             {cliente.vence_respuesta ? ` Hay que responderle a más tardar el ${fechaTexto(cliente.vence_respuesta, { day: 'numeric', month: 'long' })} (cinco días hábiles, Condiciones §2.4).` : ''}
-                            {' '}{esSolicitante ? 'Tú la hiciste: la tiene que resolver otra persona.' : ''}
+                            {' '}{esSolicitante ? 'Tú la hiciste. La resuelve otra persona.' : ''}
                             {cliente.solicitado_por ? (
                                 <span className="mt-1.5 flex"><PersonaConFoto id={cliente.solicitado_por_id} nombre={cliente.solicitado_por} px={20} detalle="Lo propuso" /></span>
                             ) : null}
@@ -374,7 +374,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                                 {d.historial.map((h, i) => (
                                     <li key={i} className="text-body-sm text-content-2">
                                         <span className="text-content-3">{fechaTexto(h.cuando, { day: 'numeric', month: 'short', year: 'numeric' })} · </span>
-                                        {textoDeAccion(h)}{h.nota ? ` — «${h.nota}»` : ''}
+                                        {textoDeAccion(h)}{h.nota ? `: «${h.nota}»` : ''}
                                         {h.por ? <span className="ml-2 inline-flex align-middle"><PersonaConFoto id={h.por_id} nombre={h.por} px={20} /></span> : null}
                                     </li>
                                 ))}
@@ -389,8 +389,8 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                                     options={[{ value: 'mayoreo', label: 'Mayoreo' }, { value: 'mayoreo_plus', label: 'Mayoreo Plus' }]} />
                             )}
                             <PortalTextarea rows={2} maxLength={300} value={nota} onChange={(e) => setNota(e.target.value)}
-                                label={resolverSolicitud ? 'Motivo (obligatorio para rechazar: se le avisa al cliente)'
-                                    : gestionar ? 'Motivo (obligatorio para retirar o bajar a Mayoreo: se le avisa al cliente)'
+                                label={resolverSolicitud ? 'Motivo (obligatorio para rechazar; se le avisa al cliente)'
+                                    : gestionar ? 'Motivo (obligatorio para retirar o bajar a Mayoreo; se le avisa al cliente)'
                                         : 'Nota (opcional, interna)'} />
                         </section>
                     )}
@@ -399,14 +399,14 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Cerrar</Button>
                 {puedeAbrirSolicitud && (
-                    <Button icon={Send} loading={ocupado} onClick={() => correr('propuesto', () => proponerMayorista(cliente.customer_id, precio, nota), 'Solicitud enviada a Administración')}>
+                    <Button icon={Send} loading={ocupado} onClick={() => correr('propuesto', () => proponerMayorista(cliente.customer_id, precio, nota), 'Solicitud enviada a un supervisor o administrador')}>
                         Proponer como mayorista
                     </Button>
                 )}
                 {decidir && (
                     <>
                         <Button variant="secondary" icon={X} loading={ocupado}
-                            onClick={() => correr('descartado', () => resolverMayorista(cliente.customer_id, 'descartar', null, nota), 'No aprobado: sale de los candidatos')}>No aprobar</Button>
+                            onClick={() => correr('descartado', () => resolverMayorista(cliente.customer_id, 'descartar', null, nota), 'No aprobado. Sale de los candidatos.')}>No aprobar</Button>
                         <Button icon={Check} loading={ocupado} disabled={cliente.ficha_completa === false}
                             onClick={() => correr('aprobado', () => resolverMayorista(cliente.customer_id, 'aprobar', precio, nota), `Aprobado con ${PRECIOS[precio]}`)}>Aprobar</Button>
                     </>

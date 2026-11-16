@@ -55,13 +55,13 @@ export function comoLlegar(requerido, nivel) {
   if (requerido === 'mayoreo') return 'Es para Clientes Mayoristas aprobados. Pregunta en tu sucursal cómo serlo.';
   const ex = EXCLUSIVAS[requerido];
   if (!ex) return null;
-  if (nivel?.activos === false) return `Los niveles de Puntos Salud llegan pronto: con tus compras subirás a ${ex.nombre}.`;
+  if (nivel?.activos === false) return `Los niveles de Puntos Salud llegan pronto. Con tus compras subirás a ${ex.nombre}.`;
   const sig = nivel?.siguiente;
   if (sig && sig.falta > 0) {
     const dinero = dolares(sig.falta);
     return sig.clave === requerido
       ? `Te faltan ${dinero} en compras para llegar a ${ex.nombre}.`
-      : `Te faltan ${dinero} en compras para subir a ${sig.nombre}; ${ex.nombre} viene después.`;
+      : `Te faltan ${dinero} en compras para subir a ${sig.nombre}. Después viene ${ex.nombre}.`;
   }
   return `Sube a ${ex.nombre} con tus compras de los últimos 12 meses.`;
 }

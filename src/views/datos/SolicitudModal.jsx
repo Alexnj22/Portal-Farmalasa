@@ -244,13 +244,12 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                 <div className="flex flex-col gap-5">
                     {plazo?.vencida && (
                         <Notice variant="danger" bloque>
-                            El plazo del Art. 20 ya pasó. No atender en tiempo y forma es una
-                            infracción grave. Resuelve y deja anotado por qué se atrasó.
+                            El plazo del Art. 20 ya pasó. Atender tarde es una infracción grave. Resuelve y anota por qué se atrasó.
                         </Notice>
                     )}
 
                     <Seccion titulo="Quién solicita"
-                        nota="Búscala primero: elegirla llena los campos y evita que un dígito de más los deje sin cruzar con la base.">
+                        nota="Búscala primero. Al elegirla se llenan los campos.">
                         {/* El buscador va ARRIBA de los campos, no al lado. Con
                             los campos primero, quien transcribe los llena a mano
                             y el buscador queda como un extra que nadie aprieta;
@@ -361,14 +360,12 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                                 <div data-surface="card" className="p-3.5 flex flex-col gap-2">
                                     {hallazgo.fallaron?.length > 0 && (
                                         <Notice variant="danger" bloque>
-                                            No se pudo consultar {hallazgo.fallaron.join(', ')}. Esta búsqueda
-                                            está incompleta: no la uses para responder que no hay información.
+                                            No se pudo consultar {hallazgo.fallaron.join(', ')}. La búsqueda está incompleta. No la uses para responder que no hay información.
                                         </Notice>
                                     )}
                                     {hallazgo.porNombre && (
                                         <Notice variant="warning" compact>
-                                            Se buscó por nombre. Un nombre trae homónimos: comprueba que la
-                                            ficha sea la de esta persona antes de entregarle nada.
+                                            Se buscó por nombre y puede haber homónimos. Comprueba que los datos sean de esta persona antes de entregarle nada.
                                         </Notice>
                                     )}
 
@@ -397,10 +394,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
 
                                     {hallazgo.total === 0 && !hallazgo.fallaron?.length && (
                                         <Notice variant="info" bloque>
-                                            Con esos datos no aparece nada. Antes de responder que no consta
-                                            información, prueba con el otro documento, con el teléfono o con
-                                            el nombre: un dato guardado de otra forma no aparece, y eso no es
-                                            lo mismo que no existir.
+                                            Con esos datos no aparece nada. Antes de responder que no consta información, prueba con el otro documento, con el teléfono o con el nombre.
                                         </Notice>
                                     )}
                                 </div>
@@ -457,21 +451,21 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
 
                     {!resuelta && solicitud.recibida_at && (
                         <Seccion titulo="Trámite"
-                            nota="Prórroga, prevención, negativa y aviso a terceros: cada paso queda registrado con lo que se le comunicó.">
+                            nota="Prórroga, prevención, negativa y aviso a terceros. Cada paso queda registrado con lo que se le comunicó.">
                             <TramiteDeLey solicitud={solicitud} onCambio={(fila) => { clearDraft(claveBorrador); onGuardada?.(fila); onClose?.(); }} />
                         </Seccion>
                     )}
 
                     {resuelta && !solicitud.negada && (solicitud.derechos ?? []).includes('cancelacion') && (
                         <Seccion titulo="Anonimizar los datos del cliente"
-                            nota="Ejecuta la cancelación resuelta: la ficha queda sin datos que identifiquen a la persona, en el portal y en la caja. Lo que exige otra ley se conserva.">
+                            nota="Ejecuta la cancelación resuelta. Se quitan los datos que identifican a la persona, en el portal y en la caja. Lo que exige otra ley se conserva.">
                             <AnonimizarCliente solicitud={solicitud} />
                         </Seccion>
                     )}
 
                     <Seccion titulo="Resolución">
                         {solicitud.negada && solicitud.motivo_negativa && (
-                            <Notice variant="warning" compact>Negada — {solicitud.motivo_negativa}</Notice>
+                            <Notice variant="warning" compact>Negada: {solicitud.motivo_negativa}</Notice>
                         )}
                         <PortalTextarea label="Qué se resolvió y con qué fundamento" name="resolucion" rows={4}
                             value={f.resolucion ?? ''} readOnly={resuelta}

@@ -53,8 +53,8 @@ export default function SinNumeroDeFicha({ onAbrir }) {
         try {
             const r = await reintentarAlta(fila.customer_id, crear, { nombre: fila.name });
             const toast = useToastStore.getState().showToast;
-            if (r?.hecho) toast('Listo', `${fila.name}: ficha ${r.erp_id}.`, 'success');
-            else if (r?.revisar) toast('Sigue sin número', r.error || 'Hay que revisarla.', 'warning');
+            if (r?.hecho) toast('Listo', `${fila.name}: número ${r.erp_id}.`, 'success');
+            else if (r?.revisar) toast('Sigue sin número', r.error || 'Hay que revisarlo.', 'warning');
             else toast('En camino', 'Se le asigna el número en unos minutos.', 'info');
             await cargar();
         } catch (e) {
@@ -69,8 +69,8 @@ export default function SinNumeroDeFicha({ onAbrir }) {
     return (
         <div className="space-y-3">
             <Notice variant="warning" icon={Hash}>
-                {datos?.revisar === 1 ? 'Una ficha no tiene' : `${datos?.revisar ?? 0} fichas no tienen`} número
-                de ficha y necesitan que alguien las mire: hasta tenerlo no se les puede facturar a su nombre.
+                {datos?.revisar === 1 ? 'Un cliente no tiene' : `${datos?.revisar ?? 0} clientes no tienen`} número.
+                Revísalos. Sin número no se les puede facturar a su nombre.
             </Notice>
             {error && <Notice variant="danger">{error}</Notice>}
             {!!datos?.porRevisar?.length && (

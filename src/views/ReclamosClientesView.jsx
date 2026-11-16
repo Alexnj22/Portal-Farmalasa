@@ -51,7 +51,7 @@ const COLUMNAS = [
     { key: 'folio', label: 'N.º' },
     { key: 'cliente', label: 'Cliente' },
     { key: 'tema', label: 'Reclamo' },
-    { key: 'sala', label: 'Sala', hideBelow: 'md' },
+    { key: 'sala', label: 'Sucursal', hideBelow: 'md' },
     { key: 'recibido', label: 'Recibido', hideBelow: 'sm' },
     { key: 'plazo', label: 'Plazo' },
 ];
@@ -109,8 +109,7 @@ export default function ReclamosClientesView() {
             <div className="p-4 md:p-6 space-y-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <p className="text-body-sm text-content-3 max-w-2xl">
-                        Los reclamos sobre Puntos Salud, las reservas o la condición de Cliente Mayorista se registran en la
-                        sala donde se presentan, y hay diez días hábiles para responderlos.
+                        Los reclamos sobre Puntos Salud, las reservas o la condición de Cliente Mayorista se registran en la sucursal donde se presentan. Hay diez días hábiles para responderlos.
                     </p>
                     {puedeRegistrar && <Button icon={Plus} onClick={() => setNuevo(true)}>Registrar reclamo</Button>}
                 </div>
@@ -167,7 +166,7 @@ function Registrar({ deTodaLaRed, salaPropia, onClose, onListo }) {
     // Lo que falta, en orden, y el campo donde se arregla (2026-11-14). Las
     // mismas tres condiciones que apagaban «Registrar».
     const queFalta = !sala
-        ? (deTodaLaRed ? { texto: 'Elige la sala donde se presenta.', campo: 'sala-reclamo' } : { texto: 'No tienes una sala asignada para registrarlo.', campo: null })
+        ? (deTodaLaRed ? { texto: 'Elige la sucursal donde se presenta.', campo: 'sala-reclamo' } : { texto: 'No tienes una sucursal asignada para registrarlo.', campo: null })
         : !nombre.trim() ? { texto: 'Escribe el nombre de quien reclama.', campo: 'nombre-reclamo' }
         : !tema.trim() ? { texto: 'Escribe de qué se trata.', campo: 'tema-reclamo' }
         : null;
@@ -191,8 +190,8 @@ function Registrar({ deTodaLaRed, salaPropia, onClose, onListo }) {
                     <SegmentedControl label="Sobre qué es" value={programa} onChange={setPrograma} options={PROGRAMAS} />
                     {deTodaLaRed ? (
                         <div data-campo="sala-reclamo">
-                            <span className="text-caption font-bold text-content-2 block mb-1.5">Sala donde se presenta</span>
-                            <LiquidSelect value={sala} onChange={setSala} options={opcionesSala} placeholder="¿En qué sala?" />
+                            <span className="text-caption font-bold text-content-2 block mb-1.5">Sucursal donde se presenta</span>
+                            <LiquidSelect value={sala} onChange={setSala} options={opcionesSala} placeholder="¿En qué sucursal?" />
                         </div>
                     ) : null}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -258,7 +257,7 @@ function Detalle({ r, puedeResponder, onClose, onListo }) {
                             <SegmentedControl label="Por dónde se le respondió" value={via} onChange={setVia} options={VIAS} />
                         </section>
                     ) : (
-                        <Notice variant="info" compact>Lo responde administración a más tardar el {dia(r.vence)}.</Notice>
+                        <Notice variant="info" compact>Lo responde un supervisor o administrador a más tardar el {dia(r.vence)}.</Notice>
                     )}
                 </div>
             </LiquidModal.Body>

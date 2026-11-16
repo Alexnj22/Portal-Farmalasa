@@ -49,7 +49,7 @@ export default function TabActivas({
                 <EmptyState
                     icon={Tag}
                     title="Sin promociones vigentes"
-                    subtitle={`${terminadas === 1 ? 'La última terminó' : `Las ${terminadas} terminaron`}. Se pueden reactivar desde Histórico, moviéndoles la fecha de fin.`}
+                    subtitle={`${terminadas === 1 ? 'La última terminó' : `Las ${terminadas} terminaron`}. Puedes reactivarlas desde Histórico cambiando la fecha de fin.`}
                     action={onVerTerminadas
                         ? <Button variant="secondary" icon={History} onClick={onVerTerminadas}>
                             Ver las terminadas
@@ -170,7 +170,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                     <>
                         <Dato rotulo="Laboratorios" valor={fmtUnidades(labs.length)} />
                         <Dato rotulo="Niveles"      valor={fmtUnidades(promo.niveles)} />
-                        <Dato rotulo="Salas"        valor={fmtUnidades(promo.salas)} />
+                        <Dato rotulo="Sucursales"   valor={fmtUnidades(promo.salas)} />
                     </>
                 ) : (
                     <>
@@ -207,7 +207,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
             {esLab && (
                 <Button variant="secondary" size="sm" icon={BarChart3}
                     onClick={(e) => { e.stopPropagation(); onVerMatriz?.(); }}>
-                    Ver cómo va cada sala
+                    Ver cómo va cada sucursal
                 </Button>
             )}
 

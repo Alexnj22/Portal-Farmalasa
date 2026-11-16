@@ -56,7 +56,7 @@ export default function Matriz({ promocionId }) {
   if (!datos) return <Aviso tono="cuidado" texto="Ya no está en el portal. Puede que la hayan borrado." />;
   return (
     <View style={{ gap: 12, opacity: cargando ? 0.6 : 1 }}>
-      {datos.congelado ? <Aviso texto={`Mes cerrado: estos números quedaron congelados al terminar ${rotuloMes(datos.year_month)} — son los que se pagaron.`} /> : null}
+      {datos.congelado ? <Aviso texto={`Mes cerrado: estos números quedaron fijos al terminar ${rotuloMes(datos.year_month)}. Son los que se pagaron.`} /> : null}
       {datos.simulacion ? <Aviso tono="cuidado" texto={`Estás simulando: así habría quedado si hubiera corrido en ${rotuloMes(datos.mes_medido)}. La promoción es de ${rotuloMes(datos.year_month)} y no cambió.`} /> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Tocable onPress={elegirMes} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
@@ -74,7 +74,7 @@ export default function Matriz({ promocionId }) {
       <View style={{ marginHorizontal: -16 }}>
         <FilaDeKpis>
           <Kpi icono="TrendingUp" rotulo="Venta del mes" valor={fmtMoneda(datos.venta_total)} color={MARCA.azulClaro}
-            apoyo={`${salas.filter((x) => x.nivel != null).length} de ${salas.length} salas con nivel`} />
+            apoyo={`${salas.filter((x) => x.nivel != null).length} de ${salas.length} sucursales con nivel`} />
           <Kpi icono="Wallet" rotulo="Costo del bono" valor={fmtMoneda(datos.costo_total)} color={MARCA.violetaClaro}
             apoyo={`${fmtUnidades(datos.personas_pagadas)} cobran bono`} />
         </FilaDeKpis>
@@ -84,7 +84,7 @@ export default function Matriz({ promocionId }) {
           {datos.laboratorios.map((l) => <Pildora key={l.id} texto={l.nombre} color={colorSistema.texto2} />)}
         </View>
       ) : null}
-      {!salas.length ? <Vacio titulo="Ninguna sala tiene cuánto vender todavía." detalle="Se escriben al editar la promoción." /> : null}
+      {!salas.length ? <Vacio titulo="Ninguna sucursal tiene cuánto vender todavía." detalle="Escríbelo al editar la promoción." /> : null}
       {salas.map((s) => {
         const alcanzo = s.nivel != null;
         return (

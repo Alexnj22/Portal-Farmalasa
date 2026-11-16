@@ -209,7 +209,7 @@ export default function Promocion() {
                     {items.map((x) => <Renglon key={x.id} r={x} />)}
                   </View>
                 ))}
-                <Titulo texto="Quién vendió" sub="unidades base, por sala" />
+                <Titulo texto="Quién vendió" sub="unidades base, por sucursal" />
                 {(detalle.vendedores || []).length ? (
                   <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', minHeight: 32, justifyContent: 'center' }} onPress={() => {
                     const c = csvVendedoresDePromocion(detalle.vendedores, detalle.nombre);
@@ -221,7 +221,7 @@ export default function Promocion() {
                 {salasVend.length ? salasVend.map((g) => <SalaQueVendio key={g.sala} g={g} conBono={r.conBono} personaDe={personaDe} />)
                   : <Aviso texto="Nadie ha vendido productos de esta promoción en su vigencia." />}
                 {detalle.sin_dueno?.unidades > 0 ? (
-                  <Aviso tono="cuidado" texto={`${fmtUnidades(detalle.sin_dueno.unidades)} unidades (${fmtMoneda(detalle.sin_dueno.monto)}) se vendieron con un código que no da con nadie activo. Ese bono no se paga y no se reparte entre los demás.`} />
+                  <Aviso tono="cuidado" texto={`${fmtUnidades(detalle.sin_dueno.unidades)} unidades (${fmtMoneda(detalle.sin_dueno.monto)}) se vendieron con un código que no es de ningún vendedor activo. Ese bono no se paga y no se reparte entre los demás.`} />
                 ) : null}
               </>
             ) : null}

@@ -42,7 +42,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
         <div className="space-y-5">
             <Bloque titulo="La encuesta">
                 <PortalInput label="Nombre" name="nombre" value={encuesta.nombre} readOnly={soloLectura}
-                    onChange={(e) => set('nombre')(e.target.value)} placeholder="Ej. Satisfacción en sala — octubre" />
+                    onChange={(e) => set('nombre')(e.target.value)} placeholder="Ej. Satisfacción en sucursal, octubre" />
                 <PortalTextarea label="Qué queremos saber" name="objetivo" rows={2} value={encuesta.objetivo || ''}
                     readOnly={soloLectura} onChange={(e) => set('objetivo')(e.target.value)}
                     placeholder="El objetivo, para quien aprueba y para leer los resultados después" />
@@ -68,7 +68,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                             {porSala
                                 ? 'Cada sucursal tiene su cuota: la encuesta termina cuando todas la cumplen.'
                                 : 'Se reparte en las sucursales elegidas y cuenta el total.'}
-                            {encuesta.canales.includes('campo') && ' Las respuestas de campo no son de ninguna sucursal: cuentan para la meta general, no para las cuotas.'}
+                            {encuesta.canales.includes('campo') && ' Las respuestas de campo cuentan para la meta general, no para las cuotas.'}
                         </p>
                         <div className="divide-y divide-border-card rounded-xl border border-border-card">
                             {salas.map((s) => {
@@ -181,7 +181,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                     <PortalTextarea label="Consentimiento para guardar sus datos" name="texto_consentimiento" rows={3}
                         value={encuesta.texto_consentimiento || ''} readOnly={soloLectura}
                         onChange={(e) => set('texto_consentimiento')(e.target.value)}
-                        helperText="Se muestra sólo si el cliente quiere dejar su ficha o teléfono. Sin aceptarlo, la respuesta queda anónima." />
+                        helperText="Se muestra sólo si el cliente quiere dejar sus datos. Sin aceptarlo, la respuesta queda anónima." />
                 )}
             </Bloque>
         </div>

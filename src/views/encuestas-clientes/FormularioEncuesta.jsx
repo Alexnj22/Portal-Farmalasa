@@ -279,7 +279,7 @@ function Incentivo({ r, entrevista, entregando, onEntregar }) {
         if (inc.estado === 'pendiente') {
             return <Notice variant="info" icon={Gift} compact>
                 {entrevista
-                    ? `Los ${inc.puntos} puntos quedaron pendientes: el teléfono no corresponde a una sola ficha. Se asignan desde el módulo.`
+                    ? `Los ${inc.puntos} puntos quedaron pendientes: el teléfono no corresponde a un solo cliente. Se asignan desde el módulo.`
                     : `Tus ${inc.puntos} puntos quedan pendientes: los acreditamos cuando confirmemos tu cuenta.`}
             </Notice>;
         }

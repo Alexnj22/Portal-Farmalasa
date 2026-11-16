@@ -28,10 +28,10 @@ import TituloDeSeccion from '../../components/common/TituloDeSeccion';
  */
 
 const CAMPOS = [
-    { clave: 'mensaje_abierto', rotulo: 'Con la farmacia en horario', icono: Store,
-      ayuda: 'Lo recibe quien escribe mientras alguna farmacia está abierta.' },
+    { clave: 'mensaje_abierto', rotulo: 'Con sucursales en horario', icono: Store,
+      ayuda: 'Lo recibe quien escribe mientras alguna sucursal está abierta.' },
     { clave: 'mensaje_cerrado', rotulo: 'Fuera de horario', icono: Moon,
-      ayuda: 'Lo recibe quien escribe con todas las farmacias cerradas. Conviene decir cuándo abren: {abre}.' },
+      ayuda: 'Lo recibe quien escribe con todas las sucursales cerradas. Conviene decir cuándo abren: {abre}.' },
 ];
 
 function VistaPrevia({ texto, estado }) {

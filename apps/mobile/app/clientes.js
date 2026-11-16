@@ -73,7 +73,7 @@ function PorRevisar() {
           apoyo="nombre, DUI o NIT ya usado" onPress={() => setFamilia((v) => (v === 'repetido' ? '' : 'repetido'))} />
       </FilaDeKpis>
       <View style={{ marginHorizontal: 16 }}>
-        <Aviso texto="Estas fichas no se completaron solas a propósito. Las fiscales se congelan porque cada dato que se declara a Hacienda necesita una persona que lo confirme. Las de posible repetido no se crearon porque ya hay un cliente con ese nombre, DUI o NIT, y crearlas partiría al cliente en dos." />
+        <Aviso texto="Los fiscales los confirma una persona antes de ir al Ministerio de Hacienda. Los posibles repetidos tienen el nombre, DUI o NIT de otro cliente." />
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {d.rows.map((f) => {
@@ -89,7 +89,7 @@ function PorRevisar() {
                   <Pildora texto={m.label} color={colorDeVariante(m.variant)} />
                 </View>
                 {f.detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{f.detalle}</Text> : null}
-                {!f.customer_id ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>Sin ficha en el portal</Text> : null}
+                {!f.customer_id ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>Sin datos en el portal</Text> : null}
                 {puede ? (
                   <Pressable onPress={() => marcar(f)} hitSlop={6}
                     style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: `${MARCA.verde}2E`, opacity: pressed ? 0.7 : 1 })}>
@@ -101,12 +101,12 @@ function PorRevisar() {
           </Pressable>
         );
       })}
-      {!d.rows.length ? <Vacio titulo={familia ? 'Sin pendientes en este grupo' : 'Sin fichas por revisar'} tono="bien" /> : null}
+      {!d.rows.length ? <Vacio titulo={familia ? 'Sin pendientes en este grupo' : 'Sin clientes por revisar'} tono="bien" /> : null}
     </>
   );
 }
 
-const FICHA = { completa: ['Completa', MARCA.verde], parcial: ['Por completar', MARCA.ambar], vacia: ['Vacía', MARCA.rojo] };
+const FICHA = { completa: ['Completos', MARCA.verde], parcial: ['Por completar', MARCA.ambar], vacia: ['Sin datos', MARCA.rojo] };
 
 function Fila({ c, verMontos }) {
   const [ficha, color] = FICHA[c.ficha] ?? [c.ficha ?? '—', colorSistema.texto2];
@@ -202,8 +202,8 @@ export default function Clientes() {
   const grupos = [
     { id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
       opciones: [{ id: 'todas', label: 'Todas' }, ...CATEGORIAS_CLIENTE.map((c) => ({ id: c, label: c })), { id: '__sin__', label: 'Sin categoría' }] },
-    { id: 'ficha', titulo: 'Ficha', activa: ficha, porDefecto: 'todas', onCambiar: setFicha,
-      opciones: [{ id: 'todas', label: 'Todas' }, { id: 'completa', label: 'Completas' }, { id: 'parcial', label: 'Por completar' }, { id: 'vacia', label: 'Vacías' }] },
+    { id: 'ficha', titulo: 'Datos', activa: ficha, porDefecto: 'todas', onCambiar: setFicha,
+      opciones: [{ id: 'todas', label: 'Todas' }, { id: 'completa', label: 'Completos' }, { id: 'parcial', label: 'Por completar' }, { id: 'vacia', label: 'Sin datos' }] },
     { id: 'revisar', titulo: 'A revisar', activa: revisar, porDefecto: 'todas', onCambiar: setRevisar,
       opciones: [{ id: 'todas', label: 'Sin filtro' }, { id: 'dui', label: 'DUI inválido' }, { id: 'telefono', label: 'Teléfono' }, { id: 'nombre', label: 'Nombre dañado' }, { id: 'duplicado', label: 'Duplicados' }] },
     { id: 'departamento', titulo: 'Departamento', activa: departamento, porDefecto: 'todos', onCambiar: setDepartamento,
@@ -253,12 +253,12 @@ export default function Clientes() {
           <>
             <FilaDeKpis>
               <Kpi icono="Users" rotulo="Clientes" valor={(stats.total ?? 0).toLocaleString('es-SV')} color={MARCA.azul} apoyo="en el catálogo" />
-              <Kpi icono="IdCard" rotulo="Completas" valor={(stats.completas ?? 0).toLocaleString('es-SV')} color={MARCA.verde} apoyo="según su categoría" />
+              <Kpi icono="IdCard" rotulo="Completos" valor={(stats.completas ?? 0).toLocaleString('es-SV')} color={MARCA.verde} apoyo="según su categoría" />
             </FilaDeKpis>
             <FilaDeKpis>
               <Kpi icono="Receipt" rotulo="Por completar" valor={(stats.por_completar ?? 0).toLocaleString('es-SV')} color={MARCA.ambar} pide={soloPorCompletar}
                 apoyo={soloPorCompletar ? 'filtrando · toca para quitar' : 'compran y no tienen datos'} onPress={() => setSoloPorCompletar((v) => !v)} />
-              <Kpi icono="ShieldCheck" rotulo="Contribuyentes" valor={(stats.contribuyentes ?? 0).toLocaleString('es-SV')} color={MARCA.violetaClaro} apoyo="se declaran a Hacienda" />
+              <Kpi icono="ShieldCheck" rotulo="Contribuyentes" valor={(stats.contribuyentes ?? 0).toLocaleString('es-SV')} color={MARCA.violetaClaro} apoyo="se declaran al MH" />
             </FilaDeKpis>
             <FilaDeKpis>
               <Kpi icono="ShieldAlert" rotulo="A revisar" valor={(stats.a_revisar ?? 0).toLocaleString('es-SV')} color={stats.a_revisar ? MARCA.rojo : MARCA.verde}
@@ -267,7 +267,7 @@ export default function Clientes() {
           </>
         ) : null}
         {pestana !== 'lista' ? null : <>
-        {datos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran nombres parecidos." /></View> : null}
+        {datos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta. Se muestran nombres parecidos." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {!cargando || datos.rows.length ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
@@ -278,7 +278,7 @@ export default function Clientes() {
         {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.rows.length && !error ? (
-          <Vacio titulo="Ninguna ficha con esos filtros." icono="Search" />
+          <Vacio titulo="Ningún cliente con esos filtros." icono="Search" />
         ) : null}
         </>}
       </ScrollView>

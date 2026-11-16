@@ -98,7 +98,7 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
             <EmptyState
                 icon={FlaskConical}
                 title="Sin promoción"
-                subtitle="Ya no está en el portal. Puede que la hayan borrado mientras mirabas la lista."
+                subtitle="Ya no está en el portal. Puede que la hayan borrado."
             />
         );
     }
@@ -109,8 +109,8 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
             {datos.congelado && (
                 <Notice variant="info" icon={Lock}>
                     <span className="font-semibold">Mes cerrado.</span>{' '}
-                    Estos números quedaron congelados al terminar {rotuloMes(datos.year_month)} —
-                    son los que se pagaron, no un recálculo de hoy.
+                    Estos números quedaron fijos al terminar {rotuloMes(datos.year_month)}.
+                    Son los que se pagaron.
                 </Notice>
             )}
             {datos.simulacion && (
@@ -167,7 +167,7 @@ export default function MatrizLaboratorio({ promocionId, onCabecera }) {
                 <EmptyState
                     icon={FlaskConical}
                     title="Todavía no hay umbrales"
-                    subtitle="Ninguna sala tiene cuánto vender, así que nadie puede alcanzar un nivel. Se escriben al editar la promoción."
+                    subtitle="Ninguna sucursal tiene cuánto vender. Escríbelo al editar la promoción."
                 />
             ) : (
                 <div className="space-y-2">

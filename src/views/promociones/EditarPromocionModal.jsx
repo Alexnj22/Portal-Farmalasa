@@ -337,10 +337,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                         <span className="font-semibold">
                                             «{avisoSync.sin_productos[0].descripcion}»
                                         </span>{' '}
-                                        quedaría sin ningún producto, así que no se tocó. Quítalo desde
-                                        la pestaña <span className="font-semibold">Descuentos</span>:
-                                        borrarlo desde aquí sería deshacer un descuento entero por haber
-                                        quitado un producto.
+                                        quedaría sin productos y no se tocó. Quítalo desde
+                                        la pestaña <span className="font-semibold">Descuentos</span>.
                                     </>
                                 ) : avisoSync.cambiados?.length ? (
                                     <>
@@ -350,7 +348,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                         )).join(' · ')}.
                                     </>
                                 ) : (
-                                    'El descuento ya tenía ese cambio: no hizo falta tocarlo.'
+                                    'El descuento ya tenía ese cambio.'
                                 )}
                             </Notice>
                         )}
@@ -366,10 +364,10 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                         <Notice variant="info" compact>
                             Si corriges el <span className="font-semibold">lote</span>, la{' '}
                             <span className="font-semibold">presentación</span> o el{' '}
-                            <span className="font-semibold">reparto entre salas</span>, lo vendido se
+                            <span className="font-semibold">reparto entre sucursales</span>, lo vendido se
                             vuelve a contar desde el inicio con el dato corregido. Si cambias{' '}
                             <span className="font-semibold">cuánto se paga por unidad</span>, lo ya
-                            ganado no cambia: el monto nuevo cuenta desde hoy.
+                            ganado no cambia. El monto nuevo cuenta desde hoy.
                         </Notice>
 
                         {/* Plegados cuando son muchos: con 102 productos se
@@ -416,8 +414,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 {promo.descuentos > 0 && (
                                     <Notice variant="info" icon={Percent} compact>
                                         Esta promoción <span className="font-semibold">baja el precio en la
-                                        venta</span>: al agregar se pregunta si los productos nuevos entran
-                                        también al descuento.
+                                        venta</span>. Al agregar productos, te pregunta si también entran
+                                        al descuento.
                                     </Notice>
                                 )}
                             </div>
@@ -496,7 +494,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 onClose={() => setBorrando(false)}
                 onConfirm={borrar}
                 title="Borrar la promoción"
-                message={`«${promo?.nombre}» se borra con todos sus productos. Sólo se puede porque sigue en borrador: una que ya corrió es historia y no se borra.`}
+                message={`«${promo?.nombre}» se borra con todos sus productos.`}
                 confirmText="Borrar"
                 isDestructive
                 isProcessing={borrandoYa}
@@ -508,7 +506,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 onConfirm={() => quitarYa(aQuitar, false)}
                 title="Quitar el producto"
                 message={aQuitar
-                    ? `«${aQuitar.producto}» sale de la promoción. Lleva ${fmtUnidades(aQuitar.vendido_base)} unidades vendidas en ella: dejan de contar.`
+                    ? `«${aQuitar.producto}» sale de la promoción. Lleva ${fmtUnidades(aQuitar.vendido_base)} unidades vendidas. Dejan de contar.`
                     : ''}
                 confirmText="Quitar"
                 isDestructive
@@ -547,9 +545,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                         {pendiente?.tipo === 'quitar' ? (
                             <>
                                 <span className="font-semibold">{pendiente?.renglon?.producto ?? ''}</span>{' '}
-                                sale de la promoción. Si no se quita también del descuento, la venta{' '}
-                                <span className="font-semibold">le sigue bajando el precio</span>{' '}
-                                a un producto que ya no es de ninguna campaña.
+                                sale de la promoción. Si no lo quitas también del descuento, la venta{' '}
+                                <span className="font-semibold">le sigue bajando el precio</span>.
                             </>
                         ) : (
                             <>
@@ -705,14 +702,14 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                     onChange={(v) => setTieneBono(v === 'si')}
                     options={[
                         { value: 'si', label: 'Sí, paga por unidad vendida' },
-                        { value: 'no', label: 'No — sólo medir cuánto se vende' },
+                        { value: 'no', label: 'No, sólo mide cuánto se vende' },
                     ]}
                     clearable={false} ariaLabel="Paga bono" />
             </Campo>
 
             {tieneBono && (
                 <div className="grid gap-3 sm:grid-cols-2">
-                    <Campo rotulo="¿Quién lo cancela?">
+                    <Campo rotulo="¿Quién lo paga?">
                         <LiquidSelect value={paga} onChange={setPaga}
                             options={[
                                 { value: 'empresa',   label: 'La empresa' },
@@ -737,7 +734,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                 <div className="pt-2 border-t border-border-muted">
                     <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
                         <span className="text-label uppercase tracking-widest text-content-3 font-black">
-                            Reparto por sala
+                            Reparto por sucursal
                         </span>
                         <span className="flex-1" />
                         {sumaReparto > 0 && (
@@ -806,7 +803,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                         onChange={(e) => setBb(e.target.value)} inputMode="decimal" />
                 </div>
                 {montosIlegibles && (
-                    <p className="text-caption text-danger-text">Uno de los montos no se entiende como número.</p>
+                    <p className="text-caption text-danger-text">Uno de los montos no es un número.</p>
                 )}
                 <p className="text-caption text-content-3">
                     Los montos nuevos rigen <span className="font-semibold">desde hoy</span>. Lo vendido

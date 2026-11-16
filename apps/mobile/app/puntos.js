@@ -214,7 +214,7 @@ function Avisos() {
                   <View style={{ flex: 1 }} />
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{x.puntos(a)}</Text>
                 </View>
-                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{a.cliente || 'Sin ficha'}</Text>
+                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{a.cliente || 'Sin cliente'}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>
                   {[a.cuando ? fechaHora12(a.cuando) : null, a.sala, a.documento, a.vendedor ? `vendió ${a.vendedor}` : null].filter(Boolean).join(' · ')}
                 </Text>

@@ -73,7 +73,7 @@ function PorEntregar({ busqueda, puedeAdministrar, miSala, nombreSala, salas }) 
     return () => { vivo = false; };
   }, [sala, buscar, entregados, version, puedeAdministrar, miSala]);
 
-  if (!puedeAdministrar && !miSala) return <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu ficha no tiene sucursal: no hay premios que entregar desde aquí." /></View>;
+  if (!puedeAdministrar && !miSala) return <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="No tienes sucursal asignada. Desde aquí no hay premios que entregar." /></View>;
 
   return (
     <>
@@ -130,11 +130,11 @@ function Regalos({ puedeAdministrar, miSala, nombreSala }) {
     dejar('puntos-regalo', { modo, promo, ...extra });
     router.push({ pathname: '/puntos-regalo', params: { modo } });
   };
-  const recibir = (v) => Alert.alert('¿Llegó el envío?', `${v.cantidad} × ${v.nombre}, de ${nombreSala(v.desde)}. Se suma al inventario de regalos de ${nombreSala(v.hacia)}.`, [
+  const recibir = (v) => Alert.alert('¿Llegó el traslado?', `${v.cantidad} × ${v.nombre}, de ${nombreSala(v.desde)}. Se suma a los regalos de ${nombreSala(v.hacia)}.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Recibido', onPress: async () => {
       trabajando('Guardando…');
-      try { await recibirPromocional(v.id); listo('Envío recibido', `${v.cantidad} × ${v.nombre}`); cargar(); }
+      try { await recibirPromocional(v.id); listo('Traslado recibido', `${v.cantidad} × ${v.nombre}`); cargar(); }
       catch (e) { fallo('No se pudo recibir', mensajeAmigable(e)); }
     } },
   ]);

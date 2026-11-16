@@ -208,7 +208,7 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
                             cortada lo DICE en vez de parecer completa. */}
                         <span className="text-caption text-content-3 tabular-nums">
                             {total > filas.length
-                                ? `${filas.length} de ${total} — afina la búsqueda`
+                                ? `${filas.length} de ${total}. Afina la búsqueda.`
                                 : `${total} ${total === 1 ? 'producto' : 'productos'}`}
                         </span>
                     </div>

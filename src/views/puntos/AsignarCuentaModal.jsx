@@ -108,15 +108,15 @@ function Cuerpo({ cuenta, puedeAsignar, onClose, onAsignada }) {
                     )}
 
                     <div className="flex flex-col gap-3">
-                        <span className="text-caption font-bold text-content-2">¿A qué ficha van estos puntos?</span>
+                        <span className="text-caption font-bold text-content-2">¿A qué cliente van estos puntos?</span>
                         <SearchInput value={termino} onChange={setTermino} loading={buscando}
-                            placeholder="Buscar ficha por nombre, DUI o teléfono…"
-                            ariaLabel="Buscar ficha" />
+                            placeholder="Buscar cliente por nombre, DUI o teléfono…"
+                            ariaLabel="Buscar cliente" />
                         {!buscando && fichas.length === 0 && (
                             <p className="text-caption text-content-3">
                                 {termino.trim()
-                                    ? 'Ninguna ficha coincide.'
-                                    : 'No hay fichas con el mismo teléfono ni un nombre parecido. Busca la ficha arriba.'}
+                                    ? 'Ningún cliente coincide.'
+                                    : 'No hay clientes con el mismo teléfono ni un nombre parecido. Búscalo arriba.'}
                             </p>
                         )}
                         <div className="flex flex-col gap-2">
@@ -124,7 +124,7 @@ function Cuerpo({ cuenta, puedeAsignar, onClose, onAsignada }) {
                                 const activa = f.id === elegida;
                                 return (
                                     <div key={f.id} data-surface="card"
-                                        {...clickable(() => setElegida(activa ? null : f.id), { label: `Elegir la ficha de ${f.nombre}` })}
+                                        {...clickable(() => setElegida(activa ? null : f.id), { label: `Elegir a ${f.nombre}` })}
                                         className={`p-3 flex items-center gap-3 min-h-[var(--tap-min)] ${activa ? 'ring-2 ring-brand/45' : ''}`}>
                                         <span className={`shrink-0 ${activa ? 'text-brand-text' : 'text-content-3'}`}>
                                             {activa ? <Check size={18} /> : <UserSearch size={18} />}
@@ -160,7 +160,7 @@ function Cuerpo({ cuenta, puedeAsignar, onClose, onAsignada }) {
                 <div className="flex flex-wrap items-center justify-between gap-3 w-full">
                     <p className="text-caption text-content-3 min-w-0 flex-1">
                         {!ficha
-                            ? 'Elige una ficha.'
+                            ? 'Elige un cliente.'
                             : nota.trim().length < 5
                                 ? 'Escribe por qué se asigna.'
                                 : `Los ${pts(cuenta.saldo)} puntos se suman a los de ${ficha.nombre}.`}

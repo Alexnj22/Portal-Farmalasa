@@ -160,7 +160,7 @@ function Ofertas({ busqueda, puedeEditar, showToast }) {
                     { key: 'oferta', label: 'Oferta' },
                     { key: 'estado', label: 'Estado' },
                     { key: 'fechas', label: 'Fechas', hideBelow: 'sm' },
-                    { key: 'salas', label: 'Salas', hideBelow: 'md' },
+                    { key: 'salas', label: 'Sucursales', hideBelow: 'md' },
                     ...(puedeEditar ? [{ key: 'acciones', label: '', align: 'right' }] : []),
                 ]}
                 movil={{ usarAccionDeFila: true, acciones: 'mantener' }}
@@ -281,13 +281,13 @@ function Preregistros({ busqueda, puedeEditar, showToast }) {
     return (
         <>
             <Notice variant="info">
-                Se unieron desde la app y todavía no tienen ficha. Cuando la sala los registra con el mismo documento y
-                teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron.
+                Se unieron desde la app y todavía no están registrados como clientes. Cuando la sucursal los registra con el
+                mismo documento y teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron.
             </Notice>
             <Notice variant="neutral">
-                Si alguien escribe a soporte porque no puede unirse con su DUI, búscalo aquí por el número: otra persona
-                lo pre-registró con su teléfono. Verifica que el documento sea de quien escribe y elimina el pre-registro;
-                después ya se puede registrar desde la app.
+                Si alguien escribe porque no puede unirse con su DUI, búscalo aquí por el número. Otra persona lo
+                pre-registró con su teléfono. Verifica que el documento sea de quien escribe y elimina el pre-registro.
+                Después ya se puede registrar desde la app.
             </Notice>
             {visibles.length === 0 ? (
                 <EmptyState icon={UserPlus} title="Sin pre-registros pendientes" />
@@ -361,9 +361,9 @@ function ResolverModal({ pre, onClose, onListo, onError }) {
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">Documento {pre.documento} · Teléfono {pre.telefono}{pre.email ? ` · ${pre.email}` : ''}</p>
-                    {fichas === null && <LoadingState label="Buscando la ficha" />}
+                    {fichas === null && <LoadingState label="Buscando al cliente" />}
                     {fichas?.length === 0 && (
-                        <Notice variant="warning">No hay ficha con ese documento. Hay que crearla en caja con estos datos; la app la reconocerá sola.</Notice>
+                        <Notice variant="warning">No hay ningún cliente con ese documento. Regístralo en caja con estos datos y la app lo reconocerá sola.</Notice>
                     )}
                     {fichas?.map((c) => (
                         <div key={c.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-card-hover">
@@ -382,7 +382,7 @@ function ResolverModal({ pre, onClose, onListo, onError }) {
             </LiquidModal.Footer>
             {eliminando && (
                 <ConfirmModal isOpen title="Eliminar pre-registro"
-                    message={`El documento ${pre.documento} queda libre y quien tenga la app con este pre-registro sale de su sesión. La persona dueña del documento ya se puede registrar desde la app.`}
+                    message={`El documento ${pre.documento} queda libre. Quien tenga la app con este pre-registro sale de su sesión. La persona dueña del documento ya se puede registrar desde la app.`}
                     confirmText="Eliminar" isProcessing={ocupado} onClose={() => setEliminando(false)}
                     onConfirm={async () => { await hacer('descartar'); setEliminando(false); }} />
             )}

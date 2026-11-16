@@ -63,7 +63,7 @@ export default function TramiteDeLey({ solicitud, onCambio }) {
         <div className="flex flex-col gap-3">
             {solicitud.prorrogada_at && (
                 <Notice variant="info" compact>
-                    Prorrogada el {dia(solicitud.prorrogada_at)}: el plazo es de cuarenta días hábiles desde el acuse.
+                    Prorrogada el {dia(solicitud.prorrogada_at)}. El plazo es de cuarenta días hábiles desde el acuse.
                     {solicitud.motivo_prorroga ? ` Causa: «${solicitud.motivo_prorroga}».` : ''}
                 </Notice>
             )}

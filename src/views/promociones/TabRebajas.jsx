@@ -101,7 +101,7 @@ export default function TabRebajas({ periodo, salaId = '', vista = 'campana', on
 
     const nota = (
         <p className="text-caption text-content-3">
-            Es de campaña cuando ese día el producto tenía un descuento vigente en la sala y la rebaja es
+            Es de campaña cuando ese día el producto tenía un descuento vigente en la sucursal y la rebaja es
             exactamente la del descuento. Lo demás es un precio cambiado al vender.
         </p>
     );
@@ -189,7 +189,7 @@ export default function TabRebajas({ periodo, salaId = '', vista = 'campana', on
                             <span className="flex items-center gap-2 min-w-0">
                                 <AvatarConEstado emp={{ id: r.vendedor_id, name: r.vendedor }} px={20} marco="" />
                                 <span className="text-body-sm text-content-2 truncate">
-                                    {r.vendedor ? shortEmployeeName({ name: r.vendedor }) : 'Sin ficha'}
+                                    {r.vendedor ? shortEmployeeName({ name: r.vendedor }) : 'Sin vendedor'}
                                 </span>
                             </span>
                         </DataCell>

@@ -109,7 +109,7 @@ export default function TraspasosPendientes({ puedeResolver }) {
                             aMano === f.solicitud_id ? (
                                 <div className="flex flex-col gap-2">
                                     <PortalInput label="Qué se hizo" name={`nota_traspaso_${f.solicitud_id}`} value={nota}
-                                        placeholder="Ej.: le quité 40 a … y le di 40 a … desde su ficha"
+                                        placeholder="Ej.: le quité 40 a … y le di 40 a … desde sus datos"
                                         onChange={(e) => setNota(e.target.value.slice(0, 300))} />
                                     <div className="flex flex-wrap gap-2">
                                         <Button variant="ghost" size="sm" onClick={() => { setAMano(null); setNota(''); }}

@@ -27,13 +27,13 @@ export default function AsignadoA({ conversacion: c, equipo, className = '' }) {
             </span>
             {c.escalada_supervision_at ? (
                 <Badge variant="danger" size="sm" uppercase={false} icon={ShieldAlert}
-                    title="Pasaron 20 minutos sin respuesta: quedó registrado y se avisó a supervisión">
+                    title="Pasaron 20 minutos sin respuesta. Quedó registrado y se avisó a supervisores y administradores.">
                     Sin respuesta · registrado
                 </Badge>
             ) : c.escalada_sala_at ? (
                 <Badge variant="warning" size="sm" uppercase={false} icon={BellRing}
-                    title="Pasaron 15 minutos sin respuesta: se avisó a la sala de la persona asignada">
-                    Avisado a la sala
+                    title="Pasaron 15 minutos sin respuesta. Se avisó a la sucursal de la persona asignada.">
+                    Avisado a la sucursal
                 </Badge>
             ) : null}
         </span>

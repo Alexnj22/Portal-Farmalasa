@@ -147,7 +147,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
                     {soloDescuento ? (
                         <p className="text-body text-content-2">
                             La promoción sigue activa hasta el {fechaCorta(promo?.fin)}, pero su descuento ya
-                            venció: el precio en caja no está bajando. Se lleva el descuento hasta esa misma fecha.
+                            venció. El precio en caja no está bajando. El descuento se mueve hasta esa misma fecha.
                         </p>
                     ) : (
                         <>
@@ -164,8 +164,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
 
                             <p className="text-caption text-content-3">
                                 Todos sus productos vuelven a contar hasta esa fecha, con el mismo lote,
-                                reparto y bono. Los que cerraron porque se vendió el lote no se reabren:
-                                mover la fecha no agrega producto.
+                                reparto y bono. Los que cerraron porque se vendió el lote no se reabren.
                             </p>
                         </>
                     )}
@@ -204,7 +203,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
                                         {' · '}{d.productos?.length ?? 0} producto{d.productos?.length === 1 ? '' : 's'}
                                         {' · '}hoy {fmtVigencia(d.inicio, d.fin)}
                                         {d.ligado === false && (
-                                            <span className="text-content-3"> · se cargó aparte; queda ligado a esta promoción</span>
+                                            <span className="text-content-3"> · se creó aparte. Queda ligado a esta promoción</span>
                                         )}
                                     </li>
                                 ))}
@@ -216,7 +215,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
                         <Notice variant="warning" icon={AlertTriangle}>
                             <p className="mb-1">
                                 {dudosos.length === 1 ? 'Este descuento podría ser' : 'Estos descuentos podrían ser'} de
-                                esta promoción o de otra que arrancó igual, así que no se mueve{dudosos.length === 1 ? '' : 'n'} solo{dudosos.length === 1 ? '' : 's'}:
+                                esta promoción o de otra que empezó igual. No se mueve{dudosos.length === 1 ? '' : 'n'} solo{dudosos.length === 1 ? '' : 's'}:
                             </p>
                             <ul className="space-y-1">
                                 {dudosos.map((d) => (

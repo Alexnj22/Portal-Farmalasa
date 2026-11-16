@@ -85,7 +85,7 @@ function Renglon({ item, idx, presentaciones, niveles, esCCF, onCambiar, onQuita
           <Eleccion rotulo="Presentación" valor={item.presentacionId} opciones={opcionesPres} onCambiar={(v) => onCambiar('presentacionId', v)} />
           <Eleccion rotulo="Precio" valor={item.priceType} opciones={opcionesNivel} onCambiar={(v) => onCambiar('priceType', v)} />
         </>
-      ) : <Aviso tono="cuidado" texto="Este producto no tiene precios activos: pon el precio a mano." />}
+      ) : <Aviso tono="cuidado" texto="Este producto no tiene precios activos. Escribe el precio." />}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Cantidad</Text>
         <Tocable onPress={() => paso(-1)} hitSlop={6} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}>
@@ -133,7 +133,7 @@ function Buscador({ placeholder, buscar, render, onElegir }) {
     <View style={{ gap: 6 }}>
       <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder={placeholder} autoCorrect={false} />
       {res.cargando ? <Indicador /> : null}
-      {res.parecidos && res.filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin coincidencia exacta: se muestran los parecidos.</Text> : null}
+      {res.parecidos && res.filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin coincidencia exacta. Se muestran los parecidos.</Text> : null}
       {res.filas.slice(0, 8).map((f, i) => (
         <Tocable key={f.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(f); setTexto(''); }}
           style={({ pressed }) => ({ paddingVertical: 9, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
@@ -287,7 +287,7 @@ export default function NuevaCotizacion() {
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Fecha</Text>
                 <Fecha valor={fecha} onCambiar={setFecha} />
               </View>
-              <Eleccion rotulo="Documento" valor={docType} opciones={TIPOS_DE_DOCUMENTO_COTIZACION}
+              <Eleccion rotulo="Tipo de factura" valor={docType} opciones={TIPOS_DE_DOCUMENTO_COTIZACION}
                 onCambiar={(v) => { setDocType(v); if (v === 'COF') setRetencion(false); }} />
               <Eleccion rotulo="Forma de pago" valor={paymentType} opciones={FORMAS_DE_PAGO_COTIZACION} onCambiar={setPaymentType} />
               {salas.length > 1 ? (
@@ -306,7 +306,7 @@ export default function NuevaCotizacion() {
                 </View>
               ) : (
                 <>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Consumidor final, o busca la ficha del cliente.</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Consumidor final, o busca al cliente.</Text>
                   <Buscador placeholder="Nombre, DUI o NIT" buscar={searchCustomersByName}
                     onElegir={(c) => { setCliente({ id: c.id, name: c.name, nit: c.nit }); if (c.nit) setDocType('CCF'); }}
                     render={(c) => (
@@ -330,7 +330,7 @@ export default function NuevaCotizacion() {
             </Seccion>
 
             <Seccion titulo="Notas">
-              <Rotulo texto="Opcional — aparecen en el papel" />
+              <Rotulo texto="Opcional. Aparecen en el papel." />
               <Campo value={notas} onChangeText={setNotas} placeholder="Condiciones, vigencia, entrega…" style={{ minHeight: 70 }} />
             </Seccion>
 
@@ -348,7 +348,7 @@ export default function NuevaCotizacion() {
                 <Dato rotulo="Total a pagar" valor={formatMoney(t.total)} fuerte />
               </Seccion>
             ) : null}
-            {sugerirRetencion ? <Aviso tono="cuidado" texto={`La base pasa de ${formatMoney(UMBRAL_RETENCION)}: si el cliente es gran contribuyente, aplica la retención del 1%.`} /> : null}
+            {sugerirRetencion ? <Aviso tono="cuidado" texto={`La base pasa de ${formatMoney(UMBRAL_RETENCION)}. Si el cliente es gran contribuyente, aplica la retención del 1%.`} /> : null}
             {error ? <Aviso tono="freno" texto={error} /> : null}
             <BotonGrande texto={guardando ? 'Guardando…' : edita ? 'Guardar cambios' : 'Crear cotización'} onPress={guardar} deshabilitado={guardando || !items.length} />
           </ScrollView>

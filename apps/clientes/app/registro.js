@@ -100,7 +100,7 @@ export default function Registro() {
 
   return (
     <Formulario>
-      <Grupo titulo="Tus datos" pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'En tu próxima compra en sala te pedimos el DUI para completar tu ficha. Desde esa compra empiezas a acumular.'}>
+      <Grupo titulo="Tus datos" pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'En tu próxima compra en una sucursal te pedimos el DUI para completar tu registro. Desde esa compra empiezas a acumular.'}>
         <FilaCampo placeholder="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words"
           textContentType="name" autoComplete="name" returnKeyType="next" blurOnSubmit={false}
           onSubmitEditing={() => duiRef.current?.focus()} />

@@ -32,7 +32,7 @@ export function AvisoDeUniones({ fusionadaEn, recibidas }) {
             <Notice variant="info" bloque>
                 Esta cuenta se unió a la de <strong>{fusionadaEn.destino_nombre}</strong> el{' '}
                 {fechaTexto(fusionadaEn.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}.
-                Sus puntos y lo que compre con esta ficha se suman en esa cuenta.
+                Sus puntos y lo que compre con esta cuenta se suman en esa otra.
             </Notice>
         );
     }
@@ -46,7 +46,7 @@ export function AvisoDeUniones({ fusionadaEn, recibidas }) {
                     <strong>{u.origen_nombre}</strong>
                 </React.Fragment>
             ))}
-            . Lo que compre con esa ficha también se suma aquí.
+            . Sus compras nuevas también se suman aquí.
         </Notice>
     );
 }
@@ -116,8 +116,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
                     <Merge size={14} /> Unir con otra cuenta
                 </TituloDeSeccion>
                 <p className="text-caption text-content-3 mt-1">
-                    Para la misma persona con dos fichas. Los puntos de la otra cuenta pasan a ésta con sus
-                    fechas de vencimiento, y lo que compre después con la otra ficha también se suma aquí.
+                    Para la misma persona con dos cuentas. Los puntos de la otra cuenta pasan a ésta con sus fechas de vencimiento. Lo que compre después con la otra cuenta también se suma aquí.
                 </p>
             </div>
 
@@ -173,7 +172,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
                         placeholder="Opcional: cómo se confirmó que es la misma persona"
                         onChange={(e) => setNota(e.target.value.slice(0, 200))} />
                     <Notice variant="warning" bloque>
-                        No se deshace desde aquí: después de unir, los canjes toman puntos de las dos historias.
+                        No se puede deshacer desde aquí. Después de unir, los canjes toman puntos de las dos cuentas.
                     </Notice>
                 </div>
             )}

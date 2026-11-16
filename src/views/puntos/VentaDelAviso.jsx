@@ -72,7 +72,7 @@ export default function VentaDelAviso({ aviso, rotulo, variante, puntosTexto }) 
 
             {anuladaSinAviso && (
                 <Notice variant="info" bloque>
-                    Esta venta se anuló después del canje ({aviso.venta_estado}). Si la sala la rehízo,
+                    Esta venta se anuló después del canje ({aviso.venta_estado}). Si la sucursal la rehízo,
                     la venta nueva aparece en los movimientos del cliente.
                 </Notice>
             )}
@@ -80,7 +80,7 @@ export default function VentaDelAviso({ aviso, rotulo, variante, puntosTexto }) 
             <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 min-w-0">
                 <Campo icono={Receipt} rotulo="Documento" valor={aviso.documento || '—'} />
                 <Campo icono={CalendarClock} rotulo="Fecha" valor={cuando || '—'} />
-                <Campo icono={Store} rotulo="Sala" valor={aviso.sala || '—'} />
+                <Campo icono={Store} rotulo="Sucursal" valor={aviso.sala || '—'} />
                 <Campo icono={DollarSign} rotulo="Total cobrado"
                     valor={aviso.venta_total != null ? formatMoney(aviso.venta_total) : '—'} />
             </dl>

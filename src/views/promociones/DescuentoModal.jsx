@@ -241,18 +241,18 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                                 <Checkbox
                                     checked={f.todas}
                                     onChange={(v) => set('todas', v)}
-                                    label="En todas las salas"
-                                    description="Sin esto, el descuento vale sólo en la sala que elijas."
+                                    label="En todas las sucursales"
+                                    description="Si no la marcas, vale sólo en la sucursal que elijas."
                                 />
                                 {!f.todas && (
-                                    <Campo rotulo="Sala" falta>
+                                    <Campo rotulo="Sucursal" falta>
                                         <LiquidSelect
                                             value={f.branchId}
                                             onChange={(v) => set('branchId', v)}
                                             options={salas.map((s) => ({ value: String(s.id), label: s.name }))}
-                                            placeholder="Elige la sala"
+                                            placeholder="Elige la sucursal"
                                             clearable={false}
-                                            ariaLabel="Sala del descuento"
+                                            ariaLabel="Sucursal del descuento"
                                         />
                                     </Campo>
                                 )}

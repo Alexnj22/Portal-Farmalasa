@@ -29,8 +29,8 @@ import { EstadoDeLaFarmacia } from '../../componentes/chat/Encabezado';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const CAMPOS = [
-  { clave: 'mensaje_abierto', rotulo: 'Con la farmacia en horario', ayuda: 'Lo recibe quien escribe mientras alguna farmacia está abierta.' },
-  { clave: 'mensaje_cerrado', rotulo: 'Fuera de horario', ayuda: 'Lo recibe quien escribe con todas las farmacias cerradas. Conviene decir cuándo abren: {abre}.' },
+  { clave: 'mensaje_abierto', rotulo: 'Con sucursales en horario', ayuda: 'Lo recibe quien escribe mientras alguna sucursal está abierta.' },
+  { clave: 'mensaje_cerrado', rotulo: 'Fuera de horario', ayuda: 'Lo recibe quien escribe con todas las sucursales cerradas. Conviene decir cuándo abren: {abre}.' },
 ];
 
 function VistaPrevia({ texto, estado }) {

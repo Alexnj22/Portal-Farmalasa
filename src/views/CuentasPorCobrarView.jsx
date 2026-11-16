@@ -124,8 +124,8 @@ function AvisoDeNombre({ lectura }) {
             {dice
                 ? <>El comprobante está a nombre de <strong>«{dice}»</strong>, que no es la empresa.</>
                 : <>El comprobante no dice a quién se le pagó.</>}
-            {' '}El cobro se va a registrar <strong>esperando aprobación</strong>: el
-            crédito sigue con saldo hasta que confirmen que el pago entró.
+            {' '}El cobro se va a registrar <strong>esperando aprobación</strong>. El
+            crédito sigue con saldo hasta que confirmen el pago.
         </Notice>
     );
 }
@@ -248,7 +248,7 @@ export default function CuentasPorCobrarView() {
         setReservasLeidas(res.ok);
         if (!res.ok) {
             showToast('No se pudo comprobar qué créditos están en aprobación',
-                'Por precaución no se puede cobrar hasta que se lea. Vuelve a entrar en un momento.',
+                'No se puede cobrar hasta leerlos. Vuelve a entrar en un momento.',
                 'warning', 8000);
         }
         setLectura(l);
@@ -359,7 +359,7 @@ export default function CuentasPorCobrarView() {
                 comprobanteUrl = await subirComprobanteDeAbono(pago.archivo, abonando.branch_id);
             } catch (err) {
                 showToast('El comprobante no se guardó',
-                    `${mensajeAmigable(err)} El cobro sigue; el número queda anotado.`, 'warning');
+                    `${mensajeAmigable(err)} El cobro sigue. El número queda anotado.`, 'warning');
             }
         }
 
@@ -519,7 +519,7 @@ export default function CuentasPorCobrarView() {
                 </div>
 
                 {cargando ? (
-                    <LoadingState label="Leyendo la cartera de las salas" />
+                    <LoadingState label="Leyendo la cartera de las sucursales" />
                 ) : !filtrados.length ? (
                     busqueda ? (
                         <EmptyState compact icon={Search} title="Sin resultados"
@@ -594,7 +594,7 @@ export default function CuentasPorCobrarView() {
                                             sin esta marca se leería «pagado». */}
                                         {c.anulado_el ? (
                                             <Badge variant="neutral" size="sm"
-                                                title={`Se anuló el ${fechaCorta(c.anulado_el)}: no es una deuda`}>
+                                                title={`Se anuló el ${fechaCorta(c.anulado_el)}. No es una deuda.`}>
                                                 Anulado
                                             </Badge>
                                         ) : (
@@ -770,7 +770,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
     const abonos = useMemo(() => abonosDelCredito(delOrigen, delPortal), [delOrigen, delPortal]);
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Ficha del crédito">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Datos del crédito">
             <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -787,7 +787,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
                     )}
                 </div>
 
-                {cargando ? <LoadingState label="Abriendo la ficha" /> : (
+                {cargando ? <LoadingState label="Abriendo el crédito" /> : (
                     <>
                         {/* El dinero, como una sola idea y no como tres cajas.
                             Lo que se pregunta al abrir esto es «¿cuánto falta?»,
@@ -827,7 +827,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
                               ['Último abono', c?.ultimo_abono_el
                                   ? fechaCorta(c.ultimo_abono_el)
                                   : 'ninguno desde el portal'],
-                              ['Documento', `${c?.tipo_doc || ''} ${credito.documento || ''}`.trim()]].map(([k, v]) => (
+                              ['Factura', `${c?.tipo_doc || ''} ${credito.documento || ''}`.trim()]].map(([k, v]) => (
                                 <div key={k} className="flex items-baseline justify-between gap-3 min-w-0">
                                     <dt className="text-content-3 shrink-0">{k}</dt>
                                     <dd className="text-content font-medium text-right truncate">{v}</dd>
@@ -1347,7 +1347,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                         de ser la primera vez que aparece la cifra. */}
                     {otros.length > 0 && (
                         <p className="text-micro text-content-3">
-                            Tiene {hermanos.length} créditos en esta sala:
+                            Tiene {hermanos.length} créditos en esta sucursal:
                             {' '}<span className="text-content-2 font-bold tabular-nums">{formatMoney(debeTodo)}</span>
                             {' '}en total.
                         </p>
@@ -1471,9 +1471,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                             sin decir hasta cuánto obliga a probar a ciegas. */}
                         {topeado && (
                             <Notice variant="warning">
-                                {credito.cliente} debe {formatMoney(debeTodo)} en total, así que
-                                el monto se ajustó a esa cifra. Un pago por más de la deuda no se
-                                puede registrar.
+                                {credito.cliente} debe {formatMoney(debeTodo)} en total. El monto se ajustó a esa cifra. No se puede registrar un pago mayor que la deuda.
                             </Notice>
                         )}
 
@@ -1551,7 +1549,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                                     {/* El aro es visual; el lector de
                                                         pantalla necesita la palabra. */}
                                                     {esEste && (
-                                                        <span className="sr-only">— el crédito que abriste</span>
+                                                        <span className="sr-only">(el crédito que abriste)</span>
                                                     )}
                                                 </span>
                                             )}
@@ -1663,7 +1661,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
 
                         {forma === 'Efectivo' && (
                             <Notice variant="info">
-                                El efectivo entra al cajón y cuenta para el corte del día.
+                                El efectivo entra a la caja y cuenta para el corte.
                             </Notice>
                         )}
                     </>
@@ -1755,7 +1753,7 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
             showToast('No se pudo pedir', mensajeAmigable(r.error || r), 'error');
             return;
         }
-        showToast('Solicitud enviada', 'La decide quien tenga el permiso de cuentas por cobrar.', 'success');
+        showToast('Solicitud enviada', 'La decide un supervisor o administrador.', 'success');
         onListo?.();
     }, [credito, abono, que, motivo, montoNuevo, formaNueva, documento, lectura, showToast, onListo]);
 
@@ -1772,15 +1770,14 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
                 {/* Se dice ANTES de elegir: corregir no es un UPDATE allá, y
                     quien pide tiene que saber qué va a pasar de verdad. */}
                 <Notice variant="info">
-                    Corregir un abono se aplica <strong>borrándolo y volviéndolo a hacer</strong> —
-                    es lo único que el sistema de la caja permite—, así que en su historial van a
-                    quedar los dos renglones.
+                    Para corregir un abono, <strong>se borra y se vuelve a hacer</strong>.
+                    En su historial quedan los dos abonos.
                 </Notice>
 
                 <LiquidSelect label="Qué hay que hacer" value={que} onChange={(v) => setQue(v || 'ANULAR')}
                     clearable={false}
                     options={[
-                        { value: 'ANULAR', label: 'Anularlo: no debió cobrarse' },
+                        { value: 'ANULAR', label: 'Anularlo, no debió cobrarse' },
                         { value: 'MONTO',  label: 'Corregir el monto' },
                         { value: 'FORMA',  label: 'Corregir la forma de pago' },
                     ]} />

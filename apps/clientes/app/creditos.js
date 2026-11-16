@@ -263,7 +263,7 @@ export default function Creditos() {
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginHorizontal: 8, marginTop: 4 }}>
         <Icono sf="info.circle" respaldo="i" tam={15} color={colorSistema.texto3} />
         <Texto nivel={3} estilo={{ flex: 1, fontSize: 13 }}>
-          El plazo de cada crédito es de {Number(datos.plazo_dias) || 30} días desde la compra. {enLinea ? 'Puedes pagar aquí el saldo completo con tarjeta, o abonar en la sucursal' : 'Puedes abonar en cualquier sucursal'}; lo que pagas en sala se refleja en unos minutos.
+          El plazo de cada crédito es de {Number(datos.plazo_dias) || 30} días desde la compra. {enLinea ? 'Puedes pagar aquí el saldo completo con tarjeta, o abonar en la sucursal' : 'Puedes abonar en cualquier sucursal'}; lo que pagas en la sucursal se refleja en unos minutos.
         </Texto>
       </View>
     </Pantalla>

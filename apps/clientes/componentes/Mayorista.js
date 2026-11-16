@@ -36,7 +36,7 @@ export const PRECIOS = { mayoreo: 'Mayoreo', mayoreo_plus: 'Mayoreo Plus' };
 export const QUE_ES_MAYORISTA = {
   titulo: 'Ser Cliente Mayorista',
   texto: 'Es para quien compra para surtir: tiendas, clínicas, botiquines, farmacias pequeñas, empresas e instituciones.\n\n'
-    + 'Requisitos: haber comprado en promedio $100 al mes en los últimos 3 meses (o $500 en una sola factura) y tener tu ficha completa (documento y teléfono).\n\n'
+    + 'Requisitos: haber comprado en promedio $100 al mes en los últimos 3 meses (o $500 en una sola factura) y tener tus datos completos (documento de identidad y teléfono).\n\n'
     + 'Te respondemos en 5 días hábiles.',
 };
 
@@ -187,7 +187,7 @@ export function BeneficiosEquipo({ mayoreo = null }) {
     <View style={{ gap: 8, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador }}>
       <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Team Farmacia Salud</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {['Mayoreo Plus', 'Crédito 30 días', 'Todas las salas'].map((b) => (
+        {['Mayoreo Plus', 'Crédito 30 días', 'Todas las sucursales'].map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />

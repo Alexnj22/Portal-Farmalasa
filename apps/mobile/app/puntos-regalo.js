@@ -59,7 +59,7 @@ export default function PuntosRegalo() {
         listo(n > 0 ? 'Entrada anotada' : 'Ajuste anotado', `Quedan ${queda}`);
       } else {
         await enviarPromocional(promo.id, Number(f.sala), Number(f.hacia), n);
-        listo('Envío anotado', 'La sucursal lo confirma al recibirlo.');
+        listo('Traslado anotado', 'La sucursal lo confirma al recibirlo.');
       }
       clearDraft(llave);
       volver('/puntos');
@@ -105,7 +105,7 @@ export default function PuntosRegalo() {
                 </Seccion>
               ) : null}
               {modo === 'enviar' ? (
-                <Seccion titulo="Envío" pie={promo?.existencias?.[f.sala] != null ? `Hay ${promo.existencias[f.sala]} en el origen.` : 'En el origen no hay existencias anotadas.'}>
+                <Seccion titulo="Traslado" pie={promo?.existencias?.[f.sala] != null ? `Hay ${promo.existencias[f.sala]} en el origen.` : 'En el origen no hay existencias anotadas.'}>
                   <Rotulo texto="Desde" />
                   <SelectorDeSala salas={salas} activa={f.sala} onCambiar={(v) => poner('sala', v)} />
                   <Rotulo texto="Hacia" />

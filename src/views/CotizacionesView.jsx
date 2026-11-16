@@ -377,7 +377,7 @@ export default function CotizacionesView() {
             descartar();   // la cotización existe: el borrador ya no sirve
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
-        } catch (e) { setSaveError(mensajeAmigable(e, 'Error al guardar.')); }
+        } catch (e) { setSaveError(mensajeAmigable(e, 'No se pudo guardar.')); }
         setSaving(false);
     };
 
@@ -394,7 +394,7 @@ export default function CotizacionesView() {
             if (freshErr) console.error('handleUpdate: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
-        } catch (e) { setSaveError(mensajeAmigable(e, 'Error al guardar.')); }
+        } catch (e) { setSaveError(mensajeAmigable(e, 'No se pudo guardar.')); }
         setSaving(false);
     };
 
@@ -482,7 +482,7 @@ export default function CotizacionesView() {
                                 options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>
                         <div>
-                            <label className={rotuloCampo('text-content-2', { denso: true })}>Tipo Documento</label>
+                            <label className={rotuloCampo('text-content-2', { denso: true })}>Tipo de factura</label>
                             <LiquidSelect value={docType}
                                 onChange={v => { setDocType(v); if (v === 'COF') setAppliesRetention(false); }}
                                 options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
@@ -517,7 +517,7 @@ export default function CotizacionesView() {
                                 </div>
                                 <div>
                                     <p className="text-label font-black text-content-2 leading-none">Retención 1%</p>
-                                    <p className="text-micro font-bold text-content-3 mt-0.5">Solo CCF — agente de retención</p>
+                                    <p className="text-micro font-bold text-content-3 mt-0.5">Sólo crédito fiscal, agente de retención</p>
                                 </div>
                                 {appliesRetention && <Badge variant="warning" size="sm" uppercase={false} className="ml-auto">ACTIVA</Badge>}
                             </div>
@@ -525,7 +525,7 @@ export default function CotizacionesView() {
                                 <div {...clickable(() => setAppliesRetention(true))}
                                     className="flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/30 rounded-xl cursor-pointer hover:bg-warning/10 transition-all">
                                     <AlertTriangle size={12} className="text-warning shrink-0" />
-                                    <span className="text-caption font-bold text-warning-text">Base &gt; $100 en CCF. ¿Aplicar retención?</span>
+                                    <span className="text-caption font-bold text-warning-text">Más de $100 en crédito fiscal. ¿Aplicar retención?</span>
                                 </div>
                             )}
                         </div>
@@ -551,7 +551,7 @@ export default function CotizacionesView() {
                                 {items.length > 0 && <Badge variant="success" uppercase={false}>{items.length}</Badge>}
                             </TituloDeSeccion>
                             {isCCFMode && (
-                                <Badge variant="chart-1" size="sm" icon={Info} uppercase={false}>Desglose CCF por línea</Badge>
+                                <Badge variant="chart-1" size="sm" icon={Info} uppercase={false}>Desglose de crédito fiscal por producto</Badge>
                             )}
                         </div>
                         <div className="w-full sm:w-[320px]">
@@ -647,7 +647,7 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         {[
                             { icon: User,       label: 'Cliente',       val: cot.customer_name, sub: cot.customer_nit ? `NIT: ${cot.customer_nit}` : '' },
-                            { icon: FileText,   label: 'Documento',     val: isCCF ? 'CCF' : 'COF' },
+                            { icon: FileText,   label: 'Tipo de factura', val: isCCF ? 'Crédito fiscal' : 'Factura' },
                             { icon: CreditCard, label: 'Forma de pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
                             { icon: Building2,  label: 'Sucursal',      val: branchName || `Suc. ${cot.branch_id}`, sub: fmtD(cot.fecha) },
                         ].map(c => (
@@ -763,7 +763,7 @@ export default function CotizacionesView() {
                 onClose={() => !anulando && setConfirmAnular(null)}
                 onConfirm={handleAnular}
                 title="Anular cotización"
-                message="Esta acción marcará la cotización como ANULADA y no se podrá reactivar. ¿Deseas continuar?"
+                message="La cotización quedará anulada y no se podrá reactivar. ¿Deseas continuar?"
                 confirmText="Sí, anular"
                 cancelText="Cancelar"
                 isDestructive
@@ -781,7 +781,7 @@ export default function CotizacionesView() {
             onClose={() => !anulando && setConfirmAnular(null)}
             onConfirm={handleAnular}
             title="Anular cotización"
-            message="Esta acción marcará la cotización como ANULADA y no se podrá reactivar. ¿Deseas continuar?"
+            message="La cotización quedará anulada y no se podrá reactivar. ¿Deseas continuar?"
             confirmText="Sí, anular"
             cancelText="Cancelar"
             isDestructive

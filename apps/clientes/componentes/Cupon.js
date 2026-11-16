@@ -203,7 +203,7 @@ export default function Cupon({ cupon, nivel: nivelDado = 'platino', fondo, acti
                 backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <Icono sf="clock.fill" respaldo="⏰" tam={12} color="#FFFFFF" />
                 <Text style={{ flexShrink: 1, color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
-                  {premio ? `Vence el ${fechaLarga(cupon.vence)} — retíralo este mes` : `Sólo dura este mes: vence el ${fechaLarga(cupon.vence)}`}
+                  {premio ? `Vence el ${fechaLarga(cupon.vence)}. Retíralo este mes` : `Sólo dura este mes: vence el ${fechaLarga(cupon.vence)}`}
                 </Text>
               </View>
             ) : null}

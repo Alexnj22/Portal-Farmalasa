@@ -91,7 +91,7 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
         try {
             const exp = await fetchExpedienteDelCliente(cliente.customer_id, { como: modo, nombre: cliente.nombre });
             if (mio !== pedidoRef.current) return;
-            if (!exp) setAviso({ variante: 'warning', texto: 'La ficha de ese cliente ya no existe.' });
+            if (!exp) setAviso({ variante: 'warning', texto: 'Ese cliente ya no existe.' });
             setExpediente(exp ?? null);
         } catch (e) {
             if (mio !== pedidoRef.current) return;

@@ -50,7 +50,7 @@ export default function Compras() {
   if (!datos) return <Cargando />;
   if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={refrescar}>{datos.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio></Pantalla>;
   if (datos.pendiente) {
-    return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras" icono="bag.fill" respaldo="◍">Cuando completes tu registro en sala verás aquí cada compra.</Vacio></Pantalla>;
+    return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras" icono="bag.fill" respaldo="◍">Cuando completes tu registro en una sucursal verás aquí cada compra.</Vacio></Pantalla>;
   }
   if (!datos.compras.length) {
     return <Pantalla conPestanas={false}><Vacio titulo="Todavía no hay compras" icono="bag.fill" respaldo="◍">Tus compras con tu DUI aparecen aquí.</Vacio></Pantalla>;

@@ -99,7 +99,7 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
     }, [sala, buscar, entregados, version, puedeAdministrar, miSala]);
 
     if (!puedeAdministrar && !miSala) {
-        return <Notice variant="warning">Tu ficha no tiene sucursal: no hay premios que entregar desde aquí.</Notice>;
+        return <Notice variant="warning">No tienes sucursal asignada. Desde aquí no hay premios que entregar.</Notice>;
     }
 
     return (
@@ -195,7 +195,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
         setRecibiendo(v.id);
         try {
             await recibirPromocional(v.id);
-            showToast('Envío recibido', `${v.cantidad} × ${v.nombre}`, 'success');
+            showToast('Traslado recibido', `${v.cantidad} × ${v.nombre}`, 'success');
             recargar();
         } catch (e) {
             showToast('No se pudo recibir', mensajeAmigable(e), 'error');
@@ -323,7 +323,7 @@ function DialogoRegalo({ modo, promo, opcionesSala, onClose, onHecho, hacia = ''
                 showToast(n > 0 ? 'Entrada anotada' : 'Ajuste anotado', `Quedan ${queda}`, 'success');
             } else {
                 await enviarPromocional(promo.id, Number(f.sala), Number(f.hacia), n);
-                showToast('Envío anotado', 'La sucursal lo confirma al recibirlo.', 'success');
+                showToast('Traslado anotado', 'La sucursal lo confirma al recibirlo.', 'success');
             }
             clearDraft(llave);
             onHecho();

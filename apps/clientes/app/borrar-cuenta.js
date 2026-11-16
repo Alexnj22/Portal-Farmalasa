@@ -30,7 +30,7 @@ const SE_BORRA = [
   'Las reservas que no pagaste se cancelan. Las que pagaste siguen en pie.',
 ];
 const SE_CONSERVA = [
-  'Tu ficha de cliente con tus compras y facturas.',
+  'Tus datos de cliente, con tus compras y facturas.',
   'La receta de un medicamento que ya retiraste.',
 ];
 

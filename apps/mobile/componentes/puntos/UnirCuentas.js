@@ -41,12 +41,12 @@ export function useUnionesDeCuenta(customerId, version) {
 
 export function AvisoDeUniones({ fusionadaEn, recibidas }) {
   if (fusionadaEn) {
-    return <Aviso texto={`Esta cuenta se unió a la de ${fusionadaEn.destino_nombre} el ${fechaTexto(fusionadaEn.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}. Sus puntos y lo que compre con esta ficha se suman en esa cuenta.`} />;
+    return <Aviso texto={`Esta cuenta se unió a la de ${fusionadaEn.destino_nombre} el ${fechaTexto(fusionadaEn.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}. Sus puntos y lo que compre con esta cuenta se suman en esa otra.`} />;
   }
   if (!recibidas?.length) return null;
   const nombres = recibidas.map((u) => u.origen_nombre);
   const lista = nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}` : nombres[0];
-  return <Aviso texto={`Esta cuenta reúne también los puntos de ${lista}. Lo que compre con esa ficha también se suma aquí.`} />;
+  return <Aviso texto={`Esta cuenta reúne también los puntos de ${lista}. Sus compras nuevas también se suman aquí.`} />;
 }
 
 export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
@@ -103,7 +103,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
   ]);
 
   return (
-    <Seccion titulo="Unir con otra cuenta" pie="Para la misma persona con dos fichas. Los puntos de la otra cuenta pasan a ésta con sus fechas de vencimiento, y lo que compre después con la otra ficha también se suma aquí.">
+    <Seccion titulo="Unir con otra cuenta" pie="Para la misma persona con dos cuentas. Los puntos de la otra cuenta pasan a ésta con sus fechas de vencimiento. Lo que compre después con la otra cuenta también se suma aquí.">
       {!otra ? (
         <>
           <Campo multiline={false} autoFocus value={busqueda} onChangeText={setBusqueda} placeholder="Nombre, DUI o teléfono de la otra cuenta" accessibilityLabel="Buscar la otra cuenta" />
@@ -134,7 +134,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
           </View>
           <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{`Quedará con ${puntosTexto(vista.saldo_final)} puntos.`}</Text>
           <Campo value={nota} onChangeText={(v) => setNota(v.slice(0, 200))} placeholder="Opcional: cómo se confirmó que es la misma persona" accessibilityLabel="Detalle" />
-          <Aviso tono="cuidado" texto="No se deshace desde aquí: después de unir, los canjes toman puntos de las dos historias." />
+          <Aviso tono="cuidado" texto="No se puede deshacer desde aquí. Después de unir, los canjes toman puntos de las dos cuentas." />
         </>
       )}
       <View style={{ flexDirection: 'row', gap: 10 }}>

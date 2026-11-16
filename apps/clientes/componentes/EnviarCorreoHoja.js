@@ -60,7 +60,7 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
   const elegir = (c) => { Haptics.selectionAsync().catch(() => {}); setElegido(c); setNuevo(''); setTocadoNuevo(false); setError(null); };
 
   const borrar = (c) => {
-    if (c.de_ficha) { Alert.alert('Es el correo de tu ficha', 'Para cambiarlo, pídelo en tu sucursal.'); return; }
+    if (c.de_ficha) { Alert.alert('Es tu correo registrado', 'Para cambiarlo, pídelo en tu sucursal.'); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     Alert.alert('¿Quitar este correo?', `${c.correo} ya no aparecerá en la lista.`, [
       { text: 'Cancelar', style: 'cancel' },
@@ -146,7 +146,7 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
                             <Icono sf={activo ? 'checkmark.circle.fill' : 'circle'} respaldo={activo ? '●' : '○'} tam={22} color={activo ? t.color.magenta : colorSistema.texto3} />
                             <View style={{ flex: 1, gap: 2 }}>
                               <Text style={{ fontSize: 15, fontWeight: activo ? '700' : '500', color: colorSistema.texto }}>{c.correo}</Text>
-                              {c.de_ficha ? <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>El de tu ficha</Text> : null}
+                              {c.de_ficha ? <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>El registrado</Text> : null}
                             </View>
                           </Presionable>
                           {!c.de_ficha ? (

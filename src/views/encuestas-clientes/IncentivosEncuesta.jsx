@@ -87,7 +87,7 @@ export default function IncentivosEncuesta({ encuesta, puedeEditar }) {
                                 <span className="text-body-sm text-content-2">{i.tipo === 'puntos' ? `${i.puntos} pts` : (i.descripcion || 'Muestra')}</span>
                                 <Badge size="sm" variant={est.variant}>{est.label}</Badge>
                                 {puedeEditar && i.tipo === 'puntos' && ['pendiente', 'no_aplica'].includes(i.estado) && (
-                                    <Button variant="secondary" size="sm" icon={UserCheck} onClick={() => setAsignando(i)}>Asignar ficha</Button>
+                                    <Button variant="secondary" size="sm" icon={UserCheck} onClick={() => setAsignando(i)}>Asignar cliente</Button>
                                 )}
                             </li>
                         );
@@ -98,8 +98,8 @@ export default function IncentivosEncuesta({ encuesta, puedeEditar }) {
                 <AsignarFicha incentivo={asignando} onClose={() => setAsignando(null)}
                     onListo={(r) => {
                         setAsignando(null);
-                        showToast(r?.estado === 'acreditado' ? 'Puntos acreditados' : 'Ficha asignada',
-                            r?.estado === 'no_aplica' ? 'Esa ficha no acumula puntos.' : null, r?.estado === 'acreditado' ? 'success' : 'warning');
+                        showToast(r?.estado === 'acreditado' ? 'Puntos acreditados' : 'Cliente asignado',
+                            r?.estado === 'no_aplica' ? 'Ese cliente no acumula puntos.' : null, r?.estado === 'acreditado' ? 'success' : 'warning');
                         cargar();
                     }} />
             )}
@@ -141,13 +141,13 @@ function AsignarFicha({ incentivo, onClose, onListo }) {
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Asignar ficha">
-            <LiquidModal.Header titulo="Asignar ficha" onClose={onClose} />
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Asignar cliente">
+            <LiquidModal.Header titulo="Asignar cliente" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
                         {incentivo.puntos} puntos para {incentivo.contacto_nombre || 'quien respondió'}
-                        {incentivo.telefono ? ` (${incentivo.telefono.replace(/(\d{4})(\d{4})/, '$1-$2')})` : ''}. Se acreditan al elegir la ficha.
+                        {incentivo.telefono ? ` (${incentivo.telefono.replace(/(\d{4})(\d{4})/, '$1-$2')})` : ''}. Se acreditan al elegir el cliente.
                     </p>
                     <SearchInput value={texto} onChange={setTexto} placeholder="Nombre, teléfono, DUI…" icon={Search} />
                     {error && <Notice variant="danger" icon={AlertTriangle} compact>{mensajeAmigable(error, 'No se pudo asignar.')}</Notice>}
@@ -166,7 +166,7 @@ function AsignarFicha({ incentivo, onClose, onListo }) {
                             </li>
                         ))}
                         {!buscando && texto.trim().length >= 3 && !resultados.length && (
-                            <li className="text-body-sm text-content-3">Sin fichas con esa búsqueda.</li>
+                            <li className="text-body-sm text-content-3">Sin clientes con esa búsqueda.</li>
                         )}
                     </ul>
                 </div>

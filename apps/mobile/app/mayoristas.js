@@ -55,7 +55,7 @@ const FilaCliente = memo(function FilaCliente({ f, tab, columnas }) {
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>
                   {[f.documento, f.estado === 'solicitado' ? ORIGENES[f.origen] : null,
                     tab === 'candidatos' && f.precio_en_nombre ? `${PRECIOS[f.precio_en_nombre]} en el nombre` : null,
-                    f.ficha_completa ? null : 'Ficha incompleta'].filter(Boolean).join(' · ') || '—'}
+                    f.ficha_completa ? null : 'Datos incompletos'].filter(Boolean).join(' · ') || '—'}
                 </Text>
               </View>
               {tab === 'candidatos' ? (
@@ -146,9 +146,9 @@ export default function Mayoristas() {
       { id: 'requisito', titulo: 'Requisito', activa: soloCumplen ? 'cumplen' : 'todos', porDefecto: 'todos',
         onCambiar: (v) => setSoloCumplen(v === 'cumplen'),
         opciones: [{ id: 'todos', label: 'Todos los que compraron a mayoreo' }, { id: 'cumplen', label: 'Cumplen el requisito' }] },
-      { id: 'ficha', titulo: 'Ficha', activa: soloConNombre ? 'nombre' : 'todas', porDefecto: 'todas',
+      { id: 'ficha', titulo: 'Nombre', activa: soloConNombre ? 'nombre' : 'todas', porDefecto: 'todas',
         onCambiar: (v) => setSoloConNombre(v === 'nombre'),
-        opciones: [{ id: 'todas', label: 'Todas las fichas' }, { id: 'nombre', label: 'Con «(4)» o «(5)» en el nombre' }] },
+        opciones: [{ id: 'todas', label: 'Todos los clientes' }, { id: 'nombre', label: 'Con «(4)» o «(5)» en el nombre' }] },
       { id: 'descartados', titulo: 'No aprobados', activa: verDescartados ? 'ver' : 'ocultar', porDefecto: 'ocultar',
         onCambiar: (v) => setVerDescartados(v === 'ver'),
         opciones: [{ id: 'ocultar', label: 'Ocultar los no aprobados' }, { id: 'ver', label: 'Mostrar también los no aprobados' }] },
@@ -186,7 +186,7 @@ export default function Mayoristas() {
             <FiltrosActivos grupos={grupos} />
             {tab === 'candidatos' ? (
               <View style={{ marginHorizontal: 16 }}>
-                <Aviso texto="Les vendieron a precio de mayoreo en los últimos 6 meses, o tienen «(4)»/«(5)» en el nombre de la ficha. Cada uno se aprueba o no a mano: nadie entra solo. La cláusula 2.3 pide promedio de $100 al mes en los últimos 3 meses o una factura de $500, con la ficha completa." />
+                <Aviso texto="Les vendieron a precio de mayoreo en los últimos 6 meses, o tienen «(4)»/«(5)» en el nombre. Cada uno se aprueba a mano. La cláusula 2.3 pide promedio de $100 al mes en los últimos 3 meses o una factura de $500, con los datos completos." />
               </View>
             ) : null}
             {!cargando && tab !== 'historial' ? (

@@ -184,8 +184,8 @@ export default function CuentasPorCobrar() {
   const salas = useMemo(() => (sucursales || []).filter((b) => b.name !== 'Bodega' && b.name !== 'Administracion')
     .sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: (v) => { setSala(v); setVendedor(''); },
-      opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: (v) => { setSala(v); setVendedor(''); },
+      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     { id: 'vendedor', titulo: 'Vendedor', activa: vendedor, porDefecto: '', onCambiar: setVendedor,
       opciones: [{ id: '', label: 'Todos los vendedores' }, ...opcionesVendedor] },
     { id: 'orden', titulo: 'Orden', activa: orden, porDefecto: 'ANTIGUOS', onCambiar: setOrden,

@@ -153,7 +153,7 @@ export default function NuevaPromocionProducto() {
   };
   const elegirSalaDescuento = (marcadas) => {
     const opciones = [...marcadas.map((s) => s.name), 'Cancelar'];
-    ActionSheetIOS.showActionSheetWithOptions({ title: 'Sala del descuento', options: opciones, cancelButtonIndex: opciones.length - 1 },
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Sucursal del descuento', options: opciones, cancelButtonIndex: opciones.length - 1 },
       (i) => { if (i < marcadas.length) setDesc((d) => ({ ...d, branchId: String(marcadas[i].id) })); });
   };
 
@@ -226,7 +226,7 @@ export default function NuevaPromocionProducto() {
           {promoCreada ? <Aviso tono="cuidado" texto="La promoción ya quedó creada. Lo único pendiente es el descuento." /> : null}
           <Seccion titulo="La promoción">
             <Rotulo texto="Nombre" />
-            <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="El nombre que va a ver la sala" editable={!promoCreada} />
+            <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="El nombre que va a ver la sucursal" editable={!promoCreada} />
             <Rotulo texto="Nota (opcional)" />
             <Campo value={nota} onChangeText={setNota} placeholder="Lo acordado con el laboratorio" editable={!promoCreada} />
           </Seccion>
@@ -264,7 +264,7 @@ export default function NuevaPromocionProducto() {
             ) : null}
           </Seccion>
 
-          <Seccion titulo="Salas" pie={marcadas.length ? 'Si repartes el lote, la suma tiene que dar el lote exacto.' : 'Sin ninguna marcada, aplica en todas.'}>
+          <Seccion titulo="Sucursales" pie={marcadas.length ? 'Si repartes el lote, la suma tiene que dar el lote exacto.' : 'Si no marcas ninguna, aplica en todas.'}>
             {salas.map((s) => (
               <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40 }}>
                 <Interruptor value={!!general.salas?.[s.id]} onValueChange={(v) => cambiarSala(s.id, v)} />
@@ -304,17 +304,17 @@ export default function NuevaPromocionProducto() {
             <FilaConSwitch titulo="También baja el precio" detalle="La mayoría de las promociones sólo paga bono: el precio no cambia." valor={desc.activo} onCambiar={(v) => setDesc((d) => ({ ...d, activo: v }))} />
             {desc.activo ? (
               <>
-                <Opciones valor={desc.tipo} onCambiar={(v) => setDesc((d) => ({ ...d, tipo: v }))} opciones={[{ id: '%', label: 'Porcentaje del renglón' }, { id: '$', label: 'Monto por unidad' }]} />
+                <Opciones valor={desc.tipo} onCambiar={(v) => setDesc((d) => ({ ...d, tipo: v }))} opciones={[{ id: '%', label: 'Porcentaje del precio' }, { id: '$', label: 'Monto por unidad' }]} />
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{desc.tipo === '%' ? 'Porcentaje' : 'Monto ($)'}</Text>
                   <Numero valor={desc.monto} onCambiar={(v) => setDesc((d) => ({ ...d, monto: v }))} />
                 </View>
                 {marcadas.length > 1 ? (
                   <>
-                    <FilaConSwitch titulo="En todas las salas" detalle="La caja acepta un descuento en una sala o en todas, nunca en varias." valor={desc.todas} onCambiar={(v) => setDesc((d) => ({ ...d, todas: v }))} />
+                    <FilaConSwitch titulo="En todas las sucursales" detalle="Un descuento vale en una sucursal o en todas, nunca en varias." valor={desc.todas} onCambiar={(v) => setDesc((d) => ({ ...d, todas: v }))} />
                     {!desc.todas ? (
                       <Tocable onPress={() => elegirSalaDescuento(marcadas)}>
-                        <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{salas.find((s) => String(s.id) === String(desc.branchId))?.name || 'Elegir la sala…'}</Text>
+                        <Text style={{ color: colorSistema.acento, fontSize: 16 }}>{salas.find((s) => String(s.id) === String(desc.branchId))?.name || 'Elegir la sucursal…'}</Text>
                       </Tocable>
                     ) : null}
                   </>

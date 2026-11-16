@@ -142,7 +142,7 @@ async function tokenWeb(pedirPermiso = true) {
   const e = estadoAvisosWeb();
   if (!e?.soportado) {
     return { error: e?.iphone
-      ? 'En el iPhone, los avisos llegan cuando Puntos Salud está en tu pantalla de inicio: toca Compartir, luego «Agregar a inicio», y actívalos desde ahí.'
+      ? 'En el iPhone, primero agrega Puntos Salud a tu pantalla de inicio. Toca Compartir y luego «Agregar a inicio». Después activa los avisos desde ahí.'
       : 'Este navegador no puede recibir avisos.' };
   }
   // Lo primero, dentro del toque: el navegador sólo pregunta durante un gesto.

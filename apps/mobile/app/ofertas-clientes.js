@@ -199,7 +199,7 @@ export default function OfertasClientes() {
                         </View>
                         {detalle.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{detalle.join(' · ')}</Text> : null}
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                          {[rango(o), o.branch_ids?.length ? o.branch_ids.map((id) => nombreSala.get(id)).filter(Boolean).join(', ') : 'Todas las salas'].join(' · ')}
+                          {[rango(o), o.branch_ids?.length ? o.branch_ids.map((id) => nombreSala.get(id)).filter(Boolean).join(', ') : 'Todas las sucursales'].join(' · ')}
                         </Text>
                         {o.descuento_erp_id ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>Sigue a un descuento de la caja</Text> : null}
                       </View>
@@ -215,10 +215,10 @@ export default function OfertasClientes() {
           pre == null ? <Cargando /> : (
             <>
               <View style={{ marginHorizontal: 16 }}>
-                <Aviso texto="Se unieron desde la app y todavía no tienen ficha. Cuando la sala los registra con el mismo documento y teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron." />
+                <Aviso texto="Se unieron desde la app y todavía no están registrados como clientes. Cuando la sucursal los registra con el mismo documento y teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron." />
               </View>
               <View style={{ marginHorizontal: 16 }}>
-                <Aviso texto="Si alguien escribe a soporte porque no puede unirse con su DUI, búscalo aquí por el número: otra persona lo pre-registró con su teléfono. Verifica que el documento sea de quien escribe y elimina el pre-registro; después ya se puede registrar desde la app." />
+                <Aviso texto="Si alguien escribe porque no puede unirse con su DUI, búscalo aquí por el número. Otra persona lo pre-registró con su teléfono. Verifica que el documento sea de quien escribe y elimina el pre-registro. Después ya se puede registrar desde la app." />
               </View>
               {preVisibles.map((p) => (
                 <Pressable key={p.id} disabled={!editaClientes}

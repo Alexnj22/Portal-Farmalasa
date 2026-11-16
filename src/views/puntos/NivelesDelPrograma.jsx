@@ -340,11 +340,7 @@ function EditorDePremios({ premios, alCambiar, puedeEditar }) {
                 </Button>
             )}
             <p className="text-caption text-content-3">
-                El peso es la probabilidad relativa: la columna de la derecha dice cuánto sale cada uno. Un producto
-                se entrega en la sala y se descarga del inventario; un promocional sale del inventario de regalos de
-                esa sala. Un premio sin existencia, sin cupo o que ya no cabe en el tope del mes no se sortea: sale
-                otro de la lista. «En cada sucursal» cuenta en la sala donde se retira: la que ya entregó su cupo del mes no lo entrega, y se retira en otra. No hay premios
-                en descuento: la caja no cobra porcentajes.
+                El peso es la probabilidad relativa. La columna de la derecha dice cuánto sale cada uno. Un producto se entrega en la sucursal y se descuenta de su existencia. Un promocional sale de los regalos de esa sucursal. Un premio sin existencia, sin cupo o fuera del tope del mes no se sortea, y sale otro de la lista. «En cada sucursal» cuenta en la sucursal donde se retira. Si esa sucursal ya entregó su cupo del mes, se retira en otra. No hay premios en descuento.
             </p>
         </div>
     );

@@ -177,7 +177,7 @@ export default function SolicitudesDatosView() {
                 {(vencidas > 0 || apremian > 0) && (
                     <Notice variant={vencidas > 0 ? 'danger' : 'warning'} icon={AlertTriangle} bloque>
                         {vencidas > 0
-                            ? `${vencidas} solicitud${vencidas === 1 ? '' : 'es'} pasó del plazo de veinte días hábiles. No atender en tiempo y forma es una infracción grave del Art. 56.`
+                            ? `${vencidas === 1 ? 'Una solicitud pasó' : `${vencidas} solicitudes pasaron`} del plazo de veinte días hábiles. Atender tarde es una infracción grave del Art. 56.`
                             : `${apremian} solicitud${apremian === 1 ? '' : 'es'} vence dentro de tres días hábiles o menos.`}
                     </Notice>
                 )}

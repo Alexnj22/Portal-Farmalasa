@@ -181,7 +181,7 @@ export default function AplicarEncuestaView() {
 
     const opciones = [
         ...salas.map((s) => ({ value: String(s.id), label: s.nombre })),
-        ...(hayCampo ? [{ value: OPCION_CAMPO, label: 'Campo (fuera de las salas)' }] : []),
+        ...(hayCampo ? [{ value: OPCION_CAMPO, label: 'Campo (fuera de las sucursales)' }] : []),
     ];
 
     let cuerpo;

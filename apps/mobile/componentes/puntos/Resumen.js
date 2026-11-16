@@ -99,7 +99,7 @@ export default function Resumen({ onIrA }) {
     <>
       <View style={{ marginHorizontal: 16 }}>
         {!encendido ? <Aviso tono="freno" texto="La acumulación de puntos está apagada." />
-          : quieto ? <Aviso tono="freno" texto={`No se acumulan puntos desde hace ${quieto} minutos, con las salas abiertas.`} />
+          : quieto ? <Aviso tono="freno" texto={`No se acumulan puntos desde hace ${quieto} minutos, con las sucursales abiertas.`} />
             : <Aviso tono="nota" texto={r.ultima_acumulacion ? `Funcionando · última acumulación ${fechaHora12(r.ultima_acumulacion)}` : 'Funcionando.'} />}
       </View>
       <FilaDeKpis>
@@ -138,7 +138,7 @@ export default function Resumen({ onIrA }) {
           resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Desliza el dedo sobre la gráfica para ver cada día.</Text>} />
       </Panel>
       <Panel>
-        <Titulo nota="Acumulado · canjeado">Este mes, por sala</Titulo>
+        <Titulo nota="Acumulado · canjeado">Este mes, por sucursal</Titulo>
         {salas.length ? salas.map((s) => (
           <View key={s.sucursal} style={{ gap: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>

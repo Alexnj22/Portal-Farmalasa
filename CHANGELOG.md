@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.4 — Lenguaje: Clientes
+
+- Novena tanda de la revisión del lenguaje: Clientes (datos, mayoristas,
+  reclamos, cuentas por cobrar, cotizaciones), Puntos, Chat con clientes,
+  Encuestas de clientes, Promociones y Ofertas, en la web y la app del
+  personal; y la app de clientes. Unos 440 textos. «ficha» → datos/cliente;
+  reclamos, mayoristas y correcciones de cobros los decide «un supervisor o
+  administrador», como dicen los permisos.
+
 ## v2.1554.3 — Conteo: las columnas nuevas se pueden leer
 
 - La migración 20261116175431 agregó tres columnas a `conteo_inventario_items`,

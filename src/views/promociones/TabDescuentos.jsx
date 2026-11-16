@@ -102,7 +102,7 @@ export default function TabDescuentos({
                 <EmptyState
                     icon={Percent}
                     title="Sin descuentos configurados"
-                    subtitle="Un descuento le rebaja al renglón de la venta un porcentaje, o un monto por cada unidad. Se crean al crear la promoción, marcando «Además baja el precio en la venta»."
+                    subtitle="Un descuento baja el precio de un producto en la venta, en porcentaje o en un monto por unidad. Se crea al crear la promoción, con «Además baja el precio en la venta»."
                 />
             );
     }
@@ -113,8 +113,8 @@ export default function TabDescuentos({
                 que lista cosas y no tiene botón de agregar se lee como un
                 permiso que falta. */}
             <Notice variant="info" icon={Info}>
-                Los descuentos nacen al crear la promoción. Aquí se ven todos —incluidos
-                los que se cargaron sin promoción— y se corrigen o se quitan.
+                Los descuentos nacen al crear la promoción. Aquí ves todos, también los que
+                no tienen promoción, y puedes corregirlos o quitarlos.
             </Notice>
 
             {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
@@ -188,7 +188,7 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, puedeApp, abriendoApp, on
     const sala = !alcanceTodo
         ? null
         : d.todas_las_salas
-            ? 'Todas las salas'
+            ? 'Todas las sucursales'
             /* Si el rótulo del origen no se pudo traducir se dice tal cual vino
                en vez de inventar una sala: un nombre adivinado sobre en qué sala
                se descuenta es peor que uno feo. */
@@ -220,7 +220,7 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, puedeApp, abriendoApp, on
                     {d.tipo === '%' ? `${Number(d.monto).toFixed(2)} %` : formatMoney(d.monto)}
                 </span>
                 <span className="text-caption text-content-2">
-                    {d.tipo === '%' ? 'del renglón' : 'por cada unidad'}
+                    {d.tipo === '%' ? 'del precio' : 'por cada unidad'}
                 </span>
             </div>
 

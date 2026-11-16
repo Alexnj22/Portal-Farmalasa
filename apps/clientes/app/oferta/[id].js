@@ -160,7 +160,7 @@ export default function Oferta() {
                 <Plazo fin={o.fin} color={a.fuerte} />
               </Dato>
               <Separador />
-              <Dato titulo="Dónde" texto={o.salas ? o.salas.join(', ') : 'Todas las salas'} />
+              <Dato titulo="Dónde" texto={o.salas ? o.salas.join(', ') : 'Todas las sucursales'} />
               <Separador />
               <Dato titulo="Para" texto={o.nivel_minimo ? (EXCLUSIVAS[o.nivel_minimo]?.rotulo ?? 'Socios') : o.exclusiva ? 'Socios' : 'Todos'} />
             </View>
@@ -237,7 +237,7 @@ export default function Oferta() {
 
           <Entrada indice={3}>
             <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 10 }}>
-              <Paso numero="1" texto="Ve a la sala y elige tus productos." color={a.fuerte} />
+              <Paso numero="1" texto="Ve a la sucursal y elige tus productos." color={a.fuerte} />
               <Paso numero="2" texto="Al pagar, el descuento se aplica en caja." color={a.fuerte} />
               <Paso numero="3" texto="¿Prefieres apartarlo? Toca «Reservar» en el producto y pásalo a retirar." color={a.fuerte} />
               {o.condiciones ? (

@@ -70,7 +70,7 @@ export function BarrasPorSala({ reparto = [] }) {
   return (
     <View style={{ gap: 8, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
       <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.3 }}>
-        {conCupo ? 'Por sala, contra su cupo' : 'Por sala'}
+        {conCupo ? 'Por sucursal, contra su cupo' : 'Por sucursal'}
       </Text>
       {reparto.map((s) => {
         const v = Number(s.vendido) || 0;

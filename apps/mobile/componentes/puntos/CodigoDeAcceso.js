@@ -112,7 +112,7 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
       </View>
       {eligiendo ? (
         <View style={{ gap: 6 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>¿En qué sala se imprime?</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>¿En qué sucursal se imprime?</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {(sucursales || []).map((b) => <Boton key={b.id} texto={b.name} onPress={() => imprimirEn(Number(b.id))} deshabilitado={ocupado} />)}
           </View>

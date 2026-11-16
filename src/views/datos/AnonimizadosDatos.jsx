@@ -26,7 +26,7 @@ import ConsultaResguardo from './ConsultaResguardo';
 
 const COLUMNAS = [
     { key: 'cuando', label: 'Anonimizada' },
-    { key: 'ficha', label: 'Ficha' },
+    { key: 'ficha', label: 'Cliente' },
     { key: 'solicitud', label: 'Solicitud' },
     { key: 'puntos', label: 'Puntos perdidos', hideBelow: 'md' },
     { key: 'estado', label: 'Estado' },
@@ -53,8 +53,7 @@ export default function AnonimizadosDatos() {
         <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <p className="text-body-sm text-content-3 max-w-2xl">
-                    Clientes que pidieron cancelar sus datos. Si una persona vuelve, se reactiva su misma ficha
-                    presentando el documento con que se identificó; los puntos no vuelven.
+                    Clientes que pidieron cancelar sus datos. Si una persona vuelve, se reactivan sus mismos datos con el documento con que se identificó. Los puntos no vuelven.
                 </p>
                 <Button icon={UserCheck} onClick={() => setReactivar(true)}>Reactivar datos</Button>
             </div>
@@ -81,7 +80,7 @@ export default function AnonimizadosDatos() {
 
             {resguardo && (
                 <LiquidModal open onClose={() => setResguardo(null)} maxWidth="max-w-2xl" ariaLabel="Resguardo de datos anonimizados">
-                    <LiquidModal.Header titulo={`Resguardo · ficha #${resguardo.customer_id}`} onClose={() => setResguardo(null)} />
+                    <LiquidModal.Header titulo={`Resguardo · cliente #${resguardo.customer_id}`} onClose={() => setResguardo(null)} />
                     <LiquidModal.Body>
                         <ConsultaResguardo anonimizacionId={resguardo.id} />
                     </LiquidModal.Body>
@@ -117,7 +116,7 @@ function Reactivar({ onClose, onHecho }) {
         setOcupado(true);
         try {
             const r = await reactivarCliente({ documento, motivo: motivo.trim() });
-            showToast('Datos reactivados', `Ficha #${r.customer_id}${Number(r.puntos_perdidos) > 0 ? ` · los ${r.puntos_perdidos} puntos no vuelven` : ''}`, 'success');
+            showToast('Datos reactivados', `Cliente #${r.customer_id}${Number(r.puntos_perdidos) > 0 ? ` · los ${r.puntos_perdidos} puntos no vuelven` : ''}`, 'success');
             onHecho?.();
         } catch (e) {
             showToast('No se pudo reactivar', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
@@ -143,8 +142,7 @@ function Reactivar({ onClose, onHecho }) {
                     {hallado?.anonimizado && (
                         <>
                             <Notice variant="warning" bloque>
-                                Esta persona pidió anonimizar sus datos el {dia(hallado.anonimizada_at)} (ficha
-                                #{hallado.customer_id}). Al reactivar vuelven su nombre, documentos y contacto, en el
+                                Esta persona pidió anonimizar sus datos el {dia(hallado.anonimizada_at)} (cliente #{hallado.customer_id}). Al reactivar vuelven su nombre, documentos y contacto, en el
                                 portal y en la caja. Los puntos que tenía no vuelven.
                             </Notice>
                             <PortalTextarea label="Cómo se comprobó que es la persona" rows={2} maxLength={500}

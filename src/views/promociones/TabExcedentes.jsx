@@ -136,10 +136,10 @@ export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen, 
                     {/* Una fila es persona × producto: contarlas como personas
                         decía «5 personas» donde eran dos. */}
                     {personas} {personas === 1 ? 'persona vendió' : 'personas vendieron'} por
-                    encima del lote — {fmtMoneda(total)} en total.
+                    encima del lote: {fmtMoneda(total)} en total.
                 </span>{' '}
-                Ese bono <em>no está acordado con el laboratorio</em>, así que no se paga hasta que
-                alguien lo apruebe. Mientras tanto no suma a lo de nadie.
+                Ese bono <em>no está acordado con el laboratorio</em>. No se paga ni suma a nadie
+                hasta que se apruebe.
             </Notice>
 
             {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
@@ -220,7 +220,7 @@ export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen, 
                 onConfirm={(texto) => decidir(negando, false, texto)}
                 title="No pagar este excedente"
                 message={negando
-                    ? `${shortEmployeeName(negando.persona)} vendió ${fmtUnidades(negando.unidades)} unidades por encima del lote de ${negando.promocion}. Escribe por qué no se paga — lo va a leer esa persona.`
+                    ? `${shortEmployeeName(negando.persona)} vendió ${fmtUnidades(negando.unidades)} unidades por encima del lote de ${negando.promocion}. Escribe por qué no se paga. Esa persona lo va a leer.`
                     : ''}
                 placeholder="El laboratorio sólo cubrió el lote acordado…"
                 confirmText="No pagar"

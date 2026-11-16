@@ -211,7 +211,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                                 name="nombre"
                                 value={nombre}
                                 onChange={(e) => setNombre(e.target.value)}
-                                placeholder="El nombre que va a ver la sala"
+                                placeholder="El nombre que va a ver la sucursal"
                                 required
                             />
                             <Campo rotulo="Mes" falta={!mes}>
@@ -275,8 +275,8 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                                 </Button>
                             </div>
                             <p className="text-caption text-content-3">
-                                El monto de cada nivel es el mismo para las seis salas. Lo que cambia
-                                por sala es cuánto tiene que vender para alcanzarlo.
+                                El monto de cada nivel es el mismo para todas las sucursales. Lo que cambia
+                                por sucursal es cuánto tiene que vender para alcanzarlo.
                             </p>
                             <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
                                 {niveles.map((n) => (
@@ -304,10 +304,10 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                         {/* ── La matriz: un bloque por sala ─────────────────── */}
                         <section className="space-y-2">
                             <TituloDeSeccion nivel="tarjeta">
-                                Cuánto tiene que vender cada sala
+                                Cuánto tiene que vender cada sucursal
                             </TituloDeSeccion>
                             <p className="text-caption text-content-3">
-                                Dejar un nivel en blanco significa que esa sala no lo puede alcanzar.
+                                Si dejas un nivel en blanco, esa sucursal no lo puede alcanzar.
                             </p>
                             {salas.map((s) => (
                                 <div key={s.id} className="rounded-lg bg-surface-card-hover p-3">
@@ -317,7 +317,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                                         </span>
                                         {salaTieneUmbral(s.id) && hayVacias && (
                                             <Button variant="ghost" size="sm" icon={Copy}
-                                                title="Copia estos umbrales a las salas que todavía no tienen ninguno"
+                                                title="Copia estos umbrales a las sucursales que todavía no tienen ninguno"
                                                 onClick={() => copiarUmbrales(s.id)}>
                                                 A las vacías
                                             </Button>

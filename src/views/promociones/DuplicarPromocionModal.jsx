@@ -80,28 +80,27 @@ export default function DuplicarPromocionModal({ promo, open, onClose, onDuplica
 
                     <div className="space-y-1 min-w-0">
                         <span className="text-label uppercase tracking-widest font-black text-content-2">
-                            Para una sala
+                            Para una sucursal
                         </span>
                         <LiquidSelect
                             value={sala}
                             onChange={(v) => setSala(v || '')}
                             options={salas.map((s) => ({ value: String(s.id), label: s.name }))}
-                            placeholder="Copiar tal cual (mismas salas)"
+                            placeholder="Copiar tal cual (mismas sucursales)"
                             clearLabel="Copiar tal cual"
-                            ariaLabel="Sala de la copia"
+                            ariaLabel="Sucursal de la copia"
                         />
                         <p className="text-caption text-content-3">
                             {sala
-                                ? 'La copia sólo cuenta las ventas de esa sala.'
-                                : 'La copia mantiene las salas del original.'}
+                                ? 'La copia sólo cuenta las ventas de esa sucursal.'
+                                : 'La copia mantiene las sucursales del original.'}
                         </p>
                     </div>
 
                     <Notice variant="info" icon={Copy}>
                         La copia nace en <span className="font-semibold">borrador</span> y{' '}
-                        <span className="font-semibold">sin descuento en la venta</span>: se le
-                        agrega desde su propia ficha —<span className="font-semibold">Editar</span>—,
-                        para que no quede uno vivo que nadie pidió.
+                        <span className="font-semibold">sin descuento en la venta</span>. Se lo
+                        agregas desde <span className="font-semibold">Editar</span>.
                     </Notice>
 
                     {/* El límite del sistema de ventas, dicho ANTES de copiar y
@@ -114,9 +113,7 @@ export default function DuplicarPromocionModal({ promo, open, onClose, onDuplica
                     {promo?.descuentos > 0 && (
                         <Notice variant="warning" icon={AlertTriangle}>
                             El original ya <span className="font-semibold">baja el precio</span>. La
-                            copia sólo va a poder tener el suyo si le cambias las fechas: la venta
-                            admite un solo descuento por producto en unas mismas fechas,
-                            da igual la sala.
+                            copia sólo puede tener su propio descuento si le cambias las fechas.
                         </Notice>
                     )}
 

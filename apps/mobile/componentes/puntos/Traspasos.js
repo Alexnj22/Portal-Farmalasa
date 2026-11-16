@@ -82,7 +82,7 @@ export default function Traspasos({ puedeResolver }) {
               {abierto && puedeResolver ? (
                 aMano === f.solicitud_id ? (
                   <View style={{ gap: 6 }}>
-                    <Campo value={nota} onChangeText={(v) => setNota(v.slice(0, 300))} placeholder="Qué se hizo: le quité 40 a … y le di 40 a … desde su ficha" />
+                    <Campo value={nota} onChangeText={(v) => setNota(v.slice(0, 300))} placeholder="Qué se hizo: le quité 40 a … y le di 40 a … desde sus datos" />
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Boton texto="Volver" color={colorSistema.texto2} onPress={() => setAMano(null)} />
                       <Boton texto="Marcar resuelto" color={MARCA.verde} deshabilitado={!nota.trim() || ocupado === f.solicitud_id} onPress={() => cerrarAMano(f)} />

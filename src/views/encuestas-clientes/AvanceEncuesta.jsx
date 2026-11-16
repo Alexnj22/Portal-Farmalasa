@@ -125,7 +125,7 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
                                                 </Button>
                                             )}
                                             {conTablet && s.token_tablet && (
-                                                <LineaEnlace etiqueta="Tablet de la sala (vuelve a empezar sola)" icono={Tablet}
+                                                <LineaEnlace etiqueta="Tablet de la sucursal (vuelve a empezar sola)" icono={Tablet}
                                                     url={enlace(s.token_tablet, true)} onCopiar={copiar} />
                                             )}
                                         </div>
@@ -136,7 +136,7 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
                     })}
                     {(avance.campo > 0 || encuesta.canales.includes('campo')) && (
                         <li className="flex flex-wrap items-center gap-2">
-                            <span className="text-body-sm font-semibold text-content flex-1 min-w-0">Campo (fuera de las salas)</span>
+                            <span className="text-body-sm font-semibold text-content flex-1 min-w-0">Campo (fuera de las sucursales)</span>
                             <span className="text-body-sm text-content-2">{avance.campo || 0}</span>
                         </li>
                     )}

@@ -73,7 +73,7 @@ export default function PasoCodigoWhatsapp({ reto, telefono, segundos = 60, extr
 
   return (
     <Formulario pie={pie}>
-      <Grupo titulo="Confirma que eres tú" pie={`Es la primera vez que entras desde este teléfono. Te mandamos un código de 6 números por WhatsApp al ${telefono ?? 'teléfono de tu ficha'}. Vence en 10 minutos.`}>
+      <Grupo titulo="Confirma que eres tú" pie={`Es la primera vez que entras desde este teléfono. Te mandamos un código de 6 números por WhatsApp al ${telefono ?? 'teléfono que registraste'}. Vence en 10 minutos.`}>
         <FilaCampo
           ref={campo}
           autoFocus

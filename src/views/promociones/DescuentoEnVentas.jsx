@@ -112,14 +112,14 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                 checked={!!valor.activo}
                 onChange={(v) => onCambiar('activo', v)}
                 label="Además baja el precio en la venta"
-                description="La venta le descuenta al renglón cuando se vende cualquiera de estos productos."
+                description="Les baja el precio a estos productos al venderlos."
             />
 
             {valor.activo && (
                 <>
                     {!productos.length ? (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            Agrega primero los productos de la promoción: el descuento se aplica a esos.
+                            Agrega primero los productos de la promoción. El descuento se aplica a esos.
                         </Notice>
                     ) : (
                         <>
@@ -174,16 +174,15 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                             {salasMarcadas.length <= 1 ? (
                                 <Notice variant="info" icon={Info}>
                                     {salasMarcadas.length === 0
-                                        ? 'Baja el precio en todas las salas, igual que la promoción.'
+                                        ? 'Baja el precio en todas las sucursales, igual que la promoción.'
                                         : `Baja el precio sólo en ${salasMarcadas[0].name}, igual que la promoción.`}
                                 </Notice>
                             ) : (
                                 <>
                                     <Notice variant="warning" icon={AlertTriangle}>
-                                        La promoción aplica en {salasMarcadas.length} salas, pero la
-                                        venta admite <span className="font-semibold">un
-                                        solo descuento por producto</span> en unas mismas fechas —da
-                                        igual la sala. Elige dónde baja el precio.
+                                        La promoción aplica en {salasMarcadas.length} sucursales. Pero un producto
+                                        sólo puede tener <span className="font-semibold">un descuento</span> en
+                                        las mismas fechas, en cualquier sucursal. Elige dónde baja el precio.
                                     </Notice>
                                     <Campo rotulo="Dónde baja el precio">
                                         <LiquidSelect
@@ -193,7 +192,7 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                                 onCambiar('branchId', v === 'todas' ? '' : v);
                                             }}
                                             options={[
-                                                { value: 'todas', label: 'En todas las salas' },
+                                                { value: 'todas', label: 'En todas las sucursales' },
                                                 ...salasMarcadas.map((x) => ({
                                                     value: String(x.id), label: `Sólo en ${x.name}` })),
                                             ]}
@@ -216,11 +215,11 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                         el margen aguanta. */}
                                     {valor.todas && salasSinPromocion.length > 0 && (
                                         <Notice variant="warning" icon={AlertTriangle}>
-                                            El precio va a bajar también en{' '}
+                                            El precio también baja en{' '}
                                             <span className="font-semibold">
                                                 {salasSinPromocion.map((x) => x.name).join(', ')}
-                                            </span>, donde esta promoción no aplica: el bono no se
-                                            acumula ahí, pero el producto sí se vende más barato.
+                                            </span>. Ahí la promoción no aplica: no suma bono, pero el
+                                            producto se vende más barato.
                                         </Notice>
                                     )}
                                 </>
@@ -243,8 +242,8 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                         min={inicio || undefined}
                                     />
                                     <p className="text-caption text-content-3 mt-1">
-                                        Los productos de la promoción todavía no tienen fecha de fin,
-                                        y un descuento sin fecha de corte no se apaga solo.
+                                        Los productos de la promoción todavía no tienen fecha de fin.
+                                        Elige hasta cuándo descuenta.
                                     </p>
                                 </Campo>
                             )}

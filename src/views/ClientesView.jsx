@@ -36,8 +36,8 @@ const SIN_CATEGORIA = '__sin__';
 // Consumidor le falta el DUI, a un Contribuyente el NRC y el giro). El servidor
 // resuelve cuál de los tres es — acá solo se pinta.
 const FICHA = {
-    completa: { variant: 'success', label: 'Completa' },
-    parcial:  { variant: 'warning', label: 'Parcial'  },
+    completa: { variant: 'success', label: 'Completos' },
+    parcial:  { variant: 'warning', label: 'Parciales' },
     vacia:    { variant: 'neutral', label: 'Sin datos' },
 };
 
@@ -53,7 +53,7 @@ const FICHA = {
 const COLS = [
     { key: 'nombre',   label: 'Cliente',        align: 'left',  className: 'w-[200px] sm:w-[240px]', sortable: true },
     { key: 'fiscal',   label: 'Documento',      align: 'left',  hideBelow: 'md' },
-    { key: 'ficha',    label: 'Ficha',          align: 'left',  sortable: true },
+    { key: 'ficha',    label: 'Datos',          align: 'left',  sortable: true },
     // `2xl`: a 1280 las seis columnas pedían 968px contra 886 y **Facturado se
     // salía 82px**. La ubicación es contexto; el monto es por lo que se entra.
     { key: 'ubicacion',label: 'Ubicación',      align: 'left',  hideBelow: '2xl' },
@@ -398,11 +398,11 @@ export default function ClientesView({ openModal }) {
                 empujaba el carril de tarjetas de 3 visibles a 2 en 1440px —
                 el mismo caso que §17.0 documenta en MIN·MAX y en Facturación.
                 Es una ranura que decide qué recorte mirar, no cinco métricas. */}
-            <FilterBar.Section active={!!ficha} onClear={() => setFicha('')} label="ficha">
+            <FilterBar.Section active={!!ficha} onClear={() => setFicha('')} label="datos">
                 <FilterBar.Opciones
                     options={[
-                        { value: 'completa', label: 'Completa' },
-                        { value: 'parcial',  label: 'Parcial'  },
+                        { value: 'completa', label: 'Completos' },
+                        { value: 'parcial',  label: 'Parciales' },
                         { value: 'vacia',    label: 'Sin datos' },
                     ]}
                     value={ficha}
@@ -414,14 +414,14 @@ export default function ClientesView({ openModal }) {
                         setFicha(val || '');
                         if (val !== 'vacia') setSoloPorCompletar(false);
                     }}
-                    label="Ficha"
+                    label="Datos"
                     icon={IdCard}
                     umbral={0}
                     ancho="150px"
                     /* Se nombra a sí misma en vez del "Todos" del default: al
                        sumarse la ranura "Revisar" quedaban DOS que decían
                        "Todos" pegadas, distinguibles solo por el ícono. */
-                    placeholder="Ficha"
+                    placeholder="Datos"
                 />
             </FilterBar.Section>
 
@@ -502,7 +502,7 @@ export default function ClientesView({ openModal }) {
                         <StatCard icon={Users} label="Clientes"
                             value={stats ? stats.total.toLocaleString('es-SV') : '—'}
                             sub="En el catálogo" loading={!stats} />
-                        <StatCard icon={IdCard} label="Completas"
+                        <StatCard icon={IdCard} label="Completos"
                             value={stats ? stats.completas.toLocaleString('es-SV') : '—'}
                             iconBg="bg-success/10" iconCls="text-success"
                             sub="Según su categoría" loading={!stats} />
@@ -523,7 +523,7 @@ export default function ClientesView({ openModal }) {
                             }} />
                         <StatCard icon={ShieldCheck} label="Contribuyentes"
                             value={stats ? stats.contribuyentes.toLocaleString('es-SV') : '—'}
-                            sub="Se declaran a Hacienda" loading={!stats} />
+                            sub="Se declaran al MH" loading={!stats} />
                         <StatCard icon={FileWarning} label="A revisar"
                             value={stats ? stats.a_revisar.toLocaleString('es-SV') : '—'}
                             iconBg="bg-danger/10" iconCls="text-danger"
@@ -565,7 +565,7 @@ export default function ClientesView({ openModal }) {
                             icon: Search,
                             message: 'Sin resultados',
                             subtext: docAnonimizado
-                                ? 'Esta persona pidió anonimizar sus datos. Si vuelve, se reactivan en Solicitudes sobre datos → Anonimizados presentando su documento.'
+                                ? 'Esta persona pidió anonimizar sus datos. Si vuelve, se reactivan con su documento en Solicitudes sobre datos → Anonimizados.'
                                 : searchAplicado
                                 ? `Ningún cliente coincide con "${searchAplicado}".`
                                 : 'Ningún cliente coincide con los filtros aplicados.',

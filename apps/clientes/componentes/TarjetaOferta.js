@@ -202,7 +202,7 @@ export function CuerpoOferta({ oferta: o, completa = false }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Plazo fin={o.fin} color={a.fuerte} />
         <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto3 }}>
-          {o.salas ? `Sólo en ${o.salas.join(', ')}` : 'En todas las salas'}
+          {o.salas ? `Sólo en ${o.salas.join(', ')}` : 'En todas las sucursales'}
         </Text>
       </View>
     </View>

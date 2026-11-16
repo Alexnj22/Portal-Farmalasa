@@ -131,7 +131,7 @@ export function TipoDePersona({ customerId, nombre, puedeCambiar }) {
       await guardarTipoDePersona({ customerId, tipo }, { nombre, desde: 'app' });
       setFicha({ tipo_persona: tipo, tipo_persona_revisar: false, tipo_persona_manual_at: new Date().toISOString() });
       Alert.alert('Tipo de persona guardado',
-        tipo === 'juridica' ? 'Desde el 15 de noviembre esta ficha no acumula puntos.' : 'La ficha acumula puntos como persona natural.');
+        tipo === 'juridica' ? 'Desde el 15 de noviembre este cliente no acumula puntos.' : 'El cliente acumula puntos como persona natural.');
     } catch (e) {
       Alert.alert('No se pudo guardar', mensajeAmigable(e));
     } finally {

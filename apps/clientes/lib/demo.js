@@ -85,7 +85,7 @@ export function reservasDeMuestra(demo) {
       bajo_receta: true, receta_estado: 'pendiente', receta_subida_at: iso(b, -3), horasAtras: 4 }),
     // Pedido mixto: la sucursal pidió otra foto. Se puede reenviar o quitar lo bajo receta.
     fila(3, b, { estado: 'en_revision', pedido: 'P-DEMO01', producto_nombre: 'Claritromicina 500 mg, caja de 10 tabletas', precio_unitario: 21.5,
-      bajo_receta: true, receta_estado: 'otra_foto', receta_motivo: 'La foto salió borrosa: no se lee la firma del médico.',
+      bajo_receta: true, receta_estado: 'otra_foto', receta_motivo: 'La foto salió borrosa. No se lee la firma del médico.',
       receta_subida_at: iso(b, -6), horasAtras: 7, total_pedido: 26.25 }),
     fila(4, b, { estado: 'en_revision', pedido: 'P-DEMO01', codigo: 'R-900004', producto_nombre: 'Vitamina C 1 g efervescente, tubo de 10', precio_unitario: 4.75,
       horasAtras: 7, total_pedido: 26.25 }),

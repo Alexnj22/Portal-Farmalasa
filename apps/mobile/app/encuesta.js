@@ -89,7 +89,7 @@ function Bloque({ bloque: b, filas, preguntas, inv, abierto, onAbrir, anonima })
             {jefes ? (
               <>
                 <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                  <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Empleados evaluando a su jefe/a de sala</Text>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Empleados evaluando a su jefe de sucursal</Text>
                   {jefes.porSala.filter((x) => x.sColabs).map((x) => (
                     <View key={x.suc} style={{ gap: 3 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

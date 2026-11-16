@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.3 — Conteo: las columnas nuevas se pueden leer
+
+- La migración 20261116175431 agregó tres columnas a `conteo_inventario_items`,
+  que da SELECT columna por columna; nacieron sin permiso y la pantalla del
+  conteo dio «sin permiso» a todos entre las 11:54 a. m. y las 12:20 p. m.
+  `GRANT SELECT` sobre las tres (migración 20261116182026).
+
 ## v2.1554.2 — Lenguaje: Personal
 
 - Octava tanda de la revisión del lenguaje, web y app: Personal (empleados,

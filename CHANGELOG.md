@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1555.1 — Corregir lote en la app: lote vacío, lotes ya registrados a un toque y vence por mes y año
+
+Bodega pidió que «Corregir lote» fuera práctico en el teléfono, sin tantos toques.
+
+- El lote abre **vacío** y con el teclado listo para escribir el nuevo. El lote anterior se ve de guía.
+- **Ya registrados**: los lotes que el inventario ya tiene de ese producto, y los que ya se anotaron en el conteo, a un toque. El toque llena el lote y el vencimiento.
+- El vencimiento se escribe **por mes y año** (`05/27`). La barra se pone sola y al lado se lee «mayo de 2027».
+- Del lote se pasa al vencimiento con la tecla del teclado, y desde el vencimiento se guarda. Ya no hay que confirmar: sólo cambia la etiqueta del conteo y se puede volver a corregir.
+
 ## v2.1555.0 — Preventa: ficha del cliente, puntos y existencia en otras sucursales
 
 Tercera vuelta de la vista Preventa, pedida por el usuario.

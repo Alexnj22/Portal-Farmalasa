@@ -7,25 +7,32 @@
 //   (`recontarConteoItem`). La RPC exige can_approve, rechaza que lo haga quien
 //   contó esa línea y conserva el primer conteo en el historial.
 //
-// Los dos piden confirmación antes de escribir: el recuento cambia la
-// diferencia que se va a firmar.
-import { useEffect, useState } from 'react';
+// El recuento pide confirmación antes de escribir: cambia la diferencia que
+// se va a firmar. Corregir el lote no (2026-11-16, Bodega: «que sea práctico,
+// sin tanto clic»): sólo cambia la etiqueta del conteo y se puede volver a
+// corregir. El lote abre VACÍO para escribir el nuevo, con los lotes que ya
+// conoce el inventario a un toque, y el vencimiento se pide por mes y año.
+import { useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cantidadValida } from '@nucleo/utils/conteoDeInventario';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { cantidadValida, esLoteGenerico, formatoMesAno, mesAnoDeVence, venceDeMesAno } from '@nucleo/utils/conteoDeInventario';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import * as Haptics from 'expo-haptics';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import ConAurora from '../ConAurora';
 import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
-import Fecha from '../formulario/Fecha';
+import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { MARCA, tintaSobre } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 
-export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar, onHecho }) {
+export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos = [], onCerrar, onHecho }) {
   const editarLote = useStaffStore((s) => s.editarLoteConteoItem);
   const recontar = useStaffStore((s) => s.recontarConteoItem);
+  const fetchLotesConocidos = useStaffStore((s) => s.fetchLotesConocidosDelProducto);
+  const [conocidos, setConocidos] = useState([]);
+  const campoVence = useRef(null);
   const [lote, setLote] = useState('');
   const [vence, setVence] = useState('');
   const [cantidad, setCantidad] = useState('');
@@ -34,21 +41,43 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
 
   useEffect(() => {
     if (!item) return;
-    setLote(item.lote || '');
-    setVence(item.fecha_vencimiento || '');
+    setLote('');
+    setVence(mesAnoDeVence(item.fecha_vencimiento));
     setCantidad('');
     setNota('');
   }, [item]);
 
+  // Los lotes que ya existen de este producto: los del inventario y los que
+  // ya se anotaron en este conteo. Si no se pueden leer, no hay sugerencias.
   const esLote = modo === 'lote';
-  const valido = esLote ? true : cantidad !== '' && cantidadValida(cantidad);
+  useEffect(() => {
+    if (!item || !esLote) return undefined;
+    let vivo = true;
+    setConocidos([]);
+    Promise.resolve(fetchLotesConocidos(item.erp_product_id)).then((r) => { if (vivo) setConocidos(r ?? []); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [item, esLote, fetchLotesConocidos]);
+  const sugerencias = (() => {
+    const m = new Map();
+    for (const h of [...hermanos, ...conocidos]) {
+      const l = String(h.lote ?? '').trim().toUpperCase();
+      if (esLoteGenerico(l) || (h.id && h.id === item?.id)) continue;
+      const clave = `${l}|${mesAnoDeVence(h.fecha_vencimiento)}`;
+      if (!m.has(clave)) m.set(clave, { lote: l, vence: mesAnoDeVence(h.fecha_vencimiento) });
+    }
+    return [...m.values()].slice(0, 12);
+  })();
+
+  const venceFecha = venceDeMesAno(vence);
+  const valido = esLote ? lote.trim() !== '' && (vence === '' || !!venceFecha) : cantidad !== '' && cantidadValida(cantidad);
 
   const enviar = async () => {
     setGuardando(true);
     try {
       if (esLote) {
-        const r = await editarLote(item.id, { lote: lote.trim() || null, fechaVencimiento: vence || null });
-        listo('Lote corregido', 'Se actualizó el lote en el conteo.');
+        const r = await editarLote(item.id, { lote: lote.trim().toUpperCase(), fechaVencimiento: venceFecha });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        listo('Lote corregido', `Lote ${r.lote}${r.fecha_vencimiento ? ` · vence ${mesAnoDeVence(r.fecha_vencimiento)}` : ''}`);
         onHecho?.(item.id, { lote: r.lote, fecha_vencimiento: r.fecha_vencimiento });
       } else {
         const valor = Number(cantidad);
@@ -71,8 +100,7 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
   const guardar = () => {
     if (!valido || guardando) return;
     if (esLote) {
-      Alert.alert('¿Corregir el lote?', 'Solo cambia el lote en este conteo. El inventario no cambia.', [
-        { text: 'Cancelar', style: 'cancel' }, { text: 'Corregir', onPress: enviar }]);
+      enviar();
     } else {
       Alert.alert('¿Guardar el recuento?', `La cantidad contada pasa a ${cantidad}. El primer conteo queda en el historial.`, [
         { text: 'Cancelar', style: 'cancel' }, { text: 'Guardar', onPress: enviar }]);
@@ -89,21 +117,43 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, onCerrar,
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             {esLote ? (
               <>
-                <Aviso tono="nota" texto="Úsalo cuando el lote que encontraste no es el de esta fila, por ejemplo un lote nuevo. Solo corrige este conteo. No cambia el inventario." />
-                <Seccion titulo="Lote">
-                  <Campo multiline={false} value={lote} onChangeText={setLote} placeholder="Número de lote" autoCapitalize="characters" autoCorrect={false} />
+                <Seccion titulo="Lote nuevo">
+                  <Campo multiline={false} value={lote} onChangeText={(v) => setLote(v.toUpperCase())} autoFocus
+                    placeholder={esLoteGenerico(item?.lote) ? 'Escribe el lote' : `Ahora: ${item?.lote}`}
+                    autoCapitalize="characters" autoCorrect={false} spellCheck={false} returnKeyType="next" submitBehavior="submit"
+                    onSubmitEditing={() => campoVence.current?.focus()} style={{ fontSize: 20, fontWeight: '700' }} />
                 </Seccion>
-                <Seccion titulo="Vencimiento">
-                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
-                    <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>
-                      {vence ? fechaTexto(vence, { day: 'numeric', month: 'long', year: 'numeric' }) : 'Sin fecha'}
+                {sugerencias.length ? (
+                  <Seccion titulo="Ya registrados">
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {sugerencias.map((x) => {
+                        const elegido = lote === x.lote && vence === x.vence;
+                        return (
+                          <Pressable key={`${x.lote}|${x.vence}`} hitSlop={4}
+                            onPress={() => { Haptics.selectionAsync().catch(() => {}); setLote(x.lote); setVence(x.vence); }}
+                            style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 22,
+                              backgroundColor: elegido ? MARCA.azul : `${MARCA.azulClaro}26`, opacity: pressed ? 0.6 : 1 })}>
+                            <Text style={{ color: elegido ? tintaSobre(MARCA.azul) : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{x.lote}</Text>
+                            {x.vence ? <Text style={{ color: elegido ? tintaSobre(MARCA.azul) : colorSistema.texto2, fontSize: 12 }}>{`vence ${x.vence}`}</Text> : null}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </Seccion>
+                ) : null}
+                <Seccion titulo="Vence (mes y año)">
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ width: 120 }}>
+                      <Campo ref={campoVence} multiline={false} value={vence} keyboardType="number-pad" placeholder="MM/AA" maxLength={5}
+                        onChangeText={(v) => setVence(formatoMesAno(v))} onSubmitEditing={guardar} onSiguiente={guardar}
+                        style={{ fontSize: 20, fontWeight: '700', textAlign: 'center' }} />
+                    </View>
+                    <Text style={{ flex: 1, color: vence && !venceFecha && vence.length === 5 ? MARCA.rojo : colorSistema.texto2, fontSize: 15 }}>
+                      {venceFecha ? fechaTexto(venceFecha, { month: 'long', year: 'numeric' }) : vence.length === 5 ? 'Mes inválido' : vence ? '' : 'Sin vencimiento'}
                     </Text>
-                    {vence ? <Fecha valor={vence} onCambiar={setVence} /> : null}
-                    <Pressable onPress={() => setVence(vence ? '' : (item?.fecha_vencimiento || hoySV()))} hitSlop={8} style={{ marginLeft: 10 }}>
-                      <Text style={{ color: colorSistema.acento, fontSize: 15 }}>{vence ? 'Quitar' : 'Poner fecha'}</Text>
-                    </Pressable>
                   </View>
                 </Seccion>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Solo corrige este conteo. El inventario no cambia.</Text>
               </>
             ) : (
               <>

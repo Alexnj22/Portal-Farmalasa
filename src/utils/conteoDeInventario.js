@@ -250,6 +250,29 @@ export function estadoDelProducto({ item_count = 0, contados_count = 0, diferenc
     return d > 0 ? { texto: `+${d}`, tono: 'sobra' } : { texto: `${d}`, tono: 'falta' };
 }
 
+/**
+ * El vencimiento se anota por mes y año (las cajas lo traen así): «05/27» o
+ * «0527» → '2027-05-01'. Devuelve null si todavía no es una fecha completa o
+ * el mes no existe. `aTexto` hace el camino de vuelta para precargar el campo.
+ */
+export function venceDeMesAno(texto) {
+    const d = String(texto ?? '').replace(/\D/g, '');
+    if (d.length !== 4 && d.length !== 6) return null;
+    const mes = Number(d.slice(0, 2));
+    const ano = d.length === 4 ? 2000 + Number(d.slice(2)) : Number(d.slice(2));
+    if (mes < 1 || mes > 12 || ano < 2000 || ano > 2099) return null;
+    return `${ano}-${String(mes).padStart(2, '0')}-01`;
+}
+export function mesAnoDeVence(fecha) {
+    const m = String(fecha ?? '').match(/^(\d{4})-(\d{2})/);
+    return m ? `${m[2]}/${m[1].slice(2)}` : '';
+}
+/** Lo que se escribe en el campo, con la barra puesta sola: «052» → «05/2». */
+export function formatoMesAno(texto) {
+    const d = String(texto ?? '').replace(/\D/g, '').slice(0, 4);
+    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+}
+
 /** «Sin lote asignado»: vacío o GENERICO. */
 export const esLoteGenerico = (lote) => {
     const t = String(lote ?? '').trim();

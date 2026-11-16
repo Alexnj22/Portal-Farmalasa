@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estadoDelProducto, totalesDelProducto } from '@nucleo/utils/conteoDeInventario';
+import { estadoDelProducto, totalesDelProducto, venceDeMesAno, mesAnoDeVence, formatoMesAno } from '@nucleo/utils/conteoDeInventario';
 
 describe('la píldora de un producto en el conteo', () => {
     it('mientras falten renglones, dice cuántos faltan (aunque ya haya diferencia)', () => {
@@ -33,5 +33,25 @@ describe('los totales de un producto desde sus renglones', () => {
     it('ciego o sin nada contado: sin diferencia', () => {
         expect(totalesDelProducto([{ estado_item: 'PENDIENTE', fisico_cantidad: null, ver_sistema: true }]).diferencia_total).toBeNull();
         expect(totalesDelProducto([{ estado_item: 'CONTADO', fisico_cantidad: 2, diferencia: null, ver_sistema: false }]).diferencia_total).toBeNull();
+    });
+});
+
+describe('vencimiento por mes y año', () => {
+    it('05/27, 0527 y 052027 son mayo de 2027', () => {
+        expect(venceDeMesAno('05/27')).toBe('2027-05-01');
+        expect(venceDeMesAno('0527')).toBe('2027-05-01');
+        expect(venceDeMesAno('052027')).toBe('2027-05-01');
+    });
+    it('incompleto o mes imposible: null', () => {
+        expect(venceDeMesAno('05/2')).toBeNull();
+        expect(venceDeMesAno('13/27')).toBeNull();
+        expect(venceDeMesAno('00/27')).toBeNull();
+    });
+    it('ida y vuelta, y la barra sola', () => {
+        expect(mesAnoDeVence('2027-09-15')).toBe('09/27');
+        expect(mesAnoDeVence(null)).toBe('');
+        expect(formatoMesAno('052')).toBe('05/2');
+        expect(formatoMesAno('05279')).toBe('05/27');
+        expect(formatoMesAno('0')).toBe('0');
     });
 });

@@ -690,7 +690,8 @@ export default function Conteo() {
         hermanos={loteReal ? (items[loteReal.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteReal.presentacion ?? '').trim().toUpperCase()) : []}
         onCerrar={() => setLoteReal(null)}
         onListo={() => { if (loteReal) refrescarProducto(loteReal.erp_product_id); }} />
-      <AccionDeRenglon item={accion?.item ?? null} modo={accion?.modo} aCiegas={recuento} onCerrar={() => setAccion(null)} onHecho={alAccion} />
+      <AccionDeRenglon item={accion?.item ?? null} modo={accion?.modo} aCiegas={recuento}
+        hermanos={accion ? (items[accion.item.erp_product_id] || []) : []} onCerrar={() => setAccion(null)} onHecho={alAccion} />
       <AgregarRenglon visible={agregando} conteoId={id} branchId={conteo?.branch_id} simple={simple} onCerrar={() => setAgregando(false)}
         onAgregado={(prod) => {
           // Ya está en la lista: se relee ése y se abre, sin moverse de lugar.

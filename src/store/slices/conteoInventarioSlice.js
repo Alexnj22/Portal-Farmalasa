@@ -349,6 +349,27 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data;
     },
 
+    // Los lotes reales que el inventario ya conoce de un producto (todas las
+    // sucursales), con su vencimiento: las sugerencias de «Corregir lote»
+    // (2026-11-16, Bodega: escribir el lote y la fecha cada vez era lento).
+    // Sin «GENERICO» ni vacíos. Un producto tiene a lo sumo decenas de filas.
+    fetchLotesConocidosDelProducto: async (erpProductId) => {
+        const { data, error } = await supabase.from('inventory')
+            .select('lote, fecha_vencimiento')
+            .eq('erp_product_id', erpProductId)
+            .not('lote', 'is', null)
+            .limit(500);
+        if (error) throw traducirError(error);
+        const vistos = new Map();
+        for (const f of data || []) {
+            const lote = String(f.lote ?? '').trim().toUpperCase();
+            if (!lote || /^GEN[EÉ]RICO$/.test(lote)) continue;
+            const clave = `${lote}|${f.fecha_vencimiento ?? ''}`;
+            if (!vistos.has(clave)) vistos.set(clave, { lote, fecha_vencimiento: f.fecha_vencimiento ?? null });
+        }
+        return [...vistos.values()].sort((a, b) => String(a.fecha_vencimiento ?? '9').localeCompare(String(b.fecha_vencimiento ?? '9')));
+    },
+
     // El "sistema" lo fija EL SERVIDOR y el cliente nunca lo envía ni lo
     // decide. Cuál es depende de `fuente_sistema` del conteo: con 'VIVO' se
     // relee la existencia en ese instante (para contar con la sucursal abierta

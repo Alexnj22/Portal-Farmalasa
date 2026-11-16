@@ -211,12 +211,12 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   };
 
   return (
-    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" surface={null} ariaLabel={`Corrección de marcaje · ${fmtDia}`}>
+    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" surface={null} ariaLabel={`Corrección de marcación · ${fmtDia}`}>
       {/* El contenedor y la cabecera los pone `CuerpoDialogo`: hoja en el
           teléfono, panel centrado en escritorio. Antes eran un `bg-surface-card
           backdrop-blur-2xl` a mano —o sea material escrito en clases, no en
           `data-surface`— más su propia fila de título con la ✕. */}
-      <CuerpoDialogo titulo="Corrección de marcaje" subtitulo={fmtDia} icono={Calendar}
+      <CuerpoDialogo titulo="Corrección de marcación" subtitulo={fmtDia} icono={Calendar}
         anchoEscritorio="max-w-lg">
         <div className="space-y-4 text-left">
 
@@ -247,9 +247,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
           {/* Marcajes actuales */}
           <div>
-            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-2 px-0.5">Marcajes del día</p>
+            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-2 px-0.5">Marcaciones del día</p>
             {dayPunches.length === 0 ? (
-              <p className="text-body-sm text-content-3 font-bold">Sin marcajes registrados</p>
+              <p className="text-body-sm text-content-3 font-bold">Sin marcaciones registradas</p>
             ) : (
               <div className="space-y-1.5">
                 {dayPunches.map(p => (
@@ -277,7 +277,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
           {/* Agregar marcaje */}
           <div data-surface="card" className="bg-surface-card-hover/70 p-4 space-y-3">
             <p className="text-micro font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
-              <Plus size={10} strokeWidth={3} /> Agregar marcaje
+              <Plus size={10} strokeWidth={3} /> Agregar marcación
             </p>
             <div className="grid grid-cols-2 gap-2">
               <LiquidSelect value={newType} onChange={setNewType} options={availablePunchTypes} placeholder="Tipo" compact clearable={false} />
@@ -917,7 +917,7 @@ const AttendanceAuditView = () => {
 
   // ── Correction handler ───────────────────────────────────────────────────
   const handleCorrect = useCallback((emp, dateStr, dayPunches, shift, dayConfig) => {
-    if (!(canEdit || isDemoMode)) { showToast('Sin permisos','No tienes permiso para corregir marcajes.','info'); return; }
+    if (!(canEdit || isDemoMode)) { showToast('Sin permisos','No tienes permiso para corregir marcaciones.','info'); return; }
     setCorrectionTarget({ emp, dateStr, dayPunches, shift, dayConfig });
   }, [canEdit, isDemoMode, showToast]);
 
@@ -925,7 +925,7 @@ const AttendanceAuditView = () => {
     if (!correctionTarget) return;
     const { emp, dateStr } = correctionTarget;
     if (isDemoMode) {
-      showToast('Demo','Marcaje simulado guardado.','info');
+      showToast('Demo','Marcación simulada guardada.','info');
       setCorrectionTarget(null); return;
     }
     const ts = buildCSTDate(dateStr, time);
@@ -939,22 +939,22 @@ const AttendanceAuditView = () => {
         reason,
         editedAt:       new Date().toISOString(),
       });
-      showToast('Guardado','Marcaje registrado correctamente.','success');
+      showToast('Guardado','Marcación registrada.','success');
       setCorrectionTarget(null);
     } catch(err) {
       console.error(err);
-      showToast('Error','No se pudo guardar el marcaje.','error');
+      showToast('Error','No se pudo guardar la marcación.','error');
     }
   }, [correctionTarget, isDemoMode, insertAttendancePunchAt, user, showToast]);
 
   // ── Mark pending HR review punches as reviewed ──────────────────────────
   const handleMarkReviewed = useCallback(async (emp, dateStr, pendingPunches) => {
     if (isDemoMode) { showToast('Demo', 'En modo demo no se puede marcar como revisado.', 'info'); return; }
-    if (!canEdit) { showToast('Sin permisos', 'No tienes permiso para revisar marcajes.', 'info'); return; }
+    if (!canEdit) { showToast('Sin permisos', 'No tienes permiso para revisar marcaciones.', 'info'); return; }
     if (!pendingPunches.length) return;
     try {
       await marcarMarcajesRevisados(pendingPunches, { employeeId: emp.id, date: dateStr, revisadoPor: user?.name });
-      showToast('Revisado', `${pendingPunches.length} marcaje(s) marcado(s) como revisado(s).`, 'success');
+      showToast('Revisado', `${pendingPunches.length} marcación(es) marcada(s) como revisada(s).`, 'success');
       const ids = pendingPunches.map(p => p.id);
       setReviewedPunchIds(prev => new Set([...prev, ...ids]));
     } catch (err) {
@@ -1178,7 +1178,7 @@ const AttendanceAuditView = () => {
                   que `activeBg`/`inactiveBg` se retiraron. */}
               <CarrilCards ariaLabel="Resumen de la quincena">
                 <StatCard icon={Users} label="Empleados" value={withData}
-                  iconBg="bg-brand/10" iconCls="text-brand-text" sub="Con marcajes" />
+                  iconBg="bg-brand/10" iconCls="text-brand-text" sub="Con marcaciones" />
                 <StatCard icon={Clock} label="Horas regulares" value={`${totReg.toFixed(1)}h`}
                   sub="En la quincena" />
                 <StatCard icon={TrendingUp} label="Horas extra" value={`${totOT.toFixed(1)}h`}
@@ -1190,7 +1190,7 @@ const AttendanceAuditView = () => {
                   valueCls={totAbs > 0 ? 'text-danger-text' : 'text-content-3'}
                   iconBg={totAbs > 0 ? 'bg-danger/10' : undefined}
                   iconCls={totAbs > 0 ? 'text-danger-text' : undefined}
-                  sub="Días sin marcaje" />
+                  sub="Días sin marcación" />
               </CarrilCards>
 
               {/* Branch sections — accordion */}

@@ -291,11 +291,11 @@ export function useTimeClockEngine(props = {}) {
                 status: 'error',
                 employee,
                 message: sinAcceso ? 'SIN ACCESO'
-                       : rechazo === 'DUPLICADO' ? 'MARCAJE YA REGISTRADO'
+                       : rechazo === 'DUPLICADO' ? 'MARCACIÓN YA REGISTRADA'
                        : 'NO SE PUDO REGISTRAR',
                 subtext: sinAcceso ? 'Tu acceso está suspendido. Habla con Talento Humano.'
                     : rechazo === 'DUPLICADO'
-                        ? 'Ese mismo marcaje acaba de quedar guardado.'
+                        ? 'Esa misma marcación acaba de quedar guardada.'
                         : 'Avisa a un supervisor o administrador para que lo registre.',
                 color: 'orange',
                 iconKey: 'shield',
@@ -572,7 +572,7 @@ export function useTimeClockEngine(props = {}) {
                     setSelectedBranchId('');
                     setDeviceNameInput('');
                     
-                    showToast('Kiosco Vinculado', `Kiosco "${deviceNameInput}" autorizado correctamente.`, 'success');
+                    showToast('Marcador activado', `"${deviceNameInput}" ya es marcador.`, 'success');
 
                     setTimeout(() => {
                         recargar();
@@ -1091,8 +1091,8 @@ const submitEarlyExit = useCallback((e) => {
 
                 setFeedback({
                     status: 'warning',
-                    message: 'MARCAJE DUPLICADO DETECTADO',
-                    subtext: `${employee.name} — Último marcaje: ${lastTimeStr}. Si hay un error, contacta a tu supervisor.`,
+                    message: 'MARCACIÓN DUPLICADA DETECTADA',
+                    subtext: `${employee.name} — Última marcación: ${lastTimeStr}. Si hay un error, contacta a tu supervisor.`,
                     color: 'orange',
                     iconKey: 'shield',
                 });

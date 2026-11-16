@@ -202,7 +202,7 @@ export function ordenarBitacora(logs, { key = 'created_at', direction = 'desc' }
 export const varianteDeSeveridad = (s) => (s === 'CRITICAL' ? 'danger' : s === 'WARNING' ? 'warning' : 'info');
 
 /** De dónde vino el registro, en palabras. */
-export const ROTULO_DE_ORIGEN = { KIOSK: 'Kiosco', SYSTEM: 'Sistema', ADMIN_PANEL: 'Portal' };
+export const ROTULO_DE_ORIGEN = { KIOSK: 'Marcador', SYSTEM: 'Sistema', ADMIN_PANEL: 'Portal' };
 
 /**
  * Las columnas y filas del CSV de la bitácora — el portal y la app exportan lo

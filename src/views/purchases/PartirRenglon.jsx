@@ -82,8 +82,8 @@ export default function PartirRenglon({ renglon, partesActuales, llave, emisorNi
     })));
 
     return (
-        <LiquidModal open onClose={() => !guardando && onCerrar()} maxWidth="max-w-2xl" ariaLabel="Partir producto">
-            <LiquidModal.Header titulo="Partir producto" subtitulo={renglon.descripcion} icono={Split} onClose={() => !guardando && onCerrar()} />
+        <LiquidModal open onClose={() => !guardando && onCerrar()} maxWidth="max-w-2xl" ariaLabel="Separar en productos">
+            <LiquidModal.Header titulo="Separar en productos" subtitulo={renglon.descripcion} icono={Split} onClose={() => !guardando && onCerrar()} />
             <LiquidModal.Body>
                 <p className="text-label text-content-2 tabular-nums">
                     La factura cobra {facturadas} × {formatMoney(cobrado / (facturadas || 1))} = <b>{formatMoney(cobrado)}</b>. Di qué trae cada una que factura el proveedor.

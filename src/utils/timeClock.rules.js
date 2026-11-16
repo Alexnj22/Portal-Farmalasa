@@ -297,7 +297,7 @@ case 'OUT_EARLY': {
 
   if (presentation.lateStatus?.isLate) {
     presentation.message = 'Registro con atraso';
-    presentation.subtext = presentation.lateStatus.text || 'Marcaje tardío';
+    presentation.subtext = presentation.lateStatus.text || 'Marcación tardía';
     presentation.color = 'red';
     presentation.iconKey = 'alert';
     presentation.isLactationAction = false;

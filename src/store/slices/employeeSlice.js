@@ -1897,7 +1897,7 @@ export const createEmployeeSlice = (set, get) => ({
                 `REGISTRO_ASISTENCIA`,
                 employeeId,
                 {
-                    timeline_title: `Marcaje de ${tipoMarcaje}`,
+                    timeline_title: `Marcación de ${tipoMarcaje}`,
                     dimension: 'OPERATIVE',
                     branch_id: employee?.branchId,
                     new_value: employeeName,

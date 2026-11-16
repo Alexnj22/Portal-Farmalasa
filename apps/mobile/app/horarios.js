@@ -461,7 +461,7 @@ export default function Horarios() {
             <EditorDeDia key={`${editando.persona.id}-${editando.dia}`} fecha={sumarDias(lunes, offset(editando.dia))} dia={editando.dia}
               actual={editando.actual} turnos={turnos || []} sala={(sucursales || []).find((b) => String(b.id) === String(sala))}
               guardando={guardando} onGuardar={guardarEdicion} variosDias={editando.tipo === 'persona'}
-              aviso={semana?.publishedIds?.has(String(editando.persona.id)) ? 'La semana ya está publicada. El cambio se ve en el kiosco y en la planilla al guardarlo.' : null} />
+              aviso={semana?.publishedIds?.has(String(editando.persona.id)) ? 'La semana ya está publicada. El cambio se ve en el marcador y en la planilla al guardarlo.' : null} />
           </ConAurora>
         ) : hoja ? (
           <ConAurora>

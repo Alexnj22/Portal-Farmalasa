@@ -40,6 +40,18 @@ exportados. Los comentarios del código y los nombres de variables o columnas
 | **un supervisor o administrador** | supervisión, el supervisor (a secas) | Cuando quien decide es supervisión o administración (rol SUPERVISOR/ADMIN/SUPERADMIN en la base): diferencias de pedido, traslados que no aparecen. |
 | **motorista** | conductor, chofer | |
 | **Traslado a otra sucursal** | envío a otra sala, traslado sin solicitud | El que una sucursal manda sin que se lo pidan. |
+| **Cierre mensual** | Corte Z (en pantalla) | El cotejo mensual de los cierres contra el libro. Lo que se le entrega al contador (PDF) sí dice «Corte Z», y la descripción del módulo puede nombrarlo entre paréntesis. |
+| **marcación** | marcaje | Asistencia: «Corrección de marcación», «Días sin marcación». |
+| **marcador** | kiosco, kiosko | La computadora de venta habilitada para marcar entrada y salida (una o varias por sucursal). |
+| **Gestión de existencias** | Gestión de stock | Nombre del módulo. |
+| **Separar en productos** | Partir renglón, Partir producto | En Cargar compra: una línea del proveedor que en el portal son varios productos (pack, «2 PACK»). |
+| **sala de ventas** | — | SÍ se usa, para el piso de venta frente a la bodega interna. No es la sucursal. |
+| **la caja** | el sistema, el ERP | Para lo que registra el sistema de ventas: «la caja dice 12», «Anotar en la caja». |
+| **CCF urgentes** | — | Se queda con la sigla. |
+| **Expediente** (del empleado, en la app) | — | Se queda: es el término de Talento Humano. |
+| **factura** (en la Distribuidora) | documento | Vale como genérico aunque la lista mezcle notas. |
+| **jefe de Compras y Logística** | el gerente | Con quien Bodega confirma un encargo caro que no se puede devolver. |
+| **ND: repórtalo al jefe de sucursal** | reportar a jefe inmediato | El jefe de sucursal lo pasa al supervisor de ventas. |
 
 Y la regla que ya existía (CLAUDE.md): nunca nombrar el ERP ni la jerga de la
 tubería («sincronizar», «sync»).

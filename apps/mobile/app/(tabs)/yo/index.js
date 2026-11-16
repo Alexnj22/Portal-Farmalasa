@@ -72,7 +72,7 @@ export default function Yo() {
   const rotuloModo = MODOS.find((m) => m.id === modo)?.label;
   const rotuloEstilo = ESTILOS.find((m) => m.id === estilo)?.label;
   const codigos = [
-    ...(verPin ? [{ id: 'pin', titulo: 'Código de kiosco', valor: codigo }] : []),
+    ...(verPin ? [{ id: 'pin', titulo: 'Código del marcador', valor: codigo }] : []),
     ...(verSu ? [{ id: 'su', titulo: 'Código SU', valor: `${codigo}${sufijo}` }] : []),
   ];
   const { actual: rapida } = usePestanaRapida(user, hasPermission, salas);

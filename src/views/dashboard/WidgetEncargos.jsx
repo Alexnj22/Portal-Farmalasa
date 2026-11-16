@@ -416,7 +416,7 @@ function Confirmar({ encargo, enviando = false, onClose, onConfirmar }) {
                     {riesgo && (
                         <Notice variant="warning">
                             {!encargo.devolutivo ? 'No se puede devolver al proveedor. ' : ''}{!encargo.vendido_antes ? 'Nunca se ha vendido en ninguna sucursal. ' : ''}
-                            Si es caro, confírmalo con el gerente antes de aceptar.
+                            Si es caro, confírmalo con el jefe de Compras y Logística antes de aceptar.
                         </Notice>
                     )}
                     <PortalInput label="Precio por unidad ($)" name="precioEncargo" type="text" maskType="DECIMAL" inputMode="decimal" value={precio} onChange={(e) => setPrecio(e.target.value)}

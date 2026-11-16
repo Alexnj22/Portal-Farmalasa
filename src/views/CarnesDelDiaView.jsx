@@ -309,7 +309,7 @@ const CarnesDelDiaView = () => {
                 title="Anular el carné de papel"
                 confirmText="Anular"
                 isProcessing={anulando}
-                message={`El carné de ${aAnular?.nombre ?? 'esta persona'} deja de servir ahora mismo. No abre el portal, no marca en el kiosco y no firma nada. Si tiene una sesión abierta con él, se cierra. Para darle otro, imprímelo de nuevo.`}
+                message={`El carné de ${aAnular?.nombre ?? 'esta persona'} deja de servir ahora mismo. No abre el portal, no sirve en el marcador y no firma nada. Si tiene una sesión abierta con él, se cierra. Para darle otro, imprímelo de nuevo.`}
             />
         </GlassViewLayout>
     );

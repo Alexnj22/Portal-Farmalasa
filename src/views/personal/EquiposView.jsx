@@ -459,7 +459,7 @@ function AvanceDeHoras({ horas, p }) {
     <div className="space-y-1">
       <p className="text-micro font-bold text-content-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
         {fmt(lleva)} h{objetivo > 0 ? ` de ${fmt(objetivo)} h` : ''}
-        {horas?.dias ? ` · ${horas.dias} día${horas.dias === 1 ? '' : 's'}` : ' · sin marcajes'}
+        {horas?.dias ? ` · ${horas.dias} día${horas.dias === 1 ? '' : 's'}` : ' · sin marcaciones'}
       </p>
       {pct !== null && (
         <div data-medida="dato" className="h-1.5 w-full overflow-hidden rounded-full bg-surface-card-hover"

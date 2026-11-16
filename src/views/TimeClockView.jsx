@@ -199,7 +199,7 @@ const TimeClockView = ({ setView }) => {
           scroll de emergencia y por debajo de los modales (z-header = 40,
           contra el 60 del configurador y el 90 del aviso). ── */}
       <div className="fixed top-4 right-4 [@media(max-height:640px)]:top-2 [@media(max-height:640px)]:right-2 z-header">
-        <Button variant="secondary" size="sm" icon={LogOut} title="Salir del Kiosco (Esc)" onClick={handleLogout}>
+        <Button variant="secondary" size="sm" icon={LogOut} title="Salir del marcador (Esc)" onClick={handleLogout}>
           <span className="hidden sm:inline">Salir</span>
         </Button>
       </div>

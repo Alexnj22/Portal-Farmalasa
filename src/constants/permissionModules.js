@@ -517,7 +517,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'libros_iva_descargar',         label: 'Exportar los libros (CSV)', tipo: 'cap' },
                 { key: 'libros_iva_ver_montos',        label: 'Ver montos',                tipo: 'cap' },
             ]},
-            { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por el MH, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
+            { key: 'corte_z', label: 'Cierre mensual', desc: 'Cierre mensual (Corte Z) de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por el MH, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
                 { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
                 { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
                 // El libro y el cotejo son sólo lo enviado para TODOS. Esta
@@ -627,15 +627,15 @@ const GRUPOS_CRUDOS = [
         group: 'Sistema',
         color: 'text-content-2',
         modules: [
-            { key: 'kiosk_pin',    label: 'PIN de Marcación',       desc: 'Ver y copiar el PIN personal para marcar en el kiosco',     icono: 'ShieldCheck',   hasApprove: false },
+            { key: 'kiosk_pin',    label: 'PIN de Marcación',       desc: 'Ver y copiar el PIN personal del marcador',     icono: 'ShieldCheck',   hasApprove: false },
             // El carné de PAPEL, el que vale hasta medianoche. Va aparte de
             // `kiosk_pin` porque no es lo mismo: aquél deja VER la credencial
             // permanente de alguien, éste deja CREAR una que se muere sola. Al
             // dar de alta a alguien marcado como que todavía no tiene carné no
             // hace falta —alcanza con poder editar el listado de personal—,
             // justamente para que el trámite del ingreso no se trabe.
-            { key: 'carne_temporal', label: 'Carné del día',        desc: 'Imprimir en la ticketera un carné de papel que sirve hasta medianoche: abre el portal, marca en el kiosco y firma igual que el carné de plástico', icono: 'Printer', hasApprove: false },
-            { key: 'su_pin',       label: 'Código SU (Supervisores)', desc: 'Ver el código SU de 6 dígitos para autorizar marcajes de jefes y subjefes', icono: 'ShieldAlert', hasApprove: false },
+            { key: 'carne_temporal', label: 'Carné del día',        desc: 'Imprimir en la ticketera un carné de papel que sirve hasta medianoche: abre el portal, sirve en el marcador y firma igual que el carné de plástico', icono: 'Printer', hasApprove: false },
+            { key: 'su_pin',       label: 'Código SU (Supervisores)', desc: 'Ver el código SU de 6 dígitos para autorizar marcaciones de jefes y subjefes', icono: 'ShieldAlert', hasApprove: false },
             { key: 'permissions',  label: 'Permisos de acceso',     desc: 'Control de acceso por rol a módulos del sistema',           icono: 'Lock',          hasApprove: false },
             // Faltaba en este registro y por eso NO se podía otorgar desde
             // Permisos (auditoría 2026-08-03): la ruta ya exigía

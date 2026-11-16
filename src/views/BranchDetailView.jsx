@@ -324,7 +324,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <Button variant="secondary" size="sm" icon={Building2} onClick={() => openModal && openModal('editBranchInmueble', liveBranch)}>Local</Button>
                                 {hasServices && <Button variant="secondary" size="sm" icon={Zap} onClick={() => openModal && openModal('editBranchServicios', liveBranch)}>Serv.</Button>}
                                 {hasLegal && <Button variant="secondary" size="sm" icon={Scale} onClick={() => openModal && openModal('editBranchLegal', liveBranch)}>Legal</Button>}
-                                {hasKiosk && <Button variant="secondary" size="sm" icon={Monitor} onClick={() => openModal && openModal('manageKiosks', liveBranch)}>Kioscos</Button>}
+                                {hasKiosk && <Button variant="secondary" size="sm" icon={Monitor} onClick={() => openModal && openModal('manageKiosks', liveBranch)}>Marcadores</Button>}
                             </div>
                         </div>
                         )}

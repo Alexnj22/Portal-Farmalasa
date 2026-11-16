@@ -764,7 +764,7 @@ export function paginaDelCarne({
  */
 export const INDUCCION = [
     { titulo: 'Marcar entrada y salida',
-      texto: 'Con tu carné, en el kiosco de tu sala. Es lo que prueba tus horas.' },
+      texto: 'Con tu carné, en el marcador de tu sucursal. Es lo que prueba tus horas.' },
     { titulo: 'Mis avisos',
       texto: 'Lo que la empresa comunica a tu sala y a ti. Revísalo al entrar.' },
     { titulo: 'Mi perfil',

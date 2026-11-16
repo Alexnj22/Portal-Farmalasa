@@ -111,7 +111,7 @@ export default function CarneDelDia({ employeeId, nombre, cargo = '', sala = '' 
                 title="Anular el carné de papel"
                 confirmText="Anular"
                 isProcessing={anulando}
-                message={`El carné de papel de ${nombre || 'esta persona'} deja de servir ahora mismo. No abre el portal, no marca en el kiosco ni firma nada. Si tiene una sesión abierta con él, se cierra. Para darle otro, imprímelo de nuevo.`}
+                message={`El carné de papel de ${nombre || 'esta persona'} deja de servir ahora mismo. No abre el portal, no sirve en el marcador ni firma nada. Si tiene una sesión abierta con él, se cierra. Para darle otro, imprímelo de nuevo.`}
             />
         </div>
     );

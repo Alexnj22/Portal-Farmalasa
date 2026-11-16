@@ -40,7 +40,7 @@ export function LotesPorVencer({ lotes, politica }) {
                 {`${a.fueraDePlazo ? 'Fuera de plazo. El límite era el' : 'Enviar a Bodega antes del'} ${fechaTexto(a.limite, { day: '2-digit', month: 'short' })}`}
               </Text>
             ) : null}
-            {a.reportarND ? <Text style={{ marginLeft: 62, color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>ND — reportar a jefe inmediato (6-7 meses antes de vencer)</Text> : null}
+            {a.reportarND ? <Text style={{ marginLeft: 62, color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>ND: repórtalo al jefe de sucursal 6 o 7 meses antes de vencer. Él lo pasa al supervisor de ventas.</Text> : null}
           </View>
         );
       })}

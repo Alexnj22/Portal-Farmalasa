@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1556.1 — Lenguaje: decisiones de vocabulario
+
+- Vocabulario que decidió el usuario, aplicado en web, app, funciones y base:
+  «Corte Z» → **Cierre mensual** (el PDF para el contador sigue diciendo
+  Corte Z); «marcaje» → **marcación**; «kiosco» → **marcador**; «Partir
+  producto» → **Separar en productos**; el encargo caro se confirma con el
+  **jefe de Compras y Logística**; el ND en Mín/Máx se reporta al **jefe de
+  sucursal**, que lo pasa al supervisor de ventas.
+- `docs/reglas/como-habla-el-portal.md`: las decisiones nuevas en la tabla.
+
 ## v2.1556.0 — Preventa: fotos, sucursal en la píldora y todo con el teclado
 
 Cuarta vuelta de Preventa, pedida por el usuario («moderno, fácil, eficiente,

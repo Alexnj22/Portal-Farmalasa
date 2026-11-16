@@ -1178,7 +1178,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </IconoEnCaja>
                                     <div className="text-left">
-                                        <p className="text-caption font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
+                                        <p className="text-caption font-black text-content-2 uppercase tracking-widest">Marcador</p>
                                         <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
@@ -1258,7 +1258,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <Clock size={esBaja ? 15 : 18} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-body-sm font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
+                                        <p className="text-body-sm font-black text-content-2 uppercase tracking-widest">Marcador</p>
                                         <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>

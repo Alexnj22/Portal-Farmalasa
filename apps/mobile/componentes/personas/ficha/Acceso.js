@@ -66,7 +66,7 @@ export default function Acceso({ form, setForm, cambiar, esAlta, usuarioSugerido
           detalle={esAlta ? 'Al guardar se le muestra su contraseña temporal para entregársela.' : 'Puedes imprimirle un carné de papel desde su perfil. Vale hasta medianoche.'} />
       </Seccion>
 
-      <Seccion titulo="Seguridad del kiosco" pie="Sólo números. El PIN de las barras se deriva del código (SHA-256).">
+      <Seccion titulo="Seguridad del marcador" pie="Sólo números. El PIN de las barras se deriva del código (SHA-256).">
         {!credencialesListas ? <Nota texto="Cargando el código de carné…" /> : (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>

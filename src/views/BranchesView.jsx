@@ -283,10 +283,10 @@ const BranchCard = memo(({
                     // Gestionar —o sea, poder revocar— es de quien edita sucursales.
                     <button type="button" disabled={!canEdit} onClick={sinAbrir(() => canEdit && openModal?.('manageKiosks', branch))}
                         className="inline-flex items-center gap-1.5 min-h-[var(--tap-min)] rounded-lg px-2 text-body-sm text-content-2 transition-colors duration-[var(--dur-fast)] hover:text-brand-text disabled:hover:text-content-2 disabled:cursor-default active:scale-[0.97]"
-                        title={canEdit ? 'Gestionar kioscos' : 'Kioscos activos'}>
+                        title={canEdit ? 'Gestionar marcadores' : 'Marcadores activos'}>
                         <Monitor size={15} strokeWidth={2} className={activeKiosks > 0 ? 'text-success' : 'text-content-3'} aria-hidden="true" />
                         <span className="font-black text-content tabular-nums">{activeKiosks}</span>
-                        <span>de {LIMITE_KIOSCOS} kioscos</span>
+                        <span>de {LIMITE_KIOSCOS} marcadores</span>
                     </button>
                 )}
                 <div className="ml-auto flex items-center gap-0.5">
@@ -379,7 +379,7 @@ const BranchesView = ({ openModal }) => {
                 const fallidas = results.filter(r => r.error);
                 if (fallidas.length) console.error('Error cargando kioscos', fallidas[0].error);
                 setKioskError(fallidas.length
-                    ? mensajeAmigable(fallidas[0].error, `No se pudieron leer los kioscos de ${fallidas.length === 1 ? 'una sucursal' : `${fallidas.length} sucursales`}. Su conteo puede no estar al día.`)
+                    ? mensajeAmigable(fallidas[0].error, `No se pudieron leer los marcadores de ${fallidas.length === 1 ? 'una sucursal' : `${fallidas.length} sucursales`}. Su conteo puede no estar al día.`)
                     : null);
                 setKiosksCount(prev => {
                     const next = { ...prev };

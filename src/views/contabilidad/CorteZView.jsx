@@ -290,7 +290,7 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                 </div>
             ) : (
                 <p className="text-micro leading-relaxed">
-                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z. No viene de la
+                    El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el cierre mensual. No viene de la
                     retención. Todavía no hay diagnóstico de este período. Sale cada mañana.
                     {!cuadra(fila.dif_ccf) && (
                         <> Parte de la diferencia está en los créditos fiscales
@@ -400,7 +400,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     <span className="col-span-3 md:col-span-1 text-micro font-black text-content-3 uppercase tracking-widest">
                         Cotejo contra el libro
                     </span>
-                    <span className="text-micro text-content-3 text-right">Corte Z</span>
+                    <span className="text-micro text-content-3 text-right">Cierre mensual</span>
                     <span className="text-micro text-content-3 text-right">Libro</span>
                     <span className="text-micro text-content-3 text-right">Dif.</span>
                 </div>
@@ -433,7 +433,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 netea nada, duplica. */}
             {!cuadra(fila.retencion) && (
                 <p className="text-micro text-content-3 leading-relaxed">
-                    El Corte Z resta la retención <b>dos veces</b>. Sus ventas gravadas
+                    El cierre mensual resta la retención <b>dos veces</b>. Sus ventas gravadas
                     ({formatMoney(fila.z_total)}) ya traen restados
                     los <b>{formatMoney(fila.retencion)}</b> retenidos, y su línea de total los
                     vuelve a restar hasta {formatMoney(fila.total_general)}. Esa cifra no
@@ -513,7 +513,7 @@ export default function CorteZView() {
             setFilas(await fetchCortesZ(desde, hasta, filterBranch));
             setDias({});   // el desglose es del período viejo: no sirve para el nuevo
         } catch (e) {
-            setError(mensajeAmigable(e, 'No se pudo cargar el Corte Z'));
+            setError(mensajeAmigable(e, 'No se pudo cargar el cierre mensual'));
             setFilas([]);
         } finally {
             setLoading(false);
@@ -607,13 +607,13 @@ export default function CorteZView() {
     return (
         <GlassViewLayout
             icon={Receipt}
-            title="Corte Z"
-            filtersContent={<ViewTabBar tabs={[{ key: 'z', label: 'Corte Z' }]} activeTab="z" onTabChange={() => {}} />}
+            title="Cierre mensual"
+            filtersContent={<ViewTabBar tabs={[{ key: 'z', label: 'Cierre mensual' }]} activeTab="z" onTabChange={() => {}} />}
             transparentBody={true}
         >
             <div className="p-5 md:p-6 space-y-5">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <CarrilCards className="flex-1" ariaLabel="Resumen del Corte Z">
+                    <CarrilCards className="flex-1" ariaLabel="Resumen del cierre mensual">
                         <StatCard icon={Receipt} label="Sucursales" value={totales.sucursales}
                             sub="Del período" loading={loading} />
                         {/* Las dos de dinero van con `corte_z_ver_montos`. Sucursales y
@@ -665,11 +665,11 @@ export default function CorteZView() {
                     <div data-surface="card" className="p-10 text-center space-y-2">
                         <Receipt className="mx-auto text-content-3" size={28} aria-hidden="true" />
                         <p className="text-body font-semibold">
-                            Sin Corte Z de {etiquetaPeriodo(desde)}
+                            Sin cierre mensual de {etiquetaPeriodo(desde)}
                         </p>
                         <p className="text-caption text-content-3 max-w-md mx-auto">
                             {mes >= mesSV()
-                                ? 'El mes en curso todavía no se cierra. El Corte Z aparece el día 1 del mes siguiente.'
+                                ? 'El mes en curso todavía no se cierra. El cierre mensual aparece el día 1 del mes siguiente.'
                                 : 'Este período todavía no está cargado. Sus ventas no aparecen hasta que se cargue.'}
                         </p>
                     </div>

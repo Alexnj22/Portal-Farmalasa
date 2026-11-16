@@ -525,7 +525,7 @@ const AnnouncementsView = ({ openModal }) => {
     <>
       <style>{`@keyframes subtle-shake { 0%, 100% { transform: rotate(0deg) scale(1.01); } 25% { transform: rotate(-0.5deg) scale(1.01); } 75% { transform: rotate(0.5deg) scale(1.01); } } .animate-subtle-shake { animation: subtle-shake 0.4s ease-in-out infinite; }`}</style>
       <ConfirmModal isOpen={confirmDialog.isOpen} onClose={() => setConfirmDialog({ isOpen: false, annId: null })} onConfirm={executeDelete} title="¿Eliminar este aviso?" message="El aviso se borra para siempre, con sus estadísticas." confirmText="Sí, Eliminar" isProcessing={isSubmitting} isDestructive={true} />
-      <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar aviso?" message="El aviso pasa a Archivo y deja de verse en los kioscos." confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
+      <ConfirmModal isOpen={archiveDialog.isOpen} onClose={() => setArchiveDialog({ isOpen: false, annId: null })} onConfirm={executeArchive} title="¿Archivar aviso?" message="El aviso pasa a Archivo y deja de verse en los marcadores." confirmText="Sí, Archivar" isProcessing={isSubmitting} isDestructive={false} />
       <AlertModal isOpen={alertDialog.isOpen} onClose={() => setAlertDialog({ isOpen: false, title: '', message: '' })} title={alertDialog.title} message={alertDialog.message} type="error" />
 
       <GlassViewLayout icon={Megaphone} title="Gestión de avisos" filtersContent={renderFiltersContent()} transparentBody={true} fixedScrollMode={true}>
@@ -669,7 +669,7 @@ const AnnouncementsView = ({ openModal }) => {
                    </div>
                    {publishImmediately && (
                       <p className="text-caption text-success-text font-bold mt-1 ml-1 flex items-center gap-1">
-                        <Power size={10} /> Se mostrará en los kioscos inmediatamente
+                        <Power size={10} /> Se mostrará en los marcadores inmediatamente
                       </p>
                    )}
                 </div>

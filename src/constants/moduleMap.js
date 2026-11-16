@@ -119,7 +119,7 @@ export const MODULE_MAP = {
     libro_compras_completo: { path: '/libro-compras-completo', label: 'Compras completo',  icono: 'BookOpen'      },
     cierre_periodo:    { path: '/cierre-periodo',    label: 'Cierre de período',        icono: 'CalendarCheck' },
     resumen_fiscal:    { path: '/resumen-fiscal',      label: 'Resumen fiscal',           icono: 'Calculator'    },
-    corte_z:           { path: '/corte-z',              label: 'Corte Z',                  icono: 'Receipt'       },
+    corte_z:           { path: '/corte-z',              label: 'Cierre mensual',           icono: 'Receipt'       },
     proveedores:       { path: '/proveedores',        label: 'Proveedores',              icono: 'Truck'         },
     conteo_inventario: { path: '/conteo-inventario',  label: 'Conteo de inventario',     icono: 'ClipboardCheck' },
     // Vecindario: el conteo. Las dos describen el estado FÍSICO de lo que hay

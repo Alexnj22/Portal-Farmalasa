@@ -89,9 +89,9 @@ function Tarjeta({ f, verMontos }) {
               </View>
             ))}
           </Seccion>
-          <Seccion titulo="Cotejo contra el libro" pie="Se compara con las ventas gravadas de los cierres del día, no con su total.">
+          <Seccion titulo="Cotejo contra el libro" pie="Se compara con las ventas gravadas del cierre mensual, no con su total.">
             <View style={{ flexDirection: 'row' }}>
-              {['CIERRES', 'LIBRO', 'DIFERENCIA'].map((c) => (
+              {['CIERRE', 'LIBRO', 'DIFERENCIA'].map((c) => (
                 <Text key={c} style={{ flex: 1, textAlign: 'right', color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{c}</Text>
               ))}
             </View>
@@ -138,7 +138,7 @@ function Tarjeta({ f, verMontos }) {
             );
           }) : (
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-              {`El libro tiene ${Number(f.residuo) > 0 ? 'más' : 'menos'} que los cierres del día. Todavía no se sabe por qué. Se revisa cada mañana.`}
+              {`El libro tiene ${Number(f.residuo) > 0 ? 'más' : 'menos'} que el cierre mensual. Todavía no se sabe por qué. Se revisa cada mañana.`}
             </Text>
           )}
           {docs.length && sinExplicar >= 0.005 ? <Aviso tono="cuidado" texto={`Quedan ${formatMoney(sinExplicar)} sin explicar. Hay que revisarlos contra el reporte del día.`} /> : null}
@@ -192,7 +192,7 @@ export default function CorteZ() {
   const [recargando, setRecargando] = useState(false);
   const [desde, hasta] = useMemo(() => rangoDelMes(mes), [mes]);
   const cargar = useCallback(async () => {
-    try { setFilas(await fetchCortesZ(desde, hasta, sala)); setError(null); } catch (e) { setError(mensajeAmigable(e, 'No se pudieron cargar los cierres del día')); setFilas([]); }
+    try { setFilas(await fetchCortesZ(desde, hasta, sala)); setError(null); } catch (e) { setError(mensajeAmigable(e, 'No se pudo cargar el cierre mensual')); setFilas([]); }
   }, [desde, hasta, sala]);
   useEffect(() => { setFilas(null); cargar(); }, [cargar]);
   useEffect(() => { if (!sala && filas?.length) setConCorte(filas.map((f) => ({ id: String(f.branch_id), label: f.sucursal }))); }, [filas, sala]); // eslint-disable-line react-hooks/set-state-in-effect -- se recuerdan sin filtro
@@ -215,9 +215,9 @@ export default function CorteZ() {
   const elegirPdf = () => {
     Haptics.selectionAsync().catch(() => {});
     const opciones = [`Todas las sucursales (${filas.length})`, ...filas.map((f) => f.sucursal), 'Cancelar'];
-    ActionSheetIOS.showActionSheetWithOptions({ title: `Cierres del día · ${etiquetaPeriodo(desde)}`, options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
-      if (i === 0) pdfDe(filas, `Cierres del día ${etiquetaPeriodo(desde)} · todas las sucursales`);
-      else if (i > 0 && i <= filas.length) pdfDe([filas[i - 1]], `Cierres del día ${etiquetaPeriodo(desde)} · ${filas[i - 1].sucursal}`);
+    ActionSheetIOS.showActionSheetWithOptions({ title: `Cierre mensual · ${etiquetaPeriodo(desde)}`, options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
+      if (i === 0) pdfDe(filas, `Corte Z ${etiquetaPeriodo(desde)} · todas las sucursales`);
+      else if (i > 0 && i <= filas.length) pdfDe([filas[i - 1]], `Corte Z ${etiquetaPeriodo(desde)} · ${filas[i - 1].sucursal}`);
     });
   };
 
@@ -226,7 +226,7 @@ export default function CorteZ() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cierres del día', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cierre mensual', headerLargeTitle: true }} />
       <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
@@ -245,9 +245,9 @@ export default function CorteZ() {
         {filas == null ? <Cargando /> : filas.map((f) => <Tarjeta key={`${f.branch_id}-${f.periodo}`} f={f} verMontos={verMontos} />)}
         {filas && !filas.length && !error ? (
           <View style={{ marginHorizontal: 24, gap: 6, marginTop: 30 }}>
-            <Vacio>{`Sin cierres del día de ${nombreDelMes(mes)}`}</Vacio>
+            <Vacio>{`Sin cierre mensual de ${nombreDelMes(mes)}`}</Vacio>
             <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {mes >= mesSV() ? 'El mes en curso todavía no se cierra. Los cierres del día aparecen el día 1 del mes siguiente.' : 'Este mes todavía no se ha cargado.'}
+              {mes >= mesSV() ? 'El mes en curso todavía no se cierra. El cierre mensual aparece el día 1 del mes siguiente.' : 'Este mes todavía no se ha cargado.'}
             </Text>
           </View>
         ) : null}

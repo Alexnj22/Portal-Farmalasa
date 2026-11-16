@@ -415,7 +415,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalTitle = () => {
         switch (type) {
             case "viewAuditDetail": return "Detalle de auditoría";
-            case "manageKiosks": return "Dispositivos del kiosco";
+            case "manageKiosks": return "Marcadores de la sucursal";
             case "newEmployee": return esFichaDePracticante ? "Nuevo practicante" : "Nuevo empleado";
             case "editEmployee": return esFichaDePracticante ? "Actualizar practicante" : "Actualizar información";
             case "rehireEmployee": return "Recontratación";

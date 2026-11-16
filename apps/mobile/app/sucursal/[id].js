@@ -140,7 +140,7 @@ function Resumen({ b, gente, kioscos, puedeEditar }) {
         {!b.phone && !b.cell ? <Vacio enSeccion>Sin teléfonos registrados.</Vacio> : null}
       </Seccion>
       <FilaDeKpis>
-        <Kpi icono="Monitor" rotulo="Kioscos" valor={kioscos == null ? '…' : `${kioscos} / ${cupoDeKioscos().limite}`} color={kioscos ? MARCA.violetaClaro : colorSistema.texto2} apoyo="activos para marcar"
+        <Kpi icono="Monitor" rotulo="Marcadores" valor={kioscos == null ? '…' : `${kioscos} / ${cupoDeKioscos().limite}`} color={kioscos ? MARCA.violetaClaro : colorSistema.texto2} apoyo="activos para marcar"
           onPress={sucursalLlevaKiosco(b.type || 'FARMACIA') ? () => router.push({ pathname: '/sucursal/kioscos', params: { id: String(b.id) } }) : undefined} />
         <Kpi icono="Users" rotulo="Personal" valor={String(gente.length)} color={MARCA.azulClaro} apoyo={gente.length ? 'asignados' : 'nadie asignado'} />
       </FilaDeKpis>

@@ -49,7 +49,7 @@ const FormDispositivos = ({ formData }) => {
             if (success) {
                 setKiosks(prev => prev.filter(k => k.id !== deviceId));
             } else {
-                setErrorMsg('No se pudo revocar el Kiosco.');
+                setErrorMsg('No se pudo revocar el marcador.');
             }
         } catch {
             setErrorMsg('Ocurrió un error en el servidor.');
@@ -110,7 +110,7 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <Button variant="ghost" tone="danger" size="sm" icon={PowerOff} aria-label="Desconectar el kiosco" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
+                                                <Button variant="ghost" tone="danger" size="sm" icon={PowerOff} aria-label="Desconectar el marcador" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
                                             )}
                                         </div>
 
@@ -125,7 +125,7 @@ const FormDispositivos = ({ formData }) => {
                                 );
                             })
                         ) : (
-                            <EmptyState compact icon={Laptop} title="Sin kioscos vinculados"
+                            <EmptyState compact icon={Laptop} title="Sin marcadores vinculados"
                                 subtitle="Inicia sesión en la tablet de la sucursal para vincularla." />
                         )}
                     </div>

@@ -243,7 +243,7 @@ export const resolveAttendanceFlow = ({
         authType: null,
         adjustedTimestamp: shiftEndD.toISOString(),
         actualPunchTime: currentTime.toISOString(),
-        note: `Marcaje real a las ${format12hNoSeconds(currentTime)}. Ajustado a fin de turno (${format12hNoSeconds(shiftEndD)}) para planilla.`,
+        note: `Marcación real a las ${format12hNoSeconds(currentTime)}. Ajustado a fin de turno (${format12hNoSeconds(shiftEndD)}) para planilla.`,
         lastPunch,
       };
     }

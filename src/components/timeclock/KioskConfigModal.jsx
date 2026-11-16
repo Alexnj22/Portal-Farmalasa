@@ -71,7 +71,7 @@ const KioskConfigModal = ({
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
-              Kiosco Activo
+              Marcador activo
             </h2>
             <p className="text-micro sm:text-body-sm font-black uppercase tracking-widest text-success/80 transition-colors px-2 mb-6">
               Dispositivo Autorizado
@@ -99,7 +99,7 @@ const KioskConfigModal = ({
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
-              Vincular Kiosco
+              Activar como marcador
             </h2>
             <p className="text-micro sm:text-body-sm font-black uppercase tracking-widest text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
               Configuración Inicial

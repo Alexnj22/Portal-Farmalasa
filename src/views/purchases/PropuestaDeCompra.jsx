@@ -1119,7 +1119,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                 )}
                                                 {!aj.servicio && !aj.erroneo && (r.parte?.llave || r.llave || r.codigo_proveedor) && (!r.parte || r.parte.indice === 1) && (
                                                     <Button size="xs" variant="ghost" icon={Split} onClick={() => setPartiendo(i)}>
-                                                        {r.parte ? 'Cambiar partición' : 'Partir producto'}
+                                                        {r.parte ? 'Cambiar separación' : 'Separar en productos'}
                                                     </Button>
                                                 )}
                                                 {!aj.servicio && !conProducto && !aj.erroneo && (

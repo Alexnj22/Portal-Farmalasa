@@ -97,7 +97,7 @@ function EncargoAccion() {
           {modo === 'confirmar' ? (
             <>
               {encargoConRiesgo(e) ? (
-                <Aviso tono="cuidado" texto={`${!e.devolutivo ? 'No se puede devolver al proveedor. ' : ''}${!e.vendido_antes ? 'Nunca se ha vendido en ninguna sucursal. ' : ''}Si es caro, confírmalo con el gerente antes de aceptar.`} />
+                <Aviso tono="cuidado" texto={`${!e.devolutivo ? 'No se puede devolver al proveedor. ' : ''}${!e.vendido_antes ? 'Nunca se ha vendido en ninguna sucursal. ' : ''}Si es caro, confírmalo con el jefe de Compras y Logística antes de aceptar.`} />
               ) : null}
               <Seccion titulo="Precio por unidad" pie={p > 0 ? `El cliente paga ${formatMoney(p * e.cantidad)} por adelantado (100 %).` : undefined}>
                 <Campo multiline={false} value={precio} keyboardType="decimal-pad" onChangeText={(v) => setPrecio(dinero(v))} placeholder="0.00" style={{ textAlign: 'center', fontWeight: '700' }} />

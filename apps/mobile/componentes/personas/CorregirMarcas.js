@@ -59,7 +59,7 @@ export default function CorregirMarcas({ objetivo, usuario, onCerrar }) {
     <Modal visible={!!objetivo} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={() => onCerrar(false)}>
       {objetivo ? (
         <ConAurora>
-          <EncabezadoDeHoja titulo="Corrección de marcaje"
+          <EncabezadoDeHoja titulo="Corrección de marcación"
             subtitulo={`${shortEmployeeName(objetivo.persona)} · ${fechaTexto(objetivo.dia, { weekday: 'long', day: 'numeric', month: 'long' })}`}
             onCerrar={() => onCerrar(false)} />
           <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
@@ -88,7 +88,7 @@ export default function CorregirMarcas({ objetivo, usuario, onCerrar }) {
                     </View>
                   </Seccion>
                   <Seccion titulo="Motivo" pie="Queda en la bitácora con tu nombre.">
-                    <TextInput value={motivo} onChangeText={setMotivo} placeholder="Ej: olvidó marcar, el kiosco no respondía" placeholderTextColor={colorSistema.texto2} multiline
+                    <TextInput value={motivo} onChangeText={setMotivo} placeholder="Ej: olvidó marcar, el marcador no respondía" placeholderTextColor={colorSistema.texto2} multiline
                       style={{ minHeight: 64, borderRadius: 12, padding: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: FONDO_CONTROL }} />
                   </Seccion>
                   <Aviso texto="La marca se agrega a las que ya hay: no reemplaza ninguna." />

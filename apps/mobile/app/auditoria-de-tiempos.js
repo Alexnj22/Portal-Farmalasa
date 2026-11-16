@@ -118,7 +118,7 @@ export default function AuditoriaDeTiempos() {
     try {
       await marcarMarcajesRevisados(delDia, { employeeId: e.id, date: dia, revisadoPor: user?.name });
       setRevisados((prev) => new Set([...prev, ...delDia.map((p) => p.id)]));
-      listo('Revisado', `${delDia.length} marcaje(s) de ${shortEmployeeName(e)}.`);
+      listo('Revisado', `${delDia.length} marcación(es) de ${shortEmployeeName(e)}.`);
     } catch (err) { fallo('No se pudo marcar como revisado', err?.message || ''); }
   };
   const conAlgo = filas.filter((f) => f.s.length).length;

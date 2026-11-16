@@ -45,7 +45,7 @@ EL DÍA DE UNA CAJA, en orden:
 1. Abrir la caja (botón «Abrir»): se escribe con cuánto efectivo arranca; si arranca en cero se deja vacío. Si la caja está abierta pero el turno parado, botón «Iniciar turno»: sin turno no se vende, corta ni cierra.
 2. Durante el día se anotan ENTRADAS y SALIDAS de efectivo que no son ventas (botones «Entrada» y «Salida»).
 3. Cortes (botón «Corte»): se cuenta SÓLO el efectivo del cajón; lo que ya está en las bolsas de hoy lo suma el portal. El portal compara contra lo esperado y dice si cuadró, sobró o faltó. Cada corte se CONFIRMA (el conteo es el real, aunque tenga diferencia: la diferencia queda firmada) o se DESCARTA (se contó mal o fue prueba: no cuenta, se hace otro). Al confirmar, el efectivo se embolsa.
-4. Cerrar el día (botón «Cerrar»): emite el corte Z y NO se deshace; la caja no vuelve a abrir ese día.
+4. Cerrar el día (botón «Cerrar»): hace el cierre del día y NO se deshace; la caja no vuelve a abrir ese día.
 
 LOS CUATRO FRENOS DEL CIERRE (si uno está activo, el día no cierra):
 a) un corte sin confirmar ni descartar → resolverlo; b) ningún corte confirmado hoy → hacer uno y confirmarlo; c) entró efectivo después del último corte confirmado («Falta por contar») → hacer otro corte y confirmarlo; d) preventas guardadas sin finalizar en la caja → finalizarlas en la caja. La preventa también frena el corte.

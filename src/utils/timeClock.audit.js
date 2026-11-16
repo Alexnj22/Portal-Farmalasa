@@ -148,7 +148,7 @@ export const buildLateOutAdjustedMetadata = ({
   return {
     adjustedTimestamp: shiftEndDate.toISOString(),
     actualPunchTime: now.toISOString(),
-    note: `Marcaje real a las ${hora12(now)}. Ajustado a fin de turno para planilla.`,
+    note: `Marcación real a las ${hora12(now)}. Ajustado a fin de turno para planilla.`,
   };
 };
 

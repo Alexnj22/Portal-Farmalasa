@@ -74,7 +74,7 @@ function HorarioDeLaPractica({ pasantia, horasCumplidas, edad, onChange }) {
             <div className={islandClass}>
                 <IslandHeader icon={CalendarClock} title="Horario de la práctica" />
                 <p className="text-body-sm text-content-2 mb-3">
-                    Sin horario, el kiosco le pide autorización a un supervisor cada vez que marca y no se puede
+                    Sin horario, el marcador le pide autorización a un supervisor cada vez que marca y no se puede
                     saber cuándo termina.
                 </p>
                 <Button variant="secondary" size="sm" icon={CalendarClock} onClick={() => onChange({ ...HORARIO_VACIO })}>

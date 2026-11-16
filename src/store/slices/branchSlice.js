@@ -584,7 +584,7 @@ export const createBranchSlice = (set, get) => ({
             // es para avisar antes. Si el conteo falla, NO se registra —antes
             // `undefined >= 3` daba falso y pasaba igual—.
             const { count, error: countErr } = await fetchActiveKioskDeviceCount(branchId);
-            if (countErr) throw new Error('No se pudo comprobar cuántos kioscos tiene la sucursal. Intenta de nuevo.');
+            if (countErr) throw new Error('No se pudo comprobar cuántos marcadores tiene la sucursal. Intenta de nuevo.');
 
             if (count >= LIMITE_KIOSCOS) throw new Error(`Límite alcanzado: Ya existen ${LIMITE_KIOSCOS} dispositivos activos.`);
 

@@ -119,7 +119,7 @@ export default function useKioskDevice() {
 
       if (!result?.authorized) {
         revokeLocalConfig();
-        setLastError('Kiosco no autorizado o token revocado.');
+        setLastError('Esta computadora ya no es marcador.');
         return { config: null, networkError: false };
       }
 
@@ -131,7 +131,7 @@ export default function useKioskDevice() {
     } catch (e) {
       // No debería pasar (validateKioskToken captura sus propios errores),
       // pero por seguridad se trata igual que un error de red.
-      setLastError(mensajeAmigable(e, 'Error verificando kiosco.'));
+      setLastError(mensajeAmigable(e, 'No se pudo comprobar el marcador.'));
       const ageMs = local.lastVerifiedAt ? Date.now() - new Date(local.lastVerifiedAt).getTime() : Infinity;
       if (ageMs <= GRACE_MS) {
         return { config: resolveCachedConfig(local), networkError: true };

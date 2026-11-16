@@ -345,7 +345,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             )}
                                             {ndReport && (
                                                 <span className="text-micro pl-11 font-semibold text-warning">
-                                                    ND — reportar a jefe inmediato (6-7 meses antes de vencer)
+                                                    ND: repórtalo al jefe de sucursal 6 o 7 meses antes de vencer. Él lo pasa al supervisor de ventas.
                                                 </span>
                                             )}
                                         </div>

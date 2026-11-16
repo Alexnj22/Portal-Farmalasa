@@ -2901,7 +2901,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <div className="text-center sm:text-left">
                                     <h4 className="text-body-xl font-black text-content tracking-tight">Identidad</h4>
-                                    <p className="text-label font-medium text-content-3 max-w-[250px] leading-snug mt-1">Quién es la persona. La foto aparece en el portal y en el kiosco: usa una imagen clara.</p>
+                                    <p className="text-label font-medium text-content-3 max-w-[250px] leading-snug mt-1">Quién es la persona. La foto aparece en el portal y en el marcador: usa una imagen clara.</p>
                                     {/* Tocar el avatar abre el explorador de archivos: dentro
                                         de la app eso NUNCA ofrece la cámara, hace falta un
                                         input propio con `accept` comodín + `capture` juntos
@@ -5083,7 +5083,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className={islandClass}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="p-2 bg-brand text-white rounded-xl shadow-[var(--shadow-shine)]"><Lock size={16} strokeWidth={2.5} /></div>
-                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Seguridad kiosko</h4>
+                                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Seguridad del marcador</h4>
                                 </div>
                                 <div>
                                     {/* El botón de regenerar iba DENTRO del campo, encimado

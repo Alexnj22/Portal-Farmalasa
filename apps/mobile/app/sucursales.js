@@ -102,7 +102,7 @@ export default function Sucursales() {
                     </View>
                     {b.address ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[b.address, b.settings?.location?.municipality, b.settings?.location?.department].filter(Boolean).join(', ')}</Text> : null}
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                      {[tipo === 'FARMACIA' ? `Hoy ${horarioDeHoy(b, dia)}` : null, `${gente.length} persona${gente.length === 1 ? '' : 's'}`, kioscos[b.id] != null ? `${kioscos[b.id]}/3 kioscos` : null].filter(Boolean).join(' · ')}
+                      {[tipo === 'FARMACIA' ? `Hoy ${horarioDeHoy(b, dia)}` : null, `${gente.length} persona${gente.length === 1 ? '' : 's'}`, kioscos[b.id] != null ? `${kioscos[b.id]}/3 marcadores` : null].filter(Boolean).join(' · ')}
                     </Text>
                     {alertas.hasAlerts ? <Pildora texto={alertas.message} color={alertas.critica ? MARCA.rojo : MARCA.ambar} /> : null}
                   </View>

@@ -38,7 +38,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             <Coffee size={15} className="text-chart-9-text shrink-0" />
                             <div>
                                 <p className="text-body-sm font-semibold text-chart-9-text">Ya marcaste salida a almuerzo</p>
-                                <p className="text-label text-chart-9-text">Tu salida a almuerzo quedó marcada en el kiosco hoy.</p>
+                                <p className="text-label text-chart-9-text">Tu salida a almuerzo quedó marcada en el marcador hoy.</p>
                             </div>
                         </div>
                     )}

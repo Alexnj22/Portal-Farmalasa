@@ -1240,7 +1240,7 @@ const ROUTE_TITLES = {
     '/libro-compras-completo': 'Compras completo',
     '/cierre-periodo':    'Cierre de período',
     '/resumen-fiscal':    'Resumen fiscal',
-    '/corte-z':           'Corte Z',
+    '/corte-z':           'Cierre mensual',
     '/conteo-inventario': 'Conteo de inventario',
     '/bitacoras':         'Bitácoras',
     '/cumplimiento':      'Cumplimiento sanitario',

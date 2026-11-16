@@ -79,7 +79,7 @@ export default function Kioscos() {
     if (!si) return;
     if (ultimo) {
       const seguro = await preguntar('Es el último equipo de la sucursal',
-        `${b?.name ?? 'La sucursal'} se queda sin kiosco. Nadie podrá marcar ahí hasta que se vincule otro. ¿Revocarlo igual?`, 'Sí, revocar');
+        `${b?.name ?? 'La sucursal'} se queda sin marcador. Nadie podrá marcar ahí hasta que se vincule otro. ¿Revocarlo igual?`, 'Sí, revocar');
       if (!seguro) return;
     }
     setOcupado(k.id);
@@ -90,13 +90,13 @@ export default function Kioscos() {
       setLista((l) => (l || []).filter((x) => x.id !== k.id));
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      setError('No se pudo revocar el kiosco.');
+      setError('No se pudo revocar el marcador.');
     }
   };
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Kioscos', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marcadores', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 4 }}>

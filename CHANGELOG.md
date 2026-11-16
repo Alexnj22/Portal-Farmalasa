@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.6 — Solicitudes: avisos de la decisión con otras palabras
+
+- Pedido del usuario: «entra todo lo que se pidió no me gusta, no son formas
+  que yo hablo». Cuando entra todo tal cual se pidió ya no se muestra ningún
+  aviso (además seguía visible cuando a la carga le faltaban datos).
+- Los avisos de aprobación parcial pasan a tuteo y frases cortas: «Dejaste 1
+  producto fuera… Escribe abajo el motivo», «No marcaste ningún producto…»,
+  y lo mismo para los créditos de un abono. El aviso usa el ícono de su tono.
+- «Falta antes de aprobar» → «Completa esto antes de aprobar», con «le falta el
+  lote», «le falta el vencimiento», etc.; «Completado al revisar» → «Datos
+  agregados al revisar».
+
 ## v2.1550.5 — Datos de mercado: «Elegir otro» no muestra muestras médicas ni presentaciones institucionales u hospitalarias
 
 La búsqueda en el catálogo de la SRS (función `srs-datos-mercado`, acción

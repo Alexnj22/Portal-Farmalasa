@@ -19,14 +19,14 @@ describe('decisionDeSolicitud', () => {
         const r = cuenta(descarte);
         expect(r.parcial).toBe(false);
         expect(r.aceptadas).toBeNull();
-        expect(r.aviso.texto).toBe('Entra todo lo que se pidió, completo.');
+        expect(r.aviso).toBeNull();
     });
     it('una línea afuera y otra recortada: parcial con índices y cantidad', () => {
         const cant = cantidadesIniciales(lineasDeDecision(descarte)); cant.set(0, 3);
         const r = cuenta(descarte, new Set([0, 2]), cant);
         expect(r.parcial).toBe(true);
         expect(r.aceptadas).toEqual([{ i: 0, cantidad: 3 }, { i: 2, cantidad: 1 }]);
-        expect(r.aviso.texto).toBe('Queda 1 producto afuera y a 1 le bajaste la cantidad. Cuenta por qué abajo.');
+        expect(r.aviso.texto).toBe('Dejaste 1 producto fuera y a 1 le bajaste la cantidad. Escribe abajo el motivo.');
         expect(faltaMotivo({ rechazando: false, parcial: r.parcial, nota: ' ' })).toBe(true);
     });
     it('nada marcado se avisa como peligro', () => {

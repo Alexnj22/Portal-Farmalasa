@@ -346,7 +346,7 @@ const CorreccionesDeLaCarga = ({ meta, employeesById }) => {
     const items = lineasDe(meta);
     return (
         <Caja tono="hover" className="space-y-1.5">
-            <Rotulo>Completado al revisar</Rotulo>
+            <Rotulo>Datos agregados al revisar</Rotulo>
             {lista.map((c, k) => (
                 <div key={k} className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                     <p className="text-caption text-content-2 font-semibold">

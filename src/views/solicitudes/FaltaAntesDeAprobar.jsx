@@ -29,10 +29,10 @@ import { emitir } from '@plataforma/eventos';
 const TEXTO = {
     costo:        'no tiene costo',
     habilitar:    'está deshabilitado',
-    lote:         'lleva control de lote y no dice cuál',
-    vence:        'necesita fecha de vencimiento',
-    presentacion: 'ya no tiene esa presentación',
-    factor:       'cambió de presentación',
+    lote:         'le falta el lote',
+    vence:        'le falta el vencimiento',
+    presentacion: 'ya no existe en esa presentación',
+    factor:       'su presentación cambió',
     ilegible:     'no se pudo revisar',
 };
 const NO_SE_ARREGLA = new Set(['presentacion', 'factor', 'ilegible']);
@@ -66,20 +66,20 @@ export default function FaltaAntesDeAprobar({ req, meta }) {
 
     if (estado.cargando && estado.faltan.length === 0) {
         return (
-            <LoadingState variant="inline" size="sm" label="Revisando que todo pueda entrar…" />
+            <LoadingState variant="inline" size="sm" label="Revisando los productos…" />
         );
     }
     if (estado.error) {
         return (
             <p className="px-3 text-caption text-content-3">
-                No se pudo revisar antes de aprobar: {estado.error}
+                No se pudieron revisar los productos: {estado.error}
             </p>
         );
     }
     if (estado.faltan.length === 0) {
         return estado.completa ? null : (
             <p className="px-3 text-caption text-warning-text font-semibold">
-                No alcanzó el tiempo para revisar todos los productos; lo que falte se avisa al aprobar.
+                No dio tiempo de revisar todos los productos. Si falta algo, te avisa al aprobar.
             </p>
         );
     }
@@ -94,8 +94,8 @@ export default function FaltaAntesDeAprobar({ req, meta }) {
             <div className="flex items-start gap-2">
                 <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                 <p className="text-body-sm text-warning-text font-bold leading-snug">
-                    Falta antes de aprobar: así la carga no puede entrar.
-                    {hayQueRechazar && ' Lo que no se puede completar aquí obliga a rechazarla y pedirla de nuevo.'}
+                    Completa esto antes de aprobar.
+                    {hayQueRechazar && ' Lo que no se puede arreglar aquí: rechaza la solicitud y que la vuelvan a pedir.'}
                 </p>
             </div>
             {[...porLinea.entries()].map(([i, fs]) => (

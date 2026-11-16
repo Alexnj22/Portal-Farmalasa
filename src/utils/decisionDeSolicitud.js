@@ -77,25 +77,28 @@ export function resumenDeDecision({ req, lineas, seleccion, cantidades, editable
 
     // El aviso habla de PRODUCTOS porque nació con los movimientos; sobre un
     // abono lo que queda afuera es dinero que se le DEVUELVE al cliente.
+    // Cuando entra todo tal cual se pidió no hay nada que decir: el aviso
+    // «Entra todo lo que se pidió, completo» se quitó el 2026-11-16 a pedido
+    // del usuario («no son formas que yo hablo»), y además seguía en pantalla
+    // cuando a la carga le faltaban datos, contradiciendo al aviso de arriba.
+    // Tuteo y frases cortas, como habla el usuario.
     let aviso = null;
-    if (editable) {
-        const tono = nadaSeleccionado ? 'danger' : parcial ? 'warning' : 'info';
+    if (editable && (nadaSeleccionado || parcial)) {
+        const tono = nadaSeleccionado ? 'danger' : 'warning';
         const texto = abono
             ? (nadaSeleccionado
-                ? 'No dejaste ningún crédito marcado. Si no se confirma ninguno, rechazá la solicitud: se le devuelve todo.'
-                : parcial
-                    ? (fuera === 1
-                        ? 'Un crédito queda sin confirmar: ese abono se deshace y el saldo vuelve a subir. Cuenta por qué abajo.'
-                        : `${fuera} créditos quedan sin confirmar: esos abonos se deshacen y sus saldos vuelven a subir. Cuenta por qué abajo.`)
-                    : 'Se confirman todos.')
+                ? 'No marcaste ningún crédito. Si no se confirma ninguno, rechaza la solicitud y se le devuelve todo.'
+                : (fuera === 1
+                    ? '1 crédito queda sin confirmar: ese abono se anula y el saldo vuelve a subir. Escribe abajo el motivo.'
+                    : `${fuera} créditos quedan sin confirmar: esos abonos se anulan y los saldos vuelven a subir. Escribe abajo el motivo.`))
             : nadaSeleccionado
-                ? 'No dejaste ninguna línea marcada. Si no entra nada, rechazá la solicitud.'
-                : parcial
-                    ? [
-                        fuera > 0 && (fuera === 1 ? 'Queda 1 producto afuera' : `Quedan ${fuera} productos afuera`),
-                        recortes > 0 && (recortes === 1 ? 'a 1 le bajaste la cantidad' : `a ${recortes} les bajaste la cantidad`),
-                    ].filter(Boolean).join(' y ') + '. Cuenta por qué abajo.'
-                    : 'Entra todo lo que se pidió, completo.';
+                ? 'No marcaste ningún producto. Si no va a entrar nada, rechaza la solicitud.'
+                : [
+                    fuera > 0 && (fuera === 1 ? 'Dejaste 1 producto fuera' : `Dejaste ${fuera} productos fuera`),
+                    recortes > 0 && (fuera > 0
+                        ? (recortes === 1 ? 'a 1 le bajaste la cantidad' : `a ${recortes} les bajaste la cantidad`)
+                        : (recortes === 1 ? 'A 1 producto le bajaste la cantidad' : `A ${recortes} productos les bajaste la cantidad`)),
+                ].filter(Boolean).join(' y ') + '. Escribe abajo el motivo.';
         aviso = { tono, texto };
     }
     return { fuera, recortes, parcial, nadaSeleccionado, aceptadas, aviso };

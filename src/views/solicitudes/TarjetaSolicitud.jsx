@@ -548,7 +548,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                             cantidades={conCantidad ? cantidades : undefined} />
                     </Suspense>
 
-                    {editable && (
+                    {editable && aviso && (
                         <div>
                             {/* El aviso habla de PRODUCTOS porque nació con los
                                 movimientos, y sobre un abono eso sería mentira:
@@ -556,7 +556,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 entra, es dinero que se le DEVUELVE al cliente y
                                 un saldo que vuelve a subir. Dos textos, un solo
                                 mecanismo. */}
-                            <Notice variant={aviso.tono} icon={Check}>{aviso.texto}</Notice>
+                            <Notice variant={aviso.tono}>{aviso.texto}</Notice>
                         </div>
                     )}
 

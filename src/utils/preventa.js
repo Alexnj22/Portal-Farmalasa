@@ -103,7 +103,11 @@ export function armarVenta(datos) {
     const vendedor = codigoDeVendedor(datos?.vendedor);
     if (!vendedor) throw new Error('Tus datos no tienen código de vendedor.');
     const cliente = clienteDeLaVenta(datos?.cliente);
-    const total = centavos(renglones.reduce((t, r) => t + r.subtotal, 0));
+    // Descuento por puntos (vista Preventa, 2026-11-16): $0.01 por punto, como
+    // lo aplica la caja. La base ya comprobó saldo y mínimo a pagar.
+    const puntos = Math.max(0, Math.trunc(Number(datos?.puntos) || 0));
+    const descuentoPuntos = puntos > 0 ? centavos(datos?.descuento_puntos ?? puntos * 0.01) : 0;
+    const total = centavos(renglones.reduce((t, r) => t + r.subtotal, 0) - descuentoPuntos);
     const faltaPagar = datos?.falta_pagar == null ? total : centavos(datos.falta_pagar);
     const pagado = centavos(datos?.pagado);
     return {
@@ -111,6 +115,7 @@ export function armarVenta(datos) {
         documento: datos?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
         // Cómo paga (vista Preventa, 2026-11-16). Una reserva no lo dice: contado.
         pago: PAGOS_DE_CAJA[datos?.pago] != null ? datos.pago : 'contado',
+        puntos, descuento_puntos: descuentoPuntos,
         cliente, vendedor, renglones, total, falta_pagar: faltaPagar, pagado,
         nota: notaDeLaVenta({
             codigo: datos?.codigo, cliente, nombre: datos?.cliente?.name, pagado, faltaPagar, documento: datos?.documento,

@@ -109,7 +109,7 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
                     )}
                     {vista === 'nuevo'
                         ? <Nuevo key={sala} sala={sala} nombreSala={nombreSala} atiende={atiende} ocupado={ocupado} onCobrar={onCobrar} onClose={onClose}
-                            cobraEnCaja={cobraEnCaja} onApartado={onApartado} />
+                            cobraEnCaja={cobraEnCaja} onApartado={onApartado} inicial={inicial} />
                         : <PorCobrar key={sala} sala={sala} ocupado={ocupado} onCobrar={onCobrar} elegirClave={inicial?.clave ?? null} cobraEnCaja={cobraEnCaja} />}
                 </div>
             </LiquidModal.Body>
@@ -121,13 +121,15 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
 }
 
 // ── Nuevo ───────────────────────────────────────────────────────────────────
-function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnCaja = true, onApartado = null }) {
+function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnCaja = true, onApartado = null, inicial = null }) {
     const reglasDeReserva = useReglasDeReserva();
     const showToast = useToastStore((s) => s.showToast);
     // El borrador sobrevive al cierre de sesión por inactividad (gate:borradores).
     const guardado = loadDraft(llave(sala));
-    const [cliente, setCliente] = useState(guardado?.cliente ?? null);
-    const [producto, setProducto] = useState(guardado?.producto ?? null);
+    // `inicial.cliente` / `inicial.producto` (2026-11-16): la Preventa abre esto
+    // con el cliente y el producto que ya tiene en pantalla. Un borrador manda.
+    const [cliente, setCliente] = useState(guardado?.cliente ?? inicial?.cliente ?? null);
+    const [producto, setProducto] = useState(guardado?.producto ?? inicial?.producto ?? null);
     const [presentaciones, setPresentaciones] = useState(null);
     const [pres, setPres] = useState(guardado?.pres ?? '');
     // La lista de la venta con que se aparta (2026-11-03). null = la que le

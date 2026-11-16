@@ -38293,6 +38293,10 @@ export type Database = {
         Args: { p_employee: string; p_id: number; p_paso?: string }
         Returns: Json
       }
+      preventa_cliente: {
+        Args: { p_branch: number; p_customer: number }
+        Returns: Json
+      }
       preventa_cotizar: {
         Args: { p_branch: number; p_customer: number; p_lineas: Json }
         Returns: Json
@@ -38306,7 +38310,9 @@ export type Database = {
           p_lineas: Json
           p_motivo_precio?: string
           p_nota: string
+          p_pago?: string
           p_preventa?: number
+          p_puntos?: number
         }
         Returns: Json
       }
@@ -38330,6 +38336,10 @@ export type Database = {
       preventa_puede: {
         Args: { p_branch: number; p_employee: string; p_que?: string }
         Returns: boolean
+      }
+      preventa_puntos_del_cliente: {
+        Args: { p_customer: number; p_excluir?: number }
+        Returns: Json
       }
       preventa_registrar: {
         Args: {

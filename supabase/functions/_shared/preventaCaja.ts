@@ -37,7 +37,7 @@ export interface RenglonVenta {
   precio: number; precio_normal: number | null; lista_precio: string | null; subtotal: number;
 }
 export interface Venta {
-  codigo: string; documento: string; pago?: string; vendedor: string; nota: string; total: number;
+  codigo: string; documento: string; pago?: string; puntos?: number; descuento_puntos?: number; vendedor: string; nota: string; total: number;
   cliente: { id: string; generico: boolean; motivo: string | null };
   renglones: RenglonVenta[];
 }
@@ -297,6 +297,17 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
     }
   }
 
+  // El descuento por puntos, como lo arma la caja: un renglón «-999» a $0.01
+  // por punto que la caja RESTA de lo gravado (venta.js, `addDiscountList`).
+  // El canje se registra solo cuando llega la factura.
+  const descPuntos = Math.round(Number(venta.descuento_puntos ?? 0) * 100) / 100;
+  if (descPuntos > 0) {
+    gravado -= descPuntos;
+    renglonesCaja.push({
+      id_detalle: "", id: "-999", precio: descPuntos.toFixed(2), cantidad: "1", unidades: "1",
+      subtotal: descPuntos.toFixed(2), exento: "0", id_lote: 0,
+    });
+  }
   const total = Math.round((gravado + exenta) * 100) / 100;
   const g = (Math.round(gravado * 100) / 100).toFixed(2), x = (Math.round(exenta * 100) / 100).toFixed(2);
   // Consumidor final (COF): el precio ya trae el IVA; la caja deja cambiar el

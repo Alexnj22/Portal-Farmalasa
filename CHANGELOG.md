@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1555.0 — Preventa: ficha del cliente, puntos y existencia en otras sucursales
+
+Tercera vuelta de la vista Preventa, pedida por el usuario.
+
+- **Ficha del cliente** a la vista (`preventa_cliente`): categoría, tipo
+  (socio, mayorista con su rango, empleado, empresa, mostrador), nivel,
+  compra de 12 meses, puntos disponibles, última compra y sus datos.
+- **Descontar puntos**: $0.01 por punto. Viaja a caja como el renglón
+  `-999` «DESCUENTO POR PUNTOS SALUD», igual que lo arma la caja, restado de
+  lo gravado. `preventa_directa_preparar` (ahora con `p_puntos`) revisa
+  saldo, mínimo de canje (100), tope (10,000), lo que ya apartaron otras
+  preventas vivas (`preventa_puntos_del_cliente`) y el mínimo a pagar. El
+  saldo baja cuando llega la factura (`puntos_barrer_canjes`). Probado en
+  Salud 5: la preventa quedó con el renglón y $6.00 → $4.80; se borró.
+- **Tipo de pago** en `LiquidSelect`.
+- **Otras sucursales**: abre la consulta de inventario
+  (`FormularioPedirASala`, diferida) con «Solicitar». **Apartar o encargar**
+  abre `DialogoApartar` con el cliente y el producto puestos (nuevo
+  `inicial.cliente` / `inicial.producto`). Los dos también por producto sin
+  existencia.
+- Corregido: los avisos usaban `addToast`, que no existe en el store; ahora
+  `showToast`.
+- Migración `20261116202311_preventa_cliente_y_puntos`; edge `preventa-caja` v18.
+
 ## v2.1554.11 — Lenguaje: últimos restos
 
 - Últimos restos de la revisión del lenguaje: «sala» → sucursal en

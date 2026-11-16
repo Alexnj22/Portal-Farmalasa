@@ -14,6 +14,13 @@ export async function cotizarPreventa(branchId, customerId, lineas) {
     return data;
 }
 
+/** Datos, tipo, nivel, puntos y última compra del cliente. Lanza si la base falla. */
+export async function fetchClienteDePreventa(branchId, customerId) {
+    const { data, error } = await supabase.rpc('preventa_cliente', { p_branch: Number(branchId), p_customer: Number(customerId) });
+    if (error) throw error;
+    return data;
+}
+
 /** Las preventas de la sucursal, de hoy hacia atrás `dias` días. Lanza si la base falla. */
 export async function fetchPreventasDeSala(branchId, dias = 1) {
     const { data, error } = await supabase.rpc('preventas_de_sala', { p_branch: Number(branchId), p_dias: dias });
@@ -40,10 +47,10 @@ async function invocar(body) {
  * Mandar la venta a caja, o corregir la que ya está (`preventaId`).
  * Devuelve `{ ok, referencia, codigo, corregida, avisos }` o `{ ok: false, error }`. Nunca lanza.
  */
-export const enviarPreventaDirecta = ({ branchId, customerId, documento, pago = 'contado', nota, lineas, preventaId = null, motivoPrecio = null }) =>
+export const enviarPreventaDirecta = ({ branchId, customerId, documento, pago = 'contado', puntos = 0, nota, lineas, preventaId = null, motivoPrecio = null }) =>
     invocar({
         accion: 'directa', branch_id: Number(branchId), customer_id: customerId ? Number(customerId) : null,
-        documento, pago, nota, lineas, ...(preventaId ? { preventa_id: Number(preventaId) } : {}),
+        documento, pago, puntos, nota, lineas, ...(preventaId ? { preventa_id: Number(preventaId) } : {}),
         ...(motivoPrecio ? { motivo_precio: motivoPrecio } : {}),
     });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     agregarLinea, estadoDePreventa, faltaParaEnviar, lineasDeVenta, lineasParaCotizar, nombreDeLista,
-    porQueEsaLista, sePuedeAnular, opcionesDePrecio, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
+    porQueEsaLista, sePuedeAnular, opcionesDePrecio, faltaEnPuntos, maximoDePuntos, descuentoDePuntos, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
 } from '@nucleo/utils/preventaDirecta.js';
 
 const losartan = { id: 2750, nombre: 'LOSARTAN' };
@@ -87,5 +87,23 @@ describe('estados y nombres', () => {
     it('una preventa guardada vuelve al editor sin precio autorizado', () => {
         expect(lineasDeVenta({ renglones: [{ producto_id: '5', nombre: 'A', factor: 10, cantidad: 2 }] }))
             .toEqual([{ producto_id: 5, nombre: 'A', factor: 10, cantidad: 2, lista: null }]);
+    });
+});
+
+describe('puntos', () => {
+    const info = { minimo_a_pagar: 0.05, puntos: { puede_canjear: true, saldo: 220, disponibles: 220, minimo_canje: 100, tope: 10000, valor: 0.01 } };
+    it('$0.01 por punto', () => { expect(descuentoDePuntos(120)).toBe(1.2); });
+    it('revisa mínimo, saldo y mínimo a pagar', () => {
+        expect(faltaEnPuntos({ puntos: 0, info, total: 5 })).toBeNull();
+        expect(faltaEnPuntos({ puntos: 50, info, total: 5 })).toMatch(/mínimo 100/);
+        expect(faltaEnPuntos({ puntos: 300, info, total: 5 })).toMatch(/220 puntos/);
+        expect(faltaEnPuntos({ puntos: 200, info, total: 2 })).toMatch(/mínimo a pagar/);
+        expect(faltaEnPuntos({ puntos: 150, info, total: 5 })).toBeNull();
+        expect(faltaEnPuntos({ puntos: 150, info: { ...info, puntos: { ...info.puntos, puede_canjear: false } }, total: 5 })).toMatch(/no puede/);
+    });
+    it('el máximo lo pone el saldo o el total', () => {
+        expect(maximoDePuntos(info, 10)).toBe(220);
+        expect(maximoDePuntos(info, 1.5)).toBe(145);
+        expect(maximoDePuntos(null, 10)).toBe(0);
     });
 });

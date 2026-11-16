@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { ETIQUETA_CAMPO, esContribuyente } from './clienteValidacion.js';
+import { formatMoney } from './formatNumber.js';
 
 /** El nombre de cada lista de precio (las claves son columnas de `product_precios`). */
 export const NOMBRE_DE_LISTA = {
@@ -22,7 +23,7 @@ export const ORDEN_DE_LISTAS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayo
 export const PAGOS = [
     { value: 'contado', label: 'Efectivo' },
     { value: 'tarjeta', label: 'Tarjeta' },
-    { value: 'transferencia', label: 'Transfer.' },
+    { value: 'transferencia', label: 'Transferencia' },
     { value: 'credito', label: 'Crédito' },
     { value: 'cheque', label: 'Cheque' },
 ];
@@ -93,7 +94,7 @@ export function totalesDe(cotizacion) {
  * Lo que falta para poder mandar, UNO y en orden, con el campo donde se
  * arregla. null = se puede mandar. La base lo vuelve a revisar todo.
  */
-export function faltaParaEnviar({ lineas, cotizacion, cotizando, documento, pago }) {
+export function faltaParaEnviar({ lineas, cotizacion, cotizando, documento, pago, puntos = 0, infoCliente = null }) {
     if (!(lineas ?? []).length) return { texto: 'Agrega al menos un producto.', campo: 'buscarProducto' };
     if (cotizando || !cotizacion) return { texto: 'Revisando precios y existencia…', campo: null };
     const mala = (cotizacion.lineas ?? []).find((l) => l.error);
@@ -104,6 +105,8 @@ export function faltaParaEnviar({ lineas, cotizacion, cotizando, documento, pago
     }
     if (pago === 'credito' && (cotizacion.generico || !cotizacion.cliente))
         return { texto: 'El crédito necesita un cliente con sus datos.', campo: 'cliente' };
+    const p = faltaEnPuntos({ puntos, info: infoCliente, total: totalesDe(cotizacion).total });
+    if (p) return { texto: p, campo: 'puntos' };
     return null;
 }
 
@@ -130,4 +133,45 @@ export function lineasDeVenta(venta) {
         producto_id: Number(r.producto_id), nombre: String(r.nombre ?? ''),
         factor: Number(r.factor) || 1, cantidad: Number(r.cantidad) || 1, lista: null,
     }));
+}
+
+/** Cómo se llama el programa del cliente en pantalla. */
+export const NOMBRE_DE_PROGRAMA = {
+    socio: 'Socio Puntos Salud',
+    mayorista: 'Cliente mayorista',
+    empresa: 'Empresa',
+    fuera: 'Fuera del programa de puntos',
+    mostrador: 'Cliente de mostrador',
+};
+
+/** El descuento en dólares de unos puntos ($0.01 por punto, como en caja). */
+export const descuentoDePuntos = (puntos, valor = 0.01) => Math.round((Number(puntos) || 0) * valor * 100) / 100;
+
+/**
+ * Por qué no se pueden canjear esos puntos, o null. `info` es la ficha de
+ * `preventa_cliente` (con `puntos` y `minimo_a_pagar`). La base lo vuelve a
+ * revisar contando lo que apartaron otras preventas.
+ */
+export function faltaEnPuntos({ puntos, info, total }) {
+    const n = Math.trunc(Number(puntos) || 0);
+    if (n <= 0) return null;
+    const p = info?.puntos;
+    if (!p) return 'Elige un cliente para canjear puntos.';
+    if (!p.puede_canjear) return 'Este cliente no puede canjear puntos.';
+    if (n < p.minimo_canje) return `Se canjean como mínimo ${p.minimo_canje} puntos.`;
+    if (n > p.tope) return `Se canjean como máximo ${p.tope} puntos por venta.`;
+    if (n > p.disponibles) return `El cliente tiene ${p.disponibles} puntos disponibles.`;
+    const minimo = Number(info?.minimo_a_pagar ?? 0.05);
+    if (Number(total) - descuentoDePuntos(n, p.valor) < minimo)
+        return `Con ese canje la venta queda bajo el mínimo a pagar (${formatMoney(minimo)}).`;
+    return null;
+}
+
+/** Los puntos que se pueden usar como máximo en esta venta. */
+export function maximoDePuntos(info, total) {
+    const p = info?.puntos;
+    if (!p?.puede_canjear) return 0;
+    const minimo = Number(info?.minimo_a_pagar ?? 0.05);
+    const porTotal = Math.floor(((Number(total) || 0) - minimo) / (p.valor || 0.01) + 1e-9);
+    return Math.max(0, Math.min(p.disponibles, p.tope, porTotal));
 }

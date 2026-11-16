@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Ban, ClipboardList, Minus, Package, Pencil, Plus, Receipt, RefreshCw, Send, ShoppingCart, Trash2,
-    UserPen, UserPlus, UserRound, X,
+    Ban, ClipboardList, Gift, Minus, Package, PackageSearch, Pencil, Plus, Receipt, RefreshCw, Send, ShoppingBag,
+    ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -9,6 +9,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
 import LiquidSelect from '../components/common/LiquidSelect';
+import LiquidModal from '../components/common/LiquidModal';
 import SegmentedControl from '../components/common/SegmentedControl';
 import PortalInput from '../components/common/PortalInput';
 import SearchInput from '../components/common/SearchInput';
@@ -22,30 +23,39 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { buscarClientes } from '@nucleo/data/customers';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
-import { anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchPreventasDeSala } from '@nucleo/data/preventas';
 import {
-    MAX_PRODUCTOS, PAGOS, agregarLinea, estadoDePreventa, faltaParaEnviar, faltanParaCcf, lineasDeVenta,
-    lineasParaCotizar, nombreDeLista, opcionesDePrecio, porQueEsaLista, sePuedeAnular, sePuedeCorregir, totalesDe,
+    anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala,
+} from '@nucleo/data/preventas';
+import {
+    MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, descuentoDePuntos, estadoDePreventa, faltaParaEnviar,
+    faltanParaCcf, lineasDeVenta, lineasParaCotizar, maximoDePuntos, nombreDeLista, opcionesDePrecio, porQueEsaLista,
+    sePuedeAnular, sePuedeCorregir, totalesDe,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+
+// Lo que sólo hace falta al apretar un botón no viaja con la vista.
+const FormularioPedirASala = lazy(() =>
+    import('./dashboard/inventario/PanelDeInventario').then((m) => ({ default: m.FormularioPedirASala })));
+const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Preventa — vender desde el portal y que la venta llegue armada a caja.
 //
-// Segunda vuelta (2026-11-16, usuario: «no es nada práctico»):
-// · El cliente se busca, se EDITA y se CREA aquí mismo, con el editor de
-//   clientes del portal (`editCliente`): no hay que salir a Clientes.
-// · Crédito fiscal dice qué datos le faltan al cliente y abre su editor.
-// · Tipo de pago: efectivo, tarjeta, transferencia, crédito o cheque.
-// · Los productos van en filas compactas; el buscador queda arriba, Enter
-//   agrega el primero y el foco vuelve solo para el siguiente.
-// · Otro precio se elige viendo el monto de cada lista. Quien puede elegirlo
-//   (`preventa.can_approve`) ES quien autoriza: no se le pide motivo; queda
-//   anotado en la preventa y en el registro.
-// · Si en la sucursal no alcanza, dice en qué sucursal hay.
+// Tercera vuelta (2026-11-16, usuario):
+// · La ficha del cliente a la vista: tipo, programa, nivel, compra del año,
+//   puntos disponibles, última compra y sus datos. Se edita o se crea aquí.
+// · Descontar puntos: $0.01 por punto, como en caja (renglón «DESCUENTO POR
+//   PUNTOS SALUD»). Se revisa el saldo, el mínimo de canje y que la venta no
+//   quede bajo el mínimo a pagar; el saldo baja cuando la factura llega.
+// · Tipo de pago en un select.
+// · «Otras sucursales» abre la consulta de inventario con «Solicitar»
+//   (traslado), y «Apartar o encargar» abre el diálogo de reservas con el
+//   cliente y el producto ya puestos.
 //
 // El precio lo decide la base (`preventa_cotizar`) y lo vuelve a calcular
 // antes de mandar. Corregir reescribe la MISMA preventa en caja; anular la
@@ -60,16 +70,17 @@ const DOCUMENTOS = [
     { value: 'consumidor_final', label: 'Factura' },
     { value: 'credito_fiscal', label: 'Crédito fiscal' },
 ];
-const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', nota: '', corrigiendo: null };
+const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
 
 export default function PreventaView({ openModal }) {
     const { user, hasPermission, getScope } = useAuth();
-    const toast = useToastStore((s) => s.addToast);
+    const showToast = useToastStore((s) => s.showToast);
     const todas = getScope('preventa') === 'ALL';
     const puedeVender = hasPermission('preventa', 'can_edit');
     const puedeAutorizar = hasPermission('preventa', 'can_approve');
     const puedeEditarClientes = hasPermission('clientes', 'can_edit');
     const puedeCrearClientes = hasPermission('clientes_crear');
+    const puedeApartar = hasPermission('reservas', 'can_edit') || hasPermission('dash_reservas', 'can_edit');
     const miSala = user?.branchId ?? user?.branch_id ?? null;
     const branches = useStaff((st) => st.branches);
     const salas = useMemo(() => (branches || []).filter((b) => b.type === 'FARMACIA')
@@ -88,7 +99,7 @@ export default function PreventaView({ openModal }) {
     useEffect(() => {
         if (salaPrevia.current === claveBorrador) return;
         salaPrevia.current = claveBorrador;
-        setVenta({ ...VACIA, ...(loadDraft(claveBorrador) ?? {}) }); // eslint-disable-line react-hooks/set-state-in-effect -- al cambiar de sucursal se carga SU borrador
+        setVenta({ ...VACIA, ...(loadDraft(claveBorrador) ?? {}) });  
     }, [claveBorrador]);
     useEffect(() => {
         if (venta.lineas.length || venta.cliente) saveDraft(claveBorrador, venta);
@@ -106,27 +117,41 @@ export default function PreventaView({ openModal }) {
     useEffect(() => {
         if (!sala) return undefined;
         let vivo = true;
-        setCotizando(true); // eslint-disable-line react-hooks/set-state-in-effect -- marca la cotización en curso
+        setCotizando(true);  
         const t = setTimeout(() => {
             cotizarPreventa(sala, clienteId, JSON.parse(pedido))
                 .then((c) => { if (vivo) { setCotizacion(c); setErrorCotizar(''); } })
-                .catch((e) => { if (vivo) setErrorCotizar(e?.message ?? 'No se pudieron revisar los precios.'); })
+                .catch((e) => { if (vivo) setErrorCotizar(mensajeAmigable(e, 'No se pudieron revisar los precios.')); })
                 .finally(() => { if (vivo) setCotizando(false); });
         }, 200);
         return () => { vivo = false; clearTimeout(t); };
     }, [sala, clienteId, pedido, vuelta]);
 
+    // ── La ficha del cliente: tipo, nivel, puntos ─────────────────────────
+    const [info, setInfo] = useState(null);
+    useEffect(() => {
+        if (!sala || !clienteId) { setInfo(null); return undefined; }  
+        let vivo = true;
+        fetchClienteDePreventa(sala, clienteId)
+            .then((d) => { if (vivo) setInfo(d); })
+            .catch((e) => { if (vivo) { setInfo(null); console.error('PreventaView: ficha del cliente', e); } });
+        return () => { vivo = false; };
+    }, [sala, clienteId, vuelta]);
+
     const filaDe = (l) => (cotizacion?.lineas ?? []).find((x) => x.producto_id === l.producto_id && x.factor === l.factor);
     const totales = totalesDe(cotizacion);
+    const puntos = Math.trunc(Number(venta.puntos) || 0);
+    const descPuntos = descuentoDePuntos(puntos, info?.puntos?.valor);
+    const aPagar = Math.max(0, Math.round((totales.total - descPuntos) * 100) / 100);
     const falta = errorCotizar ? { texto: errorCotizar, campo: null }
-        : faltaParaEnviar({ lineas: venta.lineas, cotizacion, cotizando, documento: venta.documento, pago: venta.pago });
+        : faltaParaEnviar({ lineas: venta.lineas, cotizacion, cotizando, documento: venta.documento, pago: venta.pago, puntos, infoCliente: info });
     const faltanCcf = venta.documento === 'credito_fiscal' && cotizacion ? faltanParaCcf(cotizacion.cliente) : [];
 
     const ponerLinea = (i, cambio) => cambiar({ lineas: venta.lineas.map((l, j) => (j === i ? { ...l, ...cambio } : l)) });
     const quitarLinea = (i) => cambiar({ lineas: venta.lineas.filter((_, j) => j !== i) });
 
     // ── El cliente: elegir, editar, crear (el editor del portal) ──────────
-    const elegirCliente = (c) => cambiar({ cliente: c ? { id: c.id, name: c.name } : null });
+    const elegirCliente = (c) => cambiar({ cliente: c ? { id: c.id, name: c.name, phone: c.phone ?? null } : null, puntos: '' });
     const editarCliente = () => {
         if (!venta.cliente) return;
         openModal?.('editCliente', {
@@ -141,6 +166,19 @@ export default function PreventaView({ openModal }) {
         });
     };
 
+    // ── Otras sucursales y apartar ────────────────────────────────────────
+    const [consulta, setConsulta] = useState(null);      // texto con que se abre la consulta de inventario
+    const [apartar, setApartar] = useState(null);        // { producto } o {}
+    const cobrar = async ({ clave, monto, apartado, pago, papel }) => {
+        const { cobrarAnticipo } = await import('../components/caja/cobrarAnticipo');
+        const r = await cobrarAnticipo({ sala, nombreSala, userId: user?.id, quienAtiende: user?.name, clave, monto, apartado, pago, papel });
+        if (!r.ok) { showToast('No se pudo cobrar', mensajeAmigable(r.error), 'error'); return false; }
+        showToast(r.aviso ? 'Anticipo cobrado, con un pendiente' : 'Anticipo cobrado',
+            r.aviso ?? `${r.apartado.codigo} · saldo ${formatMoney(Number(r.apartado.saldo ?? 0))} al retirar`, r.aviso ? 'warning' : 'success');
+        if (r.papel) showToast('No se imprimió la constancia', mensajeAmigable(r.papel), 'warning');
+        return r.apartado;
+    };
+
     // ── Las preventas de la sucursal ──────────────────────────────────────
     const [dias, setDias] = useState('1');
     const [lista, setLista] = useState(null);
@@ -149,7 +187,7 @@ export default function PreventaView({ openModal }) {
         if (!sala) return;
         fetchPreventasDeSala(sala, Number(dias))
             .then((l) => { setLista(l); setErrorLista(''); })
-            .catch((e) => setErrorLista(e?.message ?? 'No se pudieron leer las preventas.'));
+            .catch((e) => setErrorLista(mensajeAmigable(e, 'No se pudieron leer las preventas.')));
     }, [sala, dias]);
     useEffect(() => { recargar(); }, [recargar]);
 
@@ -160,12 +198,12 @@ export default function PreventaView({ openModal }) {
         if (falta || enviando) return;
         setEnviando(true);
         const r = await enviarPreventaDirecta({
-            branchId: sala, customerId: clienteId, documento: venta.documento, pago: venta.pago, nota: venta.nota,
+            branchId: sala, customerId: clienteId, documento: venta.documento, pago: venta.pago, puntos, nota: venta.nota,
             lineas: lineasParaCotizar(venta.lineas), preventaId: venta.corrigiendo?.id ?? null,
         });
         setEnviando(false);
-        if (!r?.ok) { toast(r?.error ?? 'No se pudo mandar a caja.', 'error'); return; }
-        setResultado({ ...r, total: totales.total, cliente: venta.cliente?.name ?? null });
+        if (!r?.ok) { showToast('No llegó a caja', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
+        setResultado({ ...r, total: aPagar, puntos, cliente: venta.cliente?.name ?? null });
         setVenta(VACIA);
         clearDraft(claveBorrador);
         recargar();
@@ -176,7 +214,7 @@ export default function PreventaView({ openModal }) {
             ...VACIA, lineas: lineasDeVenta(p.venta),
             cliente: p.customer_id ? { id: p.customer_id, name: p.cliente } : null,
             documento: p.venta?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
-            pago: p.venta?.pago ?? 'contado',
+            pago: p.venta?.pago ?? 'contado', puntos: p.venta?.puntos ? String(p.venta.puntos) : '',
             corrigiendo: { id: p.id, codigo: p.codigo, referencia: p.externo_ref },
         });
         setResultado(null);
@@ -192,13 +230,14 @@ export default function PreventaView({ openModal }) {
         const p = porAnular;
         setPorAnular(null);
         const r = await anularPreventa(p.id);
-        if (!r?.ok) { toast(r?.error ?? 'No se pudo anular.', 'error'); return; }
-        toast(`Preventa ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} anulada.`, 'success');
+        if (!r?.ok) { showToast('No se pudo anular', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
+        showToast('Preventa anulada', `La ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} ya no está en caja.`, 'success');
         recargar();
     };
 
     const enCaja = (lista ?? []).filter((p) => p.estado === 'viva').length;
     const pestanas = PESTANAS.map((t) => (t.key === 'hoy' && enCaja ? { ...t, label: `Preventas (${enCaja})` } : t));
+    const maxPuntos = maximoDePuntos(info, totales.total);
 
     return (
         <GlassViewLayout icon={Receipt} title="Preventa" transparentBody
@@ -230,16 +269,22 @@ export default function PreventaView({ openModal }) {
                                     </Notice>
                                 )}
 
-                                <Cliente cliente={venta.cliente} cotizacion={cotizacion}
+                                <Cliente cliente={venta.cliente} info={info} cotizacion={cotizacion}
                                     puedeEditar={puedeEditarClientes} puedeCrear={puedeCrearClientes}
                                     onElegir={elegirCliente} onEditar={editarCliente} onCrear={crearCliente} />
 
                                 <section data-surface="card" className="p-3 space-y-2">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <h2 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                                             <ShoppingCart size={13} /> Productos
                                         </h2>
-                                        <span className="ml-auto text-micro text-content-3">{venta.lineas.length} de {MAX_PRODUCTOS}</span>
+                                        <span className="text-micro text-content-3">{venta.lineas.length} de {MAX_PRODUCTOS}</span>
+                                        <div className="ml-auto flex gap-1">
+                                            <Button size="xs" variant="ghost" icon={PackageSearch} onClick={() => setConsulta('')}>Otras sucursales</Button>
+                                            {puedeApartar && (
+                                                <Button size="xs" variant="ghost" icon={ShoppingBag} onClick={() => setApartar({})}>Apartar o encargar</Button>
+                                            )}
+                                        </div>
                                     </div>
                                     <BuscarProducto onElegir={(p) => cambiar({ lineas: agregarLinea(venta.lineas, p, 1) })} />
                                     {venta.lineas.length === 0 ? (
@@ -252,8 +297,10 @@ export default function PreventaView({ openModal }) {
                                             </div>
                                             {venta.lineas.map((l, i) => (
                                                 <Linea key={`${l.producto_id}-${l.factor}`} linea={l} fila={filaDe(l)} cotizando={cotizando}
-                                                    puedeAutorizar={puedeAutorizar} listaCliente={cotizacion?.lista}
-                                                    onCambiar={(c) => ponerLinea(i, c)} onQuitar={() => quitarLinea(i)} />
+                                                    puedeAutorizar={puedeAutorizar} listaCliente={cotizacion?.lista} puedeApartar={puedeApartar}
+                                                    onCambiar={(c) => ponerLinea(i, c)} onQuitar={() => quitarLinea(i)}
+                                                    onOtras={() => setConsulta(filaDe(l)?.nombre ?? l.nombre)}
+                                                    onApartar={() => setApartar({ producto: { id: l.producto_id, nombre: filaDe(l)?.nombre ?? l.nombre } })} />
                                             ))}
                                         </div>
                                     )}
@@ -274,25 +321,53 @@ export default function PreventaView({ openModal }) {
                                     </Notice>
                                 )}
 
-                                <div className="space-y-1.5">
-                                    <SegmentedControl label="Pago" value={venta.pago} options={PAGOS}
-                                        onChange={(v) => cambiar({ pago: v })} />
-                                    {venta.pago === 'credito' && (cotizacion?.generico || !venta.cliente) && (
-                                        <p className="text-micro text-warning-text">El crédito necesita un cliente con sus datos.</p>
-                                    )}
-                                </div>
+                                <LiquidSelect label="Tipo de pago" clearable={false} value={venta.pago} options={PAGOS}
+                                    onChange={(v) => cambiar({ pago: v || 'contado' })} />
+                                {venta.pago === 'credito' && (cotizacion?.generico || !venta.cliente) && (
+                                    <p className="text-micro text-warning-text -mt-2">El crédito necesita un cliente con sus datos.</p>
+                                )}
+
+                                {info?.puntos?.puede_canjear && (
+                                    <div className="space-y-1" data-campo="puntos">
+                                        <div className="flex items-end gap-2">
+                                            <div className="flex-1">
+                                                <PortalInput label="Puntos a canjear" inputMode="numeric" value={String(venta.puntos ?? '')}
+                                                    placeholder={`Tiene ${info.puntos.disponibles}`}
+                                                    onChange={(e) => cambiar({ puntos: e.target.value.replace(/\D/g, '').slice(0, 5) })} />
+                                            </div>
+                                            {maxPuntos >= info.puntos.minimo_canje && (
+                                                <Button size="sm" variant="secondary" icon={Gift} onClick={() => cambiar({ puntos: String(maxPuntos) })}>
+                                                    Usar {maxPuntos}
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <p className="text-micro text-content-3">
+                                            {puntos > 0 ? `${formatMoney(descPuntos)} de descuento · ` : ''}
+                                            {info.puntos.disponibles} disponibles · mínimo {info.puntos.minimo_canje}
+                                            {info.puntos.comprometidos > 0 ? ` · ${info.puntos.comprometidos} ya en otra preventa` : ''}
+                                        </p>
+                                    </div>
+                                )}
 
                                 <dl className="space-y-0.5 text-body-sm border-t border-subtle pt-2">
                                     <div className="flex justify-between"><dt className="text-content-3">Productos · unidades</dt>
                                         <dd className="tabular-nums">{totales.productos} · {totales.unidades}</dd></div>
+                                    {(totales.ahorro > 0 || descPuntos > 0) && (
+                                        <div className="flex justify-between"><dt className="text-content-3">Subtotal</dt>
+                                            <dd className="tabular-nums">{formatMoney(totales.total)}</dd></div>
+                                    )}
                                     {totales.ahorro > 0 && (
-                                        <div className="flex justify-between"><dt className="text-content-3">Ahorra el cliente</dt>
+                                        <div className="flex justify-between"><dt className="text-content-3">Ahorra por su precio</dt>
                                             <dd className="tabular-nums text-success-text font-bold">{formatMoney(totales.ahorro)}</dd></div>
                                     )}
+                                    {descPuntos > 0 && (
+                                        <div className="flex justify-between"><dt className="text-content-3">Puntos ({puntos})</dt>
+                                            <dd className="tabular-nums text-success-text font-bold">−{formatMoney(descPuntos)}</dd></div>
+                                    )}
                                     <div className="flex items-end justify-between pt-1">
-                                        <dt className="text-caption font-bold text-content-2">Total</dt>
+                                        <dt className="text-caption font-bold text-content-2">A pagar</dt>
                                         <dd className={`text-title font-black tabular-nums ${cotizando ? 'text-content-3' : 'text-content'}`}>
-                                            {formatMoney(totales.total)}
+                                            {formatMoney(aPagar)}
                                         </dd>
                                     </div>
                                 </dl>
@@ -336,6 +411,30 @@ export default function PreventaView({ openModal }) {
                 )}
             </div>
 
+            {consulta != null && (
+                <LiquidModal open onClose={() => setConsulta(null)} maxWidth="max-w-4xl" ariaLabel="Existencia en otras sucursales">
+                    <LiquidModal.Header icono={PackageSearch} titulo="Existencia en otras sucursales"
+                        subtitulo="Busca el producto y pídelo con «Solicitar»." onClose={() => setConsulta(null)} />
+                    <LiquidModal.Body>
+                        <div className="h-[70vh] min-h-0 flex flex-col">
+                            <Suspense fallback={<p className="text-body-sm text-content-3 p-4">Cargando…</p>}>
+                                <FormularioPedirASala query={consulta} onQueryChange={setConsulta} />
+                            </Suspense>
+                        </div>
+                    </LiquidModal.Body>
+                </LiquidModal>
+            )}
+            {apartar && sala && (
+                <Suspense fallback={null}>
+                    <DialogoApartar abierto ocupado={false} sala={sala} nombreSala={nombreSala} atiende={user?.name}
+                        cobraEnCaja={String(sala) === String(miSala)} onClose={() => setApartar(null)}
+                        inicial={{ cliente: venta.cliente ? { id: venta.cliente.id, name: venta.cliente.name, phone: info?.phone ?? null } : null,
+                            producto: apartar.producto ?? null }}
+                        onApartado={() => showToast('Listo', 'Quedó en Reservas.', 'success')}
+                        onCobrar={cobrar} />
+                </Suspense>
+            )}
+
             <ConfirmModal isOpen={Boolean(porAnular)} onClose={() => setPorAnular(null)} onConfirm={anular}
                 title={`¿Anular la preventa ${porAnular?.externo_ref ? `#${porAnular.externo_ref}` : porAnular?.codigo ?? ''}?`}
                 message="Se borra de caja y ya no se puede facturar. No se puede deshacer." confirmText="Anular" />
@@ -343,8 +442,8 @@ export default function PreventaView({ openModal }) {
     );
 }
 
-// ── El cliente: buscar, ver sus datos, editar o crear ─────────────────────
-function Cliente({ cliente, cotizacion, puedeEditar, puedeCrear, onElegir, onEditar, onCrear }) {
+// ── El cliente: buscar, ver su ficha, editar o crear ──────────────────────
+function Cliente({ cliente, info, cotizacion, puedeEditar, puedeCrear, onElegir, onEditar, onCrear }) {
     const [texto, setTexto] = useState('');
     const q = useTextoRebotado(texto, 250);
     const [resultados, setResultados] = useState([]);
@@ -362,7 +461,6 @@ function Cliente({ cliente, cotizacion, puedeEditar, puedeCrear, onElegir, onEdi
         return () => { vivo = false; };
     }, [q, cliente]);
 
-    const c = cotizacion?.cliente;
     const elegir = (x) => { onElegir(x); setTexto(''); };
     return (
         <section data-surface="card" className="p-3 space-y-2" data-campo="cliente">
@@ -379,17 +477,7 @@ function Cliente({ cliente, cotizacion, puedeEditar, puedeCrear, onElegir, onEdi
                 )}
             </div>
             {cliente ? (
-                <div className="flex items-center gap-3 rounded-lg border border-border-subtle px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                        <p className="text-body-sm font-bold text-content truncate">{cliente.name}</p>
-                        <p className="text-micro text-content-3 truncate">
-                            {[c?.categoria, c?.nit && `NIT ${c.nit}`, !c?.nit && c?.dui && `DUI ${c.dui}`, c?.nrc && `NRC ${c.nrc}`, c?.phone]
-                                .filter(Boolean).join(' · ') || 'Sin datos'}
-                        </p>
-                    </div>
-                    {puedeEditar && <Button size="sm" variant="secondary" icon={UserPen} onClick={onEditar}>Editar datos</Button>}
-                    <Button size="sm" variant="ghost" icon={X} aria-label="Quitar cliente" onClick={() => onElegir(null)} />
-                </div>
+                <FichaDelCliente cliente={cliente} info={info} puedeEditar={puedeEditar} onEditar={onEditar} onQuitar={() => onElegir(null)} />
             ) : (
                 <>
                     <SearchInput value={texto} onChange={setTexto} placeholder="Nombre, DUI, NIT o teléfono · sin cliente va como frecuente"
@@ -421,6 +509,64 @@ function Cliente({ cliente, cotizacion, puedeEditar, puedeCrear, onElegir, onEdi
                 </>
             )}
         </section>
+    );
+}
+
+// ── La ficha: quién es, qué precio y beneficios tiene, cómo contactarlo ───
+function FichaDelCliente({ cliente, info, puedeEditar, onEditar, onQuitar }) {
+    const p = info?.puntos;
+    const tipo = info?.empleado ? 'Empleado' : info?.programa === 'mayorista'
+        ? `Mayorista${info?.mayorista?.precio === 'mayoreo_plus' ? ' Plus' : ''}${info?.rango ? ` · ${info.rango}` : ''}`
+        : NOMBRE_DE_PROGRAMA[info?.programa] ?? '';
+    const datos = [
+        info?.nit && ['NIT', info.nit], !info?.nit && info?.dui && ['DUI', info.dui], info?.nrc && ['NRC', info.nrc],
+        info?.giro && ['Giro', info.giro], info?.phone && ['Teléfono', info.phone], info?.email && ['Correo', info.email],
+        info?.direccion && ['Dirección', info.direccion],
+    ].filter(Boolean);
+    return (
+        <div className="rounded-lg border border-border-subtle p-3 space-y-2">
+            <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                    <p className="text-body font-bold text-content truncate">{cliente.name}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        {info?.categoria && <Badge size="sm" variant={info.categoria === 'Consumidor' ? 'neutral' : 'info'} uppercase={false}>{info.categoria}</Badge>}
+                        {tipo && <Badge size="sm" variant="neutral" uppercase={false}>{tipo}</Badge>}
+                        {info?.nivel && <Badge size="sm" variant="warning" uppercase={false}>Nivel {info.nivel}</Badge>}
+                    </div>
+                </div>
+                {puedeEditar && <Button size="sm" variant="secondary" icon={UserPen} onClick={onEditar}>Editar datos</Button>}
+                <Button size="sm" variant="ghost" icon={X} aria-label="Quitar cliente" onClick={onQuitar} />
+            </div>
+            {info && (
+                <div className="grid grid-cols-3 gap-2">
+                    <Dato rotulo="Puntos" valor={p ? `${p.disponibles}` : '—'}
+                        nota={p ? (p.puede_canjear ? `= ${formatMoney(descuentoDePuntos(p.disponibles, p.valor))}` : 'No canjea') : null} />
+                    <Dato rotulo="Compra 12 meses" valor={info.compra_12m != null ? formatMoney(info.compra_12m) : '—'} />
+                    <Dato rotulo="Última compra" valor={info.ultima_compra ? fechaTexto(info.ultima_compra.fecha) : '—'}
+                        nota={info.ultima_compra ? `${formatMoney(info.ultima_compra.total)} · ${info.ultima_compra.sucursal ?? ''}` : null} />
+                </div>
+            )}
+            {datos.length > 0 && (
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-micro">
+                    {datos.map(([k, v]) => (
+                        <div key={k} className="flex gap-1.5 min-w-0">
+                            <dt className="text-content-3 shrink-0">{k}</dt>
+                            <dd className="text-content-2 truncate" title={v}>{v}</dd>
+                        </div>
+                    ))}
+                </dl>
+            )}
+        </div>
+    );
+}
+
+function Dato({ rotulo, valor, nota = null }) {
+    return (
+        <div className="rounded-lg bg-surface-card-hover px-2.5 py-1.5 min-w-0">
+            <p className="text-micro text-content-3 truncate">{rotulo}</p>
+            <p className="text-body-sm font-black tabular-nums text-content truncate">{valor}</p>
+            {nota && <p className="text-micro text-content-3 truncate">{nota}</p>}
+        </div>
     );
 }
 
@@ -476,7 +622,7 @@ function BuscarProducto({ onElegir }) {
 }
 
 // ── Un producto de la venta, en una fila ──────────────────────────────────
-function Linea({ linea, fila, cotizando, puedeAutorizar, listaCliente, onCambiar, onQuitar }) {
+function Linea({ linea, fila, cotizando, puedeAutorizar, listaCliente, puedeApartar, onCambiar, onQuitar, onOtras, onApartar }) {
     const presentaciones = (fila?.presentaciones ?? [{ factor: linea.factor, tipo: '…' }])
         .map((p) => ({ value: String(p.factor), label: p.tipo }));
     const cant = Number(linea.cantidad) || 0;
@@ -486,6 +632,7 @@ function Linea({ linea, fila, cotizando, puedeAutorizar, listaCliente, onCambiar
         { value: '', label: `Del cliente${precioCliente != null ? ` · ${formatMoney(precioCliente)}` : ''}` },
         ...opciones.map((o) => ({ value: o.lista, label: `${o.nombre} · ${formatMoney(o.precio)}` })),
     ];
+    const sinExistencia = fila && fila.existencia < cant * linea.factor;
     return (
         <div className="py-2 px-1" data-campo={`linea-${linea.producto_id}-${linea.factor}`}>
             <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_130px_118px_150px_80px_36px] gap-x-2 gap-y-1.5 items-center">
@@ -495,7 +642,7 @@ function Linea({ linea, fila, cotizando, puedeAutorizar, listaCliente, onCambiar
                     </p>
                     <p className="text-micro text-content-3 flex flex-wrap items-center gap-x-1.5">
                         {fila?.bajo_receta && <span className="text-warning-text font-bold">Bajo Receta</span>}
-                        {fila && <span>Existencia {fila.existencia}</span>}
+                        {fila && <span className={sinExistencia ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
                         {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} en esta presentación</span>}
                     </p>
                 </div>
@@ -531,12 +678,20 @@ function Linea({ linea, fila, cotizando, puedeAutorizar, listaCliente, onCambiar
                 </div>
             </div>
             {fila?.error && (
-                <p className="mt-1 text-micro text-danger-text font-semibold">
-                    {fila.error}
-                    {fila.otras?.length > 0 && (
-                        <span className="text-content-3 font-normal"> Hay en {fila.otras.map((o) => `${o.sucursal} (${o.disponibles})`).join(', ')}.</span>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="text-micro text-danger-text font-semibold">
+                        {fila.error}
+                        {fila.otras?.length > 0 && (
+                            <span className="text-content-3 font-normal"> Hay en {fila.otras.map((o) => `${o.sucursal} (${o.disponibles})`).join(', ')}.</span>
+                        )}
+                    </p>
+                    {sinExistencia && (
+                        <>
+                            <Button size="xs" variant="ghost" icon={PackageSearch} onClick={onOtras}>Solicitar a otra sucursal</Button>
+                            {puedeApartar && <Button size="xs" variant="ghost" icon={ShoppingBag} onClick={onApartar}>Apartar o encargar</Button>}
+                        </>
                     )}
-                </p>
+                </div>
             )}
         </div>
     );
@@ -552,6 +707,7 @@ function Hecho({ resultado, onOtra, onVer }) {
             <p className="text-display font-black tabular-nums text-brand-text">#{resultado.referencia}</p>
             <p className="text-body text-content-2">
                 {resultado.cliente ?? 'Cliente frecuente'} · {formatMoney(resultado.total_caja ?? resultado.total)}
+                {resultado.puntos > 0 ? ` · ${resultado.puntos} puntos canjeados` : ''}
             </p>
             <p className="text-body-sm text-content-3">Dile al cliente que pase a caja con el número #{resultado.referencia}.</p>
             {(resultado.avisos ?? []).map((a) => <Notice key={a} variant="warning">{a}</Notice>)}
@@ -577,6 +733,7 @@ function Tarjeta({ p, puedeVender, onCorregir, onRepetir, onAnular }) {
                     <span className="block text-micro text-content-3 truncate">
                         {p.codigo} · {hora12(p.enviada_at ?? p.created_at)} · {shortEmployeeName({ name: p.vendedor })}
                         {pago ? ` · ${pago}` : ''}{p.venta?.documento === 'credito_fiscal' ? ' · Crédito fiscal' : ''}
+                        {p.venta?.puntos > 0 ? ` · ${p.venta.puntos} puntos` : ''}
                         {p.corregida_veces > 0 ? ` · corregida ${p.corregida_veces}×` : ''}
                     </span>
                 </span>
@@ -594,6 +751,12 @@ function Tarjeta({ p, puedeVender, onCorregir, onRepetir, onAnular }) {
                                 <span className="tabular-nums shrink-0">{formatMoney(r.subtotal)}</span>
                             </li>
                         ))}
+                        {p.venta?.descuento_puntos > 0 && (
+                            <li className="flex justify-between gap-2 text-success-text">
+                                <span>Descuento por puntos ({p.venta.puntos})</span>
+                                <span className="tabular-nums">−{formatMoney(p.venta.descuento_puntos)}</span>
+                            </li>
+                        )}
                     </ul>
                     {p.factura && <p className="text-micro text-content-3">Factura {p.factura}</p>}
                     {p.error && <Notice variant={p.estado === 'viva' ? 'warning' : 'danger'}>{p.error}</Notice>}

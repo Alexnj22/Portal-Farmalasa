@@ -26,7 +26,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO, cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado, unidadDeConteo, esLoteGenerico, rotuloDeAjuste, PROBLEMA_DE_AJUSTE, avanceSinLote, estadoDelProducto, totalesDelProducto } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO, cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado, unidadDeConteo, esLoteGenerico, rotuloDeAjuste, PROBLEMA_DE_AJUSTE, avanceSinLote, estadoDelProducto, totalesDelProducto, faltaDelRenglon, reglaDeLoteYVence, rotuloDeLoQuePide } from '@nucleo/utils/conteoDeInventario';
 import { avisoDeConteoParcial } from '@nucleo/utils/conteoPapel';
 import Interruptor from '../../componentes/Interruptor';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -66,7 +66,7 @@ const TONO = { ok: () => MARCA.verde, sobra: () => MARCA.ambar, falta: () => MAR
 // dar muchísimos toques»): el campo está siempre a la vista, «Siguiente» en el
 // teclado guarda y salta al próximo renglón sin contar —también al del producto
 // de abajo— y lo contado queda cerrado con su diferencia al lado.
-function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar }) {
+function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
@@ -111,6 +111,13 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
   const dif = verSist && contado && it.fisico_cantidad != null ? Number(it.fisico_cantidad) - it.sistema_cantidad : null;
   const estadoDif = dif == null ? null : dif === 0 ? { texto: 'Cuadra', tono: 'ok' } : { texto: `${dif > 0 ? '+' : ''}${dif}`, tono: dif > 0 ? 'sobra' : 'falta' };
   const lote = esLoteGenerico(it.lote) ? 'Sin lote' : `Lote ${it.lote}`;
+  // Lo que el producto pide y este renglón todavía no tiene (regulado sin
+  // lote, perecedero sin vencimiento).
+  const falta = faltaDelRenglon(it, producto);
+  // «Corregir lote» de un producto que no pide lote corrige sólo el vence; y
+  // si no pide ninguno de los dos, no hay nada que corregir.
+  const regla = producto?.regulado == null && producto?.perecedero == null ? null : reglaDeLoteYVence(producto);
+  const textoCorregir = !regla || regla.pideLote ? 'Corregir lote' : regla.pideVence ? 'Corregir vence' : null;
   const detalle = [it.fecha_vencimiento ? `vence ${vence(it.fecha_vencimiento)}` : 'sin vencimiento', unidadDeConteo(it).texto.toLowerCase(), it.is_vencidos ? 'área de vencidos' : null].filter(Boolean).join(' · ');
 
   const enlace = (texto, color, onPress) => (
@@ -124,7 +131,10 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
     <View style={{ gap: 4, paddingVertical: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{ flex: 1, gap: 1 }}>
-          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{lote}</Text>
+          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>
+            {lote}
+            {falta ? <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '800' }}>{`  ·  ${falta}`}</Text> : null}
+          </Text>
           {/* En qué se cuenta, entero («cajas de 100»): con la presentación a
               secas, una caja de 100 pastillas se anotaba como 100 cajas. */}
           <Text style={{ color: it.is_vencidos ? MARCA.rojo : colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>{detalle}</Text>
@@ -159,7 +169,7 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
         {contado ? enlace(`${it.contado_por_nombre ? shortEmployeeName(it.contado_por_nombre) : 'Contado'}${it.contado_at ? ` · ${fmtHM(it.contado_at)}` : ''}`, colorSistema.texto2, () => onHistorial(it)) : null}
         {puedeEscribir && it.ver_sistema && it.sistema_cantidad > 0 ? enlace('No lo encuentro', MARCA.ambar, () => guardar(noUbicado(it.nota))) : null}
         {onLoteReal ? enlace(esLoteGenerico(it.lote) ? 'Anotar lote' : 'Lote y vence', MARCA.azulClaro, () => onLoteReal(it)) : null}
-        {onLote ? enlace('Corregir lote', MARCA.azulClaro, () => onLote(it)) : null}
+        {onLote && textoCorregir ? enlace(textoCorregir, falta ? MARCA.ambar : MARCA.azulClaro, () => onLote(it)) : null}
         {onRecontar ? enlace(it.recontado_at ? 'Recontar otra vez' : 'Recontar', MARCA.ambar, () => onRecontar(it)) : null}
       </View>
       {it.recontado_at ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Recontado${it.fisico_primer_conteo != null ? ` · primer conteo ${it.fisico_primer_conteo}` : ''}`}</Text> : null}
@@ -659,6 +669,7 @@ export default function Conteo() {
           {productos.filas.map((p) => {
             // «3/3» era renglones contados de renglones: no decía si cuadraba.
             const estado = estadoDelProducto(p);
+            const pide = rotuloDeLoQuePide(p);
             return (
               <View key={p.erp_product_id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={20}>
@@ -668,13 +679,14 @@ export default function Conteo() {
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{p.product_nombre}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{p.laboratorio_nombre}</Text>
+                      {pide && !simple ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '700' }}>{pide}</Text> : null}
                     </View>
                     <Pildora texto={estado.texto} color={TONO[estado.tono]()} />
                   </View>
                   <View style={{ paddingHorizontal: 14, paddingBottom: 6 }}>
                     {!items[p.erp_product_id] ? <Indicador style={{ marginVertical: 10 }} />
                       : !items[p.erp_product_id].length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, paddingVertical: 10 }}>Sin lotes en este estante.</Text>
-                      : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} aCiegas={recuento} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
+                      : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} producto={simple ? null : p} editable={editable} aCiegas={recuento} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
                         registrar={registrar} onSiguiente={siguienteCampo} onEnfocar={enfocar}
                         // En un conteo que ajusta, el lote de un renglón del sistema no se
                         // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.
@@ -712,6 +724,7 @@ export default function Conteo() {
         onCerrar={() => setLoteReal(null)}
         onListo={() => { if (loteReal) refrescarProducto(loteReal.erp_product_id); }} />
       <AccionDeRenglon item={accion?.item ?? null} modo={accion?.modo} aCiegas={recuento}
+        producto={accion ? productos.filas.find((f) => f.erp_product_id === accion.item.erp_product_id) : null}
         hermanos={accion ? (items[accion.item.erp_product_id] || []) : []} onCerrar={() => setAccion(null)} onHecho={alAccion} />
       <AgregarRenglon visible={agregando} conteoId={id} branchId={conteo?.branch_id} simple={simple} onCerrar={() => setAgregando(false)}
         onAgregado={(prod) => {

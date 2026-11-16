@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { cantidadValida, esLoteGenerico, formatoMesAno, mesAnoDeVence, venceDeMesAno } from '@nucleo/utils/conteoDeInventario';
+import { cantidadValida, esLoteGenerico, formatoMesAno, mesAnoDeVence, reglaDeLoteYVence, venceDeMesAno } from '@nucleo/utils/conteoDeInventario';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import * as Haptics from 'expo-haptics';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -27,7 +27,7 @@ import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import { MARCA, tintaSobre } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 
-export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos = [], onCerrar, onHecho }) {
+export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos = [], producto = null, onCerrar, onHecho }) {
   const editarLote = useStaffStore((s) => s.editarLoteConteoItem);
   const recontar = useStaffStore((s) => s.recontarConteoItem);
   const fetchLotesConocidos = useStaffStore((s) => s.fetchLotesConocidosDelProducto);
@@ -68,16 +68,25 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos 
     return [...m.values()].slice(0, 12);
   })();
 
+  // Lo que pide el producto (la misma regla que aplica la base al guardar):
+  // regulado → lote y vence; perecedero → sólo vence. Sin el dato, como antes.
+  const conRegla = producto && (producto.regulado != null || producto.perecedero != null);
+  const { pideLote, pideVence } = conRegla ? reglaDeLoteYVence(producto) : { pideLote: true, pideVence: false };
   const venceFecha = venceDeMesAno(vence);
-  const valido = esLote ? lote.trim() !== '' && (vence === '' || !!venceFecha) : cantidad !== '' && cantidadValida(cantidad);
+  const loteOk = !pideLote || (lote.trim() !== '' && !esLoteGenerico(lote));
+  const venceOk = pideVence ? !!venceFecha : (vence === '' || !!venceFecha);
+  const valido = esLote ? loteOk && venceOk : cantidad !== '' && cantidadValida(cantidad);
+  const queFalta = !esLote || valido ? null
+    : !loteOk ? 'Falta el lote.' : vence.length === 5 ? 'Revisa el mes.' : pideVence ? 'Falta el vencimiento.' : null;
 
   const enviar = async () => {
     setGuardando(true);
     try {
       if (esLote) {
-        const r = await editarLote(item.id, { lote: lote.trim().toUpperCase(), fechaVencimiento: venceFecha });
+        // Sin lote que pedir, el renglón conserva el suyo: sólo cambia el vence.
+        const r = await editarLote(item.id, { lote: pideLote ? lote.trim().toUpperCase() : (item.lote ?? ''), fechaVencimiento: venceFecha });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        listo('Lote corregido', `Lote ${r.lote}${r.fecha_vencimiento ? ` · vence ${mesAnoDeVence(r.fecha_vencimiento)}` : ''}`);
+        listo(pideLote ? 'Lote corregido' : 'Vencimiento corregido', `Lote ${r.lote}${r.fecha_vencimiento ? ` · vence ${mesAnoDeVence(r.fecha_vencimiento)}` : ''}`);
         onHecho?.(item.id, { lote: r.lote, fecha_vencimiento: r.fecha_vencimiento });
       } else {
         const valor = Number(cantidad);
@@ -110,13 +119,19 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos 
   return (
     <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
-        <EncabezadoDeHoja titulo={esLote ? 'Corregir lote' : 'Recontar'}
+        <EncabezadoDeHoja titulo={esLote ? (pideLote ? 'Corregir lote' : 'Corregir vence') : 'Recontar'}
           subtitulo={[item?.product_nombre, item?.presentacion, item?.lote ? `lote ${item.lote}` : null].filter(Boolean).join(' · ')}
           onCerrar={onCerrar} />
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             {esLote ? (
               <>
+                {conRegla ? (
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>
+                    {pideLote ? 'Este producto pide lote y vencimiento.' : 'Este producto pide solo el vencimiento.'}
+                  </Text>
+                ) : null}
+                {pideLote ? (<>
                 <Seccion titulo="Lote nuevo">
                   <Campo multiline={false} value={lote} onChangeText={(v) => setLote(v.toUpperCase())} autoFocus
                     placeholder={esLoteGenerico(item?.lote) ? 'Escribe el lote' : `Ahora: ${item?.lote}`}
@@ -141,18 +156,20 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos 
                     </View>
                   </Seccion>
                 ) : null}
+                </>) : null}
                 <Seccion titulo="Vence (mes y año)">
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <View style={{ width: 120 }}>
-                      <Campo ref={campoVence} multiline={false} value={vence} keyboardType="number-pad" placeholder="MM/AA" maxLength={5}
+                      <Campo ref={campoVence} autoFocus={!pideLote} multiline={false} value={vence} keyboardType="number-pad" placeholder="MM/AA" maxLength={5}
                         onChangeText={(v) => setVence(formatoMesAno(v))} onSubmitEditing={guardar} onSiguiente={guardar}
                         style={{ fontSize: 20, fontWeight: '700', textAlign: 'center' }} />
                     </View>
                     <Text style={{ flex: 1, color: vence && !venceFecha && vence.length === 5 ? MARCA.rojo : colorSistema.texto2, fontSize: 15 }}>
-                      {venceFecha ? fechaTexto(venceFecha, { month: 'long', year: 'numeric' }) : vence.length === 5 ? 'Mes inválido' : vence ? '' : 'Sin vencimiento'}
+                      {venceFecha ? fechaTexto(venceFecha, { month: 'long', year: 'numeric' }) : vence.length === 5 ? 'Mes inválido' : vence ? '' : pideVence ? 'Obligatorio' : 'Sin vencimiento'}
                     </Text>
                   </View>
                 </Seccion>
+                {queFalta ? <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>{queFalta}</Text> : null}
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Solo corrige este conteo. El inventario no cambia.</Text>
               </>
             ) : (

@@ -49,7 +49,7 @@ import useLayoutCompacto, { useFichasEnVezDeTabla, useAltoEscaso } from '@nucleo
 import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { CajaFecha } from './camposDeConteo';
-import { unidadDeConteo, esLoteGenerico } from '@nucleo/utils/conteoDeInventario';
+import { unidadDeConteo, esLoteGenerico, rotuloDeLoQuePide } from '@nucleo/utils/conteoDeInventario';
 
 // «GENERICO» es como la caja guarda lo que no tiene lote; quien cuenta lee
 // «Sin lote».
@@ -587,6 +587,7 @@ function ItemRow({
                             {producto.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
                         </div>
                         <span className="text-micro text-content-3 truncate">{producto.laboratorio_nombre || 'Sin laboratorio'}</span>
+                        {rotuloDeLoQuePide(producto) && <span className="text-micro font-semibold text-primary truncate">{rotuloDeLoQuePide(producto)}</span>}
                     </div>
                 ) : (
                     <span className="text-content-3 text-label">↳</span>
@@ -796,6 +797,8 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
                         {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
                     </div>
                     <span className="text-micro text-content-3 truncate">{product.laboratorio_nombre || 'Sin laboratorio'}</span>
+                    {/* Qué pide el producto (regulado → lote y vence; perecedero → vence). */}
+                    {rotuloDeLoQuePide(product) && <span className="text-micro font-semibold text-primary truncate">{rotuloDeLoQuePide(product)}</span>}
                 </div>
             </DataCell>
             <DataCell>

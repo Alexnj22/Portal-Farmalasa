@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.6 — Conteo: cada producto dice qué pide (lote y vence, solo vence o solo cantidad)
+
+«Solo pide lote y vence cuando es regulado… debe verse claro». La regla ya la aplicaba la base: si el producto es regulado, pide lote y vence; si es solo perecedero, solo vence; si no es ninguno, solo cantidad. Pero la lista no lo mostraba, y «Corregir lote» lo descubría con un error al guardar.
+
+- `get_conteo_pagina` trae `regulado` y `perecedero` de cada producto. En el conteo de Bodega: 1,796 regulados, 145 solo perecederos y 59 sin ninguna de las dos marcas (de los primeros 2,000).
+- **App y web**: debajo del laboratorio, «Pide lote y vence», «Pide solo vence» o «Solo cantidad».
+- **App**: el renglón marca en ámbar «Falta lote» (regulado sin lote) o «Falta vence», y el enlace de corregir se pinta igual.
+- **«Corregir lote»** sigue la regla: si el producto es regulado, exige lote y vence; si es solo perecedero, se llama «Corregir vence» y sólo pide la fecha; si no es ninguno, el enlace no sale. Antes de guardar dice qué falta.
+- `rotuloDeLoQuePide` y `faltaDelRenglon` en `conteoDeInventario.js`, con pruebas.
+
 ## v2.1557.5 — Preventa: más compacta y el lote de cada producto
 
 - La barra (sucursal, Otras sucursales, Apartar, Vaciar) pasa a la cabecera de

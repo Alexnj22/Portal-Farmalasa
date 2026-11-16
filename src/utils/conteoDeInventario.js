@@ -290,6 +290,29 @@ export const reglaDeLoteYVence = (producto) => ({
 });
 
 /**
+ * Lo que pide el producto, dicho en la lista del conteo (2026-11-16, Bodega:
+ * «debe verse claro»). Sin `regulado`/`perecedero` (datos viejos) no dice nada.
+ */
+export function rotuloDeLoQuePide(producto) {
+    if (producto?.regulado == null && producto?.perecedero == null) return null;
+    const { pideLote, pideVence } = reglaDeLoteYVence(producto);
+    return pideLote ? 'Pide lote y vence' : pideVence ? 'Pide solo vence' : 'Solo cantidad';
+}
+
+/**
+ * Lo que le falta a un renglón según su producto: «Falta lote» si es regulado
+ * y sigue sin lote; «Falta vence» si lo pide y no lo tiene. `null` si está
+ * completo o no se sabe qué pide.
+ */
+export function faltaDelRenglon(item, producto) {
+    if (producto?.regulado == null && producto?.perecedero == null) return null;
+    const { pideLote, pideVence } = reglaDeLoteYVence(producto);
+    if (pideLote && esLoteGenerico(item?.lote)) return 'Falta lote';
+    if (pideVence && !item?.fecha_vencimiento) return 'Falta vence';
+    return null;
+}
+
+/**
  * Una línea del plan de ajuste, en palabras. Primero en lo que se CONTÓ
  * —«+3 cajas · lote L1 (vence 02/2028) · 30 unidades»— y las unidades al
  * final, porque son lo que se mueve en la caja. Sólo en unidades, 3 cajas de

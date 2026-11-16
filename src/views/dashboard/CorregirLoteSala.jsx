@@ -2,11 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { CalendarCog, CheckCircle2, ChevronRight, Minus, Plus } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
-import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
 import Notice from '../../components/common/Notice';
-import CampoMesAnio from '../../components/common/CampoMesAnio';
+import LoteDeLaCaja from '../traslados/LoteDeLaCaja';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { PieModal, EncabezadoModal } from './LanzadorSolicitud';
 import { buscarConExistencia, fetchLotesEnUnidades, corregirLoteEnSala } from '@nucleo/data/inventoryMovements';
@@ -52,8 +51,12 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
     const [regulado, setRegulado] = useState(null);
     const [origen, setOrigen] = useState(null);       // el lote que está mal
     const [unidades, setUnidades] = useState(0);
-    const [loteNuevo, setLoteNuevo] = useState('');
-    const [venceNuevo, setVenceNuevo] = useState(''); // 'AAAA-MM' o lo que se esté escribiendo
+    // El lote correcto, con la MISMA pieza que traslados y ajuste
+    // (`LoteDeLaCaja`): ofrece los lotes ya registrados del producto en toda la
+    // red, elegir uno llena su vencimiento, y un número registrado con otra
+    // fecha se frena — un lote tiene un solo vencimiento. `caja.envio` es lo
+    // que se manda ({ lote, vence: 'AAAA-MM-DD' }) o null mientras no se pueda.
+    const [caja, setCaja] = useState({ lote: '', vence: '' });
     const [motivo, setMotivo] = useState('');
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState('');
@@ -101,26 +104,42 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
     const elegirLote = (l) => {
         setOrigen(l);
         setUnidades(l.unidades);
-        setLoteNuevo(esLoteGenerico(l.lote) ? '' : l.lote);
         // El vencimiento va VACÍO: casi siempre es lo que está mal, y
         // precargarlo encendía de entrada «no hay nada que corregir» y «ya
         // pasó» antes de que la persona escribiera nada (visto en la pantalla).
-        setVenceNuevo('');
+        setCaja({ lote: esLoteGenerico(l.lote) ? '' : l.lote, vence: '' });
         setError('');
     };
 
-    const venceListo = /^\d{4}-\d{2}$/.test(venceNuevo) ? `${venceNuevo}-01` : null;
-    const mismoNumero = origen && !esLoteGenerico(origen.lote) && norm(origen.lote) === norm(loteNuevo);
+    const loteNuevo = caja.envio?.lote ?? '';
+    const venceListo = caja.envio?.vence ?? null;
+    const mismoNumero = origen && !esLoteGenerico(origen.lote) && norm(origen.lote) === norm(caja.lote);
     const sinCambio = mismoNumero && venceListo && String(origen.vence ?? '').slice(0, 10) === venceListo;
     // Si el número se queda, el lote va completo: un lote físico tiene una fecha.
     const loteCompleto = mismoNumero && origen && unidades !== origen.unidades;
-    const vencido = venceListo && venceListo <= hoySV();
     const faltan = !origen ? 'el lote'
         : !(unidades > 0) ? 'cuántas unidades'
-        : !loteNuevo.trim() ? 'el lote correcto'
-        : !venceListo ? 'el vencimiento correcto'
+        : !caja.envio ? 'el lote correcto'
         : motivo.trim().length < 4 ? 'por qué' : null;
-    const puedeEnviar = !faltan && !sinCambio && !loteCompleto && !vencido && !enviando;
+    const puedeEnviar = !faltan && !sinCambio && !loteCompleto && !enviando;
+
+    // ── Así queda la sala ─────────────────────────────────────────────────
+    // Lo que el usuario preguntaba al verlo («¿quedarían 3 lotes? ¿siempre el
+    // mismo total?»): el lote de origen pierde las unidades; si el lote correcto
+    // ya existe con ESA fecha se suman a él, si no aparece uno nuevo. El total
+    // no cambia nunca.
+    const asiQueda = useMemo(() => {
+        if (!origen || !caja.envio || sinCambio || loteCompleto || !(unidades > 0)) return null;
+        const filas = (lotes ?? []).map(l => ({ ...l, antes: l.unidades }));
+        const o = filas.find(l => l.clave === origen.clave);
+        if (o) o.unidades -= unidades;
+        const destino = filas.find(l => norm(l.lote) === norm(caja.envio.lote)
+            && String(l.vence ?? '').slice(0, 10) === caja.envio.vence);
+        if (destino) destino.unidades += unidades;
+        else filas.push({ clave: 'nuevo', lote: caja.envio.lote, vence: caja.envio.vence, unidades, antes: 0, nuevo: true });
+        const total = (lotes ?? []).reduce((n, l) => n + l.unidades, 0);
+        return { filas: filas.filter(l => l.unidades > 0 || l.antes > 0), total };
+    }, [origen, caja.envio, sinCambio, loteCompleto, unidades, lotes]);
 
     const enviar = async () => {
         if (!puedeEnviar) return;
@@ -248,12 +267,12 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <PortalInput compact label="Lote correcto" value={loteNuevo}
-                                onChange={e => setLoteNuevo(e.target.value.toUpperCase())} placeholder="Como viene en la caja" />
-                            <CampoMesAnio compact label="Vence" placeholder="MM/AAAA" value={venceNuevo}
-                                desde={hoySV().slice(0, 7)} onChange={v => setVenceNuevo(String(v ?? ''))} />
-                        </div>
+                        <LoteDeLaCaja
+                            erpProductId={producto.erp_product_id} producto={producto.descripcion}
+                            valor={caja} onChange={setCaja}
+                            excluir={esLoteGenerico(origen.lote) ? null : { lote: origen.lote, fecha: origen.vence }}
+                            permitirOtraFecha={!esLoteGenerico(origen.lote)}
+                        />
 
                         <PortalTextarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={2}
                             placeholder="¿Por qué se corrige? (obligatorio)" />
@@ -264,7 +283,22 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                                 Si sólo cambia el vencimiento, se corrige el lote completo ({origen.unidades} u.): un mismo lote no puede quedar con dos fechas.
                             </Notice>
                         )}
-                        {vencido && <Notice variant="warning">Ese vencimiento ya pasó. Si el producto está vencido, va como descarte.</Notice>}
+                        {asiQueda && (
+                            <div data-surface="card" className="p-3 flex flex-col gap-1">
+                                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Así queda la sala</p>
+                                {asiQueda.filas.map(l => (
+                                    <div key={l.clave} className="flex items-center gap-2 text-body-sm">
+                                        <span className={`flex-1 min-w-0 truncate ${l.unidades === 0 ? 'text-content-3 line-through' : 'text-content'}`}>
+                                            {rotulo(l)}{l.vence ? ` · ${fmtVence(l.vence)}` : ''}
+                                            {l.nuevo && <span className="text-micro font-bold text-brand-text"> · nuevo</span>}
+                                        </span>
+                                        <span className="tabular-nums text-content-3">{l.antes} →</span>
+                                        <span className="tabular-nums font-black text-content w-10 text-right">{l.unidades}</span>
+                                    </div>
+                                ))}
+                                <p className="text-micro text-content-3 mt-1">Total {asiQueda.total} u., igual que antes.</p>
+                            </div>
+                        )}
                     </>
                 )}
                 {error && <Notice variant="danger">{error}</Notice>}

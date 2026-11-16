@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.9 — Corregir lote: lotes registrados, sin duplicar lote/vence y «Así queda»
+
+Pedido del usuario: que el lote y el vencimiento salgan de los ya
+registrados o de uno nuevo, sin duplicar un lote con dos fechas, y que sirva
+igual en traslados e inventario.
+
+- El lote correcto se elige con **`LoteDeLaCaja`**, la misma pieza de
+  traslados, envíos y ajuste: ofrece los lotes registrados del producto en
+  toda la red, elegir uno llena su vencimiento, y un número ya registrado con
+  otro vencimiento se frena («un lote tiene un solo vencimiento»).
+- Dos agregados opcionales de `LoteDeLaCaja`, apagados para quienes ya la
+  usan: `excluir` (el par que se corrige no choca consigo mismo) y
+  `permitirOtraFecha` («Esa fecha también está mal», para cuando las dos
+  fechas registradas están mal y la buena todavía no existe).
+- **«Así queda la sala»**: antes de corregir muestra cada lote con sus
+  unidades antes → después, el nuevo marcado, y el total, que no cambia.
+
 ## v2.1551.8 — Datos de mercado: revisión de las parejas confirmadas
 
 `scripts/srs/revisar-confirmadas.mjs` pasa las parejas que ya confirmó una

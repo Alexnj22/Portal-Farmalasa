@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
@@ -27,20 +27,44 @@ const mesAnio = (v) => { const [a, m] = String(v).split('-'); return `${m}/${a}`
  *
  * `soloVence` (2026-11-13): un perecedero sin control de lote. No hay número
  * que copiar, sólo la fecha; `envio` sale `{ lote: '', vence }`.
+ *
+ * Para CORREGIR un lote (2026-11-16, `CorregirLoteSala`), dos agregados que
+ * nadie más usa:
+ *   · `excluir` ({ lote, fecha }): el par que se está corrigiendo no cuenta como
+ *     «registrado» — si no, corregirle la fecha chocaría consigo mismo.
+ *   · `permitirOtraFecha`: con el mismo número registrado con otra fecha, además
+ *     de «Usar …» ofrece «Esa fecha también está mal». Es la salida del caso en
+ *     que las DOS fechas registradas están mal y la buena todavía no existe; sin
+ *     ella no habría orden posible para corregirlas. Pide confirmarlo a mano.
  */
-export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange, soloVence = false }) {
-    const [conocidos, setConocidos] = useState([]);
+export default function LoteDeLaCaja({
+    erpProductId, producto, valor, onChange, soloVence = false, excluir = null, permitirOtraFecha = false,
+}) {
+    const [todos, setTodos] = useState([]);
     useEffect(() => {
         if (soloVence) return undefined;
         let vivo = true;
-        fetchLotesConocidosDeProducto(erpProductId).then((l) => { if (vivo) setConocidos(l); });
+        fetchLotesConocidosDeProducto(erpProductId).then((l) => { if (vivo) setTodos(l); });
         return () => { vivo = false; };
     }, [erpProductId, soloVence]);
+    const exLote = String(excluir?.lote ?? '').trim().toUpperCase();
+    const exFecha = String(excluir?.fecha ?? '').slice(0, 10);
+    const conocidos = useMemo(() => (exLote
+        ? todos.filter((c) => !(c.lote === exLote && c.fecha === exFecha))
+        : todos), [todos, exLote, exFecha]);
 
-    const motivo = soloVence ? motivoDeVenceDeCaja(valor) : motivoDeLoteDeCaja(valor, conocidos);
+    const choqueCrudo = soloVence ? null : choqueDeLote(valor, conocidos);
+    // «Esa fecha también está mal»: sólo vale mientras siga siendo el MISMO
+    // número que chocó; si cambia lo escrito, se vuelve a preguntar.
+    const otraFechaVale = permitirOtraFecha && choqueCrudo?.mismoNumero
+        && valor?.otraFecha === String(valor?.lote || '').trim().toUpperCase();
+    const choque = otraFechaVale ? null : choqueCrudo;
+    const motivo = soloVence ? motivoDeVenceDeCaja(valor)
+        : otraFechaVale ? motivoDeVenceDeCaja(valor) : motivoDeLoteDeCaja(valor, conocidos);
     const envio = motivo ? null
-        : soloVence ? venceDeCajaParaEnviar(valor) : loteDeCajaParaEnviar(valor, conocidos);
-    const choque = soloVence ? null : choqueDeLote(valor, conocidos);
+        : soloVence ? venceDeCajaParaEnviar(valor)
+        : otraFechaVale ? { lote: String(valor.lote).trim().toUpperCase(), vence: venceDeCajaParaEnviar(valor).vence }
+        : loteDeCajaParaEnviar(valor, conocidos);
     const tocado = Boolean(valor?.lote || valor?.vence);
 
     // `envio` viaja en el valor para que la pantalla que despacha no tenga que
@@ -105,10 +129,20 @@ export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange, 
                                 No, es otro lote
                             </Button>
                         )}
+                        {choque.mismoNumero && permitirOtraFecha && (
+                            <Button size="sm" variant="secondary"
+                                onClick={() => onChange({ ...valor, otraFecha: String(valor?.lote || '').trim().toUpperCase() })}>
+                                Esa fecha también está mal
+                            </Button>
+                        )}
                     </span>
                 </Notice>
-            ) : motivo && (
+            ) : motivo ? (
                 <p className={`text-caption ${tocado ? 'text-warning-text' : 'text-content-3'}`}>{motivo}</p>
+            ) : otraFechaVale && (
+                <p className="text-caption text-content-3">
+                    El lote <b>{choqueCrudo.lote}</b> sigue registrado con {mesAnio(choqueCrudo.vence)}: corrígelo también.
+                </p>
             )}
         </div>
     );

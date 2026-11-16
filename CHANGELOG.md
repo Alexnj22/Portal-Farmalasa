@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.2 — Preventa: últimas compras en un modal y «Suele llevar» en una fila
+
+Ajustes pedidos al verla en pantalla:
+- **Últimas compras** abre un modal: lo que más compra en el año y cada una de
+  sus 5 últimas compras (fecha, sucursal, comprobante, total) con sus
+  productos, foto, cantidad, presentación e importe; se agrega uno o la compra
+  entera.
+- **Suele llevar** siempre en una fila, sin barra de desplazamiento, con
+  flechas en los bordes que aparecen sólo si hay más de ese lado.
+- El aviso de datos faltantes ya no ocupa una franja: lo que falta se ve en la
+  grilla y queda un botón «Completar».
+- El problema de un producto empieza con mayúscula; divisores con el token
+  `divide-divider`.
+
 ## v2.1557.1 — Conteo en la web: una llamada por búsqueda en vez de ocho
 
 «¿Pero carga lento? Se tarda en salirme el listado». La función nueva de la app tardaba 6.9 s en producción, contra 330 ms a solas. No era ella: la base estaba saturada.
@@ -30,6 +44,7 @@ Alguien en Bodega contaba desde el navegador de un Android, buscando producto po
 - La web usa `get_conteo_pagina`, como la app: **una llamada** por estante en vez de cuatro. Una búsqueda pasa de 8 consultas pesadas a 2.
 - `get_conteo_pagina` ahora acepta `p_lotes_con_busqueda`, porque la web filtra también los lotes por la búsqueda. Además, los lotes ya no se cortan en 900: el área de vencidos pide hasta 500 productos de una vez. Comparado con las funciones de antes en el conteo de Bodega, coinciden el total, los lotes con búsqueda y el área de vencidos completa (50 productos, 66 lotes).
 - Las fotos de quién contó se firman igual que antes.
+
 
 ## v2.1557.0 — Preventa: compacta, datos del cliente, últimas compras y validación con sugerencias
 

@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-    AlertTriangle, Ban, ChevronDown, ClipboardList, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
+    AlertTriangle, Ban, ChevronLeft, ChevronRight, ClipboardList, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
     RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -15,6 +15,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import PortalInput from '../components/common/PortalInput';
 import SearchInput from '../components/common/SearchInput';
 import ConfirmModal from '../components/common/ConfirmModal';
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 import ClienteAvatar from './chat-clientes/ClienteAvatar';
 import { irAlCampo } from '../plataforma/irAlCampo';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -93,6 +94,7 @@ const ID_BUSCAR_PRODUCTO = 'preventa-buscar-producto';
 const ID_BUSCAR_CLIENTE = 'preventa-buscar-cliente';
 const enfocar = (id) => { const el = document.getElementById(id); if (el) { el.focus(); el.select?.(); } };
 const claveDe = (l) => `${l.producto_id}-${l.factor}`;
+const conMayuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
 
 export default function PreventaView({ openModal }) {
     const { user, hasPermission, getScope } = useAuth();
@@ -761,7 +763,7 @@ function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, pu
                     </div>
                     {abierto && (
                         <ul id={idLista} role="listbox" aria-label="Clientes encontrados"
-                            className="rounded-xl border border-border-subtle divide-y divide-border-subtle overflow-hidden">
+                            className="rounded-xl border border-border-card divide-y divide-divider overflow-hidden">
                             {resultados.map((x, i) => (
                                 <li key={x.id} id={`${idLista}-${i}`} role="option" aria-selected={i === nav.activo}
                                     onMouseEnter={() => nav.setActivo(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(x)}
@@ -837,23 +839,23 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
             </div>
 
             {info && (
-                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 rounded-lg bg-surface-card-hover px-3 py-2 text-micro">
-                    {datos.map(([k, v, exigido]) => (
-                        <div key={k} className={`flex items-baseline gap-1.5 min-w-0 ${k === 'Dirección' ? 'col-span-2 sm:col-span-3' : ''}`}>
-                            <dt className="text-content-3 shrink-0 w-14">{k}</dt>
-                            <dd className={`min-w-0 truncate ${v ? 'text-content font-semibold' : exigido ? 'text-danger-text font-bold' : importante(k) ? 'text-warning-text font-semibold' : 'text-content-3'}`}
-                                title={v ?? ''}>
-                                {v || (exigido ? 'Falta · lo pide el crédito fiscal' : importante(k) ? 'Falta' : '—')}
-                            </dd>
-                        </div>
-                    ))}
-                </dl>
-            )}
-            {info && faltan.length > 0 && (
-                <Notice variant="warning" compact
-                    action={puedeEditar ? <Button size="xs" variant="secondary" icon={UserPen} onClick={onEditar}>Completar datos</Button> : null}>
-                    Le falta {faltan.join(', ').toLowerCase()}. Pídeselo ahora: caja y Hacienda lo necesitan para facturar y avisarle.
-                </Notice>
+                <div className="flex items-start gap-2 rounded-lg bg-surface-card-hover px-3 py-2">
+                    <dl className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-micro">
+                        {datos.map(([k, v, exigido]) => (
+                            <div key={k} className={`flex items-baseline gap-1.5 min-w-0 ${k === 'Dirección' ? 'col-span-2 sm:col-span-3' : ''}`}>
+                                <dt className="text-content-3 shrink-0 w-14">{k}</dt>
+                                <dd className={`min-w-0 truncate ${v ? 'text-content font-semibold' : exigido ? 'text-danger-text font-bold' : importante(k) ? 'text-warning-text font-semibold' : 'text-content-3'}`}
+                                    title={v ?? ''}>
+                                    {v || (exigido ? 'Falta · lo pide el crédito fiscal' : importante(k) ? 'Falta' : '—')}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+                    {/* Lo que falta ya se ve en la grilla: aquí sólo el atajo para completarlo. */}
+                    {(faltan.length > 0 || faltanCcf.length > 0) && puedeEditar && (
+                        <Button size="xs" variant="secondary" icon={UserPen} onClick={onEditar} className="shrink-0">Completar</Button>
+                    )}
+                </div>
             )}
 
             {info && (info.frecuentes?.length > 0 || info.ultimas_compras?.length > 0) && (
@@ -876,69 +878,126 @@ function Cifra({ rotulo, valor, nota = null, tono = null }) {
 // ── Lo que suele llevar y sus últimas compras: todo se agrega de un toque ─
 function Historial({ info, onAgregar, onAgregarVarios }) {
     const [abierto, setAbierto] = useState(false);
-    const [compra, setCompra] = useState(null);
     const frecuentes = info.frecuentes ?? [];
     const ultimas = info.ultimas_compras ?? [];
     return (
-        <div className="space-y-1.5">
-            {frecuentes.length > 0 && (
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="shrink-0 text-micro font-bold text-content-3">Suele llevar</span>
-                    <div className="flex gap-1.5 overflow-x-auto overscroll-contain pb-0.5 min-w-0">
-                        {frecuentes.map((f) => (
-                            <button key={f.producto_id} type="button" onClick={() => onAgregar(f)}
-                                title={`Agregar ${f.nombre} · lo compró ${f.veces} ${f.veces === 1 ? 'vez' : 'veces'} en el año`}
-                                className="shrink-0 flex items-center gap-1.5 rounded-full border border-border-card bg-surface-card-hover pl-0.5 pr-2 py-0.5 min-h-[var(--tap-min)] md:min-h-0 text-micro font-semibold text-content-2 hover:border-brand/50 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand">
-                                <Miniatura src={f.foto_url} tamano="w-6 h-6" />
-                                <span className="max-w-[10rem] truncate">{f.nombre}</span>
-                                <Plus size={12} className="text-brand-text" />
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+        <div className="flex items-center gap-2 min-w-0">
             {ultimas.length > 0 && (
-                <>
-                    <button type="button" onClick={() => setAbierto((a) => !a)} aria-expanded={abierto}
-                        className="flex items-center gap-1.5 text-micro font-bold text-content-3 hover:text-content-2 rounded focus-visible:outline-2 focus-visible:outline-brand">
-                        <History size={12} /> Últimas compras · {ultimas.length}
-                        <ChevronDown size={12} className={`transition-transform ${abierto ? 'rotate-180' : ''}`} />
-                    </button>
-                    {abierto && (
-                        <ul className="rounded-lg border border-border-subtle divide-y divide-border-subtle">
-                            {ultimas.map((u) => (
-                                <li key={u.id} className="text-micro">
-                                    <button type="button" onClick={() => setCompra((c) => (c === u.id ? null : u.id))} aria-expanded={compra === u.id}
-                                        className="w-full grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-2 px-2.5 py-1.5 text-left hover:bg-surface-card-hover focus-visible:outline-2 focus-visible:outline-brand">
-                                        <span className="font-semibold text-content tabular-nums">{fechaTexto(u.fecha)}</span>
-                                        <span className="truncate text-content-3">
-                                            {u.sucursal} · {nombreDeComprobante(u.tipo_documento)} · {u.productos?.length ?? 0} producto{u.productos?.length === 1 ? '' : 's'}
-                                        </span>
-                                        <span className="font-black tabular-nums text-content">{formatMoney(Number(u.total))}</span>
-                                    </button>
-                                    {compra === u.id && (
-                                        <div className="px-2.5 pb-2 space-y-1">
-                                            {(u.productos ?? []).map((x, i) => (
-                                                <div key={`${x.producto_id}-${i}`} className="flex items-center gap-2">
-                                                    <Miniatura src={x.foto_url} tamano="w-6 h-6" />
-                                                    <span className="flex-1 min-w-0 truncate text-content-2">{Number(x.cantidad)} × {x.nombre}</span>
-                                                    {x.activo && x.producto_id && (
-                                                        <Button size="xs" variant="ghost" icon={Plus} onClick={() => onAgregar(x)}>Agregar</Button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {(u.productos ?? []).filter((x) => x.activo && x.producto_id).length > 1 && (
-                                                <Button size="xs" variant="secondary" icon={RefreshCw}
-                                                    onClick={() => onAgregarVarios(u.productos.filter((x) => x.activo && x.producto_id))}>Agregar toda la compra</Button>
-                                            )}
-                                        </div>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </>
+                <Button size="xs" variant="secondary" icon={History} onClick={() => setAbierto(true)} className="shrink-0">
+                    Últimas compras · {ultimas.length}
+                </Button>
             )}
+            {frecuentes.length > 0 && <SueleLlevar frecuentes={frecuentes} onAgregar={onAgregar} />}
+            {abierto && (
+                <LiquidModal open onClose={() => setAbierto(false)} maxWidth="max-w-2xl" ariaLabel="Últimas compras del cliente">
+                    <LiquidModal.Header icono={History} titulo="Últimas compras"
+                        subtitulo={`${info.name} · ${info.compra_12m != null ? `${formatMoney(info.compra_12m)} en 12 meses` : 'sin compras en el año'}`}
+                        onClose={() => setAbierto(false)} />
+                    <LiquidModal.Body>
+                        <div className="space-y-3">
+                            {frecuentes.length > 0 && (
+                                <section className="space-y-1.5">
+                                    <TituloDeSeccion nivel="tarjeta">Lo que más compra en el año</TituloDeSeccion>
+                                    <ul className="grid sm:grid-cols-2 gap-1.5">
+                                        {frecuentes.map((f) => (
+                                            <li key={f.producto_id} className="flex items-center gap-2 rounded-lg bg-surface-card-hover px-2 py-1.5 min-w-0">
+                                                <Miniatura src={f.foto_url} tamano="w-8 h-8" />
+                                                <span className="flex-1 min-w-0">
+                                                    <span className="block text-body-sm font-semibold text-content truncate">{f.nombre}</span>
+                                                    <span className="block text-micro text-content-3">{f.veces} {f.veces === 1 ? 'vez' : 'veces'} · última {fechaTexto(f.ultima)}</span>
+                                                </span>
+                                                <Button size="xs" variant="ghost" icon={Plus} onClick={() => onAgregar(f)}>Agregar</Button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+                            )}
+                            {ultimas.map((u) => {
+                                const vendibles = (u.productos ?? []).filter((x) => x.activo && x.producto_id);
+                                return (
+                                    <section key={u.id} data-surface="card" className="p-3 space-y-2">
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                            <p className="text-body-sm font-bold text-content tabular-nums">{fechaTexto(u.fecha)}</p>
+                                            <p className="text-micro text-content-3">{u.sucursal} · {nombreDeComprobante(u.tipo_documento)}</p>
+                                            <p className="ml-auto text-body font-black tabular-nums text-content">{formatMoney(Number(u.total))}</p>
+                                        </div>
+                                        <ul className="divide-y divide-divider">
+                                            {(u.productos ?? []).map((x, i) => (
+                                                <li key={`${x.producto_id}-${i}`} className="flex items-center gap-2 py-1.5 min-w-0">
+                                                    <Miniatura src={x.foto_url} tamano="w-8 h-8" />
+                                                    <span className="flex-1 min-w-0">
+                                                        <span className="block text-body-sm text-content truncate">{x.nombre}</span>
+                                                        <span className="block text-micro text-content-3">
+                                                            {Number(x.cantidad)} {x.presentacion ?? ''}{x.activo ? '' : ' · ya no se vende'}
+                                                        </span>
+                                                    </span>
+                                                    <span className="text-body-sm font-semibold tabular-nums text-content-2">{formatMoney(Number(x.total ?? 0))}</span>
+                                                    {x.activo && x.producto_id
+                                                        ? <Button size="xs" variant="ghost" icon={Plus} onClick={() => onAgregar(x)}>Agregar</Button>
+                                                        : <span className="w-[4.5rem]" />}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        {vendibles.length > 1 && (
+                                            <div className="flex justify-end">
+                                                <Button size="sm" variant="secondary" icon={RefreshCw}
+                                                    onClick={() => { onAgregarVarios(vendibles); setAbierto(false); }}>Agregar toda la compra</Button>
+                                            </div>
+                                        )}
+                                    </section>
+                                );
+                            })}
+                        </div>
+                    </LiquidModal.Body>
+                </LiquidModal>
+            )}
+        </div>
+    );
+}
+
+// «Suele llevar» en una sola fila: se desliza con las flechas de los bordes
+// (o con el dedo), sin barra de desplazamiento a la vista. Cada flecha sólo
+// aparece si hay más productos de ese lado.
+function SueleLlevar({ frecuentes, onAgregar }) {
+    const pista = useRef(null);
+    const [bordes, setBordes] = useState({ izq: false, der: false });
+    const medir = useCallback(() => {
+        const el = pista.current;
+        if (!el) return;
+        setBordes({ izq: el.scrollLeft > 2, der: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+    }, []);
+    useEffect(() => {
+        medir();
+        const el = pista.current;
+        const ro = typeof ResizeObserver !== 'undefined' && el ? new ResizeObserver(medir) : null;
+        if (ro) ro.observe(el);
+        return () => ro?.disconnect();
+    }, [medir, frecuentes]);
+    const mover = (dir) => pista.current?.scrollBy({ left: dir * pista.current.clientWidth * 0.8, behavior: 'smooth' });
+    return (
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <span className="shrink-0 text-micro font-bold text-content-3">Suele llevar</span>
+            <div className="relative flex-1 min-w-0">
+                <div ref={pista} onScroll={medir} className="flex gap-1 overflow-x-auto scrollbar-hide overscroll-contain scroll-smooth">
+                    {frecuentes.map((f) => (
+                        <button key={f.producto_id} type="button" onClick={() => onAgregar(f)}
+                            title={`Agregar ${f.nombre} · lo compró ${f.veces} ${f.veces === 1 ? 'vez' : 'veces'} en el año`}
+                            className="shrink-0 flex items-center gap-1.5 rounded-full border border-border-card bg-surface-card-hover pl-0.5 pr-2 py-0.5 min-h-[var(--tap-min)] md:min-h-0 text-micro font-semibold text-content-2 hover:border-brand/50 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand">
+                            <Miniatura src={f.foto_url} tamano="w-6 h-6" />
+                            <span className="max-w-[9rem] truncate">{f.nombre}</span>
+                            <Plus size={12} className="text-brand-text" />
+                        </button>
+                    ))}
+                </div>
+                {bordes.izq && (
+                    <Button size="xs" variant="secondary" icon={ChevronLeft} iconOnly aria-label="Ver los anteriores" tabIndex={-1}
+                        onClick={() => mover(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full shadow-md" />
+                )}
+                {bordes.der && (
+                    <Button size="xs" variant="secondary" icon={ChevronRight} iconOnly aria-label="Ver más" tabIndex={-1}
+                        onClick={() => mover(1)} className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full shadow-md" />
+                )}
+            </div>
         </div>
     );
 }
@@ -975,7 +1034,7 @@ function BuscarProducto({ onElegir }) {
             )}
             {abierto && (
                 <ul id={idLista} role="listbox" aria-label="Productos encontrados"
-                    className="rounded-xl border border-border-subtle divide-y divide-border-subtle max-h-72 overflow-y-auto overscroll-contain">
+                    className="rounded-xl border border-border-card divide-y divide-divider max-h-72 overflow-y-auto overscroll-contain">
                     {resultados.map((p, i) => (
                         <li key={p.id} id={`${idLista}-${i}`} role="option" aria-selected={i === nav.activo}
                             onMouseEnter={() => nav.setActivo(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(p)}
@@ -1068,7 +1127,7 @@ function Linea({ indice, linea, fila, foto, cotizando, problema, puedeAutorizar,
             {problema && (
                 <div className="mt-1.5 md:pl-11 flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                     <p className="min-w-0 flex-1 basis-60 text-micro leading-snug break-words">
-                        <span className="font-bold text-danger-text">{problema.titulo.replace(/^[^:]+:\s*/, '')}</span>{' '}
+                        <span className="font-bold text-danger-text">{conMayuscula(problema.titulo.replace(/^[^:]+:\s*/, ''))}</span>{' '}
                         <span className="text-content-2">{problema.ayuda}</span>
                     </p>
                     <div className="flex flex-wrap gap-1">

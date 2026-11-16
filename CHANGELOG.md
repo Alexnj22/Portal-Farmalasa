@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.6 — Datos de mercado: «alta» exige lo que el portal dice en el nombre y la misma forma
+
+Revisión de las 95 «alta» pendientes: cinco estaban mal (DICLOFENAC MK con el
+de BAL PHARMA, FUCIDIN UNGÜENTO con la crema, VITA C ZINC con la de sin zinc,
+VITAMINA C cápsulas con tabletas). Ahora no es «alta» si la fila no dice lo que
+el portal escribe en el nombre (MK, ZINC), si cambia la forma tópica (crema,
+ungüento, gel) o si es tableta contra cápsula. Quedan 78 «alta».
+
+
 ## v2.1551.5 — Corregir lote: búsqueda con foco, vencimiento vacío y en mes/año
 
 Visto al recorrer la pantalla en producción con el ZALDIAR de Salud 2:

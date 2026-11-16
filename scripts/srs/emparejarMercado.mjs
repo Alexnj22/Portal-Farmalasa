@@ -286,6 +286,18 @@ export function juzgar(portal, fila) {
     // búsqueda, pero no es «alta» (GLIBENCLAMIDA SAIMED → la de TQ).
     const otroFabricante = s.extra.some(w => !contiene(palabrasPortal, w) && !contiene(portal.lab, w));
     if (propias.length && !enNombre.length && !portal.lab.some(w => w.length >= 3 && contiene(s.lab, w)) && otroFabricante) avisos.push('fabricante');
+    // Lo que el portal escribe en el NOMBRE (MK, ZINC) y la fila no dice en
+    // ningún lado: no es «alta» aunque no nombre a otro (DICLOFENAC MK → el de
+    // BAL PHARMA; VITA C ZINC → VITA C a secas).
+    const delNombre = portal.resto.filter(w => w.length >= 2 && !VARIANTES.has(w));
+    if (delNombre.length && !delNombre.some(w => contiene(s.palabrasNombre, w) || contiene(s.lab, w))) avisos.push('fabricante');
+    // Crema, ungüento, gel… son la misma «forma» para el puntaje, pero no el
+    // mismo producto (FUCIDIN UNGÜENTO → FUCIDIN CREMA); tableta contra
+    // cápsula tampoco es «alta».
+    const TOPICAS = ['CREMA', 'UNGUENTO', 'GEL', 'POMADA', 'LOCION'];
+    const topPortal = TOPICAS.filter(w => palabrasPortal.has(w)); const topSrs = TOPICAS.filter(w => s.palabrasNombre.has(w));
+    if (topPortal.length && topSrs.length && !topPortal.some(w => topSrs.includes(w))) avisos.push('forma');
+    if (portal.forma && s.forma && portal.forma !== s.forma) avisos.push('forma');
     if (s.muestra) { puntos -= 60; choques.push('muestra'); }
     if (s.noComercial) { puntos -= 60; choques.push('no_comercial'); }
 

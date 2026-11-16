@@ -76,6 +76,17 @@ describe('decidir', () => {
         expect(sinNombre.crp).toBe('F035203092008-1');
     });
 
+    it('no es alta si falta lo que el portal dice en el nombre o cambia la forma tópica', () => {
+        const mk = decidir({ product_id: 1, nombre: 'DICLOFENAC SODICO 50MG X 20 TAB. MK', laboratorio: 'TECNOQUIMICAS' }, [
+            fila('A-1', 'DICLOFENACO SODICO 50 mg TABLETAS RECUBIERTAS', 'CAJA X 20 TABLETAS RECUBIERTAS (PRESENTACIÓN COMERCIAL)', 'M/S BAL PHARMA LIMITED'),
+        ]);
+        expect(mk.confianza).not.toBe('alta');
+        const ung = decidir({ product_id: 2, nombre: 'FUCIDIN UNGUENTO 2% X 15G' }, [
+            fila('B-1', 'FUCIDIN LEO 2% CREMA', '1 TUBO X 15 G (PRESENTACIÓN COMERCIAL)', 'LEO PHARMA'),
+        ]);
+        expect(ung.confianza).not.toBe('alta');
+    });
+
     it('una presentación institucional u hospitalaria nunca gana ni va de alternativa', () => {
         const r = decidir({ product_id: 1, nombre: 'XUMER 60MG X 14 TAB' }, [
             fila('F03-10', 'XUMER (ETORICOXIB) 60 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 2 BLISTER X 7 COMPRIMIDOS RECUBIERTOS (PRESENTACIÓN INSTITUCIONAL)'),

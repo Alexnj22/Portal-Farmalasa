@@ -358,7 +358,7 @@ function DialogoEnvio({ envio, personaPor, onCerrar }) {
         <ModalShell open onClose={onCerrar} maxWidthClass="max-w-2xl" zClass="z-toast"
             surface={null} ariaLabel="Detalle del traslado">
             <CuerpoDialogo
-                titulo="Traslado sin solicitud"
+                titulo="Traslado a otra sucursal"
                 subtitulo={fmtFechaLarga(envio.updated_at ?? envio.created_at)}
                 icono={CornerUpLeft}
                 anchoEscritorio="max-w-xl"
@@ -577,7 +577,7 @@ export default function HistorialTraslados({
                 es el corte por sucursal, que es la misma pregunta. */}
             {envios.length > 0 && (
                 <div className="flex flex-col gap-3">
-                    <Titulo cuenta={envios.length}>Traslados sin solicitud cerrados</Titulo>
+                    <Titulo cuenta={envios.length}>Traslados a otra sucursal cerrados</Titulo>
                     {porSucursal ? (
                         enviosPorSala.map(([sala, deLaSala]) => (
                             <div key={sala} className="flex flex-col gap-2">

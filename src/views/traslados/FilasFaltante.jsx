@@ -238,7 +238,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null, supervis
                             </Button>
                         ) : (
                             <span className="flex-1 sm:flex-none text-caption text-content-3 leading-snug">
-                                Si no aparece, lo cierra el supervisor.
+                                Si no aparece, lo cierra un supervisor o administrador.
                             </span>
                         )}
                     </div>

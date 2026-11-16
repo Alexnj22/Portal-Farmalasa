@@ -1582,8 +1582,8 @@ export function usePedidosData({ searchTerm = '' }) {
                 );
             } else if (data?.estado === 'escalada') {
                 useToastStore.getState().showToast(
-                    'Pasó al supervisor',
-                    'No hubo acuerdo. El supervisor decide qué se hace.',
+                    'Pasó a un supervisor o administrador',
+                    'No hubo acuerdo. Lo decide un supervisor o administrador.',
                     'info',
                 );
             }

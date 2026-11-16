@@ -34,7 +34,7 @@ import { turnoDe } from '@nucleo/utils/decisionDiferencia';
 const ESPERA = {
     sala:        'Esperando que la sucursal decida',
     bodega:      'Esperando la respuesta de bodega',
-    supervision: 'Lo está viendo el supervisor',
+    supervision: 'Lo está viendo un supervisor o administrador',
 };
 
 const TITULO = {
@@ -189,7 +189,7 @@ export default function DecisionDiferencia({
                         el clic ya se movió algo. */}
                     <span className="flex-1 min-w-0 text-caption text-content-3 leading-snug">
                         {esSala ? 'Bodega la acepta o propone la otra.' : 'La sucursal la acepta o propone la otra.'}
-                        {' '}Si no se ponen de acuerdo, decide el supervisor.
+                        {' '}Si no se ponen de acuerdo, decide un supervisor o administrador.
                     </span>
                     <Button tone="chart-3" loading={ocupado} disabled={!elegida || (pideCaja(elegida) && !cajaLista)}
                         onClick={() => (necesitaFoto(elegida)
@@ -254,7 +254,7 @@ export default function DecisionDiferencia({
                             <PortalInput
                                 aria-label="Por qué no" className="flex-1" tono="danger" compact autoFocus
                                 value={motivoRech} onChange={e => setMotivoRech(e.target.value)}
-                                placeholder="Por qué no… (lo lee el supervisor)"
+                                placeholder="Por qué no… (lo lee un supervisor o administrador)"
                                 onKeyDown={e => {
                                     if (e.key === 'Enter' && motivoRech.trim()) decidir('rechazar', null, motivoRech);
                                     if (e.key === 'Escape') setRechazando(false);

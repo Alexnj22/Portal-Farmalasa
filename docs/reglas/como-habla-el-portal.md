@@ -37,6 +37,9 @@ exportados. Los comentarios del código y los nombres de variables o columnas
 | **cargo** | puesto | «Cargo: Regente». |
 | **el cargo**: jefe de sucursal, subjefe de sucursal, supervisor, Talento Humano | jefe inmediato, jefatura, supervisión | «Jefe inmediato» cambia según quien lee (para un dependiente es el jefe de sucursal; para el jefe, el supervisor). Antes de nombrar a quien recibe un aviso o hace algo, mirar en el código o la base quién es de verdad. |
 | **Soporte** | Sistemas, Informática | «Si sigue igual, avisa a Soporte». |
+| **un supervisor o administrador** | supervisión, el supervisor (a secas) | Cuando quien decide es supervisión o administración (rol SUPERVISOR/ADMIN/SUPERADMIN en la base): diferencias de pedido, traslados que no aparecen. |
+| **motorista** | conductor, chofer | |
+| **Traslado a otra sucursal** | envío a otra sala, traslado sin solicitud | El que una sucursal manda sin que se lo pidan. |
 
 Y la regla que ya existía (CLAUDE.md): nunca nombrar el ERP ni la jerga de la
 tubería («sincronizar», «sync»).

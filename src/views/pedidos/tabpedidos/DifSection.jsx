@@ -463,7 +463,7 @@ function EsperandoA({ item, catalogo, isBranch }) {
     const op = opcionElegida(catalogo, item.error_tipo, item.resolucion_tipo);
     const texto = item.resolucion_status === 'propuesta'      ? 'Contesta bodega'
                 : item.resolucion_status === 'contrapropuesta' ? 'Contesta la sucursal'
-                : item.resolucion_status === 'escalada'        ? 'Lo ve el supervisor'
+                : item.resolucion_status === 'escalada'        ? 'Lo ve un supervisor o administrador'
                 : op?.mueve === 'traslado_a_sala'              ? 'Falta el traslado'
                 : op?.mueve === 'devolucion'                   ? 'Falta el traslado'
                 : op?.cierra_con === 'llegada_sala'            ? (isBranch ? 'Falta que llegue' : 'Lo confirma la sucursal')

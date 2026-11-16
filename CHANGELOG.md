@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1552.4 — Lenguaje: quién decide, motorista y traslado a otra sucursal
+
+- Diferencias de pedido y traslados que no aparecen: «el supervisor» →
+  «un supervisor o administrador», que es quien la base deja decidir.
+- Historial de traslados: «Traslado sin solicitud» → «Traslado a otra sucursal».
+- Las tres palabras quedan en `docs/reglas/como-habla-el-portal.md`, junto
+  con «motorista».
+
 ## v2.1552.3 — Corregir lote: el nombre del producto sale de products.nombre
 
 `corregir-lote-inventario` leía `products.descripcion`, una columna que no

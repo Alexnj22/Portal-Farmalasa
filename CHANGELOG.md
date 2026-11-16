@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1553.4 — App: agregar un lote en el conteo ya no te saca de donde vas
+
+- Agregar un lote a un producto que ya está en la lista relee sólo ese
+  producto y lo abre; antes cambiaba la búsqueda y volvía a la página 1.
+- Lo mismo al terminar «Lote y vence».
+- Si la lista está en la página 2 o más, la sincronización en vivo ya no
+  repite productos: relee la cabecera y el producto abierto.
+
 ## v2.1553.3 — Lenguaje: Productos, Mín/Máx y Distribución
 
 - Sexta tanda de la revisión del lenguaje, web y app: Productos (catálogo,

@@ -203,7 +203,7 @@ try {
     });
     if (!r.ok) throw new Error(`registrar ${p}: ${r.status} ${await r.text()}`);
     const [fila] = await r.json();
-    console.log(`✓ ${p}: actualización ${fila.id} publicada (${assets.length} archivos además del paquete). Llega al abrir la app; se usa la vez siguiente.`);
+    console.log(`✓ ${p}: actualización ${fila.id} publicada (${assets.length} archivos además del paquete). Llega sola: la app se recarga al abrirla o al volver a ella (revisa cada 15 min como mucho). No hace falta cerrarla.`);
   }
 } finally {
   rmSync(salida, { recursive: true, force: true });

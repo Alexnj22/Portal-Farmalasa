@@ -593,9 +593,9 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
                                 <Link to="/traslados?tab=envios"
                                     className="font-black text-brand-text underline underline-offset-2"
                                     onClick={onCerrar}>
-                                    Traslados entre salas
+                                    Traslados entre sucursales
                                 </Link>
-                                : ahí se acepta lo que se queda la sala y se devuelve lo demás con su motivo.
+                                . Ahí se acepta lo que se queda la sucursal y se devuelve lo demás con su motivo.
                             </p>
                         </div>
                     )}

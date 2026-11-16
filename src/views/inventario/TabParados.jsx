@@ -261,7 +261,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
             {avisoEnvio && <Notice variant={avisoEnvio.variant}>{avisoEnvio.texto}</Notice>}
             {!puedeArmar && !cargando && grupos.length > 0 && (
                 <Notice variant="neutral" compact>
-                    Estás viendo {nombreSala}. Los envíos los arma quien trabaja en esa sala.
+                    Estás viendo {nombreSala}. Los traslados los arma quien trabaja en esa sucursal.
                 </Notice>
             )}
 
@@ -309,7 +309,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                         disabled={n === 0 || (esBodega && despacho.size === 0)}
                                         title={esBodega && n === 0 ? 'Ninguno completa su presentación de despacho' : undefined}
                                         onClick={() => armar(g)}>
-                                        Armar envío{n > POR_ENVIO ? ` · ${POR_ENVIO} de ${n}` : esBodega && n < g.filas.length ? ` · ${n}` : ''}
+                                        Armar traslado{n > POR_ENVIO ? ` · ${POR_ENVIO} de ${n}` : esBodega && n < g.filas.length ? ` · ${n}` : ''}
                                     </Button>
                                 );
                             })()}

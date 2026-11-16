@@ -579,7 +579,7 @@ function ContextoMinMax({ meta, rechazada }) {
                     <p className="text-body font-black text-content-2 tabular-nums">{cifra(meta.ventas_mes)}</p>
                 </Caja>
                 <Caja>
-                    <Rotulo>En sala</Rotulo>
+                    <Rotulo>En la sucursal</Rotulo>
                     <p className="text-body font-black text-content-2 tabular-nums">
                         {meta.existencia != null && Number.isFinite(Number(meta.existencia))
                             ? `${cifra(meta.existencia)} und` : '—'}

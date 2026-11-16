@@ -1883,7 +1883,7 @@ export function CuerpoDeProductosSinVenta({ datos, claseTenue, isDark }) {
                 </ul>
             )}
             <Bloque rotulo="Qué sigue" claseTenue={claseTenue} claseRotulo={t.naranja.texto}>
-                Abre Gestión de stock y arma el traslado de cada destino. Sale cargado y lo puedes cambiar antes de mandarlo.
+                Abre Gestión de existencias y arma el traslado de cada destino. Sale cargado y lo puedes cambiar antes de mandarlo.
             </Bloque>
         </Grilla>
     );

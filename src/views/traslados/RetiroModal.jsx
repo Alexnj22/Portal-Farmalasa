@@ -342,7 +342,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                                             {i > 0 && ', '}
                                             <strong>{f.bolsas}</strong> en {f.sala ?? 'una sucursal'}
                                         </React.Fragment>
-                                    ))}. Se pasa una sola vez por sala.
+                                    ))}. Se pasa una sola vez por sucursal.
                                 </span>
                                 <Button variant="secondary" icon={UserCheck} disabled={ocupado}
                                     onClick={() => { setModoFirma(true); setError(''); setAviso(''); }}>

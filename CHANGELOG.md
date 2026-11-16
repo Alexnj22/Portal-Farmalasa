@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.11 — Lenguaje: últimos restos
+
+- Últimos restos de la revisión del lenguaje: «sala» → sucursal en
+  Traslados, Mi caja, Solicitudes y Mapfre; «stock» → existencia en
+  Pedidos; «Armar envío» → «Armar traslado» y «Gestión de existencias» en los
+  avisos.
+
 ## v2.1554.10 — Conteo en la app: un producto que sólo está en vencidos ya no se queda cargando
 
 En Bodega, KISS CHOCOLATE se quedaba con la rueda de carga. Sólo tiene lotes en el área de vencidos, y la lista lo pedía antes de saber que el conteo tiene esa área: traía productos de los dos estantes y lotes de uno solo.

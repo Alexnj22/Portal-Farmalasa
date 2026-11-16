@@ -502,7 +502,7 @@ export default function ModalNuevaPersonal({
                         />
                         {companeros.length === 0 && (
                             <p className="text-label text-content-3 mt-1.5 ml-1">
-                                No hay otros compañeros activos en la misma sala.
+                                No hay otros compañeros activos en la misma sucursal.
                             </p>
                         )}
                     </div>

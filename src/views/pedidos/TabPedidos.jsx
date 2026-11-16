@@ -332,10 +332,10 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         return null;
                     })()}
                     {(stats.agotamiento ?? 0) > 0 && (
-                        <Badge uppercase={false}>{stats.agotamiento} stock insuf.</Badge>
+                        <Badge uppercase={false}>{stats.agotamiento} existencia insuf.</Badge>
                     )}
                     {stats.sinStock > 0 && (
-                        <Badge uppercase={false}>{stats.sinStock} sin stock</Badge>
+                        <Badge uppercase={false}>{stats.sinStock} sin existencia</Badge>
                     )}
                     {stats.porRegla > 0 && (
                         <Badge icon={AlertTriangle} uppercase={false}>{stats.porRegla} por regla</Badge>
@@ -1179,7 +1179,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     paddingRight: pegado ? 12 + alas.der : undefined,
                                 }}
                                 className={`hidden lg:grid lg:sticky z-tabs gap-x-5 pl-4 pr-3 pt-3 pb-2.5 transition-[border-radius,box-shadow,margin,padding] duration-[var(--dur-base)] lg:grid-cols-[9rem_minmax(24rem,1fr)_17rem_1rem] ${pegado ? 'rounded-b-xl rounded-t-none shadow-[var(--shadow-elevation-md)]' : 'rounded-xl shadow-[var(--shadow-elevation-sm)]'}`}>
-                                <span className="self-end text-caption font-semibold text-content-2">Sala</span>
+                                <span className="self-end text-caption font-semibold text-content-2">Sucursal</span>
                                 <EncabezadoDeAvance />
                                 <span className="self-end text-caption font-semibold text-content-2">Estado</span>
                             </div>

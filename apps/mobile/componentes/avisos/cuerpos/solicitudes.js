@@ -692,7 +692,7 @@ function CuerpoDeProductosSinVenta({ d }) {
         </Caja>
       ) : null}
       <Bloque rotulo="Qué sigue" color={MARCA.ambar}>
-        Abre Gestión de stock y aprieta «Armar envío» en cada destino. Sale cargado y lo puedes cambiar antes de transferir.
+        Abre Gestión de existencias y toca «Armar traslado» en cada destino. Sale cargado y lo puedes cambiar antes de transferir.
       </Bloque>
     </>
   );

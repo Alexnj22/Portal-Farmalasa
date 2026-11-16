@@ -1040,7 +1040,7 @@ export default function MiCajaView({ comoPestana = false }) {
                         le descuenta 314px a la píldora igual —`useMedidaFila` lo
                         busca en el abuelo y reserva su ancho esté o no—. Sin
                         sala dicen «—», que es la respuesta honesta. */}
-                    <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sala">
+                    <CarrilCards className="flex-1" ariaLabel="Estado de la caja de esta sucursal">
                         {/* 1 · ¿Cuánto hay? Lo que el sistema espera adentro
                             AHORA, que hasta v2.886 no estaba en ninguna pantalla. */}
                         {/* Con el conteo a ciegas puesto, esta tarjeta cambia de

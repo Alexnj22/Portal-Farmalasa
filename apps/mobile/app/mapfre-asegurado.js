@@ -135,7 +135,7 @@ export default function MapfreAsegurado() {
             {error ? <Aviso tono="freno" texto={error} /> : null}
             {facturas == null ? <Indicador /> : facturas.length === 0 ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-                No hay facturas de Mapfre por cobrar en esta sala. Una venta recién hecha tarda hasta un minuto en llegar.
+                No hay facturas de Mapfre por cobrar en esta sucursal. Una venta recién hecha tarda hasta un minuto en llegar.
               </Text>
             ) : facturas.map((f) => (
               <Fila key={f.id} activa={elegida?.id === f.id} onPress={() => { setElegida(f); setPago(FORMA_DE_PAGO_INICIAL); }}

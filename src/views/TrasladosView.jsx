@@ -493,7 +493,7 @@ export default function TrasladosView() {
             showSearch
             searchValue={busqueda}
             onSearchChange={setBusqueda}
-            placeholder="Buscar producto, sala o motivo…"
+            placeholder="Buscar producto, sucursal o motivo…"
         />
     );
 

@@ -2,7 +2,8 @@ import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { hoySV, relojSV, sumarDias } from '../utils/fecha';
-import { sumaUnidades, unidadesDe, unidadesEnSala } from '../utils/unidadesInventario';
+import { sumaUnidades, unidadesDe, unidadesEnSala, lotesEnUnidades } from '../utils/unidadesInventario';
+import { anotar } from './audit';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
 // Datos del widget de cargas y descartes de inventario.
@@ -367,4 +368,48 @@ export async function fetchSucursalEnConteo(branchId) {
         return { en_conteo: false };
     }
     return data ?? { en_conteo: false };
+}
+
+/**
+ * Los lotes de un producto en una sala, en UNIDADES y por número + fecha
+ * (2026-11-16). Para corregir un lote: la cantidad que se corrige se cuenta en
+ * unidades sueltas, igual que el sistema cuenta cada lote.
+ */
+export async function fetchLotesEnUnidades({ erpProductId, erpSucursalId }) {
+    const { data, error } = await supabase
+        .from('v_inventario_lotes')
+        .select('erp_product_id, lote, fecha_vencimiento, presentacion, factor, cantidad')
+        .eq('erp_product_id', Number(erpProductId))
+        .eq('erp_sucursal_id', Number(erpSucursalId))
+        .eq('is_vencidos', false)
+        .gt('cantidad', 0)
+        .range(0, TOPE_FILAS_DE_PRODUCTO);
+    if (error) return { lotes: [], error };
+    return { lotes: lotesEnUnidades(data ?? []), error: null };
+}
+
+/**
+ * Corrige el lote o el vencimiento de existencia de la sala, sin sumar ni
+ * restar unidades. Directo, sin solicitud (decisión del usuario, 2026-11-16):
+ * ver `supabase/functions/_shared/erp-corregir-lote.ts`. Queda en la bitácora
+ * salga bien o mal.
+ */
+export async function corregirLoteEnSala({ erpSucursalId, erpProductId, descripcion, lote, vence, unidades, loteNuevo, venceNuevo, motivo }) {
+    const { data, error } = await supabase.functions.invoke('corregir-lote-inventario', {
+        body: {
+            erp_sucursal_id: erpSucursalId, erp_product_id: erpProductId, lote, vence,
+            unidades, lote_nuevo: loteNuevo, vence_nuevo: venceNuevo, motivo,
+        },
+    });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('INVENTARIO_CORRIGE_LOTE', erpProductId, {
+        ok: !msg, erp_sucursal_id: erpSucursalId, producto: descripcion, unidades,
+        de: { lote, vence }, a: { lote: data?.lote ?? loteNuevo, vence: data?.vence ?? venceNuevo },
+        motivo, error: msg,
+    });
+    return { resultado: msg ? null : data, error: msg };
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-    AlertTriangle, Archive, ArchiveRestore, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
+    AlertTriangle, Archive, ArchiveRestore, ArrowLeft, CalendarCog, CalendarX2, Check, CheckCircle2, ChevronRight, ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
@@ -29,6 +29,7 @@ import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, fotoDeAjuste, BUCKET_EVIDENCIA, MAX
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import Notice from '../../components/common/Notice';
 import PasarAVencidosBodega from './PasarAVencidosBodega';
+import CorregirLoteSala from './CorregirLoteSala';
 import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 // Widget «Ajuste de Inventario».
@@ -144,7 +145,7 @@ function VenceMesAnio({ label = 'Vence', value, onChange }) {
 // desde que la app pide ajustes: una sola definición para las dos pantallas.
 
 /* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
-function SelectorOperacion({ onSelect, onAVencidos, onAlEstante }) {
+function SelectorOperacion({ onSelect, onAVencidos, onAlEstante, onCorregirLote }) {
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 shrink-0">
@@ -167,6 +168,22 @@ function SelectorOperacion({ onSelect, onAVencidos, onAlEstante }) {
                         <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
                     </button>
                 ))}
+                {/* Directo, sin aprobación (CorregirLoteSala): no cambia unidades. */}
+                {onCorregirLote && (
+                    <button
+                        onClick={onCorregirLote}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl border text-left hover:translate-y-[var(--lift-hover)] transition-all bg-brand/10 border-brand/30"
+                    >
+                        <IconoEnCaja tamano="sm" tono="brand" className="flex-shrink-0">
+                            <CalendarCog size={15} strokeWidth={2} />
+                        </IconoEnCaja>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-body-sm font-black text-brand-text">Corregir lote o vencimiento</p>
+                            <p className="text-caption text-content-3 mt-0.5">Las mismas unidades, con el lote o la fecha correcta. Sin aprobación</p>
+                        </div>
+                        <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
+                    </button>
+                )}
                 {/* Sólo Bodega, y directo: no es una solicitud (PasarAVencidosBodega). */}
                 {onAVencidos && (
                     <button
@@ -215,6 +232,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const { user, hasPermission } = useAuth();
     // Bodega (erp 6) pasa a vencidos directo; lo hace quien carga compras.
     const [aVencidos, setAVencidos] = useState(null);   // null | 'a_vencidos' | 'al_estante'
+    const [corrigiendoLote, setCorrigiendoLote] = useState(false);
     const puedeAVencidos = Number(erpSucursalId) === 6 && hasPermission('cargar_compra', 'can_edit');
     const employees = useStaffStore(s => s.employees);
 
@@ -646,10 +664,16 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         <PasarAVencidosBodega key={aVencidos} sentido={aVencidos} branchName={branchName} onVolver={() => setAVencidos(null)} onHecho={onHecho} />
     );
 
+    if (corrigiendoLote && erpSucursalId) return (
+        <CorregirLoteSala erpSucursalId={erpSucursalId} branchName={branchName}
+            onVolver={() => setCorrigiendoLote(false)} onHecho={onHecho} />
+    );
+
     if (!op) return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">
             {selectorSucursal}
             <SelectorOperacion onSelect={setOpKey}
+                onCorregirLote={erpSucursalId ? () => setCorrigiendoLote(true) : null}
                 onAVencidos={puedeAVencidos ? () => setAVencidos('a_vencidos') : null}
                 onAlEstante={puedeAVencidos ? () => setAVencidos('al_estante') : null} />
         </div>

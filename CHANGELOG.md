@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.0 — Corregir lote o vencimiento en la sala, sin aprobación
+
+La sala corrige el lote o el vencimiento de lo que ya tiene, sin quitar ni
+agregar unidades y sin pedir aprobación (decisión del usuario). Nace de una
+solicitud de descarte de 20 ZALDIAR que Salud 2 recibió con vencimiento
+2026-10 en vez de 2028-09, y que pensaba volver a pedir como carga.
+
+- Ajuste de inventario → **Corregir lote o vencimiento**: buscar el producto,
+  elegir el lote que está mal, escribir el lote y el vencimiento correctos y
+  por qué.
+- Nueva función `corregir-lote-inventario` (JWT): exige `dash_inv_movement` y
+  la sala propia o cubierta; frena con conteo abierto. Hace una carga con el
+  lote correcto y un descargo del equivocado por número **y fecha**, en la
+  presentación de una unidad; si el descargo se rechaza, deshace la carga.
+  Lo «sin lote asignado» delega en `asignarLoteAGenerico`.
+- Si sólo cambia la fecha, se corrige el lote completo; un número que ya
+  existe con una tercera fecha se frena.
+- `descartarUnaLinea` acepta `vence` para elegir el renglón exacto de un lote.
+- Queda en la bitácora (`INVENTARIO_CORRIGE_LOTE`) y en el concepto del kardex.
+
 ## v2.1550.6 — Solicitudes: avisos de la decisión con otras palabras
 
 - Pedido del usuario: «entra todo lo que se pidió no me gusta, no son formas

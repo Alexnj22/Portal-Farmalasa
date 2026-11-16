@@ -1033,7 +1033,9 @@ export const AREAS = [
                  'consultas_existencia', 'consultas_existencia_salas',
                  // El conteo que corrige la caja (2026-11-05): la cola de lo que se aplica.
                  'conteo_caja_movimiento'],
-        edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp', 'aplicar-conteo-caja'],
+        edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp', 'aplicar-conteo-caja',
+               // La sala corrige lote/vencimiento directo (2026-11-16).
+               'corregir-lote-inventario'],
         crons: ['refresh-inv-mv-2min', 'crear-conteos-ciclicos-mensual', 'vacuum-inventory-hourly',
                 'leer-traslados-erp', 'conteo-caja-cada-minuto'],
         docs: ['docs/planes-cerrados/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md',

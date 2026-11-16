@@ -50,6 +50,10 @@ export interface LineaDescarte {
   /** Si viene, se descarta ESE lote y no el que vence primero (un producto
    *  devuelto sale con el lote con que entró). */
   lote?: string | null;
+  /** Con `lote`, además la FECHA (2026-11-16): un mismo número puede vivir con
+   *  dos vencimientos en la sala —justo lo que corrige `erp-corregir-lote.ts`—
+   *  y sin la fecha el descargo podría salir del renglón equivocado. */
+  vence?: string | null;
 }
 
 export interface LoteDeDescargo { id: string; numero: string; vence: string; stock: number }
@@ -72,11 +76,14 @@ const esGenerico = (n: string) => /^gen[eé]rico$/i.test(String(n ?? "").trim())
  */
 export function lotesDelDescargo(
   lotes: LoteDeDescargo[], paquetes: number, unidad: number, numero?: string | null,
+  vence?: string | null,
 ): { renglones: RenglonDeDescargo[]; faltan: number } {
   const u = Number(unidad) || 1;
   const caben = (x: LoteDeDescargo) => Math.floor((Number(x.stock) + 1e-9) / u);
+  const dia = vence ? String(vence).slice(0, 10) : null;
   const pool = numero
-    ? lotes.filter((x) => esGenerico(numero) ? esGenerico(x.numero) : x.numero === String(numero))
+    ? lotes.filter((x) => (esGenerico(numero) ? esGenerico(x.numero) : x.numero === String(numero))
+        && (!dia || String(x.vence ?? "").slice(0, 10) === dia))
     : lotes;
   const porVence = [...pool].filter((x) => x.stock > 0)
     .sort((a, b) => (a.vence || "").localeCompare(b.vence || ""));
@@ -212,10 +219,10 @@ export async function descartarUnaLinea(opc: {
   let renglones: RenglonDeDescargo[] = [{ idLote: "0", numero: "", vence: "", cantidad }];
   const avisos: string[] = [];
   if (regulado) {
-    let r = lotesDelDescargo(lotes, cantidad, Number(unidad), l.lote);
+    let r = lotesDelDescargo(lotes, cantidad, Number(unidad), l.lote, l.lote ? l.vence : null);
     if (r.faltan > 0 && Number(unidad) > 1) {
       const base = presentaciones.find((p) => p.etiqueta.endsWith("(1)"));
-      const enU = lotesDelDescargo(lotes, enUnidades, 1, l.lote);
+      const enU = lotesDelDescargo(lotes, enUnidades, 1, l.lote, l.lote ? l.vence : null);
       if (base && enU.faltan === 0) {
         try {
           const jb = JSON.parse(await pedir(cookie, DESCARGO, new URLSearchParams({

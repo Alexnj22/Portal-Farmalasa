@@ -415,6 +415,10 @@
     "barrido-clientes-caja": {
       "guarda": "cron",
       "motivo": "Cruza la lista entera de fichas de la caja contra el portal y trae lo que falta. Sin sesión: exige el secreto fiscal (requireInvokeSecret) y la llaman la base o un script; las fichas son de toda la red."
+    },
+    "corregir-lote-inventario": {
+      "guarda": "alcance",
+      "motivo": "La sala corrige el lote o el vencimiento de su existencia, directo (2026-11-16). Exige `dash_inv_movement` y la sala propia, la que cubre ahora (`salas_que_cubre_ahora`) o alcance de todas — la regla de `validar_solicitud_movimiento_inventario`."
     }
   },
   "rpc": {

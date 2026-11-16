@@ -116,7 +116,7 @@ function empacarEnElHueco(hueco, medidaHueco, ids, medidaDe, columnas) {
  * columna sin que nadie se lo pida es exactamente lo que se reportó como
  * «desordena todo lo que había ordenado».
  */
-function compactar(acomodo, medidaDe, columnas) {
+export function compactar(acomodo, medidaDe, columnas) {
     const t = tablero(columnas);
     const salida = {};
     for (const id of Object.keys(acomodo).sort(porLectura(acomodo))) {

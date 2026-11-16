@@ -97,7 +97,7 @@ import {
     fetchDashboardCanon, upsertDashboardCanon, fetchBajoMinimo } from '@nucleo/data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
 import { clickable } from '@nucleo/utils/clickable';
-import { reacomodar } from '@nucleo/utils/acomodoWidgets';
+import { reacomodar, compactar } from '@nucleo/utils/acomodoWidgets';
 import { permitirEscapeDelScroll } from '../plataforma/scrollEncadenado';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import useCapaFlotante from '../plataforma/capaFlotante';
@@ -1401,11 +1401,19 @@ const DashboardView = ({ openModal }) => {
     // Depura y completa SIN mover lo que ya estaba: los que faltan van al primer
     // hueco REAL del acomodo guardado (ver `colocarEnHuecos`, que es donde vive
     // el porqué de no recalcular el tablero entero para averiguarlo).
+    //
+    // Y al final se COMPACTA (2026-11-16, «las cards están desordenadas, ¿por
+    // qué no se auto ordenan al agregarse nuevas?»). Un acomodo guardado
+    // conserva el hueco de cada widget que se apagó o que el cargo dejó de
+    // ver, y el que entra nuevo cae en un hueco suelto: con los meses el
+    // tablero quedaba agujereado. `compactar` sube cada widget en SU columna
+    // mientras quepa —la misma pasada que cierra cada arrastre—, así que el
+    // orden que la persona eligió se respeta y sólo desaparecen los huecos.
     const alDia = (guardado, sizes, cols) => {
       const base = Object.fromEntries(Object.entries(guardado).filter(([id]) => vigente(id)));
       const faltan = catalogo.filter(id => !(id in base));
-      if (!faltan.length) return base;
-      return { ...base, ...colocarEnHuecos(base, faltan, sizes, cols) };
+      const completo = faltan.length ? { ...base, ...colocarEnHuecos(base, faltan, sizes, cols) } : base;
+      return compactar(completo, medidaEfectiva(sizes, cols), cols);
     };
 
     // Mientras el usuario no haya movido NADA en esta pestaña, el tablero se

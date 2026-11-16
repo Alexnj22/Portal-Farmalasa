@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { reacomodar } from '@nucleo/utils/acomodoWidgets';
+import { reacomodar, compactar } from '@nucleo/utils/acomodoWidgets';
 
 // La regla que decide dónde queda cada widget al soltar uno encima de otro.
 //
@@ -180,5 +180,24 @@ describe('reacomodar', () => {
         // número exacto, que cambia con cualquier ajuste de la heurística.
         expect(blancos / casos, 'el acomodo dejó de ser compacto').toBeLessThan(1);
         expect(movidos / casos, 'volvió a desordenar el tablero').toBeLessThan(1.5);
+    });
+});
+
+// El acomodo guardado de quien ya acomodó su tablero se pasa por `compactar`
+// al pintarse (DashboardView, `alDia`): el hueco de un widget que se apagó no
+// puede quedar reservado para siempre. Reportado el 2026-11-16.
+describe('compactar', () => {
+    it('cierra el hueco de un widget que ya no está, sin cambiar columnas', () => {
+        // calendario 2×2 arriba a la izquierda, un widget apagado debajo (filas
+        // 3-4) y cumpleaños en la fila 5: cumpleaños tiene que subir a la 3.
+        const m = medidas({ cal: { cols: 2, rows: 2 }, cum: { cols: 2, rows: 2 }, der: { cols: 2, rows: 6 } });
+        const salida = compactar({ cal: { col: 1, row: 1 }, der: { col: 3, row: 1 }, cum: { col: 1, row: 5 } }, m, COLS);
+        expect(salida).toEqual({ cal: { col: 1, row: 1 }, der: { col: 3, row: 1 }, cum: { col: 1, row: 3 } });
+    });
+
+    it('respeta el orden de lectura: nadie salta por encima de otro', () => {
+        const m = medidas({});
+        const salida = compactar({ a: { col: 1, row: 2 }, b: { col: 1, row: 4 } }, m, COLS);
+        expect(salida).toEqual({ a: { col: 1, row: 1 }, b: { col: 1, row: 2 } });
     });
 });

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1548.2 — El Inicio cierra solo los huecos del tablero acomodado
+
+- Quien ya había acomodado su tablero veía huecos: al apagarse un widget o
+  dejar de verlo por su cargo, su lugar seguía reservado (p. ej. el espacio
+  vacío debajo del calendario donde iba «Bitácoras»), y los widgets nuevos
+  caían en un hueco suelto.
+- Ahora el acomodo guardado se compacta al pintarse: cada tarjeta sube en su
+  columna mientras quepa. Se respeta el orden elegido; sólo desaparecen los
+  huecos.
+
 ## v2.1548.1 — Consulta de precios en la app del personal
 
 - **App del personal:** nueva tarjeta «Consulta de precios» en el Inicio

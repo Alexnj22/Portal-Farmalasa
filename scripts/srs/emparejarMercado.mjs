@@ -166,8 +166,12 @@ export function analizarSrs(fila) {
         if (/^(ML|L|G|GR|MG|OZ)$/.test(u)) { volumen = { n: u === 'L' ? n * 1000 : n, u: /^(ML|L)$/.test(u) ? 'ML' : 'G' }; continue; }
         if (n > 0) { unidades *= n; hayUnidades = true; }
     }
+    // Las palabras propias del nombre fuera de la marca: el fabricante del
+    // genérico («CARBAMAZEPINA 200 mg SAIMED», «… 200MG TABLETAS ECOMED»).
+    const extra = palabras.slice(marca.length)
+        .filter(w => /^[A-Z]{2,}$/.test(w) && !FORMA_DE.has(w) && !NO_MARCA.has(w) && !CONECTORES.has(w) && !contiene(marca, w));
     return {
-        nombre, pres, marca,
+        nombre, pres, marca, extra,
         palabrasNombre: new Set(palabras),
         lab: new Set(normalizar(fila?.laboratorio).split(' ')),
         fuerzas: numerosDe(nombre),
@@ -267,6 +271,21 @@ export function juzgar(portal, fila) {
 
     // Laboratorio, muestra médica, institucional u hospitalaria.
     if (portal.lab.some(w => w.length >= 3 && contiene(s.lab, w))) puntos += 5;
+    // El fabricante del genérico decide entre veinte «CARBAMAZEPINA 200»
+    // iguales (2026-11-16: SAIMED x100 quedaba con la de ECOMED, que también
+    // trae 100). Lo que el portal dice fuera de la marca y la SRS escribe en el
+    // nombre suma; la marca ajena que la SRS escribe y el portal no, resta.
+    const propias = [...new Set([...portal.resto, ...portal.lab])].filter(w => w.length >= 2 && !VARIANTES.has(w));   // MK, PL, FD cuentan
+    const enNombre = propias.filter(w => contiene(s.palabrasNombre, w));
+    puntos += Math.min(2, enNombre.length) * 15;
+    const palabrasPortal = new Set(portal.nombre.split(' '));
+    const ajenas = s.extra.filter(w => w.length >= 3 && !contiene(palabrasPortal, w) && !contiene(portal.lab, w));
+    puntos -= Math.min(3, ajenas.length) * 6;
+    // El portal dice de quién es (SAIMED, VIDES, «ZINC») y esta fila no lo
+    // dice pero sí nombra a otro (TQ, LV): puede ser la única que trajo la
+    // búsqueda, pero no es «alta» (GLIBENCLAMIDA SAIMED → la de TQ).
+    const otroFabricante = s.extra.some(w => !contiene(palabrasPortal, w) && !contiene(portal.lab, w));
+    if (propias.length && !enNombre.length && !portal.lab.some(w => w.length >= 3 && contiene(s.lab, w)) && otroFabricante) avisos.push('fabricante');
     if (s.muestra) { puntos -= 60; choques.push('muestra'); }
     if (s.noComercial) { puntos -= 60; choques.push('no_comercial'); }
 
@@ -294,6 +313,9 @@ export function busquedasFinasDe(portal) {
     if (portal.unidades) qs.push(`${marca} ${portal.unidades}`);
     if (f != null && portal.unidades) qs.push(`${marca} ${f} ${portal.unidades}`);
     if (portal.volumen) qs.push(`${marca} ${portal.volumen.n}`);
+    // El fabricante del genérico: «CARBAMAZEPINA 200 SAIMED».
+    const propias = [...new Set([...(portal.resto ?? []), ...(portal.lab ?? [])])].filter(w => w.length >= 3 && !VARIANTES.has(w)).slice(0, 2);
+    for (const w of propias) qs.push(f != null ? `${marca} ${f} ${w}` : `${marca} ${w}`);
     return [...new Set(qs)];
 }
 

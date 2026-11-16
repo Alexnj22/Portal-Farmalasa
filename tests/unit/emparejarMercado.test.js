@@ -61,6 +61,21 @@ describe('decidir', () => {
         expect(r.crp).toBe('E-2');
         expect(r.confianza).toBe('alta');
     });
+    it('el fabricante del genérico decide entre presentaciones iguales', () => {
+        const r = decidir({ product_id: 1, nombre: 'CARBAMAZEPINA 200MG X 100 SAIMED', laboratorio: 'SAIMED' }, [
+            fila('18259-1', 'CARBAMAZEPINA 200MG TABLETAS ECOMED', 'CAJA X 10 BLISTER X 10 TABLETA (PRESENTACIÓN COMERCIAL)', 'LABORATORIOS PHARMEDIC'),
+            fila('F021818042013-1', 'CARBAMAZEPINA 200 MG BIOGALENIC TABLETAS', 'CAJA X 100 TABLETAS (PRESENTACIÓN COMERCIAL)', 'M/S. BAROQUE PHARMACEUTICALS PVT. LTD.'),
+            fila('F035203092008-1', 'CARBAMAZEPINA 200 mg SAIMED TABLETA', 'CAJA X 100 TABLETAS (PRESENTACIÓN COMERCIAL)', 'M/S CAPLIN POINT LABORATORIES LTD'),
+        ]);
+        expect(r.crp).toBe('F035203092008-1');
+        // Sin el fabricante en el nombre, decide el laboratorio del producto.
+        const sinNombre = decidir({ product_id: 2, nombre: 'CARBAMAZEPINA 200MG X 100', laboratorio: 'SAIMED' }, [
+            fila('18259-1', 'CARBAMAZEPINA 200MG TABLETAS ECOMED', 'CAJA X 10 BLISTER X 10 TABLETA (PRESENTACIÓN COMERCIAL)', 'LABORATORIOS PHARMEDIC'),
+            fila('F035203092008-1', 'CARBAMAZEPINA 200 mg SAIMED TABLETA', 'CAJA X 100 TABLETAS (PRESENTACIÓN COMERCIAL)', 'M/S CAPLIN POINT LABORATORIES LTD'),
+        ]);
+        expect(sinNombre.crp).toBe('F035203092008-1');
+    });
+
     it('una presentación institucional u hospitalaria nunca gana ni va de alternativa', () => {
         const r = decidir({ product_id: 1, nombre: 'XUMER 60MG X 14 TAB' }, [
             fila('F03-10', 'XUMER (ETORICOXIB) 60 mg COMPRIMIDOS RECUBIERTOS', 'CAJA X 2 BLISTER X 7 COMPRIMIDOS RECUBIERTOS (PRESENTACIÓN INSTITUCIONAL)'),

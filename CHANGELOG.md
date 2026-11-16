@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.3 — Datos de mercado: el fabricante del genérico decide la pareja
+
+Entre veinte «CARBAMAZEPINA 200» iguales el emparejador no tenía con qué
+elegir y CARBAMAZEPINA 200MG X 100 SAIMED quedaba con la de ECOMED, que también
+trae 100. Ahora cuentan las palabras propias del portal fuera de la marca y su
+laboratorio (aunque el nombre no lo diga): +15 si la SRS las escribe en el
+nombre, −6 por cada marca ajena que la SRS escribe y el portal no, y si la fila
+nombra a otro fabricante no puede ser «alta». Las búsquedas finas suman
+«marca + concentración + fabricante». Corrido sobre las pendientes: 128 cambian
+de pareja y las «alta» pasan de 54 a 95.
+
+
 ## v2.1551.2 — Lenguaje: sin voseo ni «acá» en los mensajes
 
 - Barrido de los textos que ve el usuario (~46,000 en web, app y funciones):

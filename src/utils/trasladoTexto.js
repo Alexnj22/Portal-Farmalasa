@@ -182,33 +182,36 @@ export function lotesPorRenglon(meta) {
     const out = new Map();
 
     items.forEach((item, idx) => {
-        const asignado = asignados[idx] ?? asignados[String(idx)] ?? null;
+        // Una caja de varios lotes se anota como `idx#k`, uno por lote (2026-11-16).
+        const delRenglon = Object.entries(asignados)
+            .filter(([k]) => k === String(idx) || k.startsWith(`${idx}#`)).map(([, v]) => v).filter(Boolean);
         const pedidos = (Array.isArray(item?.lotes) ? item.lotes : []).filter(l => l && (l.lote || l.vence));
 
         const suyas = detalle.length > 0 ? lineasDelRenglon(items, idx, detalle) : null;
         if (suyas && suyas.length > 0) {
             out.set(idx, suyas.map(d => {
                 const lote = d?.numero_lote ? String(d.numero_lote) : null;
-                const coincide = asignado && (
-                    (d?.id_lote_erp && String(asignado.id_lote_erp ?? '') === String(d.id_lote_erp))
-                    || (lote && String(asignado.lote ?? '') === lote));
+                const coincide = delRenglon.find(asg =>
+                    (d?.id_lote_erp && String(asg.id_lote_erp ?? '') === String(d.id_lote_erp))
+                    || (lote && String(asg.lote ?? '') === lote)) ?? null;
                 const pedido = lote ? pedidos.find(l => String(l.lote ?? '') === lote) : null;
                 return {
                     lote,
-                    vence: (coincide ? asignado.vence : null) ?? pedido?.vence ?? null,
+                    vence: (coincide ? coincide.vence : null) ?? pedido?.vence ?? null,
                     unidades: Number(d?.cantidad) || 0,
                     fuente: 'salio',
                 };
             }));
             return;
         }
-        if (asignado && (asignado.lote || asignado.vence)) {
-            out.set(idx, [{
-                lote: asignado.lote ? String(asignado.lote) : null,
-                vence: asignado.vence ?? null,
-                unidades: Number(asignado.paquetes) || null,
+        const apartados = delRenglon.filter(asg => asg.lote || asg.vence);
+        if (apartados.length > 0) {
+            out.set(idx, apartados.map(asg => ({
+                lote: asg.lote ? String(asg.lote) : null,
+                vence: asg.vence ?? null,
+                unidades: Number(asg.paquetes) || null,
                 fuente: 'apartado',
-            }]);
+            })));
             return;
         }
         if (pedidos.length > 0) {

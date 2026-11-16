@@ -75,3 +75,25 @@ describe('vence de la caja y qué falta (2026-11-13)', () => {
         expect(faltaDeLaCaja(null, reparto)).toEqual({ pide: null, unidades: 0 });
     });
 });
+
+import { faltaEnVariosLotes, variosLotesParaEnviar } from '@nucleo/utils/loteDeCaja.js';
+describe('faltaEnVariosLotes (caja de varios lotes, 2026-11-16)', () => {
+    const fila = (lote, vence, unidades) => ({ caja: { lote, vence: vence.slice(0, 7), envio: { lote, vence } }, unidades });
+    it('60 + 40 de una caja de 100: se puede mandar', () => {
+        expect(faltaEnVariosLotes([fila('A1', '2028-01-01', '60'), fila('B2', '2029-01-01', '40')], 100)).toBeNull();
+    });
+    it('la suma tiene que dar la caja', () => {
+        expect(faltaEnVariosLotes([fila('A1', '2028-01-01', '60'), fila('B2', '2029-01-01', '30')], 100)).toBe('Los lotes suman 90 de 100 unidades.');
+    });
+    it('un lote no va dos veces (un lote tiene un solo vencimiento)', () => {
+        expect(faltaEnVariosLotes([fila('A1', '2028-01-01', '60'), fila('a1', '2029-01-01', '40')], 100)).toBe('El lote A1 está dos veces.');
+    });
+    it('sin lote válido o sin unidades, lo dice', () => {
+        expect(faltaEnVariosLotes([{ caja: { lote: 'X', vence: '' }, unidades: '5' }, fila('B2', '2029-01-01', '5')], 10)).toMatch(/Copia el lote/);
+        expect(faltaEnVariosLotes([fila('A1', '2028-01-01', ''), fila('B2', '2029-01-01', '5')], 10)).toMatch(/cuántas unidades/);
+    });
+    it('lo que viaja: un elemento por lote con sus unidades', () => {
+        expect(variosLotesParaEnviar(3, [fila('A1', '2028-01-01', '60'), fila('B2', '2029-01-01', '40')]))
+            .toEqual([{ posicion: 3, lote: 'A1', vence: '2028-01-01', unidades: 60 }, { posicion: 3, lote: 'B2', vence: '2029-01-01', unidades: 40 }]);
+    });
+});

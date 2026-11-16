@@ -1096,6 +1096,7 @@ Deno.serve(async (req) => {
     // ya tienen su lote y volver a asignarlas convertiría otras que no son.
     const posDe = aceptadas.map((a) => a.i);
     const loteEscrito = new Map<number, { lote: string; vence: string }>();
+    const lotesVarios = new Map<number, { lote: string; vence: string; unidades: number }[]>();
     for (const x of Array.isArray(lotes_de_generico) ? lotes_de_generico : []) {
       const pos = Number(x?.posicion);
       if (!Number.isInteger(pos) || !lineas[pos]) continue;
@@ -1117,6 +1118,27 @@ Deno.serve(async (req) => {
           error: `${lineas[pos].descripcion ?? lineas[pos].erp_product_id}: el lote ${v.lote} ya está `
             + `registrado con vencimiento ${choca}. Revisa la caja.`,
         }, 422);
+      // Con `unidades`: la caja viene de VARIOS lotes (2026-11-16, pedido del
+      // usuario con un DRAMANYL X 100 CAP que no tenía una caja de un lote).
+      // Cada lote dice cuántas unidades base trae; el renglón sale entonces en
+      // la presentación de 1, un renglón por lote (ver `lotesVarios` abajo).
+      if (x?.unidades != null) {
+        const u = Number(x.unidades);
+        if (!Number.isInteger(u) || u <= 0)
+          return json({
+            ok: false, codigo: "LOTE_INVALIDO", posicion: pos,
+            error: `${lineas[pos].descripcion ?? lineas[pos].erp_product_id}: indica cuántas unidades trae el lote ${v.lote}.`,
+          }, 422);
+        const lista = lotesVarios.get(pos) ?? [];
+        if (lista.some((e) => e.lote === v.lote))
+          return json({
+            ok: false, codigo: "LOTE_REPETIDO", posicion: pos,
+            error: `${lineas[pos].descripcion ?? lineas[pos].erp_product_id}: el lote ${v.lote} está escrito dos veces.`,
+          }, 422);
+        lista.push({ lote: v.lote, vence: v.vence, unidades: u });
+        lotesVarios.set(pos, lista);
+        continue;
+      }
       loteEscrito.set(pos, { lote: v.lote, vence: v.vence });
     }
     // ── El vencimiento de la caja de un perecedero sin lote (2026-11-13) ──
@@ -1184,6 +1206,11 @@ Deno.serve(async (req) => {
       elegida: string; costo: string; precio: string; unidad: string;
       paquetes: number; lote: string; vence: string;
       resto: { cantidad: number; idLote: string; lote: string | null }[];
+      /** Dónde se anota en `meta.lotes_asignados`: la posición, o `pos#k` para
+       *  cada lote de una caja de varios lotes. */
+      clave: string;
+      /** Varios lotes del mismo renglón comparten `resto`: se anota al último. */
+      anotar: boolean;
     };
     const porAsignar: PorAsignar[] = [];
 
@@ -1226,6 +1253,20 @@ Deno.serve(async (req) => {
             : null,
         });
       }
+    };
+
+    // La presentación de 1 unidad del producto: para la caja que ningún lote
+    // completa y para la que viene de varios lotes.
+    const presentacionBase = async (f: ReturnType<typeof leerFila>) => {
+      for (const c of f.presentaciones) {
+        try {
+          const jp = JSON.parse(await pedir(cookie, TRASLADO, new URLSearchParams({
+            process: "getpresentacion", id_presentacion: c.id,
+          }), { extra: { Referer: TRASLADO } }));
+          if (Number(jp?.unidad) === 1) return { id: c.id, tipo: c.tipo, costo: String(jp.costo), precio: String(jp.precio) };
+        } catch { /* la siguiente */ }
+      }
+      return null;
     };
 
     for (let i = 0; i < envio.length; i++) {
@@ -1305,18 +1346,11 @@ Deno.serve(async (req) => {
       // ofrece (o, confirmado, se hace) en la presentación base.
       if (f.regulado && Number(unidad) > 1 && Number(l.cantidad) > hay.paquetes
           && hay.unidades >= Number(l.cantidad) * Number(unidad)) {
-        let base: { id: string; tipo: string; costo: string; precio: string } | null = null;
-        for (const c of f.presentaciones) {
-          try {
-            const jp = JSON.parse(await pedir(cookie, TRASLADO, new URLSearchParams({
-              process: "getpresentacion", id_presentacion: c.id,
-            }), { extra: { Referer: TRASLADO } }));
-            if (Number(jp?.unidad) === 1) { base = { id: c.id, tipo: c.tipo, costo: String(jp.costo), precio: String(jp.precio) }; break; }
-          } catch { /* la siguiente */ }
-        }
+        const base = await presentacionBase(f);
         if (base) {
           const enU = Number(l.cantidad) * Number(unidad);
-          if (!enUnidadesOk.has(posDe[i])) {
+          // Con varios lotes escritos ya se sabe que sale en unidades: no se pregunta.
+          if (!enUnidadesOk.has(posDe[i]) && !lotesVarios.has(posDe[i])) {
             const rep = repartirEnLotes(f.lotes, enU, 1, reservadosDe(l, 1));
             cajaEnUnidades.push({
               posicion: posDe[i], producto: nombre, presentacion: String(l.presentacion_tipo ?? ""),
@@ -1333,6 +1367,20 @@ Deno.serve(async (req) => {
           elegida = base.id; costo = base.costo; precio = base.precio; unidad = "1";
           hay = medir();
         }
+      }
+      // La caja de varios lotes sale en unidades aunque un GENERICO la complete:
+      // físicamente son unidades de lotes distintos, y una caja es de un lote.
+      const varios = lotesVarios.get(posDe[i]);
+      if (varios && f.regulado && Number(unidad) > 1) {
+        const base = await presentacionBase(f);
+        if (!base)
+          return json({
+            ok: false, codigo: "SIN_PRESENTACION_BASE", posicion: posDe[i],
+            error: `${nombre} no se puede mandar por unidad: manda la caja de un solo lote.`,
+          }, 409);
+        l = { ...l, presentacion_tipo: base.tipo, factor: 1, cantidad: Number(l.cantidad) * Number(unidad) };
+        elegida = base.id; costo = base.costo; precio = base.precio; unidad = "1";
+        hay = medir();
       }
       if (Number(l.cantidad) > hay.paquetes)
         return json({
@@ -1384,11 +1432,26 @@ Deno.serve(async (req) => {
       const pos = posDe[i];
       const previa = yaAsignados[String(pos)];
       const elegidoAqui = loteElegido.get(pos);
-      const reservas = (elegidoAqui
+      let reservas = (elegidoAqui
         ? [{ numero: elegidoAqui.lote, vence: elegidoAqui.vence, paquetes: Number(l.cantidad) }]
         : reservadosDe(l, Number(unidad))
       ).map((r) =>
         previa && esLoteGenerico(r.numero) ? { ...r, numero: previa.lote, vence: previa.vence } : r);
+      // Caja de varios lotes y un intento anterior ya asignó algunos: esas
+      // unidades salen de SU lote y GENERICO reserva sólo lo que falta.
+      const yaDeVarios = (varios ?? []).map((_, k) => yaAsignados[`${pos}#${k}`]).filter(Boolean);
+      if (yaDeVarios.length) {
+        let asignadas = yaDeVarios.reduce((n, a) => n + Number(a.paquetes), 0);
+        reservas = [
+          ...yaDeVarios.map((a) => ({ numero: a.lote, vence: a.vence, paquetes: Number(a.paquetes) })),
+          ...reservas.map((r) => {
+            if (!esLoteGenerico(r.numero) || asignadas <= 0) return r;
+            const q = Math.min(r.paquetes, asignadas);
+            asignadas -= q;
+            return { ...r, paquetes: r.paquetes - q };
+          }).filter((r) => r.paquetes > 0),
+        ];
+      }
       const reparto = f.regulado
         ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(unidad), reservas)
         : { renglones: noRegulado, faltan: 0, avisos: [] as string[] };
@@ -1473,7 +1536,22 @@ Deno.serve(async (req) => {
       const deGenerico = f.regulado
         ? reparto.renglones.filter((r) => esLoteGenerico(r.lote)).reduce((n, r) => n + r.cantidad, 0)
         : 0;
-      if (deGenerico > 0) {
+      if (deGenerico > 0 && varios) {
+        const pendientes = varios.map((e, k) => ({ ...e, k })).filter((e) => !yaAsignados[`${pos}#${e.k}`]);
+        const suma = pendientes.reduce((n, e) => n + e.unidades, 0);
+        if (suma !== deGenerico) {
+          const yaSuma = yaDeVarios.reduce((n, a) => n + Number(a.paquetes), 0);
+          return json({
+            ok: false, codigo: "LOTES_NO_SUMAN", posicion: pos,
+            error: `${nombre}: los lotes escritos suman ${suma + yaSuma} unidades y salen ${deGenerico + yaSuma}.`,
+          }, 422);
+        }
+        const resto = reparto.renglones.filter((r) => !esLoteGenerico(r.lote)).map((r) => ({ ...r }));
+        pendientes.forEach((e, j) => porAsignar.push({
+          pos, l, nombre, f, elegida, costo, precio, unidad, paquetes: e.unidades, lote: e.lote, vence: e.vence,
+          resto, clave: `${pos}#${e.k}`, anotar: j === pendientes.length - 1,
+        }));
+      } else if (deGenerico > 0) {
         const escrito = loteEscrito.get(pos);
         if (!escrito)
           faltaLote.push({
@@ -1484,6 +1562,7 @@ Deno.serve(async (req) => {
           porAsignar.push({
             pos, l, nombre, f, elegida, costo, precio, unidad, paquetes: deGenerico, ...escrito,
             resto: reparto.renglones.filter((r) => !esLoteGenerico(r.lote)).map((r) => ({ ...r })),
+            clave: String(pos), anotar: true,
           });
       } else if (!f.regulado) {
         // Un perecedero sin control de lote cuya existencia no tiene fecha
@@ -1652,7 +1731,7 @@ Deno.serve(async (req) => {
           error: r.descuadre ? `${r.error} ${r.descuadre}` : r.error,
         }, 502);
       }
-      yaAsignados[String(p.pos)] = {
+      yaAsignados[p.clave] = {
         lote: r.lote, vence: r.vence, paquetes: r.paquetes, id_lote_erp: r.idLote,
       };
       venceAsignado.set(String(r.idLote), String(r.vence ?? "").slice(0, 10));
@@ -1669,7 +1748,7 @@ Deno.serve(async (req) => {
       const ya = renglones.find((x) => x.idLote === r.idLote);
       if (ya) ya.cantidad += r.paquetes;
       else renglones.push({ cantidad: r.paquetes, idLote: r.idLote, lote: r.lote });
-      anotarRenglones(p.l, p.f, p.elegida, p.costo, p.precio, p.unidad, renglones);
+      if (p.anotar) anotarRenglones(p.l, p.f, p.elegida, p.costo, p.precio, p.unidad, renglones);
     }
 
     // ── El envío ─────────────────────────────────────────────────────────

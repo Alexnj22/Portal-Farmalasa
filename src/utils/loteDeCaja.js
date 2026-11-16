@@ -124,3 +124,31 @@ export function faltaDeLaCaja(exige, reparto) {
     }
     return { pide: null, unidades: 0 };
 }
+
+// ── La caja que viene de VARIOS lotes (2026-11-16) ────────────────────────
+// Pedido del usuario: «si no tengo una caja completa con el mismo lote, que
+// pueda ingresar las cantidades y los lotes / vence». Cada fila es
+// `{ caja: valor de LoteDeLaCaja, unidades: texto }`; la suma de unidades
+// tiene que dar lo que sale, y un lote no se escribe dos veces (un lote tiene
+// un solo vencimiento). Devuelve lo que falta, o null si se puede mandar.
+export const FILA_DE_VARIOS_LOTES = () => ({ caja: LOTE_DE_CAJA_VACIO, unidades: '' });
+
+export function faltaEnVariosLotes(filas = [], total = 0) {
+    if (filas.length < 2) return 'Escribe al menos dos lotes.';
+    if (filas.some(f => !f?.caja?.envio)) return 'Copia el lote y el vencimiento de cada caja.';
+    const n = filas.map(f => Number(String(f?.unidades ?? '').trim()));
+    if (n.some(u => !Number.isInteger(u) || u <= 0)) return 'Escribe cuántas unidades trae cada lote.';
+    const vistos = new Set();
+    for (const f of filas) {
+        const lote = String(f.caja.envio.lote).trim().toUpperCase();
+        if (vistos.has(lote)) return `El lote ${lote} está dos veces.`;
+        vistos.add(lote);
+    }
+    const suma = n.reduce((a, b) => a + b, 0);
+    if (suma !== total) return `Los lotes suman ${suma} de ${total} unidades.`;
+    return null;
+}
+
+/** Lo que se manda al despachar: un elemento por lote, con sus unidades. */
+export const variosLotesParaEnviar = (posicion, filas) =>
+    filas.map(f => ({ posicion, ...f.caja.envio, unidades: Number(String(f.unidades).trim()) }));

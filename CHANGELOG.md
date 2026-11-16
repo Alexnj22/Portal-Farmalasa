@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1552.0 — Caja de varios lotes: despacho por lote y venta al precio de caja
+
+Pedido del usuario con un traslado de DRAMANYL X 100 CAP sin lote asignado:
+«si no tengo una caja completa con el mismo lote, que pueda ingresar las
+cantidades y los lotes / vence», y vender la caja al precio de caja aunque sea
+de varios lotes.
+
+- **Despacho de traslados**: en «Esto no tiene lote asignado», el botón «La
+  caja trae más de un lote» abre una fila por lote (lote, vencimiento y
+  unidades). Cada lote se elige con `LoteDeLaCaja`: ofrece los registrados y
+  frena un número registrado con otra fecha. La suma tiene que dar lo que sale
+  y un lote no se escribe dos veces (`faltaEnVariosLotes`).
+- **`aplicar-traslado-inventario`**: `lotes_de_generico` acepta `unidades` por
+  lote. El renglón sale en la presentación de 1, se le asigna cada lote a sus
+  unidades y viaja un renglón por lote. Cada asignación se anota como `pos#k`
+  en `lotes_asignados`, así un reintento no asigna dos veces. `lotesPorRenglon`
+  lee esas claves.
+- **Preventa**: si ningún lote completa la presentación, lo que falta sale en
+  unidades, un renglón por lote, al precio de la presentación ÷ sus unidades y
+  con la misma lista (`repartirCajaEnUnidades`). Medido en Salud 5 con una
+  preventa de prueba, borrada después: la caja la aceptó y guardó $2.25 por
+  blíster y $22.50 de total. Falta comprobarlo facturando.
+
 ## v2.1551.12 — Lenguaje: Caja con frases cortas
 
 - Tercera tanda de la revisión del lenguaje: Caja (Mi Caja, cortes, cobros,

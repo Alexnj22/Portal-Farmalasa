@@ -155,6 +155,29 @@ export function repartirEnLotesDeVenta(
   return { partes, faltan };
 }
 
+/**
+ * La caja que ningún lote completa, en unidades (2026-11-16, pedido del usuario:
+ * «vender siempre la caja aunque sea de diferente lote, al mismo precio»).
+ *
+ * Primero las presentaciones enteras, igual que `repartirEnLotesDeVenta`; lo
+ * que falta sale en la presentación BASE, de lo que le queda a cada lote, en
+ * el mismo orden. Medido en Salud 5 ese día (preventa de prueba, borrada): la
+ * caja acepta un renglón por lote en blísteres a «precio de caja ÷ 10» y lo
+ * guarda tal cual, con el total de una caja.
+ */
+export function repartirCajaEnUnidades(
+  lotes: { id: string; stock: number }[], cantidad: number, unidades: number,
+): { partes: { id: string; cantidad: number }[]; sueltas: { id: string; cantidad: number }[]; faltan: number } {
+  const enteras = repartirEnLotesDeVenta(lotes, cantidad, unidades);
+  if (enteras.faltan === 0 || unidades <= 1) return { partes: enteras.partes, sueltas: [], faltan: enteras.faltan };
+  const quedan = lotes.map((l) => ({
+    id: l.id, stock: l.stock - (enteras.partes.find((x) => x.id === l.id)?.cantidad ?? 0) * unidades,
+  }));
+  const sueltas = repartirEnLotesDeVenta(quedan, enteras.faltan * unidades, 1);
+  if (sueltas.faltan > 0) return { partes: enteras.partes, sueltas: [], faltan: enteras.faltan };
+  return { partes: enteras.partes, sueltas: sueltas.partes, faltan: 0 };
+}
+
 export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<ResultadoCaja> {
   const avisos: string[] = [];
   const pagina = await http.get("venta.php?preventa=1");
@@ -198,18 +221,44 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<R
       throw new Error(`En la caja hay ${hay} de «${r.nombre}» y la reserva pide ${necesarias}.`);
     }
     let partes: { id: string; cantidad: number }[] = [{ id: "0", cantidad: r.cantidad }];
+    let sueltas: { id: string; cantidad: number }[] = [];
     if (fila.regulado) {
-      const rep = repartirEnLotesDeVenta(fila.lotes, r.cantidad, unidades);
+      const rep = repartirCajaEnUnidades(fila.lotes, r.cantidad, unidades);
       if (rep.faltan > 0) {
-        throw new Error(`«${r.nombre}»: hay ${hay} unidades, pero repartidas en lotes no completan ${r.cantidad} de ${unidades} sin partir una presentación.`);
+        throw new Error(`«${r.nombre}»: hay ${hay} unidades, pero repartidas en lotes no completan ${r.cantidad} de ${unidades}.`);
       }
       partes = rep.partes;
+      sueltas = rep.sueltas;
     }
 
     const precio = elegirPrecio(precios, r);
     if (!precio) throw new Error(`«${r.nombre}» no tiene precio en la caja.`);
     if (!igual(precio.valor, r.precio)) {
       avisos.push(`«${r.nombre}»: la caja lo tiene a $${precio.valor.toFixed(2)} y la reserva es a $${r.precio.toFixed(2)}.`);
+    }
+    // Lo que va suelto, en la presentación de 1 y al precio de la presentación
+    // entera ÷ sus unidades, con la MISMA lista: así la caja armada de dos
+    // lotes cuesta lo mismo que una caja de un lote.
+    if (sueltas.length) {
+      let base: { id: string } | null = null;
+      for (const p of fila.presentaciones) {
+        const d = JSON.parse(await http.post("venta.php", {
+          process: "getpresentacion", id_presentacion: p.id, cant: "1", precio_aut: "",
+        }));
+        if (num(d?.unidad) === 1) { base = p; break; }
+      }
+      if (!base) throw new Error(`«${r.nombre}»: ningún lote completa la presentación y la caja no la vende por unidad.`);
+      const unitario = Math.round((precio.valor / unidades) * 10000) / 10000;
+      for (const s of sueltas) {
+        const sub = Math.round(s.cantidad * unitario * 100) / 100;
+        if (fila.exento === "0") gravado += sub; else exenta += sub;
+        renglonesCaja.push({
+          id_detalle: "", id: String(r.producto_id), precio: unitario.toFixed(4), cantidad: String(s.cantidad),
+          unidades: "1", subtotal: sub.toFixed(2), id_presentacion: base.id, exento: fila.exento,
+          id_lote: Number(s.id), precio_seleccionado: precio.clave,
+        });
+      }
+      avisos.push(`«${r.nombre}»: ningún lote completa la presentación; sale en unidades de varios lotes al mismo precio.`);
     }
     for (const parte of partes) {
       const sub = Math.round(parte.cantidad * precio.valor * 100) / 100;

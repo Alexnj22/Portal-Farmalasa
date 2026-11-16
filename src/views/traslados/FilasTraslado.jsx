@@ -24,6 +24,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa, loQueViajo } from '@nucleo/utils/imprimirTraslado';
 import LoteDeLaCaja from './LoteDeLaCaja';
+import VariosLotesDeLaCaja from './VariosLotesDeLaCaja';
 import ElegirLoteDeEnvio from './ElegirLoteDeEnvio';
 import CajaEnUnidades from './CajaEnUnidades';
 import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva, venceMasCortoQueLoPedido } from '@nucleo/utils/loteDeEnvio';
@@ -32,7 +33,7 @@ import AvisoDeFalta from '../../components/common/AvisoDeFalta';
 import { irAlCampo } from '../../plataforma/irAlCampo';
 import { hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
-import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
+import { LOTE_DE_CAJA_VACIO, FILA_DE_VARIOS_LOTES, faltaEnVariosLotes, variosLotesParaEnviar } from '@nucleo/utils/loteDeCaja';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
  * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás
@@ -290,6 +291,9 @@ export function DecisionTraslado({ fila, onHecho }) {
     const [venceCaja,       setVenceCaja]       = useState({});     // { [posicion]: valor de LoteDeLaCaja soloVence }
     const [sinLoteServidor, setSinLoteServidor] = useState(null);   // la lista del servidor, si la dio
     const [loteCaja,        setLoteCaja]        = useState({});     // { [posicion]: valor de LoteDeLaCaja }
+    // La caja que viene de varios lotes (2026-11-16): { [posicion]: filas de
+    // VariosLotesDeLaCaja }. Si está, reemplaza al lote único de esa posición.
+    const [variosLotes,     setVariosLotes]     = useState({});
     // Regulados de TODA la solicitud: también hacen falta para saber si el
     // lote pedido está en la sala (ver «el lote que sale», abajo).
     const erpsDeItems = useMemo(
@@ -431,7 +435,9 @@ export function DecisionTraslado({ fila, onHecho }) {
             // `null` es «sale todo lo pedido»: el camino normal hace exactamente
             // el mismo viaje que antes de que existiera el despacho parcial.
             recortado ? aceptadas : null,
-            pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion].envio })),
+            pidenLote.flatMap(x => (variosLotes[x.posicion]
+                ? variosLotesParaEnviar(x.posicion, variosLotes[x.posicion])
+                : [{ posicion: x.posicion, ...loteCaja[x.posicion].envio }])),
             [...conEleccion.values()].map(x => ({ posicion: x.pos, lote: x.valor.lote, vence: x.valor.vence })),
             [...aceptaUnidades],
             pidenVence.map(x => ({ posicion: x.posicion, vence: venceCaja[x.posicion].envio.vence })),
@@ -554,7 +560,12 @@ export function DecisionTraslado({ fila, onHecho }) {
     // que antes era un `&&` de cinco condiciones —`lotesCompletos` son las tres
     // primeras—, partida para poder decir cuál.
     const faltaParaConfirmar = (() => {
-        const sinCaja = pidenLote.find(x => !loteCaja[x.posicion]?.envio);
+        for (const x of pidenLote) {
+            if (!variosLotes[x.posicion]) continue;
+            const falta = faltaEnVariosLotes(variosLotes[x.posicion], x.unidades);
+            if (falta) return { texto: `${x.producto}: ${falta}`, campo: `loteCaja-${x.posicion}` };
+        }
+        const sinCaja = pidenLote.find(x => !variosLotes[x.posicion] && !loteCaja[x.posicion]?.envio);
         if (sinCaja) return { texto: `Copia el lote y el vencimiento de la caja de ${sinCaja.producto}.`, campo: `loteCaja-${sinCaja.posicion}` };
         const sinElegir = lineasLote.find(x => x.abierto && !x.valor);
         if (sinElegir) return { texto: `Elige el lote que sale de ${sinElegir.producto}.`, campo: `loteSale-${sinElegir.pos}` };
@@ -747,14 +758,34 @@ export function DecisionTraslado({ fila, onHecho }) {
                                 {x.producto}
                                 <span className="text-content-3"> · {x.unidades} {x.unidades === 1 ? 'unidad' : 'unidades'}</span>
                             </p>
-                            <LoteDeLaCaja
-                                erpProductId={x.erp} producto={x.producto}
-                                valor={loteCaja[x.posicion]
-                                    ?? (dePropuesta(x.posicion)?.sin_asignar
-                                        ? { lote: dePropuesta(x.posicion).lote, vence: String(dePropuesta(x.posicion).vence).slice(0, 7) }
-                                        : LOTE_DE_CAJA_VACIO)}
-                                onChange={v => setLoteCaja(c => ({ ...c, [x.posicion]: v }))}
-                            />
+                            {variosLotes[x.posicion] ? (
+                                <VariosLotesDeLaCaja
+                                    erpProductId={x.erp} producto={x.producto} total={x.unidades}
+                                    filas={variosLotes[x.posicion]}
+                                    onChange={filas => setVariosLotes(c => ({ ...c, [x.posicion]: filas }))}
+                                    onUnSoloLote={() => setVariosLotes(({ [x.posicion]: _, ...resto }) => resto)}
+                                />
+                            ) : (
+                                <>
+                                    <LoteDeLaCaja
+                                        erpProductId={x.erp} producto={x.producto}
+                                        valor={loteCaja[x.posicion]
+                                            ?? (dePropuesta(x.posicion)?.sin_asignar
+                                                ? { lote: dePropuesta(x.posicion).lote, vence: String(dePropuesta(x.posicion).vence).slice(0, 7) }
+                                                : LOTE_DE_CAJA_VACIO)}
+                                        onChange={v => setLoteCaja(c => ({ ...c, [x.posicion]: v }))}
+                                    />
+                                    {/* Una caja que no es de un solo lote: se escribe cada uno con sus unidades
+                                        y sale en unidades, un renglón por lote. */}
+                                    {x.unidades > 1 && (
+                                        <button type="button"
+                                            onClick={() => setVariosLotes(c => ({ ...c, [x.posicion]: [FILA_DE_VARIOS_LOTES(), FILA_DE_VARIOS_LOTES()] }))}
+                                            className="self-start min-h-[var(--tap-min)] text-micro font-bold text-brand-text underline underline-offset-2 active:scale-[0.97]">
+                                            La caja trae más de un lote
+                                        </button>
+                                    )}
+                                </>
+                            )}
                         </div>
                     ))}
                 </div>

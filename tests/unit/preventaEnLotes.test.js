@@ -22,3 +22,25 @@ describe('repartirEnLotesDeVenta', () => {
             .toEqual({ partes: [{ id: 'B', cantidad: 2 }], faltan: 0 });
     });
 });
+
+// La caja armada con varios lotes (2026-11-16): lo que ningún lote completa
+// sale en unidades, un renglón por lote, sin tocar las cajas enteras.
+import { repartirCajaEnUnidades } from '../../supabase/functions/_shared/preventaCaja.ts';
+describe('repartirCajaEnUnidades', () => {
+    it('LOSARTAN de Salud 5: 5 + 5 blísteres, piden 1 caja de 10 → 5 y 5 sueltos', () => {
+        expect(repartirCajaEnUnidades([{ id: 'A', stock: 5 }, { id: 'B', stock: 5 }], 1, 10))
+            .toEqual({ partes: [], sueltas: [{ id: 'A', cantidad: 5 }, { id: 'B', cantidad: 5 }], faltan: 0 });
+    });
+    it('las cajas enteras van enteras; sólo lo que falta va suelto', () => {
+        expect(repartirCajaEnUnidades([{ id: 'A', stock: 15 }, { id: 'B', stock: 15 }], 3, 10))
+            .toEqual({ partes: [{ id: 'A', cantidad: 1 }, { id: 'B', cantidad: 1 }], sueltas: [{ id: 'A', cantidad: 5 }, { id: 'B', cantidad: 5 }], faltan: 0 });
+    });
+    it('si ni sumando alcanza, no inventa', () => {
+        expect(repartirCajaEnUnidades([{ id: 'A', stock: 4 }, { id: 'B', stock: 5 }], 1, 10))
+            .toEqual({ partes: [], sueltas: [], faltan: 1 });
+    });
+    it('alcanza con cajas enteras: no hay sueltas', () => {
+        expect(repartirCajaEnUnidades([{ id: 'A', stock: 20 }], 2, 10))
+            .toEqual({ partes: [{ id: 'A', cantidad: 2 }], sueltas: [], faltan: 0 });
+    });
+});

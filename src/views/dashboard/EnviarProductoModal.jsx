@@ -106,6 +106,13 @@ const fmtVence = (d) => d
 const llevaCaja = (pide, l) => pide === 'lote' ? (esLoteGenerico(l.lote) || !l.lote)
     : pide === 'vence' ? !String(l.vence || '').trim() : false;
 
+/* Lo mismo para un renglón ya agregado: viaja con `regulado` y `perecedero`. */
+const pideDeRenglon = (r) => r.regulado ? 'lote' : r.perecedero ? 'vence' : null;
+const faltaCajaDeRenglon = (r) => {
+    const pide = pideDeRenglon(r);
+    return Boolean(pide) && (r.lotes ?? []).some(l => llevaCaja(pide, l) && !l.caja);
+};
+
 export default function EnviarProductoModal({ onClose, onListo, precarga = null }) {
     const { user, getScope } = useAuth();
 
@@ -408,15 +415,25 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
      * unidades —sin tocar ningún otro lote—. */
     /* Y un perecedero SIN control de lote (2026-11-13): no tiene número que
      * copiar, pero si lo que sale no trae vencimiento se escribe el de la caja. */
+    /* `exigeListo` (2026-11-16): mientras no se sabe qué exige el producto
+     * no se puede agregar. Antes `exige` arrancaba en null —«no exige nada»—
+     * y un clic rápido, o una consulta fallida, dejaba pasar un perecedero sin
+     * vencimiento: el aviso salía recién al apretar «Transferir». El producto
+     * siempre existe en `products`, así que si no vuelve es que falló. */
     const [exige, setExige] = useState(null);   // { regulado, perecedero }
+    const [exigeListo, setExigeListo] = useState(null);   // null cargando · true · false falló
     const regulado = exige?.regulado === true;
     const [caja, setCaja] = useState(LOTE_DE_CAJA_VACIO);   // valor de LoteDeLaCaja
     useEffect(() => {
         let cancelado = false;
         setExige(null);
+        setExigeListo(null);
         if (!elegido?.erp_product_id) return undefined;
         fetchExigenciasDe([elegido.erp_product_id]).then(m => {
-            if (!cancelado) setExige(m.get(Number(elegido.erp_product_id)) ?? null);
+            if (cancelado) return;
+            const e = m.get(Number(elegido.erp_product_id)) ?? null;
+            setExige(e);
+            setExigeListo(e !== null);
         });
         return () => { cancelado = true; };
     }, [elegido?.erp_product_id]);
@@ -486,6 +503,8 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             ? (presBase >= 0
                 ? `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}. Confirma mandarla en unidades.`
                 : `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}, y el producto no tiene presentación de una unidad.`)
+        : exigeListo === null ? 'Revisando el producto…'
+        : exigeListo === false ? 'No se pudo revisar el producto. Vuelve a elegirlo.'
         : faltaCaja ? faltaCaja
         // El origen y el destino se eligen en dos momentos distintos y nada los
         // ata: sin esto, un renglón podía salir de la misma sala a la que va —y
@@ -551,6 +570,8 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             // lote elegido (ver `sinLoteElegido`).
             regulado,
             perecedero: exige?.perecedero === true,
+            // Lo escrito de la caja, para que el lápiz lo muestre y se pueda corregir.
+            ...(falta.pide ? { cajaValor: caja } : {}),
             presentaciones,
         }]);
         setElegido(null);
@@ -561,6 +582,24 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         setPestana('lista');
     }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length,
         caja, regulado, exige, falta.pide]);
+
+    /* El lote o vencimiento de la caja escrito sobre un renglón ya agregado:
+     * `cajaValor` es lo del campo; `caja` en cada lote, lo que viaja. */
+    const cajaDeRenglon = useCallback((i, valor) => {
+        setRenglones(rs => rs.map((r, k) => {
+            if (k !== i) return r;
+            const pide = pideDeRenglon(r);
+            return {
+                ...r,
+                cajaValor: valor,
+                lotes: (r.lotes ?? []).map(l => {
+                    if (!llevaCaja(pide, l)) return l;
+                    const { caja: _viejo, ...resto } = l;
+                    return valor?.envio ? { ...resto, caja: valor.envio } : resto;
+                }),
+            };
+        }));
+    }, []);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -612,6 +651,11 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     const sinLoteElegido = useMemo(() => renglones.filter(r => (r.regulado || r.perecedero)
         && (Number(r.unidades) || 0) > (r.lotes ?? []).reduce((n, l) => n + (Number(l.unidades) || 0), 0)),
     [renglones]);
+
+    /* Un renglón ya agregado al que le falta el lote o el vencimiento de la
+     * caja (2026-11-16). Se corrige AHÍ, con el lápiz, sin quitarlo y volver a
+     * buscarlo: el usuario lo pidió al toparse con el aviso en «Transferir». */
+    const sinCajaEnRenglon = useMemo(() => renglones.filter(r => faltaCajaDeRenglon(r)), [renglones]);
 
     /* A dónde puede ir. Cualquiera menos la propia; con alcance sobre todas se
      * ofrecen TODAS —quien manda no tiene una sala en este sentido— y lo que
@@ -743,6 +787,8 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     const faltaParaMandar = renglones.length === 0 ? 'Agrega al menos un producto.'
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
         : sinLoteElegido.length > 0 ? 'Hay productos con la cantidad cambiada sin lote ni vencimiento elegido.'
+        : sinCajaEnRenglon.length > 0
+            ? `A ${sinCajaEnRenglon[0].descripcion} le falta ${pideDeRenglon(sinCajaEnRenglon[0]) === 'lote' ? 'el lote y el vencimiento' : 'el vencimiento'} de la caja. Toca el lápiz.`
         : !destino ? 'Elige la sucursal de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sucursal a la que va.'
         // Antes de «Elige el motivo»: si no hay ninguno posible, ese aviso
@@ -769,7 +815,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     // El campo de ese motivo, en el mismo orden: el aviso del pie lleva hasta
     // él (2026-11-14). `null` = está en la lista de productos, sin un control.
     const campoQueFalta = !faltaParaMandar ? null
-        : (renglones.length === 0 || excesos.length > 0 || sinLoteElegido.length > 0) ? null
+        : (renglones.length === 0 || excesos.length > 0 || sinLoteElegido.length > 0 || sinCajaEnRenglon.length > 0) ? null
         : (!destino || chocanConElDestino.length > 0 || sinMotivoPosible) ? 'destino'
         : !motivo ? 'motivo'
         : (reglasPendientes || sueltosABodega.length > 0) ? null
@@ -1279,6 +1325,9 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             <div className="flex flex-col gap-2">
                                 {renglones.map((r, i) => {
                                     const abierta = editando === i;
+                                    const pideCaja = pideDeRenglon(r);
+                                    const conCaja = pideCaja && (r.lotes ?? []).some(l => llevaCaja(pideCaja, l));
+                                    const faltaSuCaja = faltaCajaDeRenglon(r);
                                     return (
                                         <div key={i} data-surface="card" className="px-3 py-2.5">
                                             <div className="flex items-start gap-2">
@@ -1298,6 +1347,12 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                                                 vence tiene que decir de sí mismo. */}
                                                             {(variosOrigenes || r.origen_vencidos) && r.origen_nombre
                                                                 ? ` · desde ${r.origen_nombre}` : ''}
+                                                        </p>
+                                                    )}
+                                                    {!abierta && faltaSuCaja && (
+                                                        <p className="text-micro font-bold text-warning-text mt-0.5">
+                                                            {pideCaja === 'lote' ? 'Falta el lote y el vencimiento.' : 'Falta el vencimiento.'}
+                                                            {' '}Toca el lápiz.
                                                         </p>
                                                     )}
                                                 </div>
@@ -1344,6 +1399,22 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                                     <span className="text-micro font-semibold text-content-2">
                                                         {r.unidades} {r.unidades === 1 ? 'unidad' : 'unidades'}
                                                     </span>
+                                                    {conCaja && (
+                                                        <div className="basis-full flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
+                                                            <p className="text-micro font-bold text-warning-text leading-snug">
+                                                                {pideCaja === 'lote'
+                                                                    ? 'Copia el lote y el vencimiento que trae la caja:'
+                                                                    : 'Copia el vencimiento que trae la caja:'}
+                                                            </p>
+                                                            <LoteDeLaCaja
+                                                                erpProductId={r.erp_product_id}
+                                                                producto={r.descripcion}
+                                                                valor={r.cajaValor ?? LOTE_DE_CAJA_VACIO}
+                                                                onChange={v => cajaDeRenglon(i, v)}
+                                                                soloVence={pideCaja === 'vence'}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

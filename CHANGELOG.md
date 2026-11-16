@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1556.5 — Enviar producto: el vencimiento de la caja se corrige en el producto ya agregado
+
+Pedido desde sucursal: un Electrolit (perecedero, sin vencimiento en la existencia) quedaba agregado al traslado sin vencimiento, y la única salida era quitarlo y volver a buscarlo.
+
+- El lápiz del producto ya agregado muestra ahora el campo del lote y vencimiento de la caja cuando le hace falta. La fila avisa «Falta el vencimiento. Toca el lápiz» y «Transferir» no se habilita hasta escribirlo.
+- La validación estaba en el lugar equivocado: «Agregar al traslado» dejaba pasar el producto mientras todavía se consultaba si es regulado o perecedero, y si esa consulta fallaba, lo tomaba como que no exigía nada. Ahora espera («Revisando el producto…») y, si falla, pide volver a elegirlo.
+
 ## v2.1556.4 — Conteo en la app: vuelve a cargar
 
 La v2.1556.2 dejó el conteo de la app sin cargar: «undefined is not a function / No se pudo cargar el conteo».

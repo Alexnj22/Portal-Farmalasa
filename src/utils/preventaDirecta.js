@@ -4,6 +4,8 @@
 // según el cliente, y la base lo vuelve a calcular antes de mandar a caja.
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { ETIQUETA_CAMPO, esContribuyente } from './clienteValidacion.js';
+
 /** El nombre de cada lista de precio (las claves son columnas de `product_precios`). */
 export const NOMBRE_DE_LISTA = {
     vineta: 'Regular',
@@ -13,9 +15,33 @@ export const NOMBRE_DE_LISTA = {
     mayoreo: 'Mayoreo Plus',
 };
 
-/** Las listas que se pueden autorizar a mano, de la más alta a la más baja. */
-export const LISTAS_AUTORIZABLES = ['descuento_1', 'vip', 'clinica', 'mayoreo']
-    .map((key) => ({ value: key, label: NOMBRE_DE_LISTA[key] }));
+/** Las listas, de la más alta a la más baja (el orden en que se ofrecen). */
+export const ORDEN_DE_LISTAS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo'];
+
+/** Cómo paga el cliente. El crédito exige un cliente con datos. */
+export const PAGOS = [
+    { value: 'contado', label: 'Efectivo' },
+    { value: 'tarjeta', label: 'Tarjeta' },
+    { value: 'transferencia', label: 'Transfer.' },
+    { value: 'credito', label: 'Crédito' },
+    { value: 'cheque', label: 'Cheque' },
+];
+
+/** Lo que le falta a un cliente para emitirle crédito fiscal, como rótulos. */
+export const CAMPOS_CCF = ['nit', 'nrc', 'giro', 'direccion'];
+export function faltanParaCcf(cliente) {
+    if (!cliente) return ['Cliente'];
+    const faltan = CAMPOS_CCF.filter((c) => !String(cliente[c] ?? '').trim()).map((c) => ETIQUETA_CAMPO[c] ?? c);
+    if (!esContribuyente(cliente.categoria)) faltan.unshift('Categoría contribuyente');
+    return faltan;
+}
+
+/** Las listas con precio de una presentación, para elegir viendo el monto. */
+export function opcionesDePrecio(precios) {
+    return ORDEN_DE_LISTAS
+        .filter((k) => Number(precios?.[k]) > 0)
+        .map((k) => ({ lista: k, nombre: NOMBRE_DE_LISTA[k], precio: Number(precios[k]) }));
+}
 
 export const nombreDeLista = (k) => NOMBRE_DE_LISTA[k] ?? 'Regular';
 
@@ -67,15 +93,17 @@ export function totalesDe(cotizacion) {
  * Lo que falta para poder mandar, UNO y en orden, con el campo donde se
  * arregla. null = se puede mandar. La base lo vuelve a revisar todo.
  */
-export function faltaParaEnviar({ lineas, cotizacion, cotizando, documento, motivoPrecio }) {
+export function faltaParaEnviar({ lineas, cotizacion, cotizando, documento, pago }) {
     if (!(lineas ?? []).length) return { texto: 'Agrega al menos un producto.', campo: 'buscarProducto' };
     if (cotizando || !cotizacion) return { texto: 'Revisando precios y existencia…', campo: null };
     const mala = (cotizacion.lineas ?? []).find((l) => l.error);
     if (mala) return { texto: `${mala.nombre ?? 'Un producto'}: ${mala.error}`, campo: `linea-${mala.producto_id}-${mala.factor}` };
-    if (documento === 'credito_fiscal' && !cotizacion.cliente?.nrc)
-        return { texto: 'El crédito fiscal necesita un cliente con NRC.', campo: 'cliente' };
-    if (lineas.some((l) => l.lista) && String(motivoPrecio ?? '').trim().length < 4)
-        return { texto: 'Escribe por qué va otro precio.', campo: 'motivoPrecio' };
+    if (documento === 'credito_fiscal') {
+        const f = faltanParaCcf(cotizacion.cliente);
+        if (f.length) return { texto: `Para crédito fiscal le falta al cliente: ${f.join(', ')}.`, campo: 'cliente' };
+    }
+    if (pago === 'credito' && (cotizacion.generico || !cotizacion.cliente))
+        return { texto: 'El crédito necesita un cliente con sus datos.', campo: 'cliente' };
     return null;
 }
 

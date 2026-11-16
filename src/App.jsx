@@ -1004,7 +1004,7 @@ function MainApp() {
                                     <Route path="ofertas-clientes" element={<PermissionGuard moduleKey="ofertas_clientes"><OfertasClientesView /></PermissionGuard>} />
                                     <Route path="chat-clientes" element={<PermissionGuard moduleKey="chat_clientes"><ChatClientesView /></PermissionGuard>} />
                                     <Route path="reservas" element={<PermissionGuard moduleKey="reservas"><ReservasView /></PermissionGuard>} />
-                                    <Route path="preventa" element={<PermissionGuard moduleKey="preventa"><PreventaView /></PermissionGuard>} />
+                                    <Route path="preventa" element={<PermissionGuard moduleKey="preventa"><PreventaView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />

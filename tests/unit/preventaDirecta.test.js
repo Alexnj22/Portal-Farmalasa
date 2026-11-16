@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     agregarLinea, estadoDePreventa, faltaParaEnviar, lineasDeVenta, lineasParaCotizar, nombreDeLista,
-    porQueEsaLista, sePuedeAnular, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
+    porQueEsaLista, sePuedeAnular, opcionesDePrecio, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
 } from '@nucleo/utils/preventaDirecta.js';
 
 const losartan = { id: 2750, nombre: 'LOSARTAN' };
@@ -52,13 +52,21 @@ describe('faltaParaEnviar', () => {
         const f = faltaParaEnviar({ ...base, cotizacion: { lineas: [{ producto_id: 1, factor: 1, nombre: 'X', error: 'sin existencia' }] } });
         expect(f).toEqual({ texto: 'X: sin existencia', campo: 'linea-1-1' });
     });
-    it('crédito fiscal exige NRC', () => {
-        expect(faltaParaEnviar({ ...base, documento: 'credito_fiscal', cotizacion: { lineas: [], cliente: { nrc: null } } }).campo).toBe('cliente');
+    it('crédito fiscal dice qué datos le faltan al cliente', () => {
+        const f = faltaParaEnviar({ ...base, documento: 'credito_fiscal', cotizacion: { lineas: [], cliente: { categoria: 'Consumidor', nit: '1' } } });
+        expect(f.campo).toBe('cliente');
+        expect(f.texto).toMatch(/Categoría contribuyente, NRC, Giro, Dirección/);
+        const listo = { categoria: 'Contribuyente', nit: '1', nrc: '2', giro: 'x', direccion: 'y' };
+        expect(faltaParaEnviar({ ...base, documento: 'credito_fiscal', cotizacion: { lineas: [], cliente: listo } })).toBeNull();
     });
-    it('otro precio exige motivo', () => {
+    it('el crédito exige un cliente con datos; otro precio ya no pide motivo', () => {
+        expect(faltaParaEnviar({ ...base, pago: 'credito', cotizacion: { lineas: [], generico: true } }).campo).toBe('cliente');
         const lineas = [{ producto_id: 1, factor: 1, cantidad: 1, lista: 'mayoreo' }];
-        expect(faltaParaEnviar({ ...base, lineas, cotizacion: { lineas: [] } }).campo).toBe('motivoPrecio');
-        expect(faltaParaEnviar({ ...base, lineas, motivoPrecio: 'autorizó gerencia', cotizacion: { lineas: [] } })).toBeNull();
+        expect(faltaParaEnviar({ ...base, lineas, cotizacion: { lineas: [] } })).toBeNull();
+    });
+    it('las opciones de precio van de la más alta a la más baja, sin las vacías', () => {
+        expect(opcionesDePrecio({ vineta: 3, descuento_1: 2.5, vip: 2, clinica: 0, mayoreo: 1.65 }).map((o) => o.nombre))
+            .toEqual(['Regular', 'Público', 'Preferente', 'Mayoreo Plus']);
     });
 });
 

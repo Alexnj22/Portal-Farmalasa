@@ -68,6 +68,9 @@ export function clienteDeLaVenta(c) {
 
 const centavos = (v) => Math.round(Number(v || 0) * 100) / 100;
 
+/** El tipo de pago y su código en la caja (`con_pago` de la pantalla de venta). */
+export const PAGOS_DE_CAJA = { contado: '0', credito: '1', tarjeta: '2', cheque: '3', transferencia: '5' };
+
 /**
  * Arma la venta de una preventa a partir de lo que devuelve `preventa_preparar`.
  *
@@ -106,6 +109,8 @@ export function armarVenta(datos) {
     return {
         codigo: String(datos?.codigo ?? ''),
         documento: datos?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
+        // Cómo paga (vista Preventa, 2026-11-16). Una reserva no lo dice: contado.
+        pago: PAGOS_DE_CAJA[datos?.pago] != null ? datos.pago : 'contado',
         cliente, vendedor, renglones, total, falta_pagar: faltaPagar, pagado,
         nota: notaDeLaVenta({
             codigo: datos?.codigo, cliente, nombre: datos?.cliente?.name, pagado, faltaPagar, documento: datos?.documento,

@@ -186,6 +186,7 @@ async function directa(
     p_documento: String(body.documento ?? "consumidor_final"), p_nota: String(body.nota ?? ""),
     p_lineas: Array.isArray(body.lineas) ? body.lineas : [], p_preventa: corrige,
     p_motivo_precio: body.motivo_precio ? String(body.motivo_precio) : null,
+    p_pago: String(body.pago ?? "contado"),
   });
   if (ePrep) {
     const m = String(ePrep.message ?? "");
@@ -200,6 +201,14 @@ async function directa(
 
   let venta;
   try { venta = armarVenta(datos); } catch (e) { return await fallar((e as Error).message, 409); }
+  // Un nombre con tilde o Ñ viaja como cliente genérico (defecto medido de la
+  // caja, ver `clienteDeLaVenta`), y a un genérico no se le emite crédito fiscal
+  // ni se le da crédito: se dice antes de mandar, no en la caja.
+  if (venta.cliente.generico && datos.cliente && (venta.documento === "credito_fiscal" || venta.pago === "credito")) {
+    return await fallar(venta.cliente.motivo === "nombre_con_tilde"
+      ? "El nombre del cliente lleva tilde o Ñ y así no se puede emitir a su nombre. Corrígelo en sus datos."
+      : "El cliente todavía no tiene número de ficha: espera unos minutos o revísalo en Clientes.", 409);
+  }
 
   let resultado;
   try {

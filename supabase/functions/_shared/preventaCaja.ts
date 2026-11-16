@@ -23,6 +23,8 @@
 //
 // ⚠️ La sucursal vive en la SESIÓN: un login por envío y en serie.
 
+import { PAGOS_DE_CAJA } from "../../../src/utils/preventa.js";
+
 export const BASE = "https://clientesdte3.oss.com.sv/farma_salud/";
 
 export interface Http {
@@ -35,7 +37,7 @@ export interface RenglonVenta {
   precio: number; precio_normal: number | null; lista_precio: string | null; subtotal: number;
 }
 export interface Venta {
-  codigo: string; documento: string; vendedor: string; nota: string; total: number;
+  codigo: string; documento: string; pago?: string; vendedor: string; nota: string; total: number;
   cliente: { id: string; generico: boolean; motivo: string | null };
   renglones: RenglonVenta[];
 }
@@ -304,8 +306,8 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
     id_cliente: venta.cliente.id, total: total.toFixed(2), id_vendedor: "",
     json_arr: "[" + renglonesCaja.map((r) => JSON.stringify(r)).join(",") + "]",
     retencion: "0.00", total_percepcion: "0", iva: "0.00", items: String(renglonesCaja.length),
-    subtotal: g, sumas: total.toFixed(2), venta_exenta: x, suma_gravada: g, tipo_impresion: "COF", id_factura: opc.idFactura || "0",
-    precio_aut: "", clave: "", codvende: venta.vendedor, datos_extras: venta.nota, credito: "0", medico: "",
+    subtotal: g, sumas: total.toFixed(2), venta_exenta: x, suma_gravada: g, tipo_impresion: venta.documento === "credito_fiscal" ? "CCF" : "COF", id_factura: opc.idFactura || "0",
+    precio_aut: "", clave: "", codvende: venta.vendedor, datos_extras: venta.nota, credito: (PAGOS_DE_CAJA as Record<string, string>)[venta.pago ?? "contado"] ?? "0", medico: "",
   };
   const crudo = await http.post("venta.php", datos);
   let resp: { typeinfo?: string; referencia?: unknown; tot?: unknown; msg?: string } = {};

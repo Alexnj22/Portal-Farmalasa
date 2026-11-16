@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.0 — Preventa más práctica: cliente, pago y filas compactas
+
+- El cliente se edita y se crea desde la misma vista, con sus datos a la vista.
+- Crédito fiscal dice qué datos le faltan al cliente y abre su editor.
+- Tipo de pago: efectivo, tarjeta, transferencia, crédito o cheque; llega así
+  a caja. El crédito pide un cliente con datos.
+- Crédito fiscal ahora llega a caja como crédito fiscal (antes, como factura).
+- Productos en filas compactas; Enter agrega el primero y el foco vuelve solo.
+- Otro precio se elige viendo el monto de cada lista, sin pedir motivo: queda
+  anotado quién lo autorizó. Mayoreo Plus se respeta en cualquier presentación.
+- Si en la sucursal no alcanza, dice en qué sucursal hay.
+
 ## v2.1553.3 — Lenguaje: Productos, Mín/Máx y Distribución
 
 - Sexta tanda de la revisión del lenguaje, web y app: Productos (catálogo,

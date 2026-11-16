@@ -58,8 +58,7 @@ export default function AvanceSinLote({ branchId, conteoId, refrescar }) {
                         {suc.sucursal ? `En ${suc.sucursal}` : 'En las sucursales'} quedan{' '}
                         <strong className="tabular-nums">{formatQty(suc.sinLote)}</strong> de{' '}
                         <strong className="tabular-nums">{formatQty(suc.regulados)}</strong> regulados con existencia sin lote.
-                        {' '}<span className="tabular-nums">{suc.limpios}%</span> ya está todo en su lote. Baja al aprobar un
-                        conteo que ajusta.
+                        {' '}<span className="tabular-nums">{suc.limpios}%</span> ya tiene toda su existencia en lotes. Se reduce al aprobar cada conteo.
                     </p>
                     <div className="h-2 rounded-full bg-content-3/20 overflow-hidden"
                         role="progressbar" aria-valuenow={suc.limpios} aria-valuemin={0} aria-valuemax={100}

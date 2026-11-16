@@ -46,7 +46,7 @@ const COLUMNAS = [
 
 /* Lo que la regla de despacho dice de esta fila. A Bodega: cuántas
  * presentaciones completas vuelven y qué queda suelto (o que no vuelve nada).
- * A otra sala: sólo avisa si no llega ni a una presentación — «2 de una caja de
+ * A otra sucursal: sólo avisa si no llega ni a una presentación — «2 de una caja de
  * 100 no vale la pena, pero que avise para estar enterado» (usuario, 24-sep). */
 function NotaDeDespacho({ existencia, u, aBodega }) {
     if (!u || Number(u.unidades) <= 1) return null;
@@ -74,7 +74,7 @@ function NotaDeDespacho({ existencia, u, aBodega }) {
  * grupo—; las demás detrás, en gris, como contexto. */
 function VendidoEn({ fila, destino }) {
     const otras = Array.isArray(fila.vendido_en) ? fila.vendido_en : [];
-    if (otras.length === 0) return <span className="text-label text-content-3">En ninguna sala</span>;
+    if (otras.length === 0) return <span className="text-label text-content-3">En ninguna sucursal</span>;
     return (
         <div className="flex items-center gap-1.5 flex-wrap">
             {otras.slice(0, 3).map(v => (
@@ -166,8 +166,8 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
             filas, enviados, sala, nombreSala: ERP_NAMES[sala], nombreDestino: ERP_NAMES[destino], user,
         });
         setAvisoEnvio(conMinMax === 0 ? null : fallidas.length
-            ? { variant: 'warning', texto: `El envío salió, pero no se pudo pedir el cambio de Min/Max de: ${fallidas.join(', ')}. Pídelo a mano.` }
-            : { variant: 'success', texto: `Se pidió quitar el Min/Max de ${conMinMax} ${conMinMax === 1 ? 'producto' : 'productos'}; lo aprueba quien aprueba los ajustes de Min/Max.` });
+            ? { variant: 'warning', texto: `El traslado salió, pero no se pudo pedir el cambio de Mín/Máx de: ${fallidas.join(', ')}. Pídelo a mano.` }
+            : { variant: 'success', texto: `Se pidió quitar el Mín/Máx de ${conMinMax} ${conMinMax === 1 ? 'producto' : 'productos'}. Lo aprueba quien aprueba los Mín/Máx.` });
         cargar();
     }, [filas, sala, user, cargar]);
 
@@ -214,8 +214,8 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                             sub="lo que vale lo que no se mueve" loading={cargando && filas.length === 0} />
                     )}
                     <StatCard icon={Truck} iconBg="bg-brand/10" iconCls="text-brand-text"
-                        label="A otra sala" value={totales.aSala.toLocaleString('es-SV')}
-                        sub="allá sí se venden" tono="brand"
+                        label="A otra sucursal" value={totales.aSala.toLocaleString('es-SV')}
+                        sub="ahí sí se venden" tono="brand"
                         active={haciaDonde === 'sala'} onClick={() => setHaciaDonde(v => (v === 'sala' ? null : 'sala'))}
                         loading={cargando && filas.length === 0} />
                     <StatCard icon={Archive} label="A Bodega" value={totales.aBodega.toLocaleString('es-SV')}
@@ -238,7 +238,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                 onChange={setFiltro}
                                 options={[
                                     { value: 'todos', label: 'Todos' },
-                                    { value: 'minmax', label: `Con Min/Max · ${totales.conMinmax}` },
+                                    { value: 'minmax', label: `Con Mín/Máx · ${totales.conMinmax}` },
                                 ]}
                             />
                         </FilterBar.Section>
@@ -299,7 +299,7 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                 <p className="text-label text-content-3 leading-snug">
                                     {g.filas.length} {g.filas.length === 1 ? 'producto' : 'productos'} · {unidades(g.unidades)}
                                     {veCostos && ` · ${formatMoney(g.costo)}`}
-                                    {esBodega && ' · ninguna sala vendió 3 o más en 6 meses · se devuelve por presentación completa'}
+                                    {esBodega && ' · ninguna sucursal vendió 3 o más en 6 meses · se devuelve por presentación completa'}
                                 </p>
                             </div>
                             {puedeArmar && (() => {

@@ -326,7 +326,7 @@ export default function ConteoInventarioView() {
                     icon={FileSpreadsheet} label="Sin ajustar" value={formatQty(resumen.sinAjuste)}
                     iconBg="bg-danger/10" iconCls="text-danger"
                     valueCls={resumen.sinAjuste ? 'text-danger' : 'text-content'}
-                    sub="el stock aún sin corregir"
+                    sub="la existencia aún sin corregir"
                     active={foco === 'SIN_AJUSTE'} onClick={() => setFoco((f) => (f === 'SIN_AJUSTE' ? 'TODOS' : 'SIN_AJUSTE'))}
                 />
                 {/* No es filtro: no lleva `onClick`. Cuenta PRODUCTOS regulados con
@@ -482,7 +482,7 @@ export default function ConteoInventarioView() {
                 icon: ClipboardCheck,
                 message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí',
                 subtext: foco === 'TODOS'
-                    ? 'Un conteo toma una foto del inventario del sistema y la compara con lo que hay en vitrinas y estantes.'
+                    ? 'Un conteo compara el inventario del sistema con lo que hay en vitrinas y estantes.'
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
                 action: foco !== 'TODOS'
                     ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }
@@ -603,7 +603,7 @@ export default function ConteoInventarioView() {
                             <ListRow
                                 icon={ChevronRight}
                                 title="Abrir conteo"
-                                subtitle="Ver y capturar los renglones"
+                                subtitle="Ver y contar los productos"
                                 // Se cierra apagando el ABIERTO, nunca vaciando el
                                 // conteo: el cuerpo tiene que seguir dibujado
                                 // mientras la hoja hace su salida.
@@ -614,7 +614,7 @@ export default function ConteoInventarioView() {
                                     icon={Trash2}
                                     tone="danger"
                                     title="Eliminar conteo"
-                                    subtitle="Se borran los renglones y el historial"
+                                    subtitle="Se borran los productos y el historial"
                                     // Encadena a la confirmación de siempre, no borra
                                     // acá: el gesto acerca la acción, no la abarata.
                                     onClick={() => { setOpcionesAbierto(false); setABorrar(opciones); }}
@@ -642,7 +642,7 @@ export default function ConteoInventarioView() {
                 onConfirm={confirmarBorrado}
                 title="¿Eliminar este conteo?"
                 message={aBorrar
-                    ? `Se borra el conteo de ${aBorrar.branches?.name || 'la sucursal'} del ${fmtDate(aBorrar.created_at)} (${(ESTADO_CFG[aBorrar.status] || ESTADO_CFG.BORRADOR).label}) con todos sus renglones y el historial de quién contó cada uno. No se puede deshacer.`
+                    ? `Se borra el conteo de ${aBorrar.branches?.name || 'la sucursal'} del ${fmtDate(aBorrar.created_at)} (${(ESTADO_CFG[aBorrar.status] || ESTADO_CFG.BORRADOR).label}) con todos sus productos y el historial de quién contó cada uno. No se puede deshacer.`
                     : ''}
                 confirmText="Eliminar conteo"
                 isProcessing={borrando}

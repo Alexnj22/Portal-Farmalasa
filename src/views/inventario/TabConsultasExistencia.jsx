@@ -104,7 +104,7 @@ export default function TabConsultasExistencia() {
             if (e2) throw e2;
             useToastStore.getState().showToast(fallos.length ? 'Ajuste pedido' : 'Existencia ajustada',
                 fallos.length
-                    ? `No se pudo aplicar todavía: ${fallos[0]}. Queda en Solicitudes para reintentar.`
+                    ? `Todavía no se aplicó: ${fallos[0]}. Queda en Solicitudes para intentar de nuevo.`
                     : `${consulta.nombre} en ${sala.sala}: ${textoDeDiferencia(sala)}, ya corregido.`,
                 fallos.length ? 'warning' : 'success');
             setAjuste(null);
@@ -122,7 +122,7 @@ export default function TabConsultasExistencia() {
         const { consulta, sala } = ajuste;
         setTrabajando(true);
         const { error } = await resolverConsulta(sala.id, {
-            estado: 'SIN_AJUSTE', nota: 'La existencia cambió después del conteo; se pidió otro conteo.',
+            estado: 'SIN_AJUSTE', nota: 'La existencia cambió después del conteo. Se pidió contar de nuevo.',
         });
         const r = error ? { error } : await crearConsultaExistencia({
             producto: consulta.erp_product_id, salas: [sala.erp_sucursal_id],
@@ -148,8 +148,7 @@ export default function TabConsultasExistencia() {
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-body-sm text-content-2 max-w-2xl">
-                    Pregúntale a una o varias salas cuánto tienen de un producto. Cuentan sin ver el sistema;
-                    si no cuadra vuelven a contar una vez, y un descuadre lo ajusta quien aprueba inventario.
+                    Pregunta a una o varias sucursales cuánto tienen de un producto. Cuentan sin ver el sistema. Si no cuadra, vuelven a contar una vez. Si sigue sin cuadrar, lo ajusta quien aprueba inventario.
                 </p>
                 {puedePedir && (
                     <Button variant="primary" icon={Plus} onClick={() => setNueva(true)}>Pedir conteo</Button>
@@ -176,7 +175,7 @@ export default function TabConsultasExistencia() {
                                         return (
                                             <Button key={s.id} size="sm" variant={recontar ? 'secondary' : 'primary'}
                                                 icon={recontar ? RotateCcw : ClipboardCheck} onClick={() => setContando(s.id)}
-                                                title={recontar ? `${s.sala}: no cuadró, hay que volver a contar` : `Contar en ${s.sala}`}>
+                                                title={recontar ? `${s.sala}: no cuadró. Hay que volver a contar` : `Contar en ${s.sala}`}>
                                                 {salas.length === 1 && !recontar ? 'Contar' : s.sala}
                                                 {recontar && salas.length > 1 ? ' · recontar' : ''}
                                                 {recontar && salas.length === 1 ? 'Volver a contar' : ''}
@@ -252,8 +251,8 @@ export default function TabConsultasExistencia() {
                 <ConfirmModal isOpen onClose={() => setAjuste(null)} isDestructive={false} isProcessing={trabajando}
                     title={ajuste.datos.cambio ? 'La existencia cambió' : 'No se puede ajustar exacto'}
                     message={ajuste.datos.cambio
-                        ? `Desde que ${ajuste.sala.sala} contó, la existencia de ${ajuste.consulta.nombre} se movió (una venta o una entrada). Ajustar con ese conteo descuadraría lo que ya estaba bien. ¿Pedimos que vuelvan a contar?`
-                        : `La diferencia no se puede escribir en las presentaciones activas de ${ajuste.consulta.nombre}. Hazlo desde Solicitudes de inventario.`}
+                        ? `Desde que ${ajuste.sala.sala} contó, la existencia de ${ajuste.consulta.nombre} cambió por una venta o una entrada. Si se ajusta con ese conteo, se descuadra. ¿Pedimos que cuenten de nuevo?`
+                        : `No se puede ajustar ${ajuste.consulta.nombre} en sus presentaciones activas. Hazlo desde Solicitudes de inventario.`}
                     confirmText={ajuste.datos.cambio ? 'Pedir otro conteo' : 'Entendido'}
                     onConfirm={ajuste.datos.cambio ? recontar : () => setAjuste(null)} />
             ) : ajuste && (
@@ -262,7 +261,7 @@ export default function TabConsultasExistencia() {
                     message={(
                         <span className="block space-y-3 text-left">
                             <span className="block">
-                                {`${ajuste.consulta.nombre}: la sala contó ${formatQty(ajuste.datos.contado)} unidades `
+                                {`${ajuste.consulta.nombre}: la sucursal contó ${formatQty(ajuste.datos.contado)} unidades `
                                     + `y el sistema dice ${formatQty(ajuste.datos.sistema)}. Se `
                                     + (ajuste.datos.lineas ?? []).map(l => `${l.sentido === 'carga' ? 'cargan' : 'descartan'} `
                                         + `${formatQty(l.cantidad)} ${String(l.tipo).toLowerCase()}${l.lote ? ` del lote ${l.lote}` : ''}`).join(' y se ')
@@ -307,8 +306,8 @@ function FilaDeSala({ sala: s, puedeAjustar, trabajando, onAjustar, onSinAjuste 
                 {corr && (
                     <p className={`text-label font-bold ${corr.tipo === 'parcial' ? 'text-warning-text' : 'text-success-text'}`}>
                         {corr.tipo === 'cubierta' && `Se corrigió por el cambio de presentación el ${fechaNumerica(corr.at)}.`}
-                        {corr.tipo === 'parcial' && `El cambio de presentación corrigió ${unidades(corr.unidades)}; ${corr.resto > 0 ? 'sobran' : 'faltan'} ${unidades(corr.resto)} por ajustar.`}
-                        {corr.tipo === 'sin_conteo' && `Ya se corrigió por el cambio de presentación el ${fechaNumerica(corr.at)}; el conteo lo confirma.`}
+                        {corr.tipo === 'parcial' && `El cambio de presentación corrigió ${unidades(corr.unidades)}. ${corr.resto > 0 ? 'Sobran' : 'Faltan'} ${unidades(corr.resto)} por ajustar.`}
+                        {corr.tipo === 'sin_conteo' && `Ya se corrigió por el cambio de presentación el ${fechaNumerica(corr.at)}. El conteo lo confirma.`}
                     </p>
                 )}
                 {s.nota && <p className="text-label text-content-3">{s.nota}</p>}

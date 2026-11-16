@@ -67,7 +67,7 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
     return (
         <div className="flex flex-col gap-3">
             {movs.length === 0 ? (
-                <Notice variant="success">Sin diferencias: el inventario ya estaba como se contó.</Notice>
+                <Notice variant="success">No hay diferencias. El inventario ya estaba como se contó.</Notice>
             ) : enCola ? (
                 <Notice variant="info">
                     Ajustando el inventario: {cuenta('HECHO')} de {movs.length} productos listos. Sigue solo aunque
@@ -75,13 +75,11 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
                 </Notice>
             ) : problemas.length ? (
                 <Notice variant="warning">
-                    {cuenta('HECHO')} de {movs.length} productos quedaron como se contaron. {problemas.length} no se
-                    pudieron aplicar: revísalos abajo.
+                    {cuenta('HECHO')} de {movs.length} productos quedaron como se contaron. {problemas.length} no se pudieron aplicar. Revísalos abajo.
                 </Notice>
             ) : (
                 <Notice variant="success">
-                    Los {movs.length} productos con diferencia quedaron en el inventario como se contaron. Abajo, lo
-                    que entró y lo que salió de cada lote.
+                    Los {movs.length} productos con diferencia quedaron en el inventario como se contaron. Abajo está lo que entró y salió de cada lote.
                 </Notice>
             )}
 

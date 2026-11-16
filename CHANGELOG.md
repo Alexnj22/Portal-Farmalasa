@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1551.10 — Lenguaje: Inventario con frases cortas
+
+- Segunda tanda de la revisión del lenguaje: Inventario (conteos, ajustes,
+  consultas de existencia, parados y vendidos sin Mín/Máx). Frases cortas,
+  sin rayas, y el vocabulario de `docs/reglas/como-habla-el-portal.md`:
+  «renglón» → producto o lote, «sala» → sucursal, «stock» → existencia,
+  «Min/Max» → Mín/Máx, «Área vencidos»/«Ubicación vencidos» → Área de vencidos.
+
 ## v2.1551.9 — Corregir lote: lotes registrados, sin duplicar lote/vence y «Así queda»
 
 Pedido del usuario: que el lote y el vencimiento salgan de los ya

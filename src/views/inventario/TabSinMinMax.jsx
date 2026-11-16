@@ -180,7 +180,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
             ? { variant: 'success', texto: `${row.product_name}: Min ${min} · Max ${max} aplicado.` }
             : puedeAplicar
                 ? { variant: 'warning', texto: `${row.product_name}: quedó pedido, pero no se pudo aplicar (${r.error}). Resuélvelo en Solicitudes.` }
-                : { variant: 'success', texto: `${row.product_name}: ajuste pedido (Min ${min} · Max ${max}). Lo aprueba quien aprueba Min/Max.` });
+                : { variant: 'success', texto: `${row.product_name}: ajuste pedido (Mín ${min} · Máx ${max}). Lo aprueba quien aprueba Mín/Máx.` });
     }, [editando, sala, user, puedeAplicar]);
 
     const exportar = useCallback(() => {
@@ -202,14 +202,14 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
             {/* §17.0 — el carril y la píldora en UNA fila. Las dos tarjetas de
                 sugerencia filtran, igual que el desplegable de la derecha. */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                <CarrilCards className="flex-1" ariaLabel="Resumen de vendidos sin Min/Max">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de vendidos sin Mín/Máx">
                     <StatCard icon={ListPlus} iconBg="bg-warning/10" iconCls="text-warning-text"
-                        label="Sin Min/Max" value={filas.length.toLocaleString('es-SV')}
+                        label="Sin Mín/Máx" value={filas.length.toLocaleString('es-SV')}
                         sub="se venden y no se reponen solos" loading={cargando && filas.length === 0} />
                     <StatCard icon={DollarSign} label="Venta 6 meses" value={formatMoney(venta6m)}
                         sub="de estos productos" loading={cargando && filas.length === 0} />
                     <StatCard icon={PlusCircle} iconBg="bg-success/10" iconCls="text-success-text"
-                        label="Agregar Min/Max" value={conteos.agregar} valueCls="text-success-text"
+                        label="Agregar Mín/Máx" value={conteos.agregar} valueCls="text-success-text"
                         sub="la rotación lo justifica" tono="success"
                         active={filtro === 'agregar'} onClick={() => elegirFiltro('agregar')}
                         loading={cargando && filas.length === 0} />
@@ -264,7 +264,7 @@ export default function TabSinMinMax({ sala, onSala, searchTerm = '' }) {
                 skeletonRows={10}
                 empty={{
                     icon: PackageSearch,
-                    message: filas.length === 0 ? `Todo lo que se vende en ${nombreSala} ya tiene Min/Max` : 'Nada con ese filtro',
+                    message: filas.length === 0 ? `Todo lo que se vende en ${nombreSala} ya tiene Mín/Máx` : 'Nada con ese filtro',
                 }}
                 minWidth="680px"
                 // En el teléfono la fila es una ficha: el «Pedir/Aplicar Min/Max»
@@ -352,7 +352,7 @@ function AccionDeFila({ row, ign, hecho, editando, setEditando, guardando, puede
                 <PortalInput compact className="w-14" aria-label={`Max de ${row.product_name}`} inputMode="numeric"
                     value={editando.max} onChange={set('max')} placeholder="Max" inputClassName="text-right font-bold" />
                 <Button size="sm" icon={Check} iconOnly loading={guardando} onClick={onConfirmar}
-                    title={puedeAplicar ? 'Aplicar este Min/Max' : 'Pedir este Min/Max'} />
+                    title={puedeAplicar ? 'Aplicar este Mín/Máx' : 'Pedir este Mín/Máx'} />
                 <Button size="sm" variant="ghost" icon={X} iconOnly title="Cancelar" onClick={() => setEditando(null)} />
             </div>
         );
@@ -364,7 +364,7 @@ function AccionDeFila({ row, ign, hecho, editando, setEditando, guardando, puede
         <div className="flex items-center justify-end gap-3">
             {ofrecer && puedePedir && (
                 <Button size="sm" variant="secondary" icon={SlidersHorizontal} onClick={onAbrir}
-                    title={puedeAplicar ? 'Aplicar Min/Max (se puede cambiar el número)' : 'Pedir Min/Max (lo aprueba quien aprueba Min/Max)'}>
+                    title={puedeAplicar ? 'Aplicar Mín/Máx (se puede cambiar el número)' : 'Pedir Mín/Máx (lo aprueba quien aprueba Mín/Máx)'}>
                     {puedeAplicar ? 'Aplicar' : 'Pedir'}
                 </Button>
             )}

@@ -56,7 +56,7 @@ export default function AjusteAntesDeAprobar({ open, conteoId, busy, onClose, on
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between gap-3 relative z-base">
                 <div className="min-w-0">
                     <TituloDeSeccion nivel="tarjeta">Aprobar y ajustar el inventario</TituloDeSeccion>
-                    <p className="text-caption text-content-3">Esto es lo que se va a cargar y descontar, en lo que se contó; la caja lo mueve en unidades.</p>
+                    <p className="text-caption text-content-3">Esto es lo que se va a cargar y descontar.</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />
             </div>
@@ -67,7 +67,7 @@ export default function AjusteAntesDeAprobar({ open, conteoId, busy, onClose, on
                 ) : !plan ? (
                     <SkeletonText lines={5} className="w-full" />
                 ) : productos.length === 0 ? (
-                    <Notice variant="success">Sin diferencias: al aprobarlo el inventario no cambia.</Notice>
+                    <Notice variant="success">No hay diferencias. Al aprobarlo, el inventario no cambia.</Notice>
                 ) : (
                     <>
                         <p className="text-body-sm text-content-2">
@@ -76,9 +76,7 @@ export default function AjusteAntesDeAprobar({ open, conteoId, busy, onClose, on
                         </p>
                         {avisos.length > 0 && (
                             <Notice variant="warning" icon={AlertTriangle}>
-                                {avisos.length === 1 ? 'Hay un producto' : `Hay ${avisos.length} productos`} para mirar antes de aprobar
-                                (marcados abajo). Si se vendió justo cuando se contó, recuéntalo: el número del sistema pudo no
-                                tener esa venta todavía.
+                                {avisos.length === 1 ? 'Hay un producto' : `Hay ${avisos.length} productos`} para revisar antes de aprobar (están marcados abajo). Si se vendió mientras se contaba, vuelve a contarlo.
                             </Notice>
                         )}
                         <ul className="flex flex-col gap-2">
@@ -90,7 +88,7 @@ export default function AjusteAntesDeAprobar({ open, conteoId, busy, onClose, on
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="text-body font-bold text-content">{p.producto ?? `Producto ${p.erp_product_id}`}</span>
                                             {p.is_vencidos && <Badge variant="neutral" size="sm" uppercase={false}>Área de vencidos</Badge>}
-                                            {p.a_medio_contar && <Badge variant="danger" size="sm" uppercase={false} icon={PackageX}>No se ajusta: a medio contar</Badge>}
+                                            {p.a_medio_contar && <Badge variant="danger" size="sm" uppercase={false} icon={PackageX}>No se ajusta. Faltan lotes por contar</Badge>}
                                             {suyos.filter((q) => !q.bloquea).map((q) => (
                                                 <Badge key={q.tipo} variant="warning" size="sm" uppercase={false}>{PROBLEMA_DE_AJUSTE[q.tipo] ?? q.tipo}</Badge>
                                             ))}

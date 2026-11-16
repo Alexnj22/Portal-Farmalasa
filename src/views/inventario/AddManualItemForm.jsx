@@ -250,8 +250,8 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                     <div className="min-w-0">
                         <p className="text-body-sm font-black text-content">Agregar al conteo</p>
                         <p className="text-caption text-content-2">
-                            Para lo que apareció en el estante y no está en la lista
-                            {simple ? '.' : ', o para un lote que no venía.'}
+                            Para lo que encontraste en el estante y no está en la lista
+                            {simple ? '.' : ', o para un lote que no está.'}
                         </p>
                     </div>
                 </div>
@@ -302,20 +302,18 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                     <p className="text-micro text-content-3 flex items-center gap-1.5 ml-1">
                         {buscandoCodigo
                             ? <LoadingState variant="inline" label="Buscando el código…" />
-                            : <><ScanLine size={12} /> …o pasa el lector por el código de la caja: no hace falta tocar nada.</>}
+                            : <><ScanLine size={12} /> También puedes pasar el lector por el código.</>}
                     </p>
 
                     {escaneoTecleado && !buscandoCodigo && (
                         <p className="text-micro text-warning-text ml-1">
-                            Eso llegó tecleado, no leído. Escribe el nombre en el buscador o vuelve a pasar el código.
+                            No se leyó el código. Vuelve a pasarlo o busca el producto por nombre.
                         </p>
                     )}
 
                     {avisoDeCodigo?.tipo === SIN_RESULTADO && (
                         <Notice variant="warning" icon={AlertTriangle}>
-                            El código <strong className="font-mono">{avisoDeCodigo.codigo}</strong> no
-                            está en el catálogo. Búscalo por nombre — y si tampoco aparece, es un producto
-                            que todavía no existe en el portal.
+                            El código <strong className="font-mono">{avisoDeCodigo.codigo}</strong> no está registrado. Búscalo por nombre. Si no aparece, el producto todavía no existe en el portal.
                         </Notice>
                     )}
                     {avisoDeCodigo?.tipo === FALLO && (
@@ -373,9 +371,9 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                     {!simple && (
                         <p className="text-micro text-content-3">
                             {pideLote
-                                ? 'Este producto lleva lote: elige el impreso en la caja o escribe uno nuevo, con su vencimiento.'
+                                ? 'Este producto lleva lote. Elige el que dice la caja o escribe uno nuevo con su vencimiento.'
                                 : pideVence
-                                    ? 'Este producto no lleva lote, pero sí vencimiento: anota la fecha de lo que estás contando.'
+                                    ? 'Este producto no lleva lote, pero sí vencimiento. Anota la fecha.'
                                     : 'Este producto no lleva lote ni vencimiento.'}
                         </p>
                     )}

@@ -207,7 +207,7 @@ const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(di
 // apagado cuando su grupo cuadra, porque en rojo se lee como diez unidades
 // perdidas y eso fue exactamente el reporte del 2026-08-21.
 const esReacomodo = (item) => !!item?.grupo_mixto && (item?.diferencia_grupo ?? 0) === 0;
-const REACOMODO_AVISO = 'El sistema cuenta los paquetes y las unidades por separado. En unidades este producto cuadra: el total del producto lo dice.';
+const REACOMODO_AVISO = 'El sistema lleva paquetes y unidades por separado. Sumado en unidades, este producto cuadra.';
 
 // La otra forma del mismo caso: lo que el sistema tenía «sin lote» (o en otro
 // lote) se contó en sus lotes reales. Cada renglón tiene diferencia, pero el
@@ -217,7 +217,7 @@ const REACOMODO_AVISO = 'El sistema cuenta los paquetes y las unidades por separ
 // cinco productos en 0). Se decide con el total del producto que da el
 // servidor, y sólo con todos sus renglones contados: a medias todavía no se
 // sabe si cuadra.
-const REACOMODO_LOTE_AVISO = 'Este producto cuadra en total: lo que el sistema tenía en este renglón se contó en otro lote. Al aprobar, pasa de un renglón al otro; no falta ni sobra nada.';
+const REACOMODO_LOTE_AVISO = 'Este producto cuadra. Lo de este lote se contó en otro. Al aprobar, pasa de un lote al otro. No falta ni sobra nada.';
 const productoCuadra = (product) => !!product
     && product.diferencia_total === 0
     && product.item_count > 1
@@ -328,7 +328,7 @@ function VencimientoBadge({ status }) {
 // (no c/u a su ritmo) y el costo es una sola propiedad opacity por GPU.
 function LiveBadge() {
     return (
-        <Badge title="En vivo — se actualiza hasta que se cuente" variant="success" size="sm" icon={Radio}>Vivo</Badge>
+        <Badge title="En vivo. Se actualiza hasta que se cuente." variant="success" size="sm" icon={Radio}>Vivo</Badge>
     );
 }
 
@@ -359,7 +359,7 @@ function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick, tonoE
     const corto = nombre ? shortEmployeeName(nombre) : null;
     const titulo = `Contado por ${corto || 'desconocido'} · ${fmtDateTime(cuando)}`
         + (ediciones > 0 ? ` · editada ${ediciones} ${ediciones === 1 ? 'vez' : 'veces'}` : '')
-        + ' — ver historial';
+        + ' · ver historial';
     return (
         // `xs` y no `sm`: son 8px menos de padding, que es exactamente lo que le
         // faltaba a la tabla para entrar sin scroll a 1440 con el menú abierto. Es
@@ -494,7 +494,7 @@ function ItemRow({
             setRevelado(true);
         } catch (err) {
             setFisico('');
-            showToast('No se guardó el recuento', `${item.product_nombre || 'Esta línea'}: ${mensajeAmigable(err)}`, 'error');
+            showToast('No se guardó el recuento', `${item.product_nombre || 'Este producto'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -540,7 +540,7 @@ function ItemRow({
             if (nextFisico !== null) onUnlock(item.id, false);
         } catch (err) {
             revertToLastSaved();
-            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${mensajeAmigable(err)}`, 'error');
+            showToast('No se guardó el conteo', `${item.product_nombre || 'Este producto'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -566,7 +566,7 @@ function ItemRow({
             }
             onUnlock(item.id, false);
         } catch (err) {
-            showToast('No se marcó el renglón', mensajeAmigable(err), 'error');
+            showToast('No se pudo marcar', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
         }
@@ -678,8 +678,8 @@ function ItemRow({
                                     {fisico}
                                 </span>
                                 <Button variant="ghost" icon={Pencil} disabled={saving}
-                                    title="Corregir esta cantidad — queda registrado en el historial"
-                                    aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, ${renglonEtiqueta(item, simple)}`}
+                                    title="Corregir esta cantidad. Queda en el historial."
+                                    aria-label={`Corregir la cantidad de ${item.product_nombre || 'este producto'}, ${renglonEtiqueta(item, simple)}`}
                                     iconOnly onClick={() => onUnlock(item.id, true)} />
                             </>
                         ) : (
@@ -706,7 +706,7 @@ function ItemRow({
                                 />
                                 {editable && !recuento && (
                                     <Button variant="ghost" icon={PackageX} disabled={saving}
-                                        title="No ubicado — lo busqué y no está en el estante"
+                                        title="No ubicado. Lo busqué y no está en el estante."
                                         aria-label="Marcar como no ubicado"
                                         iconOnly onClick={marcarNoUbicado} />
                                 )}
@@ -929,7 +929,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             if (valor !== null) onUnlock(item.id, false);
         } catch (err) {
             setFisico(guardado.current ?? '');
-            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${mensajeAmigable(err)}`, 'error');
+            showToast('No se guardó el conteo', `${item.product_nombre || 'Este producto'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -986,7 +986,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         </span>
                         <Button variant="secondary" icon={Pencil} iconOnly disabled={saving}
                             className="h-14 w-14 shrink-0"
-                            aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, ${renglonEtiqueta(item, simple)}`}
+                            aria-label={`Corregir la cantidad de ${item.product_nombre || 'este producto'}, ${renglonEtiqueta(item, simple)}`}
                             onClick={() => onUnlock(item.id, true)} />
                     </>
                 ) : (
@@ -1074,7 +1074,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             )}
             {(autor.nombre || estadoItem === 'SIN_UBICAR' || item.is_vencidos || item.es_agregado_manual) && (
                 <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                    {item.is_vencidos && <Badge variant="danger" size="sm">Área vencidos</Badge>}
+                    {item.is_vencidos && <Badge variant="danger" size="sm">Área de vencidos</Badge>}
                     {item.es_agregado_manual && <Badge variant="chart-9" size="sm">Agregado</Badge>}
                     {estadoItem === 'SIN_UBICAR' && <Badge variant="danger" size="sm" icon={PackageX}>No ubicado</Badge>}
                     <AutorLinea
@@ -1209,7 +1209,7 @@ function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }
                         <span className="text-micro text-content-3 basis-full">Totales en unidades (hay paquetes y unidades)</span>
                     )}
                     {verSistema && productoReacomodado(product) && (
-                        <span className="text-micro text-content-3 basis-full">Cuadra: sólo cambió de lote</span>
+                        <span className="text-micro text-content-3 basis-full">Cuadra. Solo cambió de lote</span>
                     )}
                 </div>
             )}
@@ -1271,7 +1271,7 @@ function tarjetasResumen(resumen, abierto, canVerMontos) {
     const falt = faltNeto ?? faltBruto;
     const sobra = sobraNeto ?? sobraBruto;
     const subDif = reacomodados > 0
-        ? `${formatQty(reacomodados)} renglón(es) sólo cambiaron de lote`
+        ? `${formatQty(reacomodados)} producto(s) solo cambiaron de lote`
         : (recontados > 0 ? `${formatQty(recontados)} recontada(s)`
             : (prodDif != null ? 'productos que no cuadran' : 'contra la existencia'));
     // La tarjeta de dinero muestra lo que PESA: el faltante si lo hay; si no,
@@ -1280,7 +1280,7 @@ function tarjetasResumen(resumen, abierto, canVerMontos) {
     const muestraSobrante = !(falt > 0) && sobra > 0;
     const subMonto = [
         falt > 0 && sobra > 0 ? `sobrante ${formatMoney(sobra)}` : null,
-        Number(valorReacomodo) > 0 ? `${formatMoney(valorReacomodo)} sólo cambia de lote` : null,
+        Number(valorReacomodo) > 0 ? `${formatMoney(valorReacomodo)} solo cambia de lote` : null,
     ].filter(Boolean).join(' · ') || (falt > 0 || muestraSobrante ? 'por producto, neto' : 'cuadra');
     const pct = items > 0 ? (contados / items) * 100 : 0;
 
@@ -1403,7 +1403,7 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
     }, [open, item, fetchConteoItemHistory]);
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo · ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <TituloDeSeccion nivel="tarjeta">{item?.product_nombre}</TituloDeSeccion>
@@ -1482,7 +1482,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
     };
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote · ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <TituloDeSeccion nivel="tarjeta">Corregir lote</TituloDeSeccion>
@@ -1491,7 +1491,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
-                <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (por ejemplo, un lote nuevo que todavía no figura). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
+                <p className="text-label text-content-3">Úsalo cuando el lote que encontraste no es el de esta fila, por ejemplo un lote nuevo. Solo corrige este conteo. No cambia el inventario.</p>
                 <div>
                     <label className={rotuloCampo('text-content-3')}>Lote</label>
                     <PortalInput
@@ -1549,7 +1549,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
 
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
                 <p className="text-label text-content-2">
-                    Después de finalizar ya no se pueden editar cantidades. El conteo queda a la espera de que otra persona lo apruebe.
+                    Después de finalizar ya no se pueden cambiar cantidades. Otra persona tiene que aprobar el conteo.
                 </p>
 
                 {hayPendientes ? (
@@ -1560,19 +1560,19 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                         <SegmentedControl
                             layout="block"
                             tone="chart-9"
-                            label="Qué hacer con los renglones pendientes"
+                            label="Qué hacer con lo que falta contar"
                             options={TRATO_PENDIENTES}
                             value={trato}
                             onChange={setTrato}
                         />
                         <p className="text-caption text-content-3 leading-snug">
                             {trato === 'CERO'
-                                ? 'El conteo cubrió toda el área: lo que no apareció en vitrinas ni estantes se registra con físico 0 y su faltante es real. Quedan marcados como "no ubicado", no como contados.'
-                                : 'El conteo fue parcial: esos renglones no se valúan ni cuentan como diferencia. El número queda guardado en el reporte para que nadie lea el resultado como un cuadre completo.'}
+                                ? 'El conteo cubrió toda el área. Lo que no apareció queda en 0 y cuenta como faltante. Se marca como «no ubicado», no como contado.'
+                                : 'El conteo fue parcial. Lo que falta contar no cuenta como diferencia. El reporte lo dice, para que nadie lo lea como un cuadre completo.'}
                         </p>
                     </>
                 ) : (
-                    <Notice variant="success">Todos los renglones tienen cantidad física.</Notice>
+                    <Notice variant="success">Todo tiene cantidad contada.</Notice>
                 )}
             </div>
 
@@ -1900,7 +1900,7 @@ export default function ConteoDetailView() {
                 const n = r.agregados;
                 showToast(
                     'Llegaron productos nuevos',
-                    `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sala después de empezar el conteo. Ya se pueden contar.`,
+                    `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sucursal después de empezar el conteo. Ya se pueden contar.`,
                     'info');
                 loadRef.current?.();
             });
@@ -2068,7 +2068,7 @@ export default function ConteoDetailView() {
             ...prev,
             [erpProductId]: (prev[erpProductId] || []).map((it) => (it.id === itemId ? { ...it, lote: result.lote, fecha_vencimiento: result.fecha_vencimiento } : it)),
         }));
-        showToast('Lote corregido', 'Se actualizó la etiqueta del renglón', 'success');
+        showToast('Lote corregido', 'Se actualizó el lote en el conteo', 'success');
     };
 
     // Lo que impide ajustar se pregunta ANTES de abrir el diálogo de finalizar:
@@ -2131,7 +2131,7 @@ export default function ConteoDetailView() {
         setBusy(true);
         try {
             await aprobarConteoInventario(id, nota);
-            showToast('Conteo aprobado', 'Queda cerrado y con firma auditable', 'success');
+            showToast('Conteo aprobado', 'Queda cerrado y firmado', 'success');
             await load();
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
@@ -2193,7 +2193,7 @@ export default function ConteoDetailView() {
         setBusy(true);
         try {
             await marcarAjusteErp(id, nota);
-            showToast('Ajuste registrado', 'Queda constancia de que el ajuste ya se aplicó', 'success');
+            showToast('Ajuste registrado', 'Queda anotado que el ajuste ya se aplicó', 'success');
             await load();
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
@@ -2210,10 +2210,10 @@ export default function ConteoDetailView() {
     // opción; con el conteo cerrado hay cuatro y ahí sí hay algo que elegir.
     const documentos = !canDownload ? [] : [
         { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el estante, con columna de notas y firma de quien contó.' },
-        { kind: 'hoja-compacta', icon: Printer, label: 'Hoja compacta', detalle: 'La mitad de páginas: dos productos por renglón, apaisada y sin columna de notas.' },
+        { kind: 'hoja-compacta', icon: Printer, label: 'Hoja compacta', detalle: 'La mitad de páginas: dos productos por fila, apaisada y sin columna de notas.' },
         ...(hasResults ? [
-            { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valuación de cada renglón.' },
-            { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para aplicar', detalle: 'Partido en faltantes (salida) y sobrantes (entrada), listo para teclear.' },
+            { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valor de cada producto.' },
+            { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para aplicar', detalle: 'Separado en faltantes (salida) y sobrantes (entrada), listo para digitar.' },
             { kind: 'ajuste-csv', icon: Download, label: 'Ajuste en CSV', detalle: 'Lo mismo en planilla, para filtrar o cargar en lote.' },
         ] : []),
     ];
@@ -2326,7 +2326,7 @@ export default function ConteoDetailView() {
                     ciego: la RPC los trata como TODOS, así que serían controles que
                     no controlan — y ofrecerlos ya insinúa que hay algo que mirar. */}
                 <FilterBar.Opciones
-                    label="Filtrar los renglones"
+                    label="Filtrar los productos"
                     value={filtro}
                     onChange={cambiarFiltro}
                     options={FILTRO_PILLS
@@ -2468,13 +2468,7 @@ export default function ConteoDetailView() {
                         {conteo.aplica_en_caja && conteo.status === 'EN_PROGRESO' && (
                             <div className="mt-4">
                                 <Notice variant="info">
-                                    Este conteo ajusta el inventario. Debajo de cada renglón <strong>Sin lote</strong>
-                                    escribe el lote, el vencimiento (mes/año) y cuántas, y Enter: el lote queda como
-                                    renglón propio y «Sin lote» baja solo. <strong>+ Lote</strong> agrega otra fila; en
-                                    los que ya tienen lote, el lápiz sirve para confirmarlo o corregirlo. Al aprobar,
-                                    la existencia queda en el lote real. Cuenta cada renglón en lo que dice
-                                    debajo del lote: cajas, blísteres o unidades. Cuenta todos los renglones de un
-                                    producto: uno a medio contar no se puede ajustar.
+                                    Este conteo ajusta el inventario. Debajo de cada <strong>Sin lote</strong>, escribe el lote, el vencimiento (mes/año) y cuántas hay, y presiona Enter. <strong>+ Lote</strong> agrega otra fila. Si ya tiene lote, usa el lápiz para confirmarlo o corregirlo. Cuenta en lo que dice debajo del lote: cajas, blísteres o unidades. Cuenta todos los lotes de un producto: si falta uno, no se puede ajustar.
                                 </Notice>
                             </div>
                         )}
@@ -2490,9 +2484,7 @@ export default function ConteoDetailView() {
                         {conteo.aplica_en_caja && conteo.status === 'FINALIZADO' && (
                             <div className="mt-4">
                                 <Notice variant="warning">
-                                    Al aprobarlo, el inventario queda como se contó, lote por lote: antes de firmar se ve
-                                    exactamente qué entra y qué sale. Lo que quedó sin contar no se toca. Si quieres
-                                    revisar un renglón, recuéntalo ahora.
+                                    Al aprobarlo, el inventario queda como se contó, lote por lote. Antes de firmar verás qué entra y qué sale. Lo que no se contó no cambia. Si quieres revisar algo, recuéntalo ahora.
                                 </Notice>
                             </div>
                         )}
@@ -2508,7 +2500,7 @@ export default function ConteoDetailView() {
                                 {conteo.ajuste_erp_aplicado ? (
                                     <Notice variant="success" icon={ClipboardCheck}>
                                         Ajuste aplicado el {fmtDateTime(conteo.ajuste_erp_at)}.
-                                        {conteo.ajuste_erp_nota ? ` — "${conteo.ajuste_erp_nota}"` : ''}
+                                        {conteo.ajuste_erp_nota ? ` Nota: "${conteo.ajuste_erp_nota}"` : ''}
                                     </Notice>
                                 ) : conteo.total_diferencias > 0 ? (
                                     <Notice
@@ -2520,11 +2512,10 @@ export default function ConteoDetailView() {
                                             </Button>
                                         )}
                                     >
-                                        Ajuste pendiente de aplicar: {conteo.total_diferencias} línea(s).
-                                        Descarga la hoja o el CSV, aplícalo, y regístralo aquí.
+                                        Falta aplicar el ajuste de {conteo.total_diferencias} producto(s). Descarga la hoja o el CSV, aplícalo y márcalo aquí.
                                     </Notice>
                                 ) : (
-                                    <Notice variant="success">Sin diferencias: no hay ajuste que aplicar.</Notice>
+                                    <Notice variant="success">No hay diferencias. No hay nada que ajustar.</Notice>
                                 )}
                             </div>
                         )}
@@ -2533,8 +2524,8 @@ export default function ConteoDetailView() {
                             <div className="mt-4">
                                 <Notice variant={conteo.pendientes_como_cero ? 'warning' : 'danger'}>
                                     {conteo.pendientes_como_cero
-                                        ? <>Al cerrar, <strong className="tabular-nums">{conteo.total_pendientes}</strong> renglón(es) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.</>
-                                        : <>Conteo parcial: <strong className="tabular-nums">{conteo.total_pendientes}</strong> renglón(es) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.</>}
+                                        ? <>Al cerrar, <strong className="tabular-nums">{conteo.total_pendientes}</strong> producto(s) sin contar quedaron como no ubicados (en 0). Su faltante está en los montos.</>
+                                        : <>Conteo parcial: <strong className="tabular-nums">{conteo.total_pendientes}</strong> producto(s) quedaron sin contar y no están en los montos. No es un cuadre completo.</>}
                                 </Notice>
                             </div>
                         )}
@@ -2600,17 +2591,13 @@ export default function ConteoDetailView() {
 
                 {!verSistema && (
                     <Notice variant="info" icon={EyeOff}>
-                        <strong>Conteo ciego.</strong> Anota lo que ves en el estante, no lo que el sistema espera:
-                        la existencia del sistema y la diferencia no se muestran porque no salen de la base para tu rol.
-                        Se ven cuando el conteo se finaliza, o con el permiso «Ver Existencia del Sistema».
+                        <strong>Conteo ciego.</strong> Anota lo que ves en el estante. No verás la existencia del sistema ni la diferencia hasta que se finalice el conteo.
                     </Notice>
                 )}
 
                 {recuento && (
                     <Notice variant="info" icon={ShieldCheck}>
-                        Recuento a ciegas sobre los renglones <strong>con diferencia</strong>, en orden de estante (por laboratorio).
-                        El campo arranca vacío y no ves el primer conteo ni el sistema hasta registrar el tuyo.
-                        No puedes recontar una línea que contaste tú mismo.
+                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. No puedes recontar lo que contaste tú.
                     </Notice>
                 )}
 
@@ -2683,9 +2670,7 @@ export default function ConteoDetailView() {
                 {enVencidos && (
                     <div className="space-y-3">
                         <Notice variant="warning" icon={AlertTriangle}>
-                            <strong>Otro estante.</strong> Lo apartado por vencer se recorre y se cuenta
-                            aparte de la bodega. Un producto puede estar en los dos: el número que anotes
-                            aquí es sólo el de esta área.
+                            <strong>Otro estante.</strong> Lo vencido se cuenta aparte. Si un producto está en los dos lugares, anota aquí solo lo de esta área.
                         </Notice>
                         <ListaDeConteo
                             enFichas={enFichas}
@@ -2809,8 +2794,8 @@ export default function ConteoDetailView() {
                 // conteo recién armado y tirar uno con 800 renglones contados
                 // no son la misma decisión, aunque el botón sea el mismo.
                 message={conteoEmpezado || hasResults
-                    ? `Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'}: ${formatQty(resumen?.total_items ?? 0)} renglón(es), de los cuales ${formatQty(resumen?.contados ?? 0)} ya están contados, y el historial de quién contó cada uno. No se puede deshacer.`
-                    : `Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'} con sus ${formatQty(resumen?.total_items ?? 0)} renglón(es). Todavía no se ha contado ninguno. No se puede deshacer.`}
+                    ? `Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'}: ${formatQty(resumen?.total_items ?? 0)} producto(s), de los cuales ${formatQty(resumen?.contados ?? 0)} ya están contados, y el historial de quién contó cada uno. No se puede deshacer.`
+                    : `Se borra el conteo de ${conteo?.branches?.name || 'la sucursal'} con sus ${formatQty(resumen?.total_items ?? 0)} producto(s). Todavía no se ha contado ninguno. No se puede deshacer.`}
                 confirmText="Eliminar conteo"
                 isProcessing={busy}
             />
@@ -2842,7 +2827,7 @@ export default function ConteoDetailView() {
                 onClose={() => setPromptAprobarOpen(false)}
                 onConfirm={confirmAprobar}
                 title="Aprobar conteo"
-                message="Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo."
+                message="Queda cerrado y firmado. No puedes aprobar un conteo que finalizaste tú."
                 placeholder="Nota de aprobación (opcional)"
                 confirmText="Aprobar"
                 cancelText="Cancelar"
@@ -2854,7 +2839,7 @@ export default function ConteoDetailView() {
                 onClose={() => setPromptAjusteOpen(false)}
                 onConfirm={confirmMarcarAjuste}
                 title="Registrar ajuste aplicado"
-                message="Esto no modifica existencias — el portal no escribe stock. Solo deja constancia de que el ajuste ya se aplicó, para que este conteo no quede como pendiente."
+                message="Esto no cambia la existencia. Solo anota que el ajuste ya se aplicó, para que el conteo no quede pendiente."
                 placeholder="Referencia del ajuste (opcional)"
                 confirmText="Registrar"
                 cancelText="Cancelar"

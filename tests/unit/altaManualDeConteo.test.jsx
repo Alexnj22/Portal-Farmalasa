@@ -144,7 +144,7 @@ describe('AddManualItemForm — el código entra por el lector', () => {
         const container = await montar();
         pasarElLector('0000000000000');
         await waitFor(() => {
-            expect(container.textContent).toContain('no está en el catálogo');
+            expect(container.textContent).toContain('no está registrado');
         }, { timeout: 3000 });
     });
 

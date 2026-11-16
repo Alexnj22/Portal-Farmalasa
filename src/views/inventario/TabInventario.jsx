@@ -113,7 +113,7 @@ function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false, on
                 <TablaUbicaciones filas={regulares} titulo={hayVencidos ? 'Inventario regular' : null} />
             )}
             {hayVencidos && (
-                <TablaUbicaciones filas={vencidos} titulo="Ubicación vencidos" vencidos />
+                <TablaUbicaciones filas={vencidos} titulo="Área de vencidos" vencidos />
             )}
         </>
     );
@@ -327,7 +327,7 @@ export default function TabInventario({ searchTerm = '' }) {
             setExpandedVencidos(prev => ({ ...prev, [key]: vData || [] }));
         } catch (e) {
             console.error('TabInventario: detalle de inventario fallo:', e);
-            useToastStore.getState().showToast('No se pudo abrir el detalle', 'El inventario del producto no cargo. Intenta de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo abrir el detalle', 'El inventario del producto no cargó. Intenta de nuevo.', 'error');
         } finally {
             setExpandLoading(prev => { const s = new Set(prev); s.delete(key); return s; });
         }
@@ -397,7 +397,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     {isBodega && (
                         <StatCard
                             icon={PackageX} iconBg={filterAreaVenc ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
-                            label="Área vencidos" sub="ubicación bodega"
+                            label="Área de vencidos" sub="ubicación bodega"
                             value={loading ? '–' : Object.keys(vencidosMap).length.toLocaleString('es-SV')} valueCls="text-danger-text"
                             tono="danger" active={filterAreaVenc}
                             onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}

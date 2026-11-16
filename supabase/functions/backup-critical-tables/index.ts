@@ -13,7 +13,7 @@ const TABLES = [
   "product_stock_params", "dispatch_rules", "stock_config", "minmax_ignored",
   "product_categories", "erp_sucursal_map",
   "kiosk_devices", "overtime_bank", "payroll_periods", "payroll_entries",
-  "vacation_plan_headers", "vacation_plans", "audit_logs",
+  "vacation_plan_headers", "vacation_plans",
   // ── Bitácoras: el registro que la norma manda conservar MÁS tiempo ──────
   // RTS 11.02.04:24 §6.2.16 conserva temperatura y humedad **2 años**, y la
   // Guía de Verificación de BPAD 3.12 la dispensación bajo receta 1 año. No
@@ -61,6 +61,11 @@ const TABLES = [
   // que `backup_dump_table` (migración 20261113161226).
   "inyeccion_libro", "cumplimiento_registros", "regencia_visitas",
   "libro_lote_revisiones", "antibioticos_aware", "antibioticos_producto",
+  // ── La más grande, AL FINAL ─────────────────────────────────────────────
+  // ~10k filas nuevas por semana. El 2026-11-15 la función murió por memoria
+  // justo acá, y como iba en el medio se llevó todas las bitácoras de atrás.
+  // Si alguna vez vuelve a reventar, que sea después de lo que la norma exige.
+  "audit_logs",
 ];
 
 const RETENTION_DAYS = 60;
@@ -68,8 +73,31 @@ const RETENTION_DAYS = 60;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-async function gzip(data: string): Promise<Uint8Array> {
-  const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"));
+/**
+ * Vuelca una tabla ya comprimida, SIN parsear el JSON.
+ *
+ * Hasta el 2026-11-15 se hacía `admin.rpc()` → objeto en memoria →
+ * `JSON.stringify` → Blob → gzip: cuatro copias de la tabla a la vez, y con
+ * audit_logs (57.5k filas) la función murió con «Memory limit exceeded». Ahora
+ * el cuerpo de la respuesta de PostgREST pasa directo al gzip, así que en
+ * memoria sólo queda el archivo comprimido. `backup_dump_table` devuelve `json`
+ * (no `jsonb`) para que el texto salga tal cual.
+ */
+async function dumpGzip(supabaseUrl: string, serviceKey: string, table: string): Promise<Uint8Array> {
+  const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/backup_dump_table`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({ p_table: table }),
+    signal: AbortSignal.timeout(120_000),
+  });
+  if (!resp.ok || !resp.body) {
+    throw new Error(`HTTP ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+  }
+  const stream = resp.body.pipeThrough(new CompressionStream("gzip"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -91,10 +119,12 @@ Deno.serve(async (req: Request) => {
     // 1. Exportar cada tabla (RPC con whitelist, solo service_role)
     for (const table of TABLES) {
       try {
-        const { data, error } = await admin.rpc("backup_dump_table", { p_table: table });
-        if (error) throw new Error(error.message);
-        const rows = Array.isArray(data) ? data.length : 0;
-        const compressed = await gzip(JSON.stringify(data ?? []));
+        const compressed = await dumpGzip(supabaseUrl, serviceKey, table);
+        // El conteo ya no sale del array (no se parsea): se pide aparte.
+        const { count, error: errCount } = await admin.from(table)
+          .select("*", { count: "exact", head: true });
+        if (errCount) console.error(`[backup-critical-tables] conteo ${table}:`, errCount.message);
+        const rows = count ?? null;
         const path = `${today}/${table}.json.gz`;
         const { error: upErr } = await admin.storage.from("backups")
           .upload(path, compressed, { contentType: "application/gzip", upsert: true });

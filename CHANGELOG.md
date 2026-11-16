@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1548.5 — Respaldo semanal: ya no muere por memoria con audit_logs
+
+- El respaldo del domingo 15-nov murió con «Memory limit exceeded» al llegar a
+  `audit_logs` (57.5k filas, ~10k nuevas por semana): quedaron 22 de 42 tablas
+  y ninguna bitácora. El aviso «Sync backup sin correr» del lunes era eso.
+- `backup_dump_table` devuelve `json` (`json_agg`) y la edge function pasa el
+  cuerpo de la respuesta directo al gzip, sin parsearlo: en memoria sólo queda
+  el archivo comprimido. `audit_logs` va al final de la lista.
+- Corrido a mano el 16-nov: 42/42 tablas, 6.3 MB.
+
 ## v2.1548.4 — Ninguna tarjeta del Inicio se ensancha a más de 2 columnas
 
 - El empacado en renglones llenos ensanchaba tarjetas hasta 4 columnas

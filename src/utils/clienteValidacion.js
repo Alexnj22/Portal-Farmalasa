@@ -318,3 +318,20 @@ export function giroDelCatalogo(texto, opciones) {
     if (!k || !opciones?.length) return null;
     return opciones.find(o => claveGiro(o.value) === k)?.value ?? null;
 }
+
+
+/**
+ * Lo que se buscó, como datos para empezar una ficha nueva (nació en el
+ * Inicio; desde 2026-11-16 también en Preventa: «si no lo encuentra, que
+ * sugiera crearlo, así ya tienes ese dato»). 9 dígitos = DUI, 8 = teléfono,
+ * sin dígitos = nombre (en mayúscula, como se guarda). Otra cosa: nada.
+ */
+export function datosDeLoBuscado(texto) {
+    const t = String(texto ?? '').trim();
+    const d = t.replace(/\D/g, '');
+    if (!t) return {};
+    if (/^[\d\s-]+$/.test(t) && d.length === 9) return { dui: `${d.slice(0, 8)}-${d.slice(8)}` };
+    if (/^[\d\s-]+$/.test(t) && d.length === 8) return { phone: `${d.slice(0, 4)}-${d.slice(4)}` };
+    if (/\d/.test(t)) return {};
+    return { name: t.toUpperCase() };
+}

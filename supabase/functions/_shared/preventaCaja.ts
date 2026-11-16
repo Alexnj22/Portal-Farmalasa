@@ -258,17 +258,28 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
     let unidades = fila.unidades;
     let precios = fila.precios;
     if (!pres) throw new Error(`«${r.nombre}» no tiene presentación en la caja.`);
-    if (unidades !== r.factor) {
-      let hallada = false;
+    // Dos presentaciones con las mismas unidades y distinta viñeta (2026-11-16:
+    // CAJA $10.61 y CAJA $10.65 del mismo producto) se distinguen por sus
+    // precios: va la que tiene el precio de la reserva Y su viñeta. Sin
+    // ninguna que tenga las dos, la que tenga el precio; si no, la primera.
+    const encaja = (ps: { valor: number }[]) =>
+      (ps.some((x) => igual(x.valor, r.precio)) ? 1 : 0) + (ps.some((x) => igual(x.valor, r.precio_normal)) ? 1 : 0);
+    if (unidades !== r.factor || encaja(precios) < 2) {
+      let mejor: { pres: typeof pres; unidades: number; precios: typeof precios; puntos: number } | null =
+        unidades === r.factor ? { pres, unidades, precios, puntos: encaja(precios) } : null;
       for (const p of fila.presentaciones) {
+        if (mejor && p.id === mejor.pres.id) continue;
         const d = JSON.parse(await http.post("venta.php", {
           process: "getpresentacion", id_presentacion: p.id, cant: String(r.cantidad), precio_aut: "",
         }));
-        if (num(d?.unidad) === r.factor) {
-          pres = p; unidades = num(d.unidad); precios = leerPrecios(String(d?.select_rank ?? "")); hallada = true; break;
-        }
+        if (num(d?.unidad) !== r.factor) continue;
+        const ps = leerPrecios(String(d?.select_rank ?? ""));
+        const puntos = encaja(ps);
+        if (!mejor || puntos > mejor.puntos) mejor = { pres: p, unidades: num(d.unidad), precios: ps, puntos };
+        if (puntos === 2) break;
       }
-      if (!hallada) throw new Error(`«${r.nombre}» no tiene en la caja una presentación de ${r.factor} unidades.`);
+      if (!mejor) throw new Error(`«${r.nombre}» no tiene en la caja una presentación de ${r.factor} unidades.`);
+      pres = mejor.pres; unidades = mejor.unidades; precios = mejor.precios;
     }
 
     const necesarias = r.cantidad * unidades;

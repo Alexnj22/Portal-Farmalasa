@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1559.3 — Preventa: dos viñetas del mismo empaque y crear cliente con lo buscado
+
+_(pendiente de redactar)_
+
 ## v2.1559.2 — Lenguaje: decisiones en la tabla
 
 - `docs/reglas/como-habla-el-portal.md`: Productos de la factura, jefe inmediato sólo en la encuesta de clima, «la farmacia» para el cliente, cliente en vez de ficha.

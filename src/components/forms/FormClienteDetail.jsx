@@ -564,7 +564,7 @@ const FormClienteDetail = ({ formData }) => {
                                         : form.categoria === 'Extranjero'
                                             ? 'Nombre y apellido, como en el pasaporte. Se guarda en mayúscula'
                                             : esNuevo ? 'Nombre y apellido, como en el DUI. Se guarda en mayúscula' : 'Se guarda en mayúscula'}
-                                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                                    onChange={e => setForm(p => ({ ...p, name: e.target.value.toUpperCase() }))}
                                 />
                             </div>
                             {!esNuevo && <div>
@@ -703,7 +703,7 @@ const FormClienteDetail = ({ formData }) => {
                                     required={requeridos.has('direccion')}
                                     value={form.direccion} readOnly={!editable}
                                     hasError={!!errorDe('direccion')} errorMessage={errorDe('direccion')}
-                                    onChange={e => setForm(p => ({ ...p, direccion: e.target.value }))}
+                                    onChange={e => setForm(p => ({ ...p, direccion: e.target.value.toUpperCase() }))}
                                 />
                             </div>
                             <div>

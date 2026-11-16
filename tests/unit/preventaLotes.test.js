@@ -55,3 +55,27 @@ describe('queCompletar', () => {
         expect(queCompletar('consumidor_final', { nit: '0614' }).campos).not.toContain('dui');
     });
 });
+
+import { opcionesDePresentacion, lineasParaCotizar } from '@nucleo/utils/preventaDirecta';
+
+describe('opcionesDePresentacion', () => {
+    const fila = { id_presentacion: 227, presentaciones: [
+        { factor: 10, tipo: 'BLISTER', id_presentacion: 36, vineta: 1.06 },
+        { factor: 100, tipo: 'CAJA', id_presentacion: 227, vineta: 10.65 },
+        { factor: 100, tipo: 'CAJA', id_presentacion: 9, vineta: 10.61 },
+    ] };
+    it('dos viñetas del mismo empaque salen las dos', () => {
+        const o = opcionesDePresentacion(fila, { factor: 100 });
+        expect(o.options.map((x) => x.label)).toEqual(['BLISTER', 'CAJA · viñeta 10.65', 'CAJA · viñeta 10.61']);
+        expect(o.value).toBe('100:227');
+    });
+    it('elegir la otra viñeta la pide a la base', () => {
+        const o = opcionesDePresentacion(fila, { factor: 100 });
+        const c = o.leer('100:9');
+        expect(c).toEqual({ factor: 100, presentacion: 9 });
+        expect(lineasParaCotizar([{ producto_id: 1, cantidad: 1, ...c }])[0].presentacion).toBe(9);
+    });
+    it('una sola por empaque no lleva id', () => {
+        expect(opcionesDePresentacion(fila, { factor: 10 }).leer('10')).toEqual({ factor: 10, presentacion: null });
+    });
+});

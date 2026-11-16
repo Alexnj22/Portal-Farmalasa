@@ -33,11 +33,12 @@ import {
 } from '@nucleo/data/preventas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
-    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
+    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
     porQueEsaLista, problemasDeVenta, sePuedeAnular, sePuedeCorregir, totalesDe, vencePronto,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { datosDeLoBuscado } from '@nucleo/utils/clienteValidacion';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -254,9 +255,9 @@ export default function PreventaView({ openModal }) {
             onSaved: () => setVuelta((n) => n + 1),
         });
     };
-    const crearCliente = () => {
+    const crearCliente = (buscado = '') => {
         openModal?.('editCliente', {
-            nombre: 'Nuevo cliente', canEdit: true,
+            nombre: 'Nuevo cliente', canEdit: true, inicial: datosDeLoBuscado(buscado),
             onSaved: (r) => { if (r?.id) elegirCliente({ id: r.id, name: r.name }); setVuelta((n) => n + 1); },
         });
     };
@@ -771,7 +772,7 @@ function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, pu
                                 placeholder="Nombre, DUI, NIT o teléfono" ariaLabel="Buscar cliente" onKeyDown={nav.onKeyDown}
                                 combobox={{ lista: idLista, abierto, activo: abierto ? `${idLista}-${nav.activo}` : null }} />
                         </div>
-                        {puedeCrear && <Button variant="secondary" icon={UserPlus} onClick={onCrear}>Nuevo</Button>}
+                        {puedeCrear && <Button variant="secondary" icon={UserPlus} onClick={() => onCrear(q)}>Nuevo</Button>}
                     </div>
                     {abierto && (
                         <ul id={idLista} role="listbox" aria-label="Clientes encontrados"
@@ -794,9 +795,19 @@ function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, pu
                     )}
                     <p className="text-micro text-content-3">
                         {!buscando && q.trim().length >= 3 && !abierto
-                            ? <>No aparece «{q.trim()}».{puedeCrear ? ' Créalo con «Nuevo».' : ''}</>
+                            ? <>No aparece «{q.trim()}».</>
                             : <>Sin cliente va como frecuente, con precio {nombreDeLista(cotizacion?.lista ?? 'descuento_1')}. Con cliente gana su precio y sus puntos.</>}
                     </p>
+                    {/* No está: se ofrece crearlo con lo que ya se escribió (DUI, teléfono o nombre). */}
+                    {puedeCrear && !buscando && q.trim().length >= 3 && !abierto && (
+                        <Button size="sm" variant="secondary" icon={UserPlus} onClick={() => onCrear(q)}>
+                            {(() => {
+                                const d = datosDeLoBuscado(q);
+                                return d.dui ? `Crear cliente con DUI ${d.dui}` : d.phone ? `Crear cliente con teléfono ${d.phone}`
+                                    : d.name ? `Crear «${d.name}»` : 'Crear cliente';
+                            })()}
+                        </Button>
+                    )}
                 </>
             )}
         </section>
@@ -1071,8 +1082,8 @@ function BuscarProducto({ onElegir }) {
 // Con problema: borde y fondo rojos, el campo culpable marcado, y debajo qué
 // pasa y qué hacer, con sus botones.
 function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAutorizar, listaCliente, onCambiar, onQuitar, onListo, onResolver }) {
-    const presentaciones = (fila?.presentaciones?.length ? fila.presentaciones : [{ factor: linea.factor, tipo: fila ? 'Sin precio' : '…' }])
-        .map((p) => ({ value: String(p.factor), label: p.tipo }));
+    const pres = opcionesDePresentacion(fila, linea);
+    const presentaciones = pres.options;
     const cant = Number(linea.cantidad) || 0;
     const opciones = opcionesDePrecio(fila?.precios);
     // El precio que le toca al cliente sale ya marcado; elegir otro lo
@@ -1095,7 +1106,7 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             {fila && <span className={malaCantidad ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
                             {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} aquí</span>}
                             <Lotes lotes={lotes} cantidad={cant} factor={linea.factor} nombre={nombre} elegido={linea.lote}
-                                presentacion={presentaciones.find((p) => p.value === String(linea.factor))?.label}
+                                presentacion={fila?.tipo ?? presentaciones.find((p) => p.value === pres.value)?.label}
                                 onElegir={(lote) => onCambiar({ lote })} />
                         </p>
                     </div>
@@ -1103,8 +1114,8 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                 <span className="md:hidden"><Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre}`} onClick={onQuitar} /></span>
                 <div className="max-md:col-span-2 max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-2 md:contents">
                     <div className="max-md:w-32 md:w-full min-w-0" data-col="0">
-                        <LiquidSelect compact clearable={false} value={String(linea.factor)} options={presentaciones} ariaLabel={`Presentación de ${nombre}`}
-                            invalid={problema?.tipo === 'precio'} disabled={presentaciones.length < 2} onChange={(v) => onCambiar({ factor: Number(v) || 1 })} />
+                        <LiquidSelect compact clearable={false} value={pres.value} options={presentaciones} ariaLabel={`Presentación de ${nombre}`}
+                            invalid={problema?.tipo === 'precio'} disabled={presentaciones.length < 2} onChange={(v) => onCambiar(pres.leer(v))} />
                     </div>
                     <div className="flex items-center justify-center gap-0.5 min-w-0" data-col="1">
                         <Button size="xs" variant="ghost" icon={Minus} iconOnly aria-label="Una menos" tabIndex={-1}

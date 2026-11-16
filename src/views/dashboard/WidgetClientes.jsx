@@ -7,6 +7,7 @@ import SearchInput from '../../components/common/SearchInput';
 import Notice from '../../components/common/Notice';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { datosDeLoBuscado } from '@nucleo/utils/clienteValidacion';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { buscarClientes, mensajeDeError } from '@nucleo/data/customers';
 
@@ -23,16 +24,6 @@ import { buscarClientes, mensajeDeError } from '@nucleo/data/customers';
 const TOPE = 6;
 
 /** Lo buscado, puesto en el campo que le toca. */
-function inicialDe(texto) {
-    const t = String(texto ?? '').trim();
-    const d = t.replace(/\D/g, '');
-    if (!t) return {};
-    if (/^[\d\s-]+$/.test(t) && d.length === 9) return { dui: `${d.slice(0, 8)}-${d.slice(8)}` };
-    if (/^[\d\s-]+$/.test(t) && d.length === 8) return { phone: `${d.slice(0, 4)}-${d.slice(4)}` };
-    if (/\d/.test(t)) return {};
-    return { name: t.toUpperCase() };
-}
-
 export default function WidgetClientes({ openModal }) {
     const { hasPermission } = useAuth();
     const canCrear = hasPermission('clientes_crear');
@@ -68,7 +59,7 @@ export default function WidgetClientes({ openModal }) {
     };
     const nuevo = () => {
         openModal?.('editCliente', {
-            nombre: 'Nuevo cliente', canEdit: true, inicial: inicialDe(q),
+            nombre: 'Nuevo cliente', canEdit: true, inicial: datosDeLoBuscado(q),
             onSaved: () => setQ(''),
         });
     };
@@ -104,7 +95,7 @@ export default function WidgetClientes({ openModal }) {
             </div>
             {canCrear && (
                 <Button size="sm" variant={filas?.length === 0 ? 'primary' : 'secondary'} icon={UserPlus} onClick={nuevo}>
-                    {filas?.length === 0 && Object.keys(inicialDe(q)).length ? 'Crearlo con esto' : 'Nuevo cliente'}
+                    {filas?.length === 0 && Object.keys(datosDeLoBuscado(q)).length ? 'Crearlo con esto' : 'Nuevo cliente'}
                 </Button>
             )}
         </div>

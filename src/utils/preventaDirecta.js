@@ -64,11 +64,40 @@ export function lineaNueva(producto, factor = 1) {
     };
 }
 
-/** Lo que viaja a la base: sólo producto, presentación, cantidad y la lista autorizada. */
+/** Lo que viaja a la base: producto, presentación (y su viñeta, si se eligió), cantidad y la lista autorizada. */
 export const lineasParaCotizar = (lineas) => (lineas ?? []).map((l) => ({
     producto_id: l.producto_id, factor: l.factor, cantidad: Number(l.cantidad) || 0,
     ...(l.lista ? { lista: l.lista } : {}),
+    ...(l.presentacion ? { presentacion: l.presentacion } : {}),
 }));
+
+/**
+ * Las opciones de presentación de una línea (2026-11-16). Dos con las mismas
+ * unidades son dos viñetas del mismo empaque (CAJA $10.61 y CAJA $10.65): se
+ * muestran las dos con su viñeta y el valor lleva el id para distinguirlas.
+ * `leer(valor)` devuelve el cambio para la línea: `{ factor, presentacion }`.
+ */
+export function opcionesDePresentacion(fila, linea) {
+    const lista = fila?.presentaciones?.length ? fila.presentaciones : null;
+    if (!lista) {
+        const v = String(linea.factor);
+        return { options: [{ value: v, label: fila ? 'Sin precio' : '…' }], value: v, leer: () => ({}) };
+    }
+    const cuantas = new Map();
+    for (const p of lista) cuantas.set(p.factor, (cuantas.get(p.factor) ?? 0) + 1);
+    const doble = (f) => (cuantas.get(f) ?? 0) > 1;
+    const options = lista.map((p) => ({
+        value: doble(p.factor) ? `${p.factor}:${p.id_presentacion}` : String(p.factor),
+        label: doble(p.factor) ? `${p.tipo} · viñeta ${Number(p.vineta).toFixed(2)}` : p.tipo,
+    }));
+    const f = Number(linea.factor) || 1;
+    const value = doble(f) ? `${f}:${linea.presentacion ?? fila?.id_presentacion ?? lista.find((p) => p.factor === f)?.id_presentacion}` : String(f);
+    const leer = (v) => {
+        const [fa, id] = String(v ?? '').split(':');
+        return { factor: Number(fa) || 1, presentacion: id ? Number(id) : null };
+    };
+    return { options, value, leer };
+}
 
 /** Agrega un producto; si ya está en esa presentación, le suma 1. */
 export function agregarLinea(lineas, producto, factor = 1) {

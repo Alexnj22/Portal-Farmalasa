@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1550.5 — Datos de mercado: «Elegir otro» no muestra muestras médicas ni presentaciones institucionales u hospitalarias
+
+La búsqueda en el catálogo de la SRS (función `srs-datos-mercado`, acción
+«buscar») descarta las filas cuya presentación es muestra médica,
+institucional u hospitalaria: la farmacia declara sólo la presentación
+comercial. PRONOL 550 x100, confirmado con la hospitalaria, volvió a pendiente
+con su presentación comercial.
+
+
 ## v2.1550.4 — Datos de mercado: el emparejador descarta presentaciones institucionales y hospitalarias
 
 La farmacia declara a la SRS lo que vende al público, así que la pareja de un

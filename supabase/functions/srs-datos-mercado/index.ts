@@ -38,6 +38,7 @@ import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmploy
 const BASE = "https://datosmercado.srs.gob.sv/";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
 const PLAZO_MS = 30_000;
+const NO_COMERCIAL = /MUESTRA|INSTITUCIONAL|HOSPITALARI/i;
 
 type Admin = ClienteAdmin;
 let secretosCache: Record<string, string> | null = null;
@@ -164,7 +165,11 @@ Deno.serve(async (req) => {
       if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
       if (!permiso.puede) return responder({ ok: false, error: "No tienes permiso para ver los datos de mercado." }, 403);
 
-      const productos = await buscarEnCatalogo(admin, q);
+      // La farmacia declara lo que vende al público: ni muestras médicas ni
+      // presentaciones institucionales u hospitalarias (2026-11-16, lo pidió
+      // el usuario al ver parejas con la institucional).
+      const productos = (await buscarEnCatalogo(admin, q))
+        .filter((p) => !NO_COMERCIAL.test(p.presentacion ?? ""));
       return responder({ ok: true, productos });
     }
 

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1548.4 — Ninguna tarjeta del Inicio se ensancha a más de 2 columnas
+
+- El empacado en renglones llenos ensanchaba tarjetas hasta 4 columnas
+  («Venta por vendedor», «Precios» a todo lo ancho). Ahora el ensanche
+  automático para en 2; la que ya mide más por diseño o por elección propia
+  se respeta.
+- Para que el tope no deje huecos, un renglón que no puede repartirse lo que
+  sobra acepta a su lado una tarjeta una fila más baja (y la estira).
+
 ## v2.1548.3 — El Inicio acomodado se arma en renglones llenos
 
 - Subir cada tarjeta en su columna (v2.1548.2) no alcanzó: con widgets

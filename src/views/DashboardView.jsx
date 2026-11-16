@@ -333,6 +333,8 @@ const getWidgetSize = (id) => {
  * `getEffectiveCols`, así que si sólo devolviera posiciones la rejilla diría
  * una cosa y el widget mediría otra.
  */
+const ANCHO_MAX_EMPACADO = 2;
+
 function empacarFilas(orden, medidas, gridCols) {
   const alto  = id => Math.max(medidas[id]?.rows ?? getWidgetSize(id).minRows, 1);
   const ancho = id => Math.min(Math.max(medidas[id]?.cols ?? getWidgetSize(id).minCols, 1), gridCols);
@@ -360,8 +362,13 @@ function empacarFilas(orden, medidas, gridCols) {
       // inventario» subía a 2×2 junto a los avisos —una tarjeta grande con un
       // ícono y nada más— y «Ajuste de inventario» quedaba sola, de 4×1. Así
       // las dos baldosas van juntas en un renglón y nadie se estira en alto.
+      //
+      // Salvo cuando el tope de ancho (`ANCHO_MAX_EMPACADO`) no deja que los del
+      // renglón se repartan lo que sobra: ahí la alternativa ya no es
+      // «estirar a uno», es dejar celdas vacías, y es peor.
       const menores = pendientes.filter(id => alto(id) === h - 1).length;
-      if (i === -1 && menores < 2) i = pendientes.findIndex(id => alto(id) === h - 1 && cabe(id));
+      const absorbe = ids.reduce((s, id) => s + Math.max(ancho(id), ANCHO_MAX_EMPACADO) - ancho(id), 0);
+      if (i === -1 && (menores < 2 || libre > absorbe)) i = pendientes.findIndex(id => alto(id) === h - 1 && cabe(id));
       if (i === -1) break;
       const [id] = pendientes.splice(i, 1);
       ids.push(id);
@@ -410,12 +417,25 @@ function empacarFilas(orden, medidas, gridCols) {
     // Lo que no se pudo llenar con otro widget se reparte como ancho extra,
     // desde el final: tres baldosas en cuatro columnas dejan a la última doble,
     // dos quedan mitad y mitad. Así nunca queda una celda muerta al final.
+    //
+    // Tope: el empacado nunca deja una tarjeta de más de `ANCHO_MAX_EMPACADO`
+    // columnas (2026-11-16, «nunca dejes tú por defecto una tarjeta de más de
+    // 2 de ancho»). La que ya mide más —por diseño o porque la persona la
+    // eligió así— se queda como está; lo que no se puede repartir sin pasar
+    // el tope queda como celda libre al final del renglón.
     const extra = Object.fromEntries(ids.map(id => [id, 0]));
+    const tope  = id => Math.max(ancho(id), ANCHO_MAX_EMPACADO);
     let libre = sobrante(ids);
     let i = ids.length - 1;
-    while (libre > 0) {
-      extra[ids[i]] += 1;
-      libre -= 1;
+    let sinLugar = 0;
+    while (libre > 0 && sinLugar < ids.length) {
+      if (ancho(ids[i]) + extra[ids[i]] < tope(ids[i])) {
+        extra[ids[i]] += 1;
+        libre -= 1;
+        sinLugar = 0;
+      } else {
+        sinLugar += 1;
+      }
       i = i === 0 ? ids.length - 1 : i - 1;
     }
 

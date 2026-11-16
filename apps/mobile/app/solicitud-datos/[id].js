@@ -211,7 +211,7 @@ function Cuerpo({ solicitud }) {
                 <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{c.nombre || '—'}<Text style={{ color: colorSistema.texto2 }}>{` · ${ORIGEN_DE_PERSONA[c.origen] ?? c.origen}${c.numero ? ` · ${c.numero}` : ''}`}</Text></Text>
               </Pressable>
             ))}
-            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Nueve dígitos busca un DUI, ocho un teléfono; lo demás, un nombre. Tocar a alguien llena los campos.</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Con nueve dígitos busca un DUI. Con ocho, un teléfono. Con letras, un nombre. Al tocar a alguien se llenan los campos.</Text>
           </Seccion>
         ) : null}
 
@@ -220,13 +220,13 @@ function Cuerpo({ solicitud }) {
           <Campo multiline={false} editable={!resuelta} value={f.solicitante_nombre} onChangeText={set('solicitante_nombre')} />
           <Elegir rotulo="Documento" deshabilitado={resuelta} valor={f.solicitante_documento || 'Elegir'}
             onPress={() => hoja('Documento', [...DOCUMENTOS_DE_IDENTIDAD.map((d) => ({ value: d.value, label: d.label })), { value: 'NIT', label: 'NIT' }], set('solicitante_documento'))} />
-          <Rotulo texto={errores.malDui ? 'Número — ese DUI no es válido' : 'Número'} error={errores.malDui} />
+          <Rotulo texto={errores.malDui ? 'Número (ese DUI no es válido)' : 'Número'} error={errores.malDui} />
           <Campo multiline={false} editable={!resuelta} value={f.solicitante_numero} onChangeText={set('solicitante_numero')} keyboardType="numbers-and-punctuation" />
           <Rotulo texto="Dirección" />
           <Campo multiline={false} editable={!resuelta} value={f.solicitante_direccion} onChangeText={set('solicitante_direccion')} />
-          <Rotulo texto={errores.malTel ? 'Teléfono — debe tener ocho dígitos' : 'Teléfono'} error={errores.malTel} />
+          <Rotulo texto={errores.malTel ? 'Teléfono (debe tener ocho dígitos)' : 'Teléfono'} error={errores.malTel} />
           <Campo multiline={false} editable={!resuelta} value={f.solicitante_telefono} onChangeText={set('solicitante_telefono')} keyboardType="phone-pad" />
-          <Rotulo texto={errores.malCorreo ? 'Correo — no tiene forma de correo' : 'Correo'} error={errores.malCorreo} />
+          <Rotulo texto={errores.malCorreo ? 'Correo (no tiene forma de correo)' : 'Correo'} error={errores.malCorreo} />
           <Campo multiline={false} editable={!resuelta} value={f.solicitante_correo} onChangeText={set('solicitante_correo')} keyboardType="email-address" autoCapitalize="none" />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Solicita por otra persona, a quien representa</Text>
@@ -270,7 +270,7 @@ function Cuerpo({ solicitud }) {
           <Elegir rotulo="Documento cotejado" deshabilitado={resuelta}
             valor={DOCUMENTOS_DE_IDENTIDAD.find((d) => d.value === f.identidad_documento)?.label ?? 'Elegir'}
             onPress={() => hoja('Documento cotejado', DOCUMENTOS_DE_IDENTIDAD, set('identidad_documento'))} />
-          <Rotulo texto={errores.malIdent ? 'Número cotejado — ese DUI no es válido' : 'Número del documento cotejado'} error={errores.malIdent} />
+          <Rotulo texto={errores.malIdent ? 'Número cotejado (ese DUI no es válido)' : 'Número del documento cotejado'} error={errores.malIdent} />
           <Campo multiline={false} editable={!resuelta} value={f.identidad_numero} onChangeText={set('identidad_numero')} keyboardType="numbers-and-punctuation" />
         </Seccion>
 
@@ -278,7 +278,7 @@ function Cuerpo({ solicitud }) {
           {!hallazgo ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{resuelta ? 'Busca a la persona desde el portal para volver a armar la respuesta.' : 'Todavía no se ha buscado. Usa el buscador de arriba.'}</Text> : (
             <>
               {hallazgo.fallaron?.length ? <Aviso tono="freno" texto={`No se pudo consultar ${hallazgo.fallaron.join(', ')}. Esta búsqueda está incompleta: no la uses para responder que no hay información.`} /> : null}
-              {hallazgo.porNombre ? <Aviso tono="cuidado" texto="Se buscó por nombre. Un nombre trae homónimos: comprueba que la ficha sea la de esta persona antes de entregarle nada." /> : null}
+              {hallazgo.porNombre ? <Aviso tono="cuidado" texto="Se buscó por nombre y puede haber homónimos. Comprueba que los datos sean de esta persona antes de entregarle nada." /> : null}
               {(hallazgo.donde ?? []).map((d, i) => (
                 <Dato key={d.clave} primero={!i} rotulo={d.rotulo}
                   valor={d.falló ? 'no se pudo consultar' : !d.filas.length ? 'sin coincidencias' : d.filas.length === 1 ? (comoPersona(d.clave, d.filas[0]).nombre || '1 coincidencia') : `${d.filas.length} coincidencias`} />
@@ -291,20 +291,20 @@ function Cuerpo({ solicitud }) {
 
         {!resuelta && solicitud.recibida_at ? (
           <Seccion titulo="Trámite">
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Prórroga, prevención, negativa y aviso a terceros: cada paso queda registrado con lo que se le comunicó.</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Prórroga, prevención, negativa y aviso a terceros. Cada paso queda registrado con lo que se le comunicó.</Text>
             <TramiteDeLey solicitud={solicitud} onCambio={() => { clearDraft(borrador); router.back(); }} />
           </Seccion>
         ) : null}
 
         {resuelta && !solicitud.negada && (solicitud.derechos ?? []).includes('cancelacion') ? (
           <Seccion titulo="Anonimizar los datos del cliente">
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ejecuta la cancelación resuelta: la ficha queda sin datos que identifiquen a la persona, en el portal y en la caja. Lo que exige otra ley se conserva.</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Ejecuta la cancelación resuelta. Se quitan los datos que identifican a la persona, en el portal y en la caja. Lo que exige otra ley se conserva.</Text>
             <AnonimizarCliente solicitud={solicitud} />
           </Seccion>
         ) : null}
 
         <Seccion titulo="Resolución">
-          {solicitud.negada && solicitud.motivo_negativa ? <Aviso tono="cuidado" texto={`Negada — ${solicitud.motivo_negativa}`} /> : null}
+          {solicitud.negada && solicitud.motivo_negativa ? <Aviso tono="cuidado" texto={`Negada: ${solicitud.motivo_negativa}`} /> : null}
           <Rotulo texto="Qué se resolvió y con qué fundamento" />
           <Campo editable={!resuelta} value={f.resolucion} onChangeText={set('resolucion')} style={{ minHeight: 90 }} />
           <Rotulo texto="Notas internas (opcional)" />

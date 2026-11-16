@@ -136,7 +136,7 @@ export default function SeguroDeVida() {
                     {pagoVigente.comprobante_url ? <Enlace texto="Ver el listado de la aseguradora" onPress={() => abrir(pagoVigente.comprobante_url)} /> : null}
                   </>
                 ) : (
-                  <Aviso tono="cuidado" texto={`Todavía no se registró el pago de ${vigente}. Cuando llegue el listado de la aseguradora, súbelo y la app deja a cada persona como solvente.${prima != null ? ` Estimado: ${activos.length} personas × ${dinero(prima)} = ${dinero(prima * activos.length)}.` : ''}`} />
+                  <Aviso tono="cuidado" texto={`Todavía no se registró el pago de ${vigente}. Cuando llegue el listado de la aseguradora, súbelo aquí.${prima != null ? ` Estimado: ${activos.length} personas × ${dinero(prima)} = ${dinero(prima * activos.length)}.` : ''}`} />
                 )}
                 {puedeEditar ? (
                   <BotonGrande texto={pagoVigente ? 'Corregir listado' : `Registrar pago ${vigente}`} borde={!!pagoVigente} color={MARCA.azulClaro}
@@ -152,7 +152,7 @@ export default function SeguroDeVida() {
                   <Cifra rotulo="Sin cubrir" valor={pagoVigente ? String(activos.length - solventes) : '—'} color={pagoVigente && activos.length - solventes > 0 ? MARCA.rojo : undefined} />
                   <Cifra rotulo="Certificados" valor={`${activos.length - sinCertificado}/${activos.length}`} color={sinCertificado ? MARCA.ambar : MARCA.verde} />
                 </View>
-                {sinCertificado > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 16 }}>«Sin certificado»: le falta el certificado de asegurado en su expediente.</Text> : null}
+                {sinCertificado > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 16 }}>«Sin certificado»: le falta su certificado de asegurado.</Text> : null}
                 <Vidrio radio={20}>
                   <View style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
                     {activos.map((e, i) => {
@@ -239,7 +239,7 @@ function Poliza({ poliza, puedeEditar, onGuardada }) {
   };
 
   return (
-    <Seccion titulo="La póliza" pie="El documento general — es el mismo cada año. La suma asegurada es igual para todos.">
+    <Seccion titulo="La póliza" pie="El documento general. Es el mismo cada año. La suma asegurada es igual para todos.">
       <CampoConRotulo rotulo="Aseguradora" value={f.aseguradora || ''} editable={puedeEditar} onChangeText={(t) => set('aseguradora', t)} />
       <CampoConRotulo rotulo="Número de póliza" value={f.numero_poliza || ''} editable={puedeEditar} placeholder="Opcional" onChangeText={(t) => set('numero_poliza', t)} />
       <CampoConRotulo rotulo="Suma asegurada por persona ($)" value={String(f.suma_asegurada ?? '')} editable={puedeEditar} keyboardType="decimal-pad"
@@ -299,7 +299,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
       const cruce = cruzarConElPadron(nombres, activos);
       setFilas(cruce.map((c) => ({ clave: c.nombre, nombre: c.nombre, employee_id: c.empleado?.id || null, posible: c.posible || null, ambiguo: c.ambiguo })));
       const sin = cruce.filter((c) => !c.empleado).length;
-      setAviso(`Se leyeron ${nombres.length} nombres${sin ? `; ${sin} sin ficha reconocida — revísalos` : ', todos con ficha'}.`);
+      setAviso(`Se leyeron ${nombres.length} nombres${sin ? `; ${sin} sin reconocer. Revísalos` : ', todos reconocidos'}.`);
       listo('Listado leído', '');
     } catch (e) {
       fallo('No se pudo subir el listado', mensajeAmigable(e) || '');
@@ -339,7 +339,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
   return (
     <>
       <Seccion titulo={`${pagoExistente ? 'Corregir' : 'Registrar'} el pago ${anio}`}
-        pie="Sube el documento con el listado que envía la aseguradora: se leen los nombres y se cruzan con las fichas. Revisa la lista antes de guardar — quien quede afuera no aparece como solvente.">
+        pie="Sube el listado que envía la aseguradora. La app lee los nombres y busca a cada persona. Revisa la lista antes de guardar. Quien quede fuera no aparece como solvente.">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={1}>{comprobante.url ? (comprobante.nombre || 'Listado de la aseguradora') : 'Sin listado'}</Text>
           {comprobante.url ? <Enlace texto="Ver" onPress={() => abrir(comprobante.url)} /> : null}
@@ -352,7 +352,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
           placeholder={estimado != null ? `${estimado.toFixed(2)} (estimado)` : ''} />
       </Seccion>
 
-      <Seccion titulo={`${filas.length} en el listado · ${conFicha} con ficha`}>
+      <Seccion titulo={`${filas.length} en el listado · ${conFicha} reconocidos`}>
         {!filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Todavía nadie en el listado.</Text> : null}
         {filas.map((f, i) => {
           const e = f.employee_id ? porId.get(f.employee_id) : null;
@@ -362,7 +362,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{f.nombre}</Text>
-                  <Text style={{ color: e ? MARCA.verde : MARCA.ambar, fontSize: 12 }}>{e ? `Ficha: ${shortEmployeeName(e)}` : 'Sin ficha — elige a quién corresponde, o déjalo así'}</Text>
+                  <Text style={{ color: e ? MARCA.verde : MARCA.ambar, fontSize: 12 }}>{e ? `Es ${shortEmployeeName(e)}` : 'Sin reconocer. Elige a quién corresponde o déjalo así.'}</Text>
                 </View>
                 {f.ambiguo ? <Pildora texto="Hay dos iguales" color={MARCA.ambar} /> : null}
                 <Enlace texto="Quitar" color={MARCA.rojo} onPress={() => quitar(f.clave)} />
@@ -375,7 +375,7 @@ function RegistrarPago({ anio, pagoExistente, prima, activos, onCancelar, onGuar
                       <Enlace texto="Sí" onPress={() => elegir(f.clave, f.posible.id)} />
                     </View>
                   ) : null}
-                  <Elegir rotulo="Su ficha" valor="" opciones={opciones} onCambiar={(id) => elegir(f.clave, id)} vacio="Sin ficha" />
+                  <Elegir rotulo="Quién es" valor="" opciones={opciones} onCambiar={(id) => elegir(f.clave, id)} vacio="Sin elegir" />
                 </>
               ) : null}
             </View>

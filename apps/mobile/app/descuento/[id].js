@@ -129,8 +129,8 @@ export default function CorregirDescuento() {
                 <Seccion titulo="Salas">
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: colorSistema.texto, fontSize: 16 }}>En todas las salas</Text>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin esto, el descuento vale sólo en la sala que elijas.</Text>
+                      <Text style={{ color: colorSistema.texto, fontSize: 16 }}>En todas las sucursales</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin esto, el descuento vale sólo en la sucursal que elijas.</Text>
                     </View>
                     <Interruptor value={f.todas} onValueChange={set('todas')} />
                   </View>

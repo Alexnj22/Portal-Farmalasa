@@ -122,8 +122,8 @@ export default function AuditoriaDeTiempos() {
     } catch (err) { fallo('No se pudo marcar como revisado', err?.message || ''); }
   };
   const conAlgo = filas.filter((f) => f.s.length).length;
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-    opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
+  const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
+    opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
   const ir = (n) => { Haptics.selectionAsync().catch(() => {}); setDia((d) => sumarDias(d, n)); setAbierto(null); };
 
   return (

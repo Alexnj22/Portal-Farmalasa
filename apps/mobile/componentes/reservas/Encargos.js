@@ -98,7 +98,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
   if (!filas?.length) return null;
   const hoy = hoySV();
   return (
-    <Seccion titulo={`Encargos · ${filas.length}`} pie="Lo que no hay en ninguna sucursal: Compras lo consigue y confirma el precio.">
+    <Seccion titulo={`Encargos · ${filas.length}`} pie="Lo que no hay en ninguna sucursal. Compras lo consigue y confirma el precio.">
       {filas.map((e, i) => {
         const est = estadoDeEncargo(e);
         const sinVincular = encargoSinVincular(e);
@@ -138,7 +138,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
               {!soloLectura && e.estado === 'aceptado' ? <Accion texto={ROT.pedido} deshabilitado={!!ocupado}
                 onPress={() => mover(e, 'pedido', 'Marcar como pedido', `${e.codigo} · ${e.cantidad} × ${e.producto} ya se pidió.`)} /> : null}
               {!soloLectura && (e.estado === 'aceptado' || e.estado === 'pedido') ? <Accion texto={ROT.llego} color={MARCA.verde} deshabilitado={!!ocupado || sinVincular}
-                onPress={() => mover(e, 'listo', 'Marcar que llegó', `${e.codigo} · ${e.cantidad} × ${e.producto} ya está en la sala.`)} /> : null}
+                onPress={() => mover(e, 'listo', 'Marcar que llegó', `${e.codigo} · ${e.cantidad} × ${e.producto} ya está en la sucursal.`)} /> : null}
               {!soloLectura && sinVincular && (e.estado === 'aceptado' || e.estado === 'pedido')
                 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, alignSelf: 'center' }}>Primero vincula el producto ya creado en el catálogo.</Text> : null}
               {!soloLectura && e.estado === 'listo' ? <Accion texto={ROT.entregar} color={MARCA.verde}

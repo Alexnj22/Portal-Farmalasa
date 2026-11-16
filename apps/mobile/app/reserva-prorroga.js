@@ -51,7 +51,7 @@ function Pedir() {
     try {
       for (const id of String(ids).split(',').filter(Boolean)) await pedirProrroga(tipo, id, n, motivo);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      listo('Prórroga pedida', 'La autoriza Talento Humano o Supervisión de ventas. Mientras tanto, el plazo no vence.');
+      listo('Prórroga pedida', 'La autoriza Talento Humano o el supervisor de ventas. Mientras tanto, el plazo no vence.');
       router.back();
     } catch (err) { fallo('No se pudo pedir la prórroga', mensajeAmigable(err, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };
@@ -62,7 +62,7 @@ function Pedir() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled">
-          <Aviso texto={`${titulo}${vence ? ` · hoy puede retirar hasta el ${dia(vence)}` : ''}. Se pide una sola vez: la autoriza Talento Humano o Supervisión de ventas, y al cliente le llega el aviso.`} />
+          <Aviso texto={`${titulo}${vence ? ` · hoy puede retirar hasta el ${dia(vence)}` : ''}. Se pide una sola vez. La autoriza Talento Humano o el supervisor de ventas. Al cliente le llega el aviso.`} />
           <Seccion titulo="Días que necesita" pie={quedaria ? `Quedaría hasta el ${dia(quedaria)}.` : undefined}>
             <Campo multiline={false} value={dias} keyboardType="number-pad" onChangeText={(v) => setDias(soloDigitos(v))} placeholder="Ej. 15"
               style={{ textAlign: 'center', fontWeight: '700' }} />
@@ -109,13 +109,13 @@ function Bandeja() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         refreshControl={<Refrescar refreshing={refrescando} onRefresh={async () => { setRefrescando(true); await cargar(); setRefrescando(false); }} />}>
-        {!puede ? <Aviso tono="cuidado" texto="Autorizar prórrogas es de Talento Humano y Supervisión de ventas." />
+        {!puede ? <Aviso tono="cuidado" texto="Las prórrogas las autoriza Talento Humano o el supervisor de ventas." />
           : error ? <Aviso tono="cuidado" texto={error} />
           : lista === null ? <Indicador />
-          : !lista.length ? <Vacio titulo="No hay prórrogas esperando." detalle="Cuando la sala o un cliente pida una, aparece aquí." />
+          : !lista.length ? <Vacio titulo="No hay prórrogas esperando." detalle="Cuando la sucursal o un cliente pida una, aparece aquí." />
           : lista.map((p) => (
             <Seccion key={`${p.tipo}:${p.codigo}`} titulo={`${diasTexto(p.dias)} más · ${p.codigo}`}
-              pie={`${p.origen === 'app' ? 'Pedida por el cliente en la app' : 'Pedida por la sala'}${p.vence ? ` · hoy vence el ${dia(p.vence)}` : ''}`}>
+              pie={`${p.origen === 'app' ? 'Pedida por el cliente en la app' : 'Pedida por la sucursal'}${p.vence ? ` · hoy vence el ${dia(p.vence)}` : ''}`}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${String(p.cliente ?? '').split(/\s+/)[0]} · ${p.sala ?? ''}`}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{p.productos.join(', ')}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Motivo: ${p.motivo}`}</Text>
@@ -151,7 +151,7 @@ function Decidir({ p, autorizar: inicial, onCerrar, onListo }) {
       for (const id of p.ids) vence = (await decidirProrroga(id, si, nota, si ? n : null))?.vence ?? vence;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       listo(si ? 'Prórroga autorizada' : 'Prórroga no autorizada',
-        si ? `Puede retirar hasta el ${dia(vence)}. La sala y el cliente reciben el aviso.` : 'La sala y el cliente reciben el aviso con el motivo.');
+        si ? `Puede retirar hasta el ${dia(vence)}. La sucursal y el cliente reciben el aviso.` : 'La sucursal y el cliente reciben el aviso con el motivo.');
       onListo();
     } catch (err) { fallo('No se pudo', mensajeAmigable(err, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };

@@ -174,7 +174,7 @@ export default function AuditoriaDelSistema() {
       <Stack.Screen options={{
         ...BARRA_FIJA, title: 'Auditoría',
         headerSearchBarOptions: {
-          placeholder: 'Persona, acción, sala o equipo', hideWhenScrolling: false,
+          placeholder: 'Persona, acción, sucursal o equipo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />

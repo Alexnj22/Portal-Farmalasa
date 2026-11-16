@@ -90,7 +90,7 @@ export default function Credito() {
           </View>
         </Vidrio>
 
-        {datos === null ? <Aviso tono="freno" texto="No se pudo abrir la ficha." /> : null}
+        {datos === null ? <Aviso tono="freno" texto="No se pudo abrir el crédito." /> : null}
         {c ? (
           <Seccion titulo="El crédito">
             <Dato primero rotulo="Compró el" valor={fecha(c.fecha)} />

@@ -46,15 +46,15 @@ export default function Enlazar({ form, setForm, employees, branches, roles }) {
         <View style={{ padding: 12, borderRadius: 14, backgroundColor: `${MARCA.ambar}22`, gap: 4 }}>
           <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '800', textTransform: MAYUSCULAS }}>Posible duplicado</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
-            Ya existe un empleado registrado con este mismo nombre completo. Si es la misma persona, enlázala abajo en vez de crear una ficha nueva. Si es otra (homónimo), sigue adelante.
+            Ya hay un empleado con este mismo nombre completo. Si es la misma persona, enlázala abajo. Si es otra, sigue adelante.
           </Text>
         </View>
       ) : null}
       <Seccion titulo="¿Esta persona ya trabajaba aquí?"
-        pie="Enlázala con su ficha para que conserve sus solicitudes, traslados y todo lo que ya hizo. Déjalo vacío si es alguien que entra por primera vez.">
-        <Elegir rotulo="Su ficha" valor={form.enlazar_con_id || ''} opciones={opciones} onCambiar={elegir} vacio="Es alguien nuevo" />
+        pie="Enlázala con su perfil y conserva sus solicitudes, traslados y todo lo que ya hizo. Déjalo vacío si entra por primera vez.">
+        <Elegir rotulo="Su perfil" valor={form.enlazar_con_id || ''} opciones={opciones} onCambiar={elegir} vacio="Es alguien nuevo" />
         {ficha ? (
-          <Nota tono="bien" texto={`El formulario quedó lleno con lo que la ficha de ${shortEmployeeName(ficha)} ya tenía guardado: revísalo y cambia lo que haya cambiado. Al guardar no se crea un registro nuevo — se actualiza el suyo, y conserva su historial.`} />
+          <Nota tono="bien" texto={`El formulario se llenó con los datos de ${shortEmployeeName(ficha)}. Revísalo y cambia lo que haga falta. Al guardar se actualiza su perfil y conserva su historial.`} />
         ) : null}
         {motivo ? <Nota tono={form._fichaFallo ? 'freno' : 'cuidado'} texto={motivo} /> : null}
       </Seccion>

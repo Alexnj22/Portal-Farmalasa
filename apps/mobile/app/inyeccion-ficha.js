@@ -46,7 +46,7 @@ export default function InyeccionFicha() {
     return () => { vivo = false; };
   }, [q, ficha]);
 
-  const asignar = () => Alert.alert('Asignar a un cliente', `La aplicación queda en el historial de ${ficha.name} y la ve en su app. También las demás del mismo cobro sin ficha.`, [
+  const asignar = () => Alert.alert('Asignar a un cliente', `La aplicación queda en el historial de ${ficha.name} y la ve en su app. También las demás del mismo cobro sin cliente.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Asignar', onPress: async () => {
       if (enviando) return;
@@ -83,10 +83,10 @@ export default function InyeccionFicha() {
                 </View>
               </Seccion>
             ) : (
-              <Seccion titulo="Cliente" pie="Con su ficha, la aplicación queda en su historial y la ve en su app.">
-                <Campo multiline={false} autoFocus value={texto} onChangeText={setTexto} placeholder="Nombre, DUI o teléfono" accessibilityLabel="Buscar la ficha del cliente" />
+              <Seccion titulo="Cliente" pie="Asignada a un cliente, la aplicación queda en su historial y la ve en su app.">
+                <Campo multiline={false} autoFocus value={texto} onChangeText={setTexto} placeholder="Nombre, DUI o teléfono" accessibilityLabel="Buscar al cliente" />
                 {buscando ? <Indicador /> : null}
-                {!buscando && q.trim().length >= 3 && !resultados.length ? <Vacio enSeccion>Ninguna ficha coincide.</Vacio> : null}
+                {!buscando && q.trim().length >= 3 && !resultados.length ? <Vacio enSeccion>Ningún cliente coincide.</Vacio> : null}
                 {resultados.map((c, i) => (
                   <Pressable key={c.id} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setFicha(c); }}
                     style={({ pressed }) => ({ minHeight: 48, justifyContent: 'center', paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>

@@ -41,7 +41,7 @@ export default function FaltanteTardio() {
     const r = await declararFaltanteTardio(id, declarados.map(({ max, ...x }) => x));
     setEnviando(false);
     if (!r.ok) { fallo('No se pudo anotar', r.error ?? 'Intenta de nuevo.'); return; }
-    listo('Faltante anotado', `${r.declarados} renglón(es) quedan por aclarar`);
+    listo('Faltante anotado', `${r.declarados} producto(s) quedan por aclarar`);
     router.back();
   };
 
@@ -58,7 +58,7 @@ export default function FaltanteTardio() {
                 {`${t.origen ?? t.envio_bolsa?.origen_branch_name ?? '—'} → ${t.destino ?? t.envio_bolsa?.branch_name ?? '—'}`}
               </Text>
               <Aviso tono="nota" texto={`Este paquete ya se recibió${t.recibio ? ` (lo recibió ${t.recibio})` : ''}.`} />
-              {!puede ? <Aviso tono="freno" texto={`Pasaron más de ${HORAS_PARA_DECLARAR_TARDE} horas: ya no se puede anotar lo que faltó.`} /> : (
+              {!puede ? <Aviso tono="freno" texto={`Pasaron más de ${HORAS_PARA_DECLARAR_TARDE} horas. Ya no se puede anotar lo que faltó.`} /> : (
                 <>
                   <Seccion titulo="¿Qué no venía?">
                     {renglones.map((r, i) => (

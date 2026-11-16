@@ -62,7 +62,7 @@ export default function RegistrarLlamada() {
           ) : null}
           <Seccion titulo={exigeRespuesta ? 'Qué respondió' : 'Nota (opcional)'}>
             <Campo value={respuesta} onChangeText={setRespuesta} maxLength={300}
-              placeholder={enPersona ? 'Ej. Estaba en la sala; paga el viernes' : contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó'} />
+              placeholder={enPersona ? 'Ej. Estaba en la sucursal. Paga el viernes' : contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó'} />
           </Seccion>
           <BotonGrande texto={ocupado ? 'Un momento…' : 'Anotar aviso'} color={MARCA.verde} deshabilitado={ocupado || falta} onPress={guardar} />
         </ScrollView>

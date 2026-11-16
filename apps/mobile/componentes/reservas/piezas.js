@@ -84,7 +84,7 @@ export function ElegirCliente({ cliente, onElegir }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[c.dui, c.phone].filter(Boolean).join(' · ') || 'Sin documento'}</Text>
         </Pressable>
       ))}
-      {texto.trim().length >= 3 && !buscando && !resultados.length ? <Vacio enSeccion>{`Ninguna ficha coincide con «${texto.trim()}». Si no tiene ficha, créala primero en Clientes.`}</Vacio> : null}
+      {texto.trim().length >= 3 && !buscando && !resultados.length ? <Vacio enSeccion>{`Ningún cliente coincide con «${texto.trim()}». Si no está registrado, créalo primero en Clientes.`}</Vacio> : null}
     </>
   );
 }
@@ -109,7 +109,7 @@ export function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiad
     try {
       await updateCustomerFiscal(cliente.id, { phone: tel }, {}, { nombre: cliente.name });
       const r = await pushClienteAlErp(cliente.id);
-      listo(r?.empujado ? 'Teléfono actualizado' : 'Teléfono guardado', r?.empujado ? 'Quedó en la ficha del cliente.' : motivoSinAplicar(r));
+      listo(r?.empujado ? 'Teléfono actualizado' : 'Teléfono guardado', r?.empujado ? 'Quedó en los datos del cliente.' : motivoSinAplicar(r));
       setEditando(false);
       onCambiado(tel);
     } catch (e) {
@@ -122,7 +122,7 @@ export function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiad
   if (editando) {
     return (
       <View style={{ gap: 6 }}>
-        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{actual ? 'Teléfono nuevo' : 'No tiene teléfono: escríbelo'}</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{actual ? 'Teléfono nuevo' : 'No tiene teléfono. Escríbelo'}</Text>
         <Campo multiline={false} value={nuevo} keyboardType="phone-pad" onChangeText={(v) => setNuevo(v.replace(/[^0-9-]/g, ''))} placeholder="7777-7777" autoFocus />
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Accion texto={guardando ? 'Guardando…' : 'Guardar'} color={MARCA.verde} onPress={guardar} deshabilitado={guardando || !tel} />

@@ -50,7 +50,7 @@ export default function Jefatura() {
   const activos = useMemo(() => empleados.filter((e) => (e.status || '').toUpperCase() !== 'INACTIVO'), [empleados]);
   const lista = useMemo(() => (buscar.trim() ? activos.filter((e) => tokenMatch(buscar.trim(), e.name, e.role)) : activos).slice(0, 40), [activos, buscar]);
   const elegido = activos.find((e) => e.id === elegidoId) || null;
-  const salaDe = (e) => sucursales.find((b) => String(b.id) === String(e?.branchId))?.name || 'Sin sala';
+  const salaDe = (e) => sucursales.find((b) => String(b.id) === String(e?.branchId))?.name || 'Sin sucursal';
 
   if (!sucursal) return <PantallaSinDato texto="No se encontró la sucursal." />;
   const movimiento = tipoDeMovimiento(elegido, sucursal, cargo);

@@ -97,12 +97,12 @@ export default function Monitor() {
     const m = new Map();
     for (const f of ordenadas) { const k = String(f.e.branchId ?? f.e.branch_id); if (!m.has(k)) m.set(k, []); m.get(k).push(f); }
     return [...m.entries()].sort((a, b) => ordenDeSala(Number(a[0])) - ordenDeSala(Number(b[0])))
-      .map(([k, l]) => ({ id: k, titulo: (sucursales || []).find((b) => String(b.id) === k)?.name ?? 'Sin sala', filas: l }));
+      .map(([k, l]) => ({ id: k, titulo: (sucursales || []).find((b) => String(b.id) === k)?.name ?? 'Sin sucursal', filas: l }));
   }, [visibles, filtro, sucursales]);
   const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? null;
 
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-    opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
+  const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
+    opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
 
   return (
     <>

@@ -82,7 +82,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
     }
     return [...m.entries()].sort((a, b) => ordenDeSala(Number(a[0])) - ordenDeSala(Number(b[0])));
   }, [empleados, porPersona]);
-  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'Sin sala';
+  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'Sin sucursal';
   const actual = inicio === getCurrentQuincenaStart();
 
   const aprobarTodo = (e) => {
@@ -108,7 +108,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
   const rotuloQuincena = `${fechaTexto(inicio, { day: 'numeric' })} – ${fechaTexto(fin, { day: 'numeric', month: 'long' })}`;
   const cerrar = () => {
     if (!sinAprobar.length) return;
-    const quien = salaNombre ? `de ${salaNombre}` : 'de todas las salas que ves';
+    const quien = salaNombre ? `de ${salaNombre}` : 'de todas las sucursales que ves';
     Alert.prompt('Cerrar la quincena',
       `Se aprueban ${sinAprobar.length} día${sinAprobar.length === 1 ? '' : 's'} sin aprobar ${quien} (${rotuloQuincena}). La planilla se arma con esas horas.\n\nEscribe CERRAR para confirmar.`, [
         { text: 'Cancelar', style: 'cancel' },
@@ -139,13 +139,13 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
       if (error) throw error;
       setTurnosExtra((prev) => prev.filter((r) => r.id !== req.id));
       setEditando(null);
-      if (yaResuelta) fallo('Ya estaba resuelta', 'Alguien la decidió antes, así que no se volvió a aplicar.');
+      if (yaResuelta) fallo('Ya estaba resuelta', 'Alguien la decidió antes.');
       else listo(aprobar ? 'Confirmado' : 'Rechazado', aprobar ? 'Turno extra aplicado al empleado.' : 'Solicitud rechazada.');
     } catch (err) {
       fallo('No se pudo resolver', mensajeAmigable(err, 'Intenta de nuevo.'));
     } finally { setOcupado(null); }
   };
-  const rechazar = (req) => Alert.prompt('Rechazar el turno extra', 'Dile por qué: sin motivo no sabe qué corregir.', [
+  const rechazar = (req) => Alert.prompt('Rechazar el turno extra', 'Escribe el motivo para que sepa qué corregir.', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Rechazar', style: 'destructive', onPress: (motivo) => {
       if (!String(motivo || '').trim()) { fallo('Falta el motivo', ''); return; }
@@ -226,7 +226,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
                             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{emp ? shortEmployeeName(emp) : (m.employeeName || 'Empleado')}</Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                               {[m.date ? fechaTexto(m.date, { weekday: 'long', day: 'numeric', month: 'long' }) : null,
-                                m.declaredStart && m.declaredEnd ? `declara ${m.declaredStart} – ${m.declaredEnd}` : 'no declaró horario — sólo registró entrada',
+                                m.declaredStart && m.declaredEnd ? `declara ${m.declaredStart} – ${m.declaredEnd}` : 'no declaró horario, sólo registró entrada',
                                 m.pinOmitido ? 'sin PIN' : null].filter(Boolean).join(' · ')}
                             </Text>
                           </View>

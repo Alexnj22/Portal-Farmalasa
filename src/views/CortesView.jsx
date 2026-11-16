@@ -238,7 +238,7 @@ const METRICAS_DIF = {
     falta: [
         { clave: 'sin_resolver',  icon: AlertTriangle, label: 'Sin resolver', sub: 'Días sin causa',  iconBg: 'bg-danger/10',  iconCls: 'text-danger-text', valueCls: 'text-danger-text' },
         { clave: 'con_saldo',     icon: HandCoins,     label: 'Por cobrar',   sub: 'A responsables',  iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text', dinero: 'saldo' },
-        { clave: 'por_registrar', icon: Landmark,      label: 'Por anotar',   sub: 'En el sistema',   iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
+        { clave: 'por_registrar', icon: Landmark,      label: 'Por anotar',   sub: 'En la caja',      iconBg: 'bg-brand/10',   iconCls: 'text-brand-text' },
         { clave: 'resuelto',      icon: ShieldCheck,   label: 'Resueltos',    sub: 'Pagados o con causa', iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
     ],
     sobra: [
@@ -812,10 +812,10 @@ const CortesView = () => {
             // En «Hoy» no hay nada que buscar: es un turno, no una lista.
             showSearch={!enHoy}
             placeholder={enMovimientos
-                ? 'Buscar por concepto, cliente, folio, sala o monto…'
+                ? 'Buscar por concepto, cliente, folio, sucursal o monto…'
                 : enDiferencias
-                    ? 'Buscar por sala, fecha, responsable o monto…'
-                    : 'Buscar por sala, persona, hora o monto…'}
+                    ? 'Buscar por sucursal, fecha, responsable o monto…'
+                    : 'Buscar por sucursal, persona, hora o monto…'}
         />
     );
 
@@ -1047,11 +1047,11 @@ const CortesView = () => {
                             <div className="min-w-0">
                                 <span className="font-bold">
                                     {sinAsentar.length === 1
-                                        ? '1 movimiento por anotar en el sistema'
-                                        : `${sinAsentar.length} movimientos por anotar en el sistema`}
+                                        ? '1 movimiento por anotar en la caja'
+                                        : `${sinAsentar.length} movimientos por anotar en la caja`}
                                 </span>
                                 <span className="block mt-0.5 font-normal text-content-2">
-                                    Dinero que ya entró o salió del cajón por una diferencia.
+                                    Dinero que ya entró o salió de la caja por una diferencia.
                                 </span>
                             </div>
                             <Button variant="secondary" size="sm" onClick={() => setAsentando(true)}>

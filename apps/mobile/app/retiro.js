@@ -69,7 +69,7 @@ async function reimprimirTicket(b, sala) {
   const cache = fila.employee_id ? await st.resolverPersonasDeSolicitudes([fila.employee_id]) : {};
   const pide = fila.employee_id ? (buscadorDePersonas(st.employees)(fila.employee_id)?.name ?? cache?.[String(fila.employee_id)]?.name ?? null) : null;
   const papel = ticketParaReimprimir({ metadata: fila.metadata, pide, familia: fila.type === 'INVENTORY_TRANSFER_PUSH' ? 'envio' : 'solicitud' });
-  if (!papel) return { ok: false, detalle: 'Ese traslado no tiene número: su ticket se confirma a mano.' };
+  if (!papel) return { ok: false, detalle: 'Ese traslado no tiene número. Su ticket se confirma a mano.' };
   return imprimirEnLaSala(papel.ticket, sala, papel.titulo);
 }
 
@@ -101,13 +101,13 @@ export default function Retiro() {
     try {
       const { traslado } = await fetchTrasladoPorCodigo(codigo);
       if (!traslado?.id) {
-        setError(traslado?.es_de_un_pedido ? 'Ese ticket es de un pedido de Bodega, no de un traslado entre salas.' : 'No encontramos ese ticket. Puede que el código no se haya leído bien.');
+        setError(traslado?.es_de_un_pedido ? 'Ese ticket es de un pedido de Bodega. Aquí sólo se cargan traslados entre sucursales.' : 'No encontramos ese ticket. Puede que el código no se haya leído bien.');
         return false;
       }
       if (traslado.ya_recibido) { setError(`Ese paquete ya se recibió${traslado.recibio ? `, lo recibió ${traslado.recibio}` : ''}.`); return false; }
       const r = await cargarBulto(traslado.id, null, { origen: traslado.origen ?? null, destino: traslado.destino ?? null, desde: 'app' });
       if (!r?.ok) { setError(r?.error ?? 'No se pudo cargar ese paquete.'); return false; }
-      setAviso(r.falta_firma ? `Cargado. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sala'}.` : r.entrego ? `Cargado · te lo entrega ${r.entrego}.` : 'Cargado.');
+      setAviso(r.falta_firma ? `Cargado. Falta el carné de quien entrega en ${traslado.origen ?? 'esa sucursal'}.` : r.entrego ? `Cargado · te lo entrega ${r.entrego}.` : 'Cargado.');
       const origenId = r.origen_branch_id ?? null;
       setSalaActual(origenId ? { id: origenId, nombre: traslado.origen } : null);
       await recargar(origenId);
@@ -123,7 +123,7 @@ export default function Retiro() {
     const r = await firmarEntregaConCarne(codigo, { retiroId: retiro?.retiro_id, desde: 'app' });
     if (!r?.ok) { setError(r?.error ?? 'No se pudo registrar la firma.'); return false; }
     const n = Number(r.firmadas ?? 0);
-    setAviso(n > 0 ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'paquete' : 'paquetes'}.` : `${r.quien} queda como quien entrega lo que te lleves de su sala.`);
+    setAviso(n > 0 ? `${r.quien} firmó la entrega de ${n} ${n === 1 ? 'paquete' : 'paquetes'}.` : `${r.quien} queda como quien entrega lo que te lleves de su sucursal.`);
     setEscaneando(null);
     await recargar();
     return true;
@@ -131,7 +131,7 @@ export default function Retiro() {
 
   const reimprimir = async (b) => {
     const r = await reimprimirTicket(b, salaActual?.id).catch((e) => ({ ok: false, detalle: mensajeAmigable(e) }));
-    if (r?.ok) listo('Ticket enviado', r.detalle ?? 'Se mandó a la caja de la sala.'); else fallo('No se imprimió', r?.detalle ?? '');
+    if (r?.ok) listo('Ticket enviado', r.detalle ?? 'Se mandó a la caja de la sucursal.'); else fallo('No se imprimió', r?.detalle ?? '');
   };
   const soltar = (b) => Alert.alert('¿Soltar este paquete?', `${b.origen} → ${b.destino}. Deja de estar a tu cargo.`, [
     { text: 'Cancelar', style: 'cancel' },

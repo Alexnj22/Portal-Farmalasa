@@ -35,7 +35,7 @@ function UsarSaldo() {
     try {
       const f = ((await buscarSaldoAFavor(codigo, prueba)) || []).find((x) => String(x.id) === String(id));
       if (!f) setError('Ese saldo ya no está disponible.');
-      else if (!f.confirmado) setError('No coincide con el cliente de este saldo. Escanea su tarjeta de Puntos Salud o escribe el DUI o el teléfono de su ficha.');
+      else if (!f.confirmado) setError('No coincide con el cliente de este saldo. Escanea su tarjeta de Puntos Salud o escribe su DUI o su teléfono registrado.');
       else { setFila(f); setMonto(Number(f.saldo_favor).toFixed(2)); }
     } catch (e) { setError(mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };
@@ -56,14 +56,14 @@ function UsarSaldo() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         {!fila ? (
           <>
-            <Seccion titulo="Confirma al cliente" pie="Su tarjeta de Puntos Salud (o el QR de su app), o el DUI o el teléfono de su ficha.">
+            <Seccion titulo="Confirma al cliente" pie="Su tarjeta de Puntos Salud (o el QR de su app), o su DUI o su teléfono registrado.">
               <Campo multiline={false} value={prueba} onChangeText={setPrueba} placeholder="Tarjeta, DUI o teléfono" autoCapitalize="characters" autoFocus />
             </Seccion>
             <BotonGrande texto={ocupado ? 'Confirmando…' : 'Confirmar cliente'} color={MARCA.azulClaro} deshabilitado={ocupado || !prueba.trim()} onPress={confirmar} />
           </>
         ) : (
           <>
-            <Seccion titulo={fila.cliente ?? 'Cliente'} pie="Lo que uses pasa a sus puntos: en caja, factura a su nombre y descuéntalo con puntos.">
+            <Seccion titulo={fila.cliente ?? 'Cliente'} pie="Lo que uses pasa a sus puntos. En caja, factura a su nombre y descuéntalo con puntos.">
               <Dato rotulo="Tiene a favor" valor={formatMoney(disponible)} primero fuerte />
               <Dato rotulo="Vale hasta" valor={fechaTexto(fila.saldo_favor_vence, { day: 'numeric', month: 'short' })} />
             </Seccion>

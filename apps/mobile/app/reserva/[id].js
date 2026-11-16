@@ -108,7 +108,7 @@ export default function DetalleDeReserva() {
         <View style={{ gap: 6, marginHorizontal: 4 }}>
           <Pildora texto={estado.label} color={colorDeTono(estado.variant)} />
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-            {`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}${r.sala ? ` · ${r.sala}` : ''}`}
+            {`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sucursal'}${r.sala ? ` · ${r.sala}` : ''}`}
           </Text>
         </View>
 
@@ -125,7 +125,7 @@ export default function DetalleDeReserva() {
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{r.cliente ?? 'Sin cliente'}</Text>
           <Datos filas={[
             ['Teléfono', tel || 'Sin teléfono'],
-            ['App', r.tiene_app ? 'La tiene: los avisos le llegan solos' : 'No la tiene: se le avisa por WhatsApp'],
+            ['App', r.tiene_app ? 'La tiene. Los avisos le llegan solos' : 'No la tiene. Se le avisa por WhatsApp'],
             r.entrega === 'domicilio' && ['Entrega', `A domicilio · ${r.direccion_entrega ?? ''}`],
             fiscal && ['Factura', `Crédito fiscal · ${fiscal.nombre} · NIT ${fiscal.nit} · NRC ${fiscal.nrc}`],
           ]} />
@@ -141,7 +141,7 @@ export default function DetalleDeReserva() {
           {filas.map((x, i) => {
             const t = x.estado === 'pendiente' ? TRASLADO_DE_RESERVA[x.traslado_estado] : null;
             const nota = x.estado === 'pendiente'
-              ? `${x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sala.')}${Number(x.traslado_llegaron) > 0 ? ` Llegaron ${x.traslado_llegaron} de ${x.cantidad}.` : ''}`.trim()
+              ? `${x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sucursal.')}${Number(x.traslado_llegaron) > 0 ? ` Llegaron ${x.traslado_llegaron} de ${x.cantidad}.` : ''}`.trim()
               : textoDeFaltante(x);
             return (
               <View key={x.id} style={{ gap: 4, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
@@ -180,7 +180,7 @@ export default function DetalleDeReserva() {
           <Datos filas={[
             pagado > 0 && ['Cómo pagó', formaDePagoLegible(r.pago_metodo)],
             Number(r.costo_envio) > 0 && ['Envío', formatMoney(Number(r.costo_envio))],
-            r.pago_prueba && ['Atención', 'El cobro en línea fue de prueba: no entró dinero, se cobra en caja.'],
+            r.pago_prueba && ['Atención', 'El cobro en línea fue de prueba. No entró dinero. Se cobra en caja.'],
             r.preventa_ref && ['En caja', `Preventa #${r.preventa_ref}${r.factura ? ` · factura ${r.factura}` : ''}`],
           ]} />
         </Seccion>

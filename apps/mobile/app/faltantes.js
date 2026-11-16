@@ -99,20 +99,20 @@ function Faltante({ f, onHecho, supervisa }) {
             </Text>
           ) : null}
           {abierto && f.incierto ? (
-            <Aviso tono="freno" texto={`El descuento anterior quedó sin confirmar. Antes de volver a cerrarlo hay que revisar el movimiento de ${f.destino_branch_name ?? 'la sala'}.`} />
+            <Aviso tono="freno" texto={`El descuento anterior quedó sin confirmar. Antes de volver a cerrarlo hay que revisar el movimiento de ${f.destino_branch_name ?? 'la sucursal'}.`} />
           ) : abierto && f.ajuste_error ? (
             <Aviso tono="freno" texto={`El último intento de cerrarlo no pasó: ${f.ajuste_error}`} />
           ) : null}
           {!abierto && f.falta_ingresar ? (
             <View style={{ gap: 8 }}>
               <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>
-                {`Apareció, pero todavía no entró al inventario de ${f.destino_branch_name ?? 'la sala'}.`}
+                {`Apareció, pero todavía no entró al inventario de ${f.destino_branch_name ?? 'la sucursal'}.`}
               </Text>
               <BotonGrande texto="Ingresar a inventario" color={MARCA.verde} onPress={ingresar} />
             </View>
           ) : null}
           {abierto && !cerrando && f.en_curso ? (
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Supervisión lo está cerrando…</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Un supervisor o administrador lo está cerrando…</Text>
           ) : null}
           {abierto && !cerrando && !f.en_curso ? (
             <View style={{ gap: 6 }}>
@@ -122,7 +122,7 @@ function Faltante({ f, onHecho, supervisa }) {
                   <View style={{ flex: 1 }}><BotonGrande texto="No apareció" borde color={MARCA.ambar} deshabilitado={f.incierto} onPress={() => setCerrando(true)} /></View>
                 ) : null}
               </View>
-              {!supervisa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si no aparece, lo cierra supervisión.</Text> : null}
+              {!supervisa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si no aparece, lo cierra un supervisor o administrador.</Text> : null}
             </View>
           ) : null}
           {abierto && cerrando ? (
@@ -135,8 +135,8 @@ function Faltante({ f, onHecho, supervisa }) {
                   onPress={() => { setResponsable(r.valor); if (r.valor !== 'persona') setPersona(''); }} />
               ))}
               {responsable === 'persona' ? <ElegirPersona elegida={persona} onElegir={setPersona} /> : null}
-              <Campo value={nota} onChangeText={setNota} placeholder="¿Qué se averiguó? Ej.: no estaba en ninguna sala" />
-              <Aviso tono="cuidado" texto={`Se descontará ${f.cantidad} de ${f.descripcion ?? 'este producto'} del inventario de ${f.destino_branch_name ?? 'la sala que recibió'}${f.en_transito ? ', después de recibir lo que quedó en camino' : ''}.`} />
+              <Campo value={nota} onChangeText={setNota} placeholder="¿Qué se averiguó? Ej.: no estaba en ninguna de las dos sucursales" />
+              <Aviso tono="cuidado" texto={`Se descontará ${f.cantidad} de ${f.descripcion ?? 'este producto'} del inventario de ${f.destino_branch_name ?? 'la sucursal que recibió'}${f.en_transito ? ', después de recibir lo que quedó en camino' : ''}.`} />
               <BotonGrande texto="Cerrar y descontar" color={MARCA.ambar}
                 deshabilitado={!nota.trim() || (responsable === 'persona' && !persona)} onPress={() => cerrar('no_aparecio')} />
               <Pressable onPress={() => setCerrando(false)} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center' }}>

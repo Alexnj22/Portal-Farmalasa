@@ -80,7 +80,7 @@ export default function CorregirAbono() {
     }).catch((e) => ({ error: e }));
     setOcupado(false);
     if (r?.error || r?.ok === false) { fallo('No se pudo pedir', mensajeAmigable(r.error || r)); return; }
-    listo('Solicitud enviada', 'La decide quien tenga el permiso de cuentas por cobrar.');
+    listo('Solicitud enviada', 'La decide un supervisor o administrador.');
     router.back();
   };
 
@@ -94,7 +94,7 @@ export default function CorregirAbono() {
             <Text style={{ color: colorSistema.texto, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(abono.monto)}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[abono.forma, fechaCorta(abono.fecha), credito.cliente].filter(Boolean).join(' · ')}</Text>
           </View>
-          <Aviso texto="Corregir un abono se aplica borrándolo y volviéndolo a hacer —es lo único que el sistema de la caja permite—, así que en su historial van a quedar los dos renglones." />
+          <Aviso texto="Para corregir un abono, se borra y se vuelve a hacer. En su historial van a quedar los dos movimientos." />
           <Seccion titulo="Qué hay que hacer">
             <Opciones opciones={QUE} valor={que} onCambiar={setQue} />
           </Seccion>

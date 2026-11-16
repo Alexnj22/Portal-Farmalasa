@@ -41,7 +41,7 @@ export default function Preregistro() {
       setOcupado(false);
     }
   };
-  const descartar = () => Alert.alert('Eliminar pre-registro', `El documento ${pre.documento} queda libre y quien tenga la app con este pre-registro sale de su sesión. La persona dueña del documento ya se puede registrar desde la app.`, [
+  const descartar = () => Alert.alert('Eliminar pre-registro', `El documento ${pre.documento} queda libre. Quien tenga la app con este pre-registro sale de su sesión. La persona dueña del documento ya se puede registrar desde la app.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Eliminar', style: 'destructive', onPress: () => hacer('descartar') },
   ]);
@@ -59,7 +59,7 @@ export default function Preregistro() {
           <Dato rotulo="Acepta promociones" valor={pre.acepta_promociones ? 'Sí' : 'No'} />
           <Dato rotulo="Fecha" valor={fechaTexto(pre.created_at, { day: 'numeric', month: 'long' })} />
         </Seccion>
-        <Seccion titulo="Fichas con ese documento">
+        <Seccion titulo="Clientes con ese documento">
           {fichas == null ? <Indicador /> : fichas.length ? fichas.map((c, i) => (
             <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>
               <View style={{ flex: 1 }}>
@@ -71,7 +71,7 @@ export default function Preregistro() {
                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>Vincular</Text>
               </Pressable>
             </View>
-          )) : <Aviso tono="cuidado" texto="No hay ficha con ese documento. Hay que crearla en caja con estos datos; la app la reconocerá sola." />}
+          )) : <Aviso tono="cuidado" texto="No hay un cliente con ese documento. Créalo en caja con estos datos. La app lo reconoce sola." />}
         </Seccion>
         <BotonGrande texto="Eliminar" color={MARCA.rojo} borde onPress={descartar} deshabilitado={ocupado} />
       </ScrollView>

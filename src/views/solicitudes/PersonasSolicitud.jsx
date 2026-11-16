@@ -155,7 +155,7 @@ export const FichaPersona = ({ rotulo, persona, sala = null, cuando, apunte, vac
                     </p>
                     {sala && (
                         <p className="text-micro text-content-3 leading-tight truncate">
-                            La sala que tiene el producto
+                            La sucursal que tiene el producto
                         </p>
                     )}
                     {/* Sólo el cargo: la sala ya está arriba a la derecha, y
@@ -250,7 +250,7 @@ export const BloquePersonas = ({ req, empleadosPorId }) => {
                    Renderos?», sobre algo que podían resolver cuatro). */
                 vacio={cancelada ? 'La retiró quien la envió'
                     : !pendiente ? 'Sin registro'
-                    : req.type === 'MINMAX_CHANGE_REQUEST' ? 'Quien administre Min/Max'
+                    : req.type === 'MINMAX_CHANGE_REQUEST' ? 'Quien administre Mín/Máx'
                     : porArea ? area
                     : 'Sin asignar'}
                 cuando={cancelada ? req.updated_at : cerro}

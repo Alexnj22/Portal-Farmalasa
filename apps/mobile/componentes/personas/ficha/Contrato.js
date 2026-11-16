@@ -40,7 +40,7 @@ export default function Contrato({ form, setForm, cambiar, esAlta, veSalario, sa
   const rotuloSalario = civil ? 'Honorario' : 'Salario base';
 
   return (
-    <Seccion titulo="El contrato" pie={esAlta ? null : 'Tipo, inicio y salario se cambian con una acción de personal desde la ficha.'}>
+    <Seccion titulo="El contrato" pie={esAlta ? null : 'Tipo, inicio y salario se cambian con una acción de personal desde su perfil.'}>
       {esAlta ? (
         <>
           <Elegir rotulo="Tipo de contrato" valor={form.contract_type} opciones={op(TIPOS_DE_CONTRATO)} onCambiar={cambiar('contract_type')} />
@@ -56,13 +56,13 @@ export default function Contrato({ form, setForm, cambiar, esAlta, veSalario, sa
         <CampoFecha rotulo="Fecha fin" requerido valor={form.contract_end_date} onCambiar={cambiar('contract_end_date')} desde={form.contract_start_date || undefined}
           error={errores.contract_end_date || (!form.contract_end_date ? 'Obligatoria en un contrato a plazo' : null)} />
       ) : null}
-      {civil ? <Nota tono="cuidado" texto={`${ART20_ADVERTENCIA} Además: se le retiene el 10% de renta, y no lleva ISSS ni AFP a cargo de la empresa, ni aguinaldo, ni vacaciones, ni indemnización. Tampoco se remite al Ministerio de Trabajo.`} /> : null}
+      {civil ? <Nota tono="cuidado" texto={`${ART20_ADVERTENCIA} Además, se le retiene el 10% de renta, y no lleva ISSS ni AFP a cargo de la empresa, ni aguinaldo, ni vacaciones, ni indemnización. Tampoco se remite al Ministerio de Trabajo.`} /> : null}
       {form.contract_type === 'TEMPORAL' ? (
         <>
           <Elegir rotulo="Por qué es temporal" valor={form.contract_temporal_legal_basis || ''} opciones={op(TEMPORAL_LEGAL_BASIS_OPTIONS)}
             onCambiar={cambiar('contract_temporal_legal_basis')} vacio="Sin indicar" error={!form.contract_temporal_legal_basis ? 'Requerido' : null} />
           <CampoConRotulo rotulo="Motivo" value={form.contract_temporal_reason || ''} onChangeText={cambiar('contract_temporal_reason')}
-            placeholder="Ej. Cobertura de incapacidad de la titular del puesto" />
+            placeholder="Ej. Cobertura de incapacidad de la titular del cargo" />
         </>
       ) : null}
 
@@ -70,8 +70,8 @@ export default function Contrato({ form, setForm, cambiar, esAlta, veSalario, sa
         <>
           <Subtitulo texto="Horario de trabajo" />
           <Nota texto={horario.texto} />
-          <Nota texto={horario.fijo ? 'Esta área no rota, así que el contrato dice el horario completo.'
-            : 'El contrato remite al reglamento en vez de fijar un horario: los turnos rotan. Quién trabaja qué día se decide en Horarios.'} />
+          <Nota texto={horario.fijo ? 'Esta área no rota. El contrato dice el horario completo.'
+            : 'Los turnos rotan. El contrato remite al reglamento y los días se deciden en Horarios.'} />
           <Elegir rotulo="Horas semanales" valor={horasFijas ? String(form.weekly_contracted_hours) : 'OTRO'}
             opciones={[{ id: '44', label: 'Tiempo completo 44h' }, { id: '22', label: 'Medio tiempo 22h' }, { id: 'OTRO', label: 'Otro' }]}
             onCambiar={(v) => cambiar('weekly_contracted_hours')(v === 'OTRO' ? '' : v)} />
@@ -106,8 +106,8 @@ export default function Contrato({ form, setForm, cambiar, esAlta, veSalario, sa
           <Subtitulo texto="Prórrogas" />
           {prorrogas.length >= 2 ? (
             <Nota tono="cuidado" texto={civil
-              ? `Van ${prorrogas.length} prórrogas. Cuanto más se extiende una relación de servicios profesionales, más pesa la presunción del Art. 20: si además cumple horario y tiene jefe, la figura correcta es un contrato de trabajo.`
-              : `Van ${prorrogas.length} prórrogas. La ley no las limita en número, pero el Art. 25 sólo acepta el plazo si la labor es transitoria: prorrogar no convierte en temporal un puesto permanente.`} />
+              ? `Van ${prorrogas.length} prórrogas. Cuanto más se extiende una relación de servicios profesionales, más pesa la presunción del Art. 20. Si además cumple horario y tiene jefe, corresponde un contrato de trabajo.`
+              : `Van ${prorrogas.length} prórrogas. La ley no las limita en número, pero el Art. 25 sólo acepta el plazo si la labor es transitoria. Prorrogar no vuelve temporal un trabajo permanente.`} />
           ) : null}
           {!prorrogas.length ? <Nota texto="Sin prórrogas." /> : null}
           {prorrogas.map((p, i) => (
@@ -135,11 +135,11 @@ export default function Contrato({ form, setForm, cambiar, esAlta, veSalario, sa
         <>
           {mtps.remitido ? <Nota tono="bien" texto={`Remitido el ${largo(mtps.fecha)}.`} /> : (
             <Nota tono={mtps.vencido ? 'freno' : 'cuidado'} texto={mtps.vencido
-              ? `El plazo venció hace ${Math.abs(mtps.diasRestantes)} día${Math.abs(mtps.diasRestantes) === 1 ? '' : 's'}. Se remite igual: no haberlo hecho a tiempo no invalida el contrato.`
+              ? `El plazo venció hace ${Math.abs(mtps.diasRestantes)} día${Math.abs(mtps.diasRestantes) === 1 ? '' : 's'}. Remítelo igual. El contrato sigue siendo válido.`
               : `Quedan ${mtps.diasRestantes} día${mtps.diasRestantes === 1 ? '' : 's'} para remitir el tercer ejemplar (hasta el ${fechaTexto(mtps.limite, { day: '2-digit', month: 'long' })}).`} />
           )}
           <CampoFecha rotulo="Fecha en que se remitió" valor={form.mtps_remitido_fecha} onCambiar={cambiar('mtps_remitido_fecha')} />
-          <Nota texto="El acuse sellado se adjunta en el expediente." />
+          <Nota texto="El acuse sellado se adjunta en sus documentos." />
         </>
       )}
     </Seccion>

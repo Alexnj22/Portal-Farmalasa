@@ -119,7 +119,7 @@ export default function CompletarReceta() {
   const puedeGuardar = puede && paciente.trim() && medico && p > 0 && !entregoDeMas;
 
   const guardar = async () => {
-    setEnviando(true); trabajando('Guardando el renglón…');
+    setEnviando(true); trabajando('Guardando…');
     try {
       let medicoId = medico.id;
       if (!medicoId) {
@@ -141,7 +141,7 @@ export default function CompletarReceta() {
       });
       if (error) throw new Error(error);
       clearDraft(clave);
-      listo('Renglón completo', fotoUrl ? renglon.producto_nombre : `${renglon.producto_nombre} · falta la foto de la receta`);
+      listo('Receta completa', fotoUrl ? renglon.producto_nombre : `${renglon.producto_nombre} · falta la foto de la receta`);
       router.back();
     } catch (e) {
       fallo('No se pudo guardar', e?.message);
@@ -153,7 +153,7 @@ export default function CompletarReceta() {
   if (renglon === undefined) return <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Completar receta' }} />;
   if (!renglon) {
     return (
-      <PantallaSinDato titulo="Completar receta" texto="Este renglón ya no está pendiente." />
+      <PantallaSinDato titulo="Completar receta" texto="Esta receta ya no está pendiente." />
     );
   }
   const clase = CLASE_CLIENTE[renglon.clase_cliente];
@@ -225,7 +225,7 @@ export default function CompletarReceta() {
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Cuánto recetó</Text>
               <View style={{ width: 110 }}><Campo multiline={false} value={prescrita} onChangeText={setPrescrita} keyboardType="decimal-pad" style={{ textAlign: 'center' }} /></View>
             </View>
-            {entregoDeMas ? <Aviso tono="freno" texto={`Se entregaron ${entregada}: lo recetado no puede ser menos.`} /> : null}
+            {entregoDeMas ? <Aviso tono="freno" texto={`Se entregaron ${entregada}. Lo recetado no puede ser menos.`} /> : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Fecha de la receta</Text>
               <Fecha valor={fechaReceta} onCambiar={setFechaReceta} hasta={hoySV()} />

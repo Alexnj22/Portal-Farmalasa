@@ -83,7 +83,7 @@ function ResolverReservaNativo() {
   const precioDistinto = r.traslado_estado === 'precio' && r.encargo?.estado === 'confirmado';
   const opciones = [
     ...(precioDistinto ? [{ id: 'precio', label: 'Precio' }] : []),
-    ...(falta > 0 && !precioDistinto ? [{ id: 'pedir', label: 'Otra sala' }, { id: 'bodega', label: 'Bodega' }] : []),
+    ...(falta > 0 && !precioDistinto ? [{ id: 'pedir', label: 'Otra sucursal' }, { id: 'bodega', label: 'Bodega' }] : []),
     { id: 'cliente', label: 'El cliente' },
   ];
 
@@ -104,7 +104,7 @@ function ResolverReservaNativo() {
           {vista === 'pedir' ? <PedirAOtraSala r={r} falta={falta} ocupado={ocupado} hacer={hacer} /> : null}
           {vista === 'bodega' ? (
             <>
-              <Aviso texto="Bodega confirma el precio y para cuándo. Si es el mismo precio sigue sola; si es otro, decide el cliente. Cuando llegue, la reserva queda lista sola." />
+              <Aviso texto="Bodega confirma el precio y la fecha. Si el precio es el mismo, sigue sola. Si cambia, decide el cliente. Cuando llegue, la reserva queda lista sola." />
               {falta > 20 ? <Aviso tono="cuidado" texto={`Bodega encarga hasta 20 por pedido y faltan ${falta}.`} /> : null}
               <BotonGrande texto={ocupado ? 'Encargando…' : `Encargar ${falta} a Bodega`} color={MARCA.azulClaro} deshabilitado={ocupado || falta > 20}
                 onPress={() => hacer(() => encargarRestoABodega(r.id), 'Encargado a Bodega', (res) => `${res?.codigo ?? ''} · ${falta} × ${r.producto}`)} />
@@ -158,7 +158,7 @@ function PedirAOtraSala({ r, falta, ocupado, hacer }) {
   const lista = Boolean(elegido && h.lineaLista && String(h.origenId) === String(elegido.erp_sucursal_id));
 
   if (!h.donde.length) return <Indicador />;
-  if (!candidatos.length) return <Aviso texto={`Ninguna otra sala tiene ${necesita} unidades. Encárgalo a Bodega.`} />;
+  if (!candidatos.length) return <Aviso texto={`Ninguna otra sucursal tiene ${necesita} unidades. Encárgalo a Bodega.`} />;
   return (
     <>
       <Seccion titulo={`Faltan ${falta}: ¿quién los tiene?`}>
@@ -170,8 +170,8 @@ function PedirAOtraSala({ r, falta, ocupado, hacer }) {
       <BotonGrande texto={ocupado ? 'Pidiendo…' : elegido ? `Pedir ${falta} a ${elegido.sala}` : 'Pedir'} color={MARCA.azulClaro}
         deshabilitado={ocupado || !lista}
         onPress={() => hacer(() => h.enviarSoloEsta(`Reserva ${codigoDeReserva(r.id)} para ${pilaDelCliente(r)}`, { reserva_id: r.id }),
-          'Traslado pedido', `${elegido?.sala ?? 'La sala'} manda ${falta}. Cuando llegue, la reserva queda lista sola.`)} />
-      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si ninguna sala lo tiene, encárgalo a Bodega.</Text>
+          'Traslado pedido', `${elegido?.sala ?? 'La sucursal'} manda ${falta}. Cuando llegue, la reserva queda lista sola.`)} />
+      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si ninguna sucursal lo tiene, encárgalo a Bodega.</Text>
     </>
   );
 }
@@ -208,7 +208,7 @@ function LoDecideElCliente({ r, ocupado, hacer }) {
   const falta = !Number.isFinite(n) || n < 0 || n > Number(r.cantidad) ? `Del original se queda de 0 a ${r.cantidad}.`
     : conAlternativa && !usaAlt ? 'Elige la alternativa, su presentación y cuántas.'
       : n === Number(r.cantidad) && !usaAlt ? 'Así no cambia nada.'
-        : n === 0 && !usaAlt ? 'Si no lleva nada, cancela la reserva desde la lista: lo pagado queda a su favor.'
+        : n === 0 && !usaAlt ? 'Si no lleva nada, cancela la reserva desde la lista. Lo pagado queda a su favor.'
           : motivo.trim().length < 3 ? 'Escribe qué decidió el cliente.' : null;
 
   const confirmar = () => hacer(() => ajustarReserva(r.id, {
@@ -224,10 +224,10 @@ function LoDecideElCliente({ r, ocupado, hacer }) {
       <Seccion titulo={`Del original se queda (de ${r.cantidad})`} pie={yaViene ? `Llegó o viene: ${yaViene}.` : undefined}>
         <Campo multiline={false} value={queda} onChangeText={setQueda} keyboardType="number-pad" />
       </Seccion>
-      <BotonGrande texto={conAlternativa ? 'Quitar la alternativa' : 'Agregar una alternativa de esta sala'} borde
+      <BotonGrande texto={conAlternativa ? 'Quitar la alternativa' : 'Agregar una alternativa de esta sucursal'} borde
         onPress={() => { setConAlternativa((v) => !v); setBuscando(!conAlternativa && !alt); }} />
       {conAlternativa ? (
-        <Seccion titulo="Alternativa" pie="Se aparta de lo que hay en esta sala, con el precio de hoy.">
+        <Seccion titulo="Alternativa" pie="Se aparta de lo que hay en esta sucursal, con el precio de hoy.">
           {buscando || !alt ? (
             <BuscadorProducto onElegir={(p) => { setAlt({ id: Number(p.id), nombre: p.nombre }); setPrecios(null); setPres(''); setBuscando(false); }}
               onCancelar={() => { setBuscando(false); if (!alt) setConAlternativa(false); }} />

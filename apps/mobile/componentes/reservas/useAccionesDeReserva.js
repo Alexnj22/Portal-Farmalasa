@@ -41,7 +41,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
 
   const avisarPorWhatsapp = (r) => {
     const numero = whatsappDe(r.telefono);
-    if (!numero) { Alert.alert('Sin teléfono válido', 'La ficha del cliente no tiene un teléfono válido para WhatsApp.'); return; }
+    if (!numero) { Alert.alert('Sin teléfono válido', 'El cliente no tiene un teléfono válido para WhatsApp.'); return; }
     const texto = mensajeDeReservaLista(r, r.sala ?? nombreSala);
     Alert.alert('Avisar por WhatsApp', `Al +${numero}:\n\n${texto}`, [
       { text: 'Ahora no', style: 'cancel' },
@@ -61,7 +61,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
     const ids = filasDe.filter((x) => (estado === 'lista' ? x.estado === 'pendiente' : x.estado === r.estado)).map((x) => x.id);
     const que = r.renglones?.length > 1 ? `el pedido ${r.pedido} (${ids.length} ${ids.length === 1 ? 'producto' : 'productos'})` : `${r.cantidad} × ${r.producto}`;
     const textos = {
-      lista: ['Apartar y avisar', `Se aparta ${que}${r.tiene_app ? ' y se le avisa al cliente en la app.' : '. El cliente no tiene la app: después se le avisa por WhatsApp.'}`, 'Apartar'],
+      lista: ['Apartar y avisar', `Se aparta ${que}${r.tiene_app ? ' y se le avisa al cliente en la app.' : '. El cliente no tiene la app. Después se le avisa por WhatsApp.'}`, 'Apartar'],
     }[estado];
     Alert.alert(textos[0], textos[1], [
       { text: 'Volver', style: 'cancel' },
@@ -125,7 +125,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
   const enviarACaja = (r) => {
     const ids = (r.renglones ?? [r]).filter(puedeEnviarPreventa).map((x) => x.id);
     if (!ids.length) return;
-    Alert.alert('Enviar a caja', 'Deja la venta armada en la caja: producto, cliente y tú como vendedor.', [
+    Alert.alert('Enviar a caja', 'Deja la venta armada en la caja con el producto, el cliente y tú como vendedor.', [
       { text: 'Volver', style: 'cancel' },
       { text: 'Enviar', onPress: async () => {
         setOcupada(r.id); trabajando('Enviando a caja…');
@@ -134,7 +134,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
           if (!res?.ok) { fallo('No se envió a caja', mensajeAmigable(res?.error, 'Intenta de nuevo.')); return; }
           Promise.resolve(appendAuditLog?.('RESERVA_PREVENTA', ids.join(','), { referencia: res.referencia ?? null, sala: r.branch_id ?? sala })).catch(() => {});
           const notas = [
-            res.cliente_generico ? 'Va como cliente frecuente: el código de la reserva viaja en la nota.' : '',
+            res.cliente_generico ? 'Va como cliente frecuente. El código de la reserva va en la nota.' : '',
             ...(res.avisos ?? []),
             res.externo_id ? 'Al facturarla, la reserva se cierra sola.' : 'Al facturarla, ciérrala con «Retirar».',
           ].filter(Boolean).join(' ');

@@ -83,7 +83,7 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
       if (error || !data?.ok) {
         setFalloLectura(data?.details || (data?.error === 'NO_ES_DUI'
           ? (unArchivo ? 'El archivo no parece un DUI. Revisa que traiga las dos caras.' : 'Las imágenes no parecen un DUI. Revisa que sean las dos caras.')
-          : 'No se pudo leer. Escribe los datos a mano; el documento quedó guardado.'));
+          : 'No se pudo leer. El documento quedó guardado. Escribe los datos a mano.'));
         return;
       }
       setCaras(avisoDeCaras(data, unArchivo));
@@ -108,7 +108,7 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
         numeroIlegible: leido.numeroIlegible,
       }), 0);
     } catch {
-      setFalloLectura('No se pudo leer. Escribe los datos a mano; el documento quedó guardado.');
+      setFalloLectura('No se pudo leer. El documento quedó guardado. Escribe los datos a mano.');
     } finally { setLeyendo(false); }
   };
 
@@ -141,8 +141,8 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
     : modo === 'uno' ? !!doc('DUI_COMPLETO')?.url : !!(doc('DUI_FRENTE')?.url && doc('DUI_REVERSO')?.url);
 
   return (
-    <Seccion titulo={esMenor ? (rotuloAlterno || 'Documento de identidad') : 'DUI — los dos lados'}
-      pie={esMenor ? 'Súbelo y después escribe los datos: un documento alterno no tiene formato fijo.'
+    <Seccion titulo={esMenor ? (rotuloAlterno || 'Documento de identidad') : 'DUI, los dos lados'}
+      pie={esMenor ? 'Súbelo y después escribe los datos a mano.'
         : 'Sube las dos caras y la app lee los datos. Lo que el documento dice reemplaza lo escrito, y se puede deshacer.'}>
       {!completo ? <Nota tono="cuidado" texto="Pendiente" /> : null}
       {esMenor ? (
@@ -169,8 +169,8 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
         <View style={{ gap: 6, padding: 10, borderRadius: 12, backgroundColor: dudoso ? `${MARCA.ambar}1F` : `${MARCA.verde}1F` }}>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
             {lectura.aplicados > 0 ? `Se completaron ${lectura.aplicados} dato${lectura.aplicados === 1 ? '' : 's'} con el documento.`
-              : lectura.camposLeidos === 0 ? 'El documento no aportó ningún dato. Vuelve a subirlo —o escribe los campos a mano.'
-                : 'Lo que dice el documento ya estaba escrito en la ficha.'}
+              : lectura.camposLeidos === 0 ? 'El documento no aportó ningún dato. Vuelve a subirlo o escribe los campos a mano.'
+                : 'Lo que dice el documento ya estaba en sus datos.'}
           </Text>
           {lectura.reemplazos.length ? (
             <>
@@ -185,8 +185,8 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
               <Enlace texto="Dejar lo que estaba" onPress={dejarLoQueEstaba} />
             </>
           ) : null}
-          {lectura.numeroIlegible ? <Nota texto="El número no se leyó bien —el dígito verificador no cuadra—: escríbelo a mano." /> : null}
-          {lectura.descartados.map((d) => <Nota key={d} texto={`No se usó el ${d}: no coincide con ninguna opción del portal.`} />)}
+          {lectura.numeroIlegible ? <Nota texto="El número no se leyó bien. Escríbelo a mano." /> : null}
+          {lectura.descartados.map((d) => <Nota key={d} texto={`No se usó el ${d}. No coincide con ninguna opción.`} />)}
           <Pressable onPress={() => setLectura(null)} hitSlop={8}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Entendido</Text></Pressable>
         </View>
       ) : null}

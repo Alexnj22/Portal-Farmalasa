@@ -133,7 +133,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                     <StatCard icon={Clock} label="Preparación" value={fmtMin(ind.prep)} loading={loading}
                         sub="promedio, sin pausas" />
                     <StatCard icon={Truck} label="Tránsito" value={fmtMin(ind.transito)} loading={loading}
-                        sub="de bodega a la sala" />
+                        sub="de bodega a la sucursal" />
                     <StatCard icon={PackageCheck} label="Recuento" value={fmtMin(ind.recuento)} loading={loading}
                         sub="de la llegada al ingreso" />
                     <StatCard icon={Pause} label="Pausas" value={fmtMin(ind.pausado)} loading={loading}

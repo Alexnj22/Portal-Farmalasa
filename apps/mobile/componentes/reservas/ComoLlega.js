@@ -35,7 +35,7 @@ export function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar 
           </Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
             {elegidosV.length ? `${Math.min(Math.floor(tomadas / f), cantidad)} de ${cantidad} · ${elegidosV.every((v) => v.estado === 'enviado') ? 'ya salió' : 'pedido, todavía no sale'}`
-              : 'Se pide a otra sala o se encarga'}
+              : 'Se pide a otra sucursal o se encarga'}
           </Text>
         </View>
         <Enlace texto="Cambiar" onPress={() => setAbierta(true)} />
@@ -57,7 +57,7 @@ export function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar 
             onPress={() => (activa ? elegir(elegidos.filter((x) => x !== v.id)) : cubierto ? elegir([v.id]) : elegir([...elegidos, v.id]))} />
         );
       })}
-      <Marcable activa={elegidos.length === 0} titulo="No: pedirlo a otra sala o encargarlo" detalle="Lo que viene queda para quien lo pidió"
+      <Marcable activa={elegidos.length === 0} titulo="No, pedirlo a otra sucursal o encargarlo" detalle="Lo que viene queda para quien lo pidió"
         onPress={() => elegir([])} />
     </View>
   );
@@ -89,22 +89,22 @@ export function DeOtraSala({ producto, factor, cantidad, disponibles = null, api
     onCambio(elegido ? { branch_id: elegido.branch_id, sala: elegido.sala, lista } : null);
   }, [elegido, lista, onCambio]);
 
-  const aqui = disponibles == null ? 'Ninguna sala' : disponibles > 0 ? `En esta sala hay sólo ${disponibles} y ninguna otra` : 'En esta sala no hay y ninguna otra';
+  const aqui = disponibles == null ? 'Ninguna' : disponibles > 0 ? `En esta sucursal hay sólo ${disponibles} y ninguna otra` : 'En esta sucursal no hay y ninguna otra';
   // Sin sala asignada no se pregunta a las demás: decir «ninguna lo tiene» ahí sería afirmar algo que no se miró.
-  if (!h.miErp) return <Aviso texto="Pedir a otra sala lo hace alguien asignado a una sala." />;
-  if (h.dondeCargando) return <Aviso texto="Revisando qué salas lo tienen…" />;
-  if (h.dondeError) return <Aviso tono="cuidado" texto="No se pudo revisar qué salas lo tienen." />;
-  if (!candidatos.length) return <Aviso texto={`${aqui} sala tiene ${necesita}.`} />;
+  if (!h.miErp) return <Aviso texto="Para pedir a otra sucursal, tienes que estar asignado a una sucursal." />;
+  if (h.dondeCargando) return <Aviso texto="Revisando qué sucursales lo tienen…" />;
+  if (h.dondeError) return <Aviso tono="cuidado" texto="No se pudo revisar qué sucursales lo tienen." />;
+  if (!candidatos.length) return <Aviso texto={`${aqui} sucursal tiene ${necesita}.`} />;
   return (
     <View>
       <Text style={{ color: colorSistema.texto2, fontSize: 13, marginBottom: 4 }}>
-        {`${disponibles > 0 ? `Aquí hay sólo ${disponibles}` : 'Aquí no hay'} · ¿Lo pedimos a otra sala?`}
+        {`${disponibles > 0 ? `Aquí hay sólo ${disponibles}` : 'Aquí no hay'} · ¿Lo pedimos a otra sucursal?`}
       </Text>
       {candidatos.map((d, i) => (
         <Marcable key={d.erp_sucursal_id} primero={i === 0} activa={efectiva === String(d.erp_sucursal_id)}
           titulo={`Pedir a ${d.sala} y apartar`} detalle={`Tiene ${Number(d.unidades)} unidades`} onPress={() => setEleccion(String(d.erp_sucursal_id))} />
       ))}
-      <Marcable activa={efectiva === 'encargo'} titulo="No pedir: encargar a Compras" detalle="Compras confirma el precio y la fecha"
+      <Marcable activa={efectiva === 'encargo'} titulo="No pedir y encargar a Compras" detalle="Compras confirma el precio y la fecha"
         onPress={() => setEleccion('encargo')} />
       {elegido && h.avisoVence ? <Aviso tono={h.avisoVence.grave ? 'freno' : 'cuidado'} texto={h.avisoVence.texto} /> : null}
     </View>

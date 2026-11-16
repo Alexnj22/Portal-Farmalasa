@@ -47,10 +47,10 @@ function Lista({ titulo, rubros, conteos, color }) {
 }
 
 const TABLAS = {
-  customers: 'Ficha del cliente', solicitudes_datos: 'Solicitud de datos', consentimientos_cliente: 'Consentimientos',
+  customers: 'Datos del cliente', solicitudes_datos: 'Solicitud de datos', consentimientos_cliente: 'Consentimientos',
   app_cliente_aceptaciones: 'Aceptaciones en la app', reclamos_clientes: 'Reclamos', encuesta_cliente_respuestas: 'Encuestas',
-  customers_changelog: 'Historial de cambios de la ficha', espejo_conflictos: 'Diferencias de ficha por revisar',
-  clientes_por_revisar: 'Fichas por revisar', app_chat_conversaciones: 'Conversaciones del chat', app_chat_mensajes: 'Mensajes del chat',
+  customers_changelog: 'Historial de cambios de los datos', espejo_conflictos: 'Diferencias de datos por revisar',
+  clientes_por_revisar: 'Clientes por revisar', app_chat_conversaciones: 'Conversaciones del chat', app_chat_mensajes: 'Mensajes del chat',
   app_cliente_fotos: 'Fotos', app_cliente_preregistros: 'Pre-registros', app_cliente_avisos: 'Avisos', app_cliente_correos: 'Correos',
   app_cliente_correo_envios: 'Envíos de correo', app_cliente_muestras: 'Muestras', app_tratamientos: 'Tratamientos',
   app_reservas: 'Reservas (dirección de entrega)',
@@ -106,7 +106,7 @@ export function ConsultaResguardo({ anonimizacionId }) {
   if (!r) {
     return (
       <View style={{ gap: 8 }}>
-        <Aviso texto="El resguardo sólo se consulta con un motivo (un requerimiento de autoridad, una reclamación, la propia persona). Queda registrado quién lo consultó, cuándo y por qué." />
+        <Aviso texto="El resguardo sólo se consulta con un motivo: un requerimiento de autoridad, una reclamación o la propia persona. Queda registrado quién lo consultó, cuándo y por qué." />
         <Rotulo texto="Motivo de la consulta" />
         <Campo value={motivo} onChangeText={(t) => setMotivo(t.slice(0, 500))} style={{ minHeight: 60 }} />
         <BotonGrande texto={ocupado ? 'Consultando…' : 'Consultar el resguardo'} color={MARCA.azul}
@@ -158,17 +158,17 @@ function Hecha({ a, onCambio }) {
         <Pildora texto={a.reactivada_at ? `Reactivada el ${dia(a.reactivada_at)}` : `Anonimizada el ${dia(a.anonimizada_at)}`}
           color={a.reactivada_at ? MARCA.azulClaro : colorSistema.texto2} />
         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-          {`Ficha #${a.customer_id}${Number(a.puntos_perdidos) > 0 ? ` · ${numero(a.puntos_perdidos)} puntos perdidos` : ''}`}
+          {`Cliente #${a.customer_id}${Number(a.puntos_perdidos) > 0 ? ` · ${numero(a.puntos_perdidos)} puntos perdidos` : ''}`}
         </Text>
       </View>
       {!a.reactivada_at ? (
         <>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
             {Number(a.caja_total) === 0
-              ? 'La ficha no existe en la caja: no hubo nada que anonimizar allá.'
+              ? 'El cliente no existe en la caja. No había nada que anonimizar.'
               : Number(a.caja_pendientes) > 0
-                ? `La ficha de la caja se anonimiza en los próximos minutos (${a.caja_pendientes} de ${a.caja_total} datos pendientes).`
-                : 'La ficha de la caja ya quedó anonimizada.'}
+                ? `Los datos de la caja se anonimizan en los próximos minutos (${a.caja_pendientes} de ${a.caja_total} datos pendientes).`
+                : 'Los datos de la caja ya quedaron anonimizados.'}
           </Text>
           {Number(a.archivos_pendientes) > 0 ? (
             <>
@@ -211,7 +211,7 @@ export default function AnonimizarCliente({ solicitud }) {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  if (!estado) return <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Revisando la ficha…</Text>;
+  if (!estado) return <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Revisando los datos…</Text>;
   if (estado.error) return <Aviso tono="cuidado" texto={estado.error} />;
 
   const candidatos = estado.candidatos ?? [];
@@ -221,12 +221,12 @@ export default function AnonimizarCliente({ solicitud }) {
   const faltaMotivo = candidato?.requiere_motivo_sin_documento && motivoSinDoc.trim().length < 15;
 
   const elegirFicha = () => ActionSheetIOS.showActionSheetWithOptions(
-    { title: 'Hay más de una ficha con ese documento', options: [...candidatos.map((c) => rotuloDeFicha(c.ficha)), 'Cancelar'], cancelButtonIndex: candidatos.length },
+    { title: 'Hay más de un cliente con ese documento', options: [...candidatos.map((c) => rotuloDeFicha(c.ficha)), 'Cancelar'], cancelButtonIndex: candidatos.length },
     (i) => { if (i < candidatos.length) setElegida(candidatos[i].ficha.id); },
   );
 
   const anonimizar = () => Alert.alert('Anonimizar datos',
-    `La ficha #${candidato.ficha.id} queda sin datos que identifiquen a la persona, en el portal y en la caja.${Number(candidato.puntos_que_se_pierden) > 0 ? ` Se pierden ${numero(candidato.puntos_que_se_pierden)} puntos.` : ''}`, [
+    `El cliente #${candidato.ficha.id} queda sin datos que identifiquen a la persona, en el portal y en la caja.${Number(candidato.puntos_que_se_pierden) > 0 ? ` Se pierden ${numero(candidato.puntos_que_se_pierden)} puntos.` : ''}`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Anonimizar', style: 'destructive', onPress: async () => {
         setOcupado(true);
@@ -235,8 +235,8 @@ export default function AnonimizarCliente({ solicitud }) {
             solicitudId: solicitud.id, customerId: candidato.ficha.id, confirmacion,
             sinDocumentoMotivo: candidato.requiere_motivo_sin_documento ? motivoSinDoc.trim() : null,
           });
-          if (r.archivos_pendientes) Alert.alert('Datos anonimizados', `Ficha #${candidato.ficha.id}. Quedaron ${r.archivos_pendientes} archivo(s) por borrar: se pueden reintentar.`);
-          else listo('Datos anonimizados', `Ficha #${candidato.ficha.id}`);
+          if (r.archivos_pendientes) Alert.alert('Datos anonimizados', `Cliente #${candidato.ficha.id}. Quedaron ${r.archivos_pendientes} archivo(s) por borrar. Puedes reintentar.`);
+          else listo('Datos anonimizados', `Cliente #${candidato.ficha.id}`);
           setConfirmacion(''); setMotivoSinDoc('');
           await cargar();
         } catch (e) {
@@ -255,20 +255,20 @@ export default function AnonimizarCliente({ solicitud }) {
               <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
                 Ninguna ficha de cliente tiene el documento de esta solicitud. Si la persona es cliente con una ficha sin documento, escribe el número de ficha (aparece en Clientes).
               </Text>
-              <Rotulo texto="Número de ficha" />
+              <Rotulo texto="Número de cliente" />
               <Campo multiline={false} keyboardType="number-pad" value={fichaManual} onChangeText={(t) => setFichaManual(t.replace(/\D/g, ''))} />
               <BotonGrande texto="Revisar" borde color={MARCA.azulClaro} deshabilitado={!fichaManual} onPress={() => cargar(Number(fichaManual))} />
             </View>
           ) : null}
           {candidatos.length > 1 ? (
             <BotonGrande borde color={MARCA.azulClaro} onPress={elegirFicha}
-              texto={candidato ? rotuloDeFicha(candidato.ficha) : 'Elegir la ficha'} />
+              texto={candidato ? rotuloDeFicha(candidato.ficha) : 'Elige el cliente'} />
           ) : null}
           {candidato ? (
             <View style={{ gap: 10 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{rotuloDeFicha(candidato.ficha)}</Text>
               {(candidato.fichas ?? []).length > 1 ? (
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Incluye ${candidato.fichas.length - 1} ficha(s) que ya se habían unido a esta.`}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Incluye ${candidato.fichas.length - 1} cliente(s) que ya se habían fusionado con este.`}</Text>
               ) : null}
               {(candidato.bloqueos ?? []).map((b, i) => <Aviso key={i} tono="cuidado" texto={b} />)}
               {Number(candidato.puntos_que_se_pierden) > 0 ? (
@@ -278,13 +278,13 @@ export default function AnonimizarCliente({ solicitud }) {
               <Lista titulo="Se guarda en el resguardo" rubros={RUBROS_ANONIMIZACION.resguarda} conteos={candidato.conteos?.resguarda} color={MARCA.ambar} />
               <Lista titulo="Se conserva (lo exige la ley)" rubros={RUBROS_ANONIMIZACION.conserva} conteos={candidato.conteos?.conserva} color={colorSistema.texto2} />
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                La ficha queda como «CLIENTE ANÓNIMO» sin nombre, documentos, teléfonos, correo, dirección ni fecha de nacimiento, también en la caja. Las facturas conservan el nombre con que se emitieron: son documentos fiscales. Si la persona vuelve, sus datos se pueden reactivar presentando el mismo documento.
+                El cliente queda como «CLIENTE ANÓNIMO» sin nombre, documentos, teléfonos, correo, dirección ni fecha de nacimiento, también en la caja. Las facturas conservan el nombre con que se emitieron. Si la persona vuelve, sus datos se pueden reactivar presentando el mismo documento.
               </Text>
               {candidato.puede ? (
                 <>
                   {candidato.requiere_motivo_sin_documento ? (
                     <>
-                      <Rotulo texto="La ficha no tiene documento: ¿por qué es la de esta persona?" />
+                      <Rotulo texto="El cliente no tiene documento. ¿Cómo sabes que es esta persona?" />
                       <Campo value={motivoSinDoc} onChangeText={(t) => setMotivoSinDoc(t.slice(0, 500))} style={{ minHeight: 60 }} />
                     </>
                   ) : null}
@@ -319,7 +319,7 @@ export function Reactivar({ onHecho }) {
     setOcupado(true);
     try {
       const r = await reactivarCliente({ documento, motivo: motivo.trim() });
-      listo('Datos reactivados', `Ficha #${r.customer_id}${Number(r.puntos_perdidos) > 0 ? ` · los ${r.puntos_perdidos} puntos no vuelven` : ''}`);
+      listo('Datos reactivados', `Cliente #${r.customer_id}${Number(r.puntos_perdidos) > 0 ? ` · los ${r.puntos_perdidos} puntos no vuelven` : ''}`);
       setDocumento(''); setMotivo(''); setHallado(null);
       onHecho?.();
     } catch (e) {
@@ -336,7 +336,7 @@ export function Reactivar({ onHecho }) {
       {hallado && !hallado.anonimizado ? <Aviso texto="Con ese documento no hay datos anonimizados." /> : null}
       {hallado?.anonimizado ? (
         <>
-          <Aviso tono="cuidado" texto={`Esta persona pidió anonimizar sus datos el ${dia(hallado.anonimizada_at)} (ficha #${hallado.customer_id}). Al reactivar vuelven su nombre, documentos y contacto, en el portal y en la caja. Los puntos que tenía no vuelven.`} />
+          <Aviso tono="cuidado" texto={`Esta persona pidió anonimizar sus datos el ${dia(hallado.anonimizada_at)} (cliente #${hallado.customer_id}). Al reactivar vuelven su nombre, documentos y contacto, en el portal y en la caja. Los puntos que tenía no vuelven.`} />
           <Rotulo texto="Cómo se comprobó que es la persona" />
           <Campo value={motivo} onChangeText={(t) => setMotivo(t.slice(0, 500))} style={{ minHeight: 60 }} />
           <BotonGrande texto={ocupado ? 'Reactivando…' : 'Reactivar'} color={MARCA.azul}

@@ -76,10 +76,10 @@ export default function AsignarCuenta() {
             <Dato rotulo="Teléfono" valor={cuenta.telefono || '—'} />
           </Seccion>
           {QUE_HACER_POR_MOTIVO[cuenta.motivo] ? <Aviso texto={QUE_HACER_POR_MOTIVO[cuenta.motivo]} /> : null}
-          <Seccion titulo="¿A qué ficha van estos puntos?">
-            <Campo multiline={false} value={termino} onChangeText={setTermino} placeholder="Buscar ficha por nombre, DUI o teléfono…" />
+          <Seccion titulo="¿A qué cliente van estos puntos?">
+            <Campo multiline={false} value={termino} onChangeText={setTermino} placeholder="Buscar cliente por nombre, DUI o teléfono…" />
             {buscando ? <Indicador /> : !fichas.length ? (
-              <Aviso texto={termino.trim() ? 'Ninguna ficha coincide.' : 'No hay fichas con el mismo teléfono ni un nombre parecido. Busca la ficha arriba.'} />
+              <Aviso texto={termino.trim() ? 'Ningún cliente coincide.' : 'No hay clientes con el mismo teléfono ni un nombre parecido. Busca al cliente arriba.'} />
             ) : fichas.map((f) => {
               const activa = f.id === elegida;
               return (
@@ -97,10 +97,10 @@ export default function AsignarCuenta() {
               );
             })}
           </Seccion>
-          <Seccion titulo="Por qué" pie="Al menos cinco letras: queda en el historial de la cuenta.">
+          <Seccion titulo="Por qué" pie="Al menos cinco letras. Queda en el historial de la cuenta.">
             <Campo value={nota} onChangeText={setNota} placeholder="Ej.: confirmé con su DUI en caja" />
           </Seccion>
-          {!puedeAsignar ? <Aviso tono="freno" texto="Asignar cuentas es de quien puede editar Puntos." /> : null}
+          {!puedeAsignar ? <Aviso tono="freno" texto="Sólo quien puede editar Puntos asigna cuentas." /> : null}
           <BotonGrande texto={guardando ? 'Asignando…' : 'Asignar'} color={MARCA.verde} deshabilitado={!listoParaAsignar} onPress={asignar} />
         </ScrollView>
       </KeyboardAvoidingView>

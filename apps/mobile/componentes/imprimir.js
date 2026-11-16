@@ -11,7 +11,7 @@ import { leerAjustesDeImpresion, textoParaElRollo, ticketEnBase64 } from '@nucle
 import { encolarImpresion } from '@nucleo/data/impresion';
 
 export async function imprimirEnLaSala(ticket, sala, titulo = null) {
-  if (sala == null) return { ok: false, detalle: 'No se sabe en qué sala imprimirlo.' };
+  if (sala == null) return { ok: false, detalle: 'No se sabe en qué sucursal imprimirlo.' };
   try {
     const { ancho } = leerAjustesDeImpresion();
     const { error } = await encolarImpresion({
@@ -19,8 +19,8 @@ export async function imprimirEnLaSala(ticket, sala, titulo = null) {
       titulo: titulo || ticket?.titulo || 'Documento',
       contenidoB64: ticketEnBase64(textoParaElRollo({ ancho, ...ticket })),
     });
-    if (error) return { ok: false, detalle: 'La sala no tiene una caja que reciba el documento, o tiene demasiados esperando.' };
-    return { ok: true, detalle: 'Se mandó a la caja de la sala. Sale en unos segundos.' };
+    if (error) return { ok: false, detalle: 'La sucursal no tiene una caja que lo reciba, o tiene demasiados esperando.' };
+    return { ok: true, detalle: 'Se mandó a la caja de la sucursal. Sale en unos segundos.' };
   } catch (e) {
     return { ok: false, detalle: e?.message ?? 'No se pudo mandar a imprimir.' };
   }

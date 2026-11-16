@@ -72,7 +72,7 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
             if (cobroEn === 'enlace') {
               const r = await enlaceDePagoDeApartado({ sala, monto: redondear(n), apartado: apartadoPorCobrar(elegido) });
               if (r?.error) throw r.error;
-              listo('Enlace creado', `${r.codigo} · ${r.prueba ? 'enlace de PRUEBA: no cobra dinero' : 'cuando pague, se suma solo'}`);
+              listo('Enlace creado', `${r.codigo} · ${r.prueba ? 'enlace de PRUEBA, no cobra dinero' : 'cuando pague, se suma solo'}`);
               await Share.share({ message: mensajeDeEnlaceDePago(r, nombreSala) }).catch(() => {});
             } else {
               const r = await cobrarAnticipoEnLaApp({ sala, nombreSala, user, clave: clave.current, monto: redondear(n), pago,
@@ -92,10 +92,10 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
   };
 
   if (filas == null) return <Indicador />;
-  if (!filas.length) return <Aviso texto="No hay encargos confirmados ni reservas con saldo en esta sala." />;
+  if (!filas.length) return <Aviso texto="No hay encargos confirmados ni reservas con saldo en esta sucursal." />;
   return (
     <>
-      <Seccion titulo="Por cobrar" pie="Un encargo confirmado se paga completo; una reserva, lo que falte.">
+      <Seccion titulo="Por cobrar" pie="Un encargo confirmado se paga completo. Una reserva, lo que falte.">
         {filas.map((f, i) => {
           const esta = elegido?.clave === f.clave;
           return (

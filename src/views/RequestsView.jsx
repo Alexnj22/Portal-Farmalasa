@@ -705,7 +705,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     <>
                     {isReqSearchFuzzy && rawSearch.trim() && (
                         <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
+                    Resultados similares para &ldquo;{rawSearch.trim()}&rdquo;. No hay coincidencias exactas.
                 </Notice>
                     )}
                     {groupedByType.map(([type, cards]) => {

@@ -37,13 +37,13 @@ export function useCarneDePapel() {
     trabajando('Buscando las cajas…');
     const { salas, error } = await fetchSalasConCaja();
     cerrarProgreso();
-    if (error) { fallo('No se pudo leer qué salas imprimen', 'Revisa la conexión y vuelve a intentar.'); return; }
+    if (error) { fallo('No se pudo leer qué sucursales imprimen', 'Revisa la conexión y vuelve a intentar.'); return; }
     const nombreDe = new Map((sucursales || []).map((b) => [Number(b.id), b.name]));
     const opciones = [...(salas || [])].sort((a, b) => ordenDeSala(a.branch_id) - ordenDeSala(b.branch_id))
-      .map((s) => ({ id: s.branch_id, nombre: nombreDe.get(Number(s.branch_id)) || `Sala ${s.branch_id}`, latiendo: s.latiendo }))
+      .map((s) => ({ id: s.branch_id, nombre: nombreDe.get(Number(s.branch_id)) || `Sucursal ${s.branch_id}`, latiendo: s.latiendo }))
       .map((s) => ({ ...s, label: s.latiendo ? s.nombre : `${s.nombre} (su caja no responde)` }));
-    if (!opciones.length) { fallo('Ninguna sala imprime ahora', 'No hay cajas que reciban documentos. Imprímelo desde una computadora.'); return; }
-    const destino = await elegir(`Carné del día — ${nombre}. ¿En qué sala sale?`, opciones);
+    if (!opciones.length) { fallo('Ninguna sucursal imprime ahora', 'No hay cajas listas para imprimir. Imprímelo desde una computadora.'); return; }
+    const destino = await elegir(`Carné del día de ${nombre}. ¿En qué sucursal sale?`, opciones);
     if (!destino) return;
     Alert.alert('¿Imprimir el carné del día?', `Sale en la caja de ${destino.nombre} y vale hasta medianoche. Si ya tenía uno de hoy, ese deja de servir.`, [
       { text: 'Cancelar', style: 'cancel' },
@@ -54,7 +54,7 @@ export function useCarneDePapel() {
           sala: sala || destino.nombre, salaId: destino.id, salaElegida: true, emitidoPor: user?.name || '',
         }).catch((e) => ({ ok: false, emitido: false, motivo: e?.message }));
         if (r.ok) listo('Carné del día', `Sale en la caja de ${destino.nombre} en unos segundos. Vale hasta medianoche.`);
-        else if (r.emitido) fallo('Se emitió pero no salió papel', `${r.motivo || ''} Vuelve a imprimirlo: el de antes ya no sirve.`);
+        else if (r.emitido) fallo('Se emitió pero no salió papel', `${r.motivo || ''} Vuelve a imprimirlo. El de antes ya no sirve.`);
         else fallo('No se emitió el carné', r.motivo || 'Intenta de nuevo.');
         alTerminar?.(r);
       } },

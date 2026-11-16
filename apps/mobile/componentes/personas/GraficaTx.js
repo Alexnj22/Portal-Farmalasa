@@ -51,7 +51,7 @@ export default function GraficaTx({ stats, dia, nombreDelDia }) {
                   );
                 })}
               </View>
-            ) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin ventas registradas para esta sala.</Text>}
+            ) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin ventas registradas para esta sucursal.</Text>}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
               {LEYENDA.map(([k, t]) => (
                 <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>

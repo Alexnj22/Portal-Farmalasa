@@ -81,7 +81,7 @@ export default function DocumentosDeLaFicha({ form, setForm, empleadoId, quien }
       setNuevoExtra('');
     });
   };
-  const quitarExtra = (cat) => Alert.alert('Quitar el documento', '¿Quitarlo del expediente?', [
+  const quitarExtra = (cat) => Alert.alert('Quitar el documento', '¿Lo quitas de sus documentos?', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Quitar', style: 'destructive', onPress: () => setForm((prev) => ({ ...prev, employee_documents: (prev.employee_documents || []).filter((d) => d.category !== cat) })) },
   ]);
@@ -101,7 +101,7 @@ export default function DocumentosDeLaFicha({ form, setForm, empleadoId, quien }
 
   return (
     <>
-      <Nota texto="Se guardan con la ficha, al tocar el botón de abajo. El DUI se sube en Personal y los comprobantes de las juntas en Laboral." />
+      <Nota texto="Se guardan al tocar el botón de abajo. El DUI se sube en Personal y los comprobantes de las juntas en Laboral." />
       {SECCIONES_DE_DOCUMENTOS.map((sec) => (
         <Seccion key={sec.id} titulo={sec.titulo} pie={sec.bajada}>
           {sec.claves.map((cat, i) => {

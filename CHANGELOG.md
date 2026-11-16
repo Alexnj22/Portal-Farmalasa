@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1554.9 — Lenguaje: lo que quedó entre módulos
+
+- Barrido final de la revisión del lenguaje: 44 archivos que quedaron entre
+  módulos (en la app: reservas, encargos, recetas, créditos, descuentos,
+  mayoristas, datos del empleado, nómina, seguro de vida, faltantes; en la
+  web: Cortes y Solicitudes). Unos 210 textos. «cajón» → caja; «timesheets»
+  → hojas de horas.
+
 ## v2.1554.8 — El conteo en la app: menos toques y la diferencia a la vista
 
 Bodega preguntó qué era el «3/3» al lado de cada producto y pidió menos toques para llenar el conteo en la app.

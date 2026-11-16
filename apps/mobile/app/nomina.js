@@ -107,7 +107,7 @@ export default function Nomina() {
   const fichaPorId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const conFicha = useMemo(() => (entradas || []).map((e) => ({ ...e, employee: { ...(e.employee || {}), ...(fichaPorId.get(String(e.employee_id)) || {}) } })), [entradas, fichaPorId]);
 
-  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'Sin sala';
+  const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'Sin sucursal';
   const visibles = useMemo(() => conFicha
     .filter((e) => sala === 'ALL' || String(e.employee?.branchId ?? e.employee?.branch_id ?? e.branch_id) === sala)
     .filter((e) => !texto.trim() || tokenMatch(texto.trim(), e.employee?.name, e.employee?.code)), [conFicha, sala, texto]);
@@ -122,8 +122,8 @@ export default function Nomina() {
   }, [visibles]);
   const grupos = [
     { id: 'estado', titulo: 'Estado', activa: estadoFiltro, porDefecto: 'ALL', onCambiar: (v) => { setEstadoFiltro(v); setPeriodoId(null); }, opciones: ESTADOS },
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-      opciones: [{ id: 'ALL', label: 'Todas las salas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
+      opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
   const estadoKey = periodo?.status || 'DRAFT';
   const estado = ESTADO_PLANILLA[estadoKey] ?? null;
@@ -139,7 +139,7 @@ export default function Nomina() {
   const cambiarEstado = (status) => {
     const aprobar = status === 'APPROVED';
     const aviso = aprobar && sinAprobar > 0
-      ? `Hay ${sinAprobar} timesheet${sinAprobar === 1 ? '' : 's'} sin aprobar en este período. ¿Aprobarla igual?`
+      ? `Hay ${sinAprobar} hoja${sinAprobar === 1 ? '' : 's'} de horas sin aprobar en este período. ¿Aprobarla igual?`
       : `¿Seguro que quieres ${aprobar ? 'aprobar' : 'marcar como pagada'} «${periodo.name || rotuloDePeriodo(periodo.start_date, periodo.end_date)}»?`;
     Alert.alert(aprobar ? 'Aprobar planilla' : 'Marcar como pagada', aviso, [
       { text: 'Cancelar', style: 'cancel' },
@@ -164,8 +164,8 @@ export default function Nomina() {
   const generar = () => {
     const re = conRenglones;
     const nombre = periodo.name || rotuloDePeriodo(periodo.start_date, periodo.end_date);
-    const alcance = sala === 'ALL' ? 'todas las salas' : nombreSala(sala);
-    const avisoHoras = sinAprobar > 0 ? `\n\nHay ${sinAprobar} timesheet${sinAprobar === 1 ? '' : 's'} sin aprobar en este período.` : '';
+    const alcance = sala === 'ALL' ? 'todas las sucursales' : nombreSala(sala);
+    const avisoHoras = sinAprobar > 0 ? `\n\nHay ${sinAprobar} hoja${sinAprobar === 1 ? '' : 's'} de horas sin aprobar en este período.` : '';
     Alert.alert(re ? 'Regenerar la planilla' : 'Generar la planilla',
       `«${nombre}», ${alcance}. ${re ? 'Se recalculan las filas que no se editaron a mano.' : 'Se arma una fila por persona con sus horas aprobadas.'}${avisoHoras}`, [
         { text: 'Cancelar', style: 'cancel' },
@@ -209,7 +209,7 @@ export default function Nomina() {
     Haptics.selectionAsync().catch(() => {});
     const deSala = sala !== 'ALL';
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Todas las boletas', deSala ? 'Planilla de la sala' : 'Planilla global', 'CSV del banco', 'Cancelar'], cancelButtonIndex: 3 },
+      { options: ['Todas las boletas', deSala ? 'Planilla de la sucursal' : 'Planilla global', 'CSV del banco', 'Cancelar'], cancelButtonIndex: 3 },
       (i) => {
         if (i === 0) boletas(visibles, sala === 'ALL' ? null : sala);
         else if (i === 1) planilla(visibles, deSala ? sala : undefined);
@@ -250,7 +250,7 @@ export default function Nomina() {
   const papelesDeSala = (k, l) => {
     Haptics.selectionAsync().catch(() => {});
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: nombreSala(k), options: ['Boletas de la sala', 'Planilla de la sala', 'Cancelar'], cancelButtonIndex: 2 },
+      { title: nombreSala(k), options: ['Boletas de la sucursal', 'Planilla de la sucursal', 'Cancelar'], cancelButtonIndex: 2 },
       (i) => { if (i === 0) boletas(l, k); else if (i === 1) planilla(l, k); },
     );
   };
@@ -311,7 +311,7 @@ export default function Nomina() {
             <Vidrio radio={16} tinte="rgba(247,144,9,0.18)">
               <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>
-                  {`${sinAprobar} timesheet${sinAprobar === 1 ? '' : 's'} sin aprobar en este período`}
+                  {`${sinAprobar} hoja${sinAprobar === 1 ? '' : 's'} de horas sin aprobar en este período`}
                 </Text>
                 <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>Revisar ›</Text>
               </View>
@@ -370,7 +370,7 @@ export default function Nomina() {
                       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0, opacity: pressed ? 0.7 : 1 })}>
                       <Avatar empleado={e.employee ?? { name: '?' }} tamano={36} />
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{e.employee?.name ? shortEmployeeName(e.employee) : 'Sin ficha'}</Text>
+                        <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{e.employee?.name ? shortEmployeeName(e.employee) : 'Sin datos'}</Text>
                         {e.employee?.role ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{e.employee.role}</Text> : null}
                         <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                           {[`${e.days_worked ?? '—'} días`, Number(e.subtotal_b) ? `extras ${formatMoney(e.subtotal_b)}` : null, `desc. ${formatMoney(e.total_deductions)}`].filter(Boolean).join(' · ')}

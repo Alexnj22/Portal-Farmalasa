@@ -137,8 +137,8 @@ export default function Mayorista() {
                 {sub ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{sub}</Text> : null}
               </View>
               {cliente.ficha_completa === false ? <Aviso tono="freno" texto={cliente.falta_correo
-                ? 'A una empresa o institución le falta el correo electrónico en su ficha (Condiciones §2.4). Hay que completarlo antes de aprobar.'
-                : 'La ficha no está completa (documento o teléfono). Hay que completarla antes de aprobar.'} /> : null}
+                ? 'A esta empresa o institución le falta el correo electrónico (Condiciones §2.4). Complétalo antes de aprobar.'
+                : 'Le falta el documento o el teléfono. Complétalo antes de aprobar.'} /> : null}
               {cliente.resuelto_por && est && est !== 'solicitado' ? (
                 <View style={{ gap: 4 }}>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${est === 'aprobado' ? 'Última decisión' : ESTADOS[est]?.label}:${cliente.motivo && est !== 'aprobado' ? ` «${cliente.motivo}»` : ''}`}</Text>
@@ -149,11 +149,11 @@ export default function Mayorista() {
               {est === 'aprobado' && (cliente.retiro_programado || cliente.precio_programado_el) ? (
                 <Aviso tono="cuidado" texto={`${cliente.retiro_programado
                   ? `Retiro avisado: deja de ser Cliente Mayorista el ${fechaTexto(cliente.retiro_programado, { day: 'numeric', month: 'long' })}.`
-                  : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`} ${cliente.retiro_por_inactividad ? 'Es por seis meses sin compras (Condiciones §2.5): si vuelve a comprar antes, se cancela solo.' : 'Rige 15 días después del aviso (Condiciones §6); hasta entonces se puede cancelar.'}`} />
+                  : `Bajada avisada: pasa a precio Mayoreo el ${fechaTexto(cliente.precio_programado_el, { day: 'numeric', month: 'long' })}.`} ${cliente.retiro_por_inactividad ? 'Lleva seis meses sin compras (Condiciones §2.5). Si vuelve a comprar antes, se cancela solo.' : 'Rige 15 días después del aviso (Condiciones §6). Hasta entonces se puede cancelar.'}`} />
               ) : null}
               {est === 'solicitado' ? (
                 <View style={{ gap: 4 }}>
-                  <Aviso texto={`${ORIGENES[cliente.origen] ?? 'Solicitado'}${cliente.solicitado_at ? ` el ${fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}` : ''}${cliente.nota_solicitud ? ` — «${cliente.nota_solicitud}»` : ''}.${cliente.vence_respuesta ? ` Hay que responderle a más tardar el ${fechaTexto(cliente.vence_respuesta, { day: 'numeric', month: 'long' })} (cinco días hábiles).` : ''}${acciones.esSolicitante ? ' Tú la hiciste: la tiene que resolver otra persona.' : ''}`} />
+                  <Aviso texto={`${ORIGENES[cliente.origen] ?? 'Solicitado'}${cliente.solicitado_at ? ` el ${fechaTexto(cliente.solicitado_at, { day: 'numeric', month: 'short' })}` : ''}${cliente.nota_solicitud ? `: «${cliente.nota_solicitud}»` : ''}.${cliente.vence_respuesta ? ` Hay que responderle a más tardar el ${fechaTexto(cliente.vence_respuesta, { day: 'numeric', month: 'long' })} (cinco días hábiles).` : ''}${acciones.esSolicitante ? ' Tú la hiciste. La resuelve otra persona.' : ''}`} />
                   <Persona id={cliente.solicitado_por_id} nombre={cliente.solicitado_por} detalle="Lo propuso" />
                 </View>
               ) : null}
@@ -185,7 +185,7 @@ export default function Mayorista() {
                     <View key={i} style={{ gap: 3, paddingVertical: 4 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
                         <Text style={{ color: colorSistema.texto2 }}>{`${fechaTexto(h.cuando, { day: 'numeric', month: 'short', year: 'numeric' })} · `}</Text>
-                        {`${textoDeAccion(h)}${h.nota ? ` — «${h.nota}»` : ''}`}
+                        {`${textoDeAccion(h)}${h.nota ? `: «${h.nota}»` : ''}`}
                       </Text>
                       <Persona id={h.por_id} nombre={h.por} />
                     </View>
@@ -197,8 +197,8 @@ export default function Mayorista() {
                 <Seccion titulo={conPrecio ? 'Precio y nota' : 'Nota'}>
                   {conPrecio ? <Segmentos margen={0} activa={precio} onCambiar={setPrecio} opciones={[{ id: 'mayoreo', label: 'Mayoreo' }, { id: 'mayoreo_plus', label: 'Mayoreo Plus' }]} /> : null}
                   <Campo value={nota} onChangeText={setNota} maxLength={300}
-                    placeholder={acciones.resolver ? 'Motivo (obligatorio para rechazar: se le avisa al cliente)'
-                      : acciones.gestionar ? 'Motivo (obligatorio para retirar o bajar a Mayoreo: se le avisa al cliente)'
+                    placeholder={acciones.resolver ? 'Motivo (obligatorio para rechazar; se le avisa al cliente)'
+                      : acciones.gestionar ? 'Motivo (obligatorio para retirar o bajar a Mayoreo; se le avisa al cliente)'
                         : 'Nota (opcional, interna)'} />
                 </Seccion>
               ) : null}
@@ -209,8 +209,8 @@ export default function Mayorista() {
                     onPress={() => correr('Aprobar como mayorista', `${nombre} pasa a comprar con ${PRECIOS[precio]}.`, 'Aprobar', 'aprobado',
                       () => resolverMayorista(cliente.customer_id, 'aprobar', precio, nota), `Aprobado con ${PRECIOS[precio]}`)} />
                   <BotonGrande texto="No aprobar" borde color={MARCA.rojo} deshabilitado={ocupado}
-                    onPress={() => correr('No aprobar', `${nombre} sale de los candidatos. No se le avisa: no pidió nada.`, 'No aprobar', 'descartado',
-                      () => resolverMayorista(cliente.customer_id, 'descartar', null, nota), 'No aprobado: sale de los candidatos', true)} />
+                    onPress={() => correr('No aprobar', `${nombre} sale de los candidatos. No se le avisa.`, 'No aprobar', 'descartado',
+                      () => resolverMayorista(cliente.customer_id, 'descartar', null, nota), 'No aprobado. Sale de los candidatos.', true)} />
                 </View>
               ) : null}
               {acciones.cancelar ? (
@@ -221,8 +221,8 @@ export default function Mayorista() {
 
               {puedeProponer ? (
                 <BotonGrande texto="Proponer como mayorista" deshabilitado={ocupado}
-                  onPress={() => correr('Proponer como mayorista', `Se envía a Administración con ${PRECIOS[precio]}.`, 'Proponer', 'propuesto',
-                    () => proponerMayorista(cliente.customer_id, precio, nota), 'Solicitud enviada a Administración')} />
+                  onPress={() => correr('Proponer como mayorista', `Se envía a un supervisor o administrador con ${PRECIOS[precio]}.`, 'Proponer', 'propuesto',
+                    () => proponerMayorista(cliente.customer_id, precio, nota), 'Solicitud enviada a un supervisor o administrador')} />
               ) : null}
               {acciones.resolver ? (
                 <View style={{ gap: 10 }}>

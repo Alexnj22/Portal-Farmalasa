@@ -110,14 +110,14 @@ function EncargoAccion() {
               </Seccion>
               <BotonGrande texto={ocupado ? 'Guardando…' : 'Confirmar y avisar'} color={MARCA.verde} deshabilitado={ocupado || !(p > 0) || !fecha || fecha < hoySV()}
                 onPress={() => hacer(() => responderEncargo(e.id, 'confirmar', { precio: p, fecha, nota: nota.trim() || null }),
-                  'Encargo confirmado', 'La sala recibe el aviso para confirmarlo con el cliente.')} />
+                  'Encargo confirmado', 'La sucursal recibe el aviso para confirmarlo con el cliente.')} />
             </>
           ) : null}
 
           {modo === 'rechazar' ? (
             <>
               <Seccion titulo="Motivo para el cliente">
-                <Campo value={nota} onChangeText={setNota} maxLength={300} placeholder="Ej. El proveedor no lo tiene; te recomendamos …" />
+                <Campo value={nota} onChangeText={setNota} maxLength={300} placeholder="Ej. El proveedor no lo tiene. Te recomendamos …" />
               </Seccion>
               <BotonGrande texto={ocupado ? 'Guardando…' : 'Avisar al cliente'} color={MARCA.rojo}
                 deshabilitado={ocupado || (e.producto_nuevo && !nota.trim())}
@@ -127,7 +127,7 @@ function EncargoAccion() {
 
           {modo === 'saldo' ? (
             <>
-              <Aviso texto={`Lo pagado (${formatMoney(Number(e.anticipo ?? 0))}) queda a favor del cliente por ${vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sala. El producto queda para la venta. No se deshace.`} />
+              <Aviso texto={`Lo pagado (${formatMoney(Number(e.anticipo ?? 0))}) queda a favor del cliente por ${vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sucursal. El producto queda para la venta. No se deshace.`} />
               <Seccion titulo="Motivo">
                 <Campo value={nota} onChangeText={setNota} maxLength={300} placeholder="Ej. Se le llamó dos veces y no contestó / dijo que ya no lo necesita" />
               </Seccion>
@@ -143,7 +143,7 @@ function EncargoAccion() {
                 <Fecha valor={fecha} onCambiar={setFecha} desde={hoySV()} />
               </Seccion>
               <Seccion titulo="Motivo para el cliente (opcional)">
-                <Campo value={nota} onChangeText={setNota} maxLength={200} placeholder="Ej. El proveedor atrasó el envío" />
+                <Campo value={nota} onChangeText={setNota} maxLength={200} placeholder="Ej. El proveedor atrasó la entrega" />
               </Seccion>
               <BotonGrande texto={ocupado ? 'Guardando…' : 'Cambiar y avisar'} color={MARCA.azulClaro}
                 deshabilitado={ocupado || !fecha || fecha < hoySV() || fecha === e.fecha_estimada}
@@ -155,7 +155,7 @@ function EncargoAccion() {
             <>
               <Seccion titulo="Qué eligió el cliente">
                 <Opciones valor={eleccion} onCambiar={setEleccion} opciones={[
-                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se pide devolver ${formatMoney(Number(e.anticipo ?? 0))} en efectivo; administración la autoriza o la niega` },
+                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se pide devolver ${formatMoney(Number(e.anticipo ?? 0))} en efectivo. Un supervisor o administrador la autoriza o la niega` },
                   { id: 'saldo', label: 'Otro producto', detalle: `Por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal` },
                 ]} />
               </Seccion>

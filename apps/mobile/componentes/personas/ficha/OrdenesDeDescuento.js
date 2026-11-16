@@ -146,7 +146,7 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
         return n;
       });
       if (campos.banco_leido && !campos.banco) {
-        setAviso(`El documento dice «${campos.banco_leido}» y no está en la lista de bancos: elígelo a mano o usa «Otro».`);
+        setAviso(`El documento dice «${campos.banco_leido}» y no está en la lista de bancos. Elígelo a mano o usa «Otro».`);
       }
     } catch (e) {
       setFalla(mensajeAmigable(e) || e?.message || 'No se pudo leer el documento. Llena los datos a mano.');
@@ -191,7 +191,7 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
           automaticallyAdjustKeyboardInsets>
           {recuperado ? <Nota texto="Se recuperó lo que habías escrito antes." /> : null}
 
-          <Seccion titulo="El documento" pie="Se leen las fotos una sola vez. Todo lo que traiga queda editable; un PDF se guarda, pero sus datos se escriben a mano.">
+          <Seccion titulo="El documento" pie="Las fotos se leen una sola vez y todo queda editable. Un PDF se guarda, pero sus datos se escriben a mano.">
             {hojas.map((h, i) => (
               <View key={`${h.uri}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={1}>
@@ -217,7 +217,7 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
           {f.nombre_en_documento ? (
             <Nota tono={cruce === 'distinto' ? 'cuidado' : 'bien'} texto={cruce === 'distinto'
               ? `El documento nombra a ${f.nombre_en_documento}, que no parece ser esta persona. Revísalo antes de guardar.`
-              : `El documento es de ${f.nombre_en_documento} — coincide con la ficha.`} />
+              : `El documento es de ${f.nombre_en_documento}. Coincide con sus datos.`} />
           ) : null}
           {aviso ? <Nota texto={aviso} /> : null}
 
@@ -271,7 +271,7 @@ export default function OrdenesDeDescuento({ empleado, puedeEditar }) {
   if (!id) {
     return (
       <Seccion titulo="Órdenes de descuento">
-        <Nota texto="Se agregan cuando la ficha ya existe: guárdala y ábrela de nuevo para cargar el préstamo. Si esta persona ya trabajaba aquí, enlázala con su ficha (pestaña Personal) y aparecen aquí mismo." />
+        <Nota texto="Primero guarda los datos de la persona y ábrelos de nuevo para cargar el préstamo. Si ya trabajaba aquí, enlázala con su perfil en la pestaña Personal y aparecen aquí." />
         <Enlace texto="Agregar orden" deshabilitado onPress={() => {}} />
       </Seccion>
     );
@@ -281,7 +281,7 @@ export default function OrdenesDeDescuento({ empleado, puedeEditar }) {
   const cuotaMensual = vigentes.reduce((s, o) => s + (Number(o.cuota) || 0) * (o.periodicidad === 'QUINCENAL' ? 2 : 1), 0);
 
   const borrar = (o) => Alert.alert('Borrar orden de descuento',
-    `¿Borrar la orden de ${o.banco || 'este banco'}? Si ya terminó de pagarse, mejor márcala como finalizada para que quede el historial.`, [
+    `¿Borrar la orden de ${o.banco || 'este banco'}? Si ya terminó de pagarse, mejor márcala como finalizada. Así queda en el historial.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Borrar', style: 'destructive', onPress: async () => {
         try {

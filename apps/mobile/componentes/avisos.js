@@ -110,7 +110,7 @@ export async function rechazarTrasladoDesdeAviso(d, motivo = null, texto = '') {
   trabajando(`Rechazando traslado${deQue(d)}…`);
   const { error } = await rechazarTraslado(d.solicitud, motivo, texto);
   if (error) { fallo('No se pudo rechazar', error.message ?? String(error)); return false; }
-  listo('Traslado rechazado', 'La sala que lo pidió recibe el aviso con tu motivo.');
+  listo('Traslado rechazado', 'La sucursal que lo pidió recibe el aviso con tu motivo.');
   return true;
 }
 

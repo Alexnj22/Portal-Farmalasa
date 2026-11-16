@@ -3,6 +3,7 @@ import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.t
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
+import { fijarCosto } from "../_shared/erp-regulado.ts";
 
 // Aplica en el ERP la carga o el descarte de inventario que el supervisor
 // aprobó. Cuarta pieza de la misma familia que `aplicar-solicitud-facturacion`,
@@ -217,7 +218,8 @@ Deno.serve(async (req) => {
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
     // aprueba sale del JWT y no se recibe nunca por parámetro.
-    const { request_id, approver_note, lineas_aceptadas } = await req.json().catch(() => ({}));
+    const { request_id, approver_note, lineas_aceptadas, accion, linea, costo } =
+      await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
 
     // ── Quién llama. Nunca del payload: del JWT. ──────────────────────────
@@ -264,6 +266,93 @@ Deno.serve(async (req) => {
       }, 422);
     if (sol.status !== "PENDING")
       return json({ ok: false, error: `La solicitud ya está ${sol.status}.` }, 409);
+
+    // ── Poner el costo que falta (2026-11-16) ─────────────────────────────
+    //
+    // El sistema rechaza una carga entera si un producto tiene costo 0 («El
+    // costo para el producto ID '5312' no es válido»), y hasta hoy eso sólo se
+    // destrababa entrando a la ficha del producto fuera del portal. Ésta es la
+    // salida desde la solicitud misma, con los mismos permisos que aprobarla.
+    //
+    // Lo que viaja del navegador es el ÍNDICE de la línea y el costo: el
+    // producto y la presentación se releen de la solicitud guardada, igual que
+    // en `lineas_aceptadas`. Y sólo llena un costo VACÍO, sólo en una carga
+    // pendiente: no es una puerta para cambiar costos. No toma el arriendo
+    // porque no mueve existencias; si alguien aprueba a la vez, la carga lee
+    // el costo recién puesto o falla como fallaba antes.
+    if (accion === "fijar_costo") {
+      if (!esCarga)
+        return json({ ok: false, error: "El costo sólo se pone desde una carga." }, 422);
+      const metaC = (typeof sol.metadata === "string" ? JSON.parse(sol.metadata) : sol.metadata) ?? {};
+      const items: Linea[] = Array.isArray(metaC.items) ? metaC.items : [];
+      const i = Number(linea);
+      if (!Number.isInteger(i) || i < 0 || i >= items.length)
+        return json({ ok: false, error: "Esa línea no está en la solicitud." }, 422);
+      const monto = Math.round(Number(costo) * 10000) / 10000;
+      // Un tope de cordura: un costo de diez mil por presentación es un dedo
+      // de más, no una compra. Mejor frenarlo que dejarlo en la ficha.
+      if (!Number.isFinite(monto) || monto <= 0 || monto > 10000)
+        return json({ ok: false, error: "Escribe un costo mayor que cero." }, 422);
+      const erpSucursalC = Number(metaC.erp_sucursal_id);
+      if (!erpSucursalC)
+        return json({ ok: false, error: "La solicitud no trae la sucursal." }, 422);
+
+      const l = items[i];
+      const nombre = l.descripcion ?? `el producto ${l.erp_product_id}`;
+      const cookieC = await login();
+      const rS = await pedir(cookieC, SESION, new URLSearchParams({
+        process: "set_sucursal", id_sucursal: String(erpSucursalC),
+      }), { extra: { Referer: `${BASE}/dashboard.php` } });
+      let okS = false;
+      try { okS = Boolean(JSON.parse(rS)?.success); } catch { okS = false; }
+      if (!okS) return json({ ok: false, error: "No se pudo abrir la sucursal de la solicitud." }, 502);
+
+      const c = leerConsulta(await pedir(cookieC, INGRESO, new URLSearchParams({
+        process: "consultar_stock", tipo: "D", id_producto: String(l.erp_product_id),
+      }), { extra: { Referer: INGRESO } }));
+      if (!c.ok) return json({ ok: false, error: `No se pudo leer ${nombre}.` }, 502);
+      const elegida = c.presentaciones.find((p) => p.etiqueta === norm(`${l.presentacion_tipo} (${l.factor})`));
+      if (!elegida)
+        return json({
+          ok: false, codigo: "PRESENTACION_NO_EXISTE",
+          error: `${nombre} ya no tiene la presentación ${l.presentacion_tipo} (${l.factor}).`,
+        }, 409);
+
+      try {
+        await fijarCosto(cookieC, Number(l.erp_product_id), elegida.id, monto);
+      } catch (e) {
+        return json({ ok: false, error: (e as Error).message }, 409);
+      }
+
+      // La prueba que importa es la que va a hacer la carga: pedir el detalle
+      // de ESA presentación y ver el costo. Si no lo ve, la ficha dice una cosa
+      // y la carga va a leer otra — se avisa en vez de dar por resuelto.
+      let visto = 0;
+      try {
+        const jp = JSON.parse(await pedir(cookieC, INGRESO, new URLSearchParams({
+          process: "getpresentacion", id_presentacion: elegida.id,
+        }), { extra: { Referer: INGRESO } }));
+        visto = Number(jp?.costo ?? 0);
+      } catch { visto = 0; }
+      if (!(visto > 0))
+        return json({
+          ok: false,
+          error: `Se guardó el costo en la ficha de ${nombre}, pero la carga todavía no lo ve. Prueba de nuevo en un minuto.`,
+        }, 502);
+
+      // El catálogo del portal se pone al día ya, sin esperar la próxima
+      // lectura: así la pantalla deja de ofrecer «Poner costo» en esa línea.
+      const { error: ppErr } = await admin.from("product_precios")
+        .update({ costo: monto })
+        .eq("product_id", Number(l.erp_product_id))
+        .eq("factor", Number(l.factor))
+        .lte("costo", 0);
+      if (ppErr) console.error("[aplicar-movimiento-inventario] product_precios:", ppErr.message);
+
+      console.log(`[aplicar-movimiento-inventario] costo ${monto} en ${l.erp_product_id}/${elegida.id} `
+        + `por ${aprobador.id} (solicitud ${sol.id})`);
+      return json({ ok: true, costo: visto, linea: i });
+    }
 
     // ── El arriendo: de acá hasta el final, esta solicitud es de esta corrida ─
     // La comprobación de arriba mira el estado en un instante, y entre ese

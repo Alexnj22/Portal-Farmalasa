@@ -14,7 +14,7 @@
 // sin aprobador.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { conBitacora } from './audit';
+import { conBitacora, anotar } from './audit';
 
 export const REQUEST_SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
 
@@ -465,6 +465,63 @@ export async function aplicarMovimientoInventarioEnErp(requestId, approverNote =
 
         // El motivo real viaja en el cuerpo; sin leerlo todo fallo se ve como
         // un "non-2xx status code" indistinguible.
+        let detalle = '';
+        try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
+        return { ok: false, error: detalle || error.message };
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
+/**
+ * Los renglones de una carga cuyo producto NO tiene costo en esa presentación
+ * (2026-11-16). El sistema rechaza la carga ENTERA si uno está en cero, así
+ * que quien aprueba tiene que verlo antes de apretar «Aprobar», no después.
+ *
+ * Cruza por producto Y factor —la presentación que se pidió—, no por producto
+ * solo: un producto con la caja costeada y la unidad en cero rebota igual.
+ * Devuelve `Set` de índices de `items`, o `null` si no se pudo leer (y
+ * entonces la pantalla no afirma nada).
+ */
+export async function lineasSinCosto(items = []) {
+    const ids = [...new Set(items.map(it => Number(it?.erp_product_id)).filter(Boolean))];
+    if (ids.length === 0) return new Set();
+    const filas = await fetchAllRows(() => supabase
+        .from('product_precios')
+        .select('id, product_id, factor, costo')
+        .in('product_id', ids)
+        .eq('activo', true)
+        .order('id', { ascending: true }));
+    if (filas === null) return null;
+    const costoDe = new Map();
+    for (const f of filas) {
+        const k = `${f.product_id}|${Number(f.factor)}`;
+        costoDe.set(k, Math.max(costoDe.get(k) ?? 0, Number(f.costo) || 0));
+    }
+    const sin = new Set();
+    items.forEach((it, i) => {
+        const k = `${Number(it?.erp_product_id)}|${Number(it?.factor)}`;
+        // Sin fila no se afirma «sin costo»: puede ser una presentación que el
+        // catálogo todavía no leyó. Sólo el cero medido cuenta.
+        if (costoDe.has(k) && !(costoDe.get(k) > 0)) sin.add(i);
+    });
+    return sin;
+}
+
+/**
+ * Pone el costo que le falta a un renglón de una carga pendiente. Lo hace el
+ * servidor sobre la ficha del producto, releyendo producto y presentación de
+ * la solicitud guardada: de acá sólo viaja el índice y el monto. Nunca lanza.
+ */
+export async function fijarCostoDeLinea(requestId, linea, costo) {
+    try {
+        const { data, error } = await supabase.functions.invoke('aplicar-movimiento-inventario', {
+            body: { accion: 'fijar_costo', request_id: requestId, linea, costo },
+        });
+        if (!error) {
+            if (data?.ok) anotar('INVENTORY_LOAD_COST_SET', requestId, { linea, costo: data.costo });
+            return data ?? { ok: false, error: 'El servidor no devolvió respuesta.' };
+        }
         let detalle = '';
         try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
         return { ok: false, error: detalle || error.message };

@@ -17,6 +17,7 @@ import {
 import { CaraPersona, ChipPersona, BloquePersonas } from './PersonasSolicitud';
 import LaVenta from './VentaDeSolicitud';
 import PuntosDelCambio from './PuntosDelCambio';
+import CostoFaltante from './CostoFaltante';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ajusteSinCambio, fmtUltimaVenta } from '@nucleo/utils/minmaxSolicitud';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -640,6 +641,11 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                     onCantidad={onCantidad} cantidades={cantidades}
                     rechazadas={rech} ajustadas={ajus}
                     signo={SIGNO_POR_TIPO[t] ?? ''} />
+                {/* Sólo a quien decide una carga pendiente: el sistema la
+                    rechaza entera si un producto está a costo cero. */}
+                {t === 'INVENTORY_LOAD_REQUEST' && req.status === 'PENDING' && typeof onToggle === 'function' && (
+                    <CostoFaltante req={req} meta={meta} />
+                )}
                 <EvidenciaFotos urls={meta.evidencia_urls} />
             </div>
         );

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1549.0 — Poner el costo que falta desde la carga de inventario
+
+- Una carga con un producto a costo 0 rebotaba entera al aprobarla («El costo
+  para el producto ID '5312' no es válido», MINART AM, creado el 13-nov sin
+  costo) y sólo se destrababa entrando a la ficha del producto fuera del portal.
+- Ahora el detalle de una carga pendiente avisa ANTES de aprobar qué productos
+  no tienen costo (cruce por producto y factor en `product_precios`) y deja
+  escribirlo ahí (`CostoFaltante.jsx`).
+- `aplicar-movimiento-inventario` acepta `accion: 'fijar_costo'` con el índice
+  de la línea y el monto; producto y presentación se releen de la solicitud.
+  Mismo permiso que aprobar (`requests_inventario`). `fijarCosto`
+  (`_shared/erp-regulado.ts`) arma el mismo sobre de la ficha, **sólo llena un
+  costo vacío**, relee y exige que nada más haya cambiado; después se confirma
+  con `getpresentacion`, que es lo que lee la carga, y se pone al día
+  `product_precios.costo`. Los precios no se tocan.
+
 ## v2.1548.5 — Respaldo semanal: ya no muere por memoria con audit_logs
 
 - El respaldo del domingo 15-nov murió con «Memory limit exceeded» al llegar a

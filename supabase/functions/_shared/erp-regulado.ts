@@ -148,3 +148,58 @@ export async function cambiarRegulado(cookie: string, id: number, valor: boolean
     throw new Error(`La ficha de ${antes.nombre} quedó distinta al cambiar el control de lote.`);
   return antes;
 }
+
+/**
+ * Pone el COSTO de una presentación que hoy no tiene (2026-11-16).
+ *
+ * Nació con MINART AM (id 5312): el producto se creó con costo 0 y el sistema
+ * rechaza cualquier carga a costo cero («El costo para el producto ID '5312'
+ * no es válido»), así que la solicitud no se podía aprobar desde el portal.
+ *
+ * Mismo sobre y misma verificación que `cambiarRegulado`, con dos frenos
+ * propios:
+ *  - **Sólo llena un costo vacío.** Si la presentación ya tiene costo > 0 se
+ *    niega: corregir un costo existente es una decisión de precios, no un
+ *    trámite para destrabar una carga.
+ *  - Los precios NO se tocan. Los «precios automáticos» de la ficha los
+ *    recalcula el navegador del sistema, no el servidor
+ *    (`reference_precios_automaticos_del_erp`): mandar los mismos precios con
+ *    otro costo deja los precios como estaban. La huella lo comprueba.
+ */
+export async function fijarCosto(cookie: string, id: number, idPrp: string, costo: number): Promise<Ficha> {
+  if (!(costo > 0)) throw new Error("El costo tiene que ser mayor que cero.");
+  const antes = await leerFichaDe(cookie, id);
+  if (antes.conUbi) throw new Error(`La ficha ${id} trae campos que el sobre no conoce.`);
+  const k = antes.presentaciones.findIndex((p) => p.exis && p.id_prp === idPrp);
+  if (k < 0) throw new Error(`La presentación ${idPrp} no está en la ficha de ${antes.nombre}.`);
+  const actual = parseFloat(antes.presentaciones[k].costo);
+  if (actual > 0)
+    throw new Error(`${antes.nombre} ya tiene costo (${antes.presentaciones[k].costo}); no se cambia desde acá.`);
+
+  const texto = costo.toFixed(4);
+  const nueva: Ficha = {
+    ...antes,
+    presentaciones: antes.presentaciones.map((p, i) => (i === k ? { ...p, costo: texto } : p)),
+  };
+
+  let resp = "";
+  try {
+    resp = await pedir(cookie, EDITAR, sobreDeEdicion(nueva, antes.regulado),
+      { extra: { Referer: `${BASE}/admin_producto.php` }, reintentos: 1 });
+  } catch { /* se decide abajo con la relectura */ }
+  let j: { typeinfo?: string; msg?: string } | null = null;
+  try { j = JSON.parse(resp); } catch { /* idem */ }
+
+  const despues = await leerFichaDe(cookie, id);
+  const quedo = despues.presentaciones.find((p) => p.id_prp === idPrp);
+  if (!quedo || Math.abs(parseFloat(quedo.costo) - costo) > 0.00005)
+    throw new Error(`El sistema no guardó el costo de ${antes.nombre}: ${(j?.msg ?? resp.slice(0, 160)) || "sin respuesta"}`);
+  // Todo lo demás, idéntico: la ficha releída con el costo de antes en esa
+  // presentación tiene que dar la misma huella que la de antes.
+  const sinCosto = (f: Ficha) => JSON.stringify({
+    ...f, presentaciones: f.presentaciones.map((p) => (p.id_prp === idPrp ? { ...p, costo: "" } : p)),
+  });
+  if (sinCosto(despues) !== sinCosto(antes))
+    throw new Error(`La ficha de ${antes.nombre} quedó distinta en algo más que el costo.`);
+  return despues;
+}

@@ -178,3 +178,92 @@ export function maximoDePuntos(info, total) {
     const porTotal = Math.floor(((Number(total) || 0) - minimo) / (p.valor || 0.01) + 1e-9);
     return Math.max(0, Math.min(p.disponibles, p.tope, porTotal));
 }
+
+/**
+ * Todo lo que impide enviar, no sólo lo primero, y cada cosa con cómo
+ * resolverla (2026-11-16, usuario: «los avisos deben dar sugerencias de cómo
+ * solventar, no sólo el error»). Cada problema:
+ *   { clave, titulo, ayuda, campo, linea?, acciones: [{ id, label, valor? }] }
+ * Las acciones son IDS: la pantalla decide qué hace cada una y esconde las
+ * que el usuario no puede usar (apartar, editar el cliente).
+ */
+export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos = 0, infoCliente = null, hayCliente = false }) {
+    const out = [];
+    if (!(lineas ?? []).length) {
+        out.push({ clave: 'vacia', titulo: 'Agrega al menos un producto.', ayuda: 'Búscalo por nombre o escanea el código (F3).',
+            campo: 'buscarProducto', acciones: [{ id: 'buscar', label: 'Buscar producto' }] });
+        return out;
+    }
+    if (!cotizacion) return out;
+    for (const l of cotizacion.lineas ?? []) {
+        if (!l.error) continue;
+        const linea = `${l.producto_id}-${l.factor}`;
+        const base = { clave: `linea-${linea}`, linea, campo: `linea-${linea}` };
+        const nombre = l.nombre ?? 'Un producto';
+        const pide = Number(l.cantidad ?? 0) * Number(l.factor ?? 1);
+        if (/^Hay /.test(l.error)) {
+            const alcanza = Math.floor(Number(l.existencia ?? 0) / Number(l.factor || 1));
+            const otras = (l.otras ?? []).map((o) => `${o.sucursal} (${o.disponibles})`).join(', ');
+            out.push({ ...base, tipo: 'existencia',
+                titulo: `${nombre}: hay ${Number(l.existencia ?? 0)} y pides ${pide}.`,
+                ayuda: alcanza > 0
+                    ? `Baja a ${alcanza}${otras ? `, pide el resto a ${otras}` : ''} o apártalo para el cliente.`
+                    : otras ? `No hay aquí. Hay en ${otras}: pídelo o apártalo.` : 'No hay en ninguna sucursal: apártalo como encargo o quítalo.',
+                acciones: [
+                    ...(alcanza > 0 ? [{ id: 'ajustar', label: `Dejar ${alcanza}`, valor: alcanza }] : []),
+                    ...(otras ? [{ id: 'otras', label: 'Pedir a otra sucursal' }] : []),
+                    { id: 'apartar', label: 'Apartar' },
+                    { id: 'quitar', label: 'Quitar' },
+                ] });
+        } else if (/cantidad/i.test(l.error)) {
+            out.push({ ...base, tipo: 'cantidad', titulo: `${nombre}: escribe una cantidad.`, ayuda: 'Va de 1 a 999.',
+                acciones: [{ id: 'ajustar', label: 'Poner 1', valor: 1 }, { id: 'quitar', label: 'Quitar' }] });
+        } else if (/precio/i.test(l.error)) {
+            out.push({ ...base, tipo: 'precio', titulo: `${nombre}: esa presentación no tiene precio.`,
+                ayuda: 'Elige otra presentación o quítalo.', acciones: [{ id: 'quitar', label: 'Quitar' }] });
+        } else {
+            out.push({ ...base, tipo: 'producto', titulo: `${nombre}: ${l.error}`, ayuda: 'No se puede vender. Quítalo de la venta.',
+                acciones: [{ id: 'quitar', label: 'Quitar' }] });
+        }
+    }
+    if (documento === 'credito_fiscal') {
+        const f = faltanParaCcf(hayCliente ? cotizacion.cliente : null);
+        if (f.length) out.push({ clave: 'ccf', campo: 'cliente',
+            titulo: hayCliente ? `Para crédito fiscal faltan: ${f.join(', ')}.` : 'El crédito fiscal necesita un cliente.',
+            ayuda: hayCliente ? 'Complétalos en los datos del cliente o emite Factura.' : 'Busca al cliente (F4) o emite Factura.',
+            acciones: [hayCliente ? { id: 'editar', label: 'Completar datos' } : { id: 'cliente', label: 'Buscar cliente' },
+                { id: 'factura', label: 'Cambiar a Factura' }] });
+    }
+    if (pago === 'credito' && (!hayCliente || cotizacion.generico)) {
+        out.push({ clave: 'credito', campo: 'cliente', titulo: 'El pago al crédito necesita un cliente con datos.',
+            ayuda: 'Busca al cliente (F4) o cambia el tipo de pago.',
+            acciones: [{ id: 'cliente', label: 'Buscar cliente' }, { id: 'contado', label: 'Cambiar a Efectivo' }] });
+    }
+    const p = faltaEnPuntos({ puntos, info: infoCliente, total: totalesDe(cotizacion).total });
+    if (p) {
+        const max = maximoDePuntos(infoCliente, totalesDe(cotizacion).total);
+        const min = Number(infoCliente?.puntos?.minimo_canje ?? 0);
+        out.push({ clave: 'puntos', campo: 'puntos', titulo: p,
+            ayuda: max >= min && max > 0 ? `Puede usar hasta ${max} en esta venta.` : 'En esta venta no alcanza para canjear.',
+            acciones: [...(max >= min && max > 0 ? [{ id: 'puntos', label: `Usar ${max}`, valor: max }] : []),
+                { id: 'puntos', label: 'No canjear', valor: 0 }] });
+    }
+    return out;
+}
+
+/** Los datos que le faltan a la ficha y que caja o Hacienda terminan pidiendo. */
+export function datosQueFaltan(info) {
+    if (!info || info.generico || info.programa === 'mostrador') return [];
+    const v = (k) => String(info[k] ?? '').trim();
+    return [
+        !v('phone') && 'Teléfono',
+        !v('dui') && !v('nit') && 'DUI o NIT',
+        !v('email') && 'Correo',
+        !v('direccion') && 'Dirección',
+    ].filter(Boolean);
+}
+
+/** El comprobante de una venta pasada, como lo lee la sucursal. */
+export function nombreDeComprobante(tipo) {
+    return { COF: 'Factura', CCF: 'Crédito fiscal', TIK: 'Ticket', NC: 'Nota de crédito' }[tipo] ?? tipo ?? '';
+}

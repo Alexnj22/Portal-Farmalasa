@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-    Ban, ClipboardList, Gift, Minus, Package, PackageSearch, Pencil, Plus, Receipt, RefreshCw, Send, ShoppingBag,
-    ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
+    AlertTriangle, Ban, ChevronDown, ClipboardList, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
+    RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -14,7 +14,6 @@ import LiquidModal from '../components/common/LiquidModal';
 import SegmentedControl from '../components/common/SegmentedControl';
 import PortalInput from '../components/common/PortalInput';
 import SearchInput from '../components/common/SearchInput';
-import AvisoDeFalta from '../components/common/AvisoDeFalta';
 import ConfirmModal from '../components/common/ConfirmModal';
 import ClienteAvatar from './chat-clientes/ClienteAvatar';
 import { irAlCampo } from '../plataforma/irAlCampo';
@@ -30,9 +29,9 @@ import {
     anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala, fotosDeProductos,
 } from '@nucleo/data/preventas';
 import {
-    MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, descuentoDePuntos, estadoDePreventa, faltaParaEnviar,
-    faltanParaCcf, lineasDeVenta, lineasParaCotizar, maximoDePuntos, nombreDeLista, opcionesDePrecio, porQueEsaLista,
-    sePuedeAnular, sePuedeCorregir, totalesDe,
+    MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
+    faltanParaCcf, lineasDeVenta, lineasParaCotizar, maximoDePuntos, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
+    porQueEsaLista, problemasDeVenta, sePuedeAnular, sePuedeCorregir, totalesDe,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -49,27 +48,30 @@ const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 // ═══════════════════════════════════════════════════════════════════════════
 // Preventa — vender desde el portal y que la venta llegue armada a caja.
 //
-// Cuarta vuelta (2026-11-16, usuario: «moderno, fácil, eficiente, intuitivo,
-// que funcione con las teclas y los focus estén donde deben»):
-// · La sucursal se elige en la píldora del cuerpo (`FilterBar.Sucursal`),
-//   junto a las acciones de la vista, como en el resto del portal.
-// · La foto del cliente (la que subió desde la app) y la de cada producto.
-// · Teclado de punta a punta, con las MISMAS teclas que la caja y la venta de
-//   Distribución, para que nadie aprenda dos mapas:
-//     F2 · F8 · Ctrl+Enter  enviar a caja        F3 · /  buscar producto
-//     F4  buscar cliente                          F6      vaciar (con confirmación)
-//     F7  existencia en otras sucursales          Supr    quitar el producto
-//     ↑ ↓ en un buscador recorre la lista, Enter elige, Esc limpia.
-//     En los productos: ← → cambia de campo, ↑ ↓ de producto, Enter vuelve
-//     al buscador.
-// · El foco va solo a donde sigue el trabajo: al abrir, al buscador; al
-//   elegir cliente, a productos; al agregar uno, a su cantidad; al quitarlo
-//   o cerrar un diálogo, de vuelta al buscador. En el teléfono no se enfoca
-//   nada solo (abriría el teclado encima de la pantalla).
+// Quinta vuelta (2026-11-16, usuario: «ocupa demasiado espacio, debe ser más
+// compacto pero igual de informativo; los datos del cliente bien
+// estructurados, avisar si falta un dato importante, ver sus últimas compras;
+// los avisos se salen del cuadro y deben dar sugerencias; validaciones más
+// agresivas y visuales»):
+// · El cliente en un bloque denso: cara, nombre, tipo y nivel en una fila;
+//   sus cifras al lado; sus datos en una grilla donde lo que falta se ve
+//   («Falta»), y una franja que dice qué falta con «Completar datos».
+// · «Suele llevar» (lo que más compra en 12 meses) y «Últimas compras»
+//   (las 5 últimas con sus productos): todo se agrega con un toque.
+// · Validación: TODOS los problemas a la vez (`problemasDeVenta`), cada uno
+//   con qué hacer y un botón que lo hace (dejar lo que alcanza, pedir a otra
+//   sucursal, apartar, quitar, completar datos, cambiar a Factura…). La fila
+//   con problema se pinta en rojo y el campo culpable queda marcado.
 //
-// Tercera vuelta: ficha del cliente (tipo, nivel, puntos), descuento por
-// puntos (renglón «DESCUENTO POR PUNTOS SALUD» a $0.01 por punto), tipo de
-// pago en un select, existencia en otras sucursales y apartar.
+// Cuarta vuelta: sucursal en la píldora (`FilterBar.Sucursal`), fotos del
+// cliente y de los productos, y teclado con las mismas teclas que la caja:
+//     F2 · F8 · Ctrl+Enter  enviar a caja        F3 · /  buscar producto
+//     F4  buscar cliente                          F6      vaciar (confirma)
+//     F7  existencia en otras sucursales          Supr    quitar el producto
+//     ↑ ↓ en un buscador recorre la lista, Enter elige, Esc limpia; en los
+//     productos ← → cambia de campo, ↑ ↓ de producto, Enter vuelve al buscador.
+// El foco va solo a donde sigue el trabajo; en el teléfono no se enfoca nada
+// solo (abriría el teclado encima de la pantalla).
 //
 // El precio lo decide la base (`preventa_cotizar`) y lo vuelve a calcular
 // antes de mandar. Corregir reescribe la MISMA preventa en caja; anular la
@@ -86,13 +88,11 @@ const DOCUMENTOS = [
 ];
 const DIAS = [{ value: '1', label: 'Hoy' }, { value: '7', label: '7 días' }, { value: '30', label: '30 días' }];
 const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
-const TECLAS = [
-    ['F2', 'Enviar a caja'], ['F3', 'Buscar producto'], ['F4', 'Buscar cliente'], ['F7', 'Otras sucursales'],
-    ['F6', 'Vaciar'], ['Supr', 'Quitar producto'], ['↑ ↓', 'Moverse'], ['Esc', 'Limpiar búsqueda'],
-];
+const TECLAS = [['F2', 'Enviar'], ['F3', 'Producto'], ['F4', 'Cliente'], ['F7', 'Otras sucursales'], ['F6', 'Vaciar'], ['Supr', 'Quitar']];
 const ID_BUSCAR_PRODUCTO = 'preventa-buscar-producto';
 const ID_BUSCAR_CLIENTE = 'preventa-buscar-cliente';
 const enfocar = (id) => { const el = document.getElementById(id); if (el) { el.focus(); el.select?.(); } };
+const claveDe = (l) => `${l.producto_id}-${l.factor}`;
 
 export default function PreventaView({ openModal }) {
     const { user, hasPermission, getScope } = useAuth();
@@ -131,14 +131,12 @@ export default function PreventaView({ openModal }) {
     const cambiar = (cambio) => setVenta((v) => ({ ...v, ...cambio }));
 
     // ── El foco: una orden que se cumple después de pintar ────────────────
-    // `{ id }` enfoca ese elemento; `{ cantidad: 'pid-factor' }` el campo de
-    // cantidad de ese producto, con el número seleccionado para reescribirlo.
     const [foco, setFoco] = useState(null);
     useEffect(() => {
         if (!foco) return;
         if (foco.cantidad) enfocar(`cantidad-${foco.cantidad}`);
         else if (foco.id) enfocar(foco.id);
-        setFoco(null);  
+        setFoco(null);
     }, [foco]);
     const alBuscador = useCallback(() => { if (!tactil) setFoco({ id: ID_BUSCAR_PRODUCTO }); }, [tactil]);
 
@@ -152,7 +150,7 @@ export default function PreventaView({ openModal }) {
     useEffect(() => {
         if (!sala) return undefined;
         let vivo = true;
-        setCotizando(true);  
+        setCotizando(true);
         const t = setTimeout(() => {
             cotizarPreventa(sala, clienteId, JSON.parse(pedido))
                 .then((c) => { if (vivo) { setCotizacion(c); setErrorCotizar(''); } })
@@ -162,10 +160,10 @@ export default function PreventaView({ openModal }) {
         return () => { vivo = false; clearTimeout(t); };
     }, [sala, clienteId, pedido, vuelta]);
 
-    // ── La ficha del cliente: foto, tipo, nivel, puntos ───────────────────
+    // ── La ficha del cliente: foto, tipo, nivel, puntos, compras ──────────
     const [info, setInfo] = useState(null);
     useEffect(() => {
-        if (!sala || !clienteId) { setInfo(null); return undefined; }  
+        if (!sala || !clienteId) { setInfo(null); return undefined; }
         let vivo = true;
         fetchClienteDePreventa(sala, clienteId)
             .then((d) => { if (vivo) setInfo(d); })
@@ -190,20 +188,41 @@ export default function PreventaView({ openModal }) {
     const puntos = Math.trunc(Number(venta.puntos) || 0);
     const descPuntos = descuentoDePuntos(puntos, info?.puntos?.valor);
     const aPagar = Math.max(0, Math.round((totales.total - descPuntos) * 100) / 100);
-    const falta = errorCotizar ? { texto: errorCotizar, campo: null }
-        : faltaParaEnviar({ lineas: venta.lineas, cotizacion, cotizando, documento: venta.documento, pago: venta.pago, puntos, infoCliente: info });
-    const faltanCcf = venta.documento === 'credito_fiscal' && cotizacion ? faltanParaCcf(cotizacion.cliente) : [];
     const maxPuntos = maximoDePuntos(info, totales.total);
+
+    // Todo lo que impide enviar, con qué hacer. Las acciones que el usuario
+    // no puede usar no se ofrecen.
+    const problemas = useMemo(() => {
+        if (errorCotizar) return [{ clave: 'cotizar', titulo: errorCotizar, ayuda: 'Revisa la conexión e intenta de nuevo.', acciones: [{ id: 'reintentar', label: 'Reintentar' }] }];
+        return problemasDeVenta({ lineas: venta.lineas, cotizacion: cotizando ? null : cotizacion, documento: venta.documento,
+            pago: venta.pago, puntos, infoCliente: info, hayCliente: Boolean(venta.cliente) })
+            .map((p) => ({ ...p, acciones: p.acciones.filter((a) => (a.id !== 'apartar' || puedeApartar) && (a.id !== 'editar' || puedeEditarClientes)) }));
+    }, [errorCotizar, venta.lineas, venta.documento, venta.pago, venta.cliente, cotizacion, cotizando, puntos, info, puedeApartar, puedeEditarClientes]);
+    const revisando = !errorCotizar && venta.lineas.length > 0 && (cotizando || !cotizacion);
+    const problemaDeLinea = (l) => problemas.find((p) => p.linea === claveDe(l));
+    const clienteConProblema = problemas.some((p) => p.clave === 'ccf' || p.clave === 'credito');
+    const faltanCcf = venta.documento === 'credito_fiscal' && venta.cliente && cotizacion ? faltanParaCcf(cotizacion.cliente) : [];
 
     const ponerLinea = (i, cambio) => cambiar({ lineas: venta.lineas.map((l, j) => (j === i ? { ...l, ...cambio } : l)) });
     const quitarLinea = (i) => { cambiar({ lineas: venta.lineas.filter((_, j) => j !== i) }); alBuscador(); };
-    const agregarProducto = (p) => {
+    const agregarProducto = (p, cantidad = 1) => {
         if (venta.lineas.length >= MAX_PRODUCTOS && !venta.lineas.some((l) => l.producto_id === Number(p.id) && l.factor === 1)) {
-            showToast('Llegaste al tope', `Una preventa lleva hasta ${MAX_PRODUCTOS} productos.`, 'warning');
+            showToast('Llegaste al tope', `Una preventa lleva hasta ${MAX_PRODUCTOS} productos. Envía esta y empieza otra.`, 'warning');
             return;
         }
-        cambiar({ lineas: agregarLinea(venta.lineas, p, 1) });
+        cambiar({ lineas: agregarLinea(venta.lineas, p, 1).map((l) => (l.producto_id === Number(p.id) && l.factor === 1 && cantidad > 1
+            ? { ...l, cantidad: Math.min(999, (Number(l.cantidad) || 0) - 1 + cantidad) } : l)) });
         if (!tactil) setFoco({ cantidad: `${Number(p.id)}-1` });
+    };
+    const agregarVarios = (productos) => {
+        let lineas = venta.lineas;
+        for (const p of productos) {
+            if (lineas.length >= MAX_PRODUCTOS) break;
+            lineas = agregarLinea(lineas, { id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url }, 1);
+        }
+        cambiar({ lineas });
+        showToast('Agregados', `${productos.length} producto(s) de esa compra. Revisa las cantidades.`, 'success');
+        alBuscador();
     };
 
     // ── El cliente: elegir, editar, crear (el editor del portal) ──────────
@@ -240,6 +259,27 @@ export default function PreventaView({ openModal }) {
         return r.apartado;
     };
 
+    // ── Lo que hace cada sugerencia ───────────────────────────────────────
+    const resolver = (p, a) => {
+        const i = p.linea ? venta.lineas.findIndex((l) => claveDe(l) === p.linea) : -1;
+        const linea = i >= 0 ? venta.lineas[i] : null;
+        const nombre = linea ? (filaDe(linea)?.nombre ?? linea.nombre) : '';
+        switch (a.id) {
+            case 'buscar': enfocar(ID_BUSCAR_PRODUCTO); break;
+            case 'ajustar': if (i >= 0) { ponerLinea(i, { cantidad: a.valor }); if (!tactil) setFoco({ cantidad: p.linea }); } break;
+            case 'otras': setConsulta(nombre); break;
+            case 'apartar': setApartar({ producto: linea ? { id: linea.producto_id, nombre } : null }); break;
+            case 'quitar': if (i >= 0) quitarLinea(i); break;
+            case 'editar': editarCliente(); break;
+            case 'cliente': setFoco({ id: ID_BUSCAR_CLIENTE }); break;
+            case 'factura': cambiar({ documento: 'consumidor_final' }); break;
+            case 'contado': cambiar({ pago: 'contado' }); break;
+            case 'puntos': cambiar({ puntos: a.valor ? String(a.valor) : '' }); break;
+            case 'reintentar': setVuelta((n) => n + 1); break;
+            default: break;
+        }
+    };
+
     // ── Las preventas de la sucursal ──────────────────────────────────────
     const [dias, setDias] = useState('1');
     const [lista, setLista] = useState(null);
@@ -255,15 +295,16 @@ export default function PreventaView({ openModal }) {
     // ── Enviar o corregir ─────────────────────────────────────────────────
     const [enviando, setEnviando] = useState(false);
     const [resultado, setResultado] = useState(null);
+    const bloqueada = problemas.length > 0 || revisando;
     const enviar = async () => {
-        if (falta || enviando || !puedeVender) return;
+        if (bloqueada || enviando || !puedeVender) return;
         setEnviando(true);
         const r = await enviarPreventaDirecta({
             branchId: sala, customerId: clienteId, documento: venta.documento, pago: venta.pago, puntos, nota: venta.nota,
             lineas: lineasParaCotizar(venta.lineas), preventaId: venta.corrigiendo?.id ?? null,
         });
         setEnviando(false);
-        if (!r?.ok) { showToast('No llegó a caja', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
+        if (!r?.ok) { showToast('No llegó a caja', `${r?.error ?? 'Algo falló.'} Revisa la venta e intenta de nuevo.`, 'error'); setVuelta((n) => n + 1); return; }
         setResultado({ ...r, total: aPagar, puntos, cliente: venta.cliente?.name ?? null });
         setVenta(VACIA);
         clearDraft(claveBorrador);
@@ -306,12 +347,11 @@ export default function PreventaView({ openModal }) {
     const vendiendo = Boolean(sala) && pestana === 'nueva' && !resultado;
     useEffect(() => {
         if (!vendiendo || tactil) return;
-        setFoco({ id: venta.cliente || venta.lineas.length ? ID_BUSCAR_PRODUCTO : ID_BUSCAR_CLIENTE });  
+        setFoco({ id: venta.cliente || venta.lineas.length ? ID_BUSCAR_PRODUCTO : ID_BUSCAR_CLIENTE });
     }, [vendiendo, tactil]); // eslint-disable-line react-hooks/exhaustive-deps -- sólo al entrar, no en cada cambio de la venta
 
     // ── Teclas de la pantalla: las mismas de la caja ──────────────────────
     // Aprietan el MISMO botón que el ratón (si está deshabilitado, nada pasa).
-    // Las acciones se leen por ref: el oyente se engancha una vez.
     const acciones = useRef({});
     acciones.current = {
         vendiendo, lineas: venta.lineas, pedirVaciar, quitarLinea,
@@ -327,7 +367,9 @@ export default function PreventaView({ openModal }) {
             const fila = e.target?.closest?.('[data-fila]');
             if (k === 'F2' || k === 'F8' || (k === 'Enter' && (e.ctrlKey || e.metaKey))) {
                 e.preventDefault();
-                document.querySelector('[data-accion-enviar]:not([disabled])')?.click();
+                const boton = document.querySelector('[data-accion-enviar]');
+                if (boton && !boton.disabled) boton.click();
+                else document.querySelector('[data-problema] button')?.focus(); // no se puede: el foco al primer pendiente
             } else if (k === 'F3' || (k === '/' && !enCampo)) { e.preventDefault(); enfocar(ID_BUSCAR_PRODUCTO); }
             else if (k === 'F4') {
                 e.preventDefault();
@@ -356,136 +398,115 @@ export default function PreventaView({ openModal }) {
             disabled: !(venta.lineas.length || venta.cliente || venta.corrigiendo) },
     ];
     const accionesLista = [{ key: 'actualizar', icon: RefreshCw, label: 'Actualizar', onClick: recargar }];
-    const pildora = sala && (
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <div className="flex-1 min-w-0">
-                {pestana === 'nueva' && (
-                    <p className="text-body-sm text-content-3">
-                        Llega a caja de <span className="font-bold text-content">{nombreSala}</span> con tu nombre como vendedor.
-                    </p>
-                )}
-            </div>
-            <div className="flex justify-end min-w-0">
-                <FilterBar acciones={pestana === 'nueva' ? accionesVender : accionesLista} activeCount={0}>
-                    {todas && opcionesSala.length > 1 && (
-                        <FilterBar.Section label="sucursal" fija>
-                            <FilterBar.Sucursal value={String(sala ?? '')} onChange={(v) => v && setSalaUrl(v)} options={opcionesSala} ancho="170px" />
-                        </FilterBar.Section>
-                    )}
-                    {pestana === 'hoy' && (
-                        <FilterBar.Section label="período">
-                            <FilterBar.Opciones value={dias} onChange={setDias} label="Desde" options={DIAS} />
-                        </FilterBar.Section>
-                    )}
-                </FilterBar>
-            </div>
-        </div>
-    );
 
     return (
         <GlassViewLayout icon={Receipt} title="Preventa" transparentBody
             filtersContent={<ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />}>
-            <div className="p-3 md:p-5 space-y-3">
+            <div className="p-3 md:p-4 space-y-3">
                 {!sala && <Notice variant="warning">Tu usuario no tiene sucursal asignada.</Notice>}
-                {pildora}
+                {sala && (
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+                        <p className="flex-1 min-w-0 text-body-sm text-content-3">
+                            {pestana === 'nueva'
+                                ? <>Llega a caja de <span className="font-bold text-content">{nombreSala}</span> con tu nombre como vendedor.</>
+                                : <>{enCaja} en caja sin facturar</>}
+                        </p>
+                        <div className="flex justify-end min-w-0">
+                            <FilterBar acciones={pestana === 'nueva' ? accionesVender : accionesLista} activeCount={0}>
+                                {todas && opcionesSala.length > 1 && (
+                                    <FilterBar.Section label="sucursal" fija>
+                                        <FilterBar.Sucursal value={String(sala ?? '')} onChange={(v) => v && setSalaUrl(v)} options={opcionesSala} ancho="170px" />
+                                    </FilterBar.Section>
+                                )}
+                                {pestana === 'hoy' && (
+                                    <FilterBar.Section label="período">
+                                        <FilterBar.Opciones value={dias} onChange={setDias} label="Desde" options={DIAS} />
+                                    </FilterBar.Section>
+                                )}
+                            </FilterBar>
+                        </div>
+                    </div>
+                )}
 
                 {sala && pestana === 'nueva' && (
                     resultado ? (
                         <Hecho resultado={resultado} onOtra={nuevaVenta} onVer={() => { setResultado(null); setPestana('hoy'); }} />
                     ) : (
-                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_360px] items-start">
+                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
                             <div className="space-y-3 min-w-0">
                                 {venta.corrigiendo && (
-                                    <Notice variant="info">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="flex-1">
-                                                Corrigiendo la preventa {venta.corrigiendo.referencia ? `#${venta.corrigiendo.referencia}` : venta.corrigiendo.codigo}.
-                                                Al guardar, cambia la misma en caja.
-                                            </span>
-                                            <Button size="sm" variant="ghost" icon={X} onClick={() => { setVenta(VACIA); setFoco({ id: ID_BUSCAR_CLIENTE }); }}>Cancelar</Button>
-                                        </div>
+                                    <Notice variant="info" compact action={
+                                        <Button size="sm" variant="ghost" icon={X} onClick={() => { setVenta(VACIA); setFoco({ id: ID_BUSCAR_CLIENTE }); }}>Cancelar</Button>}>
+                                        Corrigiendo la preventa {venta.corrigiendo.referencia ? `#${venta.corrigiendo.referencia}` : venta.corrigiendo.codigo}. Al guardar, cambia la misma en caja.
                                     </Notice>
                                 )}
 
-                                <Cliente cliente={venta.cliente} info={info} cotizacion={cotizacion}
-                                    puedeEditar={puedeEditarClientes} puedeCrear={puedeCrearClientes}
-                                    onElegir={elegirCliente} onEditar={editarCliente} onCrear={crearCliente} />
+                                <Cliente cliente={venta.cliente} info={info} cotizacion={cotizacion} alerta={clienteConProblema}
+                                    faltanCcf={faltanCcf} puedeEditar={puedeEditarClientes} puedeCrear={puedeCrearClientes}
+                                    onElegir={elegirCliente} onEditar={editarCliente} onCrear={crearCliente}
+                                    onAgregar={(p) => agregarProducto({ id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url })}
+                                    onAgregarVarios={agregarVarios} />
 
-                                <section data-surface="card" className="p-3 md:p-4 space-y-3">
+                                <section data-surface="card" className="p-3 space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <h2 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
+                                        <h2 className="shrink-0 text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                                             <ShoppingCart size={13} /> Productos
+                                            <span className="text-micro font-semibold text-content-3 normal-case tracking-normal tabular-nums">{venta.lineas.length}/{MAX_PRODUCTOS}</span>
                                         </h2>
-                                        <span className="text-micro text-content-3 tabular-nums">{venta.lineas.length} de {MAX_PRODUCTOS}</span>
                                     </div>
                                     <BuscarProducto onElegir={agregarProducto} />
                                     {venta.lineas.length === 0 ? (
-                                        <div className="flex flex-col items-center gap-1.5 py-8 text-content-3">
-                                            <Package size={28} strokeWidth={1.5} />
-                                            <p className="text-body-sm font-semibold">Busca o escanea un producto para empezar.</p>
-                                        </div>
+                                        <p className="flex items-center justify-center gap-2 py-4 text-body-sm text-content-3">
+                                            <Package size={18} strokeWidth={1.5} /> Busca o escanea un producto para empezar.
+                                        </p>
                                     ) : (
-                                        <div className="divide-y divide-border-subtle" onKeyDown={navegarRenglones}>
-                                            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_130px_118px_160px_84px_36px] gap-2 px-1 pb-1.5 text-micro font-black text-content-3 uppercase tracking-widest">
+                                        <div className="space-y-1" onKeyDown={navegarRenglones}>
+                                            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_112px_150px_80px_32px] gap-2 pl-3 pr-1 text-micro font-black text-content-3 uppercase tracking-widest">
                                                 <span>Producto</span><span>Presentación</span><span className="text-center">Cantidad</span>
                                                 <span>Precio</span><span className="text-right">Subtotal</span><span />
                                             </div>
                                             {venta.lineas.map((l, i) => (
-                                                <Linea key={`${l.producto_id}-${l.factor}`} indice={i} linea={l} fila={filaDe(l)} cotizando={cotizando}
+                                                <Linea key={claveDe(l)} indice={i} linea={l} fila={filaDe(l)} cotizando={cotizando}
+                                                    problema={problemaDeLinea(l)} onResolver={resolver}
                                                     foto={l.foto_url ?? fotos.get(l.producto_id) ?? null}
-                                                    puedeAutorizar={puedeAutorizar} listaCliente={cotizacion?.lista} puedeApartar={puedeApartar}
-                                                    onCambiar={(c) => ponerLinea(i, c)} onQuitar={() => quitarLinea(i)} onListo={alBuscador}
-                                                    onOtras={() => setConsulta(filaDe(l)?.nombre ?? l.nombre)}
-                                                    onApartar={() => setApartar({ producto: { id: l.producto_id, nombre: filaDe(l)?.nombre ?? l.nombre } })} />
+                                                    puedeAutorizar={puedeAutorizar} listaCliente={cotizacion?.lista}
+                                                    onCambiar={(c) => ponerLinea(i, c)} onQuitar={() => quitarLinea(i)} onListo={alBuscador} />
                                             ))}
                                         </div>
                                     )}
                                 </section>
                             </div>
 
-                            <aside data-surface="card" className="p-3 md:p-4 space-y-3 lg:sticky lg:top-3">
+                            <aside data-surface="card" className="p-3 space-y-2.5 lg:sticky lg:top-3 min-w-0">
                                 <SegmentedControl label="Comprobante" value={venta.documento} options={DOCUMENTOS}
                                     onChange={(v) => cambiar({ documento: v })} />
-                                {faltanCcf.length > 0 && (
-                                    <Notice variant="warning">
-                                        <p>Para crédito fiscal le falta: {faltanCcf.join(', ')}.</p>
-                                        <div className="mt-2">
-                                            {venta.cliente
-                                                ? <Button size="sm" variant="secondary" icon={UserPen} onClick={editarCliente}>Completar datos</Button>
-                                                : <span className="text-micro">Elige o crea el cliente.</span>}
-                                        </div>
-                                    </Notice>
-                                )}
-
                                 <LiquidSelect label="Tipo de pago" clearable={false} value={venta.pago} options={PAGOS}
+                                    invalid={problemas.some((p) => p.clave === 'credito')}
                                     onChange={(v) => cambiar({ pago: v || 'contado' })} />
-                                {venta.pago === 'credito' && (cotizacion?.generico || !venta.cliente) && (
-                                    <p className="text-micro text-warning-text -mt-2">El crédito necesita un cliente con sus datos.</p>
-                                )}
 
                                 {info?.puntos?.puede_canjear && (
                                     <div className="space-y-1" data-campo="puntos">
                                         <div className="flex items-end gap-2">
-                                            <div className="flex-1">
-                                                <PortalInput label="Puntos a canjear" name="puntos" inputMode="numeric" value={String(venta.puntos ?? '')}
-                                                    placeholder={`Tiene ${info.puntos.disponibles}`}
+                                            <div className="flex-1 min-w-0">
+                                                <PortalInput compact label="Puntos a canjear" name="puntos" inputMode="numeric" value={String(venta.puntos ?? '')}
+                                                    placeholder={`Tiene ${info.puntos.disponibles}`} hasError={problemas.some((p) => p.clave === 'puntos')}
                                                     onChange={(e) => cambiar({ puntos: e.target.value.replace(/\D/g, '').slice(0, 5) })} />
                                             </div>
-                                            {maxPuntos >= info.puntos.minimo_canje && (
+                                            {maxPuntos >= info.puntos.minimo_canje && String(maxPuntos) !== String(venta.puntos) && (
                                                 <Button size="sm" variant="secondary" icon={Gift} onClick={() => cambiar({ puntos: String(maxPuntos) })}>
                                                     Usar {maxPuntos}
                                                 </Button>
                                             )}
                                         </div>
                                         <p className="text-micro text-content-3">
-                                            {puntos > 0 ? `${formatMoney(descPuntos)} de descuento · ` : ''}
+                                            {puntos > 0 && descPuntos > 0 ? `${formatMoney(descPuntos)} de descuento · ` : ''}
                                             {info.puntos.disponibles} disponibles · mínimo {info.puntos.minimo_canje}
-                                            {info.puntos.comprometidos > 0 ? ` · ${info.puntos.comprometidos} ya en otra preventa` : ''}
+                                            {info.puntos.comprometidos > 0 ? ` · ${info.puntos.comprometidos} en otra preventa` : ''}
                                         </p>
                                     </div>
                                 )}
 
-                                <dl className="space-y-1 text-body-sm border-t border-subtle pt-3">
+                                <dl className="space-y-0.5 text-body-sm border-t border-subtle pt-2.5">
                                     <div className="flex justify-between"><dt className="text-content-3">Productos · unidades</dt>
                                         <dd className="tabular-nums">{totales.productos} · {totales.unidades}</dd></div>
                                     {(totales.ahorro > 0 || descPuntos > 0) && (
@@ -510,14 +531,26 @@ export default function PreventaView({ openModal }) {
 
                                 <PortalInput compact label="Nota para caja" name="nota" value={venta.nota} maxLength={60}
                                     onChange={(e) => cambiar({ nota: e.target.value })} placeholder="Opcional" />
-                                <AvisoDeFalta motivo={falta?.texto} onIr={falta?.campo ? () => irAlCampo(falta.campo) : null} />
+
+                                <Pendientes problemas={problemas} revisando={revisando} onResolver={resolver} />
+
                                 <Button className="w-full" size="lg" icon={venta.corrigiendo ? Pencil : Send} loading={enviando}
-                                    disabled={!puedeVender || Boolean(falta)} onClick={enviar} data-accion-enviar>
-                                    {venta.corrigiendo ? 'Guardar corrección' : 'Enviar a caja'}
-                                    {!tactil && <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-60">F2</kbd>}
+                                    disabled={!puedeVender || bloqueada} onClick={enviar} data-accion-enviar>
+                                    {problemas.length > 0
+                                        ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
+                                        : venta.corrigiendo ? 'Guardar corrección' : 'Enviar a caja'}
+                                    {!tactil && !problemas.length && <kbd aria-hidden="true" className="ml-1 text-micro font-bold opacity-60">F2</kbd>}
                                 </Button>
                                 {!puedeVender && <p className="text-micro text-content-3">Puedes mirar, pero no enviar preventas.</p>}
-                                {!tactil && <GuiaDeTeclas />}
+                                {!tactil && (
+                                    <p className="hidden lg:flex flex-wrap gap-x-2.5 gap-y-1 text-micro text-content-3">
+                                        {TECLAS.map(([k, que]) => (
+                                            <span key={k} className="inline-flex items-center gap-1">
+                                                <kbd className="rounded border border-border-card bg-surface-card-hover px-1 font-bold text-content-2">{k}</kbd>{que}
+                                            </span>
+                                        ))}
+                                    </p>
+                                )}
                             </aside>
                         </div>
                     )
@@ -525,7 +558,6 @@ export default function PreventaView({ openModal }) {
 
                 {sala && pestana === 'hoy' && (
                     <section className="space-y-2">
-                        <p className="text-body-sm text-content-3">{enCaja} en caja sin facturar</p>
                         {errorLista && <Notice variant="danger">{errorLista}</Notice>}
                         {lista && lista.length === 0 && (
                             <div className="flex flex-col items-center gap-1.5 py-10 text-content-3">
@@ -636,7 +668,7 @@ function useListaConTeclas(items, onElegir, onLimpiar) {
 
 // La miniatura de un producto: su foto o la caja vacía. Las fotos del catálogo
 // son públicas y van tal cual.
-function Miniatura({ src, tamano = 'w-10 h-10' }) {
+function Miniatura({ src, tamano = 'w-9 h-9' }) {
     const [rota, setRota] = useState(false);
     const [previa, setPrevia] = useState(src);
     if (src !== previa) { setPrevia(src); setRota(false); }
@@ -644,26 +676,49 @@ function Miniatura({ src, tamano = 'w-10 h-10' }) {
         <span className={`${tamano} shrink-0 rounded-lg bg-surface-card-hover border border-border-card overflow-hidden flex items-center justify-center`}>
             {src && !rota
                 ? <img src={src} alt="" loading="lazy" decoding="async" onError={() => setRota(true)} className="w-full h-full object-contain" />
-                : <Package size={16} strokeWidth={1.5} className="text-content-3" />}
+                : <Package size={14} strokeWidth={1.5} className="text-content-3" />}
         </span>
     );
 }
 
-function GuiaDeTeclas() {
+// ── Lo que falta para enviar: todo junto, cada cosa con qué hacer ─────────
+function Pendientes({ problemas, revisando, onResolver }) {
+    if (revisando && !problemas.length) {
+        return <p className="text-micro text-content-3">Revisando precios y existencia…</p>;
+    }
+    if (!problemas.length) return null;
+    const vacia = problemas.length === 1 && problemas[0].clave === 'vacia';
     return (
-        <dl className="hidden lg:grid grid-cols-2 gap-x-3 gap-y-1 border-t border-subtle pt-3 text-micro text-content-3">
-            {TECLAS.map(([k, que]) => (
-                <div key={k} className="flex items-center gap-1.5 min-w-0">
-                    <dt><kbd className="inline-block min-w-[2rem] text-center rounded border border-border-card bg-surface-card-hover px-1 font-bold text-content-2">{k}</kbd></dt>
-                    <dd className="truncate">{que}</dd>
-                </div>
-            ))}
-        </dl>
+        <div role="status" className={`rounded-xl border p-2 space-y-2 min-w-0 ${vacia ? 'border-border-subtle bg-surface-card-hover' : 'border-danger/40 bg-danger/5'}`}>
+            {!vacia && (
+                <p className="text-micro font-black uppercase tracking-widest text-danger-text flex items-center gap-1.5">
+                    <AlertTriangle size={12} /> Antes de enviar · {problemas.length}
+                </p>
+            )}
+            <ul className="space-y-2">
+                {problemas.map((p) => (
+                    <li key={p.clave} data-problema className="min-w-0">
+                        <button type="button" onClick={() => p.campo && irAlCampo(p.campo)}
+                            className={`block w-full text-left text-label font-semibold leading-snug break-words rounded focus-visible:outline-2 focus-visible:outline-brand ${vacia ? 'text-content-2' : 'text-danger-text'}`}>
+                            {p.titulo}
+                        </button>
+                        {p.ayuda && <p className="text-micro text-content-2 leading-snug break-words mt-0.5">{p.ayuda}</p>}
+                        {p.acciones.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {p.acciones.map((a) => (
+                                    <Button key={`${a.id}-${a.label}`} size="xs" variant="secondary" onClick={() => onResolver(p, a)}>{a.label}</Button>
+                                ))}
+                            </div>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 }
 
 // ── El cliente: buscar, ver su ficha, editar o crear ──────────────────────
-function Cliente({ cliente, info, cotizacion, puedeEditar, puedeCrear, onElegir, onEditar, onCrear }) {
+function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, puedeCrear, onElegir, onEditar, onCrear, onAgregar, onAgregarVarios }) {
     const [texto, setTexto] = useState('');
     const q = useTextoRebotado(texto, 250);
     const [resultados, setResultados] = useState([]);
@@ -686,25 +741,20 @@ function Cliente({ cliente, info, cotizacion, puedeEditar, puedeCrear, onElegir,
     const nav = useListaConTeclas(resultados, elegir, () => setTexto(''));
     const abierto = resultados.length > 0;
     return (
-        <section data-surface="card" className="p-3 md:p-4 space-y-3" data-campo="cliente">
-            <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
-                    <UserRound size={13} /> Cliente
-                </h2>
-                <Badge variant={cotizacion?.generico ? 'neutral' : 'success'} size="sm" uppercase={false}>
-                    Precio {nombreDeLista(cotizacion?.lista)}
-                </Badge>
-                <span className="text-micro text-content-3 hidden sm:inline">{porQueEsaLista(cotizacion?.lista, cotizacion?.generico ?? !cliente)}</span>
-            </div>
+        <section data-surface="card" data-campo="cliente"
+            className={`p-3 space-y-2.5 transition-shadow ${alerta ? 'ring-2 ring-danger/45' : ''}`}>
             {cliente ? (
-                <FichaDelCliente cliente={cliente} info={info} puedeEditar={puedeEditar} onEditar={onEditar} onQuitar={() => onElegir(null)} />
+                <FichaDelCliente cliente={cliente} info={info} cotizacion={cotizacion} faltanCcf={faltanCcf} puedeEditar={puedeEditar}
+                    onEditar={onEditar} onQuitar={() => onElegir(null)} onAgregar={onAgregar} onAgregarVarios={onAgregarVarios} />
             ) : (
                 <>
                     <div className="flex items-center gap-2">
+                        <h2 className="shrink-0 text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
+                            <UserRound size={13} /> Cliente
+                        </h2>
                         <div className="flex-1 min-w-0">
                             <SearchInput id={ID_BUSCAR_CLIENTE} value={texto} onChange={setTexto} loading={buscando}
-                                placeholder="Nombre, DUI, NIT o teléfono · sin cliente va como frecuente"
-                                ariaLabel="Buscar cliente" onKeyDown={nav.onKeyDown}
+                                placeholder="Nombre, DUI, NIT o teléfono" ariaLabel="Buscar cliente" onKeyDown={nav.onKeyDown}
                                 combobox={{ lista: idLista, abierto, activo: abierto ? `${idLista}-${nav.activo}` : null }} />
                         </div>
                         {puedeCrear && <Button variant="secondary" icon={UserPlus} onClick={onCrear}>Nuevo</Button>}
@@ -715,7 +765,7 @@ function Cliente({ cliente, info, cotizacion, puedeEditar, puedeCrear, onElegir,
                             {resultados.map((x, i) => (
                                 <li key={x.id} id={`${idLista}-${i}`} role="option" aria-selected={i === nav.activo}
                                     onMouseEnter={() => nav.setActivo(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(x)}
-                                    className={`px-3 py-2 min-h-[var(--tap-min)] flex items-center gap-3 cursor-pointer active:scale-[0.99] ${i === nav.activo ? 'bg-brand/10' : ''}`}>
+                                    className={`px-3 py-1.5 min-h-[var(--tap-min)] flex items-center gap-3 cursor-pointer active:scale-[0.99] ${i === nav.activo ? 'bg-brand/10' : ''}`}>
                                     <ClienteAvatar conversacion={{ cliente: x.name }} />
                                     <span className="min-w-0 flex-1">
                                         <span className="block text-body-sm font-semibold text-content truncate">{x.name}</span>
@@ -728,79 +778,167 @@ function Cliente({ cliente, info, cotizacion, puedeEditar, puedeCrear, onElegir,
                             ))}
                         </ul>
                     )}
-                    {!buscando && q.trim().length >= 3 && resultados.length === 0 && (
-                        <p className="text-micro text-content-3">
-                            No aparece «{q.trim()}».{puedeCrear ? ' Créalo con «Nuevo».' : ''}
-                        </p>
-                    )}
+                    <p className="text-micro text-content-3">
+                        {!buscando && q.trim().length >= 3 && !abierto
+                            ? <>No aparece «{q.trim()}».{puedeCrear ? ' Créalo con «Nuevo».' : ''}</>
+                            : <>Sin cliente va como frecuente, con precio {nombreDeLista(cotizacion?.lista ?? 'descuento_1')}. Con cliente gana su precio y sus puntos.</>}
+                    </p>
                 </>
             )}
         </section>
     );
 }
 
-// ── La ficha: quién es, qué precio y beneficios tiene, cómo contactarlo ───
-function FichaDelCliente({ cliente, info, puedeEditar, onEditar, onQuitar }) {
+// ── La ficha: quién es, qué datos tiene (y cuáles faltan), qué compra ─────
+function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, onEditar, onQuitar, onAgregar, onAgregarVarios }) {
     const p = info?.puntos;
     const tipo = info?.empleado ? 'Empleado' : info?.programa === 'mayorista'
         ? `Mayorista${info?.mayorista?.precio === 'mayoreo_plus' ? ' Plus' : ''}${info?.rango ? ` · ${info.rango}` : ''}`
         : NOMBRE_DE_PROGRAMA[info?.programa] ?? '';
+    const faltan = datosQueFaltan(info);
+    const ccf = new Set(faltanCcf);
+    // Los datos, siempre en el mismo orden: lo vacío se ve como «Falta».
     const datos = [
-        info?.nit && ['NIT', info.nit], !info?.nit && info?.dui && ['DUI', info.dui], info?.nrc && ['NRC', info.nrc],
-        info?.giro && ['Giro', info.giro], info?.phone && ['Teléfono', info.phone], info?.email && ['Correo', info.email],
-        info?.direccion && ['Dirección', info.direccion],
-    ].filter(Boolean);
+        ['DUI', info?.dui, ccf.has('DUI')], ['NIT', info?.nit, ccf.has('NIT')], ['NRC', info?.nrc, ccf.has('NRC')],
+        ['Teléfono', info?.phone, false], ['Correo', info?.email, false], ['Giro', info?.giro, ccf.has('Giro')],
+        ['Dirección', info?.direccion, ccf.has('Dirección')],
+    ];
+    const importante = (k) => faltan.some((f) => f === k || (f === 'DUI o NIT' && (k === 'DUI' || k === 'NIT')));
     return (
-        <div className="space-y-3">
-            <div className="flex items-center gap-3">
+        <div className="space-y-2.5">
+            <div className="flex items-center gap-3 min-w-0">
                 {/* La foto que subió desde la app, dentro del aro de su nivel (el mismo del chat). */}
-                <ClienteAvatar size="lg" animado conversacion={{
+                <ClienteAvatar size="lg" conversacion={{
                     cliente: cliente.name, foto_url: info?.foto ?? null, nivel: info?.nivel?.toLowerCase() ?? null,
                     es_mayoreo: info?.programa === 'mayorista', rango: info?.rango ?? null, es_team: Boolean(info?.empleado),
                 }} />
                 <div className="min-w-0 flex-1">
-                    <p className="text-body font-bold text-content truncate">{cliente.name}</p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    <p className="text-body-sm font-bold text-content truncate" title={cliente.name}>{cliente.name}</p>
+                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                        <Badge size="sm" variant={cotizacion?.generico ? 'neutral' : 'success'} uppercase={false}
+                            title={porQueEsaLista(cotizacion?.lista, cotizacion?.generico)}>Precio {nombreDeLista(cotizacion?.lista)}</Badge>
                         {info?.categoria && <Badge size="sm" variant={info.categoria === 'Consumidor' ? 'neutral' : 'info'} uppercase={false}>{info.categoria}</Badge>}
                         {tipo && <Badge size="sm" variant="neutral" uppercase={false}>{tipo}</Badge>}
-                        {info?.nivel && <Badge size="sm" variant="warning" uppercase={false}>Nivel {info.nivel}</Badge>}
+                        {info?.nivel && <Badge size="sm" variant="warning" uppercase={false}>{info.nivel}</Badge>}
                     </div>
                 </div>
+                {info && (
+                    <dl className="hidden sm:flex items-stretch gap-1.5 shrink-0">
+                        <Cifra rotulo="Puntos" valor={p ? String(p.disponibles) : '—'} nota={p?.puede_canjear ? formatMoney(descuentoDePuntos(p.disponibles, p.valor)) : p ? 'No canjea' : null}
+                            tono={p?.puede_canjear && p.disponibles > 0 ? 'success' : null} />
+                        <Cifra rotulo="12 meses" valor={info.compra_12m != null ? formatMoney(info.compra_12m) : '—'} />
+                        <Cifra rotulo="Última" valor={info.ultima_compra ? fechaTexto(info.ultima_compra.fecha) : '—'} nota={info.ultima_compra?.sucursal ?? null} />
+                    </dl>
+                )}
                 <div className="flex items-center gap-1 shrink-0">
-                    {puedeEditar && <Button size="sm" variant="secondary" icon={UserPen} onClick={onEditar}>Editar</Button>}
-                    <Button size="sm" variant="ghost" icon={X} iconOnly aria-label="Cambiar de cliente"
-                        onClick={onQuitar} data-accion-cambiar-cliente />
+                    {puedeEditar && <Button size="sm" variant="secondary" icon={UserPen} iconOnly aria-label="Editar datos del cliente" onClick={onEditar} />}
+                    <Button size="sm" variant="ghost" icon={X} iconOnly aria-label="Cambiar de cliente" onClick={onQuitar} data-accion-cambiar-cliente />
                 </div>
             </div>
+
             {info && (
-                <div className="grid grid-cols-3 gap-2">
-                    <Dato rotulo="Puntos" valor={p ? `${p.disponibles}` : '—'} destacado={p?.puede_canjear && p.disponibles > 0}
-                        nota={p ? (p.puede_canjear ? `= ${formatMoney(descuentoDePuntos(p.disponibles, p.valor))}` : 'No canjea') : null} />
-                    <Dato rotulo="Compra 12 meses" valor={info.compra_12m != null ? formatMoney(info.compra_12m) : '—'} />
-                    <Dato rotulo="Última compra" valor={info.ultima_compra ? fechaTexto(info.ultima_compra.fecha) : '—'}
-                        nota={info.ultima_compra ? `${formatMoney(info.ultima_compra.total)} · ${info.ultima_compra.sucursal ?? ''}` : null} />
-                </div>
-            )}
-            {datos.length > 0 && (
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 text-micro">
-                    {datos.map(([k, v]) => (
-                        <div key={k} className="flex gap-1.5 min-w-0">
-                            <dt className="text-content-3 shrink-0">{k}</dt>
-                            <dd className="text-content-2 truncate" title={v}>{v}</dd>
+                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 rounded-lg bg-surface-card-hover px-3 py-2 text-micro">
+                    {datos.map(([k, v, exigido]) => (
+                        <div key={k} className={`flex items-baseline gap-1.5 min-w-0 ${k === 'Dirección' ? 'col-span-2 sm:col-span-3' : ''}`}>
+                            <dt className="text-content-3 shrink-0 w-14">{k}</dt>
+                            <dd className={`min-w-0 truncate ${v ? 'text-content font-semibold' : exigido ? 'text-danger-text font-bold' : importante(k) ? 'text-warning-text font-semibold' : 'text-content-3'}`}
+                                title={v ?? ''}>
+                                {v || (exigido ? 'Falta · lo pide el crédito fiscal' : importante(k) ? 'Falta' : '—')}
+                            </dd>
                         </div>
                     ))}
                 </dl>
+            )}
+            {info && faltan.length > 0 && (
+                <Notice variant="warning" compact
+                    action={puedeEditar ? <Button size="xs" variant="secondary" icon={UserPen} onClick={onEditar}>Completar datos</Button> : null}>
+                    Le falta {faltan.join(', ').toLowerCase()}. Pídeselo ahora: caja y Hacienda lo necesitan para facturar y avisarle.
+                </Notice>
+            )}
+
+            {info && (info.frecuentes?.length > 0 || info.ultimas_compras?.length > 0) && (
+                <Historial info={info} onAgregar={onAgregar} onAgregarVarios={onAgregarVarios} />
             )}
         </div>
     );
 }
 
-function Dato({ rotulo, valor, nota = null, destacado = false }) {
+function Cifra({ rotulo, valor, nota = null, tono = null }) {
     return (
-        <div className={`rounded-xl px-3 py-2 min-w-0 ${destacado ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
-            <p className="text-micro text-content-3 truncate">{rotulo}</p>
-            <p className={`text-body font-black tabular-nums truncate ${destacado ? 'text-success-text' : 'text-content'}`}>{valor}</p>
-            {nota && <p className="text-micro text-content-3 truncate">{nota}</p>}
+        <div className={`rounded-lg px-2.5 py-1 min-w-[5.5rem] ${tono === 'success' ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
+            <dt className="text-micro text-content-3">{rotulo}</dt>
+            <dd className={`text-body-sm font-black tabular-nums leading-tight ${tono === 'success' ? 'text-success-text' : 'text-content'}`}>{valor}</dd>
+            {nota && <dd className="text-micro text-content-3 truncate max-w-[7rem]">{nota}</dd>}
+        </div>
+    );
+}
+
+// ── Lo que suele llevar y sus últimas compras: todo se agrega de un toque ─
+function Historial({ info, onAgregar, onAgregarVarios }) {
+    const [abierto, setAbierto] = useState(false);
+    const [compra, setCompra] = useState(null);
+    const frecuentes = info.frecuentes ?? [];
+    const ultimas = info.ultimas_compras ?? [];
+    return (
+        <div className="space-y-1.5">
+            {frecuentes.length > 0 && (
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="shrink-0 text-micro font-bold text-content-3">Suele llevar</span>
+                    <div className="flex gap-1.5 overflow-x-auto overscroll-contain pb-0.5 min-w-0">
+                        {frecuentes.map((f) => (
+                            <button key={f.producto_id} type="button" onClick={() => onAgregar(f)}
+                                title={`Agregar ${f.nombre} · lo compró ${f.veces} ${f.veces === 1 ? 'vez' : 'veces'} en el año`}
+                                className="shrink-0 flex items-center gap-1.5 rounded-full border border-border-card bg-surface-card-hover pl-0.5 pr-2 py-0.5 min-h-[var(--tap-min)] md:min-h-0 text-micro font-semibold text-content-2 hover:border-brand/50 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand">
+                                <Miniatura src={f.foto_url} tamano="w-6 h-6" />
+                                <span className="max-w-[10rem] truncate">{f.nombre}</span>
+                                <Plus size={12} className="text-brand-text" />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {ultimas.length > 0 && (
+                <>
+                    <button type="button" onClick={() => setAbierto((a) => !a)} aria-expanded={abierto}
+                        className="flex items-center gap-1.5 text-micro font-bold text-content-3 hover:text-content-2 rounded focus-visible:outline-2 focus-visible:outline-brand">
+                        <History size={12} /> Últimas compras · {ultimas.length}
+                        <ChevronDown size={12} className={`transition-transform ${abierto ? 'rotate-180' : ''}`} />
+                    </button>
+                    {abierto && (
+                        <ul className="rounded-lg border border-border-subtle divide-y divide-border-subtle">
+                            {ultimas.map((u) => (
+                                <li key={u.id} className="text-micro">
+                                    <button type="button" onClick={() => setCompra((c) => (c === u.id ? null : u.id))} aria-expanded={compra === u.id}
+                                        className="w-full grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-center gap-2 px-2.5 py-1.5 text-left hover:bg-surface-card-hover focus-visible:outline-2 focus-visible:outline-brand">
+                                        <span className="font-semibold text-content tabular-nums">{fechaTexto(u.fecha)}</span>
+                                        <span className="truncate text-content-3">
+                                            {u.sucursal} · {nombreDeComprobante(u.tipo_documento)} · {u.productos?.length ?? 0} producto{u.productos?.length === 1 ? '' : 's'}
+                                        </span>
+                                        <span className="font-black tabular-nums text-content">{formatMoney(Number(u.total))}</span>
+                                    </button>
+                                    {compra === u.id && (
+                                        <div className="px-2.5 pb-2 space-y-1">
+                                            {(u.productos ?? []).map((x, i) => (
+                                                <div key={`${x.producto_id}-${i}`} className="flex items-center gap-2">
+                                                    <Miniatura src={x.foto_url} tamano="w-6 h-6" />
+                                                    <span className="flex-1 min-w-0 truncate text-content-2">{Number(x.cantidad)} × {x.nombre}</span>
+                                                    {x.activo && x.producto_id && (
+                                                        <Button size="xs" variant="ghost" icon={Plus} onClick={() => onAgregar(x)}>Agregar</Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {(u.productos ?? []).filter((x) => x.activo && x.producto_id).length > 1 && (
+                                                <Button size="xs" variant="secondary" icon={RefreshCw}
+                                                    onClick={() => onAgregarVarios(u.productos.filter((x) => x.activo && x.producto_id))}>Agregar toda la compra</Button>
+                                            )}
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </>
+            )}
         </div>
     );
 }
@@ -832,14 +970,16 @@ function BuscarProducto({ onElegir }) {
             <SearchInput id={ID_BUSCAR_PRODUCTO} value={texto} onChange={setTexto} loading={buscando}
                 placeholder="Buscar producto o escanear · Enter agrega el resaltado" ariaLabel="Buscar producto"
                 onKeyDown={nav.onKeyDown} combobox={{ lista: idLista, abierto, activo: abierto ? `${idLista}-${nav.activo}` : null }} />
-            {!buscando && q.trim().length >= 2 && !abierto && <p className="text-micro text-content-3">Sin resultados para «{q.trim()}».</p>}
+            {!buscando && q.trim().length >= 2 && !abierto && (
+                <p className="text-micro text-content-3">Sin resultados para «{q.trim()}». Prueba con el principio activo o menos letras.</p>
+            )}
             {abierto && (
                 <ul id={idLista} role="listbox" aria-label="Productos encontrados"
-                    className="rounded-xl border border-border-subtle divide-y divide-border-subtle max-h-80 overflow-y-auto overscroll-contain">
+                    className="rounded-xl border border-border-subtle divide-y divide-border-subtle max-h-72 overflow-y-auto overscroll-contain">
                     {resultados.map((p, i) => (
                         <li key={p.id} id={`${idLista}-${i}`} role="option" aria-selected={i === nav.activo}
                             onMouseEnter={() => nav.setActivo(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(p)}
-                            className={`px-3 py-2 min-h-[var(--tap-min)] flex items-center gap-3 cursor-pointer active:scale-[0.99] ${i === nav.activo ? 'bg-brand/10' : ''}`}>
+                            className={`px-3 py-1.5 min-h-[var(--tap-min)] flex items-center gap-3 cursor-pointer active:scale-[0.99] ${i === nav.activo ? 'bg-brand/10' : ''}`}>
                             <Miniatura src={p.foto_url} />
                             <span className="min-w-0 flex-1">
                                 <span className="block text-body-sm font-semibold text-content truncate">{p.nombre}</span>
@@ -857,7 +997,9 @@ function BuscarProducto({ onElegir }) {
 }
 
 // ── Un producto de la venta, en una fila ──────────────────────────────────
-function Linea({ indice, linea, fila, foto, cotizando, puedeAutorizar, listaCliente, puedeApartar, onCambiar, onQuitar, onListo, onOtras, onApartar }) {
+// Con problema: borde y fondo rojos, el campo culpable marcado, y debajo qué
+// pasa y qué hacer, con sus botones.
+function Linea({ indice, linea, fila, foto, cotizando, problema, puedeAutorizar, listaCliente, onCambiar, onQuitar, onListo, onResolver }) {
     const presentaciones = (fila?.presentaciones ?? [{ factor: linea.factor, tipo: '…' }])
         .map((p) => ({ value: String(p.factor), label: p.tipo }));
     const cant = Number(linea.cantidad) || 0;
@@ -867,19 +1009,21 @@ function Linea({ indice, linea, fila, foto, cotizando, puedeAutorizar, listaClie
         { value: '', label: `Del cliente${precioCliente != null ? ` · ${formatMoney(precioCliente)}` : ''}` },
         ...opciones.map((o) => ({ value: o.lista, label: `${o.nombre} · ${formatMoney(o.precio)}` })),
     ];
-    const sinExistencia = fila && fila.existencia < cant * linea.factor;
     const nombre = fila?.nombre ?? linea.nombre;
+    const malaCantidad = problema && (problema.tipo === 'existencia' || problema.tipo === 'cantidad');
     return (
-        <div className="py-2.5 px-1 rounded-lg focus-within:bg-brand/5" data-fila={indice} data-campo={`linea-${linea.producto_id}-${linea.factor}`}>
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_130px_118px_160px_84px_36px] gap-x-2 gap-y-2 items-center">
-                <div className="min-w-0 flex items-center gap-2.5">
+        <div data-fila={indice} data-campo={`linea-${linea.producto_id}-${linea.factor}`}
+            className={`rounded-lg border-l-[3px] py-1.5 pl-2 pr-1 transition-colors ${problema
+                ? 'border-danger bg-danger/5' : 'border-transparent focus-within:bg-brand/5 hover:bg-surface-card-hover'}`}>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_120px_112px_150px_80px_32px] gap-x-2 gap-y-1.5 items-center">
+                <div className="min-w-0 flex items-center gap-2">
                     <Miniatura src={foto} />
                     <div className="min-w-0">
                         <p className="text-body-sm font-semibold text-content leading-tight truncate" title={nombre}>{nombre}</p>
                         <p className="text-micro text-content-3 flex flex-wrap items-center gap-x-1.5">
                             {fila?.bajo_receta && <span className="text-warning-text font-bold">Bajo Receta</span>}
-                            {fila && <span className={sinExistencia ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
-                            {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} en esta presentación</span>}
+                            {fila && <span className={malaCantidad ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
+                            {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} aquí</span>}
                         </p>
                     </div>
                 </div>
@@ -887,14 +1031,14 @@ function Linea({ indice, linea, fila, foto, cotizando, puedeAutorizar, listaClie
                 <div className="col-span-2 md:col-span-1 flex flex-wrap md:contents items-center gap-2">
                     <div className="w-32 md:w-auto" data-col="0">
                         <LiquidSelect clearable={false} value={String(linea.factor)} options={presentaciones} ariaLabel={`Presentación de ${nombre}`}
-                            disabled={presentaciones.length < 2} onChange={(v) => onCambiar({ factor: Number(v) || 1 })} />
+                            invalid={problema?.tipo === 'precio'} disabled={presentaciones.length < 2} onChange={(v) => onCambiar({ factor: Number(v) || 1 })} />
                     </div>
                     <div className="flex items-center gap-0.5" data-col="1">
                         <Button size="xs" variant="ghost" icon={Minus} iconOnly aria-label="Una menos" tabIndex={-1}
                             onClick={() => onCambiar({ cantidad: Math.max(1, cant - 1) })} />
                         <div className="w-14">
                             <PortalInput compact inputMode="numeric" name={`cantidad-${linea.producto_id}-${linea.factor}`}
-                                value={String(linea.cantidad)} aria-label={`Cantidad de ${nombre}`}
+                                value={String(linea.cantidad)} aria-label={`Cantidad de ${nombre}`} hasError={Boolean(malaCantidad)}
                                 onFocus={(e) => e.target.select()}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onListo(); } }}
                                 onChange={(e) => onCambiar({ cantidad: e.target.value.replace(/\D/g, '').slice(0, 3) })} />
@@ -913,28 +1057,26 @@ function Linea({ indice, linea, fila, foto, cotizando, puedeAutorizar, listaClie
                             </p>
                         )}
                     </div>
-                    <p className={`ml-auto md:ml-0 text-right text-body font-black tabular-nums ${cotizando ? 'text-content-3' : 'text-content'}`}>
+                    <p className={`ml-auto md:ml-0 text-right text-body-sm font-black tabular-nums ${cotizando ? 'text-content-3' : problema ? 'text-danger-text line-through' : 'text-content'}`}>
                         {fila ? formatMoney(fila.subtotal) : '…'}
                     </p>
                     <div className="hidden md:block" data-col="3">
-                        <Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre}`} title="Quitar (Supr)" onClick={onQuitar} />
+                        <Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre} (Supr)`} onClick={onQuitar} />
                     </div>
                 </div>
             </div>
-            {fila?.error && (
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 md:pl-[3.125rem]">
-                    <p className="text-micro text-danger-text font-semibold">
-                        {fila.error}
-                        {fila.otras?.length > 0 && (
-                            <span className="text-content-3 font-normal"> Hay en {fila.otras.map((o) => `${o.sucursal} (${o.disponibles})`).join(', ')}.</span>
-                        )}
+            {problema && (
+                <div className="mt-1.5 md:pl-11 flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                    <p className="min-w-0 flex-1 basis-60 text-micro leading-snug break-words">
+                        <span className="font-bold text-danger-text">{problema.titulo.replace(/^[^:]+:\s*/, '')}</span>{' '}
+                        <span className="text-content-2">{problema.ayuda}</span>
                     </p>
-                    {sinExistencia && (
-                        <>
-                            <Button size="xs" variant="ghost" icon={PackageSearch} onClick={onOtras}>Solicitar a otra sucursal</Button>
-                            {puedeApartar && <Button size="xs" variant="ghost" icon={ShoppingBag} onClick={onApartar}>Apartar o encargar</Button>}
-                        </>
-                    )}
+                    <div className="flex flex-wrap gap-1">
+                        {problema.acciones.map((a) => (
+                            <Button key={`${a.id}-${a.label}`} size="xs" variant={a.id === 'quitar' ? 'ghost' : 'secondary'}
+                                onClick={() => onResolver(problema, a)}>{a.label}</Button>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1557.0 — Preventa: compacta, datos del cliente, últimas compras y validación con sugerencias
+
+Quinta vuelta de Preventa (usuario: «ocupa demasiado espacio… avisarme si
+falta un dato importante, ver sus últimas compras; los avisos se salen del
+cuadro y deben dar sugerencias; validaciones más agresivas y visuales»).
+
+- **Cliente compacto**: cara, nombre, precio, tipo y nivel en una fila; sus
+  cifras (puntos, 12 meses, última compra) al lado; sus datos en una grilla
+  fija donde lo vacío dice «Falta» (en rojo si lo exige el crédito fiscal) y
+  una franja «Le falta…» con «Completar datos».
+- **Suele llevar** (lo que más compra en 12 meses) y **Últimas compras** (las
+  5 últimas con sus productos): se agregan de un toque, o la compra entera.
+  `preventa_cliente` devuelve `ultimas_compras` y `frecuentes` (migración
+  `20261116210811_preventa_ultimas_compras`; no se calcula para el cliente de
+  mostrador ni el genérico, y lo frecuente mira sus 200 compras más recientes).
+- **Validación**: `problemasDeVenta` junta TODOS los problemas, cada uno con
+  qué hacer y botones que lo hacen (dejar lo que alcanza, pedir a otra
+  sucursal, apartar, quitar, completar datos, cambiar a Factura, a Efectivo,
+  usar el máximo de puntos…). La fila con problema va en rojo, con el campo
+  culpable marcado; el cliente se enmarca en rojo si falta algo suyo; el
+  botón dice «Resuelve N pendientes» y F2 lleva al primero.
+- El aviso ya no se sale del cuadro (el texto parte en varias líneas).
+
 ## v2.1556.5 — Enviar producto: el vencimiento de la caja se corrige en el producto ya agregado
 
 Pedido desde sucursal: un Electrolit (perecedero, sin vencimiento en la existencia) quedaba agregado al traslado sin vencimiento, y la única salida era quitarlo y volver a buscarlo.

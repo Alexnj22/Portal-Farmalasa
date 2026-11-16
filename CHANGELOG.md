@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1558.0 — Preventa: elegir el lote, la caja armada de varios lotes y la ficha marca lo que falta
+
+- **Lote:** al tocar el lote de un producto se elige de cuál sale
+  («Automático» = primero el que vence antes, como caja). El elegido viaja a
+  caja y sale primero; si no alcanza, lo que falta sale de los otros. Si ya no
+  está en caja, sale en el orden de caja y se avisa. Probado en Salud 5
+  (preventa #42, lote 1101525 en vez de 0101725; anulada).
+- **Caja armada:** si ningún lote completa la presentación, el panel dice de
+  qué lotes sale cada parte y que se cobra al precio de la presentación (lo
+  que caja ya hacía al recibirla).
+- El panel de lotes se cierra al tocar afuera o con Escape.
+- **Completar:** la ficha del cliente abre marcando lo que falta para esa
+  venta (aviso arriba, campos en rojo, la categoría si el crédito fiscal pide
+  Contribuyente). Sólo cuando se abre desde Preventa.
+- **Orden:** el buscador de productos queda a la izquierda de Otras
+  sucursales y Apartar; la sucursal (sólo quien ve todas) y «Vaciar venta» van
+  junto a las pestañas. El tope de 30 productos sólo se muestra al acercarse.
+
 ## v2.1557.6 — Conteo: cada producto dice qué pide (lote y vence, solo vence o solo cantidad)
 
 «Solo pide lote y vence cuando es regulado… debe verse claro». La regla ya la aplicaba la base: si el producto es regulado, pide lote y vence; si es solo perecedero, solo vence; si no es ninguno, solo cantidad. Pero la lista no lo mostraba, y «Corregir lote» lo descubría con un error al guardar.

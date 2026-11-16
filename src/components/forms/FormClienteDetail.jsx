@@ -209,6 +209,8 @@ function faltaAlNacer(f) {
     return faltan;
 }
 
+const ROTULO_COMPLETAR = { nit: 'NIT', nrc: 'NRC', giro: 'giro', direccion: 'dirección', phone: 'teléfono', email: 'correo', dui: 'DUI' };
+
 const FormClienteDetail = ({ formData }) => {
     // Sin `id` es un alta. Al crearse, la misma ventana pasa a ser la ficha de
     // ese cliente: así se ve en vivo cuando la caja le da su número.
@@ -362,8 +364,15 @@ const FormClienteDetail = ({ formData }) => {
         dui: form?.categoria === 'Extranjero' ? undefined : 'DUI o NIT',
         pasaporte: 'El pasaporte, si es extranjero',
     };
+    // Quien abre la ficha para completar una venta (Preventa, 2026-11-16:
+    // «al dar en completar, que visualmente me diga qué falta») dice qué le
+    // falta: `formData.completar = { campos, motivo, categoria? }`. Ahí sí se
+    // marca al abrir, porque abrirla ES ir a completar eso.
+    const completar = formData?.completar ?? null;
+    const pendientes = (completar?.campos ?? []).filter(c => !String(form?.[c] ?? '').trim());
+    const faltaCategoria = Boolean(completar?.categoria) && !esFiscal(form?.categoria);
     const errorDe = (campo) =>
-        v.errores[campo] || (marcarFalta(campo)
+        v.errores[campo] || (pendientes.includes(campo) ? (completar.rotulo ?? completar.motivo) : undefined) || (marcarFalta(campo)
             ? (esNuevo && FALTA_AL_NACER[campo]) || 'Requerido para facturar' : undefined);
 
     const guardar = useCallback(async (confirmando = false) => {
@@ -492,6 +501,14 @@ const FormClienteDetail = ({ formData }) => {
                 label="Sección de los datos del cliente"
             />}
 
+            {completar && !cliente.mostrador && (faltaCategoria || pendientes.length > 0) && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    {completar.motivo}: {[faltaCategoria && `categoría ${completar.categoria}`,
+                        ...pendientes.map(c => ROTULO_COMPLETAR[c] ?? c)].filter(Boolean).join(', ')}.
+                    {faltaCategoria && ' Cambia la categoría primero: así aparecen sus campos.'}
+                </Notice>
+            )}
+
             {cliente.mostrador && (
                 <Notice variant="warning" icon={Store}>
                     Es el cliente genérico del mostrador. Lleva las ventas sin cliente.
@@ -551,10 +568,11 @@ const FormClienteDetail = ({ formData }) => {
                                 />
                             </div>
                             {!esNuevo && <div>
-                                <label className={rotuloCampo('text-content-3')}>
+                                <label className={rotuloCampo(faltaCategoria ? 'text-danger-text' : 'text-content-3')}>
                                     Categoría
                                 </label>
                                 <LiquidSelect
+                                    invalid={faltaCategoria}
                                     value={form.categoria}
                                     onChange={v => setForm(p => (esNuevo
                                         ? conCategoria(p, v || 'Consumidor')

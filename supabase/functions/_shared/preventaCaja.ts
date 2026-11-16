@@ -35,6 +35,8 @@ export interface Http {
 export interface RenglonVenta {
   reserva_id: number; producto_id: number; nombre: string; cantidad: number; factor: number;
   precio: number; precio_normal: number | null; lista_precio: string | null; subtotal: number;
+  /** El lote que eligió quien vende (2026-11-16): va primero. Sin él, el orden de caja. */
+  lote?: { nombre: string; vence: string | null } | null;
 }
 export interface Venta {
   codigo: string; documento: string; pago?: string; puntos?: number; descuento_puntos?: number; vendedor: string; nota: string; total: number;
@@ -89,7 +91,7 @@ export function leerRenglonDeStock(tr: string) {
   const unidades = num(tr.match(/id='unidades' name='unidades' value='([^']*)'/)?.[1] ?? "1") || 1;
   const regulado = /data-regulado='1'/.test(tr);
   const lotes = [...tr.matchAll(/<option data-stock='([\d.]+)' data-vencimiento='([^']*)' value='(\d+)'\s*>([^<]*)</g)]
-    .map((m) => ({ stock: num(m[1]), vence: m[2], id: m[3] }));
+    .map((m) => ({ stock: num(m[1]), vence: m[2], id: m[3], nombre: m[4].trim() }));
   const selPres = tr.match(/<select class=\\?"sel form-control\\?">(.*?)<\/select>/s)?.[1] ?? "";
   const presentaciones = [...selPres.matchAll(/<option([^>]*)value=\\?"(\d+)\\?"([^>]*)>([^<]*)</g)]
     .map((m) => ({ id: m[2], elegida: /selected/.test(m[1] + m[3]), texto: m[4].trim() }));
@@ -155,6 +157,36 @@ export function repartirEnLotesDeVenta(
     if (toma > 0) { partes.push({ id: l.id, cantidad: toma }); faltan -= toma; }
   }
   return { partes, faltan };
+}
+
+/** Una fecha de caja (`2028-03-01`, `01/03/2028`, `01-03-2028`, `0000-00-00`) en `YYYY-MM-DD`, o null. */
+export function fechaDeLote(s: string | null | undefined): string | null {
+  const t = String(s ?? "").trim();
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] === "0000" ? null : `${m[1]}-${m[2]}-${m[3]}`;
+  m = t.match(/^(\d{2})[/-](\d{2})[/-](\d{4})/);
+  if (m) return m[3] === "0000" ? null : `${m[3]}-${m[2]}-${m[1]}`;
+  return null;
+}
+
+/**
+ * El lote que eligió quien vende, primero (2026-11-16, usuario: «¿cómo
+ * selecciono otro lote?»). Se reconoce por nombre y vencimiento; el resto
+ * sigue en el orden de caja, así que si el elegido no alcanza, lo que falta
+ * sale de los otros. Si no está en caja, queda el orden de caja y se avisa.
+ */
+export function ponerPrimeroElLote<T extends { nombre?: string; vence: string }>(
+  lotes: T[], elegido: { nombre: string; vence: string | null } | null | undefined,
+): { lotes: T[]; hallado: boolean } {
+  if (!elegido?.nombre) return { lotes, hallado: true };
+  const n = elegido.nombre.trim().toUpperCase();
+  const v = fechaDeLote(elegido.vence);
+  const i = lotes.findIndex((l) => {
+    const t = String(l.nombre ?? "").trim().toUpperCase();
+    return (t === n || t.startsWith(`${n} `)) && fechaDeLote(l.vence) === v;
+  });
+  if (i < 0) return { lotes, hallado: false };
+  return { lotes: [lotes[i], ...lotes.slice(0, i), ...lotes.slice(i + 1)], hallado: true };
 }
 
 /**
@@ -249,7 +281,9 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
     let partes: { id: string; cantidad: number }[] = [{ id: "0", cantidad: r.cantidad }];
     let sueltas: { id: string; cantidad: number }[] = [];
     if (fila.regulado) {
-      const rep = repartirCajaEnUnidades(fila.lotes, r.cantidad, unidades);
+      const orden = ponerPrimeroElLote(fila.lotes, r.lote);
+      if (!orden.hallado) avisos.push(`«${r.nombre}»: el lote ${r.lote?.nombre} ya no está en caja; sale en el orden de caja.`);
+      const rep = repartirCajaEnUnidades(orden.lotes, r.cantidad, unidades);
       if (rep.faltan > 0) {
         throw new Error(`«${r.nombre}»: hay ${hay} unidades, pero repartidas en lotes no completan ${r.cantidad} de ${unidades}.`);
       }

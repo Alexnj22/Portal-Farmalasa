@@ -135,6 +135,7 @@ export function lineasDeVenta(venta) {
     return (venta?.renglones ?? []).map((r) => ({
         producto_id: Number(r.producto_id), nombre: String(r.nombre ?? ''),
         factor: Number(r.factor) || 1, cantidad: Number(r.cantidad) || 1, lista: null,
+        lote: r.lote?.nombre ? { lote: r.lote.nombre, vence: r.lote.vence ?? null } : null,
     }));
 }
 
@@ -291,3 +292,61 @@ export function vencePronto(fecha, hoy) {
     if (!fecha || !hoy) return false;
     return (new Date(`${fecha}T00:00:00Z`) - new Date(`${hoy}T00:00:00Z`)) / 86400000 < 90;
 }
+
+/**
+ * Qué marcar en la ficha al tocar «Completar»: con crédito fiscal, lo que
+ * pide el CCF (y la categoría); si no, los datos importantes que faltan.
+ */
+export function queCompletar(documento, cliente) {
+    if (!cliente) return null;
+    if (documento === 'credito_fiscal') {
+        return { campos: CAMPOS_CCF, motivo: 'Para el crédito fiscal falta', rotulo: 'Lo pide el crédito fiscal', categoria: esContribuyente(cliente.categoria) ? null : 'Contribuyente' };
+    }
+    const v = (k) => String(cliente[k] ?? '').trim();
+    const campos = ['phone', ...(!v('dui') && !v('nit') ? ['dui'] : []), 'email', 'direccion'];
+    return { campos, motivo: 'Para esta venta falta', rotulo: 'Falta' };
+}
+
+/** El mismo lote: nombre y vencimiento. */
+export const mismoLote = (a, b) => Boolean(a && b) && a.lote === b.lote && (a.vence ?? null) === (b.vence ?? null);
+
+/**
+ * Cómo sale de los lotes lo que se pide, igual que lo arma caja
+ * (`repartirCajaEnUnidades` en _shared/preventaCaja.ts): primero
+ * presentaciones ENTERAS de cada lote, en orden; lo que ningún lote completa
+ * se arma en unidades de varios lotes, al precio de la presentación. Con
+ * `elegido` (`{lote, vence}`) ese lote va primero.
+ *
+ * Devuelve `{ lotes: [{lote, vence, unidades, enteras, sueltas}], armada, faltan }`.
+ */
+export function planDeLotes(lotes, cantidad, factor, elegido = null) {
+    const f = Math.max(1, Number(factor) || 1);
+    let orden = [...(lotes ?? [])];
+    const i = elegido ? orden.findIndex((l) => mismoLote(l, elegido)) : -1;
+    if (i > 0) orden = [orden[i], ...orden.slice(0, i), ...orden.slice(i + 1)];
+    let faltan = Math.max(0, Number(cantidad) || 0);
+    const plan = orden.map((l) => {
+        const enteras = Math.min(Math.floor((Number(l.unidades) || 0) / f), faltan);
+        faltan -= enteras;
+        return { ...l, enteras, sueltas: 0 };
+    });
+    let armada = false;
+    if (faltan > 0 && f > 1) {
+        let unidades = faltan * f;
+        const total = plan.reduce((t, l) => t + (Number(l.unidades) || 0) - l.enteras * f, 0);
+        if (total >= unidades) {
+            for (const l of plan) {
+                const toma = Math.min((Number(l.unidades) || 0) - l.enteras * f, unidades);
+                l.sueltas = toma; unidades -= toma;
+            }
+            faltan = 0; armada = true;
+        }
+    }
+    return { lotes: plan, armada, faltan };
+}
+
+/** Lo que viaja a caja: lo de cotizar más el lote elegido, si hay. */
+export const lineasParaEnviar = (lineas) => (lineas ?? []).map((l) => ({
+    ...lineasParaCotizar([l])[0],
+    ...(l.lote ? { lote: { nombre: l.lote.lote, vence: l.lote.vence ?? null } } : {}),
+}));

@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-    AlertTriangle, Ban, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
+    AlertTriangle, Ban, Building2, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
     RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -10,6 +10,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Notice from '../components/common/Notice';
 import LiquidSelect from '../components/common/LiquidSelect';
+import Popover from '../components/common/Popover';
 import LiquidModal from '../components/common/LiquidModal';
 import SegmentedControl from '../components/common/SegmentedControl';
 import PortalInput from '../components/common/PortalInput';
@@ -18,6 +19,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
 import ClienteAvatar from './chat-clientes/ClienteAvatar';
 import { irAlCampo } from '../plataforma/irAlCampo';
+import useAnclaje from '../plataforma/useAnclaje';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useCoarsePointer } from '../plataforma/useCoarsePointer';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -31,7 +33,7 @@ import {
 } from '@nucleo/data/preventas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
-    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lotesQueSalen, maximoDePuntos, mesDeVencimiento, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
+    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
     porQueEsaLista, problemasDeVenta, sePuedeAnular, sePuedeCorregir, totalesDe, vencePronto,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -248,6 +250,7 @@ export default function PreventaView({ openModal }) {
         if (!venta.cliente) return;
         openModal?.('editCliente', {
             id: venta.cliente.id, nombre: venta.cliente.name, canEdit: puedeEditarClientes,
+            completar: queCompletar(venta.documento, info ?? cotizacion?.cliente),
             onSaved: () => setVuelta((n) => n + 1),
         });
     };
@@ -315,7 +318,7 @@ export default function PreventaView({ openModal }) {
         setEnviando(true);
         const r = await enviarPreventaDirecta({
             branchId: sala, customerId: clienteId, documento: venta.documento, pago: venta.pago, puntos, nota: venta.nota,
-            lineas: lineasParaCotizar(venta.lineas), preventaId: venta.corrigiendo?.id ?? null,
+            lineas: lineasParaEnviar(venta.lineas), preventaId: venta.corrigiendo?.id ?? null,
         });
         setEnviando(false);
         if (!r?.ok) { showToast('No llegó a caja', `${r?.error ?? 'Algo falló.'} Revisa la venta e intenta de nuevo.`, 'error'); setVuelta((n) => n + 1); return; }
@@ -408,18 +411,11 @@ export default function PreventaView({ openModal }) {
     const accionesVender = [
         { key: 'existencias', icon: PackageSearch, label: 'Otras sucursales', onClick: () => setConsulta('') },
         ...(puedeApartar ? [{ key: 'apartar', icon: ShoppingBag, label: 'Apartar o encargar', onClick: () => setApartar({}) }] : []),
-        { key: 'vaciar', icon: Trash2, label: 'Vaciar', soloIcono: true, onClick: pedirVaciar,
-            disabled: !(venta.lineas.length || venta.cliente || venta.corrigiendo) },
     ];
     const accionesLista = [{ key: 'actualizar', icon: RefreshCw, label: 'Actualizar', onClick: recargar }];
 
     const barra = (
         <FilterBar acciones={pestana === 'nueva' ? accionesVender : accionesLista} activeCount={0}>
-            {todas && opcionesSala.length > 1 && (
-                <FilterBar.Section label="sucursal" fija>
-                    <FilterBar.Sucursal value={String(sala ?? '')} onChange={(v) => v && setSalaUrl(v)} options={opcionesSala} ancho="170px" />
-                </FilterBar.Section>
-            )}
             {pestana === 'hoy' && (
                 <FilterBar.Section label="período">
                     <FilterBar.Opciones value={dias} onChange={setDias} label="Desde" options={DIAS} />
@@ -430,7 +426,23 @@ export default function PreventaView({ openModal }) {
 
     return (
         <GlassViewLayout icon={Receipt} title="Preventa" transparentBody
-            filtersContent={<ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />}>
+            filtersContent={(
+                // La sucursal (sólo quien ve todas) y vaciar van junto a las
+                // pestañas: son de toda la venta, no de los productos.
+                <div className="flex items-center gap-2 min-w-0">
+                    {todas && opcionesSala.length > 1 && (
+                        <div className="w-44 shrink-0">
+                            <LiquidSelect compact clearable={false} icon={Building2} value={String(sala ?? '')} options={opcionesSala}
+                                onChange={(v) => v && setSalaUrl(v)} ariaLabel="Sucursal" />
+                        </div>
+                    )}
+                    {pestana === 'nueva' && (
+                        <Button size="sm" variant="ghost" icon={Trash2} onClick={pedirVaciar}
+                            disabled={!(venta.lineas.length || venta.cliente || venta.corrigiendo)}>Vaciar venta</Button>
+                    )}
+                    <ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />
+                </div>
+            )}>
             <div className="p-3 md:p-4 space-y-3">
                 {!sala && <Notice variant="warning">Tu usuario no tiene sucursal asignada.</Notice>}
                 {/* Al vender, la barra va en la cabecera de Productos: una fila
@@ -461,14 +473,11 @@ export default function PreventaView({ openModal }) {
                                     onAgregarVarios={agregarVarios} />
 
                                 <section data-surface="card" className="p-3 space-y-2">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <h2 className="shrink-0 text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
-                                            <ShoppingCart size={13} /> Productos
-                                            <span className="text-micro font-semibold text-content-3 normal-case tracking-normal tabular-nums">{venta.lineas.length}/{MAX_PRODUCTOS}</span>
-                                        </h2>
-                                        <div className="min-w-0 flex justify-end">{barra}</div>
+                                    {/* El buscador a la izquierda de sus acciones: una fila. */}
+                                    <div className="flex flex-col md:flex-row md:items-start gap-2">
+                                        <div className="min-w-0 flex-1"><BuscarProducto onElegir={agregarProducto} /></div>
+                                        <div className="shrink-0 flex justify-end">{barra}</div>
                                     </div>
-                                    <BuscarProducto onElegir={agregarProducto} />
                                     {venta.lineas.length === 0 ? (
                                         <p className="flex items-center justify-center gap-2 py-4 text-body-sm text-content-3">
                                             <Package size={18} strokeWidth={1.5} /> Busca o escanea un producto para empezar.
@@ -476,7 +485,7 @@ export default function PreventaView({ openModal }) {
                                     ) : (
                                         <div className="space-y-1" onKeyDown={navegarRenglones}>
                                             <div className="max-md:hidden grid grid-cols-[minmax(0,1fr)_150px_112px_224px_84px_32px] gap-2 pl-3 pr-1 text-micro font-black text-content-3 uppercase tracking-widest">
-                                                <span>Producto</span><span>Presentación</span><span className="text-center">Cantidad</span>
+                                                <span>Producto <span className="tabular-nums normal-case tracking-normal font-semibold">· {venta.lineas.length}{venta.lineas.length >= MAX_PRODUCTOS - 5 ? ` de ${MAX_PRODUCTOS}` : ''}</span></span><span>Presentación</span><span className="text-center">Cantidad</span>
                                                 <span>Precio</span><span className="text-right">Subtotal</span><span />
                                             </div>
                                             {venta.lineas.map((l, i) => (
@@ -1095,7 +1104,9 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             {fila?.bajo_receta && <span className="text-warning-text font-bold">Bajo Receta</span>}
                             {fila && <span className={malaCantidad ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
                             {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} aquí</span>}
-                            <Lotes lotes={lotes} unidades={cant * (Number(linea.factor) || 1)} nombre={nombre} />
+                            <Lotes lotes={lotes} cantidad={cant} factor={linea.factor} nombre={nombre} elegido={linea.lote}
+                                presentacion={presentaciones.find((p) => p.value === String(linea.factor))?.label}
+                                onElegir={(lote) => onCambiar({ lote })} />
                         </p>
                     </div>
                 </div>
@@ -1159,45 +1170,65 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
 // La caja usa los lotes en el orden en que llegan (GENERICO primero, después
 // el que vence antes). Al lado de la existencia va el primero del que sale; al
 // tocarlo, todos con lo que tiene cada uno y cuánto se lleva de él.
-function Lotes({ lotes, unidades, nombre }) {
+function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegir }) {
     const [abierto, setAbierto] = useState(false);
+    const cerrar = useCallback(() => setAbierto(false), []);
+    const id = useId();
+    const { btnRef, caja } = useAnclaje(abierto, cerrar, id);
     if (!lotes?.length) return null;
     const hoy = hoySV();
-    const salen = lotesQueSalen(lotes, unidades);
-    const usados = salen.filter((l) => l.toma > 0);
-    const primero = usados[0] ?? salen[0];
+    const vigente = lotes.some((l) => mismoLote(l, elegido)) ? elegido : null;
+    const plan = planDeLotes(lotes, cantidad, factor, vigente);
+    const usados = plan.lotes.filter((l) => l.enteras || l.sueltas);
+    const primero = usados[0] ?? plan.lotes[0];
     const vencido = (l) => Boolean(l.vence) && l.vence < hoy;
     const cuando = (l) => (!l.vence ? 'sin fecha' : vencido(l) ? `venció ${mesDeVencimiento(l.vence)}` : `vence ${mesDeVencimiento(l.vence)}`);
     const tono = (l) => (vencido(l) ? 'text-danger-text font-bold' : vencePronto(l.vence, hoy) ? 'text-warning-text font-bold' : '');
-    const etiqueta = (l) => `${l.lote} · ${cuando(l)}`;
+    const f = Math.max(1, Number(factor) || 1);
+    const cuanto = (l) => [l.enteras ? `${l.enteras} ${String(presentacion || '').toLowerCase()}` : '', l.sueltas ? `${l.sueltas} u.` : '']
+        .filter(Boolean).join(' + ');
     return (
-        <span className="relative inline-flex items-center">
-            <button type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto}
+        <>
+            <button ref={btnRef} type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-haspopup="dialog"
                 aria-label={`Lotes de ${nombre}`}
                 className={`inline-flex items-center gap-1 rounded px-1 -mx-1 hover:bg-surface-card-hover active:scale-[0.97] ${tono(primero)}`}>
-                · Lote {etiqueta(primero)}
+                · {vigente ? 'Lote elegido' : 'Lote'} {primero.lote} · {cuando(primero)}
                 {usados.length > 1 && <span className="font-bold text-content-2">+{usados.length - 1}</span>}
-                {lotes.length > 1 && <ChevronDown size={11} strokeWidth={1.5} />}
+                {plan.armada && <span className="font-bold text-brand-text">· armada</span>}
+                <ChevronDown size={11} strokeWidth={1.5} />
             </button>
-            {abierto && (
-                <span role="dialog" aria-label={`Lotes de ${nombre}`}
-                    className="absolute left-0 top-full mt-1 z-dropdown w-80 rounded-lg border border-border-card bg-surface-card shadow-lg p-2 space-y-1"
-                    onKeyDown={(e) => { if (e.key === 'Escape') setAbierto(false); }}>
-                    <span className="flex items-center justify-between text-micro font-black text-content-3 uppercase tracking-widest">
-                        Lotes en esta sucursal
-                        <Button size="xs" variant="ghost" icon={X} iconOnly aria-label="Cerrar" onClick={() => setAbierto(false)} />
-                    </span>
-                    {salen.map((l) => (
-                        <span key={`${l.lote}-${l.vence}`} className={`flex items-center gap-2 rounded px-1.5 py-1 text-caption ${l.toma ? 'bg-brand/10' : ''}`}>
-                            <span className="min-w-0 flex-1 truncate font-semibold text-content">{l.lote}</span>
-                            <span className={tono(l) || 'text-content-2'}>{cuando(l)}</span>
-                            <span className="w-14 text-right tabular-nums text-content-2">{l.unidades} u.</span>
-                            <span className="w-16 text-right tabular-nums font-bold text-brand-text">{l.toma ? `sale ${l.toma}` : ''}</span>
-                        </span>
-                    ))}
-                </span>
-            )}
-        </span>
+            <Popover abierto={abierto} caja={caja} id={id} lado="izquierda" ariaLabel={`Lotes de ${nombre}`}
+                className="w-[22rem] p-2 space-y-1.5">
+                <p className="px-1 text-micro font-black text-content-3 uppercase tracking-widest">Lotes en esta sucursal</p>
+                <div role="radiogroup" aria-label="De qué lote sale" className="space-y-1">
+                    <button type="button" role="radio" aria-checked={!vigente} onClick={() => { onElegir(null); cerrar(); }}
+                        className={`w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-caption active:scale-[0.97] ${!vigente ? 'bg-brand/10 ring-1 ring-brand/30' : 'hover:bg-surface-card-hover'}`}>
+                        <span className="flex-1 font-semibold text-content">Automático</span>
+                        <span className="text-content-3">primero el que vence antes</span>
+                    </button>
+                    {plan.lotes.map((l) => {
+                        const este = mismoLote(l, vigente);
+                        const sale = cuanto(l);
+                        return (
+                            <button key={`${l.lote}-${l.vence}`} type="button" role="radio" aria-checked={este}
+                                onClick={() => { onElegir({ lote: l.lote, vence: l.vence ?? null }); cerrar(); }}
+                                className={`w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-caption active:scale-[0.97] ${este ? 'bg-brand/10 ring-1 ring-brand/30' : 'hover:bg-surface-card-hover'}`}>
+                                <span className="min-w-0 flex-1 truncate font-semibold text-content">{l.lote}</span>
+                                <span className={tono(l) || 'text-content-2'}>{cuando(l)}</span>
+                                <span className="w-14 text-right tabular-nums text-content-2">{l.unidades} u.</span>
+                                <span className="w-24 text-right tabular-nums font-bold text-brand-text truncate">{sale ? `sale ${sale}` : ''}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                {plan.armada && (
+                    <p className="px-1 text-micro text-content-2">
+                        Ningún lote completa {f > 1 ? `la ${String(presentacion || 'presentación').toLowerCase()}` : 'lo que pides'}: se arma con unidades de varios lotes y se cobra al precio de la {String(presentacion || 'presentación').toLowerCase()}.
+                    </p>
+                )}
+                {plan.faltan > 0 && <p className="px-1 text-micro font-bold text-danger-text">Con estos lotes no se completan {plan.faltan}.</p>}
+            </Popover>
+        </>
     );
 }
 

@@ -202,6 +202,17 @@ async function directa(
 
   let venta;
   try { venta = armarVenta(datos); } catch (e) { return await fallar((e as Error).message, 409); }
+  // El lote que eligió quien vende viaja con la línea; no cambia precio ni
+  // existencia (eso lo decidió la base), sólo de qué lote sale primero.
+  const lotesPedidos = new Map<string, { nombre: string; vence: string | null }>();
+  for (const l of Array.isArray(body.lineas) ? body.lineas : []) {
+    const nombre = String(l?.lote?.nombre ?? "").trim().slice(0, 60);
+    if (nombre) lotesPedidos.set(`${Number(l.producto_id)}|${Number(l.factor) || 1}`, { nombre, vence: l.lote.vence ? String(l.lote.vence).slice(0, 10) : null });
+  }
+  for (const r of venta.renglones) {
+    const p = lotesPedidos.get(`${Number(r.producto_id)}|${Number(r.factor) || 1}`);
+    if (p) r.lote = p;
+  }
   // Un nombre con tilde o Ñ viaja como cliente genérico (defecto medido de la
   // caja, ver `clienteDeLaVenta`), y a un genérico no se le emite crédito fiscal
   // ni se le da crédito: se dice antes de mandar, no en la caja.

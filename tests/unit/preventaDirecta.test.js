@@ -86,7 +86,7 @@ describe('estados y nombres', () => {
     });
     it('una preventa guardada vuelve al editor sin precio autorizado', () => {
         expect(lineasDeVenta({ renglones: [{ producto_id: '5', nombre: 'A', factor: 10, cantidad: 2 }] }))
-            .toEqual([{ producto_id: 5, nombre: 'A', factor: 10, cantidad: 2, lista: null }]);
+            .toEqual([{ producto_id: 5, nombre: 'A', factor: 10, cantidad: 2, lista: null, lote: null }]);
     });
 });
 

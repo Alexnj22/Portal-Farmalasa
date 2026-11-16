@@ -1611,6 +1611,7 @@ export default function ConteoDetailView() {
     const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
     const editarLoteConteoItem = useStaffStore((s) => s.editarLoteConteoItem);
     const agregarProductoManualConteo = useStaffStore((s) => s.agregarProductoManualConteo);
+    const fetchConteoProductItems = useStaffStore((s) => s.fetchConteoProductItems);
     const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
     const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
     const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
@@ -1772,12 +1773,16 @@ export default function ConteoDetailView() {
     const anotarLoteEnLineaConteo = useStaffStore((s) => s.anotarLoteEnLineaConteo);
     const anotarLoteEnLinea = useCallback(async (item, linea) => {
         const filas = await anotarLoteEnLineaConteo(id, item, linea);
-        setItemsByProduct((prev) => ({ ...prev, [item.erp_product_id]: filas }));
+        // El producto se relee en las dos áreas; esta lista es sólo la bodega.
+        setItemsByProduct((prev) => ({ ...prev, [item.erp_product_id]: filas.filter((f) => !f.is_vencidos) }));
         cargarCabecera().catch((err) => console.error('cabecera del conteo:', err?.message));
     }, [id, anotarLoteEnLineaConteo, cargarCabecera]);
 
-    const cargarPagina = useCallback(async () => {
-        setLoading(true);
+    // `silencioso`: relee sin pasar por el esqueleto de carga. El esqueleto
+    // desmonta la tabla, y quien cuenta pierde la fila y el lugar del scroll
+    // (Bodega, 2026-11-16: «se actualiza así que pierdo el hilo de donde voy»).
+    const cargarPagina = useCallback(async ({ silencioso = false } = {}) => {
+        if (!silencioso) setLoading(true);
         try {
             const productsPage = await fetchConteoProductsPage(id, {
                 page, pageSize: tamPagina, search: searchDiferido, filtro,
@@ -1788,7 +1793,7 @@ export default function ConteoDetailView() {
             setProducts(productsPage.rows);
             setTotal(productsPage.total);
             setSonParecidos(!!productsPage.aproximado);
-            setDesbloqueadas({});
+            if (!silencioso) setDesbloqueadas({});
 
             // Nada se contrae: las líneas de los productos de la página vienen
             // de una sola llamada. Antes era una por producto, al expandirlo.
@@ -1800,7 +1805,7 @@ export default function ConteoDetailView() {
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
         } finally {
-            setLoading(false);
+            if (!silencioso) setLoading(false);
         }
     }, [id, page, tamPagina, searchDiferido, filtro, laboratorioId, orden, fetchConteoProductsPage,
         fetchConteoItemsForProducts, showToast]);
@@ -1861,13 +1866,13 @@ export default function ConteoDetailView() {
     }, [id, fetchConteoResumen]);
 
     // Lo que corre cuando cambió el conteo entero y no sólo qué se está mirando.
-    const load = useCallback(async () => {
+    const load = useCallback(async (opciones) => {
         try {
             await cargarCabecera();
         } catch (err) {
             showToast('Error', mensajeAmigable(err), 'error');
         }
-        await cargarPagina();
+        await cargarPagina(opciones);
     }, [cargarCabecera, cargarPagina, showToast]);
 
     useEffect(() => {
@@ -1902,7 +1907,9 @@ export default function ConteoDetailView() {
                     'Llegaron productos nuevos',
                     `Se ${n === 1 ? 'agregó 1 producto que entró' : `agregaron ${n} productos que entraron`} a la sucursal después de empezar el conteo. Ya se pueden contar.`,
                     'info');
-                loadRef.current?.();
+                // Sin esqueleto: llega en medio del conteo y no puede
+                // llevarse la fila en la que está quien cuenta.
+                loadRef.current?.({ silencioso: true });
             });
         };
         traer();
@@ -2057,6 +2064,29 @@ export default function ConteoDetailView() {
 
     const bodega   = hacerHandlers(setItemsByProduct, setProducts);
     const vencidas = hacerHandlers(setVencidosItems, setVencidos);
+
+    // Agregar un lote o un producto relee SÓLO ese producto y la cabecera. Antes
+    // recargaba la página entera con su esqueleto: la tabla se desmontaba y
+    // quien contaba perdía el lugar (Bodega, 2026-11-16). Si el producto no
+    // está en la página, ésta se relee sin esqueleto para que aparezca.
+    const agregarAlConteo = async (payload) => {
+        await agregarProductoManualConteo(id, payload);
+        setShowAddForm(false);
+        cargarCabecera().catch((err) => console.error('cabecera del conteo:', err?.message));
+        const pid = payload.erpProductId;
+        if (!products.some((p) => p.erp_product_id === pid)) {
+            await cargarPagina({ silencioso: true });
+            return;
+        }
+        try {
+            const filas = conNetoDelGrupo((await fetchConteoProductItems(id, pid)).filter((f) => !f.is_vencidos));
+            setItemsByProduct((prev) => ({ ...prev, [pid]: filas }));
+            recomputeProductTotals(pid, filas, setProducts);
+        } catch (err) {
+            console.error('releer el producto del conteo:', err?.message);
+            await cargarPagina({ silencioso: true });
+        }
+    };
     const handleSaveItem       = bodega.guardar;
     const handleRecountItem    = bodega.recontar;
     const handleSaveVencido    = vencidas.guardar;
@@ -2605,11 +2635,7 @@ export default function ConteoDetailView() {
                     <Suspense fallback={null}><AddManualItemForm
                         branchId={conteo.branch_id}
                         simple={simple}
-                        onAdd={async (payload) => {
-                            await agregarProductoManualConteo(id, payload);
-                            setShowAddForm(false);
-                            await load();
-                        }}
+                        onAdd={agregarAlConteo}
                         onCancel={() => setShowAddForm(false)}
                     /></Suspense>
                 )}
@@ -2737,11 +2763,7 @@ export default function ConteoDetailView() {
                             <AddManualItemForm
                                 branchId={conteo.branch_id}
                                 simple={simple}
-                                onAdd={async (payload) => {
-                                    await agregarProductoManualConteo(id, payload);
-                                    setShowAddForm(false);
-                                    await load();
-                                }}
+                                onAdd={agregarAlConteo}
                                 onCancel={() => setShowAddForm(false)}
                             />
                         </Suspense>

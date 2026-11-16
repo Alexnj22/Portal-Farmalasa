@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1553.2 — Conteo: corregir la etiqueta de un lote ya no duplica renglones ni recarga la página
+
+Bodega, conteo en vivo por lote: «BEBELAC 1 X 900 dice 8 y en inventario
+salen 5».
+- Al corregir la etiqueta de un renglón del sistema (GENERICO → 101505512), la
+  lectura en vivo buscaba el lote nuevo en la existencia —no existe— y el
+  renglón pasaba a 0; y `sincronizar_conteo_en_vivo` volvía a agregar el lote
+  original como «llegó después». Ahora el renglón guarda contra qué existencia
+  se compara (`etiqueta_corregida`, `lote_sistema`, `vence_sistema`) y las siete
+  funciones del conteo lo usan (migración `20261116175431`).
+- Reparado el conteo de Bodega en curso: 29 etiquetas marcadas, 28 renglones
+  duplicados borrados (todos vacíos o en 0) y 13 sistemas releídos.
+- Agregar un lote relee sólo ese producto, y la sincronización en vivo relee sin
+  esqueleto: la tabla ya no se desmonta ni se pierde el lugar.
+
+
 ## v2.1553.1 — Lenguaje: Tablero, y la app al día con la web
 
 - Quinta tanda de la revisión del lenguaje: el Tablero de inicio (traslados,

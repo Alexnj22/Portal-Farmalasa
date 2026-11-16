@@ -8830,6 +8830,7 @@ export type Database = {
           erp_product_id: number
           es_agregado_manual: boolean
           estado_item: string
+          etiqueta_corregida: boolean
           fecha_vencimiento: string | null
           fisico_cantidad: number | null
           fisico_primer_conteo: number | null
@@ -8837,6 +8838,7 @@ export type Database = {
           id: string
           is_vencidos: boolean
           lote: string | null
+          lote_sistema: string | null
           nota: string | null
           presentacion: string | null
           recontado_at: string | null
@@ -8845,6 +8847,7 @@ export type Database = {
           sistema_inicial: number | null
           source_inventory_id: number | null
           source_sync_key: string | null
+          vence_sistema: string | null
         }
         Insert: {
           contado_at?: string | null
@@ -8856,6 +8859,7 @@ export type Database = {
           erp_product_id: number
           es_agregado_manual?: boolean
           estado_item?: string
+          etiqueta_corregida?: boolean
           fecha_vencimiento?: string | null
           fisico_cantidad?: number | null
           fisico_primer_conteo?: number | null
@@ -8863,6 +8867,7 @@ export type Database = {
           id?: string
           is_vencidos?: boolean
           lote?: string | null
+          lote_sistema?: string | null
           nota?: string | null
           presentacion?: string | null
           recontado_at?: string | null
@@ -8871,6 +8876,7 @@ export type Database = {
           sistema_inicial?: number | null
           source_inventory_id?: number | null
           source_sync_key?: string | null
+          vence_sistema?: string | null
         }
         Update: {
           contado_at?: string | null
@@ -8882,6 +8888,7 @@ export type Database = {
           erp_product_id?: number
           es_agregado_manual?: boolean
           estado_item?: string
+          etiqueta_corregida?: boolean
           fecha_vencimiento?: string | null
           fisico_cantidad?: number | null
           fisico_primer_conteo?: number | null
@@ -8889,6 +8896,7 @@ export type Database = {
           id?: string
           is_vencidos?: boolean
           lote?: string | null
+          lote_sistema?: string | null
           nota?: string | null
           presentacion?: string | null
           recontado_at?: string | null
@@ -8897,6 +8905,7 @@ export type Database = {
           sistema_inicial?: number | null
           source_inventory_id?: number | null
           source_sync_key?: string | null
+          vence_sistema?: string | null
         }
         Relationships: [
           {

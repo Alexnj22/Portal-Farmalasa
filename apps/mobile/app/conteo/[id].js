@@ -276,7 +276,29 @@ export default function Conteo() {
   // portal: al abrir y cada vez que la app vuelve al frente (contar toma horas
   // y la pantalla se deja abierta). Y se avisa: el «faltan N» sube.
   const cargarRef = useRef(null);
-  useEffect(() => { cargarRef.current = () => { cargar(); cargarConteo(); }; });
+  // Releer UN producto (sus renglones, su píldora y la cabecera) sin tocar la
+  // lista: agregar un lote recargaba la página y se perdía el lugar (Bodega,
+  // 2026-11-16).
+  const refrescarProducto = useCallback(async (erp) => {
+    cargarConteo();
+    try {
+      const filas = await fetchConteoItemsForProducts(id, [erp], { area: hayVencidosRef.current ? area : null });
+      setItems((m) => ({ ...m, [erp]: filas }));
+      const contadosDelProducto = filas.filter((it) => it.estado_item !== 'PENDIENTE').length;
+      setProductos((p) => ({ ...p, filas: p.filas.map((f) => (f.erp_product_id === erp
+        ? { ...f, item_count: filas.length, contados_count: contadosDelProducto } : f)) }));
+    } catch {
+      setItems((m) => { const n = { ...m }; delete n[erp]; return n; });
+    }
+  }, [id, area, cargarConteo, fetchConteoItemsForProducts]);
+
+  // En la página 2 o más, `cargar` AGREGA la página al final: releerla repetía
+  // productos. Ahí sólo se releen la cabecera y el producto abierto.
+  useEffect(() => { cargarRef.current = () => {
+    cargarConteo();
+    if (pagina === 1) cargar();
+    if (abierto != null) refrescarProducto(abierto);
+  }; });
   const abiertoParaContar = conteoEditable(conteo);
   useEffect(() => {
     if (!abiertoParaContar) return undefined;
@@ -609,10 +631,14 @@ export default function Conteo() {
       <LoteReal conteoId={id} item={loteReal}
         hermanos={loteReal ? (items[loteReal.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteReal.presentacion ?? '').trim().toUpperCase()) : []}
         onCerrar={() => setLoteReal(null)}
-        onListo={() => { const erp = loteReal?.erp_product_id; setItems((m) => { const n = { ...m }; delete n[erp]; return n; }); cargar(); cargarConteo(); }} />
+        onListo={() => { if (loteReal) refrescarProducto(loteReal.erp_product_id); }} />
       <AccionDeRenglon item={accion?.item ?? null} modo={accion?.modo} aCiegas={recuento} onCerrar={() => setAccion(null)} onHecho={alAccion} />
       <AgregarRenglon visible={agregando} conteoId={id} branchId={conteo?.branch_id} simple={simple} onCerrar={() => setAgregando(false)}
-        onAgregado={(prod) => { setItems((m) => { const n = { ...m }; delete n[prod.id]; return n; }); setFiltro('TODOS'); setTexto(prod.nombre); setPagina(1); cargar(); cargarConteo(); }} />
+        onAgregado={(prod) => {
+          // Ya está en la lista: se relee ése y se abre, sin moverse de lugar.
+          if (productos.filas.some((f) => f.erp_product_id === prod.id)) { refrescarProducto(prod.id); setAbierto(prod.id); return; }
+          setItems((m) => { const n = { ...m }; delete n[prod.id]; return n; }); setFiltro('TODOS'); setTexto(prod.nombre); setPagina(1); cargar(); cargarConteo();
+        }} />
       <Escaner visible={escaneando} titulo="Buscar en el conteo" ayuda="Apunta al código de barras del producto"
         onCodigo={(c) => { setEscaneando(false); setFiltro('TODOS'); setTexto(String(c)); }} onCerrar={() => setEscaneando(false)} />
     </>

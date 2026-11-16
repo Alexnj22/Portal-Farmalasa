@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1548.3 — El Inicio acomodado se arma en renglones llenos
+
+- Subir cada tarjeta en su columna (v2.1548.2) no alcanzó: con widgets
+  apagados, una columna quedaba mucho más larga que la otra y abajo sobraba
+  un bloque vacío (14 celdas en el tablero que se reportó).
+- En escritorio el tablero acomodado ahora se arma igual que el automático:
+  renglones llenos, sin huecos, ensanchando tarjetas cuando hace falta. Del
+  acomodo propio se conserva el orden; los widgets nuevos van al final.
+
 ## v2.1548.2 — El Inicio cierra solo los huecos del tablero acomodado
 
 - Quien ya había acomodado su tablero veía huecos: al apagarse un widget o

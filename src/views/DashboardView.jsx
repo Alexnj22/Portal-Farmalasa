@@ -97,7 +97,7 @@ import {
     fetchDashboardCanon, upsertDashboardCanon, fetchBajoMinimo } from '@nucleo/data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
 import { clickable } from '@nucleo/utils/clickable';
-import { reacomodar, compactar } from '@nucleo/utils/acomodoWidgets';
+import { reacomodar } from '@nucleo/utils/acomodoWidgets';
 import { permitirEscapeDelScroll } from '../plataforma/scrollEncadenado';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import useCapaFlotante from '../plataforma/capaFlotante';
@@ -1361,9 +1361,28 @@ const DashboardView = ({ openModal }) => {
   // el resto = 2); `empacarFilas` sólo puede AGRANDARLO, y `getEffectiveCols`
   // lee el resultado en vez de volver a imponer la regla. Si la persona ya
   // acomodó su tablero (escritorio o móvil), esto no corre y manda lo suyo.
+  //
+  // **En escritorio, también para quien YA acomodó** (2026-11-16, «dejalo
+  // cuadrado, puedes mover y cambiar tamaño de ser necesario»). Su acomodo
+  // guardado sólo aporta el ORDEN de lectura; `empacarFilas` arma renglones
+  // llenos y ensancha lo que haga falta. Respetar cada posición guardada
+  // dejaba para siempre el hueco de cada widget apagado: en el tablero real,
+  // con «Bitácoras» y «Reservas» apagadas, 14 celdas vacías. Empacado: 0.
+  // Los que entran nuevos van al final del orden.
   const acomodoAutomatico = useMemo(() => {
-    if (!acomodoLibre || tabsAcomodadas.has(activeTab)) return null;
-    if (!isMobile) return empacarFilas(catalogoVisible, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+    if (!acomodoLibre) return null;
+    if (!isMobile) {
+      const guardado = tabsAcomodadas.has(activeTab) ? (widgetLayout[activeTab] || EMPTY_OBJ) : null;
+      const orden = guardado
+        ? [
+            ...catalogoVisible.filter(id => id in guardado).sort((a, b) =>
+              guardado[a].row - guardado[b].row || guardado[a].col - guardado[b].col),
+            ...catalogoVisible.filter(id => !(id in guardado)),
+          ]
+        : catalogoVisible;
+      return empacarFilas(orden, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+    }
+    if (tabsAcomodadas.has(activeTab)) return null;
     const movilPropio = Object.keys(mobileLayout[activeTab] || {}).length > 0
       || Object.keys(mobileSizes[activeTab] || {}).length > 0;
     if (movilPropio) return null;
@@ -1372,7 +1391,7 @@ const DashboardView = ({ openModal }) => {
       return [id, { cols: esTelefono ? anchoEnTelefono(id) : Math.min(def.minCols, MOBILE_COLS), rows: def.minRows }];
     }));
     return empacarFilas(catalogoVisible, medidas, MOBILE_COLS);
-  }, [acomodoLibre, isMobile, esTelefono, anchoEnTelefono, tabsAcomodadas, activeTab, widgetSizes, mobileLayout, mobileSizes, catalogoVisible]);
+  }, [acomodoLibre, isMobile, esTelefono, anchoEnTelefono, tabsAcomodadas, activeTab, widgetLayout, widgetSizes, mobileLayout, mobileSizes, catalogoVisible]);
 
   // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
   // escritorio, que es donde su efecto los da de alta.
@@ -1398,22 +1417,31 @@ const DashboardView = ({ openModal }) => {
       const pa = base[a], pb = base[b];
       return pa.row !== pb.row ? pa.row - pb.row : pa.col - pb.col;
     };
-    // Depura y completa SIN mover lo que ya estaba: los que faltan van al primer
-    // hueco REAL del acomodo guardado (ver `colocarEnHuecos`, que es donde vive
-    // el porqué de no recalcular el tablero entero para averiguarlo).
+    // Depura, completa y REACOMODA en el orden que la persona eligió
+    // (2026-11-16, «las cards están desordenadas, ¿por qué no se auto ordenan
+    // al agregarse nuevas?»).
     //
-    // Y al final se COMPACTA (2026-11-16, «las cards están desordenadas, ¿por
-    // qué no se auto ordenan al agregarse nuevas?»). Un acomodo guardado
-    // conserva el hueco de cada widget que se apagó o que el cargo dejó de
-    // ver, y el que entra nuevo cae en un hueco suelto: con los meses el
-    // tablero quedaba agujereado. `compactar` sube cada widget en SU columna
-    // mientras quepa —la misma pasada que cierra cada arrastre—, así que el
-    // orden que la persona eligió se respeta y sólo desaparecen los huecos.
+    // Antes se respetaba cada posición guardada y los nuevos iban al primer
+    // hueco (`colocarEnHuecos`). Eso conservaba para siempre el hueco de cada
+    // widget que se apagó o que el cargo dejó de ver. Subirlos sólo en su
+    // columna (`compactar`, v2.1548.2) no alcanzó: medido sobre el tablero
+    // real, con «Bitácoras» y «Reservas» apagadas, la columna derecha quedaba
+    // 8 filas más larga y abajo a la izquierda sobraban 14 celdas.
+    //
+    // Ahora el guardado sólo aporta el ORDEN de lectura; cada widget, con SU
+    // tamaño, va al primer lugar libre (`autoPlaceOrder`), y los que entran
+    // nuevos van al final de ese orden. Mismo tablero: 2 celdas vacías, las
+    // del último renglón. No se usa `empacarFilas` porque ensancha para
+    // llenar renglones, y sobre un tablero con tamaños elegidos a mano dejaba
+    // «Venta por vendedor» y «Precios» a todo lo ancho.
+    //
+    // Como todas las posiciones salen de la misma pasada, no puede repetirse
+    // el encimado que motivó `colocarEnHuecos` (posiciones guardadas mezcladas
+    // con posiciones de un tablero recalculado).
     const alDia = (guardado, sizes, cols) => {
       const base = Object.fromEntries(Object.entries(guardado).filter(([id]) => vigente(id)));
       const faltan = catalogo.filter(id => !(id in base));
-      const completo = faltan.length ? { ...base, ...colocarEnHuecos(base, faltan, sizes, cols) } : base;
-      return compactar(completo, medidaEfectiva(sizes, cols), cols);
+      return autoPlaceOrder([...Object.keys(base).sort(porPosicion(base)), ...faltan], sizes, cols);
     };
 
     // Mientras el usuario no haya movido NADA en esta pestaña, el tablero se

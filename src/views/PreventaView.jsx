@@ -1388,7 +1388,14 @@ function Tarjeta({ p, puedeVender, onCorregir, onRepetir, onAnular }) {
         <li data-surface="card" className="p-3 flex flex-col gap-2">
             <button type="button" onClick={() => setAbierta((a) => !a)} aria-expanded={abierta}
                 className="flex items-center gap-3 text-left min-h-[var(--tap-min)] rounded-lg active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand">
-                <span className="text-title font-black tabular-nums text-content w-16 shrink-0">{p.externo_ref ? `#${p.externo_ref}` : '—'}</span>
+                {p.externo_ref
+                    ? <span className="text-title font-black tabular-nums text-content w-16 shrink-0">#{p.externo_ref}</span>
+                    : (
+                        // Sin número de caja todavía: el estado en lugar de un guion.
+                        <span className={`w-16 shrink-0 flex justify-center ${est.tono === 'danger' ? 'text-danger-text' : 'text-content-3'}`}>
+                            {est.tono === 'danger' ? <Ban size={22} /> : <Receipt size={22} />}
+                        </span>
+                    )}
                 <span className="flex-1 min-w-0">
                     <span className="block text-body-sm font-bold text-content truncate">{p.cliente ?? 'Cliente frecuente'}</span>
                     <span className="block text-micro text-content-3 truncate">
@@ -1399,7 +1406,7 @@ function Tarjeta({ p, puedeVender, onCorregir, onRepetir, onAnular }) {
                     </span>
                 </span>
                 <span className="text-right shrink-0">
-                    <span className="block text-body font-black tabular-nums">{formatMoney(p.total)}</span>
+                    {p.total != null && <span className="block text-body font-black tabular-nums">{formatMoney(p.total)}</span>}
                     <Badge variant={est.tono} size="sm" uppercase={false}>{est.texto}</Badge>
                     {p.cobro_distinto?.alerta && <Badge variant="danger" size="sm" uppercase={false}>Se cobró distinto</Badge>}
                 </span>

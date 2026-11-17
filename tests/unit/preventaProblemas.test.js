@@ -61,3 +61,18 @@ describe('datos del cliente', () => {
         expect(nombreDeComprobante('CCF')).toBe('Crédito fiscal');
     });
 });
+
+describe('nombre con tilde o Ñ', () => {
+    const cotN = { lineas: [linea({ existencia: 999, cantidad: 1 })], generico: false,
+        cliente: { categoria: 'Contribuyente', name: 'EDWIN NUÑEZ', erp_id: '5', nit: '1', nrc: '1', giro: 'x', direccion: 'x' } };
+    it('con puntos se avisa antes de enviar y dice cómo queda', () => {
+        const p = problemasDeVenta({ lineas: [{}], cotizacion: cotN, documento: 'consumidor_final', pago: 'contado', puntos: 100, hayCliente: true })
+            .find((x) => x.clave === 'nombre-caja');
+        expect(p.ayuda).toContain('EDWIN NUNEZ');
+        expect(p.acciones.map((a) => a.label)).toEqual(['Corregir nombre', 'No canjear']);
+    });
+    it('una factura sin puntos ni crédito no se frena', () => {
+        expect(problemasDeVenta({ lineas: [{}], cotizacion: cotN, documento: 'consumidor_final', pago: 'contado', puntos: 0, hayCliente: true })
+            .some((x) => x.clave === 'nombre-caja')).toBe(false);
+    });
+});

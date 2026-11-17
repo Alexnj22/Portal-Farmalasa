@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.12 — Preventa: nombre con Ñ avisado antes de enviar
+
+- Si el nombre del cliente lleva tilde o Ñ y la venta lleva crédito fiscal,
+  crédito o puntos, «Antes de enviar» lo dice con cómo queda corregido
+  (NUÑEZ → NUNEZ) y botones para corregirlo o quitar lo que lo impide.
+- Editor del cliente: aviso con el botón «Corregir» que quita tildes y Ñ.
+- La preventa que no llegó a caja guarda sus productos y ya no muestra guiones.
+- Novedades: no — corrección de un error de envío.
+
 ## v2.1562.11 — Preventa: flechas fijas y aviso del lote que no alcanza
 
 - Las flechas de «Suele llevar» ya no se mueven hacia abajo al pasar el cursor.

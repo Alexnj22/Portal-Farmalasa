@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
-    History, AlertTriangle, Store, Building2,
+    History, AlertTriangle, Store, Building2, Wand2,
 } from 'lucide-react';
+import { enAscii, esTextoSeguro } from '@nucleo/utils/preventa';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import Notice from '../common/Notice';
@@ -580,6 +581,18 @@ const FormClienteDetail = ({ formData }) => {
                                             : esNuevo ? 'Nombre y apellido, como en el DUI. Se guarda en mayúscula' : 'Se guarda en mayúscula'}
                                     onChange={e => setForm(p => ({ ...p, name: e.target.value.toUpperCase() }))}
                                 />
+                                {/* Caja no acepta a su nombre a quien lleva tilde o Ñ: sin esto no
+                                    se le puede dar crédito fiscal, crédito ni puntos desde Preventa. */}
+                                {editable && form.name && !esTextoSeguro(form.name) && (
+                                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-warning/10 px-3 py-2">
+                                        <AlertTriangle size={14} className="shrink-0 text-warning-text" />
+                                        <p className="flex-1 min-w-0 text-caption font-semibold text-warning-text">
+                                            Caja no acepta tildes ni Ñ en el nombre. Quedaría: <span className="font-black">{enAscii(form.name)}</span>
+                                        </p>
+                                        <Button size="sm" variant="secondary" icon={Wand2}
+                                            onClick={() => setForm(p => ({ ...p, name: enAscii(p.name) }))}>Corregir</Button>
+                                    </div>
+                                )}
                             </div>
                             {ver('dui') && <PortalInput
                                 name="dui" label="DUI" maskType="DUI"

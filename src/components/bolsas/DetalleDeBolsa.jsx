@@ -9,7 +9,7 @@ import PromptModal from '../common/PromptModal';
 import { SkeletonText } from '../common/StateViews';
 import PhotoLightbox from '../common/PhotoLightbox';
 import {
-    anularBolsa, anularLaSalidaDeBolsa, fetchDiferenciaDeUnCorte, fetchEventosDeBolsa, fetchSalidasDeBolsa,
+    anularBolsa, anularLaSalidaDeBolsa, fetchDiferenciaDeUnCorte, fetchEstadosDeDiferenciaDeCortes, fetchEventosDeBolsa, fetchSalidasDeBolsa,
 } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -22,6 +22,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { ACCION_DE_BOLSA, COMO_SE_IDENTIFICO } from '@nucleo/utils/bolsasTexto';
 import { contadoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { ESTADO_DIFERENCIA_ROTULO } from '@nucleo/utils/diferenciasDeCaja';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.
@@ -95,7 +96,7 @@ const ESTADO = {
 const fechaHoraCorta = (iso) => (iso ? fechaHora12(iso, { day: 'numeric', month: 'short' }) : '');
 
 /** Una diferencia con su nombre: Faltó / Sobró / Cuadró, con color. */
-function Diferencia({ titulo, ayuda, valor, vacio, cargando = false }) {
+function Diferencia({ titulo, ayuda, valor, vacio, cargando = false, estado = null }) {
     const sinDato = valor === undefined;
     const hay = typeof valor === 'number';
     const cuadra = hay && Math.abs(valor) < 0.01;
@@ -108,7 +109,10 @@ function Diferencia({ titulo, ayuda, valor, vacio, cargando = false }) {
                 {cargando ? '…' : sinDato ? 'Sin dato' : !hay ? vacio
                     : cuadra ? 'Cuadró' : `${valor < 0 ? 'Faltó' : 'Sobró'} ${formatMoney(Math.abs(valor))}`}
             </div>
-            <div className="text-caption text-content-3">{ayuda}</div>
+            {estado && hay && !cuadra && (
+                <Badge variant={estado.variant} size="sm" dot className="mt-1">{estado.label}</Badge>
+            )}
+            <div className="text-caption text-content-3 mt-1">{ayuda}</div>
         </div>
     );
 }
@@ -134,6 +138,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
     // La diferencia del CORTE que creó la bolsa —faltante o sobrante de la caja—,
     // que no es la del conteo. `undefined` = no se pudo leer.
     const [difCorte, setDifCorte] = useState(null);
+    const [estadoCorte, setEstadoCorte] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [ocupado, setOcupado] = useState(null);
     // Qué se está anulando: la bolsa entera, o una salida concreta.
@@ -172,12 +177,15 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
     const cargar = useCallback(async () => {
         if (!bolsa) return;
         setCargando(true);
-        const [s, e, dc] = await Promise.all([
+        const [s, e, dc, est] = await Promise.all([
             fetchSalidasDeBolsa(bolsa.id),
             fetchEventosDeBolsa(bolsa.id),
             fetchDiferenciaDeUnCorte({ corteId: bolsa.corte_id, branchId: bolsa.branch_id, fecha: bolsa.fecha }),
+            bolsa.corte_id ? fetchEstadosDeDiferenciaDeCortes({ desde: bolsa.fecha, hasta: bolsa.fecha }) : null,
         ]);
-        setSalidas(s); setEventos(e); setDifCorte(dc); setCargando(false);
+        setSalidas(s); setEventos(e); setDifCorte(dc);
+        setEstadoCorte(est?.get(bolsa.corte_id) || null);
+        setCargando(false);
     }, [bolsa]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al abrir
@@ -290,7 +298,6 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                 <LiquidModal.Body className="space-y-5">
                     <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant={estado.variant} dot>{estado.label}</Badge>
-                        {bolsa.dif_at && <Badge variant="neutral" icon={Check}>Diferencia del conteo resuelta</Badge>}
                     </div>
 
                     {/* ── Las cifras ──────────────────────────────────────── */}
@@ -314,11 +321,13 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                         <Diferencia titulo="Diferencia del corte"
                             ayuda="Lo contado en la caja contra lo que dice el corte"
                             valor={bolsa.corte_id ? difCorte : null}
-                            vacio={bolsa.corte_id ? 'Sin conteo en el corte' : 'Sin corte'} cargando={cargando} />
+                            vacio={bolsa.corte_id ? 'Sin conteo en el corte' : 'Sin corte'} cargando={cargando}
+                            estado={estadoCorte ? ESTADO_DIFERENCIA_ROTULO[estadoCorte] : null} />
                         <Diferencia titulo="Diferencia del conteo"
                             ayuda="Lo que había en la bolsa contra lo que debía haber"
                             valor={dif}
-                            vacio={bolsa.estado === 'ANULADA' ? 'Anulada' : 'Todavía no se cuenta'} />
+                            vacio={bolsa.estado === 'ANULADA' ? 'Anulada' : 'Todavía no se cuenta'}
+                            estado={bolsa.dif_at ? ESTADO_DIFERENCIA_ROTULO.resuelto : ESTADO_DIFERENCIA_ROTULO.sin_resolver} />
                     </div>
 
                     {bolsa.dif_causa && (

@@ -46,6 +46,18 @@
 
 export const ESTADOS_DIFERENCIA = ['sin_resolver', 'por_confirmar', 'con_saldo', 'por_registrar', 'acumulado', 'resuelto'];
 
+/** Cómo se dice cada estado en pantalla (Cortes de caja y Bolsas: una sola lista). */
+export const ESTADO_DIFERENCIA_ROTULO = {
+    sin_resolver:  { label: 'Sin resolver', variant: 'danger' },
+    por_confirmar: { label: 'Falta confirmar el corte', variant: 'warning' },
+    con_saldo:     { label: 'Por cobrar', variant: 'warning' },
+    por_registrar: { label: 'Por anotar', variant: 'info' },
+    // Un sobrante sin causa no es trabajo pendiente: queda en el acumulado de
+    // la sala para el inventario (usuario, 2026-09-25).
+    acumulado:     { label: 'Acumulado', variant: 'info' },
+    resuelto:      { label: 'Resuelto', variant: 'success' },
+};
+
 const rango = (e) => {
     const i = ESTADOS_DIFERENCIA.indexOf(e);
     return i < 0 ? ESTADOS_DIFERENCIA.length : i;

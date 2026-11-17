@@ -57,6 +57,7 @@ export const FILTROS_TODAS_BOLSAS = [
     { value: 'pendiente', label: 'Pendientes' },
     { value: 'CONTADA',   label: 'Contadas' },
     { value: 'difcorte',  label: 'Corte con diferencia' },
+    { value: 'cortesinresolver', label: 'Corte sin resolver' },
     { value: 'dif',       label: 'Conteo con diferencia' },
     { value: 'ANULADA',   label: 'Anuladas' },
 ];

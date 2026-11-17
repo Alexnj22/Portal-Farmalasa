@@ -5,6 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 vi.mock('@nucleo/data/bolsas', () => ({
   anularBolsa: vi.fn(), anularLaSalidaDeBolsa: vi.fn(),
   fetchSalidasDeBolsa: vi.fn(async () => []),
+  fetchEstadosDeDiferenciaDeCortes: vi.fn(async () => new Map([[55, 'resuelto']])),
   fetchDiferenciaDeUnCorte: vi.fn(async () => 2.5),
   fetchEventosDeBolsa: vi.fn(async () => ([
     { id: 3, accion: 'CONTAR', nombre: 'CELINA BEATRIZ ESCOBAR ESCOBAR', employee_id: 9, created_at: '2026-11-13T20:37:00Z', motivo: 'No cuadró.' },
@@ -30,6 +31,7 @@ describe('DetalleDeBolsa', () => {
     expect(screen.getByText('Diferencia del corte')).toBeTruthy();
     await waitFor(() => expect(screen.getAllByText(/Sobró \$2\.50/).length).toBeGreaterThan(0));
     expect(screen.queryByText('LP-2124')).toBeNull();
+    await waitFor(() => expect(screen.getAllByText('Resuelto').length).toBeGreaterThan(0));
     expect(screen.getAllByText('Depositada').length).toBe(1);
     expect(screen.queryByText(/CELINA BEATRIZ ESCOBAR ESCOBAR/)).toBeNull();
     expect(screen.getAllByText(/Faltaron 4 dólares/).length).toBe(1);

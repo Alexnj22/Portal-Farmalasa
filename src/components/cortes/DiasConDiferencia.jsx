@@ -12,7 +12,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { desgloseDelDia, resolucionesDe, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
+import { ESTADO_DIFERENCIA_ROTULO, desgloseDelDia, resolucionesDe, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 import PuntoDeEstado from '../common/PuntoDeEstado';
@@ -32,16 +32,8 @@ import PuntoDeEstado from '../common/PuntoDeEstado';
  * formulario: es el mismo, puesto donde se lo busca.
  */
 
-const ESTADO = {
-    sin_resolver:  { label: 'Sin resolver', variant: 'danger' },
-    por_confirmar: { label: 'Falta confirmar el corte', variant: 'warning' },
-    con_saldo:     { label: 'Por cobrar', variant: 'warning' },
-    por_registrar: { label: 'Por anotar', variant: 'info' },
-    // Un sobrante sin causa no es trabajo pendiente: queda en el acumulado de
-    // la sala para el inventario (usuario, 2026-09-25).
-    acumulado:     { label: 'Acumulado', variant: 'info' },
-    resuelto:      { label: 'Resuelto', variant: 'success' },
-};
+// Los rótulos viven en el núcleo: Bolsas muestra el mismo estado del corte.
+const ESTADO = ESTADO_DIFERENCIA_ROTULO;
 
 // La fecha de un corte es la de la sala: se lee a mediodía UTC para que ningún
 // huso la corra de día.

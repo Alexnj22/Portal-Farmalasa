@@ -7,8 +7,9 @@ import { recordarIngresoEnEspera } from './ingresosEnEspera';
 import { repartoDeUnaSalida } from '../utils/repartoDeSalida';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
-import { fetchCortesResumen, fetchCortesDelDiaDeSala } from './cortes';
+import { fetchCortesResumen, fetchCortesDelDiaDeSala, fetchDiasConDiferencia, fetchDiferencias } from './cortes';
 import { conTramoPorSalaYDia } from '../utils/cortesDiagnostico';
+import { conEstados, unirResoluciones } from '../utils/diferenciasDeCaja';
 
 // Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte, hasta
 // que administración lo cuenta.
@@ -1931,4 +1932,24 @@ export async function fetchDiferenciaDeUnCorte({ corteId, branchId, fecha }) {
     if (error) return undefined;
     const c = conTramoPorSalaYDia(cortes).find((x) => x.id === corteId);
     return c ? c.tramo : null;
+}
+
+/**
+ * Si la diferencia de cada corte se resolvió: `corte_id → estado`
+ * (`sin_resolver`, `resuelto`, `acumulado`, …). Es el MISMO cálculo de
+ * «Días con diferencia» en Cortes de caja (`conEstados(unirResoluciones(…))`),
+ * no uno propio. Sólo trae los cortes que no cuadraron. `null` si falla.
+ * @returns {Promise<Map<number, string>|null>}
+ */
+export async function fetchEstadosDeDiferenciaDeCortes({ desde, hasta }) {
+    const [r, resoluciones] = await Promise.all([
+        fetchDiasConDiferencia({ desde, hasta }),
+        fetchDiferencias({ desde, hasta }),
+    ]);
+    if (r.error) return null;
+    const m = new Map();
+    for (const d of conEstados(unirResoluciones(r.dias, resoluciones))) {
+        for (const c of d.cortes || []) m.set(c.id, c.estadoDif);
+    }
+    return m;
 }

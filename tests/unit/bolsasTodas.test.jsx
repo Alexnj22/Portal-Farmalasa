@@ -11,6 +11,7 @@ vi.mock('@nucleo/data/bolsas', () => ({
   ])),
   fetchSaldos: vi.fn(async (ids) => new Map(ids.map((id) => [id, { bolsa_id: id, saldo: id === 1 ? 100 : id === 2 ? 50 : 0 }]))),
   fetchPersonasDeBolsas: vi.fn(async () => [{ id: 7, name: 'Ana Pérez López' }]),
+  fetchEstadosDeDiferenciaDeCortes: vi.fn(async () => new Map([[90, 'sin_resolver']])),
   fetchDiferenciasDeCortes: vi.fn(async () => new Map([[90, -12.5]])),
 }));
 
@@ -28,6 +29,8 @@ describe('TodasLasBolsas', () => {
         expect(screen.getAllByText(/Faltó/).length).toBeGreaterThan(0);
         await waitFor(() => expect(onMetricas.mock.calls.at(-1)[0].length).toBe(5));
         expect(screen.getAllByText(/Faltó \$12\.50/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Sin resolver').length).toBeGreaterThan(0);
+        expect(onMetricas.mock.calls.at(-1)[0][0].value).toBe('$150.00');
       }
       expect(onOpciones.mock.calls.at(-1)[0].map((o) => o.label)).toContain('Anuladas (1)');
       unmount();

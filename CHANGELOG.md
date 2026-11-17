@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.1 — Bolsas: tarjetas en dinero y si la diferencia del corte se resolvió
+
+- «en card me interesa más ver cuánto es en total $», «diferencia del conteo
+  céntralo», «¿aparece si se resolvió la diferencia del corte?» (usuario,
+  2026-11-17).
+- Tarjetas de «Todas»: la cifra grande es el dinero (en las bolsas, pendiente,
+  contado, neto de los cortes, neto del conteo); la cantidad va en el rótulo.
+- Columnas de diferencia centradas, cada una con su estado debajo: la del corte
+  con el MISMO estado de Cortes de caja (`conEstados(unirResoluciones(…))` vía
+  `fetchEstadosDeDiferenciaDeCortes`: Sin resolver, Resuelto, Acumulado, Por
+  cobrar…); la del conteo, Resuelto / Sin resolver según `dif_at`. Filtro nuevo
+  «Corte sin resolver».
+- El detalle muestra el estado bajo cada diferencia.
+- `ESTADO_DIFERENCIA_ROTULO` pasa de `DiasConDiferencia.jsx` al núcleo
+  (`diferenciasDeCaja.js`) para que Cortes y Bolsas digan lo mismo.
+- Novedades: no — mejora de una pantalla que ya existía.
+
 ## v2.1573.0 — Kiosco de caja: la cola siempre a la vista y el cobro en la pantalla de venta
 
 Rediseño completo del kiosco de caja (pedido del usuario: «no veo un rediseño,

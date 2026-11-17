@@ -298,7 +298,7 @@ export default function EntregaDeBolsas({
                 <div className="flex items-center justify-between gap-3 w-full flex-wrap">
                     {/* Lo que falta, completo y en el tono de aviso (antes se cortaba). */}
                     {falta ? <AvisoDeFalta motivo={falta} /> : (
-                        <span className="text-caption text-content-3 min-w-0 truncate">Se imprime el comprobante que firman los dos</span>
+                        <span className="text-caption text-content-3 min-w-0 truncate">Queda registrado con las dos firmas</span>
                     )}
                     <div className="flex items-center gap-2 ml-auto">
                         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>

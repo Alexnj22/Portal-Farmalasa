@@ -48,11 +48,12 @@ export function fetchBolsas({ desde, hasta, estados = ['ABIERTA'], porFechaDeCon
         // su trabajo esfumarse. Lo destapó la prueba en el entorno de pruebas
         // con una bolsa de hace cinco días.
         const campo = porFechaDeConteo ? 'contado_at' : 'fecha';
-        if (desde) q = q.gte(campo, desde);
-        // El fin del día, no la medianoche: `contado_at` lleva hora, y comparar
-        // contra la fecha pelada dejaría fuera todo lo contado después de las
-        // 00:00 del último día del rango.
-        if (hasta) q = q.lte(campo, porFechaDeConteo ? `${hasta}T23:59:59.999Z` : hasta);
+        // `contado_at` lleva hora y está en UTC: los límites van en hora de El
+        // Salvador (−06:00). Con `Z` el día terminaba a las 6 p. m. y una tanda
+        // confirmada a las 6:30 p. m. no salía hasta el día siguiente (76 de
+        // 1,090 contadas, medido el 2026-11-17).
+        if (desde) q = q.gte(campo, porFechaDeConteo ? `${desde}T00:00:00-06:00` : desde);
+        if (hasta) q = q.lte(campo, porFechaDeConteo ? `${hasta}T23:59:59.999-06:00` : hasta);
         if (estados?.length) q = q.in('estado', estados);
         return q.order('fecha', { ascending: false }).order('hora', { ascending: false });
     });

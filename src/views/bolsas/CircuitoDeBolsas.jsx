@@ -58,6 +58,8 @@ const DepositosAlBanco = lazy(() => import('../../components/bolsas/DepositosAlB
 /* Y el archivo de los conteos: la misma `DataTable`, así que comparten chunk en
  * cuanto se abre cualquiera de los dos. */
 const ConteosDeBolsas = lazy(() => import('../../components/bolsas/ConteosDeBolsas'));
+// «Todas» carga su propia consulta (por fecha del corte, todos los estados).
+const TodasLasBolsas = lazy(() => import('./TodasLasBolsas'));
 
 /* El editor de la foto se baja al ELEGIR el archivo, no al abrir la pantalla:
  * la enorme mayoría de los conteos no adjunta nada. Es el mismo canónico y el
@@ -475,11 +477,13 @@ function Conteo({ bolsa, ocupado, ocupadoDesmarcar, ocupadoResolver,
     const cuentaCeroConSaldo = valido && n === 0 && saldoDe(bolsa) >= 0.01;
 
     const cerrar = () => { setAbierto(false); setValor(''); setConfirmandoCero(false); };
-    const guardar = () => {
-        if (!valido) return;
+    // Se cierra cuando la base CONTESTA bien: si rechaza («lo que debe haber
+    // cambió…»), el monto escrito se queda en el campo para corregirlo.
+    const guardar = async () => {
+        if (!valido || ocupado) return;
         if (cuentaCeroConSaldo && !confirmandoCero) { setConfirmandoCero(true); return; }
-        onContar(bolsa, n);
-        cerrar();
+        const ok = await onContar(bolsa, n);
+        if (ok !== false) cerrar();
     };
 
     /* Enter anota, Escape cancela (usuario, 2026-08-26: «mejora el input, que al
@@ -1218,6 +1222,9 @@ export default function CircuitoDeBolsas({
      * puerta no falla — simplemente no está, y nadie se entera. */
     const [invariante, setInvariante] = useState([]);
     const [depositando, setDepositando] = useState(false);
+    // Sube al registrar un depósito: «Depósitos» tiene su propia lectura y sin
+    // esto el depósito recién hecho no aparecía hasta recargar la página.
+    const [versionDepositos, setVersionDepositos] = useState(0);
     const { cerradas, alternar: plegar } = usePlegado();
     /* El instante de la última lectura. «Entregada hace más de un día» se mide
      * contra ESTO y no contra `Date.now()` en el render: leer el reloj mientras
@@ -1231,8 +1238,14 @@ export default function CircuitoDeBolsas({
        Es la única señal de que la lectura de fondo está en curso — sin ella,
        apretar «Actualizar» no acusa recibo y se aprieta dos veces. */
     const [refrescando, setRefrescando] = useState(false);
+    // La última lectura falló. Se conserva lo que ya estaba en pantalla: una
+    // lista vacía por un tropiezo de red se lee como «no hay bolsas», y en el
+    // refresco de fondo además desmontaba el monto que alguien estaba escribiendo.
+    const [falloCarga, setFalloCarga] = useState(false);
     const [elegidas, setElegidas] = useState(() => new Set());
     const [ocupado, setOcupado] = useState(null);
+    // `true` = la sucursal única de la lista; un id = la sucursal del grupo
+    // donde se tocó «Entregar» (con alcance de todas hay varias).
     const [entregando, setEntregando] = useState(false);
     // Qué bolsa está abierta en el detalle: es donde viven la foto del
     // comprobante, la bitácora y las dos anulaciones.
@@ -1293,6 +1306,12 @@ export default function CircuitoDeBolsas({
             fetchInvariante({ desde, hasta }),
         ]);
         if (!vigente()) return;
+        const fallar = () => {
+            setFalloCarga(true);
+            setCargando(false);
+            setRefrescando(false);
+        };
+        if (vivas == null || contadas == null) { fallar(); return; }
         setTandas(lasTandas || []);
         setInvariante(invar || []);
         // Una diferencia puede estar además dentro del rango: se deduplica por
@@ -1305,6 +1324,9 @@ export default function CircuitoDeBolsas({
         // el efectivo que hay adentro.
         const saldos = await fetchSaldos(todas.map((b) => b.id));
         if (!vigente()) return;
+        // Sin saldos cada bolsa se pintaría en $0.00: mejor quedarse con lo anterior.
+        if (saldos == null) { fallar(); return; }
+        setFalloCarga(false);
         setBolsas(todas.map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
         setDiferencias((conDif || []).map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
         setPorDepositar(paraBanco || []);
@@ -1888,12 +1910,35 @@ export default function CircuitoDeBolsas({
     // los filtros, así que esos tres botones se quedan junto a la cifra que
     // están confirmando. Un botón de dinero sin su monto al lado se aprieta a
     // ciegas.
+    /* Lo que se ofrece al ENTREGAR no lleva el recorte del período ni del
+     * buscador: las bolsas más viejas —las de alarma— son justo las que hay que
+     * poder entregar, y con un folio escrito el diálogo ofrecía un pedazo sin
+     * decirlo. Y una entrega es de UNA sucursal (`entregar_bolsas` lo exige):
+     * con alcance de todas y sin sucursal elegida, el diálogo mezclaba las seis
+     * y la base lo rechazaba recién después de escanear el carné. */
+    const paraEntregar = useMemo(
+        () => deLaSala.filter((b) => b.estado === 'ABIERTA'),
+        [deLaSala],
+    );
+    const salasParaEntregar = useMemo(
+        () => new Set(paraEntregar.map((b) => b.branch_id)).size,
+        [paraEntregar],
+    );
+    const aEntregar = useMemo(
+        () => (entregando && entregando !== true
+            ? paraEntregar.filter((b) => String(b.branch_id) === String(entregando))
+            : paraEntregar),
+        [paraEntregar, entregando],
+    );
     const acciones = useMemo(() => (puedeEntregar && etapa === 'sala' ? [
         {
-            key: 'entregar', icon: Send, label: 'Entregar dinero', rotulo: 'Entregar',
-            variant: 'primary', disabled: !enSala.length, onClick: () => setEntregando(true),
+            key: 'entregar', icon: Send,
+            label: salasParaEntregar > 1 ? 'Entregar: elige la sucursal abajo' : 'Entregar dinero',
+            rotulo: 'Entregar',
+            variant: 'primary', disabled: !paraEntregar.length || salasParaEntregar > 1,
+            onClick: () => setEntregando(true),
         },
-    ] : VACIO), [puedeEntregar, etapa, enSala.length, setEntregando]);
+    ] : VACIO), [puedeEntregar, etapa, paraEntregar.length, salasParaEntregar, setEntregando]);
 
     // ── El número de cada pestaña, publicado a la píldora del header ───────
     //
@@ -1923,13 +1968,14 @@ export default function CircuitoDeBolsas({
         diferencias: sinResolver.length,
         camino: enCamino.length,
         contar: porContar.length,
-        finalizadas: contadas.length,
+        // Lo que la pestaña VA a mostrar, también con la tanda o «Sin resolver».
+        finalizadas: archivo.length,
         tonos: {
             camino: enCaminoViejas.length ? 'danger' : undefined,
             diferencias: sinResolver.length ? 'danger' : undefined,
         },
     }), [enSala.length, sinResolver.length, enCamino.length, porContar.length,
-        contadas.length, enCaminoViejas.length]);
+        archivo.length, enCaminoViejas.length]);
 
     useEffect(() => { onConteos?.(conteos); }, [conteos, onConteos]);
 
@@ -2093,6 +2139,18 @@ export default function CircuitoDeBolsas({
             <Frescura leidoEn={leidoEn} refrescando={refrescando}
                 pausado={!refrescoActivo} onRecargar={recargarEnSilencio} />
 
+            {falloCarga && (
+                <Notice variant="danger" icon={AlertTriangle}
+                    action={(
+                        <Button variant="secondary" size="sm" loading={refrescando}
+                            onClick={recargarEnSilencio}>
+                            Reintentar
+                        </Button>
+                    )}>
+                    No se pudieron cargar las bolsas.{bolsas.length ? ' Lo que ves puede no estar al día.' : ''}
+                </Notice>
+            )}
+
             {/* ── El corte que cuadró y su dinero que no llegó ────────────────
                 El caso PEOR del circuito, y el único que ninguna otra cifra de
                 la pantalla puede delatar: un corte confirmado dice que había
@@ -2178,7 +2236,7 @@ export default function CircuitoDeBolsas({
                 Y sólo sale cuando además HAY algo en pantalla. Si el rango no
                 trae nada, lo dice el vacío de abajo: dos textos diciendo lo mismo
                 sobre una pantalla en blanco es de lo que se quejaba. */}
-            {pendientesFuera.length > 0 && !vacioTotal && (
+            {pendientesFuera.length > 0 && !vacioTotal && etapa !== 'todas' && (
                 <Notice variant="warning" icon={AlertTriangle}
                     action={onAmpliarPeriodo && masViejaFuera ? (
                         <Button variant="secondary" size="sm" icon={CalendarDays}
@@ -2308,7 +2366,17 @@ export default function CircuitoDeBolsas({
                 vacío— así que acá se corta: el vacío del período hablaría de
                 bolsas que esa pestaña ni mira, porque las diferencias salen sin
                 importar el rango. */}
-            {etapa === 'diferencias' ? null : vacioTotal ? (
+            {/* «Todas» se dibuja entera aparte: su propia consulta, su propia
+                tabla y su propio vacío. */}
+            {etapa === 'todas' && alcanceTodos && (
+                <Suspense fallback={<LoadingState label="Buscando las bolsas" />}>
+                    <TodasLasBolsas desde={desde} hasta={hasta} sala={sala} busqueda={busqueda}
+                        nombreSala={nombreSala} verMontos={verMontos} onAbrir={setAbierta}
+                        version={leidoEn} />
+                </Suspense>
+            )}
+
+            {etapa === 'diferencias' || etapa === 'todas' || (falloCarga && !bolsas.length) ? null : vacioTotal ? (
                 <EmptyState
                     icon={Package}
                     title="Sin bolsas en estas fechas"
@@ -2342,9 +2410,12 @@ export default function CircuitoDeBolsas({
                                 loading={ocupado === `imprimir-${b.id}`}
                                 onClick={async () => {
                                     setOcupado(`imprimir-${b.id}`);
-                                    await imprimir(b, { cerradaPor: nombrePersona.get(b.cerrada_por) });
-                                    setOcupado(null);
-                                    cargar({ silencioso: true });
+                                    try {
+                                        await imprimir(b, { cerradaPor: nombrePersona.get(b.cerrada_por) });
+                                    } finally {
+                                        setOcupado(null);
+                                        cargar({ silencioso: true });
+                                    }
                                 }}>
                                 {b.etiqueta_impresa_at ? 'Reimprimir' : 'Imprimir etiqueta'}
                             </Button>
@@ -2352,6 +2423,12 @@ export default function CircuitoDeBolsas({
                     ),
                 })}
                 total={enSala.length} montoTotal={suma(enSala)}
+                accionDeGrupo={puedeEntregar && salasParaEntregar > 1 ? (g) => (
+                    <Button variant="secondary" size="sm" icon={Send}
+                        onClick={() => setEntregando(g.branchId)}>
+                        Entregar
+                    </Button>
+                ) : null}
                 verMontos={verMontos}
                 vacio={pendientesFuera.length ? "Sin efectivo esperando en las sucursales en estas fechas" : "Sin efectivo esperando en las sucursales"}
             />
@@ -2704,7 +2781,7 @@ export default function CircuitoDeBolsas({
                 de las preguntas por las que existe. */}
             {verMontos && (
                 <Suspense fallback={null}>
-                    <DepositosAlBanco desde={desde} hasta={hasta} nombreSala={nombreSala}
+                    <DepositosAlBanco key={versionDepositos} desde={desde} hasta={hasta} nombreSala={nombreSala}
                         plegada={cerradas.has('depositos')}
                         onPlegar={() => plegar('depositos')} />
                 </Suspense>
@@ -2739,7 +2816,7 @@ export default function CircuitoDeBolsas({
                         bolsas={porDepositar}
                         personas={empleados}
                         onClose={() => setDepositando(false)}
-                        onHecho={recargarEnSilencio}
+                        onHecho={() => { recargarEnSilencio(); setVersionDepositos((v) => v + 1); }}
                     />
                 </Suspense>
             )}
@@ -2747,11 +2824,11 @@ export default function CircuitoDeBolsas({
             {entregando && (
                 <Suspense fallback={null}>
                     <EntregaDeBolsas
-                        abierto={entregando}
-                        bolsas={enSala}
+                        abierto={!!entregando}
+                        bolsas={aEntregar}
                         saldoDe={saldoDe}
                         verMontos={verMontos}
-                        nombreSala={enSala.length ? nombreSala[enSala[0].branch_id] : ''}
+                        nombreSala={aEntregar.length ? nombreSala[aEntregar[0].branch_id] : ''}
                         onClose={() => setEntregando(false)}
                         onHecho={trasLaEntrega}
                     />

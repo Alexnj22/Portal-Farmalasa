@@ -13,6 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import useCerrarBolsa from '@nucleo/hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { DIAS_DE_ALARMA_BOLSA } from '@nucleo/utils/bolsasTexto';
 import { hora12 } from '@nucleo/utils/hora';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
@@ -61,7 +62,8 @@ const EntregaDeBolsas = lazy(() => import('../../components/bolsas/EntregaDeBols
  */
 const REFRESCO_MS = 60 * 1000;
 const POR_EMBOLSAR_DIAS = 2;
-const DIAS_DE_ALARMA = 4;
+// Un solo umbral para todo el portal: el mismo que usa el módulo.
+const DIAS_DE_ALARMA = DIAS_DE_ALARMA_BOLSA;
 
 const diasDesde = (fecha) => Math.max(0, diasEntre(fecha, hoySV()));
 
@@ -187,9 +189,12 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     // etiqueta con $300 de más. Ver el comentario de `useCerrarBolsa`.
     const reimprimir = useCallback(async (bolsa) => {
         setImprimiendo(bolsa.id);
-        await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por) });
-        setImprimiendo(null);
-        cargar();
+        try {
+            await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por) });
+        } finally {
+            setImprimiendo(null);
+            cargar();
+        }
     }, [imprimir, nombrePersona, cargar]);
 
     /**

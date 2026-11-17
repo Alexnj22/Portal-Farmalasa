@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1572.0 — Bolsas: pestaña «Todas» por fecha del corte y arreglos del módulo
+
+- **Pestaña «Todas»** (solo alcance de todas las sucursales), pedida por el
+  usuario: «si quiero ver todas, por ejemplo del 1 al 15 de este mes?». Cada
+  bolsa del rango por la FECHA DEL CORTE, en cualquier estado (anuladas
+  incluidas), con resumen (bolsas, pendientes, contadas, diferencia neta),
+  filtro rápido, orden por columna, detalle al tocar la fila y descarga CSV
+  (anotada con `registrar_egreso`, módulo `bolsas`). `TodasLasBolsas.jsx`.
+- **Finalizadas perdía lo contado de noche**: el filtro por `contado_at` usaba
+  límites en UTC, así que el día terminaba a las 6 p. m. de El Salvador (76 de
+  1,090 bolsas contadas caían en otro día). Ahora los límites van en −06:00.
+- **Un fallo de carga ya no parece «no hay bolsas»**: si falla la lectura de
+  bolsas o de saldos se conserva lo que había, no se pinta $0.00 y sale un
+  aviso con «Reintentar». El refresco de fondo ya no borra un conteo a medio
+  escribir.
+- **Entregar**: el diálogo ofrece todas las bolsas pendientes de la sucursal
+  (sin el recorte de fecha ni del buscador). Con alcance de todas, cada
+  sucursal tiene su botón «Entregar»: antes mezclaba las seis y la base lo
+  rechazaba después de escanear el carné. El pie ya no promete un comprobante
+  impreso que no existe.
+- **Anotar un conteo** cierra el campo sólo si la base lo aceptó; si lo rechaza,
+  el monto escrito se queda.
+- **Imprimir etiqueta**: la ticketera se carga antes de marcar la versión (un
+  fallo ya no deja «#N anula la anterior» sobre una que nunca salió) y el botón
+  no se queda girando.
+- «Depósitos» muestra el depósito recién registrado sin recargar; el contador de
+  «Finalizadas» respeta la tanda y «Sin resolver»; la baldosa «Sin resolver»
+  lleva a «Diferencias»; el widget usa el mismo umbral de alarma que el módulo.
+- Queda abierto: `get_bolsas_invariante` devuelve filas y se truncaría a 1000
+  con un período muy largo (hacia feb-2027); pasarla a `RETURNS json`.
+- Novedades: no — el usuario decidió no anunciarlo (2026-11-17).
+
 ## v2.1571.0 — La foto desde el teléfono sabe qué se pide, y abre la app
 
 - Auditoría del QR para mandar una foto desde el teléfono, pedida por el

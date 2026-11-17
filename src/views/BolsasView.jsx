@@ -265,7 +265,7 @@ const BolsasView = () => {
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                     label={m.label} value={m.value} sub={m.sub} valueCls={m.valueCls}
                                     onClick={m.accionable
-                                        ? () => { setEtapa('finalizadas'); setSoloSinResolver(true); }
+                                        ? () => setEtapa('diferencias')
                                         : undefined} />
                             ))}
                         </CarrilCards>

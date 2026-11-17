@@ -45,4 +45,8 @@ export const ETAPAS_DE_BOLSA = [
     { key: 'camino',      label: 'Esperando recepción', icono: 'Send',        estado: 'ENTREGADA', soloAdmin: true },
     { key: 'contar',      label: 'Por contar',          icono: 'Banknote',    estado: 'RECIBIDA',  soloAdmin: true },
     { key: 'finalizadas', label: 'Finalizadas',         icono: 'ShieldCheck', estado: 'CONTADA',   soloAdmin: true },
+    /* «Todas» tampoco es una etapa: es la consulta de un rango por la FECHA DEL
+     * CORTE, en cualquier estado y con descarga (usuario, 2026-11-17: «si quiero
+     * ver todas, por ejemplo del 1 al 15 de este mes?»). Sólo lectura. */
+    { key: 'todas',       label: 'Todas',               icono: 'List',        estado: null,        soloAdmin: true },
 ];

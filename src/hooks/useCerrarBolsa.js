@@ -83,16 +83,25 @@ export default function useCerrarBolsa({ nombreSala = {}, origen = 'inicio' } = 
         // Es un viaje de ~1 ms contra una bolsa que se imprime una vez.
         const cheques = await fetchChequesDeBolsa(bolsa.id);
 
+        // La ticketera se carga ANTES de marcar la etiqueta: si el `import()`
+        // falla (típico justo después de publicar), la versión no sube y la
+        // próxima etiqueta no dice «anula la anterior» sobre una que nunca salió.
+        let imprimirDocumento, construirEtiquetaDeBolsa;
+        try {
+            [{ imprimirDocumento }, { construirEtiquetaDeBolsa }] = await Promise.all([
+                import('../utils/ticketPrint'),
+                import('../utils/bolsaComprobante'),
+            ]);
+        } catch (err) {
+            showToast?.('No se pudo imprimir', mensajeAmigable(err, 'Recarga la página y vuelve a intentar.'), 'error');
+            return false;
+        }
+
         const { data: version, error } = await marcarEtiquetaImpresa(bolsa.id);
         if (error) {
             showToast?.('No se pudo imprimir', mensajeAmigable(error, 'Vuelve a intentar en un momento.'), 'error');
             return false;
         }
-
-        const [{ imprimirDocumento }, { construirEtiquetaDeBolsa }] = await Promise.all([
-            import('../utils/ticketPrint'),
-            import('../utils/bolsaComprobante'),
-        ]);
 
         const r = await imprimirDocumento(construirEtiquetaDeBolsa({
             bolsa,

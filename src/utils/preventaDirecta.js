@@ -6,7 +6,7 @@
 
 import { ETIQUETA_CAMPO, esContribuyente } from './clienteValidacion.js';
 import { formatMoney } from './formatNumber.js';
-import { enAscii, esTextoSeguro } from './preventa.js';
+import { esTextoSeguro } from './preventa.js';
 
 /** El nombre de cada lista de precio (las claves son columnas de `product_precios`). */
 export const NOMBRE_DE_LISTA = {
@@ -353,10 +353,9 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
     const conCredito = documento === 'credito_fiscal' || pago === 'credito' || Number(puntos) > 0;
     if (hayCliente && !cotizacion?.generico && nom && !esTextoSeguro(nom) && conCredito) {
         out.push({ clave: 'nombre-caja', campo: 'cliente',
-            titulo: 'El nombre lleva tilde o Ñ y caja no lo acepta.',
-            ayuda: `Corrígelo en sus datos: ${enAscii(nom)}.${documento === 'credito_fiscal' ? '' : ' O envíala sin puntos ni crédito.'}`,
-            acciones: [{ id: 'editar', label: 'Corregir nombre' },
-                ...(documento === 'credito_fiscal' ? [{ id: 'factura', label: 'Cambiar a Factura' }] : []),
+            titulo: 'Con tilde o Ñ en el nombre, caja no lo recibe a su nombre.',
+            ayuda: 'Envíala como Factura, sin puntos ni crédito: va a caja como cliente sin datos.',
+            acciones: [...(documento === 'credito_fiscal' ? [{ id: 'factura', label: 'Cambiar a Factura' }] : []),
                 ...(Number(puntos) > 0 ? [{ id: 'puntos', label: 'No canjear', valor: 0 }] : []),
                 ...(pago === 'credito' ? [{ id: 'contado', label: 'Cambiar a Efectivo' }] : [])] });
     }

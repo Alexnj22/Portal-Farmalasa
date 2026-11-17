@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.14 — Preventa: sin corregir nombres con Ñ
+
+- El nombre del cliente no se corrige: se llama así. Se quitan el botón
+  «Corregir» del editor y la acción «Corregir nombre».
+- Con tilde o Ñ y crédito fiscal, puntos o crédito, «Antes de enviar» dice que
+  vaya como Factura, sin puntos ni crédito. Caja toma el nombre de su propia
+  ficha, así que el portal no puede quitarle las tildes al enviar.
+- Novedades: no — corrección de un aviso.
+
 ## v2.1562.13 — Novedades: Android abre la invitación de la prueba
 
 - «Descargar en Google Play» abre la invitación de la prueba interna, donde se

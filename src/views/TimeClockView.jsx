@@ -34,17 +34,20 @@ function tipoDelEquipo() {
 
 // El kiosco de caja tiene dos pestañas (plan del kiosco de caja, fase 1). La
 // pestaña vive en la dirección (`?tab=`), como en todo el portal.
-const PESTANAS_CAJA = ['preventas', 'caja', 'marcar'];
+const PESTANAS_CAJA = ['vender', 'preventas', 'caja', 'marcar'];
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
   const esCaja = useMemo(() => tipoDelEquipo() === 'caja', []);
-  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'preventas' : 'marcar');
+  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'preventas' : 'marcar', 'pantalla');
   const enCola = esCaja && pestana === 'preventas';
   const enCaja = esCaja && pestana === 'caja';
+  const enVender = esCaja && pestana === 'vender';
   // La sesión que abrió un carné en Caja se cierra al salir de esa pestaña.
   useEffect(() => {
-    if (pestana !== 'caja' && sesionDeCaja.abiertaPorCarne) {
+    // Vender y Caja comparten la sesión del carné: pasar de una a otra no la
+    // cierra; ir a Preventas o Marcar, sí.
+    if (pestana !== 'caja' && pestana !== 'vender' && sesionDeCaja.abiertaPorCarne) {
       sesionDeCaja.abiertaPorCarne = false;
       logout?.();
     }
@@ -93,7 +96,7 @@ const TimeClockView = ({ setView }) => {
     cancelSelfDeclare,
     tipoDeEquipo,
     setTipoDeEquipo,
-  } = useTimeClockEngine({ pausado: enCola || enCaja });
+  } = useTimeClockEngine({ pausado: enCola || enCaja || enVender });
 
   // Read device & branch from localStorage kiosk_config
   const kioskLabel = useMemo(() => {
@@ -266,8 +269,9 @@ const TimeClockView = ({ setView }) => {
             <SegmentedControl
               label="Pantalla del kiosco"
               layout="block"
-              columns={3}
+              columns={4}
               options={[
+                { value: 'vender', label: 'Vender' },
                 { value: 'preventas', label: 'Preventas' },
                 { value: 'caja', label: 'Caja' },
                 { value: 'marcar', label: 'Marcar' },
@@ -278,7 +282,7 @@ const TimeClockView = ({ setView }) => {
           </div>
         )}
 
-        {enCola ? <ColaDeCaja /> : enCaja ? <CajaDelKiosco branchId={branchDelEquipo} /> : (
+        {enCola ? <ColaDeCaja /> : (enCaja || enVender) ? <CajaDelKiosco branchId={branchDelEquipo} vista={enVender ? 'vender' : 'caja'} /> : (
         <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
 
           {/* Cabecera y reloj, rediseño del 2026-11-17 (pedido del usuario:

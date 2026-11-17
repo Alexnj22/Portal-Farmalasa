@@ -22,13 +22,22 @@ import { sesionDeCaja } from './sesionDeCaja';
 // «Terminar», al cambiar de pestaña y tras 2 minutos sin tocar nada. Es lo que
 // separa esto de dejar una sesión abierta en la caja, que era el problema de
 // partida (datos de una persona a la vista de todos).
+// Las pantallas que se abren con el carné. Diferidas: el kiosco no las carga
+// hasta que alguien entra.
 const MiCajaView = lazy(() => import('../../views/MiCajaView'));
+const PreventaView = lazy(() => import('../../views/PreventaView'));
+
+const VISTAS = {
+    caja: { pide: 'Pasa tu carné para abrir la caja', detalle: 'Apertura, cortes y cierre del día quedan a tu nombre.', abriendo: 'Abriendo la caja…' },
+    vender: { pide: 'Pasa tu carné para vender', detalle: 'La preventa llega a caja con tu nombre como vendedor.', abriendo: 'Abriendo…' },
+};
 
 const INACTIVO_MS = 2 * 60_000;
 
 const EVENTOS_DE_USO = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
 
-export default function CajaDelKiosco({ branchId }) {
+export default function CajaDelKiosco({ branchId, vista = 'caja' }) {
+    const textos = VISTAS[vista] ?? VISTAS.caja;
     const { isAuthenticated, user, login, logout } = useAuth();
     const [, setParams] = useSearchParams();
     const [entrando, setEntrando] = useState(false);
@@ -73,11 +82,11 @@ export default function CajaDelKiosco({ branchId }) {
 
     if (!isAuthenticated) {
         return (
-            <section aria-label="Caja" className="w-full max-w-[420px] mx-auto my-auto flex flex-col items-center text-center gap-5 py-6">
+            <section aria-label={vista === 'vender' ? 'Vender' : 'Caja'} className="w-full max-w-[420px] mx-auto my-auto flex flex-col items-center text-center gap-5 py-6">
                 <ScanReadyRing specialMode={false} />
                 <div className="flex flex-col items-center gap-1">
-                    <p className="text-title-lg font-bold text-white">{entrando ? 'Abriendo la caja…' : 'Pasa tu carné para abrir la caja'}</p>
-                    <p className="text-body text-white/55">Apertura, cortes y cierre del día quedan a tu nombre.</p>
+                    <p className="text-title-lg font-bold text-white">{entrando ? textos.abriendo : textos.pide}</p>
+                    <p className="text-body text-white/55">{textos.detalle}</p>
                 </div>
                 {aviso && <Notice variant="warning" icon={AlertCircle}>{aviso}</Notice>}
             </section>
@@ -85,7 +94,7 @@ export default function CajaDelKiosco({ branchId }) {
     }
 
     return (
-        <section aria-label="Caja" className="w-full max-w-[1200px] mx-auto flex flex-col gap-3">
+        <section aria-label={vista === 'vender' ? 'Vender' : 'Caja'} className="w-full max-w-[1200px] mx-auto flex flex-col gap-3">
             <div data-surface="card" className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="flex items-center gap-3 min-w-0">
                     <AvatarConEstado emp={user} px={36} mostrarChip={false} />
@@ -97,7 +106,7 @@ export default function CajaDelKiosco({ branchId }) {
                 <Button variant="secondary" icon={LogOut} onClick={terminar}>Terminar</Button>
             </div>
             <Suspense fallback={<LoadingState />}>
-                <MiCajaView comoPestana />
+                {vista === 'vender' ? <PreventaView /> : <MiCajaView comoPestana />}
             </Suspense>
         </section>
     );

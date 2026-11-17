@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1568.0 — Kiosco de caja: vender con carné
+
+- El kiosco de caja suma la pestaña **Vender**: se pasa el carné y se abre la
+  Preventa de hoy a nombre de quien escaneó; la venta llega a la cola de caja
+  con su nombre como vendedor. Vender y Caja comparten la sesión del carné;
+  ir a Preventas o Marcar la cierra, igual que los 2 minutos sin uso.
+- La pestaña del kiosco va en `?pantalla=` y no en `?tab=`: Preventa ya usa
+  `tab` para las suyas.
+- En el kiosco no se edita la ficha del cliente (necesita el modal del portal).
+- Novedades: no — piloto en Salud 4.
+
 ## v2.1567.3 — Conteo: lector USB vuelve al buscador y aviso de ajuste corto
 
 - **Lector USB en la web**: un código de barras entero escrito en el buscador

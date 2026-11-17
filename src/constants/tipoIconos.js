@@ -120,6 +120,9 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // 2026-11-14: el resumen de la mañana de administración (varios temas en
     // un aviso). `ClipboardList`: es una lista de pendientes.
     RESUMEN_MANANA: 'ClipboardList',
+    // 2026-11-16: administración agregó tu correo a la prueba de Android y ya
+    // puedes descargar la app del personal.
+    APP_PERSONAL_LISTA: 'Smartphone',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

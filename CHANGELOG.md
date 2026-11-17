@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.0 — Novedades: lo nuevo por cargo, aviso al entrar y Preventa en el Inicio
+
+- **Novedades** (`/novedades`, Avisos → Novedades): lo nuevo del portal y la app explicado con animación y pasos según el cargo. Al abrir una se marca revisada. Las tarjetas muestran imagen fija.
+- **Android**: administración marca a quién agregó a la prueba y la persona recibe un aviso con el enlace de descarga y los pasos (`novedades_android_avisar`).
+- **Aviso al entrar** (desde el 2026-11-17): una vez por persona, dice que ya hay Novedades y dónde están. `?aviso=novedades` lo muestra para revisarlo.
+- **Preventa**: primera opción de Comercial y cuadro nuevo en el Inicio con lo pendiente de cobrar.
+- **Cumplimiento sanitario** sólo para administración (permisos de 6 cargos retirados en producción).
+- **`gate:novedades`**: cada novedad le sale sólo a quien puede abrir lo que explica; un módulo o widget nuevo trae su novedad; y si un cambio parece algo que el personal tiene que saber, se le pregunta al usuario y su respuesta va en el CHANGELOG.
+
+Novedades: preventa, prueba-android, app-personal
+
 ## v2.1561.5 — Preventa: precio según el cliente
 
 - **Empleado:** Mayoreo Plus en cualquier presentación, también en blíster.

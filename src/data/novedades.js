@@ -9,6 +9,7 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 import { updateCustomerFiscal, pushClienteAlErp } from './customers';
+import { fetchRolePermissionsForRoles } from './permissions';
 
 const ERRORES = {
     CORREO_INVALIDO: 'Revisa el correo: debe verse como nombre@gmail.com.',
@@ -71,10 +72,33 @@ export async function fetchPruebasAndroid() {
     return data ?? [];
 }
 
-/** Marca como agregados en Google Play. Devuelve cuántos se marcaron. */
+/**
+ * Marca como agregados en Google Play y les avisa (campana y teléfono) con el
+ * enlace a sus pasos. Devuelve cuántos se marcaron.
+ */
 export async function marcarAgregadosEnPlay(employeeIds) {
     const { data, error } = await supabase.rpc('novedades_android_agregados', { p_empleados: employeeIds });
     if (error) throw error;
     anotar('NOVEDADES_ANDROID_AGREGADOS', null, { cuantos: data });
     return Number(data) || 0;
+}
+
+/** Vuelve a mandar el aviso «ya puedes descargarla» a quien ya está agregado. */
+export async function reenviarAvisoAndroid(employeeIds) {
+    const { data, error } = await supabase.rpc('novedades_android_avisar', { p_empleados: employeeIds });
+    if (error) throw error;
+    anotar('NOVEDADES_ANDROID_AVISO', null, { cuantos: data });
+    return Number(data) || 0;
+}
+
+/**
+ * Los permisos de un cargo, con la forma que usa `hasPermission`:
+ * `{ [modulo]: { can_view, can_edit, can_approve } }`. Para «Ver como».
+ */
+export async function fetchPermisosDeCargo(roleId) {
+    const { data, error } = await fetchRolePermissionsForRoles([roleId]);
+    if (error) throw error;
+    const mapa = {};
+    for (const p of data ?? []) mapa[p.module_key] = { can_view: !!p.can_view, can_edit: !!p.can_edit, can_approve: !!p.can_approve };
+    return mapa;
 }

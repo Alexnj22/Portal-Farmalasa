@@ -48,6 +48,7 @@ const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="tr
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
 import ElegirNombreDialog from './ElegirNombreDialog';
+import AvisoNovedades from './AvisoNovedades';
 /* El selector de sala sólo lo ve quien cubre varias (regente, referente):
  * `lazy` para que su LiquidSelect no viaje en el arranque de todos (2026-11-11). */
 const SelectorDeSala = React.lazy(() => import('./SelectorDeSala'));
@@ -1586,6 +1587,7 @@ const AppLayout = ({ children, handleLogout }) => {
             />
 
             <ElegirNombreDialog empleado={myEmp} open={debeElegirNombre} obligatorio />
+            <AvisoNovedades empId={user?.id} puede={hasPermission('novedades', 'can_view')} bloqueado={debeElegirNombre} />
 
         </LayoutGroup>
     );

@@ -768,6 +768,12 @@ Informe completo: `docs/AUDITORIA-PORTAL-2026-08-23.md`.
   devuelve por su NOMBRE). Desde una pantalla, el núcleo se importa como
   `@nucleo/…`, nunca `../../utils/…` (`node scripts/nucleo-alias.mjs --escribir`
   lo corrige). Plan: `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+- **Novedades lo decide el usuario, no la sesión** (2026-11-16). Antes de
+  commitear algo que el personal ve, `npm run gate:novedades -- --valorar`. Si
+  dice que hay que preguntar, se le pregunta al usuario si va a Novedades
+  (proponiéndole el título y los pasos por cargo) y se anota SU respuesta en la
+  entrada del CHANGELOG: `Novedades: <id>` o `Novedades: no — <motivo>`. Nunca
+  escribir el «no» por cuenta propia para pasar el gate.
 - **Un módulo nuevo del portal nace también nativo en la app**: su pantalla en
   `apps/mobile` (iOS con SwiftUI/`@expo/ui`, Android con las piezas `.android.js`)
   registrada en `apps/mobile/pantallas.js`, o en `EXCEPCIONES` de
@@ -823,6 +829,7 @@ Por qué existe cada uno: `docs/reglas/gates.md` y el encabezado de su script.
 | `gate:movil` | elementos con variante móvil canónica escritos a mano | si toca `src/views` o `src/components` | no | DESIGN.md §32 |
 | `gate:rutas` | direcciones en español, título de pestaña, ningún ítem del menú al 404 | si toca `App.jsx` o `moduleMap.js` | no | DESIGN.md §33 |
 | `gate:app-nativa` | todo módulo tiene pantalla nativa o excepción | si toca `moduleMap.js`, `App.jsx` o `apps/mobile/pantallas.js` | no | `scripts/app-nativa-gate.mjs` |
+| `gate:novedades` | cada novedad le sale sólo a quien puede abrir lo que explica (foto `scripts/db/permisos-de-cargos.json`); módulo o widget nuevo trae su novedad (trinquete `scripts/novedades-baseline.json`); si lo preparado puntúa como algo que el personal tiene que saber (`-- --valorar`), su CHANGELOG dice `Novedades: <id>` o `Novedades: no — <motivo>` | si toca pantallas, `novedades.js`, `moduleMap.js`, `version.js` o la foto | no | `scripts/novedades-gate.mjs` |
 | `gate:app-secciones` | en la app del personal, las secciones de una pantalla (`Segmentos`) van fijas arriba en `FijoArriba`, no dentro de la lista | si toca `apps/mobile/app` o `componentes` | no | `apps/mobile/componentes/FijoArriba.js` |
 | `gate:app-colores` | en la app del personal, el azul de la marca y `colorSistema` se leen al pintar: ni escritos a mano ni congelados al cargar el módulo (en Android no seguirían al color del sistema) | si toca `apps/mobile/app` o `componentes` | no | `scripts/app-colores-gate.mjs` |
 | `gate:tokens` | `tokens.json` igual a lo que dice `index.css`; ningún token a una variable inexistente | si toca `index.css` o `tokens.json` | no | — |

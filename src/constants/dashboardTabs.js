@@ -11,7 +11,8 @@
 // aparte arriba de todo—, y por eso `tematicaDe` lo trata como si no tuviera
 // pestaña propia: no puede "pertenecer" a una sola.
 export const PESTANAS_TEMATICAS = {
-    comercial: ['kpi', 'meta_sala', 'cortes_sala', 'cotizaciones', 'facturacion', 'top_productos', 'sales', 'vendedores'],
+    // `preventa` primero (2026-11-16, pedido del usuario): es por donde se vende.
+    comercial: ['kpi', 'preventa', 'meta_sala', 'cortes_sala', 'cotizaciones', 'facturacion', 'top_productos', 'sales', 'vendedores'],
     rrhh:      ['kpi', 'trend', 'shifts', 'absences', 'requests', 'calendar', 'announcements', 'birthdays'],
     // `reservas` entró a Operación el 2026-10-21 (pedido del dueño: «pasa el
     // widget a Operación»): apartar, entregar y cobrar lo reservado es trabajo

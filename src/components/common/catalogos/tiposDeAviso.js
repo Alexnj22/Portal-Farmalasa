@@ -38,6 +38,7 @@ import {
     ShieldAlert,
     Printer,
     ShoppingCart,
+    Smartphone,
     Truck,
 } from 'lucide-react';
 import { NOMBRE_DE_ICONO_POR_TIPO, nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
@@ -69,6 +70,7 @@ const ICONOS = {
     RefreshCw,
     ShieldAlert,
     ShoppingCart,
+    Smartphone,
     Stethoscope,
     Target,
     Trash2,

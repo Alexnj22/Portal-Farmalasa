@@ -68,6 +68,7 @@ const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
 const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
 // Buscar, abrir y crear clientes desde el Inicio (2026-11-15).
 const WidgetClientes = lazy(() => import('./dashboard/WidgetClientes'));
+const WidgetPreventa = lazy(() => import('./dashboard/WidgetPreventa'));
 // Precios por presentación y lote, hasta Mayoreo Plus (2026-11-15). Aparte de
 // «Consulta de inventario» a pedido del usuario: un widget, una pregunta.
 const WidgetConsultaPrecios = lazy(() => import('./dashboard/WidgetConsultaPrecios'));
@@ -208,6 +209,7 @@ const WIDGET_SIZES = {
   announcements: { minCols: 1, minRows: 2, label: 'Avisos'       },
   birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
   cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
+  preventa:      { minCols: 1, minRows: 2, label: 'Preventa'     },
   facturacion:   { minCols: 1, minRows: 2, label: 'Facturación'  },
   top_productos: { minCols: 1, minRows: 2, label: 'Top productos'},
   // 1×1 como sus tres hermanas: `WidgetInventorySearch` ya no trae el buscador
@@ -684,6 +686,7 @@ const WIDGET_DEFS = [
   { id: 'calendar',      label: 'Calendario',              permission: 'dash_calendar',      icon: CalendarDays, category: 'general'   },
   { id: 'announcements', label: 'Avisos recientes',        permission: 'dash_announcements', icon: Megaphone,    category: 'general'   },
   { id: 'birthdays',     label: 'Cumpleaños del mes',      permission: 'dash_birthdays',     icon: Gift,         category: 'personal'  },
+  { id: 'preventa',      label: 'Preventa',                permission: 'preventa',           icon: Receipt,      category: 'ventas'    },
   { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'dash_cotizaciones',  icon: Receipt,      category: 'ventas'    },
   { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText,     category: 'ventas'    },
   { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
@@ -3553,6 +3556,18 @@ const DashboardView = ({ openModal }) => {
         </div>
         </SiCompacto>
       , staggerIdx, employees.length > 0 && displayBirthdays.length === 0);
+    }
+
+    /* ── PREVENTA ── */
+    // Ir a vender de un toque y ver lo que sigue sin cobrar (2026-11-16).
+    if (wid === 'preventa') {
+      if (!showWidget('preventa', 'preventa')) return null;
+      return wrapWidget('preventa',
+        <WidgetCard title="Preventa" icon={Receipt} category="ventas"
+          action={puedeAbrir('/preventa')&&<Button variant="ghost" size="xs" onClick={() => navigate('/preventa?tab=hoy')}>Ver <ChevronRight size={11}/></Button>}>
+          <WidgetPreventa />
+        </WidgetCard>
+      , staggerIdx);
     }
 
     /* ── COTIZACIONES ── */

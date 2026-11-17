@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.3 — Bolsas: la diferencia del conteo resuelta y el sobrante acumulado ya no cuentan
+
+- «esa diferencia de 4 también está resuelta» (usuario, 2026-11-17).
+- Conteo: una bolsa con `dif_at` se pinta neutra en la tabla y en «Se contó» del
+  detalle, y sale de la tarjeta, que ahora dice «Conteo · N sin resolver»; el
+  filtro pasa a «Conteo sin resolver».
+- Corte: `acumulado` (sobrante sin causa que queda para el inventario) tampoco
+  es pendiente — mismo criterio que Cortes de caja. Sale de la tarjeta y del
+  filtro «Corte sin resolver», y su rótulo ya no va en rojo.
+- Novedades: no — mejora de una pantalla que ya existía.
+
+
 ## v2.1573.2 — Bolsas: la diferencia del corte resuelta ya no cuenta y dice qué pasó
 
 - «si está resuelto entonces que no lo tome como diferencia negativa, porque ya

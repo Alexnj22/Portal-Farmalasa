@@ -126,7 +126,8 @@ export default function TodasLasBolsas({
             nombre(b.recibida_por), nombre(b.contado_por));
     }), [bolsas, sala, busqueda, nombreSala, nombre]);
 
-    const conDif = useCallback((b) => b.estado === 'CONTADA' && Math.abs(diferenciaDeBolsa(b) || 0) >= 0.01, []);
+    // Con diferencia SIN resolver: la resuelta ya tiene causa y no cuenta (usuario, 2026-11-17).
+    const conDif = useCallback((b) => b.estado === 'CONTADA' && !b.dif_at && Math.abs(diferenciaDeBolsa(b) || 0) >= 0.01, []);
     /** La diferencia del corte de esta bolsa: número, `null` (sin dato) o `undefined` (no se pudo leer). */
     const difDelCorte = useCallback((b) => {
         if (!b.corte_id) return null;
@@ -136,6 +137,13 @@ export default function TodasLasBolsas({
     const conDifCorte = useCallback((b) => Math.abs(difDelCorte(b) || 0) >= 0.01, [difDelCorte]);
     const estadoDelCorte = useCallback((b) => (conDifCorte(b) ? estCortes.get(b.corte_id)?.estado || null : null),
         [conDifCorte, estCortes]);
+    /* Trabajo pendiente = lo que Cortes de caja marca en rojo o ámbar. `resuelto`
+     * ya tiene causa y `acumulado` es un sobrante que queda para el inventario
+     * (usuario, 2026-09-25): ninguno de los dos cuenta como diferencia. */
+    const corteSinResolver = useCallback((b) => {
+        const e = estadoDelCorte(b);
+        return conDifCorte(b) && e !== 'resuelto' && e !== 'acumulado';
+    }, [conDifCorte, estadoDelCorte]);
 
     const visibles = useMemo(() => {
         const f = delAlcance.filter((b) => {
@@ -143,7 +151,7 @@ export default function TodasLasBolsas({
             if (filtro === 'pendiente') return ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado);
             if (filtro === 'dif') return conDif(b);
             if (filtro === 'difcorte') return conDifCorte(b);
-            if (filtro === 'cortesinresolver') return conDifCorte(b) && estadoDelCorte(b) !== 'resuelto';
+            if (filtro === 'cortesinresolver') return corteSinResolver(b);
             return b.estado === filtro;
         });
         const s = orden.dir === 'asc' ? 1 : -1;
@@ -156,19 +164,19 @@ export default function TodasLasBolsas({
             estado: (a, b) => ORDEN_ESTADO[a.estado] - ORDEN_ESTADO[b.estado],
         }[orden.key];
         return [...f].sort((a, b) => s * cmp(a, b) || String(b.fecha).localeCompare(String(a.fecha)));
-    }, [delAlcance, filtro, orden, nombreSala, conDif, conDifCorte, difDelCorte, estadoDelCorte]);
+    }, [delAlcance, filtro, orden, nombreSala, conDif, conDifCorte, difDelCorte, corteSinResolver]);
 
     // Las cifras del rango. Las anuladas no suman: no son dinero.
     const resumen = useMemo(() => {
         const vivas = delAlcance.filter((b) => b.estado !== 'ANULADA');
         const contadas = vivas.filter((b) => b.estado === 'CONTADA');
         const pendientes = vivas.filter((b) => b.estado !== 'CONTADA');
-        const neto = contadas.reduce((a, b) => a + (diferenciaDeBolsa(b) || 0), 0);
+        const neto = contadas.filter((b) => !b.dif_at).reduce((a, b) => a + (diferenciaDeBolsa(b) || 0), 0);
         // Un corte puede tener varias bolsas: su diferencia se cuenta una vez.
         const cortesVistos = new Map();
         // Lo resuelto ya tiene causa: no cuenta como diferencia (usuario, 2026-11-17).
         for (const b of vivas) {
-            if (b.corte_id && !cortesVistos.has(b.corte_id) && estadoDelCorte(b) !== 'resuelto') {
+            if (b.corte_id && !cortesVistos.has(b.corte_id) && corteSinResolver(b)) {
                 cortesVistos.set(b.corte_id, difDelCorte(b));
             }
         }
@@ -185,7 +193,7 @@ export default function TodasLasBolsas({
             netoCortes: Math.round(difsCorte.reduce((a, d) => a + (d || 0), 0) * 100) / 100,
             cortesConDif: difsCorte.filter((d) => Math.abs(d || 0) >= 0.01).length,
         };
-    }, [delAlcance, conDif, difDelCorte, estadoDelCorte]);
+    }, [delAlcance, conDif, difDelCorte, corteSinResolver]);
 
     const columnas = [
         { key: 'fecha', label: 'Fecha', sortable: true },
@@ -208,11 +216,11 @@ export default function TodasLasBolsas({
             if (v === 'pendiente') return delAlcance.filter((b) => ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado)).length;
             if (v === 'dif') return delAlcance.filter(conDif).length;
             if (v === 'difcorte') return delAlcance.filter(conDifCorte).length;
-            if (v === 'cortesinresolver') return delAlcance.filter((b) => conDifCorte(b) && estadoDelCorte(b) !== 'resuelto').length;
+            if (v === 'cortesinresolver') return delAlcance.filter(corteSinResolver).length;
             return delAlcance.filter((b) => b.estado === v).length;
         };
         return FILTROS_TODAS_BOLSAS.filter((f) => f.value).map((f) => ({ ...f, label: `${f.label} (${cuenta(f.value)})` }));
-    }, [delAlcance, conDif, conDifCorte, estadoDelCorte]);
+    }, [delAlcance, conDif, conDifCorte, corteSinResolver]);
     useEffect(() => { onOpciones?.(opciones); }, [opciones, onOpciones]);
 
     /* «en card me interesa más ver cuánto es en total $» (usuario, 2026-11-17):
@@ -231,7 +239,7 @@ export default function TodasLasBolsas({
             label: `Cortes · ${cuantas(resumen.cortesConDif, 'sin resolver', 'sin resolver')}`,
             onClick: resumen.cortesConDif ? () => onFiltro?.('cortesinresolver') : undefined },
         { clave: 't-dif', icon: Scale, value: formatMoney(resumen.neto), valueCls: tonoDif(resumen.neto),
-            label: `Conteo · ${cuantas(resumen.conDif, 'con diferencia', 'con diferencia')}`,
+            label: `Conteo · ${cuantas(resumen.conDif, 'sin resolver', 'sin resolver')}`,
             onClick: resumen.conDif ? () => onFiltro?.('dif') : undefined },
     ] : []), [bolsas, verMontos, resumen, onFiltro]);
     useEffect(() => { onMetricas?.(metricas); }, [metricas, onMetricas]);
@@ -286,9 +294,9 @@ export default function TodasLasBolsas({
                             )}
                             {verMontos && (
                                 <DataCell align="center">
-                                    <Diferencia valor={difDelCorte(b)} resuelta={estadoDelCorte(b) === 'resuelto'} />
+                                    <Diferencia valor={difDelCorte(b)} resuelta={!!estadoDelCorte(b) && !corteSinResolver(b)} />
                                     {estadoDelCorte(b) && (
-                                        <span className={`block text-caption ${estadoDelCorte(b) === 'resuelto' ? 'text-content-3' : 'text-danger-text'}`}>
+                                        <span className={`block text-caption ${corteSinResolver(b) ? 'text-danger-text' : 'text-content-3'}`}>
                                             {ESTADO_DIFERENCIA_ROTULO[estadoDelCorte(b)]?.label}
                                         </span>
                                     )}
@@ -296,7 +304,7 @@ export default function TodasLasBolsas({
                             )}
                             {verMontos && (
                                 <DataCell align="center">
-                                    <Diferencia valor={dif} />
+                                    <Diferencia valor={dif} resuelta={!!b.dif_at} />
                                     {dif != null && Math.abs(dif) >= 0.01 && (
                                         <span className={`block text-caption ${b.dif_at ? 'text-content-3' : 'text-danger-text'}`}>
                                             {b.dif_at ? 'Resuelto' : 'Sin resolver'}

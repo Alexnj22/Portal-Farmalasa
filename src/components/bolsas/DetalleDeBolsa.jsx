@@ -101,7 +101,9 @@ function Diferencia({ titulo, ayuda, valor, vacio, cargando = false, estado = nu
     const hay = typeof valor === 'number';
     const cuadra = hay && Math.abs(valor) < 0.01;
     // Resuelta = ya se sabe qué pasó: deja de pintarse como faltante.
-    const resuelta = estado?.label === ESTADO_DIFERENCIA_ROTULO.resuelto.label;
+    // `acumulado` es un sobrante que queda para el inventario: tampoco es pendiente.
+    const resuelta = estado?.label === ESTADO_DIFERENCIA_ROTULO.resuelto.label
+        || estado?.label === ESTADO_DIFERENCIA_ROTULO.acumulado.label;
     const tono = !hay || cuadra ? (cuadra ? 'text-success-text' : 'text-content-3')
         : resuelta ? 'text-content-2' : valor < 0 ? 'text-danger-text' : 'text-warning-text';
     return (
@@ -310,7 +312,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                         <Cifra label="Debe haber" valor={formatMoney(saldo)} fuerte />
                         {contado != null && (
                             <Cifra label="Se contó" valor={formatMoney(contado)} fuerte
-                                tono={Math.abs(dif) < 0.01 ? 'text-success-text' : dif < 0 ? 'text-danger-text' : 'text-warning-text'} />
+                                tono={Math.abs(dif) < 0.01 ? 'text-success-text' : bolsa.dif_at ? 'text-content' : dif < 0 ? 'text-danger-text' : 'text-warning-text'} />
                         )}
                     </div>
 

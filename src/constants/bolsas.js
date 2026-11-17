@@ -58,6 +58,6 @@ export const FILTROS_TODAS_BOLSAS = [
     { value: 'CONTADA',   label: 'Contadas' },
     { value: 'difcorte',  label: 'Corte con diferencia' },
     { value: 'cortesinresolver', label: 'Corte sin resolver' },
-    { value: 'dif',       label: 'Conteo con diferencia' },
+    { value: 'dif',       label: 'Conteo sin resolver' },
     { value: 'ANULADA',   label: 'Anuladas' },
 ];

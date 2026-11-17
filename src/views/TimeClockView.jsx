@@ -15,6 +15,7 @@ import IdleScanPanel from '../components/timeclock/IdleScanPanel';
 import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ColaDeCaja from '../components/timeclock/ColaDeCaja';
+import CajaDelKiosco from '../components/timeclock/CajaDelKiosco';
 import { hora12ConSegundos } from '@nucleo/utils/hora';
 import { usePestanaEnUrl } from '@plataforma/usePestanaEnUrl';
 
@@ -32,13 +33,15 @@ function tipoDelEquipo() {
 
 // El kiosco de caja tiene dos pestañas (plan del kiosco de caja, fase 1). La
 // pestaña vive en la dirección (`?tab=`), como en todo el portal.
-const PESTANAS_CAJA = ['caja', 'marcar'];
+const PESTANAS_CAJA = ['preventas', 'caja', 'marcar'];
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
   const esCaja = useMemo(() => tipoDelEquipo() === 'caja', []);
-  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'caja' : 'marcar');
-  const enCola = esCaja && pestana === 'caja';
+  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'preventas' : 'marcar');
+  const enCola = esCaja && pestana === 'preventas';
+  const enCaja = esCaja && pestana === 'caja';
+  const branchDelEquipo = useMemo(() => { try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null')?.branchId ?? null; } catch { return null; } }, []);
 
   const {
     scanCode,
@@ -82,7 +85,7 @@ const TimeClockView = ({ setView }) => {
     cancelSelfDeclare,
     tipoDeEquipo,
     setTipoDeEquipo,
-  } = useTimeClockEngine({ pausado: enCola });
+  } = useTimeClockEngine({ pausado: enCola || enCaja });
 
   // Read device & branch from localStorage kiosk_config
   const kioskLabel = useMemo(() => {
@@ -251,12 +254,14 @@ const TimeClockView = ({ setView }) => {
           esos 100px no los cubría nadie. */}
       <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-8 sm:py-10 [@media(min-height:801px)_and_(max-height:900px)]:py-6 [@media(max-height:800px)]:py-5 [@media(max-height:640px)]:!py-2">
         {esCaja && (
-          <div className="w-full max-w-[420px] mb-4 [@media(max-height:640px)]:mb-2">
+          <div className="w-full max-w-[560px] mb-4 [@media(max-height:640px)]:mb-2">
             <SegmentedControl
               label="Pantalla del kiosco"
               layout="block"
+              columns={3}
               options={[
-                { value: 'caja', label: 'En caja' },
+                { value: 'preventas', label: 'Preventas' },
+                { value: 'caja', label: 'Caja' },
                 { value: 'marcar', label: 'Marcar' },
               ]}
               value={pestana}
@@ -265,7 +270,7 @@ const TimeClockView = ({ setView }) => {
           </div>
         )}
 
-        {enCola ? <ColaDeCaja /> : (
+        {enCola ? <ColaDeCaja /> : enCaja ? <CajaDelKiosco branchId={branchDelEquipo} /> : (
         <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
 
           {/* Cabecera y reloj, rediseño del 2026-11-17 (pedido del usuario:

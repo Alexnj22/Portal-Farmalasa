@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1567.0 — Kiosco de caja: la caja con carné
+
+- El kiosco de caja tiene tres pestañas: **Preventas** (la cola), **Caja** y
+  **Marcar**. En **Caja** se pasa el carné y se abre Mi caja de hoy, idéntica,
+  a nombre de esa persona: apertura, turno, ingresos, cortes y cierre del día
+  con sus permisos y sus frenos. Sin menú ni otras pantallas.
+- La sesión no se queda en la computadora: se cierra con **Terminar**, al
+  cambiar de pestaña (si la abrió un carné ahí) y tras 2 minutos sin uso.
+- Decisión del usuario (2026-11-17): carné que abre Mi caja, en lugar de
+  reescribir las ~10 funciones de caja que identifican por sesión.
+- Novedades: no — piloto en Salud 4.
+
 ## v2.1566.1 — Kiosco: pantalla más clara
 
 - La pantalla del kiosco se rediseñó para leerse de pie: el reloj grande y sin

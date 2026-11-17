@@ -9,7 +9,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 // detección anti-fraude sigue midiendo velocidad de tecleo sobre ese buffer,
 // solo que ya no hay un <input> real detrás. 2026-07-25, a pedido del
 // usuario — "no quiero que aparezca un input, nada se ingresa a mano".
-function ScanReadyRing({ specialMode }) {
+export function ScanReadyRing({ specialMode }) {
   const ring = specialMode ? 'border-chart-4/40' : 'border-chart-1/40';
   const core = specialMode ? 'bg-chart-4/15 border-chart-4/50' : 'bg-chart-1/15 border-chart-1/50';
   const iconColor = specialMode ? 'text-chart-4-text' : 'text-chart-1-text';

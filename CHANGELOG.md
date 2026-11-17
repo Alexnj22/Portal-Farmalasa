@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1565.3 — Kiosco: botón para configurar el equipo
+
+- Con sesión abierta, el kiosco muestra **Configurar equipo** arriba a la
+  derecha y abre el configurador. La llave por hora no se podía escribir a
+  mano: el lector sólo acepta tecleo a velocidad de escáner. Guardar lo sigue
+  decidiendo el permiso de la sesión en la base.
+- La tarjeta de Asistencia tenía dos íconos de código de barras y el nombre de
+  la empresa repetido: queda uno de cada uno.
+- Novedades: no — ajuste del kiosco para el piloto de caja en Salud 4.
+
 ## v2.1565.2 — Conteo: más claro y sin pasos de más, en web y app
 
 Auditoría del conteo de inventario (web y app), con los arreglos que pegan al contar.

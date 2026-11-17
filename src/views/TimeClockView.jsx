@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import Button from '../components/common/Button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useTimeClockEngine } from '@nucleo/hooks/useTimeClockEngine';
@@ -82,6 +82,8 @@ const TimeClockView = ({ setView }) => {
     cancelSelfDeclare,
     tipoDeEquipo,
     setTipoDeEquipo,
+    isAuthenticated,
+    openConfigurator,
   } = useTimeClockEngine({ pausado: enCola });
 
   // Read device & branch from localStorage kiosk_config
@@ -224,7 +226,16 @@ const TimeClockView = ({ setView }) => {
           derecha, con su propio ancho, `fixed` para que no se mueva con el
           scroll de emergencia y por debajo de los modales (z-header = 40,
           contra el 60 del configurador y el 90 del aviso). ── */}
-      <div className="fixed top-4 right-4 [@media(max-height:640px)]:top-2 [@media(max-height:640px)]:right-2 z-header">
+      <div className="fixed top-4 right-4 [@media(max-height:640px)]:top-2 [@media(max-height:640px)]:right-2 z-header flex gap-2">
+        {/* Con sesión se configura el equipo con un botón. La llave por hora
+            no se puede escribir a mano: el lector sólo acepta tecleo a
+            velocidad de escáner. Guardar lo sigue decidiendo el permiso de
+            la sesión en la base. */}
+        {isAuthenticated && !isConfiguring && (
+          <Button variant="secondary" size="sm" icon={Settings} title="Configurar este equipo" onClick={openConfigurator}>
+            <span className="hidden sm:inline">Configurar equipo</span>
+          </Button>
+        )}
         <Button variant="secondary" size="sm" icon={LogOut} title="Salir del marcador (Esc)" onClick={handleLogout}>
           <span className="hidden sm:inline">Salir</span>
         </Button>

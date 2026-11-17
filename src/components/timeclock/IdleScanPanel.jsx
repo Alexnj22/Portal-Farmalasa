@@ -48,15 +48,8 @@ export default function IdleScanPanel({
       <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
 
         {/* TOP: Ícono y Títulos */}
-        <div className="flex flex-col items-center text-center w-full mb-6 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
-          <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]'
-            }`}>
-            {specialMode
-              ? <ShieldAlert size={40} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
-              : <ScanBarcode size={40} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />}
-          </div>
+        <div className="flex flex-col items-center text-center w-full mb-2 shrink-0">
           <h1 className="text-2xl sm:text-4xl [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1 [@media(max-height:800px)]:mb-0.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
-          <p className={`text-micro sm:text-body-sm [@media(max-height:800px)]:hidden font-black uppercase tracking-widest transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
         </div>
 
         {/* MIDDLE: estado de espera del escáner (nada se teclea a mano) */}

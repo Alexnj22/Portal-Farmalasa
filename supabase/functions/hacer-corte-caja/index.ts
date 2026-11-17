@@ -817,6 +817,82 @@ Deno.serve(async (req) => {
       }
     }
 
+    /* ── UN INGRESO EN EFECTIVO QUE NO LLEGÓ A LA CAJA (2026-11-16) ────────
+     *
+     * Decisión del usuario: «no debe quedar nada pendiente nunca … verificar lo
+     * pendiente y enviarlo de un solo». El 16-nov el sistema de la caja no
+     * contestó 4 minutos y un ingreso de $32.89 de Salud 3 quedó anotado en el
+     * portal y fuera de la caja. El cierre no lo miraba, y después del Z ya no
+     * se puede mandar («su día ya se cerró»): el cajón tendría plata que la
+     * caja no cuenta.
+     *
+     * Así que, antes de cualquier corte o cierre —también el automático—, se
+     * le pide a `operar-caja` que mande lo pendiente (`mandar_pendientes`, el
+     * mismo juez que «Mandar a la caja»: busca cada ingreso en la caja por
+     * `P{id}` y sólo lo manda si no está). Después se vuelve a mirar en la
+     * base, y si queda alguno, el corte FRENA con la lista. El envío no vive
+     * aquí a propósito: dos copias de cómo se manda plata a la caja son dos
+     * respuestas distintas el día que una cambie.
+     *
+     * Sólo la apertura viva y sólo efectivo: tarjeta y transferencia nunca van
+     * a la caja, y un ingreso de un día ya cerrado no cabe en el de hoy.
+     * `simular` es una sonda: no manda ni frena. */
+    const ingresosSinCaja = async () => {
+      const { data, error } = await supabase.from("caja_movimientos_portal")
+        .select("id, monto, concepto")
+        .eq("branch_id", sala).eq("tipo", "ENTRADA")
+        .is("anulado_at", null).is("erp_movimiento_id", null)
+        .eq("erp_apertura_id", Number(viva.aper))
+        .or("forma_pago.is.null,forma_pago.eq.EFECTIVO")
+        .order("id", { ascending: true }).limit(30);
+      // Un error NO se lee como «no hay ninguno»: sería cortar justo cuando no
+      // se pudo comprobar que la caja tuviera todo.
+      if (error) throw new Error(`revisando los ingresos que no llegaron a la caja: ${error.message}`);
+      return (data ?? []) as { id: number; monto: number | string; concepto: string | null }[];
+    };
+    let sinCaja = simular ? [] : await ingresosSinCaja();
+    if (sinCaja.length) {
+      try {
+        const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/operar-caja`, {
+          method: "POST",
+          headers: automatico
+            ? {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              "x-cierre-automatico": secretoDeCircuito("fiscal") ?? "",
+            }
+            : {
+              "Content-Type": "application/json",
+              Authorization: req.headers.get("Authorization") ?? "",
+            },
+          body: JSON.stringify({ accion: "mandar_pendientes", sala, automatico }),
+          signal: AbortSignal.timeout(100_000),
+        });
+        const res = await r.json().catch(() => null);
+        console.log(`[hacer-corte-caja] sala=${sala}: ${sinCaja.length} ingreso(s) sin caja; `
+          + `mandar_pendientes → ${r.status} ${JSON.stringify(res).slice(0, 400)}`);
+      } catch (e) {
+        console.error(`[hacer-corte-caja] sala=${sala}: mandar_pendientes falló:`, e);
+      }
+      sinCaja = await ingresosSinCaja();
+    }
+    if (sinCaja.length) {
+      // Corto a propósito, como el de las preventas: la pantalla cambia por el
+      // genérico todo mensaje de más de 240 caracteres. La lista va entera en
+      // `ingresos`.
+      const primero = sinCaja[0];
+      const cual = `$${Number(primero.monto).toFixed(2)} ${String(primero.concepto ?? "").slice(0, 40)}`
+        + (sinCaja.length > 1 ? ` y ${sinCaja.length - 1} más` : "");
+      const cuantos = sinCaja.length === 1
+        ? "Un ingreso en efectivo no llegó a la caja y no se pudo mandar"
+        : `${sinCaja.length} ingresos en efectivo no llegaron a la caja y no se pudieron mandar`;
+      return json({
+        ok: false, ingresos_sin_caja: true, ingresos: sinCaja,
+        error: `${cuantos} (${cual}). Mándalo desde Mi caja con «Mandar a la caja» antes de `
+          + (esZ ? "cerrar el día." : "hacer el corte."),
+      }, 409);
+    }
+
     /* ── UNA PREVENTA SIN FINALIZAR FRENA EL CORTE Y EL CIERRE (2026-10-28) ──
      *
      * Reporte del usuario: «antes cuando se hacían cortes desde el ERP sí

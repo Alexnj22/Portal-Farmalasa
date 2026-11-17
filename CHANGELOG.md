@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1561.0 — Caja: el corte manda lo pendiente y «Mandar a la caja» vuelve a funcionar
+
+El 16-nov el sistema de la caja no contestó 4 minutos (5:54–5:58 pm) y un ingreso en efectivo de $32.89 de Salud 3 quedó anotado en el portal y fuera de la caja. Al revisarlo apareció la causa de fondo:
+
+- **«Mandar a la caja» y el reenvío automático nunca funcionaron.** `reenviar_a_caja` tenía su rama en `operar-caja` desde el 9-nov, pero no estaba en la lista de acciones permitidas: la función contestaba «Acción desconocida» (400). El equipo de Salud 3 lo intentó 7 veces entre las 6:01 y las 6:29 pm. Ahora está en la lista. Es el mismo tropiezo que tuvo `abono` el 1-sep.
+- **Antes de cada corte o cierre del día —también el automático— el portal manda lo pendiente** (`mandar_pendientes`, nueva en `operar-caja`): todos los ingresos en efectivo de la apertura viva que no llegaron a la caja. Usa el mismo juez que «Mandar a la caja»: reclama cada ingreso 90 s, lo busca en la caja por `P{id}` y sólo lo manda si no está, así que no se cobra dos veces.
+- **Si alguno no entra, el corte frena** (`hacer-corte-caja`) y dice cuál es. Después del cierre del día ese ingreso ya no se puede mandar, así que el cierre no sale con plata en la caja que el sistema no cuenta. Tarjeta y transferencia no cuentan: nunca van a la caja.
+- **El cierre automático** entra con su secreto (sólo para esta acción) y, si frena por esto, lo anota (`ingresos_sin_caja`) y avisa a supervisión la primera vez de la noche, igual que con las preventas.
+- Medido: en los últimos 90 días quedaron fuera de la caja 2 ingresos en efectivo (el de hoy y uno del 23-oct, cuyo día ya cerró).
+
 ## v2.1560.0 — Preventa: el cobro de comisiones con el monto del correo
 
 - COMISIONES POR SERVICIO DE CORRESPONSAL se cobra desde la preventa: escribes el monto (neto + IVA) o pegas el correo y el portal lo suma. Al enviar, el portal pone ese precio en el producto, confirma que quedó y lo manda a caja. Sólo administración y con crédito fiscal.

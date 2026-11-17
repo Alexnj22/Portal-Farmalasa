@@ -463,8 +463,13 @@ Deno.serve(async (req) => {
     // salió a producción y esta puerta le contestaba «Acción desconocida» — la
     // rama existía y nunca se alcanzó. Es lo que esta lista tiene de traicionero
     // en el otro sentido: no sólo deja pasar de más, también deja afuera.
+    // Y volvió a pasar con `reenviar_a_caja` (2026-11-16): su rama existía desde
+    // el 9-nov y esta puerta la rechazaba, así que ni el botón «Mandar a la
+    // caja» ni el reenvío automático mandaron nunca nada. Lo destapó un ingreso
+    // de $32.89 de Salud 3 que quedó fuera de la caja tras una caída de 4 min.
     if (!["abrir", "iniciar_turno", "ingreso", "salida", "abono", "cerrar", "estado", "corregir",
-          "aplicar_correccion", "rechazar_autorizacion", "enlace_apartado"].includes(accion)) {
+          "aplicar_correccion", "rechazar_autorizacion", "enlace_apartado",
+          "reenviar_a_caja", "mandar_pendientes"].includes(accion)) {
       return json({ ok: false, error: "Acción desconocida." }, 400);
     }
     if (!Number.isFinite(sala)) return json({ ok: false, error: "Falta la sucursal." }, 400);
@@ -474,8 +479,26 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const quien = await requireActiveEmployeeUser(req, supabase);
-    if (!quien) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+    /* ── EL CORTE MANDA LO PENDIENTE ANTES DE CORTAR (2026-11-16) ──────────
+     *
+     * `hacer-corte-caja` pide `mandar_pendientes` justo antes de emitir un
+     * corte. Con una persona, viaja SU sesión y pasa por los mismos permisos de
+     * abajo. En el cierre automático no hay nadie: entra con el mismo secreto
+     * que autoriza a `hacer-corte-caja` (`x-cierre-automatico`, circuito
+     * fiscal), y SÓLO para esta acción, que no firma nada a nombre de nadie:
+     * cada ingreso viaja a nombre de quien lo anotó. */
+    const automatico = accion === "mandar_pendientes" && body.automatico === true;
+    if (automatico) {
+      const secreto = secretoDeCircuito("fiscal");
+      if (!secreto || req.headers.get("x-cierre-automatico") !== secreto) {
+        return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+      }
+    }
+    const quienOAuto = automatico ? null : await requireActiveEmployeeUser(req, supabase);
+    if (!automatico && !quienOAuto) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+    // En automático `quien` no existe y no se lee: la única acción posible es
+    // `mandar_pendientes`, que no usa a quien llama.
+    const quien = quienOAuto as NonNullable<typeof quienOAuto>;
     /* Tres permisos distintos y no uno, porque son tres actos distintos:
      *
      *  · MIRAR el estado lo puede hacer quien ve los cortes (`can_view`).
@@ -488,9 +511,11 @@ Deno.serve(async (req) => {
     const [modulo, accionDelPermiso]: [string, "can_view" | "can_edit" | "can_approve"] = ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
       ? ["requests_caja", "can_approve"]
       : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];   // `abono` incluido: es un ingreso
-    const permiso = await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
-    if (permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
-    if (!permiso.puede) {
+    // En automático no hay a quién preguntarle: lo autorizó el secreto de arriba.
+    const permisoOAuto = automatico ? null : await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
+    const permiso = permisoOAuto as NonNullable<typeof permisoOAuto>;
+    if (!automatico && permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+    if (!automatico && !permiso.puede) {
       return json({ ok: false, error: ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
         ? "No tienes permiso para decidir las correcciones de caja."
         : "No tienes permiso para operar la caja desde el portal." }, 403);
@@ -505,7 +530,7 @@ Deno.serve(async (req) => {
      * `aplicar_correccion` y `corregir` no pasan por acá —van contra un
      * movimiento que se relee de la base, con su propia sala— así que el freno
      * se aplica a lo que sí toca una caja por número de sala. */
-    if (!["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
+    if (!automatico && !["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
         && !permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
       return json({ ok: false, error: "Solo puedes operar la caja de tu propia sucursal." }, 403);
     }
@@ -700,7 +725,7 @@ Deno.serve(async (req) => {
     // Y el vale del retiro de lo apartado (2026-10-20): es la salida que hay
     // que poder probar del retiro al contado.
     const valeDeRetiro = accion === "salida" && String(body.tipo ?? "") === "APLICA_ANTICIPO";
-    if (cajaSimulada && !valeDeRetiro && !["estado", "ingreso", "corregir", "aplicar_correccion", "rechazar_autorizacion"].includes(accion)) {
+    if (cajaSimulada && !valeDeRetiro && !["estado", "ingreso", "corregir", "aplicar_correccion", "rechazar_autorizacion", "mandar_pendientes"].includes(accion)) {
       return json({ ok: false, error: "En el entorno de pruebas la caja es simulada: sólo se puede mirar, anotar ingresos y corregirlos." }, 409);
     }
 
@@ -742,7 +767,8 @@ Deno.serve(async (req) => {
         const puede = puedeEsperarALaCaja(accion, body);
         // «Rescatada»: nadie quedó frenado — el ingreso entra en espera, o es
         // el reenvío automático de uno que ya está anotado.
-        await anotarFallaDeLaCaja(supabase, quien.id, sala, accion, e, puede || accion === "reenviar_a_caja");
+        await anotarFallaDeLaCaja(supabase, quienOAuto?.id ?? null, sala, accion, e,
+          puede || ["reenviar_a_caja", "mandar_pendientes"].includes(accion));
         if (!puede) throw e;
         const { data: ap, error: errAp } = await supabase.from("cortes_caja_aperturas")
           .select("erp_apertura_id").eq("branch_id", sala).is("cerrada_at", null)
@@ -894,6 +920,48 @@ Deno.serve(async (req) => {
       const r = await resolverSinNumero(mov);
       if (!r.ok) return json({ ok: false, error: r.error }, r.status);
       return json({ ok: true, movimiento_del_portal: mov.id, movimiento_en_caja: r.idMov, reenviado: r.reenviado });
+    }
+
+    /* ── MANDAR TODO LO PENDIENTE DE UNA VEZ (2026-11-16) ─────────────────
+     *
+     * Decisión del usuario: «no debe quedar nada pendiente nunca … verificar lo
+     * pendiente y enviarlo de un solo». Lo pide `hacer-corte-caja` antes de
+     * cada corte y cierre —también el automático—, y si algo no entra, el corte
+     * frena con la lista.
+     *
+     * Son los ingresos en EFECTIVO de la apertura viva que quedaron sin número
+     * de la caja (los de tarjeta y transferencia no van a la caja). Cada uno
+     * pasa por `resolverSinNumero`, el MISMO juez de «Mandar a la caja»: lo
+     * reclama 90 s, lo busca en la caja por `P{id}` y sólo lo manda si no está.
+     * No se reescribe aquí ninguna regla de envío: dos copias de cómo se manda
+     * plata a la caja son dos respuestas distintas el día que una cambie.
+     *
+     * Uno por uno y en orden: la caja es lenta y un envío en paralelo pelearía
+     * por la misma sesión. La lista es corta por construcción (2 en 90 días al
+     * escribir esto); el tope de 30 es sólo para no pasarse del tiempo de vida
+     * de la función si algún día se juntan muchos — los que queden los vuelve a
+     * pedir el siguiente intento. */
+    if (accion === "mandar_pendientes") {
+      if (cajaSimulada) return json({ ok: true, pendientes: 0, mandados: [], fallidos: [] });
+      if (!estado.abierta || !estado.aper) return json({ ok: true, pendientes: 0, mandados: [], fallidos: [], sin_caja_abierta: true });
+      const { data: pend, error: errPend } = await supabase.from("caja_movimientos_portal")
+        .select("*")
+        .eq("branch_id", sala).eq("tipo", "ENTRADA")
+        .is("anulado_at", null).is("erp_movimiento_id", null)
+        .eq("erp_apertura_id", Number(estado.aper))
+        .or("forma_pago.is.null,forma_pago.eq.EFECTIVO")
+        .order("id", { ascending: true }).limit(30);
+      if (errPend) throw new Error(`leyendo los ingresos pendientes: ${errPend.message}`);
+      const mandados: { id: number; movimiento_en_caja: number | null; reenviado: boolean }[] = [];
+      const fallidos: { id: number; monto: number; concepto: string; error: string }[] = [];
+      for (const mov of pend ?? []) {
+        const r = await resolverSinNumero(mov);
+        if (r.ok) mandados.push({ id: mov.id, movimiento_en_caja: r.idMov, reenviado: r.reenviado });
+        else fallidos.push({ id: mov.id, monto: Number(mov.monto), concepto: String(mov.concepto ?? ""), error: r.error });
+      }
+      console.log(`[operar-caja] mandar_pendientes sala=${sala}${automatico ? " (cierre automático)" : ""}: `
+        + `${pend?.length ?? 0} pendiente(s), ${mandados.length} resuelto(s), ${fallidos.length} sin resolver`);
+      return json({ ok: fallidos.length === 0, pendientes: pend?.length ?? 0, mandados, fallidos });
     }
 
     if (accion === "estado") {

@@ -54,9 +54,39 @@ const horaSV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(11,
 /** Supervisión: los mismos cargos que avisa `avisar_dias_sin_cierre`, por cargo y no por lista. */
 const SUPERVISION = ["Gerente General", "Supervisor/a de Ventas"];
 
+/** Lo que dice el aviso a supervisión: el título lleva delante el nombre de la sucursal. */
+type Aviso = { titulo: string; cuerpo: string; motivo: string; datos: Record<string, unknown> };
+
+const avisoDePreventas = (preventas: { referencia: string; cliente: string; total: number }[]): Aviso => {
+  const lista = preventas.map((p) => `#${p.referencia} ${p.cliente} $${Number(p.total).toFixed(2)}`).join("; ");
+  return {
+    titulo: "el día no se cerró por preventas sin finalizar",
+    cuerpo: (preventas.length === 1 ? "Quedó una preventa guardada" : `Quedaron ${preventas.length} preventas guardadas`)
+      + (lista ? ` (${lista})` : "") + ". Puede ser dinero que ya está en la caja y todavía no es venta. "
+      + "Finalízala o elimínala y cierra el día.",
+    motivo: "preventas_sin_finalizar", datos: { preventas },
+  };
+};
+
+// El ingreso en efectivo que no llegó a la caja (2026-11-16): `hacer-corte-caja`
+// ya intentó mandarlo y no entró. Sin él, el cierre dejaría plata en el cajón que
+// la caja no cuenta, y después del cierre ya no se puede mandar.
+const avisoDeIngresos = (ingresos: { id: number; monto: number | string; concepto: string | null }[]): Aviso => {
+  const lista = ingresos.slice(0, 3)
+    .map((m) => `$${Number(m.monto).toFixed(2)} ${String(m.concepto ?? "").slice(0, 40)}`).join("; ")
+    + (ingresos.length > 3 ? ` y ${ingresos.length - 3} más` : "");
+  return {
+    titulo: "el día no se cerró por un ingreso que no llegó a la caja",
+    cuerpo: (ingresos.length === 1
+      ? "Un ingreso en efectivo no llegó a la caja y no se pudo mandar"
+      : `${ingresos.length} ingresos en efectivo no llegaron a la caja y no se pudieron mandar`)
+      + (lista ? ` (${lista})` : "") + ". Mándalo desde Mi caja con «Mandar a la caja» y cierra el día.",
+    motivo: "ingresos_sin_caja", datos: { ingresos },
+  };
+};
+
 // deno-lint-ignore no-explicit-any
-async function avisarSupervision(supabase: any, sala: number, fecha: string,
-  preventas: { referencia: string; cliente: string; total: number }[]) {
+async function avisarSupervision(supabase: any, sala: number, fecha: string, aviso: Aviso) {
   const { data: roles, error: eRoles } = await supabase.from("roles").select("id").in("name", SUPERVISION);
   if (eRoles || !roles?.length) {
     console.error(`[cierre-automatico-caja] sala=${sala} cargos de supervisión: ${eRoles?.message ?? "ninguno"}`);
@@ -73,14 +103,11 @@ async function avisarSupervision(supabase: any, sala: number, fecha: string,
   // Sin el nombre el aviso sale igual, con «Una sala»: no se pierde por un rótulo.
   const { data: suc, error: eSuc } = await supabase.from("branches").select("name").eq("id", sala).maybeSingle();
   if (eSuc) console.error(`[cierre-automatico-caja] sala=${sala} nombre: ${eSuc.message}`);
-  const lista = preventas.map((p) => `#${p.referencia} ${p.cliente} $${Number(p.total).toFixed(2)}`).join("; ");
   const { error } = await supabase.rpc("notify_employees", {
     p_recipients: gente.map((e: { id: string }) => e.id), p_type: "DIA_SIN_CIERRE",
-    p_title: `${suc?.name ?? "Una sucursal"}: el día no se cerró por preventas sin finalizar`,
-    p_body: (preventas.length === 1 ? "Quedó una preventa guardada" : `Quedaron ${preventas.length} preventas guardadas`)
-      + (lista ? ` (${lista})` : "") + ". Puede ser dinero que ya está en la caja y todavía no es venta. "
-      + "Finalízala o elimínala y cierra el día.",
-    p_link: "/cortes", p_metadata: { origen: "cierre-automatico", motivo: "preventas_sin_finalizar", fecha, preventas },
+    p_title: `${suc?.name ?? "Una sucursal"}: ${aviso.titulo}`,
+    p_body: aviso.cuerpo,
+    p_link: "/cortes", p_metadata: { origen: "cierre-automatico", motivo: aviso.motivo, fecha, ...aviso.datos },
     p_push: true, p_branch_id: sala,
   });
   if (error) console.error(`[cierre-automatico-caja] sala=${sala} aviso a supervisión: ${error.message}`);
@@ -198,9 +225,30 @@ Deno.serve(async (req) => {
           motivo: "preventas_sin_finalizar", detalle: { preventas, error: z.error ?? null },
         });
         if (!errPrevio && previo?.motivo !== "preventas_sin_finalizar") {
-          await avisarSupervision(supabase, d.branch_id, d.fecha, preventas);
+          await avisarSupervision(supabase, d.branch_id, d.fecha, avisoDePreventas(preventas));
         }
         resultados.push({ sala: d.branch_id, cerrado: false, motivo: "preventas_sin_finalizar", preventas });
+        continue;
+      }
+
+      /* ── UN INGRESO QUE NO LLEGÓ A LA CAJA (2026-11-16) ────────────────
+       * Mismo trato que la preventa: `hacer-corte-caja` ya intentó mandarlo y
+       * no entró, así que el día queda abierto y supervisión se entera la
+       * primera vez de la noche. El cron vuelve a intentarlo a los 10 minutos,
+       * y en cada intento `hacer-corte-caja` lo vuelve a mandar. */
+      if (z?.ingresos_sin_caja === true) {
+        const ingresos = Array.isArray(z.ingresos) ? z.ingresos as
+          { id: number; monto: number | string; concepto: string | null }[] : [];
+        const { data: previo, error: errPrevio } = await supabase.from("caja_cierres_automaticos")
+          .select("motivo").eq("branch_id", d.branch_id).eq("fecha", d.fecha).maybeSingle();
+        if (errPrevio) console.error(`[cierre-automatico-caja] sala=${d.branch_id} leyendo lo anotado: ${errPrevio.message}`);
+        await anotar(d, "no_cerrado", {
+          motivo: "ingresos_sin_caja", detalle: { ingresos, error: z.error ?? null },
+        });
+        if (!errPrevio && previo?.motivo !== "ingresos_sin_caja") {
+          await avisarSupervision(supabase, d.branch_id, d.fecha, avisoDeIngresos(ingresos));
+        }
+        resultados.push({ sala: d.branch_id, cerrado: false, motivo: "ingresos_sin_caja", ingresos });
         continue;
       }
 

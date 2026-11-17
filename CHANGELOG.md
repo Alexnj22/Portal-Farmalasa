@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.9 — Editor del cliente ordenado; lote y presentación a la vista
+
+- Editor del cliente: el mismo selector de tipo que al crearlo (Consumidor,
+  Contribuyente, Otro), secciones separadas, ubicación en una fila y lo que
+  falta en fichas.
+- Preventa: con dos precios en la misma presentación, el campo dice
+  «CAJA $4.55» y ya no se corta.
+- Preventa: el lote es un selector visible con su vencimiento. Un lote que no
+  completa ni una presentación no se puede elegir, y si el elegido no alcanza
+  se avisa de dónde sale lo demás.
+- Novedades: no — ajustes de pantallas existentes.
+
 ## v2.1562.8 — Editor del cliente según su categoría; logo de Apple
 
 - Preventa: a un consumidor el editor ya no le marca NIT, NRC, giro, correo ni

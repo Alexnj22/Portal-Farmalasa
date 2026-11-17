@@ -503,9 +503,12 @@ const FormClienteDetail = ({ formData }) => {
 
             {completar && !cliente.mostrador && (faltaCategoria || pendientes.length > 0) && (
                 <Notice variant="warning" icon={AlertTriangle}>
-                    {completar.motivo}: {[faltaCategoria && `categoría ${completar.categoria}`,
-                        ...pendientes.map(c => ROTULO_COMPLETAR[c] ?? c)].filter(Boolean).join(', ')}.
-                    {faltaCategoria && ' Cambia la categoría primero: así aparecen sus campos.'}
+                    <span className="font-bold">{completar.motivo}</span>
+                    <span className="mt-1.5 flex flex-wrap gap-1">
+                        {[faltaCategoria && `Tipo ${completar.categoria}`, ...pendientes.map(c => ETIQUETA_CAMPO[c] ?? c)]
+                            .filter(Boolean).map(t => <Badge key={t} size="sm" variant="warning" uppercase={false}>{t}</Badge>)}
+                    </span>
+                    {faltaCategoria && <span className="block mt-1.5 text-caption">Elige Contribuyente arriba: así aparecen sus campos.</span>}
                 </Notice>
             )}
 
@@ -526,14 +529,18 @@ const FormClienteDetail = ({ formData }) => {
                 <PanelActividad actividad={actividad} facturas={facturas} bitacora={bitacora} />
             ) : (
                 <div className="space-y-5">
-                    {/* Identidad */}
+                    {/* Tipo e identidad */}
                     <div className="space-y-3">
-                        <SectionHeader icon={IdCard}>{esNuevo ? 'Tipo de cliente' : 'Identidad'}</SectionHeader>
-                        {esNuevo && (
-                            <div className="space-y-2">
+                        <SectionHeader icon={IdCard}>Tipo de cliente</SectionHeader>
+                        {/* El mismo selector al crear y al editar (2026-11-16, usuario: «¿por qué
+                            el editor no es como el creador?»). Al editar no se borra nada al
+                            cambiar de tipo: lo escrito sigue a la vista. */}
+                        {(esNuevo || editable) && (
+                            <div className={`space-y-2 ${faltaCategoria ? 'rounded-2xl ring-1 ring-danger/30 p-2 -m-2' : ''}`}>
                                 <SegmentedControl
-                                    value={GRUPO_DE[form.categoria] ?? 'consumidor'}
-                                    onChange={g => setForm(p => conCategoria(p, PRIMERA_DEL_GRUPO[g]))}
+                                    value={GRUPO_DE[form.categoria] ?? (esNuevo ? 'consumidor' : '')}
+                                    onChange={g => setForm(p => (GRUPO_DE[p.categoria] === g ? p
+                                        : esNuevo ? conCategoria(p, PRIMERA_DEL_GRUPO[g]) : { ...p, categoria: PRIMERA_DEL_GRUPO[g] }))}
                                     label="Tipo de cliente"
                                     options={[
                                         { value: 'consumidor', label: 'Consumidor' },
@@ -544,15 +551,22 @@ const FormClienteDetail = ({ formData }) => {
                                 {VARIANTES[GRUPO_DE[form.categoria]] && (
                                     <LiquidSelect
                                         value={form.categoria}
-                                        onChange={v => v && setForm(p => conCategoria(p, v))}
+                                        onChange={v => v && setForm(p => (esNuevo ? conCategoria(p, v) : { ...p, categoria: v }))}
                                         options={VARIANTES[GRUPO_DE[form.categoria]].map(c => ({ value: c, label: c }))}
                                         clearable={false}
                                         ariaLabel="Qué clase de cliente"
                                     />
                                 )}
-                                <p className="text-caption text-content-3 ml-1">{QUE_ES[form.categoria]}</p>
+                                {QUE_ES[form.categoria] && <p className="text-caption text-content-3 ml-1">{QUE_ES[form.categoria]}</p>}
                             </div>
                         )}
+                        {!esNuevo && !editable && (
+                            <Dato label="Categoría" value={form.categoria || 'Sin categoría'} />
+                        )}
+                    </div>
+
+                    <div className="space-y-3 border-t border-divider pt-5">
+                        <SectionHeader icon={IdCard}>Identidad</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="sm:col-span-2">
                                 <PortalInput
@@ -567,23 +581,6 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={e => setForm(p => ({ ...p, name: e.target.value.toUpperCase() }))}
                                 />
                             </div>
-                            {!esNuevo && <div>
-                                <label className={rotuloCampo(faltaCategoria ? 'text-danger-text' : 'text-content-3')}>
-                                    Categoría
-                                </label>
-                                <LiquidSelect
-                                    invalid={faltaCategoria}
-                                    value={form.categoria}
-                                    onChange={v => setForm(p => (esNuevo
-                                        ? conCategoria(p, v || 'Consumidor')
-                                        : { ...p, categoria: v || '' }))}
-                                    options={CATEGORIAS.map(c => ({ value: c, label: c }))}
-                                    placeholder="Sin categoría"
-                                    clearable={false}
-                                    disabled={!editable}
-                                    ariaLabel="Categoría fiscal del cliente"
-                                />
-                            </div>}
                             {ver('dui') && <PortalInput
                                 name="dui" label="DUI" maskType="DUI"
                                 placeholder="00000000-0"
@@ -663,7 +660,7 @@ const FormClienteDetail = ({ formData }) => {
                     </div>
 
                     {/* Contacto */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 border-t border-divider pt-5">
                         <SectionHeader icon={Phone}>Contacto</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <PortalInput
@@ -694,10 +691,10 @@ const FormClienteDetail = ({ formData }) => {
                     </div>
 
                     {/* Ubicación */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 border-t border-divider pt-5">
                         <SectionHeader icon={MapPin}>Ubicación</SectionHeader>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="sm:col-span-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="sm:col-span-3">
                                 <PortalInput
                                     name="direccion" label="Dirección"
                                     required={requeridos.has('direccion')}
@@ -734,7 +731,7 @@ const FormClienteDetail = ({ formData }) => {
                                     ariaLabel="Municipio"
                                 />
                             </div>
-                            <div className="sm:col-span-2">
+                            <div>
                                 <label className={rotuloCampo('text-content-3')}>
                                     Distrito
                                 </label>
@@ -752,7 +749,7 @@ const FormClienteDetail = ({ formData }) => {
                                     momento de facturar. */}
                                 {esContribuyente && !form.distrito && (
                                     <p className="text-caption text-warning-text mt-1 ml-1 font-bold">
-                                        El crédito fiscal lo pide junto con departamento y municipio.
+                                        El crédito fiscal pide el distrito, con departamento y municipio.
                                     </p>
                                 )}
                             </div>
@@ -760,7 +757,7 @@ const FormClienteDetail = ({ formData }) => {
                     </div>
 
                     {/* Fiscal y notas */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 border-t border-divider pt-5">
                         <SectionHeader icon={ShieldCheck}>{ver('retencion_pct') ? 'Retención y notas' : 'Notas'}</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {ver('retencion_pct') && <PortalInput

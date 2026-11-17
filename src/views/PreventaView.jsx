@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-    AlertTriangle, Ban, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
+    AlertTriangle, Ban, Layers, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
     RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -476,7 +476,7 @@ export default function PreventaView({ openModal }) {
                                         </p>
                                     ) : (
                                         <div className="space-y-1" onKeyDown={navegarRenglones}>
-                                            <div className="max-md:hidden grid grid-cols-[minmax(0,1fr)_150px_112px_224px_84px_32px] gap-2 pl-3 pr-1 text-micro font-black text-content-3 uppercase tracking-widest">
+                                            <div className="max-md:hidden grid grid-cols-[minmax(0,1fr)_168px_112px_208px_84px_32px] gap-2 pl-3 pr-1 text-micro font-black text-content-3 uppercase tracking-widest">
                                                 <span>Producto <span className="tabular-nums normal-case tracking-normal font-semibold">· {venta.lineas.length}{venta.lineas.length >= MAX_PRODUCTOS - 5 ? ` de ${MAX_PRODUCTOS}` : ''}</span></span><span>Presentación</span><span className="text-center">Cantidad</span>
                                                 <span>Precio</span><span className="text-right">Subtotal</span><span />
                                             </div>
@@ -1159,7 +1159,7 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
         <div data-fila={indice} data-campo={`linea-${linea.producto_id}-${linea.factor}`}
             className={`rounded-lg border-l-[3px] py-1.5 pl-2 pr-1 transition-colors ${problema
                 ? 'border-danger bg-danger/5' : 'border-transparent focus-within:bg-brand/5 hover:bg-surface-card-hover'}`}>
-            <div className="grid max-md:grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_150px_112px_224px_84px_32px] gap-x-2 gap-y-1.5 items-center">
+            <div className="grid max-md:grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_168px_112px_208px_84px_32px] gap-x-2 gap-y-1.5 items-center">
                 <div className="min-w-0 flex items-center gap-2">
                     <Miniatura src={foto} />
                     <div className="min-w-0">
@@ -1168,10 +1168,10 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             {fila?.bajo_receta && <span className="text-warning-text font-bold">Bajo Receta</span>}
                             {fila && <span className={malaCantidad ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
                             {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} aquí</span>}
-                            <Lotes lotes={lotes} cantidad={cant} factor={linea.factor} nombre={nombre} elegido={linea.lote}
-                                presentacion={fila?.tipo ?? presentaciones.find((p) => p.value === pres.value)?.label}
-                                onElegir={(lote) => onCambiar({ lote })} />
                         </p>
+                        <Lotes lotes={lotes} cantidad={cant} factor={linea.factor} nombre={nombre} elegido={linea.lote}
+                            presentacion={fila?.tipo ?? presentaciones.find((p) => p.value === pres.value)?.label}
+                            onElegir={(lote) => onCambiar({ lote })} />
                     </div>
                 </div>
                 <span className="md:hidden"><Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre}`} onClick={onQuitar} /></span>
@@ -1266,16 +1266,33 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
     const f = Math.max(1, Number(factor) || 1);
     const cuanto = (l) => [l.enteras ? `${l.enteras} ${String(presentacion || '').toLowerCase()}` : '', l.sueltas ? `${l.sueltas} u.` : '']
         .filter(Boolean).join(' + ');
+    const pres = String(presentacion || 'presentación').toLowerCase();
+    // Lo que daría cada lote si se elige: nada → no se puede elegir (antes
+    // quedaba marcado y caja sacaba todo de otros); una parte → se avisa.
+    const aporte = (l) => {
+        const p = planDeLotes(lotes, cantidad, factor, l).lotes.find((x) => mismoLote(x, l));
+        return (p?.enteras ?? 0) + (p?.sueltas ?? 0);
+    };
+    const alcanza = (l) => (Number(l.unidades) || 0) >= (Number(cantidad) || 0) * f;
+    const elegidoNoAlcanza = vigente && usados.length > 1;
     return (
         <>
             <button ref={btnRef} type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-haspopup="dialog"
-                aria-label={`Lotes de ${nombre}`}
-                className={`inline-flex items-center gap-1 rounded px-1 -mx-1 hover:bg-surface-card-hover active:scale-[0.97] ${tono(primero)}`}>
-                · {vigente ? 'Lote elegido' : 'Lote'} {primero.lote} · {cuando(primero)}
-                {usados.length > 1 && <span className="font-bold text-content-2">+{usados.length - 1}</span>}
-                {plan.armada && <span className="font-bold text-brand-text">· armada</span>}
-                <ChevronDown size={11} strokeWidth={1.5} />
+                aria-label={`Lote de ${nombre}: ${primero.lote}, ${cuando(primero)}. Cambiar lote`}
+                className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2 py-0.5 min-h-[var(--tap-min)] md:min-h-0 text-micro transition-colors active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand ${elegidoNoAlcanza
+                    ? 'border-warning/40 bg-warning/10' : vigente ? 'border-brand/40 bg-brand/10' : 'border-border-card bg-surface-card-hover hover:border-brand/50'}`}>
+                <Layers size={12} className={vigente ? 'text-brand-text' : 'text-content-3'} />
+                <span className="font-bold text-content truncate">{primero.lote}</span>
+                <span className={tono(primero) || 'text-content-2'}>{cuando(primero)}</span>
+                {usados.length > 1 && <span className="font-bold text-content-2">+{usados.length - 1} lote{usados.length > 2 ? 's' : ''}</span>}
+                {plan.armada && <span className="font-bold text-brand-text">armada</span>}
+                <ChevronDown size={12} className="text-content-3" />
             </button>
+            {elegidoNoAlcanza && (
+                <p className="text-micro font-semibold text-warning-text">
+                    El lote {vigente.lote} no alcanza: lo demás sale de {usados.length - 1 === 1 ? 'otro lote' : `otros ${usados.length - 1} lotes`}.
+                </p>
+            )}
             <Popover abierto={abierto} caja={caja} id={id} lado="izquierda" ariaLabel={`Lotes de ${nombre}`}
                 className="w-[22rem] p-2 space-y-1.5">
                 <p className="px-1 text-micro font-black text-content-3 uppercase tracking-widest">Lotes en esta sucursal</p>
@@ -1288,11 +1305,16 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
                     {plan.lotes.map((l) => {
                         const este = mismoLote(l, vigente);
                         const sale = cuanto(l);
+                        const da = aporte(l);
+                        const nota = da === 0 ? `no completa ${f > 1 ? `una ${pres}` : 'lo que pides'}` : !alcanza(l) ? 'no alcanza solo' : null;
                         return (
-                            <button key={`${l.lote}-${l.vence}`} type="button" role="radio" aria-checked={este}
+                            <button key={`${l.lote}-${l.vence}`} type="button" role="radio" aria-checked={este} disabled={da === 0 && !este}
                                 onClick={() => { onElegir({ lote: l.lote, vence: l.vence ?? null }); cerrar(); }}
-                                className={`w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-caption active:scale-[0.97] ${este ? 'bg-brand/10 ring-1 ring-brand/30' : 'hover:bg-surface-card-hover'}`}>
-                                <span className="min-w-0 flex-1 truncate font-semibold text-content">{l.lote}</span>
+                                className={`w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-caption active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100 ${este ? 'bg-brand/10 ring-1 ring-brand/30' : 'enabled:hover:bg-surface-card-hover'}`}>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate font-semibold text-content">{l.lote}</span>
+                                    {nota && <span className={`block text-micro ${da === 0 ? 'text-content-3' : 'text-warning-text font-semibold'}`}>{nota}</span>}
+                                </span>
                                 <span className={tono(l) || 'text-content-2'}>{cuando(l)}</span>
                                 <span className="w-14 text-right tabular-nums text-content-2">{l.unidades} u.</span>
                                 <span className="w-24 text-right tabular-nums font-bold text-brand-text truncate">{sale ? `sale ${sale}` : ''}</span>

@@ -69,7 +69,7 @@ describe('opcionesDePresentacion', () => {
     ] };
     it('dos viñetas del mismo empaque salen las dos', () => {
         const o = opcionesDePresentacion(fila, { factor: 100 });
-        expect(o.options.map((x) => x.label)).toEqual(['BLISTER', 'CAJA · viñeta 10.65', 'CAJA · viñeta 10.61']);
+        expect(o.options.map((x) => x.label)).toEqual(['BLISTER', 'CAJA $10.65', 'CAJA $10.61']);
         expect(o.value).toBe('100:227');
     });
     it('elegir la otra viñeta la pide a la base', () => {

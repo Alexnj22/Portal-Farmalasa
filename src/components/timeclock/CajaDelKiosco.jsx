@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { LogOut, AlertCircle } from 'lucide-react';
 import Button from '../common/Button';
@@ -9,6 +9,7 @@ import { ScanReadyRing } from './IdleScanPanel';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import useCapturaDeCarne from '@plataforma/useCapturaDeCarne';
+import { sesionDeCaja } from './sesionDeCaja';
 
 // La pestaña «Caja» del kiosco de caja (fase 2, 2026-11-17).
 //
@@ -24,6 +25,7 @@ import useCapturaDeCarne from '@plataforma/useCapturaDeCarne';
 const MiCajaView = lazy(() => import('../../views/MiCajaView'));
 
 const INACTIVO_MS = 2 * 60_000;
+
 const EVENTOS_DE_USO = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
 
 export default function CajaDelKiosco({ branchId }) {
@@ -42,17 +44,8 @@ export default function CajaDelKiosco({ branchId }) {
         }, { replace: true });
     }, [branchId, setParams]);
 
-    // ¿La sesión la abrió un carné en esta pestaña? (ver abajo)
-    const entroAquiRef = useRef(false);
-    const terminar = useCallback(() => { entroAquiRef.current = false; logout?.(); }, [logout]);
+    const terminar = useCallback(() => { sesionDeCaja.abiertaPorCarne = false; logout?.(); }, [logout]);
 
-    // Al salir de la pestaña, la sesión que se abrió AQUÍ con un carné se va
-    // con ella. Una sesión que ya estaba (alguien entró a propósito) no se
-    // toca al cambiar de pestaña; la cierra la inactividad. Y así el doble
-    // montaje del modo estricto no cierra nada.
-    const terminarRef = useRef(terminar);
-    useEffect(() => { terminarRef.current = terminar; });
-    useEffect(() => () => { if (entroAquiRef.current) terminarRef.current(); }, []);
 
     // Dos minutos sin tocar nada: se cierra sola.
     useEffect(() => {
@@ -71,7 +64,7 @@ export default function CajaDelKiosco({ branchId }) {
         setError(null);
         const r = await login(codigo);
         setEntrando(false);
-        if (r?.ok) entroAquiRef.current = true;
+        if (r?.ok) sesionDeCaja.abiertaPorCarne = true;
         if (!r?.ok) setError(r?.error || 'Ese carné no abre la caja. Intenta de nuevo.');
     }, [login]);
 

@@ -16,6 +16,7 @@ import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel
 import SegmentedControl from '../components/common/SegmentedControl';
 import ColaDeCaja from '../components/timeclock/ColaDeCaja';
 import CajaDelKiosco from '../components/timeclock/CajaDelKiosco';
+import { sesionDeCaja } from '../components/timeclock/sesionDeCaja';
 import { hora12ConSegundos } from '@nucleo/utils/hora';
 import { usePestanaEnUrl } from '@plataforma/usePestanaEnUrl';
 
@@ -41,6 +42,13 @@ const TimeClockView = ({ setView }) => {
   const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'preventas' : 'marcar');
   const enCola = esCaja && pestana === 'preventas';
   const enCaja = esCaja && pestana === 'caja';
+  // La sesión que abrió un carné en Caja se cierra al salir de esa pestaña.
+  useEffect(() => {
+    if (pestana !== 'caja' && sesionDeCaja.abiertaPorCarne) {
+      sesionDeCaja.abiertaPorCarne = false;
+      logout?.();
+    }
+  }, [pestana, logout]);
   const branchDelEquipo = useMemo(() => { try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null')?.branchId ?? null; } catch { return null; } }, []);
 
   const {

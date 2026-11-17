@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1567.1 — Kiosco: la caja ya no cierra la sesión al entrar
+
+- Arreglo: en la pestaña Caja del kiosco, el carné abría la sesión y se
+  cerraba un segundo después (Salud 4, 17:27:24 → 17:27:25). Al entrar, el
+  portal muestra «Verificando sesión» y desmonta el kiosco, y la pestaña lo
+  tomaba por un cambio de pestaña. Ahora la marca vive fuera del componente
+  (`sesionDeCaja.js`) y el cambio de pestaña lo decide `TimeClockView`.
+- Novedades: no — arreglo del piloto.
+
 ## v2.1567.0 — Kiosco de caja: la caja con carné
 
 - El kiosco de caja tiene tres pestañas: **Preventas** (la cola), **Caja** y

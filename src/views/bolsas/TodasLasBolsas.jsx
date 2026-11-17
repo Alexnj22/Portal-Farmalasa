@@ -14,7 +14,7 @@ import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diferenciaDeBolsa, saldoDeBolsa, contadoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { fetchBolsas, fetchSaldos, fetchPersonasDeBolsas, fetchDiferenciasDeCortes, fetchEstadosDeDiferenciaDeCortes } from '@nucleo/data/bolsas';
 import { ESTADO_DIFERENCIA_ROTULO } from '@nucleo/utils/diferenciasDeCaja';
-import { FILTROS_TODAS_BOLSAS } from '@nucleo/constants/bolsas';
+import { ESTADO_DE_BOLSA, FILTROS_TODAS_BOLSAS } from '@nucleo/constants/bolsas';
 
 /* ── «Todas»: cada bolsa de un rango, en la etapa que esté ───────────────────
  *
@@ -32,13 +32,7 @@ import { FILTROS_TODAS_BOLSAS } from '@nucleo/constants/bolsas';
  * mismo detalle que el resto del módulo. Sin descarga (lo pidió el usuario). Sólo para alcance de todas las
  * sucursales (`soloAdmin`), que es lo que pidió el usuario. */
 
-const ESTADOS = {
-    ABIERTA:   { label: 'En la sucursal',      variant: 'info' },
-    ENTREGADA: { label: 'Esperando recepción', variant: 'warning' },
-    RECIBIDA:  { label: 'Por contar',          variant: 'warning' },
-    CONTADA:   { label: 'Contada',             variant: 'success' },
-    ANULADA:   { label: 'Anulada',             variant: 'neutral' },
-};
+const ESTADOS = ESTADO_DE_BOLSA;
 const ORDEN_ESTADO = { ABIERTA: 0, ENTREGADA: 1, RECIBIDA: 2, CONTADA: 3, ANULADA: 4 };
 
 

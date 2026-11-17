@@ -43,12 +43,15 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import {
-  confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchInvariante, fetchPorDepositar, fetchSaldos, marcarConteoBolsa, recibirBolsas,
+  confirmarConteo, desmarcarConteoBolsa, fetchBolsas, fetchBolsasConDiferencia, fetchDiferenciasDeCortes, fetchEstadosDeDiferenciaDeCortes, fetchInvariante,
+  fetchPorDepositar, fetchSaldos, marcarConteoBolsa, recibirBolsas,
 } from '@nucleo/data/bolsas';
 import { contadoDeBolsa, diferenciaDeBolsa, rotuloDeVia, saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { contadoDeBolsas } from '@nucleo/utils/depositoDeEfectivo';
 import { DIAS_DE_ALARMA_BOLSA, laMasVieja } from '@nucleo/utils/bolsasTexto';
 import { ordenDeSala } from '@nucleo/constants/erp';
+import { ESTADO_DE_BOLSA } from '@nucleo/constants/bolsas';
+import { ESTADO_DIFERENCIA_ROTULO } from '@nucleo/utils/diferenciasDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
@@ -84,6 +87,27 @@ function porSala(lista) {
     m.get(b.branch_id).push(b);
   }
   return [...m.entries()];
+}
+
+/** En «Todas»: el estado y las dos diferencias, cada una con si se resolvió. */
+function FilaDeTodas({ bolsa, verMontos, difCorte, estadoCorte, corteSinResolver }) {
+  const est = ESTADO_DE_BOLSA[bolsa.estado];
+  const difConteo = bolsa.estado === 'CONTADA' ? diferenciaDeBolsa(bolsa) : null;
+  const texto = (v) => (Math.abs(v) < 0.01 ? 'cuadró' : `${v < 0 ? 'faltó' : 'sobró'}${verMontos ? ` ${formatMoney(Math.abs(v))}` : ''}`);
+  const pildoras = [];
+  if (est) pildoras.push({ t: est.label, c: est.variant === 'success' ? MARCA.verde : est.variant === 'warning' ? MARCA.ambar : est.variant === 'info' ? MARCA.azulClaro : colorSistema.texto2 });
+  if (typeof difCorte === 'number' && Math.abs(difCorte) >= 0.01) {
+    pildoras.push({ t: `Corte: ${texto(difCorte)}${estadoCorte ? ` · ${ESTADO_DIFERENCIA_ROTULO[estadoCorte]?.label ?? ''}` : ''}`,
+      c: corteSinResolver ? MARCA.rojo : colorSistema.texto2 });
+  }
+  if (difConteo != null && Math.abs(difConteo) >= 0.01) {
+    pildoras.push({ t: `Conteo: ${texto(difConteo)} · ${bolsa.dif_at ? 'Resuelto' : 'Sin resolver'}`, c: bolsa.dif_at ? colorSistema.texto2 : MARCA.rojo });
+  }
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      {pildoras.map((p) => <Pildora key={p.t} texto={p.t} color={p.c} />)}
+    </View>
+  );
 }
 
 function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar, userId, onResuelta }) {
@@ -189,6 +213,11 @@ export default function Bolsas() {
   const [buscar, setBuscar] = useState('');
   const [tanda, setTanda] = useState('todas');
   const [invariante, setInvariante] = useState([]);
+  // «Todas» (como el portal): las bolsas del período por fecha del CORTE, en
+  // cualquier estado, con la diferencia del corte y si se resolvió.
+  const [todas, setTodas] = useState(null);
+  const [difCortes, setDifCortes] = useState(() => new Map());
+  const [estCortes, setEstCortes] = useState(() => new Map());
   const desdeContadas = periodo === 'rango' ? rango.desde : sumarDias(hoySV(), -(Number(periodo) - 1));
   const hastaContadas = periodo === 'rango' ? rango.hasta : hoySV();
 
@@ -221,6 +250,22 @@ export default function Bolsas() {
     setContadas((contadas || []).map(conSaldo));
   }, [puedeContar, desdeContadas, hastaContadas]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+  const lecturaTodasRef = useRef(0);
+  const cargarTodas = useCallback(async () => {
+    const esta = ++lecturaTodasRef.current;
+    const [filas, cortes, estados] = await Promise.all([
+      fetchBolsas({ desde: desdeContadas, hasta: hastaContadas, estados: [] }),
+      fetchDiferenciasDeCortes({ desde: desdeContadas, hasta: hastaContadas }),
+      fetchEstadosDeDiferenciaDeCortes({ desde: desdeContadas, hasta: hastaContadas }),
+    ]);
+    if (esta !== lecturaTodasRef.current) return;
+    const saldos = await fetchSaldos((filas || []).map((b) => b.id));
+    if (esta !== lecturaTodasRef.current) return;
+    setDifCortes(cortes || new Map());
+    setEstCortes(estados || new Map());
+    setTodas((filas || []).map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
+  }, [desdeContadas, hastaContadas]);
+  useEffect(() => { if (etapa === 'todas') cargarTodas(); }, [etapa, cargarTodas]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al abrir la pestaña
   // Se pone al día sola, como en el portal: con dos o tres contando a la vez,
   // cada teléfono tiene que ver lo que hicieron los otros sin deslizar. Se
   // pausa con una bolsa abierta o una diferencia a medio resolver: cambiarle
@@ -256,11 +301,21 @@ export default function Bolsas() {
     return [...m.entries()].sort((x, y) => String(y[1]).localeCompare(String(x[1])));
   }, [contadas]);
   const contadasVistas = tanda === 'sin-resolver' ? diferencias : tanda === 'todas' ? contadas : contadas.filter((b) => String(b.conteo_id) === tanda);
-  const lista = (etapa === 'sala' ? enSala : etapa === 'camino' ? enCamino : etapa === 'contar' ? porContar : etapa === 'contadas' ? contadasVistas : diferencias).filter(pasa);
+  const lista = (etapa === 'todas' ? (todas || []) : etapa === 'sala' ? enSala : etapa === 'camino' ? enCamino : etapa === 'contar' ? porContar : etapa === 'contadas' ? contadasVistas : diferencias).filter(pasa);
+  // Diferencia del corte (`undefined` = no se pudo leer) y si queda trabajo:
+  // `resuelto` ya tiene causa y `acumulado` es un sobrante para el inventario.
+  const difDelCorte = (b) => (difCortes == null ? undefined : b.corte_id ? difCortes.get(b.corte_id) ?? null : null);
+  const estadoDelCorte = (b) => (Math.abs(difDelCorte(b) || 0) >= 0.01 ? estCortes.get(b.corte_id)?.estado || null : null);
+  const corteSinResolver = (b) => { const e = estadoDelCorte(b); return !!e && e !== 'resuelto' && e !== 'acumulado'; };
+  const conteoSinResolver = (b) => b.estado === 'CONTADA' && !b.dif_at && Math.abs(diferenciaDeBolsa(b) || 0) >= 0.01;
+  const todasVivas = lista.filter((b) => b.estado !== 'ANULADA');
+  const cortesPend = new Map();
+  for (const b of todasVivas) if (b.corte_id && corteSinResolver(b)) cortesPend.set(b.corte_id, difDelCorte(b));
+  const conteosPend = todasVivas.filter(conteoSinResolver);
   // «El corte y su bolsa»: los días cuyo efectivo declarado no llegó entero a una bolsa.
   const diasQueNoCuadran = invariante.filter((d) => (salaFiltro === 'todas' || String(d.branch_id) === salaFiltro) && Math.abs(Number(d.descuadre || 0)) >= 0.01);
   // Contar y recibir necesitan todas a la vista (se eligen y se anotan una por una).
-  const paginar = etapa === 'contadas' || etapa === 'diferencias';
+  const paginar = etapa === 'contadas' || etapa === 'diferencias' || etapa === 'todas';
   const sinRecibir = [...enSala, ...enCamino].filter(pasa);
   const { bolsa: masVieja, dias: diasMasVieja } = laMasVieja([...sinRecibir, ...porContarVistas]);
   const sinCuadrar = diferenciasVistas.reduce((a, b) => a + Math.abs(diferenciaDeBolsa(b) ?? 0), 0);
@@ -318,7 +373,7 @@ export default function Bolsas() {
         { id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
           opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set([...(bolsas || []), ...contadas, ...diferencias].map((b) => String(b.branch_id)))]
             .sort((x, y) => ordenDeSala(x) - ordenDeSala(y)).map((id) => ({ id, label: nombreDeSala(id) }))] },
-        { id: 'periodo', titulo: 'Contadas y el corte y su bolsa', activa: periodo, porDefecto: '30', onCambiar: setPeriodo,
+        { id: 'periodo', titulo: 'Todas, Contadas y el corte y su bolsa', activa: periodo, porDefecto: '30', onCambiar: setPeriodo,
           opciones: [{ id: '7', label: 'Últimos 7 días' }, { id: '30', label: 'Últimos 30 días' }, { id: '90', label: 'Últimos 90 días' }, { id: 'rango', label: 'Fechas…' }] },
         ...(etapa === 'contadas' ? [{ id: 'tanda', titulo: 'Contadas', activa: tanda, porDefecto: 'todas', onCambiar: setTanda,
           opciones: [{ id: 'todas', label: 'Todas' }, { id: 'sin-resolver', label: 'Sólo sin resolver' },
@@ -337,13 +392,30 @@ export default function Bolsas() {
           { id: 'contar', label: 'Contar' },
           { id: 'contadas', label: 'Contadas' },
           { id: 'diferencias', label: 'Cuadre' },
+          { id: 'todas', label: 'Todas' },
         ]} />
       </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await (etapa === 'todas' ? cargarTodas() : cargar()); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
-        {bolsas ? (
+        {etapa === 'todas' && todas && verMontos ? (
+          <FilaDeKpis>
+            <Kpi icono="Package" rotulo="En las bolsas" color={MARCA.azulClaro} valor={formatMoney(suma(todasVivas))}
+              apoyo={`${todasVivas.length} bolsa${todasVivas.length === 1 ? '' : 's'}`} />
+            <Kpi icono="Receipt" rotulo="Cortes" color={cortesPend.size ? MARCA.rojo : MARCA.verde} pide={cortesPend.size > 0}
+              valor={formatMoney([...cortesPend.values()].reduce((a, d) => a + (d || 0), 0))}
+              apoyo={`${cortesPend.size} sin resolver`} />
+          </FilaDeKpis>
+        ) : null}
+        {etapa === 'todas' && todas && verMontos ? (
+          <FilaDeKpis>
+            <Kpi icono="Banknote" rotulo="Conteo" color={conteosPend.length ? MARCA.rojo : MARCA.verde} pide={conteosPend.length > 0}
+              valor={formatMoney(conteosPend.reduce((a, b) => a + (diferenciaDeBolsa(b) || 0), 0))}
+              apoyo={`${conteosPend.length} sin resolver`} />
+          </FilaDeKpis>
+        ) : null}
+        {bolsas && etapa !== 'todas' ? (
           <FilaDeKpis>
             <Kpi icono="HandCoins" rotulo="Sin recibir" color={MARCA.azulClaro}
               valor={verMontos ? formatMoney(suma(sinRecibir)) : String(sinRecibir.length)}
@@ -356,7 +428,7 @@ export default function Bolsas() {
         ) : null}
         {/* La tercera va en su propia fila: tres en un teléfono cortan los
             rótulos («Sin rec…»). */}
-        {bolsas ? (
+        {bolsas && etapa !== 'todas' ? (
           <FilaDeKpis>
             <Kpi icono="AlertTriangle" rotulo="Sin cuadrar" color={diferenciasVistas.length ? MARCA.rojo : MARCA.verde} pide={diferenciasVistas.length > 0}
               valor={verMontos && diferenciasVistas.length ? formatMoney(sinCuadrar) : String(diferenciasVistas.length)}
@@ -364,7 +436,7 @@ export default function Bolsas() {
               onPress={diferenciasVistas.length ? () => { setEtapa('diferencias'); setElegidas(new Set()); } : undefined} />
           </FilaDeKpis>
         ) : null}
-        {bolsas && verCards ? (
+        {bolsas && verCards && etapa !== 'todas' ? (
           <FilaDeKpis>
             <Kpi icono="ShieldCheck" rotulo="El corte y su bolsa" color={diasQueNoCuadran.length ? MARCA.rojo : MARCA.verde} pide={diasQueNoCuadran.length > 0}
               valor={String(diasQueNoCuadran.length)}
@@ -400,7 +472,8 @@ export default function Bolsas() {
         {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
           {[
-            etapa === 'sala' ? 'En la sucursal, esperando que la entreguen' : etapa === 'camino' ? 'Entregadas, esperando recepción'
+            etapa === 'todas' ? `Por fecha del corte ${periodo === 'rango' ? `del ${dia(rango.desde)} al ${dia(rango.hasta)}` : `de los últimos ${periodo} días`}`
+              : etapa === 'sala' ? 'En la sucursal, esperando que la entreguen' : etapa === 'camino' ? 'Entregadas, esperando recepción'
               : etapa === 'contar' ? `Por contar · ${marcadas.length} de ${porContarVistas.length} anotadas` : etapa === 'contadas' ? (tanda === 'sin-resolver' ? 'Contadas sin resolver (de cualquier fecha)' : `Contadas ${periodo === 'rango' ? `del ${dia(rango.desde)} al ${dia(rango.hasta)}` : `en los últimos ${periodo} días`}`) : 'Contadas que no cuadraron',
             `${lista.length} bolsa${lista.length === 1 ? '' : 's'}`,
             verMontos && lista.length ? formatMoney(suma(lista)) : null,
@@ -422,7 +495,7 @@ export default function Bolsas() {
               deshabilitado={!!ocupado} onPress={() => recibir(elegidasVistas.length ? elegidasVistas : enCaminoVistas.map((b) => b.id))} />
           </View>
         ) : null}
-        {bolsas == null ? <Cargando /> : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
+        {bolsas == null || (etapa === 'todas' && todas == null) ? <Cargando /> : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
           <View key={sala} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginHorizontal: 20, marginTop: 6 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{nombreDeSala(sala)}</Text>
@@ -457,6 +530,10 @@ export default function Bolsas() {
                     {etapa === 'contar' && puedeContar
                       ? <Contar bolsa={b} verMontos={verMontos} ocupado={ocupado === b.id || ocupado === 'confirmar'} onMarcar={marcar} onDesmarcar={desmarcar} userId={user?.id} onResuelta={cargar} />
                       : null}
+                    {etapa === 'todas' ? (
+                      <FilaDeTodas bolsa={b} verMontos={verMontos} difCorte={difDelCorte(b)} estadoCorte={estadoDelCorte(b)}
+                        corteSinResolver={corteSinResolver(b)} />
+                    ) : null}
                     {etapa === 'contadas' && dif != null && Math.abs(dif) >= 0.01 ? (
                       <Pildora texto={`${dif > 0 ? 'Sobraron' : 'Faltaron'} ${formatMoney(Math.abs(dif))}`} color={MARCA.ambar} />
                     ) : null}
@@ -493,15 +570,15 @@ export default function Bolsas() {
             <BotonGrande borde texto={`Ver ${Math.min(POR_PAGINA, lista.length - cuantos)} más · quedan ${lista.length - cuantos}`} onPress={() => setCuantos((n) => n + POR_PAGINA)} />
           </View>
         ) : null}
-        {bolsas && !lista.length ? (
+        {bolsas && !lista.length && (etapa !== 'todas' || todas) ? (
           <Vacio>
-            {etapa === 'sala' ? 'Ninguna bolsa en las sucursales' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'
+            {etapa === 'todas' ? 'Sin bolsas en estas fechas' : etapa === 'sala' ? 'Ninguna bolsa en las sucursales' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'
               : etapa === 'contadas' ? 'Ninguna contada en ese período' : 'Sin diferencias por resolver'}
           </Vacio>
         ) : null}
       </ScrollView>
       <DetalleDeBolsa bolsa={abierta} sala={abierta ? nombreDeSala(abierta.branch_id) : ''} verMontos={verMontos} onCerrar={() => setAbierta(null)}
-        onCambio={cargar} cerradaPor={abierta ? (quien(abierta.cerrada_por) || '') : ''} />
+        onCambio={() => { cargar(); if (etapa === 'todas') cargarTodas(); }} cerradaPor={abierta ? (quien(abierta.cerrada_por) || '') : ''} />
     </>
   );
 }

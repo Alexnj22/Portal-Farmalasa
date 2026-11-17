@@ -22,7 +22,12 @@ import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { anularBolsa, anularLaSalidaDeBolsa, fetchEventosDeBolsa, fetchSalidasDeBolsa } from '@nucleo/data/bolsas';
+import {
+  anularBolsa, anularLaSalidaDeBolsa, fetchDiferenciaDeUnCorte, fetchEstadosDeDiferenciaDeCortes, fetchEventosDeBolsa, fetchSalidasDeBolsa,
+} from '@nucleo/data/bolsas';
+import { diferenciaDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { ESTADO_DIFERENCIA_ROTULO, VIA_LARGO } from '@nucleo/utils/diferenciasDeCaja';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ACCION_DE_BOLSA, COMO_SE_IDENTIFICO } from '@nucleo/utils/bolsasTexto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
@@ -96,6 +101,32 @@ function Salida({ s, puedeAnular, onAnular, onReimprimir }) {
   );
 }
 
+/* Dos diferencias que NO son la misma (usuario, 2026-11-17, igual que el
+ * portal): la del corte es la caja contra el tiquete; la del conteo, la bolsa
+ * contra lo que debía haber. Resuelta o acumulada ya no se pinta como falta. */
+function Diferencia({ rotulo, valor, vacio, estado, primero }) {
+  const hay = typeof valor === 'number';
+  const cuadra = hay && Math.abs(valor) < 0.01;
+  const tranquila = estado === 'resuelto' || estado === 'acumulado';
+  const rot = estado ? ESTADO_DIFERENCIA_ROTULO[estado] : null;
+  const color = cuadra ? MARCA.verde : tranquila ? colorSistema.texto2 : valor < 0 ? MARCA.rojo : MARCA.ambar;
+  return (
+    <View style={{ gap: 6, paddingTop: primero ? 0 : 9, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>{rotulo}</Text>
+        <Text style={{ color: hay ? color : colorSistema.texto2, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+          {valor === undefined ? 'Sin dato' : !hay ? vacio : cuadra ? 'Cuadró' : `${valor < 0 ? 'Faltó' : 'Sobró'} ${formatMoney(Math.abs(valor))}`}
+        </Text>
+      </View>
+      {hay && !cuadra && rot ? (
+        <View style={{ alignSelf: 'flex-end' }}>
+          <Pildora texto={rot.label} color={tranquila ? MARCA.verde : MARCA.rojo} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar, onCambio, cerradaPor = '' }) {
   const puedeEditar = useAuth().hasPermission('bolsas', 'can_edit');
   const [salidas, setSalidas] = useState(null);
@@ -103,12 +134,20 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
   const [anulando, setAnulando] = useState(null);   // { tipo: 'bolsa' } | { tipo: 'salida', operacionId, folio }
   const [motivo, setMotivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [difCorte, setDifCorte] = useState(null);
+  const [corte, setCorte] = useState(null);   // { estado, resoluciones }
 
   const cargar = useCallback(async () => {
     if (!bolsa) return;
     setSalidas(null);
-    const [s, e] = await Promise.all([fetchSalidasDeBolsa(bolsa.id), fetchEventosDeBolsa(bolsa.id)]);
+    setDifCorte(null); setCorte(null);
+    const [s, e, dc, est] = await Promise.all([
+      fetchSalidasDeBolsa(bolsa.id), fetchEventosDeBolsa(bolsa.id),
+      fetchDiferenciaDeUnCorte({ corteId: bolsa.corte_id, branchId: bolsa.branch_id, fecha: bolsa.fecha }),
+      bolsa.corte_id ? fetchEstadosDeDiferenciaDeCortes({ desde: bolsa.fecha, hasta: bolsa.fecha }) : null,
+    ]);
     setSalidas(s || []); setEventos(e || []);
+    setDifCorte(dc); setCorte(est?.get(bolsa.corte_id) || null);
   }, [bolsa]);
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -116,6 +155,8 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
   const guardado = Number(bolsa?.monto_inicial || 0);
   const saldo = guardado + vivas.reduce((a, s) => a + Number(s.monto || 0), 0);
   const enLaSala = bolsa?.estado === 'ABIERTA';
+  const difConteo = bolsa?.estado === 'CONTADA' ? diferenciaDeBolsa(bolsa) : null;
+  const conDifCorte = Math.abs(difCorte || 0) >= 0.01;
 
   const reimprimir = async (s) => {
     trabajando('Mandando el vale…');
@@ -148,13 +189,39 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
     <Modal visible={!!bolsa} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       {bolsa ? (
         <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
-          <EncabezadoDeHoja titulo={bolsa.folio} subtitulo={`${sala} · corte del ${fechaNumerica(bolsa.fecha, { vacio: '' })} ${hora12(bolsa.hora)}`} onCerrar={onCerrar} />
+          <EncabezadoDeHoja titulo={`${sala} · ${fechaNumerica(bolsa.fecha, { vacio: '' })}`}
+            subtitulo={[`Corte de las ${hora12(bolsa.hora)}`, bolsa.caja].filter(Boolean).join(' · ')} onCerrar={onCerrar} />
           <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}>
             {verMontos ? (
               <Seccion titulo="El dinero">
                 <Dato primero rotulo="Se guardó" valor={formatMoney(guardado)} />
                 {vivas.length ? <Dato rotulo={`Salió en ${vivas.length} ${vivas.length === 1 ? 'vale' : 'vales'}`} valor={`−${formatMoney(Math.abs(saldo - guardado))}`} /> : null}
                 <Dato rotulo="Efectivo que debe haber" valor={formatMoney(saldo)} fuerte />
+              </Seccion>
+            ) : null}
+            {verMontos ? (
+              <Seccion titulo="Las diferencias">
+                <Diferencia primero rotulo="Del corte" valor={bolsa.corte_id ? difCorte : null}
+                  vacio={bolsa.corte_id ? 'Sin conteo en el corte' : 'Sin corte'} estado={conDifCorte ? corte?.estado : null} />
+                <Diferencia rotulo="Del conteo" valor={difConteo}
+                  vacio={bolsa.estado === 'ANULADA' ? 'Anulada' : 'Todavía no se cuenta'} estado={bolsa.dif_at ? 'resuelto' : 'sin_resolver'} />
+                {bolsa.dif_causa ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Por qué no cuadró el conteo: ${bolsa.dif_causa}`}</Text> : null}
+              </Seccion>
+            ) : null}
+            {verMontos && conDifCorte && corte?.resoluciones?.length ? (
+              <Seccion titulo="Qué pasó con el corte">
+                {corte.resoluciones.map((r, i) => (
+                  <View key={r.id} style={{ gap: 2, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>
+                      {`${VIA_LARGO[r.via] || 'Resuelto'}${r.monto != null ? ` · ${formatMoney(Math.abs(Number(r.monto)))}` : ''}`}
+                    </Text>
+                    {r.causa ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{r.causa}</Text> : null}
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
+                      {[r.evidencia_ref && `Respaldo: ${r.evidencia_ref}`, r.registrado_nombre && `Lo resolvió ${shortEmployeeName(r.registrado_nombre)}`,
+                        r.registrado_at && fechaHora12(r.registrado_at)].filter(Boolean).join(' · ')}
+                    </Text>
+                  </View>
+                ))}
               </Seccion>
             ) : null}
             {salidas == null ? <Cargando /> : (

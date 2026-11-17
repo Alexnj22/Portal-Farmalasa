@@ -52,6 +52,15 @@ export const ETAPAS_DE_BOLSA = [
 ];
 
 // Los recortes de la pestaña «Todas», en la píldora de la vista. `''` = todas.
+/** Cómo se dice el estado de una bolsa (portal y app). */
+export const ESTADO_DE_BOLSA = {
+    ABIERTA:   { label: 'En la sucursal',      variant: 'info' },
+    ENTREGADA: { label: 'Esperando recepción', variant: 'warning' },
+    RECIBIDA:  { label: 'Por contar',          variant: 'warning' },
+    CONTADA:   { label: 'Contada',             variant: 'success' },
+    ANULADA:   { label: 'Anulada',             variant: 'neutral' },
+};
+
 export const FILTROS_TODAS_BOLSAS = [
     { value: '',          label: 'Todas' },
     { value: 'pendiente', label: 'Pendientes' },

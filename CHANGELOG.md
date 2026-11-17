@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.6 — Bolsas en la app: pestaña «Todas» y las dos diferencias en el detalle
+
+- «¿y la vista móvil? ¿es canónico y nativo?» (usuario, 2026-11-17). La web en
+  el teléfono ya era canónica (`DataTable` con `usarAccionDeFila`); la app del
+  personal no tenía «Todas» ni las dos diferencias.
+- App (`apps/mobile/app/bolsas.js`): segmento «Todas» con las bolsas del período
+  por fecha del corte en cualquier estado, tarjetas en dinero (en las bolsas,
+  cortes sin resolver, conteo sin resolver) y en cada bolsa su estado y las dos
+  diferencias con «Resuelto / Sin resolver». Mismo criterio que el portal:
+  `resuelto` y `acumulado` no son pendiente.
+- App (`componentes/caja/DetalleDeBolsa.js`): título con sucursal y día (sin
+  folio), sección «Las diferencias» (del corte y del conteo, con su estado) y
+  «Qué pasó con el corte» con la causa, el respaldo y quién lo resolvió.
+- `ESTADO_DE_BOLSA` pasa a `src/constants/bolsas.js` para que portal y app
+  digan lo mismo.
+- Novedades: no — mejora de una pantalla que ya existía.
+
 ## v2.1573.5 — Kiosco de caja: el carné abre la sesión de quien lo pasa, y se elige antes de pasarlo
 
 - Reportado en Salud 4: al pasar el carné de Idalia salía la foto del

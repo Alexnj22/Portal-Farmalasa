@@ -125,7 +125,7 @@ function Accion({ k, grande = false, activa, onClick }) {
 
 // Elegido lo que se va a hacer, se pide quién es: el carné por el lector o,
 // sin carné, usuario y contraseña (pedido del usuario, 2026-11-17).
-function Acceso({ titulo, icono: Icono, entrando, aviso, conClave, setConClave, onClave, onVolver }) {
+function Acceso({ titulo, icono: Icono, entrando, aviso, conClave, setConClave, onClave, onVolver, previa }) {
     const [usuario, setUsuario] = useState('');
     const [clave, setClave] = useState('');
     const enviar = (e) => { e.preventDefault(); onClave(usuario.trim(), clave); };
@@ -156,6 +156,12 @@ function Acceso({ titulo, icono: Icono, entrando, aviso, conClave, setConClave, 
                         <Button variant="secondary" icon={KeyRound} onClick={() => setConClave(true)} disabled={entrando}>
                             No tengo mi carné: entrar con usuario
                         </Button>
+                        {/* Vista previa desde el portal: no hay lector, se entra con la sesión de quien mira. */}
+                        {previa && (
+                            <Button variant="ghost" onClick={() => onClave('previa', 'previa')} disabled={entrando}>
+                                Vista previa: entrar con mi sesión
+                            </Button>
+                        )}
                     </>
                 )}
             </section>
@@ -232,7 +238,6 @@ export default function CajaDelKiosco({
                                 options={['vender', 'caja'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
                                 value={vista} onChange={irA} />
                             )}
-                            {enPortal ? <Button variant="secondary" icon={ArrowLeft} onClick={onSalir}>Volver al portal</Button> : (
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2">
                                     <Anillo restante={restante} />
@@ -242,14 +247,13 @@ export default function CajaDelKiosco({
                                 </div>
                                 <Button variant="secondary" icon={LogOut} onClick={terminar}>Terminar</Button>
                             </div>
-                            )}
                         </>
                     ) : (
                         <>
                             <div className="flex items-center gap-3 min-w-0">
                                 <img src="/Logo192.png" alt="" className="w-10 h-10 object-contain" draggable="false" />
                                 <div className="leading-tight">
-                                    <p className="text-title font-bold text-content">{equipo.branchName || 'Kiosco de caja'}</p>
+                                    <p className="text-title font-bold text-content">{(enPortal ? nombreSala : equipo.branchName) || 'Kiosco de caja'}</p>
                                     <p className="text-label text-content-3 first-letter:uppercase">
                                         {fechaTexto(ahora, { weekday: 'long', day: 'numeric', month: 'long' })}
                                     </p>
@@ -308,7 +312,7 @@ export default function CajaDelKiosco({
                         ) : pedida ? (
                             <Acceso titulo={detalle ? `Cobrar la #${detalle.referencia}` : pedida.label} icono={detalle ? Receipt : pedida.icon}
                                 entrando={entrando} aviso={aviso} conClave={conClave} setConClave={setConClave}
-                                onClave={entrarConClave} onVolver={() => { setElegida(null); setAccion(null); }} />
+                                onClave={entrarConClave} onVolver={() => { setElegida(null); setAccion(null); }} previa={enPortal} />
                         ) : (
                             <div className="flex-1 flex flex-col gap-5 justify-center max-w-4xl w-full mx-auto">
                                 <div>

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.7 — Vista previa del kiosco de caja a pantalla completa
+
+- Corrección del usuario: quería ver el kiosco «como se vería en la caja», no
+  dentro del marco del portal. `/preventa/kiosco` pasa a ser una ruta fuera
+  del marco, a pantalla completa y con el estilo «Mostrador», con una barra de
+  vista previa (sucursal y salir). Se ve igual que en la sucursal: inicio,
+  pantalla de carné o usuario, cuenta regresiva y Terminar. Entrar usa la
+  sesión de quien mira (botón «Vista previa: entrar con mi sesión») y
+  Terminar no la cierra. Marcar no marca.
+- `useKioscoDeCaja`: una entrada simulada no cambiaba ningún estado y la
+  pantalla no se enteraba de que la sesión se abrió; ahora fuerza el repintado.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.6 — Kiosco de caja visible desde el portal
 
 - Pedido del usuario: ver el kiosco de caja desde su computadora. Nueva ruta

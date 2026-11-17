@@ -15,8 +15,9 @@ function leerEquipo() {
     try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null') ?? {}; } catch { return {}; }
 }
 
-// `enPortal`: la misma pantalla dentro del portal, con la sesión de quien mira:
-// sin carné, sin cuenta regresiva y sin cerrar la sesión.
+// `enPortal`: la vista previa desde el portal. Todo igual que en la sucursal
+// (inicio, carné o usuario, cuenta regresiva), pero entrar no cambia de
+// cuenta y terminar no cierra la sesión: se usa la de quien mira.
 export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo, enPortal = false }) {
     const { isAuthenticated, user, login, loginWithUsername, logout } = useAuth();
     const [, setParams] = useSearchParams();
@@ -30,8 +31,7 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
     const [restante, setRestante] = useState(INACTIVO_MS);
     const [vista, setVistaState] = useState(sesionDeCaja.vista || 'vender');
     // Mientras el carné abre la sesión, quien estaba antes NO cuenta como abierta.
-    const abierta = enPortal ? isAuthenticated
-        : isAuthenticated && sesionDeCaja.abiertaPorCarne && !(sesionDeCaja.previo && user?.id === sesionDeCaja.previo);
+    const abierta = isAuthenticated && sesionDeCaja.abiertaPorCarne && !(sesionDeCaja.previo && user?.id === sesionDeCaja.previo);
     const marcando = accion === 'marcar' || marcadorOcupado;
 
     const setVista = useCallback((v) => { sesionDeCaja.vista = v; setVistaState(v); }, []);
@@ -63,13 +63,13 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         sesionDeCaja.abiertaPorCarne = false;
         sesionDeCaja.ultimoUso = 0;
         setAccion(null);
-        if (!esDemo()) logout?.();
+        if (!esDemo() && !enPortal) logout?.();
         setTick((n) => n + 1);
-    }, [logout]);
+    }, [logout, enPortal]);
 
     // Dos minutos sin tocar nada: se cierra sola. La cuenta se ve arriba.
     useEffect(() => {
-        if (!abierta || enPortal) return undefined;
+        if (!abierta) return undefined;
         if (!sesionDeCaja.ultimoUso) sesionDeCaja.ultimoUso = Date.now();
         const usar = () => { sesionDeCaja.ultimoUso = Date.now(); };
         EVENTOS_DE_USO.forEach((ev) => window.addEventListener(ev, usar, { passive: true, capture: true }));
@@ -82,7 +82,7 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
             clearInterval(id);
             EVENTOS_DE_USO.forEach((ev) => window.removeEventListener(ev, usar, { capture: true }));
         };
-    }, [abierta, terminar, enPortal]);
+    }, [abierta, terminar]);
 
     // `cred`: el código del carné, o `{ usuario, clave }` sin carné.
     const entrar = useCallback(async (cred, destino) => {
@@ -92,11 +92,12 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         // verifica la sesión, y al volver tiene que saber que es del carné.
         sesionDeCaja.abiertaPorCarne = true;
         sesionDeCaja.ultimoUso = Date.now();
-        sesionDeCaja.previo = isAuthenticated && !esDemo() ? user?.id ?? null : null;
+        const simulado = (esDemo() || enPortal) && isAuthenticated;
+        sesionDeCaja.previo = isAuthenticated && !simulado ? user?.id ?? null : null;
         setVista(destino);
         // Muestra: la sesión es la cuenta con la que ya se entró al navegador.
         const conUsuario = typeof cred === 'object' && cred;
-        const r = esDemo() && isAuthenticated ? { ok: true }
+        const r = simulado ? { ok: true }
             : conUsuario ? await loginWithUsername(cred.usuario, cred.clave) : await login(cred);
         setEntrando(false);
         sesionDeCaja.previo = null;
@@ -105,8 +106,11 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
             setError(r?.error || (conUsuario ? 'Usuario o contraseña incorrectos.' : 'Ese carné no abrió la sesión. Intenta de nuevo.'));
         } else {
             setConClave(false);
+            // Simulado no espera nada: sin esto ningún estado cambia y la
+            // pantalla no se entera de que la sesión del kiosco se abrió.
+            setTick((n) => n + 1);
         }
-    }, [login, loginWithUsername, setVista, isAuthenticated, user?.id]);
+    }, [login, loginWithUsername, setVista, isAuthenticated, user?.id, enPortal]);
 
     // Muestra: tocar Vender o Caja entra directo, sin carné (la laptop no
     // tiene lector). Marcar sigue pidiendo el carné: escribe una marcación.
@@ -134,7 +138,7 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         return () => window.removeEventListener(EVENTO_CARNE_DEMO, f);
     }, [abierta, marcando, alLeer]);
 
-    const escuchando = !enPortal && pidiendo && !conClave && !abierta && !entrando && !marcando && !feedbackAbierto;
+    const escuchando = pidiendo && !conClave && !abierta && !entrando && !marcando && !feedbackAbierto;
     const { manual } = useCapturaDeCarne(escuchando, alLeer);
     const aviso = manual ? 'Pasa el carné por el lector. Escrito a mano no cuenta.' : error;
 

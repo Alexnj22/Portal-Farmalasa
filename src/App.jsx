@@ -748,6 +748,13 @@ function MainApp() {
         <Suspense fallback={<RouteLoadingFallback />}>
         <Routes>
             <Route path="/raw-test" element={<RawTestView />} />
+            {/* La vista previa del kiosco de caja: a pantalla completa, fuera
+                del marco del portal, como se ve en la sucursal. */}
+            <Route path="/preventa/kiosco" element={
+                isAuthenticated
+                    ? <PermissionGuard moduleKey="preventa"><KioscoEnPortalView /></PermissionGuard>
+                    : <Navigate to="/login" replace />
+            } />
             <Route path="/kiosk" element={
                 !isMobileOrApp() ? (
                     <TimeClockView setView={setView} />
@@ -1008,7 +1015,6 @@ function MainApp() {
                                     <Route path="chat-clientes" element={<PermissionGuard moduleKey="chat_clientes"><ChatClientesView /></PermissionGuard>} />
                                     <Route path="reservas" element={<PermissionGuard moduleKey="reservas"><ReservasView /></PermissionGuard>} />
                                     <Route path="preventa" element={<PermissionGuard moduleKey="preventa"><PreventaView openModal={openModal} /></PermissionGuard>} />
-                                    <Route path="preventa/kiosco" element={<PermissionGuard moduleKey="preventa"><KioscoEnPortalView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />

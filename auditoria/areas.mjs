@@ -419,8 +419,10 @@ export const AREAS = [
             // correo de Android para la prueba de la app del personal.
             'src/views/NovedadesView.jsx', 'src/constants/novedades.js', 'src/data/novedades.js',
             'public/novedades/',
+            // Lo visto, en la base (2026-11-17): sigue a la persona en cualquier dispositivo.
+            'src/hooks/useNovedadesVistas.js', 'src/components/layout/AvisoNovedades.jsx',
         ],
-        tablas: ['app_pruebas_android', 'announcements', 'notifications', 'avisos_emitidos', 'avisos_diferidos', 'push_subscriptions', 'push_dispositivos',
+        tablas: ['app_pruebas_android', 'novedades_vistas', 'announcements', 'notifications', 'avisos_emitidos', 'avisos_diferidos', 'push_subscriptions', 'push_dispositivos',
                  'resumen_manana_renglones', 'avisos_ultimo_valor',
                  'surveys', 'survey_bloques', 'survey_preguntas', 'survey_responses'],
         edge: ['send-push-notification'],

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1564.0 — Novedades: lo visto sigue a la persona y quién las vio
+
+- **Lo revisado ahora vive en la base** (`novedades_vistas`, migración
+  `20261117153604`), no en el navegador. Quien entra desde otro dispositivo ve
+  cuáles ya revisó, y la pantalla «Hay novedades» no le vuelve a salir.
+  Lo que cada navegador ya tenía se sube solo la primera vez
+  (`useNovedadesVistas`).
+- **Pestaña «Quién las vio»** (quien edita Novedades): cada persona activa con
+  cuántas revisó de las que le tocan a su cargo, filtros Sin ver / A medias /
+  Todas vistas y por cargo, y el detalle con fecha y hora de cada una.
+- Lo anterior a hoy no se puede recuperar: nunca llegó a la base.
+- Verificado en el entorno de pruebas: abrir dos novedades → 2 de 17; borrar
+  el almacenamiento del navegador y recargar → siguen 2 de 17; la pestaña
+  muestra la persona y el detalle.
+
+Novedades: no — lo decidió el usuario: es un ajuste interno.
+
 ## v2.1563.1 — App: pegar el código de un solo uso
 
 - Recuperar contraseña: el código se puede pegar, venga como venga («123 456»

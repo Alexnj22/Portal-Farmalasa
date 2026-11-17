@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Megaphone, ArrowRight } from 'lucide-react';
-import * as almacen from '../../plataforma/almacen';
+import useNovedadesVistas from '@nucleo/hooks/useNovedadesVistas';
 import { hoySV } from '@nucleo/utils/fecha';
 import { TANDAS, novedadesVisibles } from '@nucleo/constants/novedades';
 
@@ -16,26 +16,30 @@ import { TANDAS, novedadesVisibles } from '@nucleo/constants/novedades';
  *
  * Sale una vez por persona y por tanda (`TANDAS[0].id`): cuando salga la
  * próxima quincena, vuelve a salir. Desde `DESDE` (hora de El Salvador).
+ * Que ya salió se guarda en la base (`entrada:<tanda>` en `novedades_vistas`),
+ * no en el navegador: en otro dispositivo no vuelve a salir (2026-11-17).
  * `?aviso=novedades` la muestra siempre: es para revisarla.
  */
 const DESDE = '2026-11-17';
 const DURA_MS = 4200;
 const tanda = TANDAS[0];
-const clave = (empId) => `novedades-entrada:${tanda?.id}:${empId || 'anon'}`;
-const yaLaVio = (empId) => { try { return almacen.leer(clave(empId)) === '1'; } catch { return false; } };
-const marcar = (empId) => { try { almacen.guardar(clave(empId), '1'); } catch { /* vuelve a salir: no se pierde nada */ } };
+const CLAVE = `entrada:${tanda?.id}`;
 
 export default function AvisoNovedades({ empId, roleId, hasPermission, bloqueado = false }) {
     const { pathname, search } = useLocation();
     const forzado = new URLSearchParams(search).get('aviso') === 'novedades';
     const puede = hasPermission?.('novedades', 'can_view');
-    // Se decide UNA vez, al montar: después no reaparece por navegar.
-    const [toca] = useState(() => forzado || (hoySV() >= DESDE && !yaLaVio(empId) && !pathname.startsWith('/novedades')));
+    const { vistas, marcar } = useNovedadesVistas(empId);
+    // Se decide UNA vez, cuando ya se sabe qué vio: después no reaparece por navegar.
+    const [toca, setToca] = useState(null);
+    if (toca === null && (forzado || vistas !== null)) {
+        setToca(forzado || (hoySV() >= DESDE && !vistas.has(CLAVE) && !pathname.startsWith('/novedades')));
+    }
     if (!tanda || !puede || bloqueado || !toca) return null;
-    return <Entrada empId={empId} roleId={roleId} hasPermission={hasPermission} />;
+    return <Entrada roleId={roleId} hasPermission={hasPermission} onVista={() => marcar(CLAVE)} />;
 }
 
-function Entrada({ empId, roleId, hasPermission }) {
+function Entrada({ roleId, hasPermission, onVista }) {
     const navigate = useNavigate();
     const quieto = useReducedMotion();
     const [visible, setVisible] = useState(true);
@@ -44,7 +48,7 @@ function Entrada({ empId, roleId, hasPermission }) {
     const portadas = mias.filter((n) => n.media).slice(0, 3);
 
     const salir = (ir) => {
-        marcar(empId);
+        onVista();
         setVisible(false);
         if (ir) navigate('/novedades');
     };

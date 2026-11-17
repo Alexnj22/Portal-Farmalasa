@@ -1,10 +1,45 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-10T17:00:45.944Z",
+ "generado": "2026-11-17T15:39:51.348Z",
  "funciones": {
+  "_avisar_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_bolsa_por_codigo": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_bolsas_por_llevar": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_carne_a_empleado": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_destinatarios_bodega_y": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "_docs_sin_numero_control": {
    "area": "ventas",
    "por": "tablas"
+  },
+  "_ruta_puede_operar": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "_sala_que_reporta": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   },
   "abonar_diferencia_corte": {
    "area": "cortes-efectivo",
@@ -306,6 +341,11 @@
    "area": "productos",
    "por": "tablas"
   },
+  "app_cliente_codigo_intento": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
+  },
   "app_cliente_compras": {
    "area": "app-clientes",
    "por": "código"
@@ -393,7 +433,7 @@
   },
   "app_preregistro_completar_ficha": {
    "area": "app-clientes",
-   "por": "trigger"
+   "por": "tablas"
   },
   "app_preregistro_resolver": {
    "area": "app-clientes",
@@ -442,6 +482,11 @@
   "app_tratamiento_agregar": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "app_tratamiento_buscar": {
+   "area": "app-clientes",
+   "por": "manual",
+   "manual": true
   },
   "app_tratamiento_cambiar": {
    "area": "app-clientes",
@@ -517,6 +562,11 @@
    "area": "compras",
    "por": "código"
   },
+  "armar_resumen_manana": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
   "asentar_diferencias_corte": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -528,6 +578,10 @@
   "asignar_documento_a_empleados": {
    "area": "personal",
    "por": "código"
+  },
+  "asueto_nacional": {
+   "area": "horarios",
+   "por": "tablas"
   },
   "attendance_kiosko_pedido_lifecycle": {
    "area": "asistencia",
@@ -610,9 +664,24 @@
    "area": "permisos",
    "por": "nombre"
   },
+  "auth_supervisa_faltantes": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "auth_ve_costos": {
    "area": "permisos",
    "por": "nombre"
+  },
+  "auth_yo": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
+  "auth_yo_olvidar": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
   },
   "avisar_a_empleados": {
    "area": "solicitudes",
@@ -622,9 +691,18 @@
    "area": "comunicacion",
    "por": "código"
   },
+  "avisar_apertura_tardia": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
   "avisar_aperturas_de_la_manana": {
    "area": "cortes-efectivo",
    "por": "código"
+  },
+  "avisar_bolsas_entregadas_sin_recibir": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   },
   "avisar_cambios_que_no_se_quedaron": {
    "area": "solicitudes",
@@ -633,6 +711,10 @@
   "avisar_camino_del_pedido": {
    "area": "pedidos",
    "por": "trigger"
+  },
+  "avisar_ccf": {
+   "area": "ventas",
+   "por": "código"
   },
   "avisar_cierre_del_dia": {
    "area": "cortes-efectivo",
@@ -698,6 +780,11 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "avisar_faltante_resuelto": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "avisar_faltantes": {
    "area": "solicitudes",
    "por": "tablas"
@@ -722,6 +809,11 @@
   "avisar_pago_seguro_vida": {
    "area": "personal",
    "por": "cron"
+  },
+  "avisar_paquete_en_camino": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   },
   "avisar_pedidos_sin_recibir": {
    "area": "pedidos",
@@ -748,6 +840,11 @@
    "area": "pedidos",
    "por": "trigger"
   },
+  "avisar_sobrante": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "avisar_solicitudes_datos_por_vencer": {
    "area": "plataforma",
    "por": "cron"
@@ -760,9 +857,19 @@
    "area": "facturacion-dte",
    "por": "cron"
   },
+  "aviso_cambio_o_semanal": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
   "aviso_de_pedido_fallo": {
    "area": "sistema",
    "por": "tablas"
+  },
+  "aviso_valor_olvidar": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
   },
   "aviso_ventana": {
    "area": "personal",
@@ -804,6 +911,11 @@
   "bitacora_auditar": {
    "area": "bitacoras",
    "por": "trigger"
+  },
+  "bitacora_avisar_anomalias": {
+   "area": "bitacoras",
+   "por": "manual",
+   "manual": true
   },
   "bitacora_de_dinero": {
    "area": "cortes-efectivo",
@@ -857,6 +969,11 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
+  "bolsa_ajena": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "bolsa_al_descartar_corte": {
    "area": "cortes-efectivo",
    "por": "trigger"
@@ -864,6 +981,11 @@
   "bolsa_anular_operacion_nucleo": {
    "area": "cortes-efectivo",
    "por": "tablas"
+  },
+  "bolsa_llego_por_error": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   },
   "bolsa_operacion_no_anulable": {
    "area": "cortes-efectivo",
@@ -1240,6 +1362,11 @@
    "area": "app-clientes",
    "por": "tablas"
   },
+  "cliente_crear": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
   "cliente_crear_de_mostrador": {
    "area": "facturacion-dte",
    "por": "código"
@@ -1247,6 +1374,10 @@
   "cliente_es_empleado": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "cliente_es_generico": {
+   "area": "facturacion-dte",
+   "por": "tablas"
   },
   "cliente_expediente": {
    "area": "ventas",
@@ -1256,6 +1387,11 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "cliente_necesita_alta_erp": {
+   "area": "facturacion-dte",
+   "por": "tablas",
+   "manual": true
+  },
   "cliente_por_tarjeta": {
    "area": "ventas",
    "por": "código"
@@ -1264,15 +1400,9 @@
    "area": "ventas",
    "por": "código"
   },
-  "cliente_crear": {
+  "cliente_vigente": {
    "area": "facturacion-dte",
-   "por": "tablas",
-   "manual": true
-  },
-  "cliente_necesita_alta_erp": {
-   "area": "facturacion-dte",
-   "por": "tablas",
-   "manual": true
+   "por": "tablas"
   },
   "clientes_alta_erp_reintentar": {
    "area": "facturacion-dte",
@@ -1294,17 +1424,22 @@
    "por": "tablas",
    "manual": true
   },
-  "cliente_vigente": {
-   "area": "facturacion-dte",
-   "por": "tablas"
-  },
   "clientes_anotar_nacimiento": {
    "area": "facturacion-dte",
    "por": "tablas"
   },
+  "clientes_importar_de_caja": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
+  },
   "clientes_mayoristas_avisar_solicitud": {
    "area": "app-clientes",
    "por": "trigger"
+  },
+  "clientes_niveles": {
+   "area": "facturacion-dte",
+   "por": "código"
   },
   "clientes_sin_distrito_corregibles": {
    "area": "facturacion-dte",
@@ -1752,6 +1887,50 @@
    "area": "acceso",
    "por": "código"
   },
+  "cumplimiento_anular": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_cerrar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_dependientes": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_guardar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_lista": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_pestana": {
+   "area": "traslados",
+   "por": "tablas"
+  },
+  "cumplimiento_plazo": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "cumplimiento_puede_escribir": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "cumplimiento_requeridos": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_resumen": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_retiro_a_todas": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "custom_access_token_hook": {
    "area": "plataforma",
    "por": "código"
@@ -1859,6 +2038,11 @@
    "area": "traslados",
    "por": "código"
   },
+  "declarar_sobrantes": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "dejar_documento_pendiente": {
    "area": "personal",
    "por": "código"
@@ -1883,6 +2067,10 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
+  "destinatarios_de_aperturas": {
+   "area": "personal",
+   "por": "tablas"
+  },
   "destinatarios_de_cortes": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -1895,12 +2083,12 @@
    "area": "personal",
    "por": "tablas"
   },
-  "destinatarios_de_reservas": {
+  "destinatarios_de_productos": {
    "area": "personal",
    "por": "tablas"
   },
-  "destinatarios_de_productos": {
-   "area": "productos",
+  "destinatarios_de_reservas": {
+   "area": "personal",
    "por": "tablas"
   },
   "destinatarios_de_saldo_favor": {
@@ -2359,6 +2547,10 @@
    "area": "personal",
    "por": "código"
   },
+  "elegir_sala_activa": {
+   "area": "acceso",
+   "por": "código"
+  },
   "eliminar_caja_de_impresion": {
    "area": "impresion",
    "por": "código"
@@ -2399,15 +2591,15 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "encargo_cancelar_sin_pago": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "encargo_en_sucursal_crear": {
    "area": "app-clientes",
    "por": "código"
   },
   "encargo_nuevo_en_sucursal_crear": {
-   "area": "app-clientes",
-   "por": "código"
-  },
-  "encargo_cancelar_sin_pago": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -2447,6 +2639,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "encargo_ya_vendido": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "encargos_de_sucursal": {
    "area": "app-clientes",
    "por": "código"
@@ -2458,6 +2654,10 @@
   "encargos_sugerir_producto": {
    "area": "app-clientes",
    "por": "cron"
+  },
+  "encargos_ventas_candidatas": {
+   "area": "app-clientes",
+   "por": "código"
   },
   "encolar_impresion": {
    "area": "impresion",
@@ -2502,6 +2702,11 @@
   "encuesta_cliente_avisar_detractor": {
    "area": "encuestas-clientes",
    "por": "trigger"
+  },
+  "encuesta_cliente_avisar_quejas_del_dia": {
+   "area": "encuestas-clientes",
+   "por": "manual",
+   "manual": true
   },
   "encuesta_cliente_candado": {
    "area": "encuestas-clientes",
@@ -2575,6 +2780,11 @@
    "area": "encuestas-clientes",
    "por": "código"
   },
+  "encuesta_cliente_nota": {
+   "area": "encuestas-clientes",
+   "por": "manual",
+   "manual": true
+  },
   "encuesta_cliente_poblacion": {
    "area": "encuestas-clientes",
    "por": "código"
@@ -2594,6 +2804,11 @@
   "encuesta_cliente_puntaje": {
    "area": "encuestas-clientes",
    "por": "llamada"
+  },
+  "encuesta_cliente_queja": {
+   "area": "encuestas-clientes",
+   "por": "manual",
+   "manual": true
   },
   "encuesta_cliente_registrar": {
    "area": "encuestas-clientes",
@@ -2684,11 +2899,6 @@
    "area": "facturacion-dte",
    "por": "código"
   },
-  "es_nit_valido": {
-   "area": "facturacion-dte",
-   "por": "código",
-   "manual": true
-  },
   "es_inyectable": {
    "area": "ventas",
    "por": "llamada"
@@ -2700,6 +2910,11 @@
   "es_medicamento_de_tratamiento": {
    "area": "app-clientes",
    "por": "llamada"
+  },
+  "es_nit_valido": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
   },
   "es_parte_del_nombre": {
    "area": "personal",
@@ -2909,82 +3124,6 @@
    "por": "código"
   },
   "get_bitacora_resumen_mes": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_anular": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_cerrar": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_dependientes": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_guardar": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_lista": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_pestana": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_plazo": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_puede_escribir": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_requeridos": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_resumen": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "cumplimiento_retiro_a_todas": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "inyeccion_al_alcance": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "inyeccion_libro_de": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "inyeccion_libro_guardar": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "quitar_renglones_sin_salir": {
-   "area": "traslados",
-   "por": "código"
-  },
-  "regencia_anular_visita": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "regencia_de_sala": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "regencia_horas_minimas": {
-   "area": "bitacoras",
-   "por": "código"
-  },
-  "regencia_registrar_visita": {
    "area": "bitacoras",
    "por": "código"
   },
@@ -3738,6 +3877,16 @@
    "area": "ventas",
    "por": "código"
   },
+  "giro_clave": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
+  },
+  "giro_valido": {
+   "area": "facturacion-dte",
+   "por": "código",
+   "manual": true
+  },
   "guardar_carga_producto": {
    "area": "productos",
    "por": "código"
@@ -3868,6 +4017,10 @@
    "area": "inventario",
    "por": "código"
   },
+  "inyeccion_al_alcance": {
+   "area": "ventas",
+   "por": "llamada"
+  },
   "inyeccion_aplicaciones_por_nombre": {
    "area": "productos",
    "por": "llamada"
@@ -3926,6 +4079,19 @@
   },
   "inyeccion_fijar_precio": {
    "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_libro_de": {
+   "area": "ventas",
+   "por": "código"
+  },
+  "inyeccion_libro_firma": {
+   "area": "bitacoras",
+   "por": "manual",
+   "manual": true
+  },
+  "inyeccion_libro_guardar": {
+   "area": "plataforma",
    "por": "código"
   },
   "inyeccion_lote_aplicado": {
@@ -4604,6 +4770,22 @@
    "area": "comunicacion",
    "por": "trigger"
   },
+  "novedades_android_agregados": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "novedades_android_avisar": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "novedades_correo_android": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "novedades_marcar_vistas": {
+   "area": "comunicacion",
+   "por": "código"
+  },
   "nuevo_folio_de_bolsa": {
    "area": "sucursales",
    "por": "tablas"
@@ -4662,9 +4844,49 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "preventa_anular": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_cliente": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_cobro_distinto": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_cobro_turno": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_cotizar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_directa_preparar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "preventa_lista_efectiva": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "preventa_lotes": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "preventa_preparar": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "preventa_puede": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "preventa_puntos_del_cliente": {
+   "area": "facturacion-dte",
+   "por": "tablas"
   },
   "preventa_registrar": {
    "area": "app-clientes",
@@ -4673,6 +4895,10 @@
   "preventas_cerrar_facturadas": {
    "area": "app-clientes",
    "por": "cron"
+  },
+  "preventas_de_sala": {
+   "area": "app-clientes",
+   "por": "código"
   },
   "preview_metas_gasto": {
    "area": "metas",
@@ -5305,6 +5531,10 @@
    "area": "promociones",
    "por": "código"
   },
+  "quitar_renglones_sin_salir": {
+   "area": "traslados",
+   "por": "código"
+  },
   "rango_de_empleado": {
    "area": "personal",
    "por": "tablas"
@@ -5451,6 +5681,22 @@
   "refresh_sales_daily_stats": {
    "area": "ventas",
    "por": "cron"
+  },
+  "regencia_anular_visita": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "regencia_de_sala": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "regencia_horas_minimas": {
+   "area": "bitacoras",
+   "por": "llamada"
+  },
+  "regencia_registrar_visita": {
+   "area": "bitacoras",
+   "por": "código"
   },
   "registrar_bitacora": {
    "area": "sistema",
@@ -5761,6 +6007,16 @@
    "area": "pedidos",
    "por": "código"
   },
+  "resumen_manana_agregar": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
+  "resumen_manana_paso_la_hora": {
+   "area": "comunicacion",
+   "por": "manual",
+   "manual": true
+  },
   "resumen_sala_feriado": {
    "area": "horarios",
    "por": "tablas"
@@ -5845,31 +6101,72 @@
    "area": "personal",
    "por": "tablas"
   },
+  "ruta_bolsas": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_entregar_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_entregar_bolsa_con_carne": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_entregar_bolsas_de_parada": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_firma_sala_carne": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_firma_sala_exigida": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "ruta_parada_no_entregada": {
    "area": "pedidos",
    "por": "código"
+  },
+  "ruta_pedidos_exige_firma_sala": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   },
   "ruta_pedidos_firma_entrega": {
    "area": "pedidos",
    "por": "trigger"
   },
+  "ruta_recoger_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
+  "ruta_soltar_bolsa": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
+  },
   "sala_abierta_ahora": {
    "area": "sucursales",
    "por": "tablas"
+  },
+  "sala_activa_vigente": {
+   "area": "acceso",
+   "por": "código"
   },
   "sala_con_caja_abierta": {
    "area": "cortes-efectivo",
    "por": "código"
   },
   "sala_de_apoyo_vigente": {
-   "area": "acceso",
-   "por": "código"
-  },
-  "sala_activa_vigente": {
-   "area": "acceso",
-   "por": "código"
-  },
-  "elegir_sala_activa": {
    "area": "acceso",
    "por": "código"
   },
@@ -6068,6 +6365,26 @@
    "area": "facturacion-dte",
    "por": "código"
   },
+  "srs_mercado_cargar_propuestas": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "srs_mercado_lista": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "srs_mercado_por_emparejar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "srs_mercado_revisar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "srs_mercado_secretos": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "sucursal_en_conteo": {
    "area": "inventario",
    "por": "código"
@@ -6136,6 +6453,11 @@
   "toggle_producto_oculto_ventas": {
    "area": "ventas",
    "por": "código"
+  },
+  "tomar_ajuste_faltante": {
+   "area": "traslados",
+   "por": "manual",
+   "manual": true
   },
   "tomar_despacho_envio": {
    "area": "solicitudes",
@@ -6367,7 +6689,7 @@
   },
   "verificar_facturas_reclamadas": {
    "area": "compras",
-   "por": "cron"
+   "por": "tablas"
   },
   "verificar_hojas_pedido": {
    "area": "pedidos",
@@ -6408,224 +6730,6 @@
   "zero_out_product_all_branches": {
    "area": "minmax",
    "por": "código"
-  },
-  "_avisar_bolsa": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "_bolsa_por_codigo": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "_bolsas_por_llevar": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "_carne_a_empleado": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "_destinatarios_bodega_y": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "_ruta_puede_operar": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "_sala_que_reporta": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "avisar_bolsas_entregadas_sin_recibir": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "avisar_paquete_en_camino": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "bolsa_ajena": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "bolsa_llego_por_error": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_bolsas": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_entregar_bolsa": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_recoger_bolsa": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_soltar_bolsa": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_firma_sala_carne": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_firma_sala_exigida": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_pedidos_exige_firma_sala": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "auth_supervisa_faltantes": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "avisar_faltante_resuelto": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "avisar_sobrante": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "declarar_sobrantes": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_entregar_bolsas_de_parada": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "tomar_ajuste_faltante": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "auth_yo": {
-   "area": "acceso",
-   "por": "manual",
-   "manual": true
-  },
-  "auth_yo_olvidar": {
-   "area": "acceso",
-   "por": "manual",
-   "manual": true
-  },
-  "app_cliente_codigo_intento": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "app_tratamiento_buscar": {
-   "area": "app-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "ruta_entregar_bolsa_con_carne": {
-   "area": "traslados",
-   "por": "manual",
-   "manual": true
-  },
-  "bitacora_avisar_anomalias": {
-   "area": "bitacoras",
-   "por": "manual",
-   "manual": true
-  },
-  "inyeccion_libro_firma": {
-   "area": "bitacoras",
-   "por": "manual",
-   "manual": true
-  },
-  "encuesta_cliente_nota": {
-   "area": "encuestas-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "encuesta_cliente_queja": {
-   "area": "encuestas-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "encuesta_cliente_avisar_quejas_del_dia": {
-   "area": "encuestas-clientes",
-   "por": "manual",
-   "manual": true
-  },
-  "aviso_cambio_o_semanal": {
-   "area": "comunicacion",
-   "por": "manual",
-   "manual": true
-  },
-  "aviso_valor_olvidar": {
-   "area": "comunicacion",
-   "por": "manual",
-   "manual": true
-  },
-  "resumen_manana_paso_la_hora": {
-   "area": "comunicacion",
-   "por": "manual",
-   "manual": true
-  },
-  "resumen_manana_agregar": {
-   "area": "comunicacion",
-   "por": "manual",
-   "manual": true
-  },
-  "armar_resumen_manana": {
-   "area": "comunicacion",
-   "por": "manual",
-   "manual": true
-  },
-  "clientes_importar_de_caja": {
-   "area": "facturacion-dte",
-   "por": "código",
-   "manual": true
-  },
-  "giro_clave": {
-   "area": "facturacion-dte",
-   "por": "código",
-   "manual": true
-  },
-  "giro_valido": {
-   "area": "facturacion-dte",
-   "por": "código",
-   "manual": true
   }
- },
- "encargos_ventas_candidatas": {
-  "area": "app-clientes",
-  "por": "código"
- },
- "encargo_ya_vendido": {
-  "area": "app-clientes",
-  "por": "código"
  }
 }

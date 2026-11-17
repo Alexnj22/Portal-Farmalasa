@@ -11,8 +11,10 @@
  *     galería de tarjetas con la animación de cada novedad. Al tocar una se
  *     abre el detalle: la animación grande, para qué sirve y los pasos.
  *   · Las tarjetas muestran una imagen fija; la animación corre al abrirla.
- *   · Abrir una novedad la marca como revisada, en este dispositivo
- *     (comodidad, no registro).
+ *   · Abrir una novedad la marca como revisada EN LA BASE
+ *     (`novedades_vistas`, 2026-11-17): sigue a la persona en cualquier
+ *     dispositivo, y la pestaña «Quién las vio» (quien edita Novedades) dice
+ *     cuántas revisó cada persona de las que le tocan.
  *   · Cada quien ve sólo lo suyo. Qué le sale a cada cargo lo audita
  *     `npm run gate:novedades -- --reporte` (el usuario quitó «Ver como»).
  *   · Android: la app se baja de la prueba interna de Google Play. La persona
@@ -44,12 +46,13 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { EmptyState } from '../components/common/StateViews';
 import PersonaConFoto from '../components/caja/PersonaConFoto';
 import usePestanaEnUrl from '../plataforma/usePestanaEnUrl';
-import * as almacen from '../plataforma/almacen';
+import useNovedadesVistas from '@nucleo/hooks/useNovedadesVistas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaHora12 } from '@nucleo/utils/hora';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { clickable } from '@nucleo/utils/clickable';
 import {
@@ -57,7 +60,7 @@ import {
 } from '@nucleo/constants/novedades';
 import {
     registrarCorreoAndroid, fetchMiCorreoAndroid, fetchPruebasAndroid, marcarAgregadosEnPlay, mensajeDeNovedades,
-    reenviarAvisoAndroid,
+    reenviarAvisoAndroid, fetchQuienVioNovedades,
 } from '@nucleo/data/novedades';
 
 const ICONOS = {
@@ -67,15 +70,9 @@ const ICONOS = {
 
 const dia = (iso) => (iso ? fechaTexto(iso, { day: 'numeric', month: 'long' }) : '');
 
-// «Revisada» por persona y dispositivo. El id de la tanda va en la clave de
+// «Revisada» por persona, en la base. El id de la tanda va en la clave de
 // cada novedad, así una tanda nueva arranca en cero.
-const claveRevisadas = (empId) => `novedades-revisadas:${empId || 'anon'}`;
-function leerRevisadas(empId) {
-    try { return new Set(JSON.parse(almacen.leer(claveRevisadas(empId)) || '[]')); } catch { return new Set(); }
-}
-function guardarRevisadas(empId, set) {
-    try { almacen.guardar(claveRevisadas(empId), JSON.stringify([...set])); } catch { /* sin espacio: sigue en memoria */ }
-}
+const claveDe = (n) => `${n.tanda}:${n.id}`;
 
 const esAndroid = () => /android/i.test(globalThis.navigator?.userAgent || '');
 const esIphone = () => /iphone|ipad|ipod/i.test(globalThis.navigator?.userAgent || '');
@@ -103,7 +100,10 @@ export default function NovedadesView() {
 
     const pestanas = useMemo(() => [
         { key: 'novedades', label: 'Lo nuevo', icon: Sparkles },
-        ...(puedeAdministrar ? [{ key: 'android', label: 'Android', icon: Smartphone }] : []),
+        ...(puedeAdministrar ? [
+            { key: 'quien', label: 'Quién las vio', icon: Eye },
+            { key: 'android', label: 'Android', icon: Smartphone },
+        ] : []),
     ], [puedeAdministrar]);
     const [pestana, setPestana] = usePestanaEnUrl(pestanas, 'novedades');
     const [busqueda, setBusqueda] = useState('');
@@ -112,13 +112,11 @@ export default function NovedadesView() {
         <GlassViewLayout icon={Megaphone} title="Novedades" filtersContent={(
             <ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana}
                 searchValue={busqueda} onSearchChange={setBusqueda}
-                placeholder={pestana === 'android' ? 'Buscar por nombre o correo…' : 'Buscar una novedad…'} />
+                placeholder={pestana === 'android' ? 'Buscar por nombre o correo…' : pestana === 'quien' ? 'Buscar por nombre…' : 'Buscar una novedad…'} />
         )}>
-            {pestana === 'android'
-                ? <PruebaAndroid busqueda={busqueda} />
-                : (
-                    <LoNuevo user={user} ctx={ctx} cargo={cargoVisto} busqueda={busqueda} />
-                )}
+            {pestana === 'android' && <PruebaAndroid busqueda={busqueda} />}
+            {pestana === 'quien' && <QuienLasVio busqueda={busqueda} />}
+            {pestana === 'novedades' && <LoNuevo user={user} ctx={ctx} cargo={cargoVisto} busqueda={busqueda} />}
         </GlassViewLayout>
     );
 }
@@ -128,14 +126,15 @@ export default function NovedadesView() {
 function LoNuevo({ user, ctx, cargo, busqueda }) {
     const empId = user?.id;
     const [tema, setTema] = useState('todos');
-    const [revisadas, setRevisadas] = useState(() => leerRevisadas(empId));
+    const { vistas, marcar } = useNovedadesVistas(empId);
+    const revisadas = vistas ?? new Set();
     const [abierta, setAbierta] = useState(null);
     const tandas = useMemo(() => novedadesVisibles(ctx), [ctx]);
     const todas = useMemo(() => tandas.flatMap((t) => t.novedades.map((n) => ({ ...n, tanda: t.id }))), [tandas]);
     const app = todas.find((n) => n.especial === 'app-personal');
     const galeria = todas.filter((n) => n.especial !== 'app-personal');
 
-    const clave = (n) => `${n.tanda}:${n.id}`;
+    const clave = claveDe;
     const filtrar = (n) => (tema === 'todos' || n.tema === tema)
         && (!busqueda.trim() || tokenMatch(busqueda, n.titulo, n.resumen, n.donde, ...(n.pasos || [])));
     const visibles = galeria.filter(filtrar);
@@ -147,11 +146,7 @@ function LoNuevo({ user, ctx, cargo, busqueda }) {
     // Abrir una novedad la da por revisada (también al pasar con anterior/siguiente).
     const ver = (n) => {
         setAbierta(n.id);
-        if (revisadas.has(clave(n))) return;
-        const sig = new Set(revisadas);
-        sig.add(clave(n));
-        setRevisadas(sig);
-        guardarRevisadas(empId, sig);
+        if (!revisadas.has(clave(n))) marcar(clave(n));
     };
 
     // El aviso «ya puedes descargarla» trae aquí con `?app=android`.
@@ -489,6 +484,168 @@ function AppPersonal({ user, destacar }) {
                 </div>
             </div>
         </section>
+    );
+}
+
+// ── Quién las vio (administración) ─────────────────────────────────────────
+//
+// Cuántas de las novedades que LE TOCAN revisó cada persona activa. Qué le
+// toca sale de `novedadesVisibles` con los permisos de su cargo, la misma
+// regla que arma su pantalla. Sólo cuenta a quien puede abrir Novedades.
+
+const COLUMNAS_QUIEN = [
+    { key: 'persona', label: 'Persona' },
+    { key: 'sucursal', label: 'Sucursal', hideBelow: 'md' },
+    { key: 'cargo', label: 'Cargo', hideBelow: 'lg' },
+    { key: 'revisadas', label: 'Revisadas' },
+    { key: 'ultima', label: 'Última vez', hideBelow: 'md' },
+];
+
+const ESTADOS_QUIEN = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'sin', label: 'Sin ver' },
+    { value: 'medias', label: 'A medias' },
+    { value: 'completas', label: 'Todas vistas' },
+];
+
+function QuienLasVio({ busqueda }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const branches = useStaffStore((s) => s.branches);
+    const [datos, setDatos] = useState(null);
+    const [estado, setEstado] = useState('todos');
+    const [cargo, setCargo] = useState('');
+    const [abierta, setAbierta] = useState(null);
+
+    useEffect(() => {
+        let vivo = true;
+        fetchQuienVioNovedades()
+            .then((d) => { if (vivo) setDatos(d); })
+            .catch((e) => { if (vivo) { setDatos({ empleados: [], vistas: [], permisos: {}, cargos: [] }); showToast('No se pudo cargar', mensajeDeNovedades(e), 'error'); } });
+        return () => { vivo = false; };
+    }, [showToast]);
+
+    const filas = useMemo(() => {
+        if (!datos) return [];
+        const cargos = new Map(datos.cargos.map((c) => [c.id, c]));
+        const porPersona = new Map();
+        for (const v of datos.vistas) {
+            if (!porPersona.has(v.employee_id)) porPersona.set(v.employee_id, new Map());
+            porPersona.get(v.employee_id).set(v.clave, v.visto_at);
+        }
+        const cache = new Map();
+        const deCargo = (roleId) => {
+            if (!cache.has(roleId)) {
+                const su = !!cargos.get(roleId)?.is_su;
+                const perms = datos.permisos[roleId] ?? {};
+                const puede = (m, nivel = 'can_view') => su || !!perms[m]?.[nivel];
+                const lista = puede('novedades')
+                    ? novedadesVisibles({ roleId, puede }).flatMap((t) => t.novedades.map((n) => ({ ...n, tanda: t.id })))
+                        .filter((n) => n.especial !== 'app-personal')
+                    : null;
+                cache.set(roleId, lista);
+            }
+            return cache.get(roleId);
+        };
+        return datos.empleados.map((e) => {
+            const lista = deCargo(e.role_id);
+            if (!lista) return null;
+            const suyas = porPersona.get(e.id) ?? new Map();
+            const vistas = lista.filter((n) => suyas.has(claveDe(n)));
+            const ultima = [...suyas.values()].sort().at(-1) ?? null;
+            return {
+                ...e, lista, suyas, hechas: vistas.length, total: lista.length, ultima,
+                cargo: cargos.get(e.role_id)?.name ?? '—',
+            };
+        }).filter(Boolean);
+    }, [datos]);
+
+    const opcionesCargo = useMemo(() => [...new Set(filas.map((f) => f.cargo))].sort().map((c) => ({ value: c, label: c })), [filas]);
+    const cuenta = (k) => filas.filter((f) => k === 'todos' || estadoDe(f) === k).length;
+    const visibles = filas
+        .filter((f) => estado === 'todos' || estadoDe(f) === estado)
+        .filter((f) => !cargo || f.cargo === cargo)
+        .filter((f) => !busqueda.trim() || tokenMatch(busqueda, f.name))
+        .sort((a, b) => (a.hechas / (a.total || 1)) - (b.hechas / (b.total || 1)) || a.name.localeCompare(b.name));
+    const sala = (id) => (branches ?? []).find((b) => b.id === id)?.name ?? '—';
+    const actual = abierta ? filas.find((f) => f.id === abierta) : null;
+
+    return (
+        <div className="p-4 md:p-6 flex flex-col gap-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <SegmentedControl size="sm" value={estado} onChange={setEstado}
+                    options={ESTADOS_QUIEN.map((o) => ({ value: o.value, label: `${o.label} ${cuenta(o.value)}` }))} />
+                <div className="w-full sm:w-64">
+                    <LiquidSelect value={cargo} onChange={(v) => setCargo(v || '')} options={opcionesCargo}
+                        placeholder="Todos los cargos" icon={Users} clearable compact />
+                </div>
+            </div>
+
+            <DataTable columns={COLUMNAS_QUIEN} loading={datos === null} minWidth="720px" movil={{ usarAccionDeFila: true }}
+                empty={{ icon: Eye, message: 'Nadie con ese filtro', subtext: 'Prueba con Todos o borra la búsqueda.' }}>
+                {visibles.map((f, i) => (
+                    <DataRow key={f.id} index={i} onClick={() => setAbierta(f.id)}>
+                        <DataCell>
+                            <PersonaConFoto id={f.id} nombre={shortEmployeeName(f.name || '')} px={28} />
+                        </DataCell>
+                        <DataCell>{sala(f.branch_id)}</DataCell>
+                        <DataCell>{f.cargo}</DataCell>
+                        <DataCell><Avance hechas={f.hechas} total={f.total} /></DataCell>
+                        <DataCell>
+                            <span className="text-body-sm text-content-2 tabular-nums">{f.ultima ? fechaHora12(f.ultima) : 'Nunca'}</span>
+                        </DataCell>
+                    </DataRow>
+                ))}
+            </DataTable>
+
+            {actual && <DetalleDePersona f={actual} sala={sala(actual.branch_id)} onCerrar={() => setAbierta(null)} />}
+        </div>
+    );
+}
+
+function estadoDe(f) {
+    if (f.hechas === 0) return 'sin';
+    return f.hechas >= f.total ? 'completas' : 'medias';
+}
+
+function Avance({ hechas, total }) {
+    const pct = total ? Math.round((hechas / total) * 100) : 0;
+    const variante = hechas === 0 ? 'bg-danger-solid' : hechas >= total ? 'bg-success-solid' : 'bg-warning-solid';
+    return (
+        <div className="flex items-center gap-3 min-w-[9rem]">
+            <div className="h-2 flex-1 rounded-full bg-surface-card-hover overflow-hidden" aria-hidden>
+                <div className={`h-full rounded-full ${variante}`} style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-body-sm font-semibold text-content tabular-nums shrink-0">{hechas} de {total}</span>
+        </div>
+    );
+}
+
+function DetalleDePersona({ f, sala, onCerrar }) {
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-2xl" ariaLabel={`Novedades de ${shortEmployeeName(f.name || '')}`}>
+            <LiquidModal.Header titulo={shortEmployeeName(f.name || '')} subtitulo={`${f.cargo} · ${sala}`} icono={Eye} onClose={onCerrar} />
+            <LiquidModal.Body>
+                <div className="flex flex-col gap-4">
+                    <Avance hechas={f.hechas} total={f.total} />
+                    <ul className="flex flex-col divide-y divide-border-subtle">
+                        {f.lista.map((n) => {
+                            const cuando = f.suyas.get(claveDe(n));
+                            return (
+                                <li key={claveDe(n)} className="flex items-center justify-between gap-3 py-3">
+                                    <span className="text-body text-content min-w-0">{n.titulo}</span>
+                                    {cuando
+                                        ? <Badge variant="success" icon={Check} uppercase={false}>{fechaHora12(cuando)}</Badge>
+                                        : <Badge variant="warning" uppercase={false}>Sin ver</Badge>}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            </LiquidModal.Body>
+            <PieDeModal>
+                <Button icon={Check} onClick={onCerrar}>Listo</Button>
+            </PieDeModal>
+        </LiquidModal>
     );
 }
 

@@ -10,6 +10,7 @@ import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 import { updateCustomerFiscal, pushClienteAlErp } from './customers';
 import { fetchRolePermissionsForRoles } from './permissions';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 const ERRORES = {
     CORREO_INVALIDO: 'Revisa el correo: debe verse como nombre@gmail.com.',
@@ -101,4 +102,59 @@ export async function fetchPermisosDeCargo(roleId) {
     const mapa = {};
     for (const p of data ?? []) mapa[p.module_key] = { can_view: !!p.can_view, can_edit: !!p.can_edit, can_approve: !!p.can_approve };
     return mapa;
+}
+
+// ── Novedades vistas (2026-11-17) ──────────────────────────────────────────
+// Lo visto vive en la base (`novedades_vistas`), no en el navegador: así sigue
+// a la persona en cualquier dispositivo y administración sabe quién vio qué.
+// Clave: `<tanda>:<novedad>`, y `entrada:<tanda>` para la pantalla de inicio.
+
+/** Las claves que ya vio este empleado. */
+export async function fetchMisVistas(employeeId) {
+    if (!employeeId) return new Set();
+    const { data, error } = await supabase.from('novedades_vistas')
+        .select('clave').eq('employee_id', employeeId).limit(500);
+    if (error) throw error;
+    return new Set((data ?? []).map((r) => r.clave));
+}
+
+/** Marca como vistas (la firma la pone la base). Devuelve cuántas eran nuevas. */
+export async function marcarVistas(claves) {
+    const lista = [...new Set((claves ?? []).filter(Boolean))];
+    if (!lista.length) return 0;
+    const { data, error } = await supabase.rpc('novedades_marcar_vistas', { p_claves: lista });
+    if (error) throw error;
+    return data ?? 0;
+}
+
+/**
+ * Para «Quién las vio»: el personal activo, lo que vio cada uno y los permisos
+ * de cada cargo (qué novedades le tocan sale de `novedadesVisibles`).
+ */
+export async function fetchQuienVioNovedades() {
+    const [emp, vistas, roles] = await Promise.all([
+        fetchAllRows(() => supabase.from('employees')
+            .select('id, name, role_id, branch_id').eq('status', 'ACTIVO').order('name'), { completo: true }),
+        fetchAllRows(() => supabase.from('novedades_vistas')
+            .select('employee_id, clave, visto_at').order('employee_id').order('clave'), { completo: true }),
+        // `roles` es tabla chica (<1000): va entera.
+        supabase.from('roles').select('id, name, is_su'),
+    ]);
+    if (roles.error) throw roles.error;
+    if (!emp || !vistas) throw new Error('No se pudo leer la lista completa.');
+    const cargos = [...new Set(emp.map((e) => e.role_id).filter((r) => r != null))];
+    // ~1,800 filas con todos los cargos: pasa el techo de 1000, va paginado.
+    const perms = cargos.length
+        ? await fetchAllRows(() => supabase.from('role_permissions')
+            .select('role_id, module_key, can_view, can_edit, can_approve')
+            .in('role_id', cargos).order('role_id').order('module_key'), { completo: true })
+        : [];
+    if (!perms) throw new Error('No se pudieron leer los permisos de los cargos.');
+    const permisos = {};
+    for (const p of perms) {
+        (permisos[p.role_id] ??= {})[p.module_key] = { can_view: !!p.can_view, can_edit: !!p.can_edit, can_approve: !!p.can_approve };
+    }
+    // Por el cargo principal: un cargo secundario puede sumarle alguna novedad
+    // que aquí no se cuenta.
+    return { empleados: emp, vistas, permisos, cargos: roles.data ?? [] };
 }

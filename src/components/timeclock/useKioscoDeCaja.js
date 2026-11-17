@@ -10,19 +10,19 @@ import { esDemo, EVENTO_CARNE_DEMO } from './demoDelKiosco';
 // dos diseños del kiosco mientras se elige uno (2026-11-17).
 
 const EVENTOS_DE_USO = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
-const ELEGIR_MS = 20_000;
 
 function leerEquipo() {
     try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null') ?? {}; } catch { return {}; }
 }
 
 export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo }) {
-    const { isAuthenticated, user, login, logout } = useAuth();
+    const { isAuthenticated, user, login, loginWithUsername, logout } = useAuth();
     const [, setParams] = useSearchParams();
     const [equipo] = useState(leerEquipo);
     const [accion, setAccion] = useState(null);
     const [, setTick] = useState(0);
-    const [pendiente, setPendiente] = useState(null);
+    // Sin carné a mano: entrar con usuario y contraseña (el lector se apaga).
+    const [conClave, setConClave] = useState(false);
     const [entrando, setEntrando] = useState(false);
     const [error, setError] = useState(null);
     const [restante, setRestante] = useState(INACTIVO_MS);
@@ -56,13 +56,6 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         return () => clearTimeout(t);
     }, [feedbackAbierto, marcadorOcupado]);
 
-    // Un carné leído sin elegir nada espera 20 s; después se olvida.
-    useEffect(() => {
-        if (!pendiente) return undefined;
-        const t = setTimeout(() => setPendiente(null), ELEGIR_MS);
-        return () => clearTimeout(t);
-    }, [pendiente]);
-
     const terminar = useCallback(() => {
         sesionDeCaja.abiertaPorCarne = false;
         sesionDeCaja.ultimoUso = 0;
@@ -88,8 +81,8 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         };
     }, [abierta, terminar]);
 
-    const entrar = useCallback(async (codigo, destino) => {
-        setPendiente(null);
+    // `cred`: el código del carné, o `{ usuario, clave }` sin carné.
+    const entrar = useCallback(async (cred, destino) => {
         setEntrando(true);
         setError(null);
         // Se marca ANTES de entrar: el portal desmonta el kiosco mientras
@@ -99,14 +92,18 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         sesionDeCaja.previo = isAuthenticated && !esDemo() ? user?.id ?? null : null;
         setVista(destino);
         // Muestra: la sesión es la cuenta con la que ya se entró al navegador.
-        const r = esDemo() && isAuthenticated ? { ok: true } : await login(codigo);
+        const conUsuario = typeof cred === 'object' && cred;
+        const r = esDemo() && isAuthenticated ? { ok: true }
+            : conUsuario ? await loginWithUsername(cred.usuario, cred.clave) : await login(cred);
         setEntrando(false);
         sesionDeCaja.previo = null;
         if (!r?.ok) {
             sesionDeCaja.abiertaPorCarne = false;
-            setError(r?.error || 'Ese carné no abrió la sesión. Intenta de nuevo.');
+            setError(r?.error || (conUsuario ? 'Usuario o contraseña incorrectos.' : 'Ese carné no abrió la sesión. Intenta de nuevo.'));
+        } else {
+            setConClave(false);
         }
-    }, [login, setVista, isAuthenticated, user?.id]);
+    }, [login, loginWithUsername, setVista, isAuthenticated, user?.id]);
 
     // Muestra: tocar Vender o Caja entra directo, sin carné (la laptop no
     // tiene lector). Marcar sigue pidiendo el carné: escribe una marcación.
@@ -114,21 +111,17 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         const valor = typeof v === 'function' ? v(accion) : v;
         if (esDemo() && (valor === 'vender' || valor === 'caja')) { entrar('DEMO', valor); return; }
         setError(null);
+        setConClave(false);
         setAccion(valor);
     }, [accion, entrar]);
 
-    // Primero se elige y después se pasa el carné (pedido del usuario,
-    // 2026-11-17: «escanear y seleccionar es poco práctico»). Un carné sin
-    // elección no abre nada: se pide elegir.
-    const alLeer = useCallback((codigo) => {
-        if (accion === 'vender' || accion === 'caja') entrar(codigo, accion);
-        else setError('Primero toca qué vas a hacer: Vender, Caja o Marcar.');
-    }, [accion, entrar]);
-
-    const elegirDespues = useCallback((destino) => {
-        if (destino === 'marcar') { setPendiente(null); setAccion('marcar'); return; }
-        if (pendiente) entrar(pendiente, destino);
-    }, [pendiente, entrar]);
+    // Primero se elige y AHÍ se pide el carné (pedido del usuario,
+    // 2026-11-17): en la pantalla principal el lector no escucha.
+    const pidiendo = accion === 'vender' || accion === 'caja';
+    const alLeer = useCallback((codigo) => { if (pidiendo) entrar(codigo, accion); }, [pidiendo, accion, entrar]);
+    const entrarConClave = useCallback((usuario, clave) => {
+        if (pidiendo && usuario && clave) entrar({ usuario, clave }, accion);
+    }, [pidiendo, accion, entrar]);
 
     // Muestra: un botón hace de carné.
     useEffect(() => {
@@ -138,12 +131,13 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         return () => window.removeEventListener(EVENTO_CARNE_DEMO, f);
     }, [abierta, marcando, alLeer]);
 
-    const escuchando = !abierta && !entrando && !marcando && !feedbackAbierto && !pendiente;
+    const escuchando = pidiendo && !conClave && !abierta && !entrando && !marcando && !feedbackAbierto;
     const { manual } = useCapturaDeCarne(escuchando, alLeer);
     const aviso = manual ? 'Pasa el carné por el lector. Escrito a mano no cuenta.' : error;
 
     return {
-        user, equipo, abierta, marcando, accion, setAccion: elegir, pendiente, setPendiente,
-        entrando, aviso, restante, vista, setVista, terminar, elegirDespues,
+        user, equipo, abierta, marcando, accion, setAccion: elegir,
+        entrando, aviso, restante, vista, setVista, terminar,
+        conClave, setConClave: (v) => { setError(null); setConClave(v); }, entrarConClave,
     };
 }

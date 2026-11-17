@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useState } from 'react';
-import { ArrowLeft, ChevronRight, Clock3, LogOut, Receipt, RefreshCw, ShoppingCart, Wallet, WifiOff, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Clock3, KeyRound, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, Wallet, WifiOff, X } from 'lucide-react';
+import PortalInput from '../common/PortalInput';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
@@ -122,12 +123,52 @@ function Accion({ k, grande = false, activa, onClick }) {
     );
 }
 
+// Elegido lo que se va a hacer, se pide quién es: el carné por el lector o,
+// sin carné, usuario y contraseña (pedido del usuario, 2026-11-17).
+function Acceso({ titulo, icono: Icono, entrando, aviso, conClave, setConClave, onClave, onVolver }) {
+    const [usuario, setUsuario] = useState('');
+    const [clave, setClave] = useState('');
+    const enviar = (e) => { e.preventDefault(); onClave(usuario.trim(), clave); };
+    return (
+        <div className="flex-1 flex flex-col justify-center w-full max-w-md mx-auto gap-5">
+            <Button variant="ghost" icon={ArrowLeft} onClick={onVolver} disabled={entrando} className="self-start">Volver</Button>
+            <section data-surface="card" className="p-6 flex flex-col gap-5">
+                <div className="flex items-center gap-3">
+                    <span className="w-11 h-11 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center">
+                        <Icono size={22} aria-hidden="true" />
+                    </span>
+                    <h1 className="text-title-lg font-black text-content">{titulo}</h1>
+                </div>
+                {conClave ? (
+                    <form onSubmit={enviar} className="flex flex-col gap-3">
+                        <PortalInput label="Usuario" name="usuario" autoComplete="username" value={usuario} autoFocus
+                            onChange={(e) => setUsuario(e.target.value)} disabled={entrando} />
+                        <PortalInput label="Contraseña" name="clave" type="password" autoComplete="current-password" value={clave}
+                            onChange={(e) => setClave(e.target.value)} disabled={entrando} />
+                        {aviso && <p className="text-body-sm text-warning-text" role="alert">{aviso}</p>}
+                        <Button type="submit" size="lg" loading={entrando} disabled={!usuario.trim() || !clave}>Entrar</Button>
+                        <Button variant="ghost" icon={ScanBarcode} onClick={() => setConClave(false)} disabled={entrando}>Usar mi carné</Button>
+                    </form>
+                ) : (
+                    <>
+                        <Pide titulo={entrando ? 'Abriendo…' : 'Pasa tu carné por el lector'}
+                            detalle="Lo que hagas queda a tu nombre." aviso={aviso} />
+                        <Button variant="secondary" icon={KeyRound} onClick={() => setConClave(true)} disabled={entrando}>
+                            No tengo mi carné: entrar con usuario
+                        </Button>
+                    </>
+                )}
+            </section>
+        </div>
+    );
+}
+
 export default function CajaDelKiosco({
     ahora, onSalir, panelMarcador, marcadorOcupado, feedbackAbierto, onMarcadorActivo,
 }) {
     const {
         user, equipo, abierta, marcando, accion, setAccion,
-        entrando, aviso, restante, vista, setVista, terminar,
+        entrando, aviso, restante, vista, setVista, terminar, conClave, setConClave, entrarConClave,
     } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo });
     const datosCola = useColaDeCaja();
     // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
@@ -261,13 +302,16 @@ export default function CajaDelKiosco({
                                 {panelMarcador}
                                 {!marcadorOcupado && <Button variant="ghost" icon={X} onClick={() => setAccion(null)}>Volver</Button>}
                             </div>
+                        ) : pedida ? (
+                            <Acceso titulo={detalle ? `Cobrar la #${detalle.referencia}` : pedida.label} icono={detalle ? Receipt : pedida.icon}
+                                entrando={entrando} aviso={aviso} conClave={conClave} setConClave={setConClave}
+                                onClave={entrarConClave} onVolver={() => { setElegida(null); setAccion(null); }} />
                         ) : (
                             <div className="flex-1 flex flex-col gap-5 justify-center max-w-4xl w-full mx-auto">
-                                <section data-surface="card" className="px-5 pt-4">
-                                    <Pide titulo={entrando ? 'Abriendo…' : detalle ? `Pasa tu carné para cobrar la #${detalle.referencia}` : pedida?.pide || '¿Qué vas a hacer?'}
-                                        detalle={pedida ? 'Lo que hagas queda a tu nombre.' : 'Toca una opción y después pasa tu carné. Toca un ticket para cobrarlo.'}
-                                        aviso={aviso} onCancelar={pedida && !entrando ? () => setAccion(null) : null} />
-                                </section>
+                                <div>
+                                    <h1 className="text-title-lg font-black text-content">¿Qué vas a hacer?</h1>
+                                    <p className="text-body-sm text-content-3">Toca un ticket de la izquierda para cobrarlo.</p>
+                                </div>
                                 <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:grid-rows-2">
                                     <div className="md:row-span-2"><Accion k="vender" grande activa={accion === 'vender'} onClick={() => tocar('vender')} /></div>
                                     <Accion k="caja" activa={accion === 'caja'} onClick={() => tocar('caja')} />

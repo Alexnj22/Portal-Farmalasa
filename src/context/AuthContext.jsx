@@ -1402,7 +1402,15 @@ export const AuthProvider = ({ children }) => {
     writeLastActivity(true);
     setPermsLoading(true);
     fijarDuenoDeBorradores(u?.id);
+    // Los permisos se recargan cuando CAMBIA el usuario (efecto por id y
+    // cargo). Si entra otra vez la MISMA persona con su sesión aún puesta, el
+    // efecto no corre y `permsLoading` quedaba en true para siempre: la
+    // pantalla «Verificando sesión» sin salida (kiosco de caja, 2026-11-17).
+    const misma = userRef.current?.id === u?.id
+      && (userRef.current?.roleId ?? null) === (u?.roleId ?? null)
+      && (userRef.current?.secondaryRoleId ?? null) === (u?.secondaryRoleId ?? null);
     setUser(u);
+    if (misma) refreshPermissions(u);
     startIdleWatcher(u);
   }
 

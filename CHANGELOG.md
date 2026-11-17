@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.5 — Kiosco de caja: se elige y después se pide carné o usuario
+
+- Pedido del usuario: la pantalla principal ya no tiene el lector. Sólo
+  «¿Qué vas a hacer?» con Vender, Caja y Marcar. Al tocar Vender o Caja (o un
+  ticket de la cola) se abre una pantalla que pide el carné por el lector, y
+  si no lo tiene, «No tengo mi carné: entrar con usuario» con usuario y
+  contraseña. El lector sólo escucha en esa pantalla y se apaga mientras se
+  escribe la contraseña.
+- `AuthContext`: si entraba otra vez la MISMA persona con su sesión puesta,
+  los permisos no se recargaban (el efecto corre al cambiar de usuario) y la
+  pantalla se quedaba en «Verificando sesión» para siempre. Ahora
+  `ponerAdentro` los recarga en ese caso.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.4 — Kiosco de caja: el cobro abre la preventa completa
 
 - Reportado en Salud 4: al tocar una preventa en la cola, el cobro se abría

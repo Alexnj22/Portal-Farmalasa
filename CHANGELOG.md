@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1563.1 — App: pegar el código de un solo uso
+
+- Recuperar contraseña: el código se puede pegar, venga como venga («123 456»
+  o la frase del correo): se queda con los 6 números. Y un botón «Pegar» que
+  lo toma del portapapeles.
+
+Novedades: no — es parte de la novedad olvide-contrasena, publicada hoy.
+
 ## v2.1563.0 — App: ¿Olvidaste tu contraseña? con código al correo
 
 - En la entrada de la app del personal, «¿Olvidaste tu contraseña?»

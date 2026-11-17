@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { Button, Host } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { cambiarClaveConCodigo, pedirCodigoDeClave } from '@nucleo/data/auth';
@@ -29,6 +30,13 @@ function Boton({ texto, onPress, disabled, variante = 'filled' }) {
       </Host>
     </View>
   );
+}
+
+// Los 6 números, vengan como vengan: «123456», «123 456» o «Tu código es 123456».
+function soloCodigo(texto) {
+  const t = String(texto ?? '');
+  const seis = t.match(/(^|\D)(\d{6})(?!\d)/);   // sin lookbehind: más seguro en Hermes
+  return (seis ? seis[2] : t.replace(/\D/g, '')).slice(0, 6);
 }
 
 function Explicacion({ children }) {
@@ -68,6 +76,12 @@ export default function RecuperarContrasena() {
     } finally {
       setOcupado(false);
     }
+  };
+
+  const pegar = async () => {
+    const t = await Clipboard.getStringAsync().catch(() => '');
+    const c = soloCodigo(t);
+    if (c.length === 6) { setCodigo(c); setError(''); } else setError('No hay un código copiado. Cópialo del correo y vuelve a tocar Pegar.');
   };
 
   const cambiar = async () => {
@@ -116,8 +130,16 @@ export default function RecuperarContrasena() {
         <>
           <Explicacion>Te mandamos un código a {envio.correo}. Vence en {envio.minutos} minutos. Si no lo ves, revisa el correo no deseado.</Explicacion>
           <Grupo vidrio>
-            <FilaCampo key={`codigo-${vuelta}`} placeholder="Código de 6 números" keyboardType="number-pad" maxLength={6}
-              textContentType="oneTimeCode" autoComplete="one-time-code" autoFocus onChangeText={setCodigo} />
+            <View key={`codigo-${vuelta}`} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* Sin `maxLength`: pegar «123 456» o la frase entera del correo
+                  se recortaba antes de limpiar. Se queda con los números. */}
+              <FilaCampo style={{ flex: 1 }} placeholder="Código de 6 números" keyboardType="number-pad" value={codigo}
+                textContentType="oneTimeCode" autoComplete="one-time-code" autoFocus onChangeText={(t) => setCodigo(soloCodigo(t))} />
+              <Pressable onPress={pegar} accessibilityRole="button" accessibilityLabel="Pegar el código"
+                style={({ pressed }) => ({ minHeight: 52, paddingHorizontal: 16, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Pegar</Text>
+              </Pressable>
+            </View>
           </Grupo>
           <Grupo vidrio pie="Mínimo 8 caracteres, con una mayúscula y un número.">
             <FilaClave key={`nueva-${vuelta}`} placeholder="Contraseña nueva" textContentType="newPassword" onChangeText={setNueva} returnKeyType="next" />

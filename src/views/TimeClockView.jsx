@@ -112,9 +112,9 @@ const TimeClockView = ({ setView }) => {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = meta?.content;
-    if (meta) meta.content = '#060B18';
+    if (meta) meta.content = esCaja ? '#f2eee4' : '#060B18';
     return () => { if (meta && prev) meta.content = prev; };
-  }, []);
+  }, [esCaja]);
 
   // Este kiosco es una pantalla siempre-oscura, independiente del tema real
   // del portal (igual que LoginView) — pero a diferencia de LoginView, SÍ
@@ -125,14 +125,18 @@ const TimeClockView = ({ setView }) => {
   // de LiquidSelect — hereden los tokens oscuros correctos sin importar el
   // tema elegido por el usuario, restaurando el valor real al desmontar.
   useEffect(() => {
+    // El kiosco de CAJA usa su propio estilo, «Mostrador» (claro, papel y
+    // tinta; ver index.css): va sobre Solid, que ya apaga el vidrio.
     const root = document.documentElement;
     const prevTheme = root.getAttribute('data-theme');
-    root.setAttribute('data-theme', 'dark');
+    root.setAttribute('data-theme', esCaja ? 'solid' : 'dark');
+    if (esCaja) root.setAttribute('data-estilo', 'mostrador');
     return () => {
       if (prevTheme) root.setAttribute('data-theme', prevTheme);
       else root.removeAttribute('data-theme');
+      root.removeAttribute('data-estilo');
     };
-  }, []);
+  }, [esCaja]);
 
   useEffect(() => {
     const handleEscKey = (e) => {
@@ -176,18 +180,18 @@ const TimeClockView = ({ setView }) => {
           className="w-9 h-9 [@media(max-height:800px)]:w-7 [@media(max-height:800px)]:h-7 object-contain"
           draggable="false"
         />
-        <span className="text-label font-bold text-white/70 truncate max-w-[320px]">
+        <span className="text-label font-bold text-content-2 truncate max-w-[320px]">
           {kioskLabel || 'Farmacias La Salud & Popular'}
         </span>
       </header>
       )}
 
       <div className="animate-view-enter w-full flex flex-col items-center" style={{ animationDelay: '60ms' }}>
-        <h2 className="text-white font-light tabular-nums leading-none w-full text-center whitespace-nowrap tracking-tight
+        <h2 className="text-content font-light tabular-nums leading-none w-full text-center whitespace-nowrap tracking-tight
           text-[4rem] sm:text-[5.5rem] [@media(min-height:801px)_and_(max-height:900px)]:text-[4rem] [@media(max-height:800px)]:text-[2.75rem] [@media(max-height:640px)]:!text-[2rem]">
           {timeStr}
         </h2>
-        <p className="text-white/55 text-body font-semibold mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 first-letter:uppercase">
+        <p className="text-content-3 text-body font-semibold mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 first-letter:uppercase">
           {dateStr}
         </p>
       </div>
@@ -237,7 +241,7 @@ const TimeClockView = ({ setView }) => {
   );
 
   return (
-    <div className="h-[100dvh] w-full bg-surface-page relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
+    <div className={`h-[100dvh] w-full bg-surface-page relative ${esCaja ? 'kiosco-papel' : ''} overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30`}>
 
       {/* ── Ambient orbs — mismo estándar que AppLayout.jsx (colores reales
           del logo, AUDITORIA-TEMA-2026-07.md §7.7): el kiosco ya no tiene su

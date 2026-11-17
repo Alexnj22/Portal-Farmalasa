@@ -9,10 +9,10 @@ export default function PasaTuCarne({ titulo, detalle, aviso }) {
         <section data-surface="card" aria-live="polite"
             className="flex flex-col items-center text-center gap-4 px-6 py-8">
             <div className="relative w-28 h-28 flex items-center justify-center">
-                <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-chart-1/40 animate-[scanPulse_2.2s_var(--ease-spring)_infinite]" />
-                <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-chart-1/40 animate-[scanPulse_2.2s_var(--ease-spring)_infinite]" style={{ animationDelay: '1.1s' }} />
-                <span className="relative w-20 h-20 rounded-full border-2 border-chart-1/50 bg-chart-1/15 flex items-center justify-center">
-                    <ScanBarcode size={32} strokeWidth={1.5} className="text-chart-1-text" aria-hidden="true" />
+                <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-brand/30 animate-[scanPulse_2.2s_var(--ease-spring)_infinite]" />
+                <span aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-brand/30 animate-[scanPulse_2.2s_var(--ease-spring)_infinite]" style={{ animationDelay: '1.1s' }} />
+                <span className="relative w-20 h-20 rounded-full border-2 border-brand/40 bg-brand/10 flex items-center justify-center">
+                    <ScanBarcode size={32} strokeWidth={1.5} className="text-brand-text" aria-hidden="true" />
                 </span>
             </div>
             <div className="flex flex-col gap-1.5">

@@ -4371,3 +4371,118 @@ html[data-en-pestana] #main-scroll {
   animation: destello-campo 1.6s ease-in-out;
 }
 @media (prefers-reduced-motion: reduce) { [data-destello] { animation: none; outline-color: var(--warning); } }
+
+/* ═══════════════════════════════════════════════════════════════
+   ESTILO «MOSTRADOR» — el kiosco de caja (2026-11-17)
+   ─────────────────────────────────────────────────────────────
+   Pedido del usuario: «que no sea ni liquid glass ni el solid, usa uno
+   nuevo». La escena: quien cobra está DE PIE en el mostrador, con luz de
+   farmacia (blanca y fuerte), mirando la pantalla de reojo entre cliente y
+   cliente. Eso pide claro y con mucho contraste, no oscuro.
+
+   El material es papel impreso: fondo de papel cálido con una trama de
+   puntos, tinta casi negra teñida hacia el verde de la marca, y tarjetas que
+   se leen como tickets apoyados sobre el mostrador (un canto de apoyo abajo,
+   no una sombra difusa ni vidrio). El color de acción es el verde del logo,
+   oscurecido para que el texto blanco pase AA.
+
+   Se monta SOBRE `data-theme="solid"` (que ya apaga vidrio, orbes y brillos)
+   y lo enciende `TimeClockView` estampando `data-estilo` en <html> mientras
+   el kiosco de caja está montado: así Mi caja y la venta embebidas, y los
+   diálogos que se montan en <body>, toman el mismo material.
+
+   Contraste medido (WCAG): tinta #1b2016 sobre papel #f2eee4 15.6 · #464d40
+   sobre papel 8.4 · #5c6355 sobre papel 5.3 y sobre tarjeta 5.9 · blanco
+   sobre #2e6b10 6.4 · #2a600e sobre papel 6.6.
+   Los colores de DATO (chart-*, success/warning/danger) no se tocan.
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-estilo="mostrador"] {
+  color-scheme: light;
+  --bg-page: #f2eee4;
+
+  --text-primary:   #1b2016;
+  --text-secondary: #464d40;
+  --text-tertiary:  #5c6355;
+
+  --brand:         #2e6b10;
+  --brand-dark:    #23530c;
+  --brand-hover:   #23530c;
+  --brand-pressed: #1a3e09;
+  --brand-text:    #2a600e;
+  --btn-brand-shadow:       0 2px 0 #1a3e09;
+  --btn-brand-shadow-hover: 0 3px 0 #1a3e09;
+  --shadow-ring-brand:      0 0 0 4px rgba(46,107,16,.18);
+  --state-selected-overlay: rgba(46,107,16,.08);
+
+  --surface-card:       #fffdf8;
+  --surface-card-hover: #f8f4ea;
+  --surface-header:     #fffdf8;
+  --surface-modal:      #fffdf8;
+  --surface-sheet:      #fffdf8;
+  --surface-input:      #f7f3ea;
+  --surface-dropdown:   #fffdf8;
+  --surface-tab-track:  #e9e4d7;
+  --surface-tab-active: #fffdf8;
+  --tabaction-bg:       #fffdf8;
+  --tabaction-hover:    #f8f4ea;
+  --thead-bg:           #f6f2e8;
+
+  --border-card:   rgba(27,32,22,.16);
+  --border-header: rgba(27,32,22,.14);
+  --border-modal:  rgba(27,32,22,.18);
+  --border-input:  rgba(27,32,22,.28);
+  --border-tab:    rgba(27,32,22,.14);
+  --tabaction-border: rgba(27,32,22,.18);
+  --rim-base:      rgba(27,32,22,.16);
+  --rim-glint:     rgba(27,32,22,.16);
+  --rim-sombra:    rgba(27,32,22,.16);
+  --anidada:       rgba(27,32,22,.07);
+
+  /* El canto de apoyo: dos líneas duras abajo y una caída corta. */
+  --card-shadow:       0 1px 0 rgba(27,32,22,.05), 0 3px 0 rgba(27,32,22,.07), 0 14px 24px -18px rgba(27,32,22,.30);
+  --card-shadow-hover: 0 1px 0 rgba(27,32,22,.06), 0 5px 0 rgba(27,32,22,.08), 0 18px 28px -18px rgba(27,32,22,.34);
+  --header-shadow:     0 1px 0 rgba(27,32,22,.10);
+  --modal-shadow:      0 4px 0 rgba(27,32,22,.10), 0 30px 60px -20px rgba(27,32,22,.40);
+  --dropdown-shadow:   0 3px 0 rgba(27,32,22,.08), 0 18px 36px -16px rgba(27,32,22,.28);
+  --lift-card: -2px;
+
+  --card-radius:         1.125rem;
+  --card-radius-anidada: 0.75rem;
+  --modal-radius:        1.25rem;
+  --header-radius:       0;
+  --btn-radius:          0.75rem;
+  --tab-track-radius:    0.875rem;
+  --tab-pill-radius:     0.625rem;
+  --input-radius:        0.75rem;
+  --badge-radius:        0.5rem;
+
+  --campo-hueco: .06;
+  --velo: rgba(27,32,22,.28);
+}
+
+/* El papel: una trama de puntos fina, de tinta al 7%. */
+:root[data-estilo="mostrador"] .kiosco-papel {
+  background-color: var(--bg-page);
+  background-image: radial-gradient(rgba(27,32,22,.07) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+
+/* La tipografía de «Mostrador»: frases, no letreros. El portal habla en
+   versalitas espaciadas (rótulos, pestañas, insignias); el kiosco habla en
+   minúscula normal, con pesos más tranquilos y la letra chica un punto más
+   grande, porque se lee de pie y de reojo. Afecta a todo lo que pinta el
+   kiosco —también Mi caja y la venta embebidas— y a nada fuera de él. */
+:root[data-estilo="mostrador"] .uppercase { text-transform: none; }
+:root[data-estilo="mostrador"] .tracking-widest,
+:root[data-estilo="mostrador"] .tracking-wider,
+:root[data-estilo="mostrador"] .tracking-wide { letter-spacing: -0.005em; }
+:root[data-estilo="mostrador"] .font-black { font-weight: 750; }
+:root[data-estilo="mostrador"] .text-micro { font-size: 0.75rem; line-height: 1rem; }
+:root[data-estilo="mostrador"] .text-label { font-size: 0.8125rem; }
+/* La barra del kiosco: pantallas grandes para el dedo. */
+:root[data-estilo="mostrador"] .kiosco-nav [role="radio"] {
+  height: 2.75rem;
+  padding-inline: 1.25rem;
+  font-size: 0.9375rem;
+  gap: 0.5rem;
+}

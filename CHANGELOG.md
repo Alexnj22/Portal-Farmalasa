@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1570.0 — Kiosco de caja: estilo propio «Mostrador»
+
+- Pedido del usuario: «que no sea ni liquid glass ni el solid, usa uno
+  nuevo… moderno, práctico, eficiente, intuitivo». El kiosco de caja estrena
+  su propio lenguaje visual, **Mostrador**: claro, fondo de papel cálido con
+  trama de puntos, tinta casi negra, el verde del logo como color de acción y
+  tarjetas que se leen como tickets apoyados (canto de apoyo abajo, sin vidrio
+  ni sombra difusa). Frases en minúscula en vez de letreros en versalitas, y
+  la letra chica un punto más grande: se lee de pie y de reojo.
+- Va como tokens en `:root[data-estilo="mostrador"]` sobre Solid, estampado
+  en <html> por `TimeClockView` sólo en el kiosco de caja: Mi caja, la venta y
+  los diálogos embebidos toman el mismo material. El marcador de asistencia
+  sigue igual.
+- La cola: el número de la preventa es el talón verde del ticket, separado por
+  una línea punteada. La barra lleva pantallas más grandes para el dedo.
+- Los paneles del marcador (permiso, salida anticipada, turno) dejaron el
+  blanco escrito a mano y usan la tarjeta y los colores del tema.
+- Novedades: no — piloto en Salud 4.
+
 ## v2.1569.1 — App: Meter dinero con motivos visuales y foto que se ajusta
 
 - Pedido del usuario: los botones de la foto «casi invisibles», la foto que no

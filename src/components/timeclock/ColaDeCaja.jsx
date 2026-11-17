@@ -57,12 +57,14 @@ const Tarjeta = ({ p, ahora }) => {
 
     return (
         <li data-surface="card" className="p-3 sm:p-4 flex gap-4 items-center">
-            <span className="shrink-0 w-16 h-16 rounded-xl bg-surface-card-hover border border-border-card flex flex-col items-center justify-center">
-                <span className="text-micro font-black uppercase tracking-widest text-content-3">Ref.</span>
-                <span className="text-title-lg leading-none font-black tabular-nums text-content">{p.referencia || '—'}</span>
+            {/* El talón del ticket: el número con que se cobra, y la línea
+                punteada que lo separa del resto, como un ticket de papel. */}
+            <span className="shrink-0 w-16 h-16 rounded-xl bg-brand text-white flex flex-col items-center justify-center">
+                <span className="text-micro font-black uppercase tracking-widest">Ref.</span>
+                <span className="text-title-lg leading-none font-black tabular-nums">{p.referencia || '—'}</span>
             </span>
 
-            <div className="min-w-0 flex-1 flex flex-col gap-1">
+            <div className="min-w-0 flex-1 flex flex-col gap-1 pl-4 border-l border-dashed border-border-card">
                 <div className="flex items-center gap-2 min-w-0">
                     <p className="text-body font-bold text-content truncate">{p.cliente || 'Cliente frecuente'}</p>
                     {p.estado === 'enviando' && <Badge size="sm" variant="warning">Llegando</Badge>}

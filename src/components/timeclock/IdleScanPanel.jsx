@@ -10,9 +10,11 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 // solo que ya no hay un <input> real detrás. 2026-07-25, a pedido del
 // usuario — "no quiero que aparezca un input, nada se ingresa a mano".
 export function ScanReadyRing({ specialMode }) {
-  const ring = specialMode ? 'border-chart-4/40' : 'border-chart-1/40';
-  const core = specialMode ? 'bg-chart-4/15 border-chart-4/50' : 'bg-chart-1/15 border-chart-1/50';
-  const iconColor = specialMode ? 'text-chart-4-text' : 'text-chart-1-text';
+  // El color de la marca y no un color de dato: así sigue al estilo del kiosco
+  // (azul en el marcador, verde en «Mostrador»).
+  const ring = specialMode ? 'border-chart-4/40' : 'border-brand/40';
+  const core = specialMode ? 'bg-chart-4/15 border-chart-4/50' : 'bg-brand/15 border-brand/50';
+  const iconColor = specialMode ? 'text-chart-4-text' : 'text-brand-text';
   const Icono = specialMode ? ShieldAlert : ScanBarcode;
   return (
     <div className="relative w-36 h-36 [@media(max-height:800px)]:w-24 [@media(max-height:800px)]:h-24 flex items-center justify-center">
@@ -42,7 +44,7 @@ export default function IdleScanPanel({
         <ScanReadyRing specialMode={specialMode} />
         <div className="flex flex-col items-center gap-1">
           {specialMode && <p className="text-label font-black uppercase tracking-widest text-chart-4-text">Autorización</p>}
-          <p className="text-title-lg [@media(max-height:800px)]:text-title font-bold text-white">
+          <p className="text-title-lg [@media(max-height:800px)]:text-title font-bold text-content">
             {specialMode ? 'Acerca tu carné para autorizar' : 'Acerca tu carné al lector'}
           </p>
         </div>
@@ -66,7 +68,7 @@ export default function IdleScanPanel({
             <div className="flex flex-col gap-1.5">
               {lunchAlerts.map(alert => (
                 <div key={alert.employee.id} className="flex items-center justify-between gap-2">
-                  <span className="text-white/80 text-label font-semibold truncate">
+                  <span className="text-content-2 text-label font-semibold truncate">
                     {shortEmployeeName(alert.employee)}
                   </span>
                   <span className={`text-caption font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-danger' : 'text-chart-4-text'}`}>

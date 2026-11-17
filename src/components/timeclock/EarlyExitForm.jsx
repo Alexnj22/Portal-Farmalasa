@@ -40,14 +40,14 @@ function EarlyExitForm({
     // 1920×1080 y 266px en 1024×600.
     <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(min-height:801px)_and_(max-height:900px)]:p-2 [@media(max-height:800px)]:p-0 animate-in fade-in duration-[var(--dur-lento)] pointer-events-auto overflow-hidden">
 
-      <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-5 sm:p-7 [@media(min-height:801px)_and_(max-height:900px)]:p-4 [@media(max-height:800px)]:p-3.5 [@media(max-height:640px)]:!p-3 shadow-[var(--shadow-glass-dark)] overflow-hidden transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
+      <div data-surface="card" className="w-full max-w-[420px] max-h-full flex flex-col rounded-header p-5 sm:p-7 [@media(min-height:801px)_and_(max-height:900px)]:p-4 [@media(max-height:800px)]:p-3.5 [@media(max-height:640px)]:!p-3 overflow-hidden">
 
         <div className="flex flex-col items-center text-center w-full mb-4 sm:mb-5 [@media(min-height:801px)_and_(max-height:900px)]:mb-3 [@media(max-height:800px)]:mb-2 shrink-0 group/icon">
           <div className="inline-flex p-3 sm:p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-2.5 sm:mb-3 [@media(max-height:800px)]:mb-1.5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
             <FileText size={36} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-10 sm:h-10 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
           </div>
 
-          <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-title [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">
+          <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-title [@media(max-height:800px)]:text-title-sm font-semibold text-content tracking-tight leading-tight mb-1 transition-colors">
             Solicitud de Permiso
           </h1>
           <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro [@media(max-height:640px)]:hidden font-black uppercase tracking-widest text-chart-4-text/80 transition-colors px-2">
@@ -57,19 +57,19 @@ function EarlyExitForm({
 
         <form onSubmit={onSubmit} className="relative z-content w-full flex-1 flex flex-col justify-start min-h-0 shrink-0 gap-3 sm:gap-4 [@media(max-height:800px)]:gap-2 overflow-y-auto scrollbar-hide py-1">
 
-          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2.5 [@media(max-height:800px)]:p-2 shadow-[var(--shadow-shine-lg)] shrink-0">
+          <div className="flex items-center gap-3 bg-surface-card-hover border border-border-card rounded-2xl p-2.5 [@media(max-height:800px)]:p-2 shrink-0">
             {/* La foto canónica (2026-11-05), a 48: uno de los cinco tamaños. */}
             <AvatarConEstado emp={employee} px={48} />
             <div className="text-left flex-1 overflow-hidden">
               <TituloDeSeccion tono="inverso" className="truncate" title={employee.name}>{shortEmployeeName(employee)}</TituloDeSeccion>
-              <p className="text-white/40 text-micro sm:text-micro font-black uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">
+              <p className="text-content-3 text-micro sm:text-micro font-black uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">
                 Perfil a autorizar
               </p>
             </div>
           </div>
 
 <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-  <label className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-micro`}>
+  <label className={`${rotuloCampo('text-content-3', { denso: true })} sm:text-micro`}>
     Motivo autorizado
   </label>
   {/* Este formulario solo se monta dentro de TimeClockView, que fuerza
@@ -97,7 +97,7 @@ function EarlyExitForm({
 </div>
 
           <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-            <label className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-micro`}>
+            <label className={`${rotuloCampo('text-content-3', { denso: true })} sm:text-micro`}>
               Justificación (Opcional)
             </label>
             <PortalTextarea

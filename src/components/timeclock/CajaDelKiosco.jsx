@@ -170,7 +170,7 @@ export default function CajaDelKiosco({ pantalla, onPantalla, marcar, ahora, onS
                             <p className="text-label text-content-3 tabular-nums">{hora12(ahora)}</p>
                         </div>
                     </div>
-                    <SegmentedControl label="Pantalla del kiosco" tone="neutro" options={PANTALLAS} value={pantalla} onChange={onPantalla} />
+                    <SegmentedControl className="kiosco-nav" label="Pantalla del kiosco" tone="brand" options={PANTALLAS} value={pantalla} onChange={onPantalla} />
                     <div className="flex justify-end min-w-0">
                         {abierta && conCarne
                             ? <QuienOpera user={user} restante={restante} onTerminar={terminar} />

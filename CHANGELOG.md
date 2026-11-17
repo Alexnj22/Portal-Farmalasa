@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.1 — Novedades: pantalla animada al entrar y sin «Ver como»
+
+- Al entrar al portal, en lugar del diálogo, una pantalla animada «Hay novedades» con las novedades en abanico: en unos segundos entra sola a Novedades («Ahora no» la salta). Sale una vez por persona y por quincena de novedades, desde el 2026-11-17. `?aviso=novedades` la muestra para revisarla.
+- Novedades ya no tiene «Ver como otro cargo»: cada quien ve lo suyo y lo de cada cargo lo audita `gate:novedades -- --reporte`.
+
+Novedades: no — es la entrada a Novedades misma, decidida por el usuario
+
 ## v2.1562.0 — Novedades: lo nuevo por cargo, aviso al entrar y Preventa en el Inicio
 
 - **Novedades** (`/novedades`, Avisos → Novedades): lo nuevo del portal y la app explicado con animación y pasos según el cargo. Al abrir una se marca revisada. Las tarjetas muestran imagen fija.

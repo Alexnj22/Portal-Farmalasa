@@ -1587,7 +1587,7 @@ const AppLayout = ({ children, handleLogout }) => {
             />
 
             <ElegirNombreDialog empleado={myEmp} open={debeElegirNombre} obligatorio />
-            <AvisoNovedades empId={user?.id} puede={hasPermission('novedades', 'can_view')} bloqueado={debeElegirNombre} />
+            <AvisoNovedades empId={user?.id} roleId={user?.roleId ?? (Number.isInteger(user?.role) ? user.role : null)} hasPermission={hasPermission} bloqueado={debeElegirNombre} />
 
         </LayoutGroup>
     );

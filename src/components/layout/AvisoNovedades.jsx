@@ -1,91 +1,136 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Megaphone, Bell, ChevronRight, Sparkles, Smartphone, ListChecks } from 'lucide-react';
-import LiquidModal from '../common/LiquidModal';
-import PieDeModal from '../common/PieDeModal';
-import Button from '../common/Button';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Megaphone, ArrowRight } from 'lucide-react';
 import * as almacen from '../../plataforma/almacen';
 import { hoySV } from '@nucleo/utils/fecha';
+import { TANDAS, novedadesVisibles } from '@nucleo/constants/novedades';
 
 /**
- * «Ya puedes ver las Novedades» — una vez por persona (2026-11-16).
+ * Pantalla de entrada «Hay novedades» (2026-11-16).
  *
- * Pedido del usuario: «mañana cuando inicien sesión por primera vez, agrega una
- * pantalla de aviso que les salga que pueden ver las novedades y les diga
- * dónde». Sale desde `DESDE` (hora de El Salvador), a quien puede ver
- * Novedades, una sola vez: al tocar cualquiera de los dos botones queda
- * marcado en este dispositivo.
+ * Pedido del usuario: «al iniciar sesión, antes de cargar, que me salga que hay
+ * novedades, una pequeña pantalla animada moderna y bonita, y me lleve a ver
+ * las novedades». No es un diálogo: tapa todo el portal mientras carga detrás,
+ * cuenta unos segundos y entra sola a /novedades.
  *
- * `?aviso=novedades` en la dirección la muestra aunque no sea el día o ya se
- * haya visto: es para revisarla.
+ * Sale una vez por persona y por tanda (`TANDAS[0].id`): cuando salga la
+ * próxima quincena, vuelve a salir. Desde `DESDE` (hora de El Salvador).
+ * `?aviso=novedades` la muestra siempre: es para revisarla.
  */
 const DESDE = '2026-11-17';
-const clave = (empId) => `aviso-novedades-visto:${empId || 'anon'}`;
-const yaLoVio = (empId) => { try { return almacen.leer(clave(empId)) === '1'; } catch { return false; } };
-const marcar = (empId) => { try { almacen.guardar(clave(empId), '1'); } catch { /* sin espacio: vuelve a salir, no se pierde nada */ } };
+const DURA_MS = 4200;
+const tanda = TANDAS[0];
+const clave = (empId) => `novedades-entrada:${tanda?.id}:${empId || 'anon'}`;
+const yaLaVio = (empId) => { try { return almacen.leer(clave(empId)) === '1'; } catch { return false; } };
+const marcar = (empId) => { try { almacen.guardar(clave(empId), '1'); } catch { /* vuelve a salir: no se pierde nada */ } };
 
-export default function AvisoNovedades({ empId, puede, bloqueado = false }) {
-    const navigate = useNavigate();
+export default function AvisoNovedades({ empId, roleId, hasPermission, bloqueado = false }) {
     const { pathname, search } = useLocation();
     const forzado = new URLSearchParams(search).get('aviso') === 'novedades';
-    const [cerrado, setCerrado] = useState(false);
+    const puede = hasPermission?.('novedades', 'can_view');
+    // Se decide UNA vez, al montar: después no reaparece por navegar.
+    const [toca] = useState(() => forzado || (hoySV() >= DESDE && !yaLaVio(empId) && !pathname.startsWith('/novedades')));
+    if (!tanda || !puede || bloqueado || !toca) return null;
+    return <Entrada empId={empId} roleId={roleId} hasPermission={hasPermission} />;
+}
 
-    const toca = forzado || (hoySV() >= DESDE && !yaLoVio(empId) && !pathname.startsWith('/novedades'));
-    if (!puede || bloqueado || cerrado || !toca) return null;
+function Entrada({ empId, roleId, hasPermission }) {
+    const navigate = useNavigate();
+    const quieto = useReducedMotion();
+    const [visible, setVisible] = useState(true);
+    const mias = useMemo(() => novedadesVisibles({ roleId, puede: (m, n = 'can_view') => hasPermission(m, n) })
+        .flatMap((t) => t.novedades).filter((n) => n.especial !== 'app-personal'), [roleId, hasPermission]);
+    const portadas = mias.filter((n) => n.media).slice(0, 3);
 
-    const cerrar = () => { marcar(empId); setCerrado(true); };
-    const ver = () => { cerrar(); navigate('/novedades'); };
+    const salir = (ir) => {
+        marcar(empId);
+        setVisible(false);
+        if (ir) navigate('/novedades');
+    };
+    useEffect(() => {
+        const t = setTimeout(() => salir(true), DURA_MS);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const sube = (d) => ({ initial: { opacity: 0, y: quieto ? 0 : 18 }, animate: { opacity: 1, y: 0 }, transition: { delay: d, duration: 0.55, ease: [0.22, 1, 0.36, 1] } });
+    const abanico = [{ r: -14, x: -118, y: 18 }, { r: 0, x: 0, y: -8 }, { r: 14, x: 118, y: 18 }];
 
     return (
-        <LiquidModal open onClose={cerrar} maxWidth="max-w-lg" ariaLabel="Novedades">
-            <div className="relative overflow-hidden bg-gradient-to-br from-brand to-brand-purple text-white px-6 pt-8 pb-6">
-                <div aria-hidden className="pointer-events-none absolute -right-12 -top-16 w-56 h-56 rounded-full bg-brand-purple/40" />
-                <div aria-hidden className="pointer-events-none absolute -left-10 -bottom-20 w-48 h-48 rounded-full bg-brand/30" />
-                <div className="relative flex flex-col items-start gap-3">
-                    <span className="w-14 h-14 rounded-2xl bg-brand-purple/50 ring-1 ring-brand/30 grid place-items-center shadow-modal">
-                        <Megaphone size={28} />
-                    </span>
-                    <h2 className="text-display font-black leading-tight tracking-tight">Ya puedes ver las Novedades</h2>
-                    <p className="text-body text-white/85">Todo lo nuevo del portal y la app en un solo lugar, con lo que le toca a tu cargo.</p>
-                </div>
-            </div>
+        <AnimatePresence>
+            {visible && (
+                <motion.div key="entrada" role="dialog" aria-modal="true" aria-label="Hay novedades"
+                    className="fixed inset-0 z-toast overflow-hidden bg-gradient-to-br from-brand via-brand-purple to-brand text-white grid place-items-center px-6"
+                    style={{ paddingTop: 'var(--sa-top)', paddingBottom: 'var(--sa-bottom)' }}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: quieto ? 1 : 1.04 }}
+                    transition={{ duration: 0.45 }}>
+                    {/* Luces que se mueven despacio detrás de todo */}
+                    {!quieto && [0, 1, 2].map((i) => (
+                        <motion.span key={i} aria-hidden
+                            className={`pointer-events-none absolute rounded-full blur-3xl ${i === 1 ? 'bg-brand/50 w-[28rem] h-[28rem]' : 'bg-brand-purple/60 w-[22rem] h-[22rem]'}`}
+                            style={{ left: `${[8, 55, 30][i]}%`, top: `${[10, 50, 70][i]}%` }}
+                            animate={{ x: [0, 60 - i * 40, 0], y: [0, -40 + i * 30, 0] }}
+                            transition={{ duration: 9 + i * 2, repeat: Infinity, ease: 'easeInOut' }} />
+                    ))}
 
-            <LiquidModal.Body>
-                <div className="flex flex-col gap-5">
-                    <div>
-                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">Dónde está</p>
-                        <div className="rounded-card border border-border-subtle bg-surface-card-hover p-3 flex flex-col gap-1" aria-label="En el menú: Avisos, luego Novedades">
-                            <div className="flex items-center gap-2.5 px-2 py-1.5 text-body-sm text-content-2">
-                                <Bell size={16} /> <span className="font-semibold">Avisos</span>
-                                <ChevronRight size={14} className="ml-auto rotate-90 text-content-3" />
-                            </div>
-                            <div className="flex items-center gap-2.5 ml-5 px-3 py-2 rounded-lg bg-brand/12 ring-1 ring-brand/30 text-body-sm text-brand-text">
-                                <Megaphone size={16} /> <span className="font-black">Novedades</span>
-                                <span className="ml-auto text-caption font-bold">Aquí</span>
-                            </div>
+                    <div className="relative flex flex-col items-center text-center max-w-md w-full">
+                        {/* Las novedades en abanico, o el megáfono si no hay imágenes */}
+                        <div className="relative h-44 w-full mb-8 grid place-items-center">
+                            {portadas.length >= 2 ? portadas.map((n, i) => {
+                                const a = abanico[portadas.length === 2 ? i * 2 : i];
+                                return (
+                                    <motion.div key={n.id}
+                                        className="absolute w-36 h-40 rounded-2xl overflow-hidden ring-1 ring-brand/30 shadow-modal bg-surface-card"
+                                        initial={{ opacity: 0, y: quieto ? 0 : 80, rotate: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, x: a.x, y: a.y, rotate: a.r, scale: 1 }}
+                                        transition={{ delay: 0.25 + i * 0.12, type: 'spring', stiffness: 140, damping: 16 }}>
+                                        <img src={n.media.portada || n.media.src} alt="" className="w-full h-full object-cover object-top" />
+                                    </motion.div>
+                                );
+                            }) : null}
+                            <motion.span
+                                className="relative w-20 h-20 rounded-3xl bg-brand grid place-items-center shadow-modal ring-1 ring-brand/30"
+                                initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }}
+                                transition={{ delay: 0.7, type: 'spring', stiffness: 220, damping: 14 }}
+                                style={portadas.length >= 2 ? { position: 'absolute', bottom: -18 } : undefined}>
+                                {!quieto && (
+                                    <motion.span aria-hidden className="absolute inset-0 rounded-3xl ring-2 ring-brand/45"
+                                        animate={{ scale: [1, 1.6], opacity: [0.7, 0] }}
+                                        transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut', delay: 1 }} />
+                                )}
+                                <Megaphone size={36} />
+                            </motion.span>
                         </div>
-                        <p className="text-body-sm text-content-2 mt-2">En el menú de la izquierda: <b className="text-content">Avisos → Novedades</b>.</p>
+
+                        <motion.p {...sube(0.9)} className="text-caption font-black uppercase tracking-widest text-white/75">
+                            {tanda.titulo}
+                        </motion.p>
+                        <motion.h1 {...sube(1.0)} className="text-display-lg font-black leading-none tracking-tight mt-3">
+                            Hay novedades
+                        </motion.h1>
+                        <motion.p {...sube(1.15)} className="text-body-lg text-white/85 mt-3">
+                            {mias.length === 1 ? 'Una cosa nueva' : `${mias.length} cosas nuevas`} para ti en el portal y la app.
+                        </motion.p>
+
+                        <motion.div {...sube(1.3)} className="w-full mt-8 flex flex-col items-center gap-4">
+                            <button type="button" onClick={() => salir(true)}
+                                className="group relative w-full max-w-xs min-h-[var(--tap-min)] rounded-full bg-content text-brand font-black text-body overflow-hidden active:scale-[0.97] transition-transform">
+                                <motion.span aria-hidden className="absolute inset-y-0 left-0 bg-brand/30"
+                                    initial={{ width: '0%' }} animate={{ width: '100%' }}
+                                    transition={{ duration: DURA_MS / 1000, ease: 'linear' }} />
+                                <span className="relative inline-flex items-center justify-center gap-2 px-6 py-3">
+                                    Ver novedades <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+                                </span>
+                            </button>
+                            <button type="button" onClick={() => salir(false)}
+                                className="min-h-[var(--tap-min)] px-4 text-body-sm font-semibold text-white/70 hover:text-white active:scale-[0.97] transition">
+                                Ahora no
+                            </button>
+                        </motion.div>
                     </div>
-
-                    <ul className="flex flex-col gap-3">
-                        {[
-                            { Icono: Sparkles, t: 'Cada cambio con una animación de cómo se hace.' },
-                            { Icono: ListChecks, t: 'Los pasos que te tocan según tu cargo.' },
-                            { Icono: Smartphone, t: 'Ahí también descargas Portal Farmasalud, la app del personal.' },
-                        ].map(({ Icono, t }) => (
-                            <li key={t} className="flex items-start gap-3">
-                                <span className="w-8 h-8 rounded-xl bg-brand/12 text-brand-text grid place-items-center shrink-0"><Icono size={16} /></span>
-                                <span className="text-body text-content pt-1">{t}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </LiquidModal.Body>
-
-            <PieDeModal>
-                <Button variant="ghost" onClick={cerrar}>Después</Button>
-                <Button icon={Megaphone} onClick={ver}>Ver novedades</Button>
-            </PieDeModal>
-        </LiquidModal>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }

@@ -13,8 +13,8 @@
  *   · Las tarjetas muestran una imagen fija; la animación corre al abrirla.
  *   · Abrir una novedad la marca como revisada, en este dispositivo
  *     (comodidad, no registro).
- *   · «Ver como»: quien administra Novedades ve lo que lee cada cargo, con los
- *     permisos reales de ese cargo.
+ *   · Cada quien ve sólo lo suyo. Qué le sale a cada cargo lo audita
+ *     `npm run gate:novedades -- --reporte` (el usuario quitó «Ver como»).
  *   · Android: la app se baja de la prueba interna de Google Play. La persona
  *     deja su correo de Google; administración lo agrega en Play Console y lo
  *     marca en la pestaña «Android». La base le manda un aviso (campana y
@@ -57,7 +57,7 @@ import {
 } from '@nucleo/constants/novedades';
 import {
     registrarCorreoAndroid, fetchMiCorreoAndroid, fetchPruebasAndroid, marcarAgregadosEnPlay, mensajeDeNovedades,
-    fetchPermisosDeCargo, reenviarAvisoAndroid,
+    reenviarAvisoAndroid,
 } from '@nucleo/data/novedades';
 
 const ICONOS = {
@@ -88,30 +88,8 @@ export default function NovedadesView() {
     const roles = useStaffStore((s) => s.roles);
     const miCargo = user?.roleId ?? (Number.isInteger(user?.role) ? user.role : null);
 
-    const [verComo, setVerComo] = useState(null);
-    const [leidos, setLeidos] = useState({ roleId: null, mapa: null });
-    const showToast = useToastStore((s) => s.showToast);
-    useEffect(() => {
-        if (!verComo) return undefined;
-        let vivo = true;
-        fetchPermisosDeCargo(verComo)
-            .then((mapa) => { if (vivo) setLeidos({ roleId: verComo, mapa }); })
-            .catch(() => { if (vivo) { setVerComo(null); showToast('No se pudo cargar', 'No se pudieron leer los permisos de ese cargo.', 'error'); } });
-        return () => { vivo = false; };
-    }, [verComo, showToast]);
-    const permisosAjenos = verComo && leidos.roleId === verComo ? leidos.mapa : null;
-
-    const ctx = useMemo(() => {
-        if (verComo && permisosAjenos) {
-            return { roleId: verComo, puede: (m, nivel = 'can_view') => !!permisosAjenos[m]?.[nivel], simulado: true };
-        }
-        return { roleId: miCargo, puede: (m, nivel = 'can_view') => hasPermission(m, nivel), simulado: false };
-    }, [verComo, permisosAjenos, miCargo, hasPermission]);
+    const ctx = useMemo(() => ({ roleId: miCargo, puede: (m, nivel = 'can_view') => hasPermission(m, nivel) }), [miCargo, hasPermission]);
     const cargoVisto = (roles ?? []).find((r) => r.id === ctx.roleId)?.name ?? null;
-    const opcionesDeCargo = useMemo(() => (roles ?? [])
-        .filter((r) => !r.is_su)
-        .map((r) => ({ value: r.id, label: r.name }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'es')), [roles]);
 
     const pestanas = useMemo(() => [
         { key: 'novedades', label: 'Lo nuevo', icon: Sparkles },
@@ -129,14 +107,7 @@ export default function NovedadesView() {
             {pestana === 'android'
                 ? <PruebaAndroid busqueda={busqueda} />
                 : (
-                    <LoNuevo key={ctx.roleId ?? 'yo'} user={user} ctx={ctx} cargo={cargoVisto} busqueda={busqueda}
-                        cargando={!!verComo && !permisosAjenos}
-                        verComo={puedeAdministrar ? (
-                            <div className="w-full sm:w-72">
-                                <LiquidSelect icon={Eye} value={verComo} onChange={(v) => setVerComo(v || null)}
-                                    options={opcionesDeCargo} placeholder="Ver como otro cargo" clearable />
-                            </div>
-                        ) : null} />
+                    <LoNuevo user={user} ctx={ctx} cargo={cargoVisto} busqueda={busqueda} />
                 )}
         </GlassViewLayout>
     );
@@ -144,7 +115,7 @@ export default function NovedadesView() {
 
 // ── Lo nuevo ────────────────────────────────────────────────────────────────
 
-function LoNuevo({ user, ctx, cargo, busqueda, verComo, cargando }) {
+function LoNuevo({ user, ctx, cargo, busqueda }) {
     const empId = user?.id;
     const [tema, setTema] = useState('todos');
     const [revisadas, setRevisadas] = useState(() => leerRevisadas(empId));
@@ -198,17 +169,13 @@ function LoNuevo({ user, ctx, cargo, busqueda, verComo, cargando }) {
                         <Badge onDark icon={Sparkles} className="w-fit">{tanda ? `Del ${dia(tanda.desde)} al ${dia(tanda.hasta)}` : 'Novedades'}</Badge>
                         <h2 className="text-display-lg font-black leading-none tracking-tight">Lo nuevo en el portal</h2>
                         <p className="text-body-lg text-white/85">
-                            {ctx.simulado
-                                ? <>Así lo ve <b className="text-white">{cargo || 'ese cargo'}</b>: {total} novedades, cada una con sus pasos.</>
-                                : <>{cargo ? <>Para ti, como <b className="text-white">{cargo}</b>: </> : ''}{total} novedades que ya puedes usar. Toca una para ver cómo se hace.</>}
+                            {cargo ? <>Para ti, como <b className="text-white">{cargo}</b>: </> : ''}{total} novedades que ya puedes usar. Toca una para ver cómo se hace.
                         </p>
-                        {verComo && <div className="mt-2">{verComo}</div>}
                     </div>
                     <Progreso pct={pct} hechas={hechas} total={total} />
                 </div>
             </section>
 
-            {cargando && <Notice variant="info" compact>Cargando los permisos de ese cargo…</Notice>}
 
             {app && !busqueda.trim() && <AppPersonal user={user} destacar={llegaPorLaApp} />}
 
@@ -226,7 +193,7 @@ function LoNuevo({ user, ctx, cargo, busqueda, verComo, cargando }) {
                             <TarjetaNovedad key={n.id} n={n} revisada={revisadas.has(clave(n))} onAbrir={() => ver(n)} />
                         ))}
                     </div>
-                ) : !cargando && (
+                ) : (
                     <EmptyState icon={Sparkles} title="Sin novedades con ese filtro" subtitle="Prueba con Todo o borra la búsqueda." />
                 )}
             </div>

@@ -1,6 +1,6 @@
 {
  "_comment": "Foto de role_permissions de producción por cargo: módulo → letras (v=can_view, e=can_edit, a=can_approve). La usa scripts/novedades-gate.mjs para auditar que cada novedad le salga sólo a quien puede abrir lo que explica. Regenerar con: npm run gate:novedades -- --sql (imprime la consulta) y guardar el resultado aquí.",
- "_generado": "2026-11-16",
+ "_generado": "2026-11-17",
  "cargos": {
   "2": {
    "nombre": "Gerente General",
@@ -1056,6 +1056,7 @@
     "pedidos": "ve",
     "pedidos_tab_historial": "v",
     "pedidos_tab_rutas": "v",
+    "preventa": "ve",
     "puntos": "v",
     "puntos_tab_avisos": "v",
     "puntos_tab_consulta": "v",
@@ -1114,6 +1115,7 @@
     "pedidos": "ve",
     "pedidos_tab_historial": "v",
     "pedidos_tab_rutas": "v",
+    "preventa": "ve",
     "puntos": "v",
     "puntos_tab_avisos": "v",
     "puntos_tab_consulta": "v",
@@ -1187,6 +1189,7 @@
     "pedidos": "ve",
     "pedidos_tab_historial": "v",
     "pedidos_tab_rutas": "v",
+    "preventa": "ve",
     "puntos": "v",
     "puntos_tab_consulta": "v",
     "puntos_tab_por_asignar": "v",
@@ -1270,6 +1273,7 @@
     "pedidos": "ve",
     "pedidos_tab_historial": "v",
     "pedidos_tab_rutas": "v",
+    "preventa": "ve",
     "puntos": "v",
     "puntos_tab_consulta": "v",
     "puntos_tab_por_asignar": "v",

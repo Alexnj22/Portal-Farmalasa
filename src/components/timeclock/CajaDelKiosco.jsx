@@ -10,6 +10,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { useAuth } from '@nucleo/context/AuthContext';
 import useKioscoDeCaja from './useKioscoDeCaja';
 import { esperaTexto, minutosDesde, tonoDeEspera, useColaDeCaja } from './datosDeLaCola';
 import { Anillo, Etiquetas, Pide } from './piezasDelKiosco';
@@ -129,8 +130,14 @@ export default function CajaDelKiosco({
         entrando, aviso, restante, vista, setVista, terminar, elegirDespues,
     } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo });
     const datosCola = useColaDeCaja();
+    // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
+    // Sin esto, alguien sin permiso entraba a Vender y veía un error rojo.
+    const { hasPermission, rolePerms } = useAuth();
+    const puede = { vender: hasPermission('preventa', 'can_edit'), caja: hasPermission('caja_vales', 'can_edit') };
     const [elegida, setElegida] = useState(null);
     const detalle = elegida ? datosCola.cola?.find((p) => p.id === elegida) : null;
+    // `rolePerms` null = todavía no se leyó: no se acusa a nadie mientras carga.
+    const sinPermiso = abierta && rolePerms != null && !puede[detalle ? 'vender' : vista];
 
     // Entrada / Salida: lleva a la caja con ese diálogo ya abierto.
     const [dialogoCaja, setDialogoCaja] = useState({ n: 0, cual: null });
@@ -219,7 +226,19 @@ export default function CajaDelKiosco({
                         pago con las mismas validaciones, y se cobra ahí. Una
                         venta propia a medias sigue en su borrador. */}
                     <div className="flex-1 flex flex-col">
-                        {abierta ? (
+                        {sinPermiso ? (
+                            <div className="mx-auto w-full max-w-lg py-10 flex flex-col gap-4">
+                                <Notice variant="warning" title={`Tu cargo no puede ${detalle || vista === 'vender' ? 'vender' : 'usar la caja'} en este kiosco`}>
+                                    Pide a un cajero o a tu jefe de sucursal que lo haga.
+                                </Notice>
+                                <div className="flex flex-wrap gap-2">
+                                    {!detalle && vista === 'vender' && puede.caja && <Button variant="secondary" icon={Wallet} onClick={() => irA('caja')}>Ir a la caja</Button>}
+                                    {!detalle && vista === 'caja' && puede.vender && <Button variant="secondary" icon={ShoppingCart} onClick={() => irA('vender')}>Ir a vender</Button>}
+                                    {detalle && <Button variant="secondary" icon={X} onClick={() => setElegida(null)}>Cerrar preventa</Button>}
+                                    <Button icon={LogOut} onClick={terminar}>Terminar</Button>
+                                </div>
+                            </div>
+                        ) : abierta ? (
                             <Suspense fallback={<LoadingState />}>
                                 {/* La venta NO se desmonta al ir a la caja: lo editado
                                     sigue ahí al volver. */}

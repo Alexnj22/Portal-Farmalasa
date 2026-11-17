@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.4 — Kiosco de caja: aviso claro sin permiso; preventa para los cargos de sucursal
+
+- En el primer uso real en Salud 4 (14:08), Fernando Oliva (Auxiliar de Bodega,
+  de apoyo en Salud 4 cubriendo Regente de Enfermería) entró a Vender y vio
+  «No tienes permiso para hacer esto» en rojo. No era un error: el módulo
+  `preventa` sólo lo tenían Administrador, Gerente General, Talento Humano,
+  Supervisor/a de Ventas y QA, así que **ningún cargo de sucursal podía vender
+  desde el kiosco**.
+- Producción, con el sí del usuario: `preventa` ver + editar, alcance `BRANCH`,
+  sin `can_approve`, para Dependiente de Farmacia (30), Regente de Enfermería
+  (23), Jefe/a de Sala (19) y Subjefe/a de Sala (20) — el mismo alcance que ya
+  tienen en `caja_vales` y `reservas`. Foto `scripts/db/permisos-de-cargos.json`
+  al día.
+- El kiosco ya no deja entrar a una pantalla que el cargo no puede usar: dice
+  «Tu cargo no puede vender en este kiosco» y ofrece la otra pantalla si la
+  puede usar, o Terminar. Espera a que lleguen los permisos para no acusar a
+  nadie mientras cargan.
+- Novedades: no — el gate no lo pidió (`--valorar`: 0 de 4).
+
 ## v2.1573.3 — Bolsas: la diferencia del conteo resuelta y el sobrante acumulado ya no cuentan
 
 - «esa diferencia de 4 también está resuelta» (usuario, 2026-11-17).

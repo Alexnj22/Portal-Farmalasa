@@ -47,7 +47,7 @@ function valorDe(tr, id) {
     return e ? (e.attrs.value ?? '') : null;
 }
 
-/** El `<select>` cuya clase incluye `clase`, con su opción elegida. */
+/** La lista desplegable (etiqueta select) cuya clase incluye `clase`, con su opción elegida. */
 function elegidaDe(tr, clase) {
     const sel = etiquetas(tr, 'select').find((t) => String(t.attrs.class ?? '').split(/\s+/).includes(clase));
     if (!sel) return null;

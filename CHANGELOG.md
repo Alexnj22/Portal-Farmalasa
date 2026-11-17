@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.9 — Kiosco de caja: revisar el cobro en la caja sin cobrar
+
+- Mientras el cobro no está encendido, el kiosco muestra «Revisar cobro en la
+  caja» al cobrar una preventa: corre el ensayo de `preventa-caja` y dice si
+  todo cuadra (productos y total) o qué impide cobrarla desde el portal.
+
+Novedades: no — es para la prueba del piloto en Salud 4.
+
 ## v2.1573.8 — Kiosco de caja: ensayo del cobro de una preventa
 
 - `src/utils/cobroDeCaja.js`: lee la preventa como la devuelve la caja y arma

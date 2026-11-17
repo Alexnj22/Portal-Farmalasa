@@ -89,3 +89,10 @@ export async function lotesDePreventa(branchId, ids) {
     if (error) throw error;
     return new Map((data ?? []).map((p) => [Number(p.producto_id), p.lotes ?? []]));
 }
+
+/**
+ * Revisar el cobro de una preventa en la caja SIN cobrar (kiosco de caja).
+ * Devuelve `{ ok, motivo, totales, cabecera, renglones }` o `{ ok: false, error }`. Nunca lanza.
+ */
+export const ensayarCobro = (preventaId, efectivo) =>
+    invocar({ accion: 'cobrar', ensayo: true, preventa_id: Number(preventaId), efectivo: Number(efectivo) || 0 });

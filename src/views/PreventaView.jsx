@@ -30,6 +30,7 @@ import { buscarClientes } from '@nucleo/data/customers';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import {
     anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala, fotosDeProductos, lotesDePreventa,
+    ensayarCobro,
 } from '@nucleo/data/preventas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
@@ -351,6 +352,15 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const enEfectivo = venta.pago === 'contado';
     const faltaEfectivo = enEfectivo && recibidoNum < aPagar;
     const cobroConectado = esDemo();
+    // Mientras el cobro no está encendido, el kiosco puede REVISARLO: la caja
+    // contesta qué cobraría, sin cobrar (`preventa-caja`, acción `cobrar`).
+    const [revision, setRevision] = useState(null);
+    const revisarCobro = async () => {
+        if (!cobrando?.id || revision?.cargando) return;
+        setRevision({ cargando: true });
+        const r = await ensayarCobro(cobrando.id, enEfectivo ? recibidoNum : aPagar);
+        setRevision(r);
+    };
     const cobrarEnKiosco = () => {
         if (bloqueada || faltaEfectivo || !cobroConectado) return;
         // En la muestra no se emite nada: se ve cómo queda al terminar.
@@ -656,7 +666,17 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                                 ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
                                                 : faltaEfectivo ? 'Escribe lo recibido' : `Cobrar ${formatMoney(aPagar)}`}
                                         </Button>
-                                        {!cobroConectado && <p className="text-micro text-content-3">El cobro todavía no está conectado.</p>}
+                                        {!cobroConectado && (
+                                            <>
+                                                <p className="text-micro text-content-3">El cobro todavía no está conectado.</p>
+                                                <Button className="w-full" variant="secondary" size="sm" loading={revision?.cargando} onClick={revisarCobro}>Revisar cobro en la caja</Button>
+                                                {revision && !revision.cargando && (
+                                                    revision.ok && !revision.motivo
+                                                        ? <Notice variant="success" compact>Todo cuadra: {revision.renglones} producto{revision.renglones === 1 ? '' : 's'}, {formatMoney(revision.totales?.total ?? 0)}. Listo para cobrar.</Notice>
+                                                        : <Notice variant="warning" compact>{revision.motivo || revision.error}</Notice>
+                                                )}
+                                            </>
+                                        )}
                                         {!tactil && (
                                             <div className="border-t border-subtle pt-2.5 space-y-1.5">
                                                 <p className="text-micro font-semibold text-content-2">Teclas rápidas</p>

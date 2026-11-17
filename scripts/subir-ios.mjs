@@ -22,7 +22,7 @@
 // contraseña ni código.
 import { execSync } from 'node:child_process';
 import { createPrivateKey, sign } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { esperarTurno } from './lib/turno-de-compilacion.mjs';
@@ -163,7 +163,21 @@ writeFileSync(join(salida, 'ExportOptions.plist'), `<?xml version="1.0" encoding
   <key>uploadSymbols</key><true/>
 </dict></plist>
 `);
-correr(`xcodebuild -exportArchive -archivePath "${salida}/app.xcarchive" -exportOptionsPlist "${salida}/ExportOptions.plist" -exportPath "${salida}/export" ${auth}`, ios);
+// La subida también habla con App Store Connect («Error Downloading App
+// Information» en su caída del 2026-11-17): se reintenta sin recompilar. Un
+// rechazo del binario (versión repetida, tren cerrado) se repite igual en cada
+// intento: leer el error de arriba antes de esperar los seis.
+for (let intento = 1; ; intento++) {
+  try {
+    rmSync(join(salida, 'export'), { recursive: true, force: true });
+    correr(`xcodebuild -exportArchive -archivePath "${salida}/app.xcarchive" -exportOptionsPlist "${salida}/ExportOptions.plist" -exportPath "${salida}/export" ${auth}`, ios);
+    break;
+  } catch (e) {
+    if (intento >= 6) throw e;
+    console.warn(`La subida falló (intento ${intento} de 6). Reintento en 90 s…`);
+    await new Promise((ok) => setTimeout(ok, 90_000));
+  }
+}
 
 writeFileSync(REGISTRO, JSON.stringify({ ...subidas, [bundle]: Number(numero) }, null, 2) + '\n');
 console.log(`✓ ${appJson.name} ${appJson.version} (${numero}) subida. Aparece en TestFlight en 10–30 minutos.`);

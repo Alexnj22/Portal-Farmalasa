@@ -84,9 +84,10 @@ export async function fetchAuditLogsForBranch(branchId) {
 
 // ── Kioscos ──────────────────────────────────────────────────────────────────
 
-export function fetchActiveKioskDeviceCount(branchId) {
+/** Cuántos equipos activos de ese tipo tiene la sucursal (el tope es por tipo). */
+export function fetchActiveKioskDeviceCount(branchId, tipo = 'marcacion') {
     return supabase.from('kiosk_devices').select('*', { count: 'exact', head: true })
-        .eq('branch_id', branchId).eq('status', 'ACTIVE');
+        .eq('branch_id', branchId).eq('status', 'ACTIVE').eq('tipo', tipo);
 }
 
 export function insertKioskDevice(payload) {

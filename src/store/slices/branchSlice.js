@@ -7,7 +7,7 @@ import {
 } from '../../data/branches';
 import * as almacen from '@plataforma/almacen';
 import { formatMoney } from '../../utils/formatNumber';
-import { LIMITE_KIOSCOS } from '../../utils/kioscos';
+import { LIMITES_DE_KIOSCO, TIPOS_DE_KIOSCO, rotuloDeKiosco } from '../../utils/kioscos';
 import { buscarCargo } from '../../utils/roles';
 import { yaEstabaPagado } from '../../utils/pagoDeSucursal';
 import { SIN_ASIGNAR } from '../../data/constants';
@@ -578,31 +578,39 @@ export const createBranchSlice = (set, get) => ({
         }
     },
 
-    registerKioskDevice: async (branchId, deviceName) => {
+    // `tipo`: 'marcacion' (hasta 3) o 'caja' (1), plan del kiosco de caja.
+    registerKioskDevice: async (branchId, deviceName, tipo = TIPOS_DE_KIOSCO.MARCACION) => {
         try {
             // El tope también lo pone la base (`trg_kiosk_devices_tope`): esto
             // es para avisar antes. Si el conteo falla, NO se registra —antes
             // `undefined >= 3` daba falso y pasaba igual—.
-            const { count, error: countErr } = await fetchActiveKioskDeviceCount(branchId);
+            const { count, error: countErr } = await fetchActiveKioskDeviceCount(branchId, tipo);
             if (countErr) throw new Error('No se pudo comprobar cuántos marcadores tiene la sucursal. Intenta de nuevo.');
 
-            if (count >= LIMITE_KIOSCOS) throw new Error(`Límite alcanzado: Ya existen ${LIMITE_KIOSCOS} dispositivos activos.`);
+            const limite = LIMITES_DE_KIOSCO[tipo] ?? LIMITES_DE_KIOSCO.marcacion;
+            if (count >= limite) {
+                throw new Error(tipo === TIPOS_DE_KIOSCO.CAJA
+                    ? 'Esta sucursal ya tiene su kiosco de caja. Desconecta el anterior primero.'
+                    : `Límite alcanzado: ya hay ${limite} marcadores activos.`);
+            }
 
-            const { data: newDevice, error } = await insertKioskDevice({ branch_id: branchId, device_name: deviceName, status: 'ACTIVE' });
+            const { data: newDevice, error } = await insertKioskDevice({ branch_id: branchId, device_name: deviceName, status: 'ACTIVE', tipo });
 
             if (error) throw error;
 
             await get().appendAuditLog('VINCULAR_KIOSCO', newDevice.id, {
-                timeline_title: `Marcador vinculado`,
+                timeline_title: `${rotuloDeKiosco(tipo)} vinculado`,
                 dimension: 'OPERATIVE',
                 branch_id: branchId,
-                new_value: `Dispositivo: ${deviceName}`
+                new_value: `Dispositivo: ${deviceName}`,
+                tipo,
             });
             return {
                 deviceId: newDevice.id,
                 deviceToken: newDevice.device_token,
                 branchId: newDevice.branch_id,
-                deviceName: newDevice.device_name
+                deviceName: newDevice.device_name,
+                tipo: newDevice.tipo ?? tipo,
             };
 
         } catch (err) {

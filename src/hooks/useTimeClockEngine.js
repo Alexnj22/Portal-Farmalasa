@@ -85,6 +85,8 @@ export function useTimeClockEngine(props = {}) {
     const [isConfiguring, setIsConfiguring] = useState(false);
     const [selectedBranchId, setSelectedBranchId] = useState('');
     const [deviceNameInput, setDeviceNameInput] = useState('');
+    // Marcador o kiosco de caja (plan del kiosco de caja, 2026-11-17).
+    const [tipoDeEquipo, setTipoDeEquipo] = useState('marcacion');
     const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
 
     const [earlyExitData, setEarlyExitData] = useState(null);
@@ -554,7 +556,7 @@ export function useTimeClockEngine(props = {}) {
         setIsProcessing(true);
         try {
             const branch = branches.find((b) => String(b.id || b.branchId) === String(selectedBranchId));
-            const newDeviceData = await registerKioskDevice(selectedBranchId, deviceNameInput);
+            const newDeviceData = await registerKioskDevice(selectedBranchId, deviceNameInput, tipoDeEquipo);
 
             if (newDeviceData && newDeviceData.deviceId && newDeviceData.deviceToken) {
                 const configToSave = {
@@ -563,6 +565,7 @@ export function useTimeClockEngine(props = {}) {
                     deviceId: newDeviceData.deviceId,
                     deviceToken: newDeviceData.deviceToken,
                     deviceName: deviceNameInput,
+                    tipo: newDeviceData.tipo || tipoDeEquipo,
                 };
                 
                 const saved = kiosk.saveConfig(configToSave);
@@ -572,7 +575,8 @@ export function useTimeClockEngine(props = {}) {
                     setSelectedBranchId('');
                     setDeviceNameInput('');
                     
-                    showToast('Marcador activado', `"${deviceNameInput}" ya es marcador.`, 'success');
+                    showToast(tipoDeEquipo === 'caja' ? 'Kiosco de caja activado' : 'Marcador activado',
+                        tipoDeEquipo === 'caja' ? `"${deviceNameInput}" ya es el kiosco de caja.` : `"${deviceNameInput}" ya es marcador.`, 'success');
 
                     setTimeout(() => {
                         recargar();
@@ -586,7 +590,7 @@ export function useTimeClockEngine(props = {}) {
         } finally {
             setIsProcessing(false);
         }
-    }, [deviceNameInput, selectedBranchId, branches, registerKioskDevice, kiosk, showToast]);
+    }, [deviceNameInput, selectedBranchId, tipoDeEquipo, branches, registerKioskDevice, kiosk, showToast]);
 
     const handleAnnouncementRead = useCallback(async () => {
         if (!feedback?.announcement || !feedback?.employee) {
@@ -1218,7 +1222,9 @@ const submitEarlyExit = useCallback((e) => {
             !earlyExitData &&
             !selfDeclareData &&
             !isConfiguring &&
-            !isRevokeModalOpen;
+            !isRevokeModalOpen &&
+            // En el kiosco de caja, fuera de la pestaña Marcar un carné NO marca.
+            !props.pausado;
 
         const onKeyDown = (e) => {
             if (!canCaptureIdleScan()) return;
@@ -1246,7 +1252,7 @@ const submitEarlyExit = useCallback((e) => {
 
         escucharTeclas(onKeyDown, true);
         return () => soltarTeclas(onKeyDown, true);
-    }, [authPrompt, feedback, isProcessing, earlyExitData, selfDeclareData, isConfiguring, isRevokeModalOpen, handleScan]);
+    }, [authPrompt, feedback, isProcessing, earlyExitData, selfDeclareData, isConfiguring, isRevokeModalOpen, handleScan, props.pausado]);
 
     // Lunch alerts: employees currently working whose scheduled lunch time has arrived
     const lunchAlerts = useMemo(() => {
@@ -1291,6 +1297,8 @@ const submitEarlyExit = useCallback((e) => {
         setSelectedBranchId,
         deviceNameInput,
         setDeviceNameInput,
+        tipoDeEquipo,
+        setTipoDeEquipo,
         isRevokeModalOpen,
         setIsRevokeModalOpen,
         earlyExitData,

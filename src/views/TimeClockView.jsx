@@ -13,10 +13,32 @@ import EarlyExitForm from '../components/timeclock/EarlyExitForm';
 import KioskConfigModal from '../components/timeclock/KioskConfigModal';
 import IdleScanPanel from '../components/timeclock/IdleScanPanel';
 import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
+import SegmentedControl from '../components/common/SegmentedControl';
+import ColaDeCaja from '../components/timeclock/ColaDeCaja';
 import { hora12ConSegundos } from '@nucleo/utils/hora';
+import { usePestanaEnUrl } from '@plataforma/usePestanaEnUrl';
+
+// El tipo del equipo se lee UNA vez al montar: cambia sólo al vincularlo, y
+// eso recarga la página. Un equipo de antes del 2026-11-17 no tiene tipo:
+// es marcador.
+function tipoDelEquipo() {
+  try {
+    const raw = localStorage.getItem('kiosk_config');
+    return raw && JSON.parse(raw)?.tipo === 'caja' ? 'caja' : 'marcacion';
+  } catch {
+    return 'marcacion';
+  }
+}
+
+// El kiosco de caja tiene dos pestañas (plan del kiosco de caja, fase 1). La
+// pestaña vive en la dirección (`?tab=`), como en todo el portal.
+const PESTANAS_CAJA = ['caja', 'marcar'];
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
+  const esCaja = useMemo(() => tipoDelEquipo() === 'caja', []);
+  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'caja' : 'marcar');
+  const enCola = esCaja && pestana === 'caja';
 
   const {
     scanCode,
@@ -58,7 +80,9 @@ const TimeClockView = ({ setView }) => {
     selfDeclareData,
     submitSelfDeclare,
     cancelSelfDeclare,
-  } = useTimeClockEngine();
+    tipoDeEquipo,
+    setTipoDeEquipo,
+  } = useTimeClockEngine({ pausado: enCola });
 
   // Read device & branch from localStorage kiosk_config
   const kioskLabel = useMemo(() => {
@@ -172,6 +196,8 @@ const TimeClockView = ({ setView }) => {
           branches={branches}
           selectedBranchId={selectedBranchId}
           deviceNameInput={deviceNameInput}
+          tipoDeEquipo={tipoDeEquipo}
+          onChangeTipo={setTipoDeEquipo}
           isProcessing={isProcessing}
           onChangeBranch={setSelectedBranchId}
           onChangeDeviceName={setDeviceNameInput}
@@ -224,6 +250,22 @@ const TimeClockView = ({ setView }) => {
           (1440×900, 1600×900): antes saltaba de tamaño completo a compacto y
           esos 100px no los cubría nadie. */}
       <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-8 sm:py-10 [@media(min-height:801px)_and_(max-height:900px)]:py-6 [@media(max-height:800px)]:py-5 [@media(max-height:640px)]:!py-2">
+        {esCaja && (
+          <div className="w-full max-w-[420px] mb-4 [@media(max-height:640px)]:mb-2">
+            <SegmentedControl
+              label="Pantalla del kiosco"
+              layout="block"
+              options={[
+                { value: 'caja', label: 'En caja' },
+                { value: 'marcar', label: 'Marcar' },
+              ]}
+              value={pestana}
+              onChange={setPestana}
+            />
+          </div>
+        )}
+
+        {enCola ? <ColaDeCaja /> : (
         <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
 
           {/* Logo — se retira por completo abajo de 640px de alto: en esas
@@ -324,6 +366,7 @@ const TimeClockView = ({ setView }) => {
           </div>
 
         </div>
+        )}
       </main>
     </div>
   );

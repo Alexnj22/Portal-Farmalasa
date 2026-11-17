@@ -104,7 +104,7 @@ export function opcionesDePresentacion(fila, linea) {
     const options = lista.map((p) => ({
         value: doble(p.factor) ? `${p.factor}:${p.id_presentacion}` : String(p.factor),
         // Corto, para que el precio se vea en el campo cerrado (antes «CAJA · viñeta 4.55» se cortaba).
-        label: doble(p.factor) ? `${p.tipo} $${Number(p.vineta).toFixed(2)}` : p.tipo,
+        label: doble(p.factor) ? `${p.tipo} ${formatMoney(Number(p.vineta))}` : p.tipo,
     }));
     const f = Number(linea.factor) || 1;
     const value = doble(f) ? `${f}:${linea.presentacion ?? fila?.id_presentacion ?? lista.find((p) => p.factor === f)?.id_presentacion}` : String(f);

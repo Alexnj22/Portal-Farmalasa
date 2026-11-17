@@ -18579,6 +18579,7 @@ export type Database = {
           last_active_at: string | null
           revoked_at: string | null
           status: string
+          tipo: string
         }
         Insert: {
           branch_id?: number | null
@@ -18589,6 +18590,7 @@ export type Database = {
           last_active_at?: string | null
           revoked_at?: string | null
           status?: string
+          tipo?: string
         }
         Update: {
           branch_id?: number | null
@@ -18599,6 +18601,7 @@ export type Database = {
           last_active_at?: string | null
           revoked_at?: string | null
           status?: string
+          tipo?: string
         }
         Relationships: [
           {
@@ -37845,6 +37848,10 @@ export type Database = {
           p_device_token: string
           p_employee_id?: string
         }
+        Returns: Json
+      }
+      kiosco_caja_cola: {
+        Args: { p_device_id: string; p_device_token: string }
         Returns: Json
       }
       kiosco_cubre_empleado: {

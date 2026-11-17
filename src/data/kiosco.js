@@ -177,3 +177,29 @@ export async function kioscoDeclararTurno({ employeeId, inicio, fin, metadata = 
     if (error) console.error('kiosco: no se pudo declarar el turno:', error.message);
     return { ok: !error };
 }
+
+// La cola de preventas que esperan cobro en la sucursal del equipo. Sólo la ve
+// un kiosco de CAJA: a un marcador el servidor le contesta `KIOSK_NO_ES_CAJA`.
+// Fase 1 del plan del kiosco de caja: sólo lectura.
+//
+// → { ok, cola, motivo, networkError }
+export async function kioscoCajaCola() {
+    const cred = credenciales();
+    if (!cred) return { ok: false, cola: [], motivo: 'SIN_EQUIPO', networkError: false };
+
+    const { data, error } = await supabase.rpc('kiosco_caja_cola', {
+        p_device_id: cred.deviceId,
+        p_device_token: cred.deviceToken,
+    });
+
+    if (error) {
+        const msg = String(error.message || '');
+        return {
+            ok: false,
+            cola: [],
+            motivo: msg.includes('KIOSK_NO_ES_CAJA') ? 'NO_ES_CAJA' : msg.includes('KIOSK_DEVICE_INVALID') ? 'SIN_EQUIPO' : 'ERROR',
+            networkError: !esRechazoDelServidor(error),
+        };
+    }
+    return { ok: true, cola: Array.isArray(data) ? data : [], motivo: null, networkError: false };
+}

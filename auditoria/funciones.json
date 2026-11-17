@@ -4166,6 +4166,10 @@
    "area": "acceso",
    "por": "código"
   },
+  "kiosco_caja_cola": {
+   "area": "acceso",
+   "por": "código"
+  },
   "kiosco_cubre_empleado": {
    "area": "personal",
    "por": "tablas"

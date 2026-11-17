@@ -3,10 +3,10 @@ import Notice from '../common/Notice';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { SkeletonText, EmptyState } from '../common/StateViews';
-import { Laptop, AlertCircle, Unplug, PowerOff, Activity } from 'lucide-react';
+import { Laptop, AlertCircle, Unplug, PowerOff, Activity, Receipt } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { kioscosActivos, LIMITE_KIOSCOS } from '@nucleo/utils/kioscos';
+import { kioscosActivos, cupoDeKioscos, tipoDeKiosco, rotuloDeKiosco, TIPOS_DE_KIOSCO } from '@nucleo/utils/kioscos';
 
 const FormDispositivos = ({ formData }) => {
     const [kiosks, setKiosks] = useState([]);
@@ -39,8 +39,11 @@ const FormDispositivos = ({ formData }) => {
         }
     }, [formData.id, getBranchKiosks]);
 
-    // SOLO ACTIVOS
-    const activeKiosks = useMemo(() => kioscosActivos(kiosks), [kiosks]);
+    // SOLO ACTIVOS, de los dos tipos: el kiosco de caja también es un equipo
+    // de la sucursal y se desconecta desde aquí. El cupo es por tipo.
+    const activeKiosks = useMemo(() => kioscosActivos(kiosks, null), [kiosks]);
+    const cupoMarcadores = useMemo(() => cupoDeKioscos(kiosks, TIPOS_DE_KIOSCO.MARCACION), [kiosks]);
+    const cupoCaja = useMemo(() => cupoDeKioscos(kiosks, TIPOS_DE_KIOSCO.CAJA), [kiosks]);
 
     const executeRevoke = async (deviceId, deviceName) => {
         setIsRevoking(true);
@@ -49,7 +52,7 @@ const FormDispositivos = ({ formData }) => {
             if (success) {
                 setKiosks(prev => prev.filter(k => k.id !== deviceId));
             } else {
-                setErrorMsg('No se pudo revocar el marcador.');
+                setErrorMsg('No se pudo desconectar el equipo.');
             }
         } catch {
             setErrorMsg('Ocurrió un error en el servidor.');
@@ -73,9 +76,14 @@ const FormDispositivos = ({ formData }) => {
                     <Activity size={16} className="text-brand-text"/> Dispositivos aprobados
                 </h4>
                 {/* El cupo es un dato, no algo vivo: sin el punto que latía. */}
-                <Badge size="sm" variant={activeKiosks.length >= LIMITE_KIOSCOS ? 'warning' : 'success'} uppercase={false}>
-                    {activeKiosks.length} de {LIMITE_KIOSCOS}
-                </Badge>
+                <div className="flex items-center gap-1.5">
+                    <Badge size="sm" variant={cupoMarcadores.lleno ? 'warning' : 'success'} uppercase={false}>
+                        Marcadores {cupoMarcadores.activos} de {cupoMarcadores.limite}
+                    </Badge>
+                    <Badge size="sm" variant={cupoCaja.lleno ? 'info' : 'neutral'} uppercase={false}>
+                        Caja {cupoCaja.activos} de {cupoCaja.limite}
+                    </Badge>
+                </div>
             </div>
 
             {/* CONTENEDOR DE LISTA ÚNICA */}
@@ -87,6 +95,8 @@ const FormDispositivos = ({ formData }) => {
                         {activeKiosks.length > 0 ? (
                             activeKiosks.map(kiosk => {
                                 const isConfirming = confirmingId === kiosk.id;
+                                const esCaja = tipoDeKiosco(kiosk) === TIPOS_DE_KIOSCO.CAJA;
+                                const Icono = esCaja ? Receipt : Laptop;
 
                                 return (
                                     <div key={kiosk.id} data-surface="card" data-tono={isConfirming ? 'danger' : undefined}
@@ -96,21 +106,21 @@ const FormDispositivos = ({ formData }) => {
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div aria-hidden="true" className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>
-                                                    <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
+                                                    <Icono size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className={`text-body font-black leading-tight truncate ${isConfirming ? 'text-danger-text' : 'text-content'}`}>
                                                         {kiosk.device_name}
                                                     </p>
                                                     <p className="text-label text-content-3 mt-0.5 truncate">
-                                                        {isConfirming ? '¿Desconectar este equipo?' : `Vinculado el ${fechaTexto(kiosk.created_at)}`}
+                                                        {isConfirming ? '¿Desconectar este equipo?' : `${rotuloDeKiosco(tipoDeKiosco(kiosk))} · vinculado el ${fechaTexto(kiosk.created_at)}`}
                                                     </p>
                                                 </div>
                                             </div>
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <Button variant="ghost" tone="danger" size="sm" icon={PowerOff} aria-label="Desconectar el marcador" iconOnly onClick={() => setConfirmingId(kiosk.id)} />
+                                                <Button variant="ghost" tone="danger" size="sm" icon={PowerOff} aria-label={esCaja ? 'Desconectar el kiosco de caja' : 'Desconectar el marcador'} iconOnly onClick={() => setConfirmingId(kiosk.id)} />
                                             )}
                                         </div>
 
@@ -125,7 +135,7 @@ const FormDispositivos = ({ formData }) => {
                                 );
                             })
                         ) : (
-                            <EmptyState compact icon={Laptop} title="Sin marcadores vinculados"
+                            <EmptyState compact icon={Laptop} title="Sin equipos vinculados"
                                 subtitle="Inicia sesión en la tablet de la sucursal para vincularla." />
                         )}
                     </div>

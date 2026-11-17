@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; // 🚨 Asegúrate de que esta ruta sea correcta
 import PortalInput from '../common/PortalInput';
+import SegmentedControl from '../common/SegmentedControl';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
@@ -19,6 +20,8 @@ const KioskConfigModal = ({
   branches = [],
   selectedBranchId = '',
   deviceNameInput = '',
+  tipoDeEquipo = 'marcacion',
+  onChangeTipo,
   onChangeBranch,
   onChangeDeviceName,
   onSave,
@@ -71,7 +74,7 @@ const KioskConfigModal = ({
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
-              Marcador activo
+              {parsedConfig.tipo === 'caja' ? 'Kiosco de caja activo' : 'Marcador activo'}
             </h2>
             <p className="text-micro sm:text-body-sm font-black uppercase tracking-widest text-success/80 transition-colors px-2 mb-6">
               Dispositivo Autorizado
@@ -99,7 +102,7 @@ const KioskConfigModal = ({
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
-              Activar como marcador
+              Activar este equipo
             </h2>
             <p className="text-micro sm:text-body-sm font-black uppercase tracking-widest text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
               Configuración Inicial
@@ -107,6 +110,25 @@ const KioskConfigModal = ({
 
             <div className="w-full text-left flex flex-col gap-4 sm:gap-5 relative z-tabs">
               
+              {/* Qué va a ser este equipo. El de caja también marca; hay uno
+                  por sucursal y los marcadores siguen hasta 3. */}
+              <div className="flex flex-col gap-1.5">
+                <span className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-caption`}>
+                  Este equipo será
+                </span>
+                <SegmentedControl
+                  label="Este equipo será"
+                  layout="block"
+                  options={[
+                    { value: 'marcacion', label: 'Marcador' },
+                    { value: 'caja', label: 'Kiosco de caja' },
+                  ]}
+                  value={tipoDeEquipo}
+                  onChange={(v) => onChangeTipo?.(v)}
+                  disabled={isProcessing}
+                />
+              </div>
+
               {/* 🚨 REEMPLAZO DEL SELECT NATIVO POR LIQUIDSELECT */}
               <div className="flex flex-col gap-1.5 relative z-header">
                 <label className={`${rotuloCampo('text-white/50', { denso: true })} sm:text-caption`}>
@@ -134,7 +156,7 @@ const KioskConfigModal = ({
                   label="Identificador del Equipo" name="kiosk-device" onDark icon={Laptop}
                   value={deviceNameInput}
                   onChange={(e) => onChangeDeviceName?.(e.target.value)}
-                  placeholder="Ej: Tablet Entrada"
+                  placeholder={tipoDeEquipo === 'caja' ? 'Ej: Computadora de caja' : 'Ej: Tablet Entrada'}
                   readOnly={isProcessing}
                   autoComplete="off"
                 />

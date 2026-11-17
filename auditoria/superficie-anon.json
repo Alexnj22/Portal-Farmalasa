@@ -53,6 +53,13 @@
       "motivo": "La marcación misma. Verificado a mano el 2026-08-23: abre resolviendo la sala por device_id + device_token."
     },
     {
+      "nombre": "kiosco_caja_cola",
+      "area": "acceso",
+      "guarda": "device_token",
+      "estado": "nueva-2026-11-17",
+      "motivo": "Kiosco de caja (fase 1): la cola de preventas de la sucursal del equipo, sólo lectura. Exige equipo ACTIVO de tipo caja; a un marcador le contesta KIOSK_NO_ES_CAJA."
+    },
+    {
       "nombre": "kiosco_marcajes_recientes",
       "area": "acceso",
       "guarda": "device_token",

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1565.0 — Kiosco de caja: fase 1
+
+- Al vincular un equipo se elige qué será: **Marcador** (hasta 3 por sucursal)
+  o **Kiosco de caja** (1 por sucursal). La base pone el mismo tope por tipo y
+  ahora también lo vigila al reactivar un equipo.
+- El kiosco de caja tiene dos pestañas: **En caja**, con las preventas que
+  esperan cobro en la sucursal (la más vieja arriba, quién la vendió, cuánto
+  espera, solo ver), y **Marcar**, la marcación de siempre. Fuera de Marcar,
+  escanear un carné no marca.
+- `kiosco_caja_cola`: sólo la ve un equipo de caja activo; declarada en la
+  superficie sin sesión.
+- La presentación con dos precios usa `formatMoney`.
+- Plan: `docs/PLAN-KIOSCO-DE-CAJA-2026-11-17.md`, fase 1.
+- Novedades: no — piloto en Salud 4; se anuncia cuando se cobre desde el kiosco (fase 3). Lo decidió el usuario.
+
 ## v2.1564.3 — Preventa nativa en la app
 
 - **Preventa ya no se abre como el portal dentro de la app**: pantalla nativa

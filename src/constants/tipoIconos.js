@@ -57,6 +57,7 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     PEDIDO_LLEGADA:   'Package',
     PEDIDO_REENVIO:   'Package',
     PEDIDO_PROBLEMA:  'Package',
+    PREVENTA_COBRO_DISTINTO: 'ShieldAlert',
     MINMAX_PENDING:   'BarChart2',
     MINMAX_DECIDED:   'BarChart2',
     REQUEST_PENDING:  'ClipboardList',

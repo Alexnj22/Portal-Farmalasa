@@ -22795,6 +22795,7 @@ export type Database = {
           anulada_at: string | null
           anulada_por: string | null
           branch_id: number
+          cobro_distinto: Json | null
           codigo_generacion: string | null
           correccion_previa: Json | null
           corregida_veces: number
@@ -22822,6 +22823,7 @@ export type Database = {
           anulada_at?: string | null
           anulada_por?: string | null
           branch_id: number
+          cobro_distinto?: Json | null
           codigo_generacion?: string | null
           correccion_previa?: Json | null
           corregida_veces?: number
@@ -22849,6 +22851,7 @@ export type Database = {
           anulada_at?: string | null
           anulada_por?: string | null
           branch_id?: number
+          cobro_distinto?: Json | null
           codigo_generacion?: string | null
           correccion_previa?: Json | null
           corregida_veces?: number
@@ -38419,6 +38422,7 @@ export type Database = {
         Args: { p_branch: number; p_customer: number }
         Returns: Json
       }
+      preventa_cobro_distinto: { Args: { p_id: number }; Returns: Json }
       preventa_cobro_turno: {
         Args: { p_product: number; p_tomar: boolean }
         Returns: boolean

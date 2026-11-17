@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.4 — Preventa: aviso si se cobró distinto
+
+- Al cerrarse una preventa con su factura se compara producto por producto lo
+  prometido con lo cobrado. Si cambió el precio, la cantidad o falta un
+  producto, la tarjeta dice **«Se cobró distinto»** con el detalle, y se avisa
+  a la sucursal y a quien la envió. Lo agregado en caja se anota sin alarma.
+- El crédito fiscal se compara con el IVA puesto (sus renglones van sin IVA).
+- Lo ya facturado se comparó una vez sin avisar: sólo la reserva #12 ($27.15
+  prometido, $28.40 cobrado) salió distinta.
+
 ## v2.1562.3 — Novedades: redacción y referencias revisadas
 
 - Revisé cada novedad contra la pantalla real. Bodega: el botón es «Devolver a bodega» (no existían «Volver al estante» ni la lista «Pasados desde el portal»). Inicio: el botón es «Personalizar», no «Editar Inicio». Conteo: la columna Dif. sale después de guardar. Mi perfil: se abre tocando tu nombre abajo en el menú. Android: la ruta completa en Play Console.

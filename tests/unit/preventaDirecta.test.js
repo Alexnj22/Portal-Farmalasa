@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     agregarLinea, estadoDePreventa, faltaParaEnviar, lineasDeVenta, lineasParaCotizar, nombreDeLista,
-    porQueEsaLista, sePuedeAnular, opcionesDePrecio, faltaEnPuntos, maximoDePuntos, descuentoDePuntos, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
+    diferenciasDelCobro, porQueEsaLista, sePuedeAnular, opcionesDePrecio, faltaEnPuntos, maximoDePuntos, descuentoDePuntos, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
 } from '@nucleo/utils/preventaDirecta.js';
 
 const losartan = { id: 2750, nombre: 'LOSARTAN' };
@@ -111,5 +111,20 @@ describe('puntos', () => {
         expect(maximoDePuntos(info, 10)).toBe(220);
         expect(maximoDePuntos(info, 1.5)).toBe(145);
         expect(maximoDePuntos(null, 10)).toBe(0);
+    });
+});
+
+describe('diferenciasDelCobro', () => {
+    it('la reserva #12: precio prometido y cobrado; lo agregado no alarma', () => {
+        const d = diferenciasDelCobro({ productos: [
+            { tipo: 'precio', nombre: 'IRBESARTAN', prometido: 27.15, cobrado: 28.4 },
+            { tipo: 'agregado', nombre: 'PULMO GRIP', cobrado: 9.6 },
+            { tipo: 'cantidad', nombre: 'X', unidades_prometidas: 2, unidades_cobradas: 1 },
+        ] });
+        expect(d.map((x) => x.texto)).toEqual([
+            'se prometió a $27.15 y se cobró $28.40', 'se agregó en caja ($9.60)', 'se prometieron 2 unidades y se cobraron 1 unidad',
+        ]);
+        expect(d.map((x) => x.alerta)).toEqual([true, false, true]);
+        expect(diferenciasDelCobro(null)).toEqual([]);
     });
 });

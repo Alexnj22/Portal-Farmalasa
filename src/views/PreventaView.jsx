@@ -33,7 +33,7 @@ import {
 } from '@nucleo/data/preventas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
-    faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, montoDelCorreo, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
+    faltanParaCcf, diferenciasDelCobro, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, montoDelCorreo, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
     porQueEsaLista, problemasDeVenta, sePuedeAnular, sePuedeCorregir, totalesDe, vencePronto,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -1301,6 +1301,7 @@ function Tarjeta({ p, puedeVender, onCorregir, onRepetir, onAnular }) {
                 <span className="text-right shrink-0">
                     <span className="block text-body font-black tabular-nums">{formatMoney(p.total)}</span>
                     <Badge variant={est.tono} size="sm" uppercase={false}>{est.texto}</Badge>
+                    {p.cobro_distinto?.alerta && <Badge variant="danger" size="sm" uppercase={false}>Se cobró distinto</Badge>}
                 </span>
             </button>
             {abierta && (
@@ -1320,6 +1321,16 @@ function Tarjeta({ p, puedeVender, onCorregir, onRepetir, onAnular }) {
                         )}
                     </ul>
                     {p.factura && <p className="text-micro text-content-3">Factura {p.factura}</p>}
+                    {p.cobro_distinto && (
+                        <Notice variant={p.cobro_distinto.alerta ? 'danger' : 'info'}>
+                            Se prometió {formatMoney(p.cobro_distinto.total_prometido)} y se facturó {formatMoney(p.cobro_distinto.total_cobrado)}.
+                            <ul className="mt-1 space-y-0.5">
+                                {diferenciasDelCobro(p.cobro_distinto).map((d) => (
+                                    <li key={d.nombre}><span className="font-semibold">{d.nombre}</span>: {d.texto}</li>
+                                ))}
+                            </ul>
+                        </Notice>
+                    )}
                     {p.error && <Notice variant={p.estado === 'viva' ? 'warning' : 'danger'}>{p.error}</Notice>}
                     {(p.avisos ?? []).map((a) => <Notice key={a} variant="warning">{a}</Notice>)}
                     {puedeVender && (

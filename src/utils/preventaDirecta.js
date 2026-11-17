@@ -172,6 +172,25 @@ export function estadoDePreventa(p) {
     }
 }
 
+/**
+ * Lo que se cobró distinto de lo prometido (2026-11-16), una línea por
+ * producto. Lo arma la base al cerrar la preventa con su factura
+ * (`preventa_cobro_distinto`). Sin diferencias, lista vacía.
+ */
+export function diferenciasDelCobro(cd) {
+    const $ = (v) => '$' + (Math.round(Number(v || 0) * 100) / 100).toFixed(2);
+    const u = (v) => `${Number(v)} ${Number(v) === 1 ? 'unidad' : 'unidades'}`;
+    return (cd?.productos ?? []).map((x) => {
+        const nombre = String(x.nombre ?? 'Producto');
+        switch (x.tipo) {
+            case 'precio': return { nombre, texto: `se prometió a ${$(x.prometido)} y se cobró ${$(x.cobrado)}`, alerta: true };
+            case 'cantidad': return { nombre, texto: `se prometieron ${u(x.unidades_prometidas)} y se cobraron ${u(x.unidades_cobradas)}`, alerta: true };
+            case 'quitado': return { nombre, texto: 'no se cobró', alerta: true };
+            default: return { nombre, texto: `se agregó en caja (${$(x.cobrado)})`, alerta: false };
+        }
+    });
+}
+
 /** ¿Se puede corregir o anular? Sólo mientras está en caja sin facturar (o si no llegó). */
 export const sePuedeCorregir = (p) => p?.estado === 'viva';
 export const sePuedeAnular = (p) => ['viva', 'fallida', 'sin_enlace'].includes(p?.estado);

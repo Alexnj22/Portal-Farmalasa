@@ -67,6 +67,7 @@ export const ACTION_LABEL = {
     PEDIDO_LLEGADA:  'Confirmar recepción',
     PEDIDO_REENVIO:  'Confirmar llegada',
     PEDIDO_PROBLEMA: 'Ver detalle',
+    PREVENTA_COBRO_DISTINTO: 'Ver la preventa',
     CORTE_NUEVO:     'Revisar el corte',
     DEPOSITO_BANCO:  'Ver el depósito',
     CHAT_CLIENTE:    'Responder',

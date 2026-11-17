@@ -23,6 +23,8 @@
 import { imprimirDocumento, limpiarValorDeBarras } from '@nucleo/utils/ticketPrint';
 import { construirCarneDePapel } from '@nucleo/utils/carneDePapel';
 import { VENTANA_BLOQUEADA } from './ventanaDeImpresion';
+import { svgDeCodigoDeBarras } from './impresion';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // El documento vive en el núcleo (`carneDePapel`): la app imprime el mismo.
 export { SIMBOLOGIA_DEL_CARNE, construirCarneDePapel } from '@nucleo/utils/carneDePapel';
@@ -43,16 +45,19 @@ export function imprimirCarneDePapel(datos, { sala = null, soloCola = false } = 
 
 // ── El carné de PLÁSTICO ────────────────────────────────────────────────────
 //
-// Es otro papel y otro camino: una etiqueta de 85 × 30 mm por el diálogo del
-// navegador, la que se lleva quien fabrica el carné. NO va al rollo, y eso es
-// una decisión, no una omisión: lo que lleva adentro es el `kiosk_pin`, la
-// credencial PERMANENTE de esa persona. En un ticket térmico quedaría sobre un
-// mostrador y sin fecha de vencimiento — que es exactamente el problema por el
-// que existe el carné del día.
+// El carné completo, a tamaño tarjeta (85.6 × 54 mm), en una hoja carta para
+// recortar: logo, foto, nombre, cargo, sucursal y el código de barras. Hasta el
+// 2026-11-17 esto era sólo una etiqueta de 85 × 30 mm con el nombre y las
+// barras; en hoja carta el navegador ignoraba el `@page` y estiraba el código a
+// lo ancho de la hoja. Ahora el tamaño lo fija la TARJETA, no la página.
 //
-// Vivía escrito dentro de `FormNovedad` (el cambio de código) y salió acá el
-// 2026-08-20, cuando el perfil necesitó lo mismo. Dos copias del mismo
-// documento se desincronizan y la diferencia sólo se ve en el papel.
+// NO va al rollo, y eso es una decisión, no una omisión: lo que lleva adentro
+// es el `kiosk_pin`, la credencial PERMANENTE de esa persona. En un ticket
+// térmico quedaría sobre un mostrador y sin fecha de vencimiento — que es
+// exactamente el problema por el que existe el carné del día.
+//
+// Lo usan el perfil (reimprimir) y `FormNovedad` (el cambio de código): una
+// sola copia, porque dos se desincronizan y sólo se ve con los papeles al lado.
 //
 // **La ventana se abre SINCRÓNICA en el gesto y por eso la recibe hecha**: si
 // se abriera después del `await` del `import`, el bloqueador de emergentes la
@@ -61,8 +66,9 @@ export function imprimirCarneDePapel(datos, { sala = null, soloCola = false } = 
 // Y el documento no lleva ni un `<script>`: una ventana abierta con
 // `window.open('')` **hereda el origen del portal**, así que un script de un
 // tercero adentro vería el `localStorage` entero, token de sesión incluido.
-// El código de barras se dibuja acá y a la ventana viaja el SVG ya hecho.
-export async function imprimirEtiquetaDeCarne(win, { nombre, valor }) {
+// El código de barras se dibuja acá y a la ventana viaja el SVG ya hecho; la
+// espera de las imágenes también se hace desde acá.
+export async function imprimirCarneCompleto(win, { nombre, cargo = '', sala = '', foto = null, valor }) {
     if (!win) return { ok: false, motivo: VENTANA_BLOQUEADA };
     const limpio = limpiarValorDeBarras(valor);
     if (!limpio) { win.close(); return { ok: false, motivo: 'Esa persona no tiene código de carné.' }; }
@@ -72,8 +78,7 @@ export async function imprimirEtiquetaDeCarne(win, { nombre, valor }) {
 
     let svg = '';
     try {
-        const { dibujarCodigoDeBarras } = await import('@nucleo/utils/ticketPrint');
-        svg = await dibujarCodigoDeBarras(limpio, 'CODE128');
+        svg = await svgDeCodigoDeBarras(limpio, 'CODE128');
     } catch { /* abajo */ }
     if (!svg) {
         // Sin código de barras el carné no sirve: mejor cerrar la ventana que
@@ -81,25 +86,61 @@ export async function imprimirEtiquetaDeCarne(win, { nombre, valor }) {
         win.close();
         return { ok: false, motivo: 'No se pudo dibujar el código de barras.' };
     }
+    // Que llene su caja: el ancho de las barras escala parejo, el lector lo lee igual.
+    svg = svg.replace('<svg', '<svg preserveAspectRatio="none"');
 
-    win.document.write(`
+    const origen = window.location.origin;
+    const logo = `${origen}/logo-ticket-completo.png`;
+    const fotoHtml = foto
+        ? `<img class="foto" src="${esc(foto)}" alt="">`
+        : '<div class="foto sin-foto"></div>';
+
+    win.document.write(`<!doctype html>
         <html>
         <head>
+        <meta charset="utf-8">
+        <title>Carné</title>
         <style>
-            @page { margin: 0; size: 85mm 30mm; }
-            body { margin: 0; padding: 8mm 4mm; font-family: Arial, sans-serif; text-align: center;
-                   display: flex; flex-direction: column; align-items: center; justify-content: center; }
-            h3 { margin: 0 0 3mm; font-size: 11pt; font-weight: bold; }
-            svg { max-width: 75mm; }
+            @page { size: letter; margin: 15mm; }
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #000; }
+            .carne { width: 85.6mm; height: 54mm; border: 0.3mm dashed #888; border-radius: 3mm;
+                     padding: 3mm; display: flex; flex-direction: column; justify-content: space-between;
+                     overflow: hidden; }
+            .arriba { display: flex; gap: 3mm; }
+            .foto { width: 22mm; height: 27mm; object-fit: cover; border-radius: 1.5mm; flex: none; }
+            .sin-foto { border: 0.3mm solid #bbb; }
+            .datos { min-width: 0; display: flex; flex-direction: column; }
+            .logo { height: 8mm; max-width: 52mm; object-fit: contain; object-position: left; margin-bottom: 2mm; }
+            .nombre { font-size: 11pt; font-weight: bold; line-height: 1.15; margin: 0 0 1mm; }
+            .linea { font-size: 8pt; line-height: 1.25; margin: 0; }
+            .barras { width: 100%; height: 11mm; display: block; }
         </style>
         </head>
         <body>
-            <h3>${esc(nombre)}</h3>
-            ${svg}
+            <div class="carne">
+                <div class="arriba">
+                    ${fotoHtml}
+                    <div class="datos">
+                        <img class="logo" src="${esc(logo)}" alt="">
+                        <p class="nombre">${esc(shortEmployeeName({ name: nombre }))}</p>
+                        ${cargo ? `<p class="linea">${esc(cargo)}</p>` : ''}
+                        ${sala ? `<p class="linea">${esc(sala)}</p>` : ''}
+                    </div>
+                </div>
+                <div class="barras">${svg.replace('<svg', '<svg class="barras"')}</div>
+            </div>
         </body>
         </html>
     `);
     win.document.close();
-    setTimeout(() => win.print(), 600);
+
+    // Imprimir antes de que carguen la foto y el logo los deja en blanco.
+    await Promise.all(Array.from(win.document.images).map(img => (img.complete ? null : new Promise((res) => {
+        img.addEventListener('load', res, { once: true });
+        img.addEventListener('error', res, { once: true });
+        setTimeout(res, 5000);
+    }))));
+    win.print();
     return { ok: true };
 }

@@ -520,9 +520,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     // Sincrónica dentro del gesto: después de un
                                     // `await` el bloqueador de emergentes la mata.
                                     const win = abrirVentanaDeImpresion();
-                                    const { imprimirEtiquetaDeCarne } = await import('../../plataforma/carnePrint');
-                                    const r = await imprimirEtiquetaDeCarne(win, {
+                                    const { imprimirCarneCompleto } = await import('../../plataforma/carnePrint');
+                                    const r = await imprimirCarneCompleto(win, {
                                         nombre: activeEmployee?.name || '',
+                                        cargo: activeEmployee?.role || activeEmployee?.main_role?.name || '',
+                                        foto: activeEmployee?.photo || null,
                                         valor: formData.newKioskPin || '',
                                     });
                                     // Sin esto un carné que no sale se ve

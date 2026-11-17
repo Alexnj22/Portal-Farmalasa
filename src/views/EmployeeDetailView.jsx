@@ -335,8 +335,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const handleResetPassword = () => setShowResetConfirm(true);
 
     /**
-     * Reimprime la etiqueta del carné de PLÁSTICO — la de 85 × 30 mm, por el
-     * diálogo del navegador. No sale por la ticketera a propósito: lo que lleva
+     * Reimprime el carné de PLÁSTICO completo —tarjeta de 85.6 × 54 mm en hoja
+     * carta, por el diálogo del navegador—. No sale por la ticketera a propósito: lo que lleva
      * adentro es el PIN permanente de esta persona, y un ticket térmico sobre un
      * mostrador es justo lo que el carné del día existe para evitar.
      *
@@ -351,8 +351,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         try {
             const mapa = await fetchCredenciales([emp.id]);
             const pin = mapa.get(emp.id)?.kiosk_pin;
-            const { imprimirEtiquetaDeCarne } = await import('../plataforma/carnePrint');
-            const r = await imprimirEtiquetaDeCarne(win, { nombre: emp.name, valor: pin });
+            const { imprimirCarneCompleto } = await import('../plataforma/carnePrint');
+            const r = await imprimirCarneCompleto(win, {
+                nombre: emp.name, cargo: emp.role || '', sala: branch?.name || '',
+                foto: emp.photo || null, valor: pin,
+            });
             if (!r.ok) showToast('No se pudo imprimir el carné', r.motivo, 'error');
         } catch (err) {
             win?.close();

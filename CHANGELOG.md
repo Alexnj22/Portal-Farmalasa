@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1567.2 — Reimprimir el carné saca el carné completo, a tamaño tarjeta
+
+- Arreglo: «Reimprimir el carné de plástico» (perfil) e «Imprimir Nuevo
+  Carné» (cambio de código) sacaban sólo el código de barras, y en hoja carta
+  salía estirado a lo ancho. Ahora imprimen el carné completo a 85.6 × 54 mm
+  —logo, foto, nombre corto, cargo, sucursal y barras— con borde de recorte.
+  También se arregló la llamada al dibujo de las barras, que apuntaba a una
+  función que ya no existía (`imprimirCarneCompleto` en `carnePrint.js`).
+- Novedades: no — 0 de 4 en la valoración; es el mismo botón, con el papel
+  que se esperaba.
+
 ## v2.1567.1 — Kiosco: la caja ya no cierra la sesión al entrar
 
 - Arreglo: en la pestaña Caja del kiosco, el carné abría la sesión y se

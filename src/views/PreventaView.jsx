@@ -99,7 +99,12 @@ const enfocar = (id) => { const el = document.getElementById(id); if (el) { el.f
 const claveDe = (l) => `${l.producto_id}-${l.factor}`;
 const conMayuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
 
-export default function PreventaView({ openModal }) {
+/**
+ * `enKiosco` (2026-11-17): la venta dentro del kiosco de caja. Sin el marco de
+ * la vista (el kiosco ya tiene su barra); las pestañas van arriba del cuerpo.
+ * El cuerpo y los diálogos son los mismos.
+ */
+export default function PreventaView({ openModal, enKiosco = false }) {
     const { user, hasPermission, getScope } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const tactil = useCoarsePointer();
@@ -444,10 +449,11 @@ export default function PreventaView({ openModal }) {
         </FilterBar>
     );
 
+    const Marco = enKiosco ? MarcoDeKiosco : GlassViewLayout;
     return (
-        <GlassViewLayout icon={Receipt} title="Preventa" transparentBody
+        <Marco icon={Receipt} title="Preventa" transparentBody
             filtersContent={<ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />}>
-            <div className="p-3 md:p-4 space-y-3">
+            <div className={enKiosco ? 'space-y-3' : 'p-3 md:p-4 space-y-3'}>
                 {!sala && <Notice variant="warning">Tu usuario no tiene sucursal asignada.</Notice>}
                 {/* La píldora canónica: sucursal (quien ve todas) y las acciones. */}
                 {sala && (
@@ -649,7 +655,17 @@ export default function PreventaView({ openModal }) {
                 title={venta.corrigiendo ? '¿Dejar de corregir?' : '¿Vaciar la venta?'}
                 message={venta.corrigiendo ? 'La preventa en caja queda como estaba.' : 'Se quitan el cliente y los productos.'}
                 confirmText={venta.corrigiendo ? 'Dejar de corregir' : 'Vaciar'} />
-        </GlassViewLayout>
+        </Marco>
+    );
+}
+
+/** El marco de la venta en el kiosco: sólo las pestañas, sin título. */
+function MarcoDeKiosco({ filtersContent, children }) {
+    return (
+        <div className="flex flex-col gap-3">
+            {filtersContent}
+            {children}
+        </div>
     );
 }
 

@@ -1,113 +1,187 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { LogOut, AlertCircle } from 'lucide-react';
+import { Clock3, LogOut, ShoppingCart, Wallet } from 'lucide-react';
 import Button from '../common/Button';
-import Notice from '../common/Notice';
+import SegmentedControl from '../common/SegmentedControl';
 import AvatarConEstado from '../common/AvatarConEstado';
 import { LoadingState } from '../common/StateViews';
-import { ScanReadyRing } from './IdleScanPanel';
+import ColaDeCaja from './ColaDeCaja';
+import PasaTuCarne from './PasaTuCarne';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12 } from '@nucleo/utils/hora';
 import useCapturaDeCarne from '@plataforma/useCapturaDeCarne';
-import { sesionDeCaja } from './sesionDeCaja';
+import { sesionDeCaja, INACTIVO_MS } from './sesionDeCaja';
 
-// La pestaña «Caja» del kiosco de caja (fase 2, 2026-11-17).
+// El kiosco de caja entero (rediseño del 2026-11-17, pedido del usuario: «que
+// sea práctico… ¿por qué vender y preventas está separado?»).
 //
-// Decisión del usuario: el carné ABRE Mi caja. Se pasa el carné, se entra con
-// la sesión de esa persona —la misma entrada que el carné en la pantalla de
-// inicio— y se ve Mi caja de hoy, idéntica, con sus permisos y sus frenos: lo
-// que se haga queda a su nombre. No hay menú ni otras pantallas.
+// Tres pantallas en una barra fija arriba: **Ventas** (la cola de caja y, con
+// el carné, la venta), **Caja** (con el carné, Mi caja de hoy) y **Marcar**.
+// La barra dice siempre de qué sucursal es el equipo, la hora y, con una
+// sesión abierta, quién está operando y cuánto falta para que se cierre sola.
 //
-// La sesión no se queda en la computadora de la sucursal: se cierra con
-// «Terminar», al cambiar de pestaña y tras 2 minutos sin tocar nada. Es lo que
-// separa esto de dejar una sesión abierta en la caja, que era el problema de
-// partida (datos de una persona a la vista de todos).
-// Las pantallas que se abren con el carné. Diferidas: el kiosco no las carga
-// hasta que alguien entra.
+// El carné abre la sesión de esa persona (la misma entrada que el carné en la
+// pantalla de inicio): lo que se haga queda a su nombre, con sus permisos y
+// sus frenos. Se cierra con «Terminar», al pasar a Marcar y tras 2 minutos sin
+// tocar nada. Ventas y Caja comparten la sesión.
 const MiCajaView = lazy(() => import('../../views/MiCajaView'));
 const PreventaView = lazy(() => import('../../views/PreventaView'));
 
-const VISTAS = {
-    caja: { pide: 'Pasa tu carné para abrir la caja', detalle: 'Apertura, cortes y cierre del día quedan a tu nombre.', abriendo: 'Abriendo la caja…' },
-    vender: { pide: 'Pasa tu carné para vender', detalle: 'La preventa llega a caja con tu nombre como vendedor.', abriendo: 'Abriendo…' },
-};
-
-const INACTIVO_MS = 2 * 60_000;
+const PANTALLAS = [
+    { value: 'ventas', label: 'Ventas', icon: ShoppingCart },
+    { value: 'caja', label: 'Caja', icon: Wallet },
+    { value: 'marcar', label: 'Marcar', icon: Clock3 },
+];
 
 const EVENTOS_DE_USO = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
 
-export default function CajaDelKiosco({ branchId, vista = 'caja' }) {
-    const textos = VISTAS[vista] ?? VISTAS.caja;
+function leerEquipo() {
+    try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null') ?? {}; } catch { return {}; }
+}
+
+const mmss = (ms) => {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
+/** Quién opera, cuánto le queda y «Terminar». */
+function QuienOpera({ user, restante, onTerminar }) {
+    const poco = restante <= 30_000;
+    return (
+        <div className="flex items-center gap-3 min-w-0">
+            <AvatarConEstado emp={user} px={36} mostrarChip={false} />
+            <div className="min-w-0 leading-tight hidden md:block">
+                <p className="text-body-sm font-bold text-content truncate">{shortEmployeeName(user)}</p>
+                <p className={`text-label tabular-nums ${poco ? 'text-warning-text' : 'text-content-3'}`}>
+                    Se cierra en {mmss(restante)}
+                </p>
+            </div>
+            <Button variant="secondary" size="sm" icon={LogOut} onClick={onTerminar}>Terminar</Button>
+        </div>
+    );
+}
+
+export default function CajaDelKiosco({ pantalla, onPantalla, marcar, ahora, onSalir }) {
     const { isAuthenticated, user, login, logout } = useAuth();
     const [, setParams] = useSearchParams();
+    const [equipo] = useState(leerEquipo);
     const [entrando, setEntrando] = useState(false);
     const [error, setError] = useState(null);
+    const [restante, setRestante] = useState(INACTIVO_MS);
+    const conCarne = pantalla === 'ventas' || pantalla === 'caja';
+    const abierta = isAuthenticated && sesionDeCaja.abiertaPorCarne;
 
-    // Mi caja lee la sucursal de la dirección: la del equipo, siempre.
+    // Mi caja y la venta leen la sucursal de la dirección: la del equipo.
     useEffect(() => {
-        if (!branchId) return;
+        if (!equipo.branchId) return;
         setParams((p) => {
-            if (p.get('sala') === String(branchId)) return p;
-            p.set('sala', String(branchId));
+            if (p.get('sala') === String(equipo.branchId)) return p;
+            p.set('sala', String(equipo.branchId));
             return p;
         }, { replace: true });
-    }, [branchId, setParams]);
+    }, [equipo.branchId, setParams]);
 
-    const terminar = useCallback(() => { sesionDeCaja.abiertaPorCarne = false; logout?.(); }, [logout]);
+    const terminar = useCallback(() => {
+        sesionDeCaja.abiertaPorCarne = false;
+        sesionDeCaja.ultimoUso = 0;
+        logout?.();
+    }, [logout]);
 
-
-    // Dos minutos sin tocar nada: se cierra sola.
+    // Al pasar a Marcar, la sesión del carné se cierra.
     useEffect(() => {
-        if (!isAuthenticated) return undefined;
-        let t = setTimeout(terminar, INACTIVO_MS);
-        const reiniciar = () => { clearTimeout(t); t = setTimeout(terminar, INACTIVO_MS); };
-        EVENTOS_DE_USO.forEach((ev) => window.addEventListener(ev, reiniciar, { passive: true, capture: true }));
+        if (!conCarne && sesionDeCaja.abiertaPorCarne) terminar();
+    }, [conCarne, terminar]);
+
+    // Dos minutos sin tocar nada: se cierra sola. La cuenta se ve en la barra.
+    useEffect(() => {
+        if (!abierta) return undefined;
+        if (!sesionDeCaja.ultimoUso) sesionDeCaja.ultimoUso = Date.now();
+        const usar = () => { sesionDeCaja.ultimoUso = Date.now(); };
+        EVENTOS_DE_USO.forEach((ev) => window.addEventListener(ev, usar, { passive: true, capture: true }));
+        const id = setInterval(() => {
+            const queda = sesionDeCaja.ultimoUso + INACTIVO_MS - Date.now();
+            setRestante(queda);
+            if (queda <= 0) terminar();
+        }, 1000);
         return () => {
-            clearTimeout(t);
-            EVENTOS_DE_USO.forEach((ev) => window.removeEventListener(ev, reiniciar, { capture: true }));
+            clearInterval(id);
+            EVENTOS_DE_USO.forEach((ev) => window.removeEventListener(ev, usar, { capture: true }));
         };
-    }, [isAuthenticated, terminar]);
+    }, [abierta, terminar]);
 
     const alLeer = useCallback(async (codigo) => {
         setEntrando(true);
         setError(null);
+        // Se marca ANTES de entrar: el portal desmonta el kiosco mientras
+        // verifica la sesión, y al volver tiene que saber que es del carné.
+        sesionDeCaja.abiertaPorCarne = true;
+        sesionDeCaja.ultimoUso = Date.now();
         const r = await login(codigo);
         setEntrando(false);
-        if (r?.ok) sesionDeCaja.abiertaPorCarne = true;
-        if (!r?.ok) setError(r?.error || 'Ese carné no abre la caja. Intenta de nuevo.');
+        if (!r?.ok) {
+            sesionDeCaja.abiertaPorCarne = false;
+            setError(r?.error || 'Ese carné no abrió la sesión. Intenta de nuevo.');
+        }
     }, [login]);
 
-    const { manual } = useCapturaDeCarne(!isAuthenticated && !entrando, alLeer);
+    const { manual } = useCapturaDeCarne(conCarne && !abierta && !entrando, alLeer);
     const aviso = manual ? 'Pasa el carné por el lector. Escrito a mano no cuenta.' : error;
 
-    if (!isAuthenticated) {
-        return (
-            <section aria-label={vista === 'vender' ? 'Vender' : 'Caja'} className="w-full max-w-[420px] mx-auto my-auto flex flex-col items-center text-center gap-5 py-6">
-                <ScanReadyRing specialMode={false} />
-                <div className="flex flex-col items-center gap-1">
-                    <p className="text-title-lg font-bold text-white">{entrando ? textos.abriendo : textos.pide}</p>
-                    <p className="text-body text-white/55">{textos.detalle}</p>
+    const carne = (titulo, detalle) => (
+        <PasaTuCarne titulo={entrando ? 'Abriendo…' : titulo} detalle={detalle} aviso={aviso} />
+    );
+
+    let cuerpo;
+    if (pantalla === 'marcar') {
+        cuerpo = marcar;
+    } else if (pantalla === 'caja') {
+        cuerpo = abierta
+            ? <Suspense fallback={<LoadingState />}><MiCajaView comoPestana /></Suspense>
+            : (
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="w-full max-w-[420px]">
+                        {carne('Pasa tu carné para abrir la caja', 'Apertura, cortes y cierre del día quedan a tu nombre.')}
+                    </div>
                 </div>
-                {aviso && <Notice variant="warning" icon={AlertCircle}>{aviso}</Notice>}
-            </section>
-        );
+            );
+    } else {
+        cuerpo = abierta
+            ? <Suspense fallback={<LoadingState />}><PreventaView enKiosco /></Suspense>
+            : (
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
+                    <ColaDeCaja />
+                    <aside className="order-first lg:order-none lg:sticky lg:top-24">
+                        {carne('Pasa tu carné para vender', 'La venta llega a la cola con tu nombre.')}
+                    </aside>
+                </div>
+            );
     }
 
     return (
-        <section aria-label={vista === 'vender' ? 'Vender' : 'Caja'} className="w-full max-w-[1200px] mx-auto flex flex-col gap-3">
-            <div data-surface="card" className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                    <AvatarConEstado emp={user} px={36} mostrarChip={false} />
-                    <div className="min-w-0">
-                        <p className="text-body font-bold text-content truncate">{user ? shortEmployeeName(user) : ''}</p>
-                        <p className="text-label text-content-3">Se cierra sola tras 2 minutos sin usarla.</p>
+        <div className="relative z-base flex-1 w-full flex flex-col">
+            {/* La barra del kiosco: dónde, qué pantalla y quién. */}
+            <header data-surface="page-header" className="sticky top-0 z-header">
+                <div className="mx-auto max-w-[1400px] px-4 py-2.5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <img src="/Logo192.png" alt="" className="w-8 h-8 object-contain shrink-0" draggable="false" />
+                        <div className="min-w-0 leading-tight hidden sm:block">
+                            <p className="text-body-sm font-bold text-content truncate">{equipo.branchName || 'Kiosco de caja'}</p>
+                            <p className="text-label text-content-3 tabular-nums">{hora12(ahora)}</p>
+                        </div>
+                    </div>
+                    <SegmentedControl label="Pantalla del kiosco" tone="neutro" options={PANTALLAS} value={pantalla} onChange={onPantalla} />
+                    <div className="flex justify-end min-w-0">
+                        {abierta && conCarne
+                            ? <QuienOpera user={user} restante={restante} onTerminar={terminar} />
+                            : <Button variant="ghost" size="sm" icon={LogOut} title="Salir del kiosco (Esc)" onClick={onSalir}>Salir</Button>}
                     </div>
                 </div>
-                <Button variant="secondary" icon={LogOut} onClick={terminar}>Terminar</Button>
-            </div>
-            <Suspense fallback={<LoadingState />}>
-                {vista === 'vender' ? <PreventaView /> : <MiCajaView comoPestana />}
-            </Suspense>
-        </section>
+            </header>
+
+            <main className="flex-1 w-full mx-auto max-w-[1400px] px-4 py-6 flex flex-col">
+                {cuerpo}
+            </main>
+        </div>
     );
 }

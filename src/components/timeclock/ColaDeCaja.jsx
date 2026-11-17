@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Receipt, RefreshCw, WifiOff, Gift, FileText, CreditCard } from 'lucide-react';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
+import Notice from '../common/Notice';
 import { EmptyState, SkeletonText } from '../common/StateViews';
 import { kioscoCajaCola } from '@nucleo/data/kiosco';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -11,7 +12,8 @@ import { hora12 } from '@nucleo/utils/hora';
 // La pestaña «En caja» del kiosco de caja (fase 1 del plan,
 // docs/PLAN-KIOSCO-DE-CAJA-2026-11-17.md): las preventas que esperan cobro en
 // esta sucursal, la más vieja arriba. Sólo lectura: se cobran en caja con su
-// número. El cobro desde aquí es la fase 3.
+// número. El cobro desde aquí es la fase 3. Desde el rediseño del 2026-11-17
+// vive en la pantalla Ventas, junto al «pasa tu carné para vender».
 //
 // Se relee cada 10 s mientras la pestaña está a la vista. Una lectura que falla
 // NO vacía la lista: deja la última y lo dice, porque una cola vacía por un
@@ -36,50 +38,53 @@ function esperaTexto(min) {
     return `espera ${h} h ${min % 60} min`;
 }
 
+// Cuánto lleva esperando, con color: es un cliente parado en el mostrador.
+function tonoDeEspera(min) {
+    if (min == null || min < 5) return 'success';
+    return min < 10 ? 'warning' : 'danger';
+}
+
+function resumenDeProductos(renglones) {
+    if (!renglones.length) return '';
+    const nombres = renglones.slice(0, MAX_RENGLONES).map((r) => `${Number(r.cantidad)}× ${r.nombre}`);
+    const sobran = renglones.length - MAX_RENGLONES;
+    return sobran > 0 ? `${nombres.join(' · ')} · y ${sobran} más` : nombres.join(' · ');
+}
+
 const Tarjeta = ({ p, ahora }) => {
     const min = minutosDesde(p.enviada_at, ahora);
     const renglones = Array.isArray(p.renglones) ? p.renglones : [];
-    const sobran = renglones.length - MAX_RENGLONES;
-    // Más de 10 minutos esperando se nota: es un cliente parado en el mostrador.
-    const demora = min != null && min >= 10;
 
     return (
-        <li data-surface="card" className="px-4 py-3 flex gap-4 items-start">
-            <span className="text-display-lg leading-none font-black tabular-nums text-white w-20 shrink-0">
-                {p.referencia ? `#${p.referencia}` : '—'}
+        <li data-surface="card" className="p-3 sm:p-4 flex gap-4 items-center">
+            <span className="shrink-0 w-16 h-16 rounded-xl bg-surface-card-hover border border-border-card flex flex-col items-center justify-center">
+                <span className="text-micro font-black uppercase tracking-widest text-content-3">Ref.</span>
+                <span className="text-title-lg leading-none font-black tabular-nums text-content">{p.referencia || '—'}</span>
             </span>
 
-            <div className="min-w-0 flex-1">
-                <p className="text-body font-bold text-white truncate">{p.cliente || 'Cliente frecuente'}</p>
-                <p className={`text-label truncate ${demora ? 'text-warning-text' : 'text-white/50'}`}>
-                    {[
-                        p.vendedor ? `Vendió ${shortEmployeeName(p.vendedor)}` : null,
-                        p.enviada_at ? hora12(p.enviada_at) : null,
-                        esperaTexto(min),
-                    ].filter(Boolean).join(' · ')}
+            <div className="min-w-0 flex-1 flex flex-col gap-1">
+                <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-body font-bold text-content truncate">{p.cliente || 'Cliente frecuente'}</p>
+                    {p.estado === 'enviando' && <Badge size="sm" variant="warning">Llegando</Badge>}
+                </div>
+                <p className="text-label text-content-3 truncate">
+                    {[p.vendedor ? `Vendió ${shortEmployeeName(p.vendedor)}` : null, p.enviada_at ? hora12(p.enviada_at) : null]
+                        .filter(Boolean).join(' · ')}
                 </p>
                 {renglones.length > 0 && (
-                    <ul className="mt-1.5 text-label text-white/70 space-y-0.5">
-                        {renglones.slice(0, MAX_RENGLONES).map((r, i) => (
-                            <li key={i} className="flex gap-2 min-w-0">
-                                <span className="tabular-nums text-white/50 shrink-0">{Number(r.cantidad)}×</span>
-                                <span className="truncate">{r.nombre}</span>
-                            </li>
-                        ))}
-                        {sobran > 0 && <li className="text-white/40">y {sobran} más</li>}
-                    </ul>
+                    <p className="text-label text-content-2 truncate">{resumenDeProductos(renglones)}</p>
                 )}
             </div>
 
             <div className="shrink-0 flex flex-col items-end gap-1.5">
-                <span className="text-title font-black tabular-nums text-white">
+                <span className="text-title-lg font-black tabular-nums text-content">
                     {p.total != null ? formatMoney(Number(p.total)) : ''}
                 </span>
                 <div className="flex flex-wrap justify-end gap-1">
+                    {min != null && <Badge size="sm" variant={tonoDeEspera(min)} dot>{esperaTexto(min)}</Badge>}
                     {p.documento === 'credito_fiscal' && <Badge size="sm" variant="info" icon={FileText}>Crédito fiscal</Badge>}
                     {PAGO[p.pago] && <Badge size="sm" variant="neutral" icon={CreditCard}>{PAGO[p.pago]}</Badge>}
                     {p.puntos > 0 && <Badge size="sm" variant="success" icon={Gift}>{p.puntos} puntos</Badge>}
-                    {p.estado === 'enviando' && <Badge size="sm" variant="warning">Enviando</Badge>}
                 </div>
             </div>
         </li>
@@ -119,27 +124,28 @@ const ColaDeCaja = () => {
     }, [leer]);
 
     return (
-        <section aria-label="Preventas en caja" className="w-full max-w-[880px] mx-auto flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3 px-1">
-                <div>
-                    <h2 className="text-title font-black text-white">
-                        En caja{cola ? ` · ${cola.length}` : ''}
+        <section aria-label="Preventas en caja" className="w-full flex flex-col gap-3">
+            <div className="flex items-end justify-between gap-3 px-1">
+                <div className="flex flex-col gap-0.5">
+                    <h2 className="flex items-center gap-2 text-title font-black text-content">
+                        En caja
+                        {cola && <Badge size="sm" variant={cola.length ? 'info' : 'neutral'}>{cola.length}</Badge>}
                     </h2>
-                    <p className="text-label text-white/50">Cóbralas en caja con su número. La más vieja va primero.</p>
+                    <p className="text-label text-content-3">La más vieja va primero. Se actualiza sola.</p>
                 </div>
-                <Button variant="secondary" size="sm" icon={RefreshCw} loading={leyendo} onClick={leer}>Actualizar</Button>
+                <Button variant="ghost" size="sm" icon={RefreshCw} iconOnly loading={leyendo} onClick={leer} aria-label="Actualizar la cola" />
             </div>
 
             {problema && (
-                <p role="status" className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-label text-warning-text">
-                    <WifiOff size={14} aria-hidden="true" /> {problema}
-                </p>
+                <Notice variant="warning" icon={WifiOff}>{problema}</Notice>
             )}
 
             {cola == null ? (
-                <div className="p-2"><SkeletonText lines={4} /></div>
+                <div data-surface="card" className="p-4"><SkeletonText lines={4} /></div>
             ) : cola.length === 0 ? (
-                <EmptyState compact icon={Receipt} title="Sin preventas en espera" subtitle="Las preventas que manden a caja aparecen aquí." />
+                <div data-surface="card" className="py-10">
+                    <EmptyState compact icon={Receipt} title="Nadie esperando" subtitle="Cuando alguien mande una venta a caja, aparece aquí." />
+                </div>
             ) : (
                 <ul className="flex flex-col gap-2">
                     {cola.map((p) => <Tarjeta key={p.id} p={p} ahora={ahora} />)}

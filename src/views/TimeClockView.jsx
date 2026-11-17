@@ -13,10 +13,7 @@ import EarlyExitForm from '../components/timeclock/EarlyExitForm';
 import KioskConfigModal from '../components/timeclock/KioskConfigModal';
 import IdleScanPanel from '../components/timeclock/IdleScanPanel';
 import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
-import SegmentedControl from '../components/common/SegmentedControl';
-import ColaDeCaja from '../components/timeclock/ColaDeCaja';
 import CajaDelKiosco from '../components/timeclock/CajaDelKiosco';
-import { sesionDeCaja } from '../components/timeclock/sesionDeCaja';
 import { hora12ConSegundos } from '@nucleo/utils/hora';
 import { usePestanaEnUrl } from '@plataforma/usePestanaEnUrl';
 
@@ -32,27 +29,16 @@ function tipoDelEquipo() {
   }
 }
 
-// El kiosco de caja tiene dos pestañas (plan del kiosco de caja, fase 1). La
-// pestaña vive en la dirección (`?tab=`), como en todo el portal.
-const PESTANAS_CAJA = ['vender', 'preventas', 'caja', 'marcar'];
+// El kiosco de caja tiene tres pantallas (rediseño del 2026-11-17): Ventas,
+// Caja y Marcar. Vive en la dirección (`?pantalla=`; `tab` ya lo usa Preventa).
+const PESTANAS_CAJA = ['ventas', 'caja', 'marcar'];
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
   const esCaja = useMemo(() => tipoDelEquipo() === 'caja', []);
-  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'preventas' : 'marcar', 'pantalla');
-  const enCola = esCaja && pestana === 'preventas';
-  const enCaja = esCaja && pestana === 'caja';
-  const enVender = esCaja && pestana === 'vender';
-  // La sesión que abrió un carné en Caja se cierra al salir de esa pestaña.
-  useEffect(() => {
-    // Vender y Caja comparten la sesión del carné: pasar de una a otra no la
-    // cierra; ir a Preventas o Marcar, sí.
-    if (pestana !== 'caja' && pestana !== 'vender' && sesionDeCaja.abiertaPorCarne) {
-      sesionDeCaja.abiertaPorCarne = false;
-      logout?.();
-    }
-  }, [pestana, logout]);
-  const branchDelEquipo = useMemo(() => { try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null')?.branchId ?? null; } catch { return null; } }, []);
+  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'ventas' : 'marcar', 'pantalla');
+  // En Ventas y Caja el lector es del carné de la sesión, no del marcador.
+  const marcadorPausado = esCaja && pestana !== 'marcar';
 
   const {
     scanCode,
@@ -96,7 +82,7 @@ const TimeClockView = ({ setView }) => {
     cancelSelfDeclare,
     tipoDeEquipo,
     setTipoDeEquipo,
-  } = useTimeClockEngine({ pausado: enCola || enCaja || enVender });
+  } = useTimeClockEngine({ pausado: marcadorPausado });
 
   // Read device & branch from localStorage kiosk_config
   const kioskLabel = useMemo(() => {
@@ -171,6 +157,85 @@ const TimeClockView = ({ setView }) => {
   const timeStr  = hora12ConSegundos(now);
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
 
+  // El marcador: reloj, lector y los paneles de permiso. En el kiosco de
+  // caja es la pantalla «Marcar»; en un marcador es todo.
+  const marcador = (
+    <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
+
+      {/* Cabecera y reloj, rediseño del 2026-11-17 (pedido del usuario:
+          «visualmente puede mejorar»). Se lee de pie y a dos metros: el
+          reloj es el protagonista y va sin tarjeta; arriba, de qué
+          sucursal es el equipo, que antes casi no se veía. El logo se
+          retira abajo de 640px de alto, como antes. */}
+      {/* En el kiosco de caja, la sucursal ya está en la barra de arriba. */}
+      {!esCaja && (
+      <header className="animate-view-enter flex items-center gap-2.5 [@media(max-height:640px)]:hidden">
+        <img
+          src="/Logo192.png"
+          alt="Farmalasa"
+          className="w-9 h-9 [@media(max-height:800px)]:w-7 [@media(max-height:800px)]:h-7 object-contain"
+          draggable="false"
+        />
+        <span className="text-label font-bold text-white/70 truncate max-w-[320px]">
+          {kioskLabel || 'Farmacias La Salud & Popular'}
+        </span>
+      </header>
+      )}
+
+      <div className="animate-view-enter w-full flex flex-col items-center" style={{ animationDelay: '60ms' }}>
+        <h2 className="text-white font-light tabular-nums leading-none w-full text-center whitespace-nowrap tracking-tight
+          text-[4rem] sm:text-[5.5rem] [@media(min-height:801px)_and_(max-height:900px)]:text-[4rem] [@media(max-height:800px)]:text-[2.75rem] [@media(max-height:640px)]:!text-[2rem]">
+          {timeStr}
+        </h2>
+        <p className="text-white/55 text-body font-semibold mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 first-letter:uppercase">
+          {dateStr}
+        </p>
+      </div>
+
+      {/* Scan / auth panels */}
+      <div className="w-full" style={{ animation: 'viewEnter 280ms var(--ease-spring) 120ms both' }}>
+        {selfDeclareData ? (
+          <SelfDeclareShiftPanel
+            employee={selfDeclareData.employee}
+            onSubmit={submitSelfDeclare}
+          />
+        ) : earlyExitData ? (
+          <EarlyExitForm
+            earlyExitData={earlyExitData}
+            exitReason={exitReason}
+            exitNotes={exitNotes}
+            onChangeReason={setExitReason}
+            onChangeNotes={setExitNotes}
+            onSubmit={submitEarlyExit}
+            onCancel={cancelAuth}
+            isProcessing={isProcessing}
+          />
+        ) : authPrompt ? (
+          <AuthPromptPanel
+            authPrompt={authPrompt}
+            scanCode={scanCode}
+            inputRef={inputRef}
+            submitHandler={handleScan}
+            keyDownHandler={handleKeyDown}
+            inputChangeHandler={handleInputChange}
+            cancelHandler={cancelAuth}
+            forceNormalOutHandler={handleForceNormalOut}
+            clearHandler={() => setScanCode('')}
+            skipPinHandler={handleSkipPin}
+          />
+        ) : (
+          <IdleScanPanel
+            specialMode={specialMode}
+            cancelSpecialModeHandler={cancelAuth}
+            specialOutHandler={requestSpecialOut}
+            lunchAlerts={lunchAlerts}
+          />
+        )}
+      </div>
+
+    </div>
+  );
+
   return (
     <div className="h-[100dvh] w-full bg-surface-page relative overflow-y-auto overflow-x-hidden font-sans flex flex-col selection:bg-chart-1/30">
 
@@ -230,132 +295,54 @@ const TimeClockView = ({ setView }) => {
         />
       )}
 
+      {esCaja ? (
+        <CajaDelKiosco
+          pantalla={pestana}
+          onPantalla={setPestana}
+          ahora={now}
+          onSalir={handleLogout}
+          marcar={<div className="flex-1 flex flex-col items-center">{marcador}</div>}
+        />
+      ) : (
+        <>
       {/* ── Salir ─────────────────────────────────────────────────────
-          El botón era un hijo suelto de este contenedor `flex flex-col`, o
-          sea que `align-items: stretch` lo estiraba de lado a lado: una
-          barra de 1366px pegada al borde de arriba, con la palabra «SALIR»
-          centrada en el medio de la pantalla. Va anclado arriba a la
-          derecha, con su propio ancho, `fixed` para que no se mueva con el
-          scroll de emergencia y por debajo de los modales (z-header = 40,
-          contra el 60 del configurador y el 90 del aviso). ── */}
-      <div className="fixed top-4 right-4 [@media(max-height:640px)]:top-2 [@media(max-height:640px)]:right-2 z-header">
-        <Button variant="secondary" size="sm" icon={LogOut} title="Salir del marcador (Esc)" onClick={handleLogout}>
-          <span className="hidden sm:inline">Salir</span>
-        </Button>
-      </div>
-
-      {/* ── Main content ──────────────────────────────────────────── */}
-      {/* [@media(max-height:800px)] = modo compacto: mismo breakpoint que ya
-          usa el dock de íconos de IdleScanPanel.jsx. Sin esto, en 1024x768/
-          1280x720/1366x768 (probado con Playwright real) la tarjeta central
-          se pasaba de la altura del viewport y el botón "Autorizar Permiso"
-          quedaba inaccesible — no había scroll que lo alcanzara porque este
-          contenedor usaba min-h en vez de h fija (ver el cambio de
-          min-h-[100dvh]→h-[100dvh] arriba, que además deja un scroll real
-          como red de seguridad para cualquier caso más extremo).
-
-          El relleno bajó de `py-20 sm:py-24` a `py-10 sm:py-12` (2026-08-16):
-          la columna se centra con `my-auto`, así que ese relleno NO es aire
-          de diseño — es un PISO que le quita 96px de alto útil al panel y no
-          se ve. Medido con el marco real: el formulario de permiso obligaba a
-          scrollear 49px hasta en 1920×1080 y 266px en 1024×600, en una
-          pantalla que se opera de pie y sin mouse. Además hay un escalón
-          intermedio en 900px, que es donde vive media flota de portátiles
-          (1440×900, 1600×900): antes saltaba de tamaño completo a compacto y
-          esos 100px no los cubría nadie. */}
-      <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-8 sm:py-10 [@media(min-height:801px)_and_(max-height:900px)]:py-6 [@media(max-height:800px)]:py-5 [@media(max-height:640px)]:!py-2">
-        {esCaja && (
-          <div className="w-full max-w-[560px] mb-4 [@media(max-height:640px)]:mb-2">
-            <SegmentedControl
-              label="Pantalla del kiosco"
-              layout="block"
-              columns={4}
-              options={[
-                { value: 'vender', label: 'Vender' },
-                { value: 'preventas', label: 'Preventas' },
-                { value: 'caja', label: 'Caja' },
-                { value: 'marcar', label: 'Marcar' },
-              ]}
-              value={pestana}
-              onChange={setPestana}
-            />
-          </div>
-        )}
-
-        {enCola ? <ColaDeCaja /> : (enCaja || enVender) ? <CajaDelKiosco branchId={branchDelEquipo} vista={enVender ? 'vender' : 'caja'} /> : (
-        <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
-
-          {/* Cabecera y reloj, rediseño del 2026-11-17 (pedido del usuario:
-              «visualmente puede mejorar»). Se lee de pie y a dos metros: el
-              reloj es el protagonista y va sin tarjeta; arriba, de qué
-              sucursal es el equipo, que antes casi no se veía. El logo se
-              retira abajo de 640px de alto, como antes. */}
-          <header className="animate-view-enter flex items-center gap-2.5 [@media(max-height:640px)]:hidden">
-            <img
-              src="/Logo192.png"
-              alt="Farmalasa"
-              className="w-9 h-9 [@media(max-height:800px)]:w-7 [@media(max-height:800px)]:h-7 object-contain"
-              draggable="false"
-            />
-            <span className="text-label font-bold text-white/70 truncate max-w-[320px]">
-              {kioskLabel || 'Farmacias La Salud & Popular'}
-            </span>
-          </header>
-
-          <div className="animate-view-enter w-full flex flex-col items-center" style={{ animationDelay: '60ms' }}>
-            <h2 className="text-white font-light tabular-nums leading-none w-full text-center whitespace-nowrap tracking-tight
-              text-[4rem] sm:text-[5.5rem] [@media(min-height:801px)_and_(max-height:900px)]:text-[4rem] [@media(max-height:800px)]:text-[2.75rem] [@media(max-height:640px)]:!text-[2rem]">
-              {timeStr}
-            </h2>
-            <p className="text-white/55 text-body font-semibold mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 first-letter:uppercase">
-              {dateStr}
-            </p>
+              El botón era un hijo suelto de este contenedor `flex flex-col`, o
+              sea que `align-items: stretch` lo estiraba de lado a lado: una
+              barra de 1366px pegada al borde de arriba, con la palabra «SALIR»
+              centrada en el medio de la pantalla. Va anclado arriba a la
+              derecha, con su propio ancho, `fixed` para que no se mueva con el
+              scroll de emergencia y por debajo de los modales (z-header = 40,
+              contra el 60 del configurador y el 90 del aviso). ── */}
+            <div className="fixed top-4 right-4 [@media(max-height:640px)]:top-2 [@media(max-height:640px)]:right-2 z-header">
+            <Button variant="secondary" size="sm" icon={LogOut} title="Salir del marcador (Esc)" onClick={handleLogout}>
+              <span className="hidden sm:inline">Salir</span>
+            </Button>
           </div>
 
-          {/* Scan / auth panels */}
-          <div className="w-full" style={{ animation: 'viewEnter 280ms var(--ease-spring) 120ms both' }}>
-            {selfDeclareData ? (
-              <SelfDeclareShiftPanel
-                employee={selfDeclareData.employee}
-                onSubmit={submitSelfDeclare}
-              />
-            ) : earlyExitData ? (
-              <EarlyExitForm
-                earlyExitData={earlyExitData}
-                exitReason={exitReason}
-                exitNotes={exitNotes}
-                onChangeReason={setExitReason}
-                onChangeNotes={setExitNotes}
-                onSubmit={submitEarlyExit}
-                onCancel={cancelAuth}
-                isProcessing={isProcessing}
-              />
-            ) : authPrompt ? (
-              <AuthPromptPanel
-                authPrompt={authPrompt}
-                scanCode={scanCode}
-                inputRef={inputRef}
-                submitHandler={handleScan}
-                keyDownHandler={handleKeyDown}
-                inputChangeHandler={handleInputChange}
-                cancelHandler={cancelAuth}
-                forceNormalOutHandler={handleForceNormalOut}
-                clearHandler={() => setScanCode('')}
-                skipPinHandler={handleSkipPin}
-              />
-            ) : (
-              <IdleScanPanel
-                specialMode={specialMode}
-                cancelSpecialModeHandler={cancelAuth}
-                specialOutHandler={requestSpecialOut}
-                lunchAlerts={lunchAlerts}
-              />
-            )}
-          </div>
+          {/* ── Main content ──────────────────────────────────────────── */}
+          {/* [@media(max-height:800px)] = modo compacto: mismo breakpoint que ya
+              usa el dock de íconos de IdleScanPanel.jsx. Sin esto, en 1024x768/
+              1280x720/1366x768 (probado con Playwright real) la tarjeta central
+              se pasaba de la altura del viewport y el botón "Autorizar Permiso"
+              quedaba inaccesible — no había scroll que lo alcanzara porque este
+              contenedor usaba min-h en vez de h fija (ver el cambio de
+              min-h-[100dvh]→h-[100dvh] arriba, que además deja un scroll real
+              como red de seguridad para cualquier caso más extremo).
 
-        </div>
-        )}
-      </main>
+              El relleno bajó de `py-20 sm:py-24` a `py-10 sm:py-12` (2026-08-16):
+              la columna se centra con `my-auto`, así que ese relleno NO es aire
+              de diseño — es un PISO que le quita 96px de alto útil al panel y no
+              se ve. Medido con el marco real: el formulario de permiso obligaba a
+              scrollear 49px hasta en 1920×1080 y 266px en 1024×600, en una
+              pantalla que se opera de pie y sin mouse. Además hay un escalón
+              intermedio en 900px, que es donde vive media flota de portátiles
+              (1440×900, 1600×900): antes saltaba de tamaño completo a compacto y
+              esos 100px no los cubría nadie. */}
+          <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-8 sm:py-10 [@media(min-height:801px)_and_(max-height:900px)]:py-6 [@media(max-height:800px)]:py-5 [@media(max-height:640px)]:!py-2">
+            {marcador}
+          </main>
+        </>
+      )}
     </div>
   );
 };

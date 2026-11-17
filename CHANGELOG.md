@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1569.0 — Kiosco de caja: rediseño, Ventas en una sola pantalla
+
+- Pedido del usuario: «que sea práctico… ¿por qué vender y preventas está
+  separado?». El kiosco de caja queda con tres pantallas en una barra fija:
+  **Ventas**, **Caja** y **Marcar**.
+- **Ventas** junta la cola de caja y el «pasa tu carné para vender»: la cola a
+  la izquierda (número grande, cliente, quién vendió, productos, total y la
+  espera en color: verde, ámbar desde 5 min, rojo desde 10) y el carné a la
+  derecha. Con el carné se abre la venta ahí mismo, sin el marco del portal.
+- La barra dice la sucursal y la hora, y con una sesión abierta quién opera y
+  la cuenta regresiva de los 2 minutos, con **Terminar** a mano.
+- La marca de la sesión del carné y el último uso viven fuera del componente
+  (`sesionDeCaja.js`): el portal desmonta el kiosco al verificar la sesión.
+- Novedades: no — piloto en Salud 4.
+
 ## v2.1568.1 — Reimprimir el carné saca el carné vertical de la bienvenida
 
 - Arreglo: «Reimprimir el carné de plástico» (perfil) e «Imprimir Nuevo

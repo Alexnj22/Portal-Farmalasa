@@ -204,6 +204,21 @@ export async function kioscoCajaCola() {
     return { ok: true, cola: Array.isArray(data) ? data : [], motivo: null, networkError: false };
 }
 
+// Si la caja de la sucursal del equipo está abierta, el turno corriendo y si el
+// día ya se cerró. Sin montos. Para que el inicio del kiosco sugiera qué toca.
+//
+// → { ok, estado: { abierta, turno, turno_corriendo, dia, cerrado, cortes }, networkError }
+export async function kioscoCajaEstado() {
+    const cred = credenciales();
+    if (!cred) return { ok: false, estado: null, networkError: false };
+    const { data, error } = await supabase.rpc('kiosco_caja_estado', {
+        p_device_id: cred.deviceId,
+        p_device_token: cred.deviceToken,
+    });
+    if (error) return { ok: false, estado: null, networkError: !esRechazoDelServidor(error) };
+    return { ok: true, estado: data ?? null, networkError: false };
+}
+
 // Vincula ESTE equipo con un ticket impreso, sin sesión. Si el equipo ya era
 // un kiosco, manda su credencial para que la base lo reemplace (revoca el
 // viejo en la misma transacción).

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { kioscoCajaCola } from '@nucleo/data/kiosco';
+import { kioscoCajaCola, kioscoCajaEstado } from '@nucleo/data/kiosco';
+import { estadoDeCaja } from '@nucleo/data/bolsas';
 import { fetchPreventasDeSala } from '@nucleo/data/preventas';
 import { colaDeMuestra, esDemo } from './demoDelKiosco';
 
@@ -102,4 +103,86 @@ export function useColaDeCaja({ sala = null } = {}) {
     }, [leer]);
 
     return { cola, problema, leyendo, ahora, leer };
+}
+
+// ── Lo que toca ahora (pedido del usuario, 2026-11-17) ───────────────────
+// «Que sea inteligente: si no hay apertura, que salga para hacerlo.» El
+// estado de la caja se lee sin montos: el inicio del kiosco no tiene sesión.
+
+const ESTADO_CADA_MS = 60_000;
+
+export function useEstadoDeCaja({ sala = null } = {}) {
+    const [estado, setEstado] = useState(null);
+    const leer = useCallback(async () => {
+        if (esDemo()) { setEstado({ abierta: false, turno_corriendo: false, cerrado: false, cortes: 0 }); return; }
+        if (sala) {
+            const r = await estadoDeCaja(sala);
+            if (r?.error) return;
+            setEstado({
+                abierta: Boolean(r.abierta), turno: r.turno ?? null, turno_corriendo: Boolean(r.turno_corriendo),
+                cerrado: (r.cortes ?? []).some((c) => c.tipo === 'Z'),
+                cortes: (r.cortes ?? []).filter((c) => c.tipo !== 'Z').length,
+            });
+            return;
+        }
+        const r = await kioscoCajaEstado();
+        if (r.ok) setEstado(r.estado);
+    }, [sala]);
+
+    useEffect(() => {
+        const primera = setTimeout(leer, 0);
+        const id = setInterval(() => { if (document.visibilityState === 'visible') leer(); }, ESTADO_CADA_MS);
+        const alVolver = () => { if (document.visibilityState === 'visible') leer(); };
+        document.addEventListener('visibilitychange', alVolver);
+        return () => { clearTimeout(primera); clearInterval(id); document.removeEventListener('visibilitychange', alVolver); };
+    }, [leer]);
+
+    return { estado, leer };
+}
+
+const ESPERA_LARGA_MIN = 10;
+
+/**
+ * Las sugerencias del inicio, de la más urgente a la menos. Cada una:
+ * `{ clave, tono: 'warning'|'info'|'success', titulo, detalle, boton, ir }`,
+ * con `ir` = `{ dialogo: 'abrir' }` (a Caja con ese diálogo), `{ vista: 'caja' }`
+ * o `{ ticket: id }` (cobrar ese ticket).
+ */
+export function queToca({ estado, cola, ahora }) {
+    const out = [];
+    const vivas = (cola ?? []).filter((p) => p.estado !== 'enviando');
+    const masVieja = vivas[0] ?? null;
+    const espera = masVieja ? (minutosDesde(masVieja.enviada_at, ahora) ?? 0) : 0;
+
+    if (estado && !estado.abierta && !estado.cerrado) {
+        out.push({
+            clave: 'abrir', tono: 'warning', titulo: 'La caja no está abierta',
+            detalle: vivas.length ? `Hay ${vivas.length} por cobrar. Ábrela para empezar.` : 'Ábrela para empezar a cobrar.',
+            boton: 'Abrir la caja', ir: { dialogo: 'abrir' },
+        });
+    } else if (estado?.abierta && !estado.turno_corriendo) {
+        out.push({
+            clave: 'turno', tono: 'warning', titulo: 'El turno no ha empezado',
+            detalle: 'La caja está abierta pero sin turno. Inícialo para cobrar.',
+            boton: 'Ir a la caja', ir: { vista: 'caja' },
+        });
+    } else if (estado?.cerrado) {
+        out.push({
+            clave: 'cerrado', tono: 'info', titulo: 'El cierre del día ya está hecho',
+            detalle: 'La caja de hoy ya se cerró.', boton: 'Ver la caja', ir: { vista: 'caja' },
+        });
+    }
+
+    if (masVieja && estado?.abierta && estado.turno_corriendo) {
+        out.push(espera >= ESPERA_LARGA_MIN ? {
+            clave: 'espera', tono: 'warning', titulo: `La #${masVieja.referencia} lleva ${espera} min esperando`,
+            detalle: vivas.length > 1 ? `Y ${vivas.length - 1} más en la cola.` : 'Es la única en la cola.',
+            boton: `Cobrar la #${masVieja.referencia}`, ir: { ticket: masVieja.id },
+        } : {
+            clave: 'cola', tono: 'info', titulo: vivas.length === 1 ? '1 venta espera cobro' : `${vivas.length} ventas esperan cobro`,
+            detalle: `La siguiente es la #${masVieja.referencia}.`,
+            boton: `Cobrar la #${masVieja.referencia}`, ir: { ticket: masVieja.id },
+        });
+    }
+    return out;
 }

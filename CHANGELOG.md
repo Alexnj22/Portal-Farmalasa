@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.8 — Kiosco de caja: sugiere lo que toca
+
+- Pedido del usuario: «que sea inteligente: si no hay apertura que salga para
+  hacerlo». El inicio del kiosco muestra lo que toca ahora, con su botón:
+  caja sin abrir («Abrir la caja», y tras el carné abre directo el diálogo de
+  apertura), turno sin empezar, día ya cerrado, y la venta que más espera en
+  la cola (en amarillo pasados 10 min). Vendiendo con la caja cerrada, un
+  aviso con «Abrir la caja» para quien puede usar la caja.
+- `kiosco_caja_estado(device_id, token)` (migración 20261117232458): el estado
+  sin sesión, con la credencial del equipo y SIN montos. Declarada en
+  `superficie-anon.json`. Se lee cada 60 s; la vista previa del portal usa
+  `caja_estado` con la sesión.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.7 — Vista previa del kiosco de caja a pantalla completa
 
 - Corrección del usuario: quería ver el kiosco «como se vería en la caja», no

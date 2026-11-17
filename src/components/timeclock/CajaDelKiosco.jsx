@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { ArrowLeft, ChevronRight, Clock3, KeyRound, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, Wallet, WifiOff, X } from 'lucide-react';
 import PortalInput from '../common/PortalInput';
 import Badge from '../common/Badge';
@@ -13,7 +13,8 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useKioscoDeCaja from './useKioscoDeCaja';
-import { esperaTexto, minutosDesde, tonoDeEspera, useColaDeCaja } from './datosDeLaCola';
+import { esperaTexto, minutosDesde, queToca, tonoDeEspera, useColaDeCaja, useEstadoDeCaja } from './datosDeLaCola';
+import { guardarDestino, tomarDestino } from './sesionDeCaja';
 import { Anillo, Etiquetas, Pide } from './piezasDelKiosco';
 
 // Kiosco de caja (diseño elegido el 2026-11-17).
@@ -178,6 +179,8 @@ export default function CajaDelKiosco({
         entrando, aviso, restante, vista, setVista, terminar, conClave, setConClave, entrarConClave,
     } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo, enPortal });
     const datosCola = useColaDeCaja({ sala: enPortal ? sala : null });
+    const { estado: estadoCaja, leer: leerEstado } = useEstadoDeCaja({ sala: enPortal ? sala : null });
+    const sugerencias = queToca({ estado: estadoCaja, cola: datosCola.cola, ahora });
     // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
     // Sin esto, alguien sin permiso entraba a Vender y veía un error rojo.
     const { hasPermission, rolePerms } = useAuth();
@@ -210,6 +213,24 @@ export default function CajaDelKiosco({
     const tocar = (k) => {
         setAccion((x) => (x === k ? null : k));
     };
+
+    // Una sugerencia del inicio: un ticket se cobra; lo de la caja pide el
+    // carné y, al entrar, lleva directo a ese diálogo.
+    const seguir = (ir) => {
+        if (ir.ticket) { elegirTicket(ir.ticket); return; }
+        guardarDestino(ir);
+        setAccion('caja');
+    };
+    useEffect(() => {
+        // En el próximo tick y no dentro del efecto (cambia estado).
+        const t = setTimeout(() => {
+            if (!abierta) { leerEstado(); return; }
+            const ir = tomarDestino();
+            if (!ir) return;
+            if (ir.dialogo) abrirEnCaja(ir.dialogo); else irA('caja');
+        }, 0);
+        return () => clearTimeout(t);
+    }, [abierta]); // eslint-disable-line react-hooks/exhaustive-deps
     const pedida = accion && ACCIONES[accion];
 
     return (
@@ -288,6 +309,12 @@ export default function CajaDelKiosco({
                             </div>
                         ) : abierta ? (
                             <Suspense fallback={<LoadingState />}>
+                                {vista !== 'caja' && !detalle && estadoCaja && !estadoCaja.abierta && !estadoCaja.cerrado && puede.caja && (
+                                    <Notice variant="warning" className="mb-3"
+                                        action={<Button size="sm" onClick={() => abrirEnCaja('abrir')}>Abrir la caja</Button>}>
+                                        La caja no está abierta. Puedes vender, pero para cobrar hay que abrirla.
+                                    </Notice>
+                                )}
                                 {/* La venta NO se desmonta al ir a la caja: lo editado
                                     sigue ahí al volver. */}
                                 <div className={vista === 'caja' ? 'hidden' : 'flex-1 flex flex-col'}>
@@ -319,6 +346,17 @@ export default function CajaDelKiosco({
                                     <h1 className="text-title-lg font-black text-content">¿Qué vas a hacer?</h1>
                                     <p className="text-body-sm text-content-3">Toca un ticket de la izquierda para cobrarlo.</p>
                                 </div>
+                                {sugerencias.length > 0 && (
+                                    <div className="flex flex-col gap-2" aria-label="Lo que toca ahora">
+                                        {sugerencias.map((sg) => (
+                                            <Notice key={sg.clave} variant={sg.tono} bloque
+                                                action={<Button size="sm" variant={sg.tono === 'warning' ? 'primary' : 'secondary'} onClick={() => seguir(sg.ir)}>{sg.boton}</Button>}>
+                                                <p className="font-bold">{sg.titulo}</p>
+                                                <p>{sg.detalle}</p>
+                                            </Notice>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:grid-rows-2">
                                     <div className="md:row-span-2"><Accion k="vender" grande activa={accion === 'vender'} onClick={() => tocar('vender')} /></div>
                                     <Accion k="caja" activa={accion === 'caja'} onClick={() => tocar('caja')} />

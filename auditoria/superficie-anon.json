@@ -67,6 +67,13 @@
       "motivo": "Kiosco de caja (fase 1): la cola de preventas de la sucursal del equipo, sólo lectura. Exige equipo ACTIVO de tipo caja; a un marcador le contesta KIOSK_NO_ES_CAJA."
     },
     {
+      "nombre": "kiosco_caja_estado",
+      "area": "acceso",
+      "guarda": "device_token",
+      "estado": "nueva-2026-11-17",
+      "motivo": "Kiosco de caja: si la caja está abierta, el turno corriendo y si el día ya se cerró, para que la pantalla de inicio sugiera qué toca (abrir la caja, iniciar el turno). Sólo estado, sin montos. Exige equipo ACTIVO de tipo caja."
+    },
+    {
       "nombre": "kiosco_marcajes_recientes",
       "area": "acceso",
       "guarda": "device_token",

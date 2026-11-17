@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1571.0 — La foto desde el teléfono sabe qué se pide, y abre la app
+
+- Auditoría del QR para mandar una foto desde el teléfono, pedida por el
+  usuario («debe servir para todos los casos»). La computadora sólo le decía
+  al teléfono el `modo`, y en `foto` el teléfono trataba todo como un
+  documento de varias hojas:
+  - la foto del empleado (un retrato) entraba al editor de papel;
+  - la foto de un producto, de un daño o del chat se recortaba como boleta;
+  - donde cabe UNA imagen (evidencias, catálogo, chat, campos sin PDF) se
+    podían juntar varias hojas: llegaba un PDF, la computadora lo rechazaba y
+    el código ya estaba gastado — había que pedir otro QR y repetir todo;
+  - el DUI, la boleta y la receta abrían el recuadro genérico.
+- La captura ahora lleva **clase** (`documento` · `retrato` · `libre`),
+  **forma** del papel y si acepta **varias** hojas (migración
+  `20261117181516_captura_clase_y_varias`, con defaults que dejan igual a una
+  computadora vieja). Cada sitio que abre una captura lo dice: `FileField`
+  según su editor, su forma y su `accept`; `useFotoDelTelefono` como foto
+  libre y única; la ficha del empleado como retrato.
+- La página `/foto` lo respeta: un retrato o una foto libre va sin editor, el
+  editor nace con la forma del papel, y donde cabe una sola la nueva
+  reemplaza a la anterior («Tomar otra»).
+- `subir-foto-de-captura` rechaza un PDF donde cabe una sola imagen ANTES de
+  quemar el código (`UNA_SOLA`), y el teléfono lo dice en vez de «revisa tu
+  señal».
+- **La app del personal abre el QR** (`apps/mobile/app/foto/[secreto].js`),
+  con enlaces universales para `portal.farmasalud.lat/foto/*` (iOS:
+  `associatedDomains` + `apple-app-site-association`; Android:
+  `intentFilters` + `assetlinks.json` con la huella de firma de Play). El
+  papel se toma con el escáner del sistema —esquinas en vivo, enderezado y
+  filtro—, varias hojas van en un PDF, el DUI y los documentos de dos caras
+  se unen en una imagen, y el QR del carné se lee con el lector. Sin sesión,
+  como la web. Necesita versión nueva de la app (los enlaces son nativos);
+  sin ella, el QR sigue abriendo el navegador.
+- El PDF de varias hojas es la misma receta en web y app (`pdfDeJpegs` en
+  `hojasEnPdf.js`, con pruebas), y el envío también (`mandarBase64`).
+- Novedades: no — no cambia ninguna pantalla del personal en el portal; el
+  cambio de la app se avisa al publicar la versión.
+
 ## v2.1570.0 — Kiosco de caja: estilo propio «Mostrador»
 
 - Pedido del usuario: «que no sea ni liquid glass ni el solid, usa uno

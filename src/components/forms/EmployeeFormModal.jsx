@@ -1264,7 +1264,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const cerrarCaptura = () => setCaptura(null);
 
     const pedirFotoAlTelefono = async () => {
-        const r = await abrirCaptura(formData?.id || null);
+        // Un retrato, UNO: sin editor de papel ni varias hojas en el teléfono.
+        const r = await abrirCaptura(formData?.id || null, 'foto', null, { clase: 'retrato', varias: false });
         if (!r.ok) { useToastStore.getState().showToast('No se pudo', r.motivo, 'error'); return; }
         setCaptura(r);
     };

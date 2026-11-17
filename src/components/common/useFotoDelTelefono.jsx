@@ -15,18 +15,20 @@ import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 
  * captura, pintar el QR, esperar la foto y soltar el buzón. Lo único que cambia
  * es qué se hace con el archivo, y eso lo decide quien llama en `alLlegar`.
  *
- * Desde el teléfono se pueden juntar varias hojas y llegan como UN PDF. Acá se
- * espera una foto, así que un PDF se rechaza con un aviso en vez de colarse en
- * un bucket que sólo acepta imágenes.
+ * Acá se espera UNA foto, y desde el 2026-11-17 el teléfono lo sabe: la
+ * captura se abre con `varias: false` y `clase: 'libre'` (producto, daño,
+ * chat — ninguno es un papel), así que el teléfono no ofrece juntar hojas ni
+ * abre el editor de documentos. El rechazo del PDF de abajo queda como red
+ * para un teléfono con la página vieja en caché.
  *
  * @param {(file: File) => void} alLlegar  recibe la foto (siempre una imagen)
- * @param {{ etiqueta?: string, onError?: (msg: string) => void }} opciones
+ * @param {{ etiqueta?: string, onError?: (msg: string) => void, clase?: 'libre'|'documento'|'retrato', forma?: string|null }} opciones
  * @returns {{ pedir: () => void, esperando: boolean, pidiendo: boolean, dialogo: React.ReactNode }}
  */
 const traspaso = () => import('@nucleo/data/capturaDeFoto');
 const DialogoDeCaptura = lazy(() => import('./DialogoDeCaptura'));
 
-export default function useFotoDelTelefono(alLlegar, { etiqueta = '', onError } = {}) {
+export default function useFotoDelTelefono(alLlegar, { etiqueta = '', onError, clase = 'libre', forma = null } = {}) {
     const [captura, setCaptura] = useState(null);
     const [pidiendo, setPidiendo] = useState(false);
     // En refs: quien llama suele pasar flechas nuevas en cada render, y con
@@ -40,7 +42,7 @@ export default function useFotoDelTelefono(alLlegar, { etiqueta = '', onError } 
         setPidiendo(true);
         try {
             const { abrirCaptura } = await traspaso();
-            const r = await abrirCaptura(null);
+            const r = await abrirCaptura(null, 'foto', null, { clase, forma, varias: false });
             if (!r.ok) { avisar.current?.(r.motivo); return; }
             avisar.current?.('');
             setCaptura(r);
@@ -49,7 +51,7 @@ export default function useFotoDelTelefono(alLlegar, { etiqueta = '', onError } 
         } finally {
             setPidiendo(false);
         }
-    }, []);
+    }, [clase, forma]);
 
     useEffect(() => {
         if (!captura?.id) return undefined;

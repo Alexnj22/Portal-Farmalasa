@@ -46,10 +46,21 @@ export function enlaceDeCaptura(secreto) {
  *                              que el teléfono muestra («la licencia de
  *                              conducir»): sin él, la pantalla del teléfono no
  *                              sabría qué papel pedir.
+ * @param {{clase?: 'documento'|'retrato'|'libre', forma?: string|null, varias?: boolean}} [como]
+ *   QUÉ pide y CUÁNTAS acepta (2026-11-17). Sin esto el teléfono trataba todo
+ *   como un documento de varias hojas: el retrato entraba al editor de papel y,
+ *   donde sólo cabe una imagen, dejaba juntar un PDF que acá se rechazaba con
+ *   el código ya gastado.
+ *   · `clase` — `documento` abre el editor (o el escáner) de papel; `retrato`
+ *     y `libre` mandan la foto tal cual.
+ *   · `forma` — la forma del papel para el editor (`DOCS` de fotoDocumento).
+ *   · `varias` — si acepta varias hojas, que llegan como UN PDF.
  */
-export async function abrirCaptura(employeeId = null, modo = 'foto', documento = null) {
+export async function abrirCaptura(employeeId = null, modo = 'foto', documento = null,
+    { clase = 'documento', forma = null, varias = true } = {}) {
     const { data, error } = await supabase.rpc('abrir_captura_de_foto', {
         p_employee_id: employeeId, p_modo: modo, p_documento: documento,
+        p_clase: clase, p_forma: forma, p_varias: varias,
     });
     if (error) return { ok: false, motivo: 'No se pudo abrir. Revisa tu conexión.' };
     if (!data?.ok) return { ok: false, motivo: 'No se pudo abrir la captura.' };

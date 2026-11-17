@@ -236,8 +236,17 @@ describe('las cuatro esquinas del papel', () => {
     it('el teléfono abre el editor en vez de mandar la foto tal cual', () => {
         expect(telefono).toMatch(/lazy\(\(\) => import\('\.\.\/components\/common\/EditorDeDocumento'\)\)/);
         // Confirmar suma una hoja; nunca manda desde el editor.
-        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{[\s\S]{0,200}?setHojas\(/);
+        expect(telefono).toMatch(/onConfirm=\{\(listo\) => \{[\s\S]{0,200}?sumarHoja\(listo\)/);
         expect(telefono).not.toMatch(/onConfirm=\{\(listo\) => \{[^}]*mandarFoto/);
+    });
+
+    /* 2026-11-17: la captura dice QUÉ pide. Sólo lo que NO es un papel (un
+     * retrato, la foto de un producto) se salta el editor; un documento sigue
+     * pasando por él. Y donde cabe una sola, la nueva reemplaza. */
+    it('sólo un retrato o una foto libre se salta el editor', () => {
+        expect(telefono).toMatch(/const esPapel = clase === 'documento'/);
+        expect(telefono).toMatch(/if \(!esPapel\) \{[^}]*sumarHoja\(file\); return; \}/);
+        expect(telefono).toMatch(/if \(varias\) return \[\.\.\.prev, nueva\];/);
     });
 });
 

@@ -18,6 +18,17 @@
             "comment": "Una oferta compartida desde la app: con la app la abre; sin ella, la página de la oferta."
           }
         ]
+      },
+      {
+        "appIDs": [
+          "ZZWA3Q7Q35.lat.farmasalud.portal"
+        ],
+        "components": [
+          {
+            "/": "/foto/*",
+            "comment": "El QR de la computadora para mandar una foto: con la app del personal la abre; sin ella, la pagina /foto de siempre."
+          }
+        ]
       }
     ]
   }

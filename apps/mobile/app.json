@@ -38,10 +38,30 @@
         "com.apple.developer.usernotifications.communication": true,
         "com.apple.developer.usernotifications.time-sensitive": true
       },
-      "appleTeamId": "ZZWA3Q7Q35"
+      "appleTeamId": "ZZWA3Q7Q35",
+      "associatedDomains": [
+        "applinks:portal.farmasalud.lat"
+      ]
     },
     "android": {
       "package": "lat.farmasalud.portal",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "portal.farmasalud.lat",
+              "pathPrefix": "/foto/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/icono-android.png",

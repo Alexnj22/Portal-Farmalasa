@@ -422,7 +422,16 @@ const FileField = memo(({
         setPidiendoQr(true);
         try {
             const { abrirCaptura } = await traspaso();
-            const r = await abrirCaptura(null);
+            /* El teléfono tiene que saber QUÉ se pide y CUÁNTAS caben
+             * (2026-11-17): sin editor acá, la foto va tal cual también allá;
+             * con su forma de papel, el recuadro nace con esa forma; y si este
+             * campo no acepta PDF, no se ofrece juntar varias hojas —llegaban,
+             * se rechazaban acá y el código ya estaba gastado. */
+            const r = await abrirCaptura(null, 'foto', null, {
+                clase: conEditor ? 'documento' : 'libre',
+                forma: conEditor ? tipoDeDocumento : null,
+                varias: aceptaArchivo({ type: 'application/pdf', name: 'hojas.pdf' }, accept),
+            });
             if (!r.ok) { setRechazo(r.motivo); return; }
             setRechazo(null);
             setCaptura(r);
@@ -434,7 +443,7 @@ const FileField = memo(({
         } finally {
             setPidiendoQr(false);
         }
-    }, []);
+    }, [conEditor, tipoDeDocumento, accept]);
 
     useEffect(() => {
         if (!captura?.id) return undefined;

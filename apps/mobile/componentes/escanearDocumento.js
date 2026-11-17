@@ -15,10 +15,15 @@
 // a la cámara de siempre — nunca deja a nadie sin poder adjuntar un papel.
 
 /**
- * @returns {Promise<{disponible: false} | {disponible: true, foto: {uri, tipo, tamano, nombre} | null}>}
- *   `foto: null` = la persona canceló.
+ * @param {{maxHojas?: number}} [opciones]  cuántas hojas se pueden escanear de
+ *   una vez (el QR de la computadora que acepta varias: llegan como un PDF).
+ *   En Android lo respeta el escáner; en el iPhone VisionKit no tiene tope, así
+ *   que `fotos` se recorta acá.
+ * @returns {Promise<{disponible: false} | {disponible: true, foto: {uri, tipo, tamano, nombre} | null, fotos: Array, sobraron: number}>}
+ *   `foto: null` = la persona canceló. `foto` es la primera de `fotos`.
+ *   `sobraron` = cuántas hojas se escanearon de más y se dejaron fuera.
  */
-export async function escanearDocumento() {
+export async function escanearDocumento({ maxHojas = 1 } = {}) {
   let escaner;
   try {
     // `require` y no `import`: el módulo lanza AL CARGARSE si la parte nativa
@@ -31,15 +36,18 @@ export async function escanearDocumento() {
   try {
     // Una página: cada documento del expediente es un archivo (el DUI se sube
     // por caras). Calidad 85: el lector del DUI lee igual y pesa la mitad.
-    r = await escaner.scanDocument({ maxNumDocuments: 1, croppedImageQuality: 85 });
+    r = await escaner.scanDocument({ maxNumDocuments: Math.max(1, maxHojas), croppedImageQuality: 85 });
   } catch (e) {
     // Android sin servicios de Google, o el escáner que no pudo abrir: se sigue
     // con la cámara. Cancelar no pasa por acá (vuelve con `status: 'cancel'`).
     console.warn('escanearDocumento:', e?.message || e);
     return { disponible: false };
   }
-  const ruta = r?.status === 'cancel' ? null : r?.scannedImages?.[0];
-  if (!ruta) return { disponible: true, foto: null };
-  const uri = /^[a-z]+:\/\//i.test(ruta) ? ruta : `file://${ruta}`;
-  return { disponible: true, foto: { uri, tipo: 'image/jpeg', tamano: null, nombre: 'documento.jpg' } };
+  const rutas = r?.status === 'cancel' ? [] : (r?.scannedImages || []).filter(Boolean);
+  if (!rutas.length) return { disponible: true, foto: null, fotos: [], sobraron: 0 };
+  const fotos = rutas.slice(0, Math.max(1, maxHojas)).map((ruta, i) => ({
+    uri: /^[a-z]+:\/\//i.test(ruta) ? ruta : `file://${ruta}`,
+    tipo: 'image/jpeg', tamano: null, nombre: i ? `documento-${i + 1}.jpg` : 'documento.jpg',
+  }));
+  return { disponible: true, foto: fotos[0], fotos, sobraron: rutas.length - fotos.length };
 }

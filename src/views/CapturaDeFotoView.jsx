@@ -91,6 +91,23 @@ export default function CapturaDeFotoView() {
        el nombre que escribió la computadora: sin él, esta pantalla no sabría
        qué papel está pidiendo. */
     const [documento, setDocumento] = useState('');
+    /* QUÉ pide la computadora y CUÁNTAS caben (2026-11-17). Antes todo era
+       «un documento de varias hojas»: el retrato del empleado entraba al editor
+       de papel, la foto de un producto se recortaba como una boleta y, donde
+       sólo cabe una imagen, se podía juntar un PDF que del otro lado se
+       rechazaba con el código ya gastado.
+       · `clase` — `documento` abre el editor de papel; `retrato` y `libre`
+         mandan la foto tal cual (la computadora tiene su propio editor).
+       · `forma` — la forma del papel (`dui`, `boleta`, `receta`…): el
+         recuadro nace con ella.
+       · `varias` — si se pueden juntar hojas en un PDF. */
+    const [clase, setClase] = useState('documento');
+    const [forma, setForma] = useState(null);
+    const [varias, setVarias] = useState(true);
+    const esPapel = clase === 'documento';
+    /* Sólo las formas que el editor conoce: una que no está en `DOCS` (p. ej.
+       `comprobante`) le cae a `receta`, que es más angosta que una hoja. */
+    const formaDelEditor = ['dui', 'boleta', 'receta'].includes(forma) ? forma : 'documento';
     const dosCaras = modo === 'dui' || modo === 'dos_caras';
     const [caraPorAjustar, setCaraPorAjustar] = useState(null);           // { cara, file }
     /* Las hojas ya confirmadas, en orden. Se juntan acá y se mandan de una sola
@@ -120,6 +137,9 @@ export default function CapturaDeFotoView() {
             // persona haya tocado nada puede quedar bloqueado. Se abre al tocar.
             if (r.modo === 'qr' || r.modo === 'dui' || r.modo === 'dos_caras') setModo(r.modo);
             setDocumento(r.documento || '');
+            setClase(r.clase || 'documento');
+            setForma(r.forma || null);
+            setVarias(r.varias !== false);
             setEstado('listo');
         })();
         return () => { vivo = false; };
@@ -193,14 +213,25 @@ export default function CapturaDeFotoView() {
      * Y si no contesta —sin red, secreto vencido, una foto sin ningún papel— el
      * editor abre igual: una ayuda que se cae no puede impedir mandar la foto.
      */
+    /** Suma la hoja, o la REEMPLAZA si aquí cabe una sola. */
+    const sumarHoja = (file) => setHojas(prev => {
+        const nueva = { file, vista: URL.createObjectURL(file) };
+        if (varias) return [...prev, nueva];
+        prev.forEach(h => h.vista && URL.revokeObjectURL(h.vista));
+        return [nueva];
+    });
+
     const tomar = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        /* Un retrato o una foto libre NO es un papel: sin editor de esquinas.
+           Va a la lista tal cual y se manda desde ahí. */
+        if (!esPapel) { e.target.value = ''; sumarHoja(file); return; }
         setPorAjustar(file);
         setSugerido(null);
         setBuscando(true);
         import('@nucleo/data/recorteSugerido')
-            .then(m => m.buscarEsquinas(file, { secretoDeCaptura: secreto }))
+            .then(m => m.buscarEsquinas(file, { secretoDeCaptura: secreto, tipo: forma || undefined }))
             .then(r => { if (vivoRef.current) setSugerido(r); })
             .catch(() => {})
             .finally(() => { if (vivoRef.current) setBuscando(false); });
@@ -488,7 +519,9 @@ export default function CapturaDeFotoView() {
                                active:scale-[0.97] transition-transform`}>
                         {hojas.length === 0
                             ? <><Camera size={32} strokeWidth={2.5} />Tomar la foto</>
-                            : <><Plus size={18} strokeWidth={3} />Agregar otra foto</>}
+                            : varias
+                                ? <><Plus size={18} strokeWidth={3} />Agregar otra foto</>
+                                : <><Camera size={18} strokeWidth={2.5} />Tomar otra</>}
                     </label>
                     <input id="captura-foto" type="file" {...PROPS_CAMARA} className="hidden" onChange={tomar} />
                     {/* La galería, al lado de la cámara (2026-10-31): la foto
@@ -530,9 +563,15 @@ export default function CapturaDeFotoView() {
                         teléfono en la mano le hace falta saber. */}
                     <p className="text-caption text-content-3 font-medium text-center max-w-xs leading-snug">
                         {hojas.length === 0
-                            ? 'Puedes recortarla y enderezarla aquí mismo. Si son varias, las vas agregando y se mandan todas juntas.'
+                            ? (esPapel
+                                ? (varias
+                                    ? 'Puedes recortarla y enderezarla aquí mismo. Si son varias, las vas agregando y se mandan todas juntas.'
+                                    : 'Puedes recortarla y enderezarla aquí mismo.')
+                                : 'Aparece sola en la computadora.')
                             : (hojas.length === 1
-                                ? 'Puedes agregar más fotos o mandar esta ya. Aparece sola en la computadora.'
+                                ? (varias
+                                    ? 'Puedes agregar más fotos o mandar esta ya. Aparece sola en la computadora.'
+                                    : 'Mándala o toma otra. Aparece sola en la computadora.')
                                 : 'Se mandan juntas. Acomódalas con las flechas antes de mandar.')}
                     </p>
                 </>
@@ -556,7 +595,7 @@ export default function CapturaDeFotoView() {
             {porAjustar && (
                 <Suspense fallback={<LoadingState variant="inline" label="Abriendo el editor…" />}>
                     <EditorDeDocumento
-                        tipo="documento"
+                        tipo={formaDelEditor}
                         file={porAjustar}
                         analizando={buscando && !sugerido}
                         recuadro={sugerido?.recuadro || null}
@@ -567,7 +606,7 @@ export default function CapturaDeFotoView() {
                            pantalla, que es lo que permite seguir agregando. */
                         onConfirm={(listo) => {
                             setPorAjustar(null); setSugerido(null);
-                            setHojas(prev => [...prev, { file: listo, vista: URL.createObjectURL(listo) }]);
+                            sumarHoja(listo);
                         }}
                     />
                 </Suspense>

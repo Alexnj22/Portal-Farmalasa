@@ -70,6 +70,13 @@ Deno.serve(async (req) => {
     const { data: vigente, error: errVigente } = await admin.rpc('captura_de_foto_vigente', { p_secreto: secreto });
     if (errVigente) return json({ ok: false, error: 'NO_SE_PUDO_VERIFICAR', detalle: errVigente.message }, 500);
     if (!vigente?.ok) return json({ ok: false, error: 'CODIGO_INVALIDO' }, 403);
+    /* Donde sólo cabe UNA imagen, un PDF de varias hojas no se acepta, y se
+     * rechaza ANTES de quemar el código (2026-11-17): antes llegaba, la
+     * computadora lo descartaba y había que pedir otro QR y repetir todo. Con
+     * el código vivo, el teléfono puede quitar hojas y volver a mandar. */
+    if (vigente.varias === false && mime === 'application/pdf') {
+      return json({ ok: false, error: 'UNA_SOLA' }, 422);
+    }
 
     const bytes = Uint8Array.from(atob(limpio), (c) => c.charCodeAt(0));
     const ext = mime === 'application/pdf' ? 'pdf'

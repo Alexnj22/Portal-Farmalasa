@@ -33,14 +33,6 @@ const LADO_LARGO = 792;
 
 const texto = (s) => new TextEncoder().encode(s);
 
-/** Los bytes de un JPEG, y de paso su tamaño real. */
-async function leerJpeg(file) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const { ancho, alto } = medirJpeg(bytes);
-    if (!ancho || !alto) throw new Error('No se pudo medir una de las hojas.');
-    return { bytes, ancho, alto };
-}
-
 /**
  * El ancho y el alto salen del propio JPEG, no de un `Image`.
  *
@@ -74,8 +66,30 @@ function medirJpeg(b) {
  */
 export async function hojasEnPdf(hojas, nombre = 'documento.pdf') {
     if (!Array.isArray(hojas) || !hojas.length) throw new Error('No hay hojas que unir.');
-    const paginas = [];
-    for (const h of hojas) paginas.push(await leerJpeg(h));
+    const bytes = [];
+    for (const h of hojas) bytes.push(new Uint8Array(await h.arrayBuffer()));
+    const base = String(nombre).replace(/\.[^.]+$/, '');
+    return new File([pdfDeJpegs(bytes)], `${base}.pdf`, { type: 'application/pdf' });
+}
+
+/**
+ * Lo mismo, de bytes a bytes: los JPEG entran como `Uint8Array` y sale el PDF.
+ *
+ * Existe para la app del personal (`apps/mobile/app/foto/[secreto].js`), que no
+ * tiene `File` del navegador pero sí los bytes del escáner del sistema: así el
+ * PDF que arma el teléfono nativo es EL MISMO que arma la página `/foto`, y no
+ * una segunda receta (con `expo-print` habría salido en hoja carta, con bordes).
+ *
+ * @param {Uint8Array[]} jpegs
+ * @returns {Uint8Array}
+ */
+export function pdfDeJpegs(jpegs) {
+    if (!Array.isArray(jpegs) || !jpegs.length) throw new Error('No hay hojas que unir.');
+    const paginas = jpegs.map((b) => {
+        const { ancho, alto } = medirJpeg(b);
+        if (!ancho || !alto) throw new Error('No se pudo medir una de las hojas.');
+        return { bytes: b, ancho, alto };
+    });
 
     /* Los objetos se numeran 1 = catálogo, 2 = árbol de páginas, y después TRES
      * por hoja: la imagen, su contenido y la página. Se calcula antes de
@@ -136,6 +150,8 @@ export async function hojasEnPdf(hojas, nombre = 'documento.pdf') {
     }
     escribir(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${inicioXref}\n%%EOF\n`);
 
-    const base = String(nombre).replace(/\.[^.]+$/, '');
-    return new File(partes, `${base}.pdf`, { type: 'application/pdf' });
+    const salida = new Uint8Array(largo);
+    let en = 0;
+    for (const p of partes) { salida.set(p, en); en += p.length; }
+    return salida;
 }

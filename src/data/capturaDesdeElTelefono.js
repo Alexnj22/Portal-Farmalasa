@@ -11,11 +11,17 @@
 import { supabase } from '../supabaseClient';
 import { reducirAJpeg } from '@plataforma/imagenes';
 
-/** ¿Ese código todavía sirve? La llama el TELÉFONO, sin sesión. */
+/**
+ * ¿Ese código todavía sirve? La llama el TELÉFONO, sin sesión.
+ *
+ * Devuelve `{ ok, para, modo, documento, clase, forma, varias }`. Los tres
+ * últimos (2026-11-17) dicen QUÉ pide la computadora y CUÁNTAS acepta; si
+ * faltan (una base sin la migración), valen lo de antes: documento, varias.
+ */
 export async function capturaVigente(secreto) {
     const { data, error } = await supabase.rpc('captura_de_foto_vigente', { p_secreto: secreto });
-    if (error) return { ok: false };
-    return data || { ok: false };
+    if (error || !data?.ok) return { ok: false };
+    return { clase: 'documento', forma: null, varias: true, ...data };
 }
 
 /**
@@ -83,16 +89,37 @@ export async function mandarFoto(secreto, file) {
         }
     }
 
+    return mandarBase64(secreto, reducida.base64, reducida.tipo);
+}
+
+/**
+ * El envío en sí, ya en base64: lo comparten la página `/foto` y la pantalla
+ * nativa de la app (`apps/mobile/app/foto/[secreto].js`), que reduce y arma el
+ * PDF con las herramientas del teléfono pero manda por ESTE camino — así los
+ * dos dicen lo mismo cuando algo falla.
+ *
+ * @param {string} secreto
+ * @param {string} base64   sin o con el prefijo `data:…;base64,`
+ * @param {'image/jpeg'|'image/png'|'image/webp'|'application/pdf'} tipo
+ */
+export async function mandarBase64(secreto, base64, tipo) {
     const { data, error } = await supabase.functions.invoke('subir-foto-de-captura', {
-        body: { secreto, imagenBase64: reducida.base64, tipo: reducida.tipo },
+        body: { secreto, imagenBase64: base64, tipo },
     });
-    if (error) return { ok: false, motivo: 'No se pudo enviar. Revisa tu señal.' };
-    if (!data?.ok) {
+    /* Un 4xx de la función llega como `error` y con el cuerpo en el contexto:
+       sin leerlo, «aquí va una sola foto» se diría «revisa tu señal». */
+    let cuerpo = data;
+    if (error && !cuerpo) {
+        try { cuerpo = await error.context?.json?.(); } catch { cuerpo = null; }
+        if (!cuerpo?.error) return { ok: false, motivo: 'No se pudo enviar. Revisa tu señal.' };
+    }
+    if (!cuerpo?.ok) {
         const porQue = {
             CODIGO_INVALIDO: 'Ese código ya se usó o venció. Pide uno nuevo en la computadora.',
             MUY_GRANDE: 'Pesa demasiado. Quita alguna hoja e intenta de nuevo.',
+            UNA_SOLA: 'Aquí va una sola foto. Quita las demás e intenta de nuevo.',
         };
-        return { ok: false, motivo: porQue[data?.error] || 'No se pudo guardar la foto.' };
+        return { ok: false, motivo: porQue[cuerpo?.error] || 'No se pudo guardar la foto.' };
     }
     return { ok: true };
 }

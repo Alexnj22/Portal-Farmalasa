@@ -6228,9 +6228,11 @@ export type Database = {
       }
       capturas_de_foto: {
         Row: {
+          clase: string
           created_at: string
           documento: string | null
           employee_id: string | null
+          forma: string | null
           foto_url: string | null
           id: string
           modo: string
@@ -6238,12 +6240,15 @@ export type Database = {
           solicitada_por: string
           texto: string | null
           usada_el: string | null
+          varias: boolean
           vence_el: string
         }
         Insert: {
+          clase?: string
           created_at?: string
           documento?: string | null
           employee_id?: string | null
+          forma?: string | null
           foto_url?: string | null
           id?: string
           modo?: string
@@ -6251,12 +6256,15 @@ export type Database = {
           solicitada_por: string
           texto?: string | null
           usada_el?: string | null
+          varias?: boolean
           vence_el: string
         }
         Update: {
+          clase?: string
           created_at?: string
           documento?: string | null
           employee_id?: string | null
+          forma?: string | null
           foto_url?: string | null
           id?: string
           modo?: string
@@ -6264,6 +6272,7 @@ export type Database = {
           solicitada_por?: string
           texto?: string | null
           usada_el?: string | null
+          varias?: boolean
           vence_el?: string
         }
         Relationships: [
@@ -32407,7 +32416,14 @@ export type Database = {
         Returns: Json
       }
       abrir_captura_de_foto: {
-        Args: { p_documento?: string; p_employee_id?: string; p_modo?: string }
+        Args: {
+          p_clase?: string
+          p_documento?: string
+          p_employee_id?: string
+          p_forma?: string
+          p_modo?: string
+          p_varias?: boolean
+        }
         Returns: Json
       }
       activar_promocion: {

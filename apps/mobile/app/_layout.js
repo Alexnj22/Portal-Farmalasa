@@ -64,7 +64,11 @@ function GuardiaDeSesion() {
   }, [isAuthenticated, empleadoId]);
   useEffect(() => {
     if (loading) return;
-    const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index' || segmentos[0] === 'recuperar-contrasena';
+    // `foto` (el QR de la computadora) tampoco pide sesión, igual que la página
+    // `/foto` del portal: la llave es el código, que vive cinco minutos y sirve
+    // una vez. Mandarla a `/entrar` perdería el código.
+    const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index' || segmentos[0] === 'recuperar-contrasena'
+      || segmentos[0] === 'foto';
     if (!isAuthenticated && !enEntrada) router.replace('/entrar');
   }, [isAuthenticated, loading, segmentos]);
   return isAuthenticated ? <CampanaEnVivo /> : null;
@@ -154,6 +158,8 @@ export default function Raiz() {
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
             <Stack.Screen name="recuperar-contrasena" options={{ title: 'Recuperar contraseña' }} />
+            {/* El QR de la computadora para mandar una foto (app/foto/[secreto].js). */}
+            <Stack.Screen name="foto/[secreto]" options={{ title: '', headerTransparent: false }} />
             {/* Sin opciones propias: con la barra opaca de siempre. */}
             <Stack.Screen name="torogoz/venta" options={{ headerTransparent: false }} />
             <Stack.Screen name="torogoz/venta/[id]" options={{ headerTransparent: false }} />

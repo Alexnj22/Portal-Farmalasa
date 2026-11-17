@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.11 — Preventa: flechas fijas y aviso del lote que no alcanza
+
+- Las flechas de «Suele llevar» ya no se mueven hacia abajo al pasar el cursor.
+- Si el lote elegido no completa lo que se pide, el producto avisa en amarillo
+  de qué lote sale y que hay que traer ese.
+- Novedades: no — ajuste de una pantalla publicada hoy.
+
 ## v2.1562.10 — Preventa: control de lote a la vista
 
 - Cada producto muestra siempre de qué lote sale, su vencimiento y cuánto sale

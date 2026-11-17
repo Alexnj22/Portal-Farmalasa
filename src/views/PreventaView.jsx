@@ -1073,13 +1073,19 @@ function SueleLlevar({ frecuentes, onAgregar }) {
                         </button>
                     ))}
                 </div>
+                {/* El centrado va en el contenedor: en el botón, su propio movimiento al
+                    pasar el cursor pisaba el translate y la flecha se iba hacia abajo. */}
                 {bordes.izq && (
-                    <Button size="xs" variant="secondary" icon={ChevronLeft} iconOnly aria-label="Ver los anteriores" tabIndex={-1}
-                        onClick={() => mover(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full shadow-md" />
+                    <span className="absolute inset-y-0 left-0 flex items-center">
+                        <Button size="xs" variant="secondary" icon={ChevronLeft} iconOnly aria-label="Ver los anteriores" tabIndex={-1}
+                            onClick={() => mover(-1)} className="rounded-full shadow-md" />
+                    </span>
                 )}
                 {bordes.der && (
-                    <Button size="xs" variant="secondary" icon={ChevronRight} iconOnly aria-label="Ver más" tabIndex={-1}
-                        onClick={() => mover(1)} className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full shadow-md" />
+                    <span className="absolute inset-y-0 right-0 flex items-center">
+                        <Button size="xs" variant="secondary" icon={ChevronRight} iconOnly aria-label="Ver más" tabIndex={-1}
+                            onClick={() => mover(1)} className="rounded-full shadow-md" />
+                    </span>
                 )}
             </div>
         </div>
@@ -1274,7 +1280,11 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
         return (p?.enteras ?? 0) + (p?.sueltas ?? 0);
     };
     const alcanza = (l) => (Number(l.unidades) || 0) >= (Number(cantidad) || 0) * f;
-    const elegidoNoAlcanza = vigente && usados.length > 1;
+    // El elegido no da nada (no completa ni una) o sólo una parte: hay que traer otro.
+    const elegidoNoDa = Boolean(vigente) && !usados.some((l) => mismoLote(l, vigente));
+    const elegidoNoAlcanza = Boolean(vigente) && (elegidoNoDa || usados.length > 1);
+    const otros = usados.filter((l) => !mismoLote(l, vigente)).map((l) => l.lote);
+    const nombresDe = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} y ${xs.at(-1)}` : xs[0] ?? '');
     return (
         <>
             {/* Control de lote: siempre a la vista de qué lote sale y cuánto de cada uno. */}
@@ -1297,8 +1307,13 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
                 </span>
             </button>
             {elegidoNoAlcanza && (
-                <p className="text-micro font-semibold text-warning-text">
-                    El lote {vigente.lote} no alcanza: lo demás sale de {usados.length - 1 === 1 ? 'otro lote' : `otros ${usados.length - 1} lotes`}.
+                <p className="mt-0.5 flex items-start gap-1 text-caption font-bold text-warning-text">
+                    <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                    <span>
+                        {elegidoNoDa
+                            ? <>El lote {vigente.lote} no completa {Number(cantidad) || 0} {pres}. Sale del lote {nombresDe(otros)}: trae ese.</>
+                            : <>El lote {vigente.lote} no alcanza. Lo demás sale del lote {nombresDe(otros)}: trae también ese.</>}
+                    </span>
                 </p>
             )}
             <Popover abierto={abierto} caja={caja} id={id} lado="izquierda" ariaLabel={`Lotes de ${nombre}`}

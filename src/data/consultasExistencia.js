@@ -20,14 +20,14 @@ import { insertMovimientoInventario } from './inventoryMovements';
 // Los códigos que lanzan las funciones, dichos para quien está en sala.
 const MENSAJES = {
     SIN_PERMISO:            'No tienes permiso para esto.',
-    SIN_SALAS:              'Elige al menos una sala.',
+    SIN_SALAS:              'Elige al menos una sucursal.',
     PRODUCTO_NO_ENCONTRADO: 'No se encontró el producto.',
-    YA_PEDIDA:              'Esas salas ya tienen este producto pendiente de contar.',
+    YA_PEDIDA:              'Esas sucursales ya tienen este producto pendiente de contar.',
     NO_ENCONTRADA:          'La consulta ya no existe.',
-    FUERA_DE_ALCANCE:       'Esta consulta es de otra sala.',
+    FUERA_DE_ALCANCE:       'Esta consulta es de otra sucursal.',
     YA_CONTADA:             'Esta consulta ya se contó.',
     CONTEO_INVALIDO:        'Revisa el conteo: cantidades enteras y, si el producto lo pide, el lote y la fecha de vencimiento.',
-    SIN_DESCUADRE:          'Esta sala ya no tiene un descuadre pendiente.',
+    SIN_DESCUADRE:          'Esta sucursal ya no tiene un descuadre pendiente.',
     NOTA_REQUERIDA:         'Escribe por qué no se ajusta.',
     SIN_SOLICITUD:          'No se creó ninguna solicitud de ajuste.',
 };
@@ -156,7 +156,7 @@ export async function pedirAjusteDeConsulta({ consulta, sala, ajuste, usuarioId,
         if (!lineas.length) continue;
         const carga = sentido === 'carga';
         const op = OPERACIONES_AJUSTE.find(o => o.key === (carga ? 'CARGA' : 'DESCARTE'));
-        const causa = `Consulta de existencia: la sala contó ${ajuste.contado} unidades y el sistema decía `
+        const causa = `Consulta de existencia: la sucursal contó ${ajuste.contado} unidades y el sistema decía `
             + `${ajuste.sistema} (${textoDeDiferencia(sala)}). Se contó dos veces.`;
         const payload = solicitudDeAjuste({
             op,

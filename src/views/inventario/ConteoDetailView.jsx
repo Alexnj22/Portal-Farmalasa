@@ -1016,7 +1016,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                             <Button variant="secondary" icon={PackageX} iconOnly disabled={saving}
                                 className="h-14 w-14 shrink-0"
                                 aria-label="Marcar como no ubicado"
-                                title="No ubicado — lo busqué y no está"
+                                title="No ubicado: lo busqué y no está"
                                 onClick={() => { setFisico(0); commit(0, 'SIN_UBICAR'); }} />
                         )}
                     </>
@@ -1558,7 +1558,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                 {hayPendientes ? (
                     <>
                         <Notice variant="warning">
-                            Quedan <strong className="tabular-nums">{pendientes}</strong> renglón(es) sin cantidad física. Decidí qué son antes de cerrar:
+                            Quedan <strong className="tabular-nums">{pendientes}</strong> producto(s) sin cantidad física. Decide qué son antes de cerrar:
                         </Notice>
                         <SegmentedControl
                             layout="block"
@@ -2198,7 +2198,7 @@ export default function ConteoDetailView() {
         setBusy(true);
         try {
             const res = await eliminarConteoInventario(id);
-            showToast('Conteo eliminado', `Se borraron ${res?.total_items ?? 0} renglón(es)`, 'success');
+            showToast('Conteo eliminado', `Se borraron ${res?.total_items ?? 0} producto(s)`, 'success');
             // Navegar ANTES de soltar el `busy`: la vista ya no tiene conteo que
             // recargar, y quedarse acá pintaría el estado de "no se encontró".
             navigate('/conteo-inventario');

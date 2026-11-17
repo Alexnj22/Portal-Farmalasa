@@ -360,7 +360,7 @@ export async function pasarSobrante(envioId) {
     const { data: lineas, error } = await supabase
         .from('envio_linea').select('posicion').eq('request_id', envioId);
     if (error || !lineas?.length) {
-        return { sobrante: { ok: false, error: 'Lo que vino de más salió de la otra sala pero no se pudo recibir todavía. Recíbelo en tus envíos por recibir.' } };
+        return { sobrante: { ok: false, error: 'Lo que vino de más salió de la otra sucursal, pero no se pudo recibir todavía. Recíbelo en tus traslados por recibir.' } };
     }
     const posiciones = lineas.map(l => l.posicion);
     const llegada = await invocar({
@@ -368,7 +368,7 @@ export async function pasarSobrante(envioId) {
         decisiones: posiciones.map(i => ({ i, decision: 'aceptar' })),
     });
     if (!llegada?.ok && !(llegada?.decididas > 0)) {
-        return { sobrante: { ok: false, error: `Lo que vino de más salió de la otra sala pero no se pudo recibir: ${llegada?.error ?? 'sin detalle'}. Recíbelo en tus envíos por recibir.` } };
+        return { sobrante: { ok: false, error: `Lo que vino de más salió de la otra sucursal, pero no se pudo recibir: ${llegada?.error ?? 'sin detalle'}. Recíbelo en tus traslados por recibir.` } };
     }
     return { sobrante: { ok: true, productos: llegada?.decididas ?? 0 } };
 }
@@ -421,7 +421,7 @@ export const renglonSinVence = (linea) =>
 /** Lo que se le explica a la sala por ese renglón: qué pasó y qué hacer. */
 export const explicarSinVence = (linea) =>
     `${linea?.descripcion ?? 'Este producto'} no puede salir: se armó sin el lote o el vencimiento `
-    + 'de la caja, y en tu sala no tiene uno registrado. Volver a enviarlo no lo arregla: '
+    + 'de la caja, y en tu sucursal no tiene uno registrado. Volver a enviarlo no lo arregla: '
     + 'hay que armarlo de nuevo, y ahora te pide el lote y el vencimiento que trae la caja.';
 
 /** El motivo que queda escrito al cancelar por eso. */

@@ -347,7 +347,7 @@ const PESTANAS_EFECTIVO = {
     piezas: [
         { tipo: 'titular', texto: 'Las pestañas de Efectivo', sub: 'Arriba de la pantalla' },
         { tipo: 'pasos', items: [
-            '**Hoy**: tu caja del día — abrir, entradas, salidas, cortes y cierre.',
+            '**Hoy**: tu caja del día. Abrir, entradas, salidas, cortes y cierre.',
             '**Cortes**: todos los cortes con su esperado, contado y diferencia.',
             '**Diferencias**: los días con faltante o sobrante y qué falta hacer con cada uno.',
             '**Movimientos**: las entradas y salidas, también las editadas o borradas en la caja.',

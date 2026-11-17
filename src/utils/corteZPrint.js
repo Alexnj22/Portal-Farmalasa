@@ -260,7 +260,7 @@ export function construirCorteZDoc(filas) {
  * @param {string} nombreArchivo
  */
 export async function descargarCorteZPdf(filas, nombreArchivo) {
-    if (!filas?.length) throw new Error('No hay Corte Z para descargar en este período.');
+    if (!filas?.length) throw new Error('No hay cierre mensual para descargar en este período.');
     const pdfMake = await getPdfMake();
     await descargarPdf(pdfMake.createPdf(construirCorteZDoc(filas)), nombreArchivo);
 }
@@ -314,6 +314,6 @@ table.rayas tr+tr td{border-top:0.5pt solid #ccc}
 
 /** El Corte Z en HTML (una sucursal por hoja), el mismo papel que el PDF del portal. */
 export function corteZHtml(filas) {
-    if (!filas?.length) throw new Error('No hay Corte Z para este período.');
+    if (!filas?.length) throw new Error('No hay cierre mensual para este período.');
     return pdfmakeAHtml(construirCorteZDoc(filas));
 }

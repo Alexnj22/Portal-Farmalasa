@@ -419,7 +419,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     </div>
                                     {/* MIN · MAX por sucursal */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2">
-                                        <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">MIN · MAX red</span>
+                                        <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">Mín/Máx de la red</span>
                                         {!branchReady
                                             ? <LoadingState variant="inline" size="sm" />
                                             : <div className="flex flex-col gap-1">

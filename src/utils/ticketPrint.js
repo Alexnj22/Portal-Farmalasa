@@ -1518,7 +1518,7 @@ export async function enviarAImpresoraDeLaComputadora(ticket, { sistema = 'linux
         if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
             return {
                 ok: false, direccion, motivo,
-                detalle: 'La computadora no contestó en 8 segundos. Si es una computadora de sala, '
+                detalle: 'La computadora no contestó en 8 segundos. Si es una computadora de venta, '
                     + 'el programa de impresión está detenido o colgado.',
             };
         }
@@ -1531,9 +1531,9 @@ export async function enviarAImpresoraDeLaComputadora(ticket, { sistema = 'linux
         }
         return {
             ok: false, direccion, motivo,
-            detalle: 'Nadie contestó en esa dirección. En una computadora que no es de sala es lo '
+            detalle: 'Nadie contestó en esa dirección. En una computadora que no es de venta es lo '
                 + 'esperado: no tiene el programa de impresión directa, y el papel sale con el botón '
-                + 'de arriba. Si ES una de sala, abre esa dirección en una pestaña de esa misma '
+                + 'de arriba. Si ES una de venta, abre esa dirección en una pestaña de esa misma '
                 + 'computadora: si tampoco responde ahí, el programa no está corriendo.',
         };
     }
@@ -1693,7 +1693,7 @@ export async function imprimirDocumento(
             if (!error) {
                 return {
                     via: 'cola', ok: true,
-                    detalle: 'Se mandó a la caja de la sala. Sale en unos segundos.',
+                    detalle: 'Se mandó a la caja de la sucursal. Sale en unos segundos.',
                 };
             }
             // Sin una caja registrada la función rechaza a propósito: una
@@ -1708,7 +1708,7 @@ export async function imprimirDocumento(
             if (soloCola) {
                 return {
                     via: 'cola', ok: false,
-                    detalle: `${mensajeAmigable(error, 'No se pudo mandar a la caja de esa sala.')} `
+                    detalle: `${mensajeAmigable(error, 'No se pudo mandar a la caja de esa sucursal.')} `
                         + 'Elige otra o imprímelo en esta computadora.',
                 };
             }

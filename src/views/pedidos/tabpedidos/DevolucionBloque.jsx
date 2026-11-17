@@ -180,7 +180,7 @@ export default function DevolucionBloque({
                     anotar, y repetirla movería el producto dos veces. */}
                 {dev.estado === 'error' && dev.detalle?.revisar_a_mano && (
                     <p className="text-caption text-danger-text font-semibold">
-                        Hay que revisarla a mano antes de volver a intentar — busca «{dev.clave}».
+                        Hay que revisarla a mano antes de volver a intentar. Busca «{dev.clave}».
                     </p>
                 )}
 

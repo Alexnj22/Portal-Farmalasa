@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1561.3 — Lenguaje: lo que quedaba en avisos, errores y papel
+
+- El barrido en el navegador no veía avisos, errores ni papel impreso. Se corrigieron unos 60 textos que quedaban: «sala» → «sucursal» (consultas de existencia, traslados, impresión, Mín/Máx, bienvenida), usted y voseo en el marcador y en conteos, «jefe inmediato» en la bienvenida, rayas en avisos, «Corte Z» fuera del PDF, «Stock insuficiente», «renglón» por producto.
+- Planilla: «renglón» → «pago». Bitácoras impresas: «Renglones foliados» → «Registros foliados». «Sala de ventas» como ubicación se queda. Las cuatro decisiones, en la tabla de vocabulario.
+- Saly (ayuda) y la salida generada sola en marcaciones, con el mismo vocabulario.
+
 ## v2.1561.2 — Desplegar funciones: versión fija de la CLI
 
 - El flujo «Desplegar funciones» usa la CLI de Supabase 2.98.2, la misma de `entorno-pruebas.yml`. Con «latest» la primera corrida murió antes de empezar: GitHub limitó la consulta que averigua la última versión.

@@ -106,7 +106,7 @@ export function resultadosDeConteoHtml(conteo, items = []) {
     const aviso = avisoDeConteoParcial(conteo);
     return `<!doctype html><html><head><meta charset="utf-8"/>${ESTILO}</head><body>${cabecera(conteo, 'Resultados del conteo')}
 <table><thead><tr><th>Producto</th><th>${simple ? 'Presentación' : 'Lote'}</th><th>Sistema</th><th>Físico</th><th>Dif.</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${filas}</tbody></table>
-<p class="nota">${t.items} ítems · ${k.porProducto ? `${k.conDiferencia} producto(s) con diferencia` : `${t.conDiferencia} con diferencia`}${k.renglonesReacomodo > 0 ? ` · ${k.renglonesReacomodo} renglón(es) sólo cambian de lote` : ''} · ${t.noUbicados} no ubicados · ${t.sinContar} sin contar${montos ? ` · ${esc(montos)}` : ''}</p>
+<p class="nota">${t.items} ítems · ${k.porProducto ? `${k.conDiferencia} producto(s) con diferencia` : `${t.conDiferencia} con diferencia`}${k.renglonesReacomodo > 0 ? ` · ${k.renglonesReacomodo} producto(s) sólo cambian de lote` : ''} · ${t.noUbicados} no ubicados · ${t.sinContar} sin contar${montos ? ` · ${esc(montos)}` : ''}</p>
 ${aviso ? `<p class="nota">${esc(aviso)}</p>` : ''}<div class="pie"><div>Contó</div><div>Aprobó</div></div></body></html>`;
 }
 

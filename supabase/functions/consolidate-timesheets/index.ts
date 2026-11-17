@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
           details:     {
             autoInserted:    true,
             pendingHRReview: true,
-            reason:          'Salida no registrada — generada automáticamente',
+            reason:          'Salida no registrada. Se generó sola.',
             isExceptionDay:  !!exception,
           },
         });

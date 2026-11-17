@@ -13,9 +13,9 @@ export const SECCIONES_CONFIG_MINMAX = [
         { k: 'analysis_days', label: 'Ventana histórica de ventas', unit: 'días', min: 30 },
     ] },
     { titulo: 'Mín: días de reorden por clase XYZ', campos: [
-        { k: 'reorder_x_days', label: 'Clase X — demanda estable', unit: 'días', min: 1 },
-        { k: 'reorder_y_days', label: 'Clase Y — demanda moderada', unit: 'días', min: 1 },
-        { k: 'reorder_z_days', label: 'Clase Z — demanda errática', unit: 'días', min: 1 },
+        { k: 'reorder_x_days', label: 'Clase X: demanda estable', unit: 'días', min: 1 },
+        { k: 'reorder_y_days', label: 'Clase Y: demanda moderada', unit: 'días', min: 1 },
+        { k: 'reorder_z_days', label: 'Clase Z: demanda errática', unit: 'días', min: 1 },
     ] },
     { titulo: 'Umbrales XYZ (percentil de CV, por sucursal)', nota: 'Z = el resto. Relativo: compara cada producto contra sus vecinos dentro de la misma sucursal.', campos: [
         { k: 'xyz_x_percentile', label: 'X = percentil ≤', unit: '%', min: 1, max: 99 },
@@ -29,9 +29,9 @@ export const SECCIONES_CONFIG_MINMAX = [
         { k: 'approaching_pct', label: 'Umbral (existencia < Mín × (1 + X%))', unit: '%', min: 1, max: 100 },
     ] },
     { titulo: 'Buffer de seguridad (días extra al Mín)', nota: 'Mín = velocidad × (reorden + buffer). Recalcula para aplicar.', campos: [
-        { k: 'buffer_x_days', label: 'Clase X — demanda estable', unit: 'días', min: 0 },
-        { k: 'buffer_y_days', label: 'Clase Y — demanda moderada', unit: 'días', min: 0 },
-        { k: 'buffer_z_days', label: 'Clase Z — demanda errática', unit: 'días', min: 0 },
+        { k: 'buffer_x_days', label: 'Clase X: demanda estable', unit: 'días', min: 0 },
+        { k: 'buffer_y_days', label: 'Clase Y: demanda moderada', unit: 'días', min: 0 },
+        { k: 'buffer_z_days', label: 'Clase Z: demanda errática', unit: 'días', min: 0 },
     ] },
     { titulo: 'Ventas atípicas', campos: [
         { k: 'outlier_percentile', label: 'Percentil de corte', unit: '%', min: 50, max: 100 },

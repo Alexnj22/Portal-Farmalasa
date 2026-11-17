@@ -152,7 +152,7 @@ function buildMockData() {
           // Jueves: solo entrada, salida auto-generada
           { id: 'd3a', timestamp: `${thu}T14:05:00Z`, type: 'IN',  details: {}, branch_id: 2 },
           { id: 'd3b', timestamp: `${thu}T23:00:00Z`, type: 'OUT',
-            details: { autoInserted: true, pendingHRReview: true, reason: 'Salida no registrada — generada automáticamente' }, branch_id: 2 },
+            details: { autoInserted: true, pendingHRReview: true, reason: 'Salida no registrada. Se generó sola.' }, branch_id: 2 },
         ],
       },
       {

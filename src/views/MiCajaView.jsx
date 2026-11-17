@@ -3047,7 +3047,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     {posDeOtra && !leyendo && (
                         <Notice variant="info" compact>
                             Este comprobante es del POS de {posDeOtra}. Se anota en esta caja, y su número
-                            de boleta no se confunde con los del POS de esta sala.
+                            de boleta no se confunde con los del POS de esta sucursal.
                         </Notice>
                     )}
                     {problemaDeLaBoleta && (

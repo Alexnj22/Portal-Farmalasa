@@ -653,15 +653,15 @@ export default function TrasladosView() {
                     {!cargando && Object.values(porMomento).every(v => v.length === 0) && (
                         <EmptyState
                             icon={Send}
-                            title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Sin envíos en curso'}
+                            title={busqueda.trim() ? `Sin coincidencias para "${busqueda}"` : 'Sin traslados en curso'}
                             subtitle={busqueda.trim() ? undefined
-                                : 'Aquí aparece el producto que sale de tu sala hacia otra, y el que te mandan a ti.'}
+                                : 'Aquí aparece el producto que sale de tu sucursal hacia otra, y el que te mandan a ti.'}
                         />
                     )}
 
                     {[
                         { clave: 'por_decidir',            titulo: 'Te enviaron',        Fila: FilaEnvioPorDecidir },
-                        { clave: 'por_despachar',          titulo: 'Sin salir de tu sala', Fila: FilaEnvioPorDespachar },
+                        { clave: 'por_despachar',          titulo: 'Sin salir de tu sucursal', Fila: FilaEnvioPorDespachar },
                         { clave: 'por_recibir_devolucion', titulo: 'Te devuelven',       Fila: FilaDevolucionPorRecibir },
                         { clave: 'en_camino',              titulo: 'Enviaste',           Fila: FilaEnvioEnCamino },
                     ].map(({ clave, titulo, Fila }) => (

@@ -543,7 +543,7 @@ export function useTimeClockEngine(props = {}) {
 
     const handleSaveConfig = useCallback(async () => {
         if (!selectedBranchId) {
-            showToast('Faltan Datos', 'Seleccione una sucursal para continuar.', 'error');
+            showToast('Faltan Datos', 'Elige una sucursal para seguir.', 'error');
             return;
         }
         if (!deviceNameInput.trim()) {
@@ -610,7 +610,7 @@ export function useTimeClockEngine(props = {}) {
 const submitEarlyExit = useCallback((e) => {
     e.preventDefault();
     if (!exitReason || !earlyExitData) {
-        showToast('Falta Motivo', 'Por favor seleccione un motivo de salida.', 'error');
+        showToast('Falta Motivo', 'Elige el motivo de la salida.', 'error');
         return;
     }
 
@@ -745,7 +745,7 @@ const submitEarlyExit = useCallback((e) => {
         if (!kioskConfig) {
             setFeedback({
                 status: 'error',
-                message: 'KIOSCO NO AUTORIZADO',
+                message: 'MARCADOR NO AUTORIZADO',
                 subtext: 'Dispositivo no vinculado o permiso revocado.',
                 color: 'red',
                 iconKey: 'shield',
@@ -845,7 +845,7 @@ const submitEarlyExit = useCallback((e) => {
                     setFeedback({
                         status: 'success',
                         employee: authPrompt.employee,
-                        message: pendingVerification ? 'Aceptado — pendiente' : 'Tiempo extra registrado',
+                        message: pendingVerification ? 'Aceptado. Falta que lo aprueben' : 'Tiempo extra registrado',
                         subtext: pendingVerification
                             ? 'Sin conexión: se verificará y te avisaremos cuando quede confirmado.'
                             : `Entrada con hora real — ${earlyPendingData?.earlyMins || 0} min antes del turno`,
@@ -1170,7 +1170,7 @@ const submitEarlyExit = useCallback((e) => {
             setFeedback({
                 status: 'error',
                 message: 'ERROR DE CONEXIÓN',
-                subtext: 'No se pudo procesar. Intente de nuevo.',
+                subtext: 'No se pudo procesar. Inténtalo otra vez.',
                 color: 'red',
                 iconKey: 'shield',
             });

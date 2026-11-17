@@ -84,7 +84,7 @@ export const HISTORIAL_MINMAX_META = {
     MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     variante: 'neutral' },
     MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    variante: 'danger' },
     MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    variante: 'danger' },
-    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODAS LAS SALAS', variante: 'danger' },
+    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODAS LAS SUCURSALES', variante: 'danger' },
     MINMAX_REQUEST_APPROVED:        { label: 'SOLICITUD APROBADA', variante: 'success' },
     // Ésta NO trae old_min/new_min: no cambia números, declara POR QUÉ el
     // número está donde está. Quien la pinte la trata aparte.

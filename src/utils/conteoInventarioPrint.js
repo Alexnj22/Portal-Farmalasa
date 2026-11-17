@@ -786,8 +786,8 @@ export async function printAjustesConteo(conteo, items) {
             fontSize: 10, bold: true, color: '#059669',
         });
     } else {
-        const secFalt = buildAjusteSection('FALTANTES — ajuste de SALIDA', '#dc2626', '#fef2f2', faltantes, esSimple(conteo));
-        const secSobr = buildAjusteSection('SOBRANTES — ajuste de ENTRADA', '#2563eb', '#eff6ff', sobrantes, esSimple(conteo));
+        const secFalt = buildAjusteSection('FALTANTES · ajuste de SALIDA', '#dc2626', '#fef2f2', faltantes, esSimple(conteo));
+        const secSobr = buildAjusteSection('SOBRANTES · ajuste de ENTRADA', '#2563eb', '#eff6ff', sobrantes, esSimple(conteo));
         if (secFalt) content.push(...secFalt);
         if (secSobr) content.push(...secSobr);
     }

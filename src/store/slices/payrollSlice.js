@@ -268,7 +268,7 @@ export const createPayrollSlice = (set, get) => ({
             // diciendo «Aprobada» (auditoría 2026-10-21). Una corrección sobre
             // una aprobada se hace renglón por renglón (queda EDITED, con motivo).
             if ((period.status || 'DRAFT') !== 'DRAFT') {
-                const e = new Error('Esta planilla ya fue aprobada y no se vuelve a calcular entera. Si hay que corregir a alguien, edita su renglón.');
+                const e = new Error('Esta planilla ya fue aprobada y no se vuelve a calcular entera. Si hay que corregir a alguien, edita su pago.');
                 Object.assign(e, { userFacing: true });
                 throw e;
             }
@@ -430,7 +430,7 @@ export const createPayrollSlice = (set, get) => ({
             // employee_id), el insert fallaba entero y la planilla quedaba con
             // un solo renglón (auditoría 2026-10-21).
             const { data: fijos, error: fijosErr } = await fetchPayrollEntriesNoRegenerables(periodId);
-            if (fijosErr) throw new Error(`No se pudieron leer los renglones ya editados: ${fijosErr.message}`);
+            if (fijosErr) throw new Error(`No se pudieron leer los pagos ya editados: ${fijosErr.message}`);
             const yaFijados = new Set((fijos || []).map(f => String(f.employee_id)));
 
             // Con filtro de sucursal se borra SÓLO lo de esas personas: antes
@@ -443,7 +443,7 @@ export const createPayrollSlice = (set, get) => ({
                 throw e;
             }
             const { error: delErr } = await deletePendingPayrollEntries(periodId, idsDelAlcance);
-            if (delErr) throw new Error(`No se pudieron quitar los renglones pendientes: ${delErr.message}`);
+            if (delErr) throw new Error(`No se pudieron quitar los pagos pendientes: ${delErr.message}`);
 
             // Los días que Talento Humano todavía tiene que decidir, con la
             // misma regla para renglones nuevos y editados.
@@ -504,7 +504,7 @@ export const createPayrollSlice = (set, get) => ({
             for (const emp of employees.filter(e => yaFijados.has(String(e.id)))) {
                 const { pendientes, suspensionPendiente } = diasDe(String(emp.id));
                 const { error: marcaErr } = await updatePendientesDeTH(periodId, emp.id, { incapacidad: pendientes, suspension: suspensionPendiente });
-                if (marcaErr) throw new Error(`No se pudo actualizar lo pendiente de Talento Humano en un renglón editado: ${marcaErr.message}`);
+                if (marcaErr) throw new Error(`No se pudo actualizar lo pendiente de Talento Humano en un pago editado: ${marcaErr.message}`);
             }
 
             // Antes que los renglones: el UNIQUE (request_id) es lo que impide
@@ -544,7 +544,7 @@ export const createPayrollSlice = (set, get) => ({
             }
             if (bankRows.length > 0) {
                 const { error: bankErr } = await insertOvertimeBank(bankRows);
-                if (bankErr) throw new Error(`Los renglones se generaron, pero no se pudo guardar el banco de horas: ${bankErr.message}. Vuelve a generar la planilla.`);
+                if (bankErr) throw new Error(`Los pagos se generaron, pero no se pudo guardar el banco de horas: ${bankErr.message}. Vuelve a generar la planilla.`);
             }
 
             await get().fetchPayrollEntries(periodId);
@@ -614,7 +614,7 @@ export const createPayrollSlice = (set, get) => ({
         // sueldo llega vacío y el recálculo guardaba `ordinary_salary = 0`, con
         // ISSS, AFP y renta en cero (auditoría 2026-10-21).
         if (!emp?.salario_conocido) {
-            const e = new Error('No llegó el sueldo de esta persona, así que el renglón se recalcularía en cero y no se guardó. Suele ser el permiso de «Salarios e ingresos»; si ya lo tienes, vuelve a entrar al portal e intenta de nuevo.');
+            const e = new Error('No llegó el sueldo de esta persona, así que su pago se recalcularía en cero y no se guardó. Suele ser el permiso de «Salarios e ingresos»; si ya lo tienes, vuelve a entrar al portal e intenta de nuevo.');
             Object.assign(e, { userFacing: true });
             throw e;
         }

@@ -394,7 +394,7 @@ const filtrosCuerpo = (
                 )}
                 {isLogSearchFuzzy && debouncedSearchTerm && (
                     <Notice variant="warning" icon={Search} className="mb-3">
-                    Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo;. No hay coincidencias exactas.
                 </Notice>
                 )}
                 {paginatedLogs.map((log) => {

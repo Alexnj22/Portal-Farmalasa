@@ -85,7 +85,7 @@ export const TIPOS = Object.freeze({
         campos: [
             { key: 'lugar', label: 'Lugar de la destrucción', tipo: 'texto', requerido: true },
             { key: 'gestora', label: 'Gestora autorizada', tipo: 'texto', requerido: true, ayuda: 'La empresa con autorización del MARN que se lleva los productos.' },
-            { key: 'productos', label: 'Productos (uno por renglón: producto, lote, cantidad)', tipo: 'lista', requerido: true },
+            { key: 'productos', label: 'Productos (uno por línea: producto, lote, cantidad)', tipo: 'lista', requerido: true },
             { key: 'aviso_srs_el', label: 'Fecha del aviso a la SRS', tipo: 'fecha', ayuda: 'Se avisa 72 horas antes.' },
             { key: 'certificado', label: 'Número del certificado de destrucción', tipo: 'texto', alCerrar: true },
             { key: 'testigos', label: 'Testigos', tipo: 'texto', alCerrar: true },

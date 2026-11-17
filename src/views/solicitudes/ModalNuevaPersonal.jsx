@@ -516,13 +516,13 @@ export default function ModalNuevaPersonal({
                     {payload.date && choqueEnDia(payload.date) && (
                         <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-label font-bold text-danger-text">
                             <AlertTriangle size={13} className="flex-shrink-0" strokeWidth={2.5} />
-                            Hay una incapacidad ese día ({periodo(choqueEnDia(payload.date))}) — no se puede cambiar turno
+                            Hay una incapacidad ese día ({periodo(choqueEnDia(payload.date))}). No se puede cambiar el turno.
                         </div>
                     )}
                     {companeroOcupado && (
                         <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-label font-bold text-danger-text">
                             <AlertTriangle size={13} className="flex-shrink-0" strokeWidth={2.5} />
-                            {companero ? shortEmployeeName(companero) : 'El compañero'} está {companeroOcupado.motivo} ese día — no puede hacer el cambio
+                            {companero ? shortEmployeeName(companero) : 'El compañero'} está {companeroOcupado.motivo} ese día. No puede hacer el cambio.
                         </div>
                     )}
 

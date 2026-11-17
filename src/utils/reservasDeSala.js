@@ -313,7 +313,7 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
     const modos = filas.map((x) => modoDeProrroga(x));
     if (modos.includes('directa')) lista.push({ k: 'prorrogar', label: 'Prorrogar 7 días', title: 'Una sola prórroga' });
     else if (modos.includes('pedir') && !modos.includes('pendiente')) lista.push({ k: 'pedir_prorroga', label: 'Pedir prórroga',
-        title: 'Los días que necesita el cliente y el motivo: la autoriza Talento Humano o Supervisión de ventas' });
+        title: 'Los días que necesita el cliente y el motivo: la autoriza Talento Humano o el supervisor de ventas' });
     // Reglamento v2, cláusula 9: el aviso por llamada queda registrado (quién,
     // cuándo y qué respondió el cliente). Lo habilita la base (`registrar_llamada`).
     if (filas.some((x) => x.registrar_llamada)) lista.push({ k: 'llamada', label: 'Registrar aviso', title: 'Anota que le avisaste al cliente (por llamada o en persona) y qué respondió' });

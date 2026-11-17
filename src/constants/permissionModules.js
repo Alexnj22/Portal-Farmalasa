@@ -519,7 +519,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'libros_iva_descargar',         label: 'Exportar los libros (CSV)', tipo: 'cap' },
                 { key: 'libros_iva_ver_montos',        label: 'Ver montos',                tipo: 'cap' },
             ]},
-            { key: 'corte_z', label: 'Cierre mensual', desc: 'Cierre mensual (Corte Z) de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por el MH, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
+            { key: 'corte_z', label: 'Cierre mensual', desc: 'Cierre mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por el MH, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
                 { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
                 { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
                 // El libro y el cotejo son sólo lo enviado para TODOS. Esta

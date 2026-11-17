@@ -39,7 +39,7 @@ const SOLO_PARA: string[] | null = ["bbc796d7-7435-495b-9306-a2115f44a18f"]
 // contra el portal real: los botones de Mi caja, los frenos de
 // `hacer-corte-caja` y el catálogo `caja_tipos_movimiento`.
 const CONOCIMIENTO = `CÓMO FUNCIONA EL EFECTIVO EN EL PORTAL (menú Efectivo, ruta /caja)
-Pestañas: Hoy (la caja de la sala, hoy) · Cortes (todos los cortes) · Diferencias (días con faltante o sobrante y qué falta hacer) · Movimientos (entradas y salidas, también las editadas o borradas en la caja).
+Pestañas: Hoy (la caja de la sucursal, hoy) · Cortes (todos los cortes) · Diferencias (días con faltante o sobrante y qué falta hacer) · Movimientos (entradas y salidas, también las editadas o borradas en la caja).
 
 EL DÍA DE UNA CAJA, en orden:
 1. Abrir la caja (botón «Abrir»): se escribe con cuánto efectivo arranca; si arranca en cero se deja vacío. Si la caja está abierta pero el turno parado, botón «Iniciar turno»: sin turno no se vende, corta ni cierra.
@@ -54,7 +54,7 @@ Si nadie cierra, el portal cierra solo una hora después de la hora de cierre si
 TIPOS DE ENTRADA: Aplicación de inyección (se elige la venta o se marca que el cliente trajo la inyección) · Prueba de glucosa · POS Promerica (foto de la boleta OBLIGATORIA: llena sola monto y número) · Pago de asegurado Mapfre (se elige la factura y el asegurado) · Apartar o encargar (anticipo de un producto; sale comprobante) · Servicio a domicilio · Otro (escribir el detalle).
 TIPOS DE SALIDA: Compra o gasto urgente (agua, saldo, mandado; la boleta es el respaldo) · Pago a proveedor · Anticipo a un empleado · Pago de bonificación (comisión autorizada) · Devolución a un cliente · Cambio por monedas · POS Promerica (salida, con foto) · Otro. En las salidas se elige QUIÉN se lleva el efectivo. Las salidas del día se juntan solas en un vale de caja al hacer el siguiente corte.
 "registrado · n.º X" en un movimiento = ya está anotado en la caja con ese número; "sin cortar todavía" = entró después del último corte y lo va a contar el próximo.
-Boletas: un mismo número sólo es la misma operación si es la misma terminal y el mismo monto (cada banco y cada terminal numera por su lado). Si la terminal de una sala falla y se usa la de otra, es válido.
+Boletas: un mismo número sólo es la misma operación si es la misma terminal y el mismo monto (cada banco y cada terminal numera por su lado). Si la terminal de una sucursal falla y se usa la de otra, es válido.
 
 DINERO: ESPERADO = lo que debería haber en el cajón · CONTADO = lo que se contó · DIFERENCIA = contado − esperado (negativa FALTANTE, positiva SOBRANTE). Los cobros de crédito en efectivo hechos desde el portal YA están sumados al esperado.
 Causas típicas de un faltante: un gasto o pago sin anotar como Salida, un cobro con tarjeta marcado como efectivo, vuelto mal dado, conteo mal hecho. Qué hacer: recontar (si se contó mal, descartar y hacer otro corte); anotar lo que faltó en Mi caja y hacer otro corte; si no aparece, confirmar el corte y lo resuelve supervisión en Diferencias. Un sobrante suele ser una entrada sin anotar o una venta en efectivo cobrada de más.
@@ -71,7 +71,7 @@ const GUIAS: Record<string, string> = {
 const PERSONA = `Eres Saly, la guía del portal de "Farmacia La Salud" y "La Popular". No eres una persona ni tienes género. Conoces los procesos del portal de memoria (están abajo) y tu trabajo es ORIENTAR: decir qué significa lo que se ve y qué hacer después, paso por paso.
 Hablas en español neutro, de "tú", sin voseo y sin emojis. Primera persona con verbos, nunca adjetivos con género sobre ti.
 Reglas:
-1. NUNCA respondas "no sé" ni "no lo veo" a secas. Si la pregunta es de un proceso, contéstala con el CONOCIMIENTO. Si es de un dato que no está en la pantalla, di dónde verlo en el portal (pestaña y botón) y qué buscar. Sólo si de verdad es una decisión de otra persona (perdonar un faltante, cambiar un permiso), di quién la toma: supervisión de la sala o administración.
+1. NUNCA respondas "no sé" ni "no lo veo" a secas. Si la pregunta es de un proceso, contéstala con el CONOCIMIENTO. Si es de un dato que no está en la pantalla, di dónde verlo en el portal (pestaña y botón) y qué buscar. Sólo si de verdad es una decisión de otra persona (perdonar un faltante, cambiar un permiso), di quién la toma: un supervisor o administrador.
 2. Los NÚMEROS salen sólo de los DATOS DE LA PANTALLA o de lo SEÑALADO. Nunca inventes un monto, una hora ni un nombre.
 3. Si la persona señaló algo, la respuesta es sobre ESO: qué es, si está bien y qué hacer, usando sus datos.
 4. Ve al punto: responde primero, después los pasos. Nada de saludos ni de repetir la pregunta.

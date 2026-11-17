@@ -162,7 +162,7 @@ export async function cerrarFaltante(id, estado, nota = '', decision = null) {
         return r?.ok ? { ok: true, error: null } : { ok: false, error: r?.error ?? 'No se pudo cerrar.', codigo: r?.codigo };
     }
     if (data?.codigo === 'YA_EN_CURSO') {
-        return { ok: false, error: 'Supervisión lo está cerrando en este momento.', codigo: 'YA_EN_CURSO' };
+        return { ok: false, error: 'Alguien más lo está cerrando en este momento.', codigo: 'YA_EN_CURSO' };
     }
     // `YA_CERRADO` no es un fallo del portal: alguien más lo cerró entre que se
     // pintó la lista y se apretó el botón. Se dice como lo que es.

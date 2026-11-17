@@ -238,7 +238,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
 
 function buildSectionFooter(sec) {
     const parts = [];
-    if (sec.agotamientoCount > 0) parts.push(`Stock insuficiente en Bodega: ${sec.agotamientoCount} producto(s)`);
+    if (sec.agotamientoCount > 0) parts.push(`Bodega no tiene existencia suficiente: ${sec.agotamientoCount} producto(s)`);
     if (sec.sinCount > 0) parts.push(`Sin existencia en Bodega: ${sec.sinCount} producto(s)`);
     if (sec.revCount  > 0) parts.push(`Sin asignación (revisar): ${sec.revCount}`);
     if (!parts.length) return null;

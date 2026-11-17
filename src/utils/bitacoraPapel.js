@@ -527,7 +527,7 @@ export function hojaDelLibro(mes, logo, clase = 'antibiotico', hoja = null) {
         { k: 'Establecimiento', v: esc(mes.sucursal) },
         { k: 'Mes', v: esc(nombreMes(mes.periodo)) },
         { k: 'Período cubierto', v: `Del ${fecha(mes.desde)} al ${fecha(mes.hasta)}`, chico: true },
-        { k: 'Renglones foliados', v: String(renglones.length) },
+        { k: 'Registros foliados', v: String(renglones.length) },
     ])}
     <table class="reg">
         <colgroup>
@@ -542,12 +542,12 @@ export function hojaDelLibro(mes, logo, clase = 'antibiotico', hoja = null) {
                 <th>Paciente</th><th>Documento</th><th>Prescriptor</th><th>Receta</th><th>Despachó</th>
             </tr>
         </thead>
-        <tbody>${filas || '<tr><td colspan="11" class="c">Sin renglones en el período</td></tr>'}</tbody>
+        <tbody>${filas || '<tr><td colspan="11" class="c">Sin registros en el período</td></tr>'}</tbody>
     </table>
     <p class="leyenda">Contiene lo que exige el ítem 3.5 de la Guía de Verificación de BPAD:
     denominación, presentación, laboratorio, lote, fecha de expiración, fecha y cantidad dispensada,
     y quién despachó. <b>Cant.</b> es lo entregado sobre lo prescrito.</p>
-    ${anuladas.length ? `<div class="desvios"><span class="t">Renglones anulados</span>${
+    ${anuladas.length ? `<div class="desvios"><span class="t">Registros anulados</span>${
         anuladas.join('<br/>')}</div>` : ''}
     ${firmas(mes.cierre)}`;
 }
@@ -596,7 +596,7 @@ export function portada(mes, logo, hoja = null) {
 
     <h2>Dispensación bajo receta</h2>
     <table class="cifras"><tr>
-        ${cifra('Renglones foliados', String((mes.libro || []).length))}
+        ${cifra('Registros foliados', String((mes.libro || []).length))}
         ${cifra('Anulados', String((mes.libro || []).filter(r => r.estado === 'anulada').length))}
         ${cifra('Con receta física', String((mes.libro || []).filter(r => r.receta).length))}
     </tr></table>

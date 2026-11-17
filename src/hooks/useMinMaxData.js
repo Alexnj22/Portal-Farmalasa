@@ -696,7 +696,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                     alert_status: calcAlertStatus(r.current_stock, newEff, newEffMax),
                 };
             }));
-            useToastStore.getState().showToast(row.product_name, 'Manual eliminado — Bodega vuelve a Σ sucursales', 'success');
+            useToastStore.getState().showToast(row.product_name, 'Se quitó el manual. Bodega vuelve a la suma de las sucursales', 'success');
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_RESET_MANUAL', String(row.erp_product_id), {
                 field: 'min+max', product: row.product_name, sucursal_id: 6,
                 old_min: row.effective_min ?? 0, old_max: row.effective_max ?? 0,

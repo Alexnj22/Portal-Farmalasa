@@ -367,7 +367,7 @@ const validateOptionalFormats = (data, { esAlta = false } = {}) => {
     // Tener maestría implica que la licenciatura ya finalizó — no puede seguir
     // "actualmente estudiando" el Universitario al mismo tiempo.
     if (data.is_studying && data.has_maestria) {
-        throw new Error('No puede marcar "actualmente estudiando" en Universitario junto con "Tiene Maestría/Postgrado" — tener maestría implica que la licenciatura ya finalizó.');
+        throw new Error('No puedes marcar "actualmente estudiando" en Universitario junto con "Tiene Maestría/Postgrado". Con maestría, la licenciatura ya terminó.');
     }
 
     if (data.maestria_is_studying && data.maestria_study_start_date && data.maestria_study_duration_years) {

@@ -95,9 +95,9 @@ export function estadoDelAgente(caja, publicada) {
     if (!caja.vinculada_at) return null;
     const version = caja.agente_version || null;
     const canal = caja.agente_canal || null;
-    if (!version) return { txt: 'versión vieja — hay que actualizarla', mal: true };
+    if (!version) return { txt: 'versión vieja. Hay que actualizarla', mal: true };
     const problemas = [];
-    if (publicada && version !== publicada) problemas.push('atrasada — la corrección aún no le llega');
+    if (publicada && version !== publicada) problemas.push('atrasada: la corrección aún no le llega');
     if (canal === 'CUPS') problemas.push('imprime por CUPS, le quita la ticketera al otro sistema');
     if (problemas.length) return { txt: problemas.join(' · '), mal: true };
     return { txt: `al día · escribe en ${canal || 'la ticketera'}`, mal: false };

@@ -485,7 +485,7 @@ export const BASICO_DEL_REGLAMENTO = [
     {
         titulo: 'Los diez minutos de la semana',
         texto: 'Hay diez minutos de tolerancia POR SEMANA para las entradas. Pasando de ahí sin '
-             + 'causa justificada se pierde la remuneración del día de descanso — no es una multa, '
+             + 'causa justificada se pierde la remuneración del día de descanso. No es una multa: '
              + 'es una prestación que se deja de ganar.',
         art: 'Art. 26',
     },
@@ -498,7 +498,7 @@ export const BASICO_DEL_REGLAMENTO = [
     {
         titulo: 'Salir antes de tu hora',
         texto: 'Se permanece en el lugar de trabajo durante toda la jornada. Salir antes se puede, '
-             + 'pero con autorización de tu jefe inmediato.',
+             + 'pero con autorización de tu jefe.',
         art: 'Art. 27',
     },
     {
@@ -766,7 +766,7 @@ export const INDUCCION = [
     { titulo: 'Marcar entrada y salida',
       texto: 'Con tu carné, en el marcador de tu sucursal. Es lo que prueba tus horas.' },
     { titulo: 'Mis avisos',
-      texto: 'Lo que la empresa comunica a tu sala y a ti. Revísalo al entrar.' },
+      texto: 'Lo que la empresa comunica a tu sucursal y a ti. Revísalo al entrar.' },
     { titulo: 'Mi perfil',
       texto: 'Tus datos y tu foto. Si cambias de teléfono o de dirección, avisa para actualizarlo.' },
     { titulo: 'Mis documentos',
@@ -775,8 +775,8 @@ export const INDUCCION = [
       texto: 'Vacaciones y permisos se piden desde aquí, y desde aquí ves en qué van.' },
     /* Lo que pasa ENTRE salas, que es media jornada de quien atiende un
      * mostrador y no estaba dicho en ningún lado. Pedido del usuario. */
-    { titulo: 'Traslados entre salas',
-      texto: 'Pide a otra sala el producto que te falta, manda el que te sobra, y confirma '
+    { titulo: 'Traslados entre sucursales',
+      texto: 'Pide a otra sucursal el producto que te falta, manda el que te sobra, y confirma '
            + 'lo que llega escaneando el ticket de la bolsa.' },
 ];
 
@@ -871,7 +871,7 @@ export function definicionDelDocumento({
     cuerpo.push(linea);
     cuerpo.push({ text: 'Lo básico, para empezar', style: 'seccion' });
     cuerpo.push({
-        text: 'Seis puntos del reglamento interno — el completo está aprobado por la Dirección General '
+        text: 'Seis puntos del reglamento interno. El completo está aprobado por la Dirección General '
             + 'de Trabajo y a la vista en la empresa.',
         style: 'nota', margin: [0, 0, 0, 6],
     });
@@ -898,7 +898,7 @@ export function definicionDelDocumento({
 
     cuerpo.push(linea);
     cuerpo.push({
-        text: 'Este documento tiene tus claves. Guárdalo o destrúyelo después de entrar — no lo dejes '
+        text: 'Este documento tiene tus claves. Guárdalo o destrúyelo después de entrar. No lo dejes '
             + 'sobre un mostrador.' + (conCarne ? ' El carné va en la página siguiente.' : ''),
         style: 'nota',
     });

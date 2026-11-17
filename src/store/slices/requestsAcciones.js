@@ -1477,7 +1477,7 @@ export const createRequestsSlice = (set, get) => ({
                     link: '/solicitudes-personales',
                     push: true,
                 });
-                useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
+                useToastStore.getState().showToast('Aprobado en el nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
                 emitir('requests-updated');
                 return true;
             }
@@ -1516,7 +1516,7 @@ export const createRequestsSlice = (set, get) => ({
                     push: true,
                 });
                 useToastStore.getState().showToast(
-                    `Aprobado — Nivel ${currentLevel}`,
+                    `Aprobado en el nivel ${currentLevel}`,
                     `Solicitud avanzada al nivel ${nextLevel}. Notificado el siguiente aprobador.`,
                     'success'
                 );

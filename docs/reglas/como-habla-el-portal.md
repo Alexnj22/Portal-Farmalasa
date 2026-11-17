@@ -57,6 +57,10 @@ exportados. Los comentarios del código y los nombres de variables o columnas
 | **jefe inmediato** (sólo en la encuesta de clima laboral) | — | Única excepción: ahí cada quien evalúa a su propio jefe. |
 | **la farmacia** (en lo que lee el cliente) | la sala | «la visita a la farmacia». |
 | **cliente** / **datos del cliente** | ficha | También en Por revisar: «ya es de otro cliente», «la caja no deja guardar los datos». |
+| **sala de ventas** (ubicación dentro de la farmacia) | — | Se queda: es el piso de venta frente a Bodega, no la sucursal. «N° de ubicación en sala», «Peldaño en sala». |
+| **pago** (en la planilla) | renglón | «Si hay que corregir a alguien, edita su pago». |
+| **registros** (bitácoras impresas) | renglones | «Registros foliados», «Registros anulados». |
+| **computadora de venta** | computadora de sala | La que tiene la ticketera en la sucursal. |
 
 Y la regla que ya existía (CLAUDE.md): nunca nombrar el ERP ni la jerga de la
 tubería («sincronizar», «sync»).

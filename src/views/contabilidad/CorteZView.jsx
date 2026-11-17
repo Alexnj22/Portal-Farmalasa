@@ -579,7 +579,7 @@ export default function CorteZView() {
                 // las acciones, así que cambiarlo mientras trabaja hace
                 // parpadear la píldora (el defecto de v2.349.1).
                 label: 'PDF de todas',
-                title: `Descargar el Corte Z de ${etiquetaPeriodo(desde)} de las ${filas.length} sucursales en un PDF, una por hoja`,
+                title: `Descargar el cierre mensual de ${etiquetaPeriodo(desde)} de las ${filas.length} sucursales en un PDF, una por hoja`,
                 onClick: pdfTodas,
                 disabled: loading || pdfeando || filas.length === 0,
             }]}>

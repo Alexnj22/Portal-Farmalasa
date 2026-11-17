@@ -165,7 +165,7 @@ describe('qué secciones salen y cuáles no', () => {
         // renglones se lee como que no se lleva.
         const html = imprimir(MES_BASE);
         expect(html).toContain('Dispensación de antibióticos bajo receta');
-        expect(html).toContain('Sin renglones en el período');
+        expect(html).toContain('Sin registros en el período');
     });
 
     it('el libro trae lo que exige el ítem 3.5 de la Guía de BPAD', () => {

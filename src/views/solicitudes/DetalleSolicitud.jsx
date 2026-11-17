@@ -288,7 +288,7 @@ const CabeceraMovimiento = ({ req, meta, unidadesAplicadas = null }) => {
                 <div className="flex-1 min-w-0">
                     <Rotulo>{esTraslado ? 'Recorrido' : esCarga ? 'Se carga en' : 'Se descarga de'}</Rotulo>
                     <p className="text-body-sm font-bold text-content-2">
-                        {esTraslado ? `${origen ?? 'Otra sala'} → ${sala ?? 'destino'}` : (sala ?? 'Sin sala')}
+                        {esTraslado ? `${origen ?? 'Otra sucursal'} → ${sala ?? 'destino'}` : (sala ?? 'Sin sucursal')}
                     </p>
                     {motivo && <p className="text-caption text-content-2 mt-0.5">{motivo}</p>}
                 </div>
@@ -350,7 +350,7 @@ const CorreccionesDeLaCarga = ({ meta, employeesById }) => {
             {lista.map((c, k) => (
                 <div key={k} className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                     <p className="text-caption text-content-2 font-semibold">
-                        {items[c.i]?.descripcion ?? `Renglón ${c.i + 1}`}
+                        {items[c.i]?.descripcion ?? `Producto ${c.i + 1}`}
                         {' · '}{c.campo === 'lote' ? `lote ${c.despues}` : `vence ${String(c.despues).slice(0, 7)}`}
                         {' · por'}
                     </p>

@@ -239,7 +239,7 @@ const LaVenta = memo(({ meta, employeesById, compacta = false }) => {
                         </p>
                         {filas.length > 0 && (
                             <p className="text-micro text-content-3">
-                                {filas.length} {filas.length === 1 ? 'renglón' : 'renglones'}
+                                {filas.length} {filas.length === 1 ? 'producto' : 'productos'}
                                 {unidades > 0 && ` · ${Number(unidades).toLocaleString('es-SV')} ${unidades === 1 ? 'unidad' : 'unidades'}`}
                             </p>
                         )}

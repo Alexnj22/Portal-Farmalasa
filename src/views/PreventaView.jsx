@@ -853,7 +853,7 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
     const listaDe = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} y ${xs.at(-1)}` : xs[0] ?? '').replace('Teléfono', 'teléfono')
         .replace('Correo', 'correo').replace('Giro', 'giro').replace('Dirección', 'dirección');
     return (
-        <div className="space-y-3">
+        <div className="space-y-2">
             <div className="flex items-start gap-3 min-w-0">
                 {/* La foto que subió desde la app, dentro del aro de su nivel (el mismo del chat). */}
                 <ClienteAvatar size="lg" conversacion={{
@@ -861,8 +861,18 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
                     es_mayoreo: info?.programa === 'mayorista', rango: info?.rango ?? null, es_team: Boolean(info?.empleado),
                 }} />
                 <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-start gap-2 min-w-0">
-                        <p className="flex-1 min-w-0 text-body font-bold text-content leading-tight truncate" title={cliente.name}>{cliente.name}</p>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <p className="min-w-0 text-body font-bold text-content leading-tight truncate" title={cliente.name}>{cliente.name}</p>
+                        {info && (faltaCcf.length > 0 || faltaOtro.length > 0) && (
+                            // Lo que falta, chico y al lado del nombre: un toque abre sus datos.
+                            <button type="button" onClick={puedeEditar ? onEditar : undefined} disabled={!puedeEditar}
+                                aria-label={`${faltaCcf.length ? `Para crédito fiscal falta ${listaDe(faltaCcf)}. ` : ''}${faltaOtro.length ? `Falta ${listaDe(faltaOtro)}.` : ''} Completar datos`}
+                                className={`shrink min-w-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-micro font-semibold active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand ${faltaCcf.length ? 'bg-danger/10 text-danger-text' : 'bg-warning/10 text-warning-text'}`}>
+                                <AlertTriangle size={11} className="shrink-0" />
+                                <span className="truncate">Falta {listaDe([...faltaCcf, ...faltaOtro])}</span>
+                            </button>
+                        )}
+                        <span className="flex-1" />
                         <div className="flex items-center gap-0.5 shrink-0 -mt-1">
                             {puedeEditar && <Button size="sm" variant="ghost" icon={UserPen} iconOnly aria-label="Editar datos del cliente" onClick={onEditar} />}
                             <Button size="sm" variant="ghost" icon={X} iconOnly aria-label="Cambiar de cliente" onClick={onQuitar} data-accion-cambiar-cliente />
@@ -876,25 +886,15 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
                         {info?.nivel && <Badge size="sm" variant="warning" uppercase={false}>{info.nivel}</Badge>}
                     </div>
                     {info && tiene.length > 0 && (
-                        <p className="text-micro text-content-2 leading-relaxed">
+                        <p className="text-micro text-content-2 truncate">
                             {tiene.map(([k, v], i) => (
-                                <span key={k} className={k === 'Dirección' ? 'block truncate' : ''} title={`${k}: ${v}`}>
-                                    {i > 0 && k !== 'Dirección' && <span className="text-content-3" aria-hidden> · </span>}
+                                <span key={k}>
+                                    {i > 0 && <span className="text-content-3" aria-hidden> · </span>}
                                     {k !== 'Teléfono' && k !== 'Dirección' && <span className="text-content-3">{k} </span>}
                                     <span className="font-semibold text-content tabular-nums">{v}</span>
                                 </span>
                             ))}
                         </p>
-                    )}
-                    {info && (faltaCcf.length > 0 || faltaOtro.length > 0) && (
-                        <div className={`flex items-center gap-2 rounded-lg px-2 py-1 ${faltaCcf.length ? 'bg-danger/10' : 'bg-warning/10'}`}>
-                            <AlertTriangle size={13} className={`shrink-0 ${faltaCcf.length ? 'text-danger-text' : 'text-warning-text'}`} />
-                            <p className={`flex-1 min-w-0 text-micro font-semibold ${faltaCcf.length ? 'text-danger-text' : 'text-warning-text'}`}>
-                                {faltaCcf.length > 0 && <>Para crédito fiscal falta {listaDe(faltaCcf)}. </>}
-                                {faltaOtro.length > 0 && <>Falta {listaDe(faltaOtro)}.</>}
-                            </p>
-                            {puedeEditar && <Button size="xs" variant="ghost" icon={UserPen} onClick={onEditar} className="shrink-0">Completar</Button>}
-                        </div>
                     )}
                 </div>
                 {info && <SaldoDelCliente puntos={p} compra12m={info.compra_12m} ultima={info.ultima_compra} />}
@@ -918,7 +918,15 @@ function SaldoDelCliente({ puntos: p, compra12m, ultima }) {
     return (
         <div className="hidden sm:flex items-center gap-3 shrink-0 pl-3 border-l border-subtle">
             {p && (
-                <div className="flex items-center gap-2" role="img" aria-label={!p.puede_canjear ? 'Este cliente no canjea puntos' : `${disp} puntos, canjea desde ${minimo}`}>
+                <button type="button" disabled={!p.puede_canjear}
+                    onClick={() => {
+                        // Al bloque de puntos del cobro, con el campo listo para escribir.
+                        const campo = document.querySelector('[data-campo="puntos"] input');
+                        campo?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                        campo?.focus({ preventScroll: true });
+                    }}
+                    aria-label={!p.puede_canjear ? 'Este cliente no canjea puntos' : `${disp} puntos, canjea desde ${minimo}. Usar puntos`}
+                    className="flex items-center gap-2 rounded-xl p-1 -m-1 text-left enabled:hover:bg-surface-card-hover active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand">
                     <span className="relative w-12 h-12 shrink-0">
                         <svg viewBox="0 0 48 48" className="w-12 h-12 -rotate-90" aria-hidden>
                             <circle cx="24" cy="24" r={R} fill="none" strokeWidth="4" className="stroke-current text-content-3/20" />
@@ -934,7 +942,7 @@ function SaldoDelCliente({ puntos: p, compra12m, ultima }) {
                             {!p.puede_canjear ? 'No canjea' : listo ? `puntos · ${formatMoney(descuentoDePuntos(disp, p.valor))}` : `faltan ${minimo - disp}`}
                         </span>
                     </span>
-                </div>
+                </button>
             )}
             <div className="text-micro leading-snug">
                 <p><span className="font-black tabular-nums text-body-sm text-content">{compra12m != null ? formatMoney(compra12m) : '—'}</span></p>
@@ -951,16 +959,14 @@ function Historial({ info, onAgregar, onAgregarVarios }) {
     const frecuentes = info.frecuentes ?? [];
     const ultimas = info.ultimas_compras ?? [];
     return (
-        <div className="space-y-1.5 min-w-0 border-t border-subtle pt-2.5">
-            <div className="flex items-center gap-2">
-                <p className="flex-1 text-micro font-bold text-content-3">{frecuentes.length > 0 ? 'Suele llevar' : 'Sus compras'}</p>
-                {ultimas.length > 0 && (
-                    <Button size="xs" variant="ghost" icon={History} onClick={() => setAbierto(true)} className="shrink-0">
-                        Últimas compras · {ultimas.length}
-                    </Button>
-                )}
-            </div>
-            {frecuentes.length > 0 && <SueleLlevar frecuentes={frecuentes} onAgregar={onAgregar} />}
+        <div className="flex items-center gap-2 min-w-0">
+            {frecuentes.length > 0 && <span className="shrink-0 text-micro font-bold text-content-3">Suele llevar</span>}
+            {frecuentes.length > 0 ? <SueleLlevar frecuentes={frecuentes} onAgregar={onAgregar} /> : <span className="flex-1" />}
+            {ultimas.length > 0 && (
+                <Button size="xs" variant="ghost" icon={History} onClick={() => setAbierto(true)} className="shrink-0">
+                    Últimas · {ultimas.length}
+                </Button>
+            )}
             {abierto && (
                 <LiquidModal open onClose={() => setAbierto(false)} maxWidth="max-w-2xl" ariaLabel="Últimas compras del cliente">
                     <LiquidModal.Header icono={History} titulo="Últimas compras"
@@ -1048,23 +1054,21 @@ function SueleLlevar({ frecuentes, onAgregar }) {
     }, [medir, frecuentes]);
     const mover = (dir) => pista.current?.scrollBy({ left: dir * pista.current.clientWidth * 0.8, behavior: 'smooth' });
     return (
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
             <div className="relative min-w-0">
-                <div ref={pista} onScroll={medir} className="flex gap-2 overflow-x-auto scrollbar-hide overscroll-contain scroll-smooth">
+                <div ref={pista} onScroll={medir} className="flex gap-1.5 overflow-x-auto scrollbar-hide overscroll-contain scroll-smooth">
                     {frecuentes.map((f) => (
                         <button key={f.producto_id} type="button" onClick={() => onAgregar(f)}
                             title={`Agregar ${f.nombre} · lo compró ${f.veces} ${f.veces === 1 ? 'vez' : 'veces'} en el año`}
-                            className="group shrink-0 w-[8.5rem] flex items-center gap-2 rounded-xl border border-border-card bg-surface-card-hover p-1.5 pr-2 text-left min-h-[var(--tap-min)] transition-colors hover:border-brand/50 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand">
+                            className="shrink-0 max-w-[12rem] flex items-center gap-1.5 rounded-full border border-border-card bg-surface-card-hover p-0.5 pr-2.5 text-left min-h-[var(--tap-min)] md:min-h-0 transition-colors hover:border-brand/50 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand">
                             <span className="relative shrink-0">
-                                <Miniatura src={f.foto_url} tamano="w-10 h-10" />
-                                <span className="absolute -right-1 -bottom-1 w-4 h-4 rounded-full bg-brand text-white flex items-center justify-center shadow-sm" aria-hidden>
-                                    <Plus size={10} strokeWidth={3} />
+                                <Miniatura src={f.foto_url} tamano="w-7 h-7" />
+                                <span className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full bg-brand text-white flex items-center justify-center" aria-hidden>
+                                    <Plus size={9} strokeWidth={3} />
                                 </span>
                             </span>
-                            <span className="min-w-0 flex-1">
-                                <span className="block text-micro font-semibold text-content leading-tight line-clamp-2">{f.nombre}</span>
-                                <span className="block text-micro text-content-3 tabular-nums mt-0.5">{f.veces} {f.veces === 1 ? 'vez' : 'veces'}</span>
-                            </span>
+                            <span className="min-w-0 truncate text-micro font-semibold text-content">{f.nombre}</span>
+                            <span className="shrink-0 text-micro font-bold tabular-nums text-content-3">{f.veces}×</span>
                         </button>
                     ))}
                 </div>

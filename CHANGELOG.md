@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.7 — Preventa: ficha del cliente más baja
+
+- Lo que falta va como pastilla chica al lado del nombre; un toque abre los datos.
+- «Suele llevar» en una sola fila baja, junto a «Últimas».
+- Tocar los puntos lleva al campo para canjearlos.
+- Novedades: no — ajuste de la misma ficha publicada hoy.
+
 ## v2.1562.6 — Novedades: imágenes de las cinco que faltaban
 
 - Imagen en Puntos del personal, Mi perfil, Voucher, Cierre mensual y Bodega → vencidos. Mi perfil y el voucher se capturaron con la cuenta de pruebas; ninguna muestra datos personales de nadie.

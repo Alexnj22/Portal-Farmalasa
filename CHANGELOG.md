@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1561.2 — Desplegar funciones: versión fija de la CLI
+
+- El flujo «Desplegar funciones» usa la CLI de Supabase 2.98.2, la misma de `entorno-pruebas.yml`. Con «latest» la primera corrida murió antes de empezar: GitHub limitó la consulta que averigua la última versión.
+
 ## v2.1561.1 — Flujo de GitHub para desplegar funciones
 
 - `.github/workflows/desplegar-funciones.yml`: despliega edge functions desde `main` a mano (Actions → «Desplegar funciones»), con el secreto `SUPABASE_ACCESS_TOKEN` que ya usaba el CI. Lee el `verify_jwt` vivo de cada función y lo conserva (y comprueba después que no cambió); una función que todavía no existe en producción se niega. Sirve para desplegar desde una sesión en la nube, sin la CLI ni la llave.

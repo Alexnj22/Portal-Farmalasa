@@ -42,9 +42,13 @@ jobs:
         with:
           ref: main
 
+      # Versión FIJA, la misma de `entorno-pruebas.yml`: «latest» le pregunta a
+      # GitHub cuál es la última y la primera corrida murió ahí por límite de
+      # consultas; y las versiones nuevas chocan con `[inbucket]` de
+      # supabase/config.toml (ver el comentario allá). Se suben juntas.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.98.2
 
       - name: Desplegar conservando el verify_jwt de producción
         run: |

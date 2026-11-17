@@ -126,8 +126,8 @@ export default function CajaDelKiosco({
     ahora, onSalir, panelMarcador, marcadorOcupado, feedbackAbierto, onMarcadorActivo,
 }) {
     const {
-        user, equipo, abierta, marcando, accion, setAccion, pendiente, setPendiente,
-        entrando, aviso, restante, vista, setVista, terminar, elegirDespues,
+        user, equipo, abierta, marcando, accion, setAccion,
+        entrando, aviso, restante, vista, setVista, terminar,
     } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo });
     const datosCola = useColaDeCaja();
     // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
@@ -160,7 +160,6 @@ export default function CajaDelKiosco({
     };
 
     const tocar = (k) => {
-        if (pendiente) { elegirDespues(k); return; }
         setAccion((x) => (x === k ? null : k));
     };
     const pedida = accion && ACCIONES[accion];
@@ -228,8 +227,9 @@ export default function CajaDelKiosco({
                     <div className="flex-1 flex flex-col">
                         {sinPermiso ? (
                             <div className="mx-auto w-full max-w-lg py-10 flex flex-col gap-4">
-                                <Notice variant="warning" title={`Tu cargo no puede ${detalle || vista === 'vender' ? 'vender' : 'usar la caja'} en este kiosco`}>
-                                    Pide a un cajero o a tu jefe de sucursal que lo haga.
+                                <Notice variant="warning" bloque>
+                                    <p className="font-bold">Tu cargo no puede {detalle || vista === 'vender' ? 'vender' : 'usar la caja'} en este kiosco.</p>
+                                    <p>Pide a un cajero o a tu jefe de sucursal que lo haga.</p>
                                 </Notice>
                                 <div className="flex flex-wrap gap-2">
                                     {!detalle && vista === 'vender' && puede.caja && <Button variant="secondary" icon={Wallet} onClick={() => irA('caja')}>Ir a la caja</Button>}
@@ -264,13 +264,9 @@ export default function CajaDelKiosco({
                         ) : (
                             <div className="flex-1 flex flex-col gap-5 justify-center max-w-4xl w-full mx-auto">
                                 <section data-surface="card" className="px-5 pt-4">
-                                    {pendiente ? (
-                                        <Pide titulo="Tu carné ya se leyó" detalle="¿Qué vas a hacer? Elige abajo." onCancelar={() => setPendiente(null)} />
-                                    ) : (
-                                        <Pide titulo={entrando ? 'Abriendo…' : detalle ? `Pasa tu carné para cobrar la #${detalle.referencia}` : pedida?.pide || 'Pasa tu carné'}
-                                            detalle={pedida ? 'Lo que hagas queda a tu nombre.' : 'O toca primero lo que vas a hacer. Toca un ticket para ver su detalle.'}
-                                            aviso={aviso} onCancelar={pedida && !entrando ? () => setAccion(null) : null} />
-                                    )}
+                                    <Pide titulo={entrando ? 'Abriendo…' : detalle ? `Pasa tu carné para cobrar la #${detalle.referencia}` : pedida?.pide || '¿Qué vas a hacer?'}
+                                        detalle={pedida ? 'Lo que hagas queda a tu nombre.' : 'Toca una opción y después pasa tu carné. Toca un ticket para cobrarlo.'}
+                                        aviso={aviso} onCancelar={pedida && !entrando ? () => setAccion(null) : null} />
                                 </section>
                                 <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:grid-rows-2">
                                     <div className="md:row-span-2"><Accion k="vender" grande activa={accion === 'vender'} onClick={() => tocar('vender')} /></div>

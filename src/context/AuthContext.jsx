@@ -1288,13 +1288,26 @@ export const AuthProvider = ({ children }) => {
     if (!cleanId) return { ok: false };
     skipAuthListener.current = true;
     let sesionAbierta = false;
-    const fallar = async (r) => { if (sesionAbierta) await soltarSesionDeAuth(); return r; };
+    // Un carné es SIEMPRE «esta persona». Si el navegador tenía otra sesión
+    // abierta (kiosco de caja, 2026-11-17: la del administrador que lo dejó
+    // listo), `ensure_user_by_code` contesta con el perfil de QUIEN PREGUNTA
+    // —el de la sesión vieja— y sin pase: el carné de Idalia mostraba otra foto
+    // y, al fallar, cerraba todo. Se suelta antes de preguntar.
+    let habiaOtra = false;
+    const fallar = async (r) => {
+      if (sesionAbierta) await soltarSesionDeAuth();
+      if (habiaOtra) doLogoutRef.current?.();   // que no quede en pantalla quien ya no tiene sesión
+      return r;
+    };
     try {
+      // Si ni siquiera se puede leer la sesión guardada, se suelta igual: es la falla segura.
+      const { data: previa, error: errPrevia } = await supabase.auth.getSession();
+      if (previa?.session || errPrevia) { habiaOtra = Boolean(previa?.session); await soltarSesionDeAuth(); }
       const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
         supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
       );
-      if (isNetworkError(fnErr)) return { ok: false, error: NETWORK_ERROR_MSG };
-      if (fnErr || !ensured?.ok || !ensured?.user?.email) return { ok: false };
+      if (isNetworkError(fnErr)) return await fallar({ ok: false, error: NETWORK_ERROR_MSG });
+      if (fnErr || !ensured?.ok || !ensured?.user?.email) return await fallar({ ok: false });
 
       // Se entra con el pase de un solo uso que emite el servidor, no con el PIN
       // como contraseña (SEGURIDAD-Y-ACCESO §3.1). Sin `withNetworkRetry` a

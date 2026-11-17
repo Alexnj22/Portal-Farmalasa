@@ -6,7 +6,8 @@
  * abrirla (Salud 4, 2026-11-17). Por lo mismo, el último uso también vive acá:
  * la cuenta de los 2 minutos no vuelve a empezar al remontar.
  */
-export const sesionDeCaja = { abiertaPorCarne: false, ultimoUso: 0, vista: null };
+// `previo`: quien tenía la sesión antes de pasar este carné (no se muestra mientras abre).
+export const sesionDeCaja = { abiertaPorCarne: false, ultimoUso: 0, vista: null, previo: null };
 
 /** Tiempo sin tocar nada antes de cerrar la sesión del carné. */
 export const INACTIVO_MS = 2 * 60_000;

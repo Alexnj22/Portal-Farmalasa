@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.5 — Kiosco de caja: el carné abre la sesión de quien lo pasa, y se elige antes de pasarlo
+
+- Reportado en Salud 4: al pasar el carné de Idalia salía la foto del
+  administrador y la sesión se cerraba. En ese equipo seguía abierta la sesión
+  del portal de quien lo dejó listo, y `ensure_user_by_code` con sesión
+  contesta el perfil de QUIEN PREGUNTA, sin pase: el login caía al PIN, fallaba
+  y cerraba todo. `AuthContext.login` ahora suelta cualquier sesión previa
+  antes de preguntar por el carné (un carné siempre es «esta persona»), y el
+  kiosco no muestra a quien estaba mientras abre.
+- Pedido del usuario: primero se elige (Vender, Caja, Marcar) y después se
+  pasa el carné. Un carné sin elección no abre nada y pide elegir.
+- El aviso «Tu cargo no puede vender» no mostraba su título (`Notice` no tiene
+  `title`).
+- Probado en el entorno de pruebas: con la sesión de un empleado abierta, el
+  carné de otro entra como el segundo. De paso se igualaron los permisos de las
+  tablas del branch con producción (la actualización fallida de hoy los había
+  dejado cortos: `employee_auth_accounts` sin INSERT para `service_role`).
+
+Novedades: no — corrige un error del kiosco piloto; el flujo nuevo se explica en pantalla.
+
 ## v2.1573.4 — Kiosco de caja: aviso claro sin permiso; preventa para los cargos de sucursal
 
 - En el primer uso real en Salud 4 (14:08), Fernando Oliva (Auxiliar de Bodega,

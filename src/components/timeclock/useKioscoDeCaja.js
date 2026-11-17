@@ -27,7 +27,8 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
     const [error, setError] = useState(null);
     const [restante, setRestante] = useState(INACTIVO_MS);
     const [vista, setVistaState] = useState(sesionDeCaja.vista || 'vender');
-    const abierta = isAuthenticated && sesionDeCaja.abiertaPorCarne;
+    // Mientras el carné abre la sesión, quien estaba antes NO cuenta como abierta.
+    const abierta = isAuthenticated && sesionDeCaja.abiertaPorCarne && !(sesionDeCaja.previo && user?.id === sesionDeCaja.previo);
     const marcando = accion === 'marcar' || marcadorOcupado;
 
     const setVista = useCallback((v) => { sesionDeCaja.vista = v; setVistaState(v); }, []);
@@ -95,27 +96,33 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         // verifica la sesión, y al volver tiene que saber que es del carné.
         sesionDeCaja.abiertaPorCarne = true;
         sesionDeCaja.ultimoUso = Date.now();
+        sesionDeCaja.previo = isAuthenticated && !esDemo() ? user?.id ?? null : null;
         setVista(destino);
         // Muestra: la sesión es la cuenta con la que ya se entró al navegador.
         const r = esDemo() && isAuthenticated ? { ok: true } : await login(codigo);
         setEntrando(false);
+        sesionDeCaja.previo = null;
         if (!r?.ok) {
             sesionDeCaja.abiertaPorCarne = false;
             setError(r?.error || 'Ese carné no abrió la sesión. Intenta de nuevo.');
         }
-    }, [login, setVista, isAuthenticated]);
+    }, [login, setVista, isAuthenticated, user?.id]);
 
     // Muestra: tocar Vender o Caja entra directo, sin carné (la laptop no
     // tiene lector). Marcar sigue pidiendo el carné: escribe una marcación.
     const elegir = useCallback((v) => {
         const valor = typeof v === 'function' ? v(accion) : v;
         if (esDemo() && (valor === 'vender' || valor === 'caja')) { entrar('DEMO', valor); return; }
+        setError(null);
         setAccion(valor);
     }, [accion, entrar]);
 
+    // Primero se elige y después se pasa el carné (pedido del usuario,
+    // 2026-11-17: «escanear y seleccionar es poco práctico»). Un carné sin
+    // elección no abre nada: se pide elegir.
     const alLeer = useCallback((codigo) => {
         if (accion === 'vender' || accion === 'caja') entrar(codigo, accion);
-        else { setError(null); setPendiente(codigo); }
+        else setError('Primero toca qué vas a hacer: Vender, Caja o Marcar.');
     }, [accion, entrar]);
 
     const elegirDespues = useCallback((destino) => {

@@ -196,6 +196,20 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
 
 const contadosVivos = (r) => Number(r?.contados ?? 0);
 
+// Un botón compacto del tamaño de su texto (2026-11-17, el usuario: «me salen 5
+// botones que ocupan todo el ancho»). Lleno = la acción principal; con borde,
+// las demás. 44 de alto: sigue siendo un blanco de dedo.
+function Pastilla({ texto, color, lleno = false, onPress }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
+      style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 18, borderRadius: 22, justifyContent: 'center', alignItems: 'center',
+        backgroundColor: lleno ? color : 'transparent', borderWidth: lleno ? 0 : 1.5, borderColor: color,
+        transform: [{ scale: pressed ? 0.97 : 1 }], opacity: pressed ? 0.85 : 1 })}>
+      <Text style={{ color: lleno ? '#fff' : color, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
 // Lo último que se vio de cada conteo, mientras la app está abierta: al
 // volver a entrar se pinta al instante y se actualiza por detrás.
 const RECUERDO = new Map();
@@ -452,6 +466,21 @@ export default function Conteo() {
     });
   };
 
+  // Lo que no se usa al contar va en «…» arriba: antes eran botones a todo lo
+  // ancho al final de la lista (Finalizar, Eliminar) y junto al escáner (Agregar).
+  const masAcciones = () => {
+    const ops = [
+      ...(editable ? [['Agregar producto', () => setAgregando(true)]] : []),
+      ...(puedePapel && conteo ? [['Papel del conteo', papel]] : []),
+      ...(puedeEliminar ? [['Eliminar el conteo', eliminar]] : []),
+    ];
+    if (!ops.length) return;
+    const destructivo = puedeEliminar ? ops.length - 1 : undefined;
+    ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length, destructiveButtonIndex: destructivo },
+      (i) => { ops[i]?.[1](); });
+  };
+  const hayMas = editable || (puedePapel && conteo) || puedeEliminar;
+
   const gruposLab = labs.length > 1 ? [{ id: 'lab', titulo: 'Laboratorio', activa: laboratorioId, porDefecto: 'todos', onCambiar: setLaboratorioId,
     opciones: [{ id: 'todos', label: 'Todos' }, ...labs.map((l) => ({ id: String(l.laboratorio_id ?? l.id), label: l.laboratorio_nombre ?? l.nombre ?? '—' }))] }] : [];
   const gruposOrden = [{ id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: '', onCambiar: setOrden, opciones: [
@@ -661,7 +690,7 @@ export default function Conteo() {
           onChangeText: (e) => { setPorCodigo(null); setTexto(e.nativeEvent.text); }, onCancelButtonPress: () => { setPorCodigo(null); setTexto(''); },
         },
       }} />
-      <MenuDeFiltros grupos={grupos} extra={puedePapel && conteo ? { icono: 'printer', etiqueta: 'Papel del conteo', onPress: papel } : null} />
+      <MenuDeFiltros grupos={grupos} extra={hayMas ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: masAcciones } : null} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView ref={scroll} onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={32}
           style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 60 }}
@@ -680,7 +709,11 @@ export default function Conteo() {
                   <View style={{ height: 7, borderRadius: 4, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
                     <View style={{ width: `${total ? Math.round((contados / total) * 100) : 0}%`, height: 7, backgroundColor: MARCA.verde }} />
                   </View>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} contados`}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} contados`}</Text>
+                    {/* Finalizar vive con el avance, que es lo que dice si ya toca. */}
+                    {editable ? <Pastilla texto="Finalizar" color={MARCA.verde} lleno={total > 0 && contados >= total} onPress={finalizar} /> : null}
+                  </View>
                   {/* Contra qué se compara lo que se teclea: decide si una venta
                       hecha mientras se cuenta sale como diferencia. */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -753,15 +786,6 @@ export default function Conteo() {
               ) : <Aviso tono="nota" texto="No hay diferencias. No hay nada que ajustar." />}
             </View>
           ) : null}
-          {editable ? (
-            <View style={{ marginHorizontal: 16 }}>
-              {/* Uno al lado del otro: apilados empujaban la lista media pantalla. */}
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}><BotonGrande texto="Escanear" color={MARCA.azul} onPress={() => { esperarGuardados(); setEscaneando(true); }} /></View>
-                <View style={{ flex: 1 }}><BotonGrande texto="Agregar" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} /></View>
-              </View>
-            </View>
-          ) : null}
           {hayVencidos ? (
             <Subfiltro activa={area} onCambiar={setArea} opciones={[
               { id: 'NORMAL', label: 'Inventario' },
@@ -780,7 +804,13 @@ export default function Conteo() {
             </View>
           ) : null}
           {productos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta. Estos son productos parecidos." /></View> : null}
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
+          {/* Con un código que no está, la tarjeta de abajo ya ofrece escanear otro. */}
+          {porCodigo && !cargando && !productos.filas.length ? null : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16 }}>
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, marginLeft: 4 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
+            {editable ? <Pastilla texto="Escanear" color={MARCA.azul} lleno onPress={() => { esperarGuardados(); setEscaneando(true); }} /> : null}
+          </View>
+          )}
           {productos.filas.map((p) => {
             // «3/3» era renglones contados de renglones: no decía si cuadraba.
             const estado = estadoDelProducto(p);
@@ -820,28 +850,26 @@ export default function Conteo() {
               no en el buscador (el código no se escribe en la barra nativa y en
               iOS no había cómo limpiar la búsqueda). */}
           {!cargando && !productos.filas.length && porCodigo ? (
-            <View style={{ marginHorizontal: 16, marginTop: 24, gap: 10 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700', textAlign: 'center' }}>No está en este conteo</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginBottom: 6 }}>{`Código ${porCodigo}`}</Text>
-              {editable ? <BotonGrande texto="Escanear otro" color={MARCA.azul} onPress={() => { quitarCodigo(); setEscaneando(true); }} /> : null}
-              {editable ? <BotonGrande texto="Agregar al conteo" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} /> : null}
-              <BotonGrande texto="Volver a la lista" borde onPress={quitarCodigo} />
+            <View style={{ marginHorizontal: 16, marginTop: 8 }}>
+              <Vidrio radio={20}>
+                <View style={{ padding: 18, gap: 4, alignItems: 'center' }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>No está en este conteo</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Código ${porCodigo}`}</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 12 }}>
+                    {editable ? <Pastilla texto="Escanear otro" color={MARCA.azul} lleno onPress={() => { quitarCodigo(); setEscaneando(true); }} /> : null}
+                    {editable ? <Pastilla texto="Agregarlo" color={MARCA.azulClaro} onPress={() => setAgregando(true)} /> : null}
+                  </View>
+                  <Pressable onPress={quitarCodigo} hitSlop={8} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Volver a la lista</Text>
+                  </Pressable>
+                </View>
+              </Vidrio>
             </View>
           ) : null}
           {!cargando && !productos.filas.length && !porCodigo ? (
             <Vacio accion={busqueda && editable ? { texto: 'Agregar al conteo', onPress: () => setAgregando(true) } : null}>
               {busqueda ? 'Este producto no está en el conteo' : filtro === 'PENDIENTES' ? 'No queda nada por contar' : 'Sin productos en este filtro'}
             </Vacio>
-          ) : null}
-          {editable ? (
-            <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-              <BotonGrande texto="Finalizar el conteo" borde color={MARCA.verde} onPress={finalizar} />
-            </View>
-          ) : null}
-          {puedeEliminar ? (
-            <View style={{ marginHorizontal: 16, marginTop: 4 }}>
-              <BotonGrande texto="Eliminar el conteo" borde color={MARCA.rojo} onPress={eliminar} />
-            </View>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>

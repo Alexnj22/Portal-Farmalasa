@@ -24,6 +24,9 @@
 // ⚠️ La sucursal vive en la SESIÓN: un login por envío y en serie.
 
 import { PAGOS_DE_CAJA } from "../../../src/utils/preventa.js";
+import {
+  armarFinalizado, armarGuardado, clienteDePreventa, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
+} from "../../../src/utils/cobroDeCaja.js";
 
 export const BASE = "https://clientesdte3.oss.com.sv/farma_salud/";
 
@@ -500,4 +503,40 @@ export async function borrarPreventaDeLaCaja(http: Http, externoId: string, espe
     && esperado.productos.every((p) => new RegExp(`\\b${p}\\b`).test(String(j?.lista ?? "")));
   if (!ok) throw new Error("La preventa de la caja no es la esperada: no se borra.");
   return JSON.parse(await http.post("venta.php", { process: "borrar_preventa", id_factura: externoId }));
+}
+
+// ─── El cobro de una preventa (2026-11-17) ──────────────────────────────────
+// Lo que la pantalla de la caja hace al apretar F2 Pagar y escribir el
+// efectivo, armado por `src/utils/cobroDeCaja.js` (enfrentado con la pantalla
+// en las dos preventas vivas de Salud 4: idéntico campo por campo). Esta pieza
+// sólo LEE y arma: devuelve lo que se mandaría. Mandarlo es otro paso.
+
+
+export async function prepararCobroEnLaCaja(http: Http, externoId: string, esperado: { total: number | null; efectivo: number }) {
+  const caja = leerCajaAbierta(await http.get("venta.php"));
+  if (!caja) throw new Error("La caja no tiene turno abierto. Ábrela antes de cobrar.");
+  let j: Record<string, unknown> = {};
+  try { j = JSON.parse(await http.post("venta.php", { process: "cargar_data", n_ref: externoId, fecha: caja.fecha })); } catch { j = {}; }
+  if (j.typeinfo !== "Success" || String(j.id_factura ?? "") !== externoId) {
+    throw new Error("La caja no devolvió esa preventa: puede que ya se cobrara o la borraran.");
+  }
+  const renglones = leerRenglonesDeLista(j.lista);
+  const cabecera = {
+    id_cliente: clienteDePreventa(j.select_cliente), tipo_documento: String(j.tipo_documento ?? ""), credito: String(j.credito ?? ""),
+    codvende: String(j.codvende ?? ""), id_empleado: String(j.id_empleado ?? ""), datos_extras: String(j.datos_extras ?? ""),
+    id_medico: String(j.id_medico ?? "0"), id_factura: externoId, numero_doc: String(j.numero_doc ?? ""),
+  };
+  let retiene = "";
+  try { retiene = String(JSON.parse(await http.post("venta.php", { process: "mostrar_datos_cliente", id_client: cabecera.id_cliente }))?.retiene ?? ""); }
+  catch { throw new Error("No se pudieron leer los datos del cliente en la caja."); }
+  const totales = totalesDeCobro(renglones);
+  let motivo = motivoParaNoCobrar({ renglones, tipo_documento: cabecera.tipo_documento, cliente_retiene: retiene, credito: cabecera.credito });
+  if (!motivo && esperado.total != null && Math.abs(totales.total - esperado.total) >= 0.005) {
+    motivo = `En la caja la preventa suma ${totales.total.toFixed(2)} y en el portal ${esperado.total.toFixed(2)}. Revísala antes de cobrar.`;
+  }
+  if (!motivo && !(esperado.efectivo >= totales.total)) motivo = "El efectivo no alcanza para el total.";
+  const guardado = armarGuardado({ renglones, cabecera, caja });
+  // El número del documento lo da la caja al guardar: en el ensayo va vacío.
+  const finalizado = armarFinalizado({ cabecera, guardado: { id_factura: externoId, ultimo: "" }, caja, efectivo: esperado.efectivo });
+  return { motivo, totales, caja, cabecera, renglones: renglones.length, guardado, finalizado };
 }

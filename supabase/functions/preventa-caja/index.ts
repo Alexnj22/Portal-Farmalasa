@@ -2,7 +2,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { getCortesCreds } from "../_shared/creditos.ts";
 import {
-  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
+  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, prepararCobroEnLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
 } from "../_shared/preventaCaja.ts";
 import { armarVenta } from "../../../src/utils/preventa.js";
 import { login as entrarAlSistema } from "../_shared/erp-dte.ts";
@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const accion = String(body.accion ?? "enviar");
     if (accion === "directa" || accion === "anular") return await directa(req, accion, body, responder);
+    if (accion === "cobrar") return await cobrar(req, body, responder);
     if (accion !== "enviar") return responder({ ok: false, error: "Acción desconocida." }, 400);
 
     const ids = (Array.isArray(body.reservas) ? body.reservas : [body.reserva])
@@ -355,4 +356,47 @@ async function directa(
     corregida: Boolean(datos.externo_id), cliente_generico: venta.cliente.generico,
     total_caja: resultado.total_caja, avisos: resultado.avisos,
   });
+}
+
+
+// ── Cobrar una preventa desde el kiosco de caja (2026-11-17) ───────────────
+// Por ahora SÓLO ENSAYO: lee la preventa en la caja y devuelve lo que se le
+// mandaría para cobrarla (F2 Pagar + efectivo), sin mandarlo. Sirve para
+// enfrentarlo con un cobro real antes de encender el cobro de verdad.
+// Permiso: el de la caja (`caja_vales` editar), en la sala de la PREVENTA.
+async function cobrar(req: Request, body: Record<string, unknown>, responder: (b: unknown, s?: number) => Response) {
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const quien = await requireActiveEmployeeUser(req, admin);
+  if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+  const permiso = await permisoDeModulo(admin, quien.id, "caja_vales", "can_edit");
+  if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
+  if (!permiso.puede) return responder({ ok: false, error: "No tienes permiso para cobrar." }, 403);
+  if (body.ensayo !== true) return responder({ ok: false, error: "El cobro desde el kiosco todavía no está encendido." }, 409);
+
+  const id = Number(body.preventa_id);
+  const efectivo = Number(body.efectivo);
+  if (!Number.isInteger(id) || id <= 0) return responder({ ok: false, error: "No se dijo qué preventa." }, 400);
+  if (!Number.isFinite(efectivo) || efectivo < 0) return responder({ ok: false, error: "Falta el efectivo recibido." }, 400);
+
+  const { data: pv, error: ePv } = await admin.from("preventas")
+    .select("id, branch_id, estado, sistema, externo_id, total").eq("id", id).maybeSingle();
+  if (ePv) return responder({ ok: false, error: "No se pudo leer la preventa." }, 503);
+  if (!pv || pv.sistema !== "caja") return responder({ ok: false, error: "Esa preventa no existe." }, 404);
+  if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(pv.branch_id)) {
+    return responder({ ok: false, error: "No puedes cobrar en esa sucursal." }, 403);
+  }
+  if (pv.estado !== "viva" || !pv.externo_id) return responder({ ok: false, error: "Esa preventa no está lista para cobrar." }, 409);
+
+  const { data: mapa, error: eMapa } = await admin.from("erp_sucursal_map")
+    .select("erp_sucursal_id").eq("branch_id", pv.branch_id).eq("es_bodega", false).maybeSingle();
+  if (eMapa || !mapa) return responder({ ok: false, error: "No se sabe qué sala de la caja es esta sucursal." }, 503);
+
+  try {
+    const { username, password } = getCortesCreds();
+    const http = await sesionDeCaja(username, password, Number(mapa.erp_sucursal_id));
+    const plan = await prepararCobroEnLaCaja(http, String(pv.externo_id), { total: pv.total == null ? null : Number(pv.total), efectivo });
+    return responder({ ok: true, ensayo: true, ...plan });
+  } catch (e) {
+    return responder({ ok: false, error: (e as Error).message }, 502);
+  }
 }

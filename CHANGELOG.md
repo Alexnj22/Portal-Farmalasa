@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.8 — Kiosco de caja: ensayo del cobro de una preventa
+
+- `src/utils/cobroDeCaja.js`: lee la preventa como la devuelve la caja y arma
+  lo que la caja manda al cobrar (F2 Pagar y el efectivo). Enfrentado en vivo
+  con la pantalla de la caja en las dos preventas abiertas de Salud 4: igual
+  campo por campo, también la caja abierta y el cliente.
+- `preventa-caja` acción `cobrar`, SÓLO en ensayo: lee la preventa en la caja y
+  devuelve lo que se mandaría, sin mandarlo. Pide el permiso de la caja
+  (`caja_vales` editar) en la sala de la preventa. Sin `ensayo: true` contesta
+  que el cobro todavía no está encendido.
+- Por ahora no se cobra desde el portal: crédito fiscal, cliente que retiene,
+  pago que no sea contado, o si el total de la caja no coincide con el del portal.
+
+Novedades: no — todavía no cambia nada para el personal.
+
 ## v2.1573.7 — Kiosco de caja: la columna En caja ocupa menos
 
 - Pedido del usuario desde Salud 4: la columna de la cola quitaba mucho espacio.

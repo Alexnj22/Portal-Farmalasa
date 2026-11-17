@@ -62,6 +62,7 @@ import {
     registrarCorreoAndroid, fetchMiCorreoAndroid, fetchPruebasAndroid, marcarAgregadosEnPlay, mensajeDeNovedades,
     reenviarAvisoAndroid, fetchQuienVioNovedades,
 } from '@nucleo/data/novedades';
+import { claveDeNovedad as claveDe, ESTADOS_QUIEN, estadoDeAvance as estadoDe, filasDeQuienVio, ordenDeAvance } from '@nucleo/utils/quienVioNovedades';
 
 const ICONOS = {
     Smartphone, Receipt, Tag, UserPlus, ShoppingBag, Truck, CalendarClock, PackageCheck, ClipboardCheck, CircleAlert, ShieldCheck, Star,
@@ -70,9 +71,6 @@ const ICONOS = {
 
 const dia = (iso) => (iso ? fechaTexto(iso, { day: 'numeric', month: 'long' }) : '');
 
-// «Revisada» por persona, en la base. El id de la tanda va en la clave de
-// cada novedad, así una tanda nueva arranca en cero.
-const claveDe = (n) => `${n.tanda}:${n.id}`;
 
 const esAndroid = () => /android/i.test(globalThis.navigator?.userAgent || '');
 const esIphone = () => /iphone|ipad|ipod/i.test(globalThis.navigator?.userAgent || '');
@@ -501,13 +499,6 @@ const COLUMNAS_QUIEN = [
     { key: 'ultima', label: 'Última vez', hideBelow: 'md' },
 ];
 
-const ESTADOS_QUIEN = [
-    { value: 'todos', label: 'Todos' },
-    { value: 'sin', label: 'Sin ver' },
-    { value: 'medias', label: 'A medias' },
-    { value: 'completas', label: 'Todas vistas' },
-];
-
 function QuienLasVio({ busqueda }) {
     const showToast = useToastStore((s) => s.showToast);
     const branches = useStaffStore((s) => s.branches);
@@ -524,40 +515,7 @@ function QuienLasVio({ busqueda }) {
         return () => { vivo = false; };
     }, [showToast]);
 
-    const filas = useMemo(() => {
-        if (!datos) return [];
-        const cargos = new Map(datos.cargos.map((c) => [c.id, c]));
-        const porPersona = new Map();
-        for (const v of datos.vistas) {
-            if (!porPersona.has(v.employee_id)) porPersona.set(v.employee_id, new Map());
-            porPersona.get(v.employee_id).set(v.clave, v.visto_at);
-        }
-        const cache = new Map();
-        const deCargo = (roleId) => {
-            if (!cache.has(roleId)) {
-                const su = !!cargos.get(roleId)?.is_su;
-                const perms = datos.permisos[roleId] ?? {};
-                const puede = (m, nivel = 'can_view') => su || !!perms[m]?.[nivel];
-                const lista = puede('novedades')
-                    ? novedadesVisibles({ roleId, puede }).flatMap((t) => t.novedades.map((n) => ({ ...n, tanda: t.id })))
-                        .filter((n) => n.especial !== 'app-personal')
-                    : null;
-                cache.set(roleId, lista);
-            }
-            return cache.get(roleId);
-        };
-        return datos.empleados.map((e) => {
-            const lista = deCargo(e.role_id);
-            if (!lista) return null;
-            const suyas = porPersona.get(e.id) ?? new Map();
-            const vistas = lista.filter((n) => suyas.has(claveDe(n)));
-            const ultima = [...suyas.values()].sort().at(-1) ?? null;
-            return {
-                ...e, lista, suyas, hechas: vistas.length, total: lista.length, ultima,
-                cargo: cargos.get(e.role_id)?.name ?? '—',
-            };
-        }).filter(Boolean);
-    }, [datos]);
+    const filas = useMemo(() => filasDeQuienVio(datos), [datos]);
 
     const opcionesCargo = useMemo(() => [...new Set(filas.map((f) => f.cargo))].sort().map((c) => ({ value: c, label: c })), [filas]);
     const cuenta = (k) => filas.filter((f) => k === 'todos' || estadoDe(f) === k).length;
@@ -565,7 +523,7 @@ function QuienLasVio({ busqueda }) {
         .filter((f) => estado === 'todos' || estadoDe(f) === estado)
         .filter((f) => !cargo || f.cargo === cargo)
         .filter((f) => !busqueda.trim() || tokenMatch(busqueda, f.name))
-        .sort((a, b) => (a.hechas / (a.total || 1)) - (b.hechas / (b.total || 1)) || a.name.localeCompare(b.name));
+        .sort(ordenDeAvance);
     const sala = (id) => (branches ?? []).find((b) => b.id === id)?.name ?? '—';
     const actual = abierta ? filas.find((f) => f.id === abierta) : null;
 
@@ -600,11 +558,6 @@ function QuienLasVio({ busqueda }) {
             {actual && <DetalleDePersona f={actual} sala={sala(actual.branch_id)} onCerrar={() => setAbierta(null)} />}
         </div>
     );
-}
-
-function estadoDe(f) {
-    if (f.hechas === 0) return 'sin';
-    return f.hechas >= f.total ? 'completas' : 'medias';
 }
 
 function Avance({ hechas, total }) {

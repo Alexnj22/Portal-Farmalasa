@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1564.1 — Novedades nativa en la app
+
+- **Novedades ya no se abre como el portal dentro de la app**: pantalla nativa
+  (`apps/mobile/app/novedades.js`) con el avance, una tarjeta por novedad y su
+  hoja (animación, para qué sirve, pasos, «Ir ahí»). Lo revisado se marca en
+  la base con el mismo `useNovedadesVistas` del portal. Quien edita Novedades
+  tiene además «Quién las vio» y «Android».
+- La cuenta de «Quién las vio» pasó al núcleo (`src/utils/quienVioNovedades.js`)
+  y la usan el portal y la app.
+- `novedades` sale de `EXCEPCIONES` de `gate:app-nativa`.
+
+Novedades: no — misma pantalla, ahora nativa (lo decidió el usuario).
+
 ## v2.1564.0 — Novedades: lo visto sigue a la persona y quién las vio
 
 - **Lo revisado ahora vive en la base** (`novedades_vistas`, migración

@@ -20,6 +20,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, AppState, Dimensions, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../../componentes/Tocable';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import IconoFijo from '../../componentes/IconoFijo';
+import { iconoDe } from '../../tema/iconos';
+import { useBuscadorAbajo } from '../../tema/material';
+import ElegirLaboratorio from '../../componentes/conteos/ElegirLaboratorio';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
@@ -195,6 +200,40 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
 }
 
 const contadosVivos = (r) => Number(r?.contados ?? 0);
+
+// Escanear, flotante abajo a la derecha (2026-11-17, lo eligió el usuario): al
+// alcance del pulgar y a la vista al desplazarse. «Que no interfiera con el de
+// chat»: si la burbuja del chat está en pantalla (`chat_clientes`), se sienta
+// encima de ella; y sube sobre el buscador de abajo de iOS 26, como la burbuja.
+// Con el teclado abierto se esconde: se está escribiendo una cantidad.
+const TAMANO_ESCANER = 64;
+function EscanerFlotante({ onPress }) {
+  const { hasPermission } = useAuth();
+  const { bottom } = useSafeAreaInsets();
+  const conBuscador = useBuscadorAbajo((s) => Object.keys(s.claves).length > 0);
+  const [teclado, setTeclado] = useState(false);
+  useEffect(() => {
+    const a = Keyboard.addListener('keyboardWillShow', () => setTeclado(true));
+    const b = Keyboard.addListener('keyboardDidShow', () => setTeclado(true));
+    const c = Keyboard.addListener('keyboardWillHide', () => setTeclado(false));
+    const d = Keyboard.addListener('keyboardDidHide', () => setTeclado(false));
+    return () => { a.remove(); b.remove(); c.remove(); d.remove(); };
+  }, []);
+  if (teclado) return null;
+  const conChat = !!hasPermission?.('chat_clientes', 'can_view');
+  // 54 de la burbuja + 14 de aire entre las dos.
+  const abajo = bottom + 16 + (conBuscador ? 62 : 0) + (conChat ? 54 + 14 : 0);
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="Escanear código"
+      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); onPress(); }}
+      style={({ pressed }) => ({ position: 'absolute', right: 16, bottom: abajo, width: TAMANO_ESCANER, height: TAMANO_ESCANER,
+        borderRadius: TAMANO_ESCANER / 2, backgroundColor: MARCA.azul, alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+        transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+      <IconoFijo name={iconoDe('ScanLine')} size={30} color="#fff" />
+    </Pressable>
+  );
+}
 
 // Un botón compacto del tamaño de su texto (2026-11-17, el usuario: «me salen 5
 // botones que ocupan todo el ancho»). Lleno = la acción principal; con borde,
@@ -481,8 +520,12 @@ export default function Conteo() {
   };
   const hayMas = editable || (puedePapel && conteo) || puedeEliminar;
 
-  const gruposLab = labs.length > 1 ? [{ id: 'lab', titulo: 'Laboratorio', activa: laboratorioId, porDefecto: 'todos', onCambiar: setLaboratorioId,
-    opciones: [{ id: 'todos', label: 'Todos' }, ...labs.map((l) => ({ id: String(l.laboratorio_id ?? l.id), label: l.laboratorio_nombre ?? l.nombre ?? '—' }))] }] : [];
+  // El laboratorio ya no va en el menú de la barra: son cientos y no se podía
+  // buscar. Se elige en su hoja con buscador (`ElegirLaboratorio`).
+  const opcionesLab = labs.map((l) => ({ id: String(l.laboratorio_id ?? l.id), label: l.laboratorio_nombre ?? l.nombre ?? '—' }));
+  const labElegido = laboratorioId === 'todos' ? null : opcionesLab.find((o) => o.id === String(laboratorioId));
+  const [eligiendoLab, setEligiendoLab] = useState(false);
+  const gruposLab = [];
   const gruposOrden = [{ id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: '', onCambiar: setOrden, opciones: [
     { id: '', label: 'Orden del estante' },
     ...[['producto', 'Producto'], ...(verSistema ? [['sistema', 'Sistema']] : []), ['fisico', 'Físico'], ...(verSistema ? [['diferencia', 'Diferencia']] : []), ['progreso', 'Estado']]
@@ -693,7 +736,7 @@ export default function Conteo() {
       <MenuDeFiltros grupos={grupos} extra={hayMas ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: masAcciones } : null} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView ref={scroll} onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={32}
-          style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 60 }}
+          style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 170 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           {!conteo && errorConteo ? (
             <Vacio titulo="No se pudo abrir el conteo" detalle={mensajeAmigable(errorConteo)} accion={{ texto: 'Reintentar', onPress: cargarConteo }} />
@@ -807,8 +850,26 @@ export default function Conteo() {
           {/* Con un código que no está, la tarjeta de abajo ya ofrece escanear otro. */}
           {porCodigo && !cargando && !productos.filas.length ? null : (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, marginLeft: 4 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
-            {editable ? <Pastilla texto="Escanear" color={MARCA.azul} lleno onPress={() => { esperarGuardados(); setEscaneando(true); }} /> : null}
+            {opcionesLab.length > 1 ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Elegir laboratorio"
+                onPress={() => { Haptics.selectionAsync().catch(() => {}); setEligiendoLab(true); }}
+                style={({ pressed }) => ({ flexShrink: 1, minHeight: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 6,
+                  borderWidth: 1, borderColor: labElegido ? MARCA.azulClaro : colorSistema.separador, backgroundColor: labElegido ? `${MARCA.azul}26` : 'transparent',
+                  opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ flexShrink: 1, color: labElegido ? colorSistema.texto : colorSistema.texto2, fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+                  {labElegido ? labElegido.label : 'Laboratorio'}
+                </Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>▾</Text>
+              </Pressable>
+            ) : null}
+            {labElegido ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Quitar laboratorio" hitSlop={8}
+                onPress={() => { Haptics.selectionAsync().catch(() => {}); setLaboratorioId('todos'); }}
+                style={({ pressed }) => ({ minHeight: 40, minWidth: 32, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: colorSistema.texto2, fontSize: 16 }}>✕</Text>
+              </Pressable>
+            ) : null}
+            <Text style={{ flex: 1, textAlign: 'right', color: colorSistema.texto2, fontSize: 13, marginRight: 4 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
           </View>
           )}
           {productos.filas.map((p) => {
@@ -873,6 +934,9 @@ export default function Conteo() {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+      {editable && !escaneando ? <EscanerFlotante onPress={() => { esperarGuardados(); setEscaneando(true); }} /> : null}
+      <ElegirLaboratorio visible={eligiendoLab} opciones={opcionesLab} valor={String(laboratorioId)}
+        onElegir={(v) => setLaboratorioId(v)} onCerrar={() => setEligiendoLab(false)} />
       <Historial item={historial} simple={conteo?.modo === 'SIMPLE'} onCerrar={() => setHistorial(null)} />
       <LoteReal conteoId={id} item={loteReal}
         hermanos={loteReal ? (items[loteReal.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteReal.presentacion ?? '').trim().toUpperCase()) : []}

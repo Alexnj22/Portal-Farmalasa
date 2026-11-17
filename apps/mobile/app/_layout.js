@@ -64,7 +64,7 @@ function GuardiaDeSesion() {
   }, [isAuthenticated, empleadoId]);
   useEffect(() => {
     if (loading) return;
-    const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index';
+    const enEntrada = !segmentos.length || segmentos[0] === 'entrar' || segmentos[0] === 'index' || segmentos[0] === 'recuperar-contrasena';
     if (!isAuthenticated && !enEntrada) router.replace('/entrar');
   }, [isAuthenticated, loading, segmentos]);
   return isAuthenticated ? <CampanaEnVivo /> : null;
@@ -153,6 +153,7 @@ export default function Raiz() {
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
+            <Stack.Screen name="recuperar-contrasena" options={{ title: 'Recuperar contraseña' }} />
             {/* Sin opciones propias: con la barra opaca de siempre. */}
             <Stack.Screen name="torogoz/venta" options={{ headerTransparent: false }} />
             <Stack.Screen name="torogoz/venta/[id]" options={{ headerTransparent: false }} />

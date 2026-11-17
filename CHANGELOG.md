@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1563.0 — App: ¿Olvidaste tu contraseña? con código al correo
+
+- En la entrada de la app del personal, «¿Olvidaste tu contraseña?»
+  (`app/recuperar-contrasena.js`): el usuario, un código de 6 dígitos al
+  correo de su perfil, y la contraseña nueva en la misma pantalla. Entra solo
+  con ella y, si tenía Face ID / huella, se guarda la nueva.
+- Edge function `recuperar-contrasena` (sin JWT, se cuida sola): el código va
+  por correo (Resend, gratis) y nunca vuelve en la respuesta; se guarda
+  hasheado en `recuperaciones_de_clave`, vence en 15 min, 5 intentos, 3
+  pedidos cada 15 min por persona y freno por IP. Retención de 30 días.
+- Sin correo en el perfil (8 de 57 hoy): push a Talento Humano,
+  Administrador y Supervisor/a de Ventas (sin Gerente General, decisión del
+  usuario), con enlace a su perfil para restablecerla como siempre.
+- Migración `20261117153250_recuperaciones_de_clave`.
+
+Novedades: olvide-contrasena
+
 ## v2.1562.18 — Reservas: se cobró distinto
 
 - Reservas muestra «se cobró distinto» cuando caja facturó otra cosa de lo que

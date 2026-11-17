@@ -20780,6 +20780,42 @@ export type Database = {
           },
         ]
       }
+      novedades_vistas: {
+        Row: {
+          clave: string
+          created_at: string
+          employee_id: string
+          visto_at: string
+        }
+        Insert: {
+          clave: string
+          created_at?: string
+          employee_id: string
+          visto_at?: string
+        }
+        Update: {
+          clave?: string
+          created_at?: string
+          employee_id?: string
+          visto_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novedades_vistas_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novedades_vistas_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ofertas_clientes: {
         Row: {
           acento: string
@@ -27783,6 +27819,57 @@ export type Database = {
           {
             foreignKeyName: "reclamos_clientes_respondido_por_fkey"
             columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recuperaciones_de_clave: {
+        Row: {
+          canal: string
+          codigo_hash: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          intentos: number
+          ip: string | null
+          usada_at: string | null
+          vence_at: string | null
+        }
+        Insert: {
+          canal: string
+          codigo_hash?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          intentos?: number
+          ip?: string | null
+          usada_at?: string | null
+          vence_at?: string | null
+        }
+        Update: {
+          canal?: string
+          codigo_hash?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          intentos?: number
+          ip?: string | null
+          usada_at?: string | null
+          vence_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recuperaciones_de_clave_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recuperaciones_de_clave_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -38355,6 +38442,7 @@ export type Database = {
         Returns: number
       }
       novedades_correo_android: { Args: { p_email: string }; Returns: Json }
+      novedades_marcar_vistas: { Args: { p_claves: string[] }; Returns: number }
       nuevo_folio_de_bolsa: { Args: { p_branch_id: number }; Returns: string }
       numeros_de_caja: { Args: { p: Json }; Returns: string }
       par_min_max_convertido: {

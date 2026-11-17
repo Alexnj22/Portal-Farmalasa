@@ -78,6 +78,23 @@ export const TANDAS = [
                 donde: 'App Store o Google Play',
             },
             {
+                id: 'olvide-contrasena', modulo: null, nuevo: true, tema: 'app', icono: 'ShieldCheck', media: null,
+                titulo: 'Si olvidas tu contraseña, recupérala tú',
+                resumen: 'En la app, un código a tu correo y eliges una contraseña nueva. Sin esperar a nadie.',
+                para: 'Volver a entrar en un minuto cuando no te acuerdas de la contraseña.',
+                pasos: [
+                    'En la app, toca ¿Olvidaste tu contraseña?',
+                    'Escribe tu usuario.',
+                    'Te llega un código a tu correo. Escríbelo con tu contraseña nueva.',
+                ],
+                ojo: [
+                    'El código vence en 15 minutos y sirve una sola vez.',
+                    'Si tu perfil no tiene correo, le avisamos a Talento Humano y te dan una contraseña temporal.',
+                    'Los campos de contraseña tienen un ojo para ver lo que escribes.',
+                ],
+                donde: 'App → Entrar → ¿Olvidaste tu contraseña?',
+            },
+            {
                 id: 'prueba-android', modulo: 'novedades', si: EDITA('novedades'), nuevo: true, tema: 'app', icono: 'Smartphone',
                 media: null, ruta: '/novedades?tab=android',
                 titulo: 'Da acceso a la app en Android',

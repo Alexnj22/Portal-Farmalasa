@@ -214,6 +214,15 @@ export default function Entrar() {
             : <Button variant="filled" label={ocupado ? 'Entrando…' : 'Entrar'} disabled={ocupado || !usuario || !clave} onPress={entrar} />}
         </Host>
       </View>
+
+      {/* Sin contraseña: el código va al correo de su perfil (app/recuperar-contrasena.js). */}
+      {!pendiente ? (
+        <Pressable onPress={() => router.push({ pathname: '/recuperar-contrasena', params: usuario ? { usuario } : {} })}
+          disabled={ocupado} accessibilityRole="button"
+          style={({ pressed }) => ({ minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+          <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>¿Olvidaste tu contraseña?</Text>
+        </Pressable>
+      ) : null}
     </Formulario>
   );
 }

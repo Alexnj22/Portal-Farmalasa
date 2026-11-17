@@ -312,6 +312,10 @@
     "scrape-erp-proveedores": {
       "guarda": "cron"
     },
+    "recuperar-contrasena": {
+      "guarda": "publica",
+      "motivo": "«¿Olvidaste tu contraseña?» de la app del personal: no hay sesión que presentar. Recibe sólo el usuario; el código va al correo de la FICHA (nunca vuelve en la respuesta), se guarda hasheado, vence en 15 min y aguanta 5 intentos; 3 pedidos cada 15 min por persona y freno por IP. Sin correo, sólo avisa a quien restablece contraseñas. No recibe sala."
+    },
     "send-push-notification": {
       "guarda": "cron"
     },

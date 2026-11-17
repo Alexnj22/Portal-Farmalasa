@@ -181,3 +181,35 @@ export async function leerSalasQueCubro(employeeId) {
     if (error) return { salas: [], error };
     return { salas: (data || []).map((r) => Number(r.branch_id)), error: null };
 }
+
+/**
+ * «¿Olvidaste tu contraseña?» (2026-11-17), por `recuperar-contrasena`, que
+ * va SIN sesión. Nunca lanzan: devuelven `{ ok, mensaje, … }` con el texto
+ * para la persona.
+ *
+ * `pedirCodigoDeClave(usuario)` → `{ ok, canal: 'correo', reto, correo, minutos }`
+ *   (el código va al correo de la ficha) o `{ ok, canal: 'aviso' }` (sin
+ *   correo: se avisó a quien restablece contraseñas).
+ * `cambiarClaveConCodigo(reto, codigo, nueva)` → `{ ok }` o `{ ok: false,
+ *   mensaje, vencido }`; con `vencido`, hay que pedir otro código.
+ */
+async function llamarRecuperar(body) {
+    try {
+        const { data, error } = await supabase.functions.invoke('recuperar-contrasena', { body });
+        // Un 4xx/5xx trae el mensaje en el cuerpo de la respuesta.
+        if (error) {
+            let cuerpo = null;
+            try { cuerpo = await error.context?.json?.(); } catch { /* sin cuerpo */ }
+            return cuerpo?.mensaje ? cuerpo : { ok: false, mensaje: mensajeAmigable(error, 'No hay conexión. Intenta de nuevo.') };
+        }
+        return data ?? { ok: false, mensaje: 'No se pudo completar. Intenta de nuevo.' };
+    } catch (e) {
+        return { ok: false, mensaje: mensajeAmigable(e, 'No hay conexión. Intenta de nuevo.') };
+    }
+}
+
+export const pedirCodigoDeClave = (usuario) =>
+    llamarRecuperar({ accion: 'pedir', usuario: String(usuario ?? '').toLowerCase().trim() });
+
+export const cambiarClaveConCodigo = (reto, codigo, nueva) =>
+    llamarRecuperar({ accion: 'canjear', reto, codigo: String(codigo ?? '').replace(/\D/g, ''), nueva });

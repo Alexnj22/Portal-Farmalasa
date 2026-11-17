@@ -220,7 +220,7 @@ export function repartirCajaEnUnidades(
 export async function preventaVivaEnLaCaja(http: Http, id: string, vendedor: string | null) {
   const lista = leerReferencias(await http.post("venta.php", { process: "get_referencias" }));
   const fila = lista.find((p) => p.id === id);
-  if (!fila) return { viva: false as const, motivo: "Esa preventa ya no está en caja: se facturó o la borraron allá." };
+  if (!fila) return { viva: false as const, fuera: true, motivo: "Esa preventa ya no está en caja: se facturó o la borraron allá." };
   const pagina = await http.get("venta.php?preventa=1");
   const fecha = pagina.match(/id="fecha" value="([^"]+)"/)?.[1] ?? "";
   let j: Record<string, unknown> = {};

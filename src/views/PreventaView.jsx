@@ -352,10 +352,21 @@ export default function PreventaView({ openModal }) {
         alBuscador();
     };
     const [porAnular, setPorAnular] = useState(null);
+    // Ya no está en caja (la borraron allá): se pregunta antes de cerrarla aquí.
+    const [borradaEnCaja, setBorradaEnCaja] = useState(null);
     const anular = async () => {
         const p = porAnular;
         setPorAnular(null);
         const r = await anularPreventa(p.id);
+        if (!r?.ok && r?.no_en_caja) { setBorradaEnCaja(p); return; }
+        if (!r?.ok) { showToast('No se pudo anular', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
+        showToast('Preventa anulada', `La ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} ya no está en caja.`, 'success');
+        recargar();
+    };
+    const cerrarBorrada = async () => {
+        const p = borradaEnCaja;
+        setBorradaEnCaja(null);
+        const r = await anularPreventa(p.id, true);
         if (!r?.ok) { showToast('No se pudo anular', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
         showToast('Preventa anulada', `La ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} ya no está en caja.`, 'success');
         recargar();
@@ -630,6 +641,10 @@ export default function PreventaView({ openModal }) {
             <ConfirmModal isOpen={Boolean(porAnular)} onClose={() => setPorAnular(null)} onConfirm={anular}
                 title={`¿Anular la preventa ${porAnular?.externo_ref ? `#${porAnular.externo_ref}` : porAnular?.codigo ?? ''}?`}
                 message="Se borra de caja y ya no se puede facturar. No se puede deshacer." confirmText="Anular" />
+            <ConfirmModal isOpen={Boolean(borradaEnCaja)} onClose={() => setBorradaEnCaja(null)} onConfirm={cerrarBorrada}
+                title={`La ${borradaEnCaja?.externo_ref ? `#${borradaEnCaja.externo_ref}` : borradaEnCaja?.codigo ?? ''} ya no está en caja`}
+                message="¿La borraron en caja? Si es así, se marca anulada aquí. Si se facturó, aparece como facturada en un momento."
+                confirmText="Sí, la borraron" />
             <ConfirmModal isOpen={porVaciar} onClose={() => { setPorVaciar(false); alBuscador(); }} onConfirm={vaciar}
                 title={venta.corrigiendo ? '¿Dejar de corregir?' : '¿Vaciar la venta?'}
                 message={venta.corrigiendo ? 'La preventa en caja queda como estaba.' : 'Se quitan el cliente y los productos.'}

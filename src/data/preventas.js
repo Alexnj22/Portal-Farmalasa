@@ -51,8 +51,9 @@ async function invocar(body) {
         const { data, error } = await supabase.functions.invoke('preventa-caja', { body });
         if (error) {
             let detalle = '';
-            try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
-            return { ok: false, error: detalle || error.message || 'No se pudo.' };
+            let cuerpo = null;
+            try { cuerpo = await error.context?.json(); detalle = cuerpo?.error ?? ''; } catch { /* sin cuerpo legible */ }
+            return { ok: false, error: detalle || error.message || 'No se pudo.', ...(cuerpo?.no_en_caja ? { no_en_caja: true } : {}) };
         }
         return data ?? { ok: false, error: 'No se pudo.' };
     } catch (err) {
@@ -73,7 +74,9 @@ export const enviarPreventaDirecta = ({ branchId, customerId, documento, pago = 
     });
 
 /** Borrar la preventa de la caja y marcarla anulada. Nunca lanza. */
-export const anularPreventa = (preventaId) => invocar({ accion: 'anular', preventa_id: Number(preventaId) });
+/** `borradaEnCaja`: quien anula confirma que ya no está en caja (la borraron allá). */
+export const anularPreventa = (preventaId, borradaEnCaja = false) =>
+    invocar({ accion: 'anular', preventa_id: Number(preventaId), ...(borradaEnCaja ? { borrada_en_caja: true } : {}) });
 
 /**
  * Los lotes de cada producto en la sucursal, `Map<id, [{lote, vence, unidades}]>`,

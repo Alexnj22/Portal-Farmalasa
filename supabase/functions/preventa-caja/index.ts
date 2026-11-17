@@ -178,11 +178,23 @@ async function directa(
         const http = await sesionDeCaja(username, password, Number(info.erp_sucursal));
         const viva = await preventaVivaEnLaCaja(http, String(info.externo_id), info.vendedor ?? null);
         // Si no está en la lista puede estar facturada y todavía no llegó la
-        // factura: marcarla anulada sería perder una venta. Se dice y se deja.
-        if (!viva.viva) return responder({ ok: false, error: viva.motivo }, 409);
-        await borrarPreventaDeLaCaja(http, String(info.externo_id), {
-          vendedor: String(info.vendedor ?? ""), productos: (info.productos ?? []).map(Number),
-        });
+        // factura: marcarla anulada sería perder una venta. Se pregunta a quien
+        // anula si la borraron allá (2026-11-17: borrada en caja, el portal la
+        // seguía mostrando «En caja» y no había cómo sacarla). Si dice que sí y
+        // no hay factura con ese número, se marca anulada; si después aparece
+        // facturada, el cierre automático la pasa a facturada igual.
+        if (!viva.viva) {
+          if (!("fuera" in viva && viva.fuera)) return responder({ ok: false, error: viva.motivo }, 409);
+          if (body.borrada_en_caja !== true) return responder({ ok: false, error: viva.motivo, no_en_caja: true }, 409);
+          const { data: fac, error: eFac } = await admin.from("sales_invoices").select("id")
+            .eq("erp_invoice_id", String(info.externo_id)).eq("branch_id", Number(info.branch_id ?? 0)).limit(1);
+          if (eFac) return responder({ ok: false, error: "No se pudo revisar si se facturó. Intenta de nuevo." }, 502);
+          if (fac?.length) return responder({ ok: false, error: "Esa preventa ya se facturó. En un momento sale como facturada." }, 409);
+        } else {
+          await borrarPreventaDeLaCaja(http, String(info.externo_id), {
+            vendedor: String(info.vendedor ?? ""), productos: (info.productos ?? []).map(Number),
+          });
+        }
       } catch (e) {
         return responder({ ok: false, error: (e as Error).message }, 502);
       }
@@ -191,6 +203,11 @@ async function directa(
     if (eHecho) {
       console.error("[preventa-caja] anular quedó a medias:", eHecho.message);
       return responder({ ok: false, error: `Se borró de la caja, pero el portal no la pudo marcar: ${eHecho.message}` }, 500);
+    }
+    if (body.borrada_en_caja === true) {
+      // La marca deja que el cierre automático la pase a facturada si resulta que sí se cobró.
+      const { error: eMarca } = await admin.from("preventas").update({ error: "La borraron en caja." }).eq("id", id);
+      if (eMarca) console.error("[preventa-caja] marca de borrada:", eMarca.message);
     }
     return responder({ ok: true, preventa: hecho });
   }

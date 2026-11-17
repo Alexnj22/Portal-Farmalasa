@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.15 — Preventa: cerrar la que borraron en caja
+
+- Al anular una preventa que ya no está en caja, el portal pregunta «¿La
+  borraron en caja?». Con un sí, y si no hay factura con su número, queda
+  anulada. Antes seguía «En caja» y no había cómo sacarla.
+- Si después aparece facturada, el cierre automático la pasa a facturada igual.
+- Novedades: no — corrección de un caso que trababa la lista.
+
 ## v2.1562.14 — Preventa: sin corregir nombres con Ñ
 
 - El nombre del cliente no se corrige: se llama así. Se quitan el botón

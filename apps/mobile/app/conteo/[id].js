@@ -225,6 +225,8 @@ export default function Conteo() {
   // El código escaneado no se escribe en el buscador nativo: se muestra aparte,
   // con su forma de quitarlo (antes la lista quedaba filtrada sin decir por qué).
   const [porCodigo, setPorCodigo] = useState(null);
+  // Volver a la lista de antes del escaneo: sin código y en «Pendientes».
+  const quitarCodigo = () => { setPorCodigo(null); setTexto(''); setFiltro('PENDIENTES'); };
   const busqueda = useTextoRebotado(texto, 350).trim();
   const [filtro, setFiltro] = useState('PENDIENTES');
   const [pagina, setPagina] = useState(1);
@@ -768,10 +770,10 @@ export default function Conteo() {
           ) : null}
           <Subfiltro activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
           <FiltrosActivos grupos={grupos} />
-          {porCodigo ? (
+          {porCodigo && (cargando || productos.filas.length) ? (
             <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={1}>{`Código ${porCodigo}`}</Text>
-              <Pressable onPress={() => { setPorCodigo(null); setTexto(''); setFiltro('PENDIENTES'); }} hitSlop={8}
+              <Pressable onPress={quitarCodigo} hitSlop={8}
                 style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
                 <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Quitar</Text>
               </Pressable>
@@ -814,7 +816,19 @@ export default function Conteo() {
           })}
           {cargando ? <Cargando /> : null}
           {!cargando && productos.total > productos.filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((n) => n + 1)} /></View> : null}
-          {!cargando && !productos.filas.length ? (
+          {/* El código escaneado no está en el conteo: la salida está aquí mismo,
+              no en el buscador (el código no se escribe en la barra nativa y en
+              iOS no había cómo limpiar la búsqueda). */}
+          {!cargando && !productos.filas.length && porCodigo ? (
+            <View style={{ marginHorizontal: 16, marginTop: 24, gap: 10 }}>
+              <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700', textAlign: 'center' }}>No está en este conteo</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginBottom: 6 }}>{`Código ${porCodigo}`}</Text>
+              {editable ? <BotonGrande texto="Escanear otro" color={MARCA.azul} onPress={() => { quitarCodigo(); setEscaneando(true); }} /> : null}
+              {editable ? <BotonGrande texto="Agregar al conteo" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} /> : null}
+              <BotonGrande texto="Volver a la lista" borde onPress={quitarCodigo} />
+            </View>
+          ) : null}
+          {!cargando && !productos.filas.length && !porCodigo ? (
             <Vacio accion={busqueda && editable ? { texto: 'Agregar al conteo', onPress: () => setAgregando(true) } : null}>
               {busqueda ? 'Este producto no está en el conteo' : filtro === 'PENDIENTES' ? 'No queda nada por contar' : 'Sin productos en este filtro'}
             </Vacio>

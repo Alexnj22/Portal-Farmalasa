@@ -164,7 +164,8 @@ export function textoDePreventa(r) {
     if (!r?.preventa_estado || r.preventa_estado === 'fallida' || r.preventa_estado === 'descartada') return '';
     const ref = r.preventa_ref ? ` #${r.preventa_ref}` : '';
     if (r.preventa_estado === 'enviando') return 'Enviando la preventa…';
-    if (r.preventa_estado === 'facturada') return `Facturada${r.factura ? ` · ${r.factura}` : ''}`;
+    // Se cobró distinto de lo prometido (2026-11-17): también en Reservas.
+    if (r.preventa_estado === 'facturada') return `Facturada${r.factura ? ` · ${r.factura}` : ''}${r.cobro_distinto?.alerta ? ' · se cobró distinto' : ''}`;
     if (r.preventa_estado === 'sin_enlace') return `Preventa${ref} en caja · al facturar, ciérrala con «Retirar»`;
     return `Preventa${ref} en caja`;
 }

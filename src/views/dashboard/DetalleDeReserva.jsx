@@ -8,6 +8,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { codigoDeReserva, whatsappDe } from '@nucleo/data/reservas';
 import { textoDeProrroga } from '@nucleo/utils/reservasDeSala';
+import { diferenciasDelCobro } from '@nucleo/utils/preventaDirecta';
 import { TRASLADO, cuentasDeReserva, estadoDeReserva, faltanEnSala, formaDePagoLegible, renglonesDe, telefonoLegible, textoDeFaltante } from './reservaVista';
 import { HistorialDeAvisos, InsigniaDeNivel } from './AvisosDeReserva';
 
@@ -141,6 +142,9 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                             Number(r.costo_envio) > 0 && ['Envío', formatMoney(Number(r.costo_envio))],
                             r.pago_prueba && ['Atención', 'El cobro en línea fue de prueba. No entró dinero. Se cobra en caja.'],
                             r.preventa_ref && ['En caja', `Preventa #${r.preventa_ref}${r.factura ? ` · factura ${r.factura}` : ''}`],
+                            r.cobro_distinto?.alerta && ['Se cobró distinto',
+                                `Se prometió ${formatMoney(Number(r.cobro_distinto.total_prometido))} y se facturó ${formatMoney(Number(r.cobro_distinto.total_cobrado))}. `
+                                + diferenciasDelCobro(r.cobro_distinto).map((d) => `${d.nombre}: ${d.texto}`).join('. ')],
                         ]} />
                     </Bloque>
 

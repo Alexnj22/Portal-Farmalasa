@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.18 — Reservas: se cobró distinto
+
+- Reservas muestra «se cobró distinto» cuando caja facturó otra cosa de lo que
+  prometía la preventa, y en el detalle qué cambió (precio, cantidad, quitado).
+- Cinco preventas de reservas que ya no estaban en caja quedaron cerradas
+  (La Popular #83 y #112, Salud 3 #38, Salud 5 #32, Salud 1 #53).
+- Novedades: no — dato nuevo en una pantalla existente.
+
 ## v2.1562.17 — App: contraseña con ojo, sin campos prellenados y sin mensajes en inglés
 
 - App del personal: al elegir la contraseña nueva, el primer campo ya no nace

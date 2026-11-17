@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1568.1 — Reimprimir el carné saca el carné vertical de la bienvenida
+
+- Arreglo: «Reimprimir el carné de plástico» (perfil) e «Imprimir Nuevo
+  Carné» (cambio de código) descargan ahora la MISMA tarjeta de pie que sale
+  al crear al empleado (`descargarHojaDeCarnes`), en PDF carta con marcas de
+  corte. Se quita el carné acostado de la v2.1567.2: era un segundo dibujo y
+  el usuario pidió el de la bienvenida.
+- Novedades: no — corrige el mismo botón de la versión anterior.
+
 ## v2.1568.0 — Kiosco de caja: vender con carné
 
 - El kiosco de caja suma la pestaña **Vender**: se pasa el carné y se abre la

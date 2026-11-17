@@ -25,7 +25,6 @@ import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { abrirVentanaDeImpresion } from '../../plataforma/ventanaDeImpresion';
 import { hoySV } from '@nucleo/utils/fecha';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
@@ -509,27 +508,27 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 className="mt-3 w-full"
                                 icon={Printer}
                                 disabled={!!codeConflict}
-                                // El documento y sus dos trampas —la ventana
-                                // sincrónica y el SVG dibujado acá, no por un
-                                // script de un tercero adentro del origen del
-                                // portal— viven en `plataforma/carnePrint`: el perfil
-                                // del empleado imprime la MISMA etiqueta, y dos
-                                // copias se desincronizan sin que nadie lo note
-                                // hasta tener los dos papeles al lado.
+                                // La MISMA tarjeta de pie que sale al crear al
+                                // empleado (`descargarHojaDeCarnes`), con el
+                                // código nuevo: dos dibujos del carné se
+                                // desincronizan y el lector lee dos carnés.
                                 onClick={async () => {
-                                    // Sincrónica dentro del gesto: después de un
-                                    // `await` el bloqueador de emergentes la mata.
-                                    const win = abrirVentanaDeImpresion();
-                                    const { imprimirCarneCompleto } = await import('../../plataforma/carnePrint');
-                                    const r = await imprimirCarneCompleto(win, {
+                                    const { showToast } = useToastStore.getState();
+                                    const sede = (branches || []).find(b => String(b.id) === String(activeEmployee?.branchId || activeEmployee?.branch_id));
+                                    const { descargarHojaDeCarnes } = await import('../../plataforma/documentoDeBienvenida');
+                                    const r = await descargarHojaDeCarnes([{
                                         nombre: activeEmployee?.name || '',
                                         cargo: activeEmployee?.role || activeEmployee?.main_role?.name || '',
+                                        sala: sede?.name || '',
+                                        tipoDeSede: sede?.type || '',
+                                        cargoId: activeEmployee?.role_id ?? activeEmployee?.roleId ?? null,
+                                        fechaDeInicio: activeEmployee?.hire_date || activeEmployee?.hireDate || null,
+                                        valorDelCarne: formData.newKioskPin || '',
                                         foto: activeEmployee?.photo || null,
-                                        valor: formData.newKioskPin || '',
-                                    });
+                                    }], { archivo: 'carne.pdf' });
                                     // Sin esto un carné que no sale se ve
                                     // exactamente igual que uno que sí.
-                                    if (!r.ok) useToastStore.getState().showToast('No se pudo imprimir el carné', r.motivo, 'error');
+                                    if (!r.ok) showToast('No se pudo imprimir el carné', r.motivo || 'Intenta de nuevo.', 'error');
                                 }}
                             >
                                 Imprimir Nuevo Carné

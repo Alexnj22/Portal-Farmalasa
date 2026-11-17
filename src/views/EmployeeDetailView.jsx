@@ -52,7 +52,6 @@ import { clickable } from '@nucleo/utils/clickable';
 import ModalShell from '../components/common/ModalShell';
 
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { abrirVentanaDeImpresion } from '../plataforma/ventanaDeImpresion';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
@@ -335,30 +334,32 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const handleResetPassword = () => setShowResetConfirm(true);
 
     /**
-     * Reimprime el carné de PLÁSTICO completo —tarjeta de 85.6 × 54 mm en hoja
-     * carta, por el diálogo del navegador—. No sale por la ticketera a propósito: lo que lleva
-     * adentro es el PIN permanente de esta persona, y un ticket térmico sobre un
-     * mostrador es justo lo que el carné del día existe para evitar.
+     * Reimprime el carné de PLÁSTICO: la MISMA tarjeta de pie que sale al crear
+     * al empleado (`descargarHojaDeCarnes` de `documentoDeBienvenida`), en PDF
+     * carta con marcas de corte. No sale por la ticketera a propósito: lleva el
+     * PIN permanente de esta persona.
      *
      * El PIN no viaja con la ficha —es una credencial, se pide aparte con la
      * misma compuerta que gobierna verlo— así que se busca al apretar el botón.
      */
     const reimprimirCarne = async () => {
-        // La ventana se abre SINCRÓNICA dentro del gesto: después de un `await`
-        // el bloqueador de emergentes la mata.
-        const win = abrirVentanaDeImpresion();
         const { showToast } = useToastStore.getState();
         try {
-            const mapa = await fetchCredenciales([emp.id]);
-            const pin = mapa.get(emp.id)?.kiosk_pin;
-            const { imprimirCarneCompleto } = await import('../plataforma/carnePrint');
-            const r = await imprimirCarneCompleto(win, {
-                nombre: emp.name, cargo: emp.role || '', sala: branch?.name || '',
-                foto: emp.photo || null, valor: pin,
-            });
-            if (!r.ok) showToast('No se pudo imprimir el carné', r.motivo, 'error');
+            const mapa = await fetchCredenciales([emp.id], { lanzar: true });
+            const { descargarHojaDeCarnes } = await import('../plataforma/documentoDeBienvenida');
+            const r = await descargarHojaDeCarnes([{
+                nombre: emp.name,
+                cargo: emp.role || '',
+                sala: branch?.name || '',
+                tipoDeSede: branch?.type || '',
+                cargoId: emp.role_id ?? emp.roleId ?? null,
+                fechaDeInicio: emp.hire_date || emp.hireDate || null,
+                valorDelCarne: mapa.get(emp.id)?.kiosk_pin || null,
+                foto: emp.photo || null,
+            }], { archivo: `carne-${String(emp.name || 'empleado').trim().toLowerCase().replace(/\s+/g, '-')}.pdf` });
+            if (!r.ok) { showToast('No se pudo imprimir el carné', r.motivo || 'Intenta de nuevo.', 'error'); return; }
+            showToast('Carné descargado', 'Ábrelo e imprímelo al 100 %. Recórtalo por las marcas.', 'success');
         } catch (err) {
-            win?.close();
             showToast('No se pudo imprimir el carné', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         }
     };

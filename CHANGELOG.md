@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.1 — Kiosco de caja: Entrada y Salida sólo con la caja abierta
+
+- Pedido del usuario: con la caja cerrada no tienen sentido. Junto al buscador
+  de Vender sólo aparecen si `caja_estado` dice abierta y el día no tiene
+  cierre (Z). Se vuelve a preguntar al regresar de la pestaña Caja, donde se
+  abre o se cierra. Si no se puede leer el estado, no se muestran.
+
+Novedades: no — ajuste del kiosco piloto.
+
 ## v2.1574.0 — Alerta de vencimiento corto al cargar compras y recibir pedidos
 
 - «si detecta un producto que su vence es en 6 meses, que tire alerta y

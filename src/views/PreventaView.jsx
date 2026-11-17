@@ -32,6 +32,7 @@ import {
     anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala, fotosDeProductos, lotesDePreventa,
     ensayarCobro,
 } from '@nucleo/data/preventas';
+import { estadoDeCaja } from '@nucleo/data/bolsas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
     faltanParaCcf, diferenciasDelCobro, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, montoDelCorreo, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
@@ -466,12 +467,27 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const enCaja = (lista ?? []).filter((p) => p.estado === 'viva').length;
     const pestanas = PESTANAS.map((t) => (t.key === 'hoy' && enCaja ? { ...t, label: `Preventas (${enCaja})` } : t));
 
+    // Entrada / Salida sólo con la caja abierta y el día sin cerrar: con la
+    // caja cerrada no tienen sentido (lo pidió el usuario, 2026-11-17). Se
+    // pregunta al entrar y al volver de la caja, donde se abre o se cierra.
+    const [cajaViva, setCajaViva] = useState(false);
+    useEffect(() => {
+        if (!enKiosco || !onMovimientoDeCaja || !sala || !activa) return undefined;
+        let vivo = true;
+        estadoDeCaja(sala).then((e) => {
+            if (!vivo) return;
+            const z = (e?.cortes || []).some((c) => c.tipo === 'Z');
+            setCajaViva(!e?.error && e?.abierta === true && !z);
+        });
+        return () => { vivo = false; };
+    }, [enKiosco, onMovimientoDeCaja, sala, activa]);
+
     // La píldora del cuerpo: la sucursal (para quien ve todas) y las acciones.
     // En el kiosco, rótulos cortos: caben las cuatro junto al buscador.
     const accionesVender = [
         { key: 'existencias', icon: PackageSearch, label: enKiosco ? 'Existencias' : 'Otras sucursales', onClick: () => setConsulta('') },
         ...(puedeApartar ? [{ key: 'apartar', icon: ShoppingBag, label: enKiosco ? 'Apartar' : 'Apartar o encargar', onClick: () => setApartar({}) }] : []),
-        ...(onMovimientoDeCaja ? [
+        ...(onMovimientoDeCaja && cajaViva ? [
             { key: 'entrada', icon: ArrowDownLeft, label: 'Entrada', onClick: () => onMovimientoDeCaja('ingreso') },
             { key: 'salida', icon: ArrowUpRight, label: 'Salida', onClick: () => onMovimientoDeCaja('salida') },
         ] : []),

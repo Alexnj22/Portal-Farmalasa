@@ -57,11 +57,15 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
   const [guardando, setGuardando] = useState(false);
 
   const sinLote = esLoteGenerico(item?.lote);
-  const total = Number(item?.fisico_cantidad ?? item?.sistema_cantidad ?? 0) || 0;
+  // En un conteo ciego la existencia no llega: sin contar todavía, no se sabe
+  // cuántas había. Antes se tomaba 0 y la hoja decía «había 0» y precalculaba
+  // «Sin lote impreso» con ese 0.
+  const conocido = item?.fisico_cantidad != null || (item?.ver_sistema && item?.sistema_cantidad != null);
+  const total = conocido ? Number(item.fisico_cantidad ?? item.sistema_cantidad) || 0 : null;
 
   useEffect(() => {
     if (!item) return undefined;
-    setLotes(sinLote ? [loteVacio()] : [{ lote: item.lote, vence: aMes(item.fecha_vencimiento), cantidad: String(total) }]);
+    setLotes(sinLote ? [loteVacio()] : [{ lote: item.lote, vence: aMes(item.fecha_vencimiento), cantidad: total == null ? '' : String(total) }]);
     setSinLoteEscrito(null);
     let vivo = true;
     fetchReglaDeLoteDelProducto(item.erp_product_id).then(({ data, error }) => {
@@ -71,7 +75,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
   }, [item, sinLote, total]);
 
   const anotado = lotes.reduce((t, l) => t + (Number(l.cantidad) || 0), 0);
-  const sinLoteValor = sinLoteEscrito ?? String(Math.max(0, total - anotado));
+  const sinLoteValor = sinLoteEscrito ?? (total == null ? '' : String(Math.max(0, total - anotado)));
   const plan = useMemo(() => (item ? planDeLotesReales({
     item,
     lotes: lotes.map((l) => ({ lote: l.lote, vence: l.vence ? venceDelMes(l.vence) : null, cantidad: l.cantidad })),
@@ -106,7 +110,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
     <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" allowSwipeDismissal onRequestClose={onCerrar}>
       <ConAurora>
         <EncabezadoDeHoja titulo={sinLote ? 'Anotar lote' : 'Confirmar lote'}
-          subtitulo={item ? `${item.product_nombre || ''} · ${unidad.texto ?? ''} · había ${total}` : ''} onCerrar={onCerrar} />
+          subtitulo={item ? `${item.product_nombre || ''} · ${unidad.texto ?? ''}${total == null ? '' : ` · había ${total}`}` : ''} onCerrar={onCerrar} />
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
@@ -138,7 +142,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
                   style={{ fontSize: 20, fontWeight: '700' }} />
               </Seccion>
             ) : null}
-            {sinLote ? <Aviso tono="nota" texto={`Había ${total} y anotaste ${anotado} con lote. Al aprobar, las que tienen lote salen de «Sin lote» y entran a su lote.`} /> : null}
+            {sinLote ? <Aviso tono="nota" texto={`${total == null ? 'Anotaste' : `Había ${total} y anotaste`} ${anotado} con lote. Al aprobar, las que tienen lote salen de «Sin lote» y entran a su lote.`} /> : null}
             {plan.error ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{plan.error}</Text> : null}
             <BotonGrande texto={guardando ? 'Guardando…' : conNuevos ? 'Guardar lotes' : 'Confirmar'} color={MARCA.verde}
               deshabilitado={guardando || !!plan.error} onPress={guardar} />

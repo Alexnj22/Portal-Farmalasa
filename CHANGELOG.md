@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1565.2 — Conteo: más claro y sin pasos de más, en web y app
+
+Auditoría del conteo de inventario (web y app), con los arreglos que pegan al contar.
+
+- **Base** (`20261117161846`): finalizar toma el conteo `FOR UPDATE` y guardar un
+  producto lo toma `FOR KEY SHARE`. Dos «Finalizar» a la vez ya no duplican el
+  cierre «no ubicado», y un guardado no se cuela después del cálculo de totales.
+- **Finalizar no engaña**: en la web, si no se puede saber cuánto falta, avisa
+  en vez de abrir el diálogo diciendo «todo contado»; el diálogo sólo se cierra
+  si salió bien. En la app espera lo último escrito, relee lo pendiente y explica
+  las dos opciones como la web.
+- **Un guardado que falla se ve en la fila** («No se guardó…») en web y app. En
+  la app lo escrito se queda y se puede reintentar; ya no se guarda dos veces
+  en Android ni se pisan dos lotes guardados seguidos.
+- **Escanear lleva a la cantidad**: si el código da con un producto, su primer
+  lote sin contar queda listo para escribir (web y app). En la app el código se
+  ve con «Quitar», y si no está en el conteo ofrece «Agregar al conteo».
+  «Siguiente» en el último campo pasa a la página siguiente.
+- Quien finalizó ya no ve «Aprobar» (dice que lo aprueba otra persona).
+- Errores que antes se tragaban: lista de conteos («No se pudo cargar la lista»
+  con Reintentar), conteo que no abre en la app, historial que se quedaba
+  cargando. Los avisos dicen qué falló en vez de «Error».
+- Web: la rueda del ratón ya no cambia la cantidad; borrar el número en el
+  teléfono devuelve el producto a «sin contar», como en la tabla.
+- App: conteo ciego ya no dice «había 0» al anotar lotes; enlaces de la fila a
+  44 pt; la cabecera se relee una vez por ráfaga y la lista de conteos no repite
+  un resumen por conteo en cada visita.
+- Textos: plurales reales, «En vivo», «Sistema/Físico», «Primer conteo»,
+  «existencia», «Ajuste en planilla», «Sucursal», aviso de conteo parcial único
+  (`avisoDeConteoParcial`) también en el PDF.
+- Se retira `fetchConteoProductsPage` (nadie la llamaba).
+
 ## v2.1565.1 — Kiosco de caja: la cola se relee al volver
 
 - La cola «En caja» se relee en el acto al volver a la pestaña, sin esperar los 10 s.

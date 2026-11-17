@@ -57,10 +57,10 @@ export const PLAN_VACACIONES = {
 };
 
 export const CONTEO_INVENTARIO = {
-  estado: { conteosInventario: [], conteosInventarioLoading: false },
+  estado: { conteosInventario: [], conteosInventarioLoading: false, conteosInventarioError: null },
   acciones: [
     'fetchConteosInventario', 'crearConteoInventario', 'eliminarConteoInventario', 'previewMuestraCiclica',
-    'fetchConteoDetalle', 'fetchConteoProductsPage', 'fetchConteoLaboratorios', 'fetchConteoResumen',
+    'fetchConteoDetalle', 'fetchConteoLaboratorios', 'fetchConteoResumen',
     'sincronizarConteoEnVivo', 'fetchConteoProductItems', 'fetchConteoItemsForProducts', 'fetchConteoPendientesCount',
     'editarLoteConteoItem', 'guardarConteoItem', 'recontarConteoItem', 'fetchConteoItemHistory',
     'agregarProductoManualConteo', 'finalizarConteoInventario', 'aprobarConteoInventario', 'fetchConteoCaja',

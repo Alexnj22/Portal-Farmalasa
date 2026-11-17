@@ -328,7 +328,7 @@ function VencimientoBadge({ status }) {
 // (no c/u a su ritmo) y el costo es una sola propiedad opacity por GPU.
 function LiveBadge() {
     return (
-        <Badge title="En vivo. Se actualiza hasta que se cuente." variant="success" size="sm" icon={Radio}>Vivo</Badge>
+        <Badge title="En vivo. Se actualiza hasta que se cuente." variant="success" size="sm" icon={Radio}>En vivo</Badge>
     );
 }
 
@@ -422,6 +422,10 @@ function ItemRow({
     const [ediciones, setEdiciones] = useState(item.ediciones_count ?? 0);
     const [estadoItem, setEstadoItem] = useState(item.estado_item);
     const [saving, setSaving] = useState(false);
+    // El campo vuelve al último valor guardado cuando algo falla, y Enter ya
+    // movió el foco a otra fila: sin una marca en la fila, el aviso se iba y el
+    // producto quedaba «Pendiente» sin que nadie supiera por qué.
+    const [noSeGuardo, setNoSeGuardo] = useState(false);
     // Última combinación efectivamente guardada — evita que un blur sin
     // cambios (ej. Tab entre celdas) dispare un guardado/historial redundante.
     const lastSaved = useRef({ fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item });
@@ -524,6 +528,7 @@ function ItemRow({
                 estadoItem: nextEstado,
             });
             lastSaved.current = { fisico: nextFisico, nota: nextNota, estado: nextEstado };
+            setNoSeGuardo(false);
             setSistema(result.sistema_cantidad);
             setEstadoItem(nextEstado);
             // SIN_CAMBIO: la RPC no tocó la fila (ni el sistema, ni la autoría).
@@ -540,6 +545,7 @@ function ItemRow({
             if (nextFisico !== null) onUnlock(item.id, false);
         } catch (err) {
             revertToLastSaved();
+            setNoSeGuardo(true);
             showToast('No se guardó el conteo', `${item.product_nombre || 'Este producto'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
@@ -690,6 +696,10 @@ function ItemRow({
                                     type="number"
                                     min="0"
                                     step="1"
+                                    inputMode="numeric"
+                                    // La rueda del ratón sobre un campo numérico enfocado
+                                    // cambia el número, y el blur lo guarda sin que se note.
+                                    onWheel={(e) => e.currentTarget.blur()}
                                     value={fisico}
                                     onChange={(e) => setFisico(e.target.value)}
                                     placeholder={recuento && !revelado ? 'Recontar' : unidad.nombre}
@@ -716,9 +726,13 @@ function ItemRow({
                     </div>
                     {/* Solo después de registrar el recuento: ver si coincidió con
                         el primer conteo es la métrica de calidad de ese conteo. */}
+                    {saving && <span className="text-micro text-content-3">Guardando…</span>}
+                    {!saving && noSeGuardo && (
+                        <span role="alert" className="text-micro font-bold text-danger-text">No se guardó. Escríbelo otra vez.</span>
+                    )}
                     {!tapado && item.fisico_primer_conteo != null && (
                         <span className={`text-micro font-bold tabular-nums ${item.fisico_primer_conteo === Number(fisico) ? 'text-success' : 'text-warning-text'}`}>
-                            1er conteo: {item.fisico_primer_conteo}
+                            Primer conteo: {item.fisico_primer_conteo}
                         </span>
                     )}
                 </div>
@@ -741,7 +755,7 @@ function ItemRow({
                     {estadoItem === 'SIN_UBICAR'
                         ? <Badge variant="danger" size="sm" icon={PackageX}>No ubicado</Badge>
                         : estadoItem === 'CONTADO'
-                            ? <CheckCircle2 size={14} className="text-success" />
+                            ? <CheckCircle2 size={14} className="text-success" role="img" aria-label="Contado" />
                             : <span className="text-content-3 text-micro">Pendiente</span>}
                     {(item.recontado_at || revelado) && (
                         <Badge variant="chart-1" size="sm" icon={ShieldCheck}
@@ -868,6 +882,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
     });
     const [saving, setSaving] = useState(false);
     const guardado = useRef(item.fisico_cantidad ?? null);
+    const [noSeGuardo, setNoSeGuardo] = useState(false);
 
     useEffect(() => {
         setFisico(recuento ? '' : (item.fisico_cantidad ?? ''));
@@ -912,6 +927,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                 ? await onRecount(item.id, { fisicoCantidad: valor, nota: null })
                 : await onSave(item.id, { fisicoCantidad: valor, nota: item.nota ?? null, estadoItem: estado });
             guardado.current = valor;
+            setNoSeGuardo(false);
             // La RPC devuelve la existencia leída en el instante del guardado —
             // sin esto la diferencia de la tarjeta se queda con la del snapshot.
             setSistema(res.sistema_cantidad);
@@ -932,6 +948,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             if (valor !== null) onUnlock(item.id, false);
         } catch (err) {
             setFisico(guardado.current ?? '');
+            setNoSeGuardo(true);
             showToast('No se guardó el conteo', `${item.product_nombre || 'Este producto'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
@@ -940,7 +957,14 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
 
     const onBlur = () => {
         const v = fisico === '' ? null : Number(fisico);
-        if (v === null && !recuento) { onUnlock(item.id, false); return; }
+        // Borrar el número devuelve el producto a «sin contar», igual que en la
+        // tabla. Antes, en el teléfono, vaciarlo no guardaba nada y no había
+        // forma de deshacer un conteo.
+        if (v === null && !recuento) {
+            if (guardado.current != null) commit(null, 'PENDIENTE');
+            else onUnlock(item.id, false);
+            return;
+        }
         if (v === null) return;
         commit(v, 'CONTADO');
     };
@@ -1022,6 +1046,10 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     </>
                 )}
             </div>
+            {saving && <p className="text-caption text-content-3 mt-1">Guardando…</p>}
+            {!saving && noSeGuardo && (
+                <p role="alert" className="text-caption font-bold text-danger-text mt-1">No se guardó. Escríbelo otra vez.</p>
+            )}
             {llevaLotesEnLinea(ajusta, item, editable, simple, onLoteEnLinea) && (
                 <LotesEnLinea item={item} onGuardar={onLoteEnLinea} compacto />
             )}
@@ -1070,7 +1098,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     )}
                     {!tapado && item.fisico_primer_conteo != null && (
                         <span className={`text-micro font-bold tabular-nums ${item.fisico_primer_conteo === Number(fisico) ? 'text-success' : 'text-warning-text'}`}>
-                            1er conteo: {item.fisico_primer_conteo}
+                            Primer conteo: {item.fisico_primer_conteo}
                         </span>
                     )}
                 </div>
@@ -1296,7 +1324,7 @@ function tarjetasResumen(resumen, abierto, canVerMontos) {
             icon={CheckCircle2}
             label="Avance"
             value={formatPct(pct, { decimales: 0 })}
-            sub={`${formatQty(contados)} de ${formatQty(items)} renglones`}
+            sub={`${formatQty(contados)} de ${formatQty(items)} contados`}
             {...TONO_STAT[pendientes === 0 ? 'success' : 'neutral']}
         />,
         <StatCard
@@ -1395,6 +1423,7 @@ function PrintChooserModal({ open, documentos, busy, onClose, onPick }) {
 function ItemHistoryModal({ open, item, onClose, simple = false }) {
     const fetchConteoItemHistory = useStaffStore((s) => s.fetchConteoItemHistory);
     const [history, setHistory] = useState(null);
+    const [errorHistorial, setErrorHistorial] = useState(null);
 
     // Depende de `open` además de `item`: al reabrir el MISMO renglón la
     // referencia no cambió, y sin esto se vería el historial cacheado de antes
@@ -1402,7 +1431,9 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
     useEffect(() => {
         if (!open || !item) return;
         setHistory(null); // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al abrir o cambiar de item
-        fetchConteoItemHistory(item.id).then(setHistory);
+        setErrorHistorial(null);
+        // Sin el catch, un fallo dejaba el esqueleto girando para siempre.
+        fetchConteoItemHistory(item.id).then(setHistory, (err) => setErrorHistorial(mensajeAmigable(err)));
     }, [open, item, fetchConteoItemHistory]);
 
     return (
@@ -1417,7 +1448,9 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-base">
-                {history === null ? (
+                {errorHistorial ? (
+                    <Notice variant="danger">No se pudo cargar el historial. {errorHistorial}</Notice>
+                ) : history === null ? (
                     <div className="flex items-center justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                 ) : history.length === 0 ? (
                     <p className="text-body-sm text-content-3 text-center py-8">Sin registros todavía.</p>
@@ -1441,7 +1474,7 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
                                     </div>
                                     <div className="text-right shrink-0">
                                         <p className="text-label font-bold text-content-2 tabular-nums">
-                                            {h.sistema_cantidad != null && <>Sist. {h.sistema_cantidad} · </>}Fís. {h.fisico_cantidad ?? '—'}
+                                            {h.sistema_cantidad != null && <>Sistema {h.sistema_cantidad} · </>}Físico {h.fisico_cantidad ?? '—'}
                                         </p>
                                         {h.diferencia != null && (
                                             <p className={`text-caption font-black tabular-nums ${difClass(h.diferencia)}`}>{difLabel(h.diferencia)}</p>
@@ -1494,7 +1527,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
-                <p className="text-label text-content-3">Úsalo cuando el lote que encontraste no es el de esta fila, por ejemplo un lote nuevo. Solo corrige este conteo. No cambia el inventario.</p>
+                <p className="text-label text-content-3">Úsalo cuando el lote que encontraste no es el de esta fila, por ejemplo un lote nuevo. Solo corrige este conteo. No cambia la existencia.</p>
                 <div>
                     <label className={rotuloCampo('text-content-3')}>Lote</label>
                     <PortalInput
@@ -1544,7 +1577,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
         <LiquidModal open={open} onClose={handleClose} maxWidth="max-w-md" ariaLabel="Finalizar conteo">
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
-                    <TituloDeSeccion nivel="tarjeta">Finalizar Conteo</TituloDeSeccion>
+                    <TituloDeSeccion nivel="tarjeta">Finalizar conteo</TituloDeSeccion>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-black">Se calculan los resultados</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
@@ -1558,7 +1591,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                 {hayPendientes ? (
                     <>
                         <Notice variant="warning">
-                            Quedan <strong className="tabular-nums">{pendientes}</strong> producto(s) sin cantidad física. Decide qué son antes de cerrar:
+                            Quedan <strong className="tabular-nums">{pendientes}</strong> sin contar. Decide qué hacer con ellos antes de finalizar.
                         </Notice>
                         <SegmentedControl
                             layout="block"
@@ -1801,7 +1834,7 @@ export default function ConteoDetailView() {
             if (!silencioso) setDesbloqueadas({});
             setItemsByProduct(productsPage.lotes);
         } catch (err) {
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se cargó la lista', mensajeAmigable(err), 'error');
         } finally {
             if (!silencioso) setLoading(false);
         }
@@ -1825,7 +1858,7 @@ export default function ConteoDetailView() {
             setVencidos(pagina.rows);
             setVencidosItems(pagina.lotes);
         } catch (err) {
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se cargó el área de vencidos', mensajeAmigable(err), 'error');
         } finally {
             setVencidosLoading(false);
         }
@@ -1860,13 +1893,13 @@ export default function ConteoDetailView() {
         try {
             await cargarCabecera();
         } catch (err) {
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se cargó el conteo', mensajeAmigable(err), 'error');
         }
         await cargarPagina(opciones);
     }, [cargarCabecera, cargarPagina, showToast]);
 
     useEffect(() => {
-        cargarCabecera().catch((err) => showToast('Error', mensajeAmigable(err), 'error'));
+        cargarCabecera().catch((err) => showToast('No se cargó el conteo', mensajeAmigable(err), 'error'));
     }, [cargarCabecera, showToast]);
     useEffect(() => { cargarPagina(); }, [cargarPagina]);
     useEffect(() => { cargarVencidos(); }, [cargarVencidos]);
@@ -1919,6 +1952,21 @@ export default function ConteoDetailView() {
     const cambiarFiltro = useCallback((v) => { resetPage(); setFiltro(v); }, [resetPage]);
     const cambiarLaboratorio = useCallback((v) => { resetPage(); setLaboratorioId(v); }, [resetPage]);
     const cambiarBusqueda = useCallback((v) => { resetPage(); setSearch(v); }, [resetPage]);
+    // Tras escanear, si el código dio con UN producto, su primera cantidad sin
+    // contar queda enfocada: antes había que tocar el campo después de cada
+    // escaneo. Con varios resultados elige quien cuenta.
+    const focoTrasEscanear = useRef(null);
+    useEffect(() => {
+        const codigo = focoTrasEscanear.current;
+        if (!codigo || loading || String(searchDiferido ?? '').trim() !== codigo) return undefined;
+        focoTrasEscanear.current = null;
+        if (products.length !== 1) return undefined;
+        const t = setTimeout(() => {
+            const campo = camposDeCaptura().find((el) => el.value === '');
+            if (campo) { campo.focus(); campo.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        }, 60);
+        return () => clearTimeout(t);
+    }, [products, loading, searchDiferido]);
     // `setPageSize` ya vuelve a la página 1 —en 2,800 productos, pasar de 25 a
     // 100 deja a la página 40 fuera de rango y la tabla saldría vacía sin decir
     // por qué— y lo hace en la misma escritura, no en dos.
@@ -1967,7 +2015,10 @@ export default function ConteoDetailView() {
     // —que también es NULL en un renglón por lote al que le falta la etiqueta—.
     const simple = conteo?.modo === 'SIMPLE';
     const canFinalize = editable && canEdit;
-    const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove;
+    // Quien finalizó no puede aprobar (la base lo rechaza). Antes el botón le
+    // salía igual y se enteraba al abrir el diálogo.
+    const loFinalizoYo = !!conteo?.finalizado_por && String(conteo.finalizado_por) === String(user?.id);
+    const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove && !loFinalizoYo;
     const puedeRecontar = conteo?.status === 'FINALIZADO' && canApprove;
     const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
 
@@ -2106,14 +2157,17 @@ export default function ConteoDetailView() {
             try {
                 if (await problemasQueFrenan()) return;
             } catch (err) {
-                showToast('Error', mensajeAmigable(err), 'error');
+                showToast('No se pudo revisar el conteo', mensajeAmigable(err), 'error');
                 return;
             }
         }
+        // Si no se puede saber cuánto falta, no se abre: con 0 el diálogo decía
+        // «Todo tiene cantidad contada» y se finalizaba a medias sin decidirlo.
         try {
             setPendientesAlFinalizar(await fetchConteoPendientesCount(id));
-        } catch {
-            setPendientesAlFinalizar(0);
+        } catch (err) {
+            showToast('No se pudo revisar el conteo', mensajeAmigable(err), 'error');
+            return;
         }
         setConfirmFinalizarOpen(true);
     };
@@ -2125,11 +2179,16 @@ export default function ConteoDetailView() {
             // El ciego se levanta solo: `conteo_puede_ver_sistema` deja de dar
             // false en cuanto el status sale de BORRADOR/EN_PROGRESO, y el
             // `load()` de abajo trae ya los números. No hay flag que apagar.
+            const dif = Number(res.total_diferencias) || 0;
+            const pend = Number(res.total_pendientes) || 0;
             showToast(
                 'Conteo finalizado',
-                `${res.total_diferencias} diferencia(s)${res.total_pendientes > 0 ? ` · ${res.total_pendientes} pendiente(s)` : ''}`,
+                `${dif ? `Con diferencia: ${dif}` : 'Todo cuadra'}${pend ? ` · Sin contar: ${pend}` : ''}. Falta que otra persona lo apruebe.`,
                 'success',
             );
+            // Se cierra sólo si salió bien: al fallar, la opción elegida para
+            // los pendientes se quedaba perdida y había que empezar de nuevo.
+            setConfirmFinalizarOpen(false);
             await load();
         } catch (err) {
             // Entre abrir el diálogo y confirmar alguien pudo dejar un producto
@@ -2137,10 +2196,9 @@ export default function ConteoDetailView() {
             if (/AJUSTE_CON_PRODUCTOS_POR_RESOLVER/.test(err?.codigo || err?.message || '')) {
                 await problemasQueFrenan().catch(() => {});
             }
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se pudo finalizar', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
-            setConfirmFinalizarOpen(false);
         }
     };
 
@@ -2154,7 +2212,7 @@ export default function ConteoDetailView() {
             showToast('Conteo aprobado', 'Queda cerrado y firmado', 'success');
             await load();
         } catch (err) {
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se aprobó', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
             setPromptAprobarOpen(false);
@@ -2203,7 +2261,7 @@ export default function ConteoDetailView() {
             // recargar, y quedarse acá pintaría el estado de "no se encontró".
             navigate('/conteo-inventario');
         } catch (err) {
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se pudo eliminar', mensajeAmigable(err), 'error');
             setBusy(false);
             setConfirmEliminarOpen(false);
         }
@@ -2216,7 +2274,7 @@ export default function ConteoDetailView() {
             showToast('Ajuste registrado', 'Queda anotado que el ajuste ya se aplicó', 'success');
             await load();
         } catch (err) {
-            showToast('Error', mensajeAmigable(err), 'error');
+            showToast('No se registró el ajuste', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
             setPromptAjusteOpen(false);
@@ -2234,7 +2292,7 @@ export default function ConteoDetailView() {
         ...(hasResults ? [
             { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valor de cada producto.' },
             { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para aplicar', detalle: 'Separado en faltantes (salida) y sobrantes (entrada), listo para digitar.' },
-            { kind: 'ajuste-csv', icon: Download, label: 'Ajuste en CSV', detalle: 'Lo mismo en planilla, para filtrar o cargar en lote.' },
+            { kind: 'ajuste-csv', icon: Download, label: 'Ajuste en planilla', detalle: 'Lo mismo en planilla, para filtrar o cargar en lote.' },
         ] : []),
     ];
 
@@ -2470,6 +2528,9 @@ export default function ConteoDetailView() {
                                 {canApproveNow && (
                                     <Button tone="success" icon={ShieldCheck} disabled={busy} loading={busy} onClick={handleAprobar}>Aprobar</Button>
                                 )}
+                                {conteo?.status === 'FINALIZADO' && canApprove && loFinalizoYo && (
+                                    <span className="text-caption text-content-3">Lo finalizaste tú. Lo aprueba otra persona.</span>
+                                )}
                                 {/* Eliminar va acá y no en la lista: es destructivo y sin
                                     vuelta atrás, así que la única puerta es la pantalla
                                     donde se ve QUÉ conteo se está borrando. */}
@@ -2504,7 +2565,7 @@ export default function ConteoDetailView() {
                         {conteo.aplica_en_caja && conteo.status === 'FINALIZADO' && (
                             <div className="mt-4">
                                 <Notice variant="warning">
-                                    Al aprobarlo, el inventario queda como se contó, lote por lote. Antes de firmar verás qué entra y qué sale. Lo que no se contó no cambia. Si quieres revisar algo, recuéntalo ahora.
+                                    Al aprobarlo, la existencia queda como se contó, lote por lote. Antes de firmar verás qué entra y qué sale. Lo que no se contó no cambia. Si quieres revisar algo, recuéntalo ahora.
                                 </Notice>
                             </div>
                         )}
@@ -2532,7 +2593,7 @@ export default function ConteoDetailView() {
                                             </Button>
                                         )}
                                     >
-                                        Falta aplicar el ajuste de {conteo.total_diferencias} producto(s). Descarga la hoja o el CSV, aplícalo y márcalo aquí.
+                                        Falta aplicar el ajuste de {conteo.total_diferencias} {Number(conteo.total_diferencias) === 1 ? 'producto' : 'productos'}. Descarga el ajuste, aplícalo y márcalo aquí.
                                     </Notice>
                                 ) : (
                                     <Notice variant="success">No hay diferencias. No hay nada que ajustar.</Notice>
@@ -2544,7 +2605,7 @@ export default function ConteoDetailView() {
                             <div className="mt-4">
                                 <Notice variant={conteo.pendientes_como_cero ? 'warning' : 'danger'}>
                                     {conteo.pendientes_como_cero
-                                        ? <>Al cerrar, <strong className="tabular-nums">{conteo.total_pendientes}</strong> producto(s) sin contar quedaron como no ubicados (en 0). Su faltante está en los montos.</>
+                                        ? <>Al finalizar, <strong className="tabular-nums">{conteo.total_pendientes}</strong> sin contar quedaron como no ubicados (en 0). Su faltante está en los montos.</>
                                         : <>Conteo parcial: <strong className="tabular-nums">{conteo.total_pendientes}</strong> producto(s) quedaron sin contar y no están en los montos. No es un cuadre completo.</>}
                                 </Notice>
                             </div>
@@ -2725,7 +2786,7 @@ export default function ConteoDetailView() {
                     <LectorDeCodigo
                         abierto={lectorAbierto}
                         onCerrar={() => setLectorAbierto(false)}
-                        onLeer={(codigo) => cambiarBusqueda(codigo)}
+                        onLeer={(codigo) => { focoTrasEscanear.current = String(codigo).trim(); cambiarBusqueda(codigo); }}
                         titulo="Escanear producto"
                     />
                 </Suspense>

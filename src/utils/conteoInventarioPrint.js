@@ -9,7 +9,7 @@ import { fechaNumerica } from './fecha';
 import { formatMoney } from './formatNumber';
 import { cifrasDelConteo } from './conteoDeInventario';
 import {
-    FUENTE_LABEL, SCOPE_LABEL, csvDeAjustesConteo, esAjuste, esSimple, ordenarParaDigitar, ordenarRenglonesDeConteo, valorAjuste,
+    FUENTE_LABEL, SCOPE_LABEL, avisoDeConteoParcial, csvDeAjustesConteo, esAjuste, esSimple, ordenarParaDigitar, ordenarRenglonesDeConteo, valorAjuste,
 } from './conteoPapel';
 
 // pdfmake bajo demanda — mismo motivo que en pedidoPrint.js: estático metía
@@ -621,10 +621,9 @@ function buildTotalesBlock(conteo, items) {
 // Un reporte que muestra $ de faltante calculados sobre un conteo parcial tiene
 // que decirlo en la misma hoja. Si no, el número se lee como un cuadre completo.
 function avisoParcialBlock(conteo) {
-    if (!conteo.total_pendientes) return null;
-    const texto = conteo.pendientes_como_cero
-        ? `Al cerrar, ${conteo.total_pendientes} producto(s) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.`
-        : `CONTEO PARCIAL: ${conteo.total_pendientes} producto(s) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.`;
+    // El mismo texto que la pantalla y la app: vive una vez en `conteoPapel`.
+    const texto = avisoDeConteoParcial(conteo);
+    if (!texto) return null;
     return {
         margin: [0, 8, 0, 0],
         table: {

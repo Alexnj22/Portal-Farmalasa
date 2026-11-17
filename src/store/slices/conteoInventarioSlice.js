@@ -81,16 +81,20 @@ function traducirError(err) {
 export const createConteoInventarioSlice = (set, get) => ({
     conteosInventario: [],
     conteosInventarioLoading: false,
+    // El fallo se guarda: tragado, la lista vacía se leía «Sin conteos» y
+    // ofrecía crear uno cuando en realidad no se pudo leer.
+    conteosInventarioError: null,
 
     fetchConteosInventario: async () => {
         set({ conteosInventarioLoading: true });
         try {
             const { data, error } = await fetchConteosInventarioData();
             if (error) throw error;
-            set({ conteosInventario: data || [] });
+            set({ conteosInventario: data || [], conteosInventarioError: null });
             return data || [];
         } catch (err) {
             console.error('Error obteniendo conteos de inventario:', err);
+            set({ conteosInventarioError: traducirError(err) });
             return [];
         } finally {
             set({ conteosInventarioLoading: false });
@@ -191,39 +195,11 @@ export const createConteoInventarioSlice = (set, get) => ({
     // comportamiento viejo — y era un error: un producto que está en las dos
     // (42 de 83 en el conteo abierto) salía en UNA fila con los totales de
     // ambas sumados.
-    fetchConteoProductsPage: async (conteoId, {
-        page = 1, pageSize = 25, search = '', filtro = 'TODOS',
-        laboratorioId = null, orderBy = null, orderDir = 'asc', area = null,
-    } = {}) => {
-        const from = (page - 1) * pageSize;
-        // La tercera pregunta es si lo que salió es APROXIMADO: la regla del
-        // portal cae a lo parecido cuando nada coincide tal cual, y la pantalla
-        // lo tiene que decir (docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md).
-        const [{ data: count, error: countErr }, { data: rows, error: rowsErr }, parecidos] = await Promise.all([
-            supabase.rpc('get_conteo_products_count', {
-                p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
-                p_laboratorio_id: laboratorioId, p_area: area,
-            }),
-            supabase.rpc('get_conteo_products_page', {
-                p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
-                p_limit: pageSize, p_offset: from,
-                p_laboratorio_id: laboratorioId, p_order_by: orderBy, p_order_dir: orderDir,
-                p_area: area,
-            }),
-            search
-                ? supabase.rpc('conteo_busqueda_aproximada', { p_conteo_id: conteoId, p_search: search })
-                : Promise.resolve({ data: null }),
-        ]);
-        if (countErr) throw countErr;
-        if (rowsErr) throw rowsErr;
-        return {
-            rows: rows || [], total: count || 0,
-            aproximado: Array.isArray(parecidos?.data) && parecidos.data.length > 0,
-        };
-    },
+    // (Lo de arriba describe la lista del conteo. La pedía `fetchConteoProductsPage`,
+    // retirada el 2026-11-17 sin nadie que la llamara: hoy la trae `fetchConteoPagina`.)
 
     // La página, su total y sus lotes en UN viaje (`get_conteo_pagina`,
-    // 2026-11-16): los mismos números que `fetchConteoProductsPage` +
+    // 2026-11-16): los mismos números que la página vieja (`get_conteo_products_page`) +
     // `fetchConteoItemsForProducts`, sin repetir el cálculo del total ni
     // esperar un segundo viaje por los lotes. `lotes` viene agrupado por
     // producto, con una lista (aunque vacía) por cada producto de la página.
@@ -261,7 +237,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     // Totales de TODO el conteo, en vivo. Los de `conteos_inventario` los
     // escribe recalcular_totales_conteo, que solo corre al finalizar: mientras
     // el conteo está abierto valen 0, que es justo cuando sirve saber cuánto
-    // falta. Los agregados de fetchConteoProductsPage son de la página (25 de
+    // falta. Los agregados de la página son de la página (25 de
     // 1,457 productos), así que tampoco servían.
     fetchConteoResumen: async (conteoId) => {
         const { data, error } = await supabase.rpc('get_conteo_resumen', { p_conteo_id: conteoId });

@@ -144,6 +144,7 @@ export default function ConteoInventarioView() {
     const conteos = useStaffStore((s) => s.conteosInventario);
     const loading = useStaffStore((s) => s.conteosInventarioLoading);
     const fetchConteosInventario = useStaffStore((s) => s.fetchConteosInventario);
+    const errorLista = useStaffStore((s) => s.conteosInventarioError);
     const eliminarConteoInventario = useStaffStore((s) => s.eliminarConteoInventario);
     const branches = useStaffStore((s) => s.branches);
 
@@ -399,8 +400,11 @@ export default function ConteoInventarioView() {
                     <div data-surface="card" className="p-8 text-center">
                         <ClipboardCheck size={28} className="mx-auto text-content-3 mb-2" />
                         <p className="text-body-sm font-bold text-content-3">
-                            {foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí'}
+                            {errorLista ? 'No se pudo cargar la lista' : foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí'}
                         </p>
+                        {errorLista && (
+                            <Button variant="secondary" size="sm" className="mt-3" onClick={() => fetchConteosInventario()}>Reintentar</Button>
+                        )}
                     </div>
                 ) : filtered.map((c) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
@@ -440,7 +444,7 @@ export default function ConteoInventarioView() {
                                         <Badge variant={es.variante} size="sm">{es.label}</Badge>
                                         {cifras.conDiferencia > 0 && (
                                             <span className="text-caption font-bold text-warning-text tabular-nums">
-                                                {cifras.conDiferencia} dif{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
+                                                {cifras.conDiferencia} con diferencia{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
                                             </span>
                                         )}
                                         {cifras.renglonesReacomodo > 0 && (
@@ -480,11 +484,13 @@ export default function ConteoInventarioView() {
                 movil={{ acciones: true, usarAccionDeFila: true }}
                 empty={{
                 icon: ClipboardCheck,
-                message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí',
-                subtext: foco === 'TODOS'
+                message: errorLista ? 'No se pudo cargar la lista' : foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente aquí',
+                subtext: errorLista ? mensajeAmigable(errorLista)
+                    : foco === 'TODOS'
                     ? 'Un conteo compara la existencia registrada con lo que hay en vitrinas y estantes.'
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
-                action: foco !== 'TODOS'
+                action: errorLista ? { label: 'Reintentar', onClick: () => fetchConteosInventario() }
+                    : foco !== 'TODOS'
                     ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }
                     : (canEdit ? { label: 'Nuevo conteo', onClick: () => setShowModal(true) } : undefined),
             }}>

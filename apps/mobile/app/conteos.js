@@ -41,7 +41,8 @@ function difTexto(r, c) {
   const n = r?.productos_con_diferencia ?? k.conDiferencia;
   const lote = r?.renglones_reacomodo ?? k.renglonesReacomodo;
   const prod = r?.productos_con_diferencia != null || k.porProducto;
-  return `${Number(n) ? ` · ${n} ${prod ? 'producto(s) ' : ''}con diferencia` : ''}${Number(lote) ? ` · ${lote} cambio(s) de lote` : ''}`;
+  const pl = (x, uno, varios) => (Number(x) === 1 ? uno : varios);
+  return `${Number(n) ? ` · ${n} ${prod ? `${pl(n, 'producto', 'productos')} ` : ''}con diferencia` : ''}${Number(lote) ? ` · ${lote} ${pl(lote, 'cambio', 'cambios')} de lote` : ''}`;
 }
 
 const COLOR = { get BORRADOR() { return colorSistema.texto2; }, EN_PROGRESO: MARCA.ambar, get FINALIZADO() { return MARCA.azulClaro; }, CERRADO: MARCA.verde };
@@ -50,6 +51,7 @@ export default function Conteos() {
   const { user, getScope, hasPermission } = useAuth();
   const conteos = useStaffStore((s) => s.conteosInventario);
   const cargando = useStaffStore((s) => s.conteosInventarioLoading);
+  const errorLista = useStaffStore((s) => s.conteosInventarioError);
   const fetchConteosInventario = useStaffStore((s) => s.fetchConteosInventario);
   const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
   // Los totales de la fila se llenan al finalizar: el avance de uno ABIERTO sale del resumen en vivo.
@@ -68,7 +70,7 @@ export default function Conteos() {
   const puedeBorrar = (c) => puedeEditar && (hasPermission('conteo_inventario_eliminar') || ['BORRADOR', 'EN_PROGRESO'].includes(c.status));
   useFocusEffect(useCallback(() => { fetchConteosInventario(); }, [fetchConteosInventario]));
 
-  const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sala ${id}`;
+  const nombreDeSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? `Sucursal ${id}`;
   const mios = useMemo(() => (conteos || []).filter((c) => (todas ? (salaFiltro === 'todas' || String(c.branch_id) === salaFiltro) : String(c.branch_id) === String(user?.branchId))),
     [conteos, todas, salaFiltro, user?.branchId]);
   const visibles = useMemo(() => mios.filter((c) => foco === 'TODOS' || FOCOS_CONTEO[foco](c))
@@ -88,7 +90,7 @@ export default function Conteos() {
         trabajando('Eliminando…');
         try {
           const r = await eliminarConteoInventario(c.id);
-          listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} producto(s).`);
+          listo('Conteo eliminado', r?.total_items ? `Se borró con sus ${r.total_items} ${r.total_items === 1 ? 'producto' : 'productos'}.` : 'Se borró el conteo.');
           fetchConteosInventario();
         } catch (e) { fallo('No se pudo eliminar', mensajeAmigable(e)); }
       } },
@@ -96,14 +98,17 @@ export default function Conteos() {
   };
   const resumen = useMemo(() => resumenDeConteos(mios), [mios]);
   const alternar = (f) => setFoco((x) => (x === f ? 'TODOS' : f));
+  // El avance de los abiertos. Depende de QUÉ conteos son, no del arreglo: la
+  // lista se relee en cada visita y antes eso repetía un resumen por conteo
+  // cada vez que se volvía aquí.
+  const abiertos = mios.filter((c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status)).map((c) => c.id).join(',');
   useEffect(() => {
-    const ids = mios.filter((c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status)).map((c) => c.id);
-    if (!ids.length) return undefined;
+    if (!abiertos) return undefined;
     let vivo = true;
-    Promise.all(ids.map((cid) => fetchConteoResumen(cid).then((r) => [cid, r]).catch(() => [cid, null])))
-      .then((pares) => { if (vivo) setResumenes(Object.fromEntries(pares)); });
+    Promise.all(abiertos.split(',').map((cid) => fetchConteoResumen(cid).then((r) => [cid, r]).catch(() => [cid, null])))
+      .then((pares) => { if (vivo) setResumenes((m) => ({ ...m, ...Object.fromEntries(pares.filter(([, r]) => r)) })); });
     return () => { vivo = false; };
-  }, [mios, fetchConteoResumen]);
+  }, [abiertos, fetchConteoResumen]);
 
   return (
     <>
@@ -171,8 +176,9 @@ export default function Conteos() {
           );
         })}
         {!cargando && !visibles.length ? (
-          <Vacio>
-            {foco === 'TODOS' ? 'Sin conteos' : 'Nada pendiente aquí'}
+          <Vacio detalle={errorLista ? mensajeAmigable(errorLista) : undefined}
+            accion={errorLista ? { texto: 'Reintentar', onPress: () => fetchConteosInventario() } : null}>
+            {errorLista ? 'No se pudo cargar la lista' : foco === 'TODOS' ? 'Sin conteos' : 'Nada pendiente aquí'}
           </Vacio>
         ) : null}
       </ScrollView>

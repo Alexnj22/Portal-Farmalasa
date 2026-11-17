@@ -157,7 +157,7 @@ export default function NuevoConteo() {
                   </Text>
                   {vista.cobertura ? (
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                      {`Universo de la sucursal: ${vista.cobertura.universo} productos · ${vista.cobertura.nunca_contados} nunca contados · ${vista.cobertura.mas_de_6_meses} sin contarse hace más de 6 meses.`}
+                      {`La sucursal tiene ${vista.cobertura.universo} productos · ${vista.cobertura.nunca_contados} nunca contados · ${vista.cobertura.mas_de_6_meses} sin contarse hace más de 6 meses.`}
                     </Text>
                   ) : null}
                 </View>

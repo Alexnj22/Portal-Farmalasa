@@ -66,13 +66,15 @@ const TONO = { ok: () => MARCA.verde, sobra: () => MARCA.ambar, falta: () => MAR
 // dar muchísimos toques»): el campo está siempre a la vista, «Siguiente» en el
 // teclado guarda y salta al próximo renglón sin contar —también al del producto
 // de abajo— y lo contado queda cerrado con su diferencia al lado.
-function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar }) {
+function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar, onEnCurso }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
   const [recienAbierto, setRecienAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [noSeGuardo, setNoSeGuardo] = useState(false);
   const ultimo = useRef(it.fisico_cantidad ?? '');
+  const enviando = useRef(null);
   const campo = useRef(null);
   const contado = it.estado_item !== 'PENDIENTE';
   const puedeEscribir = editable && abierto;
@@ -84,20 +86,34 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
     return () => registrar?.(it.id, null);
   }, [puedeEscribir, it.id, registrar]);
 
-  const guardar = async (payload) => {
+  const guardar = (payload) => {
+    // En Android «Siguiente» guarda y, al pasar el foco, `onEndEditing` volvía a
+    // guardar lo mismo: dos llamadas y dos entradas en el historial.
+    const firma = `${payload.fisicoCantidad ?? ''}|${payload.estadoItem}`;
+    if (enviando.current === firma) return undefined;
+    enviando.current = firma;
     setGuardando(true);
-    try {
-      const r = await guardarConteoItem(it.id, payload);
-      ultimo.current = payload.fisicoCantidad ?? '';
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      setAbierto(payload.estadoItem === 'PENDIENTE');
-      onGuardado(it.id, { ...payload, sistema: r?.sistema_cantidad, diferencia: r?.diferencia });
-    } catch (e) {
-      setValor(ultimo.current);
-      fallo('No se guardó el conteo', `${it.product_nombre || 'Este producto'}: ${mensajeAmigable(e)}`);
-    } finally {
-      setGuardando(false);
-    }
+    const promesa = (async () => {
+      try {
+        const r = await guardarConteoItem(it.id, payload);
+        ultimo.current = payload.fisicoCantidad ?? '';
+        setNoSeGuardo(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        setAbierto(payload.estadoItem === 'PENDIENTE');
+        onGuardado(it.id, { ...payload, sistema: r?.sistema_cantidad, diferencia: r?.diferencia });
+      } catch (e) {
+        // Lo escrito se queda y la fila lo dice: con mala señal, devolver el
+        // campo al valor anterior era perder la cantidad sin rastro.
+        setNoSeGuardo(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        fallo('No se guardó el conteo', `${it.product_nombre || 'Este producto'}: ${mensajeAmigable(e)}`);
+      } finally {
+        enviando.current = null;
+        setGuardando(false);
+      }
+    })();
+    onEnCurso?.(promesa);
+    return promesa;
   };
   const alTerminar = () => {
     if (String(valor) === String(ultimo.current)) { if (contado) setAbierto(false); return; }
@@ -122,8 +138,8 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
 
   const enlace = (texto, color, onPress) => (
     <Pressable key={texto} onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} hitSlop={8}
-      style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-      <Text style={{ color, fontSize: 13, fontWeight: '600' }}>{texto}</Text>
+      style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+      <Text style={{ color, fontSize: 14, fontWeight: '600' }}>{texto}</Text>
     </Pressable>
   );
 
@@ -142,7 +158,7 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
         </View>
         {puedeEscribir ? (
           <View style={{ width: 96 }}>
-            <Campo ref={campo} multiline={false} value={String(valor)} keyboardType="number-pad" placeholder="—" selectTextOnFocus
+            <Campo ref={campo} multiline={false} value={String(valor)} keyboardType="number-pad" placeholder="Cant." selectTextOnFocus
               autoFocus={recienAbierto}
               style={{ textAlign: 'center', fontSize: 22, fontWeight: '800', minHeight: 50 }}
               onFocus={() => onEnfocar?.(campo)}
@@ -158,11 +174,12 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
                 {tapado ? '•••' : it.estado_item === 'SIN_UBICAR' ? 'No ubicado' : String(it.fisico_cantidad ?? '—')}
               </Text>
             </View>
-            {editable ? <Text style={{ color: MARCA.azulClaro, fontSize: 12 }}>Editar</Text> : null}
+            {editable ? <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Editar</Text> : null}
           </Pressable>
         )}
       </View>
-      {guardando ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Guardando…</Text> : null}
+      {guardando ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Guardando…</Text>
+        : noSeGuardo ? enlace('No se guardó. Toca para reintentar', MARCA.rojo, alTerminar) : null}
       {/* Una sola línea de enlaces: quién contó (con su historial), no lo
           encuentro, y las acciones del lote. */}
       <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 16 }}>
@@ -185,7 +202,7 @@ const RECUERDO = new Map();
 
 export default function Conteo() {
   const { id } = useLocalSearchParams();
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const sucursales = useStaffStore((s) => s.branches);
   const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
   const fetchConteoPagina = useStaffStore((s) => s.fetchConteoPagina);
@@ -205,6 +222,9 @@ export default function Conteo() {
   const [conteo, setConteo] = useState(null);
   const [resumen, setResumen] = useState(null);
   const [texto, setTexto] = useState('');
+  // El código escaneado no se escribe en el buscador nativo: se muestra aparte,
+  // con su forma de quitarlo (antes la lista quedaba filtrada sin decir por qué).
+  const [porCodigo, setPorCodigo] = useState(null);
   const busqueda = useTextoRebotado(texto, 350).trim();
   const [filtro, setFiltro] = useState('PENDIENTES');
   const [pagina, setPagina] = useState(1);
@@ -223,11 +243,42 @@ export default function Conteo() {
   // por KISS en Bodega, que sólo está en vencidos) sumaba un viaje entero antes
   // de ver un producto: 1 a 3 s al abrir.
 
+  // Si el conteo no se pudo leer, se dice y se ofrece reintentar: antes la
+  // pantalla quedaba sin campos y sin explicación.
+  const [errorConteo, setErrorConteo] = useState(null);
   const cargarConteo = useCallback(async () => {
-    const [c, r] = await Promise.all([fetchConteoDetalle(id).catch(() => null), fetchConteoResumen(id).catch(() => null)]);
-    setConteo(c); setResumen(r);
+    const [c, r] = await Promise.all([
+      Promise.resolve(fetchConteoDetalle(id)).then((x) => ({ x }), (e) => ({ e })),
+      Promise.resolve(fetchConteoResumen(id)).catch(() => undefined),
+    ]);
+    if (c.e) setErrorConteo(c.e);
+    else { setErrorConteo(null); setConteo(c.x ?? null); }
+    if (r !== undefined) setResumen(r);
   }, [id, fetchConteoDetalle, fetchConteoResumen]);
   useEffect(() => { cargarConteo(); }, [cargarConteo]);
+  // Mientras se cuenta sólo cambia el resumen: se relee con espera, una vez por
+  // ráfaga. Antes cada cantidad guardada pedía el detalle y el resumen.
+  const relojCabecera = useRef(null);
+  useEffect(() => () => clearTimeout(relojCabecera.current), []);
+  const refrescarCabecera = useCallback(() => {
+    clearTimeout(relojCabecera.current);
+    relojCabecera.current = setTimeout(() => {
+      Promise.resolve(fetchConteoResumen(id)).then((r) => { if (r) setResumen(r); }).catch(() => {});
+    }, 1500);
+  }, [id, fetchConteoResumen]);
+  // Los guardados en vuelo: finalizar y escanear esperan a que terminen.
+  const enCurso = useRef(new Set());
+  const anotarEnCurso = useCallback((p) => {
+    enCurso.current.add(p);
+    p.finally(() => enCurso.current.delete(p));
+  }, []);
+  const esperarGuardados = async () => {
+    // Tocar un botón no le quita el foco al campo (`keyboardShouldPersistTaps`):
+    // sin esto, lo último escrito no se guardaba antes de finalizar.
+    Keyboard.dismiss();
+    await new Promise((r) => { setTimeout(r, 150); });
+    await Promise.allSettled([...enCurso.current]);
+  };
 
   // Regulados con existencia «sin lote»: cuántos ya contó este conteo y cuántos
   // le quedan a la sucursal (2026-11-06). Contexto: si no se lee, no se muestra.
@@ -359,15 +410,16 @@ export default function Conteo() {
     return () => { vivo = false; sub.remove(); };
   }, [id, abiertoParaContar, sincronizarConteoEnVivo]);
 
-  // Eliminar: con el permiso propio, o mientras no se haya contado nada.
-  const puedeEliminar = puedeEditar && (hasPermission('conteo_inventario_eliminar') || (conteoEditable(conteo) && contadosVivos(resumen) === 0));
+  // Eliminar: con el permiso propio, o mientras no se haya contado nada. Sin
+  // resumen no se sabe si se contó: no se ofrece.
+  const puedeEliminar = puedeEditar && (hasPermission('conteo_inventario_eliminar') || (conteoEditable(conteo) && resumen != null && contadosVivos(resumen) === 0));
   const eliminar = () => Alert.alert('Eliminar el conteo', `Se borra el conteo de ${sala ?? 'la sucursal'} con todos sus productos. No se puede deshacer.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Eliminar', style: 'destructive', onPress: async () => {
       trabajando('Eliminando…');
       try {
         const r = await eliminarConteoInventario(id);
-        listo('Conteo eliminado', `Se borraron ${r?.total_items ?? 0} producto(s).`);
+        listo('Conteo eliminado', r?.total_items ? `Se borró con sus ${r.total_items} ${r.total_items === 1 ? 'producto' : 'productos'}.` : 'Se borró el conteo.');
         router.back();
       } catch (e) { fallo('No se pudo eliminar', mensajeAmigable(e)); }
     } },
@@ -412,17 +464,26 @@ export default function Conteo() {
   const total = Number(resumen?.total_items ?? conteo?.total_items) || 0;
   const contados = Number(resumen?.contados ?? conteo?.total_contados) || 0;
 
+  // Sobre lo ÚLTIMO de la lista, no sobre lo que había al pintar: dos lotes
+  // guardados seguidos con «Siguiente» se pisaban y el primero volvía a
+  // pendiente.
+  const porRecalcular = useRef(new Set());
   const alGuardar = (erp) => (itemId, cambio) => {
-    const nuevos = (items[erp] || []).map((it) => (it.id === itemId
+    porRecalcular.current.add(erp);
+    setItems((m) => ({ ...m, [erp]: (m[erp] || []).map((it) => (it.id === itemId
       ? { ...it, fisico_cantidad: cambio.fisicoCantidad, estado_item: cambio.estadoItem, sistema_cantidad: cambio.sistema ?? it.sistema_cantidad,
         diferencia: cambio.diferencia !== undefined ? cambio.diferencia : it.diferencia }
-      : it));
-    setItems((m) => ({ ...m, [erp]: nuevos }));
-    // La píldora del producto (faltan / cuadra / diferencia), sin recargar.
-    const tot = totalesDelProducto(nuevos);
-    setProductos((p) => ({ ...p, filas: p.filas.map((f) => (f.erp_product_id === erp ? { ...f, ...tot } : f)) }));
-    cargarConteo();
+      : it)) }));
+    refrescarCabecera();
   };
+  // La píldora del producto (faltan / cuadra / diferencia), sin recargar.
+  useEffect(() => {
+    if (!porRecalcular.current.size) return;
+    const erps = [...porRecalcular.current];
+    porRecalcular.current.clear();
+    setProductos((p) => ({ ...p, filas: p.filas.map((f) => (erps.includes(f.erp_product_id) && items[f.erp_product_id]
+      ? { ...f, ...totalesDelProducto(items[f.erp_product_id]) } : f)) }));
+  }, [items]);
 
   // ── «Siguiente»: la cadena de campos en el orden de la pantalla ─────────
   // Cada renglón que se puede escribir anota su campo; «Siguiente» enfoca el
@@ -435,15 +496,30 @@ export default function Conteo() {
   const ordenDeCampos = productos.filas.flatMap((p) => (items[p.erp_product_id] || []).map((it) => it.id));
   const ordenRef = useRef(ordenDeCampos);
   ordenRef.current = ordenDeCampos;
-  const siguienteCampo = useCallback((itemId) => {
+  const productosRef = useRef(productos);
+  productosRef.current = productos;
+  const enfocarDesde = useCallback((itemId) => {
     const orden = ordenRef.current;
-    const desde = orden.indexOf(itemId);
+    const desde = itemId ? orden.indexOf(itemId) : -1;
     for (let i = desde + 1; i < orden.length; i += 1) {
       const ref = campos.current.get(orden[i]);
-      if (ref?.current) { ref.current.focus(); return; }
+      if (ref?.current) { ref.current.focus(); return true; }
+    }
+    return false;
+  }, []);
+  // Qué enfocar cuando llegue la lista: el primer pendiente tras escanear, o el
+  // primero de la página siguiente al terminar ésta.
+  const focoPendiente = useRef(null);
+  const siguienteCampo = useCallback((itemId) => {
+    if (enfocarDesde(itemId)) return;
+    const p = productosRef.current;
+    if (p.total > p.filas.length) {
+      focoPendiente.current = { despuesDe: itemId };
+      setPagina((n) => n + 1);
+      return;
     }
     Keyboard.dismiss();
-  }, []);
+  }, [enfocarDesde]);
 
   // El campo enfocado se sube a la vista: con el teclado abierto, el renglón
   // de abajo quedaba tapado y había que desplazar a mano.
@@ -464,6 +540,20 @@ export default function Conteo() {
       });
     }, 80);
   }, []);
+
+  useEffect(() => {
+    const f = focoPendiente.current;
+    if (!f || cargando || claveMostrada.current !== clave) return undefined;
+    if (f.busqueda != null && f.busqueda !== busqueda) return undefined;
+    const t = setTimeout(() => {
+      focoPendiente.current = null;
+      // Tras escanear, sólo si el código dio con un producto: con varios, el
+      // que cuenta elige.
+      if (f.busqueda != null && productos.filas.length !== 1) return;
+      enfocarDesde(f.despuesDe ?? null);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [productos, items, cargando, clave, busqueda, enfocarDesde]);
 
   // Lo que devolvió el servidor al corregir el lote o recontar, sin recargar la página.
   const alAccion = (itemId, cambio) => {
@@ -520,6 +610,7 @@ export default function Conteo() {
   };
 
   const finalizar = async () => {
+    await esperarGuardados();
     // Lo que impide ajustar, antes de cerrar: se resuelve frente al estante.
     if (conteo?.aplica_en_caja) {
       try {
@@ -531,25 +622,32 @@ export default function Conteo() {
         }
       } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
     }
-    const pendientes = Math.max(0, total - contados);
+    // Las cifras de este momento, no las de la pantalla: el último guardado
+    // todavía no estaba en el resumen.
+    const fresco = await Promise.resolve(fetchConteoResumen(id)).catch(() => null);
+    if (fresco) setResumen(fresco);
+    const pendientes = Math.max(0, Number(fresco?.pendientes ?? (total - contados)) || 0);
     const enviar = async (comoCero) => {
       trabajando('Finalizando el conteo…');
       try {
         const r = await finalizarConteoInventario(id, comoCero);
-        listo('Conteo finalizado', `${r?.total_diferencias ?? 0} con diferencia. Falta que lo aprueben.`);
+        const n = Number(r?.total_diferencias ?? 0);
+        listo('Conteo finalizado', `${n ? `Con diferencia: ${n}. ` : 'Todo cuadra. '}Falta que otra persona lo apruebe.`);
         router.back();
       } catch (e) { fallo('No se pudo finalizar', mensajeAmigable(e)); }
     };
     if (!pendientes) {
-      Alert.alert('¿Finalizar el conteo?', 'Ya no se va a poder contar. Otra persona tiene que aprobarlo.', [
+      Alert.alert('¿Finalizar el conteo?', 'Después ya no se puede contar. Otra persona tiene que aprobarlo.', [
         { text: 'Seguir contando', style: 'cancel' }, { text: 'Finalizar', onPress: () => enviar(false) }]);
       return;
     }
-    Alert.alert('Quedan productos sin contar', `${pendientes} producto${pendientes === 1 ? '' : 's'} sin contar. ¿Qué se hace con ellos?`, [
-      { text: 'Seguir contando', style: 'cancel' },
-      { text: 'Dejarlos fuera del cálculo', onPress: () => enviar(false) },
-      { text: 'Marcarlos como no ubicados (en 0)', style: 'destructive', onPress: () => enviar(true) },
-    ]);
+    // Las mismas dos opciones que la web, explicadas: es una decisión contable.
+    Alert.alert(`Quedan ${pendientes.toLocaleString('es-SV')} sin contar`,
+      'Después ya no se puede contar.\n\nFuera del cálculo: no cuentan como diferencia. El reporte dice que el conteo fue parcial.\n\nNo ubicados: quedan en 0 y cuentan como faltante.', [
+        { text: 'Seguir contando', style: 'cancel' },
+        { text: 'Dejarlos fuera del cálculo', onPress: () => enviar(false) },
+        { text: 'Darlos por no ubicados (en 0)', style: 'destructive', onPress: () => enviar(true) },
+      ]);
   };
 
   return (
@@ -558,7 +656,7 @@ export default function Conteo() {
         ...BARRA_NATIVA, title: 'Contar',
         headerSearchBarOptions: {
           placeholder: 'Producto, laboratorio o código', hideWhenScrolling: false,
-          onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
+          onChangeText: (e) => { setPorCodigo(null); setTexto(e.nativeEvent.text); }, onCancelButtonPress: () => { setPorCodigo(null); setTexto(''); },
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={puedePapel && conteo ? { icono: 'printer', etiqueta: 'Papel del conteo', onPress: papel } : null} />
@@ -566,6 +664,9 @@ export default function Conteo() {
         <ScrollView ref={scroll} onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={32}
           style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
+          {!conteo && errorConteo ? (
+            <Vacio titulo="No se pudo abrir el conteo" detalle={mensajeAmigable(errorConteo)} accion={{ texto: 'Reintentar', onPress: cargarConteo }} />
+          ) : null}
           {conteo ? (
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={20}>
@@ -577,7 +678,7 @@ export default function Conteo() {
                   <View style={{ height: 7, borderRadius: 4, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
                     <View style={{ width: `${total ? Math.round((contados / total) * 100) : 0}%`, height: 7, backgroundColor: MARCA.verde }} />
                   </View>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} productos contados`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} contados`}</Text>
                   {/* Contra qué se compara lo que se teclea: decide si una venta
                       hecha mientras se cuenta sale como diferencia. */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -598,11 +699,14 @@ export default function Conteo() {
             </View>
           ) : null}
           {avisoParcial ? <View style={{ marginHorizontal: 16 }}><Aviso tono={conteo.pendientes_como_cero ? 'cuidado' : 'freno'} texto={avisoParcial} /></View> : null}
-          {conteo && !editable && !puedeAprobar ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este conteo ya no se puede contar." /></View> : null}
+          {conteo && !editable && !puedeAprobar ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={conteoEditable(conteo) ? 'Tu cargo no puede contar en este conteo.' : 'Este conteo ya no se puede contar.'} /></View> : null}
           {puedeAprobar ? (
             <View style={{ marginHorizontal: 16, gap: 10 }}>
               <Aviso tono="nota" texto="Ya está finalizado. Puedes recontar un producto antes de aprobar. Quien lo contó no puede recontarlo." />
-              <BotonGrande texto="Aprobar el conteo" color={MARCA.verde} onPress={aprobar} />
+              {/* Quien finalizó no puede aprobar: la base lo rechaza. */}
+              {String(conteo.finalizado_por ?? '') === String(user?.id ?? '-')
+                ? <Aviso tono="nota" texto="Lo finalizaste tú. Lo aprueba otra persona." />
+                : <BotonGrande texto="Aprobar el conteo" color={MARCA.verde} onPress={aprobar} />}
               {/* El recuento del supervisor: queda en «Con diferencia» —es lo que
                   se recuenta— pero como filtro, no candado: verificar unas que
                   cuadraron es lo que detecta al que copió el número. */}
@@ -641,7 +745,7 @@ export default function Conteo() {
                 <Aviso tono="nota" texto={`Ajuste aplicado el ${fechaTexto(conteo.ajuste_erp_at, { day: 'numeric', month: 'short', year: 'numeric' })} a las ${fmtHM(conteo.ajuste_erp_at)}.${conteo.ajuste_erp_nota ? ` Nota: «${conteo.ajuste_erp_nota}»` : ''}`} />
               ) : faltaAjusteDelConteo(conteo) ? (
                 <>
-                  <Aviso tono="cuidado" texto={`Falta aplicar el ajuste de ${conteo.total_diferencias} producto(s). Aplícalo y márcalo aquí.`} />
+                  <Aviso tono="cuidado" texto={`Falta aplicar el ajuste de ${conteo.total_diferencias} ${Number(conteo.total_diferencias) === 1 ? 'producto' : 'productos'}. Aplícalo y márcalo aquí.`} />
                   {puedeEditar ? <BotonGrande texto="Registrar ajuste" borde color={MARCA.ambar} onPress={registrarAjuste} /> : null}
                 </>
               ) : <Aviso tono="nota" texto="No hay diferencias. No hay nada que ajustar." />}
@@ -651,7 +755,7 @@ export default function Conteo() {
             <View style={{ marginHorizontal: 16 }}>
               {/* Uno al lado del otro: apilados empujaban la lista media pantalla. */}
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}><BotonGrande texto="Escanear" color={MARCA.azul} onPress={() => setEscaneando(true)} /></View>
+                <View style={{ flex: 1 }}><BotonGrande texto="Escanear" color={MARCA.azul} onPress={() => { esperarGuardados(); setEscaneando(true); }} /></View>
                 <View style={{ flex: 1 }}><BotonGrande texto="Agregar" borde color={MARCA.azulClaro} onPress={() => setAgregando(true)} /></View>
               </View>
             </View>
@@ -664,6 +768,15 @@ export default function Conteo() {
           ) : null}
           <Subfiltro activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
           <FiltrosActivos grupos={grupos} />
+          {porCodigo ? (
+            <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }} numberOfLines={1}>{`Código ${porCodigo}`}</Text>
+              <Pressable onPress={() => { setPorCodigo(null); setTexto(''); setFiltro('PENDIENTES'); }} hitSlop={8}
+                style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Quitar</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {productos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta. Estos son productos parecidos." /></View> : null}
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>
           {productos.filas.map((p) => {
@@ -687,7 +800,7 @@ export default function Conteo() {
                     {!items[p.erp_product_id] ? <Indicador style={{ marginVertical: 10 }} />
                       : !items[p.erp_product_id].length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, paddingVertical: 10 }}>Sin lotes en este estante.</Text>
                       : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} producto={simple ? null : p} editable={editable} aCiegas={recuento} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
-                        registrar={registrar} onSiguiente={siguienteCampo} onEnfocar={enfocar}
+                        registrar={registrar} onEnCurso={anotarEnCurso} onSiguiente={siguienteCampo} onEnfocar={enfocar}
                         // En un conteo que ajusta, el lote de un renglón del sistema no se
                         // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.
                         onLote={editable && !simple && (!conteo?.aplica_en_caja || it.es_agregado_manual) ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
@@ -702,8 +815,8 @@ export default function Conteo() {
           {cargando ? <Cargando /> : null}
           {!cargando && productos.total > productos.filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((n) => n + 1)} /></View> : null}
           {!cargando && !productos.filas.length ? (
-            <Vacio>
-              {busqueda ? 'Ningún producto del conteo con esa búsqueda' : filtro === 'PENDIENTES' ? 'No queda nada por contar' : 'Sin productos en este filtro'}
+            <Vacio accion={busqueda && editable ? { texto: 'Agregar al conteo', onPress: () => setAgregando(true) } : null}>
+              {busqueda ? 'Este producto no está en el conteo' : filtro === 'PENDIENTES' ? 'No queda nada por contar' : 'Sin productos en este filtro'}
             </Vacio>
           ) : null}
           {editable ? (
@@ -733,7 +846,11 @@ export default function Conteo() {
           setItems((m) => { const n = { ...m }; delete n[prod.id]; return n; }); setFiltro('TODOS'); setTexto(prod.nombre); setPagina(1); cargar(); cargarConteo();
         }} />
       <Escaner visible={escaneando} titulo="Buscar en el conteo" ayuda="Apunta al código de barras del producto"
-        onCodigo={(c) => { setEscaneando(false); setFiltro('TODOS'); setTexto(String(c)); }} onCerrar={() => setEscaneando(false)} />
+        onCodigo={(c) => {
+          setEscaneando(false); setFiltro('TODOS'); setTexto(String(c)); setPorCodigo(String(c).trim());
+          // Si el código da con un producto, su primer lote sin contar queda listo para escribir.
+          focoPendiente.current = { busqueda: String(c).trim() };
+        }} onCerrar={() => setEscaneando(false)} />
     </>
   );
 }

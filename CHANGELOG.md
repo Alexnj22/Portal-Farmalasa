@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.9 — Kiosco de caja: Cómo va hoy
+
+- Pedido del usuario: «una gráfica que me diga cómo va la venta, top
+  vendedores, y motivación de subir la venta porque va bajo de lo esperado».
+  Pestaña «Cómo va» en el kiosco (después del carné) y en la vista previa:
+  vendido hoy contra lo esperado A ESTA HORA, gráfica del día (acumulado de hoy
+  contra la curva típica), los 5 que más venden hoy con foto (resalta «tú») y,
+  si va bajo, cuánto falta y una idea para subir la venta.
+- Lo esperado a esta hora = meta del día (`avanceDeMetaDelDia`) por la parte
+  del día que la sucursal normalmente ya vendió a esta hora, medida con el
+  mismo día de la semana de las 4 semanas anteriores. Sin meta, contra el día
+  típico. Así el «vas bajo» no sale cada mañana. Cuenta pura en
+  `src/utils/comoVaHoy.js` con pruebas.
+- `como_va_la_sala_hoy(branch)` (migración 20261117234222): venta por hora de
+  hoy, la típica y el top 5. Mismos frenos que `get_meta_sala`; montos sólo
+  con `dash_meta_sala_vista_completa` (sin él, en %). recharts va diferido.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.8 — Kiosco de caja: sugiere lo que toca
 
 - Pedido del usuario: «que sea inteligente: si no hay apertura que salga para

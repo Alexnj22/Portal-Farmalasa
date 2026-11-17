@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 // Metas por sala (Fase 1 — docs/planes-cerrados/PLAN-METAS-2026-08-03.md). Los tres RPC
 // devuelven pocas filas (6 salas × meses), así que no hay paginación que
@@ -293,6 +294,19 @@ export async function fetchMesEnCurso(branchId = null) {
     });
     if (error) throw error;
     return data ?? null;
+}
+
+/**
+ * La forma del día de una sucursal para «Cómo va hoy» del kiosco: venta por
+ * hora de hoy, la típica del mismo día de la semana y los 5 que más venden.
+ * Mismos permisos que `get_meta_sala`. Lanza si falla.
+ */
+export async function fetchComoVaLaSalaHoy(branchId) {
+    const { data, error } = await supabase.rpc('como_va_la_sala_hoy', { p_branch_id: Number(branchId) });
+    if (error) throw error;
+    const dia = data ?? { hoy: [], tipica: [], vendedores: [] };
+    await signPhotosDeep(dia.vendedores ?? []);
+    return dia;
 }
 
 export async function fetchMetaSala(branchId = null) {

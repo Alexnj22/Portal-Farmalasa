@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { ArrowLeft, ChevronRight, Clock3, KeyRound, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, Wallet, WifiOff, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Clock3, KeyRound, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, TrendingUp, Wallet, WifiOff, X } from 'lucide-react';
 import PortalInput from '../common/PortalInput';
+import ComoVaHoy from './ComoVaHoy';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
 import Notice from '../common/Notice';
@@ -30,6 +31,7 @@ const ACCIONES = {
     vender: { label: 'Vender', icon: ShoppingCart, description: 'Arma la venta y mándala a la cola.', pide: 'Pasa tu carné para vender' },
     caja: { label: 'Caja', icon: Wallet, description: 'Apertura, cortes y cierre del día.', pide: 'Pasa tu carné para abrir la caja' },
     marcar: { label: 'Marcar', icon: Clock3, description: 'Entrada, salida o descanso.' },
+    hoy: { label: 'Cómo va', icon: TrendingUp },
 };
 
 
@@ -188,7 +190,9 @@ export default function CajaDelKiosco({
     const [elegida, setElegida] = useState(null);
     const detalle = elegida ? datosCola.cola?.find((p) => p.id === elegida) : null;
     // `rolePerms` null = todavía no se leyó: no se acusa a nadie mientras carga.
-    const sinPermiso = abierta && rolePerms != null && !puede[detalle ? 'vender' : vista];
+    const sinPermiso = abierta && rolePerms != null && vista !== 'hoy' && !puede[detalle ? 'vender' : vista];
+    // La venta queda montada detrás de Caja y de Cómo va: lo editado sigue ahí al volver.
+    const enVenta = vista !== 'caja' && vista !== 'hoy';
 
     // Entrada / Salida: lleva a la caja con ese diálogo ya abierto.
     const [dialogoCaja, setDialogoCaja] = useState({ n: 0, cual: null });
@@ -248,7 +252,7 @@ export default function CajaDelKiosco({
                                     <p className="text-label text-content-3">{enPortal ? nombreSala : equipo.branchName}</p>
                                 </div>
                             </div>
-                            {detalle && vista !== 'caja' ? (
+                            {detalle && enVenta ? (
                                 <div className="flex items-center gap-3 rounded-[var(--radius-btn)] bg-brand/10 pl-4 pr-1 py-1">
                                     <Wallet size={18} className="text-brand-text" aria-hidden="true" />
                                     <span className="text-body font-bold text-content">Cobrando la #{detalle.referencia}</span>
@@ -256,7 +260,7 @@ export default function CajaDelKiosco({
                                 </div>
                             ) : (
                             <SegmentedControl className="kiosco-nav" label="Qué estás haciendo" tone="brand"
-                                options={['vender', 'caja'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
+                                options={['vender', 'caja', 'hoy'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
                                 value={vista} onChange={irA} />
                             )}
                             <div className="flex items-center gap-3">
@@ -309,7 +313,7 @@ export default function CajaDelKiosco({
                             </div>
                         ) : abierta ? (
                             <Suspense fallback={<LoadingState />}>
-                                {vista !== 'caja' && !detalle && estadoCaja && !estadoCaja.abierta && !estadoCaja.cerrado && puede.caja && (
+                                {enVenta && !detalle && estadoCaja && !estadoCaja.abierta && !estadoCaja.cerrado && puede.caja && (
                                     <Notice variant="warning" className="mb-3"
                                         action={<Button size="sm" onClick={() => abrirEnCaja('abrir')}>Abrir la caja</Button>}>
                                         La caja no está abierta. Puedes vender, pero para cobrar hay que abrirla.
@@ -317,15 +321,16 @@ export default function CajaDelKiosco({
                                 )}
                                 {/* La venta NO se desmonta al ir a la caja: lo editado
                                     sigue ahí al volver. */}
-                                <div className={vista === 'caja' ? 'hidden' : 'flex-1 flex flex-col'}>
+                                <div className={enVenta ? 'flex-1 flex flex-col' : 'hidden'}>
                                     {detalle ? (
-                                        <PreventaView key={detalle.id} enKiosco cobrando={detalle} activa={vista !== 'caja'}
+                                        <PreventaView key={detalle.id} enKiosco cobrando={detalle} activa={enVenta}
                                             onMovimientoDeCaja={abrirEnCaja}
                                             onTerminarCobro={() => { setElegida(null); datosCola.leer(); }} />
                                     ) : (
-                                        <PreventaView enKiosco activa={vista !== 'caja'} onMovimientoDeCaja={abrirEnCaja} />
+                                        <PreventaView enKiosco activa={enVenta} onMovimientoDeCaja={abrirEnCaja} />
                                     )}
                                 </div>
+                                {vista === 'hoy' && <ComoVaHoy sala={enPortal ? sala : equipo.branchId} ahora={ahora} />}
                                 {vista === 'caja' && (
                                     <MiCajaView key={dialogoCaja.n} comoPestana abrirAlEntrar={dialogoCaja.cual}
                                         alCerrarDialogo={dialogoCaja.cual ? () => setVista('vender') : undefined} />

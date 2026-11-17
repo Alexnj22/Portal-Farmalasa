@@ -729,6 +729,9 @@
     "get_libro_ventas_contribuyente": {
       "guarda": "alcance"
     },
+    "como_va_la_sala_hoy": {
+      "guarda": "alcance"
+    },
     "get_meta_sala": {
       "guarda": "alcance"
     },

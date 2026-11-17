@@ -11,6 +11,7 @@
 // credenciales, entra por el MISMO `loginWithUsername` que la pantalla, con sus
 // mismos controles (cuenta dada de baja, contraseña cambiada, candado). Si la
 // contraseña cambió, el intento falla, se olvida lo guardado y se pide de nuevo.
+import { Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 
@@ -23,8 +24,19 @@ export async function nombreBiometria() {
   try {
     if (!(await LocalAuthentication.hasHardwareAsync()) || !(await LocalAuthentication.isEnrolledAsync())) return null;
     const tipos = await LocalAuthentication.supportedAuthenticationTypesAsync();
-    if (tipos.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'Face ID';
-    if (tipos.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) return 'Touch ID';
+    const cara = tipos.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+    const dedo = tipos.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+    // «Face ID» y «Touch ID» son nombres de iPhone. En Android decía «Face ID»
+    // y pedía la huella (2026-11-17): muchos Android reportan la cara (débil)
+    // además del lector, pero el diálogo que sale para entrar es el de la
+    // huella. Ahí manda la huella.
+    if (Platform.OS === 'ios') {
+      if (cara) return 'Face ID';
+      if (dedo) return 'Touch ID';
+      return 'biometría';
+    }
+    if (dedo) return 'huella';
+    if (cara) return 'reconocimiento facial';
     return 'biometría';
   } catch {
     return null;

@@ -10,9 +10,12 @@
 // `TextInput` de React Native, que ES el campo del sistema (UITextField /
 // EditText), y los controles de @expo/ui (botón, selector, interruptor) van en
 // su propio `Host`, que es la forma documentada de mezclarlos.
-import { Children, forwardRef, isValidElement } from 'react';
+import { Children, forwardRef, isValidElement, useState } from 'react';
 import { Appearance, Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
+import { Icon } from '@expo/ui';
 import { paletaDe } from '../tema/material';
+import { Presionable } from './Tocable';
+import IconoFijo from './IconoFijo';
 import Vidrio from './Vidrio';
 import { MAYUSCULAS } from '../tema/mayusculas';
 import { MARCA } from './inicio/marca';
@@ -105,6 +108,28 @@ export const FilaCampo = forwardRef(function FilaCampo({ style, ...props }, ref)
   return (
     <TextInput ref={ref} placeholderTextColor={colorSistema.placeholder}
       style={[{ minHeight: 52, paddingHorizontal: 16, fontSize: 17, color: colorSistema.texto }, style]} {...props} />
+  );
+});
+
+const ICONO_VER = Icon.select({ ios: 'eye', android: require('@expo/material-symbols/visibility.xml') });
+const ICONO_OCULTAR = Icon.select({ ios: 'eye.slash', android: require('@expo/material-symbols/visibility_off.xml') });
+
+/** Una fila de contraseña con el ojo para verla (2026-11-17, usuario: «no
+ *  sale el ojo para ver las contraseñas»). Mismas props que `FilaCampo`; el
+ *  `secureTextEntry` lo maneja ella. */
+export const FilaClave = forwardRef(function FilaClave({ style, ...props }, ref) {
+  const [ver, setVer] = useState(false);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <TextInput ref={ref} placeholderTextColor={colorSistema.placeholder} autoCapitalize="none" autoCorrect={false}
+        style={[{ flex: 1, minHeight: 52, paddingLeft: 16, fontSize: 17, color: colorSistema.texto }, style]}
+        {...props} secureTextEntry={!ver} />
+      <Presionable onPress={() => setVer((v) => !v)} accessibilityRole="button"
+        accessibilityLabel={ver ? 'Ocultar contraseña' : 'Ver contraseña'} hitSlop={6}
+        style={({ pressed }) => ({ width: 48, minHeight: 52, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+        <IconoFijo name={ver ? ICONO_OCULTAR : ICONO_VER} size={20} color={colorSistema.texto2} />
+      </Presionable>
+    </View>
   );
 });
 

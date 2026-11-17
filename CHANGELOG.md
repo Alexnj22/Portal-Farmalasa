@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.17 — App: contraseña con ojo, sin campos prellenados y sin mensajes en inglés
+
+- App del personal: al elegir la contraseña nueva, el primer campo ya no nace
+  con el usuario adentro (React reusaba el campo nativo de la entrada).
+- Los campos de contraseña llevan el ojo para verla (`FilaClave`).
+- En Android decía «Entrar con Face ID» y pedía la huella: ahora dice «huella».
+- Los errores de contraseña de Auth salen en español («known to be weak»,
+  contraseña igual a la anterior, muy corta). Vale también en el portal.
+
+Novedades: no — corrige textos y campos, no cambia lo que hace nadie.
+
 ## v2.1562.16 — Preventa: clientes con Ñ van con su número
 
 - Un cliente con tilde o Ñ va a caja con su número, como cualquier otro: puede

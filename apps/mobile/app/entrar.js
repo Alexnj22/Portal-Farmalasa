@@ -16,7 +16,7 @@ import { Presionable as Pressable } from '../componentes/Tocable';
 import { router } from 'expo-router';
 import { Button, Host, Icon } from '@expo/ui';
 import Vidrio from '../componentes/Vidrio';
-import { colorSistema, FilaCampo, Formulario, Grupo } from '../componentes/Formulario';
+import { colorSistema, FilaCampo, FilaClave, Formulario, Grupo } from '../componentes/Formulario';
 
 const ICONO_FACE = Icon.select({ ios: 'faceid', android: require('@expo/material-symbols/face.xml') });
 const ICONO_HUELLA = Icon.select({ ios: 'touchid', android: require('@expo/material-symbols/fingerprint.xml') });
@@ -157,7 +157,7 @@ export default function Entrar() {
   };
 
   // El ícono del botón según lo que tenga el teléfono.
-  const iconoBio = biometria === 'Face ID' ? ICONO_FACE : ICONO_HUELLA;
+  const iconoBio = biometria === 'Face ID' || biometria === 'reconocimiento facial' ? ICONO_FACE : ICONO_HUELLA;
 
   return (
     <Formulario contentContainerStyle={{ paddingTop: 64, gap: 22 }}>
@@ -192,13 +192,16 @@ export default function Entrar() {
 
       {pendiente ? (
         <Grupo vidrio pie="Mínimo 8 caracteres, con una mayúscula y un número.">
-          <FilaCampo placeholder="Contraseña nueva" secureTextEntry textContentType="newPassword" onChangeText={setNueva} returnKeyType="next" />
-          <FilaCampo placeholder="Repítela" secureTextEntry textContentType="newPassword" onChangeText={setConfirmacion} returnKeyType="done" onSubmitEditing={cambiar} />
+          {/* Con `key` propia: sin ella React reusa los campos nativos de la
+              entrada y «Contraseña nueva» nacía con el usuario adentro (el
+              campo nativo no obedece un `value` puesto desde afuera). */}
+          <FilaClave key="nueva" placeholder="Contraseña nueva" textContentType="newPassword" onChangeText={setNueva} returnKeyType="next" />
+          <FilaClave key="repite" placeholder="Repítela" textContentType="newPassword" onChangeText={setConfirmacion} returnKeyType="done" onSubmitEditing={cambiar} />
         </Grupo>
       ) : (
         <Grupo vidrio>
-          <FilaCampo placeholder="Usuario" autoCapitalize="none" autoCorrect={false} textContentType="username" onChangeText={setUsuario} returnKeyType="next" />
-          <FilaCampo ref={claveRef} placeholder="Contraseña" secureTextEntry textContentType="password" value={clave} onChangeText={setClave} returnKeyType="go" onSubmitEditing={entrar} />
+          <FilaCampo key="usuario" placeholder="Usuario" autoCapitalize="none" autoCorrect={false} textContentType="username" onChangeText={setUsuario} returnKeyType="next" />
+          <FilaClave key="clave" ref={claveRef} placeholder="Contraseña" textContentType="password" value={clave} onChangeText={setClave} returnKeyType="go" onSubmitEditing={entrar} />
         </Grupo>
       )}
 

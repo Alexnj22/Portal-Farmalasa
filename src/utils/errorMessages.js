@@ -92,6 +92,13 @@ const REGLAS = [
     // abrir desde un aviso una solicitud que ya se decidió o se borró
     // (2026-10-12, Avisos): el texto crudo no le dice nada a nadie.
     [/PGRST116|Cannot coerce the result to a single JSON object/i, 'Ya no está disponible: puede que alguien ya la haya resuelto o borrado.'],
+    // — Contraseñas (Supabase Auth) —
+    // Auth contesta en inglés. «known to be weak» es la protección de
+    // contraseñas filtradas (la clave aparece en listas públicas): salió en
+    // la app al elegir la contraseña nueva (2026-11-17). Nada en inglés.
+    [/known to be weak|easy to guess|pwned|leaked/i, 'Esa contraseña es muy conocida y no es segura. Elige otra.'],
+    [/weak_password|Password should (contain|be at least)|at least \d+ characters/i, 'La contraseña es muy débil. Mínimo 8 caracteres, con una mayúscula y un número.'],
+    [/same_password|should be different from the old/i, 'La contraseña nueva tiene que ser distinta de la anterior.'],
     // — Solicitudes de facturación —
     // Las levanta el trigger `validar_solicitud_facturacion` y el índice
     // parcial de una-pendiente-por-factura. Van primero porque son estados

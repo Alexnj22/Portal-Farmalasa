@@ -112,7 +112,10 @@ const ColaDeCaja = () => {
         // La primera lectura sale en el próximo tick, no dentro del efecto.
         const primera = setTimeout(leer, 0);
         const id = setInterval(() => { if (document.visibilityState === 'visible') leer(); }, CADA_MS);
-        return () => { clearTimeout(primera); clearInterval(id); };
+        // Al volver a la pestaña se lee en el acto: la lista no espera 10 s vieja.
+        const alVolver = () => { if (document.visibilityState === 'visible') leer(); };
+        document.addEventListener('visibilitychange', alVolver);
+        return () => { clearTimeout(primera); clearInterval(id); document.removeEventListener('visibilitychange', alVolver); };
     }, [leer]);
 
     return (

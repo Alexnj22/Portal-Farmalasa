@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1565.1 — Kiosco de caja: la cola se relee al volver
+
+- La cola «En caja» se relee en el acto al volver a la pestaña, sin esperar los 10 s.
+- Novedades: no — piloto en Salud 4.
+
 ## v2.1565.0 — Kiosco de caja: fase 1
 
 - Al vincular un equipo se elige qué será: **Marcador** (hasta 3 por sucursal)

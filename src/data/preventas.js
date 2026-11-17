@@ -64,11 +64,12 @@ async function invocar(body) {
  * Mandar la venta a caja, o corregir la que ya está (`preventaId`).
  * Devuelve `{ ok, referencia, codigo, corregida, avisos }` o `{ ok: false, error }`. Nunca lanza.
  */
-export const enviarPreventaDirecta = ({ branchId, customerId, documento, pago = 'contado', puntos = 0, nota, lineas, preventaId = null, motivoPrecio = null }) =>
+export const enviarPreventaDirecta = ({ branchId, customerId, documento, pago = 'contado', puntos = 0, nota, lineas, preventaId = null, motivoPrecio = null, totalEsperado = null }) =>
     invocar({
         accion: 'directa', branch_id: Number(branchId), customer_id: customerId ? Number(customerId) : null,
         documento, pago, puntos, nota, lineas, ...(preventaId ? { preventa_id: Number(preventaId) } : {}),
         ...(motivoPrecio ? { motivo_precio: motivoPrecio } : {}),
+        ...(totalEsperado != null && Number.isFinite(Number(totalEsperado)) ? { total_esperado: Math.round(Number(totalEsperado) * 100) / 100 } : {}),
     });
 
 /** Borrar la preventa de la caja y marcarla anulada. Nunca lanza. */

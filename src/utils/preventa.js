@@ -92,6 +92,9 @@ export function armarVenta(datos) {
         precio: centavos(r.precio_unitario),
         precio_normal: r.precio_normal == null ? null : centavos(r.precio_normal),
         lista_precio: r.lista_precio ?? null,
+        // Para corregir o repetir con el mismo precio autorizado y la misma viñeta.
+        ...(r.lista_autorizada ? { lista_autorizada: String(r.lista_autorizada) } : {}),
+        ...(r.id_presentacion != null ? { id_presentacion: Number(r.id_presentacion) } : {}),
         subtotal: centavos(Number(r.precio_unitario) * Number(r.cantidad)),
         ...(r.cobro_con_monto ? { cobro_con_monto: true } : {}),
     }));
@@ -144,7 +147,10 @@ export function notaDeLaVenta({ codigo, cliente, nombre, pagado, faltaPagar, doc
     }
     if (pagado > 0.004) partes.push(`PAGADO ${montoAscii(pagado)} FALTA ${montoAscii(faltaPagar)}`);
     if (documento === 'credito_fiscal') partes.push('CCF');
-    if (extra && enAscii(extra)) partes.push(enAscii(extra));
+    // La nota libre no puede decir lo que dice el portal: «PAGADO $50 FALTA $0»
+    // escrito a mano confundiría a quien cobra.
+    const libre = enAscii(extra).replace(/\b(PAGAD[OA]S?|FALTA[N]?|CANCELAD[OA])\b/g, ' ').replace(/\s+/g, ' ').trim();
+    if (libre) partes.push(libre);
     return partes.join(' - ').slice(0, 90);
 }
 

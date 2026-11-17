@@ -180,7 +180,10 @@ export const sePuedeAnular = (p) => ['viva', 'fallida', 'sin_enlace'].includes(p
 export function lineasDeVenta(venta) {
     return (venta?.renglones ?? []).map((r) => ({
         producto_id: Number(r.producto_id), nombre: String(r.nombre ?? ''),
-        factor: Number(r.factor) || 1, cantidad: Number(r.cantidad) || 1, lista: null,
+        factor: Number(r.factor) || 1, cantidad: Number(r.cantidad) || 1,
+        // El precio autorizado y la viñeta elegida siguen al corregir o repetir.
+        lista: r.lista_autorizada ?? null,
+        ...(r.id_presentacion != null ? { presentacion: Number(r.id_presentacion) } : {}),
         lote: r.lote?.nombre ? { lote: r.lote.nombre, vence: r.lote.vence ?? null } : null,
         ...(r.cobro_con_monto && r.precio != null ? { monto: Number(r.precio).toFixed(2) } : {}),
     }));

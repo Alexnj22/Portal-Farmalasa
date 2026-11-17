@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.2 — Preventa a toda prueba
+
+Auditoría de la preventa (2026-11-16). Cada punto se verificó antes de tocarlo.
+
+- **Precio distinto en caja = no se envía.** Antes se mandaba igual con un
+  aviso: la reserva #12 prometió $27.15 y se facturó a $28.40. Sólo una oferta
+  de reserva (precio bajo el normal) sigue yendo con aviso.
+- **Total esperado.** La pantalla manda el total que se ve; si la base calcula
+  otro, frena y lo dice.
+- **COMISIONES:** cantidad fija en 1; el precio se pone después de comprobar
+  que la caja está abierta; si el envío falla, vuelve al que tenía; y uno a la
+  vez (`preventa_cobro_turno`).
+- **Respuesta perdida:** si caja no contesta, se busca la venta antes de darla
+  por fallida, para no duplicarla.
+- **Anular una preventa sin número** la busca en caja; si no la encuentra, no
+  la da por borrada.
+- **Corrección que falla** ya no cambia el cliente ni quién la envió.
+- **Corregir o repetir** conserva el precio autorizado y la viñeta elegida.
+- **Centavos:** un precio con 4 decimales se manda con los mismos centavos que
+  se ven, y la caja armada de varios lotes suma lo mismo que la caja entera.
+- **Nota libre:** ya no puede decir «PAGADO» ni «FALTA».
+- Revisado: caja no redondea a 0.05 (cobra $0.33, $0.61, $10.49); las listas
+  ya vienen en 0.05 salvo el Regular. El portal no redondea.
+
 ## v2.1562.1 — Novedades: pantalla animada al entrar y sin «Ver como»
 
 - Al entrar al portal, en lugar del diálogo, una pantalla animada «Hay novedades» con las novedades en abanico: en unos segundos entra sola a Novedades («Ahora no» la salta). Sale una vez por persona y por quincena de novedades, desde el 2026-11-17. `?aviso=novedades` la muestra para revisarla.

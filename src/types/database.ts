@@ -22755,18 +22755,21 @@ export type Database = {
         Row: {
           created_at: string
           id_pres_prod_erp: number
+          ocupado_hasta: string | null
           presentacion: string
           product_id: number
         }
         Insert: {
           created_at?: string
           id_pres_prod_erp: number
+          ocupado_hasta?: string | null
           presentacion?: string
           product_id: number
         }
         Update: {
           created_at?: string
           id_pres_prod_erp?: number
+          ocupado_hasta?: string | null
           presentacion?: string
           product_id?: number
         }
@@ -22793,6 +22796,7 @@ export type Database = {
           anulada_por: string | null
           branch_id: number
           codigo_generacion: string | null
+          correccion_previa: Json | null
           corregida_veces: number
           created_at: string
           customer_id: number | null
@@ -22819,6 +22823,7 @@ export type Database = {
           anulada_por?: string | null
           branch_id: number
           codigo_generacion?: string | null
+          correccion_previa?: Json | null
           corregida_veces?: number
           created_at?: string
           customer_id?: number | null
@@ -22845,6 +22850,7 @@ export type Database = {
           anulada_por?: string | null
           branch_id?: number
           codigo_generacion?: string | null
+          correccion_previa?: Json | null
           corregida_veces?: number
           created_at?: string
           customer_id?: number | null
@@ -38341,6 +38347,10 @@ export type Database = {
         Args: { p_empleados: string[] }
         Returns: number
       }
+      novedades_android_avisar: {
+        Args: { p_empleados: string[] }
+        Returns: number
+      }
       novedades_correo_android: { Args: { p_email: string }; Returns: Json }
       nuevo_folio_de_bolsa: { Args: { p_branch_id: number }; Returns: string }
       numeros_de_caja: { Args: { p: Json }; Returns: string }
@@ -38409,6 +38419,10 @@ export type Database = {
         Args: { p_branch: number; p_customer: number }
         Returns: Json
       }
+      preventa_cobro_turno: {
+        Args: { p_product: number; p_tomar: boolean }
+        Returns: boolean
+      }
       preventa_cotizar: {
         Args: { p_branch: number; p_customer: number; p_lineas: Json }
         Returns: Json
@@ -38425,6 +38439,7 @@ export type Database = {
           p_pago?: string
           p_preventa?: number
           p_puntos?: number
+          p_total_esperado?: number
         }
         Returns: Json
       }

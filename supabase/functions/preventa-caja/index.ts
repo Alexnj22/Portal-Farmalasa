@@ -1,10 +1,12 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { getCortesCreds } from "../_shared/creditos.ts";
-import { borrarPreventaDeLaCaja, enviarPreventaALaCaja, preventaVivaEnLaCaja, sesionDeCaja } from "../_shared/preventaCaja.ts";
+import {
+  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
+} from "../_shared/preventaCaja.ts";
 import { armarVenta } from "../../../src/utils/preventa.js";
 import { login as entrarAlSistema } from "../_shared/erp-dte.ts";
-import { fijarVineta } from "../_shared/erp-regulado.ts";
+import { fijarVineta, leerFichaDe } from "../_shared/erp-regulado.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PREVENTA DE UNA RESERVA — dejar la venta lista en la caja (2026-10-21).
@@ -152,6 +154,24 @@ async function directa(
     if (!Number.isInteger(id) || id <= 0) return responder({ ok: false, error: "No se dijo qué preventa." }, 400);
     const { data: info, error: eInfo } = await admin.rpc("preventa_anular", { p_employee: quien.id, p_id: id, p_paso: "revisar" });
     if (eInfo) return responder({ ok: false, error: motivoDe(String(eInfo.message ?? "")) }, eInfo.message === "FORBIDDEN" ? 403 : 409);
+    // Llegó a caja pero sin número: se busca por su referencia antes de
+    // darla por anulada (si no, caja la seguiría teniendo para cobrar).
+    if (!info.externo_id && info.estado === "sin_enlace") {
+      try {
+        const { username, password } = getCortesCreds();
+        const http = await sesionDeCaja(username, password, Number(info.erp_sucursal));
+        const fecha = await fechaDeLaCaja(http);
+        const hallada = info.referencia
+          ? await buscarPreventaEnLaCaja(http, fecha, {
+            referencia: String(info.referencia), vendedor: String(info.vendedor ?? ""), productos: (info.productos ?? []).map(Number),
+          })
+          : null;
+        if (!hallada) return responder({ ok: false, error: "No la encontramos en caja. Revísala allá antes de anularla." }, 409);
+        info.externo_id = hallada.id;
+      } catch (e) {
+        return responder({ ok: false, error: (e as Error).message }, 502);
+      }
+    }
     if (info.externo_id) {
       try {
         const { username, password } = getCortesCreds();
@@ -190,6 +210,7 @@ async function directa(
     p_motivo_precio: body.motivo_precio ? String(body.motivo_precio) : null,
     p_pago: String(body.pago ?? "contado"),
     p_puntos: Math.max(0, Math.trunc(Number(body.puntos) || 0)),
+    p_total_esperado: Number.isFinite(Number(body.total_esperado)) && body.total_esperado != null ? Number(body.total_esperado) : null,
   });
   if (ePrep) {
     const m = String(ePrep.message ?? "");
@@ -225,39 +246,84 @@ async function directa(
   }
 
   // Cobro con monto (2026-11-16): el monto que escribió administración es el
-  // precio de esa presentación en la ficha del producto; se pone y se relee
-  // ANTES de mandar, para que la caja lo encuentre entre sus precios. La base
-  // ya decidió quién puede (`preventa_directa_preparar`).
-  const cobros = (datos.renglones ?? []).filter((r: { cobro_con_monto?: boolean }) => r.cobro_con_monto);
+  // precio de esa presentación en la ficha del producto; se pone justo antes
+  // de mandar, para que la caja lo encuentre entre sus precios. La base ya
+  // decidió quién puede (`preventa_directa_preparar`). Tres cuidados
+  // (auditoría del 2026-11-16):
+  //   · se pone DESPUÉS de saber que la caja está abierta y que la preventa a
+  //     corregir sigue viva: si no, quedaba cambiado sin venta;
+  //   · uno a la vez por producto (`preventa_cobro_turno`): dos a la vez se
+  //     pisaban el monto;
+  //   · si el envío falla, el precio vuelve al que tenía.
+  const cobros = (venta.renglones ?? []).filter((r: { cobro_con_monto?: boolean }) => r.cobro_con_monto);
+  let filasCobro: { product_id: number; id_pres_prod_erp: string }[] = [];
   if (cobros.length) {
-    const { data: filas, error: eCob } = await admin.from("preventa_cobros_con_monto")
+    const { data, error: eCob } = await admin.from("preventa_cobros_con_monto")
       .select("product_id, id_pres_prod_erp").in("product_id", cobros.map((r: { producto_id: number }) => Number(r.producto_id)));
     if (eCob) return await fallar("No se pudo leer qué presentación lleva el monto.", 503);
-    try {
-      const cookie = await entrarAlSistema();
-      for (const r of cobros) {
-        const f = (filas ?? []).find((x) => Number(x.product_id) === Number(r.producto_id));
-        if (!f) throw new Error(`«${r.nombre}» no dice qué presentación lleva el monto.`);
-        await fijarVineta(cookie, Number(r.producto_id), String(f.id_pres_prod_erp), Number(r.precio_unitario));
-      }
-    } catch (e) {
-      console.error("[preventa-caja] cobro con monto:", (e as Error).message);
-      return await fallar((e as Error).message, 502, venta);
-    }
+    filasCobro = data ?? [];
   }
+  const turnos: number[] = [];
+  const devolver: { cookie: string; id: number; prp: string; precio: number }[] = [];
+  const soltar = async () => {
+    for (const id of turnos) {
+      const { error } = await admin.rpc("preventa_cobro_turno", { p_product: id, p_tomar: false });
+      if (error) console.error("[preventa-caja] soltar turno:", error.message);
+    }
+  };
+  const deshacer = async () => {
+    for (const d of devolver) {
+      try { await fijarVineta(d.cookie, d.id, d.prp, d.precio); } catch (e) {
+        console.error("[preventa-caja] no se pudo devolver el precio:", d.id, (e as Error).message);
+      }
+    }
+  };
 
   let resultado;
   try {
     const { username, password } = getCortesCreds();
     const http = await sesionDeCaja(username, password, Number(datos.erp_sucursal));
+    await fechaDeLaCaja(http);
     if (datos.externo_id) {
       const viva = await preventaVivaEnLaCaja(http, String(datos.externo_id), vendedorPrevio);
       if (!viva.viva) return await fallar(viva.motivo, 409);
     }
-    resultado = await enviarPreventaALaCaja(http, venta, { idFactura: datos.externo_id ?? null });
+    if (cobros.length) {
+      for (const r of cobros) {
+        const { data: tengo, error: eT } = await admin.rpc("preventa_cobro_turno", { p_product: Number(r.producto_id), p_tomar: true });
+        if (eT) return await fallar("No se pudo apartar el cobro.", 503, venta);
+        if (!tengo) return await fallar(`Otra persona está cobrando «${r.nombre}» en este momento. Espera un minuto y envía de nuevo.`, 409, venta);
+        turnos.push(Number(r.producto_id));
+      }
+      try {
+        const cookie = await entrarAlSistema();
+        for (const r of cobros) {
+          const f = filasCobro.find((x) => Number(x.product_id) === Number(r.producto_id));
+          if (!f) throw new Error(`«${r.nombre}» no dice qué presentación lleva el monto.`);
+          const ficha = await leerFichaDe(cookie, Number(r.producto_id));
+          const antes = parseFloat(ficha.presentaciones.find((p) => p.id_prp === String(f.id_pres_prod_erp))?.precios[0] ?? "");
+          await fijarVineta(cookie, Number(r.producto_id), String(f.id_pres_prod_erp), Number(r.precio));
+          if (antes > 0 && Math.abs(antes - Number(r.precio)) >= 0.00005) {
+            devolver.push({ cookie, id: Number(r.producto_id), prp: String(f.id_pres_prod_erp), precio: antes });
+          }
+        }
+      } catch (e) {
+        console.error("[preventa-caja] cobro con monto:", (e as Error).message);
+        await deshacer();
+        return await fallar((e as Error).message, 502, venta);
+      }
+    }
+    try {
+      resultado = await enviarPreventaALaCaja(http, venta, { idFactura: datos.externo_id ?? null });
+    } catch (e) {
+      await deshacer();
+      throw e;
+    }
   } catch (e) {
     console.error("[preventa-caja] directa:", (e as Error).message);
     return await fallar((e as Error).message, 502, venta);
+  } finally {
+    await soltar();
   }
 
   const { data: reg, error: eReg } = await admin.rpc("preventa_registrar", {

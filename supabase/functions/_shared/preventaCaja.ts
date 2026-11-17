@@ -236,13 +236,46 @@ export async function preventaVivaEnLaCaja(http: Http, id: string, vendedor: str
  * crear otra (medido en Salud 5 el 2026-11-16: `insert_preventa` con su
  * `id_factura` reemplaza los renglones y conserva número y referencia).
  */
-export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idFactura?: string | null } = {}): Promise<ResultadoCaja> {
-  const avisos: string[] = [];
+export async function fechaDeLaCaja(http: Http): Promise<string> {
   const pagina = await http.get("venta.php?preventa=1");
   const fecha = pagina.match(/id="fecha" value="([^"]+)"/)?.[1];
   // Sin fecha = la caja no tiene turno abierto: pasa después del cierre del
   // día (medido en Salud 5 el 2026-11-16, Z a las 19:01 y envío a las 20:15).
   if (!fecha) throw new Error("La caja está cerrada (ya se hizo el cierre del día). Envía la venta cuando abra.");
+  return fecha;
+}
+
+/**
+ * Entre las preventas de la sala, la nuestra: mismo vendedor y todos los
+ * productos, la más nueva primero. `soloNuevas` descarta las que ya estaban
+ * antes de mandar (para no confundirla con otra igual de antes).
+ */
+export async function buscarPreventaEnLaCaja(
+  http: Http, fecha: string,
+  b: { referencia?: string | null; total?: number | null; vendedor: string; productos: number[]; soloNuevas?: Set<string> },
+): Promise<{ id: string; referencia: string } | null> {
+  const lista = leerReferencias(await http.post("venta.php", { process: "get_referencias" }));
+  const candidatas = lista
+    .filter((p) => (b.referencia ? p.referencia === b.referencia : true))
+    .filter((p) => (b.total != null ? Math.abs(Number(p.total) - b.total) < 0.005 : true))
+    .filter((p) => (b.soloNuevas ? !b.soloNuevas.has(p.id) : true))
+    .sort((a, c) => Number(c.id) - Number(a.id));
+  for (const c of candidatas) {
+    let j: Record<string, unknown> = {};
+    try { j = JSON.parse(await http.post("venta.php", { process: "cargar_data", n_ref: c.id, fecha })); } catch { j = {}; }
+    const esLaNuestra = String(j.id_factura ?? "") === c.id && String(j.codvende ?? "") === b.vendedor
+      && b.productos.every((id) => new RegExp(`\\b${id}\\b`).test(String(j.lista ?? "")));
+    if (esLaNuestra) return { id: c.id, referencia: c.referencia };
+  }
+  return null;
+}
+
+/** Centavos: el precio que se manda es el mismo que vio quien vende. */
+const r2 = (v: number) => Math.round(v * 100) / 100;
+
+export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idFactura?: string | null } = {}): Promise<ResultadoCaja> {
+  const avisos: string[] = [];
+  const fecha = await fechaDeLaCaja(http);
 
   const renglonesCaja: Record<string, unknown>[] = [];
   let gravado = 0, exenta = 0;
@@ -307,8 +340,19 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
     const precio = elegirPrecio(precios, r);
     if (!precio) throw new Error(`«${r.nombre}» no tiene precio en la caja.`);
     if (!igual(precio.valor, r.precio)) {
+      // Una oferta de reserva (precio bajo el normal) no existe en la lista de
+      // caja: va a su precio y la nota lo dice. Todo lo demás NO se manda: el
+      // cliente vio un precio y la caja cobraría otro (2026-11-16, la reserva
+      // #12 prometió $27.15 y se facturó a $28.40).
+      const oferta = r.precio_normal != null && r.precio < r.precio_normal - 0.004;
+      if (!oferta) {
+        throw new Error(`«${r.nombre}»: en caja está a $${precio.valor.toFixed(2)} y la venta dice $${r.precio.toFixed(2)}. No se envió: revisa el precio.`);
+      }
       avisos.push(`«${r.nombre}»: la caja lo tiene a $${precio.valor.toFixed(2)} y la reserva es a $${r.precio.toFixed(2)}.`);
     }
+    // Lo que cobra caja por presentación, en centavos (una lista con 4
+    // decimales, $0.1239, se ve y se suma como $0.12).
+    const pu = r2(precio.valor);
     // Lo que va suelto, en la presentación de 1 y al precio de la presentación
     // entera ÷ sus unidades, con la MISMA lista: así la caja armada de dos
     // lotes cuesta lo mismo que una caja de un lote.
@@ -321,9 +365,14 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
         if (num(d?.unidad) === 1) { base = p; break; }
       }
       if (!base) throw new Error(`«${r.nombre}»: ningún lote completa la presentación y la caja no la vende por unidad.`);
-      const unitario = Math.round((precio.valor / unidades) * 10000) / 10000;
-      for (const s of sueltas) {
-        const sub = Math.round(s.cantidad * unitario * 100) / 100;
+      const unitario = Math.round((pu / unidades) * 10000) / 10000;
+      // Lo suelto suma lo mismo que las presentaciones enteras que reemplaza:
+      // el último renglón se lleva el centavo que el reparto pierde ($10 ÷ 3).
+      const debe = r2((sueltas.reduce((t, s) => t + s.cantidad, 0) / unidades) * pu);
+      let llevado = 0;
+      for (const [k, s] of sueltas.entries()) {
+        const sub = k === sueltas.length - 1 ? r2(debe - llevado) : r2(s.cantidad * unitario);
+        llevado = r2(llevado + sub);
         if (fila.exento === "0") gravado += sub; else exenta += sub;
         renglonesCaja.push({
           id_detalle: "", id: String(r.producto_id), precio: unitario.toFixed(4), cantidad: String(s.cantidad),
@@ -334,10 +383,10 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
       avisos.push(`«${r.nombre}»: ningún lote completa la presentación; sale en unidades de varios lotes al mismo precio.`);
     }
     for (const parte of partes) {
-      const sub = Math.round(parte.cantidad * precio.valor * 100) / 100;
+      const sub = r2(parte.cantidad * pu);
       if (fila.exento === "0") gravado += sub; else exenta += sub;
       renglonesCaja.push({
-        id_detalle: "", id: String(r.producto_id), precio: precio.valor.toFixed(2), cantidad: String(parte.cantidad),
+        id_detalle: "", id: String(r.producto_id), precio: pu.toFixed(2), cantidad: String(parte.cantidad),
         unidades: String(unidades), subtotal: sub.toFixed(2), id_presentacion: pres.id, exento: fila.exento,
         id_lote: Number(parte.id), precio_seleccionado: precio.clave,
       });
@@ -367,9 +416,26 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
     subtotal: g, sumas: total.toFixed(2), venta_exenta: x, suma_gravada: g, tipo_impresion: venta.documento === "credito_fiscal" ? "CCF" : "COF", id_factura: opc.idFactura || "0",
     precio_aut: "", clave: "", codvende: venta.vendedor, datos_extras: venta.nota, credito: (PAGOS_DE_CAJA as Record<string, string>)[venta.pago ?? "contado"] ?? "0", medico: "",
   };
-  const crudo = await http.post("venta.php", datos);
-  let resp: { typeinfo?: string; referencia?: unknown; tot?: unknown; msg?: string } = {};
-  try { resp = JSON.parse(crudo); } catch { throw new Error("La caja contestó algo que no se entiende al crear la preventa."); }
+  const productos = venta.renglones.map((r) => r.producto_id);
+  // Lo que ya había en la sala, para reconocer la nuestra si la respuesta se pierde.
+  const antes = opc.idFactura ? null
+    : new Set(leerReferencias(await http.post("venta.php", { process: "get_referencias" })).map((p) => p.id));
+  let crudo: string | null = null;
+  try { crudo = await http.post("venta.php", datos); } catch (e) { console.error("[preventaCaja] insert:", (e as Error).message); }
+  let resp: { typeinfo?: string; referencia?: unknown; tot?: unknown; msg?: string } | null = null;
+  if (crudo != null) { try { resp = JSON.parse(crudo); } catch { resp = null; } }
+  if (!resp) {
+    // Sin respuesta (o ilegible) la venta pudo haber quedado igual: se busca
+    // antes de decir que falló, para que nadie la mande dos veces.
+    const hallada = antes ? await buscarPreventaEnLaCaja(http, fecha, { total, vendedor: venta.vendedor, productos, soloNuevas: antes }) : null;
+    if (hallada) {
+      avisos.push("La caja tardó en contestar, pero la venta sí llegó.");
+      return { referencia: hallada.referencia, externo_id: hallada.id, total_caja: total, renglones_caja: renglonesCaja, avisos };
+    }
+    throw new Error(crudo == null
+      ? "La caja no contestó. Revisa en caja si llegó antes de enviarla otra vez."
+      : "La caja contestó algo que no se entiende. Revisa en caja si llegó antes de enviarla otra vez.");
+  }
   if (resp.typeinfo !== "Success") throw new Error(`La caja no aceptó la preventa: ${resp.msg ?? "sin motivo"}`);
   const referencia = String(resp.referencia ?? "").trim();
 
@@ -384,18 +450,8 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
   }
 
   // El número de la venta: por la referencia en la lista de la sala, y se relee.
-  let externo: string | null = null;
-  const lista = leerReferencias(await http.post("venta.php", { process: "get_referencias" }));
-  const candidatas = lista.filter((p) => p.referencia === referencia).sort((a, b) => Number(b.id) - Number(a.id));
-  if (!lista.length) avisos.push("La lista de preventas de la caja salió vacía: no se pudo leer el número de la venta.");
-  for (const c of candidatas) {
-    let j: Record<string, unknown> = {};
-    try { j = JSON.parse(await http.post("venta.php", { process: "cargar_data", n_ref: c.id, fecha })); } catch { j = {}; }
-    const esLaNuestra = String(j.id_factura ?? "") === c.id && String(j.codvende ?? "") === venta.vendedor
-      && venta.renglones.every((r) => new RegExp(`\\b${r.producto_id}\\b`).test(String(j.lista ?? "")));
-    if (esLaNuestra) { externo = c.id; break; }
-  }
-  if (!externo && lista.length) avisos.push("No se pudo confirmar el número de la venta en la caja.");
+  const externo = (await buscarPreventaEnLaCaja(http, fecha, { referencia, vendedor: venta.vendedor, productos }))?.id ?? null;
+  if (!externo) avisos.push("No se pudo confirmar el número de la venta en la caja.");
   return { referencia, externo_id: externo, total_caja: total, renglones_caja: renglonesCaja, avisos };
 }
 

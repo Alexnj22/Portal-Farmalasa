@@ -321,6 +321,8 @@ export default function PreventaView({ openModal }) {
         const r = await enviarPreventaDirecta({
             branchId: sala, customerId: clienteId, documento: venta.documento, pago: venta.pago, puntos, nota: venta.nota,
             lineas: lineasParaEnviar(venta.lineas), preventaId: venta.corrigiendo?.id ?? null,
+            // Lo que se ve es lo que se manda: si la base calcula otro total, frena.
+            totalEsperado: aPagar,
         });
         setEnviando(false);
         if (!r?.ok) { showToast('No llegó a caja', `${r?.error ?? 'Algo falló.'} Revisa la venta e intenta de nuevo.`, 'error'); setVuelta((n) => n + 1); return; }
@@ -333,7 +335,7 @@ export default function PreventaView({ openModal }) {
 
     const corregir = (p) => {
         setVenta({
-            ...VACIA, lineas: lineasDeVenta(p.venta),
+            ...VACIA, lineas: lineasDeVenta(p.venta).map((l) => (puedeAutorizar ? l : { ...l, lista: null })),
             cliente: p.customer_id ? { id: p.customer_id, name: p.cliente } : null,
             documento: p.venta?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
             pago: p.venta?.pago ?? 'contado', puntos: p.venta?.puntos ? String(p.venta.puntos) : '',
@@ -344,7 +346,7 @@ export default function PreventaView({ openModal }) {
         alBuscador();
     };
     const repetir = (p) => {
-        setVenta({ ...VACIA, lineas: lineasDeVenta(p.venta), cliente: p.customer_id ? { id: p.customer_id, name: p.cliente } : null });
+        setVenta({ ...VACIA, lineas: lineasDeVenta(p.venta).map((l) => (puedeAutorizar ? l : { ...l, lista: null })), cliente: p.customer_id ? { id: p.customer_id, name: p.cliente } : null });
         setResultado(null);
         setPestana('nueva');
         alBuscador();
@@ -1124,16 +1126,17 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             invalid={problema?.tipo === 'precio'} disabled={presentaciones.length < 2} onChange={(v) => onCambiar(pres.leer(v))} />
                     </div>
                     <div className="flex items-center justify-center gap-0.5 min-w-0" data-col="1">
-                        <Button size="xs" variant="ghost" icon={Minus} iconOnly aria-label="Una menos" tabIndex={-1}
+                        {/* Un cobro con monto va una sola vez: el monto ya es el total. */}
+                        <Button size="xs" variant="ghost" icon={Minus} iconOnly aria-label="Una menos" tabIndex={-1} disabled={Boolean(fila?.cobro_con_monto)}
                             onClick={() => onCambiar({ cantidad: Math.max(1, cant - 1) })} />
                         <div className="w-14">
                             <PortalInput compact inputMode="numeric" name={`cantidad-${linea.producto_id}-${linea.factor}`}
-                                value={String(linea.cantidad)} aria-label={`Cantidad de ${nombre}`} hasError={Boolean(malaCantidad)}
+                                value={String(linea.cantidad)} aria-label={`Cantidad de ${nombre}`} hasError={Boolean(malaCantidad)} disabled={Boolean(fila?.cobro_con_monto)}
                                 onFocus={(e) => e.target.select()}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onListo(); } }}
                                 onChange={(e) => onCambiar({ cantidad: e.target.value.replace(/\D/g, '').slice(0, 3) })} />
                         </div>
-                        <Button size="xs" variant="ghost" icon={Plus} iconOnly aria-label="Una más" tabIndex={-1}
+                        <Button size="xs" variant="ghost" icon={Plus} iconOnly aria-label="Una más" tabIndex={-1} disabled={Boolean(fila?.cobro_con_monto)}
                             onClick={() => onCambiar({ cantidad: Math.min(999, cant + 1) })} />
                     </div>
                     <div className="max-md:min-w-[9rem] max-md:flex-1 md:w-full md:min-w-0" data-col="2">

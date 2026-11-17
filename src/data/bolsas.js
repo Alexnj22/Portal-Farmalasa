@@ -7,6 +7,8 @@ import { recordarIngresoEnEspera } from './ingresosEnEspera';
 import { repartoDeUnaSalida } from '../utils/repartoDeSalida';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
+import { fetchCortesResumen, fetchCortesDelDiaDeSala } from './cortes';
+import { conTramoPorSalaYDia } from '../utils/cortesDiagnostico';
 
 // Bolsas de efectivo — el dinero que la sala guarda al confirmar un corte, hasta
 // que administración lo cuenta.
@@ -1899,4 +1901,34 @@ export async function fetchFacturasMapfre(sala, buscar = '') {
     });
     if (error) throw new Error(error.message);
     return Array.isArray(data) ? data : [];
+}
+
+
+/**
+ * La diferencia del CORTE (faltante o sobrante de la caja al hacer el corte),
+ * por `corte_id`. No es la del conteo de la bolsa: el corte compara lo contado
+ * en la caja contra lo que dice el tiquete; el conteo compara lo que hay en la
+ * bolsa contra lo que debía haber. «una cosa es diferencia del corte, y otra
+ * diferencia del conteo» (usuario, 2026-11-17).
+ *
+ * Es el TRAMO de ese corte —los cortes son acumulativos dentro del día—,
+ * calculado con `conTramoPorSalaYDia`, el mismo que usa Cortes de caja: dos
+ * pantallas que restan distinto terminan señalando faltantes distintos.
+ *
+ * Devuelve `null` si la lectura falla (no un mapa vacío, que diría «cuadró»).
+ * @returns {Promise<Map<number, number|null>|null>}
+ */
+export async function fetchDiferenciasDeCortes({ desde, hasta }) {
+    const cortes = await fetchCortesResumen({ desde, hasta });
+    if (cortes == null) return null;
+    return new Map(conTramoPorSalaYDia(cortes).map((c) => [c.id, c.tramo]));
+}
+
+/** Lo mismo para UN corte (el detalle de una bolsa). `undefined` si no se pudo leer. */
+export async function fetchDiferenciaDeUnCorte({ corteId, branchId, fecha }) {
+    if (!corteId) return null;
+    const { cortes, error } = await fetchCortesDelDiaDeSala({ branchId, fecha });
+    if (error) return undefined;
+    const c = conTramoPorSalaYDia(cortes).find((x) => x.id === corteId);
+    return c ? c.tramo : null;
 }

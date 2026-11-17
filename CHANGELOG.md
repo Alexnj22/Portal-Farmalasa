@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1572.5 — Bolsas: detalle nuevo y diferencia del corte separada de la del conteo
+
+- «mejoremos visualmente cómo se ve al abrir uno… moderno, útil, informativo»,
+  «¿dónde veo si ese corte tuvo faltante o sobrante? el folio no lo necesito.
+  una cosa es diferencia del corte, y otra diferencia del conteo» (usuario,
+  2026-11-17).
+- **Diferencia del corte** (lo contado en la caja contra el tiquete) separada de
+  la **diferencia del conteo** (lo que había en la bolsa contra lo que debía
+  haber). La del corte es el TRAMO de ese corte con `conTramoPorSalaYDia`, el
+  mismo cálculo de Cortes de caja (comparado contra `corte_tramo` en los cortes
+  del 15-nov). Nuevas `fetchDiferenciasDeCortes` / `fetchDiferenciaDeUnCorte`;
+  devuelven `null`/`undefined` si no se pudo leer, y la pantalla dice «Sin dato».
+- **«Todas»**: sin columna de folio; columnas «Dif. del corte» y «Dif. del
+  conteo»; tarjeta «Dif. de los cortes» (cada corte una vez aunque tenga varias
+  bolsas) junto a «Dif. del conteo»; filtro «Corte con diferencia».
+- **Detalle de la bolsa** rehecho: título con sucursal y día (sin folio), estado
+  en insignia, cifras en tarjetas (se guardó, salidas, debe haber, se contó),
+  las dos diferencias con nombre, el recorrido en cinco pasos (guardada →
+  entregada → recibida → contada → depositada, con fecha y quién) y el historial
+  como línea de tiempo con nombre corto. «Sin salidas» ya no ocupa media
+  pantalla.
+- Pruebas: `tests/unit/detalleDeBolsa.test.jsx` y `bolsasTodas.test.jsx`.
+- Novedades: no — mejora de una pantalla que ya existía.
+
+
 ## v2.1572.4 — Conteo: «+ Lote» también en conteos que no ajustan
 
 - En el conteo cíclico de Salud 4 (que no ajusta la existencia) no había dónde

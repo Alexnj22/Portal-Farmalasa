@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Clock, Package, Scale, ShieldCheck } from 'lucide-react';
+import { Clock, Package, Receipt, Scale, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Notice from '../../components/common/Notice';
@@ -12,7 +12,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diferenciaDeBolsa, saldoDeBolsa, contadoDeBolsa } from '@nucleo/utils/bolsasReparto';
-import { fetchBolsas, fetchSaldos, fetchPersonasDeBolsas } from '@nucleo/data/bolsas';
+import { fetchBolsas, fetchSaldos, fetchPersonasDeBolsas, fetchDiferenciasDeCortes } from '@nucleo/data/bolsas';
 import { FILTROS_TODAS_BOLSAS } from '@nucleo/constants/bolsas';
 
 /* ── «Todas»: cada bolsa de un rango, en la etapa que esté ───────────────────
@@ -43,6 +43,19 @@ const ORDEN_ESTADO = { ABIERTA: 0, ENTREGADA: 1, RECIBIDA: 2, CONTADA: 3, ANULAD
 
 const fechaCorta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
 const sello = (iso) => (iso ? fechaHora12(iso, { day: '2-digit', month: 'short' }) : '');
+const tonoDif = (n) => (n < -0.005 ? 'text-danger-text' : n > 0.005 ? 'text-warning-text' : 'text-content');
+
+/** Faltó / Sobró / Cuadró. `null` = no aplica; `undefined` = no se pudo leer. */
+function Diferencia({ valor }) {
+    if (valor === undefined) return <span className="text-caption text-content-3">Sin dato</span>;
+    if (valor == null) return <span className="text-content-3">—</span>;
+    if (Math.abs(valor) < 0.01) return <span className="text-caption text-success-text">Cuadró</span>;
+    return (
+        <span className={`font-bold tabular-nums whitespace-nowrap ${tonoDif(valor)}`}>
+            {valor < 0 ? 'Faltó ' : 'Sobró '}{formatMoney(Math.abs(valor))}
+        </span>
+    );
+}
 
 /** El último paso de la bolsa: quién la tiene o quién la cerró. */
 function ultimoPaso(b) {
@@ -62,6 +75,8 @@ export default function TodasLasBolsas({
     const [error, setError] = useState(false);
     const [personas, setPersonas] = useState(() => new Map());
     const [orden, setOrden] = useState({ key: 'fecha', dir: 'desc' });
+    // Diferencia del CORTE por `corte_id` (no la del conteo). `null` = no se pudo leer.
+    const [difCortes, setDifCortes] = useState(() => new Map());
 
     // Gana la lectura más nueva: el período y el refresco del módulo pueden
     // cruzarse, y la vieja no puede pisar a la nueva.
@@ -69,8 +84,12 @@ export default function TodasLasBolsas({
     const cargar = useCallback(async ({ silencioso = false } = {}) => {
         const esta = ++lecturaRef.current;
         if (!silencioso) setBolsas(null);
-        const filas = await fetchBolsas({ desde, hasta, estados: [] });
+        const [filas, cortes] = await Promise.all([
+            fetchBolsas({ desde, hasta, estados: [] }),
+            fetchDiferenciasDeCortes({ desde, hasta }),
+        ]);
         if (esta !== lecturaRef.current) return;
+        setDifCortes(cortes);
         if (filas == null) { setError(true); setBolsas([]); return; }
         const saldos = await fetchSaldos(filas.map((b) => b.id));
         if (esta !== lecturaRef.current) return;
@@ -103,12 +122,20 @@ export default function TodasLasBolsas({
     }), [bolsas, sala, busqueda, nombreSala, nombre]);
 
     const conDif = useCallback((b) => b.estado === 'CONTADA' && Math.abs(diferenciaDeBolsa(b) || 0) >= 0.01, []);
+    /** La diferencia del corte de esta bolsa: número, `null` (sin dato) o `undefined` (no se pudo leer). */
+    const difDelCorte = useCallback((b) => {
+        if (!b.corte_id) return null;
+        if (difCortes == null) return undefined;
+        return difCortes.get(b.corte_id) ?? null;
+    }, [difCortes]);
+    const conDifCorte = useCallback((b) => Math.abs(difDelCorte(b) || 0) >= 0.01, [difDelCorte]);
 
     const visibles = useMemo(() => {
         const f = delAlcance.filter((b) => {
             if (!filtro) return true;
             if (filtro === 'pendiente') return ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado);
             if (filtro === 'dif') return conDif(b);
+            if (filtro === 'difcorte') return conDifCorte(b);
             return b.estado === filtro;
         });
         const s = orden.dir === 'asc' ? 1 : -1;
@@ -117,10 +144,11 @@ export default function TodasLasBolsas({
             sala: (a, b) => String(nombreSala[a.branch_id] || '').localeCompare(String(nombreSala[b.branch_id] || ''), 'es'),
             monto: (a, b) => saldoDeBolsa(a) - saldoDeBolsa(b),
             dif: (a, b) => (diferenciaDeBolsa(a) ?? 0) - (diferenciaDeBolsa(b) ?? 0),
+            corte: (a, b) => (difDelCorte(a) ?? 0) - (difDelCorte(b) ?? 0),
             estado: (a, b) => ORDEN_ESTADO[a.estado] - ORDEN_ESTADO[b.estado],
         }[orden.key];
         return [...f].sort((a, b) => s * cmp(a, b) || String(b.fecha).localeCompare(String(a.fecha)));
-    }, [delAlcance, filtro, orden, nombreSala, conDif]);
+    }, [delAlcance, filtro, orden, nombreSala, conDif, conDifCorte, difDelCorte]);
 
     // Las cifras del rango. Las anuladas no suman: no son dinero.
     const resumen = useMemo(() => {
@@ -128,6 +156,10 @@ export default function TodasLasBolsas({
         const contadas = vivas.filter((b) => b.estado === 'CONTADA');
         const pendientes = vivas.filter((b) => b.estado !== 'CONTADA');
         const neto = contadas.reduce((a, b) => a + (diferenciaDeBolsa(b) || 0), 0);
+        // Un corte puede tener varias bolsas: su diferencia se cuenta una vez.
+        const cortesVistos = new Map();
+        for (const b of vivas) if (b.corte_id && !cortesVistos.has(b.corte_id)) cortesVistos.set(b.corte_id, difDelCorte(b));
+        const difsCorte = [...cortesVistos.values()];
         return {
             cuantas: vivas.length,
             monto: vivas.reduce((a, b) => a + saldoDeBolsa(b), 0),
@@ -137,16 +169,18 @@ export default function TodasLasBolsas({
             contado: contadas.reduce((a, b) => a + (Number(contadoDeBolsa(b)) || 0), 0),
             conDif: contadas.filter(conDif).length,
             neto: Math.round(neto * 100) / 100,
+            netoCortes: Math.round(difsCorte.reduce((a, d) => a + (d || 0), 0) * 100) / 100,
+            cortesConDif: difsCorte.filter((d) => Math.abs(d || 0) >= 0.01).length,
         };
-    }, [delAlcance, conDif]);
+    }, [delAlcance, conDif, difDelCorte]);
 
     const columnas = [
         { key: 'fecha', label: 'Fecha', sortable: true },
         { key: 'sala', label: 'Sucursal', sortable: true },
-        { key: 'folio', label: 'Folio', hideBelow: 'md' },
         ...(verMontos ? [
             { key: 'monto', label: 'En la bolsa', align: 'right', sortable: true },
-            { key: 'dif', label: 'Diferencia', align: 'right', sortable: true, hideBelow: 'lg' },
+            { key: 'corte', label: 'Dif. del corte', align: 'right', sortable: true, hideBelow: 'md' },
+            { key: 'dif', label: 'Dif. del conteo', align: 'right', sortable: true, hideBelow: 'md' },
         ] : []),
         { key: 'estado', label: 'Estado', sortable: true },
         { key: 'paso', label: 'Último paso', hideBelow: 'lg' },
@@ -160,10 +194,11 @@ export default function TodasLasBolsas({
             if (!v) return delAlcance.length;
             if (v === 'pendiente') return delAlcance.filter((b) => ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado)).length;
             if (v === 'dif') return delAlcance.filter(conDif).length;
+            if (v === 'difcorte') return delAlcance.filter(conDifCorte).length;
             return delAlcance.filter((b) => b.estado === v).length;
         };
         return FILTROS_TODAS_BOLSAS.filter((f) => f.value).map((f) => ({ ...f, label: `${f.label} (${cuenta(f.value)})` }));
-    }, [delAlcance, conDif]);
+    }, [delAlcance, conDif, conDifCorte]);
     useEffect(() => { onOpciones?.(opciones); }, [opciones, onOpciones]);
 
     const metricas = useMemo(() => (bolsas && verMontos ? [
@@ -172,9 +207,13 @@ export default function TodasLasBolsas({
             onClick: resumen.pendientes ? () => onFiltro?.('pendiente') : undefined },
         { clave: 't-cont', icon: ShieldCheck, label: 'Contadas', value: resumen.contadas, sub: formatMoney(resumen.contado),
             onClick: resumen.contadas ? () => onFiltro?.('CONTADA') : undefined },
-        { clave: 't-dif', icon: Scale, label: 'Diferencia neta', value: formatMoney(resumen.neto),
-            valueCls: resumen.neto < 0 ? 'text-danger-text' : resumen.neto > 0 ? 'text-warning-text' : 'text-content',
-            sub: `${resumen.conDif} con diferencia`,
+        { clave: 't-difc', icon: Receipt, label: 'Dif. de los cortes', value: formatMoney(resumen.netoCortes),
+            valueCls: tonoDif(resumen.netoCortes),
+            sub: `${resumen.cortesConDif} ${resumen.cortesConDif === 1 ? 'corte' : 'cortes'} con diferencia`,
+            onClick: resumen.cortesConDif ? () => onFiltro?.('difcorte') : undefined },
+        { clave: 't-dif', icon: Scale, label: 'Dif. del conteo', value: formatMoney(resumen.neto),
+            valueCls: tonoDif(resumen.neto),
+            sub: `${resumen.conDif} ${resumen.conDif === 1 ? 'bolsa' : 'bolsas'} con diferencia`,
             onClick: resumen.conDif ? () => onFiltro?.('dif') : undefined },
     ] : []), [bolsas, verMontos, resumen, onFiltro]);
     useEffect(() => { onMetricas?.(metricas); }, [metricas, onMetricas]);
@@ -220,7 +259,6 @@ export default function TodasLasBolsas({
                                 <span className="text-body-sm text-content">{nombreSala[b.branch_id] || '—'}</span>
                                 {b.caja && <span className="block text-caption text-content-3 truncate">{b.caja}</span>}
                             </DataCell>
-                            <DataCell><span className="font-mono text-caption text-content-2">{b.folio}</span></DataCell>
                             {verMontos && (
                                 <DataCell align="right">
                                     <span className={`font-bold tabular-nums ${b.estado === 'ANULADA' ? 'text-content-3 line-through' : 'text-content'}`}>
@@ -229,15 +267,10 @@ export default function TodasLasBolsas({
                                 </DataCell>
                             )}
                             {verMontos && (
-                                <DataCell align="right">
-                                    {dif == null ? <span className="text-content-3">—</span>
-                                        : Math.abs(dif) < 0.01 ? <span className="text-caption text-success-text">Cuadró</span>
-                                            : (
-                                                <span className={`font-bold tabular-nums ${dif < 0 ? 'text-danger-text' : 'text-warning-text'}`}>
-                                                    {dif < 0 ? 'Faltó ' : 'Sobró '}{formatMoney(Math.abs(dif))}
-                                                </span>
-                                            )}
-                                </DataCell>
+                                <DataCell align="right"><Diferencia valor={difDelCorte(b)} /></DataCell>
+                            )}
+                            {verMontos && (
+                                <DataCell align="right"><Diferencia valor={dif} /></DataCell>
                             )}
                             <DataCell>
                                 <Badge variant={est.variant} size="sm" dot className="whitespace-nowrap">{est.label}</Badge>

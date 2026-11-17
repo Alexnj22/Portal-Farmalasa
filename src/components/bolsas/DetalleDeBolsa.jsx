@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Ban, Image, Printer, ScrollText } from 'lucide-react';
+import { Ban, Banknote, Check, Image, Inbox, Landmark, Package, Printer, Send } from 'lucide-react';
 import Badge from '../common/Badge';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PromptModal from '../common/PromptModal';
-import { EmptyState, SkeletonText } from '../common/StateViews';
+import { SkeletonText } from '../common/StateViews';
 import PhotoLightbox from '../common/PhotoLightbox';
 import {
-    anularBolsa, anularLaSalidaDeBolsa, fetchEventosDeBolsa, fetchSalidasDeBolsa,
+    anularBolsa, anularLaSalidaDeBolsa, fetchDiferenciaDeUnCorte, fetchEventosDeBolsa, fetchSalidasDeBolsa,
 } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -20,6 +20,8 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { ACCION_DE_BOLSA, COMO_SE_IDENTIFICO } from '@nucleo/utils/bolsasTexto';
+import { contadoDeBolsa } from '@nucleo/utils/bolsasReparto';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.
@@ -70,6 +72,58 @@ const COMO = COMO_SE_IDENTIFICO;
 
 const ACCION = ACCION_DE_BOLSA;
 
+/* ── El recorrido de la bolsa, en cinco pasos ────────────────────────────────
+ * «que se vea moderno, útil, informativo» (usuario, 2026-11-17). La bitácora
+ * dice TODO, pero para saber «¿dónde está y quién la tuvo?» había que leerla
+ * entera. Los pasos lo dicen de un vistazo; la bitácora queda debajo. */
+const PASOS = [
+    { accion: 'CREAR',     label: 'Guardada',   icon: Package,  at: 'cerrada_at' },
+    { accion: 'ENTREGAR',  label: 'Entregada',  icon: Send,     at: 'entregada_at' },
+    { accion: 'RECIBIR',   label: 'Recibida',   icon: Inbox,    at: 'recibida_at' },
+    { accion: 'CONTAR',    label: 'Contada',    icon: Banknote, at: 'contado_at' },
+    { accion: 'DEPOSITAR', label: 'Depositada', icon: Landmark, at: null },
+];
+
+const ESTADO = {
+    ABIERTA:   { label: 'En la sucursal',      variant: 'info' },
+    ENTREGADA: { label: 'Esperando recepción', variant: 'warning' },
+    RECIBIDA:  { label: 'Por contar',          variant: 'warning' },
+    CONTADA:   { label: 'Contada',             variant: 'success' },
+    ANULADA:   { label: 'Anulada',             variant: 'neutral' },
+};
+
+const fechaHoraCorta = (iso) => (iso ? fechaHora12(iso, { day: 'numeric', month: 'short' }) : '');
+
+/** Una diferencia con su nombre: Faltó / Sobró / Cuadró, con color. */
+function Diferencia({ titulo, ayuda, valor, vacio, cargando = false }) {
+    const sinDato = valor === undefined;
+    const hay = typeof valor === 'number';
+    const cuadra = hay && Math.abs(valor) < 0.01;
+    const tono = !hay || cuadra ? (cuadra ? 'text-success-text' : 'text-content-3')
+        : valor < 0 ? 'text-danger-text' : 'text-warning-text';
+    return (
+        <div data-surface="card" className="px-3 py-2.5 min-w-0">
+            <div className="text-caption font-black uppercase tracking-widest text-content-3 truncate">{titulo}</div>
+            <div className={`text-body-xl font-bold tabular-nums ${tono}`}>
+                {cargando ? '…' : sinDato ? 'Sin dato' : !hay ? vacio
+                    : cuadra ? 'Cuadró' : `${valor < 0 ? 'Faltó' : 'Sobró'} ${formatMoney(Math.abs(valor))}`}
+            </div>
+            <div className="text-caption text-content-3">{ayuda}</div>
+        </div>
+    );
+}
+
+/** Una cifra del resumen: rótulo chico arriba, número grande abajo. */
+function Cifra({ label, valor, tono = 'text-content', fuerte = false, nota }) {
+    return (
+        <div data-surface="card" className="px-3 py-2.5 min-w-0">
+            <div className="text-caption font-black uppercase tracking-widest text-content-3 truncate">{label}</div>
+            <div className={`tabular-nums truncate ${fuerte ? 'text-title font-black' : 'text-body-xl font-bold'} ${tono}`}>{valor}</div>
+            {nota && <div className="text-caption text-content-3 truncate">{nota}</div>}
+        </div>
+    );
+}
+
 export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCambio }) {
     const { hasPermission } = useAuth();
     const puedeEditar = hasPermission('bolsas', 'can_edit');
@@ -77,6 +131,9 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
 
     const [salidas, setSalidas] = useState([]);
     const [eventos, setEventos] = useState([]);
+    // La diferencia del CORTE que creó la bolsa —faltante o sobrante de la caja—,
+    // que no es la del conteo. `undefined` = no se pudo leer.
+    const [difCorte, setDifCorte] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [ocupado, setOcupado] = useState(null);
     // Qué se está anulando: la bolsa entera, o una salida concreta.
@@ -115,11 +172,12 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
     const cargar = useCallback(async () => {
         if (!bolsa) return;
         setCargando(true);
-        const [s, e] = await Promise.all([
+        const [s, e, dc] = await Promise.all([
             fetchSalidasDeBolsa(bolsa.id),
             fetchEventosDeBolsa(bolsa.id),
+            fetchDiferenciaDeUnCorte({ corteId: bolsa.corte_id, branchId: bolsa.branch_id, fecha: bolsa.fecha }),
         ]);
-        setSalidas(s); setEventos(e); setCargando(false);
+        setSalidas(s); setEventos(e); setDifCorte(dc); setCargando(false);
     }, [bolsa]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al abrir
@@ -207,51 +265,110 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
     const enLaSala = bolsa.estado === 'ABIERTA';
     const vivas = salidas.filter((s) => !s.anulado_at);
     const saldo = Number(bolsa.monto_inicial || 0) + vivas.reduce((a, s) => a + Number(s.monto || 0), 0);
+    const salio = Math.abs(saldo - Number(bolsa.monto_inicial || 0));
+    const contado = bolsa.estado === 'CONTADA' ? contadoDeBolsa(bolsa) : null;
+    const dif = contado == null ? null : Math.round((Number(contado) - saldo) * 100) / 100;
+    const estado = ESTADO[bolsa.estado] || { label: bolsa.estado, variant: 'neutral' };
+
+    // El último evento de cada paso: quién y cuándo. La bitácora viene de la
+    // más nueva a la más vieja, así que el primero que aparece es el vigente.
+    const ultimoDe = (accion) => eventos.find((e) => e.accion === accion);
+    const pasos = PASOS.map((p) => {
+        const ev = ultimoDe(p.accion);
+        const at = ev?.created_at || (p.at ? bolsa[p.at] : null);
+        return { ...p, hecho: !!at || (p.accion === 'DEPOSITAR' && !!bolsa.deposito_id), at, quien: ev?.nombre };
+    });
+    const actual = pasos.findIndex((p) => !p.hecho);
 
     return (
         <>
             <LiquidModal open={!!bolsa} onClose={onClose} maxWidth="max-w-2xl"
                 ariaLabel={`Detalle de la bolsa ${bolsa.folio}`}>
-                <LiquidModal.Header titulo={bolsa.folio} onClose={onClose}
-                    subtitulo={`${sala} · corte del ${fechaCorta(bolsa.fecha)} ${hora12(bolsa.hora)}`} />
+                <LiquidModal.Header titulo={`${sala || 'Bolsa'} · ${fechaCorta(bolsa.fecha)}`} onClose={onClose}
+                    subtitulo={[`Corte de las ${hora12(bolsa.hora)}`, bolsa.caja].filter(Boolean).join(' · ')} />
 
-                <LiquidModal.Body className="space-y-4">
-                    <div data-surface="card" className="p-3 space-y-1">
-                        <div className="flex items-baseline justify-between gap-2">
-                            <span className="text-caption text-content-3">Se guardó</span>
-                            <span className="text-label tabular-nums text-content-2">
-                                {formatMoney(bolsa.monto_inicial)}
-                            </span>
-                        </div>
-                        {vivas.length > 0 && (
-                            <div className="flex items-baseline justify-between gap-2">
-                                <span className="text-caption text-content-3">
-                                    Salió en {vivas.length} {vivas.length === 1 ? 'vale' : 'vales'}
-                                </span>
-                                <span className="text-label tabular-nums text-content-2 whitespace-nowrap">
-                                    {`−${formatMoney(Math.abs(saldo - Number(bolsa.monto_inicial || 0)))}`}
-                                </span>
-                            </div>
-                        )}
-                        <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-divider">
-                            <span className="text-label font-bold text-content">Efectivo que debe haber</span>
-                            <span className="text-body font-bold tabular-nums text-content">
-                                {formatMoney(saldo)}
-                            </span>
-                        </div>
+                <LiquidModal.Body className="space-y-5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={estado.variant} dot>{estado.label}</Badge>
+                        {bolsa.dif_at && <Badge variant="neutral" icon={Check}>Diferencia del conteo resuelta</Badge>}
                     </div>
+
+                    {/* ── Las cifras ──────────────────────────────────────── */}
+                    <div className={`grid gap-2 ${contado != null ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                        <Cifra label="Se guardó" valor={formatMoney(bolsa.monto_inicial)} />
+                        <Cifra label="Salidas" valor={vivas.length ? `−${formatMoney(salio)}` : formatMoney(0)}
+                            nota={vivas.length ? `${vivas.length} ${vivas.length === 1 ? 'vale' : 'vales'}` : 'Sin salidas'} />
+                        <Cifra label="Debe haber" valor={formatMoney(saldo)} fuerte />
+                        {contado != null && (
+                            <Cifra label="Se contó" valor={formatMoney(contado)} fuerte
+                                tono={Math.abs(dif) < 0.01 ? 'text-success-text' : dif < 0 ? 'text-danger-text' : 'text-warning-text'} />
+                        )}
+                    </div>
+
+                    {/* ── Dos diferencias que NO son la misma ─────────────────
+                        «una cosa es diferencia del corte, y otra diferencia del
+                        conteo» (usuario, 2026-11-17). El corte compara lo que la
+                        caja contó contra el tiquete; el conteo, lo que había en
+                        la bolsa contra lo que debía haber. */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <Diferencia titulo="Diferencia del corte"
+                            ayuda="Lo contado en la caja contra lo que dice el corte"
+                            valor={bolsa.corte_id ? difCorte : null}
+                            vacio={bolsa.corte_id ? 'Sin conteo en el corte' : 'Sin corte'} cargando={cargando} />
+                        <Diferencia titulo="Diferencia del conteo"
+                            ayuda="Lo que había en la bolsa contra lo que debía haber"
+                            valor={dif}
+                            vacio={bolsa.estado === 'ANULADA' ? 'Anulada' : 'Todavía no se cuenta'} />
+                    </div>
+
+                    {bolsa.dif_causa && (
+                        <Notice variant={bolsa.dif_at ? 'info' : 'warning'} compact>
+                            <b className="font-bold">Por qué no cuadró el conteo:</b> {bolsa.dif_causa}
+                        </Notice>
+                    )}
+
+                    {/* ── El recorrido ────────────────────────────────────── */}
+                    {bolsa.estado !== 'ANULADA' && (
+                        <ol className="grid grid-cols-5 gap-1" aria-label="Recorrido de la bolsa">
+                            {pasos.map((p, i) => {
+                                const Icono = p.icon;
+                                const esActual = i === actual;
+                                return (
+                                    <li key={p.accion} className="relative flex flex-col items-center text-center min-w-0">
+                                        {i > 0 && (
+                                            <span aria-hidden className={`absolute top-4 right-1/2 w-full h-0.5 -translate-y-1/2
+                                                ${p.hecho ? 'bg-brand' : 'bg-divider'}`} />
+                                        )}
+                                        <span className={`relative z-base grid place-items-center size-8 rounded-full border-2
+                                            ${p.hecho ? 'bg-brand border-brand text-white'
+                                                : esActual ? 'bg-surface-modal border-brand text-brand-text'
+                                                    : 'bg-surface-modal border-divider text-content-3'}`}>
+                                            {p.hecho ? <Check size={15} strokeWidth={3} /> : <Icono size={14} />}
+                                        </span>
+                                        <span className={`mt-1.5 text-caption font-bold truncate max-w-full
+                                            ${p.hecho || esActual ? 'text-content' : 'text-content-3'}`}>{p.label}</span>
+                                        <span className="text-caption text-content-3 truncate max-w-full tabular-nums">
+                                            {p.at ? fechaHoraCorta(p.at) : esActual ? 'Pendiente' : ''}
+                                        </span>
+                                        {p.quien && (
+                                            <span className="hidden sm:block text-caption text-content-3 truncate max-w-full">
+                                                {shortEmployeeName(p.quien)}
+                                            </span>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    )}
 
                     {cargando && <SkeletonText lines={3} />}
 
-                    {/* ── Lo que salió ────────────────────────────────────── */}
-                    {!cargando && (
+                    {/* ── Lo que salió (sólo si salió algo) ───────────────── */}
+                    {!cargando && salidas.length > 0 && (
                         <section className="space-y-2">
                             <h4 className="text-caption font-black uppercase tracking-widest text-content-3">
-                                Lo que salió de esta bolsa
+                                Salidas de esta bolsa
                             </h4>
-                            {!salidas.length && (
-                                <EmptyState linea icon={ScrollText} title="Sin salidas" />
-                            )}
                             {salidas.map((s) => (
                                 <div key={s.movimiento_id} data-surface="card"
                                     className={`p-3 space-y-1.5 ${s.anulado_at ? 'opacity-55' : ''}`}>
@@ -351,51 +468,56 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                         </section>
                     )}
 
-                    {/* ── La bitácora ─────────────────────────────────────── */}
+                    {/* ── El historial, como línea de tiempo ──────────────── */}
                     {!cargando && eventos.length > 0 && (
-                        <section className="space-y-1.5">
+                        <section className="space-y-2">
                             <h4 className="text-caption font-black uppercase tracking-widest text-content-3">
                                 Historial
                             </h4>
-                            {/* El renglón ENVUELVE, no se corta. Estaba en
-                                `truncate` y con eso «se lo lleva Carlos
-                                Renderos (usuario y contraseña)» terminaba en
-                                «(u…»: justo el pedazo que dice CÓMO se probó la
-                                identidad, que es la mitad del control. Una
-                                bitácora que esconde su propio texto no sirve
-                                para lo que existe.
-
-                                Y la cara va delante del nombre: «que SIEMPRE la
-                                foto con nombre y apellido» (usuario). Sin foto,
-                                `LiquidAvatar` pinta las iniciales — la columna
-                                no cambia de forma según quién sea. */}
-                            {eventos.map((ev) => (
-                                <div key={ev.id} className="flex items-start justify-between gap-3 px-1">
-                                    <span className="text-caption text-content-2 min-w-0 flex items-start gap-1.5 flex-wrap">
-                                        {ev.nombre && (
-                                            <AvatarConEstado emp={{ id: ev.employee_id, name: ev.nombre, photo: ev.photo_url }}
-                                                px={20} marco="" />
+                            {/* El texto ENVUELVE, no se corta: el pedazo que dice CÓMO se
+                                probó la identidad es la mitad del control. Y la cara va
+                                delante del nombre, siempre. */}
+                            <ol className="relative">
+                                {eventos.map((ev, i) => (
+                                    <li key={ev.id} className="relative flex gap-3 pb-4 last:pb-0">
+                                        {i < eventos.length - 1 && (
+                                            <span aria-hidden className="absolute left-[13px] top-7 bottom-0 w-px bg-divider" />
                                         )}
-                                        <span className="min-w-0">
-                                            <b className="font-bold text-content">{ACCION[ev.accion] || ev.accion}</b>
-                                            {ev.nombre ? ` · ${ev.nombre}` : ''}
-                                            {ev.motivo ? ` · ${ev.motivo}` : ''}
-                                            {ev.nota && !ev.motivo ? ` · ${ev.nota}` : ''}
+                                        <span className="relative z-base shrink-0">
+                                            {ev.nombre ? (
+                                                <AvatarConEstado emp={{ id: ev.employee_id, name: ev.nombre, photo: ev.photo_url }}
+                                                    px={28} marco="" />
+                                            ) : (
+                                                <span className="grid place-items-center size-7 rounded-full bg-surface-card-hover text-content-3">
+                                                    <Package size={13} />
+                                                </span>
+                                            )}
                                         </span>
-                                    </span>
-                                    <span className="text-caption text-content-3 tabular-nums shrink-0">
-                                        {selloDeTiempo(ev.created_at)}
-                                    </span>
-                                </div>
-                            ))}
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-baseline justify-between gap-3">
+                                                <span className="text-label text-content min-w-0">
+                                                    <b className="font-bold">{ACCION[ev.accion] || ev.accion}</b>
+                                                    {ev.nombre && <span className="text-content-2"> · {shortEmployeeName(ev.nombre)}</span>}
+                                                </span>
+                                                <span className="text-caption text-content-3 tabular-nums shrink-0">
+                                                    {fechaHoraCorta(ev.created_at)}
+                                                </span>
+                                            </div>
+                                            {(ev.motivo || ev.nota) && (
+                                                <p className="text-caption text-content-3 mt-0.5">{ev.motivo || ev.nota}</p>
+                                            )}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ol>
                         </section>
                     )}
 
-                    {!enLaSala && (
-                        <Notice variant="info" icon={Ban}>
-                            Esta bolsa ya salió de la sucursal. Aquí no se corrige nada.
-                            {' '}Si el dinero no cuadra, se resuelve en el conteo.
-                        </Notice>
+                    {!enLaSala && bolsa.estado !== 'ANULADA' && (
+                        <p className="flex items-center gap-1.5 text-caption text-content-3">
+                            <Ban size={13} className="shrink-0" />
+                            Ya salió de la sucursal: aquí no se corrige. Si no cuadra, se resuelve en el conteo.
+                        </p>
                     )}
                 </LiquidModal.Body>
 

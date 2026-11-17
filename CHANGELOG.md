@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1564.4 — Escáner: enfoca de cerca en iPhone Pro
+
+- **El escáner de la app enfoca de cerca en los iPhone Pro** (usuario: «en mi
+  17 pro max me toca alejarlo porque al tenerlo cerca no enfoca»). Abría el
+  lente principal, que no enfoca a menos de ~20 cm; ahora abre la cámara
+  combinada del iPhone, que pasa sola al gran angular (macro) como la app de
+  Cámara (`apps/mobile/componentes/Escaner.js`, `selectedLens`).
+
+Novedades: no — arreglo de algo que ya existe.
+
 ## v2.1564.3 — Preventa nativa en la app
 
 - **Preventa ya no se abre como el portal dentro de la app**: pantalla nativa

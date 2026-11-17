@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.7 — Kiosco de caja: la columna En caja ocupa menos
+
+- Pedido del usuario desde Salud 4: la columna de la cola quitaba mucho espacio.
+  Pasa de 300/380 px a 232 px (264 en pantallas grandes, 300 sólo en las muy
+  anchas), con fichas más compactas.
+- `docs/COBRO-EN-LA-CAJA-COMO-LO-HACE-EL-SISTEMA-2026-11-17.md`: cómo cobra hoy
+  la caja una preventa, levantado de un cobro real de prueba, para conectar el
+  botón Cobrar del kiosco.
+
+Novedades: no — ajuste visual del kiosco piloto.
+
 ## v2.1573.6 — Bolsas en la app: pestaña «Todas» y las dos diferencias en el detalle
 
 - «¿y la vista móvil? ¿es canónico y nativo?» (usuario, 2026-11-17). La web en

@@ -52,15 +52,15 @@ function Persona({ persona, px = 20, rotulo, className = '' }) {
 function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir }) {
     return (
         <aside aria-label="Preventas en caja" data-surface="page-header"
-            className="md:sticky md:top-0 md:h-[100dvh] md:w-[300px] xl:w-[380px] shrink-0 md:border-r border-b md:border-b-0 border-border-card flex flex-col">
-            <div className="h-[var(--barra-kiosco)] shrink-0 px-5 flex items-center justify-between gap-3 border-b border-border-card">
+            className="md:sticky md:top-0 md:h-[100dvh] md:w-[232px] xl:w-[264px] 2xl:w-[300px] shrink-0 md:border-r border-b md:border-b-0 border-border-card flex flex-col">
+            <div className="h-[var(--barra-kiosco)] shrink-0 px-4 flex items-center justify-between gap-3 border-b border-border-card">
                 <h2 className="text-title font-bold text-content flex items-center gap-2">
                     En caja {cola && <Badge size="sm" variant={cola.length ? 'info' : 'neutral'}>{cola.length}</Badge>}
                 </h2>
                 <Button variant="ghost" size="sm" icon={RefreshCw} iconOnly loading={leyendo} onClick={leer} aria-label="Actualizar la cola" />
             </div>
             {problema && <div className="px-5 pb-3"><Notice variant="warning" icon={WifiOff}>{problema}</Notice></div>}
-            <div className="flex-1 overflow-y-auto px-3 py-3">
+            <div className="flex-1 overflow-y-auto px-2 py-2">
                 {cola == null ? <div className="p-3"><SkeletonText lines={5} /></div>
                     : cola.length === 0 ? (
                         <div className="px-2 py-12 flex flex-col items-center gap-2 text-center">
@@ -76,8 +76,8 @@ function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir
                                 return (
                                     <li key={p.id}>
                                         <button type="button" onClick={() => onElegir(activa ? null : p.id)} aria-pressed={activa} data-interactive
-                                            className={`w-full text-left rounded-[var(--radius-card-anidada)] p-3 flex gap-3 items-start transition-colors duration-[var(--dur-fast)] active:scale-[0.99] ${activa ? 'bg-brand/15 ring-2 ring-brand/45' : 'hover:bg-brand/5'}`}>
-                                            <span className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-title font-bold tabular-nums ${primero || activa ? 'bg-brand text-white' : 'bg-surface-input text-content'}`}>
+                                            className={`w-full text-left rounded-[var(--radius-card-anidada)] p-2.5 flex gap-2.5 items-start transition-colors duration-[var(--dur-fast)] active:scale-[0.99] ${activa ? 'bg-brand/15 ring-2 ring-brand/45' : 'hover:bg-brand/5'}`}>
+                                            <span className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-body font-bold tabular-nums ${primero || activa ? 'bg-brand text-white' : 'bg-surface-input text-content'}`}>
                                                 {p.referencia || '—'}
                                             </span>
                                             <span className="min-w-0 flex-1 flex flex-col gap-1">

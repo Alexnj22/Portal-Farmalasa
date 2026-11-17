@@ -267,8 +267,9 @@ sucursal lo decide.
    lo mismo que el ERP.
 2. **Carné olvidado.** Propuesta: el jefe de sucursal finaliza con el suyo y
    queda a su nombre. No se cobra sin carné.
-3. **Cupo de kioscos.** Hoy son 3 por sucursal (`LIMITE_KIOSCOS`). Propuesta:
-   el de caja va aparte, 1 por sucursal.
+3. ~~**Cupo de kioscos.**~~ **Decidido por el usuario (2026-11-17):** 1
+   kiosco de caja por sucursal, aparte; los de marcación siguen hasta 3
+   (`LIMITE_KIOSCOS`).
 4. **Tarjeta.** El número de boleta de la terminal (fase 4): leerlo como lo
    pide hoy la caja, junto con `caja_terminales_pos`.
 

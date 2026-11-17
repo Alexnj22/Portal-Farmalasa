@@ -38,7 +38,7 @@ import {
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { datosDeLoBuscado } from '@nucleo/utils/clienteValidacion';
+import { datosDeLoBuscado, esContribuyente } from '@nucleo/utils/clienteValidacion';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -824,11 +824,14 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
     const faltan = datosQueFaltan(info);
     const ccf = new Set(faltanCcf);
     // Los datos, siempre en el mismo orden: lo vacío se ve como «Falta».
+    // NIT, NRC y giro son del contribuyente: a un consumidor no se le piden,
+    // salvo que ya los tenga o que la venta vaya con crédito fiscal.
+    const fiscal = new Set(['NIT', 'NRC', 'Giro']);
     const datos = [
         ['DUI', info?.dui, ccf.has('DUI')], ['NIT', info?.nit, ccf.has('NIT')], ['NRC', info?.nrc, ccf.has('NRC')],
         ['Teléfono', info?.phone, false], ['Correo', info?.email, false], ['Giro', info?.giro, ccf.has('Giro')],
         ['Dirección', info?.direccion, ccf.has('Dirección')],
-    ];
+    ].filter(([k, v, pide]) => !fiscal.has(k) || esContribuyente(info?.categoria) || String(v ?? '').trim() || pide);
     const importante = (k) => faltan.some((f) => f === k || (f === 'DUI o NIT' && (k === 'DUI' || k === 'NIT')));
     return (
         <div className="space-y-2.5">
@@ -1086,11 +1089,13 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
     const pres = opcionesDePresentacion(fila, linea);
     const presentaciones = pres.options;
     const cant = Number(linea.cantidad) || 0;
-    const opciones = opcionesDePrecio(fila?.precios);
+    // Sólo los precios a los que tiene acceso el cliente: el suyo y los más altos.
+    const opciones = opcionesDePrecio(fila?.precios, fila?.lista_auto);
     // El precio que le toca al cliente sale ya marcado; elegir otro lo
     // autoriza, y volver al suyo quita la autorización (`lista: null`).
     const opcionesPrecio = opciones.map((o) => ({ value: o.lista, label: `${o.nombre} · ${formatMoney(o.precio)}` }));
-    const listaElegida = linea.lista ?? fila?.lista ?? listaCliente ?? '';
+    const listaElegida = (linea.lista && opciones.some((o) => o.lista === linea.lista) ? linea.lista : null)
+        ?? fila?.lista ?? listaCliente ?? '';
     const nombre = fila?.nombre ?? linea.nombre;
     const malaCantidad = problema && (problema.tipo === 'existencia' || problema.tipo === 'cantidad');
     return (
@@ -1148,7 +1153,7 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             <p className="text-body-sm font-semibold text-danger-text">Sin precio</p>
                         ) : puedeAutorizar ? (
                             <LiquidSelect compact clearable={false} value={listaElegida} options={opcionesPrecio} ariaLabel={`Precio de ${nombre}`}
-                                onChange={(v) => onCambiar({ lista: !v || v === (fila?.lista && !linea.lista ? fila.lista : listaCliente) ? null : v })} />
+                                onChange={(v) => onCambiar({ lista: !v || v === (fila?.lista_auto ?? (fila?.lista && !linea.lista ? fila.lista : listaCliente)) ? null : v })} />
                         ) : (
                             <p className="text-body-sm tabular-nums text-content-2">
                                 {fila?.precio != null ? formatMoney(fila.precio) : '…'}

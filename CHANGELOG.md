@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1561.5 — Preventa: precio según el cliente
+
+- **Empleado:** Mayoreo Plus en cualquier presentación, también en blíster.
+  Los demás siguen la regla: Mayoreo y Mayoreo Plus sólo en la presentación
+  más grande; en las chicas, Preferente.
+- **Precios que se ofrecen:** sólo el del cliente y los más altos. Un precio
+  más bajo ya no sale en la lista y la base tampoco lo respeta si se pide.
+- **Datos del cliente:** a un consumidor ya no se le muestran NIT, NRC ni giro,
+  salvo que los tenga o que la venta vaya con crédito fiscal.
+
 ## v2.1561.4 — Preventa: caja cerrada lo dice claro
 
 - Enviar una preventa después del cierre del día decía «La caja no devolvió la

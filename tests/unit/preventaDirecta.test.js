@@ -68,6 +68,12 @@ describe('faltaParaEnviar', () => {
         expect(opcionesDePrecio({ vineta: 3, descuento_1: 2.5, vip: 2, clinica: 0, mayoreo: 1.65 }).map((o) => o.nombre))
             .toEqual(['Regular', 'Público', 'Preferente', 'Mayoreo Plus']);
     });
+    it('con la lista del cliente, sólo esa y las más altas', () => {
+        const precios = { vineta: 3, descuento_1: 2.5, vip: 2, clinica: 1.8, mayoreo: 1.65 };
+        expect(opcionesDePrecio(precios, 'vip').map((o) => o.lista)).toEqual(['vineta', 'descuento_1', 'vip']);
+        expect(opcionesDePrecio(precios, 'mayoreo').map((o) => o.lista)).toEqual(['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo']);
+        expect(opcionesDePrecio(precios, 'descuento_1').map((o) => o.lista)).toEqual(['vineta', 'descuento_1']);
+    });
 });
 
 describe('estados y nombres', () => {

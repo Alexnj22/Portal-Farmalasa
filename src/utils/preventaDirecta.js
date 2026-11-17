@@ -37,10 +37,16 @@ export function faltanParaCcf(cliente) {
     return faltan;
 }
 
-/** Las listas con precio de una presentación, para elegir viendo el monto. */
-export function opcionesDePrecio(precios) {
+/**
+ * Las listas con precio de una presentación, para elegir viendo el monto.
+ * Con `tope` (la lista que le toca al cliente ahí), sólo esa y las más altas:
+ * un precio más bajo no se ofrece (usuario, 2026-11-16) y la base tampoco lo
+ * respeta.
+ */
+export function opcionesDePrecio(precios, tope = null) {
+    const hasta = tope && ORDEN_DE_LISTAS.includes(tope) ? ORDEN_DE_LISTAS.indexOf(tope) : ORDEN_DE_LISTAS.length - 1;
     return ORDEN_DE_LISTAS
-        .filter((k) => Number(precios?.[k]) > 0)
+        .filter((k, i) => i <= hasta && Number(precios?.[k]) > 0)
         .map((k) => ({ lista: k, nombre: NOMBRE_DE_LISTA[k], precio: Number(precios[k]) }));
 }
 

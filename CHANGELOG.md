@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.0 — Kiosco de caja: la cola siempre a la vista y el cobro en la pantalla de venta
+
+Rediseño completo del kiosco de caja (pedido del usuario: «no veo un rediseño,
+solo una skin»). Se compararon cuatro diseños con datos de prueba y se eligió
+el D, «mostrador doble».
+
+- **La cola vive siempre a la izquierda**, también mientras se vende o se hace
+  un corte. Cada ticket: número, cliente, quién lo vendió (con su foto), cuánto
+  espera y etiquetas de documento, pago y puntos, en una sola línea.
+- **Tocar un ticket abre la MISMA pantalla de venta (`PreventaView`) cargada
+  con esa preventa** (`cobrando`): presentación, cantidad, precio, lote,
+  cliente y puntos se corrigen con las mismas validaciones. El recuadro de caja
+  es más angosto y cobra: comprobante, forma de pago, recibido con atajos
+  (Exacto y billetes) y vuelto. **El cobro real todavía no está conectado**:
+  fuera de la muestra el botón queda apagado y lo dice.
+- En el kiosco la venta no lleva pestañas ni sucursal (la cola ES la lista y la
+  sucursal es la del equipo). Junto al buscador: Existencias · Apartar ·
+  Entrada · Salida. Entrada y Salida abren el diálogo de la caja
+  (`MiCajaView abrirAlEntrar`) y al cerrarlo vuelven a la venta, que sigue
+  montada detrás: lo editado no se pierde.
+- Teclas al cobrar: F2 cobrar, F9 recibido, F3 producto, F4 cliente, F7
+  existencias, Supr quitar, Esc cerrar la preventa. F6 (vaciar) apagada al
+  cobrar. **Esc ya no saca del kiosco de caja** (en los otros kioscos sí): se
+  aprieta para cerrar una preventa o una lista.
+- El contador de la sesión dice qué es: «Se cierra sola si no la usas».
+- La lógica de la sesión salió a `useKioscoDeCaja`; la cola a
+  `datosDeLaCola.js`. `?demo` muestra una cola de muestra con productos y
+  clientes del entorno de pruebas y un botón «Simular carné» (equipo sin
+  lector); el cobro de la muestra no escribe nada.
+- Novedades: no — el gate no lo pidió (`--valorar`: 3 de 4, «no hace falta
+  preguntar»); el kiosco de caja todavía es piloto en Salud 4.
+
 ## v2.1572.5 — Bolsas: detalle nuevo y diferencia del corte separada de la del conteo
 
 - «mejoremos visualmente cómo se ve al abrir uno… moderno, útil, informativo»,

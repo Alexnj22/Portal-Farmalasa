@@ -4486,3 +4486,25 @@ html[data-en-pestana] #main-scroll {
   font-size: 0.9375rem;
   gap: 0.5rem;
 }
+
+/* El corte de un ticket: línea punteada con dos mordidas a los lados, del
+   color del fondo. Va entre el talón y el cuerpo de una tarjeta con
+   `overflow-hidden` (kiosco de caja, diseño B, 2026-11-17). */
+.ticket-corte {
+  position: relative;
+  height: 0;
+  margin-inline: 1.5rem;
+  border-top: 2px dashed var(--border-card);
+}
+.ticket-corte::before,
+.ticket-corte::after {
+  content: '';
+  position: absolute;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--bg-page);
+}
+.ticket-corte::before { left: calc(-1.5rem - 10px); }
+.ticket-corte::after { right: calc(-1.5rem - 10px); }

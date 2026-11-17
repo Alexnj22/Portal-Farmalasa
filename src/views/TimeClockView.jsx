@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Button from '../components/common/Button';
 import { LogOut } from 'lucide-react';
 
@@ -13,9 +13,10 @@ import EarlyExitForm from '../components/timeclock/EarlyExitForm';
 import KioskConfigModal from '../components/timeclock/KioskConfigModal';
 import IdleScanPanel from '../components/timeclock/IdleScanPanel';
 import SelfDeclareShiftPanel from '../components/timeclock/SelfDeclareShiftPanel';
+import { useSearchParams } from 'react-router-dom';
 import CajaDelKiosco from '../components/timeclock/CajaDelKiosco';
+import BarraDeDemo from '../components/timeclock/BarraDeDemo';
 import { hora12ConSegundos } from '@nucleo/utils/hora';
-import { usePestanaEnUrl } from '@plataforma/usePestanaEnUrl';
 
 // El tipo del equipo se lee UNA vez al montar: cambia sólo al vincularlo, y
 // eso recarga la página. Un equipo de antes del 2026-11-17 no tiene tipo:
@@ -29,16 +30,18 @@ function tipoDelEquipo() {
   }
 }
 
-// El kiosco de caja tiene tres pantallas (rediseño del 2026-11-17): Ventas,
-// Caja y Marcar. Vive en la dirección (`?pantalla=`; `tab` ya lo usa Preventa).
-const PESTANAS_CAJA = ['ventas', 'caja', 'marcar'];
 
 const TimeClockView = ({ setView }) => {
   const { logout } = useAuth();
   const esCaja = useMemo(() => tipoDelEquipo() === 'caja', []);
-  const [pestana, setPestana] = usePestanaEnUrl(esCaja ? PESTANAS_CAJA : ['marcar'], esCaja ? 'ventas' : 'marcar', 'pantalla');
+  // En el kiosco de caja el marcador escucha sólo cuando se eligió Marcar: un
+  // carné que pasa para vender o abrir la caja no deja una marcación.
+  const [marcadorActivo, setMarcadorActivo] = useState(false);
+  // `?demo`: el kiosco de caja con datos de muestra y un botón que hace de carné.
+  const [paramsKiosco] = useSearchParams();
+  const demoKiosco = esCaja && paramsKiosco.has('demo');
   // En Ventas y Caja el lector es del carné de la sesión, no del marcador.
-  const marcadorPausado = esCaja && pestana !== 'marcar';
+  const marcadorPausado = esCaja && !marcadorActivo;
 
   const {
     scanCode,
@@ -141,11 +144,15 @@ const TimeClockView = ({ setView }) => {
   useEffect(() => {
     const handleEscKey = (e) => {
       if (e.key === 'Escape') {
+        if (e.defaultPrevented) return; // ya la usó la pantalla (cerrar la preventa en caja)
         if (feedback)           { closeFeedback();              return; }
         if (isRevokeModalOpen)  { setIsRevokeModalOpen(false); return; }
         if (selfDeclareData)    { cancelSelfDeclare();          return; }
         if (isConfiguring || earlyExitData || authPrompt || specialMode) { cancelAuth(); return; }
         if (scanCode?.length)   { setScanCode('');              return; }
+        // En el kiosco de caja Esc NO saca del kiosco: se aprieta para cerrar
+        // una preventa o una lista, y salir se hace con «Salir».
+        if (esCaja) return;
         handleLogout();
       }
     };
@@ -153,13 +160,57 @@ const TimeClockView = ({ setView }) => {
     return () => window.removeEventListener('keydown', handleEscKey);
   }, [
     feedback, isRevokeModalOpen, isConfiguring, earlyExitData, selfDeclareData,
-    authPrompt, specialMode, scanCode, closeFeedback,
+    authPrompt, specialMode, scanCode, closeFeedback, esCaja,
     setIsRevokeModalOpen, cancelAuth, setScanCode, handleLogout, cancelSelfDeclare,
   ]);
 
   const now = time || new Date();
   const timeStr  = hora12ConSegundos(now);
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // Los paneles del lector: espera, permiso, salida anticipada, turno. En el
+  // kiosco de caja aparecen a la derecha del mostrador cuando se elige Marcar.
+  const panelMarcador = (
+    <div className="w-full" style={{ animation: 'viewEnter 280ms var(--ease-spring) 120ms both' }}>
+      {selfDeclareData ? (
+        <SelfDeclareShiftPanel
+          employee={selfDeclareData.employee}
+          onSubmit={submitSelfDeclare}
+        />
+      ) : earlyExitData ? (
+        <EarlyExitForm
+          earlyExitData={earlyExitData}
+          exitReason={exitReason}
+          exitNotes={exitNotes}
+          onChangeReason={setExitReason}
+          onChangeNotes={setExitNotes}
+          onSubmit={submitEarlyExit}
+          onCancel={cancelAuth}
+          isProcessing={isProcessing}
+        />
+      ) : authPrompt ? (
+        <AuthPromptPanel
+          authPrompt={authPrompt}
+          scanCode={scanCode}
+          inputRef={inputRef}
+          submitHandler={handleScan}
+          keyDownHandler={handleKeyDown}
+          inputChangeHandler={handleInputChange}
+          cancelHandler={cancelAuth}
+          forceNormalOutHandler={handleForceNormalOut}
+          clearHandler={() => setScanCode('')}
+          skipPinHandler={handleSkipPin}
+        />
+      ) : (
+        <IdleScanPanel
+          specialMode={specialMode}
+          cancelSpecialModeHandler={cancelAuth}
+          specialOutHandler={requestSpecialOut}
+          lunchAlerts={lunchAlerts}
+        />
+      )}
+    </div>
+  );
 
   // El marcador: reloj, lector y los paneles de permiso. En el kiosco de
   // caja es la pantalla «Marcar»; en un marcador es todo.
@@ -196,46 +247,7 @@ const TimeClockView = ({ setView }) => {
         </p>
       </div>
 
-      {/* Scan / auth panels */}
-      <div className="w-full" style={{ animation: 'viewEnter 280ms var(--ease-spring) 120ms both' }}>
-        {selfDeclareData ? (
-          <SelfDeclareShiftPanel
-            employee={selfDeclareData.employee}
-            onSubmit={submitSelfDeclare}
-          />
-        ) : earlyExitData ? (
-          <EarlyExitForm
-            earlyExitData={earlyExitData}
-            exitReason={exitReason}
-            exitNotes={exitNotes}
-            onChangeReason={setExitReason}
-            onChangeNotes={setExitNotes}
-            onSubmit={submitEarlyExit}
-            onCancel={cancelAuth}
-            isProcessing={isProcessing}
-          />
-        ) : authPrompt ? (
-          <AuthPromptPanel
-            authPrompt={authPrompt}
-            scanCode={scanCode}
-            inputRef={inputRef}
-            submitHandler={handleScan}
-            keyDownHandler={handleKeyDown}
-            inputChangeHandler={handleInputChange}
-            cancelHandler={cancelAuth}
-            forceNormalOutHandler={handleForceNormalOut}
-            clearHandler={() => setScanCode('')}
-            skipPinHandler={handleSkipPin}
-          />
-        ) : (
-          <IdleScanPanel
-            specialMode={specialMode}
-            cancelSpecialModeHandler={cancelAuth}
-            specialOutHandler={requestSpecialOut}
-            lunchAlerts={lunchAlerts}
-          />
-        )}
-      </div>
+      {panelMarcador}
 
     </div>
   );
@@ -300,13 +312,17 @@ const TimeClockView = ({ setView }) => {
       )}
 
       {esCaja ? (
+        <>
+        {demoKiosco && <BarraDeDemo />}
         <CajaDelKiosco
-          pantalla={pestana}
-          onPantalla={setPestana}
           ahora={now}
           onSalir={handleLogout}
-          marcar={<div className="flex-1 flex flex-col items-center">{marcador}</div>}
+          panelMarcador={panelMarcador}
+          marcadorOcupado={Boolean(selfDeclareData || earlyExitData || authPrompt || specialMode)}
+          feedbackAbierto={Boolean(feedback)}
+          onMarcadorActivo={setMarcadorActivo}
         />
+        </>
       ) : (
         <>
       {/* ── Salir ─────────────────────────────────────────────────────

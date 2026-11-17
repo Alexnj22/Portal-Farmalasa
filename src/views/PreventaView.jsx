@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
-    AlertTriangle, Ban, Layers, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
+    AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, CheckCircle2, Layers, Wallet, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
     RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -43,6 +43,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { esDemo, marcarCobradaEnMuestra } from '../components/timeclock/demoDelKiosco';
 
 // Lo que sólo hace falta al apretar un botón no viaja con la vista.
 const FormularioPedirASala = lazy(() =>
@@ -92,6 +93,9 @@ const DOCUMENTOS = [
 ];
 const DIAS = [{ value: '1', label: 'Hoy' }, { value: '7', label: '7 días' }, { value: '30', label: '30 días' }];
 const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
+// Cobrando en el kiosco: la misma mano, con lo que hace falta para cobrar.
+const TECLAS_COBRO = [['F2', 'Cobrar'], ['F9', 'Escribir lo recibido'], ['F3', 'Buscar producto'], ['F4', 'Cambiar cliente'],
+    ['F7', 'Ver en otras sucursales'], ['Supr', 'Quitar el producto elegido'], ['Esc', 'Cerrar la preventa sin cobrar']];
 const TECLAS = [['F2', 'Enviar'], ['F3', 'Producto'], ['F4', 'Cliente'], ['F7', 'Otras sucursales'], ['F6', 'Vaciar'], ['Supr', 'Quitar']];
 const ID_BUSCAR_PRODUCTO = 'preventa-buscar-producto';
 const ID_BUSCAR_CLIENTE = 'preventa-buscar-cliente';
@@ -104,7 +108,7 @@ const conMayuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
  * la vista (el kiosco ya tiene su barra); las pestañas van arriba del cuerpo.
  * El cuerpo y los diálogos son los mismos.
  */
-export default function PreventaView({ openModal, enKiosco = false }) {
+export default function PreventaView({ openModal, enKiosco = false, cobrando = null, onTerminarCobro, activa = true, onMovimientoDeCaja }) {
     const { user, hasPermission, getScope } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const tactil = useCoarsePointer();
@@ -126,8 +130,9 @@ export default function PreventaView({ openModal, enKiosco = false }) {
     const nombreSala = salas.find((b) => Number(b.id) === Number(sala))?.name ?? '';
 
     // ── El borrador: una venta por sucursal y persona ─────────────────────
-    const claveBorrador = `preventa-${sala ?? 'x'}`;
-    const [venta, setVenta] = useState(() => ({ ...VACIA, ...(loadDraft(claveBorrador) ?? {}) }));
+    // Cobrando (kiosco de caja): la venta sale de la preventa y no del borrador.
+    const claveBorrador = cobrando ? `cobro-${cobrando.id}` : `preventa-${sala ?? 'x'}`;
+    const [venta, setVenta] = useState(() => (cobrando ? ventaDeCobro(cobrando, puedeAutorizar) : { ...VACIA, ...(loadDraft(claveBorrador) ?? {}) }));
     const salaPrevia = useRef(claveBorrador);
     useEffect(() => {
         if (salaPrevia.current === claveBorrador) return;
@@ -135,9 +140,10 @@ export default function PreventaView({ openModal, enKiosco = false }) {
         setVenta({ ...VACIA, ...(loadDraft(claveBorrador) ?? {}) });
     }, [claveBorrador]);
     useEffect(() => {
+        if (cobrando) return;
         if (venta.lineas.length || venta.cliente) saveDraft(claveBorrador, venta);
         else clearDraft(claveBorrador);
-    }, [venta, claveBorrador]);
+    }, [venta, claveBorrador, cobrando]);
     const cambiar = (cambio) => setVenta((v) => ({ ...v, ...cambio }));
 
     // ── El foco: una orden que se cumple después de pintar ────────────────
@@ -338,6 +344,24 @@ export default function PreventaView({ openModal, enKiosco = false }) {
     };
     const nuevaVenta = () => { setResultado(null); setFoco({ id: ID_BUSCAR_CLIENTE }); };
 
+    // ── Cobrar (kiosco de caja) ───────────────────────────────────────────
+    const [recibido, setRecibido] = useState('');
+    const [cobrada, setCobrada] = useState(null);
+    const recibidoNum = Number(recibido) || 0;
+    const enEfectivo = venta.pago === 'contado';
+    const faltaEfectivo = enEfectivo && recibidoNum < aPagar;
+    const cobroConectado = esDemo();
+    const cobrarEnKiosco = () => {
+        if (bloqueada || faltaEfectivo || !cobroConectado) return;
+        // En la muestra no se emite nada: se ve cómo queda al terminar.
+        marcarCobradaEnMuestra(cobrando.id);
+        setCobrada({
+            referencia: cobrando.referencia, total: aPagar, cliente: venta.cliente?.name ?? null,
+            documento: venta.documento, pago: venta.pago,
+            recibido: enEfectivo ? recibidoNum : null, vuelto: enEfectivo ? Math.round((recibidoNum - aPagar) * 100) / 100 : null,
+        });
+    };
+
     const corregir = (p) => {
         setVenta({
             ...VACIA, lineas: lineasDeVenta(p.venta).map((l) => (puedeAutorizar ? l : { ...l, lista: null })),
@@ -381,7 +405,7 @@ export default function PreventaView({ openModal, enKiosco = false }) {
     const pedirVaciar = () => { if (venta.lineas.length || venta.cliente || venta.corrigiendo) setPorVaciar(true); };
 
     // ── Al abrir Vender: el foco al primer buscador que haga falta ────────
-    const vendiendo = Boolean(sala) && pestana === 'nueva' && !resultado;
+    const vendiendo = activa && Boolean(sala) && (pestana === 'nueva' || enKiosco) && !resultado && !cobrada;
     useEffect(() => {
         if (!vendiendo || tactil) return;
         setFoco({ id: venta.cliente || venta.lineas.length ? ID_BUSCAR_PRODUCTO : ID_BUSCAR_CLIENTE });
@@ -391,7 +415,7 @@ export default function PreventaView({ openModal, enKiosco = false }) {
     // Aprietan el MISMO botón que el ratón (si está deshabilitado, nada pasa).
     const acciones = useRef({});
     acciones.current = {
-        vendiendo, lineas: venta.lineas, pedirVaciar, quitarLinea,
+        vendiendo, cobrando: Boolean(cobrando), cerrarCobro: onTerminarCobro, lineas: venta.lineas, pedirVaciar, quitarLinea,
         existencias: (nombre) => setConsulta((c) => (c != null ? null : nombre ?? '')),
     };
     useEffect(() => {
@@ -401,6 +425,10 @@ export default function PreventaView({ openModal, enKiosco = false }) {
             if (document.querySelector('[role="dialog"]')) return; // con un diálogo abierto, las teclas son suyas
             const enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
             const k = e.key;
+            // Esc cierra la preventa, salvo que esté cerrando una lista abierta.
+            if (k === 'Escape' && a.cobrando && !document.querySelector('[role="listbox"]')) {
+                e.preventDefault(); a.cerrarCobro?.(); return;
+            }
             const fila = e.target?.closest?.('[data-fila]');
             if (k === 'F2' || k === 'F8' || (k === 'Enter' && (e.ctrlKey || e.metaKey))) {
                 e.preventDefault();
@@ -412,7 +440,8 @@ export default function PreventaView({ openModal, enKiosco = false }) {
                 e.preventDefault();
                 if (document.getElementById(ID_BUSCAR_CLIENTE)) enfocar(ID_BUSCAR_CLIENTE);
                 else document.querySelector('[data-accion-cambiar-cliente]')?.focus();
-            } else if (k === 'F6') { e.preventDefault(); a.pedirVaciar(); }
+            } else if (k === 'F6') { e.preventDefault(); if (!a.cobrando) a.pedirVaciar(); }
+            else if (k === 'F9' && a.cobrando) { e.preventDefault(); const c = document.querySelector('input[name="recibido"]'); c?.focus(); c?.select(); }
             else if (k === 'F7') {
                 e.preventDefault();
                 const renglon = fila && a.lineas[Number(fila.dataset.fila)];
@@ -428,9 +457,14 @@ export default function PreventaView({ openModal, enKiosco = false }) {
     const pestanas = PESTANAS.map((t) => (t.key === 'hoy' && enCaja ? { ...t, label: `Preventas (${enCaja})` } : t));
 
     // La píldora del cuerpo: la sucursal (para quien ve todas) y las acciones.
+    // En el kiosco, rótulos cortos: caben las cuatro junto al buscador.
     const accionesVender = [
-        { key: 'existencias', icon: PackageSearch, label: 'Otras sucursales', onClick: () => setConsulta('') },
-        ...(puedeApartar ? [{ key: 'apartar', icon: ShoppingBag, label: 'Apartar o encargar', onClick: () => setApartar({}) }] : []),
+        { key: 'existencias', icon: PackageSearch, label: enKiosco ? 'Existencias' : 'Otras sucursales', onClick: () => setConsulta('') },
+        ...(puedeApartar ? [{ key: 'apartar', icon: ShoppingBag, label: enKiosco ? 'Apartar' : 'Apartar o encargar', onClick: () => setApartar({}) }] : []),
+        ...(onMovimientoDeCaja ? [
+            { key: 'entrada', icon: ArrowDownLeft, label: 'Entrada', onClick: () => onMovimientoDeCaja('ingreso') },
+            { key: 'salida', icon: ArrowUpRight, label: 'Salida', onClick: () => onMovimientoDeCaja('salida') },
+        ] : []),
     ];
     const accionesLista = [{ key: 'actualizar', icon: RefreshCw, label: 'Actualizar', onClick: recargar }];
 
@@ -452,11 +486,14 @@ export default function PreventaView({ openModal, enKiosco = false }) {
     const Marco = enKiosco ? MarcoDeKiosco : GlassViewLayout;
     return (
         <Marco icon={Receipt} title="Preventa" transparentBody
-            filtersContent={<ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />}>
+            filtersContent={enKiosco ? null : <ViewTabBar tabs={pestanas} activeTab={pestana} onTabChange={setPestana} />}>
             <div className={enKiosco ? 'space-y-3' : 'p-3 md:p-4 space-y-3'}>
                 {!sala && <Notice variant="warning">Tu usuario no tiene sucursal asignada.</Notice>}
                 {/* La píldora canónica: sucursal (quien ve todas) y las acciones. */}
-                {sala && (
+                {/* En el kiosco no hay pestañas ni sucursal que elegir: la cola
+                    de la izquierda ES la lista de preventas, y la sucursal es la
+                    del equipo. Quedan las dos acciones, en la misma línea. */}
+                {sala && !enKiosco && (
                     <div className="flex flex-col lg:flex-row lg:items-center gap-2">
                         <p className="flex-1 min-w-0 text-body-sm text-content-3">
                             {pestana === 'nueva'
@@ -466,27 +503,41 @@ export default function PreventaView({ openModal, enKiosco = false }) {
                         <div className="flex justify-end min-w-0">{barra}</div>
                     </div>
                 )}
-                {sala && pestana === 'nueva' && (
-                    resultado ? (
+                {sala && (pestana === 'nueva' || enKiosco) && (
+                    cobrada ? (
+                        <CobroHecho cobro={cobrada} onSiguiente={onTerminarCobro} />
+                    ) : resultado ? (
                         <Hecho resultado={resultado} onOtra={nuevaVenta} onVer={() => { setResultado(null); setPestana('hoy'); }} />
                     ) : (
-                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
+                        <div className={`grid gap-3 items-start ${cobrando ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : 'lg:grid-cols-[minmax(0,1fr)_340px]'}`}>
                             <div className="space-y-3 min-w-0">
-                                {venta.corrigiendo && (
+                                {cobrando && !enKiosco && (
+                                    <Notice variant="info" compact action={<Button size="sm" variant="ghost" icon={X} onClick={onTerminarCobro}>Volver a la cola</Button>}>
+                                        Cobrando la #{cobrando.referencia}. Lo que corrijas aquí sale en la factura.
+                                    </Notice>
+                                )}
+                                {venta.corrigiendo && !cobrando && (
                                     <Notice variant="info" compact action={
                                         <Button size="sm" variant="ghost" icon={X} onClick={() => { setVenta(VACIA); setFoco({ id: ID_BUSCAR_CLIENTE }); }}>Cancelar</Button>}>
                                         Corrigiendo la preventa {venta.corrigiendo.referencia ? `#${venta.corrigiendo.referencia}` : venta.corrigiendo.codigo}. Al guardar, cambia la misma en caja.
                                     </Notice>
                                 )}
 
-                                <Cliente cliente={venta.cliente} info={info} cotizacion={cotizacion} alerta={clienteConProblema}
+                                <Cliente holgada={enKiosco} cliente={venta.cliente} info={info} cotizacion={cotizacion} alerta={clienteConProblema}
                                     faltanCcf={faltanCcf} puedeEditar={puedeEditarClientes} puedeCrear={puedeCrearClientes}
                                     onElegir={elegirCliente} onEditar={editarCliente} onCrear={crearCliente}
                                     onAgregar={(p) => agregarProducto({ id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url })}
                                     onAgregarVarios={agregarVarios} />
 
                                 <section data-surface="card" className="p-3 space-y-2">
-                                    <BuscarProducto onElegir={agregarProducto} />
+                                    {/* En el kiosco, las dos acciones van junto al buscador:
+                                        son de productos, y así no quedan sueltas arriba. */}
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 min-w-0"><BuscarProducto onElegir={agregarProducto} /></div>
+                                        {enKiosco && accionesVender.map((a) => (
+                                            <Button key={a.key} variant="secondary" icon={a.icon} onClick={a.onClick} className="shrink-0">{a.label}</Button>
+                                        ))}
+                                    </div>
                                     {venta.lineas.length === 0 ? (
                                         <p className="flex items-center justify-center gap-2 py-4 text-body-sm text-content-3">
                                             <Package size={18} strokeWidth={1.5} /> Busca o escanea un producto para empezar.
@@ -510,13 +561,14 @@ export default function PreventaView({ openModal, enKiosco = false }) {
                             </div>
 
                             <aside data-surface="card" className="p-3 space-y-2.5 lg:sticky lg:top-3 min-w-0">
-                                <SegmentedControl label="Comprobante" layout="block" columns={2} value={venta.documento} options={DOCUMENTOS}
+                                <SegmentedControl label="Comprobante" layout="block" columns={2} value={venta.documento}
+                                    options={cobrando ? DOCUMENTOS.map((d) => ({ ...d, description: undefined })) : DOCUMENTOS}
                                     onChange={(v) => cambiar({ documento: v })} />
                                 <LiquidSelect label="Tipo de pago" clearable={false} value={venta.pago} options={PAGOS}
                                     invalid={problemas.some((p) => p.clave === 'credito')}
                                     onChange={(v) => cambiar({ pago: v || 'contado' })} />
 
-                                {info?.puntos?.puede_canjear && (
+                                {info?.puntos?.puede_canjear && (!enKiosco || info.puntos.disponibles >= info.puntos.minimo_canje) && (
                                     // Los puntos como un bloque propio: cuánto tiene, cuánto descuenta y un toque para usarlos.
                                     <div className="rounded-xl bg-success/10 p-2.5 space-y-2" data-campo="puntos">
                                         <div className="flex items-center gap-2">
@@ -571,10 +623,54 @@ export default function PreventaView({ openModal, enKiosco = false }) {
                                     </div>
                                 </dl>
 
-                                <PortalInput compact label="Nota para caja" name="nota" value={venta.nota} maxLength={60}
-                                    onChange={(e) => cambiar({ nota: e.target.value })} placeholder="Opcional" />
+                                {!cobrando && (
+                                    <PortalInput compact label="Nota para caja" name="nota" value={venta.nota} maxLength={60}
+                                        onChange={(e) => cambiar({ nota: e.target.value })} placeholder="Opcional" />
+                                )}
 
                                 <Pendientes problemas={problemas} revisando={revisando} onResolver={resolver} />
+
+                                {cobrando ? (
+                                    <>
+                                        {enEfectivo && (
+                                            <div className="space-y-2 border-t border-subtle pt-2.5">
+                                                <PortalInput compact label="Recibido" name="recibido" prefix="$" inputMode="decimal" value={recibido}
+                                                    placeholder="0.00" onChange={(e) => setRecibido(e.target.value.replace(/[^\d.]/g, '').slice(0, 8))} />
+                                                <div className="grid grid-cols-4 gap-1.5">
+                                                    {billetesPara(aPagar).map(([rotulo, monto]) => (
+                                                        <Button key={rotulo} size="xs" variant={recibidoNum === monto ? 'primary' : 'secondary'}
+                                                            onClick={() => setRecibido(monto.toFixed(2))}>{rotulo}</Button>
+                                                    ))}
+                                                </div>
+                                                <div className="flex items-baseline justify-between">
+                                                    <span className="text-body-sm font-semibold text-content-2">Vuelto</span>
+                                                    <span className={`text-title-lg font-black tabular-nums ${recibidoNum && !faltaEfectivo ? 'text-success-text' : 'text-content-3'}`}>
+                                                        {recibidoNum && !faltaEfectivo ? formatMoney(recibidoNum - aPagar) : '—'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <Button className="w-full" size="lg" icon={Wallet} disabled={bloqueada || faltaEfectivo || !cobroConectado}
+                                            onClick={cobrarEnKiosco} data-accion-enviar>
+                                            {problemas.length > 0
+                                                ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
+                                                : faltaEfectivo ? 'Escribe lo recibido' : `Cobrar ${formatMoney(aPagar)}`}
+                                        </Button>
+                                        {!cobroConectado && <p className="text-micro text-content-3">El cobro todavía no está conectado.</p>}
+                                        {!tactil && (
+                                            <div className="border-t border-subtle pt-2.5 space-y-1.5">
+                                                <p className="text-micro font-semibold text-content-2">Teclas rápidas</p>
+                                                <ul className="grid grid-cols-1 gap-1 text-micro text-content-2">
+                                                    {TECLAS_COBRO.map(([k, que]) => (
+                                                        <li key={k} className="flex items-center gap-2">
+                                                            <kbd className="min-w-9 text-center rounded border border-border-card bg-surface-card-hover px-1 font-bold text-content">{k}</kbd>{que}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (<>
 
                                 <Button className="w-full" size="lg" icon={venta.corrigiendo ? Pencil : Send} loading={enviando}
                                     disabled={!puedeVender || bloqueada} onClick={enviar} data-accion-enviar>
@@ -596,12 +692,13 @@ export default function PreventaView({ openModal, enKiosco = false }) {
                                         ))}
                                     </p>
                                 )}
+                                </>)}
                             </aside>
                         </div>
                     )
                 )}
 
-                {sala && pestana === 'hoy' && (
+                {sala && !enKiosco && pestana === 'hoy' && (
                     <section className="space-y-2">
                         {errorLista && <Notice variant="danger">{errorLista}</Notice>}
                         {lista && lista.length === 0 && (
@@ -777,7 +874,7 @@ function Pendientes({ problemas, revisando, onResolver }) {
 }
 
 // ── El cliente: buscar, ver su ficha, editar o crear ──────────────────────
-function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, puedeCrear, onElegir, onEditar, onCrear, onAgregar, onAgregarVarios }) {
+function Cliente({ holgada = false, cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, puedeCrear, onElegir, onEditar, onCrear, onAgregar, onAgregarVarios }) {
     const [texto, setTexto] = useState('');
     const q = useTextoRebotado(texto, 250);
     const [resultados, setResultados] = useState([]);
@@ -803,7 +900,7 @@ function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, pu
         <section data-surface="card" data-campo="cliente"
             className={`p-3 space-y-2.5 transition-shadow ${alerta ? 'ring-2 ring-danger/45' : ''}`}>
             {cliente ? (
-                <FichaDelCliente cliente={cliente} info={info} cotizacion={cotizacion} faltanCcf={faltanCcf} puedeEditar={puedeEditar}
+                <FichaDelCliente holgada={holgada} cliente={cliente} info={info} cotizacion={cotizacion} faltanCcf={faltanCcf} puedeEditar={puedeEditar}
                     onEditar={onEditar} onQuitar={() => onElegir(null)} onAgregar={onAgregar} onAgregarVarios={onAgregarVarios} />
             ) : (
                 <>
@@ -859,7 +956,7 @@ function Cliente({ cliente, info, cotizacion, alerta, faltanCcf, puedeEditar, pu
 }
 
 // ── La ficha: quién es, qué datos tiene (y cuáles faltan), qué compra ─────
-function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, onEditar, onQuitar, onAgregar, onAgregarVarios }) {
+function FichaDelCliente({ holgada = false, cliente, info, cotizacion, faltanCcf, puedeEditar, onEditar, onQuitar, onAgregar, onAgregarVarios }) {
     const p = info?.puntos;
     const tipo = info?.empleado ? 'Empleado' : info?.programa === 'mayorista'
         ? `Mayorista${info?.mayorista?.precio === 'mayoreo_plus' ? ' Plus' : ''}${info?.rango ? ` · ${info.rango}` : ''}`
@@ -885,16 +982,16 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
     const listaDe = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} y ${xs.at(-1)}` : xs[0] ?? '').replace('Teléfono', 'teléfono')
         .replace('Correo', 'correo').replace('Giro', 'giro').replace('Dirección', 'dirección');
     return (
-        <div className="space-y-2">
-            <div className="flex items-start gap-3 min-w-0">
+        <div className={holgada ? 'space-y-3' : 'space-y-2'}>
+            <div className={`flex items-start min-w-0 ${holgada ? 'gap-4' : 'gap-3'}`}>
                 {/* La foto que subió desde la app, dentro del aro de su nivel (el mismo del chat). */}
                 <ClienteAvatar size="lg" conversacion={{
                     cliente: cliente.name, foto_url: info?.foto ?? null, nivel: info?.nivel?.toLowerCase() ?? null,
                     es_mayoreo: info?.programa === 'mayorista', rango: info?.rango ?? null, es_team: Boolean(info?.empleado),
                 }} />
-                <div className="min-w-0 flex-1 space-y-1">
+                <div className={`min-w-0 flex-1 ${holgada ? 'space-y-1.5' : 'space-y-1'}`}>
                     <div className="flex items-center gap-2 min-w-0">
-                        <p className="min-w-0 text-body font-bold text-content leading-tight truncate" title={cliente.name}>{cliente.name}</p>
+                        <p className={`min-w-0 ${holgada ? 'text-title' : 'text-body'} font-bold text-content leading-tight truncate`} title={cliente.name}>{cliente.name}</p>
                         {info && (faltaCcf.length > 0 || faltaOtro.length > 0) && (
                             // Lo que falta, chico y al lado del nombre: un toque abre sus datos.
                             <button type="button" onClick={puedeEditar ? onEditar : undefined} disabled={!puedeEditar}
@@ -918,7 +1015,7 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
                         {info?.nivel && <Badge size="sm" variant="warning" uppercase={false}>{info.nivel}</Badge>}
                     </div>
                     {info && tiene.length > 0 && (
-                        <p className="text-micro text-content-2 truncate">
+                        <p className={`${holgada ? 'text-body-sm' : 'text-micro'} text-content-2 truncate`}>
                             {tiene.map(([k, v], i) => (
                                 <span key={k}>
                                     {i > 0 && <span className="text-content-3" aria-hidden> · </span>}
@@ -933,7 +1030,9 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
             </div>
 
             {info && (info.frecuentes?.length > 0 || info.ultimas_compras?.length > 0) && (
-                <Historial info={info} onAgregar={onAgregar} onAgregarVarios={onAgregarVarios} />
+                <div className={holgada ? 'pt-3 border-t border-subtle' : undefined}>
+                    <Historial info={info} onAgregar={onAgregar} onAgregarVarios={onAgregarVarios} />
+                </div>
             )}
         </div>
     );
@@ -1388,6 +1487,56 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
 }
 
 // ── Lo que quedó en caja ──────────────────────────────────────────────────
+// La venta de una preventa que llegó a caja, lista para cobrar.
+function ventaDeCobro(p, puedeAutorizar) {
+    return {
+        ...VACIA, lineas: lineasDeVenta(p.venta).map((l) => (puedeAutorizar ? l : { ...l, lista: null })),
+        cliente: p.customer_id ? { id: p.customer_id, name: p.cliente } : null,
+        documento: p.venta?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
+        pago: p.venta?.pago ?? 'contado', puntos: p.venta?.puntos ? String(p.venta.puntos) : '',
+        corrigiendo: { id: p.id, codigo: p.codigo, referencia: p.referencia, cobro: true },
+    };
+}
+
+// Atajos de efectivo: exacto y los billetes que suelen entregar.
+function billetesPara(total) {
+    const t = Math.round(total * 100) / 100;
+    const montos = [t, Math.ceil(t), Math.ceil(t / 5) * 5, Math.ceil(t / 10) * 10, Math.ceil(t / 20) * 20, Math.ceil(t / 50) * 50];
+    const vistos = new Set();
+    return montos.filter((m) => m > 0 && !vistos.has(m) && vistos.add(m)).slice(0, 4)
+        .map((m, i) => [i === 0 ? 'Exacto' : formatMoney(m).replace(/\.00$/, ''), m]);
+}
+
+function CobroHecho({ cobro, onSiguiente }) {
+    return (
+        <section data-surface="card" className="p-6 md:p-8 max-w-lg mx-auto text-center flex flex-col items-center gap-4">
+            <span className="w-16 h-16 rounded-full bg-success/15 text-success-text flex items-center justify-center">
+                <CheckCircle2 size={36} strokeWidth={1.5} aria-hidden="true" />
+            </span>
+            <div className="flex flex-col gap-1">
+                <p className="text-title font-black text-content">Venta cobrada</p>
+                <p className="text-body text-content-2">
+                    #{cobro.referencia} · {cobro.cliente ?? 'Cliente frecuente'} · {DOCUMENTOS.find((d) => d.value === cobro.documento)?.label}
+                </p>
+            </div>
+            <dl className="w-full flex flex-col gap-1.5 text-body border-y border-subtle py-3">
+                <div className="flex justify-between"><dt className="text-content-3">Total</dt><dd className="font-bold tabular-nums">{formatMoney(cobro.total)}</dd></div>
+                {cobro.recibido != null && (
+                    <div className="flex justify-between"><dt className="text-content-3">Recibido</dt><dd className="tabular-nums">{formatMoney(cobro.recibido)}</dd></div>
+                )}
+                {cobro.vuelto != null ? (
+                    <div className="flex items-baseline justify-between pt-1"><dt className="font-bold text-content">Vuelto</dt>
+                        <dd className="text-display font-black tabular-nums text-success-text leading-none">{formatMoney(cobro.vuelto)}</dd></div>
+                ) : (
+                    <div className="flex justify-between"><dt className="text-content-3">Pago</dt><dd>{PAGOS.find((x) => x.value === cobro.pago)?.label}</dd></div>
+                )}
+            </dl>
+            <Notice variant="info" compact>En la muestra no se emitió ni se imprimió nada.</Notice>
+            <Button size="lg" icon={ChevronRight} onClick={onSiguiente} autoFocus>Siguiente en la cola</Button>
+        </section>
+    );
+}
+
 function Hecho({ resultado, onOtra, onVer }) {
     return (
         <section data-surface="card" className="p-6 md:p-8 max-w-lg mx-auto text-center space-y-3">

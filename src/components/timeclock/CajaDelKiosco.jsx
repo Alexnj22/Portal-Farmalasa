@@ -1,187 +1,268 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Clock3, LogOut, ShoppingCart, Wallet } from 'lucide-react';
+import React, { Suspense, lazy, useState } from 'react';
+import { ArrowLeft, ChevronRight, Clock3, LogOut, Receipt, RefreshCw, ShoppingCart, Wallet, WifiOff, X } from 'lucide-react';
+import Badge from '../common/Badge';
 import Button from '../common/Button';
+import Notice from '../common/Notice';
 import SegmentedControl from '../common/SegmentedControl';
 import AvatarConEstado from '../common/AvatarConEstado';
-import { LoadingState } from '../common/StateViews';
-import ColaDeCaja from './ColaDeCaja';
-import PasaTuCarne from './PasaTuCarne';
-import { useAuth } from '@nucleo/context/AuthContext';
+import { LoadingState, SkeletonText } from '../common/StateViews';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
-import useCapturaDeCarne from '@plataforma/useCapturaDeCarne';
-import { sesionDeCaja, INACTIVO_MS } from './sesionDeCaja';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
+import useKioscoDeCaja from './useKioscoDeCaja';
+import { esperaTexto, minutosDesde, tonoDeEspera, useColaDeCaja } from './datosDeLaCola';
+import { Anillo, Etiquetas, Pide } from './piezasDelKiosco';
 
-// El kiosco de caja entero (rediseño del 2026-11-17, pedido del usuario: «que
-// sea práctico… ¿por qué vender y preventas está separado?»).
+// Kiosco de caja (diseño elegido el 2026-11-17).
 //
-// Tres pantallas en una barra fija arriba: **Ventas** (la cola de caja y, con
-// el carné, la venta), **Caja** (con el carné, Mi caja de hoy) y **Marcar**.
-// La barra dice siempre de qué sucursal es el equipo, la hora y, con una
-// sesión abierta, quién está operando y cuánto falta para que se cierre sola.
-//
-// El carné abre la sesión de esa persona (la misma entrada que el carné en la
-// pantalla de inicio): lo que se haga queda a su nombre, con sus permisos y
-// sus frenos. Se cierra con «Terminar», al pasar a Marcar y tras 2 minutos sin
-// tocar nada. Ventas y Caja comparten la sesión.
+// La cola vive SIEMPRE en una columna a la izquierda, también mientras se
+// vende o se hace un corte; a la derecha está el trabajo. Cada ticket dice a
+// quién se cobra y quién lo vendió. Tocar un ticket abre la MISMA pantalla de
+// venta cargada con esa preventa, para corregir y cobrar ahí.
 const MiCajaView = lazy(() => import('../../views/MiCajaView'));
 const PreventaView = lazy(() => import('../../views/PreventaView'));
 
-const PANTALLAS = [
-    { value: 'ventas', label: 'Ventas', icon: ShoppingCart },
-    { value: 'caja', label: 'Caja', icon: Wallet },
-    { value: 'marcar', label: 'Marcar', icon: Clock3 },
-];
-
-const EVENTOS_DE_USO = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
-
-function leerEquipo() {
-    try { return JSON.parse(localStorage.getItem('kiosk_config') || 'null') ?? {}; } catch { return {}; }
-}
-
-const mmss = (ms) => {
-    const s = Math.max(0, Math.ceil(ms / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const ACCIONES = {
+    vender: { label: 'Vender', icon: ShoppingCart, description: 'Arma la venta y mándala a la cola.', pide: 'Pasa tu carné para vender' },
+    caja: { label: 'Caja', icon: Wallet, description: 'Apertura, cortes y cierre del día.', pide: 'Pasa tu carné para abrir la caja' },
+    marcar: { label: 'Marcar', icon: Clock3, description: 'Entrada, salida o descanso.' },
 };
 
-/** Quién opera, cuánto le queda y «Terminar». */
-function QuienOpera({ user, restante, onTerminar }) {
-    const poco = restante <= 30_000;
+
+// El vendedor como persona: la misma forma que entiende AvatarConEstado.
+// Los nombres llegan en mayúsculas: en la cola se leen como nombre propio.
+const nombreVisible = (t) => String(t).toLocaleLowerCase('es').replace(/(^|[\s.,])(\p{L})/gu, (_, a, b) => a + b.toLocaleUpperCase('es'));
+
+const vendedorDe = (p) => (p.vendedor ? { id: p.vendedor_id ?? null, name: p.vendedor, photo: p.vendedor_foto ?? null } : null);
+
+/** Una persona en una línea: foto y nombre corto. */
+function Persona({ persona, px = 20, rotulo, className = '' }) {
+    if (!persona) return null;
     return (
-        <div className="flex items-center gap-3 min-w-0">
-            <AvatarConEstado emp={user} px={36} mostrarChip={false} />
-            <div className="min-w-0 leading-tight hidden md:block">
-                <p className="text-body-sm font-bold text-content truncate">{shortEmployeeName(user)}</p>
-                <p className={`text-label tabular-nums ${poco ? 'text-warning-text' : 'text-content-3'}`}>
-                    Se cierra en {mmss(restante)}
-                </p>
-            </div>
-            <Button variant="secondary" size="sm" icon={LogOut} onClick={onTerminar}>Terminar</Button>
-        </div>
+        <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>
+            <AvatarConEstado emp={persona} px={px} mostrarChip={false} pendientes={false} />
+            <span className="truncate">{rotulo ? `${rotulo} ` : ''}{shortEmployeeName(persona)}</span>
+        </span>
     );
 }
 
-export default function CajaDelKiosco({ pantalla, onPantalla, marcar, ahora, onSalir }) {
-    const { isAuthenticated, user, login, logout } = useAuth();
-    const [, setParams] = useSearchParams();
-    const [equipo] = useState(leerEquipo);
-    const [entrando, setEntrando] = useState(false);
-    const [error, setError] = useState(null);
-    const [restante, setRestante] = useState(INACTIVO_MS);
-    const conCarne = pantalla === 'ventas' || pantalla === 'caja';
-    const abierta = isAuthenticated && sesionDeCaja.abiertaPorCarne;
-
-    // Mi caja y la venta leen la sucursal de la dirección: la del equipo.
-    useEffect(() => {
-        if (!equipo.branchId) return;
-        setParams((p) => {
-            if (p.get('sala') === String(equipo.branchId)) return p;
-            p.set('sala', String(equipo.branchId));
-            return p;
-        }, { replace: true });
-    }, [equipo.branchId, setParams]);
-
-    const terminar = useCallback(() => {
-        sesionDeCaja.abiertaPorCarne = false;
-        sesionDeCaja.ultimoUso = 0;
-        logout?.();
-    }, [logout]);
-
-    // Al pasar a Marcar, la sesión del carné se cierra.
-    useEffect(() => {
-        if (!conCarne && sesionDeCaja.abiertaPorCarne) terminar();
-    }, [conCarne, terminar]);
-
-    // Dos minutos sin tocar nada: se cierra sola. La cuenta se ve en la barra.
-    useEffect(() => {
-        if (!abierta) return undefined;
-        if (!sesionDeCaja.ultimoUso) sesionDeCaja.ultimoUso = Date.now();
-        const usar = () => { sesionDeCaja.ultimoUso = Date.now(); };
-        EVENTOS_DE_USO.forEach((ev) => window.addEventListener(ev, usar, { passive: true, capture: true }));
-        const id = setInterval(() => {
-            const queda = sesionDeCaja.ultimoUso + INACTIVO_MS - Date.now();
-            setRestante(queda);
-            if (queda <= 0) terminar();
-        }, 1000);
-        return () => {
-            clearInterval(id);
-            EVENTOS_DE_USO.forEach((ev) => window.removeEventListener(ev, usar, { capture: true }));
-        };
-    }, [abierta, terminar]);
-
-    const alLeer = useCallback(async (codigo) => {
-        setEntrando(true);
-        setError(null);
-        // Se marca ANTES de entrar: el portal desmonta el kiosco mientras
-        // verifica la sesión, y al volver tiene que saber que es del carné.
-        sesionDeCaja.abiertaPorCarne = true;
-        sesionDeCaja.ultimoUso = Date.now();
-        const r = await login(codigo);
-        setEntrando(false);
-        if (!r?.ok) {
-            sesionDeCaja.abiertaPorCarne = false;
-            setError(r?.error || 'Ese carné no abrió la sesión. Intenta de nuevo.');
-        }
-    }, [login]);
-
-    const { manual } = useCapturaDeCarne(conCarne && !abierta && !entrando, alLeer);
-    const aviso = manual ? 'Pasa el carné por el lector. Escrito a mano no cuenta.' : error;
-
-    const carne = (titulo, detalle) => (
-        <PasaTuCarne titulo={entrando ? 'Abriendo…' : titulo} detalle={detalle} aviso={aviso} />
+/** La columna de la cola: compacta, la más vieja arriba. Cada fila se toca. */
+function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir }) {
+    return (
+        <aside aria-label="Preventas en caja" data-surface="page-header"
+            className="md:sticky md:top-0 md:h-[100dvh] md:w-[300px] xl:w-[380px] shrink-0 md:border-r border-b md:border-b-0 border-border-card flex flex-col">
+            <div className="h-[var(--barra-kiosco)] shrink-0 px-5 flex items-center justify-between gap-3 border-b border-border-card">
+                <h2 className="text-title font-bold text-content flex items-center gap-2">
+                    En caja {cola && <Badge size="sm" variant={cola.length ? 'info' : 'neutral'}>{cola.length}</Badge>}
+                </h2>
+                <Button variant="ghost" size="sm" icon={RefreshCw} iconOnly loading={leyendo} onClick={leer} aria-label="Actualizar la cola" />
+            </div>
+            {problema && <div className="px-5 pb-3"><Notice variant="warning" icon={WifiOff}>{problema}</Notice></div>}
+            <div className="flex-1 overflow-y-auto px-3 py-3">
+                {cola == null ? <div className="p-3"><SkeletonText lines={5} /></div>
+                    : cola.length === 0 ? (
+                        <div className="px-2 py-12 flex flex-col items-center gap-2 text-center">
+                            <Receipt size={32} strokeWidth={1.5} className="text-content-3" aria-hidden="true" />
+                            <p className="text-body-sm text-content-3">Nadie esperando.</p>
+                        </div>
+                    ) : (
+                        <ol className="flex flex-col gap-1.5">
+                            {cola.map((p, i) => {
+                                const min = minutosDesde(p.enviada_at, ahora);
+                                const activa = elegida === p.id;
+                                const primero = i === 0;
+                                return (
+                                    <li key={p.id}>
+                                        <button type="button" onClick={() => onElegir(activa ? null : p.id)} aria-pressed={activa} data-interactive
+                                            className={`w-full text-left rounded-[var(--radius-card-anidada)] p-3 flex gap-3 items-start transition-colors duration-[var(--dur-fast)] active:scale-[0.99] ${activa ? 'bg-brand/15 ring-2 ring-brand/45' : 'hover:bg-brand/5'}`}>
+                                            <span className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-title font-bold tabular-nums ${primero || activa ? 'bg-brand text-white' : 'bg-surface-input text-content'}`}>
+                                                {p.referencia || '—'}
+                                            </span>
+                                            <span className="min-w-0 flex-1 flex flex-col gap-1">
+                                                <span className="flex items-baseline justify-between gap-2">
+                                                    <span className="text-body font-semibold text-content truncate">{p.cliente ? nombreVisible(p.cliente) : 'Cliente frecuente'}</span>
+                                                    <span className="shrink-0 text-body font-bold tabular-nums text-content">{p.total != null ? formatMoney(Number(p.total)) : ''}</span>
+                                                </span>
+                                                <Persona persona={vendedorDe(p)} className="text-label text-content-3" rotulo="Vendió" />
+                                                <span className="flex gap-1 overflow-hidden [mask-image:linear-gradient(to_right,black_85%,transparent)]">
+                                                    <Badge size="sm" variant={tonoDeEspera(min)} dot>{esperaTexto(min)}</Badge>
+                                                    <Etiquetas p={p} />
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    )}
+            </div>
+        </aside>
     );
+}
 
-    let cuerpo;
-    if (pantalla === 'marcar') {
-        cuerpo = marcar;
-    } else if (pantalla === 'caja') {
-        cuerpo = abierta
-            ? <Suspense fallback={<LoadingState />}><MiCajaView comoPestana /></Suspense>
-            : (
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="w-full max-w-[420px]">
-                        {carne('Pasa tu carné para abrir la caja', 'Apertura, cortes y cierre del día quedan a tu nombre.')}
-                    </div>
-                </div>
-            );
-    } else {
-        cuerpo = abierta
-            ? <Suspense fallback={<LoadingState />}><PreventaView enKiosco /></Suspense>
-            : (
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] items-start">
-                    <ColaDeCaja />
-                    <aside className="order-first lg:order-none lg:sticky lg:top-24">
-                        {carne('Pasa tu carné para vender', 'La venta llega a la cola con tu nombre.')}
-                    </aside>
-                </div>
-            );
-    }
+function Accion({ k, grande = false, activa, onClick }) {
+    const a = ACCIONES[k];
+    const Icono = a.icon;
+    return (
+        <Button variant={activa || grande ? 'primary' : 'secondary'} onClick={onClick} aria-pressed={activa}
+            className={`!h-auto w-full !justify-start !items-start !text-left !rounded-[var(--radius-card)] ${grande ? '!p-7 h-full' : '!gap-4 !p-5'}`}>
+            <span className={`flex w-full ${grande ? 'flex-col gap-6' : 'items-center gap-4'}`}>
+                <span className={`shrink-0 rounded-2xl flex items-center justify-center ${grande ? 'w-16 h-16 bg-surface-card/15' : 'w-12 h-12 bg-brand/10 text-brand-text'}`}>
+                    <Icono size={grande ? 32 : 24} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1 flex flex-col gap-1">
+                    <span className={`${grande ? 'text-display' : 'text-title'} font-bold leading-none`}>{a.label}</span>
+                    <span className={`${grande ? 'text-body-lg' : 'text-body-sm'} font-normal opacity-80`}>{a.description}</span>
+                </span>
+                {!grande && <ChevronRight size={20} className="self-center opacity-60" aria-hidden="true" />}
+            </span>
+        </Button>
+    );
+}
+
+export default function CajaDelKiosco({
+    ahora, onSalir, panelMarcador, marcadorOcupado, feedbackAbierto, onMarcadorActivo,
+}) {
+    const {
+        user, equipo, abierta, marcando, accion, setAccion, pendiente, setPendiente,
+        entrando, aviso, restante, vista, setVista, terminar, elegirDespues,
+    } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo });
+    const datosCola = useColaDeCaja();
+    const [elegida, setElegida] = useState(null);
+    const detalle = elegida ? datosCola.cola?.find((p) => p.id === elegida) : null;
+
+    // Entrada / Salida: lleva a la caja con ese diálogo ya abierto.
+    const [dialogoCaja, setDialogoCaja] = useState({ n: 0, cual: null });
+    // Entrada / Salida desde la venta: abre la caja con ese diálogo y, al
+    // cerrarlo, vuelve a la venta tal como estaba (sigue montada detrás).
+    const abrirEnCaja = (cual) => {
+        setDialogoCaja((d) => ({ n: d.n + 1, cual }));
+        setVista('caja');
+    };
+    // A la caja por la pestaña: sin diálogo abierto.
+    const irA = (v) => {
+        if (v === 'caja') setDialogoCaja((d) => ({ n: d.n + 1, cual: null }));
+        setVista(v);
+    };
+
+    // Cobrar pide sesión: sin ella, el ticket queda elegido y se pide el carné.
+    const elegirTicket = (id) => {
+        setElegida(id);
+        if (id && !abierta) setAccion('vender');
+    };
+
+    const tocar = (k) => {
+        if (pendiente) { elegirDespues(k); return; }
+        setAccion((x) => (x === k ? null : k));
+    };
+    const pedida = accion && ACCIONES[accion];
 
     return (
-        <div className="relative z-base flex-1 w-full flex flex-col">
-            {/* La barra del kiosco: dónde, qué pantalla y quién. */}
-            <header data-surface="page-header" className="sticky top-0 z-header">
-                <div className="mx-auto max-w-[1400px] px-4 py-2.5 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <img src="/Logo192.png" alt="" className="w-8 h-8 object-contain shrink-0" draggable="false" />
-                        <div className="min-w-0 leading-tight hidden sm:block">
-                            <p className="text-body-sm font-bold text-content truncate">{equipo.branchName || 'Kiosco de caja'}</p>
-                            <p className="text-label text-content-3 tabular-nums">{hora12(ahora)}</p>
-                        </div>
-                    </div>
-                    <SegmentedControl className="kiosco-nav" label="Pantalla del kiosco" tone="brand" options={PANTALLAS} value={pantalla} onChange={onPantalla} />
-                    <div className="flex justify-end min-w-0">
-                        {abierta && conCarne
-                            ? <QuienOpera user={user} restante={restante} onTerminar={terminar} />
-                            : <Button variant="ghost" size="sm" icon={LogOut} title="Salir del kiosco (Esc)" onClick={onSalir}>Salir</Button>}
-                    </div>
-                </div>
-            </header>
+        <div className="relative z-base flex-1 w-full flex flex-col md:flex-row [--barra-kiosco:4.5rem]">
+            <ColumnaDeCola {...datosCola} elegida={detalle ? elegida : null} onElegir={elegirTicket} />
 
-            <main className="flex-1 w-full mx-auto max-w-[1400px] px-4 py-6 flex flex-col">
-                {cuerpo}
-            </main>
+            <div className="flex-1 min-w-0 flex flex-col">
+                <header className="h-[var(--barra-kiosco)] shrink-0 px-6 flex items-center justify-between gap-4 border-b border-border-card">
+                    {abierta ? (
+                        <>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <AvatarConEstado emp={user} px={48} mostrarChip={false} />
+                                <div className="min-w-0 leading-tight">
+                                    <p className="text-title font-bold text-content truncate">{shortEmployeeName(user)}</p>
+                                    <p className="text-label text-content-3">{equipo.branchName}</p>
+                                </div>
+                            </div>
+                            {detalle && vista !== 'caja' ? (
+                                <div className="flex items-center gap-3 rounded-[var(--radius-btn)] bg-brand/10 pl-4 pr-1 py-1">
+                                    <Wallet size={18} className="text-brand-text" aria-hidden="true" />
+                                    <span className="text-body font-bold text-content">Cobrando la #{detalle.referencia}</span>
+                                    <Button size="sm" variant="ghost" icon={X} onClick={() => setElegida(null)}>Cerrar preventa <kbd className="ml-1 rounded border border-border-card px-1 text-micro font-bold">Esc</kbd></Button>
+                                </div>
+                            ) : (
+                            <SegmentedControl className="kiosco-nav" label="Qué estás haciendo" tone="brand"
+                                options={['vender', 'caja'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
+                                value={vista} onChange={irA} />
+                            )}
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <Anillo restante={restante} />
+                                    <span className={`text-label leading-tight ${restante <= 30_000 ? 'text-warning-text font-semibold' : 'text-content-3'}`}>
+                                        Se cierra sola<br />si no la usas
+                                    </span>
+                                </div>
+                                <Button variant="secondary" icon={LogOut} onClick={terminar}>Terminar</Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <img src="/Logo192.png" alt="" className="w-10 h-10 object-contain" draggable="false" />
+                                <div className="leading-tight">
+                                    <p className="text-title font-bold text-content">{equipo.branchName || 'Kiosco de caja'}</p>
+                                    <p className="text-label text-content-3 first-letter:uppercase">
+                                        {fechaTexto(ahora, { weekday: 'long', day: 'numeric', month: 'long' })}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <p className="text-title-lg font-bold tabular-nums text-content">{hora12(ahora)}</p>
+                                <Button variant="ghost" size="sm" icon={LogOut} iconOnly onClick={onSalir} aria-label="Salir del kiosco" />
+                            </div>
+                        </>
+                    )}
+                </header>
+
+                <main className="flex-1 px-6 py-5 flex flex-col">
+                    {/* Cobrar abre la MISMA pantalla de venta, cargada con la
+                        preventa: se corrige presentación, cantidad, cliente o
+                        pago con las mismas validaciones, y se cobra ahí. Una
+                        venta propia a medias sigue en su borrador. */}
+                    <div className="flex-1 flex flex-col">
+                        {abierta ? (
+                            <Suspense fallback={<LoadingState />}>
+                                {/* La venta NO se desmonta al ir a la caja: lo editado
+                                    sigue ahí al volver. */}
+                                <div className={vista === 'caja' ? 'hidden' : 'flex-1 flex flex-col'}>
+                                    {detalle ? (
+                                        <PreventaView key={detalle.id} enKiosco cobrando={detalle} activa={vista !== 'caja'}
+                                            onMovimientoDeCaja={abrirEnCaja}
+                                            onTerminarCobro={() => { setElegida(null); datosCola.leer(); }} />
+                                    ) : (
+                                        <PreventaView enKiosco activa={vista !== 'caja'} onMovimientoDeCaja={abrirEnCaja} />
+                                    )}
+                                </div>
+                                {vista === 'caja' && (
+                                    <MiCajaView key={dialogoCaja.n} comoPestana abrirAlEntrar={dialogoCaja.cual}
+                                        alCerrarDialogo={dialogoCaja.cual ? () => setVista('vender') : undefined} />
+                                )}
+                            </Suspense>
+                        ) : marcando ? (
+                            <div className="mx-auto w-full max-w-xl py-6 flex flex-col gap-3">
+                                {panelMarcador}
+                                {!marcadorOcupado && <Button variant="ghost" icon={X} onClick={() => setAccion(null)}>Volver</Button>}
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col gap-5 justify-center max-w-4xl w-full mx-auto">
+                                <section data-surface="card" className="px-5 pt-4">
+                                    {pendiente ? (
+                                        <Pide titulo="Tu carné ya se leyó" detalle="¿Qué vas a hacer? Elige abajo." onCancelar={() => setPendiente(null)} />
+                                    ) : (
+                                        <Pide titulo={entrando ? 'Abriendo…' : detalle ? `Pasa tu carné para cobrar la #${detalle.referencia}` : pedida?.pide || 'Pasa tu carné'}
+                                            detalle={pedida ? 'Lo que hagas queda a tu nombre.' : 'O toca primero lo que vas a hacer. Toca un ticket para ver su detalle.'}
+                                            aviso={aviso} onCancelar={pedida && !entrando ? () => setAccion(null) : null} />
+                                    )}
+                                </section>
+                                <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:grid-rows-2">
+                                    <div className="md:row-span-2"><Accion k="vender" grande activa={accion === 'vender'} onClick={() => tocar('vender')} /></div>
+                                    <Accion k="caja" activa={accion === 'caja'} onClick={() => tocar('caja')} />
+                                    <Accion k="marcar" activa={accion === 'marcar'} onClick={() => tocar('marcar')} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 }

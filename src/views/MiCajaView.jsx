@@ -131,7 +131,7 @@ const VACIO = [];
  * Sigue exportándose entera y usable sola: si algún día la sala vuelve a tener
  * su pantalla propia, no hay que deshacer nada.
  */
-export default function MiCajaView({ comoPestana = false }) {
+export default function MiCajaView({ comoPestana = false, abrirAlEntrar = null, alCerrarDialogo }) {
     // `VACIO` estable y no `|| []`: un arreglo nuevo en cada render invalida
     // los `useMemo` que dependen de él.
     const branches = useStaff((s) => s.branches) ?? VACIO;
@@ -228,7 +228,13 @@ export default function MiCajaView({ comoPestana = false }) {
      * que no da `undefined` sino que lanza en cada render (`gate:tdz`). */
     const cargaRef = useRef(0);
     const [ocupado, setOcupado] = useState(false);
-    const [dialogo, setDialogo] = useState(null);   // 'abrir' | 'ingreso' | 'corte' | 'cerrar'
+    // El kiosco de caja puede entrar con un diálogo ya abierto (Entrada / Salida).
+    const [dialogo, setDialogo] = useState(abrirAlEntrar);   // 'abrir' | 'ingreso' | 'corte' | 'cerrar'
+    // Abierto desde afuera (kiosco): al cerrarse, se avisa para volver adonde estaba.
+    const abiertoDesdeAfuera = useRef(Boolean(abrirAlEntrar));
+    useEffect(() => {
+        if (abiertoDesdeAfuera.current && !dialogo) { abiertoDesdeAfuera.current = false; alCerrarDialogo?.(); }
+    }, [dialogo, alCerrarDialogo]);
     const [resultado, setResultado] = useState(null);
     const [bolsas, setBolsas] = useState(VACIO);
     const [movimientos, setMovimientos] = useState(VACIO);

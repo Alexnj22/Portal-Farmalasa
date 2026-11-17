@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Package } from 'lucide-react';
+import { Clock, Download, Package, Scale, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
@@ -197,12 +197,12 @@ export default function TodasLasBolsas({
                 <CarrilCards ariaLabel="Resumen de las bolsas del período">
                     <StatCard icon={Package} label="Bolsas" value={resumen.cuantas}
                         sub={formatMoney(resumen.monto)} />
-                    <StatCard label="Pendientes" value={resumen.pendientes}
+                    <StatCard icon={Clock} label="Pendientes" value={resumen.pendientes}
                         sub={formatMoney(resumen.montoPendiente)}
                         onClick={resumen.pendientes ? () => setFiltro('pendiente') : undefined} />
-                    <StatCard label="Contadas" value={resumen.contadas} sub={formatMoney(resumen.contado)}
+                    <StatCard icon={ShieldCheck} label="Contadas" value={resumen.contadas} sub={formatMoney(resumen.contado)}
                         onClick={resumen.contadas ? () => setFiltro('CONTADA') : undefined} />
-                    <StatCard label="Diferencia neta" value={formatMoney(resumen.neto)}
+                    <StatCard icon={Scale} label="Diferencia neta" value={formatMoney(resumen.neto)}
                         valueCls={resumen.neto < 0 ? 'text-danger-text' : resumen.neto > 0 ? 'text-warning-text' : 'text-content'}
                         sub={`${resumen.conDif} con diferencia`}
                         onClick={resumen.conDif ? () => setFiltro('dif') : undefined} />

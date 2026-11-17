@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1572.1 — Bolsas: «Todas» ya no rompe la pantalla
+
+- Al entrar a la pestaña «Todas» salía «Algo salió mal» (React #130): tres
+  baldosas del resumen iban sin `icon` y `StatCard` lo dibuja siempre. Se les
+  puso ícono. `tests/unit/bolsasTodas.test.jsx` monta la pestaña con y sin
+  montos; falla con la versión anterior.
+- Novedades: no — corrige un error de la versión anterior.
+
+
 ## v2.1572.0 — Bolsas: pestaña «Todas» por fecha del corte y arreglos del módulo
 
 - **Pestaña «Todas»** (solo alcance de todas las sucursales), pedida por el

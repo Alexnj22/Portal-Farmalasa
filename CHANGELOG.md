@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1564.2 — Plan: kiosco de caja
+
+- Plan para vender, cobrar y llevar la caja desde la computadora de caja como
+  kiosco, con el carné al finalizar: `docs/PLAN-KIOSCO-DE-CAJA-2026-11-17.md`.
+- Novedades: no — documento interno.
+
 ## v2.1564.1 — Novedades nativa en la app
 
 - **Novedades ya no se abre como el portal dentro de la app**: pantalla nativa

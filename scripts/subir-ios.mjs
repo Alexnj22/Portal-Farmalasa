@@ -57,10 +57,18 @@ function tokenAsc() {
   const firma = sign('sha256', Buffer.from(cuerpo), { key: createPrivateKey(readFileSync(LLAVE)), dsaEncoding: 'ieee-p1363' });
   return `${cuerpo}.${firma.toString('base64url')}`;
 }
+// Un 5xx de Apple se reintenta: el 2026-11-17 App Store Connect estuvo caído a
+// ratos (2 de 3 consultas pasaban) y la compilación moría en la primera
+// consulta sin haber empezado. Un 4xx sí corta: es la llave o la ruta.
 async function apiAsc(ruta) {
-  const r = await fetch(`https://api.appstoreconnect.apple.com${ruta}`, { headers: { Authorization: `Bearer ${tokenAsc()}` } });
-  if (!r.ok) throw new Error(`App Store Connect ${r.status}: ${await r.text()}`);
-  return r.json();
+  for (let intento = 1; ; intento++) {
+    const r = await fetch(`https://api.appstoreconnect.apple.com${ruta}`, { headers: { Authorization: `Bearer ${tokenAsc()}` } });
+    if (r.ok) return r.json();
+    const texto = await r.text();
+    if (r.status < 500 || intento >= 8) throw new Error(`App Store Connect ${r.status}: ${texto}`);
+    console.warn(`App Store Connect ${r.status}: reintento ${intento} de 7…`);
+    await new Promise((ok) => setTimeout(ok, intento * 5000));
+  }
 }
 
 // ── La app y sus variables ──────────────────────────────────────────────────

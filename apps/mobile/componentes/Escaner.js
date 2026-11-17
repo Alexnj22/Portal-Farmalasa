@@ -20,6 +20,23 @@ import IconoFijo from './IconoFijo';
 const TIPOS = ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf14', 'datamatrix'];
 const ESPERA_MISMO_CODIGO = 2500;
 
+// El lente (2026-11-17, usuario: «en mi 17 pro max me toca alejarlo porque al
+// tenerlo cerca no enfoca»). Sin `selectedLens`, expo-camera abre el lente
+// principal (el «1x»), y en los iPhone Pro ese lente no enfoca a menos de
+// ~20 cm: un código de barras cerca queda borroso, toque o no. La cámara
+// COMBINADA (triple, o doble gran angular en los que no son Pro) es la que usa
+// la app de Cámara: pasa sola al gran angular, que enfoca a 2 cm (macro). Su
+// nombre viene en el idioma del teléfono, así que se busca por palabras.
+// En Android no hay lentes que elegir (`selectedLens` es sólo de iOS).
+const COMBINADA = [/tri?ple/i, /dual.*(wide|angular)|(wide|angular).*dual/i];
+const lenteCombinado = (lentes) => {
+  for (const re of COMBINADA) {
+    const l = (lentes || []).find((x) => re.test(x));
+    if (l) return l;
+  }
+  return null;
+};
+
 function BotonRedondo({ icono, onPress, activo, etiqueta }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={8}>
@@ -47,6 +64,7 @@ export default function Escaner({ visible, titulo, ayuda, onCodigo, onCerrar, pi
   const ultimo = useRef({ codigo: null, en: 0 });
   const ocupado = useRef(false);
   const margen = useSafeAreaInsets();
+  const [lente, setLente] = useState(null);
 
   useEffect(() => { if (visible && permiso && !permiso.granted && permiso.canAskAgain) pedirPermiso(); }, [visible, permiso, pedirPermiso]);
   useEffect(() => { if (!visible) setLinterna(false); }, [visible]);
@@ -66,7 +84,9 @@ export default function Escaner({ visible, titulo, ayuda, onCodigo, onCerrar, pi
       <View style={{ flex: 1, backgroundColor: '#000' }}>
         {permiso?.granted ? (
           <CameraView style={StyleSheet.absoluteFill} facing="back" enableTorch={linterna}
-            barcodeScannerSettings={{ barcodeTypes: TIPOS }} onBarcodeScanned={leido} />
+            barcodeScannerSettings={{ barcodeTypes: TIPOS }} onBarcodeScanned={leido}
+            selectedLens={lente ?? undefined}
+            onAvailableLensesChanged={({ lenses }) => { const l = lenteCombinado(lenses); if (l && l !== lente) setLente(l); }} />
         ) : (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 }}>
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', textAlign: 'center' }}>La app necesita la cámara para escanear</Text>

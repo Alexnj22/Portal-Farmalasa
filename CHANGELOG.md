@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1561.4 — Preventa: caja cerrada lo dice claro
+
+- Enviar una preventa después del cierre del día decía «La caja no devolvió la
+  fecha de la sesión». Ahora dice que la caja está cerrada y que se envíe
+  cuando abra (medido en Salud 5: cierre a las 7:01 p. m., envío a las 8:15).
+- Probado en vivo en Salud 5: la caja armada de dos lotes (LOSARTAN 50MG, lotes
+  de 5 y 5) se arma en el panel y cobra $22.50, el precio de la caja.
+
 ## v2.1561.3 — Lenguaje: lo que quedaba en avisos, errores y papel
 
 - El barrido en el navegador no veía avisos, errores ni papel impreso. Se corrigieron unos 60 textos que quedaban: «sala» → «sucursal» (consultas de existencia, traslados, impresión, Mín/Máx, bienvenida), usted y voseo en el marcador y en conteos, «jefe inmediato» en la bienvenida, rayas en avisos, «Corte Z» fuera del PDF, «Stock insuficiente», «renglón» por producto.

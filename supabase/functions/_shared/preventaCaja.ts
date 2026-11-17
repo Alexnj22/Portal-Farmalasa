@@ -240,7 +240,9 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
   const avisos: string[] = [];
   const pagina = await http.get("venta.php?preventa=1");
   const fecha = pagina.match(/id="fecha" value="([^"]+)"/)?.[1];
-  if (!fecha) throw new Error("La caja no devolvió la fecha de la sesión.");
+  // Sin fecha = la caja no tiene turno abierto: pasa después del cierre del
+  // día (medido en Salud 5 el 2026-11-16, Z a las 19:01 y envío a las 20:15).
+  if (!fecha) throw new Error("La caja está cerrada (ya se hizo el cierre del día). Envía la venta cuando abra.");
 
   const renglonesCaja: Record<string, unknown>[] = [];
   let gravado = 0, exenta = 0;

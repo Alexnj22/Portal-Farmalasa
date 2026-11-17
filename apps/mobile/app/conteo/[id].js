@@ -68,7 +68,7 @@ const TONO = { ok: () => MARCA.verde, sobra: () => MARCA.ambar, falta: () => MAR
 // dar muchísimos toques»): el campo está siempre a la vista, «Siguiente» en el
 // teclado guarda y salta al próximo renglón sin contar —también al del producto
 // de abajo— y lo contado queda cerrado con su diferencia al lado.
-function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar, onEnCurso }) {
+function Renglon({ it, producto, editable, aCiegas = false, ajusta = true, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar, onEnCurso }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
@@ -187,7 +187,7 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
       <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 16 }}>
         {contado ? enlace(`${it.contado_por_nombre ? shortEmployeeName(it.contado_por_nombre) : 'Contado'}${it.contado_at ? ` · ${fmtHM(it.contado_at)}` : ''}`, colorSistema.texto2, () => onHistorial(it)) : null}
         {puedeEscribir && it.ver_sistema && it.sistema_cantidad > 0 ? enlace('No lo encuentro', MARCA.ambar, () => guardar(noUbicado(it.nota))) : null}
-        {onLoteReal ? enlace(esLoteGenerico(it.lote) ? 'Anotar lote' : 'Lote y vence', MARCA.azulClaro, () => onLoteReal(it)) : null}
+        {onLoteReal ? enlace(esLoteGenerico(it.lote) ? 'Anotar lote' : ajusta ? 'Lote y vence' : '+ Lote', MARCA.azulClaro, () => onLoteReal(it)) : null}
         {onLote && textoCorregir ? enlace(textoCorregir, falta ? MARCA.ambar : MARCA.azulClaro, () => onLote(it)) : null}
         {onRecontar ? enlace(it.recontado_at ? 'Recontar otra vez' : 'Recontar', MARCA.ambar, () => onRecontar(it)) : null}
       </View>
@@ -874,7 +874,11 @@ export default function Conteo() {
                         // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.
                         onLote={editable && !simple && (!conteo?.aplica_en_caja || it.es_agregado_manual) ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
                         // …y ése es el camino: los lotes reales de la caja (`LoteReal`).
-                        onLoteReal={editable && !simple && conteo?.aplica_en_caja && !it.es_agregado_manual && !it.is_vencidos ? setLoteReal : null}
+                        // En todo conteo por lote, ajuste o no (gemelo de `llevaLotesEnLinea`
+                        // de la web): en el cíclico de Salud 4, que no ajusta, no había dónde
+                        // agregar el segundo lote de un producto (2026-11-17).
+                        onLoteReal={editable && !simple && !it.is_vencidos && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
+                        ajusta={!!conteo?.aplica_en_caja}
                         onRecontar={puedeAprobar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                   </View>
                 </Vidrio>

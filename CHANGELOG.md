@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.2 — Conteo en la app: «+ Lote» también en conteos que no ajustan
+
+- v2.1572.4 lo arregló sólo en la web. En la app del personal la hoja de lotes
+  (`LoteReal`, con «Otro lote») sólo se abría en conteos que ajustan, y en el
+  cíclico de Salud 4 un producto con 2 lotes seguía con un solo espacio. Ahora
+  sale en todo conteo por lote fuera del área de vencidos, con el enlace
+  «+ Lote» cuando el conteo no ajusta (`apps/mobile/app/conteo/[id].js`).
+
 ## v2.1574.1 — Kiosco de caja: Entrada y Salida sólo con la caja abierta
 
 - Pedido del usuario: con la caja cerrada no tienen sentido. Junto al buscador

@@ -33,6 +33,8 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
+import { notificarVenceCorto } from '@nucleo/data/venceCorto';
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
 // `tabpedidos/EmpChip.jsx`, otro archivo).
@@ -82,10 +84,12 @@ function LotesDelRenglon({ row }) {
             {lotes.map((l, i) => {
                 const vence = fmtVence(l.fecha_vencimiento);
                 const cant  = l.take ?? l.cantidad ?? l.packs;
+                const corto = venceCorto(l.fecha_vencimiento);
                 return (
-                    <span key={i} className="text-micro text-content-3 leading-tight">
+                    <span key={i} className={`text-micro leading-tight ${corto ? 'text-warning-text font-bold' : 'text-content-3'}`}>
                         <span className="font-mono text-content-2">{l.lote || 'sin lote'}</span>
                         {vence != null && <> · vence {vence}</>}
+                        {corto && <> · vence pronto</>}
                         {cant != null && <> · {cant}</>}
                     </span>
                 );
@@ -639,7 +643,7 @@ async function fetchPresOpts(productId) {
  * medición de arriba es con contexto táctil.
  */
 export default function RecepcionModal({
-    open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed, onCorregido,
+    open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed: onConfirmedProp, onCorregido,
     // Lo YA contado. Llega APARTE de `rows` a propósito: un renglón confirmado
     // no se vuelve a contar, así que mezclarlo lo metería en la grilla y en
     // «Confirmar todo» sin que hiciera nada. Su lugar es la búsqueda y su
@@ -1056,6 +1060,24 @@ export default function RecepcionModal({
     }, [escribirExtra]);
 
     /** Vaciar los respiros pendientes AHORA y esperar a que queden escritos. */
+    // Lo que debe venir con vencimiento en 6 meses o menos (usuario,
+    // 2026-11-17): se alerta arriba y, al confirmar, se le avisa a la
+    // sucursal. La base no repite el aviso del mismo pedido y sucursal.
+    const productosVenceCorto = useMemo(() => (rows ?? []).flatMap((r) =>
+        lotesQueDebenVenir(r)
+            .filter((l) => venceCorto(l.fecha_vencimiento))
+            .map((l) => ({ nombre: r.products?.nombre ?? 'Producto', vence: String(l.fecha_vencimiento).slice(0, 7), cantidad: l.take ?? l.cantidad ?? l.packs ?? null }))),
+    [rows]);
+    const onConfirmed = useCallback((info) => {
+        if (productosVenceCorto.length && pedido?.id) {
+            notificarVenceCorto({
+                origen: 'pedido', referencia: `${pedido.id}:${sucursalId}`, detalle: pedido.codigo ?? null,
+                sucursalId, productos: productosVenceCorto,
+            });
+        }
+        onConfirmedProp?.(info);
+    }, [productosVenceCorto, pedido?.id, pedido?.codigo, sucursalId, onConfirmedProp]);
+
     const asentarExtras = useCallback(async () => {
         const porEscribir = Object.values(pendientes.current);
         Object.values(guardando.current).forEach(clearTimeout);
@@ -2330,6 +2352,16 @@ export default function RecepcionModal({
                                             {isDanadaEspecial
                                                 ? 'Esta caja especial llegó dañada. Revisa cómo vienen los productos al contar.'
                                                 : `Esta hoja venía en la caja ${(cajasDeHoja[selectedHoja] ?? []).map(n => `#${n}`).join(', ')}. Revísala producto por producto.`}
+                                        </span>
+                                    </div>
+                                )}
+                                {productosVenceCorto.length > 0 && (
+                                    <div className="mt-1 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-warning/10 border border-warning/30">
+                                        <AlertTriangle size={11} className="text-warning shrink-0" />
+                                        <span className="text-caption text-warning-text font-medium">
+                                            {productosVenceCorto.length === 1
+                                                ? `Un producto vence en 6 meses o menos (${venceTexto(productosVenceCorto[0].vence)}): ${productosVenceCorto[0].nombre}.`
+                                                : `${productosVenceCorto.length} lotes vencen en 6 meses o menos. Están marcados en la lista.`}
                                         </span>
                                     </div>
                                 )}

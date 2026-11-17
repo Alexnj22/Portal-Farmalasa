@@ -28,6 +28,8 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { ORIGEN, OTRA, ESTADO_CARGA, estadoDeCarga, fmtFecha } from './cargarCompraComun';
 import { Llegaron, BuscadorProducto } from './CargarCompraPiezas';
 import PartirRenglon from './PartirRenglon';
+import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
+import { notificarVenceCorto } from '@nucleo/data/venceCorto';
 
 // El mismo visor de Facturas de compra (lleva el PDF): sólo se baja al abrir
 // la pestaña «Documento».
@@ -552,6 +554,18 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         // abrirse»). Si no se pudo confirmar o falló, el modal sigue abierto
         // con el detalle, que es donde hay que actuar.
         if (r?.enviada === true && !e) {
+            // Vence en 6 meses o menos: se avisa a Bodega (usuario, 2026-11-17).
+            const cortos = Object.entries(rev.renglones ?? {})
+                .filter(([, x]) => !x.servicio && !x.erroneo && venceCorto(x.vence))
+                .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: x.vence, cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
+            if (cortos.length) {
+                notificarVenceCorto({
+                    origen: 'compra', referencia: doc.document_id ?? `papel-${doc.manual_id}`,
+                    detalle: doc.emisor_nombre, productos: cortos,
+                }).then(({ error: errAviso }) => {
+                    if (errAviso) useToastStore.getState().showToast('No se pudo avisar a Bodega', 'Hay productos que vencen en 6 meses o menos. Avísales tú.', 'warning');
+                });
+            }
             clearDraft(claveBorrador);
             useToastStore.getState().showToast('Compra cargada',
                 `${doc.emisor_nombre} · ${formatMoney(doc.monto_total)} ${r.verificada ? 'entró a Bodega.' : 'se mandó a Bodega. Se confirma en unos minutos.'}`,
@@ -871,6 +885,15 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                 .filter(x => !ajustes[x.renglon]?.vence && !ajustes[x.renglon]?.erroneo && !ajustes[x.renglon]?.servicio)}
                             onFechas={usarFechas} />
                     )}
+                    {uso === 'venta' && (() => {
+                        const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && venceCorto(ajustes[i]?.vence)).length;
+                        return n > 0 && (
+                            <Notice variant="warning" icon={AlertTriangle}>
+                                <b>{n === 1 ? 'Un producto vence' : `${n} productos vencen`} en 6 meses o menos.</b>{' '}
+                                Al cargar la compra se le avisa a Bodega.
+                            </Notice>
+                        );
+                    })()}
                     {!revision && uso === 'venta' && faltan === 0 && (
                         <Notice variant="success" icon={CheckCircle2}>
                             Los {resumen.renglones} productos están completos.
@@ -953,6 +976,11 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                             {uso === 'venta' && aj.erroneo && (
                                                 <p className="mt-1 text-caption text-danger-text font-bold">
                                                     Error del proveedor: entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito.
+                                                </p>
+                                            )}
+                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && venceCorto(aj.vence) && (
+                                                <p className="mt-1 text-caption text-warning-text font-bold">
+                                                    Vence en 6 meses o menos ({venceTexto(aj.vence)}).
                                                 </p>
                                             )}
                                         </div>

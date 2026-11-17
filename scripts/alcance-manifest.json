@@ -426,6 +426,9 @@
     }
   },
   "rpc": {
+    "notificar_vence_corto": {
+      "guarda": "alcance"
+    },
     "agregar_extra_a_pedido": {
       "guarda": "alcance"
     },

@@ -38500,6 +38500,16 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: number
       }
+      notificar_vence_corto: {
+        Args: {
+          p_detalle: string
+          p_origen: string
+          p_productos: Json
+          p_referencia: string
+          p_sucursal_id: number
+        }
+        Returns: number
+      }
       notify_branch: {
         Args: {
           p_body?: string

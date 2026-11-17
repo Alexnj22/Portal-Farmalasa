@@ -124,6 +124,9 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // 2026-11-16: administración agregó tu correo a la prueba de Android y ya
     // puedes descargar la app del personal.
     APP_PERSONAL_LISTA: 'Smartphone',
+    // 2026-11-17: entró producto que vence en 6 meses o menos (compra → Bodega,
+    // pedido → la sucursal que recibe).
+    VENCE_CORTO: 'CalendarClock',
 };
 
 // Fallback por familia: cubre un `PEDIDO_*` nuevo que nadie agregó al mapa.

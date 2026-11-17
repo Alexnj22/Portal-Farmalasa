@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.0 — Alerta de vencimiento corto al cargar compras y recibir pedidos
+
+- «si detecta un producto que su vence es en 6 meses, que tire alerta y
+  notifique» (usuario, 2026-11-17). Corte por mes: entra lo que vence a lo sumo
+  el mes de hoy + 6 (y lo vencido). `src/utils/venceCorto.js` y su gemelo en la
+  base, `public.notificar_vence_corto`.
+- **Cargar compra**: cada producto con vencimiento corto lo dice debajo, y un
+  aviso arriba cuenta cuántos. Al cargar la compra se avisa a la gente de Bodega
+  (campana y teléfono).
+- **Recepción de pedido**: el lote que debe venir con vencimiento corto sale
+  resaltado y arriba un aviso lo resume. Al confirmar se avisa a la sucursal que
+  recibe. Un mismo pedido y sucursal avisa una vez.
+- Migración `20261117214042_vence_corto_aviso_al_cargar`. Tipo de aviso
+  `VENCE_CORTO` (ícono `CalendarClock`).
+
 ## v2.1573.9 — Kiosco de caja: revisar el cobro en la caja sin cobrar
 
 - Mientras el cobro no está encendido, el kiosco muestra «Revisar cobro en la

@@ -1174,7 +1174,7 @@ export const AREAS = [
             'src/views/ComprasView.jsx', 'src/views/purchases/',
             'src/data/compras.js', 'src/data/cargarCompra.js', 'src/data/cuentasPorPagar.js',
             'src/data/facturasCompra.js', 'src/data/proveedores.js',
-            'src/utils/deducibilidadPorRegla.js',
+            'src/utils/deducibilidadPorRegla.js', 'src/utils/venceCorto.js', 'src/data/venceCorto.js',
             'src/components/forms/FormProveedorDetail.jsx', 'src/components/forms/FormPurchaseDteViewer.jsx',
             'src/components/forms/FormRegisterPayment.jsx',
         ],

@@ -20,10 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActionSheetIOS, Alert, AppState, Dimensions, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../../componentes/Tocable';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import IconoFijo from '../../componentes/IconoFijo';
-import { iconoDe } from '../../tema/iconos';
-import { useBuscadorAbajo } from '../../tema/material';
+import { useBotonFlotante } from '../../componentes/chat/acompanante';
 import ElegirLaboratorio from '../../componentes/conteos/ElegirLaboratorio';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -201,39 +198,8 @@ function Renglon({ it, producto, editable, aCiegas = false, onGuardado, onHistor
 
 const contadosVivos = (r) => Number(r?.contados ?? 0);
 
-// Escanear, flotante abajo a la derecha (2026-11-17, lo eligió el usuario): al
-// alcance del pulgar y a la vista al desplazarse. «Que no interfiera con el de
-// chat»: si la burbuja del chat está en pantalla (`chat_clientes`), se sienta
-// encima de ella; y sube sobre el buscador de abajo de iOS 26, como la burbuja.
-// Con el teclado abierto se esconde: se está escribiendo una cantidad.
-const TAMANO_ESCANER = 64;
-function EscanerFlotante({ onPress }) {
-  const { hasPermission } = useAuth();
-  const { bottom } = useSafeAreaInsets();
-  const conBuscador = useBuscadorAbajo((s) => Object.keys(s.claves).length > 0);
-  const [teclado, setTeclado] = useState(false);
-  useEffect(() => {
-    const a = Keyboard.addListener('keyboardWillShow', () => setTeclado(true));
-    const b = Keyboard.addListener('keyboardDidShow', () => setTeclado(true));
-    const c = Keyboard.addListener('keyboardWillHide', () => setTeclado(false));
-    const d = Keyboard.addListener('keyboardDidHide', () => setTeclado(false));
-    return () => { a.remove(); b.remove(); c.remove(); d.remove(); };
-  }, []);
-  if (teclado) return null;
-  const conChat = !!hasPermission?.('chat_clientes', 'can_view');
-  // 54 de la burbuja + 14 de aire entre las dos.
-  const abajo = bottom + 16 + (conBuscador ? 62 : 0) + (conChat ? 54 + 14 : 0);
-  return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Escanear código"
-      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); onPress(); }}
-      style={({ pressed }) => ({ position: 'absolute', right: 16, bottom: abajo, width: TAMANO_ESCANER, height: TAMANO_ESCANER,
-        borderRadius: TAMANO_ESCANER / 2, backgroundColor: MARCA.azul, alignItems: 'center', justifyContent: 'center',
-        shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
-        transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-      <IconoFijo name={iconoDe('ScanLine')} size={30} color="#fff" />
-    </Pressable>
-  );
-}
+// Escanear va pegado a la burbuja del chat (`useBotonFlotante`): mismo tamaño,
+// y al moverla se mueven los dos (2026-11-17, lo pidió el usuario).
 
 // Un botón compacto del tamaño de su texto (2026-11-17, el usuario: «me salen 5
 // botones que ocupan todo el ancho»). Lleno = la acción principal; con borde,
@@ -526,6 +492,7 @@ export default function Conteo() {
   const labElegido = laboratorioId === 'todos' ? null : opcionesLab.find((o) => o.id === String(laboratorioId));
   const [eligiendoLab, setEligiendoLab] = useState(false);
   const gruposLab = [];
+  useBotonFlotante(editable && !escaneando ? { icono: 'ScanLine', etiqueta: 'Escanear código', onPress: () => { esperarGuardados(); setEscaneando(true); } } : null);
   const gruposOrden = [{ id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: '', onCambiar: setOrden, opciones: [
     { id: '', label: 'Orden del estante' },
     ...[['producto', 'Producto'], ...(verSistema ? [['sistema', 'Sistema']] : []), ['fisico', 'Físico'], ...(verSistema ? [['diferencia', 'Diferencia']] : []), ['progreso', 'Estado']]
@@ -934,7 +901,6 @@ export default function Conteo() {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
-      {editable && !escaneando ? <EscanerFlotante onPress={() => { esperarGuardados(); setEscaneando(true); }} /> : null}
       <ElegirLaboratorio visible={eligiendoLab} opciones={opcionesLab} valor={String(laboratorioId)}
         onElegir={(v) => setLaboratorioId(v)} onCerrar={() => setEligiendoLab(false)} />
       <Historial item={historial} simple={conteo?.modo === 'SIMPLE'} onCerrar={() => setHistorial(null)} />

@@ -165,12 +165,13 @@ function Acceso({ titulo, icono: Icono, entrando, aviso, conClave, setConClave, 
 
 export default function CajaDelKiosco({
     ahora, onSalir, panelMarcador, marcadorOcupado, feedbackAbierto, onMarcadorActivo,
+    enPortal = false, sala = null, nombreSala = '',
 }) {
     const {
         user, equipo, abierta, marcando, accion, setAccion,
         entrando, aviso, restante, vista, setVista, terminar, conClave, setConClave, entrarConClave,
-    } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo });
-    const datosCola = useColaDeCaja();
+    } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo, enPortal });
+    const datosCola = useColaDeCaja({ sala: enPortal ? sala : null });
     // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
     // Sin esto, alguien sin permiso entraba a Vender y veía un error rojo.
     const { hasPermission, rolePerms } = useAuth();
@@ -217,7 +218,7 @@ export default function CajaDelKiosco({
                                 <AvatarConEstado emp={user} px={48} mostrarChip={false} />
                                 <div className="min-w-0 leading-tight">
                                     <p className="text-title font-bold text-content truncate">{shortEmployeeName(user)}</p>
-                                    <p className="text-label text-content-3">{equipo.branchName}</p>
+                                    <p className="text-label text-content-3">{enPortal ? nombreSala : equipo.branchName}</p>
                                 </div>
                             </div>
                             {detalle && vista !== 'caja' ? (
@@ -231,6 +232,7 @@ export default function CajaDelKiosco({
                                 options={['vender', 'caja'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
                                 value={vista} onChange={irA} />
                             )}
+                            {enPortal ? <Button variant="secondary" icon={ArrowLeft} onClick={onSalir}>Volver al portal</Button> : (
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2">
                                     <Anillo restante={restante} />
@@ -240,6 +242,7 @@ export default function CajaDelKiosco({
                                 </div>
                                 <Button variant="secondary" icon={LogOut} onClick={terminar}>Terminar</Button>
                             </div>
+                            )}
                         </>
                     ) : (
                         <>

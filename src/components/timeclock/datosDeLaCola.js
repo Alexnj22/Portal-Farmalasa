@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { kioscoCajaCola } from '@nucleo/data/kiosco';
+import { fetchPreventasDeSala } from '@nucleo/data/preventas';
 import { colaDeMuestra, esDemo } from './demoDelKiosco';
 
 // La cola del kiosco de caja: leerla y describirla. Sin nada de cómo se ve,
@@ -42,7 +43,32 @@ export function resumenDeProductos(renglones) {
  * falla NO vacía la lista: deja la última y lo dice, porque una cola vacía por
  * un corte de internet se leería como «no hay nada que cobrar».
  */
-export function useColaDeCaja() {
+/**
+ * En el portal (sin equipo de kiosco) la cola sale de las preventas de la
+ * sucursal, con la sesión de quien mira. Trae la venta entera: el cobro abre
+ * sin otra lectura.
+ */
+async function colaDeSala(sala) {
+    try {
+        const filas = await fetchPreventasDeSala(sala, 2);
+        const vivas = filas.filter((p) => ['viva', 'sin_enlace', 'enviando'].includes(p.estado))
+            .sort((a, b) => String(a.enviada_at ?? a.created_at).localeCompare(String(b.enviada_at ?? b.created_at)));
+        return {
+            ok: true,
+            cola: vivas.map((p) => ({
+                id: p.id, referencia: p.externo_ref, codigo: p.venta?.codigo ?? p.codigo, estado: p.estado, origen: 'directa', total: p.total,
+                enviada_at: p.enviada_at ?? p.created_at, documento: p.venta?.documento, pago: p.venta?.pago,
+                puntos: Number(p.venta?.puntos) || 0, cliente: p.venta?.cliente?.generico ? null : p.cliente,
+                vendedor_id: p.enviada_por, vendedor: p.vendedor, venta: p.venta, customer_id: p.customer_id,
+                renglones: (p.venta?.renglones ?? []).map((r) => ({ nombre: r.nombre, cantidad: r.cantidad, subtotal: r.subtotal })),
+            })),
+        };
+    } catch {
+        return { ok: false };
+    }
+}
+
+export function useColaDeCaja({ sala = null } = {}) {
     const [cola, setCola] = useState(null);
     const [problema, setProblema] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
@@ -51,7 +77,7 @@ export function useColaDeCaja() {
     const leer = useCallback(async () => {
         if (esDemo()) { setCola(colaDeMuestra()); setProblema(null); setAhora(Date.now()); return; }
         setLeyendo(true);
-        const r = await kioscoCajaCola();
+        const r = sala ? await colaDeSala(sala) : await kioscoCajaCola();
         setLeyendo(false);
         setAhora(Date.now());
         if (r.ok) {
@@ -63,7 +89,7 @@ export function useColaDeCaja() {
                 : r.networkError ? 'Sin conexión. Muestra la última lista.' : 'No se pudo leer la cola. Intenta de nuevo.');
             setCola((c) => c ?? []);
         }
-    }, []);
+    }, [sala]);
 
     useEffect(() => {
         // La primera lectura sale en el próximo tick, no dentro del efecto.

@@ -904,6 +904,7 @@ export const AREAS = [
             // La vista Preventa (2026-11-16): vender desde el portal y que la
             // venta llegue a caja con el precio del cliente.
             'src/views/PreventaView.jsx',
+            'src/views/KioscoEnPortalView.jsx',
             'src/data/preventas.js',
             'src/utils/preventaDirecta.js',
             'tests/unit/preventaDirecta.test.js',

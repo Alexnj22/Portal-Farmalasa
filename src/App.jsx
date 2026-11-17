@@ -102,6 +102,7 @@ const ChatClientesView = lazy(IMPORTADORES.ChatClientesView);
 const ReservasView = lazy(IMPORTADORES.ReservasView);
 const NovedadesView = lazy(IMPORTADORES.NovedadesView);
 const PreventaView = lazy(IMPORTADORES.PreventaView);
+const KioscoEnPortalView = lazy(IMPORTADORES.KioscoEnPortalView);
 const MayoristasView = lazy(IMPORTADORES.MayoristasView);
 const AplicarEncuestaView = lazy(IMPORTADORES.AplicarEncuestaView);
 const EncuestaPublicaView = lazy(IMPORTADORES.EncuestaPublicaView);
@@ -1007,6 +1008,7 @@ function MainApp() {
                                     <Route path="chat-clientes" element={<PermissionGuard moduleKey="chat_clientes"><ChatClientesView /></PermissionGuard>} />
                                     <Route path="reservas" element={<PermissionGuard moduleKey="reservas"><ReservasView /></PermissionGuard>} />
                                     <Route path="preventa" element={<PermissionGuard moduleKey="preventa"><PreventaView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="preventa/kiosco" element={<PermissionGuard moduleKey="preventa"><KioscoEnPortalView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
@@ -1212,6 +1214,7 @@ const ROUTE_TITLES = {
     '/chat-clientes':     'Chat con clientes',
     '/reservas':          'Reservas',
     '/preventa':          'Preventa',
+    '/preventa/kiosco':   'Kiosco de caja',
     '/metas':             'Metas',
     // Copiado LITERAL del `title` del GlassViewLayout de la vista: es lo que
     // exige gate:rutas, y por buenos motivos — el título de la pestaña del

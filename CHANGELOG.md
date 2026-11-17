@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.6 — Kiosco de caja visible desde el portal
+
+- Pedido del usuario: ver el kiosco de caja desde su computadora. Nueva ruta
+  `/preventa/kiosco` (botón «Kiosco de caja» en Preventa, para quien ve Caja):
+  la misma pantalla del kiosco con la sesión de quien mira, sin carné ni
+  cuenta regresiva. Quien ve todas las sucursales la elige arriba. La cola
+  sale de `preventas_de_sala` (trae la venta entera) y no del equipo.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.5 — Kiosco de caja: se elige y después se pide carné o usuario
 
 - Pedido del usuario: la pantalla principal ya no tiene el lector. Sólo

@@ -84,6 +84,7 @@ export const IMPORTADORES = {
     ReservasView: () => import("./views/ReservasView"),
     NovedadesView: () => import("./views/NovedadesView"),
     PreventaView: () => import("./views/PreventaView"),
+    KioscoEnPortalView: () => import("./views/KioscoEnPortalView"),
     ProveedoresView: () => import("./views/purchases/ProveedoresView"),
     ClientesView: () => import("./views/ClientesView"),
     MayoristasView: () => import("./views/mayoristas/MayoristasView"),

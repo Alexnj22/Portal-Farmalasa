@@ -3,6 +3,8 @@ import {
     AlertTriangle, ArrowDownLeft, ArrowUpRight, Ban, CheckCircle2, Layers, Wallet, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileText, Gift, History, Minus, Package, PackageSearch, Pencil, Plus, Receipt,
     RefreshCw, Send, ShoppingBag, ShoppingCart, Trash2, UserPen, UserPlus, UserRound, X,
 } from 'lucide-react';
+import { MonitorSmartphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -113,6 +115,7 @@ const conMayuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
 export default function PreventaView({ openModal, enKiosco = false, cobrando = null, onTerminarCobro, activa = true, onMovimientoDeCaja }) {
     const { user, hasPermission, getScope } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
+    const navigate = useNavigate();
     const tactil = useCoarsePointer();
     const todas = getScope('preventa') === 'ALL';
     const puedeVender = hasPermission('preventa', 'can_edit');
@@ -544,7 +547,13 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                 ? <>Llega a caja de <span className="font-bold text-content">{nombreSala}</span> con tu nombre como vendedor.</>
                                 : <>{enCaja} en caja sin facturar</>}
                         </p>
-                        <div className="flex justify-end min-w-0">{barra}</div>
+                        <div className="flex justify-end items-center gap-2 min-w-0">
+                            {hasPermission('caja_vales', 'can_view') && (
+                                <Button variant="secondary" icon={MonitorSmartphone}
+                                    onClick={() => navigate(`/preventa/kiosco${todas ? `?sala=${sala}` : ''}`)}>Kiosco de caja</Button>
+                            )}
+                            {barra}
+                        </div>
                     </div>
                 )}
                 {sala && (pestana === 'nueva' || enKiosco) && (

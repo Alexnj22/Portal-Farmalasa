@@ -90,7 +90,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
       {estado.noEfectivo && !v.sinComprobante ? (
         <>
           <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{`Foto del ${papel}`}</Text>
-          <Fotos fotos={v.foto ? [v.foto] : []} onCambiar={alCambiarFotos} max={1} />
+          <Fotos fotos={v.foto ? [v.foto] : []} onCambiar={alCambiarFotos} max={1} documento />
           {leyendo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Leyendo la foto…</Text> : null}
           {aviso ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{aviso}</Text> : null}
         </>

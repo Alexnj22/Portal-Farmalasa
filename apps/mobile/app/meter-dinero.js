@@ -33,7 +33,8 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import Motivos from '../componentes/formulario/Motivos';
 import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
 import { MARCA } from '../componentes/inicio/marca';
 import Interruptor from '../componentes/Interruptor';
@@ -41,6 +42,18 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
 import FormaDePago from '../componentes/formulario/FormaDePago';
 import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
+
+// El ícono y el color de cada motivo. Un código nuevo del catálogo sale con el
+// genérico hasta que se agregue acá; el color se lee al pintar (getters).
+const ASPECTO = {
+  APLICACION: { icono: 'Jeringa', get color() { return MARCA.violeta; } },
+  GLUCOSA: { icono: 'Gota', get color() { return MARCA.rojo; } },
+  APARTADO: { icono: 'Package', get color() { return MARCA.ambar; } },
+  MAPFRE: { icono: 'ShieldCheck', get color() { return MARCA.azulInfo; } },
+  DOMICILIO: { icono: 'Moto', get color() { return MARCA.verde; } },
+  POS_PROMERICA: { icono: 'PuntoDeVenta', get color() { return MARCA.azulClaro; } },
+  OTRO_ENTRADA: { icono: 'MasOpciones', get color() { return MARCA.gris; } },
+};
 
 export default function MeterDinero() {
   usePantallaDespierta('meter-dinero'); // se cuenta efectivo: la pantalla no se apaga
@@ -205,10 +218,10 @@ export default function MeterDinero() {
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           {nombreSala ? <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>{`Entra a la caja de ${nombreSala}`}</Text> : null}
 
-          <Seccion titulo="Motivo">
-            <Opciones opciones={tipos.map((x) => ({ id: x.codigo, label: x.etiqueta, detalle: x.leyenda || null }))}
-              valor={codigo} onCambiar={elegir} />
-          </Seccion>
+          <Motivos valor={codigo} onCambiar={elegir}
+            opciones={tipos.map((x) => ({ id: x.codigo, label: x.etiqueta, detalle: x.leyenda || null,
+              icono: ASPECTO[x.codigo]?.icono ?? (x.codigo.startsWith('OTRO') ? 'MasOpciones' : 'Banknote'),
+              color: ASPECTO[x.codigo]?.color, abre: !!x.lleva_comprobante }))} />
 
           {conFormaDePago ? (
             <FormaDePago valor={pago} onCambiar={setPago} monto={n}
@@ -218,7 +231,7 @@ export default function MeterDinero() {
           {tipo && tipo.foto !== 'NO' && !noEfectivo ? (
             <Seccion titulo={tipo.foto === 'OBLIGATORIA' ? 'Foto de la boleta' : 'Foto de la boleta (opcional)'}
               pie="La foto se lee sola y llena el monto, el número y el detalle.">
-              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} />
+              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento />
             </Seccion>
           ) : null}
           {aviso && !noEfectivo ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}

@@ -135,6 +135,15 @@ export const ICONOS = {
   // Ficha de personal: contraseña y «Acción RRHH».
   KeyRound: i('key', require('@expo/material-symbols/key.xml')),
   Plus: i('plus', require('@expo/material-symbols/add.xml')),
+  // Meter dinero: los botones de la foto y los motivos con ícono (2026-11-17).
+  Camara: i('camera.fill', require('@expo/material-symbols/photo_camera.xml')),
+  Escaner: i('doc.viewfinder', require('@expo/material-symbols/document_scanner.xml')),
+  Galeria: i('photo.on.rectangle', require('@expo/material-symbols/photo_library.xml')),
+  Jeringa: i('syringe', require('@expo/material-symbols/vaccines.xml')),
+  Gota: i('drop.fill', require('@expo/material-symbols/bloodtype.xml')),
+  Moto: i('scooter', require('@expo/material-symbols/two_wheeler.xml')),
+  PuntoDeVenta: i('creditcard', require('@expo/material-symbols/point_of_sale.xml')),
+  MasOpciones: i('ellipsis.circle', require('@expo/material-symbols/more_horiz.xml')),
 };
 
 export const ICONO_GENERICO = i('square.grid.2x2', require('@expo/material-symbols/apps.xml'));

@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1569.1 — App: Meter dinero con motivos visuales y foto que se ajusta
+
+- Pedido del usuario: los botones de la foto «casi invisibles», la foto que no
+  se ajustaba como en el portal y un selector de motivo más visual.
+- `Fotos` con `documento`: «Tomar foto» abre el escáner del sistema
+  (esquinas, enderezado; cae a la cámara si no está) y la galería recorta en
+  Android. Botones rellenos/tonales con ícono; vista previa grande y la foto
+  nueva reemplaza a la anterior. Se usa en Meter dinero y en el comprobante de
+  la forma de pago.
+- `Motivos`: tarjetas en dos columnas con ícono y color por motivo; al elegir
+  se pliega a una fila con «Cambiar».
+- Novedades: no — 0 de 4 en la valoración (sólo la app, sin pantalla del portal).
+
 ## v2.1569.0 — Kiosco de caja: rediseño, Ventas en una sola pantalla
 
 - Pedido del usuario: «que sea práctico… ¿por qué vender y preventas está

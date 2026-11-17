@@ -6,24 +6,40 @@
 // Con `pdf`, además se puede adjuntar un PDF (la boleta de incapacidad: el
 // portal acepta «PDF, JPG o PNG»). El PDF entra en la misma lista con su
 // `tipo` y se muestra como una tarjeta con el nombre, no como miniatura.
-import { Alert, Image, Text, View } from 'react-native';
+//
+// Con `documento` (una boleta, un comprobante), «Tomar foto» abre el escáner
+// del sistema (`escanearDocumento`): encuentra el papel, deja mover las cuatro
+// esquinas y lo endereza, como el editor del portal. Sin el módulo nativo cae
+// a la cámara de siempre. De la galería, en Android se puede recortar.
+// Pedido del usuario (2026-11-17, Meter dinero): los botones «casi invisibles»
+// (contorno fino) y la foto que no se ajustaba.
+import { Alert, Image, Platform, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { FONDO_CONTROL, MARCA, tintaSobre } from '../inicio/marca';
+import IconoFijo from '../IconoFijo';
+import { iconoDe } from '../../tema/iconos';
+import { escanearDocumento } from '../escanearDocumento';
 
 const OPCIONES = { mediaTypes: ['images'], quality: 0.6, allowsEditing: false };
 
-async function elegir(desdeCamara) {
+async function elegir(desdeCamara, documento = false) {
+  if (desdeCamara && documento) {
+    const r = await escanearDocumento();
+    if (r.disponible) return r.foto;
+  }
   const permiso = desdeCamara ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permiso.granted) {
     Alert.alert('Sin permiso', desdeCamara ? 'La app necesita la cámara para tomar la foto.' : 'La app necesita tus fotos para elegir una.');
     return null;
   }
-  const r = desdeCamara ? await ImagePicker.launchCameraAsync(OPCIONES) : await ImagePicker.launchImageLibraryAsync({ ...OPCIONES, selectionLimit: 1 });
+  const r = desdeCamara ? await ImagePicker.launchCameraAsync(OPCIONES) : await ImagePicker.launchImageLibraryAsync({ ...OPCIONES, selectionLimit: 1,
+    // Android trae un recorte libre; el del iPhone es cuadrado y cortaría la boleta.
+    allowsEditing: documento && Platform.OS === 'android' });
   if (r.canceled || !r.assets?.[0]) return null;
   const a = r.assets[0];
   return { uri: a.uri, tipo: a.mimeType || 'image/jpeg', nombre: a.fileName || `foto-${Date.now()}.jpg` };
@@ -41,33 +57,48 @@ async function elegirPdf() {
 
 const esPdf = (f) => String(f?.tipo || '').includes('pdf') || /\.pdf$/i.test(String(f?.nombre || ''));
 
-export default function Fotos({ fotos, onCambiar, max = 3, pdf = false }) {
+export default function Fotos({ fotos, onCambiar, max = 3, pdf = false, documento = false }) {
   const agregar = async (camara) => {
-    const f = camara === 'pdf' ? await elegirPdf() : await elegir(camara);
-    if (f) { Haptics.selectionAsync().catch(() => {}); onCambiar([...fotos, f].slice(0, max)); }
+    const f = camara === 'pdf' ? await elegirPdf() : await elegir(camara, documento);
+    // Con una sola foto de documento, la nueva REEMPLAZA a la anterior (el
+    // freno del monto pide «otra foto»: antes había que quitarla primero).
+    if (f) { Haptics.selectionAsync().catch(() => {}); onCambiar(documento && max === 1 ? [f] : [...fotos, f].slice(0, max)); }
   };
-  const Boton = ({ texto, camara }) => (
-    <Pressable onPress={() => agregar(camara)} disabled={fotos.length >= max}
-      style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1.2, borderColor: MARCA.azulClaro, opacity: fotos.length >= max ? 0.4 : pressed ? 0.7 : 1 })}>
-      <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
-    </Pressable>
-  );
+  const lleno = !(documento && max === 1) && fotos.length >= max;
+  // El primero va relleno (la acción de siempre) y los demás tonales: los dos
+  // se leen en claro y en oscuro, con su ícono.
+  const Boton = ({ texto, camara, icono, principal }) => {
+    const fondo = principal ? MARCA.azul : FONDO_CONTROL;
+    const tinta = principal ? tintaSobre(MARCA.azul) : colorSistema.texto;
+    return (
+      <Pressable onPress={() => agregar(camara)} disabled={lleno} accessibilityRole="button"
+        style={({ pressed }) => ({ flex: 1, minHeight: 52, borderRadius: 16, paddingHorizontal: 10, flexDirection: 'row', gap: 8,
+          alignItems: 'center', justifyContent: 'center', backgroundColor: fondo,
+          opacity: lleno ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        <IconoFijo name={iconoDe(icono)} size={20} color={principal ? tinta : MARCA.azulClaro} />
+        <Text numberOfLines={1} style={{ color: tinta, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
+      </Pressable>
+    );
+  };
+  const grande = documento && max === 1;
   return (
     <View style={{ gap: 10 }}>
       {fotos.length ? (
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {fotos.map((f, i) => (
-            <View key={f.uri}>
+            <View key={f.uri} style={grande ? { flex: 1 } : null}>
               {esPdf(f) ? (
                 <View style={{ width: 84, height: 84, borderRadius: 12, padding: 6, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: colorSistema.acentoTinte, borderWidth: 0.5, borderColor: colorSistema.separador }}>
                   <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '800' }}>PDF</Text>
                   <Text numberOfLines={2} style={{ color: colorSistema.texto2, fontSize: 10, textAlign: 'center' }}>{f.nombre}</Text>
                 </View>
+              ) : grande ? (
+                <Image source={{ uri: f.uri }} resizeMode="contain"
+                  style={{ width: '100%', height: 220, borderRadius: 14, backgroundColor: FONDO_CONTROL }} />
               ) : <Image source={{ uri: f.uri }} style={{ width: 84, height: 84, borderRadius: 12 }} />}
               <Pressable onPress={() => onCambiar(fotos.filter((_, j) => j !== i))} hitSlop={8}
-                style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ position: 'absolute', top: grande ? 8 : -6, right: grande ? 8 : -6, width: grande ? 32 : 24, height: grande ? 32 : 24, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>✕</Text>
               </Pressable>
             </View>
@@ -75,11 +106,11 @@ export default function Fotos({ fotos, onCambiar, max = 3, pdf = false }) {
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Boton texto="Tomar foto" camara />
-        <Boton texto="De la galería" />
-        {pdf ? <Boton texto="PDF" camara="pdf" /> : null}
+        <Boton texto={grande && fotos.length ? 'Otra foto' : 'Tomar foto'} camara icono={documento ? 'Escaner' : 'Camara'} principal />
+        <Boton texto="Galería" icono="Galeria" />
+        {pdf ? <Boton texto="PDF" camara="pdf" icono="ReceiptText" /> : null}
       </View>
-      <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fotos.length} de {max}</Text>
+      {max > 1 ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fotos.length} de {max}</Text> : null}
     </View>
   );
 }

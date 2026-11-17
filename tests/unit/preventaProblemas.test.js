@@ -50,7 +50,9 @@ describe('problemasDeVenta', () => {
 
 describe('datos del cliente', () => {
     it('avisa lo que falta, salvo al cliente de mostrador', () => {
-        expect(datosQueFaltan({ phone: '7777', dui: '', nit: '', email: null, direccion: 'x' })).toEqual(['DUI o NIT', 'Correo']);
+        expect(datosQueFaltan({ phone: '7777', dui: '', nit: '', email: null, direccion: 'x', categoria: 'Contribuyente' })).toEqual(['DUI o NIT', 'Correo']);
+        // A un consumidor no se le pide correo ni dirección, igual que al crearlo.
+        expect(datosQueFaltan({ phone: '7777', dui: '1', email: null, direccion: '', categoria: 'Consumidor' })).toEqual([]);
         expect(datosQueFaltan({ programa: 'mostrador' })).toEqual([]);
         expect(datosQueFaltan(null)).toEqual([]);
     });

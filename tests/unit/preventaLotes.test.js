@@ -49,10 +49,13 @@ describe('planDeLotes', () => {
 
 describe('queCompletar', () => {
     it('crédito fiscal pide la categoría si no es contribuyente', () => {
-        expect(queCompletar('credito_fiscal', { categoria: 'Consumidor' }).categoria).toBe('Contribuyente');
+        const q = queCompletar('credito_fiscal', { categoria: 'Consumidor' });
+        expect(q.categoria).toBe('Contribuyente');
+        expect(q.campos).toEqual([]);
     });
     it('factura pide DUI sólo si no tiene ni DUI ni NIT', () => {
         expect(queCompletar('consumidor_final', { nit: '0614' }).campos).not.toContain('dui');
+        expect(queCompletar('consumidor_final', { categoria: 'Consumidor', dui: '1' }).campos).toEqual(['phone']);
     });
 });
 

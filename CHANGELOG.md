@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.8 — Editor del cliente según su categoría; logo de Apple
+
+- Preventa: a un consumidor el editor ya no le marca NIT, NRC, giro, correo ni
+  dirección. Pide lo mismo que al crearlo (teléfono y DUI o NIT). Con crédito
+  fiscal sólo avisa que cambie la categoría.
+- En la pantalla de lo nuevo, «Descargar en App Store» lleva el logo de Apple (era una fruta).
+- Puntos Salud en el navegador dice que la app todavía no está disponible.
+- Novedades: no — corrección de textos y de un formulario existente.
+
 ## v2.1562.7 — Preventa: ficha del cliente más baja
 
 - Lo que falta va como pastilla chica al lado del nombre; un toque abre los datos.

@@ -834,7 +834,8 @@ function FichaDelCliente({ cliente, info, cotizacion, faltanCcf, puedeEditar, on
         ? `Mayorista${info?.mayorista?.precio === 'mayoreo_plus' ? ' Plus' : ''}${info?.rango ? ` · ${info.rango}` : ''}`
         : NOMBRE_DE_PROGRAMA[info?.programa] ?? '';
     const faltan = datosQueFaltan(info);
-    const ccf = new Set(faltanCcf);
+    // A un consumidor no se le marcan los datos fiscales: el aviso de la venta ya dice que cambie la categoría.
+    const ccf = new Set(esContribuyente(info?.categoria) ? faltanCcf : []);
     // Los datos, siempre en el mismo orden: lo vacío se ve como «Falta».
     // NIT, NRC y giro son del contribuyente: a un consumidor no se le piden,
     // salvo que ya los tenga o que la venta vaya con crédito fiscal.

@@ -360,11 +360,15 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
 export function datosQueFaltan(info) {
     if (!info || info.generico || info.programa === 'mostrador') return [];
     const v = (k) => String(info[k] ?? '').trim();
+    // Lo mismo que pide la ficha al crearlo (2026-11-16, usuario: «el editor
+    // pide todo aunque sea consumidor»): a un consumidor, teléfono y DUI o NIT;
+    // correo y dirección sólo al contribuyente.
+    const fiscal = esContribuyente(info.categoria);
     return [
         !v('phone') && 'Teléfono',
         !v('dui') && !v('nit') && 'DUI o NIT',
-        !v('email') && 'Correo',
-        !v('direccion') && 'Dirección',
+        fiscal && !v('email') && 'Correo',
+        fiscal && !v('direccion') && 'Dirección',
     ].filter(Boolean);
 }
 
@@ -403,11 +407,14 @@ export function vencePronto(fecha, hoy) {
  */
 export function queCompletar(documento, cliente) {
     if (!cliente) return null;
+    const fiscal = esContribuyente(cliente.categoria);
     if (documento === 'credito_fiscal') {
-        return { campos: CAMPOS_CCF, motivo: 'Para el crédito fiscal falta', rotulo: 'Lo pide el crédito fiscal', categoria: esContribuyente(cliente.categoria) ? null : 'Contribuyente' };
+        // A un consumidor no se le marcan NIT, NRC y giro: primero cambia la
+        // categoría, y ahí aparecen sus campos (como al crearlo).
+        return { campos: fiscal ? CAMPOS_CCF : [], motivo: 'Para el crédito fiscal falta', rotulo: 'Lo pide el crédito fiscal', categoria: fiscal ? null : 'Contribuyente' };
     }
     const v = (k) => String(cliente[k] ?? '').trim();
-    const campos = ['phone', ...(!v('dui') && !v('nit') ? ['dui'] : []), 'email', 'direccion'];
+    const campos = ['phone', ...(!v('dui') && !v('nit') ? ['dui'] : []), ...(fiscal ? ['email', 'direccion'] : [])];
     return { campos, motivo: 'Para esta venta falta', rotulo: 'Falta' };
 }
 

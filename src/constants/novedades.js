@@ -402,7 +402,7 @@ export const TANDAS = [
                 si: { grupo: ['sala', 'admin'] },
                 media: M('puntos.webp'),
                 titulo: 'Puntos Salud también en el navegador',
-                resumen: 'Los clientes que no quieren bajar la app entran desde cualquier teléfono o computadora en app.farmasalud.lat.',
+                resumen: 'La app de clientes todavía no está disponible. Mientras tanto, entran desde cualquier teléfono o computadora en app.farmasalud.lat.',
                 para: 'Que más clientes vean sus puntos, ofertas y reservas.',
                 pasos: [
                     'Dile al cliente que entre a app.farmasalud.lat.',

@@ -434,7 +434,7 @@ function AppPersonal({ user, destacar }) {
             <Pasos hechos={hechosAndroid} pasos={[
                 'Escribe el correo de tu cuenta de Google, el que usas en Play Store, y toca Guardar.',
                 'Espera el aviso. Te llega aquí y en tu teléfono cuando ya puedas descargarla.',
-                `Toca Descargar en Google Play, con esa misma cuenta, e instala ${APP_PERSONAL_NOMBRE}.`,
+                `Toca Descargar en Google Play con esa misma cuenta. Acepta la invitación y toca Instalar ${APP_PERSONAL_NOMBRE}.`,
                 'Entra con tu usuario y contraseña del portal y permite los avisos. Si quieres, activa tu huella.',
             ]} />
 
@@ -464,7 +464,7 @@ function AppPersonal({ user, destacar }) {
                 <Notice variant="info" compact icon={BellRing}>Ya tenemos tu correo. Te avisamos aquí y en tu teléfono cuando puedas descargarla.</Notice>
             )}
             {habilitado && !cambiando && (
-                <Notice variant="success" compact icon={PartyPopper}>Ya puedes descargarla. Si Google Play te pide unirte a la prueba, toca Unirme y después Instalar.</Notice>
+                <Notice variant="success" compact icon={PartyPopper}>Ya puedes descargarla. Toca Descargar en Google Play, acepta la invitación y después Instalar.</Notice>
             )}
             <Button icon={Play} className="mt-auto" disabled={!habilitado} onClick={() => abrir(APP_PERSONAL_ANDROID)}>
                 Descargar en Google Play

@@ -24,7 +24,10 @@
 export const APP_PERSONAL_IOS = 'https://apps.apple.com/sv/app/portal-farmasalud/id6817515258';
 // La de Android vive en la prueba interna: sólo abre para un correo que ya está
 // en la lista de Play Console (pestaña «Prueba Android»).
-export const APP_PERSONAL_ANDROID = 'https://play.google.com/store/apps/details?id=lat.farmasalud.portal';
+// La invitación de la prueba interna (2026-11-17): la ficha normal de Play le
+// dice «no disponible» a quien todavía no aceptó la prueba. Desde la invitación
+// se acepta y se instala.
+export const APP_PERSONAL_ANDROID = 'https://play.google.com/apps/internaltest/4699893969416151349';
 export const APP_PERSONAL_NOMBRE = 'Portal Farmasalud';
 
 // Para lo que NO se distingue por permisos: los cargos de sala tienen los

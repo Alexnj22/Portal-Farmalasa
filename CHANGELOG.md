@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.13 — Novedades: Android abre la invitación de la prueba
+
+- «Descargar en Google Play» abre la invitación de la prueba interna, donde se
+  acepta y se instala. La ficha normal de Play decía «no disponible» a quien
+  todavía no la había aceptado. Los pasos lo dicen así.
+- Novedades: no — corrige el enlace de una novedad que ya existe.
+
 ## v2.1562.12 — Preventa: nombre con Ñ avisado antes de enviar
 
 - Si el nombre del cliente lleva tilde o Ñ y la venta lleva crédito fiscal,

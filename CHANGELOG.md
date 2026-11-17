@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.10 — Preventa: control de lote a la vista
+
+- Cada producto muestra siempre de qué lote sale, su vencimiento y cuánto sale
+  de cada uno («Lote A123 · vence mar 2028 · sale 2 caja»), sin abrir nada.
+- Editor del cliente: sin líneas dobles entre secciones.
+- Novedades: no — ajuste de una pantalla publicada hoy.
+
 ## v2.1562.9 — Editor del cliente ordenado; lote y presentación a la vista
 
 - Editor del cliente: el mismo selector de tipo que al crearlo (Consumidor,

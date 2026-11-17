@@ -1277,16 +1277,24 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
     const elegidoNoAlcanza = vigente && usados.length > 1;
     return (
         <>
+            {/* Control de lote: siempre a la vista de qué lote sale y cuánto de cada uno. */}
             <button ref={btnRef} type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-haspopup="dialog"
-                aria-label={`Lote de ${nombre}: ${primero.lote}, ${cuando(primero)}. Cambiar lote`}
-                className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2 py-0.5 min-h-[var(--tap-min)] md:min-h-0 text-micro transition-colors active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-brand ${elegidoNoAlcanza
+                aria-label={`Lotes de ${nombre}: ${(usados.length ? usados : [primero]).map((l) => `${l.lote}, ${cuando(l)}${cuanto(l) ? `, sale ${cuanto(l)}` : ''}`).join('; ')}. Cambiar lote`}
+                className={`mt-1 flex max-w-full flex-wrap items-center gap-1 rounded-xl border p-1 pr-2 min-h-[var(--tap-min)] md:min-h-0 text-left transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand ${elegidoNoAlcanza
                     ? 'border-warning/40 bg-warning/10' : vigente ? 'border-brand/40 bg-brand/10' : 'border-border-card bg-surface-card-hover hover:border-brand/50'}`}>
-                <Layers size={12} className={vigente ? 'text-brand-text' : 'text-content-3'} />
-                <span className="font-bold text-content truncate">{primero.lote}</span>
-                <span className={tono(primero) || 'text-content-2'}>{cuando(primero)}</span>
-                {usados.length > 1 && <span className="font-bold text-content-2">+{usados.length - 1} lote{usados.length > 2 ? 's' : ''}</span>}
-                {plan.armada && <span className="font-bold text-brand-text">armada</span>}
-                <ChevronDown size={12} className="text-content-3" />
+                {(usados.length ? usados : [primero]).map((l) => (
+                    <span key={`${l.lote}-${l.vence}`} className="inline-flex items-center gap-1.5 rounded-lg bg-surface-card px-1.5 py-0.5 text-caption">
+                        <Layers size={12} className="shrink-0 text-content-3" />
+                        <span className="text-content-3">Lote</span>
+                        <span className="font-black text-content">{l.lote}</span>
+                        <span className={tono(l) || 'text-content-2'}>{cuando(l)}</span>
+                        {cuanto(l) && <span className="font-black tabular-nums text-brand-text">· sale {cuanto(l)}</span>}
+                    </span>
+                ))}
+                {plan.armada && <span className="text-caption font-bold text-brand-text">armada</span>}
+                <span className="inline-flex items-center gap-0.5 text-caption font-semibold text-content-2">
+                    {lotes.length > 1 ? 'Cambiar' : 'Ver'}<ChevronDown size={12} />
+                </span>
             </button>
             {elegidoNoAlcanza && (
                 <p className="text-micro font-semibold text-warning-text">

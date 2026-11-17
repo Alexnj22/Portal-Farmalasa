@@ -536,7 +536,7 @@ const FormClienteDetail = ({ formData }) => {
                             el editor no es como el creador?»). Al editar no se borra nada al
                             cambiar de tipo: lo escrito sigue a la vista. */}
                         {(esNuevo || editable) && (
-                            <div className={`space-y-2 ${faltaCategoria ? 'rounded-2xl ring-1 ring-danger/30 p-2 -m-2' : ''}`}>
+                            <div className={`space-y-2 ${faltaCategoria ? 'rounded-2xl ring-1 ring-danger/30 p-2' : ''}`}>
                                 <SegmentedControl
                                     value={GRUPO_DE[form.categoria] ?? (esNuevo ? 'consumidor' : '')}
                                     onChange={g => setForm(p => (GRUPO_DE[p.categoria] === g ? p
@@ -565,7 +565,7 @@ const FormClienteDetail = ({ formData }) => {
                         )}
                     </div>
 
-                    <div className="space-y-3 border-t border-divider pt-5">
+                    <div className="space-y-3">
                         <SectionHeader icon={IdCard}>Identidad</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="sm:col-span-2">
@@ -660,7 +660,7 @@ const FormClienteDetail = ({ formData }) => {
                     </div>
 
                     {/* Contacto */}
-                    <div className="space-y-3 border-t border-divider pt-5">
+                    <div className="space-y-3">
                         <SectionHeader icon={Phone}>Contacto</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <PortalInput
@@ -691,7 +691,7 @@ const FormClienteDetail = ({ formData }) => {
                     </div>
 
                     {/* Ubicación */}
-                    <div className="space-y-3 border-t border-divider pt-5">
+                    <div className="space-y-3">
                         <SectionHeader icon={MapPin}>Ubicación</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="sm:col-span-3">
@@ -757,7 +757,7 @@ const FormClienteDetail = ({ formData }) => {
                     </div>
 
                     {/* Fiscal y notas */}
-                    <div className="space-y-3 border-t border-divider pt-5">
+                    <div className="space-y-3">
                         <SectionHeader icon={ShieldCheck}>{ver('retencion_pct') ? 'Retención y notas' : 'Notas'}</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {ver('retencion_pct') && <PortalInput

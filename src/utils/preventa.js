@@ -53,16 +53,14 @@ export function enAscii(s) {
  * A quién se le vende. El cliente real (su número en la caja) si se puede;
  * si no, el genérico, con el motivo.
  *
- * ⚠️ El sistema de la caja tiene un defecto medido el 2026-10-21: si el cliente
- * de una preventa tiene Ñ o una tilde en el nombre, la LISTA de preventas de esa
- * sala sale vacía y desaparecen TODAS, también las que armó la sala a mano. Por
- * eso un nombre que no sea ASCII va como cliente genérico, y el código de la
- * reserva viaja en la nota para que la caja sepa de quién es.
+ * Un nombre con Ñ o tilde va con su número desde el 2026-11-17. Antes iba como
+ * genérico porque con él la respuesta rápida de la lista de preventas sale
+ * vacía (medido el 2026-10-21); la caja sí la muestra, y el portal ahora la lee
+ * de la página cuando eso pasa (`listaDeLaCaja` en _shared/preventaCaja.ts).
  */
 export function clienteDeLaVenta(c) {
     const erp = String(c?.erp_id ?? '').trim();
     if (!/^\d+$/.test(erp)) return { id: CLIENTE_GENERICO, generico: true, motivo: 'sin_ficha_en_caja' };
-    if (!esTextoSeguro(c?.name)) return { id: CLIENTE_GENERICO, generico: true, motivo: 'nombre_con_tilde' };
     return { id: erp, generico: false, motivo: null };
 }
 

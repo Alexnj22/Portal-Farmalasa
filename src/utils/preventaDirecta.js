@@ -6,7 +6,6 @@
 
 import { ETIQUETA_CAMPO, esContribuyente } from './clienteValidacion.js';
 import { formatMoney } from './formatNumber.js';
-import { esTextoSeguro } from './preventa.js';
 
 /** El nombre de cada lista de precio (las claves son columnas de `product_precios`). */
 export const NOMBRE_DE_LISTA = {
@@ -345,19 +344,6 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
         out.push({ clave: 'credito', campo: 'cliente', titulo: 'El pago al crédito necesita un cliente con datos.',
             ayuda: 'Busca al cliente (F4) o cambia el tipo de pago.',
             acciones: [{ id: 'cliente', label: 'Buscar cliente' }, { id: 'contado', label: 'Cambiar a Efectivo' }] });
-    }
-    // Caja no acepta a su nombre a un cliente con tilde o Ñ (defecto medido, ver
-    // `clienteDeLaVenta`): va como cliente genérico, y a un genérico no se le da
-    // crédito fiscal, crédito ni puntos. Antes se sabía recién al enviar.
-    const nom = cotizacion?.cliente?.name;
-    const conCredito = documento === 'credito_fiscal' || pago === 'credito' || Number(puntos) > 0;
-    if (hayCliente && !cotizacion?.generico && nom && !esTextoSeguro(nom) && conCredito) {
-        out.push({ clave: 'nombre-caja', campo: 'cliente',
-            titulo: 'Con tilde o Ñ en el nombre, caja no lo recibe a su nombre.',
-            ayuda: 'Envíala como Factura, sin puntos ni crédito: va a caja como cliente sin datos.',
-            acciones: [...(documento === 'credito_fiscal' ? [{ id: 'factura', label: 'Cambiar a Factura' }] : []),
-                ...(Number(puntos) > 0 ? [{ id: 'puntos', label: 'No canjear', valor: 0 }] : []),
-                ...(pago === 'credito' ? [{ id: 'contado', label: 'Cambiar a Efectivo' }] : [])] });
     }
     const p = faltaEnPuntos({ puntos, info: infoCliente, total: totalesDe(cotizacion).total });
     if (p) {

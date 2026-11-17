@@ -19,7 +19,7 @@ function caja({ precios, insert = () => JSON.stringify({ typeinfo: 'Success', re
             enviados.push(d);
             if (d.process === 'consultar_stock') return JSON.stringify({ tr: tr(precios, fila) });
             if (d.process === 'get_referencias') {
-                return JSON.stringify({ options: refs.map((r) => `<option value='${r.id}'>${r.ref}|CLIENTE|$${r.total}</option>`).join('') });
+                return JSON.stringify({ success: true, options: refs.map((r) => `<option value='${r.id}'>${r.ref}|CLIENTE|$${r.total}</option>`).join('') });
             }
             if (d.process === 'insert_preventa') {
                 // La venta queda en caja aunque la respuesta se pierda.
@@ -66,7 +66,7 @@ describe('enviarPreventaALaCaja: respuesta perdida', () => {
     });
     it('no contesta y no está: lo dice sin dar la venta por perdida', async () => {
         const http = caja({ precios: ['4.00'], insert: () => 'html roto' });
-        http.post = ((orig) => async (p, d) => (d.process === 'get_referencias' ? JSON.stringify({ options: '' }) : orig(p, d)))(http.post);
+        http.post = ((orig) => async (p, d) => (d.process === 'get_referencias' ? JSON.stringify({ success: true, options: '' }) : orig(p, d)))(http.post);
         await expect(enviarPreventaALaCaja(http, venta({ precio: 4, precio_normal: 4 })))
             .rejects.toThrow(/Revisa en caja si llegó/);
     });
@@ -93,5 +93,18 @@ describe('enviarPreventaALaCaja: caja armada de varios lotes', () => {
         const suma = r.renglones_caja.reduce((t, x) => t + Number(x.subtotal), 0);
         expect(Math.round(suma * 100) / 100).toBe(10);
         expect(r.total_caja).toBe(10);
+    });
+});
+
+import { leerReferenciasDePagina } from '../../supabase/functions/_shared/preventaCaja.ts';
+
+describe('la lista de preventas desde la página de la caja', () => {
+    it('lee el select aunque el nombre traiga una Ñ mal codificada', () => {
+        const html = `<select class="form-control select_r" name="n_ref" id="n_ref">
+            <option value="0">Seleccione</option><option value='414765'>1|FRANCISCO NOE LEMUS UMA�A|$30.00</option>                  </select>`;
+        expect(leerReferenciasDePagina(html)).toEqual([{ id: '414765', referencia: '1', cliente: 'FRANCISCO NOE LEMUS UMA�A', total: 30 }]);
+    });
+    it('sin el select no inventa una lista vacía', () => {
+        expect(leerReferenciasDePagina('<html></html>')).toBeNull();
     });
 });

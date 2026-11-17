@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.16 — Preventa: clientes con Ñ van con su número
+
+- Un cliente con tilde o Ñ va a caja con su número, como cualquier otro: puede
+  llevar crédito fiscal, puntos y crédito.
+- Medido el 2026-11-17 en La Popular: con una preventa a «LEMUS UMAÑA» en la
+  lista, la respuesta rápida de caja venía vacía, pero la página de caja sí la
+  mostraba. El portal ahora lee la página cuando eso pasa, al enviar, corregir,
+  anular y en el freno de preventas del cierre del día (que antes se trababa).
+- Novedades: no — corrección de envío.
+
 ## v2.1562.15 — Preventa: cerrar la que borraron en caja
 
 - Al anular una preventa que ya no está en caja, el portal pregunta «¿La

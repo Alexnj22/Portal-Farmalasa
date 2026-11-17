@@ -124,6 +124,37 @@ export function elegirPrecio(precios: { clave: string | null; valor: number }[],
 export function leerReferencias(respuesta: string) {
   let opciones = "";
   try { opciones = JSON.parse(respuesta)?.options ?? ""; } catch { opciones = ""; }
+  return leerOpciones(opciones);
+}
+
+/**
+ * Las preventas de la sala como las pinta la PÁGINA de preventas (el
+ * `<select id="n_ref">`). Medido el 2026-11-17 en La Popular: con un cliente
+ * con Ñ en la lista, `get_referencias` contesta VACÍO (0 bytes, la caja no
+ * puede armar el JSON), pero la página sí la muestra. `null` si la página no
+ * trae la lista.
+ */
+export function leerReferenciasDePagina(html: string) {
+  const sel = html.match(/<select[^>]*id="n_ref"[^>]*>([\s\S]*?)<\/select>/)?.[1];
+  return sel == null ? null : leerOpciones(sel);
+}
+
+/**
+ * La lista de preventas de la sala: la respuesta rápida y, si viene vacía o
+ * ilegible, la página. Si ninguna se puede leer, LANZA: tomarla por «no hay
+ * ninguna» daría por borrada una preventa viva.
+ */
+export async function listaDeLaCaja(http: Http) {
+  const crudo = await http.post("venta.php", { process: "get_referencias" });
+  let j: { success?: unknown; options?: unknown } | null = null;
+  try { j = JSON.parse(crudo); } catch { j = null; }
+  if (j?.success === true && typeof j.options === "string") return leerOpciones(j.options);
+  const lista = leerReferenciasDePagina(await http.get("venta.php?preventa=1"));
+  if (lista) return lista;
+  throw new Error("No se pudo leer la lista de preventas de la caja. Intenta de nuevo.");
+}
+
+function leerOpciones(opciones: string) {
   return [...opciones.matchAll(/value='(\d+)'>([^<]*)</g)].map((m) => {
     const [ref, cliente, total] = m[2].split("|");
     return { id: m[1], referencia: String(ref ?? "").trim(), cliente: String(cliente ?? "").trim(), total: num(String(total ?? "").replace("$", "")) };
@@ -218,7 +249,7 @@ export function repartirCajaEnUnidades(
  * alguien la borró en caja, y escribir encima sería crear otra cosa.
  */
 export async function preventaVivaEnLaCaja(http: Http, id: string, vendedor: string | null) {
-  const lista = leerReferencias(await http.post("venta.php", { process: "get_referencias" }));
+  const lista = await listaDeLaCaja(http);
   const fila = lista.find((p) => p.id === id);
   if (!fila) return { viva: false as const, fuera: true, motivo: "Esa preventa ya no está en caja: se facturó o la borraron allá." };
   const pagina = await http.get("venta.php?preventa=1");
@@ -254,7 +285,7 @@ export async function buscarPreventaEnLaCaja(
   http: Http, fecha: string,
   b: { referencia?: string | null; total?: number | null; vendedor: string; productos: number[]; soloNuevas?: Set<string> },
 ): Promise<{ id: string; referencia: string } | null> {
-  const lista = leerReferencias(await http.post("venta.php", { process: "get_referencias" }));
+  const lista = await listaDeLaCaja(http);
   const candidatas = lista
     .filter((p) => (b.referencia ? p.referencia === b.referencia : true))
     .filter((p) => (b.total != null ? Math.abs(Number(p.total) - b.total) < 0.005 : true))
@@ -419,7 +450,7 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta, opc: { idF
   const productos = venta.renglones.map((r) => r.producto_id);
   // Lo que ya había en la sala, para reconocer la nuestra si la respuesta se pierde.
   const antes = opc.idFactura ? null
-    : new Set(leerReferencias(await http.post("venta.php", { process: "get_referencias" })).map((p) => p.id));
+    : await listaDeLaCaja(http).then((l) => new Set(l.map((p) => p.id))).catch(() => null);
   let crudo: string | null = null;
   try { crudo = await http.post("venta.php", datos); } catch (e) { console.error("[preventaCaja] insert:", (e as Error).message); }
   let resp: { typeinfo?: string; referencia?: unknown; tot?: unknown; msg?: string } | null = null;

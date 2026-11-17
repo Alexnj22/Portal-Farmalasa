@@ -257,9 +257,7 @@ async function directa(
   // caja, ver `clienteDeLaVenta`), y a un genérico no se le emite crédito fiscal
   // ni se le da crédito: se dice antes de mandar, no en la caja.
   if (venta.cliente.generico && datos.cliente && (venta.documento === "credito_fiscal" || venta.pago === "credito" || (venta.puntos ?? 0) > 0)) {
-    return await fallar(venta.cliente.motivo === "nombre_con_tilde"
-      ? "El nombre del cliente lleva tilde o Ñ y así no se puede emitir a su nombre. Corrígelo en sus datos."
-      : "El cliente todavía no tiene número. Espera unos minutos o revísalo en Clientes.", 409, venta);
+    return await fallar("El cliente todavía no tiene número. Espera unos minutos o revísalo en Clientes.", 409, venta);
   }
 
   // Cobro con monto (2026-11-16): el monto que escribió administración es el

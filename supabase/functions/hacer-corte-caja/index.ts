@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
-import { leerReferencias } from "../_shared/preventaCaja.ts";
+import { leerReferencias, leerReferenciasDePagina } from "../_shared/preventaCaja.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El corte de caja, hecho desde el portal — con el conteo A CIEGAS.
@@ -127,6 +127,11 @@ async function preventasVivas(cookie: string) {
   let j: { success?: unknown; options?: unknown } = {};
   try { j = JSON.parse(texto); } catch { j = {}; }
   if (j.success !== true || typeof j.options !== "string") {
+    // Con un cliente con Ñ en la lista la respuesta viene vacía (2026-11-17);
+    // la página de preventas sí la pinta.
+    const pag = await fetch(`${BASE}venta.php?preventa=1`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20_000) });
+    const lista = leerReferenciasDePagina(await pag.text());
+    if (lista) return lista;
     throw new Error("no se pudo leer la lista de preventas de la caja");
   }
   return leerReferencias(texto);

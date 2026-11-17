@@ -19,9 +19,9 @@ describe('preventa — el vendedor', () => {
 
 describe('preventa — el cliente', () => {
     it('va el real con nombre ASCII', () => expect(clienteDeLaVenta({ erp_id: '6317', name: 'JUAN PEREZ' })).toEqual({ id: '6317', generico: false, motivo: null }));
-    it('una Ñ o una tilde lo manda como cliente frecuente', () => {
-        expect(clienteDeLaVenta({ erp_id: '6317', name: 'EDWIN NUÑEZ' })).toMatchObject({ id: '-2', generico: true, motivo: 'nombre_con_tilde' });
-        expect(clienteDeLaVenta({ erp_id: '6317', name: 'JOSÉ PÉREZ' }).generico).toBe(true);
+    it('una Ñ o una tilde va con su número (desde 2026-11-17)', () => {
+        expect(clienteDeLaVenta({ erp_id: '6317', name: 'EDWIN NUÑEZ' })).toMatchObject({ id: '6317', generico: false });
+        expect(clienteDeLaVenta({ erp_id: '6317', name: 'JOSÉ PÉREZ' }).generico).toBe(false);
     });
     it('sin ficha en la caja, cliente frecuente', () => expect(clienteDeLaVenta({ erp_id: null, name: 'ANA' }).motivo).toBe('sin_ficha_en_caja'));
 });
@@ -35,7 +35,7 @@ describe('preventa — la venta', () => {
         expect(v.nota).toBe('RESERVA R-000013');
     });
     it('con cliente genérico, la nota lleva el nombre en ASCII', () => {
-        const v = armarVenta({ ...base, cliente: { erp_id: '6317', name: 'EDWIN ALEXANDER NUÑEZ JOYA' } });
+        const v = armarVenta({ ...base, cliente: { erp_id: null, name: 'EDWIN ALEXANDER NUÑEZ JOYA' } });
         expect(v.nota).toBe('RESERVA R-000013 - EDWIN NUNEZ');
         expect(/^[\x20-\x7e]*$/.test(v.nota)).toBe(true);
     });

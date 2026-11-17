@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.4 — Kiosco de caja: el cobro abre la preventa completa
+
+- Reportado en Salud 4: al tocar una preventa en la cola, el cobro se abría
+  vacío. La cola (`kiosco_caja_cola`) trae sólo el resumen del ticket y el
+  cobro esperaba la venta entera, que sí venía en la muestra. Ahora se lee de
+  `preventas_de_sala` (productos, presentación, lote, cliente, pago) y mientras
+  tanto dice «Abriendo la preventa…»; si no la encuentra, lo dice.
+
+Novedades: no — arreglo del kiosco piloto.
+
 ## v2.1574.3 — Preventa: el lote en su propia fila
 
 - En el kiosco de Salud 4 el control del lote iba metido bajo el nombre del

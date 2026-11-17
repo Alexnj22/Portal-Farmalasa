@@ -148,6 +148,24 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     }, [venta, claveBorrador, cobrando]);
     const cambiar = (cambio) => setVenta((v) => ({ ...v, ...cambio }));
 
+    // La cola del kiosco trae sólo el resumen del ticket (nombre, cantidad,
+    // subtotal). La venta completa —productos, presentación, lote, cliente—
+    // se lee de la preventa misma. Sin esto el cobro abría VACÍO (Salud 4,
+    // 2026-11-17: en la muestra funcionaba porque trae la venta entera).
+    const [cargaCobro, setCargaCobro] = useState(cobrando && !cobrando.venta ? 'cargando' : null);
+    useEffect(() => {
+        if (!cobrando || cobrando.venta || !sala) return undefined;
+        let vivo = true;
+        fetchPreventasDeSala(sala, 2).then((filas) => {
+            if (!vivo) return;
+            const p = filas.find((f) => Number(f.id) === Number(cobrando.id));
+            if (!p?.venta) { setCargaCobro('No se pudo abrir esta preventa. Cóbrala en la caja.'); return; }
+            setVenta(ventaDeCobro({ ...p, referencia: cobrando.referencia ?? p.externo_ref }, puedeAutorizar));
+            setCargaCobro(null);
+        }).catch(() => { if (vivo) setCargaCobro('No se pudo abrir esta preventa. Intenta de nuevo.'); });
+        return () => { vivo = false; };
+    }, [cobrando, sala, puedeAutorizar]);
+
     // ── El foco: una orden que se cumple después de pintar ────────────────
     const [foco, setFoco] = useState(null);
     useEffect(() => {
@@ -537,6 +555,11 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                     ) : (
                         <div className={`grid gap-3 items-start ${cobrando ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : 'lg:grid-cols-[minmax(0,1fr)_340px]'}`}>
                             <div className="space-y-3 min-w-0">
+                                {cargaCobro && (
+                                    cargaCobro === 'cargando'
+                                        ? <Notice compact>Abriendo la preventa…</Notice>
+                                        : <Notice variant="warning" compact>{cargaCobro}</Notice>
+                                )}
                                 {cobrando && !enKiosco && (
                                     <Notice variant="info" compact action={<Button size="sm" variant="ghost" icon={X} onClick={onTerminarCobro}>Volver a la cola</Button>}>
                                         Cobrando la #{cobrando.referencia}. Lo que corrijas aquí sale en la factura.

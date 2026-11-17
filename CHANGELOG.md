@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.6 — Novedades: imágenes de las cinco que faltaban
+
+- Imagen en Puntos del personal, Mi perfil, Voucher, Cierre mensual y Bodega → vencidos. Mi perfil y el voucher se capturaron con la cuenta de pruebas; ninguna muestra datos personales de nadie.
+- Voucher: la referencia es «Efectivo → Hoy → Entrada → Cómo pagó» y explica «No tengo el voucher». Cierre mensual: se elige el mes con las flechas.
+
+Novedades: no — completa novedades que ya existen
+
 ## v2.1562.5 — Preventa: ficha del cliente compacta y visual
 
 - **Datos:** lo que tiene en una línea (DUI · teléfono · NIT) y la dirección

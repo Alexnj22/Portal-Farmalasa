@@ -1,0 +1,74 @@
+# Despliega edge functions de Supabase desde `main`, a mano (2026-11-16).
+#
+# Nació para poder desplegar desde una sesión en la nube, que no tiene la CLI
+# ni la llave: la llave vive en el secreto SUPABASE_ACCESS_TOKEN, el mismo que
+# ya usan `ci.yml` y `auditoria-mapa.yml`.
+#
+# La regla de CLAUDE.md sobre `--no-verify-jwt` («no hay lista fija: leer el
+# valor VIVO antes de redesplegar») la cumple el propio flujo: le pregunta a
+# producción el `verify_jwt` actual de cada función y lo CONSERVA. Una función
+# nueva (que todavía no existe) se niega: su valor lo decide una persona.
+#
+#   Actions → Desplegar funciones → Run workflow → «operar-caja hacer-corte-caja»
+name: Desplegar funciones
+
+on:
+  workflow_dispatch:
+    inputs:
+      funciones:
+        description: 'Funciones a desplegar, separadas por espacio (ej.: operar-caja hacer-corte-caja)'
+        required: true
+
+permissions:
+  contents: read
+
+# Una a la vez: dos despliegues de la misma función a la vez se pisan.
+concurrency:
+  group: desplegar-funciones
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROYECTO: sacecdkdmsdvgqnrsett
+      # Por variable de entorno y nunca interpolado en el script: el texto lo
+      # escribe una persona en el formulario.
+      FUNCIONES: ${{ inputs.funciones }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Desplegar conservando el verify_jwt de producción
+        run: |
+          set -euo pipefail
+          [ -n "${SUPABASE_ACCESS_TOKEN:-}" ] || { echo "::error::Falta el secreto SUPABASE_ACCESS_TOKEN"; exit 1; }
+          for f in $FUNCIONES; do
+            if ! [[ "$f" =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]]; then
+              echo "::error::Nombre de función no válido: $f"; exit 1
+            fi
+            [ -f "supabase/functions/$f/index.ts" ] || { echo "::error::No existe supabase/functions/$f/index.ts"; exit 1; }
+            vivo=$(curl -sS --fail -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$PROYECTO/functions/$f" | jq -r '.verify_jwt') \
+              || { echo "::error::$f no existe en producción o no se pudo leer: una función nueva se despliega a mano"; exit 1; }
+            case "$vivo" in
+              true)  bandera="" ;;
+              false) bandera="--no-verify-jwt" ;;
+              *) echo "::error::verify_jwt de $f ilegible: $vivo"; exit 1 ;;
+            esac
+            echo "→ $f (verify_jwt=$vivo)"
+            supabase functions deploy "$f" --project-ref "$PROYECTO" --use-api $bandera
+            despues=$(curl -sS --fail -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$PROYECTO/functions/$f" | jq -r '.verify_jwt')
+            if [ "$despues" != "$vivo" ]; then
+              echo "::error::$f quedó con verify_jwt=$despues (antes $vivo)"; exit 1
+            fi
+            echo "✓ $f desplegada, verify_jwt sigue en $despues"
+          done

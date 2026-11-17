@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1561.1 — Flujo de GitHub para desplegar funciones
+
+- `.github/workflows/desplegar-funciones.yml`: despliega edge functions desde `main` a mano (Actions → «Desplegar funciones»), con el secreto `SUPABASE_ACCESS_TOKEN` que ya usaba el CI. Lee el `verify_jwt` vivo de cada función y lo conserva (y comprueba después que no cambió); una función que todavía no existe en producción se niega. Sirve para desplegar desde una sesión en la nube, sin la CLI ni la llave.
+
 ## v2.1561.0 — Caja: el corte manda lo pendiente y «Mandar a la caja» vuelve a funcionar
 
 El 16-nov el sistema de la caja no contestó 4 minutos (5:54–5:58 pm) y un ingreso en efectivo de $32.89 de Salud 3 quedó anotado en el portal y fuera de la caja. Al revisarlo apareció la causa de fondo:

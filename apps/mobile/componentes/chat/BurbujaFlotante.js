@@ -16,6 +16,8 @@
 //     dedo con un poco de resistencia en los topes. Todo con el driver nativo
 //     (salvo el ancho del rótulo, que no puede).
 //   · Deja aire sobre la barra de abajo.
+//   · Una pantalla puede pegarle su propio botón (`useBotonFlotante`, p. ej.
+//     Escanear en el conteo): va encima, del mismo tamaño, y se mueven juntos.
 //
 // Sólo para quien puede ver el chat (`chat_clientes`). En iPhone es Liquid
 // Glass teñido de la marca; en Android, el FAB de Material con la paleta del
@@ -33,6 +35,7 @@ import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
 import { useBuscadorAbajo, usePaleta } from '../../tema/material';
+import { useAcompanante } from './acompanante';
 
 const ANDROID = Platform.OS === 'android';
 const TAMANO = 54;
@@ -47,6 +50,8 @@ const ALTO_BUSCADOR = 62;
 const RECORRIDO = 220;
 // Cuánto se queda donde la dejaron antes de volver.
 const VUELVE_EN = 3500;
+// Entre la burbuja y el botón que lleva pegado.
+const SEPARACION = 12;
 // Cuánto se ve el rótulo «N sin responder».
 const ROTULO_MS = 3500;
 const ROTULO_ANCHO = 128;
@@ -75,7 +80,10 @@ function BurbujaFlotante() {
 
   const enPestanas = segmentos[0] === '(tabs)';
   const enElChat = segmentos.some((s) => String(s).startsWith('chat-clientes'));
-  const visible = puede && !teclado && !enElChat && segmentos[0] !== 'entrar';
+  const acompanante = useAcompanante((s) => s.boton);
+  const conChat = puede && !enElChat;
+  const visible = (conChat || !!acompanante) && !teclado && segmentos[0] !== 'entrar';
+  const alto = (conChat ? TAMANO : 0) + (acompanante ? TAMANO : 0) + (conChat && acompanante ? SEPARACION : 0);
   const conBuscador = useBuscadorAbajo((s) => Object.keys(s.claves).length > 0);
   const abajo = bottom + (enPestanas ? ALTO_PESTANAS : MARGEN) + (conBuscador ? ALTO_BUSCADOR : 0);
 
@@ -144,7 +152,7 @@ function BurbujaFlotante() {
   //   · al soltar sigue la inercia del dedo (proyecta con la velocidad) y
   //     asienta con un resorte por rigidez, que no rebota de más;
   //   · al tomarla se agranda un poco: se nota que está «en la mano».
-  const tope = Math.min(RECORRIDO, Math.max(0, H - abajo - TAMANO - 140));
+  const tope = Math.min(RECORRIDO, Math.max(0, H - abajo - alto - 140));
   const topeRef = useRef(tope);
   topeRef.current = tope;
   const actual = useRef(0);
@@ -188,7 +196,7 @@ function BurbujaFlotante() {
     });
   }, [dy]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!puede) return null;
+  if (!puede && !acompanante) return null;
 
   const etiqueta = sinLeer > 0
     ? `Chat con clientes: ${sinLeer} ${sinLeer === 1 ? 'mensaje' : 'mensajes'} sin responder`
@@ -197,6 +205,13 @@ function BurbujaFlotante() {
   const tinta = ANDROID && paleta ? paleta.onPrimaryContainer : '#FFFFFF';
   const icono = <IconoFijo name={iconoDe('MessageCircle')} size={26} color={tinta} />;
   const textoRotulo = `${sinLeer > 99 ? '99+' : sinLeer} sin responder`;
+  // El mismo vestido para los dos botones: vidrio teñido en iPhone, el FAB de
+  // Material en Android.
+  const vestir = (hijo) => (ANDROID ? hijo : <Vidrio radio={TAMANO / 2} interactivo tinte={`${MARCA.azul}E0`}>{hijo}</Vidrio>);
+  const estiloBoton = ANDROID ? { borderRadius: 18, overflow: 'hidden', elevation: 6, backgroundColor: paleta?.primaryContainer ?? MARCA.azul } : undefined;
+  const ripple = ANDROID ? { color: 'rgba(127,127,127,0.24)', borderless: false, foreground: true } : undefined;
+  const apretar = () => Animated.spring(apretado, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 0 }).start();
+  const soltar = () => Animated.spring(apretado, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 14 }).start();
 
   const contenido = (
     <View style={{ height: TAMANO, flexDirection: 'row', alignItems: 'center' }}>
@@ -217,17 +232,29 @@ function BurbujaFlotante() {
         // pantalla (con 140 fijo, encima del buscador se quedaba asomando).
         transform: ANDROID
           ? [{ translateY: dy }, { scale: Animated.multiply(Animated.multiply(entrada, latido), apretado) }]
-          : [{ translateY: Animated.add(dy, entrada.interpolate({ inputRange: [0, 1], outputRange: [abajo + TAMANO + 40, 0] })) }, { scale: Animated.multiply(latido, apretado) }] }}>
-      <Pressable onPress={abrir} accessibilityRole="button" accessibilityLabel={etiqueta} accessibilityHint="Desliza arriba o abajo para moverla"
-        onPressIn={() => Animated.spring(apretado, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 0 }).start()}
-        onPressOut={() => Animated.spring(apretado, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 14 }).start()}
-        android_ripple={ANDROID ? { color: 'rgba(127,127,127,0.24)', borderless: false, foreground: true } : undefined}
-        style={ANDROID ? { borderRadius: 18, overflow: 'hidden', elevation: 6, backgroundColor: paleta?.primaryContainer ?? MARCA.azul } : undefined}>
-        {ANDROID ? contenido : (
-          <Vidrio radio={TAMANO / 2} interactivo tinte={`${MARCA.azul}E0`}>{contenido}</Vidrio>
-        )}
-      </Pressable>
-      <Numero n={sinLeer} visible={!rotulo} />
+          : [{ translateY: Animated.add(dy, entrada.interpolate({ inputRange: [0, 1], outputRange: [abajo + Math.max(alto, TAMANO) + 40, 0] })) }, { scale: Animated.multiply(latido, apretado) }] }}>
+      <View style={{ alignItems: 'flex-end', gap: SEPARACION }}>
+        {acompanante ? (
+          <Pressable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); acompanante.onPress(); }}
+            accessibilityRole="button" accessibilityLabel={acompanante.etiqueta} accessibilityHint="Desliza arriba o abajo para moverlo"
+            onPressIn={apretar} onPressOut={soltar} android_ripple={ripple} style={estiloBoton}>
+            {vestir(
+              <View style={{ width: TAMANO, height: TAMANO, alignItems: 'center', justifyContent: 'center' }}>
+                <IconoFijo name={iconoDe(acompanante.icono)} size={26} color={tinta} />
+              </View>,
+            )}
+          </Pressable>
+        ) : null}
+        {conChat ? (
+          <View>
+            <Pressable onPress={abrir} accessibilityRole="button" accessibilityLabel={etiqueta} accessibilityHint="Desliza arriba o abajo para moverla"
+              onPressIn={apretar} onPressOut={soltar} android_ripple={ripple} style={estiloBoton}>
+              {vestir(contenido)}
+            </Pressable>
+            <Numero n={sinLeer} visible={!rotulo} />
+          </View>
+        ) : null}
+      </View>
     </Animated.View>
   );
 }

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1572.3 — Entorno de pruebas: espera a que terminen las migraciones antes de comparar
+
+- La corrida de las 13:16 SV rehízo el branch (ref nuevo `fuqwenghserpgfhrkqku`)
+  y lo comparó al instante: «faltan 2». Minutos después estaba igual a
+  producción (1883 y 1883). Esa falsa diferencia cortó la corrida antes de
+  `herramientas()`: sin datos sembrados (el buscador de clientes del portal
+  contra pruebas quedaba vacío) y con **4 crons llamando a producción**
+  (`tick-minuto`, `cortes-caja-5min`, `sync-numero-control-inyecciones`,
+  `alta-cliente-erp-10min`), creados por las últimas migraciones después de
+  que se apagaran los demás.
+- `mantener_al_dia.mjs`: `esperarMigraciones()` re-compara cada 20 s hasta 10
+  minutos antes de declarar «sigue distinto», y los crons se apagan otra vez
+  después de esa espera.
+- A mano, ese día: los 4 crons apagados y el branch sembrado (datos, permisos de
+  la cuenta de pruebas, secreto del kiosco y resúmenes).
+- Novedades: no — es una herramienta interna del entorno de pruebas, el personal no la ve.
+
 ## v2.1572.2 — Bolsas «Todas»: filtro en la píldora, una fila de tarjetas y paginación
 
 - Pedido del usuario sobre «Todas» (captura del 2026-11-17): «los filtros a un

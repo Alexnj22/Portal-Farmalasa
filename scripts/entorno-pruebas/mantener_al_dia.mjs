@@ -116,6 +116,25 @@ async function esperar(nombre) {
     }
 }
 
+/**
+ * El branch sigue aplicando migraciones un rato DESPUÉS de reportar su estado
+ * final. Medido el 2026-11-17: comparado al instante faltaban 2, y minutos
+ * después estaba igual a producción. Esa falsa diferencia cortaba la corrida
+ * antes de `herramientas()` — sin datos sembrados — y los crons que nacieron
+ * con esas 2 últimas migraciones quedaron llamando a PRODUCCIÓN (4, uno cada
+ * minuto), porque se apagaron antes de que existieran. Se espera hasta 10
+ * minutos a que deje de cambiar.
+ */
+async function esperarMigraciones(ref) {
+    const hasta = Date.now() + 10 * 60_000;
+    let c = comparar(await versiones(PROD), await versiones(ref));
+    while (!c.igual && c.huerfanas.length === 0 && Date.now() < hasta) {
+        await new Promise((r) => setTimeout(r, 20_000));
+        c = comparar(await versiones(PROD), await versiones(ref));
+    }
+    return c;
+}
+
 function comparar(prod, branch) {
     const enProd = new Set(prod);
     const huerfanas = branch.filter((v) => !enProd.has(v));
@@ -396,7 +415,9 @@ async function escribirEnv(ref) {
             await avisarAVercel(b.project_ref);
         }
 
-        c = comparar(await versiones(PROD), await versiones(b.project_ref));
+        c = await esperarMigraciones(b.project_ref);
+        // Otra vez: las últimas migraciones pueden haber programado crons nuevos.
+        await apagarCronsQueLlamanAProduccion(b.project_ref);
         if (!c.igual) {
             console.error(`✗ Sigue distinto: faltan ${c.faltan}, huérfanas ${c.huerfanas.length}.`);
             process.exit(1);

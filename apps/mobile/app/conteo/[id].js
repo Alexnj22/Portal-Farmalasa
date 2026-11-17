@@ -244,6 +244,7 @@ export default function Conteo() {
   // El código escaneado no se escribe en el buscador nativo: se muestra aparte,
   // con su forma de quitarlo (antes la lista quedaba filtrada sin decir por qué).
   const [porCodigo, setPorCodigo] = useState(null);
+  const [verComo, setVerComo] = useState(false);
   // Volver a la lista de antes del escaneo: sin código y en «Pendientes».
   const quitarCodigo = () => { setPorCodigo(null); setTexto(''); setFiltro('PENDIENTES'); };
   const busqueda = useTextoRebotado(texto, 350).trim();
@@ -766,7 +767,15 @@ export default function Conteo() {
               alguien registre que lo aplicó, tiene que estar a la vista. */}
           {conteo?.aplica_en_caja && editable ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Aviso tono="nota" texto="Este conteo ajusta el inventario. «Sin lote» es la existencia que no tiene lote asignado. Si esas unidades traen lote impreso, agrega el lote con su vencimiento. En «Sin lote» cuenta solo lo que no trae lote (0 si no hay). Cuenta en lo que dice cada fila: cajas, blísteres o unidades. Si un producto queda a medio contar, no se ajusta." />
+              {/* Dos frases a la vista y el paso a paso plegado: eran cinco
+                  frases seguidas antes del primer producto. */}
+              <Aviso tono="nota" texto={verComo
+                ? 'Este conteo ajusta la existencia.\n• «Sin lote» es lo que no tiene lote asignado.\n• Si esas unidades traen lote impreso, agrega el lote con su vencimiento.\n• En «Sin lote» cuenta solo lo que no trae lote (0 si no hay).\n• Cuenta en lo que dice cada fila: cajas, blísteres o unidades.\n• Si un producto queda a medio contar, no se ajusta.'
+                : 'Este conteo ajusta la existencia. Anota el lote de lo que lo trae y cuenta todos los lotes de cada producto.'} />
+              <Pressable onPress={() => setVerComo((v) => !v)} hitSlop={8}
+                style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{verComo ? 'Ocultar' : 'Cómo se hace'}</Text>
+              </Pressable>
             </View>
           ) : null}
           {conteo?.aplica_en_caja && textoSinLote ? (

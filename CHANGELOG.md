@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1567.3 — Conteo: lector USB vuelve al buscador y aviso de ajuste corto
+
+- **Lector USB en la web**: un código de barras entero escrito en el buscador
+  (como lo escribe el lector) lleva el foco a la cantidad si da con un
+  producto. Al terminar sus cantidades con Enter, el foco vuelve al buscador con
+  el código seleccionado: el próximo escaneo lo reemplaza en vez de pegarse.
+- **Aviso del conteo que ajusta la existencia**: una frase a la vista y el paso
+  a paso en «Cómo se hace» (web y app). Antes eran ~80 palabras seguidas.
+
 ## v2.1567.2 — Reimprimir el carné saca el carné completo, a tamaño tarjeta
 
 - Arreglo: «Reimprimir el carné de plástico» (perfil) e «Imprimir Nuevo

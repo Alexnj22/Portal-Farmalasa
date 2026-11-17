@@ -292,6 +292,13 @@ const renglonEtiqueta = (item, simple) => (simple
 const camposDeCaptura = () => Array.from(document.querySelectorAll('input[data-fisico-input="true"]'))
     .filter((el) => el.offsetParent !== null);
 
+// El buscador del conteo, por su rótulo (el mismo texto que su placeholder:
+// lo pone `buscador` más abajo). Vive en una pieza compartida —la barra del
+// encabezado o la flotante—, así que se encuentra en la página y no por ref.
+const ROTULOS_DEL_BUSCADOR = ['Producto, lote o código', 'Producto o código'];
+const buscadorDelConteo = () => Array.from(document.querySelectorAll('input[aria-label]'))
+    .find((el) => ROTULOS_DEL_BUSCADOR.includes(el.getAttribute('aria-label')) && el.offsetParent !== null);
+
 function alTeclearEnCaptura(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -304,9 +311,19 @@ function alTeclearEnCaptura(e) {
         if (pendiente) {
             pendiente.focus();
             pendiente.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        } else {
-            e.currentTarget.blur();
+            return;
         }
+        // Con una búsqueda puesta (lo típico con lector USB: escanear, contar,
+        // escanear), al terminar el producto el foco vuelve al buscador con el
+        // código seleccionado: el próximo escaneo lo reemplaza en vez de
+        // pegarse al anterior, o de escribirse dentro de una cantidad.
+        const buscador = buscadorDelConteo();
+        if (buscador?.value) {
+            buscador.focus();
+            buscador.select();
+            return;
+        }
+        e.currentTarget.blur();
         return;
     }
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -315,6 +332,30 @@ function alTeclearEnCaptura(e) {
     const idx = inputs.indexOf(e.currentTarget);
     const next = e.key === 'ArrowDown' ? inputs[idx + 1] : inputs[idx - 1];
     if (next) { next.focus(); next.select(); }
+}
+
+// El aviso del conteo que ajusta la existencia: dos frases a la vista y el
+// paso a paso plegado. Eran ~80 palabras en un bloque que nadie terminaba de leer.
+function AvisoDeAjuste() {
+    const [abierto, setAbierto] = useState(false);
+    return (
+        <Notice variant="info">
+            Este conteo ajusta la existencia. Anota lote, vencimiento y cantidad, y cuenta todos los lotes de cada producto.{' '}
+            <button type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto}
+                className="font-bold underline underline-offset-2 active:scale-[0.97]">
+                {abierto ? 'Ocultar' : 'Cómo se hace'}
+            </button>
+            {abierto && (
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                    <li>Debajo de <strong>Sin lote</strong>, escribe el lote, el vencimiento (mes/año) y cuántas hay. Presiona Enter.</li>
+                    <li><strong>+ Lote</strong> agrega otra fila.</li>
+                    <li>Si ya tiene lote, confírmalo o corrígelo con el lápiz.</li>
+                    <li>Cuenta en lo que dice debajo del lote: cajas, blísteres o unidades.</li>
+                    <li>Si falta un lote, ese producto no se ajusta.</li>
+                </ul>
+            )}
+        </Notice>
+    );
 }
 
 function VencimientoBadge({ status }) {
@@ -1951,11 +1992,18 @@ export default function ConteoDetailView() {
     // y recién la siguiente pedía la 1. Dos consultas para una sola decisión.
     const cambiarFiltro = useCallback((v) => { resetPage(); setFiltro(v); }, [resetPage]);
     const cambiarLaboratorio = useCallback((v) => { resetPage(); setLaboratorioId(v); }, [resetPage]);
-    const cambiarBusqueda = useCallback((v) => { resetPage(); setSearch(v); }, [resetPage]);
+    const focoTrasEscanear = useRef(null);
+    const cambiarBusqueda = useCallback((v) => {
+        resetPage(); setSearch(v);
+        // Un lector USB escribe el código en el buscador como si fuera teclado:
+        // si lo escrito es un código de barras entero, al llegar el resultado
+        // el foco va a la cantidad, igual que con la cámara.
+        const limpio = String(v ?? '').trim();
+        if (/^\d{8,}$/.test(limpio)) focoTrasEscanear.current = limpio;
+    }, [resetPage]);
     // Tras escanear, si el código dio con UN producto, su primera cantidad sin
     // contar queda enfocada: antes había que tocar el campo después de cada
     // escaneo. Con varios resultados elige quien cuenta.
-    const focoTrasEscanear = useRef(null);
     useEffect(() => {
         const codigo = focoTrasEscanear.current;
         if (!codigo || loading || String(searchDiferido ?? '').trim() !== codigo) return undefined;
@@ -2548,9 +2596,7 @@ export default function ConteoDetailView() {
                             el ERP sigue mintiendo y esto tiene que estar a la vista. */}
                         {conteo.aplica_en_caja && conteo.status === 'EN_PROGRESO' && (
                             <div className="mt-4">
-                                <Notice variant="info">
-                                    Este conteo ajusta el inventario. Debajo de cada <strong>Sin lote</strong>, escribe el lote, el vencimiento (mes/año) y cuántas hay, y presiona Enter. <strong>+ Lote</strong> agrega otra fila. Si ya tiene lote, usa el lápiz para confirmarlo o corregirlo. Cuenta en lo que dice debajo del lote: cajas, blísteres o unidades. Cuenta todos los lotes de un producto: si falta uno, no se puede ajustar.
-                                </Notice>
+                                <AvisoDeAjuste />
                             </div>
                         )}
                         {/* El avance de la limpieza de lotes: lo que este conteo ya

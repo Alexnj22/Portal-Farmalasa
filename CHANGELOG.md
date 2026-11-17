@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.3 — Novedades: redacción y referencias revisadas
+
+- Revisé cada novedad contra la pantalla real. Bodega: el botón es «Devolver a bodega» (no existían «Volver al estante» ni la lista «Pasados desde el portal»). Inicio: el botón es «Personalizar», no «Editar Inicio». Conteo: la columna Dif. sale después de guardar. Mi perfil: se abre tocando tu nombre abajo en el menú. Android: la ruta completa en Play Console.
+- Vocabulario del portal: «datos» en lugar de «ficha» y «producto» en lugar de «renglón», también en el aviso de correo guardado.
+
+Novedades: no — corrige textos de novedades que ya existen
+
 ## v2.1562.2 — Preventa a toda prueba
 
 Auditoría de la preventa (2026-11-16). Cada punto se verificó antes de tocarlo.

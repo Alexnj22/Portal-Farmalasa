@@ -62,11 +62,11 @@ export const TANDAS = [
                 para: 'Hacer desde el teléfono lo mismo que en la computadora, sin buscar una.',
                 pasos: [
                     'En iPhone, descárgala de App Store.',
-                    'En Android, deja el correo de tu cuenta de Google y descárgala de Google Play cuando se encienda el botón.',
+                    'En Android, deja aquí el correo de tu cuenta de Google. Cuando te llegue el aviso, descárgala de Google Play.',
                     'Entra con tu usuario y contraseña del portal.',
                 ],
                 ojo: [
-                    'Ese correo también queda en tu ficha de empleado y, si eres cliente, en tu ficha de cliente.',
+                    'Ese correo también queda en tus datos de empleado y, si eres cliente, en tus datos de cliente.',
                     'Los avisos sin leer salen al abrir la app.',
                     'En Cuenta eliges qué pestaña rápida va en la barra.',
                     { t: 'En la app también cuentas inventario y ves la diferencia mientras cuentas.', si: EDITA('conteo_inventario') },
@@ -83,7 +83,7 @@ export const TANDAS = [
                 pasos: [
                     'Abre la pestaña Android.',
                     'Toca Copiar correos.',
-                    'Toca Abrir Google Play Console, entra a Pruebas internas → Testers y pégalos en la lista.',
+                    'Toca Abrir Google Play Console. Abre Portal Farmasalud → Pruebas internas → Testers, pega los correos y guarda.',
                     'Vuelve aquí y toca Agregados, avisarles. A cada uno le llega un aviso con sus pasos.',
                 ],
                 ojo: [
@@ -145,7 +145,7 @@ export const TANDAS = [
                     'Llena lo que dice Requerido y toca Crear cliente.',
                 ],
                 ojo: [
-                    'Si el cliente ya existe (mismo DUI, NIT o nombre), te lleva a su ficha en vez de duplicarlo.',
+                    'Si el cliente ya existe (mismo DUI, NIT o nombre), te lleva a sus datos en vez de duplicarlo.',
                     'El DUI y el NIT se revisan al escribirlos.',
                     'El giro se elige de la lista del Ministerio de Hacienda.',
                     'En la lista ves el nivel de Puntos Salud de cada cliente.',
@@ -238,13 +238,13 @@ export const TANDAS = [
             {
                 id: 'conteo', modulo: 'conteo_inventario', tema: 'productos', icono: 'ClipboardCheck',
                 media: M('conteo.webp'), ruta: '/conteo-inventario',
-                titulo: 'Conteo: lote y vencimiento en el mismo renglón',
+                titulo: 'Conteo: lote y vencimiento en cada producto',
                 resumen: 'Cada producto dice qué le falta, y lo que solo cambió de lote ya no cuenta como diferencia.',
                 para: 'Contar más rápido y que la diferencia sea real.',
                 pasos: [
                     'Abre el conteo de tu sucursal.',
                     'Escribe lo que cuentas en cada lote. Con + Lote agregas uno que no estaba.',
-                    'Revisa la columna Dif. antes de cerrar.',
+                    'Guarda lo contado. Después verás la columna Dif. con la diferencia.',
                     { t: 'Al revisar un conteo, la diferencia ya no incluye lo que solo cambió de lote.', si: APRUEBA('conteo_inventario') },
                 ],
                 ojo: [
@@ -310,12 +310,12 @@ export const TANDAS = [
                 resumen: 'Tu perfil muestra la semana con tu horario de verdad, las horas que llevas y tus datos.',
                 para: 'Saber tu horario de la semana sin preguntarle a nadie.',
                 pasos: [
-                    'Abre Mi perfil.',
+                    'Toca tu nombre abajo en el menú para abrir Mi perfil.',
                     'Revisa la tarjeta de la semana: Hoy va marcado.',
                     'Toca Solicitudes pendientes para ver las tuyas.',
                 ],
                 ojo: ['También está en la app del personal, en Cuenta.'],
-                donde: 'Mi perfil',
+                donde: 'Tu nombre, abajo en el menú → Mi perfil',
             },
             {
                 id: 'voucher', modulo: 'caja_vales', si: EDITA('caja_vales'), nuevo: true, tema: 'vender', icono: 'CreditCard',
@@ -359,7 +359,7 @@ export const TANDAS = [
                     'Mira Quién está hoy: en labores o ausente.',
                     'En tamaño chico, Cumpleaños dice quién cumple hoy y Calendario el próximo feriado.',
                 ],
-                ojo: ['Con Editar Inicio eliges el tamaño de cada cuadro.'],
+                ojo: ['Con Personalizar, arriba a la derecha, eliges el tamaño de cada cuadro.'],
                 donde: 'Inicio → General o RRHH',
             },
             {
@@ -391,8 +391,7 @@ export const TANDAS = [
                 ],
                 ojo: [
                     'Solo sale estando en la sucursal Bodega.',
-                    'Para deshacerlo, toca Devolver en Pasados desde el portal (últimos 30 días).',
-                    'Con Volver al estante regresas lo que sí se puede vender.',
+                    'Si fue por error, en Ajuste de inventario toca Devolver a bodega.',
                     'Mueve la existencia en el momento, sin aprobación.',
                 ],
                 donde: 'Inicio → Operación → Ajuste de inventario',

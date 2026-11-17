@@ -386,8 +386,8 @@ function AppPersonal({ user, destacar }) {
             const r = await registrarCorreoAndroid(correo.trim());
             setGuardado({ email: r.correo, agregado_at: guardado?.email === r.correo ? guardado.agregado_at : null });
             setCambiando(false);
-            const ficha = r.fichaDeCliente === 'actualizada' ? ' y en tu ficha de cliente' : '';
-            showToast('Correo guardado', `Quedó en tu ficha de empleado${ficha}. Te avisamos cuando ya puedas descargarla.`, 'success');
+            const ficha = r.fichaDeCliente === 'actualizada' ? ' y en tus datos de cliente' : '';
+            showToast('Correo guardado', `Quedó en tus datos de empleado${ficha}. Te avisamos cuando ya puedas descargarla.`, 'success');
         } catch (e) {
             showToast('No se pudo guardar', mensajeDeNovedades(e), 'error');
         } finally { setOcupado(false); }

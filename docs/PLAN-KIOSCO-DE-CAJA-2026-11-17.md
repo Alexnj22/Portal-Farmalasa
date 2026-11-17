@@ -206,6 +206,9 @@ faltante suelto no acusa a nadie; un patrón repetido se ve.
   carné basta para cobrar a su nombre en un kiosco autorizado. **Antes de la
   fase 3** hay que separar el código del carné de la contraseña: el carné
   lleva un identificador propio y revocable.
+  **Pospuesto por el usuario (2026-11-17):** «por ahora no lo apliquemos».
+  La fase 3 sigue sin él: el riesgo queda aceptado y lo cubre el reporte por
+  persona.
 - **Un equipo, una sucursal.** El kiosco solo cobra y opera la caja de su
   sucursal. Un equipo perdido se da de baja y queda inservible.
 - **Freno de intentos** en el carné, como ya tiene el kiosco.
@@ -236,7 +239,7 @@ sin cumplirla. Todo empieza en **Salud 4**.
 | **0 · Medir** (ya) | tiempo envío→cobro, cobrados distinto, preventas descartadas | hay 2 semanas de números |
 | **1 · Kiosco visible** | alta del equipo tipo caja, pantalla anónima, Marcar y En caja (solo ver) | una semana marcando sin fallas y la cola igual a la lista de caja |
 | **2 · Caja en el kiosco** | abrir, corte a ciegas, ingreso, vale, cierre con carné | una semana de cortes iguales a los de Mi caja |
-| **3 · Cobrar** | factura en efectivo, solo preventas del portal; carné separado de la contraseña | 2 semanas con 0 diferencias en el contraste y ≤5 s por cobro |
+| **3 · Cobrar** | factura en efectivo, solo preventas del portal | 2 semanas con 0 diferencias en el contraste y ≤5 s por cobro |
 | **4 · Completo** | crédito fiscal, tarjeta, puntos, crédito; armar y cobrar en el kiosco | 2 semanas con 0 diferencias |
 | **5 · Las demás** | una sucursal por semana | la anterior sin diferencias |
 

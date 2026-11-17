@@ -5,7 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 vi.mock('@nucleo/data/bolsas', () => ({
   anularBolsa: vi.fn(), anularLaSalidaDeBolsa: vi.fn(),
   fetchSalidasDeBolsa: vi.fn(async () => []),
-  fetchEstadosDeDiferenciaDeCortes: vi.fn(async () => new Map([[55, 'resuelto']])),
+  fetchEstadosDeDiferenciaDeCortes: vi.fn(async () => new Map([[55, { estado: 'resuelto', resoluciones: [{ id: 1, via: 'JUSTIFICA', causa: 'Salida de un adelanto sin anotar', monto: 2.5, registrado_nombre: 'EDWIN ALEXANDER NUNEZ JOYA', evidencia_ref: 'INGRESO' }] }]])),
   fetchDiferenciaDeUnCorte: vi.fn(async () => 2.5),
   fetchEventosDeBolsa: vi.fn(async () => ([
     { id: 3, accion: 'CONTAR', nombre: 'CELINA BEATRIZ ESCOBAR ESCOBAR', employee_id: 9, created_at: '2026-11-13T20:37:00Z', motivo: 'No cuadró.' },
@@ -32,6 +32,9 @@ describe('DetalleDeBolsa', () => {
     await waitFor(() => expect(screen.getAllByText(/Sobró \$2\.50/).length).toBeGreaterThan(0));
     expect(screen.queryByText('LP-2124')).toBeNull();
     await waitFor(() => expect(screen.getAllByText('Resuelto').length).toBeGreaterThan(0));
+    expect(screen.getByText('Qué pasó con el corte')).toBeTruthy();
+    expect(screen.getByText('Salida de un adelanto sin anotar')).toBeTruthy();
+    expect(screen.getByText(/Lo resolvió EDWIN NUNEZ/)).toBeTruthy();
     expect(screen.getAllByText('Depositada').length).toBe(1);
     expect(screen.queryByText(/CELINA BEATRIZ ESCOBAR ESCOBAR/)).toBeNull();
     expect(screen.getAllByText(/Faltaron 4 dólares/).length).toBe(1);

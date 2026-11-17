@@ -47,12 +47,12 @@ const sello = (iso) => (iso ? fechaHora12(iso, { day: '2-digit', month: 'short' 
 const tonoDif = (n) => (n < -0.005 ? 'text-danger-text' : n > 0.005 ? 'text-warning-text' : 'text-content');
 
 /** Faltó / Sobró / Cuadró. `null` = no aplica; `undefined` = no se pudo leer. */
-function Diferencia({ valor }) {
+function Diferencia({ valor, resuelta = false }) {
     if (valor === undefined) return <span className="text-caption text-content-3">Sin dato</span>;
     if (valor == null) return <span className="text-content-3">—</span>;
     if (Math.abs(valor) < 0.01) return <span className="text-caption text-success-text">Cuadró</span>;
     return (
-        <span className={`font-bold tabular-nums whitespace-nowrap ${tonoDif(valor)}`}>
+        <span className={`font-bold tabular-nums whitespace-nowrap ${resuelta ? 'text-content-2' : tonoDif(valor)}`}>
             {valor < 0 ? 'Faltó ' : 'Sobró '}{formatMoney(Math.abs(valor))}
         </span>
     );
@@ -134,7 +134,7 @@ export default function TodasLasBolsas({
         return difCortes.get(b.corte_id) ?? null;
     }, [difCortes]);
     const conDifCorte = useCallback((b) => Math.abs(difDelCorte(b) || 0) >= 0.01, [difDelCorte]);
-    const estadoDelCorte = useCallback((b) => (conDifCorte(b) ? estCortes.get(b.corte_id) || null : null),
+    const estadoDelCorte = useCallback((b) => (conDifCorte(b) ? estCortes.get(b.corte_id)?.estado || null : null),
         [conDifCorte, estCortes]);
 
     const visibles = useMemo(() => {
@@ -143,7 +143,7 @@ export default function TodasLasBolsas({
             if (filtro === 'pendiente') return ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado);
             if (filtro === 'dif') return conDif(b);
             if (filtro === 'difcorte') return conDifCorte(b);
-            if (filtro === 'cortesinresolver') return estadoDelCorte(b) === 'sin_resolver';
+            if (filtro === 'cortesinresolver') return conDifCorte(b) && estadoDelCorte(b) !== 'resuelto';
             return b.estado === filtro;
         });
         const s = orden.dir === 'asc' ? 1 : -1;
@@ -166,7 +166,12 @@ export default function TodasLasBolsas({
         const neto = contadas.reduce((a, b) => a + (diferenciaDeBolsa(b) || 0), 0);
         // Un corte puede tener varias bolsas: su diferencia se cuenta una vez.
         const cortesVistos = new Map();
-        for (const b of vivas) if (b.corte_id && !cortesVistos.has(b.corte_id)) cortesVistos.set(b.corte_id, difDelCorte(b));
+        // Lo resuelto ya tiene causa: no cuenta como diferencia (usuario, 2026-11-17).
+        for (const b of vivas) {
+            if (b.corte_id && !cortesVistos.has(b.corte_id) && estadoDelCorte(b) !== 'resuelto') {
+                cortesVistos.set(b.corte_id, difDelCorte(b));
+            }
+        }
         const difsCorte = [...cortesVistos.values()];
         return {
             cuantas: vivas.length,
@@ -180,7 +185,7 @@ export default function TodasLasBolsas({
             netoCortes: Math.round(difsCorte.reduce((a, d) => a + (d || 0), 0) * 100) / 100,
             cortesConDif: difsCorte.filter((d) => Math.abs(d || 0) >= 0.01).length,
         };
-    }, [delAlcance, conDif, difDelCorte]);
+    }, [delAlcance, conDif, difDelCorte, estadoDelCorte]);
 
     const columnas = [
         { key: 'fecha', label: 'Fecha', sortable: true },
@@ -203,7 +208,7 @@ export default function TodasLasBolsas({
             if (v === 'pendiente') return delAlcance.filter((b) => ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado)).length;
             if (v === 'dif') return delAlcance.filter(conDif).length;
             if (v === 'difcorte') return delAlcance.filter(conDifCorte).length;
-            if (v === 'cortesinresolver') return delAlcance.filter((b) => estadoDelCorte(b) === 'sin_resolver').length;
+            if (v === 'cortesinresolver') return delAlcance.filter((b) => conDifCorte(b) && estadoDelCorte(b) !== 'resuelto').length;
             return delAlcance.filter((b) => b.estado === v).length;
         };
         return FILTROS_TODAS_BOLSAS.filter((f) => f.value).map((f) => ({ ...f, label: `${f.label} (${cuenta(f.value)})` }));
@@ -223,8 +228,8 @@ export default function TodasLasBolsas({
             label: `${cuantas(resumen.contadas, 'contada', 'contadas')}`,
             onClick: resumen.contadas ? () => onFiltro?.('CONTADA') : undefined },
         { clave: 't-difc', icon: Receipt, value: formatMoney(resumen.netoCortes), valueCls: tonoDif(resumen.netoCortes),
-            label: `Cortes · ${cuantas(resumen.cortesConDif, 'con diferencia', 'con diferencia')}`,
-            onClick: resumen.cortesConDif ? () => onFiltro?.('difcorte') : undefined },
+            label: `Cortes · ${cuantas(resumen.cortesConDif, 'sin resolver', 'sin resolver')}`,
+            onClick: resumen.cortesConDif ? () => onFiltro?.('cortesinresolver') : undefined },
         { clave: 't-dif', icon: Scale, value: formatMoney(resumen.neto), valueCls: tonoDif(resumen.neto),
             label: `Conteo · ${cuantas(resumen.conDif, 'con diferencia', 'con diferencia')}`,
             onClick: resumen.conDif ? () => onFiltro?.('dif') : undefined },
@@ -281,9 +286,9 @@ export default function TodasLasBolsas({
                             )}
                             {verMontos && (
                                 <DataCell align="center">
-                                    <Diferencia valor={difDelCorte(b)} />
+                                    <Diferencia valor={difDelCorte(b)} resuelta={estadoDelCorte(b) === 'resuelto'} />
                                     {estadoDelCorte(b) && (
-                                        <span className={`block text-caption ${estadoDelCorte(b) === 'sin_resolver' ? 'text-danger-text' : 'text-content-3'}`}>
+                                        <span className={`block text-caption ${estadoDelCorte(b) === 'resuelto' ? 'text-content-3' : 'text-danger-text'}`}>
                                             {ESTADO_DIFERENCIA_ROTULO[estadoDelCorte(b)]?.label}
                                         </span>
                                     )}

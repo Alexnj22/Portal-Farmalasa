@@ -11,7 +11,7 @@ vi.mock('@nucleo/data/bolsas', () => ({
   ])),
   fetchSaldos: vi.fn(async (ids) => new Map(ids.map((id) => [id, { bolsa_id: id, saldo: id === 1 ? 100 : id === 2 ? 50 : 0 }]))),
   fetchPersonasDeBolsas: vi.fn(async () => [{ id: 7, name: 'Ana Pérez López' }]),
-  fetchEstadosDeDiferenciaDeCortes: vi.fn(async () => new Map([[90, 'sin_resolver']])),
+  fetchEstadosDeDiferenciaDeCortes: vi.fn(async () => new Map([[90, { estado: 'sin_resolver', resoluciones: [] }]])),
   fetchDiferenciasDeCortes: vi.fn(async () => new Map([[90, -12.5]])),
 }));
 

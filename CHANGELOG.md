@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1573.2 — Bolsas: la diferencia del corte resuelta ya no cuenta y dice qué pasó
+
+- «si está resuelto entonces que no lo tome como diferencia negativa, porque ya
+  se sabe causa, y que diga aquí qué pasó» (usuario, 2026-11-17).
+- Una diferencia de corte en estado `resuelto` se pinta neutra (no roja) en la
+  tabla y en el detalle, y sale de la tarjeta de cortes, que ahora suma sólo lo
+  que sigue sin resolver y abre el filtro «Corte sin resolver» (todo lo que no
+  está `resuelto`).
+- El detalle muestra «Qué pasó con el corte»: el camino (`VIA_LARGO`), el
+  monto, la causa escrita, el respaldo y quién lo resolvió.
+- `fetchEstadosDeDiferenciaDeCortes` devuelve `{ estado, resoluciones }`.
+- Novedades: no — mejora de una pantalla que ya existía.
+
+
 ## v2.1573.1 — Bolsas: tarjetas en dinero y si la diferencia del corte se resolvió
 
 - «en card me interesa más ver cuánto es en total $», «diferencia del conteo

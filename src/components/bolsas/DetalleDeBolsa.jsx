@@ -22,7 +22,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { ACCION_DE_BOLSA, COMO_SE_IDENTIFICO } from '@nucleo/utils/bolsasTexto';
 import { contadoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { ESTADO_DIFERENCIA_ROTULO } from '@nucleo/utils/diferenciasDeCaja';
+import { ESTADO_DIFERENCIA_ROTULO, VIA_LARGO } from '@nucleo/utils/diferenciasDeCaja';
 
 /**
  * Todo lo que le pasó a una bolsa, y las dos correcciones que existen.
@@ -100,8 +100,10 @@ function Diferencia({ titulo, ayuda, valor, vacio, cargando = false, estado = nu
     const sinDato = valor === undefined;
     const hay = typeof valor === 'number';
     const cuadra = hay && Math.abs(valor) < 0.01;
+    // Resuelta = ya se sabe qué pasó: deja de pintarse como faltante.
+    const resuelta = estado?.label === ESTADO_DIFERENCIA_ROTULO.resuelto.label;
     const tono = !hay || cuadra ? (cuadra ? 'text-success-text' : 'text-content-3')
-        : valor < 0 ? 'text-danger-text' : 'text-warning-text';
+        : resuelta ? 'text-content-2' : valor < 0 ? 'text-danger-text' : 'text-warning-text';
     return (
         <div data-surface="card" className="px-3 py-2.5 min-w-0">
             <div className="text-caption font-black uppercase tracking-widest text-content-3 truncate">{titulo}</div>
@@ -184,7 +186,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
             bolsa.corte_id ? fetchEstadosDeDiferenciaDeCortes({ desde: bolsa.fecha, hasta: bolsa.fecha }) : null,
         ]);
         setSalidas(s); setEventos(e); setDifCorte(dc);
-        setEstadoCorte(est?.get(bolsa.corte_id) || null);
+        setEstadoCorte(est?.get(bolsa.corte_id) || null);   // { estado, resoluciones }
         setCargando(false);
     }, [bolsa]);
 
@@ -322,13 +324,34 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                             ayuda="Lo contado en la caja contra lo que dice el corte"
                             valor={bolsa.corte_id ? difCorte : null}
                             vacio={bolsa.corte_id ? 'Sin conteo en el corte' : 'Sin corte'} cargando={cargando}
-                            estado={estadoCorte ? ESTADO_DIFERENCIA_ROTULO[estadoCorte] : null} />
+                            estado={estadoCorte ? ESTADO_DIFERENCIA_ROTULO[estadoCorte.estado] : null} />
                         <Diferencia titulo="Diferencia del conteo"
                             ayuda="Lo que había en la bolsa contra lo que debía haber"
                             valor={dif}
                             vacio={bolsa.estado === 'ANULADA' ? 'Anulada' : 'Todavía no se cuenta'}
                             estado={bolsa.dif_at ? ESTADO_DIFERENCIA_ROTULO.resuelto : ESTADO_DIFERENCIA_ROTULO.sin_resolver} />
                     </div>
+
+                    {/* «si está resuelto … que diga aquí qué pasó» (usuario, 2026-11-17) */}
+                    {Math.abs(difCorte || 0) >= 0.01 && estadoCorte?.resoluciones?.length > 0 && (
+                        <div data-surface="card" className="px-3 py-2.5 space-y-2">
+                            <div className="text-caption font-black uppercase tracking-widest text-content-3">Qué pasó con el corte</div>
+                            {estadoCorte.resoluciones.map((r) => (
+                                <div key={r.id} className="text-body-sm text-content">
+                                    <div className="font-bold">
+                                        {VIA_LARGO[r.via] || 'Resuelto'}
+                                        {r.monto != null && <span className="tabular-nums text-content-2"> · {formatMoney(Math.abs(Number(r.monto)))}</span>}
+                                    </div>
+                                    {r.causa && <div className="text-content-2">{r.causa}</div>}
+                                    <div className="text-caption text-content-3">
+                                        {[r.evidencia_ref && `Respaldo: ${r.evidencia_ref}`,
+                                            r.registrado_nombre && `Lo resolvió ${shortEmployeeName(r.registrado_nombre)}`,
+                                            r.registrado_at && fechaHoraCorta(r.registrado_at)].filter(Boolean).join(' · ')}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {bolsa.dif_causa && (
                         <Notice variant={bolsa.dif_at ? 'info' : 'warning'} compact>

@@ -57,6 +57,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/reservas': '/reservas-sala', // las reservas de la sala: apartar, retirar, recetas y saldos a favor (la misma del widget)
   '/torogoz': true, // la distribuidora: su menú y sus secciones (`/torogoz/<seccion>`)
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
+  '/preventa': true, // vender desde el teléfono: cliente, productos con lote y precio, cobro y enviar a caja; y las preventas de la sucursal
   '/novedades': true, // lo nuevo por cargo (con la animación de cada una); quien edita, «Quién las vio» y la prueba de Android
   '/nomina': true, // la quincena por sala y la boleta de cada persona
   '/auditoria-de-tiempos': true, // día y quincena: marcas, faltas, tardanza; corregir, revisar, aprobar, cerrar y turnos extra

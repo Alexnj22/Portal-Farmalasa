@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1564.3 — Preventa nativa en la app
+
+- **Preventa ya no se abre como el portal dentro de la app**: pantalla nativa
+  (`apps/mobile/app/preventa.js` y `componentes/preventa/`). «Vender»: cliente
+  (buscar, ficha, lo que falta, puntos, «Suele llevar», últimas compras),
+  productos (buscar o escanear; lote, presentación, cantidad, precio o monto),
+  comprobante, pago, puntos, nota, pendientes con qué hacer y «Enviar a caja»;
+  corregir reescribe la misma en caja. «Preventas»: hoy, 7 o 30 días, con
+  Corregir, Repetir y Anular. Todo con las funciones del núcleo del portal.
+- Otras sucursales, Apartar y completar datos abren sus pantallas nativas;
+  crear un cliente nuevo abre el portal (todavía no es nativo).
+- `preventa` sale de `EXCEPCIONES` de `gate:app-nativa`.
+
+Novedades: no — por ahora no (lo decidió el usuario).
+
 ## v2.1564.2 — Plan: kiosco de caja
 
 - Plan para vender, cobrar y llevar la caja desde la computadora de caja como

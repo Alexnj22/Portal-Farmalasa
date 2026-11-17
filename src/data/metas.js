@@ -297,14 +297,15 @@ export async function fetchMesEnCurso(branchId = null) {
 }
 
 /**
- * La forma del día de una sucursal para «Cómo va hoy» del kiosco: venta por
- * hora de hoy, la típica del mismo día de la semana y los 5 que más venden.
- * Mismos permisos que `get_meta_sala`. Lanza si falla.
+ * «Cómo va hoy» del kiosco: venta por hora de hoy, la típica, la de la semana
+ * pasada, el mes, los 5 que más venden y lo que más sale. Todo como parte de
+ * la base del día; los montos sólo llegan a quien tiene la vista completa (lo
+ * decide la base). Mismos permisos que `get_meta_sala`. Lanza si falla.
  */
 export async function fetchComoVaLaSalaHoy(branchId) {
     const { data, error } = await supabase.rpc('como_va_la_sala_hoy', { p_branch_id: Number(branchId) });
     if (error) throw error;
-    const dia = data ?? { hoy: [], tipica: [], vendedores: [] };
+    const dia = data ?? { base_tipo: null };
     await signPhotosDeep(dia.vendedores ?? []);
     return dia;
 }

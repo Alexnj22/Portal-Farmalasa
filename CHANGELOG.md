@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.10 — Cómo va hoy: porcentajes para el personal y más datos
+
+- Pedido del usuario: «agrega más datos, no pongas cantidades totales para los
+  dependientes, sólo porcentajes; sólo el jefe / subjefe puede ver montos».
+- Los montos los decide la base: `como_va_la_sala_hoy` (migración
+  20261117235817) manda todo como parte de la meta del día y sólo agrega
+  dinero con `dash_meta_sala_vista_completa`. Sin ella no viaja ningún monto.
+- Más datos: % de lo esperado ahora en grande, ventas hoy y ticket promedio
+  contra lo normal, línea de la semana pasada en la gráfica, «contra la semana
+  pasada» a esta hora, la hora fuerte que viene, la meta del mes (avance,
+  proyección y días que quedan), parte de la venta del día de cada vendedor
+  con barra, y los 5 productos que más salen hoy.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.9 — Kiosco de caja: Cómo va hoy
 
 - Pedido del usuario: «una gráfica que me diga cómo va la venta, top

@@ -23,7 +23,7 @@ export function relojDelDia(ahoraMs) {
 
 const porHora = (filas) => {
     const m = new Map();
-    for (const f of filas ?? []) m.set(Number(f.hora), Number(f.total) || 0);
+    for (const f of filas ?? []) m.set(Number(f.hora), Number(f.parte ?? f.total) || 0);
     return m;
 };
 
@@ -35,8 +35,9 @@ const porHora = (filas) => {
  * @returns null si no hay con qué comparar; si no, la serie de la gráfica
  *   (acumulados por hora) y los tres números: vendido, esperado ahora, base.
  */
-export function armarDia({ hoy, tipica, metaDia, reloj }) {
+export function armarDia({ hoy, tipica, metaDia, reloj, pasada = null }) {
     const real = porHora(hoy);
+    const sem = pasada ? porHora(pasada) : null;
     const tip = porHora(tipica);
     const totalTipico = [...tip.values()].reduce((a, b) => a + b, 0);
     const vendido = [...real.values()].reduce((a, b) => a + b, 0);
@@ -49,23 +50,26 @@ export function armarDia({ hoy, tipica, metaDia, reloj }) {
     const serie = [];
     let accTip = 0;
     let accReal = 0;
+    let accSem = 0;
     let esperadoAhora = 0;
     for (let h = desde; h <= hasta; h += 1) {
         const t = tip.get(h) ?? 0;
         if (h === reloj.hora) esperadoAhora = base * (accTip + t * Math.min(reloj.minuto, 60) / 60) / totalTipico;
         accTip += t;
         accReal += real.get(h) ?? 0;
+        accSem += sem?.get(h) ?? 0;
         serie.push({
             hora: h,
-            esperado: Math.round(base * accTip / totalTipico * 100) / 100,
+            esperado: Math.round(base * accTip / totalTipico * 100000) / 100000,
             // Lo que todavía no pasó no se dibuja: la línea de hoy termina en la hora actual.
-            real: h <= reloj.hora ? Math.round(accReal * 100) / 100 : null,
+            real: h <= reloj.hora ? Math.round(accReal * 100000) / 100000 : null,
+            ...(sem ? { pasada: Math.round(accSem * 100000) / 100000 } : {}),
         });
     }
     if (reloj.hora < desde) esperadoAhora = 0;
     if (reloj.hora > hasta) esperadoAhora = base;
 
-    return { serie, vendido: Math.round(vendido * 100) / 100, esperadoAhora: Math.round(esperadoAhora * 100) / 100, base, conMeta: Number(metaDia) > 0 };
+    return { serie, vendido, esperadoAhora, base, conMeta: Number(metaDia) > 0 };
 }
 
 /** 'arriba' | 'ritmo' | 'bajo' | null (todavía no hay qué medir). */
@@ -75,6 +79,44 @@ export function ritmoDelDia({ vendido, esperadoAhora }) {
     if (r >= 1.05) return 'arriba';
     if (r >= 0.95) return 'ritmo';
     return 'bajo';
+}
+
+/**
+ * Los datos de apoyo, todos como proporción (sirven igual con o sin montos):
+ * ventas y ticket contra lo normal a esta hora, la semana pasada a esta hora y
+ * la hora fuerte que viene.
+ * @param dia la respuesta de `como_va_la_sala_hoy` (con `parte` por hora)
+ */
+export function datosDeApoyo(dia, reloj) {
+    const hasta = (filas, campo) => (filas ?? []).reduce((acc, f) => {
+        const h = Number(f.hora);
+        if (h < reloj.hora) return acc + (Number(f[campo]) || 0);
+        // Lo de hoy en la hora en curso ya pasó entero; lo de otros días se toma
+        // en proporción a los minutos que van de la hora.
+        if (h === reloj.hora) return acc + (Number(f[campo]) || 0) * (filas === dia.hoy ? 1 : Math.min(reloj.minuto, 60) / 60);
+        return acc;
+    }, 0);
+    const parteHoy = hasta(dia.hoy, 'parte');
+    const ventasHoy = hasta(dia.hoy, 'ventas');
+    const parteTip = hasta(dia.tipica, 'parte');
+    const ventasTip = hasta(dia.tipica, 'ventas');
+    const parteSem = hasta(dia.semana_pasada, 'parte');
+    const vs = (a, b) => (b > 0 ? Math.round((a / b - 1) * 100) : null);
+    const ticketHoy = ventasHoy > 0 ? parteHoy / ventasHoy : null;
+    const ticketTip = ventasTip > 0 ? parteTip / ventasTip : null;
+
+    // La hora fuerte que viene: la de más venta típica entre ahora y el cierre.
+    const futuras = (dia.tipica ?? []).filter((f) => Number(f.hora) > reloj.hora);
+    const fuerte = futuras.reduce((m, f) => (!m || Number(f.parte) > Number(m.parte) ? f : m), null);
+
+    return {
+        ventasHoy: Math.round(ventasHoy),
+        ventasVsNormal: vs(ventasHoy, ventasTip),
+        ticketHoy,
+        ticketVsNormal: ticketHoy != null && ticketTip ? vs(ticketHoy, ticketTip) : null,
+        vsSemanaPasada: vs(parteHoy, parteSem),
+        horaFuerte: fuerte ? Number(fuerte.hora) : null,
+    };
 }
 
 // Ideas para subir la venta: cosas que se hacen en el mostrador, ya.

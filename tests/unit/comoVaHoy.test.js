@@ -41,3 +41,20 @@ describe('relojDelDia', () => {
         expect(relojDelDia(Date.UTC(2026, 10, 17, 20, 15))).toEqual({ hora: 14, minuto: 15 });
     });
 });
+
+import { datosDeApoyo } from '@nucleo/utils/comoVaHoy.js';
+
+describe('datosDeApoyo', () => {
+    const dia = {
+        hoy: [{ hora: 8, parte: 0.1, ventas: 10 }, { hora: 9, parte: 0.05, ventas: 4 }],
+        tipica: [{ hora: 8, parte: 0.1, ventas: 8 }, { hora: 9, parte: 0.1, ventas: 8 }, { hora: 10, parte: 0.3, ventas: 20 }, { hora: 11, parte: 0.2, ventas: 10 }],
+        semana_pasada: [{ hora: 8, parte: 0.05 }, { hora: 9, parte: 0.1 }],
+    };
+    it('compara contra lo normal a esta hora y busca la hora fuerte', () => {
+        const d = datosDeApoyo(dia, { hora: 9, minuto: 30 });
+        expect(d.ventasHoy).toBe(14);
+        expect(d.ventasVsNormal).toBe(17);   // 14 contra 12
+        expect(d.horaFuerte).toBe(10);
+        expect(d.vsSemanaPasada).toBe(50);   // 0.15 contra 0.1
+    });
+});

@@ -1,13 +1,15 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { Lightbulb, Medal, TrendingDown, TrendingUp, Target } from 'lucide-react';
+import {
+    CalendarDays, Flame, Lightbulb, Medal, PackageCheck, PartyPopper, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
+} from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { LoadingState } from '../common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchComoVaLaSalaHoy, fetchMetaSala } from '@nucleo/data/metas';
-import { avanceDeMetaDelDia } from '@nucleo/utils/cajaDelDia';
-import { armarDia, ideaDelMomento, relojDelDia, ritmoDelDia } from '@nucleo/utils/comoVaHoy';
+import { fetchComoVaLaSalaHoy } from '@nucleo/data/metas';
+import { armarDia, datosDeApoyo, ideaDelMomento, relojDelDia, ritmoDelDia } from '@nucleo/utils/comoVaHoy';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 const GraficaDelDia = lazy(() => import('./GraficaDelDia'));
@@ -19,23 +21,28 @@ const TONO = {
     bajo: { icono: TrendingDown, clase: 'text-warning-text', fondo: 'bg-warning/10', titulo: 'Vas bajo de lo esperado' },
 };
 
+const pct = (v) => `${Math.round(v * 100)} %`;
+const conSigno = (n) => (n == null ? '' : `${n > 0 ? '+' : ''}${n} %`);
+const tonoDe = (n) => (n == null ? 'text-content-3' : n >= 0 ? 'text-success-text' : 'text-warning-text');
+
 /**
- * «Cómo va hoy» en el kiosco de caja (pedido del usuario, 2026-11-17): la
- * venta del día contra lo esperado a esta hora, los que más venden y, si va
- * bajo, una idea para subirla. Los montos sólo con
- * `dash_meta_sala_vista_completa`, como el widget del Inicio; sin él, en %.
+ * «Cómo va hoy» en el kiosco de caja (pedido del usuario, 2026-11-17).
+ *
+ * Los montos los decide la base: `como_va_la_sala_hoy` sólo manda dinero a
+ * quien tiene `dash_meta_sala_vista_completa` (jefes y gerencia). A los demás
+ * todo les llega como porcentaje de la meta del día, y así se pinta: el
+ * dependiente ve cómo va sin ver cuánto vende la sucursal.
  */
 export default function ComoVaHoy({ sala, ahora }) {
     const { user, hasPermission } = useAuth();
     const puedeVer = hasPermission('dash_meta_sala');
-    const conMontos = hasPermission('dash_meta_sala_vista_completa');
     const [datos, setDatos] = useState(null);
     const [falla, setFalla] = useState(false);
 
     const leer = useCallback(async () => {
         try {
-            const [meta, dia] = await Promise.all([fetchMetaSala(sala).catch(() => null), fetchComoVaLaSalaHoy(sala)]);
-            setDatos({ sala, meta, dia });
+            const dia = await fetchComoVaLaSalaHoy(sala);
+            setDatos({ sala, dia });
             setFalla(false);
         } catch {
             setFalla(true);
@@ -50,100 +57,193 @@ export default function ComoVaHoy({ sala, ahora }) {
     }, [puedeVer, sala, leer]);
 
     const cuenta = useMemo(() => {
-        if (!datos || datos.sala !== sala) return null;
-        const avance = avanceDeMetaDelDia(datos.meta);
-        const dia = armarDia({ hoy: datos.dia.hoy, tipica: datos.dia.tipica, metaDia: avance?.meta ?? null, reloj: relojDelDia(ahora) });
-        return dia ? { ...dia, ritmo: ritmoDelDia(dia), metaDia: avance?.meta ?? null } : null;
+        if (!datos || datos.sala !== sala || !datos.dia.base_tipo) return null;
+        const reloj = relojDelDia(ahora);
+        const dia = armarDia({ hoy: datos.dia.hoy, tipica: datos.dia.tipica, pasada: datos.dia.semana_pasada,
+            metaDia: datos.dia.base_tipo === 'meta' ? 1 : null, reloj });
+        if (!dia) return null;
+        return { ...dia, ritmo: ritmoDelDia(dia), apoyo: datosDeApoyo(datos.dia, reloj) };
     }, [datos, sala, ahora]);
 
     if (!puedeVer) return <Notice variant="info">Tu cargo no ve cómo va la venta del día.</Notice>;
     if (falla && !datos) return <Notice variant="warning">No se pudo leer la venta de hoy. Intenta de nuevo en un momento.</Notice>;
     if (!datos) return <LoadingState />;
 
-    const vendedores = datos.dia.vendedores ?? [];
+    const { dia } = datos;
+    const montos = Boolean(dia.montos && dia.base);
+    // Una parte de la base del día, dicha como se le puede decir a quien mira.
+    const cifra = (parte) => (montos ? formatMoney(parte * dia.base) : pct(parte));
+    const esMeta = dia.base_tipo === 'meta';
     const tono = cuenta?.ritmo ? TONO[cuenta.ritmo] : null;
-    const pct = (v) => (cuenta?.base ? `${Math.round((v / cuenta.base) * 100)} %` : '');
-    const monto = (v) => (conMontos ? formatMoney(v) : pct(v));
+    const alRitmo = cuenta && cuenta.esperadoAhora > 0 ? Math.round((cuenta.vendido / cuenta.esperadoAhora) * 100) : null;
     const falta = cuenta ? Math.max(0, cuenta.esperadoAhora - cuenta.vendido) : 0;
+    const vendedores = dia.vendedores ?? [];
+    const productos = dia.productos ?? [];
+    const ap = cuenta?.apoyo;
 
     return (
-        <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-            <section data-surface="card" className="p-5 flex flex-col gap-4 min-w-0">
-                {tono ? (
-                    <div className={`flex items-start gap-3 rounded-[var(--radius-card)] p-4 ${tono.fondo}`}>
-                        <tono.icono size={28} className={`${tono.clase} shrink-0`} aria-hidden="true" />
-                        <div className="min-w-0">
-                            <p className={`text-title font-black ${tono.clase}`}>{tono.titulo}</p>
-                            <p className="text-body-sm text-content-2">
-                                {cuenta.ritmo === 'bajo'
-                                    ? (conMontos ? `Faltan ${formatMoney(falta)} para ir al ritmo de esta hora. ¡Todavía se alcanza!` : 'Todavía se alcanza. Cada venta cuenta.')
-                                    : cuenta.ritmo === 'arriba' ? '¡Buen trabajo! Sigan así hasta el cierre.' : 'Mantengan el paso para llegar a la meta.'}
-                            </p>
+        <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+            <div className="flex flex-col gap-4 min-w-0">
+                <section data-surface="card" className="p-5 flex flex-col gap-4">
+                    {tono ? (
+                        <div className={`flex items-center gap-4 rounded-[var(--radius-card)] p-4 ${tono.fondo}`}>
+                            <tono.icono size={32} className={`${tono.clase} shrink-0`} aria-hidden="true" />
+                            <div className="min-w-0 flex-1">
+                                <p className={`text-title-lg font-black ${tono.clase}`}>{tono.titulo}</p>
+                                <p className="text-body-sm text-content-2">
+                                    {cuenta.ritmo === 'bajo'
+                                        ? `Faltan ${cifra(falta)}${esMeta && !montos ? ' de la meta del día' : ''} para ir al ritmo de esta hora. ¡Todavía se alcanza!`
+                                        : cuenta.ritmo === 'arriba' ? '¡Buen trabajo, equipo! Sigan así hasta el cierre.' : 'Mantengan el paso para llegar a la meta.'}
+                                </p>
+                            </div>
+                            {alRitmo != null && (
+                                <div className="text-right shrink-0">
+                                    <p className={`text-display font-black tabular-nums leading-none ${tono.clase}`}>{alRitmo} %</p>
+                                    <p className="text-label text-content-3">de lo esperado ahora</p>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ) : (
-                    <p className="text-body-sm text-content-3">Todavía es temprano para comparar.</p>
-                )}
+                    ) : (
+                        <p className="text-body-sm text-content-3">Todavía es temprano para comparar.</p>
+                    )}
 
-                {cuenta && (
-                    <div className="grid grid-cols-3 gap-3">
-                        <Cifra rotulo="Vendido hoy" valor={monto(cuenta.vendido)} fuerte />
-                        <Cifra rotulo="Esperado a esta hora" valor={monto(cuenta.esperadoAhora)} />
-                        <Cifra rotulo={cuenta.conMeta ? 'Meta del día' : 'Un día normal'} valor={monto(cuenta.base)} />
+                    {cuenta && (
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <Cifra icono={Target} rotulo={esMeta ? 'Avance de la meta del día' : 'Avance de un día normal'}
+                                valor={montos ? formatMoney(cuenta.vendido * dia.base) : pct(cuenta.vendido)}
+                                nota={montos ? `${pct(cuenta.vendido)} de ${formatMoney(dia.base)}` : null} fuerte />
+                            <Cifra icono={TrendingUp} rotulo="Lo esperado a esta hora" valor={cifra(cuenta.esperadoAhora)} />
+                            <Cifra icono={Receipt} rotulo="Ventas hoy" valor={String(ap.ventasHoy)}
+                                nota={ap.ventasVsNormal != null ? `${conSigno(ap.ventasVsNormal)} que lo normal` : null} notaTono={tonoDe(ap.ventasVsNormal)} />
+                            <Cifra icono={ShoppingBag} rotulo="Ticket promedio"
+                                valor={montos && ap.ticketHoy != null ? formatMoney(ap.ticketHoy * dia.base) : conSigno(ap.ticketVsNormal) || '—'}
+                                nota={ap.ticketVsNormal != null ? (montos ? `${conSigno(ap.ticketVsNormal)} que lo normal` : 'que lo normal') : null}
+                                notaTono={tonoDe(ap.ticketVsNormal)} />
+                        </div>
+                    )}
+
+                    {cuenta ? (
+                        <Suspense fallback={<div className="h-[240px]" />}>
+                            <GraficaDelDia serie={cuenta.serie} base={montos ? dia.base : null} />
+                        </Suspense>
+                    ) : (
+                        <Notice variant="info">Aún no hay suficiente historia de esta sucursal para comparar.</Notice>
+                    )}
+                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-label text-content-3">
+                        <Leyenda clase="bg-[var(--chart-1)]">Hoy</Leyenda>
+                        <Leyenda clase="border-t-2 border-dashed border-content-3 h-0">Lo esperado (lo normal de este día{esMeta ? ', llevado a la meta' : ''})</Leyenda>
+                        <Leyenda clase="bg-[var(--chart-3)]">Semana pasada</Leyenda>
+                    </div>
+                </section>
+
+                {ap && (
+                    <div className="grid gap-3 md:grid-cols-3">
+                        <Dato icono={CalendarDays} titulo="Contra la semana pasada"
+                            valor={ap.vsSemanaPasada != null ? conSigno(ap.vsSemanaPasada) : '—'} valorTono={tonoDe(ap.vsSemanaPasada)}
+                            detalle="El mismo día, a esta misma hora." />
+                        <Dato icono={Flame} titulo="La hora fuerte que viene"
+                            valor={ap.horaFuerte != null ? hora12(`${ap.horaFuerte}:00`) : 'Ya pasó'}
+                            detalle={ap.horaFuerte != null ? 'Es cuando más se vende este día. Prepárate.' : 'Lo que queda del día es más tranquilo.'} />
+                        <Dato icono={Target} titulo="La meta del mes"
+                            valor={dia.mes?.pct_cumplimiento != null ? `${Math.round(dia.mes.pct_cumplimiento)} %` : '—'}
+                            detalle={dia.mes ? `Al paso de hoy cierra en ${Math.round(dia.mes.pct_proyectado ?? 0)} %. Quedan ${dia.mes.dias_restantes} días.` : 'Esta sucursal no tiene meta este mes.'} />
                     </div>
                 )}
-
-                {cuenta ? (
-                    <Suspense fallback={<div className="h-[220px]" />}>
-                        <GraficaDelDia serie={cuenta.serie} ocultarMontos={!conMontos} base={cuenta.base} />
-                    </Suspense>
-                ) : (
-                    <Notice variant="info">Aún no hay suficiente historia de esta sucursal para comparar.</Notice>
-                )}
-                <p className="text-label text-content-3">La línea punteada es lo que la sucursal suele llevar a cada hora este mismo día de la semana{cuenta?.conMeta ? ', llevado a la meta del día' : ''}.</p>
 
                 {cuenta?.ritmo === 'bajo' && (
-                    <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-border-card p-4">
-                        <Lightbulb size={22} className="text-warning-text shrink-0" aria-hidden="true" />
+                    <section data-surface="card" className="p-4 flex items-start gap-3">
+                        <Lightbulb size={24} className="text-warning-text shrink-0" aria-hidden="true" />
                         <p className="text-body text-content"><span className="font-bold">Idea para subir la venta: </span>{ideaDelMomento(ahora)}</p>
-                    </div>
+                    </section>
                 )}
-            </section>
+                {cuenta?.ritmo === 'arriba' && (
+                    <section data-surface="card" className="p-4 flex items-start gap-3">
+                        <PartyPopper size={24} className="text-success-text shrink-0" aria-hidden="true" />
+                        <p className="text-body text-content">Hoy van mejor que un día normal.{esMeta ? ' Cada venta de más acerca el bono del mes.' : ' Cada venta de más suma.'}</p>
+                    </section>
+                )}
+            </div>
 
-            <section data-surface="card" className="p-5 flex flex-col gap-3">
-                <h2 className="text-title font-black text-content flex items-center gap-2">
-                    <Medal size={20} className="text-brand-text" aria-hidden="true" /> Los que más venden hoy
-                </h2>
-                {vendedores.length === 0 ? (
-                    <p className="text-body-sm text-content-3">Todavía no hay ventas hoy.</p>
-                ) : (
-                    <ol className="flex flex-col gap-2">
-                        {vendedores.map((v, i) => {
-                            const yo = Number(v.id) === Number(user?.id);
-                            return (
-                                <li key={v.id} className={`flex items-center gap-3 rounded-[var(--radius-btn)] p-2 ${yo ? 'bg-brand/10' : ''}`}>
-                                    <span className={`w-7 text-center text-title font-black ${i === 0 ? 'text-warning-text' : 'text-content-3'}`}>{i + 1}</span>
-                                    <AvatarConEstado emp={{ id: v.id, name: v.name, photo: v.photo_url }} px={40} mostrarChip={false} pendientes={false} />
-                                    <div className="min-w-0 flex-1 leading-tight">
-                                        <p className="text-body font-bold text-content truncate">{shortEmployeeName(v)}{yo ? ' (tú)' : ''}</p>
-                                        <p className="text-label text-content-3">{v.ventas} {v.ventas === 1 ? 'venta' : 'ventas'}</p>
-                                    </div>
-                                    {conMontos && <span className="text-body font-bold tabular-nums text-content">{formatMoney(v.total)}</span>}
+            <div className="flex flex-col gap-4">
+                <section data-surface="card" className="p-5 flex flex-col gap-3">
+                    <h2 className="text-title font-black text-content flex items-center gap-2">
+                        <Medal size={20} className="text-brand-text" aria-hidden="true" /> Los que más venden hoy
+                    </h2>
+                    {vendedores.length === 0 ? (
+                        <p className="text-body-sm text-content-3">Todavía no hay ventas hoy.</p>
+                    ) : (
+                        <ol className="flex flex-col gap-2">
+                            {vendedores.map((v, i) => {
+                                const yo = Number(v.id) === Number(user?.id);
+                                const parte = v.parte_del_dia != null ? Math.round(v.parte_del_dia * 100) : null;
+                                return (
+                                    <li key={v.id} className={`flex items-center gap-3 rounded-[var(--radius-btn)] p-2 ${yo ? 'bg-brand/10' : ''}`}>
+                                        <span className={`w-6 text-center text-title font-black ${i === 0 ? 'text-warning-text' : 'text-content-3'}`}>{i + 1}</span>
+                                        <AvatarConEstado emp={{ id: v.id, name: v.name, photo: v.photo_url }} px={40} mostrarChip={false} pendientes={false} />
+                                        <div className="min-w-0 flex-1 leading-tight">
+                                            <p className="text-body font-bold text-content truncate">{shortEmployeeName(v)}{yo ? ' (tú)' : ''}</p>
+                                            <p className="text-label text-content-3">{v.ventas} {v.ventas === 1 ? 'venta' : 'ventas'}</p>
+                                            {parte != null && (
+                                                <div className="mt-1 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
+                                                    <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, parte)}%` }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            {montos && v.total != null && <p className="text-body font-bold tabular-nums text-content">{formatMoney(v.total)}</p>}
+                                            {parte != null && <p className={montos ? 'text-label text-content-3' : 'text-body font-bold tabular-nums text-content'}>{parte} %</p>}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    )}
+                    {vendedores.length > 0 && <p className="text-label text-content-3">El % es la parte de la venta de hoy que hizo cada quien.</p>}
+                </section>
+
+                <section data-surface="card" className="p-5 flex flex-col gap-3">
+                    <h2 className="text-title font-black text-content flex items-center gap-2">
+                        <PackageCheck size={20} className="text-brand-text" aria-hidden="true" /> Lo que más sale hoy
+                    </h2>
+                    {productos.length === 0 ? (
+                        <p className="text-body-sm text-content-3">Todavía no hay ventas hoy.</p>
+                    ) : (
+                        <ol className="flex flex-col gap-1.5">
+                            {productos.map((p, i) => (
+                                <li key={`${p.nombre}-${i}`} className="flex items-center gap-3">
+                                    <span className="w-6 text-center text-body font-black text-content-3">{i + 1}</span>
+                                    <span className="flex-1 min-w-0 text-body-sm text-content truncate">{p.nombre}</span>
+                                    <span className="text-label text-content-3 shrink-0">{p.ventas} {p.ventas === 1 ? 'venta' : 'ventas'}</span>
                                 </li>
-                            );
-                        })}
-                    </ol>
-                )}
-            </section>
+                            ))}
+                        </ol>
+                    )}
+                </section>
+            </div>
         </div>
     );
 }
 
-function Cifra({ rotulo, valor, fuerte = false }) {
+function Cifra({ icono: Icono, rotulo, valor, nota = null, notaTono = 'text-content-3', fuerte = false }) {
     return (
         <div className="rounded-[var(--radius-btn)] bg-surface-card-hover p-3 min-w-0">
-            <p className="text-label text-content-3">{rotulo}</p>
-            <p className={`tabular-nums truncate ${fuerte ? 'text-title-lg font-black text-content' : 'text-title font-bold text-content-2'}`}>{valor}</p>
+            <p className="text-label text-content-3 flex items-center gap-1.5"><Icono size={14} aria-hidden="true" />{rotulo}</p>
+            <p className={`tabular-nums truncate ${fuerte ? 'text-title-lg font-black text-content' : 'text-title font-bold text-content'}`}>{valor}</p>
+            {nota && <p className={`text-label font-semibold ${notaTono}`}>{nota}</p>}
         </div>
     );
+}
+
+function Dato({ icono: Icono, titulo, valor, valorTono = 'text-content', detalle }) {
+    return (
+        <section data-surface="card" className="p-4 flex flex-col gap-1">
+            <p className="text-label text-content-3 flex items-center gap-1.5"><Icono size={14} aria-hidden="true" />{titulo}</p>
+            <p className={`text-title-lg font-black tabular-nums ${valorTono}`}>{valor}</p>
+            <p className="text-label text-content-3">{detalle}</p>
+        </section>
+    );
+}
+
+function Leyenda({ clase, children }) {
+    return <span className="inline-flex items-center gap-1.5"><span className={`inline-block w-4 h-1 rounded-full ${clase}`} aria-hidden="true" />{children}</span>;
 }

@@ -50,3 +50,12 @@ export const ETAPAS_DE_BOLSA = [
      * ver todas, por ejemplo del 1 al 15 de este mes?»). Sólo lectura. */
     { key: 'todas',       label: 'Todas',               icono: 'List',        estado: null,        soloAdmin: true },
 ];
+
+// Los recortes de la pestaña «Todas», en la píldora de la vista. `''` = todas.
+export const FILTROS_TODAS_BOLSAS = [
+    { value: '',          label: 'Todas' },
+    { value: 'pendiente', label: 'Pendientes' },
+    { value: 'CONTADA',   label: 'Contadas' },
+    { value: 'dif',       label: 'Con diferencia' },
+    { value: 'ANULADA',   label: 'Anuladas' },
+];

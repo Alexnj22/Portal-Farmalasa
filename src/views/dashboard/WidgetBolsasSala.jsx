@@ -14,6 +14,8 @@ import useCerrarBolsa from '@nucleo/hooks/useCerrarBolsa';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { DIAS_DE_ALARMA_BOLSA } from '@nucleo/utils/bolsasTexto';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
@@ -187,15 +189,18 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     // sobre una bolsa que ya no lo tiene— y de traerlo se encarga `imprimir`:
     // acá estaba resuelto y en la pestaña de Cortes no, que es cómo salió una
     // etiqueta con $300 de más. Ver el comentario de `useCerrarBolsa`.
+    const showToast = useToastStore((st) => st.showToast);
     const reimprimir = useCallback(async (bolsa) => {
         setImprimiendo(bolsa.id);
         try {
             await imprimir(bolsa, { cerradaPor: nombrePersona.get(bolsa.cerrada_por) });
+        } catch (err) {
+            showToast?.('No se pudo imprimir', mensajeAmigable(err, 'Vuelve a intentar en un momento.'), 'error');
         } finally {
             setImprimiendo(null);
             cargar();
         }
-    }, [imprimir, nombrePersona, cargar]);
+    }, [imprimir, nombrePersona, cargar, showToast]);
 
     /**
      * Entregar NO imprime nada — ver el mismo comentario en `CircuitoDeBolsas`. El

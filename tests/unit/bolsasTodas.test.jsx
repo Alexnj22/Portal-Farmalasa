@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('@nucleo/data/bolsas', () => ({
   fetchBolsas: vi.fn(async () => ([
@@ -17,11 +18,26 @@ import TodasLasBolsas from '../../src/views/bolsas/TodasLasBolsas';
 describe('TodasLasBolsas', () => {
   it('pinta sin romper, con montos y sin montos', async () => {
     for (const verMontos of [true, false]) {
-      const { unmount } = render(<TodasLasBolsas desde="2026-11-01" hasta="2026-11-15" nombreSala={{ 1: 'Salud 1', 2: 'Salud 2' }} verMontos={verMontos} onAbrir={() => {}} />);
+      const onMetricas = vi.fn();
+      const onOpciones = vi.fn();
+      const { unmount } = render(<MemoryRouter><TodasLasBolsas desde="2026-11-01" hasta="2026-11-15" nombreSala={{ 1: 'Salud 1', 2: 'Salud 2' }} verMontos={verMontos} onAbrir={() => {}} onMetricas={onMetricas} onOpciones={onOpciones} /></MemoryRouter>);
       await waitFor(() => expect(screen.getAllByText(/S1-002/).length).toBeGreaterThan(0));
       expect(screen.getAllByText(/Anulada/).length).toBeGreaterThan(0);
-      if (verMontos) expect(screen.getAllByText(/Faltó/).length).toBeGreaterThan(0);
+      if (verMontos) {
+        expect(screen.getAllByText(/Faltó/).length).toBeGreaterThan(0);
+        await waitFor(() => expect(onMetricas.mock.calls.at(-1)[0].length).toBe(4));
+      }
+      expect(onOpciones.mock.calls.at(-1)[0].map((o) => o.label)).toContain('Anuladas (1)');
       unmount();
     }
+  });
+});
+
+describe('TodasLasBolsas con filtro', () => {
+  it('«Pendientes» deja sólo las que siguen en el circuito', async () => {
+    render(<MemoryRouter><TodasLasBolsas desde="2026-11-01" hasta="2026-11-15" filtro="pendiente" nombreSala={{ 1: 'Salud 1', 2: 'Salud 2' }} verMontos onAbrir={() => {}} /></MemoryRouter>);
+    await waitFor(() => expect(screen.getAllByText(/S1-002/).length).toBeGreaterThan(0));
+    expect(screen.queryByText(/S1-001/)).toBeNull();
+    expect(screen.queryByText(/S2-003/)).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Package, Scale } from 'lucide-react';
+import { ListFilter, Package, Scale } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -148,6 +148,12 @@ const BolsasView = () => {
      * filtros prendidos donde uno no hace nada es peor que uno solo: nadie
      * puede notar cuál ganó. */
     const [conteo, setConteo] = useState('');
+    /* «Todas»: el recorte va en la píldora y sus cifras REEMPLAZAN a las del
+     * circuito en la fila de tarjetas — «¿por qué 2 filas de cards?» (usuario,
+     * 2026-11-17). */
+    const [filtroTodas, setFiltroTodas] = useState('');
+    const [metricasTodas, setMetricasTodas] = useState(VACIO);
+    const [opcionesTodas, setOpcionesTodas] = useState(VACIO);
     const [tandas, setTandas] = useState(VACIO);
     const verSoloSinResolver = () => { setSoloSinResolver((v) => !v); setConteo(''); };
     const verTanda = (v) => { setConteo(v || ''); if (v) setSoloSinResolver(false); };
@@ -182,7 +188,7 @@ const BolsasView = () => {
 
     const limpiar = () => {
         setSala(''); setPeriodo(ULTIMOS_30()); setBusqueda('');
-        setSoloSinResolver(false); setConteo('');
+        setSoloSinResolver(false); setConteo(''); setFiltroTodas('');
     };
 
     /* Ir a una etapa, y opcionalmente con el filtro puesto. Lo usa el aviso de
@@ -210,6 +216,8 @@ const BolsasView = () => {
         cuenta: conteos ? conteos[e.key] : 0,
         tono: conteos?.tonos?.[e.key],
     })), [etapasVisibles, conteos]);
+
+    const tarjetas = etapa === 'todas' ? metricasTodas : metricas;
 
     const filtersContent = (
         <ViewTabBar
@@ -259,14 +267,14 @@ const BolsasView = () => {
                         «Finalizadas»—, así que tocarla lleva a esa pestaña con
                         el filtro puesto. La marca el propio motor con
                         `accionable`, porque es quien sabe si hay alguna. */}
-                    {verCards && metricas.length > 0 ? (
+                    {verCards && tarjetas.length > 0 ? (
                         <CarrilCards className="flex-1" ariaLabel="Resumen del efectivo en bolsas">
-                            {metricas.map((m) => (
+                            {tarjetas.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
                                     label={m.label} value={m.value} sub={m.sub} valueCls={m.valueCls}
-                                    onClick={m.accionable
+                                    onClick={m.onClick || (m.accionable
                                         ? () => setEtapa('diferencias')
-                                        : undefined} />
+                                        : undefined)} />
                             ))}
                         </CarrilCards>
                     ) : <div className="flex-1" />}
@@ -285,7 +293,8 @@ const BolsasView = () => {
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={limpiar}
                             acciones={acciones}
-                            activeCount={[sala, !periodoIntacto, soloSinResolver, conteo].filter(Boolean).length}>
+                            activeCount={[sala, !periodoIntacto, soloSinResolver, conteo,
+                                etapa === 'todas' && filtroTodas].filter(Boolean).length}>
                             {etapa === 'finalizadas' && (
                                 <FilterBar.Chip
                                     active={soloSinResolver}
@@ -298,6 +307,24 @@ const BolsasView = () => {
                             {alcanceTodos && (
                                 <FilterBar.Section active={!!sala} onClear={() => setSala('')} label="sucursal">
                                     <FilterBar.Sucursal value={sala} onChange={setSala} options={salaOptions} />
+                                </FilterBar.Section>
+                            )}
+
+                            {/* El recorte de «Todas» es de ESTADO: va al final del
+                                orden de §17, pero acá antes del tiempo para que
+                                quede junto a la sucursal. */}
+                            {etapa === 'todas' && (
+                                <FilterBar.Section active={!!filtroTodas} onClear={() => setFiltroTodas('')} label="estado">
+                                    <FilterBar.Opciones
+                                        options={opcionesTodas}
+                                        value={filtroTodas}
+                                        onChange={(v) => setFiltroTodas(v || '')}
+                                        label="Estado"
+                                        icon={ListFilter}
+                                        placeholder="Todas"
+                                        umbral={0}
+                                        ancho="220px"
+                                    />
                                 </FilterBar.Section>
                             )}
 
@@ -356,6 +383,10 @@ const BolsasView = () => {
                     onConteos={setConteos}
                     onIrAEtapa={irAEtapa}
                     onAmpliarPeriodo={(desdeMin) => setPeriodo(`${desdeMin}|${hoySV()}`)}
+                    filtroTodas={filtroTodas}
+                    onFiltroTodas={setFiltroTodas}
+                    onMetricasTodas={setMetricasTodas}
+                    onOpcionesTodas={setOpcionesTodas}
                 />
             </div>
         </GlassViewLayout>

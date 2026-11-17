@@ -1,21 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Clock, Download, Package, Scale, ShieldCheck } from 'lucide-react';
+import { Clock, Package, Scale, ShieldCheck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
-import Button from '../../components/common/Button';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
-import StatCard from '../../components/common/StatCard';
-import CarrilCards from '../../components/common/CarrilCards';
-import SegmentedControl from '../../components/common/SegmentedControl';
 import Notice from '../../components/common/Notice';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination from '../../components/common/TablePagination';
+import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
-import { exportCsv } from '@nucleo/utils/csvExport';
 import { diferenciaDeBolsa, saldoDeBolsa, contadoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { fetchBolsas, fetchSaldos, fetchPersonasDeBolsas } from '@nucleo/data/bolsas';
+import { FILTROS_TODAS_BOLSAS } from '@nucleo/constants/bolsas';
 
 /* ── «Todas»: cada bolsa de un rango, en la etapa que esté ───────────────────
  *
@@ -30,7 +28,7 @@ import { fetchBolsas, fetchSaldos, fetchPersonasDeBolsas } from '@nucleo/data/bo
  * anuladas incluidas (una anulada que no aparece es una bolsa que desapareció).
  *
  * Es de lectura: las acciones siguen en su pestaña. Tocar una fila abre el
- * mismo detalle que el resto del módulo. Sólo para alcance de todas las
+ * mismo detalle que el resto del módulo. Sin descarga (lo pidió el usuario). Sólo para alcance de todas las
  * sucursales (`soloAdmin`), que es lo que pidió el usuario. */
 
 const ESTADOS = {
@@ -42,13 +40,6 @@ const ESTADOS = {
 };
 const ORDEN_ESTADO = { ABIERTA: 0, ENTREGADA: 1, RECIBIDA: 2, CONTADA: 3, ANULADA: 4 };
 
-const FILTROS = [
-    { value: '',          label: 'Todas' },
-    { value: 'pendiente', label: 'Pendientes' },
-    { value: 'CONTADA',   label: 'Contadas' },
-    { value: 'dif',       label: 'Con diferencia' },
-    { value: 'ANULADA',   label: 'Anuladas' },
-];
 
 const fechaCorta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
 const sello = (iso) => (iso ? fechaHora12(iso, { day: '2-digit', month: 'short' }) : '');
@@ -61,17 +52,16 @@ function ultimoPaso(b) {
     return { verbo: 'Guardó', id: b.cerrada_por, at: b.cerrada_at };
 }
 
-const PAGINA = 200;
-
+/* El filtro vive en la píldora de la vista (`filtro`/`onFiltro`) y las cifras
+ * suben a la fila de tarjetas de arriba (`onMetricas`): una sola fila, no dos. */
 export default function TodasLasBolsas({
     desde, hasta, sala, busqueda = '', nombreSala = {}, verMontos, onAbrir, version,
+    filtro = '', onFiltro, onMetricas, onOpciones,
 }) {
     const [bolsas, setBolsas] = useState(null);
     const [error, setError] = useState(false);
     const [personas, setPersonas] = useState(() => new Map());
-    const [filtro, setFiltro] = useState('');
     const [orden, setOrden] = useState({ key: 'fecha', dir: 'desc' });
-    const [mostrar, setMostrar] = useState(PAGINA);
 
     // Gana la lectura más nueva: el período y el refresco del módulo pueden
     // cruzarse, y la vieja no puede pisar a la nueva.
@@ -94,7 +84,7 @@ export default function TodasLasBolsas({
         setPersonas(new Map((gente || []).map((p) => [p.id, p])));
     }, [desde, hasta]);
 
-    useEffect(() => { cargar(); setMostrar(PAGINA); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al entrar y al mover el período
+    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al entrar y al mover el período
     const primera = useRef(true);
     useEffect(() => {
         if (primera.current) { primera.current = false; return; }
@@ -150,27 +140,6 @@ export default function TodasLasBolsas({
         };
     }, [delAlcance, conDif]);
 
-    const exportar = () => {
-        const encabezado = ['Fecha', 'Hora', 'Sucursal', 'Folio', 'Caja', 'Estado',
-            ...(verMontos ? ['Guardado', 'En la bolsa', 'Contado', 'Diferencia'] : []),
-            'Causa de la diferencia', 'Guardó', 'Entregó', 'Recibió', 'Contó', 'Contada el'];
-        const filas = visibles.map((b) => {
-            const dif = diferenciaDeBolsa(b);
-            return [
-                b.fecha, b.hora ? hora12(b.hora) : '', nombreSala[b.branch_id] || '', b.folio || '', b.caja || '',
-                ESTADOS[b.estado]?.label || b.estado,
-                ...(verMontos ? [
-                    Number(b.monto_inicial || 0).toFixed(2), saldoDeBolsa(b).toFixed(2),
-                    b.estado === 'CONTADA' && contadoDeBolsa(b) != null ? Number(contadoDeBolsa(b)).toFixed(2) : '',
-                    b.estado === 'CONTADA' && dif != null ? dif.toFixed(2) : '',
-                ] : []),
-                b.dif_causa || '', nombre(b.cerrada_por), nombre(b.entregada_por),
-                nombre(b.recibida_por), nombre(b.contado_por), b.contado_at ? sello(b.contado_at) : '',
-            ];
-        });
-        exportCsv(encabezado, filas, `bolsas_${desde}_a_${hasta}.csv`, 'bolsas');
-    };
-
     const columnas = [
         { key: 'fecha', label: 'Fecha', sortable: true },
         { key: 'sala', label: 'Sucursal', sortable: true },
@@ -184,31 +153,41 @@ export default function TodasLasBolsas({
     ];
 
     const onSort = (key) => setOrden((o) => ({ key, dir: o.key === key && o.dir === 'desc' ? 'asc' : 'desc' }));
-    const cuantasPorFiltro = (v) => {
-        if (!v) return delAlcance.length;
-        if (v === 'pendiente') return delAlcance.filter((b) => ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado)).length;
-        if (v === 'dif') return delAlcance.filter(conDif).length;
-        return delAlcance.filter((b) => b.estado === v).length;
-    };
+
+    // Las opciones de la píldora, con cuántas hay en cada una.
+    const opciones = useMemo(() => {
+        const cuenta = (v) => {
+            if (!v) return delAlcance.length;
+            if (v === 'pendiente') return delAlcance.filter((b) => ['ABIERTA', 'ENTREGADA', 'RECIBIDA'].includes(b.estado)).length;
+            if (v === 'dif') return delAlcance.filter(conDif).length;
+            return delAlcance.filter((b) => b.estado === v).length;
+        };
+        return FILTROS_TODAS_BOLSAS.filter((f) => f.value).map((f) => ({ ...f, label: `${f.label} (${cuenta(f.value)})` }));
+    }, [delAlcance, conDif]);
+    useEffect(() => { onOpciones?.(opciones); }, [opciones, onOpciones]);
+
+    const metricas = useMemo(() => (bolsas && verMontos ? [
+        { clave: 't-bolsas', icon: Package, label: 'Bolsas', value: resumen.cuantas, sub: formatMoney(resumen.monto) },
+        { clave: 't-pend', icon: Clock, label: 'Pendientes', value: resumen.pendientes, sub: formatMoney(resumen.montoPendiente),
+            onClick: resumen.pendientes ? () => onFiltro?.('pendiente') : undefined },
+        { clave: 't-cont', icon: ShieldCheck, label: 'Contadas', value: resumen.contadas, sub: formatMoney(resumen.contado),
+            onClick: resumen.contadas ? () => onFiltro?.('CONTADA') : undefined },
+        { clave: 't-dif', icon: Scale, label: 'Diferencia neta', value: formatMoney(resumen.neto),
+            valueCls: resumen.neto < 0 ? 'text-danger-text' : resumen.neto > 0 ? 'text-warning-text' : 'text-content',
+            sub: `${resumen.conDif} con diferencia`,
+            onClick: resumen.conDif ? () => onFiltro?.('dif') : undefined },
+    ] : []), [bolsas, verMontos, resumen, onFiltro]);
+    useEffect(() => { onMetricas?.(metricas); }, [metricas, onMetricas]);
+    useEffect(() => () => { onMetricas?.([]); onOpciones?.([]); }, [onMetricas, onOpciones]);
+
+    const pag = usePaginaEnUrl({ total: visibles.length, tamPorDefecto: 50 });
+    const { resetPage } = pag;
+    // Cambiar QUÉ lista es devuelve a la primera página.
+    useEffect(() => { resetPage(); }, [filtro, busqueda, sala, desde, hasta]); // eslint-disable-line react-hooks/exhaustive-deps -- sólo al cambiar la lista
+    const tramo = visibles.slice((pag.page - 1) * pag.pageSize, pag.page * pag.pageSize);
 
     return (
         <section className="space-y-4">
-            {verMontos && bolsas && (
-                <CarrilCards ariaLabel="Resumen de las bolsas del período">
-                    <StatCard icon={Package} label="Bolsas" value={resumen.cuantas}
-                        sub={formatMoney(resumen.monto)} />
-                    <StatCard icon={Clock} label="Pendientes" value={resumen.pendientes}
-                        sub={formatMoney(resumen.montoPendiente)}
-                        onClick={resumen.pendientes ? () => setFiltro('pendiente') : undefined} />
-                    <StatCard icon={ShieldCheck} label="Contadas" value={resumen.contadas} sub={formatMoney(resumen.contado)}
-                        onClick={resumen.contadas ? () => setFiltro('CONTADA') : undefined} />
-                    <StatCard icon={Scale} label="Diferencia neta" value={formatMoney(resumen.neto)}
-                        valueCls={resumen.neto < 0 ? 'text-danger-text' : resumen.neto > 0 ? 'text-warning-text' : 'text-content'}
-                        sub={`${resumen.conDif} con diferencia`}
-                        onClick={resumen.conDif ? () => setFiltro('dif') : undefined} />
-                </CarrilCards>
-            )}
-
             {error && (
                 <Notice variant="danger">No se pudieron cargar todas las bolsas. Recarga la página.</Notice>
             )}
@@ -219,27 +198,14 @@ export default function TodasLasBolsas({
                 loading={bolsas === null}
                 minWidth="720px"
                 movil={{ usarAccionDeFila: true }}
-                empty={{ icon: Package, message: 'No hay bolsas en estas fechas' }}
-                toolbar={(
-                    <div className="w-full flex items-center justify-between gap-3 flex-wrap">
-                        <SegmentedControl size="sm" label="Mostrar"
-                            options={FILTROS.map((f) => ({ ...f, label: `${f.label} (${cuantasPorFiltro(f.value)})` }))}
-                            value={filtro} onChange={(v) => { setFiltro(v); setMostrar(PAGINA); }} />
-                        <Button variant="secondary" size="sm" icon={Download}
-                            disabled={!visibles.length} onClick={exportar}>
-                            Descargar
-                        </Button>
-                    </div>
-                )}
-                footer={visibles.length > mostrar ? (
-                    <div className="flex justify-center py-2">
-                        <Button variant="ghost" size="sm" onClick={() => setMostrar((m) => m + PAGINA)}>
-                            Ver más ({visibles.length - mostrar} restantes)
-                        </Button>
-                    </div>
+                empty={{ icon: Package, message: 'Sin bolsas en estas fechas' }}
+                footer={visibles.length > pag.pageSize ? (
+                    <TablePagination page={pag.page} totalPages={pag.totalPages}
+                        onPageChange={pag.setPage} pageSize={pag.pageSize}
+                        onPageSizeChange={pag.setPageSize} total={visibles.length} unit="bolsas" />
                 ) : null}
             >
-                {visibles.slice(0, mostrar).map((b, i) => {
+                {tramo.map((b, i) => {
                     const est = ESTADOS[b.estado] || { label: b.estado, variant: 'neutral' };
                     const dif = b.estado === 'CONTADA' ? diferenciaDeBolsa(b) : null;
                     const paso = ultimoPaso(b);
@@ -252,7 +218,7 @@ export default function TodasLasBolsas({
                             </DataCell>
                             <DataCell>
                                 <span className="text-body-sm text-content">{nombreSala[b.branch_id] || '—'}</span>
-                                {b.caja && <span className="block text-caption text-content-3">Caja {b.caja}</span>}
+                                {b.caja && <span className="block text-caption text-content-3 truncate">{b.caja}</span>}
                             </DataCell>
                             <DataCell><span className="font-mono text-caption text-content-2">{b.folio}</span></DataCell>
                             {verMontos && (

@@ -1170,6 +1170,7 @@ export default function CircuitoDeBolsas({
     desde, hasta, sala, nombreSala, soloSinResolver = false,
     onAcciones, onMetricas, onConteos, onAmpliarPeriodo, onIrAEtapa,
     conteoId = '', onTandas,
+    filtroTodas = '', onFiltroTodas, onMetricasTodas, onOpcionesTodas,
 }) {
     // `user` es para la RUTA de la foto de respaldo en el bucket, nada más: la
     // firma de quién resolvió la pone el servidor con `auth_employee_id()`.
@@ -2372,7 +2373,8 @@ export default function CircuitoDeBolsas({
                 <Suspense fallback={<LoadingState label="Buscando las bolsas" />}>
                     <TodasLasBolsas desde={desde} hasta={hasta} sala={sala} busqueda={busqueda}
                         nombreSala={nombreSala} verMontos={verMontos} onAbrir={setAbierta}
-                        version={leidoEn} />
+                        version={leidoEn} filtro={filtroTodas} onFiltro={onFiltroTodas}
+                        onMetricas={onMetricasTodas} onOpciones={onOpcionesTodas} />
                 </Suspense>
             )}
 
@@ -2412,6 +2414,8 @@ export default function CircuitoDeBolsas({
                                     setOcupado(`imprimir-${b.id}`);
                                     try {
                                         await imprimir(b, { cerradaPor: nombrePersona.get(b.cerrada_por) });
+                                    } catch (err) {
+                                        showToast?.('No se pudo imprimir', mensajeAmigable(err, 'Vuelve a intentar en un momento.'), 'error');
                                     } finally {
                                         setOcupado(null);
                                         cargar({ silencioso: true });

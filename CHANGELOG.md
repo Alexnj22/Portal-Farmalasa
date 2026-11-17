@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1572.2 — Bolsas «Todas»: filtro en la píldora, una fila de tarjetas y paginación
+
+- Pedido del usuario sobre «Todas» (captura del 2026-11-17): «los filtros a un
+  select en el filterpill», «¿por qué 2 filas de cards?», «que no se
+  descargue», «¿paginación?».
+  - El recorte (Pendientes, Contadas, Con diferencia, Anuladas, con su cuenta)
+    pasó de la barra segmentada a la ranura «estado» de la píldora.
+  - Las cifras de «Todas» reemplazan a las del circuito en la misma fila de
+    tarjetas, en vez de sumar una segunda fila.
+  - Sin botón de descarga.
+  - `TablePagination` de 50 en 50 (página en la dirección), y vuelve a la
+    primera al cambiar filtro, sucursal, búsqueda o fechas.
+  - La caja ya no repite «Caja MI CAJA…».
+- Imprimir etiqueta avisa si falla algo inesperado (catch con aviso).
+- Novedades: no — ajuste de la pestaña de la versión anterior.
+
+
 ## v2.1572.1 — Bolsas: «Todas» ya no rompe la pantalla
 
 - Al entrar a la pestaña «Todas» salía «Algo salió mal» (React #130): tres

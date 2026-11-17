@@ -73,10 +73,13 @@ const AjustaElInventario = createContext(false);
 // sacaría unidades vencidas al estante.
 const ofreceCorregirLote = (ajusta, item) => !ajusta || !!item?.es_agregado_manual || !item?.is_vencidos;
 const vaPorLoteReal = (ajusta, item) => ajusta && !item?.es_agregado_manual;
-// Las filas de lote en el renglón: conteo que ajusta, renglón del sistema y
-// fuera del área de vencidos (el alta crea existencia buena).
+// Las filas de lote en el renglón: todo conteo por lote, ajuste o no, fuera
+// del área de vencidos (el alta crea existencia buena). Antes exigía un conteo
+// que ajusta, y en el cíclico de Salud 4 (que no ajusta) no había dónde
+// agregar un segundo lote de Flucodel (2026-11-17). El alta y el guardado son
+// los mismos en los dos casos (`anotarLoteEnLineaConteo`).
 const llevaLotesEnLinea = (ajusta, item, editable, simple, onLoteEnLinea) =>
-    !!onLoteEnLinea && editable && !simple && vaPorLoteReal(ajusta, item) && !item?.is_vencidos;
+    !!onLoteEnLinea && editable && !simple && !item?.is_vencidos;
 const LoteRealDelRenglon = lazy(() => import('./LoteRealDelRenglon'));
 import { formatMoney, formatQty, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';

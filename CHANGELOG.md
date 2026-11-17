@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1572.4 — Conteo: «+ Lote» también en conteos que no ajustan
+
+- En el conteo cíclico de Salud 4 (que no ajusta la existencia) no había dónde
+  agregar un segundo lote de Flucodel: las filas de lote del renglón sólo salían
+  en conteos que ajustan. Ahora salen en todo conteo por lote, fuera del área de
+  vencidos (`llevaLotesEnLinea`, `ConteoDetailView.jsx`).
+
 ## v2.1572.3 — Entorno de pruebas: espera a que terminen las migraciones antes de comparar
 
 - La corrida de las 13:16 SV rehízo el branch (ref nuevo `fuqwenghserpgfhrkqku`)

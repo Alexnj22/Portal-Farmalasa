@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1562.5 — Preventa: ficha del cliente compacta y visual
+
+- **Datos:** lo que tiene en una línea (DUI · teléfono · NIT) y la dirección
+  debajo; lo que falta, nombrado una sola vez con «Completar».
+- **Puntos:** un aro que se llena hasta el mínimo para canjear, con los puntos
+  y su valor; al lado, lo comprado en 12 meses y la última compra.
+- **Suele llevar:** fichas con foto, nombre, cuántas veces y un «+».
+- **Puntos al cobrar:** bloque propio con el descuento, «Usar» y quitar.
+- COMISIONES: la cantidad queda fija en pantalla (antes `disabled` no llegaba al campo).
+
 ## v2.1562.4 — Preventa: aviso si se cobró distinto
 
 - Al cerrarse una preventa con su factura se compara producto por producto lo

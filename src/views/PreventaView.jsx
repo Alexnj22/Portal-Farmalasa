@@ -1341,9 +1341,6 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                             {fila && <span className={malaCantidad ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
                             {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} aquí</span>}
                         </p>
-                        <Lotes lotes={lotes} cantidad={cant} factor={linea.factor} nombre={nombre} elegido={linea.lote}
-                            presentacion={fila?.tipo ?? presentaciones.find((p) => p.value === pres.value)?.label}
-                            onElegir={(lote) => onCambiar({ lote })} />
                     </div>
                 </div>
                 <span className="md:hidden"><Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre}`} onClick={onQuitar} /></span>
@@ -1398,6 +1395,14 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                         <Button size="sm" variant="ghost" icon={X} iconOnly aria-label={`Quitar ${nombre} (Supr)`} onClick={onQuitar} />
                     </div>
                 </div>
+            </div>
+            {/* El lote va en su propia fila, a lo ancho: metido bajo el nombre
+                se partía en tres renglones en la columna angosta (kiosco de
+                Salud 4, 2026-11-17). */}
+            <div className="pl-10 md:pl-11">
+                <Lotes lotes={lotes} cantidad={cant} factor={linea.factor} nombre={nombre} elegido={linea.lote}
+                    presentacion={fila?.tipo ?? presentaciones.find((p) => p.value === pres.value)?.label}
+                    onElegir={(lote) => onCambiar({ lote })} />
             </div>
             {problema && (
                 <div className="mt-1.5 md:pl-11 flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
@@ -1456,10 +1461,10 @@ function Lotes({ lotes, cantidad, factor, presentacion, elegido, nombre, onElegi
             {/* Control de lote: siempre a la vista de qué lote sale y cuánto de cada uno. */}
             <button ref={btnRef} type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-haspopup="dialog"
                 aria-label={`Lotes de ${nombre}: ${(usados.length ? usados : [primero]).map((l) => `${l.lote}, ${cuando(l)}${cuanto(l) ? `, sale ${cuanto(l)}` : ''}`).join('; ')}. Cambiar lote`}
-                className={`mt-1 flex max-w-full flex-wrap items-center gap-1 rounded-xl border p-1 pr-2 min-h-[var(--tap-min)] md:min-h-0 text-left transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand ${elegidoNoAlcanza
+                className={`mt-0.5 inline-flex max-w-full flex-wrap items-center gap-1 rounded-xl border p-1 pr-2 min-h-[var(--tap-min)] md:min-h-0 text-left transition-colors active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand ${elegidoNoAlcanza
                     ? 'border-warning/40 bg-warning/10' : vigente ? 'border-brand/40 bg-brand/10' : 'border-border-card bg-surface-card-hover hover:border-brand/50'}`}>
                 {(usados.length ? usados : [primero]).map((l) => (
-                    <span key={`${l.lote}-${l.vence}`} className="inline-flex items-center gap-1.5 rounded-lg bg-surface-card px-1.5 py-0.5 text-caption">
+                    <span key={`${l.lote}-${l.vence}`} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-surface-card px-1.5 py-0.5 text-caption">
                         <Layers size={12} className="shrink-0 text-content-3" />
                         <span className="text-content-3">Lote</span>
                         <span className="font-black text-content">{l.lote}</span>

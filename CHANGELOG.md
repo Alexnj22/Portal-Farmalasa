@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.3 — Preventa: el lote en su propia fila
+
+- En el kiosco de Salud 4 el control del lote iba metido bajo el nombre del
+  producto y, en esa columna angosta, se partía en tres renglones. Ahora va en
+  su propia fila a lo ancho, en una sola línea por lote.
+
+Novedades: no — ajuste visual.
+
 ## v2.1574.2 — Conteo en la app: «+ Lote» también en conteos que no ajustan
 
 - v2.1572.4 lo arregló sólo en la web. En la app del personal la hoja de lotes

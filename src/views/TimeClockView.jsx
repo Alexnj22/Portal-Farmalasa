@@ -268,60 +268,31 @@ const TimeClockView = ({ setView }) => {
         {enCola ? <ColaDeCaja /> : (
         <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(min-height:801px)_and_(max-height:900px)]:gap-4 [@media(max-height:800px)]:gap-2.5">
 
-          {/* Logo — se retira por completo abajo de 640px de alto: en esas
-              pantallas es lo único prescindible (el reloj y el panel no lo
-              son), y son justo los 60px que hacen que el formulario de
-              permiso entre sin scroll. */}
-          <div className="animate-view-enter flex flex-col items-center gap-2 [@media(max-height:800px)]:gap-1 [@media(max-height:640px)]:hidden">
+          {/* Cabecera y reloj, rediseño del 2026-11-17 (pedido del usuario:
+              «visualmente puede mejorar»). Se lee de pie y a dos metros: el
+              reloj es el protagonista y va sin tarjeta; arriba, de qué
+              sucursal es el equipo, que antes casi no se veía. El logo se
+              retira abajo de 640px de alto, como antes. */}
+          <header className="animate-view-enter flex items-center gap-2.5 [@media(max-height:640px)]:hidden">
             <img
               src="/Logo192.png"
               alt="Farmalasa"
-              className="w-12 h-12 [@media(max-height:800px)]:w-8 [@media(max-height:800px)]:h-8 object-contain opacity-80 drop-shadow-[0_0_24px_rgba(147,197,253,0.35)]"
+              className="w-9 h-9 [@media(max-height:800px)]:w-7 [@media(max-height:800px)]:h-7 object-contain"
               draggable="false"
             />
-            <span className="text-micro font-black uppercase tracking-widest text-white/30">
-              Farmacias La Salud &amp; Popular
+            <span className="text-label font-bold text-white/70 truncate max-w-[320px]">
+              {kioskLabel || 'Farmacias La Salud & Popular'}
             </span>
-          </div>
+          </header>
 
-          {/* Clock card */}
-          <div
-            className="animate-view-enter w-full flex flex-col items-center justify-center relative overflow-hidden
-              bg-gradient-to-b from-blue-950/[0.30] to-white/[0.02]
-              backdrop-blur-[60px] backdrop-saturate-[160%]
-              border border-white/[0.10]
-              rounded-header px-5 py-7 [@media(min-height:801px)_and_(max-height:900px)]:py-5 [@media(max-height:800px)]:py-3 [@media(max-height:640px)]:!py-2
-              shadow-[var(--shadow-glass-5)]
-              transition-all duration-[var(--dur-lento)] hover:border-white/[0.16] hover:translate-y-[var(--lift-card)]
-              hover:shadow-[var(--shadow-glass-5)]"
-            style={{ animationDelay: '60ms' }}
-          >
-            {/* Top highlight */}
-            <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
-            {/* Blue ambient wash */}
-            <div className="absolute inset-0 bg-gradient-to-b from-blue-400/[0.04] via-transparent to-transparent pointer-events-none" />
-
-            {/* Time */}
-            <h2 className="relative text-white/[0.92] font-extralight tabular-nums leading-none w-full text-center whitespace-nowrap
-              text-[3rem] sm:text-[3.5rem] [@media(min-height:801px)_and_(max-height:900px)]:text-[2.6rem] [@media(max-height:800px)]:text-[1.85rem] [@media(max-height:640px)]:!text-[1.5rem] tracking-tight
-              drop-shadow-[0_0_40px_rgba(147,197,253,0.22)]">
+          <div className="animate-view-enter w-full flex flex-col items-center" style={{ animationDelay: '60ms' }}>
+            <h2 className="text-white font-light tabular-nums leading-none w-full text-center whitespace-nowrap tracking-tight
+              text-[4rem] sm:text-[5.5rem] [@media(min-height:801px)_and_(max-height:900px)]:text-[4rem] [@media(max-height:800px)]:text-[2.75rem] [@media(max-height:640px)]:!text-[2rem]">
               {timeStr}
             </h2>
-
-            {/* Date */}
-            <p className="relative text-white/40 text-caption font-black uppercase tracking-widest mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 capitalize">
+            <p className="text-white/55 text-body font-semibold mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 first-letter:uppercase">
               {dateStr}
             </p>
-
-            {/* Device label */}
-            {kioskLabel && (
-              <p className="relative text-white/20 text-micro font-black uppercase tracking-widest mt-2 [@media(max-height:800px)]:mt-1 [@media(max-height:640px)]:hidden w-full text-center truncate px-4">
-                {kioskLabel}
-              </p>
-            )}
-
-            {/* Bottom shimmer line */}
-            <div className="absolute inset-x-10 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-400/12 to-transparent" />
           </div>
 
           {/* Scan / auth panels */}

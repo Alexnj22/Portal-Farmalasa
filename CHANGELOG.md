@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1566.1 — Kiosco: pantalla más clara
+
+- La pantalla del kiosco se rediseñó para leerse de pie: el reloj grande y sin
+  tarjeta, la sucursal y el nombre del equipo arriba, y el lector con un anillo
+  más grande y una sola frase. Se quitaron la tarjeta de vidrio, el título
+  «Asistencia» y «Esperando escaneo». «Autorizar Permiso / Salida» pasa a
+  «Permiso o salida», como botón secundario.
+- Novedades: no — cambio visual del kiosco, mismo uso.
+
 ## v2.1566.0 — Kiosco: vincular con ticket
 
 - **Un equipo se vincula con un ticket.** En Sucursales → Marcadores, quien

@@ -11,25 +11,16 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 // usuario — "no quiero que aparezca un input, nada se ingresa a mano".
 function ScanReadyRing({ specialMode }) {
   const ring = specialMode ? 'border-chart-4/40' : 'border-chart-1/40';
-  const core = specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)]';
+  const core = specialMode ? 'bg-chart-4/15 border-chart-4/50' : 'bg-chart-1/15 border-chart-1/50';
   const iconColor = specialMode ? 'text-chart-4-text' : 'text-chart-1-text';
+  const Icono = specialMode ? ShieldAlert : ScanBarcode;
   return (
-    <div className="w-full flex flex-col items-center gap-3.5 [@media(max-height:800px)]:gap-1.5 py-2 [@media(max-height:800px)]:py-0.5">
-      <div className="relative w-24 h-24 [@media(max-height:800px)]:w-14 [@media(max-height:800px)]:h-14 flex items-center justify-center">
-        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_var(--ease-spring)_infinite]`} />
-        <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_var(--ease-spring)_infinite]`} style={{ animationDelay: '1.1s' }} />
-        <div className={`relative w-16 h-16 [@media(max-height:800px)]:w-10 [@media(max-height:800px)]:h-10 rounded-full border flex items-center justify-center ${core}`}>
-          {specialMode
-            ? <ShieldAlert size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={2} />
-            : <ScanBarcode size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={2} />}
-        </div>
+    <div className="relative w-36 h-36 [@media(max-height:800px)]:w-24 [@media(max-height:800px)]:h-24 flex items-center justify-center">
+      <div className={`absolute inset-0 rounded-full border-2 ${ring} animate-[scanPulse_2.2s_var(--ease-spring)_infinite]`} />
+      <div className={`absolute inset-0 rounded-full border-2 ${ring} animate-[scanPulse_2.2s_var(--ease-spring)_infinite]`} style={{ animationDelay: '1.1s' }} />
+      <div className={`relative w-24 h-24 [@media(max-height:800px)]:w-16 [@media(max-height:800px)]:h-16 rounded-full border-2 flex items-center justify-center ${core}`}>
+        <Icono size={40} className={`${iconColor} [@media(max-height:800px)]:w-7 [@media(max-height:800px)]:h-7`} strokeWidth={1.5} />
       </div>
-      <p className="text-body [@media(max-height:800px)]:text-label font-bold text-white/85 text-center">
-        {specialMode ? 'Acerca tu carné para autorizar' : 'Acerca tu carné al lector'}
-      </p>
-      <p className="text-caption [@media(max-height:800px)]:hidden font-black uppercase tracking-widest text-white/35 text-center">
-        Esperando escaneo
-      </p>
     </div>
   );
 }
@@ -44,27 +35,22 @@ export default function IdleScanPanel({
   return (
     <div className="relative z-content w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-[var(--dur-lento)] pointer-events-auto">
 
-      {/* 🚨 CAJA PRINCIPAL CENTRAL */}
-      <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-header p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[var(--shadow-glass-dark)] transition-all duration-[var(--dur-lento)] hover:scale-[1.01] hover:translate-y-[var(--lift-card)] hover:bg-white/[0.04] hover:shadow-[var(--shadow-glass-5)] hover:border-white/20">
-
-        {/* TOP: Ícono y Títulos */}
-        <div className="flex flex-col items-center text-center w-full mb-2 shrink-0">
-          <h1 className="text-2xl sm:text-4xl [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1 [@media(max-height:800px)]:mb-0.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
+      {/* Sin tarjeta: el anillo y la frase SON la pantalla. El título
+          «Asistencia» sólo repetía lo obvio; en modo permiso sí se dice,
+          porque cambia lo que hace el lector. */}
+      <div className="w-full max-w-[420px] mt-6 [@media(max-height:800px)]:mt-1 flex flex-col items-center text-center gap-5 [@media(max-height:800px)]:gap-3">
+        <ScanReadyRing specialMode={specialMode} />
+        <div className="flex flex-col items-center gap-1">
+          {specialMode && <p className="text-label font-black uppercase tracking-widest text-chart-4-text">Autorización</p>}
+          <p className="text-title-lg [@media(max-height:800px)]:text-title font-bold text-white">
+            {specialMode ? 'Acerca tu carné para autorizar' : 'Acerca tu carné al lector'}
+          </p>
         </div>
-
-        {/* MIDDLE: estado de espera del escáner (nada se teclea a mano) */}
-        <div className="relative z-content w-full flex flex-col justify-center shrink-0">
-          <ScanReadyRing specialMode={specialMode} />
-
-          <div className="mt-5 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center">
-            {specialMode ? (
-              <Button variant="destructive" icon={XCircle} onClick={cancelSpecialModeHandler}>Cancelar Permiso</Button>
-            ) : (
-              <Button tone="chart-4" icon={ShieldAlert} onClick={specialOutHandler}>Autorizar Permiso / Salida</Button>
-            )}
-          </div>
-        </div>
-
+        {specialMode ? (
+          <Button variant="destructive" icon={XCircle} onClick={cancelSpecialModeHandler}>Cancelar permiso</Button>
+        ) : (
+          <Button variant="secondary" icon={ShieldAlert} onClick={specialOutHandler}>Permiso o salida</Button>
+        )}
       </div>
 
       {/* Lunch alerts banner */}

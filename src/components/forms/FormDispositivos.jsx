@@ -3,7 +3,13 @@ import Notice from '../common/Notice';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { SkeletonText, EmptyState } from '../common/StateViews';
-import { Laptop, AlertCircle, Unplug, PowerOff, Activity, Receipt } from 'lucide-react';
+import { Laptop, AlertCircle, Unplug, PowerOff, Activity, Receipt, Printer, CheckCircle2 } from 'lucide-react';
+import SegmentedControl from '../common/SegmentedControl';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { emitirTicketDeVinculacion } from '@nucleo/data/kioskAuth';
+import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { hora12 } from '@nucleo/utils/hora';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { kioscosActivos, cupoDeKioscos, tipoDeKiosco, rotuloDeKiosco, TIPOS_DE_KIOSCO } from '@nucleo/utils/kioscos';
@@ -16,6 +22,15 @@ const FormDispositivos = ({ formData }) => {
     // ESTADO PARA CONFIRMACIÓN EN LÍNEA
     const [confirmingId, setConfirmingId] = useState(null);
     const [isRevoking, setIsRevoking] = useState(false);
+
+    // Vincular con ticket (2026-11-17): sólo quien tiene `kiosco_vincular`
+    // (hoy, Supervisor/a de Ventas) lo manda a la ticketera de la sucursal.
+    const { user, hasPermission } = useAuth();
+    const puedeVincular = hasPermission('kiosco_vincular');
+    const [tipoTicket, setTipoTicket] = useState(TIPOS_DE_KIOSCO.CAJA);
+    const [enviando, setEnviando] = useState(false);
+    const [enviado, setEnviado] = useState(null);
+    const appendAuditLog = useStaff(state => state.appendAuditLog);
 
     const getBranchKiosks = useStaff(state => state.getBranchKiosks);
     const revokeKioskDevice = useStaff(state => state.revokeKioskDevice);
@@ -62,6 +77,29 @@ const FormDispositivos = ({ formData }) => {
         }
     };
 
+    const imprimirTicket = async () => {
+        setEnviando(true);
+        setEnviado(null);
+        setErrorMsg('');
+        try {
+            const t = await emitirTicketDeVinculacion(formData.id, tipoTicket);
+            if (!t.ok) { setErrorMsg(t.motivo); return; }
+            const { construirTicketDeVinculacion } = await import('@nucleo/utils/ticketDeVinculacion');
+            const sala = formData.name || '';
+            const r = await imprimirDocumento(construirTicketDeVinculacion({
+                codigo: t.codigo, tipo: t.tipo, sala, nombre: t.device_name, venceAt: t.vence_at,
+                emitidoPor: user ? shortEmployeeName(user) : '',
+            }), { sala: formData.id, soloCola: true, tituloDeCola: `VINCULAR ${sala}` });
+            appendAuditLog?.('KIOSCO_TICKET_EMITIDO', formData.id, { tipo: t.tipo, vence_at: t.vence_at, impreso: !!r?.ok });
+            if (!r?.ok) { setErrorMsg(r?.detalle || `La ticketera de ${sala || 'la sucursal'} no recibió el ticket.`); return; }
+            setEnviado({ tipo: t.tipo, vence: t.vence_at });
+        } catch {
+            setErrorMsg('No se pudo enviar el ticket. Intenta de nuevo.');
+        } finally {
+            setEnviando(false);
+        }
+    };
+
     return (
         <div className="w-full flex flex-col space-y-5 animate-in fade-in duration-[var(--dur-slow)]">
 
@@ -85,6 +123,34 @@ const FormDispositivos = ({ formData }) => {
                     </Badge>
                 </div>
             </div>
+
+            {puedeVincular && (
+                <section data-surface="card" aria-label="Vincular un equipo" className="p-4 flex flex-col gap-3">
+                    <div>
+                        <p className="text-body font-black text-content">Vincular un equipo</p>
+                        <p className="text-label text-content-3">Sale un ticket en la caja de la sucursal. Se escanea en el equipo, sin iniciar sesión. Sirve una vez y vence en 15 minutos.</p>
+                    </div>
+                    <SegmentedControl
+                        label="Será"
+                        layout="block"
+                        options={[
+                            { value: TIPOS_DE_KIOSCO.CAJA, label: 'Kiosco de caja', disabled: cupoCaja.lleno },
+                            { value: TIPOS_DE_KIOSCO.MARCACION, label: 'Marcador', disabled: cupoMarcadores.lleno },
+                        ]}
+                        value={tipoTicket}
+                        onChange={(v) => { setTipoTicket(v); setEnviado(null); }}
+                        disabled={enviando}
+                    />
+                    <Button icon={Printer} loading={enviando} disabled={enviando || (tipoTicket === TIPOS_DE_KIOSCO.CAJA ? cupoCaja.lleno : cupoMarcadores.lleno)} onClick={imprimirTicket}>
+                        Imprimir ticket en la sucursal
+                    </Button>
+                    {enviado && (
+                        <Notice variant="success" icon={CheckCircle2}>
+                            Ticket enviado. Escanéalo antes de las {hora12(enviado.vence)}.
+                        </Notice>
+                    )}
+                </section>
+            )}
 
             {/* CONTENEDOR DE LISTA ÚNICA */}
             <div className="relative min-h-[150px]">
@@ -136,7 +202,7 @@ const FormDispositivos = ({ formData }) => {
                             })
                         ) : (
                             <EmptyState compact icon={Laptop} title="Sin equipos vinculados"
-                                subtitle="Inicia sesión en la tablet de la sucursal para vincularla." />
+                                subtitle={puedeVincular ? 'Imprime un ticket y escanéalo en el equipo.' : 'Pide al supervisor el ticket para vincular el equipo.'} />
                         )}
                     </div>
                 )}

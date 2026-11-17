@@ -18516,6 +18516,77 @@ export type Database = {
         }
         Relationships: []
       }
+      kiosco_tickets_vinculacion: {
+        Row: {
+          branch_id: number
+          codigo_hash: string
+          created_at: string
+          device_id: string | null
+          device_name: string
+          emitido_por: string | null
+          id: string
+          reemplazo_device_id: string | null
+          tipo: string
+          usado_at: string | null
+          vence_at: string
+        }
+        Insert: {
+          branch_id: number
+          codigo_hash: string
+          created_at?: string
+          device_id?: string | null
+          device_name: string
+          emitido_por?: string | null
+          id?: string
+          reemplazo_device_id?: string | null
+          tipo: string
+          usado_at?: string | null
+          vence_at?: string
+        }
+        Update: {
+          branch_id?: number
+          codigo_hash?: string
+          created_at?: string
+          device_id?: string | null
+          device_name?: string
+          emitido_por?: string | null
+          id?: string
+          reemplazo_device_id?: string | null
+          tipo?: string
+          usado_at?: string | null
+          vence_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kiosco_tickets_vinculacion_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosco_tickets_vinculacion_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "kiosk_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosco_tickets_vinculacion_emitido_por_fkey"
+            columns: ["emitido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kiosco_tickets_vinculacion_emitido_por_fkey"
+            columns: ["emitido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kiosk_credentials: {
         Row: {
           created_at: string
@@ -37891,6 +37962,18 @@ export type Database = {
       kiosco_sucursal: {
         Args: { p_device_id: string; p_device_token: string }
         Returns: number
+      }
+      kiosco_ticket_emitir: {
+        Args: { p_branch_id: number; p_nombre?: string; p_tipo: string }
+        Returns: Json
+      }
+      kiosco_vincular_con_ticket: {
+        Args: {
+          p_codigo: string
+          p_device_id?: string
+          p_device_token?: string
+        }
+        Returns: Json
       }
       kiosk_auth_code_for: {
         Args: { p_branch_id: number; p_bucket: string; p_su: boolean }

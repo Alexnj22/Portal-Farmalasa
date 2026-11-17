@@ -31,7 +31,9 @@ import {
     kioscoIdentificar,
     kioscoMarcajesRecientes,
     kioscoMarcar,
+    kioscoVincularConTicket,
 } from '../data/kiosco';
+import { esTicketDeVinculacion } from '../utils/kioscos';
 import useKioskDevice from './useKioskDevice';
 import { useAuth } from '../context/AuthContext';
 import { escucharConexion, soltarConexion } from '@plataforma/conexion';
@@ -682,6 +684,36 @@ const submitEarlyExit = useCallback((e) => {
             return;
         }
 
+        // Ticket de vinculación (lo manda el supervisor a la ticketera): el
+        // equipo queda vinculado sin sesión. Si ya era un kiosco, la base lo
+        // reemplaza con la credencial de este equipo.
+        if (esTicketDeVinculacion(codeToFind)) {
+            keystrokesRef.current = [];
+            setScanCode('');
+            setIsProcessing(true);
+            const r = await kioscoVincularConTicket(codeToFind);
+            setIsProcessing(false);
+            if (!r.ok) {
+                const texto = {
+                    USADO: 'Ese ticket ya se usó. Pide otro al supervisor.',
+                    VENCIDO: 'Ese ticket venció. Pide otro al supervisor.',
+                    INVALIDO: 'Ese ticket no es válido.',
+                    LLENO: r.detalle || 'La sucursal ya tiene todos sus equipos.',
+                }[r.motivo] || (r.networkError ? 'Sin conexión. Intenta de nuevo.' : 'No se pudo vincular el equipo.');
+                setFeedback({ status: 'error', message: 'NO SE VINCULÓ', subtext: texto, color: 'red', iconKey: 'shield' });
+                scheduleFeedbackClose(5000);
+                return;
+            }
+            const e = r.equipo;
+            kiosk.saveConfig({
+                branchId: e.branch_id, branchName: e.branch_name, deviceId: e.device_id,
+                deviceToken: e.device_token, deviceName: e.device_name, tipo: e.tipo,
+            });
+            showToast(e.tipo === 'caja' ? 'Kiosco de caja activo' : 'Marcador activo', `${e.device_name} · ${e.branch_name}`, 'success');
+            setTimeout(() => recargar(), 1500);
+            return;
+        }
+
         const hourlyPin = getHourlyCode();
         const masterKey = `${hourlyPin}geofls`.toUpperCase();
 
@@ -1183,6 +1215,7 @@ const submitEarlyExit = useCallback((e) => {
             scheduleFeedbackClose(4000);
         }
     }, [
+        showToast,
         anotarEnBitacora,
         authPrompt,
         isAuthenticated,

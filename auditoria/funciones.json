@@ -4194,6 +4194,14 @@
    "area": "acceso",
    "por": "tablas"
   },
+  "kiosco_ticket_emitir": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "kiosco_vincular_con_ticket": {
+   "area": "acceso",
+   "por": "código"
+  },
   "kiosk_auth_code_for": {
    "area": "plataforma",
    "por": "llamada"

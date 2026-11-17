@@ -53,6 +53,13 @@
       "motivo": "La marcación misma. Verificado a mano el 2026-08-23: abre resolviendo la sala por device_id + device_token."
     },
     {
+      "nombre": "kiosco_vincular_con_ticket",
+      "area": "acceso",
+      "guarda": "codigo-de-un-solo-uso",
+      "estado": "nueva-2026-11-17",
+      "motivo": "El equipo de la sucursal se vincula escaneando el ticket que imprimió el supervisor (permiso kiosco_vincular). Código de 10 caracteres aleatorios guardado como hash, un uso, vence a los 15 min; el tope por tipo lo pone kiosk_devices_tope. Reemplazar el equipo anterior exige SU device_token."
+    },
+    {
       "nombre": "kiosco_caja_cola",
       "area": "acceso",
       "guarda": "device_token",

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1566.0 — Kiosco: vincular con ticket
+
+- **Un equipo se vincula con un ticket.** En Sucursales → Marcadores, quien
+  tiene el permiso nuevo **Vincular equipos con ticket** (hoy sólo
+  Supervisor/a de Ventas) elige Kiosco de caja o Marcador y toca **Imprimir
+  ticket en la sucursal**: sale en la caja de esa sucursal. En el equipo se abre
+  `/kiosk` sin iniciar sesión y se escanea; queda vinculado de una vez.
+- El ticket sirve una vez y vence a los 15 minutos; la base guarda sólo su
+  hash, quién lo emitió y qué equipo nació (`kiosco_tickets_vinculacion`,
+  retención 90 días). Si el equipo ya era un kiosco, lo reemplaza: el viejo se
+  desconecta en la misma operación, probado con su propia credencial.
+- Se quita el botón «Configurar equipo» de la versión anterior: con el ticket
+  la computadora de la sucursal no necesita la sesión de nadie.
+- Arreglo: el tipo del equipo (caja o marcador) se perdía en la siguiente
+  verificación y el kiosco de caja volvía a ser marcador (`useKioskDevice`).
+- Novedades: no — el gate dice que no hace falta preguntar; lo usa sólo el supervisor en el piloto.
+
 ## v2.1565.3 — Kiosco: botón para configurar el equipo
 
 - Con sesión abierta, el kiosco muestra **Configurar equipo** arriba a la

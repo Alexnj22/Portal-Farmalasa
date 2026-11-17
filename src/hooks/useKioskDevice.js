@@ -26,6 +26,9 @@ const readLocalConfigSafe = () => {
       deviceId: parsed.deviceId ? String(parsed.deviceId) : null,
       deviceToken: parsed.deviceToken ? String(parsed.deviceToken) : null,
       deviceName: parsed.deviceName || parsed.device_name || null,
+      // El tipo (marcador o caja) viaja con la config: sin esto, la próxima
+      // verificación lo borraba y el kiosco de caja volvía a ser marcador.
+      tipo: parsed.tipo === 'caja' ? 'caja' : 'marcacion',
       lastVerifiedAt: parsed.lastVerifiedAt || null,
     };
   } catch {
@@ -154,6 +157,7 @@ export default function useKioskDevice() {
       deviceId: config.deviceId ? String(config.deviceId) : null,
       deviceToken: config.deviceToken ? String(config.deviceToken) : null,
       deviceName: config.deviceName || config.device_name || null,
+      tipo: config.tipo === 'caja' ? 'caja' : 'marcacion',
     };
     writeLocalConfig(normalized);
     return true;

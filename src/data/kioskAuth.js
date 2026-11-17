@@ -83,3 +83,17 @@ export async function fetchKioskAuthCode(branchId = null) {
 export async function setKioskPin(employeeId, pin) {
     return supabase.rpc('set_kiosk_pin', { p_employee_id: employeeId, p_pin: pin });
 }
+
+// El supervisor emite el ticket que vincula un kiosco. El permiso
+// (`kiosco_vincular`) lo decide la base; el código vuelve UNA vez y va directo
+// a la ticketera.
+export async function emitirTicketDeVinculacion(branchId, tipo, nombre = null) {
+    const { data, error } = await supabase.rpc('kiosco_ticket_emitir', {
+        p_branch_id: Number(branchId), p_tipo: tipo, p_nombre: nombre,
+    });
+    if (error) {
+        const sinPermiso = String(error.message || '').includes('SIN_PERMISO');
+        return { ok: false, motivo: sinPermiso ? 'No tienes permiso para vincular equipos.' : 'No se pudo emitir el ticket. Intenta de nuevo.' };
+    }
+    return { ok: true, ...data };
+}

@@ -637,6 +637,10 @@ const GRUPOS_CRUDOS = [
             // hace falta —alcanza con poder editar el listado de personal—,
             // justamente para que el trámite del ingreso no se trabe.
             { key: 'carne_temporal', label: 'Carné del día',        desc: 'Imprimir en la ticketera un carné de papel que sirve hasta medianoche: abre el portal, sirve en el marcador y firma igual que el carné de plástico', icono: 'Printer', hasApprove: false },
+            // Vincular un kiosco con un ticket (2026-11-17): el supervisor lo
+            // manda a la ticketera de la sucursal y el equipo lo escanea sin
+            // sesión. Lo decide `kiosco_ticket_emitir` en la base.
+            { key: 'kiosco_vincular', label: 'Vincular equipos con ticket', desc: 'Imprimir en la caja de una sucursal el ticket que vincula un marcador o el kiosco de caja. Sirve una vez y vence en 15 minutos', icono: 'Printer', hasApprove: false },
             { key: 'su_pin',       label: 'Código SU (Supervisores)', desc: 'Ver el código SU de 6 dígitos para autorizar marcaciones de jefes y subjefes', icono: 'ShieldAlert', hasApprove: false },
             { key: 'permissions',  label: 'Permisos de acceso',     desc: 'Control de acceso por rol a módulos del sistema',           icono: 'Lock',          hasApprove: false },
             // Faltaba en este registro y por eso NO se podía otorgar desde

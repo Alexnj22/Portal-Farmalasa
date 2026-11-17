@@ -39,3 +39,11 @@ export function cupoDeKioscos(lista, tipo = TIPOS_DE_KIOSCO.MARCACION) {
 
 /** Las salas donde se marca: farmacias y bodega. Las demás no llevan kiosco. */
 export const sucursalLlevaKiosco = (tipo) => tipo === 'FARMACIA' || tipo === 'BODEGA';
+
+/**
+ * ¿Lo que pasó por el lector es un ticket de vinculación? `KV` + 10 caracteres
+ * de un alfabeto sin parecidos; lo genera `kiosco_ticket_emitir`. Vive acá y no
+ * junto al ticket para que el kiosco no cargue la ticketera para reconocerlo.
+ */
+export const esTicketDeVinculacion = (codigo) =>
+    /^KV[2-9A-HJ-NP-Z]{10}$/.test(String(codigo ?? '').replace(/\s+/g, '').toUpperCase());

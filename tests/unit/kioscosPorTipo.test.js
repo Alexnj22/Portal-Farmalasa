@@ -26,3 +26,23 @@ describe('kioscos por tipo', () => {
         expect(cupoDeKioscos(lista)).toMatchObject({ activos: 2, limite: 3, lleno: false, rotulo: '2 / 3' });
     });
 });
+
+import { esTicketDeVinculacion } from '@nucleo/utils/kioscos';
+import { construirTicketDeVinculacion } from '@nucleo/utils/ticketDeVinculacion';
+
+describe('ticket de vinculación', () => {
+    it('reconoce el código que genera la base, con o sin minúsculas', () => {
+        expect(esTicketDeVinculacion('KV7MP4XNQ2RH')).toBe(true);
+        expect(esTicketDeVinculacion('kv7mp4xnq2rh')).toBe(true);
+    });
+    it('no confunde un carné ni la llave por hora', () => {
+        expect(esTicketDeVinculacion('12345')).toBe(false);
+        expect(esTicketDeVinculacion('2785GEOFLS')).toBe(false);
+        expect(esTicketDeVinculacion('KV7MP4XNQ2R0')).toBe(false); // 0 no está en el alfabeto
+    });
+    it('el papel lleva el código en barras y dice qué equipo será', () => {
+        const t = construirTicketDeVinculacion({ codigo: 'KV7MP4XNQ2RH', tipo: 'caja', sala: 'Salud 4', venceAt: '2026-11-17T17:00:00Z' });
+        expect(t.codigos[0]).toMatchObject({ valor: 'KV7MP4XNQ2RH', simbologia: 'CODE128' });
+        expect(t.encabezado.lineas).toEqual(['Kiosco de caja', 'Salud 4']);
+    });
+});

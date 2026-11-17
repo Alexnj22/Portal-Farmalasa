@@ -203,3 +203,26 @@ export async function kioscoCajaCola() {
     }
     return { ok: true, cola: Array.isArray(data) ? data : [], motivo: null, networkError: false };
 }
+
+// Vincula ESTE equipo con un ticket impreso, sin sesión. Si el equipo ya era
+// un kiosco, manda su credencial para que la base lo reemplace (revoca el
+// viejo en la misma transacción).
+//
+// → { ok, equipo, motivo: 'USADO'|'VENCIDO'|'INVALIDO'|'LLENO'|'ERROR', networkError }
+export async function kioscoVincularConTicket(codigo) {
+    const cred = credenciales();
+    const { data, error } = await supabase.rpc('kiosco_vincular_con_ticket', {
+        p_codigo: String(codigo ?? '').replace(/\s+/g, '').toUpperCase(),
+        p_device_id: cred?.deviceId ?? null,
+        p_device_token: cred?.deviceToken ?? null,
+    });
+    if (error) {
+        const msg = String(error.message || '');
+        const motivo = msg.includes('TICKET_USADO') ? 'USADO'
+            : msg.includes('TICKET_VENCIDO') ? 'VENCIDO'
+            : msg.includes('TICKET_INVALIDO') ? 'INVALIDO'
+            : msg.includes('Límite alcanzado') ? 'LLENO' : 'ERROR';
+        return { ok: false, equipo: null, motivo, detalle: motivo === 'LLENO' ? msg : null, networkError: !esRechazoDelServidor(error) };
+    }
+    return { ok: true, equipo: data, motivo: null, networkError: false };
+}

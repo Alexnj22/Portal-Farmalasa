@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1576.1 — Caja: el comparador del ensayo lee bien el código del producto
+
+La primera comparación real del ensayo del cobro (preventa 415606, Salud 1,
+$17.15) salió «no cuadra» con la lista del ensayo vacía. El ensayo estaba bien
+(los 4 productos y el total eran idénticos a la factura): la caja manda el
+código del producto con saltos de línea alrededor y `btrim` sólo quitaba
+espacios. `cobro_caja_ensayo_comparar` quita todo espacio en blanco y se
+volvió a comparar: cuadra. Migración 20261118170150.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1576.0 — Encargo con adelanto o sin anticipo, a cargo de quien lo cobra
 
 Pedido del usuario (2026-11-18), con E-000025 (3 × INVANZ, $210) y un cliente

@@ -14,7 +14,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useKioscoDeCaja from './useKioscoDeCaja';
-import { esperaTexto, minutosDesde, queToca, tonoDeEspera, useColaDeCaja, useEstadoDeCaja } from './datosDeLaCola';
+import { esperaTexto, minutosDesde, queToca, tonoDeEspera, useColaDeCaja, useColaHechaEnLaCaja, useEstadoDeCaja } from './datosDeLaCola';
 import { TRAMITES, tramitesDe } from './tramites';
 import { guardarDestino, tomarDestino } from './sesionDeCaja';
 import { Anillo, Etiquetas, Pide } from './piezasDelKiosco';
@@ -56,7 +56,7 @@ function Persona({ persona, px = 20, rotulo, className = '' }) {
 }
 
 /** La columna de la cola: compacta, la más vieja arriba. Cada fila se toca. */
-function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir }) {
+function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir, enLaCaja = [] }) {
     return (
         <aside aria-label="Preventas en caja" data-surface="page-header"
             className="md:sticky md:top-0 md:h-[100dvh] md:w-[232px] xl:w-[264px] 2xl:w-[300px] shrink-0 md:border-r border-b md:border-b-0 border-border-card flex flex-col">
@@ -104,6 +104,27 @@ function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir
                             })}
                         </ol>
                     )}
+                {/* Las hechas en la caja: se ven para saber que esperan, y se
+                    cobran en la caja (el kiosco todavía no las cobra). */}
+                {enLaCaja.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border-card flex flex-col gap-1.5">
+                        <p className="px-2 text-label font-bold text-content-3 uppercase tracking-widest">Hechas en la caja · {enLaCaja.length}</p>
+                        <ol className="flex flex-col gap-1">
+                            {enLaCaja.map((p) => (
+                                <li key={p.id} className="rounded-[var(--radius-card-anidada)] p-2.5 flex gap-2.5 items-center">
+                                    <span className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-body font-bold tabular-nums bg-surface-input text-content">{p.referencia || '—'}</span>
+                                    <span className="min-w-0 flex-1 flex flex-col">
+                                        <span className="flex items-baseline justify-between gap-2">
+                                            <span className="text-body-sm font-semibold text-content truncate">{p.cliente || 'Cliente frecuente'}</span>
+                                            <span className="shrink-0 text-body-sm font-bold tabular-nums text-content">{Number.isFinite(Number(p.total)) ? formatMoney(Number(p.total)) : ''}</span>
+                                        </span>
+                                        <span className="text-label text-content-3">Cóbrala en la caja.</span>
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                )}
             </div>
         </aside>
     );
@@ -205,6 +226,7 @@ export default function CajaDelKiosco({
         entrando, aviso, restante, vista, setVista, terminar, conClave, setConClave, entrarConClave,
     } = useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMarcadorActivo, enPortal });
     const datosCola = useColaDeCaja({ sala: enPortal ? sala : null });
+    const hechasEnLaCaja = useColaHechaEnLaCaja({ sala: enPortal ? sala : null });
     const { estado: estadoCaja, leer: leerEstado } = useEstadoDeCaja({ sala: enPortal ? sala : null });
     const sugerencias = queToca({ estado: estadoCaja, cola: datosCola.cola, ahora });
     // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
@@ -337,7 +359,7 @@ export default function CajaDelKiosco({
                         onCerrar={() => { setTramite(null); if (rapido) { setRapido(false); terminar(); } }} />
                 </Suspense>
             )}
-            <ColumnaDeCola {...datosCola} elegida={detalle ? elegida : null} onElegir={elegirTicket} />
+            <ColumnaDeCola {...datosCola} enLaCaja={hechasEnLaCaja} elegida={detalle ? elegida : null} onElegir={elegirTicket} />
 
             <div className="flex-1 min-w-0 flex flex-col">
                 <header className="h-[var(--barra-kiosco)] shrink-0 px-6 flex items-center justify-between gap-4 border-b border-border-card">

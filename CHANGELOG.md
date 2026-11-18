@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.7 — Kiosco: las preventas hechas en la caja salen en la cola
+
+Pedido del usuario (2026-11-18). La columna «En caja» del kiosco muestra
+también, aparte, las preventas armadas directamente en la caja que el portal no
+conoce: número, cliente y total, con «Cóbrala en la caja» (el kiosco todavía no
+las cobra).
+
+- `preventa-caja` gana la acción `cola`: sólo LEE la lista de preventas de la
+  caja (`get_referencias`) y quita las que ya están en `preventas`. La llama el
+  equipo de kiosco con su id y su ficha (la sucursal sale de `kiosco_sucursal`,
+  nunca del navegador) o una sesión con `caja_vales` en su sala.
+- Se relee cada minuto (cada lectura son tres peticiones a la caja), no cada
+  10 s como la cola principal.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1575.6 — Kiosco: aviso con sonido, atajos de trámites y agregar desde Cómo va
 
 Pedidos del usuario tras la auditoría del kiosco (2026-11-18):

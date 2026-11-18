@@ -2,7 +2,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { getCortesCreds } from "../_shared/creditos.ts";
 import {
-  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, prepararCobroEnLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
+  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, listaDeLaCaja, prepararCobroEnLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
 } from "../_shared/preventaCaja.ts";
 import { armarVenta } from "../../../src/utils/preventa.js";
 import { login as entrarAlSistema } from "../_shared/erp-dte.ts";
@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
     const accion = String(body.accion ?? "enviar");
     if (accion === "directa" || accion === "anular") return await directa(req, accion, body, responder);
     if (accion === "cobrar") return await cobrar(req, body, responder);
+    if (accion === "cola") return await colaDeLaCaja(req, body, responder);
     if (accion !== "enviar") return responder({ ok: false, error: "Acción desconocida." }, 400);
 
     const ids = (Array.isArray(body.reservas) ? body.reservas : [body.reserva])
@@ -396,6 +397,61 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
     const http = await sesionDeCaja(username, password, Number(mapa.erp_sucursal_id));
     const plan = await prepararCobroEnLaCaja(http, String(pv.externo_id), { total: pv.total == null ? null : Number(pv.total), efectivo });
     return responder({ ok: true, ensayo: true, ...plan });
+  } catch (e) {
+    return responder({ ok: false, error: (e as Error).message }, 502);
+  }
+}
+
+// ── Las preventas hechas EN la caja (usuario, 2026-11-18: «que también salgan
+// en la cola») ─────────────────────────────────────────────────────────────
+// Sólo LEE la lista de preventas de la caja (`get_referencias`); no cambia
+// nada. Devuelve las que el portal no conoce: las mandadas desde el portal ya
+// están en la cola con todos sus datos. Dos formas de llamar:
+//   · el equipo de kiosco de caja, con su id y su ficha (`kiosco_sucursal`):
+//     la sucursal es la del EQUIPO, nunca la que diga el navegador;
+//   · una sesión con permiso de caja (la vista previa del portal), en su sala
+//     salvo alcance de toda la red.
+async function colaDeLaCaja(req: Request, body: Record<string, unknown>, responder: (b: unknown, s?: number) => Response) {
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  let branch: number | null = null;
+  if (body.device_id && body.device_token) {
+    const { data, error } = await admin.rpc("kiosco_sucursal", { p_device_id: String(body.device_id), p_device_token: String(body.device_token) });
+    if (error) return responder({ ok: false, error: "No se pudo validar el equipo." }, 503);
+    if (data == null) return responder({ ok: false, error: "Equipo no válido." }, 401);
+    const { data: eq, error: eEq } = await admin.from("kiosk_devices").select("tipo").eq("id", String(body.device_id)).maybeSingle();
+    if (eEq) return responder({ ok: false, error: "No se pudo validar el equipo." }, 503);
+    if (eq?.tipo !== "caja") return responder({ ok: false, error: "Este equipo no es de caja." }, 403);
+    branch = Number(data);
+  } else {
+    const quien = await requireActiveEmployeeUser(req, admin);
+    if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
+    const permiso = await permisoDeModulo(admin, quien.id, "caja_vales", "can_view");
+    if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
+    if (!permiso.puede) return responder({ ok: false, error: "No tienes permiso para ver la caja." }, 403);
+    branch = Number(body.sala);
+    if (!Number.isInteger(branch) || branch <= 0) return responder({ ok: false, error: "No se dijo qué sucursal." }, 400);
+    if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== branch) {
+      return responder({ ok: false, error: "No puedes ver la caja de esa sucursal." }, 403);
+    }
+  }
+
+  const { data: mapa, error: eMapa } = await admin.from("erp_sucursal_map")
+    .select("erp_sucursal_id").eq("branch_id", branch).eq("es_bodega", false).maybeSingle();
+  if (eMapa || !mapa) return responder({ ok: false, error: "No se sabe qué sala de la caja es esta sucursal." }, 503);
+
+  try {
+    const { username, password } = getCortesCreds();
+    const http = await sesionDeCaja(username, password, Number(mapa.erp_sucursal_id));
+    const lista = await listaDeLaCaja(http);
+    const ids = lista.map((p) => p.id);
+    let conocidas = new Set<string>();
+    if (ids.length) {
+      const { data: pv, error: ePv } = await admin.from("preventas").select("externo_id")
+        .eq("branch_id", branch).eq("sistema", "caja").in("externo_id", ids);
+      if (ePv) return responder({ ok: false, error: "No se pudo leer las preventas." }, 503);
+      conocidas = new Set((pv ?? []).map((r) => String(r.externo_id)));
+    }
+    return responder({ ok: true, cola: lista.filter((p) => !conocidas.has(String(p.id))) });
   } catch (e) {
     return responder({ ok: false, error: (e as Error).message }, 502);
   }

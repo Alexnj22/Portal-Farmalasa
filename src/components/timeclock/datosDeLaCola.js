@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { kioscoCajaCola, kioscoCajaEstado } from '@nucleo/data/kiosco';
+import { colaHechaEnLaCaja, kioscoCajaCola, kioscoCajaEstado } from '@nucleo/data/kiosco';
 import { estadoDeCaja } from '@nucleo/data/bolsas';
 import { fetchPreventasDeSala } from '@nucleo/data/preventas';
 import { colaDeMuestra, esDemo } from './demoDelKiosco';
@@ -149,6 +149,26 @@ export function useColaDeCaja({ sala = null } = {}) {
     }, [leer]);
 
     return { cola, problema, leyendo, ahora, leer };
+}
+
+// ── Las preventas hechas EN la caja (usuario, 2026-11-18) ───────────────
+// Cada minuto y no cada 10 s: cada lectura entra a la caja (tres peticiones).
+// Si falla, deja la última lista: no es la cola principal.
+const CAJA_CADA_MS = 60_000;
+
+export function useColaHechaEnLaCaja({ sala = null } = {}) {
+    const [lista, setLista] = useState([]);
+    const leer = useCallback(async () => {
+        if (esDemo()) return;
+        const r = await colaHechaEnLaCaja({ sala });
+        if (r.ok) setLista(r.cola);
+    }, [sala]);
+    useEffect(() => {
+        const primera = setTimeout(leer, 0);
+        const id = setInterval(() => { if (document.visibilityState === 'visible') leer(); }, CAJA_CADA_MS);
+        return () => { clearTimeout(primera); clearInterval(id); };
+    }, [leer]);
+    return lista;
 }
 
 // ── Lo que toca ahora (pedido del usuario, 2026-11-17) ───────────────────

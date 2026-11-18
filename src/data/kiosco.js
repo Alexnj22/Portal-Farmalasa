@@ -241,3 +241,21 @@ export async function kioscoVincularConTicket(codigo) {
     }
     return { ok: true, equipo: data, motivo: null, networkError: false };
 }
+
+/**
+ * Las preventas hechas EN la caja que el portal no conoce (2026-11-18). Sólo
+ * lee. En el equipo de kiosco va con su id y su ficha; en la vista previa del
+ * portal, con la sesión y la sucursal elegida.
+ */
+export async function colaHechaEnLaCaja({ sala = null } = {}) {
+    const cred = sala ? null : credenciales();
+    if (!sala && !cred) return { ok: false, cola: [] };
+    const body = sala ? { accion: 'cola', sala: Number(sala) } : { accion: 'cola', device_id: cred.deviceId, device_token: cred.deviceToken };
+    try {
+        const { data, error } = await supabase.functions.invoke('preventa-caja', { body });
+        if (error || !data?.ok) return { ok: false, cola: [] };
+        return { ok: true, cola: Array.isArray(data.cola) ? data.cola : [] };
+    } catch {
+        return { ok: false, cola: [] };
+    }
+}

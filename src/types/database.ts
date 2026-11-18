@@ -6929,6 +6929,59 @@ export type Database = {
           },
         ]
       }
+      cobro_caja_ensayos: {
+        Row: {
+          branch_id: number
+          captado_at: string
+          comparado_at: string | null
+          created_at: string
+          cuadra: boolean | null
+          diferencias: Json | null
+          externo_id: string
+          id: number
+          plan: Json
+          referencia: string | null
+          total_caja: number | null
+          veces: number
+        }
+        Insert: {
+          branch_id: number
+          captado_at?: string
+          comparado_at?: string | null
+          created_at?: string
+          cuadra?: boolean | null
+          diferencias?: Json | null
+          externo_id: string
+          id?: never
+          plan: Json
+          referencia?: string | null
+          total_caja?: number | null
+          veces?: number
+        }
+        Update: {
+          branch_id?: number
+          captado_at?: string
+          comparado_at?: string | null
+          created_at?: string
+          cuadra?: boolean | null
+          diferencias?: Json | null
+          externo_id?: string
+          id?: never
+          plan?: Json
+          referencia?: string | null
+          total_caja?: number | null
+          veces?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobro_caja_ensayos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cola_impresion: {
         Row: {
           branch_id: number
@@ -33946,6 +33999,7 @@ export type Database = {
         }[]
       }
       close_ventas_month: { Args: { p_mes: string }; Returns: undefined }
+      cobro_caja_ensayo_comparar: { Args: never; Returns: Json }
       cobros_portal_en_efectivo: {
         Args: { p_branch: number; p_fecha: string; p_hasta: string }
         Returns: number
@@ -33964,6 +34018,7 @@ export type Database = {
         Returns: Json
       }
       cola_espejo_portal_erp: { Args: { p_limite?: number }; Returns: Json }
+      como_va_la_sala_hoy: { Args: { p_branch_id: number }; Returns: Json }
       compactar_busqueda: { Args: { p: string }; Returns: string }
       completar_dispensacion: {
         Args: {
@@ -37941,6 +37996,10 @@ export type Database = {
         Args: { p_device_id: string; p_device_token: string }
         Returns: Json
       }
+      kiosco_caja_estado: {
+        Args: { p_device_id: string; p_device_token: string }
+        Returns: Json
+      }
       kiosco_cubre_empleado: {
         Args: { p_branch_id: number; p_employee_id: string }
         Returns: boolean
@@ -38565,6 +38624,7 @@ export type Database = {
         Args: { p_max: number; p_min: number; p_razon: number }
         Returns: number[]
       }
+      para_vender_en_la_sala: { Args: { p_branch_id: number }; Returns: Json }
       parte_como_en_la_ficha: {
         Args: { completo: string; parte: string }
         Returns: string

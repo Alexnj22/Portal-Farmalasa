@@ -512,8 +512,12 @@ export async function borrarPreventaDeLaCaja(http: Http, externoId: string, espe
 // sólo LEE y arma: devuelve lo que se mandaría. Mandarlo es otro paso.
 
 
-export async function prepararCobroEnLaCaja(http: Http, externoId: string, esperado: { total: number | null; efectivo: number }) {
-  const caja = leerCajaAbierta(await http.get("venta.php"));
+export async function prepararCobroEnLaCaja(
+  http: Http, externoId: string, esperado: { total: number | null; efectivo: number },
+  // El ensayo en paralelo lee la caja UNA vez por corrida y la pasa aquí.
+  cajaLeida: ReturnType<typeof leerCajaAbierta> | undefined = undefined,
+) {
+  const caja = cajaLeida === undefined ? leerCajaAbierta(await http.get("venta.php")) : cajaLeida;
   if (!caja) throw new Error("La caja no tiene turno abierto. Ábrela antes de cobrar.");
   let j: Record<string, unknown> = {};
   try { j = JSON.parse(await http.post("venta.php", { process: "cargar_data", n_ref: externoId, fecha: caja.fecha })); } catch { j = {}; }

@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.8 — Kiosco: ensayo del cobro en paralelo en Salud 4 y Salud 1
+
+Etapa 1 del cobro desde el kiosco (usuario, 2026-11-18: «sin afectar nada,
+siempre usando el ERP»; sucursales elegidas con él: Salud 4, donde está el
+kiosco, y Salud 1, la que más vende).
+
+- `ensayo-cobro-caja` (cron `ensayo-cobro-caja`, cada minuto en las horas pico:
+  8:00–10:59 y 18:00–20:59 SV; el usuario: «sólo un tiempo, no todo el día»): lee las preventas vivas de la caja y, a cada una nueva o cuyo total
+  cambió, le arma el cobro que haría el kiosco SIN mandarlo. No escribe nada en
+  la caja; la cajera trabaja igual.
+- `cobro_caja_ensayos` guarda cada ensayo, y `cobro_caja_ensayo_comparar()`
+  lo enfrenta con la factura que la caja guardó (mismo número que la
+  preventa): total, documento, vendedor y la suma de cada producto. Las que no
+  se cobran en dos días quedan «sin factura». Retención de 60 días.
+- `prepararCobroEnLaCaja` acepta la caja ya leída, para no pedirla una vez por
+  preventa.
+- La sesión de cada sala se guarda entre corridas: 1 petición por sala y
+  minuto en vez de 3. Costo declarado: 1.080 peticiones al día, temporal
+  (`eficiencia-gate-baseline.json` sube a 24.538 con su motivo; vuelve al
+  apagar el ensayo). Migración 20261118163223 fija las franjas.
+- Primera corrida en producción: 3 preventas de Salud 1 ensayadas, sin fallas.
+- El archivo de la migración lleva, además de lo aplicado, la línea de escape
+  `-- jsonb-agg:` que pide `gate:migrations` (un comentario).
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1575.7 — Kiosco: las preventas hechas en la caja salen en la cola
 
 Pedido del usuario (2026-11-18). La columna «En caja» del kiosco muestra

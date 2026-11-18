@@ -656,6 +656,19 @@ const CRONS = [
           + 'que hacer.',
   },
   {
+    job: 'ensayo-cobro-caja', slug: 'ensayo-cobro-caja', cadencia: '* 0-2,14-16 * * *',
+    corridasDia: 360, sistema: 3,
+    motivo: 'Ensayo del cobro en paralelo (2026-11-18), TEMPORAL: etapa 1 del cobro desde el '
+          + 'kiosco. Cada minuto en las horas pico (8:00-10:59 y 18:00-20:59 SV, pedido del usuario: '
+          + '«sólo un tiempo, no todo el día»), en Salud 4 y Salud 1: la lista de preventas '
+          + '(1 por sala, con la sesión guardada entre corridas; login y sesión de la sala sólo '
+          + 'cada 20 min o si falla), más ~1 petición de media por las preventas nuevas o '
+          + 'cambiadas (cargar_data + datos del cliente, hasta 12 por sala). '
+          + 'Sólo lee: no guarda, no finaliza ni borra nada en la caja. Cada minuto y no cada '
+          + 'cinco porque una preventa se cobra a los pocos minutos de armarse y el ensayo tiene '
+          + 'que leerla ANTES. Se apaga cuando termine el ensayo (unos días).',
+  },
+  {
     job: 'cierre-automatico-caja', slug: 'cierre-automatico-caja', cadencia: '*/10 23,0-5 * * *',
     corridasDia: 42, sistema: 0,
     motivo: 'El día que nadie cerró se cierra solo (2026-09-23): una hora después de la hora de '

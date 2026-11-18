@@ -730,11 +730,11 @@ export const AREAS = [
                  'creditos_cobros_por_aprobar', 'creditos_cobro_envios',
                  'bolsas', 'bancos', 'bolsas_conteos', 'bolsas_entidades', 'bolsas_entregas',
                  'bolsas_eventos', 'bolsas_movimientos',
-                 'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios'],
+                 'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios', 'cobro_caja_ensayos'],
         // `creditos-erp` va acá y no en Facturación: abonar a un crédito mete
         // EFECTIVO al cajón, y ese dinero cuenta para el corte del mismo día.
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
-               'cierre-automatico-caja',
+               'cierre-automatico-caja', 'ensayo-cobro-caja',
                'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos', 'leer-pago-de-credito'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
@@ -742,7 +742,7 @@ export const AREAS = [
                 'cortes-caja-5min', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
                 'aperturas-caja-30min', 'aperturas-manana-antes-de-las-7',
                 'aperturas-manana-hasta-la-hora-tope',
-                'cierre-automatico-caja', 'dias-sin-cierre-0700-sv',
+                'cierre-automatico-caja', 'dias-sin-cierre-0700-sv', 'ensayo-cobro-caja',
                 'creditos-cada-10min', 'creditos-barrido-completo', 'creditos-vencidos-0800-sv'],
         docs: ['docs/CAJA-CORTES-Y-BOLSAS.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],

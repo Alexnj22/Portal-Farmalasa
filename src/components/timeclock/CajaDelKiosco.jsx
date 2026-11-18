@@ -202,6 +202,15 @@ export default function CajaDelKiosco({
         setDialogoCaja((d) => ({ n: d.n + 1, cual }));
         setVista('caja');
     };
+    // Entrada / Salida se hacen AHÍ MISMO, sin salir de la venta (usuario,
+    // 2026-11-18: «¿por qué me lleva a caja?»). Es la MISMA caja con su
+    // diálogo —montada oculta: sus diálogos salen por portal encima de la
+    // venta— y al cerrarlo se desmonta. Abrir la caja sí lleva a la caja.
+    const [movimiento, setMovimiento] = useState(null);
+    const enVentaOCaja = (cual) => {
+        if (cual === 'ingreso' || cual === 'salida') setMovimiento((m) => ({ n: (m?.n ?? 0) + 1, cual }));
+        else abrirEnCaja(cual);
+    };
     // A la caja por la pestaña: sin diálogo abierto.
     const irA = (v) => {
         if (v === 'caja') setDialogoCaja((d) => ({ n: d.n + 1, cual: null }));
@@ -324,12 +333,18 @@ export default function CajaDelKiosco({
                                 <div className={enVenta ? 'flex-1 flex flex-col' : 'hidden'}>
                                     {detalle ? (
                                         <PreventaView key={detalle.id} enKiosco cobrando={detalle} activa={enVenta}
-                                            onMovimientoDeCaja={abrirEnCaja}
+                                            onMovimientoDeCaja={enVentaOCaja}
                                             onTerminarCobro={() => { setElegida(null); datosCola.leer(); }} />
                                     ) : (
-                                        <PreventaView enKiosco activa={enVenta} onMovimientoDeCaja={abrirEnCaja} />
+                                        <PreventaView enKiosco activa={enVenta} onMovimientoDeCaja={enVentaOCaja} />
                                     )}
                                 </div>
+                                {movimiento && vista !== 'caja' && (
+                                    <div className="hidden">
+                                        <MiCajaView key={`mov-${movimiento.n}`} comoPestana abrirAlEntrar={movimiento.cual}
+                                            alCerrarDialogo={() => setMovimiento(null)} />
+                                    </div>
+                                )}
                                 {vista === 'hoy' && <ComoVaHoy sala={enPortal ? sala : equipo.branchId} ahora={ahora} />}
                                 {vista === 'caja' && (
                                     <MiCajaView key={dialogoCaja.n} comoPestana abrirAlEntrar={dialogoCaja.cual}

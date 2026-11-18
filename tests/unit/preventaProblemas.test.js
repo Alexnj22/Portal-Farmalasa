@@ -22,10 +22,16 @@ describe('problemasDeVenta', () => {
             lineas: [{}], cotizacion: cot([linea({ factor: 10, cantidad: 3, existencia: 25, error: 'Hay 25 unidades y se piden 30.',
                 otras: [{ sucursal: 'Salud 1', disponibles: 40 }] })]),
         });
-        expect(p.titulo).toBe('LOSARTAN: hay 25 y pides 30.');
+        expect(p.titulo).toBe('LOSARTAN: sólo hay 25 y pides 30.');
         expect(p.acciones.map((a) => a.id)).toEqual(['ajustar', 'otras', 'apartar', 'quitar']);
         expect(p.acciones[0].valor).toBe(2);
-        expect(p.ayuda).toMatch(/Salud 1 \(40\)/);
+        expect(p.ayuda).toBe('Deja 2 y pide el resto a Salud 1 (40 u.), o apártalo para el cliente.');
+    });
+    it('sin nada aquí dice en qué sucursales hay', () => {
+        const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([linea({ existencia: 0, error: 'Hay 0 unidades y se piden 1.',
+            otras: [{ sucursal: 'Salud 2', disponibles: 2 }, { sucursal: 'Salud 3', disponibles: 1 }] })]) });
+        expect(p.titulo).toBe('LOSARTAN: no hay en esta sucursal.');
+        expect(p.ayuda).toBe('Hay en Salud 2 (2 u.) y Salud 3 (1 u.). Pídelo a una de ellas o apártalo para el cliente.');
     });
     it('sin existencia en ninguna parte no ofrece pedir', () => {
         const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([linea({ error: 'Hay 0 unidades y se piden 99.' })]) });

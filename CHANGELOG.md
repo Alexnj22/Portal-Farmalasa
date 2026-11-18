@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.14 — Kiosco: entrada y salida en la venta, F6 borra, Existencias
+
+Pedidos del usuario (2026-11-18):
+- **Entrada / Salida** se hacen ahí mismo en Vender: abre el diálogo de la
+  caja encima de la venta, sin llevar a la pestaña Caja.
+- **F6 = Borrar**: si la preventa ya está guardada en caja, la anula (con la
+  confirmación de Anular); si no, limpia la pantalla, también confirmando.
+- **Existencias** (y «Otras sucursales» en el portal) estaba vacío: su
+  buscador va en la ranura del encabezado y el modal de la venta no la tenía.
+  Ahora usa el mismo modal del tablero. Roto desde v2.1555.0.
+- Al buscar un producto, los botones junto al buscador ya no se desplazan.
+- La existencia de cada producto va como etiqueta de color (verde, ámbar si no
+  alcanza, rojo «Sin existencia»).
+- El aviso de existencia se lee mejor: «no hay en esta sucursal. Hay en Salud 2
+  (2 u.) y Salud 3 (1 u.). Pídelo a una de ellas o apártalo para el cliente.»
+- «Lo más vendido hoy» muestra el nombre en dos líneas en vez de cortarlo.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.13 — Kiosco: anular la preventa que se cobra (F10)
 
 - **En el kiosco de caja ya se puede anular una preventa.** Al tocar un ticket de la cola, debajo de «Cobrar» está **Anular la preventa**, y también con la tecla **F10** (sale en la lista de teclas rápidas). Antes sólo se podía desde la pestaña Preventas del portal, que el kiosco no muestra.

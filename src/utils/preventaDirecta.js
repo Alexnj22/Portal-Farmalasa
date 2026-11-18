@@ -296,12 +296,16 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
         const pide = Number(l.cantidad ?? 0) * Number(l.factor ?? 1);
         if (/^Hay /.test(l.error)) {
             const alcanza = Math.floor(Number(l.existencia ?? 0) / Number(l.factor || 1));
-            const otras = (l.otras ?? []).map((o) => `${o.sucursal} (${o.disponibles})`).join(', ');
+            // «Salud 2 (2 u.) y Salud 3 (1 u.)»: con la «y», se lee como una frase.
+            const sucursales = (l.otras ?? []).map((o) => `${o.sucursal} (${o.disponibles} u.)`);
+            const otras = sucursales.length > 1 ? `${sucursales.slice(0, -1).join(', ')} y ${sucursales.at(-1)}` : sucursales[0] ?? '';
+            const hay = Number(l.existencia ?? 0);
             out.push({ ...base, tipo: 'existencia',
-                titulo: `${nombre}: hay ${Number(l.existencia ?? 0)} y pides ${pide}.`,
+                titulo: hay > 0 ? `${nombre}: sólo hay ${hay} y pides ${pide}.` : `${nombre}: no hay en esta sucursal.`,
                 ayuda: alcanza > 0
-                    ? `Baja a ${alcanza}${otras ? `, pide el resto a ${otras}` : ''} o apártalo para el cliente.`
-                    : otras ? `No hay aquí. Hay en ${otras}: pídelo o apártalo.` : 'No hay en ninguna sucursal: apártalo como encargo o quítalo.',
+                    ? `Deja ${alcanza}${otras ? ` y pide el resto a ${otras}` : ''}, o apártalo para el cliente.`
+                    : otras ? `Hay en ${otras}. Pídelo ${sucursales.length > 1 ? 'a una de ellas' : 'a esa sucursal'} o apártalo para el cliente.`
+                        : 'No hay en ninguna sucursal. Apártalo como encargo o quítalo.',
                 acciones: [
                     ...(alcanza > 0 ? [{ id: 'ajustar', label: `Dejar ${alcanza}`, valor: alcanza }] : []),
                     ...(otras ? [{ id: 'otras', label: 'Pedir a otra sucursal' }] : []),

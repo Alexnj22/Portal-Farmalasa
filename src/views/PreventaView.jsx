@@ -52,6 +52,7 @@ import { esDemo, marcarCobradaEnMuestra } from '../components/timeclock/demoDelK
 // Lo que sólo hace falta al apretar un botón no viaja con la vista.
 const FormularioPedirASala = lazy(() =>
     import('./dashboard/inventario/PanelDeInventario').then((m) => ({ default: m.FormularioPedirASala })));
+import { ModalConRanuras } from './dashboard/LanzadorSolicitud';
 const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -75,7 +76,7 @@ const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 // Cuarta vuelta: sucursal en la píldora (`FilterBar.Sucursal`), fotos del
 // cliente y de los productos, y teclado con las mismas teclas que la caja:
 //     F2 · F8 · Ctrl+Enter  enviar a caja        F3 · /  buscar producto
-//     F4  buscar cliente                          F6      vaciar (confirma)
+//     F4  buscar cliente                          F6      borrar: anula la guardada, limpia la nueva (confirma)
 //     F7  existencia en otras sucursales          Supr    quitar el producto
 //     ↑ ↓ en un buscador recorre la lista, Enter elige, Esc limpia; en los
 //     productos ← → cambia de campo, ↑ ↓ de producto, Enter vuelve al buscador.
@@ -100,7 +101,7 @@ const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 
 // Cobrando en el kiosco: la misma mano, con lo que hace falta para cobrar.
 const TECLAS_COBRO = [['F2', 'Cobrar'], ['F9', 'Escribir lo recibido'], ['F3', 'Buscar producto'], ['F4', 'Cambiar cliente'],
     ['F7', 'Ver en otras sucursales'], ['F10', 'Anular la preventa'], ['Supr', 'Quitar el producto elegido'], ['Esc', 'Cerrar la preventa sin cobrar']];
-const TECLAS = [['F2', 'Enviar'], ['F3', 'Producto'], ['F4', 'Cliente'], ['F7', 'Otras sucursales'], ['F6', 'Vaciar'], ['Supr', 'Quitar']];
+const TECLAS = [['F2', 'Enviar'], ['F3', 'Producto'], ['F4', 'Cliente'], ['F7', 'Otras sucursales'], ['F6', 'Borrar'], ['Supr', 'Quitar']];
 const ID_BUSCAR_PRODUCTO = 'preventa-buscar-producto';
 const ID_BUSCAR_CLIENTE = 'preventa-buscar-cliente';
 const enfocar = (id) => { const el = document.getElementById(id); if (el) { el.focus(); el.select?.(); } };
@@ -422,6 +423,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         if (!r?.ok && r?.no_en_caja) { setBorradaEnCaja(p); return; }
         if (!r?.ok) { showToast('No se pudo anular', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
         showToast('Preventa anulada', `La ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} ya no está en caja.`, 'success');
+        if (p.limpiar) { setVenta(VACIA); setFoco({ id: ID_BUSCAR_CLIENTE }); }
         if (p.desdeCobro) onTerminarCobro?.(); else recargar();
     };
     const cerrarBorrada = async () => {
@@ -444,6 +446,18 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const [porVaciar, setPorVaciar] = useState(false);
     const vaciar = () => { setPorVaciar(false); setVenta(VACIA); setFoco({ id: ID_BUSCAR_CLIENTE }); };
     const pedirVaciar = () => { if (venta.lineas.length || venta.cliente || venta.corrigiendo) setPorVaciar(true); };
+    // F6 = borrar la preventa (usuario, 2026-11-18): si ya está guardada en
+    // caja, se ANULA (el mismo Anular, con su confirmación); si todavía no, se
+    // limpia la pantalla, también confirmando.
+    const pedirBorrar = () => {
+        if (cobrando) { pedirAnularCobro(); return; }
+        const g = venta.corrigiendo;
+        if (g?.id && puedeVender) {
+            setPorAnular({ id: g.id, externo_ref: g.referencia, codigo: g.codigo, limpiar: true });
+            return;
+        }
+        pedirVaciar();
+    };
 
     // ── Al abrir Vender: el foco al primer buscador que haga falta ────────
     const vendiendo = activa && Boolean(sala) && (pestana === 'nueva' || enKiosco) && !resultado && !cobrada;
@@ -456,7 +470,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     // Aprietan el MISMO botón que el ratón (si está deshabilitado, nada pasa).
     const acciones = useRef({});
     acciones.current = {
-        vendiendo, cobrando: Boolean(cobrando), cerrarCobro: onTerminarCobro, lineas: venta.lineas, pedirVaciar, quitarLinea,
+        vendiendo, cobrando: Boolean(cobrando), cerrarCobro: onTerminarCobro, lineas: venta.lineas, pedirVaciar, pedirBorrar, quitarLinea,
         existencias: (nombre) => setConsulta((c) => (c != null ? null : nombre ?? '')),
         anularCobro: () => pedirAnularCobro(),
     };
@@ -482,7 +496,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                 e.preventDefault();
                 if (document.getElementById(ID_BUSCAR_CLIENTE)) enfocar(ID_BUSCAR_CLIENTE);
                 else document.querySelector('[data-accion-cambiar-cliente]')?.focus();
-            } else if (k === 'F6') { e.preventDefault(); if (!a.cobrando) a.pedirVaciar(); }
+            } else if (k === 'F6') { e.preventDefault(); a.pedirBorrar(); }
             else if (k === 'F10' && a.cobrando) { e.preventDefault(); a.anularCobro?.(); }
             else if (k === 'F9' && a.cobrando) { e.preventDefault(); const c = document.querySelector('input[name="recibido"]'); c?.focus(); c?.select(); }
             else if (k === 'F7') {
@@ -601,7 +615,9 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                 <section data-surface="card" className="p-3 space-y-2">
                                     {/* En el kiosco, las dos acciones van junto al buscador:
                                         son de productos, y así no quedan sueltas arriba. */}
-                                    <div className="flex items-center gap-2">
+                                    {/* Arriba y no al centro: la lista de resultados crece hacia
+                                        abajo y los botones se iban con ella. */}
+                                    <div className="flex items-start gap-2">
                                         <div className="flex-1 min-w-0"><BuscarProducto onElegir={agregarProducto} /></div>
                                         {enKiosco && accionesVender.map((a) => (
                                             <Button key={a.key} variant="secondary" icon={a.icon} onClick={a.onClick} className="shrink-0">{a.label}</Button>
@@ -802,17 +818,19 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
             </div>
 
             {consulta != null && (
-                <LiquidModal open onClose={cerrarConsulta} maxWidth="max-w-4xl" ariaLabel="Existencia en otras sucursales">
-                    <LiquidModal.Header icono={PackageSearch} titulo="Existencia en otras sucursales"
-                        subtitulo="Busca el producto y pídelo con «Solicitar»." onClose={cerrarConsulta} />
-                    <LiquidModal.Body>
+                // El buscador de este formulario va en la ranura del encabezado:
+                // con un modal sin ranuras no aparecía y la consulta quedaba vacía
+                // (usuario, 2026-11-18). Es el mismo modal del tablero.
+                <ModalConRanuras icon={PackageSearch} label="Existencia en otras sucursales"
+                    descripcion="Busca el producto y pídelo con «Solicitar»." maxWidth="max-w-4xl" onClose={cerrarConsulta}>
+                    {() => (
                         <div className="h-[70vh] min-h-0 flex flex-col">
                             <Suspense fallback={<p className="text-body-sm text-content-3 p-4">Cargando…</p>}>
                                 <FormularioPedirASala query={consulta} onQueryChange={setConsulta} />
                             </Suspense>
                         </div>
-                    </LiquidModal.Body>
-                </LiquidModal>
+                    )}
+                </ModalConRanuras>
             )}
             {apartar && sala && (
                 <Suspense fallback={null}>
@@ -1386,7 +1404,13 @@ function Linea({ indice, linea, fila, foto, lotes, cotizando, problema, puedeAut
                         <p className="text-body-sm font-semibold text-content leading-tight truncate" title={nombre}>{nombre}</p>
                         <p className="text-micro text-content-3 flex flex-wrap items-center gap-x-1.5">
                             {fila?.bajo_receta && <span className="text-warning-text font-bold">Bajo Receta</span>}
-                            {fila && <span className={malaCantidad ? 'text-danger-text font-bold' : ''}>Existencia {fila.existencia}</span>}
+                            {fila && (
+                                // La existencia como etiqueta de color (usuario, 2026-11-18: «que se vea más clara»).
+                                <span className={`inline-flex items-center rounded-full px-1.5 font-bold tabular-nums ${Number(fila.existencia) <= 0
+                                    ? 'bg-danger/10 text-danger-text' : malaCantidad ? 'bg-warning/10 text-warning-text' : 'bg-success/10 text-success-text'}`}>
+                                    {Number(fila.existencia) <= 0 ? 'Sin existencia' : `Existencia ${fila.existencia}`}
+                                </span>
+                            )}
                             {fila?.lista && !linea.lista && fila.lista !== listaCliente && <span>· {nombreDeLista(fila.lista)} aquí</span>}
                         </p>
                     </div>

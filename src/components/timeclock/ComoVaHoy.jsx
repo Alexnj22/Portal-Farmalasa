@@ -250,9 +250,9 @@ export default function ComoVaHoy({ sala, ahora }) {
                     ) : (
                         <ol className="flex flex-col gap-1.5">
                             {productos.map((p, i) => (
-                                <li key={`${p.nombre}-${i}`} className="flex items-center gap-3">
+                                <li key={`${p.nombre}-${i}`} className="flex items-start gap-3">
                                     <span className="w-6 text-center text-body font-black text-content-3">{i + 1}</span>
-                                    <span className="flex-1 min-w-0 text-body-sm text-content truncate">{p.nombre}</span>
+                                    <span className="flex-1 min-w-0 text-body-sm text-content leading-tight line-clamp-2">{p.nombre}</span>
                                     <span className="text-label text-content-3 shrink-0 text-right">{p.ventas} {p.ventas === 1 ? 'venta' : 'ventas'} · {Number(p.cantidad)} u.</span>
                                 </li>
                             ))}

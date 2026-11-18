@@ -99,7 +99,7 @@ const DIAS = [{ value: '1', label: 'Hoy' }, { value: '7', label: '7 días' }, { 
 const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
 // Cobrando en el kiosco: la misma mano, con lo que hace falta para cobrar.
 const TECLAS_COBRO = [['F2', 'Cobrar'], ['F9', 'Escribir lo recibido'], ['F3', 'Buscar producto'], ['F4', 'Cambiar cliente'],
-    ['F7', 'Ver en otras sucursales'], ['Supr', 'Quitar el producto elegido'], ['Esc', 'Cerrar la preventa sin cobrar']];
+    ['F7', 'Ver en otras sucursales'], ['F10', 'Anular la preventa'], ['Supr', 'Quitar el producto elegido'], ['Esc', 'Cerrar la preventa sin cobrar']];
 const TECLAS = [['F2', 'Enviar'], ['F3', 'Producto'], ['F4', 'Cliente'], ['F7', 'Otras sucursales'], ['F6', 'Vaciar'], ['Supr', 'Quitar']];
 const ID_BUSCAR_PRODUCTO = 'preventa-buscar-producto';
 const ID_BUSCAR_CLIENTE = 'preventa-buscar-cliente';
@@ -422,7 +422,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         if (!r?.ok && r?.no_en_caja) { setBorradaEnCaja(p); return; }
         if (!r?.ok) { showToast('No se pudo anular', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
         showToast('Preventa anulada', `La ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} ya no está en caja.`, 'success');
-        recargar();
+        if (p.desdeCobro) onTerminarCobro?.(); else recargar();
     };
     const cerrarBorrada = async () => {
         const p = borradaEnCaja;
@@ -430,7 +430,16 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         const r = await anularPreventa(p.id, true);
         if (!r?.ok) { showToast('No se pudo anular', r?.error ?? 'Intenta de nuevo.', 'error'); return; }
         showToast('Preventa anulada', `La ${p.externo_ref ? `#${p.externo_ref}` : p.codigo} ya no está en caja.`, 'success');
-        recargar();
+        if (p.desdeCobro) onTerminarCobro?.(); else recargar();
+    };
+    // Anular la preventa que se está cobrando (2026-11-18): desde el kiosco,
+    // con el botón o con F10. Es el MISMO Anular de la lista de Preventas: su
+    // confirmación, su permiso y su caso «la borraron en caja». Al anularla se
+    // cierra el cobro y la cola se vuelve a leer.
+    const anulableEnCobro = Boolean(cobrando) && puedeVender && sePuedeAnular(cobrando);
+    const pedirAnularCobro = () => {
+        if (!anulableEnCobro) return;
+        setPorAnular({ id: cobrando.id, externo_ref: cobrando.referencia, codigo: cobrando.codigo, desdeCobro: true });
     };
     const [porVaciar, setPorVaciar] = useState(false);
     const vaciar = () => { setPorVaciar(false); setVenta(VACIA); setFoco({ id: ID_BUSCAR_CLIENTE }); };
@@ -449,6 +458,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     acciones.current = {
         vendiendo, cobrando: Boolean(cobrando), cerrarCobro: onTerminarCobro, lineas: venta.lineas, pedirVaciar, quitarLinea,
         existencias: (nombre) => setConsulta((c) => (c != null ? null : nombre ?? '')),
+        anularCobro: () => pedirAnularCobro(),
     };
     useEffect(() => {
         const alTeclado = (e) => {
@@ -473,6 +483,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                 if (document.getElementById(ID_BUSCAR_CLIENTE)) enfocar(ID_BUSCAR_CLIENTE);
                 else document.querySelector('[data-accion-cambiar-cliente]')?.focus();
             } else if (k === 'F6') { e.preventDefault(); if (!a.cobrando) a.pedirVaciar(); }
+            else if (k === 'F10' && a.cobrando) { e.preventDefault(); a.anularCobro?.(); }
             else if (k === 'F9' && a.cobrando) { e.preventDefault(); const c = document.querySelector('input[name="recibido"]'); c?.focus(); c?.select(); }
             else if (k === 'F7') {
                 e.preventDefault();
@@ -714,6 +725,11 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                                 ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
                                                 : faltaEfectivo ? 'Escribe lo recibido' : `Cobrar ${formatMoney(aPagar)}`}
                                         </Button>
+                                        {anulableEnCobro && (
+                                            <Button className="w-full" variant="secondary" tone="danger" size="sm" icon={Ban} onClick={pedirAnularCobro}>
+                                                Anular la preventa
+                                            </Button>
+                                        )}
                                         {!cobroConectado && (
                                             <>
                                                 <p className="text-micro text-content-3">El cobro todavía no está conectado.</p>

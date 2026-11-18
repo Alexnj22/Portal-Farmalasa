@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.13 — Kiosco: anular la preventa que se cobra (F10)
+
+- **En el kiosco de caja ya se puede anular una preventa.** Al tocar un ticket de la cola, debajo de «Cobrar» está **Anular la preventa**, y también con la tecla **F10** (sale en la lista de teclas rápidas). Antes sólo se podía desde la pestaña Preventas del portal, que el kiosco no muestra.
+- Es el mismo Anular de esa pestaña: pide confirmar, exige el permiso de Preventa y sólo aparece si la preventa no está facturada. Si ya no está en caja, pregunta si la borraron allá antes de cerrarla. Al anularla se cierra el cobro y la cola se vuelve a leer.
+
 ## v2.1574.12 — Para vender: sin utilidad y con foto
 
 - Pedido del usuario: «no agregues la utilidad, sólo sugiere qué vender; agrega

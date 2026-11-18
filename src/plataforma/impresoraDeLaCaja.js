@@ -48,6 +48,23 @@ export { codificar as codificarComoLaCaja };
  */
 export async function imprimirTicketDeLaCaja(ticket, { efectivo, cambio }) {
     const win = ticket.sist_ope === 'win';
+    // El ticket fiscal (con sello: QR, código de generación), como
+    // `print_ticket_dte` de la caja: en Windows al mismo programa, si no a
+    // `printik_pista.php`. Mismos campos y en el mismo orden.
+    if (ticket.fiscal) {
+        const url = `http://${ticket.dir_print}${win ? 'printposwin1.php' : 'printik_pista.php'}`;
+        const campos = {
+            efectivo, cambio, totales: ticket.totales, total_letras: ticket.total_letras, encabezado: ticket.encabezado,
+            cuerpo: ticket.cuerpo, pie: ticket.pie, img: ticket.img, qr: ticket.qr, qr_farmalasa: ticket.qr_farmalasa,
+        };
+        await fetch(url, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: codificar(win ? { shared_printer_pos: ticket.shared_printer_pos, ...campos } : campos),
+            signal: AbortSignal.timeout(15_000),
+        });
+        return;
+    }
     const url = `http://${ticket.dir_print}${win ? 'printposwin1.php' : 'printpos1.php'}`;
     const datos = win
         ? { datosventa: ticket.facturar, efectivo, cambio, shared_printer_pos: ticket.shared_printer_pos, headers: ticket.headers, footers: ticket.footers }

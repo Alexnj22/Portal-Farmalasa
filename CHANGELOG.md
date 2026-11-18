@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.2 — El kiosco imprime el ticket fiscal con QR
+
+- Cobro desde el kiosco con sello del Ministerio de Hacienda: imprime el ticket fiscal (QR, código de generación y sello), igual que la caja al enviar la factura. Antes salía el ticket simple sin QR (visto en el primer cobro real, Salud 3).
+- Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1579.1 — Personal: renuncia sin la hoja oficial
 
 Lo pidió el usuario: una persona avisó por WhatsApp con una carta sin firmar y

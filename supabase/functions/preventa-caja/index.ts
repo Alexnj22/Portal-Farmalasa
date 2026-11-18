@@ -575,9 +575,24 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
     externo, tipo: String(cabecera.tipo_documento), branch: Number(pv.branch_id),
     clienteErp: String(cabecera.id_cliente ?? ""), deshabilitar: Number(f.resp.deshabilitar ?? 0) === 1,
   });
-  await anotar({ mh });
+  // Con sello, la caja NO imprime el ticket simple de `imprimir_fact`: imprime
+  // el ticket fiscal (QR de Hacienda, código de generación, sello) que arma
+  // `_helper_ticket_dte.php` (`print_ticket_dte` de su funciones_util.js,
+  // llamado al final de `crea_dte`). Medido en el primer cobro real (Salud 3,
+  // 2026-11-18): el kiosco imprimía el simple y salía sin QR.
+  let respuestasMh = respuestasFin;
+  if (mh.enviado) {
+    try {
+      const t = JSON.parse(await http.post("_helper_ticket_dte.php", { process: "print_ticket_dte", id_factura: externo }));
+      if (t?.success) respuestasMh = { ...respuestasFin, ticket_dte: t };
+      else console.error("[preventa-caja] ticket fiscal:", t?.msg);
+    } catch (e) {
+      console.error("[preventa-caja] ticket fiscal:", (e as Error).message);
+    }
+  }
+  await anotar({ mh, respuestas: respuestasMh });
 
-  return responder({ ok: true, ...resumenDeCobro({ ...fila, estado: "finalizada", efectivo, mh, respuestas: respuestasFin }, pv) });
+  return responder({ ok: true, ...resumenDeCobro({ ...fila, estado: "finalizada", efectivo, mh, respuestas: respuestasMh }, pv) });
 }
 
 function resumenDeCobro(c: Record<string, any>, pv: Record<string, any>) {
@@ -592,11 +607,18 @@ function resumenDeCobro(c: Record<string, any>, pv: Record<string, any>) {
     // El ticket OFICIAL de la caja, tal como lo arma ella al finalizar: el
     // kiosco lo manda al mismo programa de impresión de la computadora de la
     // caja (que también abre la gaveta).
-    ticket: ticketDeLaCaja(c.respuestas?.finalizado),
+    ticket: ticketDeLaCaja(c.respuestas?.finalizado, c.respuestas?.ticket_dte),
   };
 }
 
-function ticketDeLaCaja(f: Record<string, unknown> | undefined) {
+function ticketDeLaCaja(f: Record<string, unknown> | undefined, dte?: Record<string, unknown>) {
+  if (dte?.dir_print) {
+    return {
+      fiscal: true, dir_print: String(dte.dir_print), sist_ope: String(dte.sist_ope ?? ""), shared_printer_pos: dte.shared_printer_pos ?? null,
+      totales: dte.totales ?? null, total_letras: dte.total_letras ?? null, encabezado: dte.encabezado ?? null,
+      cuerpo: dte.cuerpo ?? null, pie: dte.pie ?? null, img: dte.img ?? null, qr: dte.qr ?? null, qr_farmalasa: dte.qr_farmalasa ?? null,
+    };
+  }
   if (!f || f.facturar == null || !f.dir_print) return null;
   return {
     facturar: f.facturar, headers: f.headers ?? null, footers: f.footers ?? null,

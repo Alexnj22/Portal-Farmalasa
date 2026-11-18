@@ -23,7 +23,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1579.0 — El kiosco cobra crédito fiscal y retención, y avisa el crédito del cliente
 
-_(pendiente de redactar)_
+- El kiosco ya cobra **crédito fiscal** y a **clientes que retienen**, con el cálculo de la caja: en crédito fiscal cada producto va sin IVA y se suma el 13 %; la retención del 1 % corre desde $100. Enfrentado al centavo con facturas reales (CCF 410964, COF 414169).
+- Al cobrar, el kiosco muestra el desglose: sumas, IVA, exento, descuento, retención y total a cobrar.
+- Una venta con productos exentos y gravados juntos no se cobra desde el kiosco (la caja los suma mal); avisa a Soporte.
+- En Vender, la ficha del cliente avisa si debe a crédito, y en rojo si tiene algo vencido.
+- Novedades: no — kiosco piloto en Salud 4.
 
 ## v2.1578.1 — Personal: la baja corregida conserva su respaldo
 

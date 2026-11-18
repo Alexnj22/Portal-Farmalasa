@@ -732,6 +732,9 @@
     "como_va_la_sala_hoy": {
       "guarda": "alcance"
     },
+    "para_vender_en_la_sala": {
+      "guarda": "alcance"
+    },
     "get_meta_sala": {
       "guarda": "alcance"
     },

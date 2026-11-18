@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.11 — Cómo va hoy: promociones, utilidad y vence pronto
+
+- Pedido del usuario: «agrega productos con porcentaje alto de utilidad para
+  venderlos, así como las promociones activas, y productos corto vencimiento».
+- `para_vender_en_la_sala` (migración 20261118000210): lo que más utilidad deja
+  al precio Público entre lo que la sucursal tiene y vendió 3+ veces en 30 días
+  (sin receta ni antibióticos; el % sólo con la vista completa), las
+  promociones vigentes con su bono, y lo que vence en 6 meses o menos (el corte
+  de `venceCorto.js`). Se lee cada 10 minutos.
+- «Lo más vendido hoy» (antes «Lo que más sale hoy») muestra también las
+  unidades.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.10 — Cómo va hoy: porcentajes para el personal y más datos
 
 - Pedido del usuario: «agrega más datos, no pongas cantidades totales para los

@@ -310,6 +310,17 @@ export async function fetchComoVaLaSalaHoy(branchId) {
     return dia;
 }
 
+/**
+ * «Para vender» del kiosco: lo que deja más utilidad (y se vende), las
+ * promociones vigentes y lo que vence pronto en la sucursal. El % de margen
+ * sólo llega con la vista completa. Lanza si falla.
+ */
+export async function fetchParaVenderEnLaSala(branchId) {
+    const { data, error } = await supabase.rpc('para_vender_en_la_sala', { p_branch_id: Number(branchId) });
+    if (error) throw error;
+    return data ?? { utilidad: [], promociones: [], vence: [], vence_total: 0 };
+}
+
 export async function fetchMetaSala(branchId = null) {
     const { data, error } = await supabase.rpc('get_meta_sala', {
         p_branch_id: branchId != null ? Number(branchId) : null,

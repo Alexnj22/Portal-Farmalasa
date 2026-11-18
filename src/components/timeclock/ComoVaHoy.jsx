@@ -1,19 +1,21 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    CalendarDays, Flame, Lightbulb, Medal, PackageCheck, PartyPopper, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
+    BadgePercent, CalendarClock, CalendarDays, Coins, Flame, Lightbulb, Medal, PackageCheck, PartyPopper, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { LoadingState } from '../common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchComoVaLaSalaHoy } from '@nucleo/data/metas';
+import { fetchComoVaLaSalaHoy, fetchParaVenderEnLaSala } from '@nucleo/data/metas';
 import { armarDia, datosDeApoyo, ideaDelMomento, relojDelDia, ritmoDelDia } from '@nucleo/utils/comoVaHoy';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
+import { venceTexto } from '@nucleo/utils/venceCorto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 const GraficaDelDia = lazy(() => import('./GraficaDelDia'));
 const CADA_MS = 120_000;
+const VENDER_CADA_MS = 600_000;
 
 const TONO = {
     arriba: { icono: TrendingUp, clase: 'text-success-text', fondo: 'bg-success/10', titulo: 'Vas arriba de lo esperado' },
@@ -23,6 +25,7 @@ const TONO = {
 
 const pct = (v) => `${Math.round(v * 100)} %`;
 const conSigno = (n) => (n == null ? '' : `${n > 0 ? '+' : ''}${n} %`);
+const fechaCorta = (f) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f)); return m ? `${m[3]}/${m[2]}` : ''; };
 const tonoDe = (n) => (n == null ? 'text-content-3' : n >= 0 ? 'text-success-text' : 'text-warning-text');
 
 /**
@@ -55,6 +58,18 @@ export default function ComoVaHoy({ sala, ahora }) {
         const id = setInterval(() => { if (document.visibilityState === 'visible') leer(); }, CADA_MS);
         return () => { clearTimeout(primera); clearInterval(id); };
     }, [puedeVer, sala, leer]);
+
+    const [vender, setVender] = useState(null);
+    useEffect(() => {
+        if (!sala) return undefined;
+        let vivo = true;
+        const leerVender = () => fetchParaVenderEnLaSala(sala)
+            .then((d) => { if (vivo) setVender({ sala, ...d }); })
+            .catch(() => {});
+        const primera = setTimeout(leerVender, 0);
+        const id = setInterval(() => { if (document.visibilityState === 'visible') leerVender(); }, VENDER_CADA_MS);
+        return () => { vivo = false; clearTimeout(primera); clearInterval(id); };
+    }, [sala]);
 
     const cuenta = useMemo(() => {
         if (!datos || datos.sala !== sala || !datos.dia.base_tipo) return null;
@@ -162,6 +177,30 @@ export default function ComoVaHoy({ sala, ahora }) {
                         <p className="text-body text-content">Hoy van mejor que un día normal.{esMeta ? ' Cada venta de más acerca el bono del mes.' : ' Cada venta de más suma.'}</p>
                     </section>
                 )}
+                {vender && vender.sala === sala && (
+                    <div className="grid gap-4 md:grid-cols-3 items-start">
+                        <Lista icono={BadgePercent} titulo="Promociones vigentes" vacio="No hay promociones vigentes."
+                            filas={(vender.promociones ?? []).map((p) => ({
+                                clave: `${p.id}-${p.promocion}`, nombre: p.nombre,
+                                detalle: [p.promocion, p.fin ? `hasta el ${fechaCorta(p.fin)}` : null].filter(Boolean).join(' · '),
+                                lado: Number(p.bono) > 0 ? `${formatMoney(p.bono)} de bono${Number(p.unidades_por_bono) > 1 ? ` c/${p.unidades_por_bono}` : ''}` : null,
+                            }))} />
+                        <Lista icono={Coins} titulo="Te conviene ofrecer" vacio="Nada que sugerir por ahora."
+                            nota="Dejan buena ganancia y la sucursal los tiene."
+                            filas={(vender.utilidad ?? []).map((p) => ({
+                                clave: p.id, nombre: p.nombre,
+                                detalle: `${Number(p.existencia)} en existencia`,
+                                lado: p.margen != null ? `${Math.round(p.margen)} % de utilidad` : null,
+                            }))} />
+                        <Lista icono={CalendarClock} titulo="Vence pronto: véndelo primero" vacio="Nada vence en los próximos 6 meses."
+                            nota={vender.vence_total > (vender.vence ?? []).length ? `Son ${vender.vence_total} lotes en total. Aquí van los más próximos.` : null}
+                            filas={(vender.vence ?? []).map((p, i) => ({
+                                clave: `${p.nombre}-${p.lote}-${i}`, nombre: p.nombre,
+                                detalle: `${p.cantidad} en existencia`,
+                                lado: `Vence ${venceTexto(p.vence)}`, ladoTono: 'text-warning-text',
+                            }))} />
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-col gap-4">
@@ -203,7 +242,7 @@ export default function ComoVaHoy({ sala, ahora }) {
 
                 <section data-surface="card" className="p-5 flex flex-col gap-3">
                     <h2 className="text-title font-black text-content flex items-center gap-2">
-                        <PackageCheck size={20} className="text-brand-text" aria-hidden="true" /> Lo que más sale hoy
+                        <PackageCheck size={20} className="text-brand-text" aria-hidden="true" /> Lo más vendido hoy
                     </h2>
                     {productos.length === 0 ? (
                         <p className="text-body-sm text-content-3">Todavía no hay ventas hoy.</p>
@@ -213,14 +252,43 @@ export default function ComoVaHoy({ sala, ahora }) {
                                 <li key={`${p.nombre}-${i}`} className="flex items-center gap-3">
                                     <span className="w-6 text-center text-body font-black text-content-3">{i + 1}</span>
                                     <span className="flex-1 min-w-0 text-body-sm text-content truncate">{p.nombre}</span>
-                                    <span className="text-label text-content-3 shrink-0">{p.ventas} {p.ventas === 1 ? 'venta' : 'ventas'}</span>
+                                    <span className="text-label text-content-3 shrink-0 text-right">{p.ventas} {p.ventas === 1 ? 'venta' : 'ventas'} · {Number(p.cantidad)} u.</span>
                                 </li>
                             ))}
                         </ol>
                     )}
+                    {productos.length > 0 && <p className="text-label text-content-3">Por cuántas ventas lo llevaron hoy.</p>}
                 </section>
+
             </div>
         </div>
+    );
+}
+
+
+function Lista({ icono: Icono, titulo, filas, vacio, nota = null }) {
+    return (
+        <section data-surface="card" className="p-5 flex flex-col gap-3">
+            <h2 className="text-title font-black text-content flex items-center gap-2">
+                <Icono size={20} className="text-brand-text" aria-hidden="true" /> {titulo}
+            </h2>
+            {filas.length === 0 ? (
+                <p className="text-body-sm text-content-3">{vacio}</p>
+            ) : (
+                <ul className="flex flex-col gap-2">
+                    {filas.map((f) => (
+                        <li key={f.clave} className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0 leading-tight">
+                                <p className="text-body-sm font-semibold text-content truncate">{f.nombre}</p>
+                                {f.detalle && <p className="text-label text-content-3 truncate">{f.detalle}</p>}
+                            </div>
+                            {f.lado && <span className={`text-label font-bold shrink-0 text-right ${f.ladoTono ?? 'text-success-text'}`}>{f.lado}</span>}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {nota && <p className="text-label text-content-3">{nota}</p>}
+        </section>
     );
 }
 

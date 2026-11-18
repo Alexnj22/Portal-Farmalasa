@@ -909,6 +909,7 @@ export const AREAS = [
             'src/data/preventas.js',
             'src/utils/preventaDirecta.js',
             'src/utils/ticketDeCobroKiosco.js',
+            'src/plataforma/impresoraDeLaCaja.js',
             'tests/unit/preventaDirecta.test.js',
             'supabase/functions/preventa-caja/',
             'supabase/functions/_shared/preventaCaja.ts',

@@ -7009,6 +7009,7 @@ export type Database = {
         Row: {
           branch_id: number
           created_at: string
+          detalle: Json
           efectivo: number | null
           empleado_id: string | null
           error: string | null
@@ -7017,6 +7018,7 @@ export type Database = {
           id: number
           mh: Json | null
           numero: string | null
+          pago: string
           preventa_id: number
           respuestas: Json
           total: number | null
@@ -7025,6 +7027,7 @@ export type Database = {
         Insert: {
           branch_id: number
           created_at?: string
+          detalle?: Json
           efectivo?: number | null
           empleado_id?: string | null
           error?: string | null
@@ -7033,6 +7036,7 @@ export type Database = {
           id?: never
           mh?: Json | null
           numero?: string | null
+          pago?: string
           preventa_id: number
           respuestas?: Json
           total?: number | null
@@ -7041,6 +7045,7 @@ export type Database = {
         Update: {
           branch_id?: number
           created_at?: string
+          detalle?: Json
           efectivo?: number | null
           empleado_id?: string | null
           error?: string | null
@@ -7049,6 +7054,7 @@ export type Database = {
           id?: never
           mh?: Json | null
           numero?: string | null
+          pago?: string
           preventa_id?: number
           respuestas?: Json
           total?: number | null

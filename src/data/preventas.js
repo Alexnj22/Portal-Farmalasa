@@ -103,8 +103,8 @@ export const ensayarCobro = (preventaId, efectivo) =>
  * sucursal tiene el cobro encendido. Devuelve `{ ok, total, efectivo, vuelto,
  * numero, documento, cliente, mh }` o `{ ok: false, error }`. Nunca lanza.
  */
-export const cobrarPreventa = (preventaId, efectivo) =>
-    invocar({ accion: 'cobrar', preventa_id: Number(preventaId), efectivo: Number(efectivo) || 0 });
+export const cobrarPreventa = (preventaId, efectivo, pago = 'contado', detalle = {}) =>
+    invocar({ accion: 'cobrar', preventa_id: Number(preventaId), efectivo: Number(efectivo) || 0, pago, detalle });
 
 /** ¿La sucursal tiene encendido el cobro desde el kiosco? Si no se puede leer, no. */
 export async function cobroEncendido(branchId) {
@@ -113,4 +113,14 @@ export async function cobroEncendido(branchId) {
         .select('encendido').eq('branch_id', Number(branchId)).maybeSingle();
     if (error) return false;
     return data?.encendido === true;
+}
+
+/** Los POS de una sucursal (`caja_terminales_pos`), para el cobro con tarjeta. */
+export async function terminalesDeSala(branchId) {
+    const { data, error } = await supabase.from('caja_terminales_pos')
+        .select('terminal, entidad, branch_id').order('branch_id');
+    if (error) throw error;
+    const propias = (data ?? []).filter((t) => Number(t.branch_id) === Number(branchId));
+    const otras = (data ?? []).filter((t) => Number(t.branch_id) !== Number(branchId));
+    return { propias, otras };
 }

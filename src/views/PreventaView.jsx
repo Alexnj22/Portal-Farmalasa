@@ -32,8 +32,10 @@ import { buscarClientes } from '@nucleo/data/customers';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import {
     anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala, fotosDeProductos, lotesDePreventa,
-    ensayarCobro, cobrarPreventa, cobroEncendido,
+    ensayarCobro, cobrarPreventa, cobroEncendido, terminalesDeSala,
 } from '@nucleo/data/preventas';
+import { problemaDelPago } from '@nucleo/utils/cobroDeCaja';
+import { imprimirTicketDeLaCaja } from '../plataforma/impresoraDeLaCaja';
 import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
 import { ticketDeCobroKiosco } from '@nucleo/utils/ticketDeCobroKiosco';
 import { estadoDeCaja } from '@nucleo/data/bolsas';
@@ -99,6 +101,11 @@ const DOCUMENTOS = [
     { value: 'credito_fiscal', label: 'Crédito fiscal', icon: FileText, description: 'Con NIT y NRC' },
 ];
 const DIAS = [{ value: '1', label: 'Hoy' }, { value: '7', label: '7 días' }, { value: '30', label: '30 días' }];
+// En el cobro, las seis formas de pago de la caja (usuario, 2026-11-18: «no se
+// usan pero deben de estar»). Bitcoin sólo existe al cobrar: la preventa no lo
+// guarda.
+const PAGOS_DE_COBRO = [...PAGOS, { value: 'bitcoin', label: 'Bitcoin' }];
+
 const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
 // Cobrando en el kiosco: la misma mano, con lo que hace falta para cobrar.
 const TECLAS_COBRO = [['F2', 'Cobrar'], ['F9', 'Escribir lo recibido'], ['F3', 'Buscar producto'], ['F4', 'Cambiar cliente'],
@@ -397,6 +404,19 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     }, [cobrando, sala]);
     const cobroConectado = esDemo() || encendido;
     const [cobrandoAhora, setCobrandoAhora] = useState(false);
+    // Los datos de la forma de pago (POS y boleta, banco y referencia…): la
+    // caja sólo tiene un texto libre; aquí se pide cada uno.
+    const [detallePago, setDetallePago] = useState({});
+    const [terminales, setTerminales] = useState(null);
+    useEffect(() => {
+        if (!cobrando || venta.pago !== 'tarjeta' || !sala || terminales) return undefined;
+        let vivo = true;
+        terminalesDeSala(sala).then((t) => { if (vivo) setTerminales(t); }).catch(() => { if (vivo) setTerminales({ propias: [], otras: [] }); });
+        return () => { vivo = false; };
+    }, [cobrando, venta.pago, sala, terminales]);
+    const faltaDelPago = cobrando && !esDemo()
+        ? problemaDelPago({ pago: venta.pago, detalle: detallePago, total: aPagar, efectivo: enEfectivo ? recibidoNum : aPagar, clienteGenerico: !venta.cliente })
+        : null;
     // Mientras el cobro no está encendido, el kiosco puede REVISARLO: la caja
     // contesta qué cobraría, sin cobrar (`preventa-caja`, acción `cobrar`).
     const [revision, setRevision] = useState(null);
@@ -407,10 +427,10 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         setRevision(r);
     };
     const cobrarEnKiosco = async () => {
-        if (bloqueada || faltaEfectivo || !cobroConectado || cobrandoAhora) return;
+        if (bloqueada || faltaEfectivo || !cobroConectado || cobrandoAhora || faltaDelPago) return;
         if (!esDemo()) {
             setCobrandoAhora(true);
-            const r = await cobrarPreventa(cobrando.id, enEfectivo ? recibidoNum : aPagar);
+            const r = await cobrarPreventa(cobrando.id, enEfectivo ? recibidoNum : aPagar, venta.pago, detallePago);
             setCobrandoAhora(false);
             if (!r?.ok) { showToast('No se cobró', r?.error ?? 'Algo falló. Revisa la venta en la caja.', 'error'); return; }
             const hecho = new Date().toISOString();
@@ -421,14 +441,18 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                 const f = filaDe(l);
                 return { nombre: f?.nombre ?? l.nombre, cantidad: f?.cantidad ?? l.cantidad, precio: f?.precio, subtotal: f?.subtotal };
             });
-            imprimirDocumento(ticketDeCobroKiosco({
+            // El ticket oficial de la caja, por su programa de impresión (abre la
+            // gaveta). Si no se llega a él, el del portal por la ticketera.
+            const porLaTicketera = () => imprimirDocumento(ticketDeCobroKiosco({
                 cobro: { ...r, cliente: r.cliente ?? venta.cliente?.name ?? null }, renglones, sala: nombreSala,
                 cobro_por: user ? shortEmployeeName(user) : null, hechoAt: hecho,
-            })).then((p) => { if (!p?.ok) showToast('No se imprimió', 'La venta sí quedó cobrada. Imprime el ticket desde la caja.', 'warning'); })
-                .catch(() => showToast('No se imprimió', 'La venta sí quedó cobrada. Imprime el ticket desde la caja.', 'warning'));
+            })).then((p) => { if (!p?.ok) throw new Error('sin papel'); });
+            (r.ticket ? imprimirTicketDeLaCaja(r.ticket, { efectivo: r.efectivo, cambio: r.vuelto }).catch(porLaTicketera) : porLaTicketera())
+                .catch(() => showToast('No se imprimió', 'La venta sí quedó cobrada. Abre la gaveta y reimprime desde Facturación.', 'warning'));
             setCobrada({
                 real: true, referencia: r.referencia ?? cobrando.referencia, total: r.total, cliente: r.cliente ?? venta.cliente?.name ?? null,
-                documento: venta.documento, pago: venta.pago, recibido: r.efectivo, vuelto: r.vuelto, numero: r.numero, mh: r.mh,
+                documento: venta.documento, pago: r.pago ?? venta.pago, recibido: r.pago === 'contado' ? r.efectivo : null,
+                vuelto: r.pago === 'contado' ? r.vuelto : null, numero: r.numero, mh: r.mh,
                 yaCobrada: Boolean(r.ya_cobrada),
             });
             return;
@@ -696,9 +720,13 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                 <SegmentedControl label="Comprobante" layout="block" columns={2} value={venta.documento}
                                     options={cobrando ? DOCUMENTOS.map((d) => ({ ...d, description: undefined })) : DOCUMENTOS}
                                     onChange={(v) => cambiar({ documento: v })} />
-                                <LiquidSelect label="Tipo de pago" clearable={false} value={venta.pago} options={PAGOS}
+                                <LiquidSelect label="Tipo de pago" clearable={false} value={venta.pago} options={cobrando ? PAGOS_DE_COBRO : PAGOS}
                                     invalid={problemas.some((p) => p.clave === 'credito')}
                                     onChange={(v) => cambiar({ pago: v || 'contado' })} />
+                                {cobrando && venta.pago !== 'contado' && (
+                                    <DatosDelPago pago={venta.pago} detalle={detallePago} terminales={terminales}
+                                        onCambiar={(c) => setDetallePago((d) => ({ ...d, ...c }))} />
+                                )}
 
                                 {info?.puntos?.puede_canjear && (!enKiosco || info.puntos.disponibles >= info.puntos.minimo_canje) && (
                                     // Los puntos como un bloque propio: cuánto tiene, cuánto descuenta y un toque para usarlos.
@@ -782,11 +810,11 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                                 </div>
                                             </div>
                                         )}
-                                        <Button className="w-full" size="lg" icon={Wallet} loading={cobrandoAhora} disabled={bloqueada || faltaEfectivo || !cobroConectado}
+                                        <Button className="w-full" size="lg" icon={Wallet} loading={cobrandoAhora} disabled={bloqueada || faltaEfectivo || !cobroConectado || Boolean(faltaDelPago)}
                                             onClick={cobrarEnKiosco} data-accion-enviar>
                                             {problemas.length > 0
                                                 ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
-                                                : faltaEfectivo ? 'Escribe lo recibido' : `Cobrar ${formatMoney(aPagar)}`}
+                                                : faltaEfectivo ? 'Escribe lo recibido' : faltaDelPago && !enEfectivo ? faltaDelPago : `Cobrar ${formatMoney(aPagar)}`}
                                         </Button>
                                         {anulableEnCobro && (
                                             <Button className="w-full" variant="secondary" tone="danger" size="sm" icon={Ban} onClick={pedirAnularCobro}>
@@ -1658,6 +1686,33 @@ function ventaDeCobro(p, puedeAutorizar) {
     };
 }
 
+/** Lo que pide cada forma de pago que no es efectivo. */
+function DatosDelPago({ pago, detalle, terminales, onCambiar }) {
+    const campo = (name, label, extra = {}) => (
+        <PortalInput compact label={label} name={`pago-${name}`} value={detalle[name] ?? ''}
+            onChange={(e) => onCambiar({ [name]: e.target.value.slice(0, 40) })} {...extra} />
+    );
+    if (pago === 'tarjeta') {
+        const opciones = [
+            ...(terminales?.propias ?? []).map((t) => ({ value: t.terminal, label: `POS ${t.entidad} · ${t.terminal}` })),
+            ...(terminales?.otras ?? []).map((t) => ({ value: t.terminal, label: `POS de otra sucursal · ${t.terminal}` })),
+        ];
+        return (
+            <div className="space-y-2">
+                <LiquidSelect label="POS" placeholder={terminales ? 'Elige el POS' : 'Cargando…'} value={detalle.terminal ?? ''}
+                    options={opciones} onChange={(v) => onCambiar({ terminal: v || '' })} />
+                {campo('boleta', 'Número de boleta', { inputMode: 'numeric', placeholder: '000123',
+                    onChange: (e) => onCambiar({ boleta: e.target.value.replace(/\D/g, '').slice(0, 12) }) })}
+            </div>
+        );
+    }
+    if (pago === 'transferencia') return <div className="space-y-2">{campo('banco', 'Banco')}{campo('referencia', 'Referencia')}</div>;
+    if (pago === 'cheque') return <div className="space-y-2">{campo('banco', 'Banco')}{campo('numero', 'Número de cheque', { inputMode: 'numeric' })}</div>;
+    if (pago === 'bitcoin') return campo('referencia', 'Referencia del pago');
+    if (pago === 'credito') return <p className="text-micro text-content-3">Se carga a la cuenta del cliente. Si tiene algo vencido, no se puede.</p>;
+    return null;
+}
+
 // Atajos de efectivo: exacto y los billetes que suelen entregar.
 function billetesPara(total) {
     const t = Math.round(total * 100) / 100;
@@ -1688,7 +1743,7 @@ function CobroHecho({ cobro, onSiguiente }) {
                     <div className="flex items-baseline justify-between pt-1"><dt className="font-bold text-content">Vuelto</dt>
                         <dd className="text-display font-black tabular-nums text-success-text leading-none">{formatMoney(cobro.vuelto)}</dd></div>
                 ) : (
-                    <div className="flex justify-between"><dt className="text-content-3">Pago</dt><dd>{PAGOS.find((x) => x.value === cobro.pago)?.label}</dd></div>
+                    <div className="flex justify-between"><dt className="text-content-3">Pago</dt><dd>{PAGOS_DE_COBRO.find((x) => x.value === cobro.pago)?.label}</dd></div>
                 )}
             </dl>
             {!cobro.real && <Notice variant="info" compact>En la muestra no se emitió ni se imprimió nada.</Notice>}

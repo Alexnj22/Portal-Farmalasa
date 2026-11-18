@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1578.0 — Caja: el kiosco cobra con todas las formas de pago y el ticket de la caja
+
+Sigue apagado (`cobro_kiosco_sucursales`). Lo pidió el usuario: el kiosco va a
+reemplazar la pantalla de la caja, así que tiene que hacer todo lo que ella hace.
+
+- **Las seis formas de pago de la caja**: efectivo, crédito, tarjeta, cheque,
+  bitcoin y transferencia o remesa («no se usan pero deben de estar»). En la
+  caja todo lo que no es efectivo es un texto libre en «datos extra»; el kiosco
+  pide cada dato (POS y número de boleta; banco y referencia; banco y número de
+  cheque) y se lo manda a la caja ordenado. Una boleta de tarjeta repetida
+  (misma terminal, número y monto) se frena. El crédito no se da a clientes
+  varios ni a quien tiene algo vencido. Sin pago mixto, por decisión del
+  usuario: la caja no lo permite. Migración 20261118184536 (`pago`, `detalle`).
+- **El ticket oficial de la caja**: al finalizar, la caja devuelve su ticket
+  armado y el kiosco lo manda al mismo programa de impresión de la computadora
+  de la caja (`impresoraDeLaCaja.js`, copia de `imprimirTicketSolo`). Sale el
+  mismo papel y se abre la gaveta. Si no se llega, imprime el del portal.
+- Verificado: el turno que ve el kiosco es el de la cajera (apertura 3358 en
+  Salud 1 = la abierta ese día), y todo cargo que vende ya tiene permiso de caja.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1577.2 — La compra cargada aparece en el portal al instante
 
 Después de cargar una compra, `cargar-compra-erp` le pedía a

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    armarFinalizado, armarGuardado, clienteDePreventa, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
+    armarFinalizado, armarGuardado, clienteDePreventa, datosExtrasDelPago, problemaDelPago, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
 } from '@nucleo/utils/cobroDeCaja.js';
 
 // Forma de la `lista` de `cargar_data` (Salud 4, 2026-11-17), con comillas mezcladas
@@ -53,11 +53,24 @@ describe('cobro de una preventa en la caja', () => {
 
     it('no cobra lo que no está medido', () => {
         const renglones = leerRenglonesDeLista(lista);
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '', credito: '0' })).toBeNull();
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'CCF', cliente_retiene: '', credito: '0' })).toMatch(/crédito fiscal/);
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '1', credito: '0' })).toMatch(/retiene/);
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '0', credito: '2' })).toMatch(/contado/);
-        expect(motivoParaNoCobrar({ renglones: leerRenglonesDeLista(fila(1, 2, 3, 0, '0.45', '0')), tipo_documento: 'COF', credito: '0' })).toMatch(/sin cantidad/);
+        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '' })).toBeNull();
+        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'CCF', cliente_retiene: '' })).toMatch(/crédito fiscal/);
+        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '1' })).toMatch(/retiene/);
+        expect(motivoParaNoCobrar({ renglones: leerRenglonesDeLista(fila(1, 2, 3, 0, '0.45', '0')), tipo_documento: 'COF' })).toMatch(/sin cantidad/);
+    });
+
+    it('pide a cada forma de pago lo suyo y lo escribe ordenado para la caja', () => {
+        const base = { total: 10, efectivo: 10 };
+        expect(problemaDelPago({ ...base, pago: 'contado' })).toBeNull();
+        expect(problemaDelPago({ ...base, pago: 'contado', efectivo: 9.99 })).toMatch(/no alcanza/);
+        expect(problemaDelPago({ ...base, pago: 'tarjeta', detalle: { terminal: '60348001' } })).toMatch(/boleta/);
+        expect(problemaDelPago({ ...base, pago: 'tarjeta', detalle: { terminal: '60348001', boleta: '000956' } })).toBeNull();
+        expect(problemaDelPago({ ...base, pago: 'transferencia', detalle: { banco: 'Agricola' } })).toMatch(/referencia/);
+        expect(problemaDelPago({ ...base, pago: 'credito', clienteGenerico: true })).toMatch(/clientes varios/);
+        expect(problemaDelPago({ ...base, pago: 'bitcoin', detalle: { referencia: 'abc' } })).toBeNull();
+        expect(problemaDelPago({ ...base, pago: 'otro' })).toMatch(/forma de pago/);
+        expect(datosExtrasDelPago('tarjeta', { terminal: '60348001', boleta: ' 000956 ' })).toBe('TARJETA POS 60348001 BOLETA 000956');
+        expect(datosExtrasDelPago('contado')).toBe('');
     });
 
     it('lee la caja abierta y el cliente elegido', () => {
@@ -66,5 +79,14 @@ describe('cobro de una preventa en la caja', () => {
         expect(leerCajaAbierta(pag)).toEqual(caja);
         expect(leerCajaAbierta('<input id="fecha" value="2026-11-17">')).toBeNull();
         expect(clienteDePreventa("<option value='-1'>VARIOS</option><option value='13810' selected>YNES</option>")).toBe('13810');
+    });
+});
+
+import { codificarComoLaCaja } from '@plataforma/impresoraDeLaCaja.js';
+
+describe('el ticket oficial de la caja', () => {
+    it('codifica el cuerpo como jQuery.param, que es lo que lee el programa de impresión', () => {
+        expect(codificarComoLaCaja({ a: 'x y', b: [1, 2], c: { d: 'é' }, e: null, f: [{ g: 1 }] }))
+            .toBe('a=x+y&b%5B%5D=1&b%5B%5D=2&c%5Bd%5D=%C3%A9&e=&f%5B0%5D%5Bg%5D=1');
     });
 });

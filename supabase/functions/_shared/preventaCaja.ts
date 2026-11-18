@@ -25,7 +25,8 @@
 
 import { PAGOS_DE_CAJA } from "../../../src/utils/preventa.js";
 import {
-  armarFinalizado, armarGuardado, clienteDePreventa, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
+  armarFinalizado, armarGuardado, clienteDePreventa, CODIGO_DE_PAGO, datosExtrasDelPago, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar,
+  problemaDelPago, totalesDeCobro,
 } from "../../../src/utils/cobroDeCaja.js";
 
 export const BASE = "https://clientesdte3.oss.com.sv/farma_salud/";
@@ -513,7 +514,10 @@ export async function borrarPreventaDeLaCaja(http: Http, externoId: string, espe
 
 
 export async function prepararCobroEnLaCaja(
-  http: Http, externoId: string, esperado: { total: number | null; efectivo: number },
+  http: Http, externoId: string,
+  // `pago`/`detalle`: la forma de pago que eligió quien cobra (sin ellos, el
+  // ensayo usa la que trae la preventa en la caja, que es lo que cobraría ella).
+  esperado: { total: number | null; efectivo: number; pago?: string; detalle?: Record<string, string> },
   // El ensayo en paralelo lee la caja UNA vez por corrida y la pasa aquí.
   cajaLeida: ReturnType<typeof leerCajaAbierta> | undefined = undefined,
 ) {
@@ -534,11 +538,20 @@ export async function prepararCobroEnLaCaja(
   try { retiene = String(JSON.parse(await http.post("venta.php", { process: "mostrar_datos_cliente", id_client: cabecera.id_cliente }))?.retiene ?? ""); }
   catch { throw new Error("No se pudieron leer los datos del cliente en la caja."); }
   const totales = totalesDeCobro(renglones);
-  let motivo = motivoParaNoCobrar({ renglones, tipo_documento: cabecera.tipo_documento, cliente_retiene: retiene, credito: cabecera.credito });
+  if (esperado.pago) {
+    const extra = datosExtrasDelPago(esperado.pago, esperado.detalle ?? {});
+    cabecera.credito = CODIGO_DE_PAGO[esperado.pago as keyof typeof CODIGO_DE_PAGO] ?? cabecera.credito;
+    cabecera.datos_extras = [cabecera.datos_extras, extra].map((x) => x.trim()).filter(Boolean).join(" | ");
+  }
+  const pago = esperado.pago ?? (Object.entries(CODIGO_DE_PAGO).find(([, c]) => c === cabecera.credito)?.[0] ?? "");
+  let motivo = motivoParaNoCobrar({ renglones, tipo_documento: cabecera.tipo_documento, cliente_retiene: retiene });
   if (!motivo && esperado.total != null && Math.abs(totales.total - esperado.total) >= 0.005) {
     motivo = `En la caja la preventa suma ${totales.total.toFixed(2)} y en el portal ${esperado.total.toFixed(2)}. Revísala antes de cobrar.`;
   }
-  if (!motivo && !(esperado.efectivo >= totales.total)) motivo = "El efectivo no alcanza para el total.";
+  if (!motivo) {
+    motivo = problemaDelPago({ pago, detalle: esperado.detalle ?? {}, total: totales.total, efectivo: esperado.efectivo,
+      clienteGenerico: cabecera.id_cliente === "-1" || cabecera.id_cliente === "" });
+  }
   const guardado = armarGuardado({ renglones, cabecera, caja });
   // El número del documento lo da la caja al guardar: en el ensayo va vacío.
   const finalizado = armarFinalizado({ cabecera, guardado: { id_factura: externoId, ultimo: "" }, caja, efectivo: esperado.efectivo });

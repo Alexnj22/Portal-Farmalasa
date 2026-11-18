@@ -107,14 +107,48 @@ export function totalesDeCobro(renglones) {
     return { gravado: r2(gravado), exento: r2(exento), total: r2(gravado + exento), descuento: r2(descuento), items: renglones.length };
 }
 
-/** Qué impide cobrar esta preventa desde el portal, o null. */
-export function motivoParaNoCobrar({ renglones, tipo_documento, cliente_retiene, credito }) {
+/** Qué impide cobrar esta preventa desde el portal, o null. La forma de pago la juzga `problemaDelPago`. */
+export function motivoParaNoCobrar({ renglones, tipo_documento, cliente_retiene }) {
     if (!renglones?.length) return 'La preventa no tiene productos.';
     if (renglones.some((r) => r.invalida)) return 'Hay un producto sin cantidad o sin precio. Cóbrala en la caja.';
     if (!['COF', 'TIK'].includes(String(tipo_documento))) return 'Esta preventa es crédito fiscal. Por ahora se cobra en la caja.';
     if (cliente_retiene && String(cliente_retiene) !== '0') return 'El cliente retiene IVA. Por ahora se cobra en la caja.';
-    if (String(credito) !== '0') return 'Por ahora el kiosco sólo cobra al contado.';
     return null;
+}
+
+// ── Las formas de pago (2026-11-18) ─────────────────────────────────────────
+// Las seis de la caja (`#con_pago` en `venta.php`), con el código que espera
+// `credito`. En la caja todo lo que no es efectivo lleva un texto libre en
+// «datos extra»; el kiosco pide cada dato por separado y lo arma siempre igual.
+export const CODIGO_DE_PAGO = { contado: '0', credito: '1', tarjeta: '2', cheque: '3', bitcoin: '4', transferencia: '5' };
+
+const limpio = (s) => String(s ?? '').trim();
+
+/** Qué le falta a la forma de pago para cobrar, o null. */
+export function problemaDelPago({ pago, detalle = {}, total, efectivo, clienteGenerico }) {
+    if (!(pago in CODIGO_DE_PAGO)) return 'Elige la forma de pago.';
+    if (pago === 'contado' && !(Number(efectivo) >= Number(total))) return 'El efectivo no alcanza para el total.';
+    if (pago === 'tarjeta') {
+        if (!limpio(detalle.terminal)) return 'Elige el POS con que se pagó.';
+        if (!/^\d{1,12}$/.test(limpio(detalle.boleta))) return 'Escribe el número de boleta del POS.';
+    }
+    if (pago === 'transferencia' && (!limpio(detalle.banco) || !limpio(detalle.referencia))) return 'Escribe el banco y la referencia de la transferencia.';
+    if (pago === 'cheque' && (!limpio(detalle.banco) || !limpio(detalle.numero))) return 'Escribe el banco y el número del cheque.';
+    if (pago === 'bitcoin' && !limpio(detalle.referencia)) return 'Escribe la referencia del pago.';
+    if (pago === 'credito' && clienteGenerico) return 'El crédito se le da a un cliente con nombre, no a clientes varios.';
+    return null;
+}
+
+/** Lo que va en «datos extra» de la caja: los datos del pago en un texto ordenado. */
+export function datosExtrasDelPago(pago, detalle = {}) {
+    const d = (k) => limpio(detalle[k]).replace(/\s+/g, ' ');
+    switch (pago) {
+        case 'tarjeta': return `TARJETA POS ${d('terminal')} BOLETA ${d('boleta')}`;
+        case 'transferencia': return `TRANSFERENCIA ${d('banco')} REF ${d('referencia')}`;
+        case 'cheque': return `CHEQUE ${d('banco')} NUM ${d('numero')}`;
+        case 'bitcoin': return `BITCOIN REF ${d('referencia')}`;
+        default: return '';
+    }
 }
 
 /** El cuerpo de `process=insert`, en el orden y con los nombres de `senddata`. */

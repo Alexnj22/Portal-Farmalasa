@@ -5,7 +5,7 @@ import {
   borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, finalizarEnLaCaja, guardarEnLaCaja, listaDeLaCaja,
   prepararCobroEnLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
 } from "../_shared/preventaCaja.ts";
-import { armarFinalizado } from "../../../src/utils/cobroDeCaja.js";
+import { armarFinalizado, CODIGO_DE_PAGO } from "../../../src/utils/cobroDeCaja.js";
 import { armarVenta } from "../../../src/utils/preventa.js";
 import { enviarDteAlMH, login as entrarAlSistema } from "../_shared/erp-dte.ts";
 import { fijarVineta, leerFichaDe } from "../_shared/erp-regulado.ts";
@@ -423,9 +423,19 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
   const ensayo = body.ensayo === true;
 
   const id = Number(body.preventa_id);
-  const efectivo = Number(body.efectivo);
+  let efectivo = Number(body.efectivo);
   if (!Number.isInteger(id) || id <= 0) return responder({ ok: false, error: "No se dijo qué preventa." }, 400);
   if (!Number.isFinite(efectivo) || efectivo < 0) return responder({ ok: false, error: "Falta el efectivo recibido." }, 400);
+  // La forma de pago y sus datos (POS y boleta, banco y referencia…). Sólo las
+  // claves conocidas y cortas: van a la caja como texto.
+  const pago = ensayo && body.pago == null ? undefined : String(body.pago ?? "contado");
+  if (pago !== undefined && !(pago in CODIGO_DE_PAGO)) return responder({ ok: false, error: "Elige la forma de pago." }, 400);
+  const detalle: Record<string, string> = {};
+  const bruto = (body.detalle && typeof body.detalle === "object") ? body.detalle as Record<string, unknown> : {};
+  for (const k of ["terminal", "boleta", "banco", "referencia", "numero"]) {
+    const v = String(bruto[k] ?? "").trim().slice(0, 40);
+    if (v) detalle[k] = v;
+  }
 
   const { data: pv, error: ePv } = await admin.from("preventas")
     .select("id, branch_id, estado, sistema, externo_id, externo_ref, total").eq("id", id).maybeSingle();
@@ -477,17 +487,42 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
   if (!fila) {
     let plan;
     try {
-      plan = await prepararCobroEnLaCaja(http, externo, { total: pv.total == null ? null : Number(pv.total), efectivo });
+      plan = await prepararCobroEnLaCaja(http, externo, { total: pv.total == null ? null : Number(pv.total), efectivo, pago, detalle });
     } catch (e) {
       return responder({ ok: false, error: (e as Error).message }, 502);
     }
     if (ensayo) return responder({ ok: true, ensayo: true, ...plan });
     if (plan.motivo) return responder({ ok: false, error: plan.motivo }, 409);
+    // Lo que no es efectivo se cobra completo: no hay vuelto.
+    if (pago !== "contado") efectivo = plan.totales.total;
+
+    if (pago === "credito") {
+      // Crédito sólo a quien no debe nada vencido (el espejo de cuentas por cobrar).
+      const { data: cli, error: eCli } = await admin.from("customers").select("id").eq("erp_id", String(plan.cabecera.id_cliente)).maybeSingle();
+      if (eCli) return responder({ ok: false, error: "No se pudo leer el cliente." }, 503);
+      if (cli) {
+        const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
+        const { count, error: eVen } = await admin.from("creditos_de_clientes").select("id", { count: "exact", head: true })
+          .eq("customer_id", cli.id).eq("estado", "PENDIENTE").gt("saldo", 0).lt("vencio_el", hoy);
+        if (eVen) return responder({ ok: false, error: "No se pudieron leer los créditos del cliente." }, 503);
+        if ((count ?? 0) > 0) return responder({ ok: false, error: "El cliente tiene créditos vencidos. Que pague primero o cóbrale de otra forma." }, 409);
+      }
+    }
+    if (pago === "tarjeta") {
+      // Misma terminal, misma boleta y mismo monto en los últimos días: es la misma operación.
+      const desde = new Date(Date.now() - 3 * 86400_000).toISOString();
+      const { data: rep, error: eRep } = await admin.from("cobro_kiosco_cobros").select("externo_id, total")
+        .eq("pago", "tarjeta").eq("detalle->>terminal", detalle.terminal).eq("detalle->>boleta", detalle.boleta).gte("created_at", desde);
+      if (eRep) return responder({ ok: false, error: "No se pudo revisar la boleta." }, 503);
+      if ((rep ?? []).some((r: { total: number }) => Math.abs(Number(r.total) - plan.totales.total) < 0.005)) {
+        return responder({ ok: false, error: `La boleta ${detalle.boleta} de ese POS ya se usó en otra venta por el mismo monto.` }, 409);
+      }
+    }
 
     // El candado: dos toques (o dos equipos) no cobran dos veces.
     const { data: nueva, error: eIns } = await admin.from("cobro_kiosco_cobros").insert({
       preventa_id: id, branch_id: pv.branch_id, externo_id: externo, empleado_id: quien.id,
-      total: plan.totales.total, efectivo, respuestas: { cabecera: plan.cabecera, caja: plan.caja },
+      total: plan.totales.total, efectivo, pago, detalle, respuestas: { cabecera: plan.cabecera, caja: plan.caja },
     }).select("*").single();
     if (eIns) {
       return eIns.code === "23505"
@@ -519,6 +554,7 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
   // ── Finalizar con el efectivo ──
   const { cabecera, caja, guardado } = fila.respuestas ?? {};
   if (!cabecera || !caja || !guardado) return responder({ ok: false, error: "Al cobro le faltan datos para finalizar. Finalízala en la caja." }, 500);
+  if (fila.pago && fila.pago !== "contado") efectivo = Number(fila.total ?? 0);
   if (!(efectivo >= Number(fila.total ?? 0))) return responder({ ok: false, error: "El efectivo no alcanza para el total." }, 409);
   const fin = armarFinalizado({ cabecera, guardado: { ...guardado, id_factura: guardado.id_factura ?? externo }, caja, efectivo });
   const f = await finalizarEnLaCaja(http, fin);
@@ -552,7 +588,19 @@ function resumenDeCobro(c: Record<string, any>, pv: Record<string, any>) {
     referencia: pv.externo_ref ?? null, externo_id: c.externo_id, total, efectivo,
     vuelto: Math.round((efectivo - total) * 100) / 100, numero: c.numero ?? null,
     documento: c.respuestas?.cabecera?.tipo_documento ?? null, cliente: g.nombre ?? null,
-    mh: c.mh ?? null,
+    mh: c.mh ?? null, pago: c.pago ?? "contado", detalle: c.detalle ?? {},
+    // El ticket OFICIAL de la caja, tal como lo arma ella al finalizar: el
+    // kiosco lo manda al mismo programa de impresión de la computadora de la
+    // caja (que también abre la gaveta).
+    ticket: ticketDeLaCaja(c.respuestas?.finalizado),
+  };
+}
+
+function ticketDeLaCaja(f: Record<string, unknown> | undefined) {
+  if (!f || f.facturar == null || !f.dir_print) return null;
+  return {
+    facturar: f.facturar, headers: f.headers ?? null, footers: f.footers ?? null,
+    dir_print: String(f.dir_print), sist_ope: String(f.sist_ope ?? ""), shared_printer_pos: f.shared_printer_pos ?? null,
   };
 }
 

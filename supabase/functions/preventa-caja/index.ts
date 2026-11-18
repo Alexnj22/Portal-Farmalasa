@@ -297,9 +297,11 @@ async function directa(
   };
 
   let resultado;
+  let httpCaja: Awaited<ReturnType<typeof sesionDeCaja>> | null = null;
   try {
     const { username, password } = getCortesCreds();
     const http = await sesionDeCaja(username, password, Number(datos.erp_sucursal));
+    httpCaja = http;
     await fechaDeLaCaja(http);
     if (datos.externo_id) {
       const viva = await preventaVivaEnLaCaja(http, String(datos.externo_id), vendedorPrevio);
@@ -352,6 +354,38 @@ async function directa(
     console.error("[preventa-caja] registrar directa:", eReg.message);
     return responder({ ok: false, error: `La preventa #${resultado.referencia} quedó en caja, pero el portal no la pudo guardar.` }, 500);
   }
+  // Ensayo del cobro en paralelo (etapa 1 del cobro desde el kiosco,
+  // 2026-11-18): recién enviada, la preventa SEGURO existe en la caja, y se
+  // le arma el cobro que haría el kiosco SIN mandarlo. Revisar la caja cada
+  // minuto no servía: el usuario midió que la preventa se guarda, se lleva a
+  // caja y se finaliza en el mismo momento. Corre DESPUÉS de responder (no hace
+  // esperar a quien vende) y nunca hace fallar el envío. Lo compara
+  // `cobro_caja_ensayo_comparar()` cuando la factura llega.
+  const ensayar = async () => {
+    try {
+      if (!httpCaja || !resultado?.externo_id) return;
+      const ext = String(resultado.externo_id);
+      // La sala que ya validó `preventa_directa_preparar` (permiso y alcance).
+      const sucursalDelEnsayo = Number(body.branch_id);
+      const plan = await prepararCobroEnLaCaja(httpCaja, ext, { total: null, efectivo: 1e9 })
+        .catch((e) => ({ error: (e as Error).message }));
+      const { data: prev, error: ePrevEns } = await admin.from("cobro_caja_ensayos").select("veces")
+        .eq("branch_id", sucursalDelEnsayo).eq("externo_id", ext).maybeSingle();
+      if (ePrevEns) { console.error("[preventa-caja] ensayo:", ePrevEns.message); return; }
+      const { error: eEns } = await admin.from("cobro_caja_ensayos").upsert({
+        branch_id: sucursalDelEnsayo, externo_id: ext, referencia: String(resultado.referencia ?? ""),
+        total_caja: resultado.total_caja ?? null, plan, captado_at: new Date().toISOString(),
+        veces: Number(prev?.veces ?? 0) + 1, comparado_at: null, cuadra: null, diferencias: null,
+      }, { onConflict: "branch_id,externo_id" });
+      if (eEns) console.error("[preventa-caja] ensayo:", eEns.message);
+    } catch (e) {
+      console.error("[preventa-caja] ensayo:", (e as Error).message);
+    }
+  };
+  // deno-lint-ignore no-explicit-any
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(ensayar()); else await ensayar();
+
   return responder({
     ok: true, preventa: reg, codigo: datos.codigo, referencia: resultado.referencia, externo_id: resultado.externo_id,
     corregida: Boolean(datos.externo_id), cliente_generico: venta.cliente.generico,

@@ -114,9 +114,6 @@
     "cierre-automatico-caja": {
       "guarda": "cron"
     },
-    "ensayo-cobro-caja": {
-      "guarda": "cron"
-    },
     "consolidate-timesheets": {
       "guarda": "cron"
     },

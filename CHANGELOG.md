@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.9 — Caja: el ensayo del cobro se hace al enviar la preventa
+
+El usuario (2026-11-18): «se tardan muy poco en preventa: la guardan, van a
+caja en el mismo momento y luego la finalizan de un solo». Revisar la caja
+cada minuto casi nunca la veía (en la primera media hora: 0 preventas en
+Salud 4).
+
+- `preventa-caja` ensaya el cobro de cada preventa RECIÉN enviada desde el
+  portal, en cualquier sucursal, con la misma sesión de la caja: se corre
+  después de responder (`EdgeRuntime.waitUntil`), no hace esperar a quien
+  vende y nunca hace fallar el envío.
+- Se borra la función `ensayo-cobro-caja` y su cron. Queda
+  `ensayo-cobro-comparar`, SQL puro cada 10 minutos, que no le pide nada a la
+  caja. El presupuesto de peticiones vuelve a 23.458.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1575.8 — Kiosco: ensayo del cobro en paralelo en Salud 4 y Salud 1
 
 Etapa 1 del cobro desde el kiosco (usuario, 2026-11-18: «sin afectar nada,

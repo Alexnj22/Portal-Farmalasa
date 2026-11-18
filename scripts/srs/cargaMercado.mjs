@@ -83,7 +83,7 @@ export function cuentaPortal(nombre) {
         if (esMedida(m[2])) continue;
         const n = Number(m[1]);
         if (!Number.isInteger(n)) continue;
-        return { n, envase: CONTENEDOR.test(m[2] ?? '') };
+        return { n, envase: CONTENEDOR.test(m[2] ?? ''), palabra: m[2] ?? '' };
     }
     return null;
 }
@@ -108,8 +108,9 @@ export function contenidos(producto, pareja, precios) {
     const total = piezasSrs(pareja.presentacion_srs);
     if (total == null) return { motivo: 'empaque_srs_desconocido' };
     const cuenta = cuentaPortal(producto?.nombre);
-    // «ZUDENINA GEL X 30» es el tubo de 30 g, no 30 piezas.
-    const nombre = cuenta && !(vs && cuenta.n === vs.n) ? cuenta.n : null;
+    // «ZUDENINA GEL X 30» (número suelto) es el tubo de 30 g, no 30 piezas.
+    // «FOSKROL X 15 AMP» sí son 15, aunque cada vial sea de 15 ml.
+    const nombre = cuenta && !(vs && !cuenta.palabra && cuenta.n === vs.n) ? cuenta.n : null;
     let srs = total;
 
     // 1) El nombre y el factor más grande se confirman entre sí.

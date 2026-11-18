@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.3 — Carga SRS: viales de 15 ml no se confunden con el volumen
+
+- `scripts/srs/cargaMercado.mjs`: el número del nombre sólo se descarta por coincidir con el volumen de la SRS cuando va suelto («GEL X 30» = tubo de 30 g). «FOSKROL X 15 AMP» con viales de 15 ml son 15 viales. En el plan de La Salud, 21 productos dejaron de quedar en revisar.
+
+Novedades: no — herramienta interna de cumplimiento.
+
 ## v2.1575.2 — Kiosco: trámites de Operación y lo más vendido con foto
 
 Pedidos del usuario (2026-11-18):

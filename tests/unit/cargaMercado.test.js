@@ -27,6 +27,14 @@ describe('contar piezas, no medidas', () => {
         expect(volumenSrs('FIXIM 100mg/5mL')).toBe(null);
     });
 
+    it('15 viales de 15 ml son 15 viales; un gel «X 30» de 30 g es un tubo', () => {
+        const precios = [{ descripcion: '1x1', factor: 1, vineta: 20, descuento_1: 18 }];
+        const viales = convertir({ producto: { nombre: 'FOSKROL X 15 AMP BEBIBLES' }, pareja: { presentacion_srs: 'CAJA X 15 VIAL BEBIBLE X 15 mL' }, precios, inventario: [{ detalle: '1x1', cantidad: 2 }] });
+        expect(viales).toMatchObject({ ok: true, existencia: 2, precio: 20 });
+        const gel = convertir({ producto: { nombre: 'ZUDENINA PLUS GEL X 30' }, pareja: { presentacion_srs: 'TUBO X 30 G' }, precios, inventario: [{ detalle: '1x1', cantidad: 3 }] });
+        expect(gel).toMatchObject({ ok: true, existencia: 3 });
+    });
+
     it.each([['TRAVATAN X 2.5 ML', null], ['KOPTIN SUSPENSION X 22.5 ML', null]])('portal «%s» → %s', (t, n) => expect(piezasPortal(t)).toBe(n));
 
     it('el portal cuenta sobres: 24 sobres son UNA caja de 24 sobres x 2, al precio de la caja', () => {

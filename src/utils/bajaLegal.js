@@ -68,6 +68,15 @@ export const DOCUMENTO_DE_BAJA = {
     ABANDONO: 'el acta de inasistencias y la carta de terminación firmadas por el patrono (el portal las arma: «Imprimir acta y carta»). Si todavía no están firmadas, la baja se registra igual y queda pendiente en el cierre',
 };
 
+/**
+ * El respaldo de ESTA baja. Una renuncia sin la hoja oficial (2026-11-18, lo
+ * pidió el usuario: la persona avisó por WhatsApp con una carta sin firmar y
+ * no volvió) se respalda con ese aviso, no con la hoja que no existe.
+ */
+export const documentoDeBaja = (d = {}) => (d?.terminationReason === 'RENUNCIA' && d?.sinHojaOficial)
+    ? 'el mensaje o la carta con que avisó que renunciaba'
+    : DOCUMENTO_DE_BAJA[d?.terminationReason] || '';
+
 /** Días de la semana, para el día de descanso (0 = domingo, como `Date.getUTCDay`). */
 export const DIAS_DE_LA_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -169,6 +178,7 @@ export const ROTULOS_DE_BAJA = {
     fueroDeclarado: '¿Tiene fuero?',
     hojaRenunciaExpedida: 'Fecha de la hoja oficial',
     renunciaPresentada: 'Fecha en que la presentó',
+    comoAviso: 'Cómo avisó',
     causalArt50: 'Causal del Art. 50',
     fechaDeLosHechos: 'Fecha de los hechos',
     pruebas: 'Pruebas de la causal',
@@ -200,7 +210,15 @@ function comprobacionesDeBaja(d = {}, empleado = {}) {
                 : null);
     }
 
-    if (motivo === 'RENUNCIA') {
+    if (motivo === 'RENUNCIA' && d.sinHojaOficial) {
+        // Sin la hoja oficial (Art. 402 CT) se registra igual, por decisión del
+        // usuario (2026-11-18). Lo que se exige a cambio es el rastro: cuándo y
+        // cómo avisó. Es lo que se va a mostrar si la persona reclama después.
+        exigir('renunciaPresentada', fecha(d.renunciaPresentada) ? null : 'Falta la fecha en que avisó que renunciaba.');
+        exigir('comoAviso', String(d.comoAviso || '').trim().length < 10 ? 'Anota cómo avisó: por dónde, a quién y qué mandó.' : null);
+    }
+
+    if (motivo === 'RENUNCIA' && !d.sinHojaOficial) {
         exigir('hojaRenunciaExpedida', fecha(d.hojaRenunciaExpedida) ? null : 'Falta la fecha de expedición de la hoja oficial de renuncia.');
         let p = null;
         if (!fecha(d.renunciaPresentada)) p = 'Falta la fecha en que presentó la renuncia.';
@@ -280,6 +298,9 @@ export function avisosDeBaja(d = {}, empleado = {}) {
         if (preaviso < 15) {
             avisos.push(`Preaviso de ${preaviso} días: la ley pide 15 (30 en cargos de dirección) para la prestación por renuncia. Revisa con el abogado si se paga.`);
         }
+    }
+    if (d.terminationReason === 'RENUNCIA' && d.sinHojaOficial) {
+        avisos.push('Sin la hoja oficial, la renuncia no queda firmada ante el Ministerio de Trabajo. Guarda el mensaje y la carta como respaldo.');
     }
     const incap = d.date ? incapacidadVigente(empleado?.history, d.date) : null;
     if (incap && d.terminationReason !== 'RENUNCIA') {

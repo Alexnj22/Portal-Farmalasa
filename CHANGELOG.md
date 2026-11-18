@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.1 — Personal: renuncia sin la hoja oficial
+
+Lo pidió el usuario: una persona avisó por WhatsApp con una carta sin firmar y
+no volvió, y la baja como renuncia exigía la fecha de la hoja oficial. Ahora la
+renuncia tiene «No trajo la hoja oficial»: en lugar de la hoja pide cuándo avisó
+y cómo, avisa que sin hoja no queda firmada ante el Ministerio de Trabajo, y el
+respaldo pasa a ser el mensaje o la carta. En el portal y en la app.
+
+Novedades: no — 0 de 4 en la valoración; es una opción dentro de la baja.
+
 ## v2.1579.0 — El kiosco cobra crédito fiscal y retención, y avisa el crédito del cliente
 
 - El kiosco ya cobra **crédito fiscal** y a **clientes que retienen**, con el cálculo de la caja: en crédito fiscal cada producto va sin IVA y se suma el 13 %; la retención del 1 % corre desde $100. Enfrentado al centavo con facturas reales (CCF 410964, COF 414169).

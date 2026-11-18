@@ -11,7 +11,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import { irAlCampo } from '../../plataforma/irAlCampo';
 import { TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
 import {
-    CAUSALES_ART_50, DOCUMENTO_DE_BAJA, DIAS_DE_LA_SEMANA, SALARIO_MINIMO_INICIAL, avisosDeBaja, pendientesDeBaja, diasDePreaviso, liquidacionEstimada,
+    CAUSALES_ART_50, documentoDeBaja, DIAS_DE_LA_SEMANA, SALARIO_MINIMO_INICIAL, avisosDeBaja, pendientesDeBaja, diasDePreaviso, liquidacionEstimada,
     requisitosDeBaja, respaldoDeBajaObligatorio, estadoDeActivos, conActivo,
 } from '@nucleo/utils/bajaLegal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -231,6 +231,26 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                         </Campo>
 
                         {esRenuncia && (
+                            <Checkbox size="sm" checked={!!formData?.sinHojaOficial} onChange={(v) => poner('sinHojaOficial', v)}
+                                label={<span className="text-body-sm text-content-2">No trajo la hoja oficial: avisó por otro medio</span>} />
+                        )}
+
+                        {esRenuncia && formData?.sinHojaOficial && (
+                            <div className="grid grid-cols-1 gap-4">
+                                <Campo campo="renunciaPresentada" rotulo="Avisó el" siguiente={falta('renunciaPresentada')}>
+                                    <div className="h-[40px]">
+                                        <LiquidDatePicker value={formData?.renunciaPresentada || ''} onChange={(v) => poner('renunciaPresentada', v || null)} icon={CalendarDays} />
+                                    </div>
+                                </Campo>
+                                <Campo campo="comoAviso" siguiente={falta('comoAviso')}>
+                                    <PortalTextarea label="Cómo avisó" rows={2} value={formData?.comoAviso || ''}
+                                        onChange={(e) => poner('comoAviso', e.target.value)}
+                                        placeholder="Por WhatsApp a Talento Humano, con una carta sin firmar" />
+                                </Campo>
+                            </div>
+                        )}
+
+                        {esRenuncia && !formData?.sinHojaOficial && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Campo campo="hojaRenunciaExpedida" rotulo="Hoja oficial expedida el" siguiente={falta('hojaRenunciaExpedida')}>
                                     <div className="h-[40px]">
@@ -330,7 +350,7 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             estado={<Badge variant={respaldoDeBajaObligatorio(motivo) ? 'warning' : 'neutral'} size="sm">{respaldoDeBajaObligatorio(motivo) ? 'Obligatorio' : 'Puede ir después'}</Badge>}>
                             Respaldo
                         </TituloSeccion>
-                        <p className="text-body-sm text-content-2">Se adjunta al final: {DOCUMENTO_DE_BAJA[motivo]}.</p>
+                        <p className="text-body-sm text-content-2">Se adjunta al final: {documentoDeBaja(formData)}.</p>
                         {conActa && (
                             <div className="space-y-1 pt-1">
                                 <Button variant="secondary" size="sm" icon={Printer} onClick={imprimirActaYCarta}>Imprimir acta y carta</Button>

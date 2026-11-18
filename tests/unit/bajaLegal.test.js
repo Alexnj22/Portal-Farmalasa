@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    problemaDeBaja, avisosDeBaja, liquidacionEstimada, ausenciasConfiguranCausal, respaldoDeBajaObligatorio, pendientesDeBaja, diasDeAguinaldo, CAUSALES_ART_50,
+    problemaDeBaja, avisosDeBaja, liquidacionEstimada, ausenciasConfiguranCausal, respaldoDeBajaObligatorio, pendientesDeBaja, diasDeAguinaldo, CAUSALES_ART_50, documentoDeBaja,
 } from '@nucleo/utils/bajaLegal';
 import { validarNovedad } from '@nucleo/utils/novedadDePersonal';
 import { htmlDeActaYCarta } from '@nucleo/utils/papelDeBaja';
@@ -172,3 +172,20 @@ describe('cierre pendiente de una baja registrada', () => {
         expect(cierrePendienteDeBaja({ motivo: 'ABANDONO' }).map((x) => x.clave)).toEqual(['hasFiniquito', 'activosDevueltos', 'avisoIsssAfp', 'constanciaEntregada', 'cartaEntregada']);
     });
 });
+
+describe('renuncia sin la hoja oficial (2026-11-18)', () => {
+    const base = { date: '2026-11-15', ultimoDiaLaborado: '2026-11-10', terminationReason: 'RENUNCIA', sinHojaOficial: true };
+    const emp = { hire_date: '2025-06-01' };
+    it('no pide la hoja, pide cuándo y cómo avisó', () => {
+        expect(problemaDeBaja(base, emp)).toMatch(/avisó/);
+        expect(problemaDeBaja({ ...base, renunciaPresentada: '2026-11-01' }, emp)).toMatch(/cómo avisó/i);
+        expect(problemaDeBaja({ ...base, renunciaPresentada: '2026-11-01', comoAviso: 'WhatsApp a Talento Humano con carta sin firmar' }, emp)).toBeNull();
+    });
+    it('avisa y cambia el respaldo', () => {
+        const d = { ...base, renunciaPresentada: '2026-11-01', comoAviso: 'WhatsApp a Talento Humano' };
+        expect(avisosDeBaja(d, emp).some((a) => /hoja oficial/.test(a))).toBe(true);
+        expect(documentoDeBaja(d)).toMatch(/mensaje o la carta/);
+        expect(documentoDeBaja({ terminationReason: 'RENUNCIA' })).toMatch(/hoja oficial/);
+    });
+});
+

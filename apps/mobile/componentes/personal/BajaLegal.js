@@ -11,7 +11,7 @@ import { Presionable as Pressable } from '../Tocable';
 import Interruptor from '../Interruptor';
 import { TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
 import {
-  CAUSALES_ART_50, DIAS_DE_LA_SEMANA, DOCUMENTO_DE_BAJA, SALARIO_MINIMO_INICIAL,
+  CAUSALES_ART_50, DIAS_DE_LA_SEMANA, documentoDeBaja, SALARIO_MINIMO_INICIAL,
   avisosDeBaja, diasDePreaviso, liquidacionEstimada, pendientesDeBaja, estadoDeActivos, conActivo,
 } from '@nucleo/utils/bajaLegal';
 import { htmlDeActaYCarta } from '@nucleo/utils/papelDeBaja';
@@ -133,9 +133,15 @@ export default function BajaLegal({ f, pon, emp }) {
 
       {motivo ? (
         <>
-          <Seccion titulo="Fechas" pie={esRenuncia ? 'La renuncia sólo vale en la hoja del Ministerio de Trabajo o del juzgado, presentada dentro de los 10 días de expedida (Art. 402 CT). El preaviso pide 15 días antes de la baja (30 en jefaturas).' : null}>
+          <Seccion titulo="Fechas" pie={esRenuncia && !f.sinHojaOficial ? 'La renuncia sólo vale en la hoja del Ministerio de Trabajo o del juzgado, presentada dentro de los 10 días de expedida (Art. 402 CT). El preaviso pide 15 días antes de la baja (30 en jefaturas).' : null}>
             <FechaDeLey rotulo="Último día que trabajó" valor={f.ultimoDiaLaborado} hasta={f.date || undefined} onCambiar={(v) => pon({ ultimoDiaLaborado: v })} />
             {esRenuncia ? (
+              <Fila rotulo="No trajo la hoja oficial"><Interruptor value={!!f.sinHojaOficial} onValueChange={(v) => pon({ sinHojaOficial: v })} /></Fila>
+            ) : null}
+            {esRenuncia && f.sinHojaOficial ? (
+              <FechaDeLey rotulo="Avisó el" valor={f.renunciaPresentada} onCambiar={(v) => pon({ renunciaPresentada: v })} />
+            ) : null}
+            {esRenuncia && !f.sinHojaOficial ? (
               <>
                 <FechaDeLey rotulo="Hoja oficial expedida el" valor={f.hojaRenunciaExpedida} onCambiar={(v) => pon({ hojaRenunciaExpedida: v })} />
                 <FechaDeLey rotulo="La presentó el" valor={f.renunciaPresentada} onCambiar={(v) => pon({ renunciaPresentada: v })} />
@@ -189,6 +195,13 @@ export default function BajaLegal({ f, pon, emp }) {
                 </Fila>
               ))}
               {!ausencias.length ? <Vacio enSeccion>Ninguno todavía.</Vacio> : null}
+            </Seccion>
+          ) : null}
+
+          {esRenuncia && f.sinHojaOficial ? (
+            <Seccion titulo="Cómo avisó">
+              <Campo value={f.comoAviso || ''} onChangeText={(t) => pon({ comoAviso: t })} style={{ minHeight: 70 }}
+                placeholder="Por WhatsApp a Talento Humano, con una carta sin firmar" />
             </Seccion>
           ) : null}
 
@@ -253,7 +266,7 @@ export default function BajaLegal({ f, pon, emp }) {
             ))}
           </Seccion>
 
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>{`Respaldo que se adjunta abajo: ${DOCUMENTO_DE_BAJA[motivo]}.`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>{`Respaldo que se adjunta abajo: ${documentoDeBaja(f)}.`}</Text>
           {conActa ? (
             <>
               <BotonGrande texto="Imprimir acta y carta" borde color={MARCA.azulClaro} onPress={imprimirActaYCarta} />

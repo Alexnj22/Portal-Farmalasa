@@ -15,7 +15,7 @@ import { EVENT_TYPES, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } 
 import { formatDate } from '@nucleo/utils/helpers';
 import { plazaOcupada, asuetoDelDia, finPorLey, diasDelPeriodo, validarNovedad, opcionesDeNovedad, antiguedad, respaldoObligatorio } from '@nucleo/utils/novedadDePersonal';
 import { pinDeKiosco } from '@nucleo/utils/pinDeKiosco';
-import { DOCUMENTO_DE_BAJA } from '@nucleo/utils/bajaLegal';
+import { documentoDeBaja } from '@nucleo/utils/bajaLegal';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
@@ -612,7 +612,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
                         file={formData?.file}
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
-                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (DOCUMENTO_DE_BAJA[formData?.terminationReason] || 'el respaldo de la baja') : 'el respaldo'} (PDF, JPG o PNG)`}
+                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (documentoDeBaja(formData) || 'el respaldo de la baja') : 'el respaldo'} (PDF, JPG o PNG)`}
                     />
                     </div>
                 </>

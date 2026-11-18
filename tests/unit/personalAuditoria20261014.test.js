@@ -103,3 +103,22 @@ describe('los tres pendientes que quedaron del plan', () => {
         expect(faltaParaRecontratar({ ...base, rehire_contract_end_date: '2027-01-01' })).toBeNull();
     });
 });
+
+describe('soporteDe sigue la cadena de correcciones (2026-11-18)', () => {
+    it('el documento de la novedad original respalda a su corrección', () => {
+        const historia = [
+            { id: 'ev-a', metadata: { status: 'SUPERSEDED', supersededBy: 'ev-b' } },
+            { id: 'ev-b', metadata: { status: 'SUPERSEDED', originalEventId: 'ev-a', supersededBy: 'ev-c' } },
+            { id: 'ev-c', metadata: { originalEventId: 'ev-b' } },
+        ];
+        const docs = [{ id: 'd1', event_id: 'ev-a', url: 'https://x/finiquito.pdf' }];
+        const ev = { eventoId: 'ev-c', metadata: historia[2].metadata };
+        expect(soporteDe(ev, docs, historia)?.id).toBe('d1');
+        expect(soporteDe(ev, docs)).toBeNull(); // sin la historia sólo llega un paso (ev-b)
+        expect(soporteDe({ eventoId: 'ev-b', metadata: historia[1].metadata }, docs)?.id).toBe('d1');
+    });
+    it('un ciclo en la cadena no cuelga', () => {
+        const historia = [{ id: 'x', metadata: { originalEventId: 'y' } }, { id: 'y', metadata: { originalEventId: 'x' } }];
+        expect(soporteDe({ eventoId: 'x', metadata: historia[0].metadata }, [], historia)).toBeNull();
+    });
+});

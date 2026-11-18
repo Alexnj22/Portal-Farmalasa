@@ -806,10 +806,18 @@ export const createSystemSlice = (set, get) => ({
                 if (isScheduled) {
                     applyMeta = { applyStatus: 'SCHEDULED', appliedChanges: empUpdates };
                 } else {
-                    const previousValues = {};
+                    let previousValues = {};
                     Object.keys(empUpdates).forEach(k => { previousValues[k] = currentEmp?.[k] ?? null; });
                     if (eventData.type === 'TERMINATION') {
                         previousValues._employee_branches = currentEmp?.assigned_branch_ids || [];
+                    }
+                    // Una corrección hereda la foto de ANTES de la novedad original.
+                    // Tomada ahora, la ficha ya tiene aplicado lo que la original
+                    // escribió: una baja corregida guardaba «INACTIVO, sin cargo ni
+                    // sucursal» como valor previo, y cancelarla no devolvía a nadie
+                    // a su puesto (2026-11-18).
+                    if (options.previousValues && typeof options.previousValues === 'object') {
+                        previousValues = { ...previousValues, ...options.previousValues };
                     }
                     applyMeta = {
                         applyStatus: 'APPLIED',
@@ -1097,11 +1105,20 @@ export const createSystemSlice = (set, get) => ({
             // fallaba —fechas que se cruzan, el tope de plazas, la red— la
             // original quedaba «EDITADO» sin reemplazo: la novedad desaparecía.
             // `excludeEventId` es lo que deja crearla mientras la vieja sigue viva.
+            // El archivo: al reabrir la novedad, `file` viene de la metadata
+            // (un `{}`, porque un File no sobrevive al JSON). Sólo uno recién
+            // elegido en la corrección es un File de verdad, y ése sí se sube.
+            // Antes se pasaba `null` siempre y el adjunto nuevo se perdía.
+            const archivoNuevo = (typeof File !== 'undefined' && cleanData.file instanceof File) ? cleanData.file : null;
             const newId = await get().registerEmployeeEvent(
                 employeeId,
                 { ...cleanData, originalEventId: eventId, isEdit: true },
-                null,
-                { excludeEventId: eventId, skipRefresh: true }
+                archivoNuevo,
+                {
+                    excludeEventId: eventId,
+                    skipRefresh: true,
+                    previousValues: currentMeta.applyStatus === 'APPLIED' ? currentMeta.previousValues : undefined,
+                }
             );
 
             const { error: supErr } = await updateEmployeeEventMetadata(eventId, {

@@ -94,13 +94,34 @@ export const eventoVigente = (ev) => !!ev?.eventoId && !ev.isSystem && !esSancio
 /**
  * El documento que respalda una novedad: el de `metadata.document_id` si lo
  * hay, o el que se subió con su `event_id` (que es como se adjuntan hoy).
+ *
+ * Corregir una novedad crea OTRA fila (la vieja pasa a SUPERSEDED con
+ * `supersededBy`, la nueva lleva `originalEventId`) y el documento se queda
+ * con el `event_id` de la primera. Por eso se recorre la cadena de
+ * correcciones hacia atrás: sin eso, el finiquito de una baja corregida
+ * desaparecía de la ficha (2026-11-18, la baja de una persona de La Popular).
  * @param {object} ev         renglón de `historialDeFicha`
  * @param {Array}  documentos filas de `employee_documents` de la persona (`emp.documents`)
+ * @param {Array}  eventos    filas de `employee_events` de la persona (`emp.history`), para seguir la cadena
  */
-export const soporteDe = (ev, documentos = []) => (documentos || []).find(d => d?.url && (
-    (ev?.documentId && String(d.id) === String(ev.documentId)) ||
-    (ev?.eventoId && String(d.event_id) === String(ev.eventoId))
-)) || null;
+export const soporteDe = (ev, documentos = [], eventos = []) => {
+    const ids = new Set();
+    const porId = new Map((eventos || []).filter(e => e?.id != null).map(e => [String(e.id), e]));
+    let actual = ev?.eventoId != null ? String(ev.eventoId) : null;
+    let original = ev?.metadata?.originalEventId;
+    if (actual) ids.add(actual);
+    while (original != null && !ids.has(String(original))) {
+        actual = String(original);
+        ids.add(actual);
+        const fila = porId.get(actual);
+        const meta = typeof fila?.metadata === 'string' ? (() => { try { return JSON.parse(fila.metadata); } catch { return null; } })() : fila?.metadata;
+        original = meta?.originalEventId;
+    }
+    return (documentos || []).find(d => d?.url && (
+        (ev?.documentId && String(d.id) === String(ev.documentId)) ||
+        (d.event_id != null && ids.has(String(d.event_id)))
+    )) || null;
+};
 
 /** Los datos para reabrir una novedad en el formulario de corrección. */
 export const datosParaCorregir = (ev, employeeId) => ({

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1578.1 — Personal: la baja corregida conserva su respaldo
+
+Corregir una novedad crea otra fila y la vieja pasa a «EDITADO». El documento
+se quedaba con el `event_id` de la original, así que en la ficha la corrección
+ofrecía «Adjuntar respaldo» y el finiquito ya no se veía (pasó con una baja
+completada desde «Bajas con el cierre pendiente»). `soporteDe` ahora recorre la
+cadena `originalEventId`.
+
+Dos bugs más en `editEmployeeEvent`: el `previousValues` de la corrección se
+tomaba de la ficha ya dada de baja (cancelarla no devolvía cargo ni sucursal) y
+un archivo elegido en la corrección no se subía nunca.
+
+Novedades: no — 0 de 4 en la valoración; arregla un bug, no cambia el uso.
+
 ## v2.1578.0 — Caja: el kiosco cobra con todas las formas de pago y el ticket de la caja
 
 Sigue apagado (`cobro_kiosco_sucursales`). Lo pidió el usuario: el kiosco va a

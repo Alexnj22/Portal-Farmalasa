@@ -787,13 +787,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <Badge variant="danger" size="sm">CANCELADO</Badge>
                                                                     ) : ev.metadata?.status === 'SUPERSEDED' ? (
                                                                         <Badge size="sm">EDITADO</Badge>
-                                                                    ) : soporteDe(ev, emp.documents) ? (
+                                                                    ) : soporteDe(ev, emp.documents, emp.history) ? (
                                                                         // El soporte se busca por `event_id` en los documentos de la
                                                                         // ficha: `metadata.document_id`, que era lo único que miraba
                                                                         // este botón, no lo escribe nadie. Con eso, una boleta recién
                                                                         // adjuntada seguía ofreciendo «Adjuntar respaldo».
                                                                         <Button tone="chart-1" soft size="xs" icon={FileText} onClick={() => {
-                                                                            const doc = soporteDe(ev, emp.documents);
+                                                                            const doc = soporteDe(ev, emp.documents, emp.history);
                                                                             if (doc?.url) setRespaldoViendo(doc);
                                                                         }}>Ver respaldo</Button>
                                                                     ) : esSancion(ev) ? null : (

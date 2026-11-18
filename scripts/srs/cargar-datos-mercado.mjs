@@ -37,7 +37,17 @@ const FARMACIAS = {
     E10F1627: { erp: 5, nombre: 'La Popular', srs: 'LA POPULAR' },
 };
 const PLAN_VENCE_H = 24;
-const PAUSA_MS = 400;
+// Despacio a propósito (2026-11-18): el firewall de la SRS bloqueó la red de
+// la oficina después de un día de consultas seguidas. Entre producto y
+// producto, --pausa ms (3 s por omisión); cada TANDA, un descanso largo.
+const PAUSA_MS = Number(opcion('--pausa') ?? 3000);
+const TANDA = 100;
+const DESCANSO_MS = 60_000;
+
+/** El firewall de la SRS (Cloudflare) cortó: se para todo, no se reintenta. */
+class Bloqueado extends Error {}
+const esBloqueo = (res, texto) => res.status === 403 || res.status === 429
+    || /you have been blocked|cloudflare ray id|attention required/i.test(texto);
 
 function leerEnv() {
     const out = {};
@@ -78,7 +88,10 @@ async function pedir(ruta, init = {}) {
     const res = await fetch(BASE + ruta, { ...init, redirect: 'manual', signal: AbortSignal.timeout(60_000),
         headers: { 'User-Agent': UA, Cookie: cab(), ...(init.headers ?? {}) } });
     for (const c of res.headers.getSetCookie()) { const [par] = c.split(';'); const i = par.indexOf('='); if (i > 0) galletas[par.slice(0, i).trim()] = par.slice(i + 1).trim(); }
-    return res;
+    const texto = await res.text();
+    if (esBloqueo(res, texto)) throw new Bloqueado(`La SRS bloqueó la conexión (${res.status} en ${ruta}). Se detiene sin reintentar.`);
+    // Se devuelve el cuerpo ya leído con la misma forma de Response.
+    return { status: res.status, headers: res.headers, text: async () => texto };
 }
 async function entrar() {
     galletas = {};
@@ -180,17 +193,20 @@ async function enviar(archivo) {
         precioInd: '0', precioLic: '0', precioEst: '0', precioPri: '0', precioExp: '0',
     });
 
-    let fallas = 0; let n = 0;
+    let fallas = 0; let n = 0; let hechosAhora = 0;
     const total = plan.eliminar.length + plan.agregar.length * 2 + plan.guardar.length;
     const paso = async (nombre, crp, hacer, bueno) => {
         n++;
         if (hecho.has(`${nombre}:${crp}`)) return true;
         let resp; let ok = false;
-        try { resp = await hacer(); ok = bueno(resp); } catch (e) { resp = e.message; }
+        try { resp = await hacer(); ok = bueno(resp); } catch (e) { if (e instanceof Bloqueado) throw e; resp = e.message; }
         anotar({ paso: nombre, crp, ok, resp: String(resp).slice(0, 200) });
         if (!ok) { fallas++; console.log(`  ✗ ${nombre} ${crp}: ${String(resp).slice(0, 120)}`); }
-        if (n % 50 === 0) console.log(`  ${n}/${total} · fallas ${fallas}`);
-        await dormir(PAUSA_MS);
+        hechosAhora++;
+        if (hechosAhora % 50 === 0) console.log(`  ${n}/${total} · fallas ${fallas} · ${new Date().toLocaleTimeString('es-SV')}`);
+        // Diez fallas en una corrida no son mala suerte: se para y se mira.
+        if (fallas >= 10) throw new Error(`Diez fallas: se detiene. Bitácora: ${bitacora}`);
+        await dormir(hechosAhora % TANDA === 0 ? DESCANSO_MS : PAUSA_MS);
         return ok;
     };
     const guardo = (t) => t === '1';

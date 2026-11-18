@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.5 — Carga SRS despacio y se detiene ante un bloqueo
+
+- `scripts/srs/cargar-datos-mercado.mjs`: 3 s entre operación y operación (`--pausa`) y 1 minuto de descanso cada 100. Si el firewall de la SRS responde 403/429 o con su página de bloqueo, se detiene sin reintentar y sin volver a iniciar sesión. También se detiene con 10 fallas. Se agregó porque el 2026-11-18 la SRS bloqueó la red de la oficina después de un día de consultas seguidas.
+
+Novedades: no — herramienta interna de cumplimiento.
+
 ## v2.1575.4 — Kiosco: el trámite se abre en el inicio y tarjetas sin cortes
 
 Pedidos del usuario (2026-11-18):

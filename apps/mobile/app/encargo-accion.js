@@ -24,7 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { cambiarFechaDeEncargo, fetchEncargos, pasarEncargoASaldo, proveedorNoEntregoEncargo, responderEncargo, vincularProductoDeEncargo } from '@nucleo/data/reservas';
 import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
-import { ROTULOS_DE_ENCARGO as ROT, encargoConRiesgo, fichaDeProductoNuevo } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, encargoConRiesgo, fichaDeProductoNuevo, pagadoDeEncargo } from '@nucleo/utils/reservasDeSala';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -127,7 +127,7 @@ function EncargoAccion() {
 
           {modo === 'saldo' ? (
             <>
-              <Aviso texto={`Lo pagado (${formatMoney(Number(e.anticipo ?? 0))}) queda a favor del cliente por ${vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sucursal. El producto queda para la venta. No se deshace.`} />
+              <Aviso texto={`Lo pagado (${formatMoney(pagadoDeEncargo(e))}) queda a favor del cliente por ${vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sucursal. El producto queda para la venta. No se deshace.`} />
               <Seccion titulo="Motivo">
                 <Campo value={nota} onChangeText={setNota} maxLength={300} placeholder="Ej. Se le llamó dos veces y no contestó / dijo que ya no lo necesita" />
               </Seccion>
@@ -155,7 +155,7 @@ function EncargoAccion() {
             <>
               <Seccion titulo="Qué eligió el cliente">
                 <Opciones valor={eleccion} onCambiar={setEleccion} opciones={[
-                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se pide devolver ${formatMoney(Number(e.anticipo ?? 0))} en efectivo. Un supervisor o administrador la autoriza o la niega` },
+                  { id: 'devolucion', label: 'Devolución completa', detalle: `Se pide devolver ${formatMoney(pagadoDeEncargo(e))} en efectivo. Un supervisor o administrador la autoriza o la niega` },
                   { id: 'saldo', label: 'Otro producto', detalle: `Por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal` },
                 ]} />
               </Seccion>

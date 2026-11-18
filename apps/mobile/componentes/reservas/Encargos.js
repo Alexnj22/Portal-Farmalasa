@@ -11,7 +11,7 @@ import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, pilaDelCliente, encargoACargo, encargoPasaASaldo } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -103,6 +103,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
         const est = estadoDeEncargo(e);
         const sinVincular = encargoSinVincular(e);
         const vencido = encargoVencido(e, hoy);
+        const cargo = encargoACargo(e);
         return (
           <View key={e.id} style={{ gap: 6, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: ocupado === e.id ? 0.5 : 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
@@ -114,11 +115,12 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
               {`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${pilaDelCliente(e)} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${corta(e.fecha_estimada)}` : ''}${cifraDeEncargo(e) ? ` · ${cifraDeEncargo(e).cobrado ? '' : 'por cobrar '}${formatMoney(cifraDeEncargo(e).valor)}` : ''}${e.retirar_hasta ? ` · retira hasta ${corta(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : ''}`}
             </Text>
-            {(sinVincular && e.sugerido) || vencido || e.nivel?.prioridad ? (
+            {(sinVincular && e.sugerido) || vencido || e.nivel?.prioridad || cargo ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {e.nivel?.prioridad ? <Pildora texto={`Cliente ${e.nivel.nombre}`} color={MARCA.azulClaro} /> : null}
                 {sinVincular && e.sugerido ? <Pildora texto={`¿Ya está en el catálogo? «${e.sugerido}»`} color={MARCA.azulClaro} /> : null}
                 {vencido ? <Pildora texto="Sin retirar · llamar" color={MARCA.ambar} /> : null}
+                {cargo ? <Pildora texto={`${cargo.sinAnticipo ? 'Sin anticipo' : 'Con adelanto'} · responde ${shortEmployeeName(cargo.persona)}`} color={MARCA.ambar} /> : null}
               </View>
             ) : null}
             <Pasos e={e} cobraAqui={cobrable(e)} />
@@ -151,7 +153,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
               {!soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' ? <Accion texto={ROT.pedir_prorroga}
                 onPress={() => router.push({ pathname: '/reserva-prorroga', params: { modo: 'pedir', tipo: 'encargo', ids: String(e.id), titulo: e.codigo,
                   vence: e.retirar_hasta ? `${e.retirar_hasta}T12:00:00` : '' } })} /> : null}
-              {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado)
+              {!soloLectura && encargoPasaASaldo(e)
                 ? <Accion texto={ROT.saldo} onPress={() => abrir(e, 'saldo')} /> : null}
             </View>
           </View>

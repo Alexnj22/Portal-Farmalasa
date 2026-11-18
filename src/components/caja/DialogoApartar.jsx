@@ -16,7 +16,7 @@ import FormaDePago from './FormaDePago';
 import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    apartarSinAnticipo, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal, ventasCandidatasDeEncargos,
+    apartarSinAnticipo, encargoSinAnticipo, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal, ventasCandidatasDeEncargos,
     listaDelCliente, mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
@@ -110,7 +110,7 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
                     {vista === 'nuevo'
                         ? <Nuevo key={sala} sala={sala} nombreSala={nombreSala} atiende={atiende} ocupado={ocupado} onCobrar={onCobrar} onClose={onClose}
                             cobraEnCaja={cobraEnCaja} onApartado={onApartado} inicial={inicial} />
-                        : <PorCobrar key={sala} sala={sala} ocupado={ocupado} onCobrar={onCobrar} elegirClave={inicial?.clave ?? null} cobraEnCaja={cobraEnCaja} />}
+                        : <PorCobrar key={sala} sala={sala} atiende={atiende} ocupado={ocupado} onCobrar={onCobrar} elegirClave={inicial?.clave ?? null} cobraEnCaja={cobraEnCaja} />}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
@@ -862,7 +862,7 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
 }
 
 // ── Por cobrar: encargos con precio confirmado y reservas con saldo ─────────
-function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = true }) {
+function PorCobrar({ sala, atiende = null, ocupado, onCobrar, elegirClave = null, cobraEnCaja = true }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     const [elegido, setElegido] = useState(null);
@@ -874,6 +874,8 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
     const [enlace, setEnlace] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const [vuelta, setVuelta] = useState(0);
+    // Un encargo con adelanto o sin anticipo queda a cargo de quien lo cobra (2026-11-18).
+    const [responsableOk, setResponsableOk] = useState(false);
     const claveDeEnvio = useRef(null);
 
     useEffect(() => {
@@ -885,7 +887,7 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
     }, [sala, vuelta, showToast]);
 
     const elegir = (f) => {
-        setElegido(f); setMonto(String(f.saldo)); setPago(FORMA_DE_PAGO_INICIAL); setCobroEn('caja');
+        setElegido(f); setMonto(String(f.saldo)); setPago(FORMA_DE_PAGO_INICIAL); setCobroEn('caja'); setResponsableOk(false);
         claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `cobrar-${f.clave}-${Date.now()}`;
     };
     // La fila pedida desde afuera se elige UNA vez, con la primera lista: si ya
@@ -915,12 +917,26 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
     }, [elegido]);
     const n = Number(monto);
     const estadoPago = estadoDeFormaDePago(pago, n);
-    const falta = !elegido ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
-        : elegido.tipo === 'encargo' && Math.abs(n - elegido.saldo) > 0.004 ? 'Un encargo se paga completo.' : cobroEn === 'caja' ? estadoPago.falta : null;
+    const esEncargo = elegido?.tipo === 'encargo';
+    // Sin el 100 % (2026-11-18): adelanto en caja o sin anticipo, a cargo de quien lo cobra.
+    const adelanto = esEncargo && cobroEn === 'caja' && n > 0 && n < elegido.saldo - 0.004;
+    const sinCobro = esEncargo && cobroEn === 'sin';
+    const falta = !elegido ? null
+        : sinCobro ? (responsableOk ? null : 'Marca que quedas como responsable.')
+            : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
+                : esEncargo && cobroEn === 'enlace' && Math.abs(n - elegido.saldo) > 0.004 ? 'Por enlace, un encargo se paga completo. Un adelanto se cobra en caja.'
+                    : adelanto && !responsableOk ? 'Marca que quedas como responsable.'
+                        : cobroEn === 'caja' ? estadoPago.falta : null;
 
     const cobrar = async () => {
         setEnviando(true);
         try {
+            if (sinCobro) {
+                await encargoSinAnticipo(elegido.id);
+                showToast('Encargo aceptado sin anticipo', `${elegido.codigo}: Compras ya lo puede pedir. Se cobran ${formatMoney(elegido.saldo)} al retirar.`, 'success');
+                setElegido(null); setVuelta((v) => v + 1);
+                return;
+            }
             if (cobroEn === 'enlace') {
                 const r = await enlaceDePagoDeApartado({ sala, monto: redondear(n),
                     apartado: apartadoPorCobrar(elegido) });
@@ -957,7 +973,7 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
                                 <span className="text-body-sm font-bold tabular-nums">{formatMoney(f.saldo)}</span>
                             </div>
                             <p className="text-caption text-content-3">
-                                {shortEmployeeName(f.cliente ?? '')} · {f.tipo === 'encargo' ? 'Encargo confirmado: se paga completo' : 'Reserva: falta este saldo'}
+                                {shortEmployeeName(f.cliente ?? '')} · {f.tipo === 'encargo' ? 'Encargo confirmado: el total, un adelanto o sin anticipo' : 'Reserva: falta este saldo'}
                             </p>
                         </button>
                     </li>
@@ -976,14 +992,29 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = 
             )}
             {elegido && (
                 <>
-                    <PortalInput label="Monto" prefix="$" inputMode="decimal" maskType="DECIMAL" value={monto} readOnly={elegido.tipo === 'encargo'}
-                        onChange={(e) => setMonto(e.target.value.replace('-', ''))} />
-                    <ComoPaga valor={cobroEn} onCambiar={setCobroEn} formas={cobraEnCaja ? ['caja', 'enlace'] : ['enlace']} />
-                    {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={n} montoFijo={elegido.tipo === 'encargo'} />}
+                    <ComoPaga valor={cobroEn} onCambiar={(v) => { setCobroEn(v); setResponsableOk(false); }}
+                        formas={[...(cobraEnCaja ? ['caja', 'enlace'] : ['enlace']), ...(esEncargo ? ['sin'] : [])]} />
+                    {sinCobro ? (
+                        <SinAnticipo encargo total={elegido.saldo} confirmado={responsableOk} onConfirmar={setResponsableOk} atiende={atiende} />
+                    ) : (
+                        <PortalInput label="Monto" prefix="$" inputMode="decimal" maskType="DECIMAL" value={monto}
+                            onChange={(e) => { setMonto(e.target.value.replace('-', '')); setResponsableOk(false); }} />
+                    )}
+                    {adelanto && (
+                        <div className="space-y-3">
+                            <Notice variant="warning" compact>
+                                <b>Deja {formatMoney(n)} de adelanto.</b> Faltan {formatMoney(redondear(elegido.saldo - n))}, que se cobran al retirar. Compras lo pide igual.
+                            </Notice>
+                            <Checkbox checked={responsableOk} onChange={setResponsableOk}
+                                label={`Quedo como responsable de este encargo${atiende ? ` (${shortEmployeeName(atiende)})` : ''}`}
+                                description="Si el cliente no lo retira, responde quien lo cobró." />
+                        </div>
+                    )}
+                    {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={n} />}
                     {falta && <p className="text-caption text-content-3">{falta}</p>}
                     <div className="flex justify-end">
                         <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={cobrar}>
-                            {cobroEn === 'enlace' ? 'Crear enlace de pago' : 'Cobrar'} {formatMoney(n || 0)}
+                            {sinCobro ? 'Aceptar sin anticipo' : `${cobroEn === 'enlace' ? 'Crear enlace de pago' : 'Cobrar'} ${formatMoney(n || 0)}`}
                         </Button>
                     </div>
                 </>
@@ -1012,16 +1043,18 @@ function ComoPaga({ valor, onCambiar, formas = ['caja', 'enlace'] }) {
 // Pedido del usuario: «al reservar sin anticipo, queda a responsabilidad de
 // quien solicita la reserva (el empleado)». La casilla no es decorativa: sin
 // marcarla no se aparta, y la base guarda quién fue con la sesión.
-function SinAnticipo({ total, confirmado, onConfirmar, atiende, enCamino }) {
+// `encargo` (2026-11-18): lo mismo para un encargo confirmado, que Compras pide igual.
+function SinAnticipo({ total, confirmado, onConfirmar, atiende, enCamino, encargo = false }) {
     return (
         <div className="space-y-3">
             <Notice variant="warning" compact>
                 <b>No se cobra nada ahora.</b> El cliente paga {formatMoney(total)} completo al retirar.
-                {enCamino ? ' El plazo para retirar empieza cuando llegue a la sucursal.' : ' Sin anticipo, el plazo para retirar es más corto. La fecha sale al apartar.'}
+                {encargo ? ' Compras lo pide igual.'
+                    : enCamino ? ' El plazo para retirar empieza cuando llegue a la sucursal.' : ' Sin anticipo, el plazo para retirar es más corto. La fecha sale al apartar.'}
             </Notice>
             <Checkbox checked={confirmado} onChange={onConfirmar}
-                label={`Quedo como responsable de esta reserva${atiende ? ` (${shortEmployeeName(atiende)})` : ''}`}
-                description="Si el cliente no la retira, responde quien la apartó." />
+                label={`Quedo como responsable de ${encargo ? 'este encargo' : 'esta reserva'}${atiende ? ` (${shortEmployeeName(atiende)})` : ''}`}
+                description={encargo ? 'Si el cliente no lo retira, responde quien lo aceptó.' : 'Si el cliente no la retira, responde quien la apartó.'} />
         </div>
     );
 }

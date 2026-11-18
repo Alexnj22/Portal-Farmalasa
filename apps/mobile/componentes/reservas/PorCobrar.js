@@ -1,5 +1,6 @@
 // «Por cobrar» de Apartar, NATIVO — gemela de `PorCobrar` de `DialogoApartar`:
-// los encargos con precio confirmado que esperan el pago (se pagan completos)
+// los encargos con precio confirmado que esperan el pago (el total, un adelanto
+// o sin anticipo, a cargo de quien lo cobra — 2026-11-18)
 // y las reservas de la sala con saldo pendiente. Se cobra en caja, con su
 // forma de pago, o se le manda al cliente un enlace de pago. La lista y el
 // `apartado` que viaja a `operar-caja` salen del núcleo (`porCobrarDeSala`).
@@ -8,7 +9,7 @@ import { Alert, Share, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
-import { fetchEncargos, fetchReservasDeSucursal, mensajeDeEnlaceDePago } from '@nucleo/data/reservas';
+import { encargoSinAnticipo, fetchEncargos, fetchReservasDeSucursal, mensajeDeEnlaceDePago } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
 import { apartadoPorCobrar, porCobrarDeSala } from '@nucleo/utils/reservasDeSala';
 import { redondear } from '@nucleo/utils/apartar';
@@ -57,16 +58,40 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
   }, [elegirClave, filas]); // eslint-disable-line react-hooks/exhaustive-deps
   const n = Number(monto);
   const estadoPago = estadoDeFormaDePago(pago, n);
-  const falta = !elegido ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
-    : elegido.tipo === 'encargo' && Math.abs(n - elegido.saldo) > 0.004 ? 'Un encargo se paga completo.' : cobroEn === 'caja' ? estadoPago.falta : null;
+  const esEncargo = elegido?.tipo === 'encargo';
+  // Sin el 100 % (2026-11-18): adelanto en caja o sin anticipo, a cargo de quien lo cobra.
+  const sinCobro = esEncargo && cobroEn === 'sin';
+  const adelanto = esEncargo && cobroEn === 'caja' && n > 0 && n < elegido.saldo - 0.004;
+  const quien = shortEmployeeName(user ?? '');
+  const falta = !elegido || sinCobro ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
+    : esEncargo && cobroEn === 'enlace' && Math.abs(n - elegido.saldo) > 0.004 ? 'Por enlace, un encargo se paga completo. Un adelanto se cobra en caja.'
+      : cobroEn === 'caja' ? estadoPago.falta : null;
+
+  const aceptarSinAnticipo = () => {
+    Alert.alert('¿Aceptar sin anticipo?', `${elegido.codigo} · ${elegido.producto}. No se cobra nada ahora: el cliente paga ${formatMoney(elegido.saldo)} al retirar y Compras lo pide igual. Quedas como responsable (${quien}).`, [
+      { text: 'Volver', style: 'cancel' },
+      { text: 'Quedo como responsable', onPress: async () => {
+        setEnviando(true); trabajando('Guardando…');
+        try {
+          await encargoSinAnticipo(elegido.id);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          listo('Encargo aceptado sin anticipo', `${elegido.codigo}: se cobran ${formatMoney(elegido.saldo)} al retirar.`);
+          setElegido(null);
+          cargar();
+        } catch (e) { fallo('No se pudo aceptar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setEnviando(false); }
+      } },
+    ]);
+  };
 
   const cobrar = () => {
     if (!elegido || falta || enviando) return;
+    if (sinCobro) { aceptarSinAnticipo(); return; }
     const metodo = FORMAS_DE_PAGO.find((x) => x.value === pago.forma)?.label ?? 'Efectivo';
-    Alert.alert(cobroEn === 'enlace' ? `¿Crear un enlace por ${formatMoney(n)}?` : `¿Cobrar ${formatMoney(n)}?`,
-      `${elegido.codigo} · ${elegido.producto} · ${shortEmployeeName(elegido.cliente ?? '')}${cobroEn === 'caja' ? ` (${metodo})` : ''}`, [
+    Alert.alert(cobroEn === 'enlace' ? `¿Crear un enlace por ${formatMoney(n)}?` : adelanto ? `¿Dejar ${formatMoney(n)} de adelanto?` : `¿Cobrar ${formatMoney(n)}?`,
+      `${elegido.codigo} · ${elegido.producto} · ${shortEmployeeName(elegido.cliente ?? '')}${cobroEn === 'caja' ? ` (${metodo})` : ''}${adelanto
+        ? `. Faltan ${formatMoney(redondear(elegido.saldo - n))} al retirar. Quedas como responsable (${quien}).` : ''}`, [
         { text: 'Volver', style: 'cancel' },
-        { text: cobroEn === 'enlace' ? 'Crear y compartir' : 'Cobrar e imprimir', onPress: async () => {
+        { text: cobroEn === 'enlace' ? 'Crear y compartir' : adelanto ? 'Quedo como responsable' : 'Cobrar e imprimir', onPress: async () => {
           setEnviando(true); trabajando(cobroEn === 'enlace' ? 'Creando el enlace…' : 'Cobrando…');
           try {
             if (cobroEn === 'enlace') {
@@ -95,7 +120,7 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
   if (!filas.length) return <Aviso texto="No hay encargos confirmados ni reservas con saldo en esta sucursal." />;
   return (
     <>
-      <Seccion titulo="Por cobrar" pie="Un encargo confirmado se paga completo. Una reserva, lo que falte.">
+      <Seccion titulo="Por cobrar" pie="Un encargo confirmado: el total, un adelanto o sin anticipo, a tu cargo. Una reserva, lo que falte.">
         {filas.map((f, i) => {
           const esta = elegido?.clave === f.clave;
           return (
@@ -105,23 +130,29 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${esta ? '✓ ' : ''}${f.codigo} · ${f.producto}`}</Text>
                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(f.saldo)}</Text>
               </View>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${shortEmployeeName(f.cliente ?? '')} · ${f.tipo === 'encargo' ? 'Encargo confirmado: se paga completo' : 'Reserva: falta este saldo'}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${shortEmployeeName(f.cliente ?? '')} · ${f.tipo === 'encargo' ? 'Encargo confirmado' : 'Reserva: falta este saldo'}`}</Text>
             </Pressable>
           );
         })}
       </Seccion>
       {elegido ? (
         <>
-          <Seccion titulo="Monto">
-            <Campo multiline={false} value={monto} editable={elegido.tipo !== 'encargo'} keyboardType="decimal-pad"
-              onChangeText={(v) => setMonto(dinero(v))} style={{ textAlign: 'center', fontWeight: '700' }} />
-          </Seccion>
           <Seccion titulo="Dónde paga">
-            <Segmentos opciones={[{ id: 'caja', label: 'En caja' }, { id: 'enlace', label: 'Enlace de pago' }]} activa={cobroEn} onCambiar={setCobroEn} margen={0} />
+            <Segmentos opciones={[{ id: 'caja', label: 'En caja' }, { id: 'enlace', label: 'Enlace de pago' }, ...(esEncargo ? [{ id: 'sin', label: 'Sin anticipo' }] : [])]}
+              activa={cobroEn} onCambiar={setCobroEn} margen={0} />
           </Seccion>
-          {cobroEn === 'caja' ? <FormaDePago valor={pago} onCambiar={setPago} monto={n || null} montoFijo={elegido.tipo === 'encargo'} /> : null}
+          {sinCobro ? (
+            <Aviso tono="cuidado" texto={`No se cobra nada ahora. El cliente paga ${formatMoney(elegido.saldo)} al retirar y Compras lo pide igual. Quedas como responsable (${quien}).`} />
+          ) : (
+            <Seccion titulo="Monto">
+              <Campo multiline={false} value={monto} keyboardType="decimal-pad"
+                onChangeText={(v) => setMonto(dinero(v))} style={{ textAlign: 'center', fontWeight: '700' }} />
+            </Seccion>
+          )}
+          {adelanto ? <Aviso tono="cuidado" texto={`Deja ${formatMoney(n)} de adelanto. Faltan ${formatMoney(redondear(elegido.saldo - n))} al retirar. Quedas como responsable (${quien}).`} /> : null}
+          {cobroEn === 'caja' ? <FormaDePago valor={pago} onCambiar={setPago} monto={n || null} /> : null}
           {falta ? <Aviso tono="cuidado" texto={falta} /> : null}
-          <BotonGrande texto={enviando ? 'Guardando…' : `${cobroEn === 'enlace' ? 'Crear enlace de pago' : 'Cobrar'} ${formatMoney(n || 0)}`}
+          <BotonGrande texto={enviando ? 'Guardando…' : sinCobro ? 'Aceptar sin anticipo' : `${cobroEn === 'enlace' ? 'Crear enlace de pago' : 'Cobrar'} ${formatMoney(n || 0)}`}
             color={MARCA.verde} deshabilitado={enviando || !!falta} onPress={cobrar} />
         </>
       ) : null}

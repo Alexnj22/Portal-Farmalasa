@@ -463,6 +463,11 @@ export async function cancelarEncargoSinPago(id, motivo) {
     return sinError(await supabase.rpc('encargo_cancelar_sin_pago', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));
 }
 
+/** Se pide sin anticipo, a cargo de quien lo acepta (2026-11-18): la base firma con la sesión. */
+export async function encargoSinAnticipo(id) {
+    return sinError(await supabase.rpc('encargo_sin_anticipo', { p_id: Number(id) }));
+}
+
 /** El cliente no retira (o desiste de) un encargo pagado: lo pagado queda a su favor. */
 export async function pasarEncargoASaldo(id, motivo) {
     return sinError(await supabase.rpc('encargo_pasar_a_saldo', { p_id: Number(id), p_motivo: String(motivo ?? '').trim() }));

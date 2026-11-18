@@ -11,6 +11,7 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { pagadoDeEncargo } from '@nucleo/utils/reservasDeSala';
 import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -77,7 +78,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="El proveedor no entregó">
             <LiquidModal.Header titulo={`El proveedor no entregó ${encargo.codigo}`}
-                subtitulo={<>{encargo.cantidad} × {encargo.producto} · pagado {formatMoney(encargo.anticipo)}</>}
+                subtitulo={<>{encargo.cantidad} × {encargo.producto} · pagado {formatMoney(pagadoDeEncargo(encargo))}</>}
                 onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-3">
@@ -85,7 +86,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
                         options={[{ value: 'devolucion', label: 'Devolución completa' }, { value: 'saldo', label: 'Otro producto' }]} />
                     <Notice variant="info" compact icon={eleccion === 'devolucion' ? PackageX : Wallet}>
                         {eleccion === 'devolucion'
-                            ? `Se pide la devolución de ${formatMoney(encargo.anticipo)} en efectivo. Un supervisor o administrador la autoriza o la niega. Cuando esté autorizada, se entrega desde Reservas. Mientras tanto, queda a su favor.`
+                            ? `Se pide la devolución de ${formatMoney(pagadoDeEncargo(encargo))} en efectivo. Un supervisor o administrador la autoriza o la niega. Cuando esté autorizada, se entrega desde Reservas. Mientras tanto, queda a su favor.`
                             : `Lo pagado queda a su favor por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal. No se deshace.`}
                     </Notice>
                     <PortalTextarea label="Nota (opcional)" rows={2} value={nota} maxLength={200} onChange={(e) => setNota(e.target.value)}

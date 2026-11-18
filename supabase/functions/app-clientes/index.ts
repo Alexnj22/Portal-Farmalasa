@@ -3087,7 +3087,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       // cerrados, sólo los de los últimos 90 días. Topes deliberados muy por
       // debajo de las 1000 filas de PostgREST: un cliente tiene a lo sumo 3
       // abiertos (lo frena `encargar`), así que 50 sobra.
-      const SEL_ENC = "id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at, prorrogable:encargo_prorrogable, retirar_hasta:encargo_retirar_hasta";
+      const SEL_ENC = "id, estado, pago_estado, producto_nombre, cantidad, precio_unitario, anticipo, abonado, reserva_id, fecha_estimada, nota_sucursal, branch_id, created_at, listo_at, prorrogado_at, prorrogable:encargo_prorrogable, retirar_hasta:encargo_retirar_hasta";
       const ABIERTOS = ["solicitado", "confirmado", "aceptado", "pedido", "listo"];
       const [abiertos, cerrados] = await Promise.all([
         admin.from("app_encargos").select(SEL_ENC).eq("customer_id", customerId).in("estado", ABIERTOS)
@@ -3114,7 +3114,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         .eq("id", Number(body?.id)).eq("customer_id", customerId).maybeSingle();
       if (error) throw error;
       if (!e || e.estado !== "confirmado") return json({ ok: false, mensaje: "Este encargo todavía no está confirmado por la sucursal." });
-      if (e.pago_estado === "pagado") return json({ ok: false, mensaje: "Este encargo ya está pagado." });
+      if (e.pago_estado !== "pendiente") return json({ ok: false, mensaje: "Este encargo ya está pagado." });
       if (!pasarelaLista()) return json({ ok: false, mensaje: EN_PREPARACION });
       const codigo = `E-${String(e.id).padStart(6, "0")}`;
       const vigenteE = await enlaceVigente("encargo_id", e.id, Number(e.anticipo));

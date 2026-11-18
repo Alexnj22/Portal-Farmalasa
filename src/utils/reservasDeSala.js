@@ -507,7 +507,31 @@ export const encargoPorCobrar = (e) => e?.estado === 'confirmado' && e?.pago_est
 export function cifraDeEncargo(e) {
     const valor = Number(e?.anticipo);
     if (!(valor > 0)) return null;
-    return encargoPorCobrar(e) ? { rotulo: 'Por cobrar', valor, cobrado: false } : { rotulo: 'Pagado', valor, cobrado: true };
+    if (encargoPorCobrar(e)) return { rotulo: 'Por cobrar', valor, cobrado: false };
+    // Con adelanto o sin anticipo (2026-11-18), lo que importa es lo que falta cobrar al retirar.
+    const cargo = encargoACargo(e);
+    if (cargo && cargo.falta > 0.004) return { rotulo: 'Falta al retirar', valor: cargo.falta, cobrado: false };
+    return { rotulo: 'Pagado', valor, cobrado: true };
+}
+
+/**
+ * Un encargo que se pidió sin el 100 % (2026-11-18): con un adelanto
+ * (`pago_estado = 'anticipo'`) o sin anticipo. Queda a cargo de quien lo
+ * cobró o lo aceptó, como la reserva sin anticipo. `null` si no aplica.
+ * `persona` va en la forma de `AvatarConEstado`.
+ */
+export function encargoACargo(e) {
+    const r = e?.responsable;
+    if (!r?.id || e?.pago_estado === 'pagado') return null;
+    const total = Number(e?.anticipo) || 0;
+    const abonado = e?.pago_estado === 'anticipo' ? Number(e?.abonado) || 0 : 0;
+    return {
+        persona: { id: r.id, first_names: r.first_names, last_names: r.last_names, name: r.name },
+        at: r.at ?? null,
+        abonado,
+        falta: Math.max(Math.round((total - abonado) * 100) / 100, 0),
+        sinAnticipo: abonado <= 0.004,
+    };
 }
 
 /**
@@ -532,11 +556,16 @@ export function pasosDeEncargo(e) {
         const hecho = !!h || (en >= 0 && en >= orden.indexOf(desde));
         return { clave, titulo, hecho, at: h?.at ?? null, persona: persona(h), quien: hecho && !persona(h) ? sinPersona : null };
     };
+    const cargo = encargoACargo(e);
+    const cobrado = resto ? { clave: 'cobrado', titulo: 'Pagado con la reserva', hecho: true, at: null, persona: null, quien: null }
+        // Sin el 100 % (2026-11-18): el paso dice cuánto dejó y quién responde.
+        : cargo?.sinAnticipo ? { clave: 'cobrado', titulo: 'Sin anticipo, a cargo de', hecho: true, at: cargo.at, persona: cargo.persona, quien: null }
+            : cargo ? { ...paso('cobrado', `Dejó ${formatMoney(cargo.abonado)} de adelanto`, 'aceptado', 'En línea'), persona: cargo.persona }
+                : paso('cobrado', 'El cliente pagó', 'aceptado', 'En línea');
     return [
         paso('encargado', 'Se encargó', 'solicitado', resto ? `Resto de la reserva ${e.reserva ?? ''}`.trim() : 'El cliente, desde la app'),
         paso('confirmado', 'Compras confirmó precio y fecha', 'confirmado'),
-        resto ? { clave: 'cobrado', titulo: 'Pagado con la reserva', hecho: true, at: null, persona: null, quien: null }
-            : paso('cobrado', 'El cliente pagó', 'aceptado', 'En línea'),
+        cobrado,
         paso('pedido', 'Se le pidió al proveedor', 'pedido'),
         paso('llego', 'Llegó a la sucursal', 'listo'),
         paso('entregado', 'Se le entregó al cliente', 'entregado'),
@@ -555,9 +584,12 @@ export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
             return 'Compras averigua si se consigue, a qué precio y cuándo llega, y aprieta «Confirmar». Si no se consigue, «No se puede conseguir».';
         case 'confirmado':
             if (e?.reserva || e?.reserva_id) return 'El cliente decide si acepta el precio nuevo; se resuelve desde su reserva.';
-            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Hasta que pague, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}${e?.tiene_app ? ' Si ya no lo quiere, lo cancela desde su app: sin pago no se pierde nada.' : ' Si ya no lo quiere, «Ya no lo quiere»: sin pago no se pierde nada.'}`;
-        case 'aceptado':
+            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Si deja menos o nada, queda a tu cargo y el resto se cobra al retirar. Hasta que pague o alguien se haga cargo, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}${e?.tiene_app ? ' Si ya no lo quiere, lo cancela desde su app: sin pago no se pierde nada.' : ' Si ya no lo quiere, «Ya no lo quiere»: sin pago no se pierde nada.'}`;
+        case 'aceptado': {
+            const cargo = encargoACargo(e);
+            if (cargo) return `${cargo.sinAnticipo ? 'Sin anticipo' : `Dejó ${formatMoney(cargo.abonado)}`}: faltan ${formatMoney(cargo.falta)} al retirar. Compras le hace el pedido al proveedor y aprieta «Ya se pidió», para que nadie lo pida dos veces.`;
             return 'Ya está pagado. Compras le hace el pedido al proveedor y aprieta «Ya se pidió», para que nadie lo pida dos veces.';
+        }
         case 'pedido':
             return `Esperar a que llegue${llega ? ` (aprox. ${llega})` : ''}. Cuando esté en la sucursal, aprieta «Llegó». El cliente recibe el aviso.`;
         case 'listo':
@@ -620,15 +652,24 @@ export function respuestaDeBodega(e) {
  * sala con `encargo_cancelar_sin_pago`. La base repite la regla y además frena
  * si hay un cobro en caja o un pago en línea en curso.
  */
-export const encargoCancelableSinPago = (e) => ['solicitado', 'confirmado'].includes(e?.estado)
-    && e?.pago_estado !== 'pagado' && !e?.reserva && !e?.reserva_id;
+export const encargoCancelableSinPago = (e) => (['solicitado', 'confirmado'].includes(e?.estado)
+    // Aceptado sin anticipo (2026-11-18): también, y responde quien lo aceptó.
+    || (['aceptado', 'pedido', 'listo'].includes(e?.estado) && !!e?.responsable?.id))
+    && e?.pago_estado === 'pendiente' && !e?.reserva && !e?.reserva_id;
+
+/** Lo que el cliente ya pagó de un encargo: el total, o el adelanto (2026-11-18). */
+export const pagadoDeEncargo = (e) => (e?.pago_estado === 'anticipo' ? Number(e?.abonado) || 0 : Number(e?.anticipo) || 0);
+
+/** Hay algo pagado que puede quedar a favor: el total o un adelanto (2026-11-18). */
+export const encargoPasaASaldo = (e) => !e?.reserva && ['pagado', 'anticipo'].includes(e?.pago_estado)
+    && ['aceptado', 'pedido', 'listo'].includes(e?.estado);
 
 /**
  * Se cobró en caja como una venta normal y nadie lo pasó por el portal
  * (2026-11-14): se puede amarrar a esa venta mientras no haya dinero del portal.
  */
 export const encargoVendibleAfuera = (e) => ['solicitado', 'confirmado', 'aceptado', 'pedido', 'listo'].includes(e?.estado)
-    && e?.pago_estado !== 'pagado' && !e?.reserva && !e?.reserva_id;
+    && e?.pago_estado === 'pendiente' && !e?.reserva && !e?.reserva_id;
 
 /** La venta casi seguro es la del encargo: mismo producto y mismo monto, o mismo cliente con uno de los dos. */
 export const ventaProbableDeEncargo = (v) => !!v && ((v.mismo_producto && v.mismo_monto) || (v.mismo_cliente && (v.mismo_producto || v.mismo_monto)));

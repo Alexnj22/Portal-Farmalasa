@@ -1402,12 +1402,20 @@ function Encargo({ e, alPagar, alCancelar, alProrrogar, pagando = false }) {
           ))}
         </View>
       ) : null}
-      <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto }}>{TEXTO_ENCARGO[e.estado] ?? e.estado}</Text>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto }}>{e.estado === 'aceptado' && e.pago_estado !== 'pagado' && !e.reserva_id ? 'Ya lo estamos pidiendo' : TEXTO_ENCARGO[e.estado] ?? e.estado}</Text>
       {e.precio_unitario != null ? (
         <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
           {dolares(e.anticipo)} en total{e.fecha_estimada ? ` · llega aprox. el ${fecha(e.fecha_estimada)}` : ''} · retiro en {e.sala}
         </Text>
       ) : <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Retiro en {e.sala}</Text>}
+      {/* Con un adelanto o sin anticipo (2026-11-18), lo que falta se paga al retirarlo. */}
+      {!e.reserva_id && ['aceptado', 'pedido', 'listo'].includes(e.estado) && ['pendiente', 'anticipo'].includes(e.pago_estado) && Number(e.anticipo) > 0 ? (
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>
+          {e.pago_estado === 'anticipo' && Number(e.abonado) > 0
+            ? `Dejaste ${dolares(e.abonado)}. Pagas ${dolares(Math.max(Number(e.anticipo) - Number(e.abonado), 0))} al retirarlo.`
+            : `Pagas ${dolares(e.anticipo)} al retirarlo.`}
+        </Text>
+      ) : null}
       {e.estado === 'listo' && e.retirar_hasta ? (
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>Retíralo hasta el {fecha(e.retirar_hasta)}</Text>
       ) : null}

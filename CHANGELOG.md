@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1576.0 — Encargo con adelanto o sin anticipo, a cargo de quien lo cobra
+
+Pedido del usuario (2026-11-18), con E-000025 (3 × INVANZ, $210) y un cliente
+que quería dejar $100: «hagamos como hicimos con el otro, que queda
+responsable la persona que lo reserva». Mismo trato que la reserva sin
+anticipo (v2.1452.0).
+
+- **Por cobrar** (portal y app del personal): un encargo confirmado ya no se
+  cobra sólo completo. Se puede dejar un **adelanto** de cualquier monto o
+  aceptarlo **sin anticipo**. En los dos casos, quien lo cobra o lo acepta
+  marca «Quedo como responsable» y la base lo firma con su sesión
+  (`responsable_id`). El encargo pasa a aceptado y Compras lo pide igual.
+- El resto se cobra **al retirar**: `apartado_para_retirar` devuelve lo abonado
+  como pagado y el diálogo de retiro cobra lo que falta. «Entregar» a secas
+  no sirve con un adelanto.
+- El **enlace de pago** sigue siendo por el total, porque el pago en línea da
+  el encargo por pagado entero.
+- A saldo a favor, devolución y «el proveedor no entregó» usan lo abonado, no
+  el total. Un encargo aceptado sin anticipo se puede cancelar.
+- La tarjeta dice «Con adelanto · responde X» o «Sin anticipo · responde X» y
+  la cifra pasa a «Falta al retirar». La app de clientes dice «Dejaste $100.
+  Pagas $110 al retirarlo».
+- Base: `20261118164521_encargo_adelanto_a_cargo` (columnas `abonado`,
+  `responsable_id` y `responsable_at`, el estado de pago `anticipo`, la nueva
+  `encargo_sin_anticipo` y 14 funciones ajustadas sobre su definición viva).
+  Probado en el entorno de pruebas: adelanto de $100 → aceptado/anticipo con
+  responsable; retiro con $100 pagado y $110 por cobrar; enlace parcial
+  frenado; pago completo sin responsable.
+- El reglamento (cláusula 4, 100 %) queda como está: decisión del usuario.
+
 ## v2.1575.9 — Caja: el ensayo del cobro se hace al enviar la preventa
 
 El usuario (2026-11-18): «se tardan muy poco en preventa: la guardan, van a

@@ -1859,6 +1859,7 @@ export type Database = {
       }
       app_encargos: {
         Row: {
+          abonado: number | null
           anticipo: number | null
           aviso_sin_retirar_at: string | null
           branch_id: number
@@ -1886,6 +1887,8 @@ export type Database = {
           reserva_id: number | null
           respondido_at: string | null
           respondido_por: string | null
+          responsable_at: string | null
+          responsable_id: string | null
           saldo_reserva_id: number | null
           srs: Json | null
           sugerido_at: string | null
@@ -1896,6 +1899,7 @@ export type Database = {
           vinculado_por: string | null
         }
         Insert: {
+          abonado?: number | null
           anticipo?: number | null
           aviso_sin_retirar_at?: string | null
           branch_id: number
@@ -1923,6 +1927,8 @@ export type Database = {
           reserva_id?: number | null
           respondido_at?: string | null
           respondido_por?: string | null
+          responsable_at?: string | null
+          responsable_id?: string | null
           saldo_reserva_id?: number | null
           srs?: Json | null
           sugerido_at?: string | null
@@ -1933,6 +1939,7 @@ export type Database = {
           vinculado_por?: string | null
         }
         Update: {
+          abonado?: number | null
           anticipo?: number | null
           aviso_sin_retirar_at?: string | null
           branch_id?: number
@@ -1960,6 +1967,8 @@ export type Database = {
           reserva_id?: number | null
           respondido_at?: string | null
           respondido_por?: string | null
+          responsable_at?: string | null
+          responsable_id?: string | null
           saldo_reserva_id?: number | null
           srs?: Json | null
           sugerido_at?: string | null
@@ -2010,6 +2019,20 @@ export type Database = {
             columns: ["reserva_id"]
             isOneToOne: false
             referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_encargos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {
@@ -35407,6 +35430,7 @@ export type Database = {
         Args: { e: Database["public"]["Tables"]["app_encargos"]["Row"] }
         Returns: string
       }
+      encargo_sin_anticipo: { Args: { p_id: number }; Returns: Json }
       encargo_vincular_producto: {
         Args: { p_id: number; p_product_id: number }
         Returns: Json

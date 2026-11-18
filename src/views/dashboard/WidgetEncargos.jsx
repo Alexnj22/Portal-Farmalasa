@@ -26,7 +26,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, cancelarEncargoSinPago, encargoYaVendido, fetchEncargos, ventasCandidatasDeEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega, encargoCancelableSinPago, encargoVendibleAfuera, ventaProbableDeEncargo } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel, pedidoDelEncargo, respuestaDeBodega, encargoCancelableSinPago, encargoVendibleAfuera, ventaProbableDeEncargo, encargoACargo, encargoPasaASaldo, pagadoDeEncargo } from '@nucleo/utils/reservasDeSala';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { EmptyState } from '../../components/common/StateViews';
@@ -273,7 +273,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                             loading: ocupado === e.id, title: 'Una sola prórroga', onClick: () => prorrogar(e) },
                         !soloLectura && modoDeProrroga(e, { encargo: true }) === 'pedir' && { k: 'pedir_prorroga', label: ROT.pedir_prorroga, icon: CalendarPlus,
                             title: 'La autoriza Talento Humano o el supervisor de ventas.', onClick: () => setPidiendoProrroga(e) },
-                        !soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && { k: 'saldo', label: ROT.saldo,
+                        !soloLectura && encargoPasaASaldo(e) && { k: 'saldo', label: ROT.saldo,
                             icon: Wallet, title: 'El cliente no lo retira o desiste. Lo pagado queda a su favor.', onClick: () => setASaldo(e) },
                         puedeComprar && sinVincular(e) && !['aceptado', 'pedido'].includes(e.estado) && { k: 'vincular', label: ROT.vincular, icon: Link2,
                             title: 'Elige el producto ya creado en el catálogo. Sin eso no se puede marcar «Llegó».', onClick: () => setVinculando(e) },
@@ -296,6 +296,8 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                         title: e.product_id ? undefined : 'Todavía no está en el catálogo. Bodega lo crea y lo vincula.' },
                                     sinVincular(e) && e.sugerido && { label: `¿Ya está como «${e.sugerido}»?`, variant: 'warning' },
                                     e.reserva && { label: `Resto de ${e.reserva}`, variant: 'neutral' },
+                                    encargoACargo(e) && { label: `${encargoACargo(e).sinAnticipo ? 'Sin anticipo' : 'Con adelanto'} · responde ${shortEmployeeName(encargoACargo(e).persona)}`, variant: 'warning',
+                                        title: `Faltan ${formatMoney(encargoACargo(e).falta)} al retirar. Si el cliente no lo retira, responde quien lo dejó pasar.` },
                                     textoDeNivel(e.nivel) && { label: textoDeNivel(e.nivel), variant: 'neutral' },
                                     probable && { label: `Parece que ya se vendió · ${probable.factura} del ${fechaTexto(probable.fecha, { day: 'numeric', month: 'short' })}`, variant: 'warning',
                                         title: 'Misma sucursal, mismo producto y mismo monto. No lo cobres otra vez.' },
@@ -355,7 +357,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
                                     {!soloLectura && encargoCancelableSinPago(e) && (
                                         <Button variant="ghost" size="xs" icon={Ban} title="El cliente ya no lo quiere. Se cancela sin cobrarle nada." onClick={() => setCancelando(e)}>{ROT.cancelar}</Button>
                                     )}
-                                    {!soloLectura && !e.reserva && e.pago_estado === 'pagado' && ['aceptado', 'pedido', 'listo'].includes(e.estado) && (
+                                    {!soloLectura && encargoPasaASaldo(e) && (
                                         <Button variant="ghost" size="xs" icon={Wallet} title="El cliente no lo retira o desiste. Lo pagado queda a su favor." onClick={() => setASaldo(e)}>{ROT.saldo}</Button>
                                     )}
                                 </>
@@ -468,7 +470,7 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
             <LiquidModal.Header titulo={`${encargo.codigo} a saldo a favor`} onClose={onClose} />
             <LiquidModal.Body>
                 <Notice variant="info" compact icon={Wallet}>
-                    Lo pagado ({formatMoney(encargo.anticipo)}) queda a favor del cliente por {vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sucursal.
+                    Lo pagado ({formatMoney(pagadoDeEncargo(encargo))}) queda a favor del cliente por {vigenciaDelSaldo(reglas)}, para cualquier compra en cualquier sucursal.
                     El producto queda para la venta. No se deshace.
                 </Notice>
                 <PortalTextarea label="Motivo" name="motivoASaldo" rows={3} value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)}

@@ -56,3 +56,39 @@ describe('pasos del encargo', () => {
         expect(siguientePasoDeEncargo({ ...base, estado: 'pedido', fecha_estimada: '2026-11-06' })).toMatch(/«Llegó»/);
     });
 });
+
+import { encargoACargo, encargoCancelableSinPago, encargoPasaASaldo, pagadoDeEncargo } from '@nucleo/utils/reservasDeSala';
+
+// Encargo con adelanto o sin anticipo, a cargo de quien lo cobra (2026-11-18).
+describe('encargo sin el 100 %', () => {
+    const resp = { id: 'u1', first_names: 'Katherine', last_names: 'Salinas', at: '2026-11-18T10:00:00Z' };
+    const base = { id: 25, estado: 'aceptado', anticipo: 210, precio_unitario: 70, cantidad: 3 };
+
+    it('con adelanto: lo que falta al retirar y quién responde', () => {
+        const e = { ...base, pago_estado: 'anticipo', abonado: 100, responsable: resp };
+        expect(encargoACargo(e)).toMatchObject({ abonado: 100, falta: 110, sinAnticipo: false, persona: { id: 'u1' } });
+        expect(cifraDeEncargo(e)).toEqual({ rotulo: 'Falta al retirar', valor: 110, cobrado: false });
+        expect(pagadoDeEncargo(e)).toBe(100);
+        expect(encargoPasaASaldo(e)).toBe(true);
+        expect(encargoCancelableSinPago(e)).toBe(false);
+        expect(siguientePasoDeEncargo(e)).toMatch(/Dejó \$100\.00: faltan \$110\.00 al retirar/);
+        expect(pasosDeEncargo(e).find((p) => p.clave === 'cobrado')).toMatchObject({ hecho: true, titulo: 'Dejó $100.00 de adelanto' });
+    });
+
+    it('sin anticipo: todo al retirar, se puede cancelar y no pasa a saldo', () => {
+        const e = { ...base, pago_estado: 'pendiente', responsable: resp };
+        expect(encargoACargo(e)).toMatchObject({ abonado: 0, falta: 210, sinAnticipo: true });
+        expect(cifraDeEncargo(e)).toEqual({ rotulo: 'Falta al retirar', valor: 210, cobrado: false });
+        expect(encargoCancelableSinPago(e)).toBe(true);
+        expect(encargoPasaASaldo(e)).toBe(false);
+        expect(pasosDeEncargo(e).find((p) => p.clave === 'cobrado')).toMatchObject({ titulo: 'Sin anticipo, a cargo de', persona: { id: 'u1' } });
+    });
+
+    it('pagado completo: igual que antes', () => {
+        const e = { ...base, pago_estado: 'pagado', abonado: 210 };
+        expect(encargoACargo(e)).toBeNull();
+        expect(cifraDeEncargo(e)).toEqual({ rotulo: 'Pagado', valor: 210, cobrado: true });
+        expect(pagadoDeEncargo(e)).toBe(210);
+        expect(encargoCancelableSinPago(e)).toBe(false);
+    });
+});

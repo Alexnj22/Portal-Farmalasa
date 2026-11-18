@@ -660,7 +660,7 @@ const CRONS = [
     corridasDia: 360, sistema: 3,
     motivo: 'Ensayo del cobro en paralelo (2026-11-18), TEMPORAL: etapa 1 del cobro desde el '
           + 'kiosco. Cada minuto en las horas pico (8:00-10:59 y 18:00-20:59 SV, pedido del usuario: '
-          + '«sólo un tiempo, no todo el día»), en Salud 4 y Salud 1: la lista de preventas '
+          + '«sólo un tiempo, no todo el día»), en Salud 2 y Salud 1 (Salud 4 salía siempre vacía): la lista de preventas '
           + '(1 por sala, con la sesión guardada entre corridas; login y sesión de la sala sólo '
           + 'cada 20 min o si falla), más ~1 petición de media por las preventas nuevas o '
           + 'cambiadas (cargar_data + datos del cliente, hasta 12 por sala). '

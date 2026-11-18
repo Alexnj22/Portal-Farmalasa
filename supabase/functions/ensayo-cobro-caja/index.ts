@@ -34,7 +34,10 @@ import { leerCajaAbierta } from "../../../src/utils/cobroDeCaja.js";
 // La llama un cron (secreto del circuito «sync»): va con --no-verify-jwt.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SUCURSALES = [28, 4];
+// Salud 2 en lugar de Salud 4 (usuario, 2026-11-18): en Salud 4 la preventa se
+// cobra en menos de un minuto y la lista siempre salía vacía (0 en todo el día,
+// con 53 ventas). Salud 4 sigue siendo la sala del primer cobro real.
+const SUCURSALES = [25, 4];
 /** Tope de preventas que se leen enteras por sucursal y corrida (cada una son 2 peticiones). */
 const TOPE_POR_CORRIDA = 12;
 

@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 import { CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTamanoWidget } from './tamanoWidget';
+import { SoloModalCtx } from './soloModal';
 
 import IconoEnCaja from '../../components/common/IconoEnCaja';
 // La baldosa que abre una solicitud, y el modal donde se arma.
@@ -53,6 +54,7 @@ const APAGADO = { texto: 'text-content-3', fondo: 'bg-surface-card-hover', borde
 // corresponde. La cuenta de inquilinos existe para el pie: `LiquidModal.Footer`
 // dibuja un borde superior, así que sin nadie adentro dejaría una franja vacía.
 const RanurasCtx = createContext(null);
+
 
 function Ranura({ nombre, children }) {
     const ctx = useContext(RanurasCtx);
@@ -249,6 +251,14 @@ export default function LanzadorSolicitud({
     const cerrar = useCallback(() => setAbierto(false), []);
     // Con dos renglones o más hay alto para la descripción y un número mayor.
     const alto = (useTamanoWidget()?.rows ?? 1) >= 2;
+    const solo = useContext(SoloModalCtx);
+    if (solo) {
+        return (
+            <ModalConRanuras icon={Icon} label={label} descripcion={descripcion} maxWidth={maxWidth} onClose={solo.onCerrar}>
+                {children}
+            </ModalConRanuras>
+        );
+    }
 
     const hay = !error && typeof pendientes === 'number' && pendientes > 0;
     const cifra = hay && tope != null && pendientes >= tope ? `${tope}+` : pendientes;

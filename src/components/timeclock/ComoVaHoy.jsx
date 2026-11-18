@@ -241,25 +241,12 @@ export default function ComoVaHoy({ sala, ahora }) {
                     {vendedores.length > 0 && <p className="text-label text-content-3">El % es la parte de la venta de hoy que hizo cada quien.</p>}
                 </section>
 
-                <section data-surface="card" className="p-5 flex flex-col gap-3">
-                    <h2 className="text-title font-black text-content flex items-center gap-2">
-                        <PackageCheck size={20} className="text-brand-text" aria-hidden="true" /> Lo más vendido hoy
-                    </h2>
-                    {productos.length === 0 ? (
-                        <p className="text-body-sm text-content-3">Todavía no hay ventas hoy.</p>
-                    ) : (
-                        <ol className="flex flex-col gap-1.5">
-                            {productos.map((p, i) => (
-                                <li key={`${p.nombre}-${i}`} className="flex items-start gap-3">
-                                    <span className="w-6 text-center text-body font-black text-content-3">{i + 1}</span>
-                                    <span className="flex-1 min-w-0 text-body-sm text-content leading-tight line-clamp-2">{p.nombre}</span>
-                                    <span className="text-label text-content-3 shrink-0 text-right">{p.ventas} {p.ventas === 1 ? 'venta' : 'ventas'} · {Number(p.cantidad)} u.</span>
-                                </li>
-                            ))}
-                        </ol>
-                    )}
-                    {productos.length > 0 && <p className="text-label text-content-3">Por cuántas ventas lo llevaron hoy.</p>}
-                </section>
+                <Lista icono={PackageCheck} titulo="Lo más vendido hoy" vacio="Todavía no hay ventas hoy."
+                    filas={productos.map((p, i) => ({
+                        clave: `${p.nombre}-${i}`, nombre: p.nombre, foto: p.foto_url, puesto: i + 1,
+                        chip: `${p.ventas} ${p.ventas === 1 ? 'venta' : 'ventas'}`, chipTono: 'brand',
+                        detalle: `${Number(p.cantidad)} ${Number(p.cantidad) === 1 ? 'unidad' : 'unidades'}`,
+                    }))} />
 
             </div>
         </div>
@@ -296,7 +283,13 @@ function Lista({ icono: Icono, titulo, filas, vacio, nota = null }) {
                 <ul className="flex flex-col gap-1">
                     {filas.map((f) => (
                         <li key={f.clave} className="flex items-center gap-3 rounded-[var(--radius-btn)] p-1.5 -mx-1.5">
-                            <FotoProducto src={f.foto} />
+                            <div className="relative shrink-0">
+                                <FotoProducto src={f.foto} />
+                                {f.puesto != null && (
+                                    <span className={`absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full flex items-center justify-center text-label font-black tabular-nums ${f.puesto === 1
+                                        ? 'bg-warning text-white' : 'bg-surface-card border border-border-card text-content-2'}`}>{f.puesto}</span>
+                                )}
+                            </div>
                             <div className="flex-1 min-w-0 leading-tight flex flex-col gap-1">
                                 <p className="text-body-sm font-semibold text-content line-clamp-2">{f.nombre}</p>
                                 <div className="flex flex-wrap items-center gap-1.5">

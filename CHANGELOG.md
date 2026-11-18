@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.2 — Kiosco: trámites de Operación y lo más vendido con foto
+
+Pedidos del usuario (2026-11-18):
+- **Trámites en el kiosco**: «quiero unos botones como los demás, que abran los
+  modales de esos widgets». En el inicio, bajo Vender/Caja/Marcar, van los
+  trámites de Inicio · Operación (modificar facturación, ajuste de inventario,
+  consulta de inventario, traslados, Mín/Máx, precios, reservas, recetas,
+  bitácoras). Un toque pide el carné y abre el MISMO modal de su baldosa. Dentro
+  de la sesión, la pestaña «Más» los muestra filtrados por el permiso de cada
+  quien. Clientes no está: Vender ya lo hace.
+- `LanzadorSolicitud` acepta `SoloModalCtx` (`soloModal.js`): dentro de ese
+  proveedor no pinta la baldosa y abre su modal al montarse.
+- **Lo más vendido hoy** con foto, puesto y etiquetas (ventas · unidades), como
+  las otras listas. `como_va_la_sala_hoy` trae `foto_url` (migración
+  20261118151849).
+- El archivo de la migración 20261117235817 se corrigió para que sea idéntico a
+  lo aplicado (había quedado un borrador con otro orden de productos).
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1575.1 — Carga de datos de mercado de la SRS con conversión de presentaciones
 
 - `scripts/srs/cargar-datos-mercado.mjs`: arma el plan de una farmacia (guardar, agregar, eliminar, revisar) sin escribir nada, y lo manda con `--enviar <plan>` y una bitácora para retomar si se corta. Antes de escribir comprueba en el paso 3 de la SRS que la farmacia activa sea la del plan.

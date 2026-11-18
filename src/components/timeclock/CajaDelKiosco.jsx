@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { ArrowLeft, ChevronRight, Clock3, KeyRound, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, TrendingUp, Wallet, WifiOff, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Clock3, KeyRound, LayoutGrid, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, TrendingUp, Wallet, WifiOff, X } from 'lucide-react';
 import PortalInput from '../common/PortalInput';
 import ComoVaHoy from './ComoVaHoy';
 import Badge from '../common/Badge';
@@ -15,6 +15,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useKioscoDeCaja from './useKioscoDeCaja';
 import { esperaTexto, minutosDesde, queToca, tonoDeEspera, useColaDeCaja, useEstadoDeCaja } from './datosDeLaCola';
+import { TRAMITES, tramitesDe } from './tramites';
 import { guardarDestino, tomarDestino } from './sesionDeCaja';
 import { Anillo, Etiquetas, Pide } from './piezasDelKiosco';
 
@@ -26,12 +27,14 @@ import { Anillo, Etiquetas, Pide } from './piezasDelKiosco';
 // venta cargada con esa preventa, para corregir y cobrar ahí.
 const MiCajaView = lazy(() => import('../../views/MiCajaView'));
 const PreventaView = lazy(() => import('../../views/PreventaView'));
+const TramiteAbierto = lazy(() => import('./TramitesDelKiosco'));
 
 const ACCIONES = {
     vender: { label: 'Vender', icon: ShoppingCart, description: 'Arma la venta y mándala a la cola.', pide: 'Pasa tu carné para vender' },
     caja: { label: 'Caja', icon: Wallet, description: 'Apertura, cortes y cierre del día.', pide: 'Pasa tu carné para abrir la caja' },
     marcar: { label: 'Marcar', icon: Clock3, description: 'Entrada, salida o descanso.' },
     hoy: { label: 'Cómo va', icon: TrendingUp },
+    mas: { label: 'Más', icon: LayoutGrid, description: 'Facturación, inventario, traslados y más.' },
 };
 
 
@@ -106,9 +109,26 @@ function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir
     );
 }
 
-function Accion({ k, grande = false, activa, onClick }) {
-    const a = ACCIONES[k];
+function Accion({ k, a: propia = null, grande = false, compacta = false, activa = false, onClick }) {
+    const a = propia ?? ACCIONES[k];
     const Icono = a.icon;
+    if (compacta) {
+        // Los trámites: más chicos que Vender/Caja/Marcar, y el texto nunca se sale.
+        return (
+            <Button variant={activa ? 'primary' : 'secondary'} onClick={onClick} aria-pressed={activa}
+                className="!h-auto w-full min-w-0 !justify-start !text-left !rounded-[var(--radius-card)] !gap-3 !p-3.5">
+                <span className="flex w-full min-w-0 items-center gap-3">
+                    <span className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-brand/10 text-brand-text">
+                        <Icono size={20} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1 flex flex-col gap-0.5">
+                        <span className="text-body font-bold leading-tight truncate">{a.label}</span>
+                        <span className="text-label font-normal opacity-75 leading-snug line-clamp-2">{a.description}</span>
+                    </span>
+                </span>
+            </Button>
+        );
+    }
     return (
         <Button variant={activa || grande ? 'primary' : 'secondary'} onClick={onClick} aria-pressed={activa}
             className={`!h-auto w-full !justify-start !items-start !text-left !rounded-[var(--radius-card)] ${grande ? '!p-7 h-full' : '!gap-4 !p-5'}`}>
@@ -185,14 +205,19 @@ export default function CajaDelKiosco({
     const sugerencias = queToca({ estado: estadoCaja, cola: datosCola.cola, ahora });
     // El carné abre la sesión de cualquiera; lo que puede hacer lo dice su cargo.
     // Sin esto, alguien sin permiso entraba a Vender y veía un error rojo.
-    const { hasPermission, rolePerms } = useAuth();
+    const { hasPermission, rolePerms, getScope } = useAuth();
     const puede = { vender: hasPermission('preventa', 'can_edit'), caja: hasPermission('caja_vales', 'can_edit') };
     const [elegida, setElegida] = useState(null);
     const detalle = elegida ? datosCola.cola?.find((p) => p.id === elegida) : null;
     // `rolePerms` null = todavía no se leyó: no se acusa a nadie mientras carga.
-    const sinPermiso = abierta && rolePerms != null && vista !== 'hoy' && !puede[detalle ? 'vender' : vista];
+    const sinPermiso = abierta && rolePerms != null && vista !== 'hoy' && vista !== 'mas' && !puede[detalle ? 'vender' : vista];
     // La venta queda montada detrás de Caja y de Cómo va: lo editado sigue ahí al volver.
-    const enVenta = vista !== 'caja' && vista !== 'hoy';
+    const enVenta = vista !== 'caja' && vista !== 'hoy' && vista !== 'mas';
+    // El trámite abierto (su modal), de «Más».
+    const [tramite, setTramite] = useState(null);
+    const [pendienteTramite, setPendienteTramite] = useState(null);
+    const salaDelKiosco = enPortal ? sala : equipo.branchId;
+    const misTramites = tramitesDe(hasPermission, salaDelKiosco);
 
     // Entrada / Salida: lleva a la caja con ese diálogo ya abierto.
     const [dialogoCaja, setDialogoCaja] = useState({ n: 0, cual: null });
@@ -224,6 +249,8 @@ export default function CajaDelKiosco({
     };
 
     const tocar = (k) => {
+        tomarDestino();
+        setPendienteTramite(null);
         setAccion((x) => (x === k ? null : k));
     };
 
@@ -240,11 +267,20 @@ export default function CajaDelKiosco({
             if (!abierta) { leerEstado(); return; }
             const ir = tomarDestino();
             if (!ir) return;
-            if (ir.dialogo) abrirEnCaja(ir.dialogo); else irA('caja');
+            if (ir.tramite) { irA('mas'); if (misTramites.some((t) => t.clave === ir.tramite)) setTramite(ir.tramite); }
+            else if (ir.dialogo) abrirEnCaja(ir.dialogo); else irA('caja');
         }, 0);
         return () => clearTimeout(t);
     }, [abierta]); // eslint-disable-line react-hooks/exhaustive-deps
-    const pedida = accion && ACCIONES[accion];
+    // Un trámite desde el inicio: pide el carné y, al entrar, abre su modal.
+    const pedirTramite = (clave) => {
+        if (abierta) { irA('mas'); setTramite(clave); return; }
+        guardarDestino({ tramite: clave });
+        setPendienteTramite(clave);
+        setAccion('mas');
+    };
+    const pedida = accion && (accion === 'mas' && pendienteTramite
+        ? TRAMITES.find((t) => t.clave === pendienteTramite) ?? ACCIONES.mas : ACCIONES[accion]);
 
     return (
         <div className="relative z-base flex-1 w-full flex flex-col md:flex-row [--barra-kiosco:4.5rem]">
@@ -269,7 +305,7 @@ export default function CajaDelKiosco({
                                 </div>
                             ) : (
                             <SegmentedControl className="kiosco-nav" label="Qué estás haciendo" tone="brand"
-                                options={['vender', 'caja', 'hoy'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
+                                options={['vender', 'caja', 'hoy', 'mas'].map((v) => ({ value: v, label: ACCIONES[v].label, icon: ACCIONES[v].icon }))}
                                 value={vista} onChange={irA} />
                             )}
                             <div className="flex items-center gap-3">
@@ -345,6 +381,17 @@ export default function CajaDelKiosco({
                                             alCerrarDialogo={() => setMovimiento(null)} />
                                     </div>
                                 )}
+                                {vista === 'mas' && (
+                                    misTramites.length ? (
+                                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                            {misTramites.map((t) => <Accion key={t.clave} a={t} compacta onClick={() => setTramite(t.clave)} />)}
+                                        </div>
+                                    ) : <Notice variant="info">Tu cargo no tiene trámites en este kiosco.</Notice>
+                                )}
+                                {tramite && (
+                                    <TramiteAbierto clave={tramite} sala={salaDelKiosco} todas={(p) => getScope?.(p) === 'ALL'}
+                                        onCerrar={() => setTramite(null)} />
+                                )}
                                 {vista === 'hoy' && <ComoVaHoy sala={enPortal ? sala : equipo.branchId} ahora={ahora} />}
                                 {vista === 'caja' && (
                                     <MiCajaView key={dialogoCaja.n} comoPestana abrirAlEntrar={dialogoCaja.cual}
@@ -381,6 +428,18 @@ export default function CajaDelKiosco({
                                     <div className="md:row-span-2"><Accion k="vender" grande activa={accion === 'vender'} onClick={() => tocar('vender')} /></div>
                                     <Accion k="caja" activa={accion === 'caja'} onClick={() => tocar('caja')} />
                                     <Accion k="marcar" activa={accion === 'marcar'} onClick={() => tocar('marcar')} />
+                                </div>
+                                {/* Los trámites de Operación (usuario, 2026-11-18): un toque,
+                                    el carné, y se abre su modal. Lo que el cargo no puede
+                                    usar se dice al entrar. */}
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-label font-bold text-content-3 uppercase tracking-widest">Trámites</p>
+                                    <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
+                                        {TRAMITES.filter((t) => !t.aplica || t.aplica(salaDelKiosco)).map((t) => (
+                                            <Accion key={t.clave} a={t} compacta activa={accion === 'mas' && pendienteTramite === t.clave}
+                                                onClick={() => pedirTramite(t.clave)} />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}

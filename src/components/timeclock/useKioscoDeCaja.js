@@ -124,7 +124,7 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
 
     // Primero se elige y AHÍ se pide el carné (pedido del usuario,
     // 2026-11-17): en la pantalla principal el lector no escucha.
-    const pidiendo = accion === 'vender' || accion === 'caja';
+    const pidiendo = accion === 'vender' || accion === 'caja' || accion === 'mas';
     const alLeer = useCallback((codigo) => { if (pidiendo) entrar(codigo, accion); }, [pidiendo, accion, entrar]);
     const entrarConClave = useCallback((usuario, clave) => {
         if (pidiendo && usuario && clave) entrar({ usuario, clave }, accion);

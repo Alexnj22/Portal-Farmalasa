@@ -95,7 +95,7 @@ BEGIN
                             GROUP BY e.id, e.name, e.photo_url
                             ORDER BY sum(s.total) DESC
                             LIMIT 5) x),
-    'productos', (SELECT coalesce(json_agg(json_build_object('nombre', d, 'cantidad', c, 'ventas', n) ORDER BY c DESC), '[]'::json)
+    'productos', (SELECT coalesce(json_agg(json_build_object('nombre', d, 'cantidad', c, 'ventas', n) ORDER BY n DESC, c DESC), '[]'::json)
                     FROM (SELECT i.descripcion d, sum(i.cantidad) c, count(DISTINCT i.invoice_id) n
                             FROM public.sales_invoices s
                             JOIN public.sales_invoice_items i ON i.invoice_id = s.id

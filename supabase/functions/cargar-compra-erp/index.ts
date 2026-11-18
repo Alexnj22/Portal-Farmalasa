@@ -347,13 +347,23 @@ async function enviarCompra(admin: any, x: {
   // Traerla al portal ya. El cron de compras mira ayer y hoy por la fecha de
   // la compra, y ésta lleva la de EMISIÓN: sin esto entraba recién con el
   // barrido del domingo (10 días) o nunca. Después de responder, sin esperarla.
-  EdgeRuntime.waitUntil(fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-erp-purchases`, {
+  //
+  // Comprobada, se guarda con lo que el portal acaba de mandar
+  // (`guardarCompraEnPortal`, al instante). Pedirla de vuelta al sistema baja
+  // TODAS las compras de la fecha: 84 s el 2026-11-18 con 38 compras del 13/11,
+  // contra un tope de 140 s. Sin comprobar, o si guardar falla, se pide como
+  // antes. El barrido del domingo la vuelve a traer del sistema igual.
+  const traerDelSistema = () => fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-erp-purchases`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${secretoDeCircuito("sync") ?? ""}` },
     body: JSON.stringify({ fini: x.sobre.fecha, ffin: x.sobre.fecha, branchId: BODEGA_BRANCH_ID }),
     signal: AbortSignal.timeout(140_000),
   }).then((r) => { if (!r.ok) console.error("[cargar-compra-erp] traerla al portal:", r.status); })
-    .catch((e) => console.error("[cargar-compra-erp] traerla al portal:", e?.message ?? e)));
+    .catch((e) => console.error("[cargar-compra-erp] traerla al portal:", e?.message ?? e));
+  EdgeRuntime.waitUntil(verif.ok && verif.compra && verif.compra > 0
+    ? guardarCompraEnPortal(admin, x.sobre, x.lineas, verif.compra)
+      .catch((e) => { console.error("[cargar-compra-erp] guardar en el portal:", e?.message ?? e); return traerDelSistema(); })
+    : traerDelSistema());
   // El costo subió y el precio de venta ya no deja margen: avisar a quien ve
   // costos. Sin esperar, y sin que un fallo del aviso toque la carga.
   EdgeRuntime.waitUntil(avisarMargenBajo(admin, x.revision, x.emisor.nombre, verif.compra)
@@ -538,6 +548,80 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
     }
   }
   return { ok: notas.length === 0, compra: Number(c.compra_id) || null, notas };
+}
+
+/**
+ * Guarda en el portal (`purchase_receipts` + renglones) la compra recién
+ * cargada y comprobada, con los datos que el portal mismo mandó. Escribe por
+ * las MISMAS funciones que `sync-erp-purchases`, así que cuando el barrido la
+ * vuelve a traer del sistema sólo reescribe lo que de verdad difiera.
+ *
+ * Cada campo reproduce lo que guarda el sistema, medido contra 155 cargas de
+ * noviembre (1,399 productos) ya traídas por el barrido:
+ * - subtotal = total − IVA (el sistema mete la percepción adentro); 155/155.
+ * - cantidad en unidades (cant × unidad) y total = cant × costo, a 2
+ *   decimales; 1,396/1,399. Las 3 restantes son de la 6625, que trae un
+ *   servicio: ahí el sistema DUPLICA los productos y es él el que está mal.
+ * - lote en mayúsculas, «GENERICO» si no lleva; vencimiento vacío = null.
+ * - los servicios no se guardan (el barrido tampoco los guarda).
+ * - retención 0: el sobre no la manda, así que el sistema tampoco la tiene.
+ */
+async function guardarCompraEnPortal(admin: any, sobre: Record<string, unknown>, lineas: LineaSobre[], erpCompra: number) {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const erpProveedor = Number(sobre.proveedor);
+  const { data: sup, error: eS } = await admin.from("suppliers").select("id, nombre").eq("erp_supplier_id", erpProveedor).maybeSingle();
+  if (eS) throw eS;
+  if (!sup) throw new Error(`el proveedor ${erpProveedor} no está en el portal`);
+  const total = Number(sobre.total), iva = Number(sobre.iva);
+  if (!Number.isFinite(total) || !Number.isFinite(iva)) throw new Error("el sobre no trae total o IVA");
+
+  const { error: eH } = await admin.rpc("sync_purchase_receipts_batch", { p_rows: [{
+    erp_purchase_id: erpCompra, branch_id: BODEGA_BRANCH_ID, erp_sucursal_id: ERP_BODEGA,
+    erp_supplier_id: erpProveedor, supplier_id: sup.id, fecha: sobre.fecha, proveedor: sup.nombre, estado: null,
+    subtotal: r2(total - iva), iva, total,
+    documento_tipo: String(sobre.tipo_doc ?? "") || null,
+    documento_numero: String(sobre.numero_doc ?? "").slice(0, 20).trim() || null,
+    percepcion_iva: Number(sobre.total_percepcion) || 0, retencion_iva: 0,
+  }] });
+  if (eH) throw new Error(`cabecera: ${eH.message}`);
+  const { data: rec, error: eR } = await admin.from("purchase_receipts").select("id")
+    .eq("erp_purchase_id", erpCompra).eq("erp_sucursal_id", ERP_BODEGA).maybeSingle();
+  if (eR) throw eR;
+  if (!rec) throw new Error("la cabecera no quedó guardada");
+
+  const productos = lineas.filter((l) => l.bandera === "PRODUCTO");
+  const ids = [...new Set(productos.map((l) => Number(l.id_producto)))];
+  const { data: cat, error: eC } = ids.length
+    ? await admin.from("products").select("id, nombre").in("id", ids)
+    : { data: [], error: null };
+  if (eC) throw eC;
+  const nombre = new Map<number, string>((cat ?? []).map((p: any) => [Number(p.id), p.nombre]));
+  const renglones = productos.map((l) => {
+    const cantidad = Number(l.cant) * (Number(l.unidad) || 1);
+    const totalLinea = r2(Number(l.cant) * Number(l.compra));
+    const vence = String(l.vence ?? "");
+    return {
+      erp_product_id: Number(l.id_producto),
+      descripcion: nombre.get(Number(l.id_producto)) ?? null,
+      cantidad,
+      precio_unitario: cantidad > 0 && totalLinea > 0 ? totalLinea / cantidad : Number(l.compra) / (Number(l.unidad) || 1),
+      total_linea: totalLinea,
+      lote: String(l.numero_lote ?? "").trim().toUpperCase() || "GENERICO",
+      fecha_vencimiento: /^\d{4}-\d{2}-\d{2}$/.test(vence) && vence !== "0000-00-00" ? vence : null,
+      lote_aproximado: false,
+    };
+  });
+  // El mismo orden que usa el barrido (producto, lote, vencimiento, cantidad, total).
+  const clave = (p: typeof renglones[number]) => [String(p.erp_product_id).padStart(10, "0"), p.lote,
+    p.fecha_vencimiento ?? "", String(p.cantidad), String(p.total_linea)].join("\u0000");
+  renglones.sort((a, b) => clave(a).localeCompare(clave(b)));
+  if (!renglones.length) return;
+  const { error: eI } = await admin.rpc("sync_purchase_receipt_items_batch", {
+    p_rows: renglones.map((p, i) => ({ receipt_id: rec.id, linea_num: i, ...p })),
+  });
+  if (eI) throw new Error(`renglones: ${eI.message}`);
+  const { error: eP } = await admin.rpc("podar_renglones_de_compra", { p_rows: [{ receipt_id: rec.id, n: renglones.length }] });
+  if (eP) throw new Error(`podar: ${eP.message}`);
 }
 
 type LecturaRapida =

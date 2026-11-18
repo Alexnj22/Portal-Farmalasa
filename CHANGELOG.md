@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1577.2 — La compra cargada aparece en el portal al instante
+
+Después de cargar una compra, `cargar-compra-erp` le pedía a
+`sync-erp-purchases` que la trajera del sistema, y eso baja TODAS las compras
+de la fecha: 84 s el 2026-11-18 (38 compras del 13/11), contra un tope de
+140 s. Con un día un poco más lleno fallaba y la compra no aparecía hasta el
+barrido del domingo.
+
+- `guardarCompraEnPortal`: si la carga quedó comprobada, guarda la cabecera y
+  los renglones con lo que el portal mismo mandó, por las mismas funciones que
+  usa el barrido (`sync_purchase_receipts_batch`, `…_items_batch`, `podar…`).
+- Medido contra 155 cargas de noviembre ya traídas por el barrido: cabecera
+  155/155 (el subtotal del sistema es total − IVA), productos 1,396/1,399 en
+  cantidad, total y renglones. Los 3 restantes son de la 6625 (con servicio),
+  donde el sistema duplica los productos. Lote en mayúsculas y «GENERICO» si no
+  lleva, como el sistema.
+- Corrida en seco sobre la 6674: mismos 19 renglones; sólo cambian los lotes
+  de la Crema Combinada, que el barrido tiene cruzados («aproximado»).
+- Sin comprobar, o si guardar falla, se pide al sistema como antes. El barrido
+  del domingo la vuelve a traer igual.
+
 ## v2.1577.1 — La carga de compras se comprueba en menos de un segundo
 
 El 2026-11-18 dos cargas de COFARSAL (compras 6672 y 6674) dieron «No se sabe

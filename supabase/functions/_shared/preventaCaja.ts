@@ -26,7 +26,7 @@
 import { PAGOS_DE_CAJA } from "../../../src/utils/preventa.js";
 import {
   armarFinalizado, armarGuardado, clienteDePreventa, CODIGO_DE_PAGO, datosExtrasDelPago, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar,
-  problemaDelPago, totalesDeCobro,
+  problemaDelPago, recalcularRenglones, totalesDeCobro,
 } from "../../../src/utils/cobroDeCaja.js";
 
 export const BASE = "https://clientesdte3.oss.com.sv/farma_salud/";
@@ -528,31 +528,43 @@ export async function prepararCobroEnLaCaja(
   if (j.typeinfo !== "Success" || String(j.id_factura ?? "") !== externoId) {
     throw new Error("La caja no devolvió esa preventa: puede que ya se cobrara o la borraran.");
   }
-  const renglones = leerRenglonesDeLista(j.lista);
   const cabecera = {
     id_cliente: clienteDePreventa(j.select_cliente), tipo_documento: String(j.tipo_documento ?? ""), credito: String(j.credito ?? ""),
     codvende: String(j.codvende ?? ""), id_empleado: String(j.id_empleado ?? ""), datos_extras: String(j.datos_extras ?? ""),
     id_medico: String(j.id_medico ?? "0"), id_factura: externoId, numero_doc: String(j.numero_doc ?? ""),
   };
-  let retiene = "";
-  try { retiene = String(JSON.parse(await http.post("venta.php", { process: "mostrar_datos_cliente", id_client: cabecera.id_cliente }))?.retiene ?? ""); }
+  // Cada fila como la recalcula la pantalla al cargar (en crédito fiscal, sin IVA).
+  const renglones = recalcularRenglones(leerRenglonesDeLista(j.lista), cabecera.tipo_documento);
+  // Si retiene y cuánto: lo que la pantalla lee al cargar el cliente
+  // (`mostrar_datos_cliente`: `retiene` y `retencion`).
+  let datosCliente: Record<string, unknown> = {};
+  try { datosCliente = JSON.parse(await http.post("venta.php", { process: "mostrar_datos_cliente", id_client: cabecera.id_cliente })) ?? {}; }
   catch { throw new Error("No se pudieron leer los datos del cliente en la caja."); }
-  const totales = totalesDeCobro(renglones);
+  const impuestos = {
+    iva: caja.iva, monto_retencion: caja.monto_retencion,
+    retiene: String(datosCliente.retiene ?? ""), porc_retencion: String(datosCliente.retencion ?? "0"),
+  };
+  const totales = totalesDeCobro(renglones, { ...impuestos, tipo: cabecera.tipo_documento });
   if (esperado.pago) {
     const extra = datosExtrasDelPago(esperado.pago, esperado.detalle ?? {});
     cabecera.credito = CODIGO_DE_PAGO[esperado.pago as keyof typeof CODIGO_DE_PAGO] ?? cabecera.credito;
     cabecera.datos_extras = [cabecera.datos_extras, extra].map((x) => x.trim()).filter(Boolean).join(" | ");
   }
   const pago = esperado.pago ?? (Object.entries(CODIGO_DE_PAGO).find(([, c]) => c === cabecera.credito)?.[0] ?? "");
-  let motivo = motivoParaNoCobrar({ renglones, tipo_documento: cabecera.tipo_documento, cliente_retiene: retiene });
-  if (!motivo && esperado.total != null && Math.abs(totales.total - esperado.total) >= 0.005) {
-    motivo = `En la caja la preventa suma ${totales.total.toFixed(2)} y en el portal ${esperado.total.toFixed(2)}. Revísala antes de cobrar.`;
+  let motivo = motivoParaNoCobrar({ renglones, tipo_documento: cabecera.tipo_documento, totales });
+  // El portal guarda el total con IVA y sin retención: se compara eso. En
+  // crédito fiscal el IVA se calcula sobre la suma sin IVA, y un centavo de
+  // redondeo entre los dos caminos es esperable.
+  const comparable = Math.round((totales.gravado_iva + totales.exento) * 100) / 100;
+  const holgura = cabecera.tipo_documento === "CCF" ? 0.025 : 0.005;
+  if (!motivo && esperado.total != null && Math.abs(comparable - esperado.total) >= holgura) {
+    motivo = `En la caja la preventa suma ${comparable.toFixed(2)} y en el portal ${esperado.total.toFixed(2)}. Revísala antes de cobrar.`;
   }
   if (!motivo) {
     motivo = problemaDelPago({ pago, detalle: esperado.detalle ?? {}, total: totales.total, efectivo: esperado.efectivo,
       clienteGenerico: cabecera.id_cliente === "-1" || cabecera.id_cliente === "" });
   }
-  const guardado = armarGuardado({ renglones, cabecera, caja });
+  const guardado = armarGuardado({ renglones, cabecera, caja, impuestos });
   // El número del documento lo da la caja al guardar: en el ensayo va vacío.
   const finalizado = armarFinalizado({ cabecera, guardado: { id_factura: externoId, ultimo: "" }, caja, efectivo: esperado.efectivo });
   return { motivo, totales, caja, cabecera, renglones: renglones.length, guardado, finalizado };

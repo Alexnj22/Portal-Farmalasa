@@ -612,7 +612,7 @@ async function mandarAHacienda(
   d: { externo: string; tipo: string; branch: number; clienteErp: string; deshabilitar: boolean },
 ): Promise<Record<string, unknown>> {
   if (d.deshabilitar) return { enviado: false, motivo: "La caja tiene el envío apagado." };
-  if (d.tipo !== "COF") return { enviado: false, motivo: `Un ${d.tipo} se manda con el envío de la noche.` };
+  if (d.tipo !== "COF" && d.tipo !== "CCF") return { enviado: false, motivo: `Un ${d.tipo} no va al MH.` };
   const { data: pausa, error: ePausa } = await admin.from("dte_sucursales_en_pausa").select("motivo").eq("branch_id", d.branch).maybeSingle();
   if (ePausa) return { enviado: false, motivo: "No se pudo leer la pausa de la sucursal." };
   if (pausa) return { enviado: false, motivo: `Sucursal en pausa: ${pausa.motivo}` };

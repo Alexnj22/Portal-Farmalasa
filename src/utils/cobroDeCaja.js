@@ -90,29 +90,100 @@ export function leerRenglonesDeLista(lista) {
             descuento_promo: valorDe(tr, 'descuento_promo') ?? '',
             descuento_tipo: valorDe(tr, 'descuento_tipo') ?? '',
         };
+        // Lo que la pantalla usa para RECALCULAR la fila (`actualiza_subtotal`)
+        // pero no manda: no es enumerable, así no viaja en `json_arr`.
+        Object.defineProperty(fila, 'calculo', {
+            enumerable: false,
+            value: { precio_sin_iva: valorDe(tr, 'precio_sin_iva') ?? '', descuento_monto: valorDe(tr, 'descuento_monto') ?? '-1' },
+        });
         fila.invalida = !(fila.cantidad > 0 && fila.precio);
         filas.push(fila);
     }
     return filas;
 }
 
-/** Los totales como `totalColumns` + `setTotals`, para consumidor final y ticket. */
-export function totalesDeCobro(renglones) {
-    let gravado = 0, exento = 0, descuento = 0;
+const redondear = (v, d) => Number(Math.round(`${v}e${d}`) + `e-${d}`);   // `round` de la caja
+
+/**
+ * Cada fila como la deja `actualiza_subtotal` al cargar la preventa (el cambio
+ * de documento la dispara para todas, releído el 2026-11-18):
+ *   · consumidor final y ticket: cantidad × precio, menos la promoción,
+ *     redondeado a 2;
+ *   · crédito fiscal: cantidad × precio SIN IVA, menos la promoción, a 4
+ *     decimales (medido: la CCF 409728 guarda 2 × $3.00 como $5.31).
+ * La promoción: `descuento_monto` (−1 = ninguna) en % o por unidad, y su monto
+ * queda en `descuento_promo`. La fila del descuento por puntos (−999) no la lleva.
+ */
+export function recalcularRenglones(renglones, tipo) {
+    const ccf = String(tipo) === 'CCF';
+    return renglones.map((r) => {
+        const c = r.calculo;
+        if (!c) return r;
+        const precio = ccf ? num(c.precio_sin_iva) : num(r.precio);
+        let sub = redondear(num(r.cantidad) * precio, 4);
+        const fila = { ...r };
+        const monto = String(c.descuento_monto ?? '-1');
+        if (monto !== '-1' && String(r.id).trim() !== '-999') {
+            if (String(r.descuento_tipo) === '%') {
+                const d = redondear((num(monto) / 100) * sub, 2);
+                sub -= d;
+                fila.descuento_promo = String(d);
+            } else {
+                sub -= num(monto) * num(r.cantidad);
+                fila.descuento_promo = String(redondear(num(monto) * num(r.cantidad), 2));
+            }
+        }
+        // Texto, como lo lee la pantalla de su campo (`.val()`).
+        fila.subtotal = ccf ? sub.toFixed(4) : String(redondear(sub, 2));
+        Object.defineProperty(fila, 'calculo', { enumerable: false, value: c });
+        return fila;
+    });
+}
+
+/**
+ * Los totales como `totalColumns` + `setTotals` de la pantalla de la caja
+ * (releídos el 2026-11-18), para los tres documentos:
+ *   · crédito fiscal: los precios van sin IVA; IVA = gravado × 13 % redondeado a
+ *     2; si el cliente retiene, retención = gravado × su porcentaje;
+ *   · consumidor final y ticket: los precios ya traen el IVA (no se suma); si el
+ *     cliente retiene, retención = gravado ÷ 1.13 × su porcentaje.
+ * La retención sólo corre desde `monto_retencion` (100 en la caja) y sólo con
+ * «retiene 1»: al cargar el cliente la caja pone en 0 el porcentaje del 10.
+ * Total = gravado + exento + IVA − retención, redondeado a 4 y mostrado a 2.
+ * Enfrentado con facturas reales (CCF 410964, COF 414169: al centavo).
+ *
+ * `imp`: { tipo, iva, retiene, porc_retencion, monto_retencion }. Sin él, un
+ * consumidor final sin retención (lo que se cobraba antes).
+ */
+export function totalesDeCobro(renglones, imp = {}) {
+    let gravado = 0, exento = 0, descuento = 0, hayGravado = false, hayExento = false;
     for (const r of renglones) {
         const sub = num(r.subtotal);
         if (String(r.id).trim() === '-999') { gravado -= sub; descuento += sub; continue; }
-        if (Number.parseInt(r.exento, 10) === 0) gravado += sub; else exento += sub;
+        if (Number.parseInt(r.exento, 10) === 0) { gravado += sub; hayGravado = true; } else { exento += sub; hayExento = true; }
     }
-    return { gravado: r2(gravado), exento: r2(exento), total: r2(gravado + exento), descuento: r2(descuento), items: renglones.length };
+    const tipo = String(imp.tipo ?? 'COF');
+    const tasa = imp.iva == null || imp.iva === '' ? 0.13 : num(imp.iva);
+    const porc = num(imp.porc_retencion);
+    const desde = imp.monto_retencion == null || imp.monto_retencion === '' ? 100 : num(imp.monto_retencion);
+    const retiene = String(imp.retiene ?? '').trim() === '1' && gravado >= desde;
+    const iva = tipo === 'CCF' ? r2(gravado * tasa) : 0;
+    const retencion = !retiene ? 0 : tipo === 'CCF' ? gravado * porc : (gravado / 1.13) * porc;
+    const total = Math.round((gravado + exento + iva - retencion) * 10000) / 10000;
+    return {
+        gravado: r2(gravado), exento: r2(exento), iva, gravado_iva: r2(gravado + iva), retencion: r2(retencion), percepcion: 0,
+        total: r2(total), descuento: r2(descuento), items: renglones.length, mixto: hayGravado && hayExento,
+    };
 }
 
 /** Qué impide cobrar esta preventa desde el portal, o null. La forma de pago la juzga `problemaDelPago`. */
-export function motivoParaNoCobrar({ renglones, tipo_documento, cliente_retiene }) {
+export function motivoParaNoCobrar({ renglones, tipo_documento, totales }) {
     if (!renglones?.length) return 'La preventa no tiene productos.';
-    if (renglones.some((r) => r.invalida)) return 'Hay un producto sin cantidad o sin precio. Cóbrala en la caja.';
-    if (!['COF', 'TIK'].includes(String(tipo_documento))) return 'Esta preventa es crédito fiscal. Por ahora se cobra en la caja.';
-    if (cliente_retiene && String(cliente_retiene) !== '0') return 'El cliente retiene IVA. Por ahora se cobra en la caja.';
+    if (renglones.some((r) => r.invalida)) return 'Hay un producto sin cantidad o sin precio. Corrígelo antes de cobrar.';
+    if (!['COF', 'CCF', 'TIK'].includes(String(tipo_documento))) return 'La preventa no dice qué documento lleva.';
+    // La pantalla de la caja suma mal una venta con productos exentos y gravados
+    // juntos (arrastra el subtotal de la fila anterior): no se cobra hasta medirla.
+    if (totales?.mixto) return 'Tiene productos exentos y gravados juntos. Avísale a Soporte antes de cobrarla.';
     return null;
 }
 
@@ -152,16 +223,16 @@ export function datosExtrasDelPago(pago, detalle = {}) {
 }
 
 /** El cuerpo de `process=insert`, en el orden y con los nombres de `senddata`. */
-export function armarGuardado({ renglones, cabecera, caja }) {
-    const t = totalesDeCobro(renglones);
+export function armarGuardado({ renglones, cabecera, caja, impuestos = {} }) {
+    const t = totalesDeCobro(renglones, { ...impuestos, tipo: cabecera.tipo_documento });
     const aplica = renglones.some((r) => ['precio', 'precio1', 'precio2'].includes(r.precio_seleccionado)) ? 1 : 0;
     const json = renglones.map(({ invalida: _i, ...r }) => JSON.stringify(r)).join(',');
     return {
         process: 'insert', cuantos: String(renglones.length), fecha_movimiento: caja.fecha,
         id_cliente: String(cabecera.id_cliente), total: f2(t.total),
         id_vendedor: String(cabecera.id_empleado ?? ''), json_arr: `[${json}]`,
-        retencion: '0.00', total_percepcion: '0.00', iva: '0.00', items: String(t.items),
-        subtotal: f2(t.gravado), sumas: f2(t.gravado), venta_exenta: f2(t.exento), suma_gravada: f2(t.gravado),
+        retencion: f2(t.retencion), total_percepcion: '0.00', iva: f2(t.iva), items: String(t.items),
+        subtotal: f2(t.gravado_iva), sumas: f2(t.gravado), venta_exenta: f2(t.exento), suma_gravada: f2(t.gravado),
         tipo_impresion: String(cabecera.tipo_documento), id_factura: String(cabecera.id_factura),
         id_apertura: String(caja.id_apertura), turno: String(caja.turno), caja: String(caja.caja),
         credito: String(cabecera.credito), codvende: String(cabecera.codvende ?? ''),
@@ -187,6 +258,8 @@ export function armarFinalizado({ cabecera, guardado, caja, efectivo }) {
         process: 'imprimir_fact', numero_doc: numdoc,
         tipo_impresion: String(cabecera.tipo_documento), num_doc_fact: String(guardado.id_factura ?? cabecera.id_factura),
         numero_factura_consumidor: tik ? '' : numdoc, fecha_fact: String(caja.fecha_fact ?? ''),
+        // El crédito fiscal lleva además el NIT y el NRC que devolvió la caja al guardar.
+        ...(String(cabecera.tipo_documento) === 'CCF' ? { nit: String(guardado.nit ?? ''), nrc: String(guardado.nrc ?? '') } : {}),
         direccion: tik ? '' : String(guardado.direccion ?? ''), nombreape: tik ? '' : String(guardado.nombre ?? ''),
         id_cliente: String(cabecera.id_cliente), efectivo: String(efectivo),
     };
@@ -196,7 +269,9 @@ export function armarFinalizado({ cabecera, guardado, caja, efectivo }) {
 export function leerCajaAbierta(html) {
     const inputs = etiquetas(String(html ?? ''), 'input').map((t) => t.attrs);
     const v = (id) => inputs.find((a) => a.id === id)?.value ?? '';
-    const caja = { fecha: v('fecha'), fecha_fact: v('fecha_fact'), id_apertura: v('id_apertura'), turno: v('turno'), caja: v('caja') };
+    const caja = { fecha: v('fecha'), fecha_fact: v('fecha_fact'), id_apertura: v('id_apertura'), turno: v('turno'), caja: v('caja'),
+        // Los impuestos de la pantalla (campos ocultos): IVA y desde cuánto se retiene.
+        iva: v('porc_iva') || '0.13', monto_retencion: v('monto_retencion1') || '100' };
     return caja.id_apertura && caja.fecha ? caja : null;
 }
 

@@ -38834,6 +38834,10 @@ export type Database = {
         Args: { p_branch: number; p_customer: number; p_lineas: Json }
         Returns: Json
       }
+      preventa_credito_del_cliente: {
+        Args: { p_customer: number }
+        Returns: Json
+      }
       preventa_directa_preparar: {
         Args: {
           p_branch: number

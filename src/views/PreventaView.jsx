@@ -392,7 +392,20 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const [cobrada, setCobrada] = useState(null);
     const recibidoNum = Number(recibido) || 0;
     const enEfectivo = venta.pago === 'contado';
-    const faltaEfectivo = enEfectivo && recibidoNum < aPagar;
+    // Lo que la caja va a cobrar de verdad: el crédito fiscal le suma el IVA a la
+    // suma sin IVA y el cliente que retiene paga menos. Sale de la revisión que
+    // se hace sola al abrir el cobro (sólo lee la caja); mientras, el del portal.
+    const [revision, setRevision] = useState(null);
+    useEffect(() => {
+        if (!cobrando?.id || esDemo()) return undefined;
+        let vivo = true;
+        setRevision({ cargando: true });
+        ensayarCobro(cobrando.id, 1e6).then((r) => { if (vivo) setRevision(r); });
+        return () => { vivo = false; };
+    }, [cobrando?.id]);
+    const desglose = cobrando && revision?.ok ? revision.totales : null;
+    const aCobrar = desglose ? desglose.total : aPagar;
+    const faltaEfectivo = enEfectivo && recibidoNum < aCobrar;
     // El cobro de verdad (etapa 2, 2026-11-18) se enciende por sucursal con una
     // fila de `cobro_kiosco_sucursales`; apagado, el kiosco sólo puede revisarlo.
     const [encendido, setEncendido] = useState(false);
@@ -415,22 +428,19 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         return () => { vivo = false; };
     }, [cobrando, venta.pago, sala, terminales]);
     const faltaDelPago = cobrando && !esDemo()
-        ? problemaDelPago({ pago: venta.pago, detalle: detallePago, total: aPagar, efectivo: enEfectivo ? recibidoNum : aPagar, clienteGenerico: !venta.cliente })
+        ? problemaDelPago({ pago: venta.pago, detalle: detallePago, total: aCobrar, efectivo: enEfectivo ? recibidoNum : aCobrar, clienteGenerico: !venta.cliente })
         : null;
-    // Mientras el cobro no está encendido, el kiosco puede REVISARLO: la caja
-    // contesta qué cobraría, sin cobrar (`preventa-caja`, acción `cobrar`).
-    const [revision, setRevision] = useState(null);
+    // Volver a revisar a mano (la caja contesta qué cobraría, sin cobrar).
     const revisarCobro = async () => {
         if (!cobrando?.id || revision?.cargando) return;
         setRevision({ cargando: true });
-        const r = await ensayarCobro(cobrando.id, enEfectivo ? recibidoNum : aPagar);
-        setRevision(r);
+        setRevision(await ensayarCobro(cobrando.id, 1e6));
     };
     const cobrarEnKiosco = async () => {
         if (bloqueada || faltaEfectivo || !cobroConectado || cobrandoAhora || faltaDelPago) return;
         if (!esDemo()) {
             setCobrandoAhora(true);
-            const r = await cobrarPreventa(cobrando.id, enEfectivo ? recibidoNum : aPagar, venta.pago, detallePago);
+            const r = await cobrarPreventa(cobrando.id, enEfectivo ? recibidoNum : aCobrar, venta.pago, detallePago);
             setCobrandoAhora(false);
             if (!r?.ok) { showToast('No se cobró', r?.error ?? 'Algo falló. Revisa la venta en la caja.', 'error'); return; }
             const hecho = new Date().toISOString();
@@ -792,12 +802,13 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
 
                                 {cobrando ? (
                                     <>
+                                        <DesgloseDelCobro desglose={desglose} cargando={Boolean(revision?.cargando)} />
                                         {enEfectivo && (
                                             <div className="space-y-2 border-t border-subtle pt-2.5">
                                                 <PortalInput compact label="Recibido" name="recibido" prefix="$" inputMode="decimal" value={recibido}
                                                     placeholder="0.00" onChange={(e) => setRecibido(e.target.value.replace(/[^\d.]/g, '').slice(0, 8))} />
                                                 <div className="grid grid-cols-4 gap-1.5">
-                                                    {billetesPara(aPagar).map(([rotulo, monto]) => (
+                                                    {billetesPara(aCobrar).map(([rotulo, monto]) => (
                                                         <Button key={rotulo} size="xs" variant={recibidoNum === monto ? 'primary' : 'secondary'}
                                                             onClick={() => setRecibido(monto.toFixed(2))}>{rotulo}</Button>
                                                     ))}
@@ -805,7 +816,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                                 <div className="flex items-baseline justify-between">
                                                     <span className="text-body-sm font-semibold text-content-2">Vuelto</span>
                                                     <span className={`text-title-lg font-black tabular-nums ${recibidoNum && !faltaEfectivo ? 'text-success-text' : 'text-content-3'}`}>
-                                                        {recibidoNum && !faltaEfectivo ? formatMoney(recibidoNum - aPagar) : '—'}
+                                                        {recibidoNum && !faltaEfectivo ? formatMoney(recibidoNum - aCobrar) : '—'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -814,7 +825,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                             onClick={cobrarEnKiosco} data-accion-enviar>
                                             {problemas.length > 0
                                                 ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
-                                                : faltaEfectivo ? 'Escribe lo recibido' : faltaDelPago && !enEfectivo ? faltaDelPago : `Cobrar ${formatMoney(aPagar)}`}
+                                                : faltaEfectivo ? 'Escribe lo recibido' : faltaDelPago && !enEfectivo ? faltaDelPago : `Cobrar ${formatMoney(aCobrar)}`}
                                         </Button>
                                         {anulableEnCobro && (
                                             <Button className="w-full" variant="secondary" tone="danger" size="sm" icon={Ban} onClick={pedirAnularCobro}>
@@ -1190,6 +1201,15 @@ function FichaDelCliente({ holgada = false, cliente, info, cotizacion, faltanCcf
                         {info?.categoria && <Badge size="sm" variant={info.categoria === 'Consumidor' ? 'neutral' : 'info'} uppercase={false}>{info.categoria}</Badge>}
                         {tipo && <Badge size="sm" variant="neutral" uppercase={false}>{tipo}</Badge>}
                         {info?.nivel && <Badge size="sm" variant="warning" uppercase={false}>{info.nivel}</Badge>}
+                        {/* Lo que debe a crédito (usuario, 2026-11-18): a la vista al venderle y al cobrarle. Vencido = pasó su plazo con saldo. */}
+                        {info?.credito && (
+                            <Badge size="sm" variant={info.credito.vencido > 0 ? 'danger' : 'warning'} uppercase={false}
+                                title={`${info.credito.documentos} documento${info.credito.documentos === 1 ? '' : 's'} a crédito, el más antiguo de hace ${info.credito.dias_mas_viejo} días.`}>
+                                {info.credito.vencido > 0
+                                    ? `Crédito vencido ${formatMoney(info.credito.vencido)} de ${formatMoney(info.credito.pendiente)}`
+                                    : `Debe a crédito ${formatMoney(info.credito.pendiente)}`}
+                            </Badge>
+                        )}
                     </div>
                     {info && tiene.length > 0 && (
                         <p className={`${holgada ? 'text-body-sm' : 'text-micro'} text-content-2 truncate`}>
@@ -1711,6 +1731,36 @@ function DatosDelPago({ pago, detalle, terminales, onCambiar }) {
     if (pago === 'bitcoin') return campo('referencia', 'Referencia del pago');
     if (pago === 'credito') return <p className="text-micro text-content-3">Se carga a la cuenta del cliente. Si tiene algo vencido, no se puede.</p>;
     return null;
+}
+
+/**
+ * Lo que va a decir el documento, como en la factura: sumas, IVA, exento,
+ * retención y total (usuario, 2026-11-18: «en el kiosco se debe poder ver la
+ * información, IVA, retención»). Lo calcula la caja al revisar el cobro.
+ */
+function DesgloseDelCobro({ desglose: d, cargando }) {
+    if (!d) return cargando ? <p className="text-micro text-content-3">Revisando el cobro en la caja…</p> : null;
+    const filas = [
+        ['Sumas', d.gravado, true],
+        ['IVA 13 %', d.iva, d.iva > 0],
+        ['Exento', d.exento, d.exento > 0],
+        ['Descuento', -d.descuento, d.descuento > 0],
+        ['Retención 1 %', -d.retencion, d.retencion > 0],
+    ].filter(([, , ver]) => ver);
+    return (
+        <dl className="space-y-1 border-t border-subtle pt-2.5 text-body-sm">
+            {filas.map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-2">
+                    <dt className="text-content-2">{k}</dt>
+                    <dd className="tabular-nums text-content">{v < 0 ? `− ${formatMoney(-v)}` : formatMoney(v)}</dd>
+                </div>
+            ))}
+            <div className="flex items-baseline justify-between gap-2 pt-1">
+                <dt className="font-bold text-content">Total a cobrar</dt>
+                <dd className="text-title font-black tabular-nums text-content">{formatMoney(d.total)}</dd>
+            </div>
+        </dl>
+    );
 }
 
 // Atajos de efectivo: exacto y los billetes que suelen entregar.

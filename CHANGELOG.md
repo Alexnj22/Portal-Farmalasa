@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.0 — El kiosco cobra crédito fiscal y retención, y avisa el crédito del cliente
+
+_(pendiente de redactar)_
+
 ## v2.1578.1 — Personal: la baja corregida conserva su respaldo
 
 Corregir una novedad crea otra fila y la vieja pasa a «EDITADO». El documento

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    armarFinalizado, armarGuardado, clienteDePreventa, datosExtrasDelPago, problemaDelPago, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
+    armarFinalizado, armarGuardado, clienteDePreventa, datosExtrasDelPago, problemaDelPago, recalcularRenglones, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
 } from '@nucleo/utils/cobroDeCaja.js';
 
 // Forma de la `lista` de `cargar_data` (Salud 4, 2026-11-17), con comillas mezcladas
@@ -29,7 +29,9 @@ describe('cobro de una preventa en la caja', () => {
     });
 
     it('suma como setTotals para consumidor final', () => {
-        expect(totalesDeCobro(leerRenglonesDeLista(lista))).toEqual({ gravado: 1.45, exento: 0, total: 1.45, descuento: 0, items: 3 });
+        expect(totalesDeCobro(leerRenglonesDeLista(lista))).toEqual({
+            gravado: 1.45, exento: 0, iva: 0, gravado_iva: 1.45, retencion: 0, percepcion: 0, total: 1.45, descuento: 0, items: 3, mixto: false,
+        });
     });
 
     it('arma el guardado con la apertura y sin el campo interno', () => {
@@ -53,9 +55,9 @@ describe('cobro de una preventa en la caja', () => {
 
     it('no cobra lo que no está medido', () => {
         const renglones = leerRenglonesDeLista(lista);
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '' })).toBeNull();
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'CCF', cliente_retiene: '' })).toMatch(/crédito fiscal/);
-        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF', cliente_retiene: '1' })).toMatch(/retiene/);
+        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'COF' })).toBeNull();
+        expect(motivoParaNoCobrar({ renglones, tipo_documento: 'CCF' })).toBeNull();
+        expect(motivoParaNoCobrar({ renglones, tipo_documento: '' })).toMatch(/documento/);
         expect(motivoParaNoCobrar({ renglones: leerRenglonesDeLista(fila(1, 2, 3, 0, '0.45', '0')), tipo_documento: 'COF' })).toMatch(/sin cantidad/);
     });
 
@@ -76,7 +78,8 @@ describe('cobro de una preventa en la caja', () => {
     it('lee la caja abierta y el cliente elegido', () => {
         const pag = `<input type="hidden" id="fecha" value="2026-11-17"><input type='hidden' name='id_apertura' id='id_apertura' value='3001'>
           <input type="hidden" id="turno" value="1"><input type="hidden" id="caja" value="5"><input type="text" id="fecha_fact" value="17-11-2026">`;
-        expect(leerCajaAbierta(pag)).toEqual(caja);
+        expect(leerCajaAbierta(pag)).toEqual({ ...caja, iva: '0.13', monto_retencion: '100' });
+        expect(leerCajaAbierta(`${pag}<input type='hidden' id='porc_iva' value='0.13'><input type='hidden' id='monto_retencion1' value='250'>`).monto_retencion).toBe('250');
         expect(leerCajaAbierta('<input id="fecha" value="2026-11-17">')).toBeNull();
         expect(clienteDePreventa("<option value='-1'>VARIOS</option><option value='13810' selected>YNES</option>")).toBe('13810');
     });
@@ -88,5 +91,40 @@ describe('el ticket oficial de la caja', () => {
     it('codifica el cuerpo como jQuery.param, que es lo que lee el programa de impresión', () => {
         expect(codificarComoLaCaja({ a: 'x y', b: [1, 2], c: { d: 'é' }, e: null, f: [{ g: 1 }] }))
             .toBe('a=x+y&b%5B%5D=1&b%5B%5D=2&c%5Bd%5D=%C3%A9&e=&f%5B0%5D%5Bg%5D=1');
+    });
+});
+
+// Una fila con lo que la pantalla usa para recalcular (precio sin IVA y promoción).
+const filaCalc = (id, cant, precio, extra = '') => fila(id, 1, 1, cant, precio, '0', 'precio2')
+    .replace("<input type='hidden' id='subtotal_fin'", `<input type='hidden' id='precio_sin_iva' value='${precio / 1.13}'>${extra}<input type='hidden' id='subtotal_fin'`);
+
+describe('impuestos como la pantalla de la caja', () => {
+    it('crédito fiscal: la fila va sin IVA, como la CCF 409728 (2 × $3.00 = $5.31)', () => {
+        const r = recalcularRenglones(leerRenglonesDeLista(filaCalc(3641, 2, 3)), 'CCF');
+        expect(r[0].subtotal).toBe('5.3097');
+        expect(JSON.stringify(r[0])).not.toContain('precio_sin_iva');
+        expect(totalesDeCobro(r, { tipo: 'CCF' })).toMatchObject({ gravado: 5.31, iva: 0.69, total: 6, retencion: 0 });
+    });
+
+    it('consumidor final: cantidad × precio, con la promoción en %', () => {
+        const conPromo = filaCalc(1, 2, 3, "<input type='hidden' id='descuento_monto' value='10'>").replace("id='descuento_tipo' value='-1'", "id='descuento_tipo' value='%'");
+        const r = recalcularRenglones(leerRenglonesDeLista(conPromo), 'COF');
+        expect(r[0]).toMatchObject({ subtotal: '5.4', descuento_promo: '0.6' });
+    });
+
+    it('retención del cliente que retiene, al centavo de facturas reales', () => {
+        const g = (monto) => [{ id: '1', subtotal: String(monto), exento: '0' }];
+        // CCF 410964: IVA 44.89, retención 3.45, total 386.73.
+        expect(totalesDeCobro(g(345.29), { tipo: 'CCF', retiene: '1', porc_retencion: '0.01' })).toMatchObject({ iva: 44.89, retencion: 3.45, total: 386.73 });
+        // COF 414169: retención 1.66, total 186.14.
+        expect(totalesDeCobro(g(187.80), { tipo: 'COF', retiene: '1', porc_retencion: '0.01' })).toMatchObject({ iva: 0, retencion: 1.66, total: 186.14 });
+        // Menos de $100 no retiene; «retiene 10» tampoco (la caja pone su porcentaje en 0).
+        expect(totalesDeCobro(g(99.99), { tipo: 'CCF', retiene: '1', porc_retencion: '0.01' }).retencion).toBe(0);
+        expect(totalesDeCobro(g(500), { tipo: 'CCF', retiene: '10', porc_retencion: '0.01' }).retencion).toBe(0);
+    });
+
+    it('no cobra exentos y gravados juntos (la pantalla los suma mal)', () => {
+        const t = totalesDeCobro([{ id: '1', subtotal: '1', exento: '0' }, { id: '2', subtotal: '2', exento: '1' }]);
+        expect(motivoParaNoCobrar({ renglones: [{ invalida: false }], tipo_documento: 'COF', totales: t })).toMatch(/exentos y gravados/);
     });
 });

@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    BadgePercent, CalendarClock, CalendarDays, Coins, Flame, Lightbulb, Medal, PackageCheck, PartyPopper, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
+    BadgePercent, CalendarClock, CalendarDays, Flame, Package, Sparkles, Lightbulb, Medal, PackageCheck, PartyPopper, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
@@ -181,23 +181,24 @@ export default function ComoVaHoy({ sala, ahora }) {
                     <div className="grid gap-4 md:grid-cols-3 items-start">
                         <Lista icono={BadgePercent} titulo="Promociones vigentes" vacio="No hay promociones vigentes."
                             filas={(vender.promociones ?? []).map((p) => ({
-                                clave: `${p.id}-${p.promocion}`, nombre: p.nombre,
-                                detalle: [p.promocion, p.fin ? `hasta el ${fechaCorta(p.fin)}` : null].filter(Boolean).join(' · '),
-                                lado: Number(p.bono) > 0 ? `${formatMoney(p.bono)} de bono${Number(p.unidades_por_bono) > 1 ? ` c/${p.unidades_por_bono}` : ''}` : null,
+                                clave: `${p.id}-${p.promocion}`, nombre: p.nombre, foto: p.foto_url,
+                                detalle: p.promocion,
+                                chip: p.fin ? `Hasta el ${fechaCorta(p.fin)}` : 'Vigente', chipTono: 'brand',
+                                extra: Number(p.bono) > 0 ? `Bono ${formatMoney(p.bono)}${Number(p.unidades_por_bono) > 1 ? ` cada ${p.unidades_por_bono}` : ''}` : null,
                             }))} />
-                        <Lista icono={Coins} titulo="Te conviene ofrecer" vacio="Nada que sugerir por ahora."
-                            nota="Dejan buena ganancia y la sucursal los tiene."
+                        <Lista icono={Sparkles} titulo="Ofrécelos hoy" vacio="Nada que sugerir por ahora."
+                            nota="Se venden bien y la sucursal los tiene."
                             filas={(vender.utilidad ?? []).map((p) => ({
-                                clave: p.id, nombre: p.nombre,
-                                detalle: `${Number(p.existencia)} en existencia`,
-                                lado: p.margen != null ? `${Math.round(p.margen)} % de utilidad` : null,
+                                clave: p.id, nombre: p.nombre, foto: p.foto_url,
+                                detalle: `${p.ventas} ventas este mes`,
+                                chip: `${Number(p.existencia)} en existencia`, chipTono: 'success',
                             }))} />
                         <Lista icono={CalendarClock} titulo="Vence pronto: véndelo primero" vacio="Nada vence en los próximos 6 meses."
-                            nota={vender.vence_total > (vender.vence ?? []).length ? `Son ${vender.vence_total} lotes en total. Aquí van los más próximos.` : null}
+                            nota={vender.vence_total > (vender.vence ?? []).length ? `Son ${vender.vence_total} lotes. Aquí van los más próximos.` : null}
                             filas={(vender.vence ?? []).map((p, i) => ({
-                                clave: `${p.nombre}-${p.lote}-${i}`, nombre: p.nombre,
+                                clave: `${p.id}-${p.lote}-${i}`, nombre: p.nombre, foto: p.foto_url,
                                 detalle: `${p.cantidad} en existencia`,
-                                lado: `Vence ${venceTexto(p.vence)}`, ladoTono: 'text-warning-text',
+                                chip: `Vence ${venceTexto(p.vence)}`, chipTono: 'warning',
                             }))} />
                     </div>
                 )}
@@ -266,23 +267,44 @@ export default function ComoVaHoy({ sala, ahora }) {
 }
 
 
+const CHIP = {
+    brand: 'bg-brand/10 text-brand-text',
+    success: 'bg-success/10 text-success-text',
+    warning: 'bg-warning/10 text-warning-text',
+};
+
+function FotoProducto({ src }) {
+    const [rota, setRota] = useState(false);
+    return (
+        <div className="w-14 h-14 shrink-0 rounded-[var(--radius-btn)] bg-surface-card-hover overflow-hidden flex items-center justify-center">
+            {src && !rota
+                ? <img src={src} alt="" loading="lazy" onError={() => setRota(true)} className="w-full h-full object-contain p-1" />
+                : <Package size={22} className="text-content-3" aria-hidden="true" />}
+        </div>
+    );
+}
+
 function Lista({ icono: Icono, titulo, filas, vacio, nota = null }) {
     return (
-        <section data-surface="card" className="p-5 flex flex-col gap-3">
+        <section data-surface="card" className="p-4 flex flex-col gap-3 min-w-0">
             <h2 className="text-title font-black text-content flex items-center gap-2">
-                <Icono size={20} className="text-brand-text" aria-hidden="true" /> {titulo}
+                <Icono size={20} className="text-brand-text shrink-0" aria-hidden="true" /> {titulo}
             </h2>
             {filas.length === 0 ? (
                 <p className="text-body-sm text-content-3">{vacio}</p>
             ) : (
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col gap-1">
                     {filas.map((f) => (
-                        <li key={f.clave} className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0 leading-tight">
-                                <p className="text-body-sm font-semibold text-content truncate">{f.nombre}</p>
-                                {f.detalle && <p className="text-label text-content-3 truncate">{f.detalle}</p>}
+                        <li key={f.clave} className="flex items-center gap-3 rounded-[var(--radius-btn)] p-1.5 -mx-1.5">
+                            <FotoProducto src={f.foto} />
+                            <div className="flex-1 min-w-0 leading-tight flex flex-col gap-1">
+                                <p className="text-body-sm font-semibold text-content line-clamp-2">{f.nombre}</p>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    {f.chip && <span className={`text-label font-bold rounded-full px-2 py-0.5 ${CHIP[f.chipTono] ?? CHIP.brand}`}>{f.chip}</span>}
+                                    {f.extra && <span className="text-label font-bold rounded-full px-2 py-0.5 bg-success/10 text-success-text">{f.extra}</span>}
+                                    {f.detalle && <span className="text-label text-content-3 truncate">{f.detalle}</span>}
+                                </div>
                             </div>
-                            {f.lado && <span className={`text-label font-bold shrink-0 text-right ${f.ladoTono ?? 'text-success-text'}`}>{f.lado}</span>}
                         </li>
                     ))}
                 </ul>

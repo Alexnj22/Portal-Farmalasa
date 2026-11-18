@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1574.12 — Para vender: sin utilidad y con foto
+
+- Pedido del usuario: «no agregues la utilidad, sólo sugiere qué vender; agrega
+  la foto de productos; que se vea moderno, útil, informativo».
+- `para_vender_en_la_sala` (migración 20261118004602) ya no manda el margen a
+  nadie: sólo ordena la lista. Cada fila trae la foto del producto.
+- Las tres listas («Promociones vigentes», «Ofrécelos hoy», «Vence pronto»)
+  van con foto, nombre en dos líneas y etiquetas de color (vigencia, bono,
+  existencia, mes de vencimiento).
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1574.11 — Cómo va hoy: promociones, utilidad y vence pronto
 
 - Pedido del usuario: «agrega productos con porcentaje alto de utilidad para

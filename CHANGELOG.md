@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1577.1 — La carga de compras se comprueba en menos de un segundo
+
+El 2026-11-18 dos cargas de COFARSAL (compras 6672 y 6674) dieron «No se sabe
+si entró»: la función se cortó a los 150 s. Las dos habían entrado. La causa:
+después de mandar, `cargar-compra-erp` comprobaba bajando la lista de TODAS las
+compras de Bodega de la fecha de la factura (`descargar_compras_json.php`), y
+el 13/11 ya tenía 38 compras: 98.5 s, y creciendo con cada carga.
+
+- `leerDeVueltaRapido`: la lista liviana de la fecha (0.4 s) da el número de
+  compra y «Ver detalle» (`ver_compra.php`, 0.3 s) sus renglones. Compara total,
+  renglones y cantidad por producto, cruzando por el nombre del catálogo.
+  Medido antes de cambiar: en 83 compras del 4, 12 y 13/11 el detalle dice lo
+  mismo que la lista del día (83 de 83), y corrida sobre 9 cargas reales da la
+  misma compra y «comprobada» en 0.3–0.7 s.
+- Papel y compras con servicio siguen con la lista del día: el detalle no trae
+  el proveedor ni los servicios, y con un servicio repite los productos (6625).
+  Esa lista ahora tiene plazo (60 s): si no alcanza, la carga responde «se está
+  comprobando» y el resultado se anota por detrás.
+- Si la lectura rápida no puede decidir (un nombre que no aparece, la pantalla
+  cambió), decide la lista del día, nunca un aviso falso.
+- La existencia del estante antes y después sigue igual: es la prueba por
+  número de producto.
+
 ## v2.1577.0 — Caja: el cobro desde el kiosco, listo y apagado
 
 Etapa 2 del cobro desde el kiosco de caja. El kiosco cobra la preventa con los

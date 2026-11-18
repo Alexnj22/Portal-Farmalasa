@@ -47,6 +47,8 @@ const COMPRAS = `${BASE}/compras.php`;
 const ERP_BODEGA = 6;
 const BODEGA_BRANCH_ID = 30; // la de `sync-erp-purchases`
 const TOLERANCIA = 0.05;
+/** Cuánto se espera la lista de compras del día antes de seguir comprobando por detrás. */
+const PLAZO_LISTA_DEL_DIA_MS = 60_000;
 /** El genérico con el que entra lo que un proveedor mandó por error y no
  * tenemos en el catálogo. Creado el 2026-10-30 con OK del usuario, una sola
  * vez; lo que era de verdad queda en `compra_renglon_erroneo`. */
@@ -279,22 +281,63 @@ async function enviarCompra(admin: any, x: {
   // cargó (en unidades). Una venta o un traslado en el medio puede dar un
   // falso aviso; preferible a no enterarse de que la mercadería no está.
   // Las dos lecturas posteriores, a la vez: ninguna depende de la otra.
-  const [verif, estanteDespues] = await Promise.all([
-    leerDeVuelta(x.cookie, x.sobre, x.lineas, x.erpProveedor).catch((e) => ({ ok: false, compra: null, notas: [`No se pudo leer de vuelta: ${e?.message ?? e}`] })),
+  //
+  // La compra se lee SOLA (`leerDeVueltaRapido`, <1 s). La lista del día
+  // (`leerDeVuelta`) baja todas las compras de la fecha con sus renglones y
+  // crece con cada una: el 2026-11-18, con 38 compras del 13/11, tardó 98.5 s
+  // y dos cargas se cortaron a los 150 s de la función. Las dos dan el mismo
+  // veredicto: medido contra las 83 compras de Bodega del 4, 12 y 13/11
+  // (total, renglones y cantidad por producto, 83 de 83). La lista del día
+  // queda para lo que la rápida no cubre (papel, consumo) y, si la rápida no
+  // pudo leer, corre DESPUÉS de responder: la pantalla no espera.
+  const rapido = leerDeVueltaRapido(admin, x.cookie, x.sobre, x.lineas)
+    .catch((e): LecturaRapida => ({ tipo: "fallo", motivo: String(e?.message ?? e) }));
+  const lenta = () => leerDeVuelta(x.cookie, x.sobre, x.lineas, x.erpProveedor)
+    .catch((e) => ({ ok: false, compra: null as number | null, notas: [`No se pudo leer de vuelta: ${e?.message ?? e}`] }));
+  const [rap, estanteDespues] = await Promise.all([
+    rapido,
     esperado.size ? existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante).catch(() => null) : Promise.resolve(new Map<number, number>()),
   ]);
+  const notasEstante: string[] = [];
   if (!estanteDespues) {
-    verif.ok = false; verif.notas.push("No se pudo leer la existencia de Bodega después de cargar. Comprueba que entró al estante.");
+    notasEstante.push("No se pudo leer la existencia de Bodega después de cargar. Comprueba que entró al estante.");
   } else {
     const faltan = [...esperado].filter(([id, u]) => (estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0) < u);
     if (faltan.length) {
-      verif.ok = false;
-      verif.notas.push(`No entró al estante de Bodega: ${faltan.map(([id, u]) => `producto ${id} debía subir ${u} y subió ${(estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0)}`).join("; ")}.`);
+      notasEstante.push(`No entró al estante de Bodega: ${faltan.map(([id, u]) => `producto ${id} debía subir ${u} y subió ${(estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0)}`).join("; ")}.`);
     }
   }
-  await marcar(verif.ok ? "verificada" : "sin_verificar", {
-    erp_compra_id: verif.compra, error: verif.notas.length ? verif.notas.join(" · ") : null,
-  });
+  const conEstante = (v: { ok: boolean; compra: number | null; notas: string[] }) =>
+    ({ ok: v.ok && notasEstante.length === 0, compra: v.compra, notas: [...v.notas, ...notasEstante] });
+  const anotarVerif = (v: { ok: boolean; compra: number | null; notas: string[] }) =>
+    marcar(v.ok ? "verificada" : "sin_verificar", { erp_compra_id: v.compra, error: v.notas.length ? v.notas.join(" · ") : null });
+
+  let verif: { ok: boolean; compra: number | null; notas: string[] };
+  // La lista del día, con un plazo: un día con pocas compras contesta en
+  // segundos y se espera; uno cargado (98 s el 13/11) no cabe en los 150 s de
+  // la función junto con el resto. Pasado el plazo se responde «se está
+  // comprobando» y la lectura sigue por detrás hasta anotar el resultado.
+  // La compra ENTRÓ (el sistema dijo «success»): lo único pendiente es comprobarla.
+  let diferida: Promise<{ ok: boolean; compra: number | null; notas: string[] }> | null = null;
+  if (rap.tipo === "leida") {
+    verif = conEstante(rap);
+  } else {
+    if (rap.tipo === "fallo") console.warn("[cargar-compra-erp] lectura rápida:", rap.motivo);
+    const enCurso = lenta();
+    const aTiempo = await Promise.race([enCurso, new Promise<null>((r) => setTimeout(() => r(null), PLAZO_LISTA_DEL_DIA_MS))]);
+    if (aTiempo) verif = conEstante(aTiempo);
+    else {
+      verif = { ok: false, compra: null, notas: ["Entró. Se está comprobando y en unos minutos queda revisada."] };
+      diferida = enCurso;
+    }
+  }
+  await anotarVerif(verif);
+  // Después de anotar lo de ahora, para que el «se está comprobando» no pise
+  // el resultado de la lectura diferida.
+  if (diferida) {
+    EdgeRuntime.waitUntil(diferida.then((v) => anotarVerif(conEstante(v)))
+      .catch((e) => console.error("[cargar-compra-erp] comprobación diferida:", e?.message ?? e)));
+  }
   // El papel ya entró: sale de la lista de facturas en papel por cargar.
   if (x.manualId) {
     const { error: eM } = await admin.from("compra_documento_manual")
@@ -345,7 +388,7 @@ async function enviarCompra(admin: any, x: {
     })());
   }
   return {
-    enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null, vencidos,
+    enviada: true, verificada: verif.ok, comprobando: diferida != null, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null, vencidos,
     reparto: repartoPedido.length ? { salas: new Set(repartoPedido.map((l) => l.branch_id)).size, enviando: verif.ok } : null,
   };
 }
@@ -495,6 +538,103 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
     }
   }
   return { ok: notas.length === 0, compra: Number(c.compra_id) || null, notas };
+}
+
+type LecturaRapida =
+  | { tipo: "leida"; ok: boolean; compra: number | null; notas: string[] }
+  | { tipo: "no_aplica" }
+  | { tipo: "fallo"; motivo: string };
+
+const desHtml = (s: string) => s
+  .replace(/<[^>]*>/g, "")
+  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+  .replace(/&ntilde;/g, "ñ").replace(/&Ntilde;/g, "Ñ")
+  .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
+const nombreComparable = (s: string) => desHtml(String(s ?? "")).replace(/\s+/g, " ").trim().toUpperCase();
+
+/**
+ * La misma comprobación que `leerDeVuelta`, leyendo SÓLO la compra recién
+ * hecha: la lista liviana de la fecha (número, total, estado) da su número de
+ * compra, y «Ver detalle» (`ver_compra.php`) sus renglones. Las dos tardan
+ * menos de medio segundo con cualquier cantidad de compras en el día.
+ *
+ * Diferencias de forma con la lista del día, medidas en 83 compras:
+ * - El detalle da la cantidad en la PRESENTACIÓN (25 cajas) y no en unidades;
+ *   se aceptan las dos, como allá.
+ * - El detalle NO repite los renglones (la lista del día devuelve k×k).
+ * - El detalle no trae el número de producto, sólo el nombre. Se cruza con el
+ *   nombre del catálogo del portal (único por producto, y en la muestra de 101
+ *   igual al del sistema letra por letra). La prueba por número de producto la
+ *   sigue dando la existencia del estante antes y después.
+ *
+ * `no_aplica`: papel (un número corto se repite entre proveedores, y la lista
+ * liviana no trae el proveedor) y consumo (sin probar todavía con servicios).
+ * `fallo`: no se pudo leer o no se encontró una sola: la decide la lista del día.
+ */
+async function leerDeVueltaRapido(
+  admin: any, cookie: string, sobre: Record<string, unknown>, lineas: LineaSobre[],
+): Promise<LecturaRapida> {
+  const productos = lineas.filter((l) => l.bandera === "PRODUCTO");
+  if (String(sobre.clase_documento_tributario) === "1" || productos.length !== lineas.length || !productos.length) {
+    return { tipo: "no_aplica" };
+  }
+  const dia = String(sobre.fecha);
+  const t = await pedir(cookie, `${BASE}/admin_compras_fecha_dt.php?fechai=${dia}&fechaf=${dia}&draw=1&start=0&length=5000`,
+    undefined, { timeoutMs: 30_000 });
+  const lista = JSON.parse(t);
+  const filas: any[][] = lista?.data;
+  if (!Array.isArray(filas)) return { tipo: "fallo", motivo: "la lista de compras no vino" };
+  if (Number(lista?.recordsFiltered ?? 0) > filas.length) return { tipo: "fallo", motivo: "la lista de compras vino incompleta" };
+  const numero = String(sobre.numero_doc).toUpperCase();
+  let cand = filas.filter((r) => {
+    const n = nombreComparable(String(r[2] ?? ""));
+    return n.length >= 8 && numero.startsWith(n) && !/ANULAD/i.test(String(r[7] ?? ""));
+  });
+  if (cand.length > 1) cand = cand.filter((r) => Math.abs(Number(r[5]) - Number(sobre.total)) <= TOLERANCIA);
+  if (cand.length !== 1) return { tipo: "fallo", motivo: `${cand.length} compras con ese número en la lista` };
+  const compra = Number(cand[0][0]) || null;
+  if (!compra) return { tipo: "fallo", motivo: "la compra vino sin número" };
+
+  const html = await pedir(cookie, `${BASE}/ver_compra.php?id_compra=${compra}`, undefined, { timeoutMs: 30_000 });
+  const renglones = [...html.matchAll(
+    /<tr>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/g,
+  )].map((m) => ({ nombre: nombreComparable(m[1]), cant: Number(desHtml(m[3]).replace(/,/g, "")) }));
+  const totalTxt = /Total[\s\S]*?([\d,]+\.\d+)/.exec(desHtml(html.replace(/<[^>]+>/g, " ")))?.[1];
+  const total = Number(String(totalTxt ?? "").replace(/,/g, ""));
+  if (!renglones.length || renglones.some((r) => !Number.isFinite(r.cant)) || !Number.isFinite(total) || !totalTxt) {
+    return { tipo: "fallo", motivo: "el detalle de la compra no se pudo leer" };
+  }
+
+  const ids = [...new Set(productos.map((l) => Number(l.id_producto)))];
+  const { data: cat, error: eC } = await admin.from("products").select("id, nombre").in("id", ids);
+  if (eC) return { tipo: "fallo", motivo: `catálogo: ${eC.message}` };
+  const nombreDe = new Map<number, string>((cat ?? []).map((p: any) => [Number(p.id), nombreComparable(p.nombre)]));
+  if (ids.some((id) => !nombreDe.get(id))) return { tipo: "fallo", motivo: "un producto no está en el catálogo del portal" };
+
+  const notas: string[] = [];
+  if (!(Math.abs(total - Number(sobre.total)) <= TOLERANCIA)) notas.push(`Total en el sistema $${total} contra $${sobre.total}.`);
+  if (renglones.length !== lineas.length) notas.push(`La compra tiene ${renglones.length} productos y se mandaron ${lineas.length}.`);
+  const porProducto = new Map<number, { cant: number; unidades: number }>();
+  for (const l of productos) {
+    const id = Number(l.id_producto);
+    const a = porProducto.get(id) ?? { cant: 0, unidades: 0 };
+    a.cant += Number(l.cant); a.unidades += Number(l.cant) * Number(l.unidad);
+    porProducto.set(id, a);
+  }
+  const cerca = (a: number, b: number) => Math.abs(a - b) <= 0.001;
+  for (const [id, e] of porProducto) {
+    const suyos = renglones.filter((r) => r.nombre === nombreDe.get(id));
+    // Sin ningún renglón con ese nombre lo más probable es un nombre cambiado
+    // en el sistema y no traído todavía: no es una diferencia, es que este
+    // camino no puede decidirlo. Lo decide la lista del día (por número).
+    if (!suyos.length) return { tipo: "fallo", motivo: `el producto ${id} no aparece por nombre en el detalle` };
+    const delSistema = suyos.reduce((a, r) => a + r.cant, 0);
+    if (!cerca(delSistema, e.cant) && !cerca(delSistema, e.unidades)) {
+      notas.push(`Producto ${id}: ${delSistema} en el sistema, se esperaban ${e.cant} (${e.unidades} unidades).`);
+    }
+  }
+  return { tipo: "leida", ok: notas.length === 0, compra, notas };
 }
 
 /** El texto de la opción elegida de un `<select>` de la pantalla del sistema. */

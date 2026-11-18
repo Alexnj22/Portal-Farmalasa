@@ -792,7 +792,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             <b>Cargada en Bodega{envio.erp_compra_id ? ` (compra ${envio.erp_compra_id})` : ''}.</b>{' '}
                             {envio.verificada
                                 ? 'Se comprobó y cuadra producto por producto.'
-                                : <>Entró, pero al comprobarla algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
+                                : envio.comprobando
+                                    ? 'Se está comprobando. En unos minutos queda revisada.'
+                                    : <>Entró, pero al comprobarla algo no cuadró: {(envio.notas ?? []).join(' ')}</>}
                             {envio.reparto && (envio.reparto.enviando
                                 ? <> Se está enviando a {envio.reparto.salas === 1 ? '1 sucursal' : `${envio.reparto.salas} sucursales`}. Lo reciben en Traslados → En camino.</>
                                 : <> <b>No se envió a las sucursales.</b> La carga no se pudo comprobar. Envíalo a mano.</>)}

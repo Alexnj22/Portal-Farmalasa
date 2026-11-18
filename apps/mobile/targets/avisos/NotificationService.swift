@@ -8,6 +8,10 @@
 //  3. Si la tarjeta trae quién lo originó, lo vuelve un aviso de COMUNICACIÓN:
 //     la foto de esa persona en lugar del ícono de la app, como en Mensajes. El
 //     título original ("Ana te pide un traslado") pasa a subtítulo.
+//  4. Si no trae tarjeta pero sí `data.imagen` (una URL https de una foto: un
+//     producto, un comunicado), la adjunta (2026-11-18). La tarjeta gana: es
+//     la imagen que ya resume el aviso. Esto exige binario; cuál aviso manda
+//     imagen se decide en el servidor, sin compilar.
 //
 // Nada de esto puede costar el aviso: si algo falla, se entrega tal cual llegó,
 // y si el sistema corta el tiempo (`serviceExtensionTimeWillExpire`), también.
@@ -39,15 +43,21 @@ class NotificationService: UNNotificationServiceExtension {
     let quien = tarjeta?["quien"] as? [String: Any]
     let nombre = (quien?["nombre"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let modelo = Modelo(tarjeta: tarjeta)
-    if nombre == nil && modelo == nil {
+    let imagenURL = modelo == nil
+      ? (datos["imagen"] as? String).flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil }
+      : nil
+    if nombre == nil && modelo == nil && imagenURL == nil {
       contentHandler(content)
       return
     }
 
     let foto = (quien?["foto"] as? String).flatMap(URL.init(string:))
     Self.bajar(foto) { imagen in
+     Self.bajarConTipo(imagenURL) { extra in
       DispatchQueue.main.async {
         if let modelo, let adjunto = ImagenDeTarjeta.adjunto(modelo, foto: imagen) {
+          content.attachments = [adjunto]
+        } else if let extra, let adjunto = Self.adjuntoDeImagen(extra.datos, tipo: extra.tipo) {
           content.attachments = [adjunto]
         }
         if let nombre {
@@ -56,6 +66,7 @@ class NotificationService: UNNotificationServiceExtension {
           contentHandler(content)
         }
       }
+     }
     }
   }
 
@@ -71,6 +82,42 @@ class NotificationService: UNNotificationServiceExtension {
       let ok = (respuesta as? HTTPURLResponse)?.statusCode == 200
       listo(ok ? data : nil)
     }.resume()
+  }
+
+  /// Como `bajar`, pero con el tipo que dice el servidor: una URL firmada no
+  /// trae extensión, y el sistema decide por la extensión del archivo.
+  private static func bajarConTipo(_ url: URL?, _ listo: @escaping ((datos: Data, tipo: String)?) -> Void) {
+    guard let url else { listo(nil); return }
+    var pedido = URLRequest(url: url)
+    pedido.timeoutInterval = 8
+    URLSession.shared.dataTask(with: pedido) { data, respuesta, _ in
+      guard let http = respuesta as? HTTPURLResponse, http.statusCode == 200, let data, !data.isEmpty else {
+        listo(nil); return
+      }
+      listo((data, (http.mimeType ?? "").lowercased()))
+    }.resume()
+  }
+
+  /// La foto como adjunto del aviso. Sólo los formatos que el sistema muestra;
+  /// cualquier otro (webp, svg) se descarta y el aviso sale sin imagen.
+  private static func adjuntoDeImagen(_ datos: Data, tipo: String) -> UNNotificationAttachment? {
+    let ext: String
+    switch tipo {
+    case "image/jpeg", "image/jpg": ext = "jpg"
+    case "image/png": ext = "png"
+    case "image/gif": ext = "gif"
+    case "image/heic": ext = "heic"
+    default: return nil
+    }
+    let archivo = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString)
+      .appendingPathExtension(ext)
+    do {
+      try datos.write(to: archivo)
+      return try UNNotificationAttachment(identifier: "imagen", url: archivo, options: nil)
+    } catch {
+      return nil
+    }
   }
 
   private static func comoComunicacion(

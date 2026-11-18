@@ -52,8 +52,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "portal.farmasalud.lat",
-              "pathPrefix": "/foto/"
+              "host": "portal.farmasalud.lat"
             }
           ],
           "category": [
@@ -66,7 +65,10 @@
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/icono-android.png",
         "monochromeImage": "./assets/icono-android-mono.png"
-      }
+      },
+      "blockedPermissions": [
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/icono.png",

@@ -104,24 +104,39 @@ export function abrirModulo(m) {
   router.push(nativaDe(m.path) ?? { pathname: '/portal', params: { ruta: m.path, nombre: m.label } });
 }
 
-// Abrir una dirección del portal (la de un aviso, con su `?solicitud=…`): la
-// pantalla nativa si la ruta ya la tiene, si no el portal en esa dirección
-// exacta, que ya sabe abrir la solicitud que nombra.
-export function abrirRuta(url) {
+// Adónde lleva una dirección del portal (la de un aviso, con su `?solicitud=…`,
+// o un enlace del portal abierto en el teléfono): la pantalla nativa si la ruta
+// ya la tiene, si no el portal en esa dirección exacta, que ya sabe abrir la
+// solicitud que nombra. Devuelve un destino del router (texto u objeto).
+export function destinoDeRuta(url) {
   const ruta = '/' + (url.split(/[?#]/)[0].split('/')[1] || '');
   // `/solicitudes?solicitud=…` nombra UNA: se abre ésa, no la bandeja.
   const una = ruta.startsWith('/solicitudes') ? url.match(/[?&]solicitud=([^&#]+)/) : null;
-  if (una) return abrirSolicitud(decodeURIComponent(una[1]));
+  if (una) return { pathname: '/solicitud/[id]', params: { id: String(decodeURIComponent(una[1])) } };
   // Torogoz: `/torogoz/<seccion>` (y `/torogoz/venta/<id>`) es la misma ruta nativa.
-  if (url.startsWith('/torogoz/')) return router.push(url);
+  if (url.startsWith('/torogoz/')) return url;
   // Una persona (`/personal/empleado/<id>` o `/personal?empleado=<id>`): su
   // ficha nativa, no el directorio entero.
   const persona = url.match(/^\/personal\/empleado\/([^/?#]+)/) || (ruta === '/personal' ? url.match(/[?&]empleado=([^&#]+)/) : null);
-  if (persona) return router.push({ pathname: '/empleado/[id]', params: { id: decodeURIComponent(persona[1]) } });
+  if (persona) return { pathname: '/empleado/[id]', params: { id: decodeURIComponent(persona[1]) } };
   // La pantalla nativa recibe la misma dirección con sus parámetros
   // (`/ventas-hoy?sala=3` abre esa sala).
   const nativa = nativaDe(ruta);
-  router.push(nativa ? nativa + url.slice(ruta.length) : { pathname: '/portal', params: { ruta: url } });
+  return nativa ? nativa + url.slice(ruta.length) : { pathname: '/portal', params: { ruta: url } };
+}
+
+export function abrirRuta(url) {
+  router.push(destinoDeRuta(url));
+}
+
+// Un destino del router escrito como dirección: lo que pide `+native-intent`.
+export function destinoComoTexto(d) {
+  if (typeof d === 'string') return d;
+  const { pathname, params = {} } = d;
+  const usados = new Set();
+  const camino = pathname.replace(/\[(\w+)\]/g, (_, k) => { usados.add(k); return encodeURIComponent(String(params[k])); });
+  const resto = Object.entries(params).filter(([k]) => !usados.has(k));
+  return resto.length ? `${camino}?${resto.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&')}` : camino;
 }
 
 // Una solicitud nombrada por un aviso: la pantalla nativa donde se decide.

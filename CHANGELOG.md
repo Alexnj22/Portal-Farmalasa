@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.0 — App del personal: lo nativo que faltaba antes de la 1.1.0
+
+Para que la 1.1.0 que va a la App Store no necesite otra compilación pronto:
+
+- **Enlaces del portal en Android**: la app abre todo `portal.farmasalud.lat`,
+  no sólo `/foto/` (el filtro va en el binario). `app/+native-intent.js` lleva
+  cada dirección a su pantalla nativa o al portal dentro de la app, con la
+  misma regla que un aviso (`destinoDeRuta` en `pantallas.js`). En iPhone lo
+  decide el `apple-app-site-association` del portal, sin compilar.
+- **Módulos en el binario**: `expo-sharing` (compartir PDF/CSV), `expo-screen-capture`
+  (bloquear capturas por pantalla) y `expo-brightness` (brillo al mostrar un QR).
+  Se usan después, por aire. `READ_MEDIA_IMAGES`, que trae la detección de
+  capturas, queda bloqueado: Google Play lo revisa y no hace falta.
+- **Avisos con imagen en iPhone**: la extensión de avisos adjunta `data.imagen`
+  (https, jpg/png/gif/heic) cuando el aviso no trae tarjeta. Qué aviso manda
+  imagen se decide en el servidor.
+- Novedades: no — preparación nativa, nada visible todavía (decisión del usuario, 2026-11-18).
+
 ## v2.1574.14 — Kiosco: entrada y salida en la venta, F6 borra, Existencias
 
 Pedidos del usuario (2026-11-18):

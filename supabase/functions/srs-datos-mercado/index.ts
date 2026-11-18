@@ -18,6 +18,9 @@ import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmploy
 //                    falta emparejar (`srs_mercado_por_emparejar`).
 //   accion "confirmadas" (herramienta manual, secreto propio) — las parejas
 //                    confirmadas, para revisarlas. Sólo lee.
+//   accion "datos_carga" (herramienta manual, secreto propio) — parejas,
+//                    precios y existencia de una sucursal para armar la carga
+//                    (scripts/srs/cargar-datos-mercado.mjs). Sólo lee.
 //   accion "cargar"  (herramienta manual, secreto propio) — deja en la base
 //                    las parejas que propuso el emparejador
 //                    (`srs_mercado_cargar_propuestas`, que nunca pisa lo que ya
@@ -130,7 +133,7 @@ Deno.serve(async (req) => {
     const accion = String(body.accion ?? "");
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    if (accion === "lista" || accion === "cargar" || accion === "confirmadas") {
+    if (accion === "lista" || accion === "cargar" || accion === "confirmadas" || accion === "datos_carga") {
       const esperado = await secreto(admin, "srs_carga_secreto");
       if (!esperado || req.headers.get("x-carga-secreto") !== esperado) {
         return responder({ ok: false, error: "No autorizado." }, 401);
@@ -157,6 +160,39 @@ Deno.serve(async (req) => {
         if (!data || data.length < 1000) break;
       }
       return responder({ ok: true, filas });
+    }
+
+    // Lo que necesita la carga de una farmacia (scripts/srs/cargar-datos-mercado.mjs):
+    // las parejas confirmadas, los precios activos por presentación y la
+    // existencia de esa sucursal por presentación. Sólo lee.
+    if (accion === "datos_carga") {
+      const sucursal = Number(body.erp_sucursal_id);
+      if (!Number.isInteger(sucursal) || sucursal <= 0) return responder({ ok: false, error: "Falta la sucursal." }, 400);
+      const todo = async (armar: (desde: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>) => {
+        const filas: unknown[] = [];
+        for (let desde = 0; ; desde += 1000) {
+          const { data, error } = await armar(desde);
+          if (error) throw new Error(error.message);
+          filas.push(...(data ?? []));
+          if (!data || data.length < 1000) break;
+        }
+        return filas;
+      };
+      const [pares, precios, inventario, pendientes] = await Promise.all([
+        todo((d) => admin.from("srs_mercado_productos")
+          .select("product_id, crp, nombre_srs, presentacion_srs, laboratorio_srs, products(nombre, principio_activo, laboratorios(nombre))")
+          .eq("estado", "confirmado").not("crp", "is", null).order("product_id").range(d, d + 999)),
+        todo((d) => admin.from("product_precios")
+          .select("product_id, descripcion, factor, vineta, descuento_1")
+          .eq("activo", true).order("id").range(d, d + 999)),
+        todo((d) => admin.from("inventory")
+          .select("erp_product_id, detalle, cantidad")
+          .eq("erp_sucursal_id", sucursal).eq("is_vencidos", false).neq("cantidad", 0).order("id").range(d, d + 999)),
+        // Lo que todavía no confirmó nadie: su pareja no se borra de la SRS.
+        todo((d) => admin.from("srs_mercado_productos")
+          .select("crp").eq("estado", "propuesto").not("crp", "is", null).order("product_id").range(d, d + 999)),
+      ]);
+      return responder({ ok: true, pares, precios, inventario, pendientes: pendientes.map((p) => (p as { crp: string }).crp) });
     }
 
     if (accion === "cargar") {

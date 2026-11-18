@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.1 — Carga de datos de mercado de la SRS con conversión de presentaciones
+
+- `scripts/srs/cargar-datos-mercado.mjs`: arma el plan de una farmacia (guardar, agregar, eliminar, revisar) sin escribir nada, y lo manda con `--enviar <plan>` y una bitácora para retomar si se corta. Antes de escribir comprueba en el paso 3 de la SRS que la farmacia activa sea la del plan.
+- `scripts/srs/cargaMercado.mjs`: convierte la existencia y el precio a la presentación de la SRS. Las piezas de la unidad más chica salen del nombre dividido por la presentación más grande, y las dos cosas se tienen que confirmar entre sí. No cuenta como piezas las dosis, los días, las U.I. ni los ml. Cuando el portal cuenta sobres, los compara contra los sobres de la SRS. Lo que no cuadra va a revisar y no se manda.
+- `srs-datos-mercado`: acción `datos_carga`, de sólo lectura, con las parejas confirmadas, los precios, la existencia de la sucursal y las parejas pendientes, que no se borran.
+- Pruebas: `tests/unit/cargaMercado.test.js`.
+
+Novedades: no — herramienta interna de cumplimiento, no cambia nada que vea el personal.
+
 ## v2.1575.0 — App del personal: lo nativo que faltaba antes de la 1.1.0
 
 Para que la 1.1.0 que va a la App Store no necesite otra compilación pronto:

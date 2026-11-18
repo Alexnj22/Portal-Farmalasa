@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    BadgePercent, CalendarClock, CalendarDays, Flame, Package, Sparkles, Lightbulb, Medal, PackageCheck, PartyPopper, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
+    BadgePercent, CalendarClock, CalendarDays, Flame, Package, Sparkles, Lightbulb, Medal, PackageCheck, PartyPopper, Plus, Receipt, ShoppingBag, Target, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
@@ -36,7 +36,7 @@ const tonoDe = (n) => (n == null ? 'text-content-3' : n >= 0 ? 'text-success-tex
  * todo les llega como porcentaje de la meta del día, y así se pinta: el
  * dependiente ve cómo va sin ver cuánto vende la sucursal.
  */
-export default function ComoVaHoy({ sala, ahora }) {
+export default function ComoVaHoy({ sala, ahora, onAgregar = null }) {
     const { user, hasPermission } = useAuth();
     const puedeVer = hasPermission('dash_meta_sala');
     const [datos, setDatos] = useState(null);
@@ -179,24 +179,24 @@ export default function ComoVaHoy({ sala, ahora }) {
                 )}
                 {vender && vender.sala === sala && (
                     <div className="grid gap-4 md:grid-cols-3 items-start">
-                        <Lista icono={BadgePercent} titulo="Promociones vigentes" vacio="No hay promociones vigentes."
+                        <Lista icono={BadgePercent} titulo="Promociones vigentes" onAgregar={onAgregar} vacio="No hay promociones vigentes."
                             filas={(vender.promociones ?? []).map((p) => ({
-                                clave: `${p.id}-${p.promocion}`, nombre: p.nombre, foto: p.foto_url,
+                                clave: `${p.id}-${p.promocion}`, id: p.id, nombre: p.nombre, foto: p.foto_url,
                                 detalle: p.promocion,
                                 chip: p.fin ? `Hasta el ${fechaCorta(p.fin)}` : 'Vigente', chipTono: 'brand',
                                 extra: Number(p.bono) > 0 ? `Bono ${formatMoney(p.bono)}${Number(p.unidades_por_bono) > 1 ? ` cada ${p.unidades_por_bono}` : ''}` : null,
                             }))} />
-                        <Lista icono={Sparkles} titulo="Ofrécelos hoy" vacio="Nada que sugerir por ahora."
+                        <Lista icono={Sparkles} titulo="Ofrécelos hoy" onAgregar={onAgregar} vacio="Nada que sugerir por ahora."
                             nota="Se venden bien y la sucursal los tiene."
                             filas={(vender.utilidad ?? []).map((p) => ({
-                                clave: p.id, nombre: p.nombre, foto: p.foto_url,
+                                clave: p.id, id: p.id, nombre: p.nombre, foto: p.foto_url,
                                 detalle: `${p.ventas} ventas este mes`,
                                 chip: `${Number(p.existencia)} en existencia`, chipTono: 'success',
                             }))} />
-                        <Lista icono={CalendarClock} titulo="Vence pronto: véndelo primero" vacio="Nada vence en los próximos 6 meses."
+                        <Lista icono={CalendarClock} titulo="Vence pronto: véndelo primero" onAgregar={onAgregar} vacio="Nada vence en los próximos 6 meses."
                             nota={vender.vence_total > (vender.vence ?? []).length ? `Son ${vender.vence_total} lotes. Aquí van los más próximos.` : null}
                             filas={(vender.vence ?? []).map((p, i) => ({
-                                clave: `${p.id}-${p.lote}-${i}`, nombre: p.nombre, foto: p.foto_url,
+                                clave: `${p.id}-${p.lote}-${i}`, id: p.id, nombre: p.nombre, foto: p.foto_url,
                                 detalle: `${p.cantidad} en existencia`,
                                 chip: `Vence ${venceTexto(p.vence)}`, chipTono: 'warning',
                             }))} />
@@ -271,7 +271,7 @@ function FotoProducto({ src }) {
     );
 }
 
-function Lista({ icono: Icono, titulo, filas, vacio, nota = null }) {
+function Lista({ icono: Icono, titulo, filas, vacio, nota = null, onAgregar = null }) {
     return (
         <section data-surface="card" className="p-4 flex flex-col gap-3 min-w-0">
             <h2 className="text-title font-black text-content flex items-center gap-2">
@@ -281,8 +281,11 @@ function Lista({ icono: Icono, titulo, filas, vacio, nota = null }) {
                 <p className="text-body-sm text-content-3">{vacio}</p>
             ) : (
                 <ul className="flex flex-col gap-1">
-                    {filas.map((f) => (
-                        <li key={f.clave} className="flex items-center gap-3 rounded-[var(--radius-btn)] p-1.5 -mx-1.5">
+                    {filas.map((f) => {
+                        const agregar = onAgregar && f.id ? () => onAgregar({ id: f.id, nombre: f.nombre, foto_url: f.foto }) : null;
+                        return (
+                        <li key={f.clave} className="rounded-[var(--radius-btn)] -mx-1.5">
+                          <FilaDeLista agregar={agregar} nombre={f.nombre}>
                             <div className="relative shrink-0">
                                 <FotoProducto src={f.foto} />
                                 {f.puesto != null && (
@@ -298,12 +301,28 @@ function Lista({ icono: Icono, titulo, filas, vacio, nota = null }) {
                                     {f.detalle && <span className="text-label text-content-3 truncate">{f.detalle}</span>}
                                 </div>
                             </div>
+                            {agregar && <Plus size={18} className="shrink-0 text-brand-text" aria-hidden="true" />}
+                          </FilaDeLista>
                         </li>
-                    ))}
+                        );
+                    })}
                 </ul>
             )}
             {nota && <p className="text-label text-content-3">{nota}</p>}
+            {onAgregar && filas.some((f) => f.id) && <p className="text-label text-content-3">Tócalo para agregarlo a la venta.</p>}
         </section>
+    );
+}
+
+// Con `agregar`, la fila es un botón que lo pone en la venta; sin él, sólo se lee.
+function FilaDeLista({ agregar, nombre, children }) {
+    const base = 'w-full flex items-center gap-3 p-1.5 text-left rounded-[var(--radius-btn)]';
+    if (!agregar) return <div className={base}>{children}</div>;
+    return (
+        <button type="button" onClick={agregar} aria-label={`Agregar ${nombre} a la venta`}
+            className={`${base} min-h-[var(--tap-min)] hover:bg-surface-card-hover active:scale-[0.98] transition-transform duration-[var(--dur-fast)]`}>
+            {children}
+        </button>
     );
 }
 

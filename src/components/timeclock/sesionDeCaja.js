@@ -16,3 +16,5 @@ export const tomarDestino = () => { const ir = sesionDeCaja.irA; sesionDeCaja.ir
 
 /** Tiempo sin tocar nada antes de cerrar la sesión del carné. */
 export const INACTIVO_MS = 2 * 60_000;
+/** El mismo plazo con un trámite o una ventana abierta. */
+export const INACTIVO_CON_VENTANA_MS = 10 * 60_000;

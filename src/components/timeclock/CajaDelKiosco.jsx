@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, Clock3, KeyRound, LayoutGrid, LogOut, Receipt, RefreshCw, ScanBarcode, ShoppingCart, TrendingUp, Wallet, WifiOff, X } from 'lucide-react';
 import PortalInput from '../common/PortalInput';
 import ComoVaHoy from './ComoVaHoy';
@@ -109,7 +109,7 @@ function ColumnaDeCola({ cola, problema, leyendo, ahora, leer, elegida, onElegir
     );
 }
 
-function Accion({ k, a: propia = null, grande = false, compacta = false, activa = false, onClick }) {
+function Accion({ k, a: propia = null, grande = false, compacta = false, activa = false, atajo = null, onClick }) {
     const a = propia ?? ACCIONES[k];
     const Icono = a.icon;
     if (compacta) {
@@ -125,6 +125,10 @@ function Accion({ k, a: propia = null, grande = false, compacta = false, activa 
                         <span className="text-body font-bold leading-tight">{a.label}</span>
                         <span className="text-label font-normal opacity-75 leading-snug">{a.description}</span>
                     </span>
+                    {atajo && (
+                        <kbd className="hidden lg:inline-flex shrink-0 self-start px-1.5 py-0.5 rounded-md border border-border-card text-caption font-semibold text-content-3 font-sans"
+                            aria-label={`Atajo Alt ${atajo}`}>Alt {atajo}</kbd>
+                    )}
                 </span>
             </Button>
         );
@@ -223,6 +227,10 @@ export default function CajaDelKiosco({
     const soloTramite = abierta && rapido;
     const salaDelKiosco = enPortal ? sala : equipo.branchId;
     const misTramites = tramitesDe(hasPermission, salaDelKiosco);
+    // Los de esta sucursal, en orden fijo: su número es su atajo (Alt+1…9),
+    // el mismo en el inicio y en «Más».
+    const tramitesDeLaSala = TRAMITES.filter((t) => !t.aplica || t.aplica(salaDelKiosco));
+    const atajoDe = (clave) => { const i = tramitesDeLaSala.findIndex((t) => t.clave === clave); return i >= 0 && i < 9 ? i + 1 : null; };
 
     // Entrada / Salida: lleva a la caja con ese diálogo ya abierto.
     const [dialogoCaja, setDialogoCaja] = useState({ n: 0, cual: null });
@@ -237,6 +245,13 @@ export default function CajaDelKiosco({
     // diálogo —montada oculta: sus diálogos salen por portal encima de la
     // venta— y al cerrarlo se desmonta. Abrir la caja sí lleva a la caja.
     const [movimiento, setMovimiento] = useState(null);
+    // Un producto tocado en «Cómo va» se agrega a la venta y se va a Vender
+    // (usuario, 2026-11-18).
+    const [paraAgregar, setParaAgregar] = useState(null);
+    const agregarAVenta = (producto) => {
+        setParaAgregar((x) => ({ n: (x?.n ?? 0) + 1, producto }));
+        setVista('vender');
+    };
     const enVentaOCaja = (cual) => {
         if (cual === 'ingreso' || cual === 'salida') setMovimiento((m) => ({ n: (m?.n ?? 0) + 1, cual }));
         else abrirEnCaja(cual);
@@ -261,8 +276,14 @@ export default function CajaDelKiosco({
 
     // Una sugerencia del inicio: un ticket se cobra; lo de la caja pide el
     // carné y, al entrar, lleva directo a ese diálogo.
-    const seguir = (ir) => {
+    const seguir = async (ir) => {
         if (ir.ticket) { elegirTicket(ir.ticket); return; }
+        // «Abrir la caja» relee el estado en el acto: si alguien ya la abrió,
+        // el aviso se va y no se pide abrirla dos veces.
+        if (ir.dialogo === 'abrir') {
+            const e = await leerEstado();
+            if (e?.abierta || e?.cerrado) return;
+        }
         guardarDestino(ir);
         setAccion('caja');
     };
@@ -282,11 +303,29 @@ export default function CajaDelKiosco({
     }, [abierta]); // eslint-disable-line react-hooks/exhaustive-deps
     // Un trámite desde el inicio: pide el carné y, al entrar, abre su modal.
     const pedirTramite = (clave) => {
-        if (abierta) { setTramite(clave); return; }
+        if (abierta) {
+            if (misTramites.some((t) => t.clave === clave)) setTramite(clave); else irA('mas');
+            return;
+        }
         guardarDestino({ tramite: clave });
         setPendienteTramite(clave);
         setAccion('mas');
     };
+    // Alt+1…9 abre el trámite de ese número (usuario, 2026-11-18). No con una
+    // ventana ya abierta: el atajo no salta de un modal a otro.
+    const atajoRef = useRef(null);
+    useEffect(() => { atajoRef.current = (n) => { const t = tramitesDeLaSala[n - 1]; if (t) pedirTramite(t.clave); }; });
+    useEffect(() => {
+        const alTeclear = (e) => {
+            if (!e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
+            const n = /^Digit([1-9])$/.exec(e.code)?.[1];
+            if (!n || document.querySelector('[role="dialog"]')) return;
+            e.preventDefault();
+            atajoRef.current?.(Number(n));
+        };
+        window.addEventListener('keydown', alTeclear);
+        return () => window.removeEventListener('keydown', alTeclear);
+    }, []);
     const pedida = accion && (accion === 'mas' && pendienteTramite
         ? TRAMITES.find((t) => t.clave === pendienteTramite) ?? ACCIONES.mas : ACCIONES[accion]);
 
@@ -386,7 +425,7 @@ export default function CajaDelKiosco({
                                             onMovimientoDeCaja={enVentaOCaja}
                                             onTerminarCobro={() => { setElegida(null); datosCola.leer(); }} />
                                     ) : (
-                                        <PreventaView enKiosco activa={enVenta} onMovimientoDeCaja={enVentaOCaja} />
+                                        <PreventaView enKiosco activa={enVenta} onMovimientoDeCaja={enVentaOCaja} agregarDesdeFuera={paraAgregar} />
                                     )}
                                 </div>
                                 {movimiento && vista !== 'caja' && (
@@ -398,11 +437,12 @@ export default function CajaDelKiosco({
                                 {vista === 'mas' && (
                                     misTramites.length ? (
                                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                            {misTramites.map((t) => <Accion key={t.clave} a={t} compacta onClick={() => setTramite(t.clave)} />)}
+                                            {misTramites.map((t) => <Accion key={t.clave} a={t} compacta atajo={atajoDe(t.clave)} onClick={() => setTramite(t.clave)} />)}
                                         </div>
                                     ) : <Notice variant="info">Tu cargo no tiene trámites en este kiosco.</Notice>
                                 )}
-                                {vista === 'hoy' && <ComoVaHoy sala={enPortal ? sala : equipo.branchId} ahora={ahora} />}
+                                {vista === 'hoy' && <ComoVaHoy sala={enPortal ? sala : equipo.branchId} ahora={ahora}
+                                    onAgregar={puede.vender && !detalle ? agregarAVenta : null} />}
                                 {vista === 'caja' && (
                                     <MiCajaView key={dialogoCaja.n} comoPestana abrirAlEntrar={dialogoCaja.cual}
                                         alCerrarDialogo={dialogoCaja.cual ? () => setVista('vender') : undefined} />
@@ -445,8 +485,8 @@ export default function CajaDelKiosco({
                                 <div className="flex flex-col gap-2">
                                     <p className="text-label font-bold text-content-3 uppercase tracking-widest">Trámites</p>
                                     <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
-                                        {TRAMITES.filter((t) => !t.aplica || t.aplica(salaDelKiosco)).map((t) => (
-                                            <Accion key={t.clave} a={t} compacta activa={accion === 'mas' && pendienteTramite === t.clave}
+                                        {tramitesDeLaSala.map((t) => (
+                                            <Accion key={t.clave} a={t} compacta atajo={atajoDe(t.clave)} activa={accion === 'mas' && pendienteTramite === t.clave}
                                                 onClick={() => pedirTramite(t.clave)} />
                                         ))}
                                     </div>

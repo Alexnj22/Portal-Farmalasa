@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.6 — Kiosco: aviso con sonido, atajos de trámites y agregar desde Cómo va
+
+Pedidos del usuario tras la auditoría del kiosco (2026-11-18):
+- **Sesión con un trámite abierto**: con una ventana abierta (un ajuste a medio
+  llenar) la sesión aguanta 10 minutos sin uso en vez de 2. Antes, lo escrito
+  se perdía.
+- **Estado de la caja al día**: se relee cada 20 s (antes 60), y «Abrir la
+  caja» lo relee en el acto; si ya estaba abierta, el aviso se va y no pide
+  abrirla otra vez.
+- **Aviso con sonido** al llegar una preventa a la cola: dos notas suaves,
+  hechas con el sintetizador del navegador (suena después del primer toque en
+  la pantalla, como exige el navegador).
+- **Preventas que esperan**: el aviso de «lleva N min esperando» sale aunque la
+  caja no esté lista, y dice cuántas pasan de 10 minutos.
+- **Atajos Alt+1…9** para los trámites, el mismo número en el inicio y en «Más»,
+  con su etiqueta en la tarjeta.
+- **Cómo va**: un toque en un producto de Promociones, Ofrécelos hoy o Vence
+  pronto lo agrega a la venta y lleva a Vender.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1575.5 — Carga SRS despacio y se detiene ante un bloqueo
 
 - `scripts/srs/cargar-datos-mercado.mjs`: 3 s entre operación y operación (`--pausa`) y 1 minuto de descanso cada 100. Si el firewall de la SRS responde 403/429 o con su página de bloqueo, se detiene sin reintentar y sin volver a iniciar sesión. También se detiene con 10 fallas. Se agregó porque el 2026-11-18 la SRS bloqueó la red de la oficina después de un día de consultas seguidas.

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useCapturaDeCarne from '@plataforma/useCapturaDeCarne';
-import { sesionDeCaja, INACTIVO_MS } from './sesionDeCaja';
+import { sesionDeCaja, INACTIVO_MS, INACTIVO_CON_VENTANA_MS } from './sesionDeCaja';
 import { esDemo, EVENTO_CARNE_DEMO } from './demoDelKiosco';
 
 // Lo que decide el kiosco de caja, sin nada de cómo se ve: quién está, qué
@@ -74,7 +74,12 @@ export default function useKioscoDeCaja({ marcadorOcupado, feedbackAbierto, onMa
         const usar = () => { sesionDeCaja.ultimoUso = Date.now(); };
         EVENTOS_DE_USO.forEach((ev) => window.addEventListener(ev, usar, { passive: true, capture: true }));
         const id = setInterval(() => {
-            const queda = sesionDeCaja.ultimoUso + INACTIVO_MS - Date.now();
+            // Con un trámite o una ventana abierta (un ajuste a medio llenar) el
+            // plazo es más largo: cerrar ahí perdía lo escrito (usuario,
+            // 2026-11-18). Sigue teniendo tope: un modal olvidado no deja la
+            // sesión de alguien abierta para siempre.
+            const plazo = document.querySelector('[role="dialog"]') ? INACTIVO_CON_VENTANA_MS : INACTIVO_MS;
+            const queda = sesionDeCaja.ultimoUso + plazo - Date.now();
             setRestante(queda);
             if (queda <= 0) terminar();
         }, 1000);

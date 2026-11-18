@@ -113,7 +113,7 @@ const conMayuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
  * la vista (el kiosco ya tiene su barra); las pestañas van arriba del cuerpo.
  * El cuerpo y los diálogos son los mismos.
  */
-export default function PreventaView({ openModal, enKiosco = false, cobrando = null, onTerminarCobro, activa = true, onMovimientoDeCaja }) {
+export default function PreventaView({ openModal, enKiosco = false, cobrando = null, onTerminarCobro, activa = true, onMovimientoDeCaja, agregarDesdeFuera = null }) {
     const { user, hasPermission, getScope } = useAuth();
     const showToast = useToastStore((s) => s.showToast);
     const navigate = useNavigate();
@@ -266,6 +266,16 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
             ? { ...l, cantidad: Math.min(999, (Number(l.cantidad) || 0) - 1 + cantidad) } : l)) });
         if (!tactil) setFoco({ cantidad: `${Number(p.id)}-1` });
     };
+    // Un producto que llega de fuera (un toque en «Cómo va» del kiosco): `n`
+    // cambia en cada toque, así el mismo producto dos veces suma dos.
+    const agregadoDeFuera = useRef(agregarDesdeFuera?.n ?? 0);
+    const agregarRef = useRef(agregarProducto);
+    useEffect(() => { agregarRef.current = agregarProducto; });
+    useEffect(() => {
+        if (!agregarDesdeFuera || agregarDesdeFuera.n === agregadoDeFuera.current) return;
+        agregadoDeFuera.current = agregarDesdeFuera.n;
+        agregarRef.current(agregarDesdeFuera.producto);
+    }, [agregarDesdeFuera]);
     const agregarVarios = (productos) => {
         let lineas = venta.lineas;
         for (const p of productos) {

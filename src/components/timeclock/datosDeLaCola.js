@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { kioscoCajaCola, kioscoCajaEstado } from '@nucleo/data/kiosco';
 import { estadoDeCaja } from '@nucleo/data/bolsas';
 import { fetchPreventasDeSala } from '@nucleo/data/preventas';
@@ -69,11 +69,55 @@ async function colaDeSala(sala) {
     }
 }
 
+// ── Aviso con sonido al llegar una preventa (usuario, 2026-11-18: «sonido
+// bonito»). Dos notas suaves y cortas, hechas con el sintetizador del
+// navegador: sin archivo que descargar. El navegador sólo deja sonar después
+// de un primer toque en la página; antes de eso, calla sin error.
+let audio = null;
+function contexto() {
+    if (typeof window === 'undefined') return null;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!audio) audio = new AC();
+    return audio;
+}
+if (typeof window !== 'undefined') {
+    // El primer toque «despierta» el audio, para que el aviso pueda sonar luego.
+    window.addEventListener('pointerdown', () => { try { contexto()?.resume?.(); } catch { /* sin audio */ } }, { once: true, capture: true });
+}
+export function sonarLlegada() {
+    try {
+        const ac = contexto();
+        if (!ac || ac.state !== 'running') return;
+        const t0 = ac.currentTime + 0.02;
+        // Mi y La agudos (campanita), con caída exponencial.
+        [[659.25, 0], [880, 0.16]].forEach(([f, d]) => {
+            const o = ac.createOscillator();
+            const g = ac.createGain();
+            o.type = 'sine';
+            o.frequency.value = f;
+            g.gain.setValueAtTime(0.0001, t0 + d);
+            g.gain.exponentialRampToValueAtTime(0.22, t0 + d + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.9);
+            o.connect(g).connect(ac.destination);
+            o.start(t0 + d);
+            o.stop(t0 + d + 1);
+        });
+    } catch { /* sin audio: el aviso es la lista */ }
+}
+
+/** Las preventas que no estaban en la lectura anterior (la primera lectura no avisa). */
+export function llegadasNuevas(antes, ahora) {
+    if (antes == null) return [];
+    return (ahora ?? []).filter((p) => p.estado !== 'enviando' && !antes.has(p.id));
+}
+
 export function useColaDeCaja({ sala = null } = {}) {
     const [cola, setCola] = useState(null);
     const [problema, setProblema] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
     const [ahora, setAhora] = useState(() => Date.now());
+    const vistas = useRef(null);
 
     const leer = useCallback(async () => {
         if (esDemo()) { setCola(colaDeMuestra()); setProblema(null); setAhora(Date.now()); return; }
@@ -82,6 +126,8 @@ export function useColaDeCaja({ sala = null } = {}) {
         setLeyendo(false);
         setAhora(Date.now());
         if (r.ok) {
+            if (llegadasNuevas(vistas.current, r.cola).length) sonarLlegada();
+            vistas.current = new Set(r.cola.filter((p) => p.estado !== 'enviando').map((p) => p.id));
             setCola(r.cola);
             setProblema(null);
         } else {
@@ -109,24 +155,28 @@ export function useColaDeCaja({ sala = null } = {}) {
 // «Que sea inteligente: si no hay apertura, que salga para hacerlo.» El
 // estado de la caja se lee sin montos: el inicio del kiosco no tiene sesión.
 
-const ESTADO_CADA_MS = 60_000;
+// 20 s: con 60, el inicio seguía diciendo «la caja no está abierta» un minuto
+// después de abrirla, y el botón invitaba a abrirla otra vez (2026-11-18).
+const ESTADO_CADA_MS = 20_000;
 
 export function useEstadoDeCaja({ sala = null } = {}) {
     const [estado, setEstado] = useState(null);
     const leer = useCallback(async () => {
-        if (esDemo()) { setEstado({ abierta: false, turno_corriendo: false, cerrado: false, cortes: 0 }); return; }
+        if (esDemo()) { const e = { abierta: false, turno_corriendo: false, cerrado: false, cortes: 0 }; setEstado(e); return e; }
         if (sala) {
             const r = await estadoDeCaja(sala);
-            if (r?.error) return;
-            setEstado({
+            if (r?.error) return null;
+            const e = {
                 abierta: Boolean(r.abierta), turno: r.turno ?? null, turno_corriendo: Boolean(r.turno_corriendo),
                 cerrado: (r.cortes ?? []).some((c) => c.tipo === 'Z'),
                 cortes: (r.cortes ?? []).filter((c) => c.tipo !== 'Z').length,
-            });
-            return;
+            };
+            setEstado(e);
+            return e;
         }
         const r = await kioscoCajaEstado();
-        if (r.ok) setEstado(r.estado);
+        if (r.ok) { setEstado(r.estado); return r.estado; }
+        return null;
     }, [sala]);
 
     useEffect(() => {
@@ -173,10 +223,14 @@ export function queToca({ estado, cola, ahora }) {
         });
     }
 
-    if (masVieja && estado?.abierta && estado.turno_corriendo) {
+    // Una preventa que lleva rato esperando es un cliente parado: se avisa
+    // aunque la caja no esté lista (usuario, 2026-11-18).
+    const largas = vivas.filter((p) => (minutosDesde(p.enviada_at, ahora) ?? 0) >= ESPERA_LARGA_MIN).length;
+    if (masVieja && (espera >= ESPERA_LARGA_MIN || (estado?.abierta && estado.turno_corriendo))) {
         out.push(espera >= ESPERA_LARGA_MIN ? {
             clave: 'espera', tono: 'warning', titulo: `La #${masVieja.referencia} lleva ${espera} min esperando`,
-            detalle: vivas.length > 1 ? `Y ${vivas.length - 1} más en la cola.` : 'Es la única en la cola.',
+            detalle: largas > 1 ? `${largas} preventas llevan más de ${ESPERA_LARGA_MIN} min sin cobrar.`
+                : vivas.length > 1 ? `Y ${vivas.length - 1} más en la cola.` : 'Es la única en la cola.',
             boton: `Cobrar la #${masVieja.referencia}`, ir: { ticket: masVieja.id },
         } : {
             clave: 'cola', tono: 'info', titulo: vivas.length === 1 ? '1 venta espera cobro' : `${vivas.length} ventas esperan cobro`,

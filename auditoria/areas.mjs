@@ -730,7 +730,8 @@ export const AREAS = [
                  'creditos_cobros_por_aprobar', 'creditos_cobro_envios',
                  'bolsas', 'bancos', 'bolsas_conteos', 'bolsas_entidades', 'bolsas_entregas',
                  'bolsas_eventos', 'bolsas_movimientos',
-                 'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios', 'cobro_caja_ensayos'],
+                 'bolsas_operaciones', 'bolsas_tipos_salida', 'depositos_bancarios', 'cobro_caja_ensayos',
+                 'cobro_kiosco_sucursales', 'cobro_kiosco_cobros'],
         // `creditos-erp` va acá y no en Facturación: abonar a un crédito mete
         // EFECTIVO al cajón, y ese dinero cuenta para el corte del mismo día.
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
@@ -907,6 +908,7 @@ export const AREAS = [
             'src/views/KioscoEnPortalView.jsx',
             'src/data/preventas.js',
             'src/utils/preventaDirecta.js',
+            'src/utils/ticketDeCobroKiosco.js',
             'tests/unit/preventaDirecta.test.js',
             'supabase/functions/preventa-caja/',
             'supabase/functions/_shared/preventaCaja.ts',

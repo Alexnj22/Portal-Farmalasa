@@ -544,3 +544,36 @@ export async function prepararCobroEnLaCaja(
   const finalizado = armarFinalizado({ cabecera, guardado: { id_factura: externoId, ultimo: "" }, caja, efectivo: esperado.efectivo });
   return { motivo, totales, caja, cabecera, renglones: renglones.length, guardado, finalizado };
 }
+
+// ─── Cobrar de verdad (etapa 2, 2026-11-18) ─────────────────────────────────
+// Los dos pasos que ESCRIBEN en la caja, sueltos, para que quien los llama deje
+// constancia entre uno y otro (`cobro_kiosco_cobros`). Cada uno dice una de
+// tres cosas, y la diferencia importa:
+//   · ok        → la caja lo aceptó;
+//   · rechazo   → la caja contestó que NO (su `msg`): no escribió nada, se
+//                 puede volver a intentar;
+//   · incierta  → no contestó, o contestó algo ilegible: pudo haber escrito.
+//                 NO se reintenta solo (guardar dos veces es una factura de más).
+export type PasoDeCaja =
+  | { ok: true; resp: Record<string, unknown> }
+  | { ok: false; rechazo: string; incierta?: undefined }
+  | { ok: false; incierta: string; rechazo?: undefined };
+
+async function pasoDeCaja(http: Http, datos: Record<string, string>, aceptado: (j: Record<string, unknown>) => boolean): Promise<PasoDeCaja> {
+  let bruto: string;
+  try { bruto = await http.post("venta.php", datos); }
+  catch (e) { return { ok: false, incierta: `La caja no contestó: ${(e as Error).message}` }; }
+  let j: Record<string, unknown>;
+  try { j = JSON.parse(bruto); }
+  catch { return { ok: false, incierta: `La caja contestó algo ilegible: ${bruto.slice(0, 200)}` }; }
+  if (j && aceptado(j)) return { ok: true, resp: j };
+  return { ok: false, rechazo: String(j?.msg ?? "La caja no lo aceptó.") };
+}
+
+/** F2 Pagar (`process=insert`): guarda la factura. Contesta `{typeinfo:'Success', id_factura, ultimo, numdoc, nombre, direccion, …}`. */
+export const guardarEnLaCaja = (http: Http, guardado: Record<string, string>) =>
+  pasoDeCaja(http, guardado, (j) => j.typeinfo === "Success");
+
+/** Enter en «Efectivo» (`process=imprimir_fact`): la finaliza. Contesta `{success, deshabilitar, …}`. */
+export const finalizarEnLaCaja = (http: Http, finalizado: Record<string, string>) =>
+  pasoDeCaja(http, finalizado, (j) => Boolean(j.success));

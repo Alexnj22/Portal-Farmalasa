@@ -136,14 +136,25 @@ export function armarGuardado({ renglones, cabecera, caja }) {
     };
 }
 
-/** El cuerpo de `process=imprimir_fact` (finalizar con el efectivo), como `imprimev`. */
+/**
+ * El cuerpo de `process=imprimir_fact` (finalizar con el efectivo), como `imprimev`.
+ *
+ * `guardado` es la respuesta de `process=insert`. Lo que la pantalla pone en sus
+ * campos al guardar (releído en `venta.js` el 2026-11-18):
+ *   · consumidor final y crédito fiscal: nombre y dirección del cliente
+ *     (`#nomcli`, `#dircli`); el número del documento (`#numdoc`) queda vacío;
+ *   · ticket: el número (`#numdoc` = `ultimo`) y nada del cliente.
+ * Y `numero_factura_consumidor` es `#numdoc` salvo en ticket, que va vacío.
+ */
 export function armarFinalizado({ cabecera, guardado, caja, efectivo }) {
-    const consumidor = String(cabecera.tipo_documento) === 'TIK' ? '' : String(guardado.ultimo ?? '');
+    const tik = String(cabecera.tipo_documento) === 'TIK';
+    const numdoc = tik ? String(guardado.ultimo ?? '') : '';
     return {
-        process: 'imprimir_fact', numero_doc: String(cabecera.numero_doc ?? ''),
+        process: 'imprimir_fact', numero_doc: numdoc,
         tipo_impresion: String(cabecera.tipo_documento), num_doc_fact: String(guardado.id_factura ?? cabecera.id_factura),
-        numero_factura_consumidor: consumidor, fecha_fact: String(caja.fecha_fact ?? ''),
-        direccion: '', nombreape: '', id_cliente: String(cabecera.id_cliente), efectivo: String(efectivo),
+        numero_factura_consumidor: tik ? '' : numdoc, fecha_fact: String(caja.fecha_fact ?? ''),
+        direccion: tik ? '' : String(guardado.direccion ?? ''), nombreape: tik ? '' : String(guardado.nombre ?? ''),
+        id_cliente: String(cabecera.id_cliente), efectivo: String(efectivo),
     };
 }
 

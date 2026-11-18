@@ -7005,6 +7005,115 @@ export type Database = {
           },
         ]
       }
+      cobro_kiosco_cobros: {
+        Row: {
+          branch_id: number
+          created_at: string
+          efectivo: number | null
+          empleado_id: string | null
+          error: string | null
+          estado: string
+          externo_id: string
+          id: number
+          mh: Json | null
+          numero: string | null
+          preventa_id: number
+          respuestas: Json
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          efectivo?: number | null
+          empleado_id?: string | null
+          error?: string | null
+          estado?: string
+          externo_id: string
+          id?: never
+          mh?: Json | null
+          numero?: string | null
+          preventa_id: number
+          respuestas?: Json
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          efectivo?: number | null
+          empleado_id?: string | null
+          error?: string | null
+          estado?: string
+          externo_id?: string
+          id?: never
+          mh?: Json | null
+          numero?: string | null
+          preventa_id?: number
+          respuestas?: Json
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobro_kiosco_cobros_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobro_kiosco_cobros_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobro_kiosco_cobros_empleado_id_fkey"
+            columns: ["empleado_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobro_kiosco_cobros_preventa_id_fkey"
+            columns: ["preventa_id"]
+            isOneToOne: true
+            referencedRelation: "preventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cobro_kiosco_sucursales: {
+        Row: {
+          branch_id: number
+          created_at: string
+          encendido: boolean
+          nota: string | null
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          encendido?: boolean
+          nota?: string | null
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          encendido?: boolean
+          nota?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobro_kiosco_sucursales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cola_impresion: {
         Row: {
           branch_id: number

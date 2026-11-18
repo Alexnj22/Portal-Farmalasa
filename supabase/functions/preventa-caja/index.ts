@@ -2,10 +2,12 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { getCortesCreds } from "../_shared/creditos.ts";
 import {
-  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, listaDeLaCaja, prepararCobroEnLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
+  borrarPreventaDeLaCaja, buscarPreventaEnLaCaja, enviarPreventaALaCaja, fechaDeLaCaja, finalizarEnLaCaja, guardarEnLaCaja, listaDeLaCaja,
+  prepararCobroEnLaCaja, preventaVivaEnLaCaja, sesionDeCaja,
 } from "../_shared/preventaCaja.ts";
+import { armarFinalizado } from "../../../src/utils/cobroDeCaja.js";
 import { armarVenta } from "../../../src/utils/preventa.js";
-import { login as entrarAlSistema } from "../_shared/erp-dte.ts";
+import { enviarDteAlMH, login as entrarAlSistema } from "../_shared/erp-dte.ts";
 import { fijarVineta, leerFichaDe } from "../_shared/erp-regulado.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -394,11 +396,23 @@ async function directa(
 }
 
 
-// ── Cobrar una preventa desde el kiosco de caja (2026-11-17) ───────────────
-// Por ahora SÓLO ENSAYO: lee la preventa en la caja y devuelve lo que se le
-// mandaría para cobrarla (F2 Pagar + efectivo), sin mandarlo. Sirve para
-// enfrentarlo con un cobro real antes de encender el cobro de verdad.
+// ── Cobrar una preventa desde el kiosco de caja ────────────────────────────
+// Dos modos:
+//   · `ensayo: true` (2026-11-17): lee la preventa en la caja y devuelve lo que
+//     se le mandaría, sin mandarlo.
+//   · el cobro de verdad (etapa 2, 2026-11-18): los mismos pasos que la
+//     pantalla de la caja —guardar (F2 Pagar) y finalizar con el efectivo— y
+//     después Hacienda, con la misma rutina del envío de cada noche. SÓLO si la
+//     sucursal tiene el cobro encendido (`cobro_kiosco_sucursales`).
 // Permiso: el de la caja (`caja_vales` editar), en la sala de la PREVENTA.
+//
+// El candado y la constancia de cada paso viven en `cobro_kiosco_cobros` (una
+// fila por preventa). Cada paso que escribe en la caja queda anotado ANTES de
+// seguir, así un cobro cortado se retoma desde lo que falta:
+//   · ya `finalizada` → no se toca: se devuelve lo que quedó;
+//   · `guardada`      → falta finalizar: se finaliza (con el efectivo nuevo);
+//   · `cobrando` o `incierta` → no se sabe si la caja escribió: NO se reintenta;
+//     se revisa en la caja.
 async function cobrar(req: Request, body: Record<string, unknown>, responder: (b: unknown, s?: number) => Response) {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const quien = await requireActiveEmployeeUser(req, admin);
@@ -406,7 +420,7 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
   const permiso = await permisoDeModulo(admin, quien.id, "caja_vales", "can_edit");
   if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
   if (!permiso.puede) return responder({ ok: false, error: "No tienes permiso para cobrar." }, 403);
-  if (body.ensayo !== true) return responder({ ok: false, error: "El cobro desde el kiosco todavía no está encendido." }, 409);
+  const ensayo = body.ensayo === true;
 
   const id = Number(body.preventa_id);
   const efectivo = Number(body.efectivo);
@@ -414,25 +428,164 @@ async function cobrar(req: Request, body: Record<string, unknown>, responder: (b
   if (!Number.isFinite(efectivo) || efectivo < 0) return responder({ ok: false, error: "Falta el efectivo recibido." }, 400);
 
   const { data: pv, error: ePv } = await admin.from("preventas")
-    .select("id, branch_id, estado, sistema, externo_id, total").eq("id", id).maybeSingle();
+    .select("id, branch_id, estado, sistema, externo_id, externo_ref, total").eq("id", id).maybeSingle();
   if (ePv) return responder({ ok: false, error: "No se pudo leer la preventa." }, 503);
   if (!pv || pv.sistema !== "caja") return responder({ ok: false, error: "Esa preventa no existe." }, 404);
   if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== Number(pv.branch_id)) {
     return responder({ ok: false, error: "No puedes cobrar en esa sucursal." }, 403);
   }
-  if (pv.estado !== "viva" || !pv.externo_id) return responder({ ok: false, error: "Esa preventa no está lista para cobrar." }, 409);
+
+  // Un cobro que ya empezó manda sobre el estado de la preventa: una vez
+  // finalizada, la preventa deja de estar «viva» y aun así hay que contestar.
+  let previo: Record<string, any> | null = null;
+  if (!ensayo) {
+    const { data: sw, error: eSw } = await admin.from("cobro_kiosco_sucursales")
+      .select("encendido").eq("branch_id", pv.branch_id).maybeSingle();
+    if (eSw) return responder({ ok: false, error: "No se pudo saber si el cobro está encendido." }, 503);
+    if (!sw?.encendido) return responder({ ok: false, error: "El cobro desde el kiosco no está encendido en esta sucursal." }, 409);
+    const { data: c, error: eC } = await admin.from("cobro_kiosco_cobros").select("*").eq("preventa_id", id).maybeSingle();
+    if (eC) return responder({ ok: false, error: "No se pudo leer el cobro." }, 503);
+    previo = c;
+    if (previo?.estado === "finalizada") return responder({ ok: true, ya_cobrada: true, ...resumenDeCobro(previo, pv) });
+    if (previo && previo.estado !== "guardada") {
+      return responder({ ok: false, error: `La preventa #${pv.externo_ref ?? id} ya se empezó a cobrar y no se sabe si la caja la guardó. Revísala en la caja antes de volver a cobrar.` }, 409);
+    }
+  }
+  if (!previo && (pv.estado !== "viva" || !pv.externo_id)) return responder({ ok: false, error: "Esa preventa no está lista para cobrar." }, 409);
 
   const { data: mapa, error: eMapa } = await admin.from("erp_sucursal_map")
     .select("erp_sucursal_id").eq("branch_id", pv.branch_id).eq("es_bodega", false).maybeSingle();
   if (eMapa || !mapa) return responder({ ok: false, error: "No se sabe qué sala de la caja es esta sucursal." }, 503);
 
+  const externo = String(pv.externo_id);
+  let http;
   try {
     const { username, password } = getCortesCreds();
-    const http = await sesionDeCaja(username, password, Number(mapa.erp_sucursal_id));
-    const plan = await prepararCobroEnLaCaja(http, String(pv.externo_id), { total: pv.total == null ? null : Number(pv.total), efectivo });
-    return responder({ ok: true, ensayo: true, ...plan });
+    http = await sesionDeCaja(username, password, Number(mapa.erp_sucursal_id));
   } catch (e) {
     return responder({ ok: false, error: (e as Error).message }, 502);
+  }
+
+  const anotar = async (cambios: Record<string, unknown>) => {
+    const { error } = await admin.from("cobro_kiosco_cobros")
+      .update({ ...cambios, updated_at: new Date().toISOString() }).eq("preventa_id", id);
+    if (error) console.error(`[preventa-caja] cobro ${id}:`, error.message);
+    return !error;
+  };
+
+  let fila = previo;
+  if (!fila) {
+    let plan;
+    try {
+      plan = await prepararCobroEnLaCaja(http, externo, { total: pv.total == null ? null : Number(pv.total), efectivo });
+    } catch (e) {
+      return responder({ ok: false, error: (e as Error).message }, 502);
+    }
+    if (ensayo) return responder({ ok: true, ensayo: true, ...plan });
+    if (plan.motivo) return responder({ ok: false, error: plan.motivo }, 409);
+
+    // El candado: dos toques (o dos equipos) no cobran dos veces.
+    const { data: nueva, error: eIns } = await admin.from("cobro_kiosco_cobros").insert({
+      preventa_id: id, branch_id: pv.branch_id, externo_id: externo, empleado_id: quien.id,
+      total: plan.totales.total, efectivo, respuestas: { cabecera: plan.cabecera, caja: plan.caja },
+    }).select("*").single();
+    if (eIns) {
+      return eIns.code === "23505"
+        ? responder({ ok: false, error: "Esa preventa ya se está cobrando." }, 409)
+        : responder({ ok: false, error: "No se pudo empezar el cobro." }, 503);
+    }
+
+    const g = await guardarEnLaCaja(http, plan.guardado);
+    if (!g.ok && g.rechazo) {
+      // La caja dijo que no: no escribió nada. Se suelta el candado.
+      const { error: eDel } = await admin.from("cobro_kiosco_cobros").delete().eq("preventa_id", id).eq("estado", "cobrando");
+      if (eDel) console.error(`[preventa-caja] soltar ${id}:`, eDel.message);
+      return responder({ ok: false, error: `La caja no guardó la venta: ${g.rechazo}` }, 409);
+    }
+    if (!g.ok) {
+      await anotar({ estado: "incierta", error: g.incierta });
+      return responder({ ok: false, error: "No se sabe si la caja guardó la venta. Revísala en la caja antes de volver a cobrar." }, 502);
+    }
+    const numero = String(g.resp.numdoc ?? g.resp.ultimo ?? "") || null;
+    const respuestas = { ...nueva.respuestas, guardado: g.resp };
+    if (!(await anotar({ estado: "guardada", numero, respuestas, error: null }))) {
+      return responder({ ok: false, error: `La caja guardó la venta #${pv.externo_ref ?? id}, pero el portal no lo pudo anotar. Finalízala en la caja.` }, 500);
+    }
+    fila = { ...nueva, estado: "guardada", numero, respuestas };
+  } else if (ensayo) {
+    return responder({ ok: false, error: "Esa preventa ya se está cobrando." }, 409);
+  }
+
+  // ── Finalizar con el efectivo ──
+  const { cabecera, caja, guardado } = fila.respuestas ?? {};
+  if (!cabecera || !caja || !guardado) return responder({ ok: false, error: "Al cobro le faltan datos para finalizar. Finalízala en la caja." }, 500);
+  if (!(efectivo >= Number(fila.total ?? 0))) return responder({ ok: false, error: "El efectivo no alcanza para el total." }, 409);
+  const fin = armarFinalizado({ cabecera, guardado: { ...guardado, id_factura: guardado.id_factura ?? externo }, caja, efectivo });
+  const f = await finalizarEnLaCaja(http, fin);
+  if (!f.ok && f.rechazo) {
+    await anotar({ efectivo, error: f.rechazo });
+    return responder({ ok: false, error: `La caja guardó la venta pero no la finalizó: ${f.rechazo}. Intenta cobrar otra vez.` }, 409);
+  }
+  if (!f.ok) {
+    await anotar({ estado: "incierta", efectivo, error: f.incierta });
+    return responder({ ok: false, error: "No se sabe si la caja finalizó la venta. Revísala en la caja." }, 502);
+  }
+  const respuestasFin = { ...fila.respuestas, finalizado: f.resp };
+  await anotar({ estado: "finalizada", efectivo, respuestas: respuestasFin, error: null });
+
+  // ── Hacienda ── nunca tumba el cobro: lo que no se mande ahora lo manda el
+  // envío de cada noche, como a cualquier factura.
+  const mh = await mandarAHacienda(admin, {
+    externo, tipo: String(cabecera.tipo_documento), branch: Number(pv.branch_id),
+    clienteErp: String(cabecera.id_cliente ?? ""), deshabilitar: Number(f.resp.deshabilitar ?? 0) === 1,
+  });
+  await anotar({ mh });
+
+  return responder({ ok: true, ...resumenDeCobro({ ...fila, estado: "finalizada", efectivo, mh, respuestas: respuestasFin }, pv) });
+}
+
+function resumenDeCobro(c: Record<string, any>, pv: Record<string, any>) {
+  const total = Number(c.total ?? 0);
+  const efectivo = Number(c.efectivo ?? 0);
+  const g = c.respuestas?.guardado ?? {};
+  return {
+    referencia: pv.externo_ref ?? null, externo_id: c.externo_id, total, efectivo,
+    vuelto: Math.round((efectivo - total) * 100) / 100, numero: c.numero ?? null,
+    documento: c.respuestas?.cabecera?.tipo_documento ?? null, cliente: g.nombre ?? null,
+    mh: c.mh ?? null,
+  };
+}
+
+// La regla de las 6 pm (`cof_no_se_envia_mh`), la pausa por sucursal y el
+// interruptor de la propia caja (`deshabilitar`): lo mismo que mira el envío de
+// cada noche. Si algo no se puede leer, NO se manda (lo levanta la noche).
+async function mandarAHacienda(
+  admin: ReturnType<typeof createClient>,
+  d: { externo: string; tipo: string; branch: number; clienteErp: string; deshabilitar: boolean },
+): Promise<Record<string, unknown>> {
+  if (d.deshabilitar) return { enviado: false, motivo: "La caja tiene el envío apagado." };
+  if (d.tipo !== "COF") return { enviado: false, motivo: `Un ${d.tipo} se manda con el envío de la noche.` };
+  const { data: pausa, error: ePausa } = await admin.from("dte_sucursales_en_pausa").select("motivo").eq("branch_id", d.branch).maybeSingle();
+  if (ePausa) return { enviado: false, motivo: "No se pudo leer la pausa de la sucursal." };
+  if (pausa) return { enviado: false, motivo: `Sucursal en pausa: ${pausa.motivo}` };
+  let customerId: number | null = null;
+  if (/^\d+$/.test(d.clienteErp)) {
+    const { data: cli, error: eCli } = await admin.from("customers").select("id").eq("erp_id", d.clienteErp).maybeSingle();
+    if (eCli) return { enviado: false, motivo: "No se pudo leer el cliente." };
+    customerId = cli?.id ?? null;
+  }
+  const ahora = new Date(Date.now() - 6 * 3600_000).toISOString();   // El Salvador, sin horario de verano
+  const { data: noSe, error: eNo } = await admin.rpc("cof_no_se_envia_mh", {
+    p_tipo: d.tipo, p_fecha: ahora.slice(0, 10), p_hora: ahora.slice(11, 19), p_customer_id: customerId,
+  });
+  if (eNo) return { enviado: false, motivo: "No se pudo leer la regla de las 6:00 p. m." };
+  if (noSe === true) return { enviado: false, motivo: "Desde las 6:00 p. m. el consumidor final no se manda." };
+  try {
+    const cookie = await entrarAlSistema();
+    const r = await enviarDteAlMH(cookie, d.externo, d.tipo, { anula: false });
+    return { enviado: true, sello: r.sello, codigo_generacion: r.codigoGeneracion, fh: r.fh };
+  } catch (e) {
+    return { enviado: false, error: (e as Error).message, observaciones: (e as { observaciones?: string[] }).observaciones ?? [] };
   }
 }
 

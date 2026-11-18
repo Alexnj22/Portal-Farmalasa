@@ -40,10 +40,15 @@ describe('cobro de una preventa en la caja', () => {
         expect(JSON.parse(g.json_arr)).toHaveLength(3);
     });
 
-    it('finaliza con el número que dio la caja y el efectivo', () => {
-        const f = armarFinalizado({ cabecera, guardado: { id_factura: '415145', ultimo: '81023' }, caja, efectivo: 5 });
-        expect(f).toMatchObject({ process: 'imprimir_fact', num_doc_fact: '415145', numero_factura_consumidor: '81023', fecha_fact: '17-11-2026', efectivo: '5' });
-        expect(armarFinalizado({ cabecera: { ...cabecera, tipo_documento: 'TIK' }, guardado: { ultimo: '9' }, caja, efectivo: 5 }).numero_factura_consumidor).toBe('');
+    it('finaliza como imprimev: consumidor final con el cliente, ticket con su número', () => {
+        const guardado = { id_factura: '415145', ultimo: '81023', nombre: 'YNES ANTONIO ARDON', direccion: 'SAN SALVADOR' };
+        expect(armarFinalizado({ cabecera, guardado, caja, efectivo: 5 })).toEqual({
+            process: 'imprimir_fact', numero_doc: '', tipo_impresion: 'COF', num_doc_fact: '415145', numero_factura_consumidor: '',
+            fecha_fact: '17-11-2026', direccion: 'SAN SALVADOR', nombreape: 'YNES ANTONIO ARDON', id_cliente: '13810', efectivo: '5',
+        });
+        expect(armarFinalizado({ cabecera: { ...cabecera, tipo_documento: 'TIK' }, guardado, caja, efectivo: 5 })).toMatchObject({
+            numero_doc: '81023', numero_factura_consumidor: '', nombreape: '', direccion: '', tipo_impresion: 'TIK',
+        });
     });
 
     it('no cobra lo que no está medido', () => {

@@ -32,8 +32,10 @@ import { buscarClientes } from '@nucleo/data/customers';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import {
     anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala, fotosDeProductos, lotesDePreventa,
-    ensayarCobro,
+    ensayarCobro, cobrarPreventa, cobroEncendido,
 } from '@nucleo/data/preventas';
+import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
+import { ticketDeCobroKiosco } from '@nucleo/utils/ticketDeCobroKiosco';
 import { estadoDeCaja } from '@nucleo/data/bolsas';
 import {
     MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
@@ -384,7 +386,17 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const recibidoNum = Number(recibido) || 0;
     const enEfectivo = venta.pago === 'contado';
     const faltaEfectivo = enEfectivo && recibidoNum < aPagar;
-    const cobroConectado = esDemo();
+    // El cobro de verdad (etapa 2, 2026-11-18) se enciende por sucursal con una
+    // fila de `cobro_kiosco_sucursales`; apagado, el kiosco sólo puede revisarlo.
+    const [encendido, setEncendido] = useState(false);
+    useEffect(() => {
+        if (!cobrando || !sala || esDemo()) return undefined;
+        let vivo = true;
+        cobroEncendido(sala).then((v) => { if (vivo) setEncendido(v); });
+        return () => { vivo = false; };
+    }, [cobrando, sala]);
+    const cobroConectado = esDemo() || encendido;
+    const [cobrandoAhora, setCobrandoAhora] = useState(false);
     // Mientras el cobro no está encendido, el kiosco puede REVISARLO: la caja
     // contesta qué cobraría, sin cobrar (`preventa-caja`, acción `cobrar`).
     const [revision, setRevision] = useState(null);
@@ -394,8 +406,33 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         const r = await ensayarCobro(cobrando.id, enEfectivo ? recibidoNum : aPagar);
         setRevision(r);
     };
-    const cobrarEnKiosco = () => {
-        if (bloqueada || faltaEfectivo || !cobroConectado) return;
+    const cobrarEnKiosco = async () => {
+        if (bloqueada || faltaEfectivo || !cobroConectado || cobrandoAhora) return;
+        if (!esDemo()) {
+            setCobrandoAhora(true);
+            const r = await cobrarPreventa(cobrando.id, enEfectivo ? recibidoNum : aPagar);
+            setCobrandoAhora(false);
+            if (!r?.ok) { showToast('No se cobró', r?.error ?? 'Algo falló. Revisa la venta en la caja.', 'error'); return; }
+            const hecho = new Date().toISOString();
+            useStaff.getState().appendAuditLog('KIOSCO_COBRO', String(cobrando.id), {
+                sala, referencia: r.referencia, total: r.total, efectivo: r.efectivo, numero: r.numero, mh: Boolean(r.mh?.enviado),
+            });
+            const renglones = venta.lineas.map((l) => {
+                const f = filaDe(l);
+                return { nombre: f?.nombre ?? l.nombre, cantidad: f?.cantidad ?? l.cantidad, precio: f?.precio, subtotal: f?.subtotal };
+            });
+            imprimirDocumento(ticketDeCobroKiosco({
+                cobro: { ...r, cliente: r.cliente ?? venta.cliente?.name ?? null }, renglones, sala: nombreSala,
+                cobro_por: user ? shortEmployeeName(user) : null, hechoAt: hecho,
+            })).then((p) => { if (!p?.ok) showToast('No se imprimió', 'La venta sí quedó cobrada. Imprime el ticket desde la caja.', 'warning'); })
+                .catch(() => showToast('No se imprimió', 'La venta sí quedó cobrada. Imprime el ticket desde la caja.', 'warning'));
+            setCobrada({
+                real: true, referencia: r.referencia ?? cobrando.referencia, total: r.total, cliente: r.cliente ?? venta.cliente?.name ?? null,
+                documento: venta.documento, pago: venta.pago, recibido: r.efectivo, vuelto: r.vuelto, numero: r.numero, mh: r.mh,
+                yaCobrada: Boolean(r.ya_cobrada),
+            });
+            return;
+        }
         // En la muestra no se emite nada: se ve cómo queda al terminar.
         marcarCobradaEnMuestra(cobrando.id);
         setCobrada({
@@ -745,7 +782,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                                 </div>
                                             </div>
                                         )}
-                                        <Button className="w-full" size="lg" icon={Wallet} disabled={bloqueada || faltaEfectivo || !cobroConectado}
+                                        <Button className="w-full" size="lg" icon={Wallet} loading={cobrandoAhora} disabled={bloqueada || faltaEfectivo || !cobroConectado}
                                             onClick={cobrarEnKiosco} data-accion-enviar>
                                             {problemas.length > 0
                                                 ? `Resuelve ${problemas.length} pendiente${problemas.length > 1 ? 's' : ''}`
@@ -1654,7 +1691,11 @@ function CobroHecho({ cobro, onSiguiente }) {
                     <div className="flex justify-between"><dt className="text-content-3">Pago</dt><dd>{PAGOS.find((x) => x.value === cobro.pago)?.label}</dd></div>
                 )}
             </dl>
-            <Notice variant="info" compact>En la muestra no se emitió ni se imprimió nada.</Notice>
+            {!cobro.real && <Notice variant="info" compact>En la muestra no se emitió ni se imprimió nada.</Notice>}
+            {cobro.real && cobro.yaCobrada && <Notice variant="info" compact>Esta venta ya estaba cobrada. No se cobró otra vez.</Notice>}
+            {cobro.real && (cobro.mh?.sello
+                ? <Notice variant="success" compact>Enviada al Ministerio de Hacienda.</Notice>
+                : <Notice variant="info" compact>El documento se envía al MH en la noche, como el resto de las ventas.</Notice>)}
             <Button size="lg" icon={ChevronRight} onClick={onSiguiente} autoFocus>Siguiente en la cola</Button>
         </section>
     );

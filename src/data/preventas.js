@@ -96,3 +96,21 @@ export async function lotesDePreventa(branchId, ids) {
  */
 export const ensayarCobro = (preventaId, efectivo) =>
     invocar({ accion: 'cobrar', ensayo: true, preventa_id: Number(preventaId), efectivo: Number(efectivo) || 0 });
+
+/**
+ * Cobrar una preventa desde el kiosco de caja, DE VERDAD (etapa 2, 2026-11-18):
+ * la caja la guarda y la finaliza, y después va a Hacienda. Sólo si la
+ * sucursal tiene el cobro encendido. Devuelve `{ ok, total, efectivo, vuelto,
+ * numero, documento, cliente, mh }` o `{ ok: false, error }`. Nunca lanza.
+ */
+export const cobrarPreventa = (preventaId, efectivo) =>
+    invocar({ accion: 'cobrar', preventa_id: Number(preventaId), efectivo: Number(efectivo) || 0 });
+
+/** ¿La sucursal tiene encendido el cobro desde el kiosco? Si no se puede leer, no. */
+export async function cobroEncendido(branchId) {
+    if (!branchId) return false;
+    const { data, error } = await supabase.from('cobro_kiosco_sucursales')
+        .select('encendido').eq('branch_id', Number(branchId)).maybeSingle();
+    if (error) return false;
+    return data?.encendido === true;
+}

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1577.0 — Caja: el cobro desde el kiosco, listo y apagado
+
+Etapa 2 del cobro desde el kiosco de caja. El kiosco cobra la preventa con los
+mismos pasos que la pantalla de la caja (guardar con F2 Pagar y finalizar con
+el efectivo) y después la manda a Hacienda con la misma rutina del envío de
+cada noche. **Nace apagado**: se enciende por sucursal con una fila de
+`cobro_kiosco_sucursales` (Salud 4 tiene la suya, en `false`).
+
+- `cobro_kiosco_cobros` es el candado (una fila por preventa: dos toques no
+  cobran dos veces) y la constancia de cada paso: `cobrando` → `guardada` →
+  `finalizada`, o `incierta` si la caja no contestó y no se sabe si escribió
+  (eso NO se reintenta solo). Un cobro cortado después de guardar se retoma
+  finalizando. Migración 20261118180833.
+- Hacienda nunca tumba el cobro y respeta lo mismo que el envío de la noche: la
+  regla de las 6:00 p. m. (`cof_no_se_envia_mh`), la pausa por sucursal y el
+  interruptor de la caja. Lo que no se manda en el momento lo manda la noche.
+- `armarFinalizado` ahora manda lo que manda la pantalla, releído en su código:
+  nombre y dirección del cliente en consumidor final, el número sólo en ticket.
+- El kiosco imprime su ticket (`ticketDeCobroKiosco`) por `imprimirDocumento`
+  y deja `KIOSCO_COBRO` en la bitácora. Apagado, sigue mostrando «Revisar cobro
+  en la caja».
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1576.2 — Caja: vuelve la revisión de la caja en el ensayo del cobro
 
 El usuario (2026-11-18): Salud 4 no usa el kiosco todavía, y el ensayo tenía

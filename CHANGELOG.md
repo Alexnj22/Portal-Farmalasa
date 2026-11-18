@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1575.4 — Kiosco: el trámite se abre en el inicio y tarjetas sin cortes
+
+Pedidos del usuario (2026-11-18):
+- «No tiene sentido que si abrí una de ajuste me lleve a Más»: un trámite
+  tocado en el inicio pide el carné y abre su modal AHÍ MISMO, sobre el inicio.
+  Al cerrarlo, la sesión termina y queda el inicio como estaba. Si el cargo no
+  puede usar ese trámite, entra a «Más» para ver cuáles sí.
+- «Mejora las tarjetas, se cortan textos»: el texto de las tarjetas del inicio
+  ya no se corta (el botón no dejaba saltar de línea ni ocupar el ancho), y la
+  flecha de Caja y Marcar queda alineada a la derecha.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1575.3 — Carga SRS: viales de 15 ml no se confunden con el volumen
 
 - `scripts/srs/cargaMercado.mjs`: el número del nombre sólo se descarta por coincidir con el volumen de la SRS cuando va suelto («GEL X 30» = tubo de 30 g). «FOSKROL X 15 AMP» con viales de 15 ml son 15 viales. En el plan de La Salud, 21 productos dejaron de quedar en revisar.

@@ -116,14 +116,14 @@ function Accion({ k, a: propia = null, grande = false, compacta = false, activa 
         // Los trámites: más chicos que Vender/Caja/Marcar, y el texto nunca se sale.
         return (
             <Button variant={activa ? 'primary' : 'secondary'} onClick={onClick} aria-pressed={activa}
-                className="!h-auto w-full min-w-0 !justify-start !text-left !rounded-[var(--radius-card)] !gap-3 !p-3.5">
+                className="!h-full w-full min-w-0 !justify-start !text-left !whitespace-normal [&>span]:w-full [&>span]:min-w-0 !rounded-[var(--radius-card)] !gap-3 !p-4">
                 <span className="flex w-full min-w-0 items-center gap-3">
                     <span className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-brand/10 text-brand-text">
                         <Icono size={20} aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1 flex flex-col gap-0.5">
-                        <span className="text-body font-bold leading-tight truncate">{a.label}</span>
-                        <span className="text-label font-normal opacity-75 leading-snug line-clamp-2">{a.description}</span>
+                        <span className="text-body font-bold leading-tight">{a.label}</span>
+                        <span className="text-label font-normal opacity-75 leading-snug">{a.description}</span>
                     </span>
                 </span>
             </Button>
@@ -131,13 +131,13 @@ function Accion({ k, a: propia = null, grande = false, compacta = false, activa 
     }
     return (
         <Button variant={activa || grande ? 'primary' : 'secondary'} onClick={onClick} aria-pressed={activa}
-            className={`!h-auto w-full !justify-start !items-start !text-left !rounded-[var(--radius-card)] ${grande ? '!p-7 h-full' : '!gap-4 !p-5'}`}>
+            className={`!h-auto w-full !justify-start !items-start !text-left !whitespace-normal [&>span]:w-full [&>span]:min-w-0 !rounded-[var(--radius-card)] ${grande ? '!p-7 h-full' : '!gap-4 !p-5'}`}>
             <span className={`flex w-full ${grande ? 'flex-col gap-6' : 'items-center gap-4'}`}>
                 <span className={`shrink-0 rounded-2xl flex items-center justify-center ${grande ? 'w-16 h-16 bg-surface-card/15' : 'w-12 h-12 bg-brand/10 text-brand-text'}`}>
                     <Icono size={grande ? 32 : 24} aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1 flex flex-col gap-1">
-                    <span className={`${grande ? 'text-display' : 'text-title'} font-bold leading-none`}>{a.label}</span>
+                    <span className={`${grande ? 'text-display' : 'text-title'} font-bold leading-tight`}>{a.label}</span>
                     <span className={`${grande ? 'text-body-lg' : 'text-body-sm'} font-normal opacity-80`}>{a.description}</span>
                 </span>
                 {!grande && <ChevronRight size={20} className="self-center opacity-60" aria-hidden="true" />}
@@ -216,6 +216,11 @@ export default function CajaDelKiosco({
     // El trámite abierto (su modal), de «Más».
     const [tramite, setTramite] = useState(null);
     const [pendienteTramite, setPendienteTramite] = useState(null);
+    // Un trámite pedido desde el inicio se abre AHÍ MISMO, sobre el inicio, y al
+    // cerrarlo la sesión termina (usuario, 2026-11-18: «no tiene sentido que me
+    // lleve a Más»).
+    const [rapido, setRapido] = useState(false);
+    const soloTramite = abierta && rapido;
     const salaDelKiosco = enPortal ? sala : equipo.branchId;
     const misTramites = tramitesDe(hasPermission, salaDelKiosco);
 
@@ -264,17 +269,20 @@ export default function CajaDelKiosco({
     useEffect(() => {
         // En el próximo tick y no dentro del efecto (cambia estado).
         const t = setTimeout(() => {
-            if (!abierta) { leerEstado(); return; }
+            if (!abierta) { leerEstado(); setTramite(null); setRapido(false); return; }
             const ir = tomarDestino();
             if (!ir) return;
-            if (ir.tramite) { irA('mas'); if (misTramites.some((t) => t.clave === ir.tramite)) setTramite(ir.tramite); }
+            if (ir.tramite) {
+                if (misTramites.some((t) => t.clave === ir.tramite)) { setRapido(true); setTramite(ir.tramite); setAccion(null); }
+                else irA('mas'); // su cargo no puede: en Más se ve qué sí
+            }
             else if (ir.dialogo) abrirEnCaja(ir.dialogo); else irA('caja');
         }, 0);
         return () => clearTimeout(t);
     }, [abierta]); // eslint-disable-line react-hooks/exhaustive-deps
     // Un trámite desde el inicio: pide el carné y, al entrar, abre su modal.
     const pedirTramite = (clave) => {
-        if (abierta) { irA('mas'); setTramite(clave); return; }
+        if (abierta) { setTramite(clave); return; }
         guardarDestino({ tramite: clave });
         setPendienteTramite(clave);
         setAccion('mas');
@@ -284,6 +292,12 @@ export default function CajaDelKiosco({
 
     return (
         <div className="relative z-base flex-1 w-full flex flex-col md:flex-row [--barra-kiosco:4.5rem]">
+            {tramite && abierta && (
+                <Suspense fallback={null}>
+                    <TramiteAbierto clave={tramite} sala={salaDelKiosco} todas={(p) => getScope?.(p) === 'ALL'}
+                        onCerrar={() => { setTramite(null); if (rapido) { setRapido(false); terminar(); } }} />
+                </Suspense>
+            )}
             <ColumnaDeCola {...datosCola} elegida={detalle ? elegida : null} onElegir={elegirTicket} />
 
             <div className="flex-1 min-w-0 flex flex-col">
@@ -343,7 +357,7 @@ export default function CajaDelKiosco({
                         pago con las mismas validaciones, y se cobra ahí. Una
                         venta propia a medias sigue en su borrador. */}
                     <div className="flex-1 flex flex-col">
-                        {sinPermiso ? (
+                        {sinPermiso && !soloTramite ? (
                             <div className="mx-auto w-full max-w-lg py-10 flex flex-col gap-4">
                                 <Notice variant="warning" bloque>
                                     <p className="font-bold">Tu cargo no puede {detalle || vista === 'vender' ? 'vender' : 'usar la caja'} en este kiosco.</p>
@@ -356,7 +370,7 @@ export default function CajaDelKiosco({
                                     <Button icon={LogOut} onClick={terminar}>Terminar</Button>
                                 </div>
                             </div>
-                        ) : abierta ? (
+                        ) : abierta && !soloTramite ? (
                             <Suspense fallback={<LoadingState />}>
                                 {enVenta && !detalle && estadoCaja && !estadoCaja.abierta && !estadoCaja.cerrado && puede.caja && (
                                     <Notice variant="warning" className="mb-3"
@@ -387,10 +401,6 @@ export default function CajaDelKiosco({
                                             {misTramites.map((t) => <Accion key={t.clave} a={t} compacta onClick={() => setTramite(t.clave)} />)}
                                         </div>
                                     ) : <Notice variant="info">Tu cargo no tiene trámites en este kiosco.</Notice>
-                                )}
-                                {tramite && (
-                                    <TramiteAbierto clave={tramite} sala={salaDelKiosco} todas={(p) => getScope?.(p) === 'ALL'}
-                                        onCerrar={() => setTramite(null)} />
                                 )}
                                 {vista === 'hoy' && <ComoVaHoy sala={enPortal ? sala : equipo.branchId} ahora={ahora} />}
                                 {vista === 'caja' && (

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1576.2 — Caja: vuelve la revisión de la caja en el ensayo del cobro
+
+El usuario (2026-11-18): Salud 4 no usa el kiosco todavía, y el ensayo tenía
+que seguir como en Salud 1, leyendo las preventas que se hacen en la caja. La
+revisión se había quitado una hora antes por un malentendido mío.
+
+- Vuelven `ensayo-cobro-caja` y su cron, cada minuto de 8:00 a 10:59 y de 18:00
+  a 20:59 SV, en Salud 4 y Salud 1 (migración 20261118171405), con la sesión
+  guardada entre corridas. El presupuesto vuelve a 24.538 con su motivo.
+- Convive con el ensayo al enviar desde el portal (`preventa-caja`) y con
+  `ensayo-cobro-comparar`.
+
+Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1576.1 — Caja: el comparador del ensayo lee bien el código del producto
 
 La primera comparación real del ensayo del cobro (preventa 415606, Salud 1,

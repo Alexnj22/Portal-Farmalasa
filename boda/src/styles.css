@@ -42,7 +42,7 @@
   --boton: var(--c-lino);
   --sobre-boton: var(--c-noche);
   --campo: oklch(0.2 0.01 105);
-  --vidrio: oklch(0.16 0.008 105 / 0.74);
+  --vidrio: oklch(0.16 0.008 105 / 0.94);
   --velo: oklch(0.12 0.006 105);
 
   --display: 'Bodoni Moda', 'Bodoni Respaldo', 'Bodoni 72', 'Didot', serif;
@@ -169,7 +169,7 @@ select option { background: var(--superficie); color: var(--texto); }
 .nav, .cabeza-app {
   position: sticky; top: 0; z-index: var(--z-cabeza); height: var(--nav);
   background: var(--vidrio); color: var(--texto);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1); backdrop-filter: blur(24px) saturate(1.1);
   border-bottom: 1px solid var(--linea);
 }
 .nav { transition: background .6s var(--salida), border-color .6s; }
@@ -333,8 +333,8 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
 .escena-foto { position: relative; height: 210svh; view-timeline: --escena block; }
 .escena-pin { position: sticky; top: 0; height: 100svh; overflow: hidden; display: grid; }
 .escena-pin img { grid-area: 1 / 1; width: 100%; height: 100%; object-fit: cover; }
-.escena-pin::after { content: ''; grid-area: 1 / 1; background: linear-gradient(180deg, oklch(0.12 0.006 105 / 0.15) 0%, transparent 30%, oklch(0.12 0.006 105 / 0.35) 55%, oklch(0.12 0.006 105 / 0.92) 92%); pointer-events: none; }
-.escena-titulo { grid-area: 1 / 1; z-index: var(--z-base); align-self: end; margin: 0; padding: 0 var(--margen) calc(var(--barra-aire) + 9svh); font: 400 clamp(3.4rem, 15vw, 10rem)/0.9 var(--display); letter-spacing: -0.025em; color: var(--c-lino); }
+.escena-pin::after { content: ''; grid-area: 1 / 1; background: linear-gradient(180deg, oklch(0.12 0.006 105 / 0.15) 0%, transparent 30%, oklch(0.12 0.006 105 / 0.5) 50%, oklch(0.12 0.006 105 / 0.96) 88%); pointer-events: none; }
+.escena-titulo { grid-area: 1 / 1; z-index: var(--z-base); align-self: end; margin: 0; padding: 0 var(--margen) calc(var(--barra-aire) + 9svh); font: 400 clamp(3.4rem, 15vw, 10rem)/0.9 var(--display); letter-spacing: -0.025em; color: var(--c-lino); text-shadow: 0 2px 24px oklch(0.1 0.005 105 / 0.55); }
 .escena-titulo em { font-style: italic; }
 .escena-titulo .versalita { display: block; margin-bottom: 18px; }
 @media (prefers-reduced-motion: no-preference) {
@@ -441,7 +441,7 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
 
 /* ═══════════════ Páginas de la app ═══════════════ */
 .pagina-app { min-height: 100svh; }
-body:has(.cinta-demo) .cabeza-app { top: 30px; }
+body:has(.cinta-demo) :is(.cabeza-app, .nav) { top: 30px; }
 .cuerpo-app { padding-top: clamp(40px, 9vw, 72px); padding-bottom: 56px; max-width: 808px; }
 .titulo-app { margin-bottom: clamp(36px, 8vw, 56px); display: grid; gap: 16px; justify-items: start; align-content: start; }
 .titulo-app .capitulo { margin: 0 0 4px; }
@@ -899,7 +899,7 @@ body:has(.cinta-demo) .aviso-vivo { top: calc(var(--nav) + 40px); }
 .aviso-vivo b { font-weight: 500; font-size: .75rem; letter-spacing: .26em; text-transform: uppercase; color: var(--acento); }
 .aviso-vivo .punto-vivo { margin-top: 8px; }
 .aviso-vivo button { flex: none; width: var(--toque); height: var(--toque); border: 1px solid var(--linea); border-radius: 50%; background: transparent; color: var(--texto); font-size: 1.3rem; cursor: pointer; }
-.cinta-demo { position: relative; z-index: var(--z-cabeza); height: 30px; line-height: 30px; padding: 0 104px 0 12px; background: var(--fondo-hondo); color: var(--texto-2); border-bottom: 1px solid var(--linea); text-align: center; font-size: .75rem; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cinta-demo { position: sticky; top: 0; z-index: var(--z-cabeza); height: 30px; line-height: 30px; padding: 0 104px 0 12px; background: var(--fondo-hondo); color: var(--texto-2); border-bottom: 1px solid var(--linea); text-align: center; font-size: .75rem; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cinta-entrada { position: sticky; top: var(--nav); z-index: 9; padding: 12px var(--margen); display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; background: var(--superficie-2); color: var(--texto); border-bottom: 1px solid var(--acento); }
 .lienzo-particulas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: var(--z-particulas); pointer-events: none; }
 

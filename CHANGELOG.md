@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.2 — Horarios: la cobertura de una semana pasada ya no se edita
+
+- Web, Horarios: la fila de quien viene a cubrir respeta la semana pasada y el permiso de editar (no se abre la celda ni se quita), igual que las filas propias y que la app.
+
 ## v2.1583.1 — Encuestas: numeración de la entrevista sin contar los «¿Cuál?» y sin la burbuja del chat encima
 
 - En la entrevista, el número de cada pregunta ya no cuenta los «¿Cuál?» que sólo aparecen al marcar «Otro». La encuesta de investigación de mercado decía «Pregunta 5 de 10» sobre una pregunta numerada «7.». Ahora va del 1 al 10, igual que el cuestionario en papel. El diseño sigue numerando todas (`numero`), y quien contesta ve `numeroVisible`.

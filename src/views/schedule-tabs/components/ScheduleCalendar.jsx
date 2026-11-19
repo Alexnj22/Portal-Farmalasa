@@ -364,7 +364,9 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 // ============================================================================
 const fmt12h = (t) => hora12(t);
 
-const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByDow, calendarDates, shifts, onEditCell, onRemove }) => {
+// `isReadOnly`: semana pasada o sin permiso de editar — igual que las filas
+// propias. Antes la fila de un apoyo no lo recibía y se podía editar o quitar.
+const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByDow, calendarDates, shifts, onEditCell, onRemove, isReadOnly }) => {
     const shortName = shortEmployeeName(emp);
     const parsedHomeRoster = useMemo(() => {
         if (!homeRoster) return {};
@@ -388,7 +390,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">APOYO</span>
                         </div>
                     </div>
-                    <Button variant="destructive" size="xs" icon={XIcon} title="Quitar cobertura" iconOnly onClick={onRemove} />
+                    {!isReadOnly && <Button variant="destructive" size="xs" icon={XIcon} title="Quitar cobertura" iconOnly onClick={onRemove} />}
                 </div>
             </td>
 
@@ -406,8 +408,8 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                 const netHrs   = hasShift ? (r.minutosPagados / 60).toFixed(1).replace('.0', '') : '';
 
                 return (
-                    <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop active:scale-[0.98] transition-transform"
-                        {...clickable(e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch))}>
+                    <td key={date} className={`p-0 align-top h-px group/cell relative z-base ${isReadOnly ? '' : 'cursor-pointer hover:z-sidebar-desktop active:scale-[0.98] transition-transform'}`}
+                        {...(isReadOnly ? {} : clickable(e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)))}>
                         <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-[var(--dur-fast)] flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
                                 ? 'bg-chart-3/10 border border-chart-3/40 shadow-[var(--shadow-glow-chart-3-md)]'
@@ -747,6 +749,7 @@ const ScheduleCalendar = memo(({
                                     shifts={shifts}
                                     onEditCell={onEditCoverageCell}
                                     onRemove={() => onRemoveCoverageEmployee?.(emp.id)}
+                                    isReadOnly={isReadOnly}
                                 />
                             ))}
 

@@ -39,7 +39,7 @@ function vistaPrevia() {
   };
 }
 
-// Precarga de la letra de los nombres (Instrument Serif normal y cursiva): sin
+// Precarga de la letra de los nombres (Bodoni Moda normal y cursiva): sin
 // esto el navegador la descubre tarde, al leer el CSS, y los nombres saltan.
 // El nombre del archivo lleva un hash que sólo se conoce al final de la compilación.
 function precargaFuentes() {
@@ -50,7 +50,7 @@ function precargaFuentes() {
       handler(html, ctx) {
         if (!ctx.bundle) return html;
         const fuentes = Object.keys(ctx.bundle)
-          .filter((f) => /instrument-serif-latin-400-(normal|italic)-[\w-]+\.woff2$/.test(f))
+          .filter((f) => /bodoni-moda-latin-opsz-(normal|italic)-[\w-]+\.woff2$/.test(f))
           .map((f) => `<link rel="preload" href="/${f}" as="font" type="font/woff2" crossorigin />`);
         return html.replace('</title>', `</title>\n    ${fuentes.join('\n    ')}`);
       },
@@ -58,8 +58,8 @@ function precargaFuentes() {
   };
 }
 
-const LINO = '#f5f0e4';
-const OLIVA_PROFUNDO = '#333916';
+// La noche del sitio (oklch 0.16 0.008 105) para la barra del sistema y el arranque.
+const NOCHE = '#0e0d0a';
 
 export default defineConfig({
   plugins: [
@@ -77,8 +77,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: LINO,
-        theme_color: OLIVA_PROFUNDO,
+        background_color: NOCHE,
+        theme_color: NOCHE,
         icons: [
           { src: '/iconos/icono-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/iconos/icono-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

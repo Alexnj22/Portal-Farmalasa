@@ -1,28 +1,22 @@
-import Revelar from './Revelar';
+import { romano } from '../lib/romanos';
 
 /** El último término del título va en cursiva: «Nuestra *historia*». */
-export function Titulo({ texto, as: Tag = 'h2' }) {
-  if (typeof texto !== 'string') return <Tag>{texto}</Tag>;
+export function Titulo({ texto, as: Tag = 'h2', ...resto }) {
+  if (typeof texto !== 'string') return <Tag {...resto}>{texto}</Tag>;
   const i = texto.lastIndexOf(' ');
-  return i > 0 ? <Tag>{texto.slice(0, i)} <em>{texto.slice(i + 1)}</em></Tag> : <Tag>{texto}</Tag>;
+  return i > 0 ? <Tag {...resto}>{texto.slice(0, i)} <em>{texto.slice(i + 1)}</em></Tag> : <Tag {...resto}>{texto}</Tag>;
 }
 
 /**
- * Sección del sitio.
- *   variante: '' | 'alterna' (arena) | 'oliva' (superficie oliva)
- *   dividida: en escritorio, título en una columna y contenido en la otra
- *   angosta:  contenido a 720px
+ * Rótulo de capítulo: numeral romano (si lo hay), un filete champán fino y el
+ * texto en versalitas. «I —— Capítulo · 2018».
  */
-export default function Seccion({ id, titulo, bajada, variante = '', dividida, angosta, children }) {
+export function Capitulo({ numero, texto, as: Tag = 'p' }) {
   return (
-    <section id={id} className={`seccion ${variante}`}>
-      <div className={`${angosta ? 'angosto' : 'contenedor'} ${dividida ? 'dividida' : ''}`}>
-        <Revelar as="header" className="seccion-cabeza">
-          <Titulo texto={titulo} />
-          {bajada && <p>{bajada}</p>}
-        </Revelar>
-        <div className={`seccion-cuerpo ${variante === 'oliva' ? 'sobre-oliva' : ''}`}>{children}</div>
-      </div>
-    </section>
+    <Tag className="capitulo">
+      {numero ? <span className="romano" aria-hidden>{romano(numero)}</span> : null}
+      <span className="filete" aria-hidden />
+      <span>{texto}</span>
+    </Tag>
   );
 }

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { boda } from '../config';
 import { faseActual, faseAlMenos, useFase } from '../lib/fase';
+import { Capitulo } from './Seccion';
 import { precargar, enRatoLibre } from '../lib/precarga';
 import { t, useIdioma, BotonIdioma } from '../lib/idioma';
 import { useFacil } from '../lib/facil';
@@ -52,15 +53,14 @@ function BarraApp({ fase }) {
   // En un rato libre se bajan las pestañas de esta fase: tocar una ya no espera.
   useEffect(() => enRatoLibre(() => lista.forEach(([a]) => precargar(a))), [fase]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <nav className="barra-app" aria-label={t('Secciones', 'Sections')} style={{ '--n': lista.length, '--i': Math.max(0, activa) }}>
-      <span className={`indicador-pestana ${activa < 0 || lista[activa]?.[3] ? 'sin' : ''}`} aria-hidden />
+    <nav className="barra-app" aria-label={t('Secciones', 'Sections')} style={{ '--n': lista.length }}>
       {lista.map(([a, icono, txt, centro], i) => {
         const activo = i === activa;
         const alerta = a === '/confirmar' && pendiente;
         return (
           <NavLink key={a} to={a} viewTransition className={`pestana-app ${centro ? 'centro' : ''} ${activo ? 'activa' : ''}`} aria-current={activo ? 'page' : undefined}
             onPointerEnter={() => precargar(a)} onPointerDown={() => precargar(a)} onFocus={() => precargar(a)} onClick={() => marcarDireccion(activa, i)}>
-            <span className="icono-pestana"><Icono n={icono} tam={centro ? 26 : 24} />{alerta && <i className="globo" aria-hidden />}</span>
+            <span className="icono-pestana"><Icono n={icono} tam={centro ? 20 : 22} grueso={1.4} />{alerta && <i className="globo" aria-hidden />}</span>
             <span className="txt-pestana">{txt}{alerta && <span className="oculto-visual">{t(' (falta responder)', ' (reply pending)')}</span>}</span>
           </NavLink>
         );
@@ -88,13 +88,11 @@ export function NavEscritorio({ fase = faseActual() }) {
 export default function AppMarco() {
   useIdioma();
   const facil = useFacil();
-  const { fase, noche } = useFase();
-  // Tema nocturno: el día de la boda, desde las 6 p. m. del lugar (ver DESIGN.md).
+  const { fase } = useFase();
+  // Un solo tema, oscuro; el modo fácil vuelve a papel claro (ver DESIGN.md).
   useEffect(() => {
-    const raiz = document.documentElement;
-    if (noche && !facil) raiz.dataset.tema = 'noche'; else delete raiz.dataset.tema;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', noche && !facil ? '#151808' : '#f5f0e4');
-  }, [noche, facil]);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', facil ? '#f5f0e4' : '#0e0d0a');
+  }, [facil]);
   // Fotos que quedaron a medio subir (se cerró la página): se retoman solas.
   useEffect(() => enRatoLibre(() => {
     import('../lib/colaSubidas').then((m) => m.reanudarSiHay()).catch((e) => console.error('Cola de subidas', e));
@@ -121,17 +119,21 @@ export default function AppMarco() {
  * izquierda (1/3) y el contenido a la derecha (2/3).
  */
 export function PaginaApp({ titulo, bajada, children, variante = '', accion }) {
+  const { pathname } = useLocation();
+  // El numeral del capítulo es el lugar de la pestaña en la barra de esta fase.
+  const lugar = pestanas(faseActual()).findIndex(([a]) => esActiva(a, pathname));
   return (
     <div className={`pagina-app ${variante}`}>
       <header className="cabeza-app">
         <div className="contenedor fila-cabeza">
-          <Link to="/" viewTransition className="marca">{boda.novios.ella[0]} &amp; {boda.novios.el[0]}</Link>
+          <Link to="/" viewTransition className="marca" aria-label={t('Inicio', 'Home')}><Monograma /></Link>
           <NavEscritorio />
           <div className="nav-acciones"><BotonMusica /><BotonFacil /><BotonIdioma /></div>
         </div>
       </header>
       <main className="contenedor cuerpo-app">
         <div className="titulo-app">
+          {lugar >= 0 && <Capitulo numero={lugar + 1} texto={pestanas(faseActual())[lugar][2]} />}
           <h1>{titulo}</h1>
           {bajada && <p>{bajada}</p>}
           {accion}
@@ -140,6 +142,11 @@ export function PaginaApp({ titulo, bajada, children, variante = '', accion }) {
       </main>
     </div>
   );
+}
+
+/** El monograma de la cabecera: «A & E» en Bodoni, el & en cursiva champán. */
+export function Monograma() {
+  return <><span>{boda.novios.ella[0]}</span><em>&amp;</em><span>{boda.novios.el[0]}</span></>;
 }
 
 export { faseAlMenos };

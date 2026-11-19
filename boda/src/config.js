@@ -46,6 +46,8 @@ export const boda = {
   // Foto para la vista previa del enlace en WhatsApp (opcional; si no, la portada).
   // Ideal: horizontal, 1200×630, menos de 300 KB.
   portadaCompartir: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=630&fit=crop&q=75',
+  // La foto que se abre a pantalla completa al bajar a «Nuestra historia» (vertical u horizontal).
+  fotoHistoria: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1800&q=80',
   galeria: [
     'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1200&q=80',
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80',

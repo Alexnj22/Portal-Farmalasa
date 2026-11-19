@@ -1,22 +1,21 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { faseActual, faseAlMenos } from '../lib/fase';
+import { faseActual } from '../lib/fase';
 import { fechaLarga, fechaCorta, descargarIcs, enlaceGoogleCalendar, limiteConfirmar } from '../lib/fechas';
 import { api } from '../lib/api';
 import { t, useIdioma, contenido, BotonIdioma } from '../lib/idioma';
 import Countdown from '../components/Countdown';
-import Seccion, { Titulo } from '../components/Seccion';
-import Telon from '../components/Telon';
+import { Titulo, Capitulo } from '../components/Seccion';
 import { sinMovimiento } from '../lib/movimiento';
-import FraseRevelada from '../components/FraseRevelada';
 import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
-import { NavEscritorio } from '../components/AppMarco';
+import { NavEscritorio, Monograma } from '../components/AppMarco';
 import { imagenAdaptable } from '../lib/fotos';
 import { precargar } from '../lib/precarga';
+import { romano } from '../lib/romanos';
 import Icono from '../components/Iconos';
 import { useInvitacion, usarCodigo } from '../lib/miInvitacion';
 import { AhoraCompacto } from '../components/EnVivo';
@@ -27,19 +26,22 @@ const Sobre = lazy(() => import('../components/Sobre'));
 const Presentacion = lazy(() => import('../components/Presentacion'));
 const CintaEntrada = lazy(() => import('../components/CintaEntrada'));
 
-/** Una palabra que entra letra por letra (cada letra sube desde su renglón). */
-function Letras({ texto, desde = 0 }) {
-  return (
-    <span className="renglon" aria-hidden>
-      {[...texto].map((c, i) => <span key={i} className="letra" style={{ '--i': desde + i }}>{c === ' ' ? '\u00a0' : c}</span>)}
-    </span>
-  );
-}
-
+/** 17 · IV · 2027: el mes en romanos, como en una invitación grabada. */
 const fechaPuntos = () => {
   const [a, m, d] = fechaBoda.toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' }).split('-');
-  return `${d} · ${m} · ${a}`;
+  return `${Number(d)} · ${romano(Number(m))} · ${a}`;
 };
+
+// Las franjas del cine se retiran una vez por visita; al volver a la portada,
+// el texto sólo se funde.
+const VISTA = 'boda-portada-abierta';
+
+/** Las últimas palabras de una frase, en cursiva. */
+function FraseConCursiva({ texto, ultimas = 3 }) {
+  const p = texto.trim().split(/\s+/);
+  const corte = Math.max(0, p.length - ultimas);
+  return <>{p.slice(0, corte).join(' ')} <em>{p.slice(corte).join(' ')}</em></>;
+}
 
 export default function Inicio({ codigo }) {
   const idioma = useIdioma();
@@ -58,6 +60,15 @@ export default function Inicio({ codigo }) {
   const portada = useRef(null);
   const centinela = useRef(null);
 
+  // ¿Ya se abrió la portada en esta visita? Antes de pintar, para que las
+  // franjas no asomen ni un cuadro.
+  useLayoutEffect(() => {
+    try {
+      if (sessionStorage.getItem(VISTA)) document.documentElement.classList.add('ya-abierta');
+      else sessionStorage.setItem(VISTA, '1');
+    } catch { document.documentElement.classList.add('ya-abierta'); }
+  }, []);
+
   // Paralaje para navegadores sin animaciones ligadas al scroll (Safari < 26):
   // un solo rAF por cuadro que escribe una variable CSS, sin estado de React,
   // y sólo mientras la portada se ve.
@@ -69,17 +80,15 @@ export default function Inicio({ codigo }) {
     const mover = () => {
       cuadro = 0;
       const y = window.scrollY;
-      if (foto && y <= window.innerHeight) foto.style.setProperty('--paralaje', `${(y * 0.38).toFixed(1)}px`);
+      if (foto && y <= window.innerHeight) foto.style.setProperty('--paralaje', `${(y * 0.3).toFixed(1)}px`);
     };
     const pedir = () => { if (!cuadro) cuadro = requestAnimationFrame(mover); };
     window.addEventListener('scroll', pedir, { passive: true });
     return () => { window.removeEventListener('scroll', pedir); cancelAnimationFrame(cuadro); };
   }, []);
 
-  // La cabecera es transparente sólo mientras NADA pasa por debajo: un
-  // centinela invisible arriba de la portada; en cuanto el texto se acerca
-  // (16 px de scroll), la cabecera se vuelve sólida con desenfoque.
-  // Un IntersectionObserver: no corre nada en cada cuadro de scroll.
+  // La cabecera es transparente sólo mientras NADA pasa por debajo (un
+  // centinela con IntersectionObserver: nada corre en cada cuadro).
   useEffect(() => {
     const el = centinela.current;
     if (!el || !('IntersectionObserver' in window)) { setArriba(false); return undefined; }
@@ -88,21 +97,22 @@ export default function Inicio({ codigo }) {
     return () => io.disconnect();
   }, []);
   const foto = imagenAdaptable(boda.portada);
+  const fotoHistoria = imagenAdaptable(boda.fotoHistoria || boda.galeria[1] || boda.galeria[0]);
 
   const titulo = fase === 'save-the-date' ? 'Save the date'
-    : fase === 'recuerdos' ? t('¡Gracias por acompañarnos!', 'Thank you for celebrating with us!')
-    : fase === 'boda' ? t('¡Hoy nos casamos!', "Today we're getting married!") : t('Nos casamos', "We're getting married");
+    : fase === 'recuerdos' ? t('Gracias por acompañarnos', 'Thank you for celebrating with us')
+    : fase === 'boda' ? t('Hoy nos casamos', "Today we're getting married") : t('Nos casamos', "We're getting married");
 
   return (
     <>
-      {/* Con enlace personal, el sobre con el nombre; sin él, el telón. */}
-      {codigo
-        ? inv?.grupo && inv.grupo.codigo === codigo.toUpperCase() && <Suspense fallback={null}><Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} desactivado={facil} /></Suspense>
-        : !facil && <Telon monograma={`${novios.ella[0]} & ${novios.el[0]}`} para="" />}
+      {/* Con enlace personal, el sobre con el nombre. */}
+      {codigo && inv?.grupo && inv.grupo.codigo === codigo.toUpperCase() && (
+        <Suspense fallback={null}><Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} desactivado={facil} /></Suspense>
+      )}
       {presentar && <Suspense fallback={null}><Presentacion fotos={presentar} alCerrar={() => setPresentar(null)} /></Suspense>}
       <nav className={`nav ${arriba ? 'sobre-foto' : ''}`}>
         <div className="contenedor">
-          <a href="#inicio" className="marca">{novios.ella[0]} &amp; {novios.el[0]}</a>
+          <a href="#inicio" className="marca"><Monograma /></a>
           <NavEscritorio fase={fase} />
           <div className="nav-acciones"><BotonMusica /><BotonFacil /><BotonIdioma /></div>
         </div>
@@ -114,14 +124,16 @@ export default function Inicio({ codigo }) {
       <header id="inicio" className="portada" ref={portada}>
         <span ref={centinela} className="centinela-nav" aria-hidden />
         <div className="portada-foto"><img {...foto} alt="" fetchpriority="high" decoding="async" /></div>
+        <span className="franja arriba" aria-hidden />
+        <span className="franja abajo" aria-hidden />
         <div className="portada-texto">
           <div className="portada-arriba">
             <p className="versalita">{titulo}</p>
             {inv?.grupo && <p className="saludo">{t('Para', 'For')} {inv.grupo.nombre}</p>}
           </div>
           <h1 aria-label={`${novios.ella} ${t('y', 'and')} ${novios.el}`}>
-            <Letras texto={novios.ella} />
-            <span className="segundo"><Letras texto={`& ${novios.el}`} desde={novios.ella.length} /></span>
+            <span className="linea-1" aria-hidden>{novios.ella}</span>
+            <span className="linea-2" aria-hidden><em className="amp">&amp;</em> <em>{novios.el}</em></span>
           </h1>
           <div className="portada-pie">
             {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : <p className="fecha-puntos">{fechaPuntos()}</p>}
@@ -136,59 +148,66 @@ export default function Inicio({ codigo }) {
         </div>
       </header>
 
-      <div className="cinta-desfile" aria-hidden>
-        <div className="pista-desfile">
-          {[0, 1].map((k) => (
-            <span key={k}>
-              {[0, 1, 2].map((j) => <span key={j}>{novios.ella} <em>&</em> {novios.el}<i>✦</i>{fechaLarga()}<i>✦</i></span>)}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {errorFotos && <p className="aviso error contenedor" role="alert" style={{ marginTop: 16 }}>{errorFotos}</p>}
 
       {/* En la fase boda ya no hay nada que contar: la cuenta regresiva se va. */}
       {fase !== 'recuerdos' && fase !== 'boda' && (
-        <section id="faltan" className="faltan">
+        <section id="faltan" className="seccion-inicio faltan">
           <div className="contenedor">
-            <Revelar as="p" className="versalita suave">{t('Faltan', 'Countdown')}</Revelar>
+            <Revelar><Capitulo texto={t('Faltan', 'Countdown')} /></Revelar>
             <Countdown />
             <Revelar className="faltan-pie">
               <p className="grande-fecha">{fase === 'save-the-date' ? fechaCorta() : fechaLarga()}</p>
-              {(fase === 'save-the-date' || fase === 'invitacion') && (
-                <div className="acciones">
-                  <a className="btn claro" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
-                  <button className="btn claro" onClick={descargarIcs}>Apple / Outlook</button>
-                </div>
-              )}
+              <div className="acciones">
+                <a className="btn claro chico" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
+                <button type="button" className="btn claro chico" onClick={descargarIcs}>Apple / Outlook</button>
+              </div>
             </Revelar>
           </div>
         </section>
       )}
 
-      <Accesos fase={fase} inv={inv} boda={boda} abrirPresentacion={abrirPresentacion} />
+      <Accesos fase={fase} inv={inv} abrirPresentacion={abrirPresentacion} />
 
-      {/* ── Historia ── */}
-      <Seccion id="historia" titulo={t('Nuestra historia', 'Our story')} dividida>
-        <FraseRevelada texto={boda.frase} className="frase" />
-        <ol className="hitos">
-          {boda.historia.map((h, i) => (
-            <Revelar as="li" key={i} className="hito">
-              <span className="anio">{h.fecha}</span>
-              <div><h3>{h.titulo}</h3><p>{h.texto}</p></div>
-            </Revelar>
-          ))}
-        </ol>
-      </Seccion>
+      {/* ── La frase: una escena tipográfica, quieta ── */}
+      <figure className="escena-frase">
+        <Revelar>
+          <span className="filete-corto" aria-hidden />
+          <blockquote><FraseConCursiva texto={boda.frase} /></blockquote>
+          <figcaption className="versalita suave">{novios.firma}</figcaption>
+        </Revelar>
+      </figure>
+
+      {/* ── Nuestra historia: la foto se abre al bajar ── */}
+      <section id="historia" className="seccion-historia" aria-labelledby="titulo-historia">
+        <div className="escena-foto">
+          <div className="escena-pin">
+            <img {...fotoHistoria} alt="" loading="lazy" decoding="async" />
+            <div className="escena-titulo">
+              <p className="versalita">{novios.ella} &amp; {novios.el}</p>
+              <Titulo texto={t('Nuestra historia', 'Our story')} as="h2" id="titulo-historia" />
+            </div>
+          </div>
+        </div>
+        <div className="contenedor">
+          <ol className="capitulos">
+            {boda.historia.map((h, i) => (
+              <Revelar as="li" key={i} className="hito">
+                <Capitulo numero={i + 1} texto={`${t('Capítulo', 'Chapter')} · ${h.fecha}`} />
+                <div><Titulo texto={h.titulo} as="h3" /><p>{h.texto}</p></div>
+              </Revelar>
+            ))}
+          </ol>
+        </div>
+      </section>
 
       <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
 
       <footer className="pie-sitio">
         <div className="contenedor">
-          <p className="versalita" style={{ color: 'var(--oliva-claro)' }}>{t('Los esperamos', 'We hope to see you')}</p>
+          <Capitulo texto={t('Los esperamos', 'We hope to see you')} />
           <p className="nombres-gigantes" aria-label={`${novios.ella} ${t('y', 'and')} ${novios.el}`}>
-            <span aria-hidden>{novios.ella}</span><span aria-hidden className="segundo"><em>&</em> {novios.el}</span>
+            <span aria-hidden>{novios.ella}</span><span aria-hidden className="segundo"><em className="amp">&amp;</em> <em>{novios.el}</em></span>
           </p>
           <div className="pie-filas">
             <p>{fechaLarga()}</p>
@@ -208,21 +227,21 @@ export default function Inicio({ codigo }) {
 }
 
 /**
- * «Qué puedo hacer aquí»: lo importante del momento, en tarjetas grandes que
- * llevan a su pestaña. Así nadie tiene que adivinar dónde está cada cosa.
+ * «Qué puedo hacer aquí»: lo importante del momento, en filas finas que llevan
+ * a su pestaña. Lo que falta hacer lleva su estado en versalitas champán.
  */
-function Accesos({ fase, inv, boda, abrirPresentacion }) {
+function Accesos({ fase, inv, abrirPresentacion }) {
   const g = inv?.grupo;
   const items = [];
   if (fase === 'invitacion') {
     items.push(g?.respondido_at
       ? { a: '/confirmar', i: 'confirmar', t: t('Ya confirmaste', 'You replied'), d: t('Ver o cambiar tu respuesta', 'See or change your reply'), hecho: true }
-      : { a: '/confirmar', i: 'confirmar', t: t('Confirma tu asistencia', 'RSVP'), d: g ? t(`Antes del ${limiteConfirmar(inv.limite)}`, `By ${limiteConfirmar(inv.limite)}`) : t('Con el código de tu invitación', 'With your invitation code'), fuerte: true });
+      : { a: '/confirmar', i: 'confirmar', t: t('Confirma tu asistencia', 'RSVP'), d: g ? t(`Antes del ${limiteConfirmar(inv.limite)}`, `By ${limiteConfirmar(inv.limite)}`) : t('Con el código de tu invitación', 'With your invitation code'), fuerte: true, estado: t('Falta tu respuesta', 'Reply pending') });
     items.push({ a: '/evento', i: 'lugar', t: t('Dónde y cuándo', 'Where and when'), d: t('Mapa, programa y vestimenta', 'Map, schedule and dress code') });
     items.push({ a: '/canciones', i: 'musica', t: t('Pide una canción', 'Request a song'), d: t('La que no puede faltar', "The one that can't be missed") });
     items.push({ a: '/mensajes', i: 'mensajes', t: t('Déjanos un mensaje', 'Leave us a message'), d: t('Escrito o de voz', 'Written or voice') });
   } else if (fase === 'boda') {
-    items.push({ a: '/hoy', i: 'hoy', t: t('Qué está pasando', 'What’s happening'), d: t('Programa en vivo y tu mesa', 'Live schedule and your table'), fuerte: true });
+    items.push({ a: '/hoy', i: 'hoy', t: t('Qué está pasando', 'What’s happening'), d: t('Programa en vivo y tu mesa', 'Live schedule and your table'), fuerte: true, estado: t('En vivo', 'Live') });
     items.push({ a: '/album', i: 'camara', t: t('Sube tus fotos', 'Upload photos'), d: t('Al álbum de todos', 'To the shared album') });
     items.push({ a: '/canciones', i: 'musica', t: t('Pide una canción', 'Request a song'), d: t('Y vota las de los demás', 'And vote for others') });
     items.push({ a: '/juego', i: 'juego', t: t('Juegos', 'Games'), d: t('Trivia, bingo y retos', 'Trivia, bingo and challenges') });
@@ -233,19 +252,29 @@ function Accesos({ fase, inv, boda, abrirPresentacion }) {
   } else {
     items.push({ a: '/confirmar', i: 'calendario', t: t('Tu lugar', 'Your seat'), d: g ? `${g.pases} ${g.pases === 1 ? t('lugar reservado', 'seat') : t('lugares reservados', 'seats')}` : t('Con el código de tu invitación', 'With your code'), fuerte: true });
   }
+  const rotulo = fase === 'recuerdos' ? t('Para recordar', 'To remember') : fase === 'boda' ? t('Esta noche', 'Tonight') : t('Para ti', 'For you');
   return (
-    <section className="accesos contenedor" aria-label={t('Qué puedes hacer', 'What you can do')}>
-      {items.map((x, k) => {
-        const cuerpo = <>
-          <span className="acceso-icono"><Icono n={x.i} tam={26} /></span>
-          <span className="acceso-texto"><b>{x.t}</b><span>{x.d}</span></span>
-          <Icono n="flecha" tam={20} className="acceso-flecha" />
-        </>;
-        const clase = `acceso ${x.fuerte ? 'fuerte' : ''} ${x.hecho ? 'hecho' : ''}`;
-        return x.boton
-          ? <button key={k} type="button" className={clase} onClick={x.boton}>{cuerpo}</button>
-          : <Link key={k} to={x.a} viewTransition className={clase} onPointerEnter={() => precargar(x.a)} onPointerDown={() => precargar(x.a)} onFocus={() => precargar(x.a)}>{cuerpo}</Link>;
-      })}
+    <section className="seccion-inicio" aria-label={t('Qué puedes hacer', 'What you can do')}>
+      <div className="contenedor dividida">
+        <Revelar className="dividida-titulo"><Capitulo texto={rotulo} /></Revelar>
+        <ul className="accesos">
+          {items.map((x, k) => {
+            const cuerpo = <>
+              <span className="acceso-icono"><Icono n={x.i} tam={24} grueso={1.3} /></span>
+              <span className="acceso-texto">{x.estado && <span className="estado-acceso">{x.estado}</span>}<b>{x.t}</b><span>{x.d}</span></span>
+              <Icono n="flecha" tam={18} grueso={1.3} className="acceso-flecha" />
+            </>;
+            const clase = `acceso ${x.fuerte ? 'fuerte' : ''} ${x.hecho ? 'hecho' : ''}`;
+            return (
+              <li key={k}>
+                {x.boton
+                  ? <button type="button" className={clase} onClick={x.boton}>{cuerpo}</button>
+                  : <Link to={x.a} viewTransition className={clase} onPointerEnter={() => precargar(x.a)} onPointerDown={() => precargar(x.a)} onFocus={() => precargar(x.a)}>{cuerpo}</Link>}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </section>
   );
 }

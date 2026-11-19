@@ -39,7 +39,9 @@ export default function Admin() {
     if (!usuario) return;
     (async () => {
       const a = await api.leerAjustes();
-      const deseado = { confirmar_antes_de: boda.confirmarAntesDe, zona_horaria: boda.zonaHoraria };
+      // momentos: registrar_foto descarta los que no están en la lista; juego_segundos: el plazo de responder_juego.
+      const deseado = { confirmar_antes_de: boda.confirmarAntesDe, zona_horaria: boda.zonaHoraria,
+        momentos: [...new Set([...boda.momentos, 'Retos'])].join('|'), juego_segundos: String(boda.juego?.segundos || 20) };
       for (const [k, v] of Object.entries(deseado)) if (a[k] !== v) await api.guardarAjuste(k, v);
     })().catch((e) => setError(`No se pudo guardar la fecha límite en la base: ${e.message}`));
   }, [usuario]);

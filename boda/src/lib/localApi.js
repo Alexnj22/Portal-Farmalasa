@@ -15,6 +15,41 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID()
   }));
 const ahora = () => new Date().toISOString();
 
+// ── Paridad con la base ─────────────────────────────────────────────────────
+// Los mismos topes y validaciones que schema.sql, para que lo que se prueba en
+// la demo se porte igual en línea.
+// Frenos simulados (por pestaña): misma idea que freno() en la base.
+const golpes = new Map();
+function freno(tipo, max, ventanaMs = 10 * 60e3) {
+  const t = Date.now();
+  const xs = (golpes.get(tipo) || []).filter((x) => t - x < ventanaMs);
+  const pasa = xs.length < max;
+  if (pasa) xs.push(t);
+  golpes.set(tipo, xs);
+  return pasa;
+}
+const excedido = (tipo, max, ventanaMs = 10 * 60e3) => (golpes.get(tipo) || []).filter((x) => Date.now() - x < ventanaMs).length >= max;
+const anotar = (tipo) => golpes.set(tipo, [...(golpes.get(tipo) || []), Date.now()]);
+// url_segura() y url_de_catalogo() de la base.
+const urlSegura = (u) => (typeof u === 'string' && /^https:\/\/[^\s"<>]+$/.test(u) && u.length <= 500 ? u : null);
+const CATALOGO = /(^|\.)(mzstatic\.com|dzcdn\.net|scdn\.co|ytimg\.com|itunes\.apple\.com)$/;
+const urlDeCatalogo = (u) => {
+  const s = urlSegura(u);
+  try { return s && CATALOGO.test(new URL(s).hostname.toLowerCase()) ? s : null; } catch { return null; }
+};
+// nombre_de_juego() de la base. La lista es la misma que el ajuste «groserias».
+const GROSERIAS = ('puta,puto,pendejo,pendeja,verga,mierda,culero,culera,cabron,cabrona,marica,maricon,'
+  + 'cono,joder,chinga,chingada,pinche,culo,hijueputa,hijoputa,hdp,malparido,zorra,perra,'
+  + 'idiota,estupido,estupida,imbecil,mamada,polla,coger,follar,nazi').split(',');
+function nombreDeJuego(n) {
+  const v = (n || '').replace(/\s+/g, ' ').trim();
+  if (v.length < 2 || v.length > 24) throw new Error('Tu nombre debe tener entre 2 y 24 letras');
+  if (/(https?:|www\.|\.(com|net|org|io|ly|me|co|xyz|app)\b|@)/i.test(v)) throw new Error('Elige otro nombre');
+  const s = sinTildes(v);
+  if (GROSERIAS.some((w) => new RegExp(`(^|[^a-z0-9])${w}($|[^a-z0-9])`).test(s))) throw new Error('Elige otro nombre');
+  return v;
+}
+
 // Invitaciones de prueba: cada una cubre un caso del flujo de confirmación.
 // El panel de pruebas las lista con su descripción (ESCENARIOS).
 export const ESCENARIOS = [
@@ -172,32 +207,42 @@ export async function responder(codigo, { personas, mensaje, cancion }) {
   if (!g) throw new Error('Invitación no encontrada');
   // Mismo juicio que responder_invitacion() en la base.
   if (plazoVencido()) throw new Error('El plazo para confirmar ya terminó. Escríbenos directamente.');
+  if (personas.some((x) => !x.quitar && (x.id || x.nombre?.trim()) && typeof x.asistira !== 'boolean')) {
+    throw new Error('Indica si asiste cada persona');
+  }
   const quitar = new Set(personas.filter((x) => x.id && x.quitar).map((x) => x.id));
   s.personas = s.personas.filter((p) => !(p.grupo_id === g.id && p.agregado_por_invitado && quitar.has(p.id)));
   const guardadas = s.personas.filter((p) => p.grupo_id === g.id).length;
-  const nuevas = personas.filter((x) => !x.id && !x.quitar && x.nombre?.trim()).length;
+  // «Nueva» = con nombre y sin id, o con un id que todavía no existe (reintento idempotente).
+  const nuevas = personas.filter((x) => !x.quitar && x.nombre?.trim() && (!x.id || !s.personas.some((y) => y.id === x.id))).length;
   if (guardadas + nuevas > g.pases) throw new Error(`La invitación tiene ${g.pases} pases`);
   for (const x of personas) {
     if (x.quitar) continue;
     const p = x.id && s.personas.find((y) => y.id === x.id && y.grupo_id === g.id);
-    if (p) Object.assign(p, { nombre: p.agregado_por_invitado ? (x.nombre?.trim() || p.nombre) : p.nombre, asistira: x.asistira, restriccion: x.restriccion?.trim() || null });
-    else if (x.nombre?.trim()) {
-      s.personas.push({ id: uid(), grupo_id: g.id, nombre: x.nombre.trim(), es_nino: false, asistira: x.asistira,
-        restriccion: x.restriccion?.trim() || null, mesa_id: null, agregado_por_invitado: true, created_at: ahora() });
+    if (p) Object.assign(p, { nombre: p.agregado_por_invitado ? (x.nombre?.trim().slice(0, 80) || p.nombre) : p.nombre, asistira: x.asistira, restriccion: x.restriccion?.trim().slice(0, 200) || null });
+    else if (x.nombre?.trim() && !(x.id && s.personas.some((y) => y.id === x.id))) {
+      s.personas.push({ id: x.id || uid(), grupo_id: g.id, nombre: x.nombre.trim().slice(0, 80), es_nino: false, asistira: x.asistira,
+        restriccion: x.restriccion?.trim().slice(0, 200) || null, mesa_id: null, agregado_por_invitado: true, created_at: ahora() });
     }
   }
   const mias = s.personas.filter((p) => p.grupo_id === g.id);
   if (!mias.length) throw new Error('Indica quién asistirá');
   const si = mias.filter((p) => p.asistira).length;
   g.estado = si === 0 ? 'declinado' : si < mias.length ? 'parcial' : 'confirmado';
-  g.mensaje = mensaje?.trim() || null;
-  g.cancion = cancion?.trim() || null;
+  g.mensaje = mensaje?.trim().slice(0, 1000) || null;
+  g.cancion = cancion?.trim().slice(0, 200) || null;
   g.respondido_at = ahora();
   guardar(s);
   return espera(clonar(armarInvitacion(s, g)));
 }
 
-export const verificarClaveAlbum = async (clave) => espera(leer().claveAlbum === clave.trim().toUpperCase());
+// Como revisar_clave(): a los 20 fallos en 10 minutos se corta.
+export async function verificarClaveAlbum(clave) {
+  if (excedido('clave_fallida', 20)) throw new Error('Demasiados intentos con una clave incorrecta. Espera unos minutos.');
+  const bien = leer().claveAlbum === (clave || '').trim().toUpperCase();
+  if (!bien) anotar('clave_fallida');
+  return espera(bien);
+}
 
 // ── Álbum ──────────────────────────────────────────────────────────────────
 export async function listarFotos({ incluirOcultas = false } = {}) {
@@ -208,14 +253,19 @@ export async function listarFotos({ incluirOcultas = false } = {}) {
 export async function subirFoto(file, { autor, momento, clave }) {
   if (!(await verificarClaveAlbum(clave))) throw new Error('Clave del álbum incorrecta');
   if (file.type.startsWith('video/')) throw new Error('En el modo demo sólo se pueden subir fotos.');
+  if (!freno('subida', 600)) throw new Error('Hay demasiadas fotos subiéndose desde esta red. Intenta en unos minutos.');
   // En la demo se guardan chicas: localStorage tiene ~5 MB.
   const { blob, ancho, alto } = await comprimirImagen(file, 900, 0.7);
   const url = await blobADataUrl(blob);
   const s = leer();
   const id = uid();
-  s.fotos.push({ id, ruta: `fotos/${id}.jpg`, url, mini: url, autor: autor?.trim() || null, momento: momento || null,
-    ancho, alto, oculta: false, created_at: ahora() });
+  const momentos = [...boda.momentos, 'Retos'];
+  s.fotos.push({ id, ruta: `fotos/${id}.jpg`, url, mini: url, autor: autor?.trim().slice(0, 60) || null,
+    momento: momentos.includes(momento) ? momento : null,
+    ancho: ancho >= 1 && ancho <= 10000 ? ancho : null, alto: alto >= 1 && alto <= 10000 ? alto : null,
+    oculta: false, created_at: ahora() });
   guardar(s);
+  return id;
 }
 
 export function suscribirFotos(alLlegar) {
@@ -239,6 +289,7 @@ export async function listarMensajes({ incluirOcultos = false } = {}) {
 export async function firmar({ autor, texto, audio }) {
   if ((autor?.trim().length ?? 0) < 2) throw new Error('Escribe tu nombre');
   if (!audio && (texto?.trim().length ?? 0) < 2) throw new Error('Escribe tu mensaje o graba uno de voz');
+  if (!freno('mensaje', 30)) throw new Error('Llegaron muchos mensajes seguidos. Intenta en unos minutos.');
   const s = leer();
   const moderar = (s.ajustes?.moderar_mensajes ?? 'no') === 'si';
   const voz = audio ? await blobADataUrl(audio) : null;
@@ -385,12 +436,13 @@ export const suscribirAvisos = oir;
 const sinTildes = (t = '') => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 export async function buscarMesa(clave, nombre) {
   if (!(await verificarClaveAlbum(clave))) throw new Error('Clave incorrecta');
+  if (!freno('mesa', 120)) throw new Error('Demasiadas búsquedas seguidas. Intenta en unos minutos.');
   const q = sinTildes(nombre.trim());
-  if (q.length < 3) return [];
+  if (q.length < 4) return [];
   const s = leer();
   const mesas = Object.fromEntries(s.mesas.map((m) => [m.id, m.nombre]));
   return espera(s.personas.filter((p) => p.asistira && p.mesa_id && sinTildes(p.nombre).includes(q))
-    .slice(0, 8).map((p) => ({ nombre: p.nombre, mesa: mesas[p.mesa_id] })));
+    .sort((a, b) => a.nombre.localeCompare(b.nombre)).slice(0, 5).map((p) => ({ nombre: p.nombre, mesa: mesas[p.mesa_id] })));
 }
 
 // ── Canciones ──────────────────────────────────────────────────────────────
@@ -398,24 +450,33 @@ const sinVotantes = ({ votantes, ...c }) => c;
 export const listarCanciones = async () => espera(leer().canciones.filter((c) => !c.oculta).map(sinVotantes)
   .sort((a, b) => b.votos - a.votos || a.created_at.localeCompare(b.created_at)));
 export async function pedirCancion({ titulo, artista, nombre, portada, enlace, muestra }, votante) {
-  if (!titulo?.trim()) throw new Error('Escribe el nombre de la canción');
+  // Se recorta ANTES de comparar, como pedir_cancion() en la base.
+  const t = (titulo || '').trim().slice(0, 120);
+  const a = (artista || '').trim().slice(0, 80) || null;
+  if (!t) throw new Error('Escribe el nombre de la canción');
+  if (!freno('cancion', 20)) throw new Error('Llegaron muchas canciones seguidas. Intenta en unos minutos.');
   const s = leer();
-  let c = s.canciones.find((x) => sinTildes(x.titulo) === sinTildes(titulo.trim()) && sinTildes(x.artista || '') === sinTildes(artista?.trim() || ''));
+  let c = s.canciones.find((x) => sinTildes(x.titulo) === sinTildes(t) && sinTildes(x.artista || '') === sinTildes(a || ''));
   if (!c) {
-    c = { id: uid(), titulo: titulo.trim().slice(0, 120), artista: artista?.trim().slice(0, 80) || null, pedido_por: nombre?.trim().slice(0, 60) || null,
-      portada: portada || null, enlace: enlace || null, muestra: muestra || null,
+    c = { id: uid(), titulo: t, artista: a, pedido_por: nombre?.trim().slice(0, 60) || null,
+      portada: urlDeCatalogo(portada), enlace: urlSegura(enlace), muestra: urlDeCatalogo(muestra),
       votos: 0, tocada: false, oculta: false, created_at: ahora(), votantes: [] };
     s.canciones.push(c);
+  } else {
+    c.portada ??= urlDeCatalogo(portada); c.enlace ??= urlSegura(enlace); c.muestra ??= urlDeCatalogo(muestra);
   }
-  if (!c.votantes.includes(votante)) c.votantes.push(votante);
+  const misVotosN = s.canciones.filter((x) => x.votantes.includes(votante)).length;
+  if (!c.votantes.includes(votante) && misVotosN < 50) c.votantes.push(votante);
   c.votos = c.votantes.length;
   guardar(s);
   return c.id;
 }
 export async function votarCancion(id, votante) {
   const s = leer();
-  const c = s.canciones.find((x) => x.id === id);
+  const c = s.canciones.find((x) => x.id === id && !x.oculta);
+  if (!c) throw new Error('Esa canción ya no está en la lista');
   const ya = c.votantes.includes(votante);
+  if (!ya && s.canciones.filter((x) => x.votantes.includes(votante)).length >= 50) throw new Error('Ya votaste por muchas canciones');
   c.votantes = ya ? c.votantes.filter((v) => v !== votante) : [...c.votantes, votante];
   c.votos = c.votantes.length;
   guardar(s);
@@ -434,8 +495,9 @@ export async function estadoJuego() {
   const { juego } = leer();
   const correctas = (boda.juego?.preguntas || []).map((q) => q.correcta);
   const deEsta = juego.respuestas.filter((r) => r.pregunta === juego.pregunta);
+  // Como estado_juego(): el conteo sólo sale con la pregunta revelada.
   const conteo = {};
-  deEsta.forEach((r) => { conteo[r.opcion] = (conteo[r.opcion] || 0) + 1; });
+  if (['revelada', 'final'].includes(juego.fase)) deEsta.forEach((r) => { conteo[r.opcion] = (conteo[r.opcion] || 0) + 1; });
   const puntos = {};
   juego.respuestas.forEach((r) => {
     const cuenta = r.pregunta < juego.pregunta || (r.pregunta === juego.pregunta && ['revelada', 'final'].includes(juego.fase));
@@ -448,9 +510,12 @@ export async function estadoJuego() {
 export async function responderJuego(jugador, nombre, opcion) {
   const s = leer();
   if (s.juego.fase !== 'abierta' || s.juego.pregunta < 0) throw new Error('Esta pregunta ya cerró');
-  if (!nombre?.trim()) throw new Error('Escribe tu nombre');
+  const segundos = boda.juego?.segundos || 20;
+  if (s.juego.desde && Date.now() > Date.parse(s.juego.desde) + (segundos + 2) * 1000) throw new Error('Se acabó el tiempo para esta pregunta');
+  if (!Number.isInteger(opcion) || opcion < 0 || opcion > 5) throw new Error('Respuesta inválida');
+  const n = nombreDeJuego(nombre);
   if (!s.juego.respuestas.some((r) => r.pregunta === s.juego.pregunta && r.jugador === jugador)) {
-    s.juego.respuestas.push({ pregunta: s.juego.pregunta, jugador, nombre: nombre.trim().slice(0, 40), opcion, created_at: ahora() });
+    s.juego.respuestas.push({ pregunta: s.juego.pregunta, jugador, nombre: n, opcion, created_at: ahora() });
     guardar(s);
   }
   return true;

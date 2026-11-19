@@ -1,0 +1,30 @@
+# Workflow OPCIONAL de GitHub Actions para respaldar la base cada noche.
+# NO está activo: para activarlo, copiar este archivo a
+#   .github/workflows/boda-respaldo.yml   (en la raíz del repo)
+# y crear el secreto SUPABASE_DB_URL en Settings → Secrets and variables → Actions.
+# El respaldo queda como artefacto de la corrida (se guarda 30 días).
+name: Respaldo de la boda
+on:
+  schedule:
+    - cron: '30 8 * * *'   # 02:30 en El Salvador
+  workflow_dispatch:
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar pg_dump 17
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+      - name: Respaldo
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: PATH="/usr/lib/postgresql/17/bin:$PATH" bash boda/scripts/respaldo.sh respaldos
+      - uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-boda
+          path: respaldos/
+          retention-days: 30

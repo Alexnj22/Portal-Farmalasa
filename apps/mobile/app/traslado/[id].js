@@ -22,14 +22,19 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchApprovalRequestById } from '@nucleo/data/requests';
-import { despacharTraslado, fetchDisponibilidadTraslado, MOTIVOS_RECHAZO, rechazarTraslado, recibirTraslado } from '@nucleo/data/traslados';
+import { despacharTraslado, fetchDisponibilidadTraslado, fetchLotesDeSalaEnUnidades, MOTIVOS_RECHAZO, rechazarTraslado, recibirTraslado } from '@nucleo/data/traslados';
+import { eleccionEfectiva, opcionesDeLote, venceMasCortoQueLoPedido } from '@nucleo/utils/loteDeEnvio';
+import { esLoteGenerico } from '@nucleo/utils/unidadesInventario';
+import { construirTicketDeTraslado } from '@nucleo/utils/trasladoTicket';
+import { hoySV } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
 import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
 import { loQueLlego, loQueNoSalio, metaDelEnvio, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import { buscadorDePersonas, desdeHace, motivoDeRechazo } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtVence } from '@nucleo/utils/pedirTraslado';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import { ticketParaReimprimir } from '@nucleo/utils/imprimirTraslado';
+import { loQueVaEnLaBolsa, loQueViajo, ticketParaReimprimir } from '@nucleo/utils/imprimirTraslado';
 import { imprimirEnLaSala } from '../../componentes/imprimir';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
@@ -37,8 +42,8 @@ import Evidencia from '../../componentes/traslados/Evidencia';
 import { Pildora, Ruta } from '../../componentes/traslados/Tarjeta';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { MARCA, FONDO_CONTROL, tintaSobre } from '../../componentes/inicio/marca';
+import { avisar, fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
 import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { MAYUSCULAS } from '../../tema/mayusculas';
@@ -75,6 +80,22 @@ function Cantidad({ valor, max, onCambiar, etiqueta }) {
   );
 }
 
+const mesAnio = (v) => { const [a, m] = String(v || '').split('-'); return a && m ? `${m}/${a}` : 'sin fecha'; };
+const minus = (t) => String(t || '').toLowerCase();
+const mismoLote = (a, b) => Boolean(a && b && a.lote === b.lote && (a.vence || '') === (b.vence || ''));
+
+// Una opción que se toca (un lote, mandar en unidades). Elegida: llena.
+function Opcion({ texto, elegida, onPress }) {
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
+      accessibilityRole="radio" accessibilityState={{ checked: elegida }}
+      style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 12,
+        backgroundColor: elegida ? MARCA.azul : FONDO_CONTROL }}>
+      <Text style={{ color: elegida ? tintaSobre(MARCA.azul) : colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
 export default function Traslado() {
   const { id } = useLocalSearchParams();
   const { user, hasPermission, getScope } = useAuth();
@@ -98,6 +119,19 @@ export default function Traslado() {
   const [pideLote, setPideLote] = useState([]);    // [{ posicion, producto, unidades }]
   const [pideVence, setPideVence] = useState([]);
   const [cajas, setCajas] = useState({});          // { 'L|pos' | 'V|pos': valor de LoteDeLaCaja }
+  /* Lo demás que el servidor puede contestar al despachar (portal:
+   * `DecisionTraslado`, 2026-11-05):
+   *   · `CAJA_EN_UNIDADES`: ningún lote completa la presentación; se ofrece
+   *     mandarla en unidades y quien despacha lo confirma.
+   *   · `PROPUESTA_*`: el lote que sale vence antes que lo pedido; se le
+   *     pregunta a la sala que pidió (enviada NO es un fallo).
+   *   · `LOTE_PEDIDO_NO_ESTA`: el lote pedido no está; se elige cuál sale. */
+  const [cajaEnUnidades, setCajaEnUnidades] = useState([]);
+  const [aceptaUnidades, setAceptaUnidades] = useState(() => new Set());
+  const [noEsta, setNoEsta] = useState(null);      // { [posicion]: { pedidos, opciones } }
+  const [eleccion, setEleccion] = useState({});    // { [posicion]: { lote, vence, sinAsignar } }
+  const [propuestaLocal, setPropuestaLocal] = useState(null);
+  const [lotesSala, setLotesSala] = useState({});  // { [erp]: lotesEnUnidades | null }
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -117,6 +151,20 @@ export default function Traslado() {
     }
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
+  // Los lotes de la sala que despacha, para poder cambiar el de una propuesta
+  // (portal: «Si cambias el lote, se le vuelve a preguntar»).
+  const origenErp = Number(disp?.origen?.erp_sucursal_id) || null;
+  const lineasPropuesta = (propuestaLocal ?? fila?.metadata?.propuesta_lote)?.lineas;
+  const erpsPropuesta = useMemo(() => [...new Set((lineasPropuesta ?? [])
+    .map((p) => Number(fila?.metadata?.items?.[Number(p.posicion)]?.erp_product_id)).filter(Boolean))].join(','), [lineasPropuesta, fila]);
+  useEffect(() => {
+    if (!origenErp || !erpsPropuesta) return undefined;
+    let vivo = true;
+    erpsPropuesta.split(',').map(Number).forEach((erp) => {
+      fetchLotesDeSalaEnUnidades(erp, origenErp).then((l) => { if (vivo) setLotesSala((x) => ({ ...x, [erp]: l })); }).catch(() => {});
+    });
+    return () => { vivo = false; };
+  }, [origenErp, erpsPropuesta]);
 
   if (fila === undefined) return <PantallaSinDato titulo="Traslado" cargando />;
   if (!fila) return <PantallaSinDato titulo="Traslado" texto="Este traslado ya no está disponible." />;
@@ -135,10 +183,48 @@ export default function Traslado() {
   const sugerencia = sugerenciaDeRechazo(lineas, items);
   const pide = persona(fila.employee_id);
 
+  // ── El lote que sale (pedido que no está, o propuesta a la sala que pidió) ──
+  const propuesta = propuestaLocal ?? m.propuesta_lote ?? null;
+  const propVigente = propuesta && ['pendiente', 'aceptada'].includes(propuesta.estado) ? propuesta : null;
+  const salaQuePide = m.branch_name ?? 'la sucursal que pidió';
+  const horaSola = propuesta?.propuesta_at ? hora12(new Date(new Date(propuesta.propuesta_at).getTime() + 3 * 3600_000)) : null;
+  const sinDatos = lineas.length === 0;
+  const lineasLote = items.map((it, pos) => {
+    const srv = noEsta?.[pos];
+    const dp = propVigente?.lineas?.find((p) => Number(p.posicion) === pos) ?? null;
+    if (!srv && !dp) return null;
+    const erp = Number(it?.erp_product_id);
+    const factor = Number(it?.factor) || 1;
+    const paquetes = sinDatos ? (Number(it?.cantidad) || 0) : (aceptadas.find((a) => a.i === pos)?.cantidad ?? 0);
+    if (!paquetes) return null;
+    const sala = lotesSala[erp];
+    const opciones = srv?.opciones ?? (sala ? opcionesDeLote(sala, paquetes, factor) : sala === null ? [] : null);
+    const desdePropuesta = dp ? (dp.sin_asignar ? { lote: 'GENERICO', vence: '', sinAsignar: true } : { lote: dp.lote, vence: dp.vence, sinAsignar: false }) : null;
+    return { pos, erp, factor, paquetes, opciones, pedidos: srv?.pedidos ?? [], dp,
+      producto: it?.descripcion ?? `Producto ${erp}`, valor: eleccionEfectiva(eleccion[pos] ?? desdePropuesta, opciones) };
+  }).filter(Boolean);
+  const conEleccion = new Map(lineasLote.filter((x) => x.valor).map((x) => [x.pos, x]));
+  const esperandoRespuesta = propuesta?.estado === 'pendiente' && Object.keys(eleccion).length === 0;
+  // Elegido «sin lote asignado»: el lote lo dice la caja, como cuando lo pide el servidor.
+  const pidenLote = [
+    ...pideLote.filter((x) => !conEleccion.has(x.posicion)),
+    ...[...conEleccion.values()].filter((x) => x.valor.sinAsignar)
+      .map((x) => ({ posicion: x.pos, producto: x.producto, unidades: x.paquetes * x.factor })),
+  ];
+  const hoy = hoySV();
+  const cortosAhora = lineasLote.filter((x) => x.valor && venceMasCortoQueLoPedido(
+    x.valor.sinAsignar ? cajas[`L|${x.pos}`]?.envio?.vence : x.valor.vence, items[x.pos], hoy));
+  const sinAceptar = cajaEnUnidades.find((c) => !aceptaUnidades.has(c.posicion));
+  const faltaParaEnviar = lineasLote.find((x) => !x.valor) ? 'Elige el lote que sale.'
+    : esperandoRespuesta ? `Espera la respuesta de ${salaQuePide} o cambia el lote.`
+    : sinAceptar ? `Decide si ${sinAceptar.producto ?? 'el producto'} sale en unidades.` : null;
+
   const enviar = async () => {
     setOcupado(true); trabajando('Enviando traslado…');
     const r = await despacharTraslado(fila.id, recortado ? porQue.trim() : '', recortado ? aceptadas : null,
-      pideLote.map((x) => ({ posicion: x.posicion, ...cajas[`L|${x.posicion}`].envio })), null, null,
+      pidenLote.map((x) => ({ posicion: x.posicion, ...cajas[`L|${x.posicion}`].envio })),
+      [...conEleccion.values()].map((x) => ({ posicion: x.pos, lote: x.valor.lote, vence: x.valor.vence })),
+      [...aceptaUnidades],
       pideVence.map((x) => ({ posicion: x.posicion, vence: cajas[`V|${x.posicion}`].envio.vence })));
     setOcupado(false);
     if (r?.codigo === 'FALTA_LOTE_DE_GENERICO' && Array.isArray(r.lineas)) {
@@ -147,12 +233,53 @@ export default function Traslado() {
     if (r?.codigo === 'FALTA_VENCE' && Array.isArray(r.lineas)) {
       setPideVence(r.lineas); fallo('Falta el vencimiento', r.error); return;
     }
+    // Ningún lote completa la presentación: se ofrece en unidades.
+    if (r?.codigo === 'CAJA_EN_UNIDADES' && Array.isArray(r.lineas)) {
+      setCajaEnUnidades(r.lineas); avisar('¿Sale en unidades?', 'Ningún lote completa la presentación. Revisa cómo saldría y decide.'); return;
+    }
+    // Vence antes que lo pedido: se le preguntó a la sala que pidió. Enviada no es un fallo.
+    if (['PROPUESTA_ENVIADA', 'PROPUESTA_PENDIENTE', 'PROPUESTA_RECHAZADA'].includes(r?.codigo) && r.propuesta) {
+      setPropuestaLocal(r.propuesta); setEleccion({});
+      if (r.codigo === 'PROPUESTA_RECHAZADA') fallo('No aceptaron el lote', r.error ?? `${salaQuePide} no aceptó el lote que vence antes. Elige otro o rechaza.`);
+      else listo(`Le preguntamos a ${salaQuePide}`, 'El lote vence antes que lo pedido. Cuando conteste, lo envías.');
+      return;
+    }
+    // El lote pedido no está: se elige con las opciones que da el servidor.
+    if (r?.codigo === 'LOTE_PEDIDO_NO_ESTA' && Array.isArray(r.lineas)) {
+      setNoEsta(Object.fromEntries(r.lineas.map((x) => {
+        const f = Number(items[x.posicion]?.factor) || 1;
+        return [x.posicion, { pedidos: x.pedidos ?? [], opciones: (x.disponibles ?? []).map((d) => ({
+          lote: d.lote, vence: d.vence, unidades: Number(d.paquetes) * f, sinAsignar: esLoteGenerico(d.lote) })) }];
+      })));
+      fallo('El lote pedido no está', r.error ?? 'Elige cuál lote sale.'); return;
+    }
+    let otra = null;
     if (!r?.ok) {
-      const { data: otra } = await fetchApprovalRequestById(fila.id).catch(() => ({ data: null }));
+      ({ data: otra } = await fetchApprovalRequestById(fila.id).catch(() => ({ data: null })));
       if (otra?.status !== 'APPROVED') { fallo('No se pudo enviar', r?.error ?? 'Inténtalo de nuevo.'); return; }
     }
     usePorDecidir.getState().quitar(fila.id);
-    listo(recortado ? 'Enviado lo que hay' : 'Traslado enviado', 'El ticket del paquete se imprime en la computadora de la sucursal.');
+    /* El ticket que va pegado a la bolsa, DESPUÉS del despacho (lleva el
+     * número del traslado), en la caja de quien despacha: ahí está la bolsa
+     * (portal: `DecisionTraslado` › `imprimirTicketDeTraslado`). Lo que salió,
+     * con el lote y el vence que de verdad viajan. Un papel que no sale no
+     * deshace el envío: se dice aparte y se reimprime desde aquí. */
+    let papel;
+    if (r?.ok) {
+      papel = { ticket: construirTicketDeTraslado({
+        familia: 'solicitud', aplicado: r.aplicado, origen: m.origen_branch_name, destino: m.branch_name, pide: pide?.name ?? null,
+        items: r.aplicado?.detalle?.length ? loQueViajo(r.aplicado.detalle, items) : loQueVaEnLaBolsa(items, recortado ? aceptadas : []),
+      }), titulo: ['SOLICITUD', r.aplicado?.id_traslado, m.branch_name].filter(Boolean).join(' ') };
+    } else {
+      // Ya estaba enviado (otra persona o un reintento): el ticket guardado.
+      papel = ticketParaReimprimir({ metadata: otra?.metadata ?? {}, pide: pide?.name ?? null, familia: 'solicitud' });
+    }
+    const impreso = papel
+      ? await imprimirEnLaSala(papel.ticket, miSala || null, papel.titulo)
+      : { ok: false, detalle: 'Ese traslado no tiene número. Su ticket se confirma a mano.' };
+    const titulo = recortado ? 'Enviado lo que hay' : 'Traslado enviado';
+    if (impreso.ok) listo(titulo, 'Pega el ticket en la bolsa.');
+    else avisar(`${titulo}, pero el ticket no salió`, `${impreso.detalle ?? 'Sin detalle.'} Reimprímelo desde el traslado.`);
     router.back();
   };
 
@@ -282,7 +409,77 @@ export default function Traslado() {
           {puedeContestar && !modo ? (
             <View style={{ gap: 12 }}>
               {recortado ? <Campo value={porQue} onChangeText={setPorQue} placeholder="¿Por qué no sale todo?" /> : null}
-              {[...pideLote.map((x) => ({ ...x, k: `L|${x.posicion}`, solo: false })),
+              {/* La propuesta a la sucursal que pidió. */}
+              {propuesta?.estado === 'pendiente' ? (
+                <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
+                  {`Le preguntamos a ${salaQuePide} si acepta el lote que vence antes.${horaSola ? ` Si nadie contesta, se acepta solo a las ${horaSola}.` : ''} Si cambias el lote, se le vuelve a preguntar.`}
+                </Text>
+              ) : null}
+              {propuesta?.estado === 'aceptada' ? (
+                <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>
+                  {propuesta.auto ? `${salaQuePide} no contestó en 3 horas, así que el lote se aceptó solo. Ya puedes enviarlo.` : `${salaQuePide} aceptó el lote. Ya puedes enviarlo.`}
+                </Text>
+              ) : null}
+              {propuesta?.estado === 'rechazada' ? (
+                <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>{`${salaQuePide} no aceptó el lote que vence antes. Elige otro o rechaza la solicitud.`}</Text>
+              ) : null}
+              {cortosAhora.length && propuesta?.estado !== 'aceptada' ? (
+                <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>
+                  {`${cortosAhora.length === 1 ? 'El lote elegido vence' : 'Los lotes elegidos vencen'} antes que lo pedido y dentro de 6 meses: al confirmar se le pregunta a ${salaQuePide} antes de enviarlo.`}
+                </Text>
+              ) : null}
+
+              {/* La caja que sale en unidades. */}
+              {cajaEnUnidades.map((c) => {
+                const si = aceptaUnidades.has(c.posicion);
+                return (
+                  <View key={`u${c.posicion}`} style={{ gap: 6 }}>
+                    <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
+                      {`${c.producto}: ningún lote completa ${c.paquetes === 1 ? 'la' : `las ${c.paquetes}`} ${minus(c.presentacion)}. Puede salir como ${c.unidades} ${minus(c.base)}:`}
+                    </Text>
+                    {(c.reparto ?? []).map((rp) => (
+                      <Text key={`${rp.lote}|${rp.vence}`} style={{ color: colorSistema.texto, fontSize: 14 }}>
+                        {`${rp.unidades} del ${esLoteGenerico(rp.lote) || /^gen[eé]rico$/i.test(rp.lote) ? 'sin lote asignado' : `lote ${rp.lote}`}${rp.vence ? ` (vence ${mesAnio(rp.vence)})` : ''}`}
+                      </Text>
+                    ))}
+                    <View style={{ flexDirection: 'row' }}>
+                      <Opcion texto={si ? `Sale en ${minus(c.base)}` : `Mandarla en ${c.unidades} ${minus(c.base)}`} elegida={si}
+                        onPress={() => setAceptaUnidades((prev) => { const n = new Set(prev); if (si) n.delete(c.posicion); else n.add(c.posicion); return n; })} />
+                    </View>
+                  </View>
+                );
+              })}
+
+              {/* El lote que sale, cuando el pedido no está o hay propuesta. */}
+              {lineasLote.map((x) => (
+                <View key={`e${x.pos}`} style={{ gap: 6 }}>
+                  <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
+                    {`${items.length > 1 ? `${x.producto}: ` : ''}${x.pedidos.length ? `el lote ${x.pedidos.join(', ')} que pidieron no está en tu sucursal o no alcanza. ¿Cuál mandas?` : '¿Qué lote mandas?'}`}
+                  </Text>
+                  {x.opciones == null ? (
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Revisando los lotes de tu sucursal…</Text>
+                  ) : x.opciones.length === 0 ? (
+                    <Text style={{ color: MARCA.rojo, fontSize: 13, fontWeight: '600' }}>Ningún lote de tu sucursal alcanza para todo lo pedido. Manda menos o rechaza.</Text>
+                  ) : (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {x.opciones.map((o) => (
+                        <Opcion key={`${o.lote}|${o.vence}`} elegida={mismoLote(x.valor, o)}
+                          texto={o.sinAsignar ? `Sin lote asignado · hay ${o.unidades}` : `${o.lote} · vence ${mesAnio(o.vence)} · hay ${o.unidades}`}
+                          onPress={() => setEleccion((e) => ({ ...e, [x.pos]: { lote: o.lote, vence: o.vence, sinAsignar: o.sinAsignar } }))} />
+                      ))}
+                    </View>
+                  )}
+                  {x.valor ? (
+                    <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>
+                      {x.valor.sinAsignar ? 'Sale sin lote asignado. Copia abajo el lote de la caja.' : `Sale el lote ${x.valor.lote} (vence ${mesAnio(x.valor.vence)}).`}
+                    </Text>
+                  ) : (x.opciones?.length ?? 0) > 1 ? (
+                    <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{`Hay ${x.opciones.length} lotes: toca el que vas a mandar.`}</Text>
+                  ) : null}
+                </View>
+              ))}
+
+              {[...pidenLote.map((x) => ({ ...x, k: `L|${x.posicion}`, solo: false })),
                 ...pideVence.map((x) => ({ ...x, k: `V|${x.posicion}`, solo: true }))].map((x) => (
                 <View key={x.k} style={{ gap: 6, marginTop: 8 }}>
                   <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
@@ -292,9 +489,10 @@ export default function Traslado() {
                     valor={cajas[x.k] ?? LOTE_DE_CAJA_VACIO} onChange={(v) => setCajas((c) => ({ ...c, [x.k]: v }))} />
                 </View>
               ))}
+              {faltaParaEnviar ? <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600' }}>{faltaParaEnviar}</Text> : null}
               <BotonGrande texto={recortado ? 'Enviar lo que hay' : 'Confirmar y enviar'} color={MARCA.verde}
-                deshabilitado={ocupado || (lineas.length > 0 && (!hayQueMandar || (recortado && !porQue.trim())))
-                  || pideLote.some((x) => !cajas[`L|${x.posicion}`]?.envio) || pideVence.some((x) => !cajas[`V|${x.posicion}`]?.envio)} onPress={enviar} />
+                deshabilitado={ocupado || Boolean(faltaParaEnviar) || (lineas.length > 0 && (!hayQueMandar || (recortado && !porQue.trim())))
+                  || pidenLote.some((x) => !cajas[`L|${x.posicion}`]?.envio) || pideVence.some((x) => !cajas[`V|${x.posicion}`]?.envio)} onPress={enviar} />
               <BotonGrande texto="Rechazar…" color={MARCA.rojo} borde deshabilitado={ocupado} onPress={() => setModo('rechazo')} />
             </View>
           ) : null}

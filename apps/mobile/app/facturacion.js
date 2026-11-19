@@ -47,7 +47,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  countConfirmedMhInvoices, fetchInvoiceObservations, fetchInvoiceResolutionsHistorial, fetchNulaInvoices, fetchObservationResolutions, fetchPendingMhInvoices,
+  countConfirmedMhInvoices, fetchInvoiceNullIds, fetchInvoiceObservations, fetchInvoiceResolutionsHistorial, fetchNulaInvoices, fetchObservationResolutions, fetchPendingMhInvoices,
   insertInvoiceResolution, regularizarDte,
 } from '@nucleo/data/facturacion';
 import {
@@ -129,12 +129,16 @@ export default function Facturacion() {
     setError(null);
     try {
       const hoy = hoySV();
-      const [mh, resHist, obs, resObs, nulas, confirmadas] = await Promise.all([
+      const [mh, resHist, obs, resObs, nulas, confirmadas, nulos] = await Promise.all([
         fetchPendingMhInvoices(sala), fetchInvoiceResolutionsHistorial('invoice_id, resolved_at'),
         fetchInvoiceObservations('2000-01-01', '2099-12-31', sala), fetchObservationResolutions('invoice_id, comment, resolved_by, resolved_at'),
         fetchNulaInvoices(sala),
         // Lo que Hacienda ya selló este mes (sello válido: `SELLO_MH_LIKE`), como el portal.
         Promise.resolve(countConfirmedMhInvoices(sala, `${hoy.slice(0, 7)}-01`, hoy)).then((r) => r.count ?? null).catch(() => null),
+        // Las que además tienen campos nulos (cliente, correlativo…): el portal
+        // tiñe su tarjeta de Pendiente MH (`nullCamposIds`). Si no se puede
+        // leer, sólo no se tiñe.
+        Promise.resolve(fetchInvoiceNullIds()).then((r) => new Set((r.data || []).map((x) => x.id))).catch(() => new Set()),
       ]);
       if (obs.error) throw new Error(obs.error.message);
       const res = resHist.data || [];
@@ -147,6 +151,7 @@ export default function Facturacion() {
         nulas: sinResolver(nulas || [], res),
         nulasSolventadasMes: res.filter((r) => idsNulas.has(r.invoice_id) && String(r.resolved_at || '').startsWith(mes)).length,
         confirmadasMes: confirmadas,
+        conNulos: nulos,
       });
     } catch (e) { setError(e?.message || 'No se pudo cargar'); setDatos({ mh: [], obs: [], obsSolventadas: [], nulas: [], nulasSolventadasMes: 0 }); }
   }, [sala]);
@@ -310,9 +315,11 @@ export default function Facturacion() {
               // Observaciones se miran, no se resuelven (ver el encabezado).
               const solventable = cola !== 'obs';
               const visitada = !!r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id));
+              // Como el portal: en Pendiente MH, la que además tiene campos nulos va teñida (si no es CCF, que manda el rojo).
+              const conNulos = cola === 'mh' && !esCcf && !!datos.conNulos?.has(r.id);
               return (
                 <View key={r.id} style={{ marginHorizontal: 16, opacity: visitada ? 0.5 : 1 }}>
-                  <Vidrio radio={20} tinte={esCcf ? 'rgba(240,68,56,0.10)' : undefined}>
+                  <Vidrio radio={20} tinte={esCcf ? 'rgba(240,68,56,0.10)' : conNulos ? `${colorDeVariante('chart-3')}1A` : undefined}>
                     <Tocable disabled={!canEdit || !solventable} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); }} style={{ padding: 12, gap: 5 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text selectable style={{ flex: 1, color: esCcf ? MARCA.rojo : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${r.tipo_documento ?? '—'} ${r.correlativo ?? 'sin número'}`}</Text>
@@ -331,6 +338,7 @@ export default function Facturacion() {
                       ) : null}
                       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                         {cola !== 'obs' ? <Pildora texto={d ? `${d} día${d === 1 ? '' : 's'} esperando` : 'de hoy'} color={d > GRACIA_SELLO_DIAS + 1 ? MARCA.rojo : d > (cola === 'mh' ? GRACIA_SELLO_DIAS : 0) ? MARCA.ambar : MARCA.verde} /> : null}
+                        {conNulos ? <Pildora texto="Campos nulos" color={colorDeVariante('chart-3')} /> : null}
                         {r.cliente_categoria ? <Pildora texto={r.cliente_categoria} color={MARCA.azulClaro} /> : null}
                         {r.tipo_pago ? <Pildora texto={String(r.tipo_pago)} color={colorSistema.texto2} /> : null}
                         {cola === 'obs' ? (r.observaciones || []).map((c) => <Pildora key={c} texto={metaObs(c).label} color={colorDeVariante(metaObs(c).variant)} />) : null}

@@ -278,7 +278,8 @@ export default function EnviarProducto() {
               familia: 'envio', codigo: creado?.metadata?.codigo_bolsa ?? '',
               aplicado: { by_name: user?.name ?? null, at: new Date().toISOString(), por_respaldo: false },
               origen: estante(origenErp, vencidos), destino: ERP_NAMES[destino] ?? '', pide: '',
-              items: (r.hechas ?? []).map((h) => ({ nombre: h?.producto, cantidad: h?.cantidad })),
+              // Con el lote y el vence de lo que salió, como el portal (`h.lotes`).
+              items: (r.hechas ?? []).map((h) => ({ nombre: h?.producto, cantidad: h?.cantidad, lotes: h?.lotes })),
               motivo: [motivo, nota.trim() && nota.trim() !== motivo ? nota.trim() : null].filter(Boolean).join(' — '),
             }), salaOrigen, ['ENVIO', creado?.metadata?.codigo_bolsa, ERP_NAMES[destino]].filter(Boolean).join(' '));
           }

@@ -24,7 +24,8 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { insertApprovalRequestSilent } from '@nucleo/data/requests';
 import { salaConCajaAbierta } from '@nucleo/data/cortes';
 import { buscarClientes } from '@nucleo/data/customers';
-import { esDeHoy, MOTIVOS_ANULACION, pagosPosibles, ROTULO_PAGO, solicitudDeFacturacion } from '@nucleo/utils/solicitudFacturacion';
+import { fetchBranchInvoicesRecent } from '@nucleo/data/facturacion';
+import { ambitoDeFacturas, esDeHoy, MOTIVOS_ANULACION, pagosPosibles, ROTULO_PAGO, solicitudDeFacturacion } from '@nucleo/utils/solicitudFacturacion';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -64,10 +65,26 @@ export default function Cambio() {
     return () => { vivo = false; };
   }, [accion, aplicado]);
 
+  /* Como el portal (`codigosVistos`): quien REALMENTE factura en la sala
+   * también se ofrece, aunque esté asignado a otra. Hay códigos que venden
+   * donde no están asignados, y sin esto no se les puede reasignar una venta
+   * que hicieron. Salen de las facturas recientes de la sala, la misma lista
+   * que el portal tiene delante. */
+  const salaId = inv?._sala?.id ?? inv?.branch_id;
+  const [codigosVistos, setCodigosVistos] = useState(() => new Set());
+  useEffect(() => {
+    if (accion !== 'vendedor' || salaId == null) return undefined;
+    let vivo = true;
+    fetchBranchInvoicesRecent(salaId, ambitoDeFacturas()).then((r) => {
+      if (vivo && !r?.error) setCodigosVistos(new Set((r.data || []).map((i) => String(i.cod_vendedor ?? '')).filter(Boolean)));
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, [accion, salaId]);
+
   const vendedores = useMemo(() => (empleados || [])
     .filter((e) => e.status === 'ACTIVO' && e.code && String(e.code) !== String(inv?.cod_vendedor)
-      && String(e.branchId ?? e.branch_id ?? '') === String(inv?._sala?.id ?? inv?.branch_id))
-    .sort((a, b) => shortEmployeeName(a).localeCompare(shortEmployeeName(b))), [empleados, inv]);
+      && (String(e.branchId ?? e.branch_id ?? '') === String(salaId) || codigosVistos.has(String(e.code))))
+    .sort((a, b) => shortEmployeeName(a).localeCompare(shortEmployeeName(b))), [empleados, inv, salaId, codigosVistos]);
   const vendedorActual = (empleados || []).find((e) => String(e.code) === String(inv?.cod_vendedor));
 
   if (!inv || !TIPO[accion]) {
@@ -137,7 +154,7 @@ export default function Cambio() {
 
           {accion === 'anular' ? (
             <>
-              {aCredito ? <Aviso tono="cuidado" texto="Es una venta a crédito. La anulación tarda más y se confirma cuando se haga." /> : null}
+              {aCredito ? <Aviso tono="cuidado" texto="Venta al crédito. Si se aprueba, también se quita su cuenta por cobrar. Si ya tiene abonos, primero hay que resolverlos." /> : null}
               {esCCF && !ccfDeOtroDia ? <Aviso tono="cuidado" texto="Es un crédito fiscal. Asegúrate de que se emita la nota de crédito." /> : null}
               <Seccion titulo="¿Por qué se anula?"><Opciones opciones={MOTIVOS_ANULACION} valor={motivo} onCambiar={setMotivo} /></Seccion>
               {ccfDeOtroDia ? (

@@ -6,9 +6,13 @@
 //
 // Cada movimiento dice quién lo anotó (con su cara), de dónde salió el monto,
 // si alguien pidió corregirlo y en qué quedó, y se abre para ver el detalle y
-// la boleta. Pedir una corrección sigue en el portal: acá se LEE.
+// la boleta. Desde aquí, igual que en el portal, quien opera la caja puede
+// pedir una corrección, reenviar con más pruebas un ingreso rechazado y mandar
+// a la caja un ingreso que no llegó (`mandarALaCaja`: el servidor mira si la
+// caja ya lo tiene y, si no, lo manda; nunca lo cobra dos veces).
 import { useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Alert, Image, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +23,9 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
+import { mandarALaCaja } from '@nucleo/data/bolsas';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { fallo, listo, trabajando } from '../Progreso';
 import { colorSistema } from '../Formulario';
 import { Aviso, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
@@ -62,9 +69,42 @@ function Correccion({ dato }) {
   );
 }
 
-function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
+function Accion({ texto, color, onPress, deshabilitado = false }) {
+  return (
+    <Pressable onPress={onPress} disabled={deshabilitado} accessibilityRole="button" accessibilityState={{ disabled: deshabilitado }}
+      style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: `${color}26`, opacity: deshabilitado ? 0.4 : pressed ? 0.7 : 1 })}>
+      <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
+function Movimiento({ l, corte, quien, puedeOperar, onCorregir, sala, onRecargar }) {
   const [abierto, setAbierto] = useState(false);
   const [foto, setFoto] = useState(null);       // null | 'cargando' | { url } | { error }
+  const [mandando, setMandando] = useState(false);
+  const [mandado, setMandado] = useState(false);
+  const salaDelMovimiento = sala ?? l.movimiento?.branch_id ?? null;
+  // Las mismas condiciones que el portal (`Movimiento` de MiCajaView).
+  // Rechazado no es anulado: espera más pruebas y se puede volver a mandar.
+  const puedeReenviar = puedeOperar && l.movimiento && !l.anulado && l.autorizacion === 'RECHAZADA';
+  // Una salida sin número no se manda desde aquí: se revisa en la caja.
+  const puedeMandar = puedeOperar && l.sinCaja && l.movimiento?.tipo === 'ENTRADA' && !mandado && salaDelMovimiento != null;
+
+  const reenviar = () => router.push({ pathname: '/reenviar-ingreso', params: { id: String(l.movimiento.id), sala: String(salaDelMovimiento ?? '') } });
+  const mandar = () => Alert.alert('¿Mandarlo a la caja?',
+    `${l.titulo || 'Este ingreso'} · ${formatMoney(l.monto)}.\nSi la caja ya lo tiene, no se cobra dos veces.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Mandarlo', onPress: async () => {
+        setMandando(true);
+        trabajando('Mandándolo a la caja…');
+        const r = await mandarALaCaja({ sala: salaDelMovimiento, movimiento: l.movimiento.id }).catch((e) => ({ error: e }));
+        setMandando(false);
+        if (r?.error) { fallo('No se pudo mandar', mensajeAmigable(r.error)); return; }
+        setMandado(true);
+        listo('Quedó en la caja');
+        onRecargar?.();
+      } },
+    ]);
   const clase = l.anulado ? { icono: 'Ban', color: colorSistema.texto2 } : (CLASE[l.clase] || CLASE.entra);
   const pendiente = (l.correcciones || []).some((c) => c.estado === 'PENDING');
   const corregido = (l.correcciones || []).some((c) => c.estado !== 'PENDING' && c.estado !== 'REJECTED');
@@ -109,12 +149,14 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
             {`${l.entra ? '+' : '−'}${formatMoney(l.monto)}`}
           </Text>
         </View>
-        {l.anulado || pendiente || corregido || l.sinEfectivo || ROTULO_DE_ORIGEN[l.montoOrigen] ? (
+        {l.anulado || pendiente || corregido || l.sinEfectivo || l.sinCaja || mandado || ROTULO_DE_ORIGEN[l.montoOrigen] ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginLeft: 44 }}>
             {l.anulado ? <Pildora texto="Anulado" color={colorSistema.texto2} /> : null}
             {pendiente ? <Pildora texto="Corrección pendiente" color={MARCA.ambar} /> : null}
             {!pendiente && corregido ? <Pildora texto="Corregido" color={colorSistema.texto2} /> : null}
             {l.sinEfectivo ? <Pildora texto="No entra a la caja" color={colorSistema.texto2} /> : null}
+            {l.sinCaja && !mandado ? <Pildora texto="No llegó a la caja" color={MARCA.ambar} /> : null}
+            {mandado ? <Pildora texto="Mandado a la caja" color={MARCA.verde} /> : null}
             {ROTULO_DE_ORIGEN[l.montoOrigen] ? <Pildora texto={ROTULO_DE_ORIGEN[l.montoOrigen]} color={MARCA.ambar} /> : null}
           </View>
         ) : null}
@@ -150,11 +192,12 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
           ) : null}
           {foto?.error ? <Aviso tono="freno" texto="No se pudo abrir la boleta. Vuelve a intentarlo." /> : null}
           {foto?.url ? <Image source={{ uri: foto.url }} resizeMode="contain" style={{ width: '100%', height: 280, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.1)' }} /> : null}
-          {puedeOperar && onCorregir && l.movimiento && !l.anulado ? (
-            <Pressable onPress={() => onCorregir(l.movimiento)} accessibilityRole="button"
-              style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: `${MARCA.ambar}26`, opacity: pressed ? 0.7 : 1 })}>
-              <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '700' }}>Pedir una corrección</Text>
-            </Pressable>
+          {puedeReenviar || puedeMandar || (puedeOperar && onCorregir && l.movimiento && !l.anulado) ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {puedeReenviar ? <Accion texto="Reenviar con más pruebas" color={MARCA.azulClaro} onPress={reenviar} /> : null}
+              {puedeMandar ? <Accion texto={mandando ? 'Mandando…' : 'Mandarlo a la caja'} color={MARCA.azulClaro} deshabilitado={mandando} onPress={mandar} /> : null}
+              {puedeOperar && onCorregir && l.movimiento && !l.anulado ? <Accion texto="Pedir una corrección" color={MARCA.ambar} onPress={() => onCorregir(l.movimiento)} /> : null}
+            </View>
           ) : null}
         </View>
       ) : null}
@@ -162,7 +205,7 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
   );
 }
 
-export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, etiquetaDe, correcciones, cortes, anotaron, puedeVerBolsas, puedeOperar = false, onCorregir }) {
+export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, etiquetaDe, correcciones, cortes, anotaron, puedeVerBolsas, puedeOperar = false, onCorregir, sala = null, onRecargar }) {
   const lineas = lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe, correcciones });
   if (!lineas.length && puedeVerBolsas) return null;
   const grupos = repartirPorCorte(lineas, cortes);
@@ -186,7 +229,7 @@ export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, 
               {`${g.lineas.length} ${g.lineas.length === 1 ? 'movimiento' : 'movimientos'}${!g.corte ? ` · ${conSigno(netoDelTramo(g.lineas))}` : ''}`}
             </Text>
           </View>
-          {g.lineas.map((l) => <Movimiento key={l.clave} l={l} corte={g.corte} quien={anotaron?.get(l.quien)} puedeOperar={puedeOperar} onCorregir={onCorregir} />)}
+          {g.lineas.map((l) => <Movimiento key={l.clave} l={l} corte={g.corte} quien={anotaron?.get(l.quien)} puedeOperar={puedeOperar} onCorregir={onCorregir} sala={sala} onRecargar={onRecargar} />)}
         </View>
       ))}
     </View>

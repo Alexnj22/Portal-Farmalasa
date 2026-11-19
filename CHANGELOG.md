@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1581.0 — La app hace lo mismo que la web en corrección de caja, traslados, conteos, cobros y facturación
+
+Segunda tanda de la auditoría app contra web del 2026-11-19 (trabas de operación):
+
+- Caja: corregir la forma de pago de un ingreso (con foto si deja de ser efectivo); antes de anular dice si ese movimiento está en la caja; «Reenviar con más pruebas» y «Mandarlo a la caja»; hacer el corte avisa y se apaga si hay preventas sin finalizar.
+- Traslados: despachar imprime el ticket de la bolsa por la caja de la sucursal (antes el mensaje decía que salía en la computadora y no salía); resuelve caja en unidades, propuesta de otro vencimiento y lote que no está. Reintentar un envío imprime lo que salió y lista lo que falló. El ticket de enviar producto lleva lotes.
+- Conteo: si no se puede saber cuánto falta, no se finaliza.
+- Nueva pantalla «Corregir lote o vencimiento» desde el ajuste de inventario.
+- Cobro y corrección de crédito: aceptan el PDF del banco; avisan si el comprobante no se guardó y si está a nombre de otro.
+- Mapfre: buscador, actualizar y cuántas facturas esperan. Cambio de vendedor con quien ya vendió en la sucursal; aviso de anular venta al crédito. Inyecciones marcadas con la sucursal del filtro. Receta de reserva: avisa si la foto no abre. Preventa: «Editar cliente» marca qué falta.
+- Facturación: la tarjeta con campos nulos se marca. `fetchInvoiceNullIds` ahora pagina: la vista tiene 4,272 filas y se leían 1,000, así que en la web también faltaba la marca en tres de cada cuatro.
+- Novedades: no — decisión del usuario (2026-11-19): son correcciones.
+
 ## v2.1580.1 — Sin señal, la app guarda la foto del comprobante y la sube sola
 
 - App del personal: si la foto del comprobante no sube porque el servicio no responde, queda guardada en el teléfono y se sube sola (al volver a la app y cada minuto mientras quede alguna), igual que el portal desde el 2026-11-02. El movimiento se anota con su foto. Vale en Meter dinero, Sacar dinero, Mapfre, aplicación de inyección y el anticipo de una reserva. Antes la app lanzaba «pendiente» y con mala señal no se podía anotar ni cobrar.

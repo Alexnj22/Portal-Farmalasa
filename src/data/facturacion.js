@@ -518,8 +518,13 @@ export function insertInvoiceResolution(payload, selectCols, { accion = 'SOLVENT
 
 // ── Campos nulos (sales_invoice_nulls) ──────────────────────────────────────
 
-export function fetchInvoiceNullIds() {
-    return supabase.from('sales_invoice_nulls').select('id');
+// Paginado: la vista tiene más de 1000 filas (4,272 el 2026-11-19) y sin
+// paginar PostgREST cortaba en silencio — tres de cada cuatro facturas con
+// campos nulos salían sin la marca en Pendiente MH. Devuelve `{ data, error }`
+// como antes para no cambiar a quien llama.
+export async function fetchInvoiceNullIds() {
+    const data = await fetchAllRows(() => supabase.from('sales_invoice_nulls').select('id').order('id'));
+    return data ? { data, error: null } : { data: null, error: new Error('No se pudieron leer los campos nulos.') };
 }
 
 export function fetchSalesInvoiceNulls(filterBranch) {

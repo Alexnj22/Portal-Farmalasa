@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { codigoDeError, fetchCustomerDetail, mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
 import { DEPARTAMENTOS, conciliarGeo, distritosDe, municipiosDe, normalizarGeo } from '@nucleo/data/elSalvadorGeo';
-import { CAMPOS_FICHA, CATEGORIAS_CLIENTE, ETIQUETA_CAMPO, cambiosDeFicha, camposRequeridos, validarCliente } from '@nucleo/utils/clienteValidacion';
+import { CAMPOS_FICHA, CATEGORIAS_CLIENTE, ETIQUETA_CAMPO, cambiosDeFicha, camposRequeridos, esContribuyente, validarCliente } from '@nucleo/utils/clienteValidacion';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -68,7 +68,11 @@ function Linea({ campo, valor, onCambiar, editable, error, requerido, opciones, 
 }
 
 export default function FichaCliente() {
-  const { id } = useLocalSearchParams();
+  const { id, completar: completarTexto } = useLocalSearchParams();
+  // Quien abre la ficha para completar una venta (Preventa) dice qué falta:
+  // `{ campos, motivo, rotulo, categoria? }` de `queCompletar`, como el
+  // `formData.completar` del portal. Ahí se marca al abrir.
+  const completar = useMemo(() => { try { return completarTexto ? JSON.parse(String(completarTexto)) : null; } catch { return null; } }, [completarTexto]);
   const { hasPermission } = useAuth();
   const puedeEditar = hasPermission('clientes', 'can_edit');
   const verMontos = hasPermission('clientes_ver_montos');
@@ -100,7 +104,10 @@ export default function FichaCliente() {
   useEffect(() => { if (form && cliente) { if (hay) saveDraft(clave, form); else clearDraft(clave); } }, [form, cliente, hay, clave]);
   const v = useMemo(() => validarCliente(form, cliente), [form, cliente]);
   const req = useMemo(() => new Set(camposRequeridos(form?.categoria)), [form?.categoria]);
-  const errorDe = (c) => v.errores[c] || ((intento || hay) && v.faltan.includes(c) ? 'Requerido para facturar' : undefined);
+  const pendientes = (completar?.campos ?? []).filter((c) => !String(form?.[c] ?? '').trim());
+  const faltaCategoria = Boolean(completar?.categoria) && !esContribuyente(form?.categoria);
+  const errorDe = (c) => v.errores[c] || (pendientes.includes(c) ? (completar.rotulo ?? completar.motivo) : undefined)
+    || ((intento || hay) && v.faltan.includes(c) ? 'Requerido para facturar' : undefined);
   const set = (c) => (valor) => setForm((f) => ({ ...f, [c]: valor }));
   const setGeo = (parcial) => setForm((f) => ({ ...f, ...normalizarGeo({ ...f, ...parcial }) }));
 
@@ -161,6 +168,9 @@ export default function FichaCliente() {
             </View>
           </Vidrio>
 
+          {completar && !cliente.mostrador && (faltaCategoria || pendientes.length > 0) ? (
+            <Aviso tono="cuidado" texto={`${completar.motivo}: ${[faltaCategoria && `Tipo ${completar.categoria}`, ...pendientes.map((c) => ETIQUETA_CAMPO[c] ?? c)].filter(Boolean).join(', ')}.${faltaCategoria ? ' Elige Contribuyente arriba: así aparecen sus campos.' : ''}`} />
+          ) : null}
           {cliente.mostrador ? <Aviso tono="nota" texto="Es el cliente genérico del mostrador. No lleva datos fiscales." /> : null}
           {cliente.nombre_corrupto ? <Aviso tono="cuidado" texto="El nombre llegó dañado. Corrígelo con el que aparece en el documento." /> : null}
 

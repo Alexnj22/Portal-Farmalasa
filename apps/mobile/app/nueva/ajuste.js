@@ -238,6 +238,24 @@ export default function Ajuste() {
               </Vidrio>
             </Pressable>
           ))}
+          {/* Directo, sin solicitud: no cambia unidades (portal: «Corregir lote o
+              vencimiento» dentro del Ajuste, `CorregirLoteSala`). */}
+          {erpSucursalId != null ? (
+            <Pressable disabled={!!enConteo?.en_conteo}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/corregir-lote', params: { sala: String(branchId) } }); }}
+              style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], opacity: enConteo?.en_conteo ? 0.4 : 1 })}>
+              <Vidrio radio={20} interactivo>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13 }}>
+                  <Chip icono="CalendarClock" color={MARCA.azulClaro} tamano={36} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Corregir lote o vencimiento</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Las mismas unidades, con el lote o la fecha correcta. Sin aprobación</Text>
+                  </View>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 20, fontWeight: '300' }}>›</Text>
+                </View>
+              </Vidrio>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </>
     );

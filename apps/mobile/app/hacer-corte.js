@@ -16,13 +16,19 @@
 // El corte existe en la caja apenas se aprieta: salir sin firmar lo deja
 // PENDIENTE, y mientras siga así no se puede hacer otro ni cerrar el día. Se
 // dice en pantalla, como el aviso del portal.
+//
+// Preventas (portal, 2026-10-28): una preventa guardada y sin finalizar puede
+// ser dinero que ya está en la caja y todavía no es venta, así que el corte no
+// sale mientras haya alguna. Se leen al entrar (`preventasDeLaCaja`, una vez,
+// no un sondeo) y se nombra cada una ANTES de contar, con el botón apagado. Si
+// no se pudieron leer no se frena aquí: el freno de verdad es el del servidor.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { estadoDeCaja, fetchBolsas, fetchSaldos, fetchValesPendientes, hacerCorte } from '@nucleo/data/bolsas';
+import { estadoDeCaja, fetchBolsas, fetchSaldos, fetchValesPendientes, hacerCorte, preventasDeLaCaja } from '@nucleo/data/bolsas';
 import { fetchCortes } from '@nucleo/data/cortes';
 import { acumuladoAntesDe, conLaCuentaBuena, conTramoDelCorte } from '@nucleo/utils/cortesDiagnostico';
 import { bolsasDelDia, declaradoDelCorte, embolsadoDelDia, valesDeLaSala } from '@nucleo/utils/corteDeCaja';
@@ -53,6 +59,7 @@ export default function HacerCorte() {
   const [efectivo, setEfectivo] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [resultado, setResultado] = useState(null);
+  const [preventas, setPreventas] = useState([]);
 
   const cargar = useCallback(async () => {
     const e = await estadoDeCaja(sala);
@@ -70,6 +77,19 @@ export default function HacerCorte() {
     setEstado(e?.error ? { error: mensajeAmigable(e.error) } : e);
   }, [sala, puedeVerCortes]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+
+  // Igual que `usePreventasDeLaCaja` del portal: se leen mientras no hay resultado.
+  const hayResultado = !!resultado;
+  useEffect(() => {
+    if (hayResultado || !sala || !puedeOperar) return undefined;
+    let vivo = true;
+    preventasDeLaCaja(sala).then((r) => {
+      if (!vivo) return;
+      if (r?.error) console.error('preventas de la caja:', r.error?.message || r.error);
+      setPreventas(r?.preventas || []);
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, [sala, hayResultado, puedeOperar]);
 
   const yaEmbolsado = embolsadoDelDia(bolsasDeHoy);
   const declarado = declaradoDelCorte(efectivo, yaEmbolsado);
@@ -172,6 +192,16 @@ export default function HacerCorte() {
     cuerpo = (
       <>
         <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>Cuenta solo el efectivo que hay en la caja ahora. Lo de las bolsas de hoy lo suma el portal.</Text>
+        {preventas.length ? (
+          <>
+            <Aviso tono="freno" texto={`${preventas.length === 1 ? 'Hay una preventa guardada sin finalizar' : `Hay ${preventas.length} preventas guardadas sin finalizar`}. Puede ser dinero que ya está en la caja y todavía no es venta. Finalízala o elimínala en la caja antes de hacer el corte.`} />
+            <Seccion titulo={preventas.length === 1 ? 'Preventa sin finalizar' : 'Preventas sin finalizar'}>
+              {preventas.map((p, i) => (
+                <Dato key={`${p.referencia}|${p.cliente}`} primero={i === 0} rotulo={`#${p.referencia} · ${p.cliente}`} valor={formatMoney(Number(p.total) || 0)} />
+              ))}
+            </Seccion>
+          </>
+        ) : null}
         {vales > 0 ? <Aviso texto={`Antes del corte se anota un vale de caja con ${vales} salida${vales === 1 ? '' : 's'} del día.`} /> : null}
         <Seccion titulo="Efectivo en la caja">
           <Campo multiline={false} value={efectivo} onChangeText={(v) => setEfectivo(v.replace(/[^\d.,]/g, ''))}
@@ -183,7 +213,7 @@ export default function HacerCorte() {
             </>
           ) : null}
         </Seccion>
-        <BotonGrande texto={ocupado ? 'Haciendo el corte…' : 'Hacer el corte'} color={MARCA.azul} deshabilitado={ocupado || !valido} onPress={cortar} />
+        <BotonGrande texto={ocupado ? 'Haciendo el corte…' : 'Hacer el corte'} color={MARCA.azul} deshabilitado={ocupado || !valido || preventas.length > 0} onPress={cortar} />
       </>
     );
   }

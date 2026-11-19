@@ -159,7 +159,14 @@ export default function CobrarCredito() {
     try {
       let comprobanteUrl = null;
       if (fotos.length) {
-        try { comprobanteUrl = (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `abonos-credito/${sala}` }))[0] ?? null; } catch { comprobanteUrl = null; }
+        // Como el portal: si la foto no sube, el cobro SIGUE (el cliente está
+        // enfrente con el dinero) pero se avisa. El número del comprobante
+        // queda anotado, que es lo que ata el pago al estado de cuenta. Con
+        // un aviso que se queda: el «listo» del cobro lo taparía.
+        try { comprobanteUrl = (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `abonos-credito/${sala}` }))[0] ?? null; } catch (err) {
+          comprobanteUrl = null;
+          Alert.alert('El comprobante no se guardó', `${mensajeAmigable(err)} El cobro sigue. El número queda anotado.`);
+        }
       }
       if (!claveCobro.current) claveCobro.current = nuevaClaveDeCobro();
       const r = await pagarCreditos({
@@ -213,7 +220,7 @@ export default function CobrarCredito() {
 
           {e.conPapel ? (
             <Seccion titulo={`Comprobante (${forma.toLowerCase()})`} pie="Una foto del comprobante o de la pantalla del banco. Se lee sola.">
-              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento />
+              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento pdf />
             </Seccion>
           ) : null}
           {leyendo ? <Aviso tono="nota" texto="Leyendo el comprobante…" /> : null}

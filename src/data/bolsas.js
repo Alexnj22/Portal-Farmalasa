@@ -1590,7 +1590,7 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
      * remesa de $50 de Salud 4: «no tiene hora, no tiene foto ni nombre de
      * quien lo hizo, no se puede ver la foto». Los tres datos existían. */
     const { data, error } = await supabase.from('caja_movimientos_portal')
-        .select('id, tipo, monto, concepto, detalle, numero_boleta, erp_movimiento_id,'
+        .select('id, branch_id, tipo, monto, concepto, detalle, numero_boleta, erp_movimiento_id,'
               + ' anulado_at, registrado_at, registrado_por, foto_url, monto_origen,'
               // Cómo se pagó y si espera autorización (2026-10-17): lo que no
               // es efectivo no llega a la caja A PROPÓSITO, y la lista tiene
@@ -1603,6 +1603,22 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }
     return data || [];
+}
+
+/**
+ * UN movimiento del portal por su id, leído en el momento: lo que necesita el
+ * diálogo de corrección (cómo se pagó, si es un ingreso, si llegó a la caja).
+ * Lo usa la app, que abre la corrección en otra pantalla y sólo lleva el id.
+ * `{ movimiento }` o `{ error }` (sin fila = `NO_ENCONTRADO`).
+ */
+export async function fetchMovimientoDelPortal(id) {
+    const { data, error } = await supabase.from('caja_movimientos_portal')
+        .select('id, branch_id, tipo, monto, concepto, detalle, erp_movimiento_id, anulado_at,'
+              + ' forma_pago, autorizacion, autorizacion_nota')
+        .eq('id', Number(id)).maybeSingle();
+    if (error) return { error };
+    if (!data) return { error: new Error('NO_ENCONTRADO') };
+    return { movimiento: data };
 }
 
 /**

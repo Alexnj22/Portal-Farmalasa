@@ -228,6 +228,7 @@ export default function Conteo() {
   const fetchConteoItemsForProducts = useStaffStore((s) => s.fetchConteoItemsForProducts);
   const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
   const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
+  const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
   const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
   const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
   const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
@@ -664,11 +665,16 @@ export default function Conteo() {
         }
       } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
     }
-    // Las cifras de este momento, no las de la pantalla: el último guardado
-    // todavía no estaba en el resumen.
-    const fresco = await Promise.resolve(fetchConteoResumen(id)).catch(() => null);
-    if (fresco) setResumen(fresco);
-    const pendientes = Math.max(0, Number(fresco?.pendientes ?? (total - contados)) || 0);
+    // Cuánto falta, preguntado a la base en este momento y con la MISMA
+    // función que la web (`fetchConteoPendientesCount`). Si no se puede saber,
+    // no se pregunta ni se finaliza: adivinarlo con la pantalla podía cerrar
+    // un conteo a medias sin que nadie lo decidiera.
+    let pendientes;
+    try {
+      pendientes = Math.max(0, Number(await fetchConteoPendientesCount(id)) || 0);
+    } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
+    // Las cifras de arriba, de paso: el último guardado no estaba en el resumen.
+    Promise.resolve(fetchConteoResumen(id)).then((r) => { if (r) setResumen(r); }).catch(() => {});
     const enviar = async (comoCero) => {
       trabajando('Finalizando el conteo…');
       try {

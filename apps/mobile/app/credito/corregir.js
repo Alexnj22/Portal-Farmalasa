@@ -110,10 +110,14 @@ export default function CorregirAbono() {
           ) : null}
           {conPapel ? (
             <Seccion titulo="Comprobante" pie="Una foto del voucher o de la transferencia.">
-              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento />
+              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento pdf />
               {leyendo ? <Aviso texto="Leyendo el comprobante…" /> : null}
               {errorLectura ? <Aviso tono="cuidado" texto={`No se pudo leer el comprobante: ${errorLectura}`} /> : null}
               {bloqueado ? <Aviso tono="freno" texto={MOTIVO_DEL_FRENO[lectura.veredicto] || 'El comprobante no se pudo dar por bueno.'} /> : null}
+              {/* `AvisoDeNombre` del portal: un comprobante a nombre de otro va a aprobación. */}
+              {!bloqueado && lectura?.nombreSinReconocer ? (
+                <Aviso tono="cuidado" texto={`${lectura.leido?.beneficiario ? `El comprobante está a nombre de «${lectura.leido.beneficiario}», que no es la empresa.` : 'El comprobante no dice a quién se le pagó.'} El cobro se va a registrar esperando aprobación. El crédito sigue con saldo hasta que confirmen el pago.`} />
+              ) : null}
               <Campo multiline={false} value={documento} onChangeText={setDocumento} maxLength={40} placeholder="Número del comprobante" />
             </Seccion>
           ) : null}

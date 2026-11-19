@@ -11,7 +11,7 @@
 //   · el asegurado sale del listado de clientes;
 //   · cómo pagó: efectivo, tarjeta o transferencia, con la foto del comprobante.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
@@ -58,7 +58,13 @@ export default function MapfreAsegurado() {
 
   const [facturas, setFacturas] = useState(null);
   const [error, setError] = useState(null);
-  const [elegida, setElegida] = useState(null);
+  // Como el portal: buscador de facturas y «Actualizar la lista» (`vuelta`).
+  const [textoFactura, setTextoFactura] = useState('');
+  const buscarFactura = useTextoRebotado(textoFactura, 350);
+  const [vuelta, setVuelta] = useState(0);
+  // Se guarda el id y no la fila: si al actualizar la factura ya no espera el
+  // pago (alguien la cobró), deja de estar elegida.
+  const [elegidaId, setElegidaId] = useState(null);
   const [texto, setTexto] = useState('');
   const buscar = useTextoRebotado(texto, 350);
   const [clientes, setClientes] = useState([]);
@@ -70,11 +76,13 @@ export default function MapfreAsegurado() {
   useEffect(() => {
     let vivo = true;
     // Sólo las que esperan el pago: una cobrada (o anotada como «Otro») no se ofrece.
-    fetchFacturasMapfre(sala)
+    fetchFacturasMapfre(sala, buscarFactura)
       .then((f) => { if (vivo) { setFacturas(f.filter((x) => x.estado === 'POR_COBRAR')); setError(null); } })
       .catch((e) => { if (vivo) { setFacturas([]); setError(mensajeAmigable(e)); } });
     return () => { vivo = false; };
-  }, [sala]);
+  }, [sala, buscarFactura, vuelta]);
+  const elegida = useMemo(() => (facturas || []).find((f) => f.id === elegidaId) || null, [facturas, elegidaId]);
+  const porCobrar = (facturas || []).length;
 
   useEffect(() => {
     const q = buscar.trim();
@@ -136,13 +144,26 @@ export default function MapfreAsegurado() {
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           <Seccion titulo="La factura de Mapfre" pie="Lo que paga el asegurado sale del descuento de la factura.">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Campo multiline={false} value={textoFactura} onChangeText={setTextoFactura} placeholder="Factura o producto" autoCapitalize="characters" />
+              </View>
+              <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVuelta((v) => v + 1); }} accessibilityRole="button"
+                accessibilityLabel="Actualizar la lista" hitSlop={6}
+                style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 6, opacity: pressed ? 0.5 : 1 })}>
+                <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Actualizar</Text>
+              </Pressable>
+            </View>
+            {porCobrar > 0 && !elegida ? (
+              <Aviso tono="cuidado" texto={`${porCobrar === 1 ? 'Una factura de Mapfre no tiene' : `${porCobrar} facturas de Mapfre no tienen`} el pago del asegurado anotado.`} />
+            ) : null}
             {error ? <Aviso tono="freno" texto={error} /> : null}
             {facturas == null ? <Indicador /> : facturas.length === 0 ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-                No hay facturas de Mapfre por cobrar en esta sucursal. Una venta recién hecha tarda hasta un minuto en llegar.
+                {buscarFactura ? 'Ninguna factura de Mapfre por cobrar coincide.' : 'No hay facturas de Mapfre por cobrar en esta sucursal. Una venta recién hecha tarda hasta un minuto en llegar.'}
               </Text>
             ) : facturas.map((f) => (
-              <Fila key={f.id} activa={elegida?.id === f.id} onPress={() => { setElegida(f); setPago(FORMA_DE_PAGO_INICIAL); }}
+              <Fila key={f.id} activa={elegida?.id === f.id} onPress={() => { setElegidaId(f.id); setPago(FORMA_DE_PAGO_INICIAL); }}
                 titulo={`Factura ${factura(f.correlativo)} · paga ${formatMoney(Number(f.asegurado))}`}
                 detalle={[`${fechaNumerica(f.fecha, { anio: false })} · ${hora12(f.hora)}`, `Mapfre ${formatMoney(Number(f.total_mapfre))}`,
                   ...(f.productos || []).slice(0, 2).map((p) => `${Number(p.cantidad)}× ${p.descripcion}`)].join('\n')} />

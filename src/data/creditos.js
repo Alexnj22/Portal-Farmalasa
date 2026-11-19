@@ -332,7 +332,8 @@ export async function leerPagoDeCredito(archivo, { forma, saldo }) {
                  * y un PDF se manda tal cual porque no se reduce. Decir
                  * `image/png` sobre bytes JPEG es pedirle al lector que
                  * adivine. */
-                mimeType: archivo.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg',
+                // En el teléfono el archivo trae `tipo` y no `type`.
+                mimeType: (archivo.type || archivo.tipo) === 'application/pdf' ? 'application/pdf' : 'image/jpeg',
                 forma: String(forma || '').toLowerCase(),
                 saldo,
             },

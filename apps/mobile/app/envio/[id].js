@@ -37,7 +37,7 @@ import Evidencia from '../../componentes/traslados/Evidencia';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { avisar, fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
 import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
 
@@ -127,8 +127,38 @@ export default function Envio() {
     setOcupado(true); trabajando('Enviando…');
     const r = await despacharEnvio(envio.id);
     setOcupado(false);
-    if (!r?.ok) { fallo('No salió', r?.error ?? 'Inténtalo de nuevo.'); cargar(); return; }
-    terminar('Enviado', r.fallos?.length ? `${r.fallos.length} producto(s) no salieron.` : undefined);
+    // Lo que acaba de salir necesita su papel aunque otra parte no saliera
+    // (portal: `FilasEnvio` › reintentar). `envio` es la fila de ANTES: se
+    // rearma con lo que salió (`r.hechas`), con los lotes que de verdad viajan.
+    let papel = null;
+    if ((r?.enviadas ?? 0) > 0) {
+      const datos = ticketDeEnvioParaImprimir({
+        envio: {
+          ...envio,
+          lineas: (envio.lineas ?? []).map((l) => {
+            const hecha = (r.hechas ?? []).find((h) => h?.producto === l.descripcion);
+            if (!hecha) return l;
+            return {
+              ...l, enviado_at: l.enviado_at ?? new Date().toISOString(),
+              ...(hecha.lotes?.length ? { detalle: { ...(l.detalle ?? {}), renglones: hecha.lotes } } : {}),
+            };
+          }),
+        },
+        quien: user?.name ?? user?.nombre ?? null,
+      });
+      papel = datos
+        ? await imprimirEnLaSala(datos.ticket, salaDelUsuario(user) ?? null, datos.titulo).catch(() => ({ ok: false, detalle: 'No se pudo mandar a imprimir.' }))
+        : { ok: false, detalle: 'Este paquete no tiene número: se recibe buscándolo en la lista.' };
+    }
+    const lista = (r?.fallos ?? []).map((f) => `${f.producto}: ${f.error}`).join('\n');
+    const sinPapel = papel && !papel.ok ? `El ticket no salió: ${papel.detalle ?? 'sin detalle'}` : '';
+    if (!r?.ok) {
+      if ((r?.enviadas ?? 0) > 0) avisar('Salió una parte', [lista || r?.error, sinPapel].filter(Boolean).join('\n'));
+      else fallo('No salió', lista || r?.error || 'Inténtalo de nuevo.');
+      cargar(); return;
+    }
+    if (lista || sinPapel) { usePorDecidir.getState().quitar(`envio:${envio.id}`); avisar(lista ? 'Salió una parte' : 'Enviado, pero el ticket no salió', [lista, sinPapel].filter(Boolean).join('\n')); router.back(); return; }
+    terminar('Enviado', 'Pega el ticket en el paquete.');
   };
 
   const cancelar = async () => {

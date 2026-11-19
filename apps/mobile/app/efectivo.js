@@ -434,7 +434,7 @@ export default function Efectivo() {
           {sala && !cargando && !noSePudo ? (
             <MovimientosDelDia movimientos={delDia.movimientos} deBolsas={delDia.deBolsas} cobros={delDia.cobros}
               dia={estado?.dia} etiquetaDe={etiquetaDe} correcciones={correcciones} cortes={delDia.cortes}
-              anotaron={personas} puedeVerBolsas={puedeVerBolsas} puedeOperar={puedeOperar}
+              anotaron={personas} puedeVerBolsas={puedeVerBolsas} puedeOperar={puedeOperar} sala={sala} onRecargar={cargar}
               onCorregir={(m) => router.push({ pathname: '/corregir-movimiento', params: { sala, id: String(m.id), concepto: m.concepto || '', monto: String(m.monto ?? '') } })} />
           ) : null}
 

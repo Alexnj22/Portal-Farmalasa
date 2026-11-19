@@ -45,6 +45,8 @@ function RevisarReceta() {
   const [reserva, setReserva] = useState(undefined);
   const [url, setUrl] = useState(null);
   const [tam, setTam] = useState(null);
+  // Como el portal: si la foto no se pudo firmar, se dice, no se queda cargando.
+  const [sinFoto, setSinFoto] = useState(false);
   const [zoom, setZoom] = useState(0);
   // null = mirando; 'otra_foto' | 'rechazada' = escribiendo el motivo.
   const [modo, setModo] = useState(null);
@@ -62,11 +64,13 @@ function RevisarReceta() {
   useEffect(() => {
     let vivo = true;
     if (!reserva?.receta_ruta) return undefined;
+    setSinFoto(false);
     firmarRuta(reserva.receta_ruta).then((u) => {
-      if (!vivo || !u) return;
+      if (!vivo) return;
+      if (!u) { setSinFoto(true); return; }
       setUrl(u);
       Image.getSize(u, (w, h) => { if (vivo) setTam({ w, h }); }, () => { if (vivo) setTam({ w: 3, h: 4 }); });
-    }).catch(() => {});
+    }).catch(() => { if (vivo) setSinFoto(true); });
     return () => { vivo = false; };
   }, [reserva?.receta_ruta]);
 
@@ -85,11 +89,13 @@ function RevisarReceta() {
       { text: textos[2], style: decision === 'rechazada' ? 'destructive' : 'default', onPress: async () => {
         setEnviando(true); trabajando('Guardando…');
         try {
-          await decidirReceta(reserva.id, decision, decision === 'aprobada' ? null : motivo);
+          const res = await decidirReceta(reserva.id, decision, decision === 'aprobada' ? null : motivo);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           listo(decision === 'aprobada' ? 'Receta aprobada' : decision === 'otra_foto' ? 'Se pidió otra foto' : 'Receta rechazada',
             decision === 'aprobada' ? 'La reserva quedó confirmada y el cliente recibió el aviso.'
-              : decision === 'otra_foto' ? 'El cliente recibió el aviso para subir otra.' : 'La reserva se canceló y el cliente recibió el aviso.');
+              : decision === 'otra_foto' ? 'El cliente recibió el aviso para subir otra o quitar ese producto.'
+              : Number(res?.siguen) > 0 ? 'Se quitaron los productos bajo receta. Lo demás del pedido sigue. El cliente recibió el aviso.'
+              : 'La reserva se canceló y el cliente recibió el aviso.');
           router.back();
         } catch (e) { fallo('No se pudo guardar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setEnviando(false); }
       } },
@@ -123,6 +129,7 @@ function RevisarReceta() {
               </View>
               <View style={{ borderRadius: 14, overflow: 'hidden', backgroundColor: colorSistema.separador, maxHeight: Dimensions.get('window').height * 0.6 }}>
                 {!reserva.receta_ruta ? <Text style={{ padding: 16, color: colorSistema.texto2 }}>El cliente todavía no subió la foto.</Text>
+                  : sinFoto ? <Text style={{ padding: 16, color: colorSistema.texto2 }}>No se pudo abrir la foto. Sal y vuelve a intentarlo.</Text>
                   : !url ? <Indicador style={{ margin: 32 }} /> : (
                     <ScrollView nestedScrollEnabled maximumZoomScale={4} minimumZoomScale={1} bouncesZoom>
                       <ScrollView horizontal nestedScrollEnabled>

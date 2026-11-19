@@ -103,7 +103,9 @@ function Pendientes({ busqueda, salaPropia, salaFiltro, nombreSala, puedeAplicar
   const aplicar = async () => {
     setEnviando(true); trabajando('Marcando…');
     try {
-      const n = await aplicarPendientes(elegidas, salaPropia || null);
+      // Como el portal (`aplicar(elegidas, filterBranch)`): la sala fija o, si
+      // se ven todas, la del filtro elegido.
+      const n = await aplicarPendientes(elegidas, salaPropia || salaFiltro || null);
       useStaffStore.getState().appendAuditLog('INYECCION_APLICADA', elegidas.join(','), { aplicaciones: n, desde: 'app' });
       listo(n === 1 ? 'Aplicación marcada' : `${n} aplicaciones marcadas`, 'Quedan como aplicadas por ti.');
     } catch (e) { fallo('No se pudieron marcar', mensajeAmigable(e)); }

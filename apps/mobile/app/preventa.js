@@ -32,7 +32,7 @@ import {
 } from '@nucleo/data/preventas';
 import {
   MAX_PRODUCTOS, PAGOS, agregarConCantidad, agregarLinea, desgloseDeVenta, descuentoDePuntos, faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar,
-  maximoDePuntos, problemasDeVenta, totalesDe,
+  maximoDePuntos, problemasDeVenta, queCompletar, totalesDe,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -310,7 +310,13 @@ export default function Preventa() {
     listo('Agregados', `${productos.length} producto(s) de esa compra, con sus cantidades.`);
   };
   const elegirCliente = (c) => cambiar({ cliente: c ? { id: c.id, name: c.name, phone: c.phone ?? null } : null, puntos: '' });
-  const editarCliente = () => { if (venta.cliente) router.push({ pathname: '/cliente/[id]', params: { id: String(venta.cliente.id) } }); };
+  // Como el portal: la ficha se abre marcando qué le falta para el documento
+  // elegido (`queCompletar`); viaja por la dirección como JSON.
+  const editarCliente = () => {
+    if (!venta.cliente) return;
+    const completar = queCompletar(venta.documento, info ?? cotizacion?.cliente);
+    router.push({ pathname: '/cliente/[id]', params: { id: String(venta.cliente.id), ...(completar ? { completar: JSON.stringify(completar) } : {}) } });
+  };
   const otrasSucursales = (linea) => router.push(linea
     ? { pathname: '/pedir-traslado', params: { producto: String(linea.producto_id), descripcion: filaDe(linea)?.nombre ?? linea.nombre ?? '' } }
     : '/pedir-traslado');

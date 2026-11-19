@@ -83,6 +83,15 @@ describe('recorrido — qué ve el cliente y qué se manda', () => {
     it('numera las preguntas de corrido entre secciones', () => {
         expect(preguntasEnOrden(CUESTIONARIO).map((p) => p.numero)).toEqual([1, 2, 3, 4, 5, 6]);
     });
+    it('el número visible no cuenta las condicionales', () => {
+        const c = { secciones: [{ id: 's', preguntas: [
+            { id: 'a', tipo: 'unica', texto: 'A' },
+            { id: 'a_otro', tipo: 'texto', texto: '¿Cuál?', condicion: { pregunta: 'a', operador: 'incluye', valor: 'otro' } },
+            { id: 'b', tipo: 'texto', texto: 'B' },
+        ] }] };
+        expect(preguntasEnOrden(c).map((p) => p.numeroVisible)).toEqual([1, null, 2]);
+        expect(preguntasEnOrden(c).map((p) => p.numero)).toEqual([1, 2, 3]);
+    });
 });
 
 describe('obligatorias', () => {

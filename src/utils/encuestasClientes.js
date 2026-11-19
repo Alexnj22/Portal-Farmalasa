@@ -149,11 +149,19 @@ export function mover(lista, i, delta) {
     return n;
 }
 
-/** Todas las preguntas en orden, con su número visible (1, 2, 3…). */
+/**
+ * Todas las preguntas en orden, con su número (1, 2, 3…).
+ *
+ * `numero` cuenta todas: es la posición en el diseño. `numeroVisible` es el
+ * que ve quien contesta y no cuenta las condicionales (el «¿Cuál?» de «Otro»),
+ * que quedan en null. Sin esto, la entrevista decía «Pregunta 5 de 10» sobre
+ * una pregunta numerada «7.» (2026-11-19).
+ */
 export function preguntasEnOrden(cuestionario) {
     let n = 0;
+    let v = 0;
     return (cuestionario?.secciones || []).flatMap((s) => (s.preguntas || [])
-        .map((p) => ({ ...p, numero: (n += 1), seccionId: s.id })));
+        .map((p) => ({ ...p, numero: (n += 1), numeroVisible: p.condicion ? null : (v += 1), seccionId: s.id })));
 }
 
 /**

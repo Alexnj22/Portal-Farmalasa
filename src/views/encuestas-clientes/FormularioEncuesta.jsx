@@ -310,7 +310,7 @@ function Pregunta({ p, valor, falta, onChange, entrevista }) {
     return (
         <fieldset className="space-y-2" aria-invalid={falta || undefined}>
             <legend className="text-body-md font-semibold text-content">
-                <span className="text-content-3 mr-1">{p.numero}.</span>
+                {p.numeroVisible && <span className="text-content-3 mr-1">{p.numeroVisible}.</span>}
                 {p.texto || <span className="text-content-3 italic">Pregunta sin texto</span>}
                 {p.obligatoria && <span className="text-danger ml-0.5" aria-label="obligatoria">*</span>}
             </legend>

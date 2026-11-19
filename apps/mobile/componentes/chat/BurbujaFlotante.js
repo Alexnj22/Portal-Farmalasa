@@ -81,7 +81,9 @@ function BurbujaFlotante() {
   const enPestanas = segmentos[0] === '(tabs)';
   const enElChat = segmentos.some((s) => String(s).startsWith('chat-clientes'));
   const acompanante = useAcompanante((s) => s.boton);
-  const conChat = puede && !enElChat;
+  // En la entrevista de una encuesta la burbuja tapaba la última opción.
+  const enEncuesta = segmentos.some((s) => String(s).startsWith('encuestas-aplicar'));
+  const conChat = puede && !enElChat && !enEncuesta;
   const visible = (conChat || !!acompanante) && !teclado && segmentos[0] !== 'entrar';
   const alto = (conChat ? TAMANO : 0) + (acompanante ? TAMANO : 0) + (conChat && acompanante ? SEPARACION : 0);
   const conBuscador = useBuscadorAbajo((s) => Object.keys(s.claves).length > 0);

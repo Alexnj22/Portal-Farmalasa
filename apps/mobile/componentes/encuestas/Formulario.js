@@ -235,7 +235,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
           {actual.preguntas.map((p) => (
             <Seccion key={p.id}>
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>
-                {`${p.numero}. ${p.texto || 'Pregunta sin texto'}`}{p.obligatoria ? <Text style={{ color: MARCA.rojo }}> *</Text> : null}
+                {`${p.numeroVisible ? `${p.numeroVisible}. ` : ''}${p.texto || 'Pregunta sin texto'}`}{p.obligatoria ? <Text style={{ color: MARCA.rojo }}> *</Text> : null}
               </Text>
               {guionDeEscala(p) ? <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{guionDeEscala(p)}</Text> : null}
               {p.ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.ayuda}</Text> : null}

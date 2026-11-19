@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.1 — Encuestas: numeración de la entrevista sin contar los «¿Cuál?» y sin la burbuja del chat encima
+
+- En la entrevista, el número de cada pregunta ya no cuenta los «¿Cuál?» que sólo aparecen al marcar «Otro». La encuesta de investigación de mercado decía «Pregunta 5 de 10» sobre una pregunta numerada «7.». Ahora va del 1 al 10, igual que el cuestionario en papel. El diseño sigue numerando todas (`numero`), y quien contesta ve `numeroVisible`.
+- En la app, la burbuja del chat ya no aparece en Aplicar encuesta: tapaba la última opción de las preguntas largas.
+- Revisado en el simulador (iPhone) con el cuestionario de producción: zona elegida, las 13 pantallas y las condicionales abiertas.
+
+Novedades: no — decisión del usuario (mismo trabajo de las zonas de campo).
+
 ## v2.1583.0 — La app del personal: cargar compra, bitácoras de regencia, alta de clientes, conteos y rentabilidad
 
 - App, pantallas nuevas que sólo tenía el portal: **Cargar compra completa** (cargar en Bodega, diccionario, producto nuevo, partir renglón, pedir fechas a la sucursal, sacar de la lista con Deshacer, Erróneos y Por llegar con notas de crédito, facturas en papel, pistas, pausa de escrituras, Registro con CSV); **Bitácoras** de antibióticos (listado, por lote, cuadre), lotes por revisar y regencia (visitas, rótulo, hoja del mes); **alta de cliente** y «Sin número»; **consultas de existencia** (pedir y contar); **rentabilidad**; Mín·Máx de la sucursal con «Poner en 0» y «Restaurar al calculado».

@@ -49,7 +49,7 @@ export default function ComprobantePago({ forma, montoEsperado, puedeCambiarMont
     <View style={{ gap: 10, padding: 12, borderRadius: 16, backgroundColor: 'rgba(127,127,127,0.12)' }}>
       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Comprobante ${TEXTO_FORMA_COMPROBANTE[forma] ?? 'del pago'}`}</Text>
       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Foto del voucher, captura de la transferencia o del cheque. El monto se lee solo.</Text>
-      <Fotos fotos={fotos} onCambiar={leer} max={1} />
+      <Fotos fotos={fotos} onCambiar={leer} max={1} documento />
       {leyendo ? <Aviso tono="nota" texto="Leyendo el monto…" /> : null}
       {rev.noEsComprobante ? <Aviso tono="cuidado" texto={`${rev.motivoNoEs} Toma otra foto.`} /> : null}
       {fotos.length && rev.pideMontoAMano ? (

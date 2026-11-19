@@ -230,7 +230,7 @@ export default function CompletarReceta() {
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Fecha de la receta</Text>
               <Fecha valor={fechaReceta} onCambiar={setFechaReceta} hasta={hoySV()} />
             </View>
-            <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
+            <Fotos fotos={fotos} onCambiar={setFotos} max={1} documento />
             <Campo value={notas} onChangeText={setNotas} placeholder="Notas (opcional)" />
           </Seccion>
 

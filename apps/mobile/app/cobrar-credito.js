@@ -213,7 +213,7 @@ export default function CobrarCredito() {
 
           {e.conPapel ? (
             <Seccion titulo={`Comprobante (${forma.toLowerCase()})`} pie="Una foto del comprobante o de la pantalla del banco. Se lee sola.">
-              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} />
+              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento />
             </Seccion>
           ) : null}
           {leyendo ? <Aviso tono="nota" texto="Leyendo el comprobante…" /> : null}

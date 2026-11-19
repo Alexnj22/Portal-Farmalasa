@@ -110,7 +110,7 @@ export default function CorregirAbono() {
           ) : null}
           {conPapel ? (
             <Seccion titulo="Comprobante" pie="Una foto del voucher o de la transferencia.">
-              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} />
+              <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento />
               {leyendo ? <Aviso texto="Leyendo el comprobante…" /> : null}
               {errorLectura ? <Aviso tono="cuidado" texto={`No se pudo leer el comprobante: ${errorLectura}`} /> : null}
               {bloqueado ? <Aviso tono="freno" texto={MOTIVO_DEL_FRENO[lectura.veredicto] || 'El comprobante no se pudo dar por bueno.'} /> : null}

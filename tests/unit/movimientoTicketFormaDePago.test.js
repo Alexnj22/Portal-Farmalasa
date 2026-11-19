@@ -33,3 +33,15 @@ describe('comprobante de un ingreso según cómo se pagó', () => {
         expect(t.datos.some(([k]) => k === 'Pago')).toBe(false);
     });
 });
+
+describe('raya de firma en una salida', () => {
+    const salida = (m) => construirComprobanteDeMovimiento({ movimiento: { tipo: 'SALIDA', id: 8181, fecha: '2026-11-19', monto: 50, ...m }, etiqueta: 'POS Promerica', sala: 'Salud 4', hechoPor: 'X', hechoAt: '2026-11-19T17:39:00Z' });
+    const conRaya = (t) => JSON.stringify(t.pie).includes('Firma');
+    it('una salida del POS (remesa, retiro) no pide firma', () => {
+        expect(conRaya(salida({ tipo_codigo: 'POS_PROMERICA_SALIDA' }))).toBe(false);
+        expect(conRaya(salida({ tipo_codigo: 'REMESA' }))).toBe(false);
+    });
+    it('una devolución sin carné sigue con raya', () => {
+        expect(conRaya(salida({ tipo_codigo: 'DEVOLUCION' }))).toBe(true);
+    });
+});

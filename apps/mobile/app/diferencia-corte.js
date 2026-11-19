@@ -307,7 +307,7 @@ export default function DiferenciaCorte() {
                       {cuenta.explicaInvalido ? <Aviso tono="freno" texto="Tiene que ser mayor que cero." /> : null}
                       {cuenta.quedaTrasCausa > 0 ? <Aviso texto={`Quedan ${formatMoney(cuenta.quedaTrasCausa)} por resolver después.`} /> : null}
                       <Campo multiline={false} value={evidenciaRef} onChangeText={setEvidenciaRef} placeholder="Ingreso, vale, factura o recibo" autoCapitalize="characters" />
-                      <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
+                      <Fotos fotos={fotos} onCambiar={setFotos} max={1} documento />
                     </Seccion>
                   ) : null}
                   {via === 'REPONE' ? (

@@ -125,7 +125,7 @@ export default function Deposito() {
             {d.comprobante_url ? <BotonGrande texto="Ver la boleta" borde onPress={() => Promise.resolve(openStoredFile(d.comprobante_url)).catch(() => {})} /> : null}
             {!anulado && puedeContar ? (
               <>
-                <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
+                <Fotos fotos={fotos} onCambiar={setFotos} max={1} documento />
                 {fotos.length ? <BotonGrande texto={ocupado ? 'Anexando…' : d.comprobante_url ? 'Reemplazar la boleta' : 'Anexar la boleta'} color={MARCA.verde} deshabilitado={ocupado} onPress={anexar} /> : null}
               </>
             ) : !d.comprobante_url ? <Vacio enSeccion>Todavía no se anexó la boleta.</Vacio> : null}

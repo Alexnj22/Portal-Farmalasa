@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.8 — Sin firma en salidas del POS y recorte nativo en toda foto de un papel
+
+- Vale de caja (web y app): una salida del POS Promerica o una remesa ya no imprime raya de firma. El respaldo es la boleta del POS con su foto (usuario, 2026-11-19).
+- App del personal: toda foto de un papel abre el escáner del sistema, que encuentra la hoja, deja mover las esquinas y la endereza. Faltaba en Sacar dinero, Cobrar crédito, Corregir crédito, Depósito, Diferencia de corte, Receta, Incapacidad, el comprobante de facturación (No efectivo y el de Torogoz) y el convenio del practicante. Las fotos de productos, personas y publicidad siguen con la cámara normal.
+
 ## v2.1579.7 — La app lee la boleta al sacar dinero
 
 - App del personal, Sacar dinero → POS Promerica: la foto de la boleta va primero y se lee con el mismo lector del portal. Llena el monto (cerrado si la boleta lo confirma), el número de boleta, de qué fue («Remesa Money Gram WS») y la remesadora, y avisa si el papel dice que la operación va para el otro lado. La lectura queda guardada en el movimiento. Antes la app no leía la foto: la remesa P8181 de Salud 4 (2026-11-19) salió como «POS Promerica» a secas y con el monto escrito a mano.

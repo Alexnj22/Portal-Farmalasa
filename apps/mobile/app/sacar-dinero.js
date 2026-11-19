@@ -241,7 +241,7 @@ export default function SacarDinero() {
           {t ? (
             <Seccion titulo="La salida">
               {/* Donde el papel manda, la foto va PRIMERO: de ella salen el monto, el número y de qué fue. */}
-              {laFotoManda ? <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} /> : null}
+              {laFotoManda ? <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento /> : null}
               {aviso ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}
               {sentido ? <Aviso tono="cuidado" texto={sentido} /> : null}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -259,7 +259,7 @@ export default function SacarDinero() {
                   : <Campo multiline={false} value={entidad} onChangeText={setEntidad} placeholder={t.etiqueta_entidad} />
               ) : null}
               {t.pide_boleta ? <Campo multiline={false} value={boleta} editable={!boletaCerrada} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
-              {t.foto && t.foto !== 'NO' && !laFotoManda ? <Fotos fotos={fotos} onCambiar={setFotos} max={1} /> : null}
+              {t.foto && t.foto !== 'NO' && !laFotoManda ? <Fotos fotos={fotos} onCambiar={setFotos} max={1} documento /> : null}
               <Campo value={nota} onChangeText={setNota} placeholder={esOtro ? 'De qué fue: qué se pagó, a quién y quién lo autorizó' : 'Nota (opcional)'} />
               {sinComprobante ? (
                 <>

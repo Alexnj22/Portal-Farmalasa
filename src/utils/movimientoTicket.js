@@ -31,7 +31,8 @@
 //                   la raya de firma con el nombre abajo»).
 //
 // El ingreso nunca lleva raya: quien entrega es el cliente y el papel es SUYO —
-// pedirle que firme el comprobante que se lleva no prueba nada.
+// pedirle que firme el comprobante que se lleva no prueba nada. Las salidas del
+// POS (remesa, retiro) tampoco: el respaldo es la boleta del POS.
 //
 // ── Lo que se rompe solo (§5 de docs/IMPRESION-EN-TICKETERA-2026-08-13.md) ──
 // Sólo ASCII —por eso los rótulos van SIN TILDE a propósito, no es un
@@ -115,7 +116,12 @@ export function construirComprobanteDeMovimiento({
     // ya prueba quién se llevó el dinero; una raya al lado pediría a mano una
     // prueba que el registro tiene mejor. Sin carné es lo único que queda, y
     // lleva el nombre debajo para que se sepa quién firma.
-    if (!entra && !comoSeComprobo) {
+    /* Las salidas del POS (remesa, retiro) tampoco llevan raya (usuario,
+     * 2026-11-19: «no tenía entendido que el comprobante pidiera firma»). Quien
+     * recibe es un cliente, y el respaldo es la boleta del POS con su foto: una
+     * firma al lado no prueba nada que la boleta no pruebe mejor. */
+    const delPos = /^(POS_|REMESA$)/.test(String(movimiento?.tipo_codigo || ''));
+    if (!entra && !comoSeComprobo && !delPos) {
         // Renglón en blanco arriba: sobre papel térmico una raya pegada al
         // renglón anterior no deja lugar para la mano.
         pie.push('', '_______________________________');

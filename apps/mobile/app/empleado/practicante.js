@@ -30,6 +30,7 @@ import { Aviso, BotonGrande, Seccion, PantallaSinDato } from '../../componentes/
 import { MARCA } from '../../componentes/inicio/marca';
 import { CampoConRotulo, CampoFecha, Elegir } from '../../componentes/personas/Formulario';
 import { fallo, listo } from '../../componentes/Progreso';
+import { escanearDocumento } from '../../componentes/escanearDocumento';
 
 export default function Practicante() {
   const { id } = useLocalSearchParams();
@@ -66,6 +67,14 @@ export default function Practicante() {
   }, [instituciones, form.institucion_educativa]);
 
   const tomarConvenio = async (camara) => {
+    // El convenio es un papel: con la cámara, el escáner del sistema lo recorta y lo endereza.
+    if (camara) {
+      const e = await escanearDocumento();
+      if (e.disponible) {
+        if (e.foto) { Haptics.selectionAsync().catch(() => {}); setConvenio({ uri: e.foto.uri, tipo: e.foto.tipo }); }
+        return;
+      }
+    }
     const permiso = camara ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permiso.granted) { Alert.alert('Sin permiso', camara ? 'La app necesita la cámara.' : 'La app necesita tus fotos.'); return; }
     const op = { mediaTypes: ['images'], quality: 0.7 };

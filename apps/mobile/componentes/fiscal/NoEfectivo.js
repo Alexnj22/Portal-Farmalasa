@@ -38,11 +38,17 @@ import { fallo, listo } from '../Progreso';
 import Tocable from '../Tocable';
 import Avatar from '../Avatar';
 import { MAYUSCULAS } from '../../tema/mayusculas';
+import { escanearDocumento } from '../escanearDocumento';
 
 const ROTULO = { tarjeta: 'Tarjeta', credito: 'Crédito', transferencia: 'Transferencia', bitcoin: 'Bitcoin', cheque: 'Cheque' };
 const finDeMes = (mes) => { const [a, m] = mes.split('-').map(Number); return `${mes}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`; };
 
 async function elegirFoto(camara) {
+  // Con la cámara, el escáner del sistema: encuentra el comprobante y lo endereza.
+  if (camara) {
+    const e = await escanearDocumento();
+    if (e.disponible) return e.foto ? { uri: e.foto.uri, tipo: e.foto.tipo, ext: 'jpg' } : null;
+  }
   const permiso = camara ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permiso.granted) { Alert.alert('Sin permiso', camara ? 'La app necesita la cámara.' : 'La app necesita tus fotos.'); return null; }
   const op = { mediaTypes: ['images'], quality: 0.6 };

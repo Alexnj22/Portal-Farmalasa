@@ -105,20 +105,45 @@ function ExtrasDelPedido() {
     if (error) fallo('No se pudo guardar', mensajeAmigable(error));
   };
   // Un respiro de 400 ms por extra, como el portal: tocar «+» cinco veces es
-  // una escritura, no cinco que pueden llegar desordenadas.
+  // una escritura, no cinco que pueden llegar desordenadas. Al salir de la
+  // pantalla lo pendiente se ESCRIBE, no se descarta (`asentarExtras` del
+  // portal): antes el último toque antes de volver se perdía.
   const respiros = useRef({});
-  useEffect(() => () => Object.values(respiros.current).forEach(clearTimeout), []);
+  const pendientes = useRef({});
+  const escribirRef = useRef(escribir);
+  escribirRef.current = escribir;
+  useEffect(() => () => {
+    const porEscribir = Object.values(pendientes.current);
+    Object.values(respiros.current).forEach(clearTimeout);
+    respiros.current = {}; pendientes.current = {};
+    porEscribir.forEach((e) => { escribirRef.current(e); });
+  }, []);
+  const escribirYa = (e) => {
+    clearTimeout(respiros.current[e.id]);
+    delete respiros.current[e.id]; delete pendientes.current[e.id];
+    return escribir(e);
+  };
   const editar = (i, cambios, guardarYa = true) => {
     const e = { ...extras[i], ...cambios };
     setExtras((xs) => xs.map((x, j) => (j === i ? e : x)));
-    if (!guardarYa) return;
+    pendientes.current[e.id] = e;
     clearTimeout(respiros.current[e.id]);
-    respiros.current[e.id] = setTimeout(() => { delete respiros.current[e.id]; escribir(e); }, 400);
+    delete respiros.current[e.id];
+    // La nota se escribe al terminar de editarla; hasta entonces queda
+    // pendiente para que salir de la pantalla no la pierda.
+    if (!guardarYa) return;
+    respiros.current[e.id] = setTimeout(() => {
+      const porEscribir = pendientes.current[e.id];
+      delete respiros.current[e.id]; delete pendientes.current[e.id];
+      if (porEscribir) escribir(porEscribir);
+    }, 400);
   };
   const quitar = (i) => Alert.alert('Quitar el extra', extras[i].nombre, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Quitar', style: 'destructive', onPress: async () => {
       const e = extras[i];
+      clearTimeout(respiros.current[e.id]);
+      delete respiros.current[e.id]; delete pendientes.current[e.id];
       const { error } = await quitarExtraDePedido(e.id);
       if (error) { fallo('No se pudo quitar', mensajeAmigable(error)); return; }
       setExtras((xs) => xs.filter((_, j) => j !== i));
@@ -169,7 +194,7 @@ function ExtrasDelPedido() {
                       <Text style={{ width: 44, textAlign: 'center', color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{e.fQty}</Text>
                       <Paso texto="+" onPress={() => editar(i, { fQty: e.fQty + 1 })} />
                     </View>
-                    <Campo multiline={false} value={e.nota} placeholder="Nota (opcional)" onChangeText={(t) => editar(i, { nota: t }, false)} onEndEditing={() => escribir(extras[i])} />
+                    <Campo multiline={false} value={e.nota} placeholder="Nota (opcional)" onChangeText={(t) => editar(i, { nota: t }, false)} onEndEditing={() => escribirYa(pendientes.current[e.id] ?? extras[i])} />
                   </>
                 )}
               </View>

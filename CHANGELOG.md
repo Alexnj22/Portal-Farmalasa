@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1580.0 — La app hace lo mismo que la web en caja, pedidos, reservas, preventa, receta e inyecciones
+
+Auditoría app contra web del 2026-11-19: la app del personal hacía menos que el portal en pantallas de dinero e inventario. Primera tanda (lo que toca dinero, inventario y libros):
+
+- Sacar dinero: salida mixta (bolsa + caja, ligadas, y si la caja rechaza se anula la de la bolsa); la foto se revisa contra lo escrito y frena si no es boleta, no se lee o no coincide; el concepto completo lleva el motivo; boleta repetida con otra remesadora avisa y no frena; avisa cuando la foto corrige algo escrito.
+- Meter dinero: boleta repetida con tipo, forma de pago, monto y lectura (no frena boletas de otro banco); «La foto leyó mal: corregir a mano».
+- Recibir pedido: no se cierra con cajas que no llegaron o productos en reenvío; frena cantidades muy por encima de lo enviado (y traduce la cantidad al cambiar de presentación); hojas de caja dañada sin «Todo llegó bien»; pide confirmar antes de meter la hoja al inventario; avisa si el inventario no entró o las diferencias no se reportaron; aviso de vencimiento corto; los extras ya no pierden el último cambio.
+- Apartar: con el precio que le toca al cliente (antes viñeta); apartar sin anticipo.
+- Encargos: avisa si ya se vendió y deja amarrarlo sin cobrar otra vez; cancelar sin cobrar. Cancelar una reserva ya facturada pregunta si el anticipo se descontó.
+- Preventa: sumas, IVA, retención y total esperado; lo de una compra pasada entra con su cantidad.
+- Libro bajo receta: se liga a una receta abierta; avisa lote vencido al vender; muestra la receta aprobada de la app de clientes.
+- Inyecciones: frena el lote parecido a uno conocido y completa su vencimiento.
+- Forma de pago: «No puedo leer el total o el número» (queda pendiente de autorización). Mapfre e inyección avisan «Anotado, falta autorizarlo».
+- Novedades: no — decisión del usuario (2026-11-19): son correcciones.
+
 ## v2.1579.8 — Sin firma en salidas del POS y recorte nativo en toda foto de un papel
 
 - Vale de caja (web y app): una salida del POS Promerica o una remesa ya no imprime raya de firma. El respaldo es la boleta del POS con su foto (usuario, 2026-11-19).

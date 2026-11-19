@@ -10,11 +10,12 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  cambiarEstadoReserva, codigoDeReserva, enviarPreventa, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, prorrogarReserva, whatsappDe,
+  cambiarEstadoReserva, codigoDeReserva, enviarPreventa, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, prorrogarReserva, ventasDelError, whatsappDe,
 } from '@nucleo/data/reservas';
 import { puedeEnviarPreventa } from '@nucleo/utils/preventa';
 import { modoDeProrroga } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fallo, listo, trabajando } from '../Progreso';
 
@@ -92,15 +93,54 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
         { text: 'Cancelar reserva', style: 'destructive', onPress: async (texto) => {
           const motivo = String(texto ?? '').trim();
           if (motivo.length < 3) { fallo('Falta el motivo', 'Escribe por qué se cancela (al menos 3 letras).'); return; }
-          setOcupada(r.id);
-          try {
-            for (const x of filasDe) await cambiarEstadoReserva(x.id, 'cancelada', motivo);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-            listo('Reserva cancelada', 'Lo que el cliente ya pagó queda como saldo a favor.');
-            releer();
-          } catch (e) { fallo('No se pudo cancelar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupada(null); }
+          await cancelarConMotivo(r, motivo);
         } },
       ], 'plain-text', '', 'default');
+  };
+
+  // Como el portal (2026-10-26): si el producto ya se le facturó al cliente
+  // por fuera de «Retirar», la base lanza `VENTA_YA_FACTURADA` y no cancela a
+  // ciegas. Los renglones sin esa duda se cancelan igual; los que la tienen
+  // esperan a que se diga si el anticipo se descontó en esa factura.
+  const cancelarConMotivo = async (r, motivo, anticipoEnVenta = null, soloIds = null) => {
+    setOcupada(r.id);
+    try {
+      const ids = soloIds ?? (r.renglones ?? [r]).map((x) => x.id);
+      const conVenta = [];
+      for (const id of ids) {
+        try {
+          await cambiarEstadoReserva(id, 'cancelada', motivo, anticipoEnVenta);
+        } catch (err) {
+          const ventas = ventasDelError(err);
+          if (!ventas) throw err;
+          conVenta.push({ id, ventas });
+        }
+      }
+      releer();
+      if (conVenta.length) { preguntarSiSeDesconto(r, motivo, conVenta); return; }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      listo('Reserva cancelada', anticipoEnVenta
+        ? 'El anticipo ya se usó en la factura. No queda saldo a favor.'
+        : 'Lo que el cliente ya pagó queda como saldo a favor.');
+    } catch (e) {
+      fallo('No se pudo cancelar', mensajeAmigable(e, 'Intenta de nuevo.'));
+      releer();
+    } finally { setOcupada(null); }
+  };
+
+  const preguntarSiSeDesconto = (r, motivo, conVenta) => {
+    const ids = new Set(conVenta.map((x) => x.id));
+    const anticipo = (r.renglones ?? [r]).filter((x) => ids.has(x.id)).reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
+    const facturas = [...new Map(conVenta.flatMap((x) => x.ventas).map((v) => [v.invoice_id, v])).values()];
+    const codigo = r.pedido ?? codigoDeReserva(r.id);
+    const lista = facturas.map((v) => `· Factura ${v.factura} · ${fechaTexto(v.fecha, { weekday: 'short', day: 'numeric', month: 'short' })} · ${v.sala} · ${Number(v.cantidad)} u.`).join('\n');
+    const soloIds = conVenta.map((x) => x.id);
+    Alert.alert('Este producto ya se le facturó',
+      `Después de reservar, al mismo cliente se le facturó lo que tenía apartado en ${codigo}:\n${lista}\n\n¿En esa venta se le descontó el anticipo de ${formatMoney(anticipo)}? Si se descontó, cancelar no deja saldo a favor. Si pagó la factura completa, el anticipo queda a su favor.`, [
+        { text: 'Ahora no', style: 'cancel' },
+        { text: 'Pagó completo', onPress: () => cancelarConMotivo(r, motivo, false, soloIds) },
+        { text: 'Sí, se descontó', onPress: () => cancelarConMotivo(r, motivo, true, soloIds) },
+      ]);
   };
 
   // Una sola prórroga de 7 días (reglamento v2); un pedido se prorroga entero.

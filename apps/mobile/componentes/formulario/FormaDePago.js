@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { leerBoleta } from '@nucleo/data/bolsas';
 import { lecturaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO, nombreDelComprobante } from '@nucleo/utils/formaDePago';
+import { estadoDeFormaDePago, faltanDatosDelComprobante, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO, nombreDelComprobante, nombreDelNumero } from '@nucleo/utils/formaDePago';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Fotos from './Fotos';
@@ -108,6 +108,22 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
               onChangeText={(t) => poner({ numero: t })} placeholder={v.forma === 'TARJETA' ? 'Número del voucher' : 'Referencia'} />
           </View>
         </View>
+      ) : null}
+
+      {/* Total y número son obligatorios (2026-11-04): sin ellos el voucher no
+          se puede cuadrar. Si no se pueden escribir, el ingreso entra
+          pendiente de autorización, como en el portal. */}
+      {estado.noEfectivo && v.foto && faltanDatosDelComprobante(v) && !v.sinDatos ? (
+        <Enlace texto={`No puedo leer el total o el ${nombreDelNumero(v.forma)}`} onPress={() => poner({ sinDatos: true })} />
+      ) : null}
+
+      {estado.noEfectivo && v.foto && faltanDatosDelComprobante(v) && v.sinDatos ? (
+        <>
+          <Aviso tono="cuidado" texto={`Sin el total y el ${nombreDelNumero(v.forma)}, el ingreso se anota pero queda pendiente de autorización. Lo revisa un supervisor, un administrador o Talento Humano.`} />
+          <Campo value={v.motivo} onChangeText={(t) => poner({ motivo: t })}
+            placeholder={`Por qué no hay total o ${nombreDelNumero(v.forma)}. Ej.: el voucher salió borroso`} />
+          <Enlace texto="Sí los tengo: escribirlos" onPress={() => poner({ sinDatos: false, motivo: '' })} />
+        </>
       ) : null}
 
       {/* Lo que el voucher cubre además de este cobro: tiene que ser una venta

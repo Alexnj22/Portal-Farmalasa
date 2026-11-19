@@ -33,7 +33,7 @@ import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Pi
 import FormaDePago from '../componentes/formulario/FormaDePago';
 import { subirFotos } from '../componentes/formulario/Fotos';
 import { MARCA } from '../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { avisar, fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
 
 const factura = (correlativo) => String(correlativo ?? '').replace(/^0+/, '').split('_')[0] || '—';
@@ -113,7 +113,11 @@ export default function MapfreAsegurado() {
             persona: asegurado.name || '', comoSeComprobo: null,
           }, sala, nombreSala, user?.name || '') : { ok: true };
           if (r?.aviso) fallo('Cobrado, con un pendiente', r.aviso);
-          else if (!papel.ok) fallo('Cobrado, pero el comprobante no salió', papel.detalle);
+          // Sin comprobante (o sin su total o número) el ingreso existe pero no
+          // está autorizado: decir «anotado» a secas haría creer que no falta nada.
+          else if (r?.movimiento?.autorizacion === 'PENDIENTE') {
+            avisar('Anotado, falta autorizarlo', `No hay comprobante. Lo revisa un supervisor, un administrador o Talento Humano.${papel.ok ? '' : ' El comprobante no salió.'}`);
+          } else if (!papel.ok) fallo('Cobrado, pero el comprobante no salió', papel.detalle);
           else listo('Pago del asegurado anotado', `Factura ${factura(elegida.correlativo)} · ${formatMoney(monto)}`);
           router.back();
         } catch (e) {

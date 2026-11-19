@@ -45,6 +45,8 @@ import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '
 
 // El ícono y el color de cada motivo. Un código nuevo del catálogo sale con el
 // genérico hasta que se agregue acá; el color se lee al pintar (getters).
+const SIN_FILAS = [];
+
 const ASPECTO = {
   APLICACION: { icono: 'Jeringa', get color() { return MARCA.violeta; } },
   GLUCOSA: { icono: 'Gota', get color() { return MARCA.rojo; } },
@@ -71,7 +73,11 @@ export default function MeterDinero() {
   const [fotos, setFotos] = useState([]);
   const [leyendo, setLeyendo] = useState(false);
   const [lectura, setLectura] = useState(null);
-  const [montoCerrado, setMontoCerrado] = useState(false);
+  /* Qué puso la foto (`puesto` de `lecturaDeBoleta`) y si la persona pidió
+   * corregirlo a mano, igual que el portal (`deLaFoto` / `aMano`): lo que la
+   * foto confirmó queda cerrado hasta que se toque «La foto leyó mal». */
+  const [deLaFoto, setDeLaFoto] = useState({});
+  const [aMano, setAMano] = useState(false);
   // El freno del monto sin comprobar (`frenoDelMonto`, núcleo), igual que en el
   // portal: primero otra foto, y sólo después «lo comparé con el papel».
   const [intentosSinComprobar, setIntentosSinComprobar] = useState(0);
@@ -79,7 +85,7 @@ export default function MeterDinero() {
   const [cotejado, setCotejado] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [sentido, setSentido] = useState(null);
-  const [repetidas, setRepetidas] = useState([]);
+  const [repetidas, setRepetidas] = useState({ clave: null, filas: SIN_FILAS });
   const [guardando, setGuardando] = useState(false);
   const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
   // Lo que no va en «Otro» y por qué no hay comprobante: las reglas del servidor.
@@ -107,14 +113,25 @@ export default function MeterDinero() {
   const estadoPago = estadoDeFormaDePago(conFormaDePago ? pago : null, n);
   const noEfectivo = conFormaDePago && estadoPago.noEfectivo;
 
+  /* Con QUÉ se anota —tipo, forma de pago, monto y la lectura—, como el portal
+   * (MiCajaView): el mismo número de otro banco, otro emisor u otra terminal
+   * es otra operación y no frena. Lo decide la base. El resultado va atado a
+   * su clave para que una respuesta vieja no se aplique a lo que hay ahora. */
+  const tipoCodigo = tipo?.codigo || null;
+  const formaDeBoleta = conFormaDePago ? (pago?.forma || 'EFECTIVO') : 'EFECTIVO';
+  const montoDeBoleta = n > 0 ? n : null;
+  const claveDeBoleta = boleta.trim() && sala ? `${sala}|${boleta.trim()}|${tipoCodigo}|${formaDeBoleta}|${montoDeBoleta}` : null;
   useEffect(() => {
     const num = boleta.trim();
-    if (!num || !sala) { setRepetidas([]); return undefined; }
+    if (!num || !sala) return undefined;
     let vivo = true;
-    const id = setTimeout(() => boletaYaEnCaja(Number(sala), num).then((f) => vivo && setRepetidas(f)), 400);
+    const id = setTimeout(() => boletaYaEnCaja(Number(sala), num, { tipoCodigo, formaPago: formaDeBoleta, monto: montoDeBoleta, lectura })
+      .then((filas) => vivo && setRepetidas({ clave: `${sala}|${num}|${tipoCodigo}|${formaDeBoleta}|${montoDeBoleta}`, filas })), 400);
     return () => { vivo = false; clearTimeout(id); };
-  }, [boleta, sala]);
-  const problema = useMemo(() => problemaDeBoleta(repetidas, true, boleta), [repetidas, boleta]);
+  }, [boleta, sala, tipoCodigo, formaDeBoleta, montoDeBoleta, lectura]);
+  const filasRepetidas = claveDeBoleta && repetidas.clave === claveDeBoleta ? repetidas.filas : SIN_FILAS;
+  const problema = useMemo(() => problemaDeBoleta(filasRepetidas, true, boleta), [filasRepetidas, boleta]);
+  const cerrado = (campo) => !!deLaFoto[campo] && !aMano;
 
   const elegir = (v) => {
     const elegido = tipos.find((t) => t.codigo === v);
@@ -129,13 +146,13 @@ export default function MeterDinero() {
       else router.replace({ pathname: '/portal', params: { ruta: `/caja?sala=${sala}` } });
       return;
     }
-    setCodigo(v); setPago(FORMA_DE_PAGO_INICIAL); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setMontoCerrado(false);
+    setCodigo(v); setPago(FORMA_DE_PAGO_INICIAL); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setDeLaFoto({});
   };
 
   // Al poner la foto se lee; al quitarla se olvida lo que dijo.
   const alCambiarFotos = async (lista) => {
     setFotos(lista);
-    setAviso(null); setSentido(null); setLectura(null); setMontoCerrado(false); setCotejado(false);
+    setAviso(null); setSentido(null); setLectura(null); setDeLaFoto({}); setCotejado(false);
     const f = lista[0];
     if (!f) return;
     setLeyendo(true);
@@ -143,12 +160,13 @@ export default function MeterDinero() {
     setLeyendo(false);
     const l = lecturaDeBoleta(r, { pideBoleta: !!tipo?.pide_boleta });
     setAviso(l.aviso);
-    if (l.error) return;
+    if (l.error) { setAMano(true); return; }
     setLectura(l.lectura);
     if (l.monto != null) setMonto(l.monto);
     if (l.boleta != null) setBoleta(l.boleta);
     if (l.concepto != null) setDetalle(l.concepto);
-    setMontoCerrado(!!l.puesto.monto);
+    setDeLaFoto(l.puesto);
+    if (l.aMano) setAMano(true);
     if (l.monto != null && !l.puesto.monto) setIntentosSinComprobar((k) => k + 1);
     setSentido(choqueDeSentido(r, true));
   };
@@ -234,7 +252,7 @@ export default function MeterDinero() {
               <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento />
             </Seccion>
           ) : null}
-          {aviso && !noEfectivo ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}
+          {aviso && !noEfectivo ? <Aviso tono={cerrado('monto') ? 'nota' : 'cuidado'} texto={aviso} /> : null}
           {frenoMonto && !leyendo ? (
             <View style={{ gap: 8 }}>
               <Aviso tono="cuidado" texto={frenoMonto.texto} />
@@ -255,21 +273,27 @@ export default function MeterDinero() {
           {tipo ? (
             <Seccion titulo="El ingreso">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{noEfectivo ? 'Cuánto es de este ingreso' : montoCerrado ? 'Monto (confirmado por la boleta)' : 'Monto'}</Text>
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{noEfectivo ? 'Cuánto es de este ingreso' : cerrado('monto') ? 'Monto (confirmado por la boleta)' : 'Monto'}</Text>
                 <View style={{ minWidth: 140 }}>
-                  <Campo multiline={false} value={monto} editable={noEfectivo || !montoCerrado} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))}
+                  <Campo multiline={false} value={monto} editable={noEfectivo || !cerrado('monto')} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))}
                     keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
                 </View>
               </View>
-              {tipo.pide_boleta && !noEfectivo ? <Campo multiline={false} value={boleta} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
+              {tipo.pide_boleta && !noEfectivo ? <Campo multiline={false} value={boleta} editable={!cerrado('boleta')} onChangeText={setBoleta} placeholder="Número de boleta" autoCapitalize="characters" /> : null}
               {tipo.pide_persona ? <Campo multiline={false} value={persona} onChangeText={setPersona} placeholder="Quién lo trae" autoCapitalize="words" /> : null}
-              <Campo value={detalle} onChangeText={setDetalle}
+              <Campo value={detalle} editable={!cerrado('concepto')} onChangeText={setDetalle}
                 placeholder={`Detalle${exigeDetalle ? '' : ' (opcional)'}${PISTA_DE_DETALLE[tipo.codigo] ? ` (p. ej. ${PISTA_DE_DETALLE[tipo.codigo]})` : ''}`} />
               {efectivoSinComprobante ? (
                 <>
                   <Aviso tono="cuidado" texto="Sin foto del comprobante, este ingreso queda pendiente de autorización." />
                   <Campo value={motivoSinFoto} onChangeText={setMotivoSinFoto} placeholder="Por qué no hay comprobante" />
                 </>
+              ) : null}
+              {/* La foto puede leer mal: un botón, no los campos siempre abiertos (portal, MiCajaView). */}
+              {Object.keys(deLaFoto).length > 0 && !aMano && !noEfectivo ? (
+                <Pressable onPress={() => setAMano(true)} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', marginHorizontal: 4 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>La foto leyó mal: corregir a mano</Text>
+                </Pressable>
               ) : null}
             </Seccion>
           ) : null}

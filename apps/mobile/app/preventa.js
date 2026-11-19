@@ -31,7 +31,7 @@ import {
   anularPreventa, cotizarPreventa, enviarPreventaDirecta, fetchClienteDePreventa, fetchPreventasDeSala, fotosDeProductos, lotesDePreventa,
 } from '@nucleo/data/preventas';
 import {
-  MAX_PRODUCTOS, PAGOS, agregarLinea, descuentoDePuntos, faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar,
+  MAX_PRODUCTOS, PAGOS, agregarConCantidad, agregarLinea, desgloseDeVenta, descuentoDePuntos, faltanParaCcf, lineasDeVenta, lineasParaCotizar, lineasParaEnviar,
   maximoDePuntos, problemasDeVenta, totalesDe,
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
@@ -262,6 +262,11 @@ export default function Preventa() {
   const puntos = Math.trunc(Number(venta.puntos) || 0);
   const descPuntos = descuentoDePuntos(puntos, info?.puntos?.valor);
   const aPagar = Math.max(0, Math.round((totales.total - descPuntos) * 100) / 100);
+  // Crédito fiscal o cliente que retiene: sumas, IVA y retención antes de
+  // enviar, como el portal (v2.1579.5). Sólo se MUESTRA.
+  const desgloseVenta = useMemo(() => (venta.cliente
+    ? desgloseDeVenta({ lineas: cotizacion?.lineas, documento: venta.documento, retencionPct: info?.retencion_pct, descuento: descPuntos })
+    : null), [venta.cliente, venta.documento, cotizacion?.lineas, info?.retencion_pct, descPuntos]);
   const maxPuntos = maximoDePuntos(info, totales.total);
 
   const problemas = useMemo(() => {
@@ -284,14 +289,25 @@ export default function Preventa() {
     }
     cambiar({ lineas: agregarLinea(venta.lineas, p, 1) });
   };
+  // Lo de una compra pasada entra con SU cantidad y SU presentación, como el portal.
+  const deCompra = (lineas, p) => agregarConCantidad(lineas, { id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url },
+    Number(p.factor) || 1, Number(p.cantidad) || 1);
+  const agregarDeCompra = (p) => {
+    const f = Number(p.factor) || 1;
+    if (venta.lineas.length >= MAX_PRODUCTOS && !venta.lineas.some((l) => l.producto_id === Number(p.producto_id) && l.factor === f)) {
+      avisar('Llegaste al tope', `Una preventa lleva hasta ${MAX_PRODUCTOS} productos. Envía esta y empieza otra.`);
+      return;
+    }
+    cambiar({ lineas: deCompra(venta.lineas, p) });
+  };
   const agregarVarios = (productos) => {
     let lineas = venta.lineas;
     for (const p of productos) {
       if (lineas.length >= MAX_PRODUCTOS) break;
-      lineas = agregarLinea(lineas, { id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url }, 1);
+      lineas = deCompra(lineas, p);
     }
     cambiar({ lineas });
-    listo('Agregados', `${productos.length} producto(s) de esa compra. Revisa las cantidades.`);
+    listo('Agregados', `${productos.length} producto(s) de esa compra, con sus cantidades.`);
   };
   const elegirCliente = (c) => cambiar({ cliente: c ? { id: c.id, name: c.name, phone: c.phone ?? null } : null, puntos: '' });
   const editarCliente = () => { if (venta.cliente) router.push({ pathname: '/cliente/[id]', params: { id: String(venta.cliente.id) } }); };
@@ -437,7 +453,9 @@ export default function Preventa() {
 
                 <Cliente cliente={venta.cliente} info={info} cotizacion={cotizacion} alerta={clienteConProblema} faltanCcf={faltanCcf}
                   puedeEditar={puedeEditarClientes} puedeCrear={puedeCrearClientes} onElegir={elegirCliente}
-                  onAgregar={(p) => agregarProducto({ id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url })}
+                  onAgregar={(p) => (p.cantidad != null
+                    ? agregarDeCompra(p)
+                    : agregarProducto({ id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url }))}
                   onAgregarVarios={agregarVarios} />
 
                 <Vidrio radio={20}>
@@ -494,7 +512,17 @@ export default function Preventa() {
                       {totales.ahorro > 0 || descPuntos > 0 ? <Fila rotulo="Subtotal" valor={formatMoney(totales.total)} /> : null}
                       {totales.ahorro > 0 ? <Fila rotulo="Ahorra por su precio" valor={formatMoney(totales.ahorro)} color={MARCA.verde} /> : null}
                       {descPuntos > 0 ? <Fila rotulo={`Puntos (${puntos})`} valor={`−${formatMoney(descPuntos)}`} color={MARCA.verde} /> : null}
-                      <Fila rotulo="A pagar" valor={formatMoney(aPagar)} fuerte color={cotizando ? colorSistema.texto2 : colorSistema.texto} />
+                      {desgloseVenta ? (
+                        <>
+                          <Fila rotulo={`Sumas${desgloseVenta.ccf ? ' sin IVA' : ''}`} valor={formatMoney(desgloseVenta.sumas)} />
+                          {desgloseVenta.ccf ? <Fila rotulo="IVA 13 %" valor={formatMoney(desgloseVenta.iva)} /> : null}
+                          {desgloseVenta.retencion > 0
+                            ? <Fila rotulo={`Retención ${Number(info?.retencion_pct)} %`} valor={`−${formatMoney(desgloseVenta.retencion)}`} />
+                            : null}
+                        </>
+                      ) : null}
+                      <Fila rotulo="A pagar" valor={formatMoney(desgloseVenta ? desgloseVenta.total : aPagar)} fuerte color={cotizando ? colorSistema.texto2 : colorSistema.texto} />
+                      {desgloseVenta ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>La caja confirma el monto al cobrar.</Text> : null}
                     </View>
 
                     <Campo multiline={false} value={venta.nota} maxLength={60} placeholder="Nota para caja (opcional)"

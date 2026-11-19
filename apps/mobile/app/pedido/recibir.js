@@ -25,10 +25,10 @@
 //     puede contar en otra presentación (`opcionesDePresentacionDeRenglon`);
 //   · «¿Necesitas un producto ya?» lo busca en TODO el pedido (dice en qué
 //     hoja cayó) para recibirlo solo, y dentro de una hoja larga hay buscador.
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../../componentes/Tocable';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -36,12 +36,14 @@ import { avanzarEtapaDePedidoEnSala, fetchApoyoForPedido, fetchEmployeeByKioskPi
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Escaner from '../../componentes/Escaner';
 import { corregirRecepcionDeItem, fetchProductPreciosOptsForProducts, marcarHojasRecibidas, recibirPedidoDeSucursal, recibirProductoSuelto } from '@nucleo/data/recepcion';
-import { lotesQueDebenVenir, opcionesDePresentacionDeRenglon } from '@nucleo/utils/extrasDeRecepcion';
+import { extrasDeRenglones, lotesQueDebenVenir, opcionesDePresentacionDeRenglon } from '@nucleo/utils/extrasDeRecepcion';
+import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
+import { notificarVenceCorto } from '@nucleo/data/venceCorto';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
 import { estadoDeHojas } from '@nucleo/utils/hojasRecepcion';
-import { conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRenglones, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -49,7 +51,7 @@ import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando, Vacio, exigeParame
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
-import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { avisar, fallo, listo, trabajando } from '../../componentes/Progreso';
 
 const PRES = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
 // El conteo va en la presentación de despacho SI lo enviado cabe exacto, y en
@@ -76,6 +78,15 @@ const textoDeLotes = (r) => {
   if (!ls.length) return null;
   return `${ls.length === 1 ? 'Debe venir del lote' : `Debe venir de ${ls.length} lotes`}: ${ls.map((l) => [l.lote || 'sin lote', vence(l.fecha_vencimiento) ? `vence ${vence(l.fecha_vencimiento)}` : null, (l.take ?? l.cantidad ?? l.packs) != null ? String(l.take ?? l.cantidad ?? l.packs) : null].filter(Boolean).join(' · ')).join('; ')}`;
 };
+// Una cantidad MUCHO mayor que lo enviado se pregunta antes de guardarse, como
+// el `AvisoExceso` del portal (el bicarbonato del pedido 240: 1,250 sobre 25).
+// Mientras no se confirme, confirmar y «Recibir solo este» la rechazan.
+const nEs = (x) => Number(x).toLocaleString('es-SV');
+const excesosSinConfirmar = (filas, pItems, valores) => pItems
+  .map((it, i) => ({ it, r: filas[i] }))
+  .filter(({ it, r }) => excesoGrande(it.cantidad_recibida, enviadoDe(r)) && (valores[r.id]?.excesoOk ?? null) !== it.cantidad_recibida);
+// ¿Algún lote que debe venir vence en 6 meses o menos? (mismo criterio del portal)
+const lotesVenceCorto = (r) => lotesQueDebenVenir(r).filter((l) => venceCorto(l.fecha_vencimiento));
 const PROBLEMAS = [['danado', 'Dañado'], ['vencido', 'Vencido'], ['otro', 'Otro']];
 
 // Memoizado y con callbacks estables: «todo el pedido» son cientos de
@@ -93,11 +104,16 @@ const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero,
   const paso = (d) => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: Math.max(0, qty + d), fPres: pres }); };
   const opciones = opcionesDePresentacionDeRenglon(r, presMap, [pres]);
   const lotes = textoDeLotes(r);
+  const corto = lotesVenceCorto(r).length > 0;
+  const fRaw = Math.round(qty * pres / erpF);
+  const enviado = enviadoDe(r);
+  const exceso = excesoGrande(fRaw, enviado);
+  const excesoConfirmado = valor.excesoOk === fRaw;
   return (
     <View style={{ gap: 8, paddingVertical: 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{r.products?.nombre ?? `Producto ${r.erp_product_id}`}</Text>
       {donde ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>{donde}</Text> : null}
-      {lotes ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{lotes}</Text> : null}
+      {lotes ? <Text style={{ color: corto ? MARCA.ambar : colorSistema.texto2, fontSize: 12, fontWeight: corto ? '600' : '400' }}>{corto ? `Vence pronto · ${lotes}` : lotes}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{`Vienen ${esperado} · ${presentacion(r)}`}</Text>
         <Boton texto="−" onPress={() => paso(-1)} />
@@ -108,8 +124,16 @@ const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero,
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Contado en</Text>
           {opciones.map((o) => {
-            return <Ficha key={o.factor} texto={o.label} activa={o.factor === pres} onPress={() => onCambiar({ fQty: qty, fPres: o.factor })} />;
+            // La cantidad se TRADUCE para seguir diciendo las mismas unidades,
+            // como el portal: dejarla quieta convirtió 25 sobres en 1,250.
+            return <Ficha key={o.factor} texto={o.label} activa={o.factor === pres} onPress={() => onCambiar({ fQty: o.factor === pres ? qty : cantidadEnOtraPresentacion(qty, pres, o.factor), fPres: o.factor })} />;
           })}
+        </View>
+      ) : null}
+      {exceso ? (
+        <View style={{ gap: 6 }}>
+          <Aviso tono="freno" texto={`¿Seguro que son ${nEs(fRaw)}? Se enviaron ${nEs(enviado)}.${excesoConfirmado ? ' Confirmado.' : ' Revisa la presentación y la cantidad.'}`} />
+          {!excesoConfirmado ? <View style={{ alignSelf: 'flex-start' }}><Ficha texto={`Sí, son ${nEs(fRaw)}`} color={MARCA.rojo} onPress={() => onCambiar({ excesoOk: fRaw })} /></View> : null}
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -220,7 +244,9 @@ function Recibir() {
     setAvisoApoyo(`${shortEmployeeName(emp)} anotado. Escanea el siguiente o cierra.`);
     return false;
   };
-  useEffect(() => { cargar(); }, [cargar]);
+  // Al volver de «Llegó algo que no venía» se relee: así el pedido sabe cuántos
+  // extras se anotaron (`extras_count` del cierre, como el portal).
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const derivado = useMemo(() => {
     if (!datos) return null;
@@ -243,7 +269,26 @@ function Recibir() {
       const ya = especiales.find((e) => e.item.id === it.id);
       if (ya) ya.labels.push(c.label); else especiales.push({ labels: [c.label], item: it });
     }
-    return { porContar, hojaNums, idsPorHoja, estado, especiales: especiales.filter((e) => !e.item.falta_caja), hayHojas: hojaNums.length > 0 };
+    // Regla del usuario (la misma del portal): una caja dañada o que no llegó
+    // ALERTA a las hojas que traía y les quita el «Todo OK». Se miran de a uno.
+    const cajaDanada = (fila.cajas_danadas ?? []).map(Number);
+    const faltaCajas = (fila.falta_cajas ?? []).map(Number);
+    const cajasDeHoja = {};
+    Object.entries(fila.caja_map ?? {}).forEach(([caja, hs]) => (hs ?? []).forEach((h) => { (cajasDeHoja[Number(h)] ??= []).push(Number(caja)); }));
+    Object.values(cajasDeHoja).forEach((v) => v.sort((a, b) => a - b));
+    const malas = new Set([...cajaDanada, ...faltaCajas]);
+    const hojasAlertadas = new Set(hojaNums.filter((h) => (cajasDeHoja[h] ?? []).some((c) => malas.has(c))));
+    const hayRenglonesEnReenvio = items.some((r) => r.falta_caja && r.status === 'pendiente' && (r.cantidad_asignada ?? 0) > 0);
+    // Lo que debe venir con vencimiento en 6 meses o menos: se alerta y, al
+    // terminar de contar, se le avisa a la sucursal (como el portal).
+    const productosVenceCorto = porContar.flatMap((r) => lotesVenceCorto(r).map((l) => ({
+      nombre: r.products?.nombre ?? 'Producto', vence: String(l.fecha_vencimiento).slice(0, 7), cantidad: l.take ?? l.cantidad ?? l.packs ?? null,
+    })));
+    return {
+      porContar, hojaNums, idsPorHoja, estado, especiales: especiales.filter((e) => !e.item.falta_caja), hayHojas: hojaNums.length > 0,
+      cajaDanada, faltaCajas, cajasDeHoja, hojasAlertadas, hayRenglonesEnReenvio, productosVenceCorto,
+      especialesLlegadas: fila.cajas_especiales_llegadas ?? {}, extrasCount: extrasDeRenglones(items).length,
+    };
   }, [datos]);
 
   const filasAbiertas = useMemo(() => {
@@ -264,15 +309,63 @@ function Recibir() {
     return n != null ? `Hoja ${n}` : null;
   }, [derivado, datos]);
 
+  // Devuelve qué pasó con las diferencias, para que el aviso diga la verdad
+  // (el portal: `handleReportarDiferencias` y `avisarSinComprobar`).
   const terminar = async (diferencia) => {
     const { error } = await avanzarEtapaDePedidoEnSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
     if (error) throw error;
     useStaffStore.getState().appendAuditLog?.('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId, desde: 'app' });
-    const items = await fetchPedidoItemsAll(pedidoId, sucId);
-    if (diferencia || (items ?? []).some((r) => r.status === 'con_diferencia')) {
-      const { error: e2 } = await avanzarEtapaDePedidoEnSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null });
-      if (!e2) useStaffStore.getState().appendAuditLog?.('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId, desde: 'app' });
+    let items = null;
+    try { items = await fetchPedidoItemsAll(pedidoId, sucId); } catch { items = null; }
+    const conDiferencia = diferencia || (items ?? []).some((r) => r.status === 'con_diferencia');
+    if (!conDiferencia) return { diferencias: items === null ? 'sin_comprobar' : 'ninguna' };
+    const { error: e2 } = await avanzarEtapaDePedidoEnSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null });
+    if (e2) return { diferencias: 'no_reportadas', error: e2 };
+    useStaffStore.getState().appendAuditLog?.('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId, desde: 'app' });
+    return { diferencias: 'reportadas' };
+  };
+
+  // Meter al inventario lo recién contado, sin hacer esperar a la sala: la
+  // misma lectura de la respuesta que `ingresarAlInventario` del portal. Nunca
+  // lanza: lo contado ya quedó guardado.
+  const ingresar = async (itemIds) => {
+    if (!itemIds.length) return { ok: true };
+    try {
+      const erp = await recibirTrasladoPedido(pedidoId, sucId, { itemIds, enSegundoPlano: true });
+      if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') { console.error('ingreso al inventario:', erp.codigo, erp.error); return { ok: false, error: null }; }
+      if (erp.completo === false && !erp.en_segundo_plano) return { ok: false, error: `entraron ${erp.recibidas ?? 0} de ${erp.pedidas ?? itemIds.length}` };
+      return { ok: true, enCurso: erp.en_segundo_plano === true };
+    } catch (e) {
+      console.error('ingreso al inventario:', e);
+      return { ok: false, error: null };
     }
+  };
+  const textoIngresoFallido = (detalle) => `El conteo quedó guardado, pero los productos no entraron al inventario${detalle ? ` (${detalle})` : ''}. Reinténtalo desde la tarjeta del pedido.`;
+
+  const rotuloAbierto = !abierto ? '' : abierto.tipo === 'especial' ? `la caja ${abierto.especial.labels.join('–')}`
+    : abierto.tipo === 'hoja' ? `la hoja ${abierto.hoja}` : 'este pedido';
+
+  // Confirmar mete el contenido al inventario y deja la hoja fuera de la lista:
+  // se pregunta antes, con el mismo texto del portal (`avisoConfirmar`).
+  const pedirConfirmar = (todoOk) => {
+    const filas = filasAbiertas;
+    if (!filas.length) return;
+    if (!todoOk) {
+      const excesos = excesosSinConfirmar(filas, filas.map((r) => renglonContado(r, valores[r.id] ?? {})), valores);
+      if (excesos.length) {
+        fallo('Revisa la cantidad', `Cantidad mucho mayor que lo enviado en: ${excesos.map(({ r }) => r.products?.nombre ?? 'un producto').join(', ')}. Confírmala («Sí, son…») o corrígela.`);
+        return;
+      }
+    }
+    const n = filas.length;
+    const prods = `${n} producto${n !== 1 ? 's' : ''}`;
+    const texto = todoOk
+      ? `Se dan por buenos ${prods} de ${rotuloAbierto} tal como se enviaron, sin contarlos, y entran al inventario de la sucursal. Después ${rotuloAbierto} ya no se vuelve a contar.`
+      : `Se dan por recibidos ${prods} de ${rotuloAbierto} con las cantidades en pantalla, y entran al inventario de la sucursal. Después ${rotuloAbierto} ya no se vuelve a contar.`;
+    Alert.alert(todoOk ? `¿Dar por bueno todo lo de ${rotuloAbierto}?` : `¿Confirmar ${rotuloAbierto}?`, texto, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: todoOk ? 'Sí, dar por bueno' : 'Sí, confirmar', onPress: () => confirmar(todoOk) },
+    ]);
   };
 
   const confirmar = async (todoOk) => {
@@ -281,12 +374,14 @@ function Recibir() {
     setGuardando(true); trabajando(todoOk ? 'Confirmando que vino completo…' : 'Guardando el conteo…');
     try {
       const p_items = filas.map((r) => (todoOk ? renglonTodoOk(r) : renglonContado(r, valores[r.id] ?? {})));
+      const extrasCount = derivado.extrasCount;
       const contexto = abierto.tipo === 'especial' ? { accion: 'CONFIRMAR_RECEPCION_ESPECIAL', especial: abierto.especial.labels.join('–'), desde: 'app', ...(todoOk ? { todo_ok: true } : {}) }
-        : abierto.tipo === 'hoja' ? {} : { accion: 'CONFIRMAR_RECEPCION_PEDIDO', desde: 'app', ...(todoOk ? { todo_ok: true } : {}) };
+        : abierto.tipo === 'hoja' ? {} : { accion: 'CONFIRMAR_RECEPCION_PEDIDO', extras_count: extrasCount, desde: 'app', ...(todoOk ? { todo_ok: true } : {}) };
       const { error } = await recibirPedidoDeSucursal({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_items, p_received_by: user?.id ?? null }, contexto);
       if (error) throw error;
-      // El ingreso al inventario va en segundo plano: el conteo ya quedó.
-      recibirTrasladoPedido(pedidoId, sucId, { itemIds: p_items.map((x) => x.pedido_item_id), enSegundoPlano: true }).catch(() => {});
+      // El ingreso al inventario va en segundo plano: el conteo ya quedó. Si no
+      // entra, se dice (antes se tragaba el error).
+      const ing = await ingresar(p_items.map((x) => x.pedido_item_id));
       const diferencia = huboDiferencia || p_items.some((x) => x.error_tipo !== null);
       setHuboDiferencia(diferencia);
 
@@ -294,21 +389,42 @@ function Recibir() {
       const quedaHoja = derivado.hojaNums.filter((n) => derivado.estado[n] === 'pendiente' && !(abierto.tipo === 'hoja' && n === abierto.hoja)).length > 0;
       const quedaEsp = derivado.especiales.some((e) => e.item.status === 'pendiente' && !(abierto.tipo === 'especial' && e.item.id === abierto.especial.item.id));
       const todo = abierto.tipo === 'pedido' || (!quedaHoja && !quedaEsp);
+      // Contar lo último NO es haber terminado si una caja no llegó o hay
+      // productos en reenvío: la misma pregunta que el portal.
+      const todoListo = todo && quedaTodoListo({ cajasQueNoLlegaron: derivado.faltaCajas, hayRenglonesEnReenvio: derivado.hayRenglonesEnReenvio });
 
       if (abierto.tipo === 'hoja') {
         const nuevas = [...new Set([...(datos.recibidas ?? []), abierto.hoja])].sort((a, b) => a - b);
         const { error: eh } = await marcarHojasRecibidas(pedidoId, sucId, nuevas, {
-          hojas: [{ hoja: abierto.hoja, items_count: p_items.length }], pedido: todo ? { extras_count: 0 } : null, desde: 'app', ...(todoOk ? { todo_ok: true } : {}),
+          hojas: [{ hoja: abierto.hoja, items_count: p_items.length }], pedido: todo ? { extras_count: extrasCount } : null, desde: 'app', ...(todoOk ? { todo_ok: true } : {}),
         });
         if (eh) throw eh;
       }
       if (todo) {
-        await terminar(diferencia);
-        listo('Pedido recibido', diferencia ? 'Las diferencias quedaron reportadas a Bodega' : 'Todo quedó contado');
+        if (derivado.productosVenceCorto.length) {
+          notificarVenceCorto({ origen: 'pedido', referencia: `${pedidoId}:${sucId}`, detalle: datos.fila?.codigo ?? null, sucursalId: sucId, productos: derivado.productosVenceCorto });
+        }
+        if (!ing.ok) fallo('Recepción guardada, falta el inventario', textoIngresoFallido(ing.error));
+        if (!todoListo) {
+          // Como el portal: se cuenta lo que llegó, pero el pedido sigue abierto
+          // hasta el reenvío.
+          const fc = derivado.faltaCajas;
+          const txt = fc.length
+            ? `Contado lo que llegó. Caja${fc.length > 1 ? 's' : ''} ${fc.map((x) => `#${x}`).join(', ')} pendiente${fc.length > 1 ? 's' : ''} de reenvío.`
+            : 'Contado lo que llegó. Faltan cajas de Electrolit o especiales por reenviar. Finaliza cuando lleguen.';
+          if (ing.ok) avisar('Falta el reenvío', txt);
+          router.back();
+          return;
+        }
+        const fin = await terminar(diferencia);
+        if (fin.diferencias === 'no_reportadas') fallo('No se pudieron reportar las diferencias', mensajeAmigable(fin.error));
+        else if (fin.diferencias === 'sin_comprobar') avisar('Quedó guardado, pero no se pudo comprobar', 'No se pudo comprobar si quedó alguna diferencia. Abre el pedido de nuevo para revisarlo.');
+        else if (ing.ok) listo('Pedido recibido', fin.diferencias === 'reportadas' ? 'Las diferencias quedaron reportadas a Bodega' : 'Todo quedó contado');
         router.back();
         return;
       }
-      listo(abierto.tipo === 'hoja' ? `Hoja ${abierto.hoja} contada` : 'Caja contada', diferencia ? 'Con diferencias' : 'Sin diferencias');
+      if (!ing.ok) fallo('Recepción guardada, falta el inventario', textoIngresoFallido(ing.error));
+      else listo(abierto.tipo === 'hoja' ? `Hoja ${abierto.hoja} contada` : 'Caja contada', `${diferencia ? 'Con diferencias' : 'Sin diferencias'}${ing.enCurso ? '. Entrando al inventario.' : ''}`);
       setAbierto(null); setValores({});
       await cargar();
     } catch (e) {
@@ -320,7 +436,15 @@ function Recibir() {
 
   // Recibir UN producto sin contar el resto de la caja: cuenta e ingresa ese
   // traslado entero (cada producto viaja en el suyo).
-  const soloEste = (r) => Alert.alert('Recibir solo este', `${r.products?.nombre ?? ''}\n\nSe cuenta como lo anotaste y entra al inventario ya, sin contar el resto.`, [
+  const soloEste = (r) => {
+    const it = renglonContado(r, valores[r.id] ?? {});
+    if (excesosSinConfirmar([r], [it], valores).length) {
+      fallo('Revisa la cantidad', `«${r.products?.nombre ?? 'El producto'}»: la cantidad es mucho mayor que lo enviado. Confírmala o corrígela antes de recibir.`);
+      return;
+    }
+    soloEsteConfirmado(r);
+  };
+  const soloEsteConfirmado = (r) => Alert.alert('Recibir solo este', `${r.products?.nombre ?? ''}\n\nSe cuenta como lo anotaste y entra al inventario ya, sin contar el resto.`, [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Recibir', onPress: async () => {
       setGuardando(true); trabajando('Recibiendo…');
@@ -375,6 +499,10 @@ function Recibir() {
   if (abierto) {
     const nombre = abierto.tipo === 'hoja' ? `Hoja ${abierto.hoja}` : abierto.tipo === 'especial' ? `Caja ${abierto.especial.labels.join('–')}` : 'Todo el pedido';
     const editado = filasAbiertas.some((r) => valores[r.id]);
+    // La hoja viene de una caja con problema: se cuenta, pero de a uno.
+    const hojaEnAlerta = abierto.tipo === 'hoja' && derivado.hojasAlertadas.has(abierto.hoja);
+    const especialDanada = abierto.tipo === 'especial' && abierto.especial.labels.some((l) => derivado.especialesLlegadas[l] === 'danada');
+    const vc = derivado.productosVenceCorto;
     return (
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: nombre }} />
@@ -384,6 +512,16 @@ function Recibir() {
             <Pressable onPress={() => { setAbierto(null); setValores({}); setBuscarHoja(''); }} style={{ minHeight: 44, justifyContent: 'center' }}>
               <Text style={{ color: colorSistema.acento, fontSize: 15 }}>‹ Volver a las hojas</Text>
             </Pressable>
+            {hojaEnAlerta ? <Aviso tono="cuidado" texto={`Esta hoja venía en la caja ${(derivado.cajasDeHoja[abierto.hoja] ?? []).map((x) => `#${x}`).join(', ')}. Revísala producto por producto.`} /> : null}
+            {especialDanada ? <Aviso tono="cuidado" texto="Esta caja especial llegó dañada. Revisa cómo vienen los productos al contar." /> : null}
+            {abierto.tipo === 'pedido' && derivado.cajaDanada.length ? (
+              <Aviso tono="cuidado" texto={`Caja${derivado.cajaDanada.length > 1 ? 's' : ''} ${derivado.cajaDanada.map((x) => `#${x}`).join(', ')} llegó dañada. Revisa el estado físico.`} />
+            ) : null}
+            {vc.length ? (
+              <Aviso tono="cuidado" texto={vc.length === 1
+                ? `Un producto vence en 6 meses o menos (${venceTexto(vc[0].vence)}): ${vc[0].nombre}.`
+                : `${vc.length} lotes vencen en 6 meses o menos. Están marcados en la lista.`} />
+            ) : null}
             {filasAbiertas.length > 8 ? (
               <Campo multiline={false} value={buscarHoja} onChangeText={setBuscarHoja} placeholder="Buscar en esta hoja" autoCorrect={false} />
             ) : null}
@@ -397,16 +535,19 @@ function Recibir() {
                   onSolo={filasAbiertas.length > 1 ? solo : null} onCambiar={cambiar} />
               ))}
             </Seccion>
-            {!editado ? <BotonGrande texto={guardando ? 'Guardando…' : 'Todo llegó bien'} color={MARCA.verde} deshabilitado={guardando} onPress={() => confirmar(true)} /> : null}
-            <BotonGrande texto={guardando ? 'Guardando…' : `Confirmar ${abierto.tipo === 'hoja' ? 'la hoja' : 'el conteo'}`} color={MARCA.azul} borde={!editado} deshabilitado={guardando} onPress={() => confirmar(false)} />
+            {/* Sin «Todo llegó bien» en una hoja que venía en una caja dañada o
+                que no llegó: es justo la que hay que mirar de a uno (portal). */}
+            {!editado && !hojaEnAlerta ? <BotonGrande texto={guardando ? 'Guardando…' : 'Todo llegó bien'} color={MARCA.verde} deshabilitado={guardando} onPress={() => pedirConfirmar(true)} /> : null}
+            <BotonGrande texto={guardando ? 'Guardando…' : `Confirmar ${abierto.tipo === 'hoja' ? 'la hoja' : 'el conteo'}`} color={MARCA.azul} borde={!editado && !hojaEnAlerta} deshabilitado={guardando} onPress={() => pedirConfirmar(false)} />
           </ScrollView>
         </KeyboardAvoidingView>
       </>
     );
   }
 
-  const { hojaNums, estado, especiales, hayHojas, porContar } = derivado;
+  const { hojaNums, estado, especiales, hayHojas, porContar, hojasAlertadas, faltaCajas } = derivado;
   const contadas = hojaNums.filter((n) => estado[n] === 'contada').length;
+  const alertadasPorContar = hojaNums.filter((n) => hojasAlertadas.has(n) && estado[n] === 'pendiente');
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} />
@@ -418,6 +559,12 @@ function Recibir() {
           // extra. El plazo lo decide la base; el motivo es obligatorio.
           <Aviso tono="cuidado" texto="La recepción ya se cerró. Hasta 2 días después puedes corregir lo contado o anotar algo que llegó de más. Escribe qué pasó. Lo que corrijas queda como diferencia y Bodega tiene que contestar." />
         ) : !porContar.length ? <Aviso tono="nota" texto="No queda nada por contar en este pedido." /> : null}
+        {faltaCajas.length && porContar.length ? (
+          <Aviso tono="nota" texto={`Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map((x) => `#${x}`).join(', ')} en reenvío. Se recibe por separado.`} />
+        ) : null}
+        {alertadasPorContar.length ? (
+          <Aviso tono="cuidado" texto={`Hoja${alertadasPorContar.length > 1 ? 's' : ''} ${alertadasPorContar.map((x) => `H${x}`).join(', ')} ${alertadasPorContar.length > 1 ? 'venían' : 'venía'} en una caja con problema. Revísala${alertadasPorContar.length > 1 ? 's' : ''} producto por producto.`} />
+        ) : null}
         {(() => {
           // «¿Necesitas un producto ya?»: buscarlo en todo el pedido y recibirlo
           // solo, contado (no dando por bueno el papel). Lo ya contado también sale.
@@ -449,7 +596,8 @@ function Recibir() {
           <Seccion titulo={`Hojas · ${contadas} de ${hojaNums.filter((n) => estado[n] !== 'reenvio').length} contadas`}>
             {hojaNums.map((n, i) => {
               const e = estado[n];
-              const [rotulo, color] = e === 'contada' ? ['Contada', MARCA.verde] : e === 'reenvio' ? ['En reenvío', MARCA.ambar] : ['Por contar', MARCA.azulClaro];
+              const [rotulo, color] = e === 'contada' ? ['Contada', MARCA.verde] : e === 'reenvio' ? ['En reenvío', MARCA.ambar]
+                : hojasAlertadas.has(n) ? ['Revisar', MARCA.ambar] : ['Por contar', MARCA.azulClaro];
               const etiqueta = datos.paginas?.[n - 1]?.firstLab || datos.paginas?.[n - 1]?.firstItem || '';
               return (
                 <Pressable key={n} disabled={e !== 'pendiente'} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto({ tipo: 'hoja', hoja: n }); }}

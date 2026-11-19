@@ -28,13 +28,15 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo,
+  apartarSinAnticipo, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, listaDelCliente, mensajeDeEnlaceDePago, opcionesDeApartado,
+  preciosDeProducto, srsParaEncargo,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
-import { apartadoDelPedido, clavePresentacion, origenesDelPedido, planDeApartar, redondear } from '@nucleo/utils/apartar';
+import { apartadoDelPedido, clavePresentacion, listaQueLeToca, origenesDelPedido, planDeApartar, redondear } from '@nucleo/utils/apartar';
 import { plazoAlApartar, SI_EL_TRASLADO_NO_SALIO } from '@nucleo/utils/reservasDeSala';
 import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import { FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -45,6 +47,7 @@ import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../component
 import FormaDePago from '../componentes/formulario/FormaDePago';
 import { subirFotos } from '../componentes/formulario/Fotos';
 import Segmentos from '../componentes/Segmentos';
+import Interruptor from '../componentes/Interruptor';
 import FijoArriba from '../componentes/FijoArriba';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -56,6 +59,8 @@ import PorCobrar from '../componentes/reservas/PorCobrar';
 import { cobrarAnticipoEnLaApp, imprimirEncargoEnLaApp } from '../componentes/reservas/cobrar';
 
 const dinero = (v) => v.replace(/[^\d.,]/g, '').replace(',', '.');
+// Los mismos rótulos de «Dónde paga» que el portal (`DialogoApartar`).
+const ROTULO_DE_COBRO = { caja: 'En caja', enlace: 'Enlace de pago', sin: 'Sin anticipo' };
 const llave = (sala) => `app_apartar_${sala ?? 'sin-sala'}`;
 
 /** Lo ya agregado al pedido o al encargo, con «Quitar». */
@@ -112,6 +117,11 @@ function Nuevo({ sala, nombreSala, user }) {
   const [buscandoProducto, setBuscandoProducto] = useState(false);
   const [presentaciones, setPresentaciones] = useState(null);
   const [pres, setPres] = useState(guardado?.pres ?? '');
+  // La lista de precio con que se aparta, como en el portal: null = la que le
+  // toca al cliente según el reglamento (`listaQueLeToca`); si alguien la
+  // cambia a mano, queda la elegida.
+  const [lista, setLista] = useState(guardado?.lista ?? null);
+  const [listaBase, setListaBase] = useState(null);
   const [cantidad, setCantidad] = useState(guardado?.cantidad ?? '1');
   const [opciones, setOpciones] = useState(null);
   const [anticipo, setAnticipo] = useState('');
@@ -128,13 +138,18 @@ function Nuevo({ sala, nombreSala, user }) {
   const [lineas, setLineas] = useState(guardado?.lineas ?? []);
   const [apartados, setApartados] = useState(guardado?.apartados ?? []);
   const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
-  const [cobroEn, setCobroEn] = useState('caja');
+  // En caja, con enlace de pago (un solo producto) o sin anticipo, a
+  // responsabilidad de quien lo aparta. Si lo elegido ya no vale, el primero.
+  const [cobroElegido, setCobroEn] = useState('caja');
+  const [responsableOk, setResponsableOk] = useState(false);
+  const formasDeCobro = ['caja', !apartados.length && 'enlace', 'sin'].filter(Boolean);
+  const cobroEn = formasDeCobro.includes(cobroElegido) ? cobroElegido : formasDeCobro[0];
   const [enviando, setEnviando] = useState(false);
   const [clave] = useState(() => `app-apartar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   useEffect(() => {
-    saveDraft(llave(sala), { cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados });
-  }, [sala, cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados]);
+    saveDraft(llave(sala), { cliente, producto, pres, lista, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados });
+  }, [sala, cliente, producto, pres, lista, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados]);
 
   useEffect(() => {
     let vivo = true;
@@ -148,7 +163,26 @@ function Nuevo({ sala, nombreSala, user }) {
     return () => { vivo = false; };
   }, [producto]);
 
-  const elegida = useMemo(() => (presentaciones ?? []).find((p) => clavePresentacion(p) === pres) ?? null, [presentaciones, pres]);
+  // La lista del cliente: sin respuesta se queda en Público (`descuento_1`),
+  // el que le toca a quien no tiene cuenta. Igual que el portal.
+  useEffect(() => {
+    let vivo = true;
+    if (!cliente?.id) { setListaBase(null); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- vaciar al quitar el cliente
+    listaDelCliente(cliente.id).then((l) => { if (vivo) setListaBase(l ?? 'descuento_1'); })
+      .catch(() => { if (vivo) setListaBase('descuento_1'); });
+    return () => { vivo = false; };
+  }, [cliente?.id]);
+
+  const presElegida = useMemo(() => (presentaciones ?? []).find((p) => clavePresentacion(p) === pres) ?? null, [presentaciones, pres]);
+  const listaSugerida = useMemo(() => listaQueLeToca(listaBase, presElegida, presentaciones ?? []), [listaBase, presElegida, presentaciones]);
+  // La presentación con el precio de la lista elegida: total, anticipo,
+  // renglón del pedido, constancia y lo que va a la base cuentan con ése. Si la
+  // presentación no tiene esa lista, vale la viñeta.
+  const elegida = useMemo(() => {
+    if (!presElegida) return null;
+    const l = presElegida.listas?.find((x) => x.key === (lista ?? listaSugerida));
+    return l ? { ...presElegida, precio: l.precio, lista: l.key } : { ...presElegida, lista: 'vineta' };
+  }, [presElegida, lista, listaSugerida]);
   const cant = Math.trunc(Number(cantidad)) || 0;
 
   // ¿Se aparta, viene en camino o se encarga? Lo decide la base con la existencia de la sala.
@@ -164,15 +198,15 @@ function Nuevo({ sala, nombreSala, user }) {
   }, [sala, producto, elegida, cant]);
 
   const plan = useMemo(() => planDeApartar({
-    opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn,
+    opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn, responsableOk,
     cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece,
-  }), [opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn,
+  }), [opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn, responsableOk,
     cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece]);
   const { total, soloEncargo, enPedido, vienen, elegidosIds, vieneSel, restoABodega, origenes, modo, totalApartados, totalCobro, mitad,
-    conAnticipo, montoAnticipo, estadoPago, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar, puedeApartarOtro,
+    seCobra, sinAnticipo, conAnticipo, montoAnticipo, estadoPago, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar, puedeApartarOtro,
     renglonActual, renglonesDelPedido, falta, deja } = plan;
 
-  const limpiarProducto = () => { setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVienenElegidos(null); setOpciones(null); };
+  const limpiarProducto = () => { setProducto(null); setPres(''); setLista(null); setCantidad('1'); setTraslado(null); setVienenElegidos(null); setOpciones(null); };
   const terminar = () => { clearDraft(llave(sala)); router.back(); };
   const papelDeEncargo = async (codigo, texto, nuevo, cantidadDelPapel) => {
     const r = await imprimirEncargoEnLaApp({ sala, nombreSala, user, codigo, cliente, producto: texto, cantidad: cantidadDelPapel, nuevo });
@@ -190,6 +224,30 @@ function Nuevo({ sala, nombreSala, user }) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         listo('Consulta enviada a Bodega', `${r.codigo} · Bodega responde el precio y para cuándo, o si no se puede conseguir.`);
         await papelDeEncargo(r.codigo, nombreNuevo.trim(), true, cant);
+        terminar();
+        return;
+      }
+      // Sin anticipo (como el portal): no pasa por la caja ni por el enlace.
+      // La base firma la reserva con la sesión: responde quien la pidió.
+      if (sinAnticipo) {
+        trabajando('Apartando…');
+        const r = await apartarSinAnticipo(sala, enPedido
+          ? apartadoDelPedido(cliente.id, renglonesDelPedido)
+          : { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombreProducto,
+            factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...enCamino });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        if (modo === 'traslado' && traslado && !enPedido) {
+          try {
+            await trasladoApi.current.enviar(`Reserva ${r.codigo} para ${shortEmployeeName(cliente.name)}`, { reserva_id: r.id });
+          } catch (e) {
+            fallo('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e, '')} ${SI_EL_TRASLADO_NO_SALIO}`);
+            terminar();
+            return;
+          }
+        }
+        listo('Apartado sin anticipo', `${r.codigo} · ${shortEmployeeName(cliente.name)} · ${r.vence_at
+          ? `vale hasta el ${fechaTexto(r.vence_at, { day: 'numeric', month: 'long' })}`
+          : 'el plazo corre cuando llegue'}. Quedas como responsable.`);
         terminar();
         return;
       }
@@ -269,6 +327,7 @@ function Nuevo({ sala, nombreSala, user }) {
   };
 
   const etiqueta = sinCatalogo ? 'Enviar consulta a Bodega'
+    : sinAnticipo ? (enPedido ? `Apartar ${renglonesDelPedido.length} productos sin anticipo` : modo === 'traslado' ? 'Pedir y apartar sin anticipo' : 'Apartar sin anticipo')
     : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
       : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
         : modo === 'encargo' ? 'Registrar encargo'
@@ -280,6 +339,7 @@ function Nuevo({ sala, nombreSala, user }) {
     const metodo = FORMAS_DE_PAGO.find((f) => f.value === pago.forma)?.label ?? 'Efectivo';
     const quien = shortEmployeeName(cliente?.name ?? '');
     const texto = sinCatalogo ? `${quien} consulta ${cant} × ${nombreNuevo.trim()}. Bodega responde el precio y para cuándo.`
+      : sinAnticipo ? `${quien} aparta ${enPedido ? `${renglonesDelPedido.length} productos` : `${cant} × ${nombreProducto}`} sin anticipo.\nNo se cobra nada ahora: paga ${formatMoney(totalCobro)} al retirar. Quedas como responsable.${modo === 'traslado' && !enPedido ? ` Se pide a ${traslado.sala}.` : ''}`
       : enPedido ? `${quien} aparta ${renglonesDelPedido.length} productos en un pedido.\nTotal ${formatMoney(totalCobro)} · anticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${estadoPago.noEfectivo ? ' No entra a la caja.' : ` Entra a la caja de ${nombreSala}.`}`
         : !conAnticipo ? `${quien} encarga ${soloEncargo ? `${lineas.length + (lineaActual ? 1 : 0)} productos` : `${cant} × ${nombreProducto}`}. Compras confirma el precio y la fecha; ahora no se cobra nada.`
           : cobroEn === 'enlace' ? `${quien} aparta ${cant} × ${nombreProducto}. Queda separado 3 días mientras paga; al pagar, el plazo pasa a 7.${modo === 'traslado' ? ` Se pide a ${traslado.sala}.` : ''}`
@@ -322,9 +382,24 @@ function Nuevo({ sala, nombreSala, user }) {
             </View>
             {presentaciones == null ? <Indicador /> : !presentaciones.length ? <Aviso tono="cuidado" texto="Ese producto no tiene precio." /> : (
               presentaciones.length > 1 ? (
-                <Opciones opciones={presentaciones.map((p) => ({ id: clavePresentacion(p), label: `${p.tipo} · ${formatMoney(p.precio)}` }))} valor={pres} onCambiar={setPres} />
-              ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${presentaciones[0].tipo} · ${formatMoney(presentaciones[0].precio)}`}</Text>
+                <Opciones opciones={presentaciones.map((p) => ({ id: clavePresentacion(p), label: p.tipo }))} valor={pres} onCambiar={(v) => { setPres(v); setLista(null); }} />
+              ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{presentaciones[0].tipo}</Text>
             )}
+            {/* El precio, de la lista que le toca al cliente (se puede cambiar), como en el portal. */}
+            {presElegida ? (
+              <>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>Precio</Text>
+                <Opciones opciones={(presElegida.listas?.length ? presElegida.listas : [{ key: 'vineta', label: 'Regular', precio: presElegida.precio }])
+                  .map((l) => ({ id: l.key, label: `${l.label} · ${formatMoney(l.precio)}` }))} valor={elegida?.lista ?? 'vineta'} onCambiar={setLista} />
+                {(() => {
+                  const toca = listaSugerida ? presElegida.listas?.find((l) => l.key === listaSugerida) : null;
+                  if (!toca) return null;
+                  return elegida?.lista === listaSugerida
+                    ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Es el que le toca a este cliente según el reglamento.</Text>
+                    : <Aviso tono="cuidado" texto={`Según el reglamento le toca ${toca.label} (${formatMoney(toca.precio)}).`} />;
+                })()}
+              </>
+            ) : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Cantidad</Text>
               <View style={{ width: 90 }}>
@@ -349,7 +424,7 @@ function Nuevo({ sala, nombreSala, user }) {
             <DeOtraSala producto={producto} factor={elegida.factor} cantidad={cant} disponibles={Number(opciones.disponibles)} apiRef={trasladoApi} onCambio={setTraslado} />
           ) : null}
           {modo === 'viene' ? <Aviso texto={`Queda en camino y se marca lista sola al llegar; ahí empieza su plazo.${restoABodega > 0 ? ` Los ${restoABodega} que faltan se encargan a Bodega con la misma reserva.` : ''}`} />
-            : modo === 'reserva' ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{`Hay ${Number(opciones.disponibles)} en esta sucursal. Se aparta ${plazoAlApartar(reglasDeReserva)} con el precio de hoy.`}</Text>
+            : modo === 'reserva' ? <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>{`Hay ${Number(opciones.disponibles)} en esta sucursal. Se aparta${sinAnticipo ? '' : ` ${plazoAlApartar(reglasDeReserva)}`} con el precio de hoy.`}</Text>
               : modo === 'traslado' ? <Aviso texto={`Se pide a ${traslado.sala}: queda en camino y se marca lista al llegar.`} />
                 : modo === 'encargo' ? <Aviso tono="cuidado" texto="Se encarga. Compras confirma precio y fecha; cuando el cliente acepte se cobra completo en «Por cobrar». Ahora no se cobra nada." />
                   : null}
@@ -368,6 +443,26 @@ function Nuevo({ sala, nombreSala, user }) {
         </Seccion>
       ) : null}
 
+      {!sinCatalogo && seCobra && (opciones || (enPedido && !producto)) ? (
+        <>
+          <Seccion titulo="Dónde paga">
+            <Segmentos opciones={formasDeCobro.map((f) => ({ id: f, label: ROTULO_DE_COBRO[f] }))} activa={cobroEn} onCambiar={setCobroEn} margen={0} />
+          </Seccion>
+        </>
+      ) : null}
+      {!sinCatalogo && sinAnticipo && (opciones || (enPedido && !producto)) ? (
+        <Seccion titulo="Sin anticipo">
+          <Aviso tono="cuidado" texto={`No se cobra nada ahora. El cliente paga ${formatMoney(totalCobro)} completo al retirar.${modo === 'viene' || modo === 'traslado'
+            ? ' El plazo para retirar empieza cuando llegue a la sucursal.' : ' Sin anticipo, el plazo para retirar es más corto. La fecha sale al apartar.'}`} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{`Quedo como responsable de esta reserva${user?.name ? ` (${shortEmployeeName(user.name)})` : ''}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si el cliente no la retira, responde quien la apartó.</Text>
+            </View>
+            <Interruptor value={responsableOk} onValueChange={setResponsableOk} />
+          </View>
+        </Seccion>
+      ) : null}
       {!sinCatalogo && conAnticipo && (opciones || (enPedido && !producto)) ? (
         <>
           <Seccion titulo={enPedido ? `Cobro del pedido · ${renglonesDelPedido.length} productos` : 'Cobro'}
@@ -381,12 +476,6 @@ function Nuevo({ sala, nombreSala, user }) {
               <Campo multiline={false} value={anticipo} keyboardType="decimal-pad" onChangeText={(v) => setAnticipo(dinero(v))} placeholder={`Anticipo (ej. ${mitad})`} style={{ textAlign: 'center', fontWeight: '700' }} autoFocus />
             ) : null}
           </Seccion>
-          {/* El enlace de pago es para un solo producto: un pedido se cobra en caja. */}
-          {!enPedido ? (
-            <Seccion titulo="Dónde paga">
-              <Segmentos opciones={[{ id: 'caja', label: 'En caja' }, { id: 'enlace', label: 'Enlace de pago' }]} activa={cobroEn} onCambiar={setCobroEn} margen={0} />
-            </Seccion>
-          ) : null}
           {cobroEn === 'caja' || enPedido ? <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo || null} /> : null}
         </>
       ) : null}

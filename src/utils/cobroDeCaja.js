@@ -90,61 +90,17 @@ export function leerRenglonesDeLista(lista) {
             descuento_promo: valorDe(tr, 'descuento_promo') ?? '',
             descuento_tipo: valorDe(tr, 'descuento_tipo') ?? '',
         };
-        // Lo que la pantalla usa para RECALCULAR la fila (`actualiza_subtotal`)
-        // pero no manda: no es enumerable, así no viaja en `json_arr`.
-        Object.defineProperty(fila, 'calculo', {
-            enumerable: false,
-            value: { precio_sin_iva: valorDe(tr, 'precio_sin_iva') ?? '', descuento_monto: valorDe(tr, 'descuento_monto') ?? '-1' },
-        });
         fila.invalida = !(fila.cantidad > 0 && fila.precio);
         filas.push(fila);
     }
     return filas;
 }
 
-const redondear = (v, d) => Number(Math.round(`${v}e${d}`) + `e-${d}`);   // `round` de la caja
-
-/**
- * Cada fila como la deja `actualiza_subtotal` al cargar la preventa (el cambio
- * de documento la dispara para todas, releído el 2026-11-18):
- *   · consumidor final y ticket: cantidad × precio, menos la promoción,
- *     redondeado a 2;
- *   · crédito fiscal: cantidad × precio SIN IVA, menos la promoción, a 4
- *     decimales (medido: la CCF 409728 guarda 2 × $3.00 como $5.31).
- * La promoción: `descuento_monto` (−1 = ninguna) en % o por unidad, y su monto
- * queda en `descuento_promo`. La fila del descuento por puntos (−999) no la lleva.
- */
-export function recalcularRenglones(renglones, tipo) {
-    const ccf = String(tipo) === 'CCF';
-    return renglones.map((r) => {
-        const c = r.calculo;
-        if (!c) return r;
-        const precio = ccf ? num(c.precio_sin_iva) : num(r.precio);
-        let sub = redondear(num(r.cantidad) * precio, 4);
-        const fila = { ...r };
-        const monto = String(c.descuento_monto ?? '-1');
-        if (monto !== '-1' && String(r.id).trim() !== '-999') {
-            if (String(r.descuento_tipo) === '%') {
-                const d = redondear((num(monto) / 100) * sub, 2);
-                sub -= d;
-                fila.descuento_promo = String(d);
-            } else {
-                sub -= num(monto) * num(r.cantidad);
-                fila.descuento_promo = String(redondear(num(monto) * num(r.cantidad), 2));
-            }
-        }
-        // Texto, como lo lee la pantalla de su campo (`.val()`).
-        fila.subtotal = ccf ? sub.toFixed(4) : String(redondear(sub, 2));
-        Object.defineProperty(fila, 'calculo', { enumerable: false, value: c });
-        return fila;
-    });
-}
-
 /**
  * Los totales como `totalColumns` + `setTotals` de la pantalla de la caja
  * (releídos el 2026-11-18), para los tres documentos:
- *   · crédito fiscal: los precios van sin IVA; IVA = gravado × 13 % redondeado a
- *     2; si el cliente retiene, retención = gravado × su porcentaje;
+ *   · crédito fiscal: los subtotales de la preventa ya vienen sin IVA; IVA =
+ *     gravado × 13 % redondeado a 2; si el cliente retiene, retención = gravado × su porcentaje;
  *   · consumidor final y ticket: los precios ya traen el IVA (no se suma); si el
  *     cliente retiene, retención = gravado ÷ 1.13 × su porcentaje.
  * La retención sólo corre desde `monto_retencion` (100 en la caja) y sólo con
@@ -226,7 +182,7 @@ export function datosExtrasDelPago(pago, detalle = {}) {
 export function armarGuardado({ renglones, cabecera, caja, impuestos = {} }) {
     const t = totalesDeCobro(renglones, { ...impuestos, tipo: cabecera.tipo_documento });
     const aplica = renglones.some((r) => ['precio', 'precio1', 'precio2'].includes(r.precio_seleccionado)) ? 1 : 0;
-    const json = renglones.map(({ invalida: _i, ...r }) => JSON.stringify(r)).join(',');
+    const json = renglones.map((x) => { const r = { ...x }; delete r.invalida; return JSON.stringify(r); }).join(',');
     return {
         process: 'insert', cuantos: String(renglones.length), fecha_movimiento: caja.fecha,
         id_cliente: String(cabecera.id_cliente), total: f2(t.total),

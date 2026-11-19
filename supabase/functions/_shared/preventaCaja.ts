@@ -26,7 +26,7 @@
 import { PAGOS_DE_CAJA } from "../../../src/utils/preventa.js";
 import {
   armarFinalizado, armarGuardado, clienteDePreventa, CODIGO_DE_PAGO, datosExtrasDelPago, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar,
-  problemaDelPago, recalcularRenglones, totalesDeCobro,
+  problemaDelPago, totalesDeCobro,
 } from "../../../src/utils/cobroDeCaja.js";
 
 export const BASE = "https://clientesdte3.oss.com.sv/farma_salud/";
@@ -533,8 +533,13 @@ export async function prepararCobroEnLaCaja(
     codvende: String(j.codvende ?? ""), id_empleado: String(j.id_empleado ?? ""), datos_extras: String(j.datos_extras ?? ""),
     id_medico: String(j.id_medico ?? "0"), id_factura: externoId, numero_doc: String(j.numero_doc ?? ""),
   };
-  // Cada fila como la recalcula la pantalla al cargar (en crédito fiscal, sin IVA).
-  const renglones = recalcularRenglones(leerRenglonesDeLista(j.lista), cabecera.tipo_documento);
+  // Las filas TAL COMO VIENEN en la lista, sin recalcular: al cargar una
+  // preventa la pantalla dispara el cambio de documento ANTES de pintar las
+  // filas (`cargar_data` en venta.js), así que `actualiza_subtotal` no las toca
+  // y `setTotals` suma los subtotales guardados (a 2 decimales). Medido el
+  // 2026-11-19: la CCF 415913 de Salud 2 cobró IVA $0.46 sobre $3.50; recalculada
+  // a 4 decimales ($3.4956) daba $0.45.
+  const renglones = leerRenglonesDeLista(j.lista);
   // Si retiene y cuánto: lo que la pantalla lee al cargar el cliente
   // (`mostrar_datos_cliente`: `retiene` y `retencion`).
   let datosCliente: Record<string, unknown> = {};

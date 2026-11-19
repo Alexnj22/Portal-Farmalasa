@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.3 — El kiosco calcula el IVA del crédito fiscal como la caja
+
+- Crédito fiscal desde el kiosco: suma los subtotales de la preventa tal como vienen (a 2 decimales), igual que la caja al cargarla; ya no los recalcula a 4. Visto en el ensayo: la CCF 415913 de Salud 2 cobró IVA $0.46 y el kiosco calculaba $0.45.
+- Novedades: no — kiosco piloto en Salud 4.
+
 ## v2.1579.2 — El kiosco imprime el ticket fiscal con QR
 
 - Cobro desde el kiosco con sello del Ministerio de Hacienda: imprime el ticket fiscal (QR, código de generación y sello), igual que la caja al enviar la factura. Antes salía el ticket simple sin QR (visto en el primer cobro real, Salud 3).

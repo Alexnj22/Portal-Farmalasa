@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    armarFinalizado, armarGuardado, clienteDePreventa, datosExtrasDelPago, problemaDelPago, recalcularRenglones, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
+    armarFinalizado, armarGuardado, clienteDePreventa, datosExtrasDelPago, problemaDelPago, leerCajaAbierta, leerRenglonesDeLista, motivoParaNoCobrar, totalesDeCobro,
 } from '@nucleo/utils/cobroDeCaja.js';
 
 // Forma de la `lista` de `cargar_data` (Salud 4, 2026-11-17), con comillas mezcladas
@@ -94,22 +94,11 @@ describe('el ticket oficial de la caja', () => {
     });
 });
 
-// Una fila con lo que la pantalla usa para recalcular (precio sin IVA y promoción).
-const filaCalc = (id, cant, precio, extra = '') => fila(id, 1, 1, cant, precio, '0', 'precio2')
-    .replace("<input type='hidden' id='subtotal_fin'", `<input type='hidden' id='precio_sin_iva' value='${precio / 1.13}'>${extra}<input type='hidden' id='subtotal_fin'`);
-
 describe('impuestos como la pantalla de la caja', () => {
-    it('crédito fiscal: la fila va sin IVA, como la CCF 409728 (2 × $3.00 = $5.31)', () => {
-        const r = recalcularRenglones(leerRenglonesDeLista(filaCalc(3641, 2, 3)), 'CCF');
-        expect(r[0].subtotal).toBe('5.3097');
-        expect(JSON.stringify(r[0])).not.toContain('precio_sin_iva');
-        expect(totalesDeCobro(r, { tipo: 'CCF' })).toMatchObject({ gravado: 5.31, iva: 0.69, total: 6, retencion: 0 });
-    });
-
-    it('consumidor final: cantidad × precio, con la promoción en %', () => {
-        const conPromo = filaCalc(1, 2, 3, "<input type='hidden' id='descuento_monto' value='10'>").replace("id='descuento_tipo' value='-1'", "id='descuento_tipo' value='%'");
-        const r = recalcularRenglones(leerRenglonesDeLista(conPromo), 'COF');
-        expect(r[0]).toMatchObject({ subtotal: '5.4', descuento_promo: '0.6' });
+    it('crédito fiscal: suma los subtotales de la preventa sin recalcular, como la CCF 415913 (IVA $0.46)', () => {
+        const r = leerRenglonesDeLista(fila(539, 650, 29777, 1, '3.95', '3.50'));
+        expect(r[0].subtotal).toBe('3.50');
+        expect(totalesDeCobro(r, { tipo: 'CCF' })).toMatchObject({ gravado: 3.5, iva: 0.46, total: 3.96 });
     });
 
     it('retención del cliente que retiene, al centavo de facturas reales', () => {

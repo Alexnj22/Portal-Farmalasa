@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.7 — La app lee la boleta al sacar dinero
+
+- App del personal, Sacar dinero → POS Promerica: la foto de la boleta va primero y se lee con el mismo lector del portal. Llena el monto (cerrado si la boleta lo confirma), el número de boleta, de qué fue («Remesa Money Gram WS») y la remesadora, y avisa si el papel dice que la operación va para el otro lado. La lectura queda guardada en el movimiento. Antes la app no leía la foto: la remesa P8181 de Salud 4 (2026-11-19) salió como «POS Promerica» a secas y con el monto escrito a mano.
+
 ## v2.1579.6 — Recibir un traslado: un fallo previo ya no deja el traslado trabado
 
 - `aplicar-traslado-inventario`: si algo falla antes de enviar la recepción (abrir la sesión, devolver lotes, preguntar el estado, leer la pantalla), se suelta el candado de recibir. Antes el 500 lo dejaba puesto y el reintento de la misma persona veía «Alguien más de tu sucursal está recibiendo este traslado» durante 3 minutos (Salud 4, traslado 66103, 2026-11-19). Función desplegada (v77, con JWT).

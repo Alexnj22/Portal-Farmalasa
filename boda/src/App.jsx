@@ -61,6 +61,7 @@ export const rutas = [{
     },
     { path: '/pantalla', element: suelta('/pantalla') },
     { path: '/dj', element: suelta('/dj') },
-    { path: '/admin/*', element: suelta('/admin') },
+    // El panel es registro producto: se queda en papel claro (estilos/claro.css).
+    { path: '/admin/*', element: <div className="tema-claro">{suelta('/admin')}</div> },
   ],
 }];

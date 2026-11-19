@@ -130,7 +130,7 @@ export default function Album() {
                   {subiendo && <><br />{t('Si cierras la página, las que faltan se suben solas cuando vuelvas.', 'If you close the page, the rest will upload when you come back.')}</>}
                 </p>
                 {subiendo && subida.reintentando > 0 && (
-                  <p className="chico" style={{ margin: '4px 0 0', color: 'var(--oliva-claro)' }}>
+                  <p className="chico" style={{ margin: '4px 0 0', color: 'var(--texto-2)' }}>
                     {t('La señal está débil: reintentando solo.', 'Weak signal: retrying automatically.')}
                   </p>
                 )}

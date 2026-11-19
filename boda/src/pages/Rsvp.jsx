@@ -147,7 +147,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
         {van.length > 0 && <>
           {mesas.length > 0
             ? <p className="mesa-grande">{t('Mesa', 'Table')}: {mesas.join(t(' y ', ' and '))}</p>
-            : <p className="chico" style={{ color: 'var(--oliva-claro)' }}>{t('Unos días antes de la boda verás aquí tu mesa.', 'A few days before the wedding you will see your table here.')}</p>}
+            : <p className="chico suave">{t('Unos días antes de la boda verás aquí tu mesa.', 'A few days before the wedding you will see your table here.')}</p>}
           <div className="pase-entrada">
             <QR texto={enlaceInvitacion(codigo)} tam={120} />
             <div>
@@ -164,7 +164,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
           </>}
           {!cerrado && !vencido && <button type="button" className="btn" onClick={() => { setRecien(false); setEditando(true); }}>{t('Cambiar mi respuesta', 'Change my answer')}</button>}
         </div>
-        {!cerrado && vencido && <p className="chico" style={{ marginTop: 16, color: 'var(--oliva-claro)' }}>{t('El plazo para cambiar la respuesta terminó. Si necesitas algo, escríbenos.', 'The deadline to change your answer has passed. If you need anything, message us.')}</p>}
+        {!cerrado && vencido && <p className="chico suave" style={{ marginTop: 16 }}>{t('El plazo para cambiar la respuesta terminó. Si necesitas algo, escríbenos.', 'The deadline to change your answer has passed. If you need anything, message us.')}</p>}
       </div>
     );
   }
@@ -252,7 +252,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
       </ul>
       {libres > 0 && (
         <button type="button" className="agregar-acompanante" onClick={agregar}>
-          + {t('Agregar acompañante', 'Add a guest')} <span style={{ opacity: .75, fontWeight: 400 }}>({libres === 1 ? t('queda 1 lugar', '1 seat left') : t(`quedan ${libres} lugares`, `${libres} seats left`)})</span>
+          + {t('Agregar acompañante', 'Add a guest')} <span className="quedan">({libres === 1 ? t('queda 1 lugar', '1 seat left') : t(`quedan ${libres} lugares`, `${libres} seats left`)})</span>
         </button>
       )}
 

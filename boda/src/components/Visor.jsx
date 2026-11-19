@@ -45,7 +45,7 @@ export default function Visor({ items, indice, alCambiar, alCerrar }) {
         {esVideo(it.ruta) ? <video src={it.url} controls autoPlay playsInline /> : <img src={it.url} alt="" />}
         {(it.autor || it.momento) && (
           <div className="info">{[it.momento && rotuloMomento(it.momento), it.autor && `${t('por', 'by')} ${it.autor}`].filter(Boolean).join(' · ')}
-            {' · '}<a href={it.url} download target="_blank" rel="noreferrer" style={{ color: 'var(--oliva-claro)' }}>{t('descargar', 'download')}</a>
+            {' · '}<a href={it.url} download target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>{t('descargar', 'download')}</a>
           </div>
         )}
       </div>

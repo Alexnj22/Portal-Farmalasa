@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../lib/idioma';
+import { romano } from '../lib/romanos';
 
 // Leaflet (y su CSS) bajan sólo cuando el mapa está por entrar en pantalla.
 let leaflet = null;
@@ -42,13 +43,14 @@ export default function Mapa({ lugares, enfocado }) {
       const movil = L.Browser.mobile;
       m = L.map(nodo.current, { scrollWheelZoom: false, dragging: !movil, tap: false });
       mapa.current = m;
+      // Teselas oscuras de CARTO (sobre OpenStreetMap), del tono de la noche del sitio.
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(m);
       const icono = (n) => L.divIcon({
         className: 'marca-mapa', html: `<span>${n}</span>`,
         iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18],
       });
       lugares.forEach((l, i) => {
-        marcas.current[l.id] = L.marker([l.lat, l.lng], { icon: icono(i + 1), title: l.nombre, alt: l.nombre })
+        marcas.current[l.id] = L.marker([l.lat, l.lng], { icon: icono(romano(i + 1)), title: l.nombre, alt: l.nombre })
           .addTo(m)
           .bindPopup(`<b>${escapar(l.tipo)}</b><br>${escapar(l.nombre)}<br><small>${escapar(l.hora)}</small>`);
       });

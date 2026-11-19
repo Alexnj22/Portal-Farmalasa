@@ -8,9 +8,9 @@ export default function Juegos() {
   useIdioma();
   const j = boda.juego || {};
   const juegos = [
-    { a: '/juego/trivia', t: t('Trivia en vivo', 'Live trivia'), d: j.titulo, e: t('Con todo el salón, en la pantalla grande', 'With the whole room, on the big screen'), cls: 'j-trivia', sim: '?' },
-    { a: '/juego/bingo', t: t('Bingo de la boda', 'Wedding bingo'), d: t('Marca lo que pase en la fiesta y canta ¡bingo!', 'Mark what happens at the party and shout bingo!'), e: t('Juegas solo, cuando quieras', 'Play on your own, anytime'), cls: 'j-bingo', sim: '★' },
-    { a: '/juego/retos', t: t('Retos de fotos', 'Photo challenges'), d: t(`${j.retos?.length || 0} fotos para cazar en la noche`, `${j.retos?.length || 0} photos to hunt tonight`), e: t('Cada foto va al álbum de todos', 'Every photo goes to the shared album'), cls: 'j-retos', sim: '◎' },
+    { a: '/juego/trivia', t: t('Trivia en vivo', 'Live trivia'), d: j.titulo, e: t('Con todo el salón, en la pantalla grande', 'With the whole room, on the big screen'), cls: 'j-trivia', sim: 'I' },
+    { a: '/juego/bingo', t: t('Bingo de la boda', 'Wedding bingo'), d: t('Marca lo que pase en la fiesta y canta ¡bingo!', 'Mark what happens at the party and shout bingo!'), e: t('Juegas solo, cuando quieras', 'Play on your own, anytime'), cls: 'j-bingo', sim: 'II' },
+    { a: '/juego/retos', t: t('Retos de fotos', 'Photo challenges'), d: t(`${j.retos?.length || 0} fotos para cazar en la noche`, `${j.retos?.length || 0} photos to hunt tonight`), e: t('Cada foto va al álbum de todos', 'Every photo goes to the shared album'), cls: 'j-retos', sim: 'III' },
   ];
   return (
     <PaginaApp titulo={<>{t('Ju', 'Ga')}<em>{t('egos', 'mes')}</em></>} bajada={t('Tres maneras de pasarla bien. Elige una.', 'Three ways to have fun. Pick one.')}>

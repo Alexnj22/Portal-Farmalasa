@@ -7,6 +7,7 @@ import { PaginaApp } from '../../components/AppMarco';
 import Mapa from '../../components/Mapa';
 import Copiar from '../../components/Copiar';
 import Icono from '../../components/Iconos';
+import { romano } from '../../lib/romanos';
 
 /** Todo lo práctico de la boda en una pantalla: dónde, a qué hora, qué ponerse. */
 export default function Evento() {
@@ -24,8 +25,8 @@ export default function Evento() {
       <section id="lugares" className="bloque-app">
         {boda.lugares.map((l, i) => (
           <article key={l.id} className="lugar-app">
-            <span className="num" aria-hidden>{i + 1}</span>
-            <p className="versalita suave">{l.tipo} · {l.hora}</p>
+            <span className="num" aria-hidden>{romano(i + 1)}</span>
+            <p className="versalita suave lugar-kicker"><span>{l.tipo}</span><span className="sin-corte"><span className="lugar-sep" aria-hidden> · </span>{l.hora}</span></p>
             <h2>{l.nombre}</h2>
             <p className="suave">{l.direccion}</p>
             <div className="botones-app">

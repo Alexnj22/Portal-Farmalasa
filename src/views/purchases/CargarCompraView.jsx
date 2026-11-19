@@ -21,6 +21,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { ORIGEN, OTRA, estadoDeCarga, fmtFecha } from './cargarCompraComun';
+import { pareceAnulada, docDePapel } from '@nucleo/utils/cargaDeCompra';
 
 // Las otras pestañas y el formulario en papel se bajan al abrirlos (CargarCompraPestanas.jsx).
 const TabPorConfirmar = lazy(() => import('./CargarCompraPestanas').then((m) => ({ default: m.TabPorConfirmar })));
@@ -90,16 +91,6 @@ const ORIGEN_FACTOR = {
     aprendido: 'confirmado',
     costo:     'por costo',
 };
-
-// Una nota de crédito del proveedor por el mismo total que la factura.
-const pareceAnulada = (f, pista) => !!pista?.nota_credito
-    && Math.abs(Number(pista.nota_credito.total) - Number(f.monto_total)) <= 0.02;
-
-/** El doc que abre la carga, armado desde la fila del papel. */
-const docDePapel = (m) => ({
-    manual_id: m.id, emisor_nombre: m.proveedor_nombre, emisor_nit: m.proveedor_nit,
-    fecha_emision: m.fecha_emision, monto_total: m.total,
-});
 
 /** Las facturas en papel escritas y todavía sin cargar. */
 function FacturasEnPapel({ facturas, puedeEditar, onAbrir, onDescartada }) {

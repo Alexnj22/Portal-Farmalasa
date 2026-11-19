@@ -15,18 +15,21 @@
 import { useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../../Tocable';
-import { DOS_CARAS, SECCIONES_DE_DOCUMENTOS, VARIAS_HOJAS, documentoReemplazado, parcheDeArchivoNuevo,
+import { DOS_CARAS, SECCIONES_DE_DOCUMENTOS, VARIAS_HOJAS, documentoReemplazado,
   rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { Seccion } from '../../formulario/Piezas';
-import { fallo } from '../../Progreso';
+import { cerrarProgreso, fallo, listo, trabajando } from '../../Progreso';
 import { colorSistema } from '../../Formulario';
 import { MARCA } from '../../inicio/marca';
 import { CampoConRotulo, CampoFecha } from '../Formulario';
 import { Enlace, Nota } from './Piezas';
 import { elegirYSubir } from './documentos';
+import { elegirSubirYLeer } from './documentoLeido';
+import RepartirDocumento from './RepartirDocumento';
 
 const Pildora = ({ texto, color }) => (
   <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: `${color}22` }}>
@@ -37,6 +40,9 @@ const Pildora = ({ texto, color }) => (
 export default function DocumentosDeLaFicha({ form, setForm, empleadoId, quien }) {
   const [subiendo, setSubiendo] = useState(null);
   const [nuevoExtra, setNuevoExtra] = useState('');
+  // El papel que nombra a varios (acuse del MTPS), esperando que se reparta.
+  const [paraVarios, setParaVarios] = useState(null);
+  const empleados = useStaffStore((s) => s.employees);
   const docs = form.employee_documents || [];
   const docDe = (cat) => docs.find((d) => d.category === cat);
   const firma = { quien: quien?.name || '', quienId: quien?.id || null, hoy: hoySV() };
@@ -50,9 +56,27 @@ export default function DocumentosDeLaFicha({ form, setForm, empleadoId, quien }
     } catch (e) { fallo('No se pudo subir', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setSubiendo(null); }
   };
 
-  const subirDocumento = (cat) => conSubida(cat, (r) => setForm((prev) => ({ ...prev,
-    employee_documents: documentoReemplazado(prev.employee_documents, cat,
-      parcheDeArchivoNuevo((prev.employee_documents || []).find((d) => d.category === cat), r), firma) })));
+  // Un documento se sube y se LEE como en el portal (`elegirSubirYLeer` →
+  // `resultadoDeLectura`, núcleo): vencimiento del papel (sin heredar el del
+  // archivo reemplazado), anualidad del CSSP, certificado médico por año y el
+  // número de la acreditación si su casilla está vacía. Si el papel nombra a
+  // varios, se pregunta a quiénes más se les adjunta.
+  const subirDocumento = async (cat) => {
+    setSubiendo(cat);
+    try {
+      const r = await elegirSubirYLeer({ category: cat, empleadoId, anterior: docDe(cat), ficha: form, alAvanzar: trabajando });
+      cerrarProgreso();
+      if (!r) return;
+      setForm((prev) => ({ ...prev,
+        ...(r.numero && !prev[r.numero.campo] ? { [r.numero.campo]: r.numero.valor } : {}),
+        employee_documents: documentoReemplazado(prev.employee_documents, cat, { ...r.subida, expiry_date: r.expiryDate || '' }, firma) }));
+      if (r.personas.length > 1) {
+        setParaVarios({ nombres: r.personas, rotulo: rotuloDelDocumento(cat),
+          documento: { category: cat, title: rotuloDelDocumento(cat), url: r.subida.url, file_name: r.subida.file_name,
+            expiry_date: r.expiryDate || null, uploaded_at: r.subida.uploaded_at } });
+      }
+    } catch (e) { fallo('No se pudo subir', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setSubiendo(null); }
+  };
 
   // Las hojas que siguen a la primera no pasan por `documentoReemplazado`:
   // agregar el reverso no es reemplazar el frente (misma regla de Expediente).
@@ -143,6 +167,11 @@ export default function DocumentosDeLaFicha({ form, setForm, empleadoId, quien }
           <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{subiendo === 'EXTRA' ? 'Subiendo…' : 'Agregar documento'}</Text>
         </Pressable>
       </Seccion>
+      {paraVarios ? (
+        <RepartirDocumento nombres={paraVarios.nombres} documento={paraVarios.documento} rotulo={paraVarios.rotulo}
+          empleados={empleados} fichaAbierta={empleadoId} onCerrar={() => setParaVarios(null)}
+          onTerminar={({ titulo, texto }) => { setParaVarios(null); listo(titulo, texto); }} />
+      ) : null}
     </>
   );
 }

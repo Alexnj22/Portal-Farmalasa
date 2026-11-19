@@ -7,7 +7,13 @@
 // A quién va: todo el personal, unas sucursales, las jefaturas de sala o unas
 // personas (con buscador). Los ids que se guardan los decide el núcleo
 // (`idsDelAlcance`), la misma regla del portal.
+//
+// Al CREAR, lo escrito se guarda solo (`useBorrador`, el mismo hook y la misma
+// forma que el portal). Se OFRECE «Recuperar / Descartar», nunca se repone
+// solo. Editando una existente no hay borrador: la fila de la base manda.
 import { useMemo, useState } from 'react';
+import useBorrador from '@nucleo/hooks/useBorrador';
+import { hora12 } from '@nucleo/utils/hora';
 import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../../componentes/Tocable';
 import Conmutador from '../../componentes/Interruptor';
@@ -28,6 +34,9 @@ import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
+// Hay borrador si se escribió algo: título, descripción, fechas o a quién va.
+const hayAlgoEscrito = (b) => !!b && ['sfNombre', 'sfDescripcion', 'sfFechaInicio', 'sfFechaFin'].some((k) => String(b[k] ?? '').trim() !== '')
+  || (!!b && Array.isArray(b.sfScopeIds) && b.sfScopeIds.length > 0);
 
 function Rotulo({ texto }) {
   return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginBottom: -4, marginLeft: 2 }}>{texto}</Text>;
@@ -63,6 +72,30 @@ export default function EditarEncuestaInterna() {
   const employees = useStaffStore((s) => s.employees);
   const alternar = (id) => { Haptics.selectionAsync().catch(() => {}); setIds((xs) => (xs.includes(id) ? xs.filter((x) => x !== id) : [...xs, id])); };
   const elegidos = useMemo(() => (employees || []).filter((p) => ids.includes(p.id)), [employees, ids]);
+  // Misma clave y forma que `EncuestaAdminView`. Sólo cuenta como borrador si
+  // hay algo escrito de verdad: el año, el tipo y el estado ya vienen puestos.
+  const creando = !e;
+  const { recuperado, cuando, descartar } = useBorrador('encuesta_nueva', {
+    sfNombre: f.nombre, sfAño: f.anio, sfTipo: f.tipo, sfEstado: f.estado, sfDescripcion: f.descripcion,
+    sfAnonima: f.anonima, sfCompartir: f.compartir, sfScope: alcance, sfScopeIds: ids,
+    sfFechaInicio: f.inicio, sfFechaFin: f.fin,
+  }, { activo: creando, vale: hayAlgoEscrito });
+  const [borradorVisto, setBorradorVisto] = useState(false);
+  const ofrecerBorrador = creando && !borradorVisto && hayAlgoEscrito(recuperado);
+  const reponerBorrador = () => {
+    const b = recuperado || {};
+    setF((x) => ({
+      ...x,
+      nombre: b.sfNombre || x.nombre, anio: b.sfAño ? String(b.sfAño) : x.anio, tipo: b.sfTipo || x.tipo,
+      estado: b.sfEstado || x.estado, descripcion: b.sfDescripcion || x.descripcion,
+      anonima: b.sfAnonima != null ? !!b.sfAnonima : x.anonima, compartir: b.sfCompartir != null ? !!b.sfCompartir : x.compartir,
+      inicio: b.sfFechaInicio || x.inicio, fin: b.sfFechaFin || x.fin,
+    }));
+    if (b.sfScope) setAlcance(b.sfScope);
+    if (Array.isArray(b.sfScopeIds)) setIds(b.sfScopeIds);
+    setBorradorVisto(true);
+  };
+  const tirarBorrador = () => { descartar(); setBorradorVisto(true); };
   const encontrados = useMemo(() => (busca.trim().length < 2 ? [] : (employees || [])
     .filter((p) => !ids.includes(p.id) && tokenMatch(busca, p.name, p.code)).slice(0, 15)), [employees, ids, busca]);
 
@@ -82,6 +115,7 @@ export default function EditarEncuestaInterna() {
     const { error } = e ? await actualizarEncuesta(e.id, payload) : await insertSurvey(payload);
     setGuardando(false);
     if (error) { fallo(e ? 'No se pudo actualizar' : 'No se pudo crear', error.message || ''); return; }
+    if (creando) descartar(); // la encuesta existe: el borrador ya no sirve
     listo(e ? 'Encuesta actualizada' : 'Encuesta creada', f.nombre.trim());
     router.back();
   };
@@ -91,6 +125,15 @@ export default function EditarEncuestaInterna() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: e ? 'Editar encuesta' : 'Nueva encuesta', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
+          {ofrecerBorrador ? (
+            <Seccion titulo="Encuesta sin terminar">
+              <Aviso tono="cuidado" texto={`Quedaron cambios sin guardar${cuando ? ` de las ${hora12(new Date(cuando))}` : ''}.`} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}><BotonGrande texto="Recuperar" onPress={reponerBorrador} /></View>
+                <View style={{ flex: 1 }}><BotonGrande texto="Descartar" borde onPress={tirarBorrador} /></View>
+              </View>
+            </Seccion>
+          ) : null}
           <Seccion titulo="La encuesta">
             <Rotulo texto="Título" />
             <Campo multiline={false} value={f.nombre} onChangeText={cambiar('nombre')} maxLength={120} placeholder="Ej. Clima laboral 2026" />

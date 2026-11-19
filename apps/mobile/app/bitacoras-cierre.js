@@ -72,6 +72,7 @@ export default function CierreDeBitacoras() {
   const [cierres, setCierres] = useState([]);
   const [libroPend, setLibroPend] = useState(0);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
   const [obs, setObs] = useState('');
   const [motivo, setMotivo] = useState('');
   const [reabriendo, setReabriendo] = useState(false);
@@ -81,12 +82,15 @@ export default function CierreDeBitacoras() {
   const cargar = useCallback(async () => {
     if (!sala) return;
     setCargando(true);
-    const [{ resumen: r }, { cierres: c }, { pendientes: p }] = await Promise.all([
-      Promise.resolve(fetchResumenMes(sala, periodo)).catch(() => ({ resumen: null })),
+    // El error del resumen se muestra, como en el portal (`TabCierre`): sin él,
+    // «no se pudo calcular» no dice por qué.
+    const [{ resumen: r, error: e1 }, { cierres: c }, { pendientes: p }] = await Promise.all([
+      Promise.resolve(fetchResumenMes(sala, periodo)).catch((e) => ({ resumen: null, error: e })),
       Promise.resolve(fetchCierres(sala)).catch(() => ({ cierres: [] })),
       Promise.resolve(fetchLibroPendientes(sala, periodo)).catch(() => ({ pendientes: 0 })),
     ]);
-    setResumen(r ?? null); setCierres(c ?? []); setLibroPend(p ?? 0); setCargando(false);
+    setResumen(r ?? null); setCierres(c ?? []); setLibroPend(p ?? 0);
+    setError(e1 ? (e1.message || String(e1)) : null); setCargando(false);
   }, [sala, periodo]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar el mes
 
@@ -154,8 +158,9 @@ export default function CierreDeBitacoras() {
             </View>
           </Seccion>
 
+          {!cargando && error && resumen ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
           {cargando ? <Cargando /> : !resumen ? (
-            <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="No se pudo calcular el resumen del mes." /></View>
+            <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error ? `No se pudo calcular el resumen del mes. ${error}` : 'No se pudo calcular el resumen del mes.'} /></View>
           ) : resumen.sin_dias ? (
             <View style={{ marginHorizontal: 16 }}><Aviso texto="Las bitácoras empezaron después de ese mes." /></View>
           ) : (

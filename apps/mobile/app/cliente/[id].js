@@ -16,11 +16,11 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { codigoDeError, fetchCustomerDetail, mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
 import { DEPARTAMENTOS, conciliarGeo, distritosDe, municipiosDe, normalizarGeo } from '@nucleo/data/elSalvadorGeo';
-import { CAMPOS_FICHA, CATEGORIAS_CLIENTE, ETIQUETA_CAMPO, cambiosDeFicha, camposRequeridos, esContribuyente, validarCliente } from '@nucleo/utils/clienteValidacion';
+import { CAMPOS_FICHA, CATEGORIAS_CLIENTE, ETIQUETA_CAMPO, cambiosDeFicha, camposDeCategoria, camposRequeridos, cargarGiros, esContribuyente, giroDelCatalogo, validarCliente } from '@nucleo/utils/clienteValidacion';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
@@ -31,13 +31,16 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { MAYUSCULAS } from '../../tema/mayusculas';
+import ElegirGiro from '../../componentes/clientes/ElegirGiro';
+import HojaDeEleccion from '../../componentes/HojaDeEleccion';
 
 const corta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const TECLADO = { dui: 'number-pad', nit: 'number-pad', nrc: 'number-pad', phone: 'phone-pad', telefono2: 'phone-pad', retencion_pct: 'number-pad', email: 'email-address' };
 
-// Elegir de una lista con la hoja del sistema (o una alerta en Android).
+// Elegir de una lista con la hoja del sistema. En Android es `HojaDeEleccion`
+// (ver `Linea`): `ActionSheetIOS` no existe ahí y una alerta sólo pinta 3 botones.
 function elegir(titulo, opciones, alElegir) {
-  if (Platform.OS !== 'web') {
+  if (Platform.OS === 'ios') {
     ActionSheetIOS.showActionSheetWithOptions({ title: titulo, options: [...opciones, 'Cancelar'], cancelButtonIndex: opciones.length },
       (i) => { if (i < opciones.length) alElegir(opciones[i]); });
   } else {
@@ -47,13 +50,19 @@ function elegir(titulo, opciones, alElegir) {
 
 function Linea({ campo, valor, onCambiar, editable, error, requerido, opciones, multilinea }) {
   const rotulo = `${ETIQUETA_CAMPO[campo] ?? campo}${requerido ? ' *' : ''}`;
+  const [hoja, setHoja] = useState(false);
   return (
     <View style={{ gap: 4 }}>
+      {hoja ? (
+        <HojaDeEleccion titulo={ETIQUETA_CAMPO[campo] ?? campo} valor={valor || ''}
+          opciones={(opciones || []).map((o) => ({ id: o, label: o }))}
+          onElegir={(v) => { setHoja(false); onCambiar(v); }} onCerrar={() => setHoja(false)} />
+      ) : null}
       <Text style={{ color: error ? MARCA.rojo : colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{rotulo}</Text>
       {!editable ? (
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{valor || '—'}</Text>
       ) : opciones ? (
-        <Pressable onPress={() => elegir(ETIQUETA_CAMPO[campo], opciones, onCambiar)}
+        <Pressable onPress={() => (Platform.OS === 'android' ? setHoja(true) : elegir(ETIQUETA_CAMPO[campo], opciones, onCambiar))}
           style={({ pressed }) => ({ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.7 : 1 })}>
           <Text style={{ color: valor ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>{valor || 'Elegir'}</Text>
         </Pressable>
@@ -62,6 +71,29 @@ function Linea({ campo, valor, onCambiar, editable, error, requerido, opciones, 
           autoCapitalize={campo === 'email' ? 'none' : campo === 'name' ? 'characters' : 'sentences'} autoCorrect={false}
           style={error ? { borderWidth: 1.5, borderColor: MARCA.rojo } : null} />
       )}
+      {error ? <Text style={{ color: MARCA.rojo, fontSize: 12 }}>{error}</Text> : null}
+    </View>
+  );
+}
+
+// El giro se elige del catálogo del MH (`ElegirGiro`), nunca escrito a mano.
+function LineaGiro({ valor, giros, editable, error, requerido, onAbrir }) {
+  const delCatalogo = giroDelCatalogo(valor, giros);
+  const fuera = !!String(valor ?? '').trim() && giros.length > 0 && !delCatalogo;
+  const texto = delCatalogo ?? valor;
+  return (
+    <View style={{ gap: 4 }}>
+      <Text style={{ color: error ? MARCA.rojo : colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{`${ETIQUETA_CAMPO.giro ?? 'Giro'}${requerido ? ' *' : ''}`}</Text>
+      {!editable ? (
+        <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{texto || '—'}</Text>
+      ) : (
+        <Pressable onPress={onAbrir} disabled={!giros.length}
+          style={({ pressed }) => ({ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, justifyContent: 'center', backgroundColor: FONDO_CONTROL,
+            borderWidth: error ? 1.5 : 0, borderColor: MARCA.rojo, opacity: pressed || !giros.length ? 0.7 : 1 })}>
+          <Text style={{ color: texto ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>{texto || (giros.length ? 'Busca la actividad económica' : 'Cargando actividades…')}</Text>
+        </Pressable>
+      )}
+      {fuera ? <Text style={{ color: MARCA.ambar, fontSize: 12 }}>No está en el listado del MH</Text> : null}
       {error ? <Text style={{ color: MARCA.rojo, fontSize: 12 }}>{error}</Text> : null}
     </View>
   );
@@ -88,20 +120,42 @@ export default function FichaCliente() {
       const r = await fetchCustomerDetail(id);
       const cliente = r.cliente ? { ...r.cliente, ...conciliarGeo(r.cliente) } : null;
       setD({ ...r, cliente });
-      const base = Object.fromEntries(CAMPOS_FICHA.map((c) => [c, cliente?.[c] ?? '']));
-      const b = loadDraft(clave);
-      setForm(b ? { ...base, ...b } : base);
+      // El borrador NO se repone aquí: se ofrece (ver `useBorrador` abajo).
+      setForm(Object.fromEntries(CAMPOS_FICHA.map((c) => [c, cliente?.[c] ?? ''])));
     } catch (e) {
       setD({ error: mensajeDeError(e) });
     }
-  }, [id, clave]);
+  }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const cliente = d?.cliente;
   const editable = puedeEditar && cliente && !cliente.mostrador;
   const cambios = useMemo(() => cambiosDeFicha(form, cliente), [form, cliente]);
   const hay = Object.keys(cambios).length > 0;
-  useEffect(() => { if (form && cliente) { if (hay) saveDraft(clave, form); else clearDraft(clave); } }, [form, cliente, hay, clave]);
+  /* La ficha fiscal se EDITA, así que el borrador se OFRECE y no se repone
+   * solo, como en el portal (`FormClienteDetail`): reponerlo escribiría datos
+   * viejos encima de lo que otra persona —o la corrida nocturna de fichas—
+   * cambió en el medio, y son los campos que Hacienda mira en un documento.
+   * Sólo se guarda con la ficha cargada y si hay cambios de verdad. */
+  const hayCambios = useCallback(() => hay, [hay]);
+  const { recuperado: borrador, cuando: borradorCuando, descartar: descartarBorrador } =
+    useBorrador(clave, form, { activo: !!editable && !!form, vale: hayCambios });
+  const [ofrecido, setOfrecido] = useState(false);
+  useEffect(() => { setOfrecido(false); }, [clave]);
+  const ofrecerBorrador = editable && !ofrecido && !!borrador && panel === 'ficha'
+    && Object.keys(cambiosDeFicha({ ...form, ...borrador }, cliente)).length > 0;
+  // El catálogo de giros del MH, cargado aparte (como el portal).
+  const [giros, setGiros] = useState([]);
+  const [eligiendoGiro, setEligiendoGiro] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    cargarGiros().then((g) => { if (vivo) setGiros(g); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+  // Los documentos que se ven dependen de la categoría; lo que la ficha ya
+  // tiene escrito se sigue viendo aunque la categoría no lo lleve.
+  const lleva = useMemo(() => camposDeCategoria(form?.categoria), [form?.categoria]);
+  const ver = (c) => lleva.has(c) || !!String(cliente?.[c] ?? '').trim();
   const v = useMemo(() => validarCliente(form, cliente), [form, cliente]);
   const req = useMemo(() => new Set(camposRequeridos(form?.categoria)), [form?.categoria]);
   const pendientes = (completar?.campos ?? []).filter((c) => !String(form?.[c] ?? '').trim());
@@ -117,7 +171,7 @@ export default function FichaCliente() {
     setGuardando(true); trabajando('Guardando los datos…');
     try {
       await updateCustomerFiscal(id, cambios, { confirmarFiscal: confirmando }, { desde: 'app' });
-      clearDraft(clave);
+      descartarBorrador(); // después del await: un guardado fallido no se lleva lo escrito
       setIntento(false);
       await cargar();
       const r = await pushClienteAlErp(id);
@@ -171,6 +225,15 @@ export default function FichaCliente() {
           {completar && !cliente.mostrador && (faltaCategoria || pendientes.length > 0) ? (
             <Aviso tono="cuidado" texto={`${completar.motivo}: ${[faltaCategoria && `Tipo ${completar.categoria}`, ...pendientes.map((c) => ETIQUETA_CAMPO[c] ?? c)].filter(Boolean).join(', ')}.${faltaCategoria ? ' Elige Contribuyente arriba: así aparecen sus campos.' : ''}`} />
           ) : null}
+          {ofrecerBorrador ? (
+            <Seccion titulo="Cambios sin guardar">
+              <Aviso tono="cuidado" texto={`Quedaron cambios sin guardar${borradorCuando ? ` de las ${hora12(new Date(borradorCuando))}` : ''}.`} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}><BotonGrande texto="Recuperar" onPress={() => { setForm((f) => ({ ...f, ...borrador })); setOfrecido(true); }} /></View>
+                <View style={{ flex: 1 }}><BotonGrande texto="Descartar" borde onPress={() => { descartarBorrador(); setOfrecido(true); }} /></View>
+              </View>
+            </Seccion>
+          ) : null}
           {cliente.mostrador ? <Aviso tono="nota" texto="Es el cliente genérico del mostrador. No lleva datos fiscales." /> : null}
           {cliente.nombre_corrupto ? <Aviso tono="cuidado" texto="El nombre llegó dañado. Corrígelo con el que aparece en el documento." /> : null}
 
@@ -182,12 +245,15 @@ export default function FichaCliente() {
               <Seccion titulo="Identificación">
                 {campo('name')}
                 {campo('categoria', { opciones: CATEGORIAS_CLIENTE })}
-                {campo('dui')}
-                {campo('nit')}
-                {campo('nrc')}
-                {campo('pasaporte')}
-                {campo('giro')}
-                {campo('retencion_pct')}
+                {ver('dui') ? campo('dui') : null}
+                {ver('nit') ? campo('nit') : null}
+                {ver('nrc') ? campo('nrc') : null}
+                {ver('pasaporte') ? campo('pasaporte') : null}
+                {ver('giro') ? (
+                  <LineaGiro valor={form?.giro} giros={giros} editable={editable} error={errorDe('giro')} requerido={req.has('giro')}
+                    onAbrir={() => setEligiendoGiro(true)} />
+                ) : null}
+                {ver('retencion_pct') ? campo('retencion_pct') : null}
               </Seccion>
               <Seccion titulo="Contacto">
                 {campo('phone')}
@@ -212,7 +278,7 @@ export default function FichaCliente() {
                 <>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>{`Cambian: ${Object.keys(cambios).map((c) => ETIQUETA_CAMPO[c] ?? c).join(', ')}`}</Text>
                   <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar los datos'} color={MARCA.azul} deshabilitado={guardando} onPress={() => guardar(false)} />
-                  <BotonGrande texto="Descartar los cambios" borde color={MARCA.rojo} onPress={() => { clearDraft(clave); setIntento(false); setForm(Object.fromEntries(CAMPOS_FICHA.map((c) => [c, cliente?.[c] ?? '']))); }} />
+                  <BotonGrande texto="Descartar los cambios" borde color={MARCA.rojo} onPress={() => { descartarBorrador(); setIntento(false); setForm(Object.fromEntries(CAMPOS_FICHA.map((c) => [c, cliente?.[c] ?? '']))); }} />
                 </>
               ) : null}
             </>
@@ -258,6 +324,8 @@ export default function FichaCliente() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+      <ElegirGiro visible={eligiendoGiro} giros={giros} valor={giroDelCatalogo(form?.giro, giros) ?? (form?.giro || '')}
+        quitable={!req.has('giro')} onElegir={(g) => set('giro')(g)} onCerrar={() => setEligiendoGiro(false)} />
     </>
   );
 }

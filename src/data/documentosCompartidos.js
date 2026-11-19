@@ -182,6 +182,50 @@ export async function dejarPendiente(nombre, documento) {
 }
 
 /**
+ * El reparto que confirmó quien mira: a las fichas que existen se les escribe
+ * ahora y los nombres sin ficha quedan en espera. Lo usan el diálogo del
+ * portal (`AsignarDocumentoAVarios`) y la app del personal.
+ *
+ * Lanza si algo no se pudo: quien decidió tiene que poder reintentar sin volver
+ * a subir el documento, y reintentar es seguro (asignar no pisa y el pendiente
+ * no se duplica). Un pendiente que no se pudo dejar se DICE: antes se
+ * descartaba y el diálogo cerraba con «Sin cambios» en verde (2026-10-13).
+ *
+ * @param {Array<string|number>} employeeIds  fichas que ya existen (sin repetir)
+ * @param {string[]} nombresEnEspera           los del papel que no tienen ficha
+ * @param {object} documento                   la entrada de `employee_documents`
+ * @returns {Promise<{ asignados: number, pendientes: number, omitidos: Array }>}
+ */
+export async function repartirDocumento(employeeIds, nombresEnEspera, documento) {
+    let asignados = 0;
+    let omitidos = [];
+    const ids = [...new Set(employeeIds || [])];
+    if (ids.length) {
+        const r = await asignarDocumentoA(ids, documento);
+        if (r?.ok === false) throw new Error(r.motivo || 'No se pudo asignar.');
+        asignados = (r?.asignados || []).length;
+        omitidos = r?.omitidos || [];
+    }
+    let pendientes = 0;
+    const sinDejar = [];
+    for (const nombre of nombresEnEspera || []) {
+        const r = await dejarPendiente(nombre, documento);
+        if (r?.ok) pendientes += 1; else sinDejar.push({ nombre, motivo: r?.motivo });
+    }
+    if (sinDejar.length) {
+        throw new Error(`No se pudo dejar en espera a ${sinDejar.map(x => x.nombre).join(', ')}`
+            + ` (${sinDejar[0].motivo || 'sin motivo'}).`);
+    }
+    return { asignados, pendientes, omitidos };
+}
+
+/** El aviso de un fallo del reparto, en palabras de quien lo usa. */
+export const mensajeDelReparto = (e) => {
+    const msg = e?.message || 'No se pudo asignar el documento.';
+    return /FORBIDDEN/.test(msg) ? 'Hace falta permiso de edición en Personal para repartir el documento.' : msg;
+};
+
+/**
  * Los que estaban esperando a esta persona.
  *
  * Lo llama el alta DESPUÉS de guardar los documentos del formulario, y no un

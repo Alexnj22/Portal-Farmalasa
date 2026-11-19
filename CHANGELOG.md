@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.0 — La app del personal: cargar compra, bitácoras de regencia, alta de clientes, conteos y rentabilidad
+
+- App, pantallas nuevas que sólo tenía el portal: **Cargar compra completa** (cargar en Bodega, diccionario, producto nuevo, partir renglón, pedir fechas a la sucursal, sacar de la lista con Deshacer, Erróneos y Por llegar con notas de crédito, facturas en papel, pistas, pausa de escrituras, Registro con CSV); **Bitácoras** de antibióticos (listado, por lote, cuadre), lotes por revisar y regencia (visitas, rótulo, hoja del mes); **alta de cliente** y «Sin número»; **consultas de existencia** (pedir y contar); **rentabilidad**; Mín·Máx de la sucursal con «Poner en 0» y «Restaurar al calculado».
+- App igual que el portal: horarios (semana pasada y días con vacación/incapacidad/apoyo no se editan; meta de practicantes), nómina (regenerar exige editar), plan de vacaciones por sucursal, error del cierre de bitácoras visible, borrador en encuesta interna; ficha del cliente (el borrador se ofrece, giro del listado del MH, campos por categoría, selector que funciona en Android); bolsas sin $0 ni «no hay» cuando falla la lectura; premio «se está entregando»; terminar el retiro con bultos; el expediente lee el documento al subirlo (vencimiento, anualidad, certificado por año, número de registro, acuse para varios).
+- Núcleo: reglas que vivían en vistas web pasan a `cargaDeCompra.js`, `lecturaDeDocumento.js`, `clienteValidacion.js` (alta), `libroBajoReceta.js` (corregir lote), `minmaxGuardar.js` (poner en 0), `documentosCompartidos.js` (repartir). `consultasExistencia` ya no usa `crypto.randomUUID` (no existe en la app).
+- Web: el buscador de Rentabilidad encontraba casi nada (argumentos de `tokenMatch` al revés).
+- Novedades: no — lo decidió el usuario (2026-11-19).
+
 ## v2.1582.0 — Encuestas de campo: zonas con su meta
 
 Pedido del usuario (2026-11-19): la investigación de mercado se aplica en Chalatenango Norte, Centro y Sur, 100 en cada uno. Quien encuesta elige la zona de una lista (el usuario descartó deducirla del GPS).

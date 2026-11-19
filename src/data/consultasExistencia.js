@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { solicitudDeAjuste, OPERACIONES_AJUSTE } from '../utils/ajusteInventario';
 import { ERP_UBICACION_POR_SUCURSAL } from '../constants/erp';
 import { insertMovimientoInventario } from './inventoryMovements';
+import { nuevoUuid } from '../utils/distribucionComercial';
 
 /**
  * Consultas de existencia (Conteo de inventario → Consultas, 2026-10-29).
@@ -183,7 +184,8 @@ export async function pedirAjusteDeConsulta({ consulta, sala, ajuste, usuarioId,
                 erpUbicacionId: ERP_UBICACION_POR_SUCURSAL[sala.erp_sucursal_id] ?? null,
             },
         });
-        const id = crypto.randomUUID();
+        // `nuevoUuid`: en la app (Hermes) `crypto.randomUUID` no existe.
+        const id = nuevoUuid();
         payload.id = id;
         payload.metadata.consulta_existencia = { consulta_id: consulta.id, sala_id: sala.id, sentido };
         const { error } = await insertMovimientoInventario(payload, { lineas: lineas.length, consulta_existencia: true, sentido });

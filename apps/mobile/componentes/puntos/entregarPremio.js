@@ -19,6 +19,7 @@ export async function entregarPremioPorCodigo({ codigo, sala, nombreSala, alTerm
     const no = !p ? `No hay un premio ${codigo}.`
       : p.estado === 'ENTREGADO' ? 'Ese premio ya se entregó.'
         : p.estado === 'VENCIDO' ? 'Ese premio ya venció.'
+          : p.estado === 'ENTREGANDO' ? 'Ese premio se está entregando en este momento.'
           : p.tipo === 'promocional' && p.reserva_branch && Number(p.reserva_branch) !== Number(sala)
             ? `Ese regalo está apartado para el cliente en ${nombreSala(p.reserva_branch)}: se retira allá.`
             : null;

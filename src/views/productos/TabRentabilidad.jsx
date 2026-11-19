@@ -62,7 +62,7 @@ export default function TabRentabilidad({ searchTerm = '' }) {
             || (filtro === 'perdida' && x.margen < 0)
             || (filtro === 'bajo' && x.margen >= 0 && x.margen < 15)
             || (filtro === 'bajo5' && x.margen_antes != null && x.margen_antes - x.margen >= 5))
-        && (!searchTerm || tokenMatch(`${x.nombre} ${x.presentacion ?? ''}`, searchTerm))), [filas, filtro, searchTerm]);
+        && (!searchTerm || tokenMatch(searchTerm, x.nombre, x.presentacion ?? ''))), [filas, filtro, searchTerm]);
 
     return (
         <div className="p-5 md:p-6 space-y-4">

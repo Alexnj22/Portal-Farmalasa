@@ -351,13 +351,18 @@ describe('los documentos que pide el expediente', () => {
         expect(form).not.toContain("key: 'CERTIFICADO_MEDICO'");
     });
 
-    it('el certificado médico vale por AÑO CALENDARIO, tomado de cuándo se hizo', () => {
+    it('el certificado médico vale por AÑO CALENDARIO, tomado de cuándo se hizo', async () => {
         // Decisión del usuario, 2026-10-13: «sólo tome el año, es válido para
         // todo ese año». Del papel sale el año de emisión y el vencimiento es el
         // 31 de diciembre de ese año. Sin fecha de emisión se queda vacío:
         // suponer el año en curso sobre un certificado viejo lo daría por vigente.
-        expect(form).toContain('POR_ANIO_CALENDARIO.has(category)');
-        expect(form).toMatch(/vencimientoDelAnio\(anioDelVencimiento\(aiResponse\?\.aiData\?\.issueDate\)\)/);
+        // La regla vive en `resultadoDeLectura` (la usan el portal y la app).
+        const { resultadoDeLectura } = await import('@nucleo/utils/lecturaDeDocumento');
+        const leer = (aiData) => resultadoDeLectura({ category: 'CERTIFICADO_MEDICO_ANUAL',
+            lectura: { data: { success: true, aiData }, error: null } }).expiryDate;
+        expect(leer({ issueDate: '2025-06-10', expDate: '2026-06-10' })).toBe('2025-12-31');
+        expect(leer({ expDate: '2027-01-01' })).toBeNull();
+        expect(form).toContain('resultadoDeLectura(');
     });
 
     it('el año del certificado se lee bien también en los guardados con la regla vieja', async () => {

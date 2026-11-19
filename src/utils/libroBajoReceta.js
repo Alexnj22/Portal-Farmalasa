@@ -31,6 +31,41 @@ export function venceEfectivo(fecha) {
 export const vencidoAlVender = (vence, fecha) => Boolean(vence && fecha && venceEfectivo(vence) < String(fecha).slice(0, 10));
 
 /**
+ * ¿El lote escrito son dos lotes en uno (o «GENERICO»)? Mismo juez que la base
+ * (`libro_lote_motivo`): un lote por fila. Lo usan el portal y la app al
+ * corregir el lote del libro (PENDIENTES 22).
+ */
+export const loteFundido = (lote) => {
+    const l = String(lote ?? '');
+    return /_/.test(l) || /\d{5,}\s*[-/, ]\s*\d{5,}/.test(l) || l.trim().toUpperCase() === 'GENERICO';
+};
+
+/**
+ * Lo que falta para poder guardar la corrección del lote, en el orden de las
+ * condiciones del botón y con el campo al que lleva, o null si está listo.
+ * `partes`: [{ lote, vence, cantidad }] como se escriben en el formulario.
+ */
+export function queFaltaAlCorregirLote({ partes, cantidad, vendidoVencido, fechaVenta }) {
+    const fmt = (v) => (v === null || v === undefined ? '—' : String(Number(v)));
+    for (let k = 0; k < partes.length; k++) {
+        const p = partes[k];
+        const deCual = partes.length > 1 ? ` (lote ${k + 1})` : '';
+        if (!String(p.lote ?? '').trim()) return { texto: `Escribe el lote${deCual}.`, campo: `lote-${k}` };
+        if (loteFundido(p.lote)) return { texto: `Escribe un solo lote por fila${deCual}.`, campo: `lote-${k}` };
+        if (!p.vence) return { texto: `Elige el vencimiento${deCual}.`, campo: `vence-${k}` };
+        if (!(Number(p.cantidad) > 0)) return { texto: `Escribe la cantidad${deCual}.`, campo: `cantidad-${k}` };
+    }
+    const suma = partes.reduce((s, p) => s + (Number(p.cantidad) || 0), 0);
+    if (Math.abs(suma - Number(cantidad)) >= 1e-9) {
+        return { texto: `Las cantidades suman ${fmt(suma)} y se entregaron ${fmt(cantidad)}.`, campo: `cantidad-${partes.length - 1}` };
+    }
+    const algunaVencida = partes.some(p => vencidoAlVender(p.vence, fechaVenta));
+    if (algunaVencida && !vendidoVencido) return { texto: 'Revisa el vencimiento o marca que se entregó vencido.', campo: 'vendidoVencido' };
+    if (!algunaVencida && vendidoVencido) return { texto: 'Desmarca «Sí, se entregó vencido»: ningún vencimiento es anterior a la venta.', campo: 'vendidoVencido' };
+    return null;
+}
+
+/**
  * El lote que el libro DICE de un renglón: el corregido por la sala si lo hay
  * (`lote_revision`, PENDIENTES 22), y si no el que trajo la venta. Una venta
  * que salió de dos lotes se escribe con la cantidad de cada uno al lado.

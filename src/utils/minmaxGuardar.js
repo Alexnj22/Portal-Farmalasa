@@ -127,6 +127,39 @@ export function planDeRestaurarMinMax({ row, productId, sucursalId, hayPublicado
     };
 }
 
+/**
+ * «Poner 0» del menú de una fila de la sala — la decisión de `zeroOutRow` de
+ * `hooks/useMinMaxData.js`, pura (2026-11-19, para que la revisión de la sala
+ * en el teléfono haga lo mismo que el portal):
+ *
+ *   · Con datos publicados y sin borrador pendiente: 0·0 EN VIVO.
+ *   · Si no: 0·0 al BORRADOR.
+ *   · Un producto clase A o B pregunta antes (`confirmar`), tenga o no par:
+ *     es la regla del menú del portal, más estricta que la de editar el par.
+ *
+ * No aplica a Bodega (el menú del portal no lo ofrece ahí).
+ *
+ * Devuelve { confirmar, tipo: 'vivo'|'borrador', payload, accion, detalle }.
+ */
+export function planDePonerEnCeroMinMax({ row, productId, sucursalId, hayPublicado, ahora = new Date().toISOString() }) {
+    const cls = row?.draft_abc_class || row?.abc_class;
+    const confirmar = cls === 'A' || cls === 'B';
+    const vivo = !!hayPublicado && row?.draft_status !== 'pending';
+    return {
+        confirmar, tipo: vivo ? 'vivo' : 'borrador',
+        payload: vivo
+            ? { erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: 0, max_units: 0, updated_at: ahora }
+            : { erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: ahora },
+        accion: vivo ? 'MINMAX_LIVE_ZERO' : 'MINMAX_ZERO_OUT',
+        detalle: {
+            field: 'min+max', sucursal_id: sucursalId,
+            old_min: vivo ? (row?.effective_min ?? 0) : (row?.draft_min ?? row?.effective_min ?? 0),
+            old_max: vivo ? (row?.effective_max ?? 0) : (row?.draft_max ?? row?.effective_max ?? 0),
+            new_min: 0, new_max: 0,
+        },
+    };
+}
+
 /** La proyección de existencia a N días con la velocidad diaria; nunca bajo 0. */
 export const proyeccionDeExistencia = (stock, velocidad, dias) => Math.max(0, Math.round((Number(stock) || 0) - (Number(velocidad) || 0) * dias));
 

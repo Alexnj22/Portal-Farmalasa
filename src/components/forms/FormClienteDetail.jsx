@@ -23,7 +23,10 @@ import {
 import {
     validarCliente, camposRequeridos, esContribuyente as esFiscal,
     ETIQUETA_CAMPO as ETIQUETAS, CAMPOS_FICHA, CATEGORIAS_CLIENTE, cambiosDeFicha,
-    camposDeCategoria, conCategoria, cargarGiros, giroDelCatalogo } from '@nucleo/utils/clienteValidacion';
+    camposDeCategoria, conCategoria, cargarGiros, giroDelCatalogo,
+    FICHA_NUEVA, GRUPO_DE_CATEGORIA as GRUPO_DE, GRUPOS_DE_CLIENTE, PRIMERA_DEL_GRUPO,
+    VARIANTES_DEL_GRUPO as VARIANTES, QUE_ES_CATEGORIA as QUE_ES, faltaAlNacer, rotuloFaltaAlNacer,
+} from '@nucleo/utils/clienteValidacion';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -164,50 +167,12 @@ function PanelActividad({ actividad, facturas, bitacora }) {
 
 // ── Formulario ───────────────────────────────────────────────────────────────
 
-// La ficha vacía con la que nace un cliente (2026-11-15: los clientes se crean
-// en el portal y el portal les da el número de la caja).
-const FICHA_NUEVA = Object.freeze(
-    Object.fromEntries(CAMPOS.map(c => [c, c === 'categoria' ? 'Consumidor' : ''])));
-
-// ── El tipo de cliente, primero ──────────────────────────────────────────────
-// En el alta lo primero que se elige es QUÉ es el cliente, y de eso sale qué
-// se pide (2026-11-15, «que sea fácil y eficiente»). Tres grupos y no seis
-// opciones: casi todos son consumidores o contribuyentes, y el canon pone el
-// tope de un segmentado en tres (DESIGN.md §15.3). Las variantes raras se
-// eligen después, sólo dentro de su grupo.
-const GRUPO_DE = {
-    'Consumidor': 'consumidor', 'Contribuyente': 'contribuyente',
-    'Gran Contribuyente': 'contribuyente', 'Contribuyente Exento': 'contribuyente',
-    'Extranjero': 'otro', 'Menor de edad': 'otro',
-};
-const PRIMERA_DEL_GRUPO = { consumidor: 'Consumidor', contribuyente: 'Contribuyente', otro: 'Extranjero' };
-const VARIANTES = {
-    contribuyente: ['Contribuyente', 'Gran Contribuyente', 'Contribuyente Exento'],
-    otro: ['Extranjero', 'Menor de edad'],
-};
-const QUE_ES = {
-    'Consumidor': 'Persona que compra. Lleva factura: basta su DUI (o su NIT), el teléfono y dónde vive.',
-    'Contribuyente': 'Inscrito en IVA: se le emite crédito fiscal. Pide NIT, NRC, giro, correo y dirección.',
-    'Gran Contribuyente': 'Como un contribuyente, y además es agente de retención: lleva su porcentaje.',
-    'Contribuyente Exento': 'Inscrito en IVA pero exento del impuesto. Pide los mismos datos que un contribuyente.',
-    'Extranjero': 'No tiene DUI: se identifica con su pasaporte.',
-    'Menor de edad': 'No tiene documento propio: basta el nombre, el teléfono y dónde vive.',
-};
+// La ficha vacía con la que nace un cliente, los tres grupos de «qué es» y lo
+// que exige nacer viven en `clienteValidacion.js` (la app da de alta igual).
 
 /** Lo que llega ya escrito (desde el buscador del Inicio): sólo campos de la ficha. */
 const inicialDe = (x) => Object.fromEntries(Object.entries(x || {})
     .filter(([k, v]) => CAMPOS.includes(k) && k !== 'categoria' && v != null && String(v).trim()));
-
-// Lo que pide `cliente_crear` además del formulario de siempre: nombre y
-// apellido, y un documento según la categoría (FALTA_DOCUMENTO en la base).
-function faltaAlNacer(f) {
-    const faltan = [];
-    if (String(f?.name ?? '').trim().split(/\s+/).filter(Boolean).length < 2) faltan.push('name');
-    if (f?.categoria === 'Extranjero') { if (!String(f?.pasaporte ?? '').trim()) faltan.push('pasaporte'); }
-    else if (f?.categoria !== 'Menor de edad'
-        && !String(f?.dui ?? '').trim() && !String(f?.nit ?? '').trim()) faltan.push('dui');
-    return faltan;
-}
 
 const ROTULO_COMPLETAR = { nit: 'NIT', nrc: 'NRC', giro: 'giro', direccion: 'dirección', phone: 'teléfono', email: 'correo', dui: 'DUI' };
 
@@ -360,9 +325,9 @@ const FormClienteDetail = ({ formData }) => {
     // Al crear, lo que falta puede no ser «para facturar» sino para identificar
     // a la persona (nombre y apellido, un documento): se dice eso.
     const FALTA_AL_NACER = {
-        name: 'Nombre y apellido',
-        dui: form?.categoria === 'Extranjero' ? undefined : 'DUI o NIT',
-        pasaporte: 'El pasaporte, si es extranjero',
+        name: rotuloFaltaAlNacer('name', form?.categoria),
+        dui: rotuloFaltaAlNacer('dui', form?.categoria),
+        pasaporte: rotuloFaltaAlNacer('pasaporte', form?.categoria),
     };
     // Quien abre la ficha para completar una venta (Preventa, 2026-11-16:
     // «al dar en completar, que visualmente me diga qué falta») dice qué le
@@ -542,11 +507,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={g => setForm(p => (GRUPO_DE[p.categoria] === g ? p
                                         : esNuevo ? conCategoria(p, PRIMERA_DEL_GRUPO[g]) : { ...p, categoria: PRIMERA_DEL_GRUPO[g] }))}
                                     label="Tipo de cliente"
-                                    options={[
-                                        { value: 'consumidor', label: 'Consumidor' },
-                                        { value: 'contribuyente', label: 'Contribuyente' },
-                                        { value: 'otro', label: 'Otro' },
-                                    ]}
+                                    options={GRUPOS_DE_CLIENTE}
                                 />
                                 {VARIANTES[GRUPO_DE[form.categoria]] && (
                                     <LiquidSelect

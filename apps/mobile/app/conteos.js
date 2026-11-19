@@ -4,7 +4,8 @@
 // aprobar, Sin ajustar—, que filtran al tocarlas. Las cuentas son del núcleo
 // (`resumenDeConteos`, `FOCOS_CONTEO`). Tocar uno abre la pantalla de contar.
 // «Nuevo conteo» abre `conteo/nuevo`; aprobar, recontar y registrar el ajuste
-// viven en la pantalla del conteo.
+// viven en la pantalla del conteo. La pestaña «Consultas de existencia» del
+// portal es `consultas-existencia`, abierta desde la tarjeta de arriba.
 //
 // Como el portal: buscador (por sucursal o alcance), filtro de sucursal para
 // quien ve todas, y eliminar un conteo manteniéndolo presionado — con el
@@ -131,6 +132,20 @@ export default function Conteos() {
             color={MARCA.rojo} onPress={() => alternar('SIN_AJUSTE')} />
         </FilaDeKpis>
         <FiltrosActivos grupos={grupos} />
+        {/* La otra pestaña del portal: Consultas de existencia (pedir que
+            cuenten un producto y contestar lo que le preguntaron a la sucursal). */}
+        <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/consultas-existencia'); }}
+          style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+          <Vidrio radio={20} interactivo>
+            <View style={{ padding: 14, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Consultas de existencia</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Pedir que cuenten un producto y contar lo que te preguntaron</Text>
+              </View>
+              <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
+            </View>
+          </Vidrio>
+        </Pressable>
         {visibles.some(puedeBorrar) ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Mantén presionado un conteo para eliminarlo.</Text> : null}
         {cargando && !mios.length ? <Cargando /> : visibles.map((c) => {
           const r = resumenes[c.id];

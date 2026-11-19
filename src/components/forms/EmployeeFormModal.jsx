@@ -69,9 +69,9 @@ import { periodoVigente, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
 import { fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
-import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
+import { getExpiryBadge, getExpiringDocuments } from '@nucleo/utils/documentExpiry';
 import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, SECCIONES_DEL_PRACTICANTE, DOCUMENTOS_DEL_PRACTICANTE, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado, enUnaPieza,
-    POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento, carasConElVencimientoDelDui } from '@nucleo/utils/documentosDelExpediente';
+    POR_ANIO_CALENDARIO, vencimientoDelAnio, anioQueCubre, estadoDelDocumento, carasConElVencimientoDelDui } from '@nucleo/utils/documentosDelExpediente';
 import TarjetaDeDocumento from './TarjetaDeDocumento';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
 import { calcAge, MINOR_AGE } from '@nucleo/utils/ageUtils';
@@ -99,6 +99,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { NOMBRES_DE_MES, fechaTexto, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { analizarDocumento, leerDui } from '@nucleo/data/ia';
+import { carpetaDelDocumento, hayQueLeerDocumento, pedidoDeLectura, resultadoDeLectura, resumenDelReparto } from '@nucleo/utils/lecturaDeDocumento';
 import SeccionDeLaPractica from '../practicantes/SeccionDeLaPractica';
 import { TIPO_FICHA_PRACTICANTE } from '@nucleo/utils/practicanteFormulario';
 import { LoadingState } from '../common/StateViews';
@@ -1463,8 +1464,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             // Un papel colectivo (el acuse del MTPS) no es de una carpeta: va a
             // `compartidos/` y cada ficha que lo nombra apunta ahí. En la
             // carpeta de uno, los demás que nombra no lo podían abrir.
-            const folder = COMPARTIBLES.has(category) ? 'compartidos'
-                : formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
+            const folder = carpetaDelDocumento(category, formData?.id);
             const url = await uploadFileToStorage(file, 'documents', folder);
             if (!url) throw new Error('La subida no devolvió una URL.');
             const stored = getStoragePathFromUrl(url);
@@ -1475,7 +1475,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
              * tarjeta siguió diciendo «vencido el 12-mar-2026». La fecha que
              * alguien escribió ANTES de subir el primer archivo sí se respeta. */
             const entradaAnterior = getDocEntry(category);
-            let expiryDate = entradaAnterior.url ? null : (entradaAnterior.expiry_date || null);
             /* Declarada AFUERA del `if`, y no es estilo.
              *
              * Estuvo dentro, y el certificado médico anual —que la lee 40
@@ -1497,67 +1496,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
              * tarjetas de ISSS/AFP o una cara del DUI no traen ninguna —el DUI
              * lo lee `leer-dui`—, y se pagaba igual una llamada de ~4 s por cada
              * uno. Medido el 16-oct: subir un DUI eran 5 llamadas al modelo;
-             * con esto son 3. */
-            const hayQueLeer = !SIN_VENCIMIENTO.has(category)
-                || COMPARTIBLES.has(category)
-                || ACREDITACIONES.some(a => a.doc === category || a.certificado === category);
-            if (stored && hayQueLeer) {
-                ({ data: aiResponse, error: aiError } = await analizarDocumento({
-                    // Los nombres SÓLO en los papeles colectivos: pedirlos en
-                    // cada documento agrega trabajo al modelo para una respuesta
-                    // que en un carné no se usa, y un campo que nadie mira es un
-                    // campo que se llena mal sin que nadie lo note.
-                    filePath: stored.path, bucketName: stored.bucket,
-                    // El resumen de dos líneas sólo lo muestra el expediente de
-                    // SUCURSAL; en la ficha nadie lo ve y era la mitad de la salida.
-                    sinResumen: true,
-                    ...(COMPARTIBLES.has(category) ? { buscarPersonas: true } : {}),
-                }));
-                if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate
-                    && !POR_ANIO_CALENDARIO.has(category)) {
-                    expiryDate = aiResponse.aiData.expDate;
-                }
-                // ── El número de la acreditación también sale del papel ──────
-                //
-                // Pedido de Talento Humano: del comprobante salen «número y
-                // vencimiento». El vencimiento ya salía; el número había que
-                // teclearlo mirando el documento que se acababa de subir.
-                //
-                // Sólo llena lo que está VACÍO, y sólo en el documento de ESA
-                // junta. Ojo: el DUI **sí** sustituye desde el 2026-09-03 («lo
-                // legal es el documento»), y acá no, a propósito — el DUI dice
-                // quién es la persona y esto dice un número de registro, que se
-                // teclea mirando el mismo papel y que nadie discute. Y el número
-                // de una junta puesto en la casilla de otra es peor que ninguno:
-                // manda a verificarlo al organismo equivocado.
-                const numeroLeido = aiResponse?.aiData?.numeroDeRegistro;
-                if (!aiError && numeroLeido) {
-                    const laDeEsteDoc = ACREDITACIONES.find(a => a.doc === category || a.certificado === category);
-                    if (laDeEsteDoc && !formData?.[laDeEsteDoc.campo]) {
-                        handleSelectChange(laDeEsteDoc.campo, String(numeroLeido).trim());
-                    }
-                }
+             * con esto son 3.
+             *
+             * Qué se toma de la lectura —el vencimiento (que no se hereda de un
+             * archivo reemplazado), la anualidad del CSSP al 31 de marzo, el
+             * certificado médico por año calendario, el número de registro de
+             * la acreditación (sólo en su casilla y vacía) y los nombres de un
+             * papel colectivo— vive en `@nucleo/utils/lecturaDeDocumento`, que
+             * comparte la app del personal. */
+            const seLee = !!stored && hayQueLeerDocumento(category);
+            if (seLee) {
+                ({ data: aiResponse, error: aiError } = await analizarDocumento(pedidoDeLectura(category, stored)));
             }
-            // Anualidad JVPQF/JVPE: fecha límite fija del CSSP (31 de marzo, igual para
-            // todos los profesionales de salud inscritos, ver reference_sv_pharma_health_regulations)
-            // — se autocompleta solo si no hay fecha ya escrita a mano ni detectada por IA en el recibo.
-            if (!expiryDate && (category === 'ANUALIDAD_JVPQF' || category === 'ANUALIDAD_JVPE')) {
-                expiryDate = getNextAnnualidadCsspDueDate();
-            }
-            // El certificado médico vale un año desde que se hizo el examen, y
-            // ese vencimiento es POR PERSONA — no una fecha fija del calendario
-            // como la anualidad del Consejo. Si el documento dice cuándo se
-            // expidió, el vencimiento sale solo; si no lo dice, se queda vacío
-            // para que alguien lo escriba. Poner «hoy + un año» sobre un
-            // certificado viejo lo daría por vigente cuando no lo está.
-            // Desde el 2026-10-13 vale por AÑO CALENDARIO (decisión del usuario:
-            // «sólo tome el año, es válido para todo ese año»): el certificado
-            // de 2026 cubre hasta el 31 de diciembre de 2026. Del papel se toma
-            // sólo el año en que se expidió; sin fecha legible queda vacío para
-            // que alguien elija el año.
-            if (!expiryDate && POR_ANIO_CALENDARIO.has(category)) {
-                expiryDate = vencimientoDelAnio(anioDelVencimiento(aiResponse?.aiData?.issueDate)) || null;
-            }
+            const leido = resultadoDeLectura({ category, anterior: entradaAnterior,
+                lectura: seLee ? { data: aiResponse, error: aiError } : null, ficha: formData });
+            const expiryDate = leido.expiryDate;
+            if (leido.numero) handleSelectChange(leido.numero.campo, leido.numero.valor);
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate,
                                   uploaded_at: new Date().toISOString() });
 
@@ -1571,19 +1525,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
              * Con un solo nombre no se pregunta nada: un acuse de una sola
              * persona es un documento normal, y abrir un diálogo para confirmar
              * lo obvio enseña a cerrarlo sin leer. */
-            if (COMPARTIBLES.has(category)) {
-                const leidas = Array.isArray(aiResponse?.aiData?.personas)
-                    ? aiResponse.aiData.personas.filter(n => String(n || '').trim())
-                    : [];
-                if (leidas.length > 1) {
-                    setDocParaVarios({
-                        category,
-                        nombres: leidas,
-                        documento: { category, title: rotuloDelDoc(category), url,
-                                     file_name: file.name, expiry_date: expiryDate || null,
-                                     uploaded_at: new Date().toISOString() },
-                    });
-                }
+            if (leido.personas.length > 1) {
+                setDocParaVarios({
+                    category,
+                    nombres: leido.personas,
+                    documento: { category, title: rotuloDelDoc(category), url,
+                                 file_name: file.name, expiry_date: expiryDate || null,
+                                 uploaded_at: new Date().toISOString() },
+                });
             }
 
             // ── El DUI se lee cuando están las DOS caras ────────────────────
@@ -5310,20 +5259,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         empleados={employees}
                         fichaAbierta={formData?.id || null}
                         alCerrar={() => setDocParaVarios(null)}
-                        alTerminar={({ asignados, pendientes, omitidos }) => {
+                        alTerminar={(r) => {
                             setDocParaVarios(null);
-                            const partes = [];
-                            if (asignados) partes.push(`${asignados} asignado${asignados === 1 ? '' : 's'}`);
-                            if (pendientes) partes.push(`${pendientes} en espera de que los registren`);
-                            // Lo omitido se DICE: quien ya tenía uno no recibió
-                            // éste, y callarlo dejaría creer que sí.
-                            const yaTenian = (omitidos || []).filter(o => o.motivo === 'ya tiene uno');
-                            useToastStore.getState().showToast(
-                                'Documento repartido',
-                                [partes.join(' · ') || 'Sin cambios',
-                                 yaTenian.length ? `${yaTenian.length} ya tenía uno cargado y no se reemplazó.` : '']
-                                    .filter(Boolean).join(' '),
-                                'success');
+                            useToastStore.getState().showToast('Documento repartido', resumenDelReparto(r), 'success');
                         }}
                     />
                 </Suspense>

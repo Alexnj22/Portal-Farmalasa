@@ -45,7 +45,7 @@ import Button from '../common/Button';
 import Notice from '../common/Notice';
 import Badge from '../common/Badge';
 import LiquidSelect from '../common/LiquidSelect';
-import { cruzarConElPadron, asignarDocumentoA, dejarPendiente, fichasSinDocumento } from '@nucleo/data/documentosCompartidos';
+import { cruzarConElPadron, fichasSinDocumento, repartirDocumento, mensajeDelReparto } from '@nucleo/data/documentosCompartidos';
 
 /**
  * @param {string[]} nombres    los que leyó el documento
@@ -107,38 +107,16 @@ export default function AsignarDocumentoAVarios({
         setGuardando(true);
         setFallo(null);
         try {
-            let asignados = 0;
-            let omitidos = [];
-            if (conFicha.length) {
-                // Dos nombres del papel apuntando a la misma ficha se asignan una vez.
-                const ids = [...new Set(conFicha.map(f => fichaDe(f).id))];
-                const r = await asignarDocumentoA(ids, documento);
-                if (r?.ok === false) throw new Error(r.motivo || 'No se pudo asignar.');
-                asignados = (r?.asignados || []).length;
-                omitidos = r?.omitidos || [];
-            }
-            let pendientes = 0;
-            const sinDejar = [];
-            for (const f of sinFicha) {
-                const r = await dejarPendiente(f.nombre, documento);
-                if (r?.ok) pendientes += 1; else sinDejar.push({ nombre: f.nombre, motivo: r?.motivo });
-            }
-            // Un pendiente que no se pudo dejar se DICE. Antes se descartaba y
-            // el diálogo cerraba con «Documento repartido · Sin cambios» en
-            // verde: así vivió roto el reparto desde el día uno (2026-10-13).
-            // Reintentar es seguro: asignar no pisa y el pendiente no se duplica.
-            if (sinDejar.length) {
-                throw new Error(`No se pudo dejar en espera a ${sinDejar.map(x => x.nombre).join(', ')}`
-                    + ` (${sinDejar[0].motivo || 'sin motivo'}).`);
-            }
-            alTerminar({ asignados, pendientes, omitidos });
+            // Dos nombres del papel apuntando a la misma ficha se asignan una
+            // vez (`repartirDocumento` quita los repetidos). Lanza si algo no
+            // se pudo, incluido un pendiente que no se dejó.
+            const r = await repartirDocumento(conFicha.map(f => fichaDe(f).id),
+                sinFicha.map(f => f.nombre), documento);
+            alTerminar(r);
         } catch (e) {
             // No se cierra: quien decidió tiene que poder reintentar sin volver
             // a subir el documento.
-            const msg = e?.message || 'No se pudo asignar el documento.';
-            setFallo(/FORBIDDEN/.test(msg)
-                ? 'Hace falta permiso de edición en Personal para repartir el documento.'
-                : msg);
+            setFallo(mensajeDelReparto(e));
         } finally {
             setGuardando(false);
         }

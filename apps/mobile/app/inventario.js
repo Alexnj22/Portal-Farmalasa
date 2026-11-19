@@ -10,7 +10,8 @@
 //
 // Tocar un producto despliega SUS lotes en ESA sala —los regulares y, aparte,
 // los del área de vencidos— sin salir de la lista (`fetchInventoryDetail`, lo
-// mismo que expande la fila del portal), con un enlace a la ficha completa.
+// mismo que expande la fila del portal), con un enlace a la ficha completa y
+// —con permiso de editar conteos— «Pedir que cuenten» (`consulta-existencia/nueva`).
 // En Bodega, la tarjeta «Área vencidos» cuenta los productos que hay en esa
 // ubicación y filtra. Debajo de las cifras, cuándo se actualizó la sala.
 //
@@ -79,7 +80,7 @@ function Lotes({ titulo, filas, color }) {
   );
 }
 
-function Tarjeta({ g, conSala, vencidas }) {
+function Tarjeta({ g, conSala, vencidas, puedePedirConteo }) {
   const [abierta, setAbierta] = useState(false);
   const [lotes, setLotes] = useState(null);
   const unidades = Number(g.total_unidades) || 0;
@@ -140,9 +141,16 @@ function Tarjeta({ g, conSala, vencidas }) {
                   {!lotes.regulares.length && !lotes.vencidos.length ? <Vacio enSeccion>Sin lotes con existencia.</Vacio> : null}
                 </>
               )}
-              <Pressable onPress={ficha} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
+              <Pressable onPress={ficha} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
                 <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Ver los datos del producto ›</Text>
               </Pressable>
+              {/* Como el panel del portal: pedirle a esta sucursal (o a otras) que lo cuenten. */}
+              {puedePedirConteo ? (
+                <Pressable hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}
+                  onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/consulta-existencia/nueva', params: { producto: String(g.erp_product_id), nombre: g.descripcion, sala: String(g.erp_sucursal_id) } }); }}>
+                  <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Pedir que cuenten ›</Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -152,7 +160,8 @@ function Tarjeta({ g, conSala, vencidas }) {
 }
 
 export default function Inventario() {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+  const puedePedirConteo = hasPermission('conteo_inventario', 'can_edit');
   const miErp = BRANCH_A_ERP[Number(salaDelUsuario(user))] ?? null;
   const [sala, setSala] = useState(miErp == null ? 'todas' : String(miErp));
   const [vista, setVista] = useState('todo');
@@ -318,7 +327,7 @@ export default function Inventario() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos.filas.map((g) => {
           const k = `${g.erp_sucursal_id}_${g.erp_product_id}`;
-          return <Tarjeta key={k} g={g} conSala={erp == null} vencidas={vencidasPorProducto[k] || 0} />;
+          return <Tarjeta key={k} g={g} conSala={erp == null} vencidas={vencidasPorProducto[k] || 0} puedePedirConteo={puedePedirConteo} />;
         })}
         {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}

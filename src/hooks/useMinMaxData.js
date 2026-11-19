@@ -5,7 +5,7 @@
 // consolidan aquí en `openBodegaTooltip`/`closeBodegaTooltip`/`openBodegaEdit`.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { signPhotosDeep } from '../utils/storageFiles';
-import { planDeGuardadoMinMax, planDeRestaurarMinMax } from '../utils/minmaxGuardar';
+import { planDeGuardadoMinMax, planDePonerEnCeroMinMax, planDeRestaurarMinMax } from '../utils/minmaxGuardar';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
@@ -417,37 +417,17 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     };
 
     const zeroOutRow = useCallback(async (row) => {
-        if (hasPublishedData && row.draft_status !== 'pending') {
-            const { error: e } = await upsertStockParams(
-                { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: 0, max_units: 0, updated_at: new Date().toISOString() }
-            );
-            if (!e) {
-                setData(prev => prev.map(r =>
-                    r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                        ? { ...r, effective_min: 0, effective_max: 0 } : r
-                ));
-            }
-            useStaff.getState().appendAuditLog('MINMAX_LIVE_ZERO', String(row.erp_product_id), {
-                field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id,
-                old_min: row.effective_min ?? 0, old_max: row.effective_max ?? 0,
-                new_min: 0, new_max: 0,
-            });
-        } else {
-            const { error: e } = await upsertStockParams(
-                { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() }
-            );
-            if (!e) {
-                setData(prev => prev.map(r =>
-                    r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                        ? { ...r, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r
-                ));
-            }
-            useStaff.getState().appendAuditLog('MINMAX_ZERO_OUT', String(row.erp_product_id), {
-                field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id,
-                old_min: row.draft_min ?? row.effective_min ?? 0, old_max: row.draft_max ?? row.effective_max ?? 0,
-                new_min: 0, new_max: 0,
-            });
+        // Qué se escribe lo decide el núcleo (`planDePonerEnCeroMinMax`), la
+        // misma regla que usa la revisión de la sala en el teléfono.
+        const plan = planDePonerEnCeroMinMax({ row, productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, hayPublicado: hasPublishedData });
+        const { error: e } = await upsertStockParams(plan.payload);
+        if (!e) {
+            setData(prev => prev.map(r =>
+                r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                    ? (plan.tipo === 'vivo' ? { ...r, effective_min: 0, effective_max: 0 } : { ...r, draft_min: 0, draft_max: 0, draft_status: 'pending' }) : r
+            ));
         }
+        useStaff.getState().appendAuditLog(plan.accion, String(row.erp_product_id), { ...plan.detalle, product: row.product_name });
     }, [hasPublishedData]);
 
     const handleZeroAllBranches = useCallback(async (row, { motivo, nota }) => {

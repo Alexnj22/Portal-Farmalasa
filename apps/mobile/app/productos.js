@@ -11,7 +11,8 @@
 // `fetchIdsPorMargen`). La ficha edita foto, devolutivo, categoría, principios
 // activos y ubicaciones. Las presentaciones se ven en `presentaciones`, y con
 // el mismo permiso la «Revisión de factor» (`producto/revision-factor`): qué
-// presentación cambió de tamaño y la existencia que hay que corregir.
+// presentación cambió de tamaño y la existencia que hay que corregir. Con
+// costos, «Rentabilidad» (`rentabilidad`): el margen del precio Regular.
 //
 // Como el portal: filtro por laboratorio, orden por producto, laboratorio,
 // categoría o estado, y las marcas de cada fila — margen (pérdida / bajo),
@@ -105,6 +106,8 @@ export default function Productos() {
   const { hasPermission, maxPriceLevel } = useAuth();
   const conCosto = hasPermission('productos_ver_costos');
   const verRevision = hasPermission('productos_tab_presentaciones');
+  // La pestaña Rentabilidad del portal: catálogo y ver costos.
+  const verRentabilidad = conCosto && hasPermission('productos_tab_catalogo');
   const [cuentas, setCuentas] = useState(null);
   const [modificados, setModificados] = useState(null);
   const [margen, setMargen] = useState(null);
@@ -172,7 +175,8 @@ export default function Productos() {
   // Lo que antes eran botones sueltos en la cabecera: otras secciones del catálogo.
   const abrirMas = () => {
     Haptics.selectionAsync().catch(() => {});
-    const ops = [['Presentaciones', '/presentaciones'], ...(verRevision ? [['Revisión de factor', '/producto/revision-factor']] : []), ['Enriquecer SRS', '/producto/enriquecer-srs']];
+    const ops = [['Presentaciones', '/presentaciones'], ...(verRevision ? [['Revisión de factor', '/producto/revision-factor']] : []),
+      ...(verRentabilidad ? [['Rentabilidad', '/rentabilidad']] : []), ['Enriquecer SRS', '/producto/enriquecer-srs']];
     ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
       (i) => { if (i < ops.length) router.push(ops[i][1]); });
   };

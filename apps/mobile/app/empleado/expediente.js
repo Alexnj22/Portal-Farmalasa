@@ -31,15 +31,18 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { DOS_CARAS, EDUCATION_OPTIONS, LEVELS_WITH_PROFESSION, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, SECCIONES_DE_DOCUMENTOS,
-  VARIAS_HOJAS, documentoReemplazado, enUnaPieza, parcheDeArchivoNuevo, rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
+  POR_ANIO_CALENDARIO, SIN_VENCIMIENTO, VARIAS_HOJAS, anioQueCubre, documentoReemplazado, enUnaPieza, rotuloDelDocumento,
+  vencimientoDelAnio } from '@nucleo/utils/documentosDelExpediente';
 import { elegirYSubir } from '../../componentes/personas/ficha/documentos';
+import { elegirSubirYLeer } from '../../componentes/personas/ficha/documentoLeido';
+import RepartirDocumento from '../../componentes/personas/ficha/RepartirDocumento';
 import { openStoredFile, subirArchivo } from '@nucleo/utils/storageFiles';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato, Vacio } from '../../componentes/formulario/Piezas';
+import { BotonGrande, Campo, Ficha, Seccion, PantallaSinDato, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Avatar from '../../componentes/Avatar';
@@ -83,6 +86,10 @@ export default function Expediente() {
   const [banco, setBanco] = useState(() => ({ bank_name: emp?.bank_name || '', account_type: emp?.account_type || 'AHORRO', account_number: emp?.account_number || '' }));
   const [ocupado, setOcupado] = useState(false);
   const [nuevoExtra, setNuevoExtra] = useState('');
+  // El papel que nombra a varios (acuse del MTPS), esperando que se reparta.
+  const [paraVarios, setParaVarios] = useState(null);
+  // Los documentos sin fecha a los que se les está poniendo una (ver abajo).
+  const [poniendoFecha, setPoniendoFecha] = useState(() => new Set());
   if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   const docs = Array.isArray(emp.employee_documents) ? emp.employee_documents : [];
@@ -111,16 +118,28 @@ export default function Expediente() {
     } catch (e) { fallo('No se pudo subir la foto', e?.message || ''); }
   };
 
-  // Un documento: el archivo nuevo va al bucket `documents` en la carpeta del
-  // portal, y la lista entera se guarda con la traza del reemplazo.
+  // Un documento: sube a la carpeta del portal y se LEE como en el portal
+  // (`elegirSubirYLeer` → `resultadoDeLectura`, núcleo): el vencimiento del
+  // papel (si reemplaza a otro, no hereda el suyo), la anualidad del CSSP al
+  // 31 de marzo, el certificado médico por año calendario y el número de la
+  // acreditación si su casilla está vacía. La lista entera se guarda con la
+  // traza del reemplazo. Si el papel nombra a varios, después se pregunta a
+  // quiénes más se les adjunta.
   const subirDocumento = async (cat) => {
     try {
-      const r = await elegirYSubir(emp.id);
+      const r = await elegirSubirYLeer({ category: cat, empleadoId: emp.id, anterior: docDe(cat), ficha: emp, alAvanzar: trabajando });
       if (!r) return;
+      setPoniendoFecha((x) => { const n = new Set(x); n.delete(cat); return n; });
       trabajando('Guardando el documento…');
-      // Si reemplaza a otro, no hereda su vencimiento (`parcheDeArchivoNuevo`).
-      const lista = documentoReemplazado(docs, cat, parcheDeArchivoNuevo(docDe(cat), r), { quien: user?.name || '', quienId: user?.id || null, hoy: hoySV() });
-      await guardar({ employee_documents: lista }, 'Documento guardado');
+      const parche = { ...r.subida, expiry_date: r.expiryDate || '' };
+      const lista = documentoReemplazado(docs, cat, parche, { quien: user?.name || '', quienId: user?.id || null, hoy: hoySV() });
+      const ok = await guardar({ employee_documents: lista, ...(r.numero ? { [r.numero.campo]: r.numero.valor } : {}) },
+        r.numero ? 'Documento y número de registro guardados' : 'Documento guardado');
+      if (ok && r.personas.length > 1) {
+        setParaVarios({ nombres: r.personas, rotulo: rotuloDelDocumento(cat),
+          documento: { category: cat, title: rotuloDelDocumento(cat), url: r.subida.url, file_name: r.subida.file_name,
+            expiry_date: r.expiryDate || null, uploaded_at: r.subida.uploaded_at } });
+      }
     } catch (e) { fallo('No se pudo subir el documento', e?.message || ''); }
   };
 
@@ -232,13 +251,41 @@ export default function Expediente() {
                     <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                       {d?.url ? <Pressable onPress={() => abrir(d.url)} hitSlop={6}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>Ver</Text></Pressable> : null}
                       {puedeEditar ? <Pressable onPress={() => subirDocumento(cat)} disabled={ocupado} hitSlop={6}><Text style={{ color: colorSistema.acento, fontSize: 15 }}>{d?.url ? 'Reemplazar' : 'Subir foto'}</Text></Pressable> : null}
-                      {d?.url && puedeEditar ? (
+                      {/* Sin fecha se dice «Sin fecha de vencimiento» (como la
+                          tarjeta del portal), no la de hoy: un documento sin
+                          vencimiento aparentaba vencer hoy. Los que no vencen
+                          (`SIN_VENCIMIENTO`) no muestran fecha, como el portal. */}
+                      {SIN_VENCIMIENTO.has(cat) || POR_ANIO_CALENDARIO.has(cat) ? null : d?.url && puedeEditar ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-                          <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Vence</Text>
-                          <Fecha valor={d.expiry_date || hoySV()} onCambiar={(v) => cambiarVencimiento(cat, v)} />
+                          {d.expiry_date || poniendoFecha.has(cat) ? (
+                            <>
+                              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Vence</Text>
+                              <Fecha valor={d.expiry_date || hoySV()} onCambiar={(v) => cambiarVencimiento(cat, v)} />
+                            </>
+                          ) : (
+                            <>
+                              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin fecha de vencimiento</Text>
+                              <Pressable onPress={() => setPoniendoFecha((s) => new Set(s).add(cat))} disabled={ocupado} hitSlop={6}>
+                                <Text style={{ color: colorSistema.acento, fontSize: 15 }}>Poner fecha</Text>
+                              </Pressable>
+                            </>
+                          )}
                         </View>
-                      ) : d?.expiry_date ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 'auto' }}>{`Vence ${fechaTexto(d.expiry_date, { day: 'numeric', month: 'short', year: 'numeric' })}`}</Text> : null}
+                      ) : d?.url ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginLeft: 'auto' }}>{d.expiry_date ? `Vence ${fechaTexto(d.expiry_date, { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Sin fecha de vencimiento'}</Text> : null}
                     </View>
+                    {/* El certificado médico vale por año calendario: se elige
+                        el año, como en el portal, y vence el 31 de diciembre. */}
+                    {POR_ANIO_CALENDARIO.has(cat) && d?.url ? (puedeEditar ? (
+                      <View style={{ gap: 6 }}>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>¿De qué año es? Vale hasta el 31 de diciembre</Text>
+                        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                          {[0, 1, 2].map((atras) => Number(hoySV().slice(0, 4)) - atras).map((anio) => (
+                            <Ficha key={anio} texto={String(anio)} activa={anioQueCubre(d.expiry_date) === anio} deshabilitada={ocupado}
+                              onPress={() => cambiarVencimiento(cat, vencimientoDelAnio(anio))} />
+                          ))}
+                        </View>
+                      </View>
+                    ) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{d.expiry_date ? `Vale todo ${anioQueCubre(d.expiry_date)}` : 'Sin año elegido'}</Text>) : null}
                     {DOS_CARAS.has(cat) && enUnaPieza(d) ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingLeft: 12 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 14 }}>Las dos caras en un solo archivo</Text>
@@ -329,6 +376,11 @@ export default function Expediente() {
 
         </ScrollView>
       </KeyboardAvoidingView>
+      {paraVarios ? (
+        <RepartirDocumento nombres={paraVarios.nombres} documento={paraVarios.documento} rotulo={paraVarios.rotulo}
+          empleados={empleados} fichaAbierta={emp.id} onCerrar={() => setParaVarios(null)}
+          onTerminar={({ titulo, texto }) => { setParaVarios(null); listo(titulo, texto); }} />
+      ) : null}
     </>
   );
 }

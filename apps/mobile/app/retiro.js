@@ -87,6 +87,7 @@ export default function Retiro() {
   const [aviso, setAviso] = useState(null);
   const [error, setError] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  const [cerrando, setCerrando] = useState(false);
 
   const nombre = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? '';
   const recargar = useCallback(async (sala = salaActual?.id) => {
@@ -180,12 +181,14 @@ export default function Retiro() {
             : <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>No llevas ninguna bolsa.</Text>}
         </Seccion>
 
-        {retiro.retiro_id && !bultos.length ? (
-          <BotonGrande texto="Terminar el recorrido" borde onPress={async () => {
-            const r = await cerrarRetiro({ retiroId: retiro.retiro_id, bultos: 0, desde: 'app' });
-            if (!r?.ok) fallo('No se pudo cerrar', r?.error); else { listo('Recorrido cerrado', ''); recargar(); }
-          }} />
-        ) : null}
+        {/* Como el portal (`RetiroModal`): siempre se puede intentar terminar y
+            decide el servidor; se anota cuántos paquetes lleva encima. */}
+        <BotonGrande texto={cerrando ? 'Terminando…' : 'Terminar el recorrido'} borde deshabilitado={cerrando} onPress={async () => {
+          setCerrando(true); setError(null); setAviso(null);
+          const r = await cerrarRetiro({ retiroId: retiro.retiro_id, bultos: bultos.length, desde: 'app' });
+          setCerrando(false);
+          if (!r?.ok) fallo('No se pudo cerrar', r?.error ?? 'No se pudo cerrar el recorrido.'); else { listo('Recorrido cerrado', ''); recargar(); }
+        }} />
       </ScrollView>
       <Escaner visible={escaneando === 'ticket'} titulo="Cargar un paquete" ayuda="Apunta al código del ticket pegado al paquete"
         onCodigo={escanear} onCerrar={() => setEscaneando(null)}

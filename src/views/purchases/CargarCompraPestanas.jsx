@@ -29,6 +29,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { ORIGEN } from './cargarCompraComun';
+import { sumaDeFacturaEnPapel } from '@nucleo/utils/cargaDeCompra';
 import { Llegaron, BuscadorProducto } from './CargarCompraPiezas';
 
 const ESTADO_POR_LLEGAR = {
@@ -925,13 +926,7 @@ export function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
     // La suma de lo escrito, para que la persona la compare con el papel antes
     // de seguir. En crédito fiscal el importe va sin IVA: se le suma el 13 % a
     // lo gravado (la percepción, si la hay, la agrega la revisión).
-    const suma = f.renglones.reduce((a, r) => {
-        const m = Number(r.importe) || 0;
-        return { gravado: a.gravado + (r.exento ? 0 : m), exento: a.exento + (r.exento ? m : 0) };
-    }, { gravado: 0, exento: 0 });
-    const estimado = Math.round(((f.tipo_doc === 'CCF' ? suma.gravado * 1.13 : suma.gravado) + suma.exento) * 100) / 100;
-    const total = Number(f.total) || 0;
-    const descuadre = total > 0 && estimado > 0 && Math.abs(estimado - total) > 0.05;
+    const { estimado, total, descuadre } = sumaDeFacturaEnPapel(f);
 
     const guardar = async () => {
         setG(true); setError('');

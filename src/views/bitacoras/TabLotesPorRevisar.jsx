@@ -19,7 +19,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { confirmarLoteDelLibro, corregirLoteDelLibro, fetchLotesPorRevisar } from '@nucleo/data/bitacoras';
-import { vencidoAlVender } from '@nucleo/utils/libroBajoReceta';
+import { loteFundido, queFaltaAlCorregirLote, vencidoAlVender } from '@nucleo/utils/libroBajoReceta';
 
 // Lotes del libro bajo receta que no sirven para rastrear (PENDIENTES 22).
 //
@@ -246,27 +246,14 @@ function CorregirLote({ revision, onCerrar }) {
 
     const cambiar = (k, campo, valor) => setPartes(ps => ps.map((p, i) => (i === k ? { ...p, [campo]: valor } : p)));
     const suma = partes.reduce((s, p) => s + (Number(p.cantidad) || 0), 0);
-    // Mismo juez que la base (`libro_lote_motivo`): un lote por fila.
-    const fundido = (l) => /_/.test(l) || /\d{5,}\s*[-/, ]\s*\d{5,}/.test(l) || l.trim().toUpperCase() === 'GENERICO';
+    // Mismo juez que la base (`libro_lote_motivo`): un lote por fila. Vive en
+    // el núcleo (`libroBajoReceta`) porque la app corrige con el mismo.
+    const fundido = loteFundido;
     const algunaVencida = partes.some(p => vencidoAlVender(p.vence, revision.fecha));
     const cuadra = Math.abs(suma - cantidad) < 1e-9;
     // Lo que falta, en el orden de las condiciones del botón y con el campo
-    // al que lleva (2026-11-14). Las filas se recorren una por una (antes era
-    // un `every`) para poder decir CUÁL fila y qué le falta.
-    const queFalta = (() => {
-        for (let k = 0; k < partes.length; k++) {
-            const p = partes[k];
-            const deCual = partes.length > 1 ? ` (lote ${k + 1})` : '';
-            if (!p.lote.trim()) return { texto: `Escribe el lote${deCual}.`, campo: `lote-${k}` };
-            if (fundido(p.lote)) return { texto: `Escribe un solo lote por fila${deCual}.`, campo: `lote-${k}` };
-            if (!p.vence) return { texto: `Elige el vencimiento${deCual}.`, campo: `vence-${k}` };
-            if (!(Number(p.cantidad) > 0)) return { texto: `Escribe la cantidad${deCual}.`, campo: `cantidad-${k}` };
-        }
-        if (!cuadra) return { texto: `Las cantidades suman ${num(suma)} y se entregaron ${num(cantidad)}.`, campo: `cantidad-${partes.length - 1}` };
-        if (algunaVencida && !vendidoVencido) return { texto: 'Revisa el vencimiento o marca que se entregó vencido.', campo: 'vendidoVencido' };
-        if (!algunaVencida && vendidoVencido) return { texto: 'Desmarca «Sí, se entregó vencido»: ningún vencimiento es anterior a la venta.', campo: 'vendidoVencido' };
-        return null;
-    })();
+    // al que lleva (2026-11-14), dicho por fila.
+    const queFalta = queFaltaAlCorregirLote({ partes, cantidad, vendidoVencido, fechaVenta: revision.fecha });
     const puedeGuardar = !guardando && !queFalta;
 
     const guardar = async () => {

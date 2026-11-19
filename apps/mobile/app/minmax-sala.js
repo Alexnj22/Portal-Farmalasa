@@ -9,9 +9,9 @@
 // ocultos.
 //
 // Mantener presionado un producto abre lo que el portal pone en la fila: el
-// historial, el motivo del ajuste, publicar o descartar ese borrador, la regla
-// de despacho, ocultar o mostrar y —en Bodega, con permiso— 0 en todas las
-// salas.
+// historial, poner en 0 (un A o B pregunta antes), restaurar al calculado, el
+// motivo del ajuste, publicar o descartar ese borrador, la regla de despacho,
+// ocultar o mostrar y —en Bodega, con permiso— 0 en todas las salas.
 //
 // Las reglas son las del portal, en el núcleo (`revisionDeSala`: el filtro, el
 // orden, los conteos, cuánto se lleva «Descartar», por qué se negó el cálculo,
@@ -39,7 +39,7 @@ import {
   motivoDeSaltoDelCalculo, ordenarFilasDeMinMax, ORDENES_DE_MINMAX,
 } from '@nucleo/utils/revisionDeSala';
 import { fmtMoney, formatUnits, hasDispatchRisk, parParaLaRegla, sortedPres, sugerenciaParaLaRegla } from '@nucleo/utils/minmaxTabla';
-import { planDeGuardadoMinMax } from '@nucleo/utils/minmaxGuardar';
+import { planDeGuardadoMinMax, planDePonerEnCeroMinMax, planDeRestaurarMinMax } from '@nucleo/utils/minmaxGuardar';
 import { ALERTA_ETIQUETA, ESTADOS_DE_AJUSTE, ESTADOS_DE_STOCK, MOTIVO_AJUSTE } from '@nucleo/constants/minmax';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
@@ -324,6 +324,37 @@ export default function MinMaxSala() {
     listo('Oculto en la sucursal', r.product_name);
     await cargar();
   };
+  // «Poner en 0» y «Restaurar al calculado», como el menú de la fila del
+  // portal: qué se escribe lo decide el núcleo (`planDePonerEnCeroMinMax`,
+  // `planDeRestaurarMinMax`), igual que `zeroOutRow` y `resetToCalc`.
+  const ponerEnCero = async (r, confirmado = false) => {
+    const plan = planDePonerEnCeroMinMax({ row: r, productId: r.erp_product_id, sucursalId: sala, hayPublicado: conteos.publicado });
+    if (plan.confirmar && !confirmado) {
+      Alert.alert('¿Poner 0 en un producto de alta rotación?',
+        `${r.product_name} es clase ${r.draft_abc_class || r.abc_class} con ${Number(r.daily_velocity ?? 0).toFixed(1)} und/día. ¿Pones el Mín/Máx en 0?`, [
+          { text: 'Cancelar', style: 'cancel' }, { text: 'Poner 0', style: 'destructive', onPress: () => ponerEnCero(r, true) },
+        ]);
+      return;
+    }
+    trabajando('Guardando el Mín/Máx…');
+    const { error: e } = await upsertStockParams(plan.payload);
+    if (e) { fallo(r.product_name, mensajeAmigable(e)); return; }
+    useStaffStore.getState().appendAuditLog?.(plan.accion, String(r.erp_product_id), { ...plan.detalle, product: r.product_name, desde: 'app' });
+    listo(plan.tipo === 'borrador' ? 'Quedó en el borrador' : 'Mín/Máx en 0', `${r.product_name} · 0 · 0`);
+    await cargar();
+  };
+  const restaurarUno = async (r) => {
+    const plan = planDeRestaurarMinMax({ row: r, productId: r.erp_product_id, sucursalId: sala, hayPublicado: conteos.publicado });
+    if (plan.sinCambio) { listo('Nada que restaurar', 'Bodega ya sigue la suma de las sucursales.'); return; }
+    trabajando('Restaurando…');
+    const { error: e } = plan.patch
+      ? await updateStockParams(r.erp_product_id, sala, plan.patch)
+      : await upsertStockParams(plan.payload);
+    if (e) { fallo(r.product_name, mensajeAmigable(e)); return; }
+    useStaffStore.getState().appendAuditLog?.(plan.accion, String(r.erp_product_id), { ...plan.detalle, product: r.product_name, desde: 'app' });
+    listo('Restaurado', plan.tipo === 'bodega' ? 'Bodega vuelve a la suma de las sucursales.' : plan.tipo === 'limpiar' ? 'No hay valor calculado. Queda sin Mín/Máx.' : `Mín ${plan.min} · Máx ${plan.max} (calculado)${plan.tipo === 'borrador' ? ', en el borrador' : ''}`);
+    await cargar();
+  };
   const mostrarUno = async (r) => {
     const { error: e } = await updateStockParams(r.erp_product_id, sala, { is_hidden: false, updated_at: new Date().toISOString() });
     if (e) { fallo('No se pudo mostrar', mensajeAmigable(e)); return; }
@@ -367,12 +398,15 @@ export default function MinMaxSala() {
     const regla = !esBodega && hasDispatchRisk(parParaLaRegla(r, esBodega).max, r.dispatch_pres_factor, r.dispatch_multiplo);
     const params = { producto: String(r.erp_product_id), sala: String(sala), nombre: r.product_name };
     const opciones = [['Historial de cambios', 'hist']];
+    // Las mismas condiciones del menú del portal (`RowActions`).
+    if (puede && !esBodega && !r.is_dead_stock && r.alert_status !== 'no_data') opciones.push(['Poner en 0', 'cero1']);
+    if (puede && (r.calc_min != null || borrador || r.has_manual)) opciones.push(['Restaurar al calculado', 'restaurar']);
     if (puede) opciones.push([r._manual_motivo ? 'Ver motivo del ajuste' : 'Poner motivo del ajuste', 'motivo']);
     if (puede && borrador && !esBodega) opciones.push(['Publicar este borrador', 'pub'], ['Descartar el borrador', 'desc']);
     if (regla) opciones.push(['Regla de despacho', 'regla']);
     if (puede && !esBodega) opciones.push([r.is_hidden ? 'Mostrar en la sucursal' : 'Ocultar en la sucursal', r.is_hidden ? 'mostrar' : 'ocultar']);
     if (esBodega && puedeCeroEnTodas) opciones.push(['0 en todas las sucursales', 'cero']);
-    const destructivos = opciones.map((o, i) => (['desc', 'ocultar', 'cero'].includes(o[1]) ? i : -1)).filter((i) => i >= 0);
+    const destructivos = opciones.map((o, i) => (['cero1', 'desc', 'ocultar', 'cero'].includes(o[1]) ? i : -1)).filter((i) => i >= 0);
     ActionSheetIOS.showActionSheetWithOptions({
       title: r.product_name, options: [...opciones.map((o) => o[0]), 'Cancelar'],
       destructiveButtonIndex: destructivos, cancelButtonIndex: opciones.length,
@@ -381,6 +415,8 @@ export default function MinMaxSala() {
       if (accion === 'hist') router.push({ pathname: '/minmax-historial', params });
       else if (accion === 'motivo') router.push({ pathname: '/minmax-motivo', params });
       else if (accion === 'regla') reglaDeDespacho(r);
+      else if (accion === 'cero1') ponerEnCero(r);
+      else if (accion === 'restaurar') restaurarUno(r);
       else if (accion === 'mostrar') mostrarUno(r);
       else if (accion === 'cero') router.push({ pathname: '/minmax-cero', params: { producto: params.producto, nombre: r.product_name, clase: r.draft_abc_class || r.abc_class || '', velocidad: String(r.daily_velocity ?? 0) } });
       else if (accion === 'pub') {

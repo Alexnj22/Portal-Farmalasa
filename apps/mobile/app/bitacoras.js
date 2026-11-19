@@ -2,8 +2,10 @@
 // misma información que la versión de teléfono del portal (TabHoy): las cuatro
 // cifras del día, un bloque por momento con lo hecho y lo que falta, las áreas
 // en pausa y la ronda para anotar. El Libro bajo receta también es nativo
-// (`app/libro-receta.js`), igual que el Cierre de mes (`bitacoras-cierre`) y
-// la Configuración (`bitacoras-config`).
+// (`app/libro-receta.js`), igual que el Cierre de mes (`bitacoras-cierre`),
+// Antibióticos (`bitacoras-antibioticos`), Lotes por revisar
+// (`bitacoras-lotes`), Regencia (`bitacoras-regencia`) y la Configuración
+// (`bitacoras-config`).
 //
 // La sala va en el menú de filtros de la barra (sólo con alcance todas) y el
 // día con el selector del sistema; la bitácora de mañana no existe, así que no
@@ -173,7 +175,12 @@ export default function Bitacoras() {
 
   const otras = [
     hasPermission('bitacoras_tab_libro', 'can_view') && { id: 'libro', label: 'Libro bajo receta', abrir: () => router.push({ pathname: '/libro-receta', params: { sala } }) },
+    // Antibióticos (listado, por lote y cuadre), lotes del libro por revisar y
+    // regencia: los mismos permisos que deciden esas secciones en el portal.
+    hasPermission('bitacoras_tab_antibioticos', 'can_view') && { id: 'antibioticos', label: 'Antibióticos', abrir: () => router.push({ pathname: '/bitacoras-antibioticos', params: { sala } }) },
+    (hasPermission('bitacoras_corregir_lote', 'can_edit') || hasPermission('bitacoras_confirmar_lote', 'can_edit')) && { id: 'lotes', label: 'Lotes por revisar', abrir: () => router.push({ pathname: '/bitacoras-lotes', params: { sala } }) },
     hasPermission('bitacoras_tab_cierre', 'can_view') && { id: 'cierre', label: 'Cierre de mes', abrir: () => router.push({ pathname: '/bitacoras-cierre', params: { sala, fecha } }) },
+    hasPermission('bitacoras_tab_regencia', 'can_view') && { id: 'regencia', label: 'Regencia', abrir: () => router.push({ pathname: '/bitacoras-regencia', params: { sala } }) },
     hasPermission('bitacoras_configurar', 'can_edit') && { id: 'config', label: 'Configuración', abrir: () => router.push({ pathname: '/bitacoras-config', params: { sala } }) },
   ].filter(Boolean);
 

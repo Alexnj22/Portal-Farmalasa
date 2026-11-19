@@ -22,7 +22,11 @@ import { juzgarPresentacion } from '@nucleo/utils/presentacionDeCompra';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { calcMargin, marginLabel } from '@nucleo/utils/preciosDeProducto';
+import {
+    ajusteInicial, conBorrador, vinetaActual, presDelCatalogo, nombrePres, nombreConTamano, tamanoAprendible,
+    cargarDe, cargarAyuda, conCarga, nombreDelRenglon, barrasDelRenglon, huellaDe, claveDe, MOTIVOS_VENCIDOS,
+    decisionDeRenglon, productoDelRenglon, faltaDelRenglon, costoDeLaRevision, cantidadSospechosa,
+} from '@nucleo/utils/cargaDeCompra';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { ORIGEN, OTRA, ESTADO_CARGA, estadoDeCarga, fmtFecha } from './cargarCompraComun';
@@ -44,98 +48,12 @@ const USOS = [
     { value: 'consumo', label: 'Para consumo' },
 ];
 
-// Lo que la persona ajustó en un renglón: unidades por cada una del proveedor,
-// lote y vencimiento. Arranca con lo que trae la propuesta.
-const ajusteInicial = (r) => ({
-    factor: String(r.factor_proveedor ?? 1),
-    lote: r.lote ?? '',
-    vence: r.vence ? r.vence.slice(0, 7) : '',
-    venta: '',   // viñeta nueva leída en la caja; vacío = la que ya tiene Bodega
-    llegaron: '', // «Llegaron menos»: vacío = llegó todo
-    // Flete / servicio: entra en la misma compra como servicio, sin producto
-    // ni inventario. Viene marcado si la descripción lo dice o ya se apartó.
-    servicio: r.servicio_sugerido === true,
-});
-
-// El borrador vuelve, pero NO le gana a la propuesta en lo que la persona no
-// tocó (2026-11-05). BRANDSTAR se abrió cuando el lector todavía no entendía
-// «FECHA VENC.» y el precio no corregía la caja: el borrador guardó vence
-// vacío y factor 1, y después del arreglo la pantalla los seguía restaurando.
-// Vacío en el borrador = no se escribió nada → manda lo leído ahora. El factor
-// sólo lo cambia «Cantidad a cargar» (que deja `cargar`): sin `cargar`, nadie
-// lo tocó.
-const conBorrador = (inicial, guardado) => {
-    if (!guardado) return inicial;
-    const r = { ...inicial, ...guardado };
-    if (!guardado.lote) r.lote = inicial.lote;
-    if (!guardado.vence) r.vence = inicial.vence;
-    if (guardado.cargar == null) r.factor = inicial.factor;
-    if (guardado.servicio == null) r.servicio = inicial.servicio;
-    return r;
-};
-
-// La viñeta que tiene hoy Bodega para la presentación con que entraría: la de
-// la revisión si ya se revisó, si no la de la propuesta (misma regla que el
-// servidor: la presentación del tamaño del factor, si no la de 1).
-const vinetaActual = (r, aj, sim, lista) => {
-    if (sim?.venta_anterior > 0) return Number(sim.venta_anterior);
-    const f = Number(aj?.factor) || 1;
-    const l = lista ?? r.vinetas ?? [];
-    const v = (l.find(x => x.factor === f) ?? l.find(x => x.factor === 1))?.vineta;
-    return Number(v) > 0 ? Number(v) : null;
-};
-// Las presentaciones del catálogo, sin la copia de factor 0, de menor a mayor.
-const presDelCatalogo = (lista) => [...new Map((lista ?? []).filter(x => Number(x.factor) > 0).map(x => [Number(x.factor), x])).values()]
-    .sort((a, b) => a.factor - b.factor);
-const nombrePres = (x) => `${x.nombre ?? (x.factor > 1 ? 'CAJA' : 'UNIDAD')} (${x.factor})`;
-// El nombre del producto con el tamaño nuevo, si lo nombra una sola vez
-// («RINOKEM PLUS X 100 CAPSULAS» → «… X 120 CAPSULAS»). Una medida no cuenta.
-const MEDIDA = String.raw`(?!\s*(?:[.,]\d|%|(?:ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|UI)\b))`;
-const nombreConTamano = (nombre, tam) => {
-    const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
-    const m = [...String(nombre ?? '').matchAll(re)];
-    if (m.length !== 1 || Number(m[0][1]) === tam) return null;
-    return String(nombre).replace(m[0][0], `X ${tam}`).replace(/\s+/g, ' ').trim();
-};
-// ¿Este tamaño se puede aprender sin preguntar? Si Bodega vende esa
-// presentación, o si es lo que dice la factura. Si no —140 en RINOKEM, 2 en
-// MEBEZOL (2026-11-06)—, una confirmación de pasada no lo vuelve regla.
-const tamanoAprendible = (factor, lista, r) => {
-    const f = Number(factor);
-    if (!(f > 1)) return true;
-    return presDelCatalogo(lista).some(x => x.factor === f) || f === Number(r?.tamano_factura);
-};
-
-// Al múltiplo de 5 centavos de arriba: así se ponen las viñetas.
-const subirA5 = (n) => Math.ceil(Math.round(n * 100) / 5) * 5 / 100;
-
-// Las unidades que entran con un factor dado, y la línea de ayuda debajo del
-// campo: de dónde salió y cómo se reparte en lo que factura el proveedor.
-const cargarDe = (r, factor) => {
-    const n = Number(r.cantidad) * Number(factor || 1);
-    return Number.isFinite(n) ? String(Math.round(n * 1000) / 1000) : '';
-};
-const cargarAyuda = (r, aj) => {
-    const cant = Number(r.cantidad), f = Number(aj.factor);
-    if (!(f > 0)) return 'Escribe cuántas unidades entran en total.';
-    if (!Number.isInteger(Math.round(f * 1000) / 1000)) {
-        const abajo = Math.floor(f) * cant, arriba = Math.ceil(f) * cant;
-        return `${aj.cargar ?? cargarDe(r, f)} no se reparte entre las ${cant} de la factura (saldrían ${Math.round(f * 100) / 100} por cada una). `
-            + `Tiene que ser múltiplo de ${cant}: ${abajo > 0 ? `${abajo} o ` : ''}${arriba}.`;
-    }
-    // Lo normal no se dice: con el rótulo denso la ayuda va al lado del título
-    // y se cortaba («60 DE LA I»). Cómo entra lo dice la fila de abajo.
-    return null;
-};
-
 // ── Producto nuevo desde un renglón (paso 4) ──────────────────────────────
 //
 // Copia a un producto PARECIDO —categoría, laboratorio, proveedor, si vence,
 // si es exento— y sólo pide lo que el modelo no puede saber. Por ahora revisa
 // el alta sin crearla: crear de verdad se enciende después de la primera
 // carga con Bodega mirando.
-const nombreDelRenglon = (t) => String(t ?? '').split('|')[0].replace(/\s+/g, ' ').trim().toUpperCase();
-const barrasDelRenglon = (t) => /\b(\d{12,14})\b/.exec(String(t ?? ''))?.[1] ?? '';
 const ROTULO_PRECIO = ['Precio 1', 'Precio 2', 'Precio 3', 'Precio 4', 'Precio 5', 'Precio 6', 'Precio 7'];
 
 /* El alta de un producto que la factura trae y Bodega no tiene. Pide lo
@@ -307,13 +225,6 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
     );
 }
 
-/** Qué renglones trae el documento, para no aplicar un borrador a otros. */
-const huellaDe = (renglones) => (renglones ?? []).map(r => [r.codigo_proveedor, r.descripcion, r.cantidad].join('|')).join('\n');
-
-/** La llave de un renglón: la del diccionario (código del proveedor, o `#`+nombre
- *  si no trae), o su posición si ni eso hay. */
-const claveDe = (r, i) => r.llave || r.codigo_proveedor || `@${i}`;
-
 export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null, onSacada = null }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
@@ -426,12 +337,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     // cada una que factura el proveedor—, que es lo que elige la presentación
     // de Bodega. Se guarda lo tecleado tal cual para no pelearle a medio número.
     const ajustarCarga = (i, r, valor) => {
-        const limpio = String(valor).replace(/[^\d]/g, '');
-        const n = Number(limpio), cant = Number(r.cantidad);
-        setAjustes(a => ({
-            ...a,
-            [i]: { ...a[i], cargar: limpio, ...(n > 0 && cant > 0 ? { factor: String(n / cant) } : {}) },
-        }));
+        setAjustes(a => ({ ...a, [i]: conCarga(a[i], r, valor) }));
         setRes(null);
     };
 
@@ -504,26 +410,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     };
     // Un aprendido cuya concentración o tamaño no coincide con la factura
     // (`numeros_distintos`) tampoco viaja solo: hay que confirmarlo.
-    const productoDe = (r, i) => elegidos[claveDe(r, i)]?.product_id
-        ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) && !r.numeros_distintos?.length ? r.producto_id : null);
+    const productoDe = (r, i) => productoDelRenglon(r, elegidos[claveDe(r, i)]);
 
-    const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, {
-        product_id: ajustes[i]?.servicio ? null : productoDe(r, i),
-        servicio: ajustes[i]?.servicio === true,
-        factor: Number(ajustes[i]?.factor) || 1,
-        lote: ajustes[i]?.lote || null,
-        // El campo de mes emite el texto mientras no está completo: eso no viaja.
-        vence: /^\d{4}-\d{2}$/.test(ajustes[i]?.vence ?? '') ? ajustes[i].vence : null,
-        venta: Number(ajustes[i]?.venta) > 0 ? Number(ajustes[i].venta) : null,
-        llegaron: ajustes[i]?.llegaron !== '' && ajustes[i]?.llegaron != null ? Number(ajustes[i].llegaron) : null,
-        erroneo: ajustes[i]?.erroneo === true,
-        vencidos: ajustes[i]?.vencidos ? {
-            unidades: ajustes[i].vencidos.modo === 'algunas' ? (Number(ajustes[i].vencidos.unidades) || 0) : null,
-            motivo: ajustes[i].vencidos.motivo || null,
-            detalle: ajustes[i].vencidos.motivo === 'otro' ? (ajustes[i].vencidos.detalle || '').trim() : null,
-        } : null,
-        reparto: aRepartir(ajustes[i]?.reparto),
-    }]));
+    const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i))]));
 
     // Lo que se revisa y lo que se manda es esta MISMA firma.
     const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '' });
@@ -595,16 +484,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     // (lo confirmado y el lote/vencimiento tecleados). El `resumen` del
     // servidor es la foto de cuando se abrió: con él, dos renglones recién
     // confirmados seguían saliendo «por confirmar» junto a su sello verde.
-    const estado = (p?.renglones ?? []).map((r, i) => {
-        const confirmado = !!elegidos[claveDe(r, i)];
-        if (ajustes[i]?.servicio) return { sin_producto: false, a_confirmar: false, sin_lote: false, sin_vencimiento: false };
-        return {
-            sin_producto: !r.producto_id && !confirmado,
-            a_confirmar: !!r.producto_id && !r.seguro && !confirmado,
-            sin_lote: !ajustes[i]?.lote,
-            sin_vencimiento: !/^\d{4}-\d{2}$/.test(ajustes[i]?.vence ?? ''),
-        };
-    });
+    const estado = (p?.renglones ?? []).map((r, i) => faltaDelRenglon(r, ajustes[i], !!elegidos[claveDe(r, i)]));
     const contar = (k) => estado.filter(e => e[k]).length;
     const resumen = p && {
         renglones: p.renglones.length,
@@ -652,21 +532,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const costos = useMemo(() => {
         const m = new Map();
         for (const x of entraComo.values()) {
-            if (!x.linea || x.linea.bandera !== 'PRODUCTO') continue;
-            const nuevo = Number(x.linea.compra), antes = x.costo_anterior, venta = Number(x.linea.venta);
-            const cambio = antes ? (nuevo - antes) / antes * 100 : null;
-            const margen = calcMargin(venta, nuevo);
-            const ventaAntes = x.venta_anterior ?? null;
-            // Si el costo sube y la viñeta no se movió: la que mantendría el
-            // margen que tenía antes, para preguntar si la caja trae precio nuevo.
-            const mAntes = ventaAntes > 0 && antes > 0 ? (ventaAntes - antes) / ventaAntes : null;
-            const sugerida = cambio != null && cambio >= 0.5 && mAntes > 0 && mAntes < 0.9
-                && Math.abs(venta - ventaAntes) < 0.005 ? subirA5(nuevo / (1 - mAntes)) : null;
-            m.set(x.renglon, {
-                nuevo, antes, venta, cambio, margen, alerta: marginLabel(margen), ventaAntes,
-                margenAntes: mAntes != null ? mAntes * 100 : null,
-                sugerida: sugerida > ventaAntes ? sugerida : null,
-            });
+            const c = costoDeLaRevision(x);
+            if (c) m.set(x.renglon, c);
         }
         return m;
     }, [entraComo]);
@@ -1443,17 +1310,6 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
     );
 }
 
-/** `{ branchId: '12' }` tecleado → `{ branchId: 12 }` sin vacíos, o null. */
-function aRepartir(reparto) {
-    if (!reparto) return null;
-    // `por`: cuántas unidades trae cada una de lo que se escribió (CAJA 20 →
-    // 2 cajas son 40). Al servidor viaja siempre en unidades.
-    const por = Number(reparto.por) || 1;
-    const limpio = Object.fromEntries(Object.entries(reparto).filter(([b]) => b !== 'por')
-        .map(([b, v]) => [b, Number(v) * por]).filter(([, n]) => n > 0));
-    return Object.keys(limpio).length ? limpio : null;
-}
-
 /**
  * ¿Se envía parte de este renglón a otras salas? (usuario, 2026-10-30). Se
  * escribe en la presentación que se elija (por defecto, la que se carga: 2 cajas
@@ -1466,12 +1322,6 @@ function aRepartir(reparto) {
  * cargar — se devuelve, viene corto de vencimiento, llegó dañado. El motivo es
  * obligatorio: es lo que después decide qué se hace con esas unidades.
  */
-const MOTIVOS_VENCIDOS = [
-    { value: 'devolucion', label: 'Se devuelve al proveedor' },
-    { value: 'corto_vencimiento', label: 'Corto vencimiento' },
-    { value: 'danado', label: 'Dañado' },
-    { value: 'otro', label: 'Otro' },
-];
 function AVencidos({ valor, total, onChange, puedeEditar }) {
     const poner = (k, v) => onChange({ ...valor, [k]: v });
     const n = Number(valor.unidades);
@@ -1565,20 +1415,6 @@ function RepartoASalas({ salas, total, valor, presentaciones, onChange, puedeEdi
             )}
         </div>
     );
-}
-
-// Si el costo nuevo es un múltiplo entero (×2 o más) del de antes, lo más
-// probable es que la caja del proveedor traiga otra cantidad de unidades:
-// 50 «CAJA X 10» cargadas como 50 unidades dejan cada una 10 veces más cara.
-function cantidadSospechosa(sim, costo) {
-    const antes = Number(costo?.antes), nuevo = Number(costo?.nuevo);
-    if (!(antes > 0 && nuevo > 0)) return null;
-    const sube = nuevo > antes;
-    const razon = sube ? nuevo / antes : antes / nuevo;
-    const veces = Math.round(razon);
-    if (veces < 2 || Math.abs(razon - veces) / veces > 0.12) return null;
-    const unidades = sube ? sim.existencias * veces : sim.existencias / veces;
-    return Number.isInteger(unidades) && unidades > 0 ? { veces, sube, unidades } : null;
 }
 
 function SeCargaComo({ r, aj, presentaciones, juicio, puedeEditar, onCargar, recordar }) {

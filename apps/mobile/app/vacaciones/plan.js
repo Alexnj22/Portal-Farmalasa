@@ -39,7 +39,10 @@ const BORRADOR = 'vacaciones_plan_nuevo';
 
 export default function PlanDeVacaciones() {
   const { id, anio: anioParam } = useLocalSearchParams();
-  const { user } = useAuth();
+  const { user, getScope } = useAuth();
+  // Como el portal: sin alcance de toda la red, la sucursal queda fija en la
+  // de quien asigna y sólo se lista a su gente.
+  const salaFija = getScope?.('vacation_plan') !== 'ALL' ? String(user?.branchId || '') : null;
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
   const planes = useStaffStore((s) => s.vacationPlans);
@@ -66,6 +69,7 @@ export default function PlanDeVacaciones() {
   const hoy = hoySV();
   const opciones = useMemo(() => soloPersonalEnPlanilla(empleados || [])
     .filter((e) => e.status === 'ACTIVO' || e.status === 'ACTIVE')
+    .filter((e) => salaFija == null || String(e.branch_id || e.branchId) === salaFija)
     .map((e) => {
       const el = elegibilidadDeVacaciones(e.hire_date, hoy);
       const motivo = conPlan.has(String(e.id)) ? `Ya tiene vacaciones en ${anio}`
@@ -74,7 +78,7 @@ export default function PlanDeVacaciones() {
     })
     .sort((a, b) => (a.motivo ? 1 : 0) - (b.motivo ? 1 : 0) || a.sala.localeCompare(b.sala) || String(a.e.name).localeCompare(String(b.e.name))),
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [empleados, conPlan, anio, hoy, sucursales]);
+  [empleados, conPlan, anio, hoy, sucursales, salaFija]);
   const persona = useMemo(() => (empleados || []).find((e) => String(e.id) === String(f.empId)), [empleados, f.empId]);
   const eleg = !editando && persona ? elegibilidadDeVacaciones(persona.hire_date, hoy) : null;
   const saldo = persona ? 15 - (usados.get(String(persona.id)) || 0) : null;

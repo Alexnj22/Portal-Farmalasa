@@ -25,7 +25,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
   '/pedidos': true,       // la sala (llegada y conteo) y Bodega (generar, preparar, despachar, rutas, anular una sala)
-  '/clientes': true,      // la lista y la ficha (ver y editar); las fichas las da de alta el punto de venta
+  '/clientes': true,      // la lista, la ficha (ver y editar), el alta y «Sin número»
   '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala es `minmax-sala`
   '/caja': '/efectivo',     // Efectivo: hoy, y desde ahí cortes, diferencias y movimientos
   '/cortes': true,        // confirmar y descartar cortes (y entregar la caja) en el teléfono

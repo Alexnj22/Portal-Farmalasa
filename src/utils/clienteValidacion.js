@@ -335,3 +335,70 @@ export function datosDeLoBuscado(texto) {
     if (/\d/.test(t)) return {};
     return { name: t.toUpperCase() };
 }
+
+// ── El alta: qué es el cliente y qué hace falta para que nazca ───────────────
+// Vivía en `FormClienteDetail.jsx`; la app del personal da de alta igual
+// (`apps/mobile/app/cliente-nuevo.js`), así que la regla es una sola.
+
+/** La ficha vacía con la que nace un cliente (2026-11-15). */
+export const FICHA_NUEVA = Object.freeze(
+    Object.fromEntries(CAMPOS_FICHA.map(c => [c, c === 'categoria' ? 'Consumidor' : ''])));
+
+// En el alta lo primero que se elige es QUÉ es el cliente, y de eso sale qué
+// se pide. Tres grupos y no seis opciones: casi todos son consumidores o
+// contribuyentes, y el canon pone el tope de un segmentado en tres
+// (DESIGN.md §15.3). Las variantes raras se eligen después, dentro de su grupo.
+export const GRUPO_DE_CATEGORIA = {
+    'Consumidor': 'consumidor', 'Contribuyente': 'contribuyente',
+    'Gran Contribuyente': 'contribuyente', 'Contribuyente Exento': 'contribuyente',
+    'Extranjero': 'otro', 'Menor de edad': 'otro',
+};
+export const GRUPOS_DE_CLIENTE = [
+    { value: 'consumidor', label: 'Consumidor' },
+    { value: 'contribuyente', label: 'Contribuyente' },
+    { value: 'otro', label: 'Otro' },
+];
+export const PRIMERA_DEL_GRUPO = { consumidor: 'Consumidor', contribuyente: 'Contribuyente', otro: 'Extranjero' };
+export const VARIANTES_DEL_GRUPO = {
+    contribuyente: ['Contribuyente', 'Gran Contribuyente', 'Contribuyente Exento'],
+    otro: ['Extranjero', 'Menor de edad'],
+};
+export const QUE_ES_CATEGORIA = {
+    'Consumidor': 'Persona que compra. Lleva factura: basta su DUI (o su NIT), el teléfono y dónde vive.',
+    'Contribuyente': 'Inscrito en IVA: se le emite crédito fiscal. Pide NIT, NRC, giro, correo y dirección.',
+    'Gran Contribuyente': 'Como un contribuyente, y además es agente de retención: lleva su porcentaje.',
+    'Contribuyente Exento': 'Inscrito en IVA pero exento del impuesto. Pide los mismos datos que un contribuyente.',
+    'Extranjero': 'No tiene DUI: se identifica con su pasaporte.',
+    'Menor de edad': 'No tiene documento propio: basta el nombre, el teléfono y dónde vive.',
+};
+
+/**
+ * Lo que pide `cliente_crear` además del formulario de siempre: nombre y
+ * apellido, y un documento según la categoría (FALTA_DOCUMENTO en la base).
+ */
+export function faltaAlNacer(f) {
+    const faltan = [];
+    if (String(f?.name ?? '').trim().split(/\s+/).filter(Boolean).length < 2) faltan.push('name');
+    if (f?.categoria === 'Extranjero') { if (!String(f?.pasaporte ?? '').trim()) faltan.push('pasaporte'); }
+    else if (f?.categoria !== 'Menor de edad'
+        && !String(f?.dui ?? '').trim() && !String(f?.nit ?? '').trim()) faltan.push('dui');
+    return faltan;
+}
+
+/**
+ * Al crear, lo que falta puede no ser «para facturar» sino para identificar a
+ * la persona: se dice eso. `undefined` = el rótulo de siempre.
+ */
+export function rotuloFaltaAlNacer(campo, categoria) {
+    if (campo === 'name') return 'Nombre y apellido';
+    if (campo === 'dui') return categoria === 'Extranjero' ? undefined : 'DUI o NIT';
+    if (campo === 'pasaporte') return 'El pasaporte, si es extranjero';
+    return undefined;
+}
+
+/** El veredicto de una ficha NUEVA: el de siempre más lo que exige nacer. */
+export function validarAlta(form) {
+    const r = validarCliente(form, FICHA_NUEVA);
+    const extra = faltaAlNacer(form).filter(c => !r.faltan.includes(c) && !r.errores[c]);
+    return extra.length ? { ...r, faltan: [...r.faltan, ...extra], ok: false } : r;
+}

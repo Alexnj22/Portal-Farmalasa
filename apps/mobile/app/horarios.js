@@ -79,6 +79,8 @@ export default function Horarios() {
   const puedeEditar = !!hasPermission?.('schedules', 'can_edit');
   const todas = getScope?.('schedules') === 'ALL';
   const puedePublicar = !!hasPermission?.('schedules', 'can_edit') && todas;
+  const practicantes = useStaffStore((s) => s.practicantes);
+  const fetchPracticantes = useStaffStore((s) => s.fetchPracticantes);
   const salas = useMemo(() => [...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const salaPorDefecto = !todas && user?.branchId ? String(user.branchId)
     : String((salas.find((b) => b.name.toLowerCase().includes('popular')) || salas[0])?.id ?? '');
@@ -101,7 +103,19 @@ export default function Horarios() {
   const [eligiendo, setEligiendo] = useState(false);
   const [busca, setBusca] = useState('');
 
-  const personas = useMemo(() => personasDelHorario(empleados, sala), [empleados, sala]);
+  // Los practicantes, como en el portal: se miden contra su patrón
+  // (`metaSemanalDePractica`), no contra las 44 h ni el descanso semanal.
+  useEffect(() => {
+    if (!(practicantes || []).length && (empleados || []).some((e) => (e.tipo_ficha ?? e.tipoFicha) === 'practicante')) fetchPracticantes?.();
+  }, [practicantes, empleados, fetchPracticantes]);
+  const personas = useMemo(() => personasDelHorario(empleados, sala, practicantes), [empleados, sala, practicantes]);
+  // La semana pasada es de sólo lectura, como en el portal (`isPastWeek` →
+  // `isReadOnly` en `SchedulesView`): ni se edita, ni se copia, ni se publica.
+  const semanaPasada = lunes < getLocalMonday();
+  const editable = puedeEditar && !semanaPasada;
+  // La meta de la semana: la del portal (`EmployeeScheduleRow`). Sin patrón,
+  // al practicante no se le inventa un faltante: su meta es lo que tiene.
+  const metaDe = (p, horas) => (p.esPracticante ? (p.metaSemanalDePractica || horas) : HORAS_SEMANA_DIURNA);
   const fechas = useMemo(() => DIAS.map((d) => sumarDias(lunes, offset(d.id))).sort(), [lunes]);
 
   const cargar = useCallback(async () => {
@@ -150,7 +164,8 @@ export default function Horarios() {
   }).filter(Boolean), [vienen, dia, empleados, turnos]);
   const cobertura = useMemo(() => {
     if (!semana) return { huecosCriticos: [], avisos: [] };
-    const horarios = personas.map((p) => ({ ...rosterDe(p.id), name: shortEmployeeName(p) }));
+    // La cobertura la cubre el PERSONAL: un practicante no tapa un hueco (portal).
+    const horarios = personas.filter((p) => !p.esPracticante).map((p) => ({ ...rosterDe(p.id), name: shortEmployeeName(p) }));
     return evaluarCoberturaDelDia(dia, horarios, turnos || [], stats?.specificHours?.[dia] || []);
   }, [semana, personas, dia, turnos, stats]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -161,6 +176,7 @@ export default function Horarios() {
     [semana, personas, turnos, fechas]);
 
   const publicar = () => {
+    if (semanaPasada || !personas.length || semana?.fallo) return;
     const { reparos, porPublicar } = reparosDeLaSemana({ personas, rosters: semana?.rosters || {}, turnos: turnos || [], fechas, publicados: semana?.publishedIds || new Set() });
     const que = porPublicar === 1 ? 'Se publicará 1 horario' : `Se publicarán ${porPublicar} horarios`;
     Alert.alert(reparos.length ? 'La semana tiene reparos' : 'La semana está completa',
@@ -209,7 +225,7 @@ export default function Horarios() {
   // Copiar la semana anterior a quien todavía no tiene horario esta semana. No
   // pisa nada ya asignado, y entra como borrador hasta que se publique.
   const sinHorario = semana ? personas.filter((p) => !semana.rosters?.[p.id]) : [];
-  const copiarAnterior = () => Alert.alert('Copiar la semana anterior',
+  const copiarAnterior = () => (!editable ? undefined : Alert.alert('Copiar la semana anterior',
     `A ${sinHorario.length === 1 ? 'la persona' : `las ${sinHorario.length} personas`} sin horario de esta semana se les copia el de la semana pasada. Queda sin publicar.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Copiar', onPress: async () => {
@@ -231,7 +247,7 @@ export default function Horarios() {
         } catch (e) { fallo('No se pudo copiar', mensajeAmigable(e, 'Intenta de nuevo.')); }
         finally { setCopiando(false); }
       } },
-    ]);
+    ]));
 
   // Quitar a quien viene de otra sala: toda su cobertura de ESTA semana aquí.
   const quitarCobertura = (e) => Alert.alert('Quitar la cobertura',
@@ -289,7 +305,8 @@ export default function Horarios() {
         </View>
 
         {semana?.fallo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={semana.fallo} /></View> : null}
-        {puedeEditar && semana && !semana.fallo ? (
+        {semanaPasada && semana && !semana.fallo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Esta semana ya pasó. Solo puedes verla." /></View> : null}
+        {editable && semana && !semana.fallo ? (
           <View style={{ marginHorizontal: 16, gap: 8 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4 }}>Toca a una persona para asignarle su semana. En un turno puedes marcar varios días a la vez.</Text>
             {sinHorario.length ? <BotonGrande texto={copiando ? 'Copiando…' : 'Copiar la semana anterior'} borde color={MARCA.azulClaro} onPress={copiarAnterior} deshabilitado={copiando} /> : null}
@@ -298,7 +315,7 @@ export default function Horarios() {
         {semana && semana.borradores > 0 ? (
           <View style={{ marginHorizontal: 16, gap: 8 }}>
             <Aviso tono="cuidado" texto={`${semana.borradores} horario${semana.borradores === 1 ? '' : 's'} de esta semana sin publicar.`} />
-            {puedePublicar ? <BotonGrande texto={publicando ? 'Publicando…' : `Publicar (${semana.borradores})`} onPress={publicar} deshabilitado={publicando} /> : null}
+            {puedePublicar && !semanaPasada ? <BotonGrande texto={publicando ? 'Publicando…' : `Publicar (${semana.borradores})`} onPress={publicar} deshabilitado={publicando || !personas.length || !!semana.fallo} /> : null}
           </View>
         ) : null}
 
@@ -339,7 +356,8 @@ export default function Horarios() {
             <Encabezado>{`${nombreDia} · trabajan ${trabajan.length}`}</Encabezado>
             {trabajan.map(({ p, r, publicado, apoyo }) => {
               const horas = horasDe(p);
-              const dif = Number((horas - HORAS_SEMANA_DIURNA).toFixed(1));
+              const meta = metaDe(p, horas);
+              const dif = Number((horas - meta).toFixed(1));
               return (
                 <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setHoja(p); }} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
                   <Vidrio radio={20} interactivo>
@@ -362,10 +380,10 @@ export default function Horarios() {
                       {apoyo ? <Pildora texto={`Apoya en ${apoyo}`} color={MARCA.azulClaro} /> : null}
                       <View style={{ gap: 4 }}>
                         <View style={{ flexDirection: 'row' }}>
-                          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12 }}>{`Semana: ${horas} h de ${HORAS_SEMANA_DIURNA}`}</Text>
+                          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12 }}>{`Semana: ${horas} h de ${meta}`}</Text>
                           {dif ? <Text style={{ color: dif > 0 ? MARCA.rojo : MARCA.ambar, fontSize: 12, fontWeight: '700' }}>{`${dif > 0 ? '+' : '−'}${Math.abs(dif)} h`}</Text> : <Text style={{ color: MARCA.verde, fontSize: 12, fontWeight: '700' }}>Completa</Text>}
                         </View>
-                        <BarraContra valor={horas} meta={HORAS_SEMANA_DIURNA} color={dif > 0 ? MARCA.rojo : dif < 0 ? MARCA.ambar : MARCA.verde} />
+                        <BarraContra valor={horas} meta={meta} color={dif > 0 ? MARCA.rojo : dif < 0 ? MARCA.ambar : MARCA.verde} />
                       </View>
                     </View>
                   </Vidrio>
@@ -381,9 +399,9 @@ export default function Horarios() {
                   <Vidrio radio={20} tinte={`${MARCA.azulClaro}1F`}>
                     <View style={{ padding: 14, gap: 10 }}>
                       {cubren.map(({ e, r }) => (
-                        <Pressable key={e.id} disabled={!puedeEditar}
+                        <Pressable key={e.id} disabled={!editable}
                           onPress={() => { Haptics.selectionAsync().catch(() => {}); setEditando({ tipo: 'cobertura', persona: e, dia, actual: coberturaDe(e.id, dia), origen: e.branchId ?? e.branch_id }); }}
-                          onLongPress={puedeEditar ? () => quitarCobertura(e) : undefined}
+                          onLongPress={editable ? () => quitarCobertura(e) : undefined}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                           <Avatar empleado={e} tamano={36} />
                           <View style={{ flex: 1 }}>
@@ -393,7 +411,7 @@ export default function Horarios() {
                           <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{r.trabaja ? rango(r) : '—'}</Text>
                         </Pressable>
                       ))}
-                      {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca para editar su día. Mantén presionado para quitarla de la semana.</Text> : null}
+                      {editable ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca para editar su día. Mantén presionado para quitarla de la semana.</Text> : null}
                     </View>
                   </Vidrio>
                 </View>
@@ -407,12 +425,12 @@ export default function Horarios() {
                   <Vidrio radio={20}>
                     <View style={{ padding: 14, gap: 10 }}>
                       {descansan.map(({ p, tieneHorario, conflicto, apoyo }) => (
-                        <Pressable key={p.id} onPress={() => { if (puedeEditar && !tieneHorario && !conflicto) setEditando({ tipo: 'persona', persona: p, dia, actual: undefined }); else setHoja(p); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
+                        <Pressable key={p.id} onPress={() => { if (editable && !tieneHorario && !conflicto && !apoyo) setEditando({ tipo: 'persona', persona: p, dia, actual: undefined }); else setHoja(p); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
                           <Avatar empleado={p} tamano={28} />
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{shortEmployeeName(p)}</Text>
                           {conflicto ? <Pildora texto={conflicto.label} color={COLOR_CONFLICTO[conflicto.label] ?? MARCA.azulClaro} />
                             : apoyo ? <Pildora texto={`Apoya en ${apoyo}`} color={MARCA.azulClaro} />
-                              : puedeEditar && !tieneHorario ? <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Asignar ›</Text>
+                              : editable && !tieneHorario ? <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Asignar ›</Text>
                                 : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{tieneHorario ? 'Libre' : 'Sin horario'}</Text>}
                         </Pressable>
                       ))}
@@ -433,7 +451,7 @@ export default function Horarios() {
           </Pressable>
         ) : null}
 
-        {puedeEditar && semana ? (
+        {editable && semana && !semana.fallo ? (
           <View style={{ marginHorizontal: 16, gap: 10, marginTop: 4 }}>
             <BotonGrande texto="Agregar quien viene a cubrir" borde color={MARCA.azulClaro} onPress={() => { setBusca(''); setEligiendo(true); }} />
           </View>
@@ -466,21 +484,25 @@ export default function Horarios() {
         ) : hoja ? (
           <ConAurora>
             <EncabezadoDeHoja titulo={shortEmployeeName(hoja)}
-              subtitulo={`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${HORAS_SEMANA_DIURNA}`}
+              subtitulo={`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${metaDe(hoja, horasDe(hoja))}`}
               onCerrar={() => setHoja(null)} />
             {/* Sin foto suelta debajo del nombre (usuario, 2026-11-12): el nombre ya
                 está en el encabezado y la foto sola agrandaba la hoja por nada. */}
-            {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Toca un día para cambiarlo.</Text> : null}
+            {editable ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Toca un día para cambiarlo.</Text> : null}
             <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
               {DIAS.map((d) => {
                 const f = sumarDias(lunes, offset(d.id));
                 const rd = resolverTurnoDelDia(rosterDe(hoja.id)[String(d.id)], turnos || []);
                 const cf = getDayConflictLocal(f, hoja.history);
+                // Como la celda del portal: no se abre con vacación, incapacidad
+                // o permiso, ni el día que apoya en otra sucursal.
+                const apoyoDia = salen.find((c) => String(c.employee_id) === String(hoja.id) && Number(c.day_of_week) === d.id);
+                const tocable = editable && !cf && !apoyoDia;
                 return (
-                  <Pressable key={d.id} disabled={!puedeEditar}
+                  <Pressable key={d.id} disabled={!tocable}
                     onPress={() => { Haptics.selectionAsync().catch(() => {}); setEditando({ tipo: 'persona', persona: hoja, dia: d.id, actual: rosterDe(hoja.id)[String(d.id)] }); }}
                     style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                  <Vidrio radio={16} interactivo={puedeEditar} tinte={d.id === dia ? `${MARCA.azul}40` : undefined}>
+                  <Vidrio radio={16} interactivo={tocable} tinte={d.id === dia ? `${MARCA.azul}40` : undefined}>
                     <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       <View style={{ width: 92 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{d.largo}</Text>
@@ -490,8 +512,9 @@ export default function Horarios() {
                         <Text style={{ color: rd.trabaja ? colorSistema.texto : colorSistema.texto2, fontSize: 16, fontWeight: '700' }}>{rd.trabaja ? rango(rd) : 'Libre'}</Text>
                         {rd.trabaja ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[rd.nombre || (rd.esManual ? 'Horario propio' : null), rd.pausa ? `almuerzo ${hora12(rd.pausa.inicio)}` : null].filter(Boolean).join(' · ')}</Text> : null}
                       </View>
-                      {cf ? <Pildora texto={cf.label} color={COLOR_CONFLICTO[cf.label] ?? MARCA.azulClaro} /> : null}
-                      {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text> : null}
+                      {cf ? <Pildora texto={cf.label} color={COLOR_CONFLICTO[cf.label] ?? MARCA.azulClaro} />
+                        : apoyoDia ? <Pildora texto={`Apoya en ${nombreSala(apoyoDia.coverage_branch_id)}`} color={MARCA.azulClaro} /> : null}
+                      {tocable ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text> : null}
                     </View>
                   </Vidrio>
                   </Pressable>

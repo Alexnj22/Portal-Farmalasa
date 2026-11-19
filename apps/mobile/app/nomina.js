@@ -162,6 +162,7 @@ export default function Nomina() {
   // confirmación siempre, y si hay horas sin aprobar se avisa ANTES, porque
   // la planilla saldría armada sobre un dato que nadie revisó.
   const generar = () => {
+    if (!puedeEditar) return;
     const re = conRenglones;
     const nombre = periodo.name || rotuloDePeriodo(periodo.start_date, periodo.end_date);
     const alcance = sala === 'ALL' ? 'todas las sucursales' : nombreSala(sala);
@@ -334,7 +335,8 @@ export default function Nomina() {
 
         {/* Sólo en borrador: regenerar una aprobada cambiaba sus montos sin
             que nadie la volviera a aprobar (auditoría 2026-10-21). */}
-        {periodo && puedeDecidir && estadoKey === 'DRAFT' ? (
+        {/* Generar escribe `payroll_entries`: la misma llave `can_edit` que el portal. */}
+        {periodo && puedeEditar && estadoKey === 'DRAFT' ? (
           <View style={{ marginHorizontal: 16 }}>
             <BotonGrande texto={conRenglones ? 'Regenerar la planilla' : 'Generar la planilla'} borde color={MARCA.azulClaro} onPress={generar} deshabilitado={ocupado} />
           </View>
@@ -391,7 +393,7 @@ export default function Nomina() {
         {puedeDecidir && periodo ? (
           <View style={{ marginHorizontal: 16, marginTop: 8, gap: 10 }}>
             {conRenglones && estadoKey !== 'PAID' ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada a una persona para editar su fila.</Text> : null}
-            <BotonGrande texto="Nueva quincena" borde color={MARCA.azulClaro} onPress={() => router.push('/nomina/periodo')} />
+            {puedeEditar ? <BotonGrande texto="Nueva quincena" borde color={MARCA.azulClaro} onPress={() => router.push('/nomina/periodo')} /> : null}
           </View>
         ) : null}
       </ScrollView>

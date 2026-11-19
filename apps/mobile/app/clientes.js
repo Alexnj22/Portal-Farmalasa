@@ -4,8 +4,12 @@
 // Son ~28 mil fichas: todo lo pagina el servidor (`get_customers_page`, de a
 // 25) y la búsqueda se descarta si llega tarde. Tocar una abre su ficha.
 //
-// El alta (desde el 2026-11-15 los clientes nacen en el portal) todavía es del
-// portal web: «Nuevo cliente» en Clientes. Pendiente traerla acá.
+// El alta (desde el 2026-11-15 los clientes nacen en el portal) es «Nuevo
+// cliente» en el menú, con `clientes_crear`: abre `cliente-nuevo.js`. En «Por
+// revisar» va primero «Sin número» (`componentes/clientes/SinNumeroDeFicha`).
+// Cada ficha lleva su nivel de Puntos Salud y, si es de mayoreo, su rango
+// (`fetchNivelesDeClientes`); y una búsqueda de un documento que no aparece
+// avisa si esa persona pidió anonimizar sus datos (`documentoAnonimizado`).
 //
 // A la par del portal: las cinco tarjetas (Clientes, Completas, Por completar,
 // Contribuyentes, A revisar); «Por completar» es el MISMO criterio del portal
@@ -22,7 +26,10 @@ import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { descartarClientePorRevisar, fetchClientesPorRevisar, fetchCustomersPage, fetchCustomersStats } from '@nucleo/data/customers';
+import { descartarClientePorRevisar, fetchClientesPorRevisar, fetchCustomersPage, fetchCustomersStats, fetchNivelesDeClientes } from '@nucleo/data/customers';
+import { documentoAnonimizado } from '@nucleo/data/solicitudesDatos';
+import { RANGOS } from '@nucleo/data/mayoristas';
+import { NIVELES } from '@nucleo/utils/chatClientes';
 import { DEPARTAMENTOS, municipiosDe } from '@nucleo/data/elSalvadorGeo';
 import { motivoPorRevisar, ORDEN_CLIENTES } from '@nucleo/utils/clientesPorRevisar';
 import Segmentos from '../componentes/Segmentos';
@@ -43,6 +50,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import SinNumeroDeFicha from '../componentes/clientes/SinNumeroDeFicha';
 
 // «Por revisar»: fichas que no se completaron solas a propósito.
 function PorRevisar() {
@@ -75,6 +83,7 @@ function PorRevisar() {
       <View style={{ marginHorizontal: 16 }}>
         <Aviso texto="Los fiscales los confirma una persona antes de ir al Ministerio de Hacienda. Los posibles repetidos tienen el nombre, DUI o NIT de otro cliente." />
       </View>
+      <SinNumeroDeFicha />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {d.rows.map((f) => {
         const m = motivoPorRevisar(f.motivo);
@@ -106,9 +115,25 @@ function PorRevisar() {
   );
 }
 
+// El nivel de Puntos Salud (2026-11-15), como `InsigniasDePuntos` del portal:
+// si es de mayoreo, su rango y su nivel; si no, sólo el nivel. Empresas,
+// mostrador y quien salió del programa no acumulan: no llevan nada.
+function PildorasDePuntos({ info }) {
+  if (!info || (info.programa !== 'socio' && info.programa !== 'mayorista')) return null;
+  const nivel = NIVELES[info.nivel];
+  return (
+    <>
+      {info.programa === 'mayorista' ? (
+        <Pildora texto={`Mayoreo${info.rango && RANGOS[info.rango] ? ` ${RANGOS[info.rango].nombre}` : ''}`} color={colorDeVariante('chart-9')} />
+      ) : null}
+      {nivel ? <Pildora texto={nivel.label} color={colorDeVariante(nivel.variant)} /> : null}
+    </>
+  );
+}
+
 const FICHA = { completa: ['Completos', MARCA.verde], parcial: ['Por completar', MARCA.ambar], vacia: ['Sin datos', MARCA.rojo] };
 
-function Fila({ c, verMontos }) {
+function Fila({ c, verMontos, puntos }) {
   const [ficha, color] = FICHA[c.ficha] ?? [c.ficha ?? '—', colorSistema.texto2];
   const doc = c.dui ? `DUI ${c.dui}` : c.nit ? `NIT ${c.nit}` : c.pasaporte ? `Pasaporte ${c.pasaporte}` : 'Sin documento';
   return (
@@ -129,12 +154,16 @@ function Fila({ c, verMontos }) {
               {c.dui_sospechoso ? <Pildora texto="DUI inválido" color={MARCA.rojo} /> : null}
               {c.nombre_corrupto ? <Pildora texto="Nombre dañado" color={MARCA.ambar} /> : null}
               {c.dup_con ? <Pildora texto="Duplicado" color={MARCA.ambar} /> : null}
+              <PildorasDePuntos info={puntos} />
             </View>
             {/* `dup_con` sólo viene con el filtro «Duplicados» (calcularlo
                 siempre cuesta). En el portal va en el `title`; acá no hay
                 hover, así que se escribe: es la única forma de saber con
                 quién choca cuando el par cae en otra letra. */}
             {c.dup_con ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>{`Choca con ${c.dup_con}`}</Text> : null}
+            {/* El monto sólo con `clientes_ver_montos`, como el `title` del portal. */}
+            {verMontos && puntos?.compra_12m != null && (puntos.programa === 'socio' || puntos.programa === 'mayorista')
+              ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Compró ${formatMoney(puntos.compra_12m)} en 12 meses`}</Text> : null}
           </View>
           <View style={{ alignItems: 'flex-end', gap: 2 }}>
             {verMontos && c.total != null ? <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(c.total, { decimales: 0 })}</Text> : null}
@@ -168,7 +197,12 @@ export default function Clientes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
+  const [niveles, setNiveles] = useState({});
+  // Buscar un documento que no aparece puede ser de alguien que pidió
+  // anonimizar sus datos: se dice, en vez de que se le cree una ficha nueva.
+  const [docAnonimizado, setDocAnonimizado] = useState(false);
   const pedido = useRef(0);
+  const puedeCrear = hasPermission('clientes_crear');
 
   useEffect(() => { fetchCustomersStats().then(setStats).catch(() => setStats(null)); }, []);
   useEffect(() => { setPagina(1); }, [busqueda, categoria, ficha, revisar, departamento, municipio, conCodigo, sinMostrador, soloPorCompletar, orden]);
@@ -191,6 +225,17 @@ export default function Clientes() {
       if (yo !== pedido.current) return;   // llegó tarde: ya se pidió otra cosa
       setError(null);
       setDatos((d) => (pagina === 1 ? r : { ...r, rows: [...d.rows, ...r.rows] }));
+      if (pagina === 1) setNiveles({});
+      fetchNivelesDeClientes(r.rows.map((x) => x.id))
+        .then((m) => { if (yo === pedido.current) setNiveles((n) => ({ ...n, ...m })); })
+        .catch(() => { /* sin niveles, la lista sigue igual */ });
+      setDocAnonimizado(false);
+      const buscado = busqueda.trim();
+      if (r.total === 0 && buscado.replace(/[^0-9]/g, '').length >= 8) {
+        documentoAnonimizado(buscado)
+          .then((x) => { if (yo === pedido.current) setDocAnonimizado(!!x?.anonimizado); })
+          .catch(() => { /* sin la consulta, queda el vacío de siempre */ });
+      }
     } catch (e) {
       if (yo === pedido.current) setError('No se pudieron cargar los clientes.');
     } finally {
@@ -238,7 +283,8 @@ export default function Clientes() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={pestana === 'lista' ? grupos : []} />
+      <MenuDeFiltros grupos={pestana === 'lista' ? grupos : []}
+        extra={puedeCrear ? { icono: 'plus', etiqueta: 'Nuevo cliente', onPress: () => router.push('/cliente-nuevo') } : null} />
       {veClientes ? (
         <FijoArriba>
           <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'lista', label: 'Clientes' }, { id: 'revisar', label: 'Por revisar' }]} />
@@ -274,11 +320,14 @@ export default function Clientes() {
             {`${datos.total.toLocaleString('es-SV')} ficha${datos.total === 1 ? '' : 's'}`}
           </Text>
         ) : null}
-        {datos.rows.map((c) => <Fila key={c.id} c={c} verMontos={verMontos} />)}
+        {datos.rows.map((c) => <Fila key={c.id} c={c} verMontos={verMontos} puntos={niveles[c.id]} />)}
         {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.rows.length && !error ? (
-          <Vacio titulo="Ningún cliente con esos filtros." icono="Search" />
+          <Vacio titulo={busqueda ? 'Sin resultados' : 'Ningún cliente con esos filtros.'} icono="Search"
+            detalle={docAnonimizado
+              ? 'Esta persona pidió anonimizar sus datos. Si vuelve, se reactivan con su documento en Solicitudes sobre datos → Anonimizados.'
+              : busqueda ? `Ningún cliente coincide con "${busqueda.trim()}".` : undefined} />
         ) : null}
         </>}
       </ScrollView>

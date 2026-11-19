@@ -205,6 +205,10 @@ export default function Bolsas() {
   const [elegidas, setElegidas] = useState(() => new Set());
   const [ocupado, setOcupado] = useState(null);
   const [recargando, setRecargando] = useState(false);
+  // Una lectura que falló NO es «no hay bolsas» ni «$0»: se avisa y se conserva
+  // lo anterior, como el portal (`CircuitoDeBolsas`).
+  const [falloCarga, setFalloCarga] = useState(false);
+  const [falloTodas, setFalloTodas] = useState(false);
   // Filtros: período de «Contadas» (por fecha de conteo), sala, texto, y en
   // «Contadas» sólo sin resolver o una tanda.
   const [periodo, setPeriodo] = useState('30');
@@ -239,11 +243,15 @@ export default function Bolsas() {
       fetchInvariante({ desde: desdeContadas, hasta: hastaContadas }),
     ]);
     if (esta !== lecturaRef.current) return;
+    if (vivas == null || contadas == null) { setFalloCarga(true); return; }
     setInvariante(invar || []);
     setPorDepositar(paraBanco || []);
     const todas = [...(vivas || []), ...(conDif || []), ...(contadas || [])];
     const saldos = await fetchSaldos([...new Set(todas.map((b) => b.id))]);
     if (esta !== lecturaRef.current) return;
+    // Sin saldos cada bolsa se pintaría en $0.00: mejor quedarse con lo anterior.
+    if (saldos == null) { setFalloCarga(true); return; }
+    setFalloCarga(false);
     const conSaldo = (b) => ({ ...b, ...(saldos?.get(b.id) || {}) });
     setBolsas((vivas || []).map(conSaldo));
     setDiferencias((conDif || []).map(conSaldo));
@@ -259,8 +267,11 @@ export default function Bolsas() {
       fetchEstadosDeDiferenciaDeCortes({ desde: desdeContadas, hasta: hastaContadas }),
     ]);
     if (esta !== lecturaTodasRef.current) return;
+    if (filas == null) { setFalloTodas(true); return; }
     const saldos = await fetchSaldos((filas || []).map((b) => b.id));
     if (esta !== lecturaTodasRef.current) return;
+    if (saldos == null) { setFalloTodas(true); return; }
+    setFalloTodas(false);
     setDifCortes(cortes || new Map());
     setEstCortes(estados || new Map());
     setTodas((filas || []).map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
@@ -335,6 +346,11 @@ export default function Bolsas() {
   // Marcar no recarga: cambia tres columnas de UNA bolsa y el RPC devuelve la fila.
   const pegar = (fila) => setBolsas((l) => (l || []).map((b) => (b.id === fila?.id ? { ...b, ...fila } : b)));
   const marcar = async (bolsa, monto) => {
+    // Sin el saldo leído, el conteo se mediría contra $0: no se anota.
+    if (bolsa?.saldo == null || !Number.isFinite(Number(bolsa.saldo))) {
+      fallo('No se pudo anotar', 'No se pudo leer cuánto hay en la bolsa. Desliza hacia abajo para recargar.');
+      return;
+    }
     setOcupado(bolsa.id);
     const { data, error } = await marcarConteoBolsa(bolsa.id, monto, saldoDeBolsa(bolsa));
     setOcupado(null);
@@ -399,6 +415,13 @@ export default function Bolsas() {
         contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await (etapa === 'todas' ? cargarTodas() : cargar()); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
+        {(etapa === 'todas' ? falloTodas : falloCarga) ? (
+          <View style={{ marginHorizontal: 16, gap: 8 }}>
+            <Aviso tono="freno" texto={`No se pudieron cargar las bolsas.${(etapa === 'todas' ? todas : bolsas)?.length ? ' Lo que ves puede no estar al día.' : ''}`} />
+            <BotonGrande texto="Reintentar" borde deshabilitado={recargando}
+              onPress={async () => { setRecargando(true); await (etapa === 'todas' ? cargarTodas() : cargar()); setRecargando(false); }} />
+          </View>
+        ) : null}
         {etapa === 'todas' && todas && verMontos ? (
           <FilaDeKpis>
             <Kpi icono="Package" rotulo="En las bolsas" color={MARCA.azulClaro} valor={formatMoney(suma(todasVivas))}
@@ -495,7 +518,7 @@ export default function Bolsas() {
               deshabilitado={!!ocupado} onPress={() => recibir(elegidasVistas.length ? elegidasVistas : enCaminoVistas.map((b) => b.id))} />
           </View>
         ) : null}
-        {bolsas == null || (etapa === 'todas' && todas == null) ? <Cargando /> : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
+        {bolsas == null || (etapa === 'todas' && todas == null) ? ((etapa === 'todas' ? falloTodas : falloCarga) ? null : <Cargando />) : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
           <View key={sala} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginHorizontal: 20, marginTop: 6 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{nombreDeSala(sala)}</Text>

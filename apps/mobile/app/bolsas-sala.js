@@ -96,10 +96,14 @@ export default function BolsasDeLaSala() {
       fetchCortesPorEmbolsar({ desde: sumarDias(hoy, -1), hasta: hoy }),
       fetchBolsasConDiferencia(),
     ]);
-    if (!abiertas) { setDatos({ error: true, bolsas: [], faltan: [], diferencias: [] }); return; }
+    // Como el portal (`WidgetBolsasSala`): una lectura que falló es un error,
+    // nunca «no falta nada» ni $0.00 guardado.
+    if (!abiertas) { setDatos({ error: 'No se pudieron cargar las bolsas.' }); return; }
+    if (!faltan) { setDatos({ error: 'No se pudieron leer los cortes por guardar.' }); return; }
     const saldos = await fetchSaldos([...abiertas, ...(conDif || [])].map((b) => b.id));
-    const conSaldo = (b) => ({ ...b, ...(saldos?.get(b.id) || {}) });
-    setDatos({ bolsas: abiertas.map(conSaldo), faltan: faltan || [], diferencias: (conDif || []).map(conSaldo) });
+    if (!saldos) { setDatos({ error: 'No se pudo leer cuánto hay en cada bolsa.' }); return; }
+    const conSaldo = (b) => ({ ...b, ...(saldos.get(b.id) || {}) });
+    setDatos({ bolsas: abiertas.map(conSaldo), faltan, diferencias: (conDif || []).map(conSaldo) });
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
@@ -174,7 +178,8 @@ export default function BolsasDeLaSala() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {datos?.error ? <Aviso tono="freno" texto="No se pudieron cargar las bolsas. Desliza hacia abajo para reintentar." /> : null}
+        {datos?.error ? <Aviso tono="freno" texto={`${datos.error} Desliza hacia abajo para reintentar.`} /> : null}
+        {datos && !datos.error ? (<>
         {sala ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 4 }}>{nombre(sala)}</Text> : null}
 
         <Vidrio radio={20}>
@@ -261,6 +266,7 @@ export default function BolsasDeLaSala() {
             ) : null}
           </>
         )}
+        </>) : null}
       </ScrollView>
     </>
   );

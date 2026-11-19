@@ -74,7 +74,7 @@ Invitaciones de ejemplo: `DEMO01` familia de 4 con 3 nombres (sobra un lugar par
 1. supabase.com → New project.
 2. SQL Editor → pegar `supabase/schema.sql` → Run. (Si ya lo habían corrido con una versión anterior, se vuelve a correr completo: agrega lo nuevo sin borrar datos.)
 3. Authentication → Users → *Add user* (correo y contraseña de quien administra).
-4. En el SQL Editor: `insert into admins (email) values ('su-correo@ejemplo.com');`
+4. En el SQL Editor: `insert into admins (email) values ('su-correo@ejemplo.com');` (el usuario tiene que existir antes: la base guarda su id)
 5. Authentication → Sign In / Providers → desactivar *Allow new users to sign up*.
 6. Project Settings → API: copiar la URL y la `anon key`.
 
@@ -86,12 +86,23 @@ Invitaciones de ejemplo: `DEMO01` familia de 4 con 3 nombres (sobra un lugar par
 
 ## Seguridad, en corto
 
-- Los invitados **no pueden leer la lista de invitados**: sólo ven su invitación, y sólo con su código (6 caracteres sin 0/O/1/I).
-- El álbum se lee público (es la idea), pero para subir hace falta la clave que va en los QR. La base revisa la clave **antes** de dejar subir el archivo: entrega una ruta con permiso de 30 minutos, y el almacenamiento rechaza cualquier archivo fuera de una ruta autorizada. Se puede cambiar desde el panel.
-- Una invitación nunca suma más personas que sus pases, ni acepta respuestas después de la fecha límite: lo controla la base, no sólo la pantalla.
-- Frenos contra abuso: subidas y mensajes tienen un tope por minuto muy por encima de lo que genera un salón lleno.
-- El panel sólo abre con un usuario cuyo correo esté en la tabla `admins`.
-- Las fotos se pueden ocultar al instante desde el panel si alguien sube algo fuera de lugar.
+- Los invitados **no pueden leer la lista de invitados**: sólo ven su invitación, y sólo con su código (8 caracteres sin 0/O/1/I/L; los de 6 ya repartidos siguen valiendo).
+- El álbum se lee público (es la idea), pero para subir hace falta la clave que va en los QR (8 caracteres al azar en una base nueva). La base revisa la clave **antes** de dejar subir: entrega una ruta con permiso de 30 minutos y el almacenamiento rechaza todo lo demás. Por carpeta: voces ≤ 3 MB de audio, fotos ≤ 15 MB, videos ≤ 60 MB. Con el álbum en su tope de espacio (`cuota_album_gb` en `ajustes`, 90 GB) no se dan más permisos.
+- Los mensajes de voz piden la clave del álbum o un código de invitación.
+- **Intentos fallidos**: 20 claves o códigos equivocados desde una misma IP en 10 minutos y esa IP espera.
+- **Frenos** en cada función abierta: un tope global, uno por IP (generoso: el wifi del salón comparte IP) y uno por teléfono. Votar y jugar exigen un token que emite la base; los nombres del juego no aceptan enlaces ni groserías (lista en `ajustes.groserias`) y las respuestas fuera de tiempo se rechazan.
+- Una invitación nunca suma más personas que sus pases, ni acepta respuestas después de la fecha límite, ni una persona sin «asiste/no asiste»: lo controla la base.
+- El panel sólo abre con un usuario registrado en `admins` (se reconoce por su id, no por el correo).
+- Ocultar una foto la saca del álbum al instante y mueve el archivo a un bucket privado: su enlace público deja de servirla (la caché de la CDN puede tardar un rato).
+- Toda edición de invitados, personas y ajustes queda en la tabla `cambios` (quién: `panel` o `invitado:CODIGO`).
+- El sitio sale con cabeceras de seguridad (`vercel.json`: CSP, nosniff, Referrer-Policy, Permissions-Policy). Si se usa un dominio propio para Supabase o una música de apertura de otro sitio, hay que agregarlo a la CSP. La CSP permite `unsafe-eval` porque el convertidor de fotos HEIC lo necesita.
+
+### Mantenimiento
+
+- **Archivos huérfanos** (subidas que nunca se registraron): `node scripts/limpiar-huerfanos.mjs` con `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` (`--ver` sólo lista). Borra por la API de almacenamiento: borrar filas de `storage.objects` deja el archivo ocupando espacio. Con `pg_cron` activo, la base limpia sola cada 15 min los permisos y frenos vencidos (no los archivos).
+- **Respaldo**: `SUPABASE_DB_URL=… bash scripts/respaldo.sh` (pg_dump). `scripts/respaldo-workflow.yml` es un workflow de GitHub para hacerlo cada noche; no está activo (las instrucciones están en el archivo).
+- **Datos personales**: unos 30 días después de la boda, en el SQL Editor, `select purgar_datos_personales();` borra teléfonos, notas, restricciones e IPs (también de la auditoría). No está programada.
+- **Pausa del plan gratuito**: un proyecto Free sin uso por 7 días se pausa. En Pro no aplica; en Free, un ping diario (p. ej. un cron de GitHub que llame `…/rest/v1/rpc/estado_juego` con la anon key) lo mantiene despierto.
 
 ## Ideas para seguir
 

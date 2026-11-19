@@ -115,7 +115,8 @@
 .sello-mitad.izq { clip-path: polygon(0 0, 54% 0, 44% 38%, 56% 62%, 46% 100%, 0 100%); }
 .sello-mitad.der { clip-path: polygon(54% 0, 100% 0, 100% 100%, 46% 100%, 56% 62%, 44% 38%); }
 .sello-onda { position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid oklch(0.85 0.09 82 / .75); opacity: 0; }
-.sello:focus-visible { outline: 2px solid var(--oro-sobre); outline-offset: 6px; }
+.sello:focus-visible { outline: 2px solid var(--oro-sobre); outline-offset: 6px; box-shadow: none; }
+.sello:focus:not(:focus-visible) { outline: none; box-shadow: none; }
 
 .sobre-ayuda { display: flex; align-items: center; gap: 10px; margin: 0; color: oklch(0.92 0.025 85 / .85); font-size: 1rem; }
 .dedo { position: relative; width: 10px; height: 10px; border-radius: 50%; background: var(--oro-sobre); }

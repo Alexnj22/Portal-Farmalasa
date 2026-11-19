@@ -1175,7 +1175,7 @@ html[data-tema=noche] {
 }
 /* Las superficies que ya son oscuras (portada, pie, galería, pestaña oliva…)
    conservan su paleta de día: ahí el lino es la letra, no el papel. */
-html[data-tema=noche] :is(.portada, .pie-sitio, .galeria-h, .oliva-app, .mi-mesa, .acceso.fuerte, .hoy-accion, .sobre-oliva, .aviso-vivo, .cinta-entrada, .ahora-actual, .ahora-chip) {
+html[data-tema=noche] :is(.nav.sobre-foto, .portada, .pie-sitio, .galeria-h, .oliva-app, .mi-mesa, .acceso.fuerte, .hoy-accion, .sobre-oliva, .aviso-vivo, .cinta-entrada, .ahora-actual, .ahora-chip) {
   --lino: oklch(0.955 0.017 85);
   --arena: oklch(0.915 0.026 82);
   --linea: oklch(0.84 0.024 85);

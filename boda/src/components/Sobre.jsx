@@ -117,7 +117,7 @@ export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
           <div className="solapa-sombra" aria-hidden><span /></div>
           <div className="sobre-solapa" aria-hidden><span className="cara-afuera" /><span className="cara-adentro" /></div>
           <div className="sobre-brillo" aria-hidden />
-          <button ref={sello} type="button" className="sello" onClick={(e) => { e.stopPropagation(); abrir(); }} aria-label={t('Abrir la invitación', 'Open the invitation')}>
+          <button ref={sello} type="button" className="sello" onClick={(e) => { e.stopPropagation(); e.currentTarget.blur(); abrir(); }} aria-label={t('Abrir la invitación', 'Open the invitation')}>
             <span className="sello-mitad izq"><span>{monograma}</span></span>
             <span className="sello-mitad der"><span>{monograma}</span></span>
             <span className="sello-onda" aria-hidden />

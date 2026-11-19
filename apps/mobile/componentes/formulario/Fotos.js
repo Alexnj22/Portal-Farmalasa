@@ -19,6 +19,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
+import { encolarFoto } from '@nucleo/data/fotosEnEspera';
 import { colorSistema } from '../Formulario';
 import { FONDO_CONTROL, MARCA, tintaSobre } from '../inicio/marca';
 import IconoFijo from '../IconoFijo';
@@ -116,6 +117,36 @@ export default function Fotos({ fotos, onCambiar, max = 3, pdf = false, document
 }
 
 /** Sube las fotos y devuelve sus URL (formato público, como guarda la base). */
+/**
+ * Como `subirFotos`, pero si el servicio de archivos no responde (falta de
+ * señal) la foto se guarda en el teléfono y se sube sola después
+ * (`FotosEnEspera`). Devuelve `{ urls, pendiente }`: las URL son las
+ * definitivas en los dos casos. Es `subirComprobanteOEncolar` del portal para
+ * la foto del teléfono (2026-11-19: en la app, sin señal no se podía anotar ni
+ * cobrar). Lanza si el error no es del servicio (permiso, tamaño, tipo) o si
+ * el teléfono no pudo guardar la foto.
+ */
+export async function subirFotosOEncolar(fotos, { bucket, carpeta }) {
+  const urls = [];
+  let pendiente = false;
+  for (const [i, f] of fotos.entries()) {
+    const ext = (f.nombre.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${carpeta}/${Date.now()}-${i}.${ext}`;
+    const datos = await (await fetch(f.uri)).arrayBuffer();
+    try {
+      const url = await subirArchivo(bucket, path, datos, { contentType: f.tipo });
+      if (url) urls.push(url);
+    } catch (e) {
+      if (!e?.pasajero) throw new Error(`No se pudo subir la foto: ${e.message}`);
+      urls.push(await encolarFoto({ bucket, path, archivo: datos, contentType: f.tipo }));
+      pendiente = true;
+    }
+  }
+  // Se dice con un aviso que se queda: el mensaje de «listo» de la pantalla lo taparía.
+  if (pendiente) Alert.alert('La foto se sube sola', 'No hay señal para subir la foto. Quedó guardada en este teléfono y se sube sola. No tienes que repetir nada.');
+  return { urls, pendiente };
+}
+
 export async function subirFotos(fotos, { bucket, carpeta }) {
   const urls = [];
   for (const [i, f] of fotos.entries()) {

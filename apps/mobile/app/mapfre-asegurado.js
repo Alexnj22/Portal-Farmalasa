@@ -31,7 +31,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import FormaDePago from '../componentes/formulario/FormaDePago';
-import { subirFotos } from '../componentes/formulario/Fotos';
+import { subirFotosOEncolar } from '../componentes/formulario/Fotos';
 import { MARCA } from '../componentes/inicio/marca';
 import { avisar, fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
@@ -96,7 +96,7 @@ export default function MapfreAsegurado() {
         try {
           let fotoUrl = null;
           if (estadoPago.noEfectivo && pago.foto) {
-            fotoUrl = (await subirFotos([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }))[0] ?? null;
+            fotoUrl = (await subirFotosOEncolar([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` })).urls[0] ?? null;
             if (!fotoUrl) throw new Error('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
           }
           // El monto y el concepto los rehace el servidor con la factura; lo que

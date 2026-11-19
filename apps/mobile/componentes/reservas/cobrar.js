@@ -1,6 +1,6 @@
 // Cobrar el anticipo de algo apartado o encargado desde el teléfono — gemela
 // de `src/components/caja/cobrarAnticipo.js`. Lo que cambia es sólo el
-// dispositivo: la foto se sube con `subirFotos` y el papel sale por la cola de
+// dispositivo: la foto se sube con `subirFotosOEncolar` (sin señal queda en el teléfono y se sube sola) y el papel sale por la cola de
 // la caja de la sala (`imprimirEnLaSala`). El cobro (`anotarIngreso`, tipo
 // APARTADO, que `operar-caja` vuelve a validar) y el papel
 // (`construirConstanciaDeReserva`) son los del núcleo.
@@ -9,7 +9,7 @@ import { datosDeFormaDePago, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { construirConstanciaDeEncargo, construirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
 import { fetchReglasDeReserva } from '@nucleo/data/reservas';
-import { subirFotos } from '../formulario/Fotos';
+import { subirFotosOEncolar } from '../formulario/Fotos';
 import { imprimirEnLaSala } from '../imprimir';
 
 /**
@@ -21,7 +21,7 @@ export async function cobrarAnticipoEnLaApp({ sala, nombreSala, user, clave, mon
   let fotoUrl = null;
   try {
     if (pago?.forma && pago.forma !== 'EFECTIVO' && pago.foto) {
-      fotoUrl = (await subirFotos([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala}/${user?.id ?? 'anon'}` }))[0] ?? null;
+      fotoUrl = (await subirFotosOEncolar([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala}/${user?.id ?? 'anon'}` })).urls[0] ?? null;
       if (!fotoUrl) throw new Error('No se pudo subir la foto del comprobante. Revisa la conexión y vuelve a intentarlo.');
     }
   } catch (e) { return { ok: false, error: e }; }

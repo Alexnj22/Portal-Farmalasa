@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1580.1 — Sin señal, la app guarda la foto del comprobante y la sube sola
+
+- App del personal: si la foto del comprobante no sube porque el servicio no responde, queda guardada en el teléfono y se sube sola (al volver a la app y cada minuto mientras quede alguna), igual que el portal desde el 2026-11-02. El movimiento se anota con su foto. Vale en Meter dinero, Sacar dinero, Mapfre, aplicación de inyección y el anticipo de una reserva. Antes la app lanzaba «pendiente» y con mala señal no se podía anotar ni cobrar.
+- `plataforma/archivosEnEspera.js` de la app guarda en `documentos/fotos-en-espera/` (bytes + datos; los datos se escriben al final). `FotosEnEspera` vacía la cola con `vaciarFotosEnEspera` del núcleo.
+
 ## v2.1580.0 — La app hace lo mismo que la web en caja, pedidos, reservas, preventa, receta e inyecciones
 
 Auditoría app contra web del 2026-11-19: la app del personal hacía menos que el portal en pantallas de dinero e inventario. Primera tanda (lo que toca dinero, inventario y libros):

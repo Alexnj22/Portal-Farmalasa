@@ -33,7 +33,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Ficha, Seccion, Vacio, PantallaSinDato } from '../componentes/formulario/Piezas';
 import FormaDePago from '../componentes/formulario/FormaDePago';
-import { subirFotos } from '../componentes/formulario/Fotos';
+import { subirFotosOEncolar } from '../componentes/formulario/Fotos';
 import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
@@ -262,7 +262,7 @@ export default function AplicacionInyeccion() {
         setEnviando(true); trabajando('Cobrando…');
         let fotoUrl = null;
         if (estadoPago.noEfectivo && pago.foto) {
-          fotoUrl = (await subirFotos([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }).catch(() => []))[0] ?? null;
+          fotoUrl = (await subirFotosOEncolar([pago.foto], { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }).catch(() => ({ urls: [] }))).urls[0] ?? null;
           // Sin la foto el servidor pediría una autorización que nadie pidió.
           if (!fotoUrl) { setEnviando(false); fallo('No se subió la foto del comprobante', 'Revisa la conexión y vuelve a intentarlo.'); return; }
         }

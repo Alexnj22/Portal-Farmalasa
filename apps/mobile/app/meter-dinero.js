@@ -35,7 +35,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import Motivos from '../componentes/formulario/Motivos';
-import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
+import Fotos, { subirFotosOEncolar } from '../componentes/formulario/Fotos';
 import { MARCA } from '../componentes/inicio/marca';
 import Interruptor from '../componentes/Interruptor';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -197,7 +197,7 @@ export default function MeterDinero() {
     try {
       // Con tarjeta o transferencia la foto que vale es la del comprobante del pago.
       const fotosQueVan = noEfectivo ? (pago.foto ? [pago.foto] : []) : fotos;
-      const fotoUrl = fotosQueVan.length ? (await subirFotos(fotosQueVan, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }))[0] ?? null : null;
+      const fotoUrl = fotosQueVan.length ? (await subirFotosOEncolar(fotosQueVan, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` })).urls[0] ?? null : null;
       // Sin la foto el servidor pediría una autorización que nadie pidió: la sala SÍ tenía el papel.
       // En efectivo igual: una subida fallida mandaba el ingreso sin la foto que se eligió.
       if (fotosQueVan.length && !fotoUrl) throw new Error('No se pudo subir la foto. Revisa la conexión y vuelve a intentarlo.');

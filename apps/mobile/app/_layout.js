@@ -28,6 +28,7 @@ import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../platafor
 import { vigilarActualizacionesPorAire } from '../plataforma/actualizacionAire';
 import { PILA_RAIZ } from '../componentes/PilaDePestana';
 import { refrescarPaleta, useRedibujarConPaleta, useVersionDePaleta } from '../tema/material';
+import FotosEnEspera from '../componentes/FotosEnEspera';
 
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
@@ -134,6 +135,7 @@ export default function Raiz() {
         {ANDROID ? null : <Aurora />}
         <AuthProvider>
           <GuardiaDeSesion />
+          <FotosEnEspera />
           <StatusBar style="auto" />
           <Stack
             screenLayout={redibujar}

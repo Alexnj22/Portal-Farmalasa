@@ -39,7 +39,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
-import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
+import Fotos, { subirFotosOEncolar } from '../componentes/formulario/Fotos';
 import Identidad from '../componentes/Identidad';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -244,7 +244,7 @@ export default function SacarDinero() {
   const guardar = async () => {
     setGuardando(true); trabajando('Registrando la salida…');
     try {
-      const fotoUrl = fotos.length ? (await subirFotos(fotos, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` }))[0] ?? null : null;
+      const fotoUrl = fotos.length ? (await subirFotosOEncolar(fotos, { bucket: 'payment-proofs', carpeta: `bolsas/${sala ?? 'sin-sala'}/${user?.id ?? 'anon'}` })).urls[0] ?? null : null;
       const entidadDicha = t.entidad_la_dice_el_papel ? '' : entidad.trim();
       if (delCajon) {
         const r = await anotarSalida({

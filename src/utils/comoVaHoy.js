@@ -133,3 +133,33 @@ const IDEAS = [
 export function ideaDelMomento(ahoraMs) {
     return IDEAS[Math.floor(ahoraMs / 600_000) % IDEAS.length];
 }
+
+// Las frases del ritmo. Cambian cada 10 minutos para que no se vuelvan ruido.
+// El bono sólo se nombra si está encendido ese mes (`metas_bono_activo`): con
+// el bono apagado, prometerlo en el kiosco es un problema con el personal.
+const TITULOS = {
+    arriba: 'Hoy va muy bien',
+    ritmo: 'Van al ritmo',
+    bajo: 'Hoy va más lento',
+};
+const ANIMO = {
+    arriba: ['Sigue así hasta el cierre.', 'Buen trabajo. Mantén el paso.', 'Cada cliente bien atendido se nota.'],
+    ritmo: ['Vas donde toca a esta hora.', 'Un producto más por venta y vas arriba.', 'Mantén el paso hasta el cierre.'],
+    bajo: ['Todavía hay tiempo de recuperarlo.', 'Cada venta cuenta. Ofrece algo más.', 'Una buena hora lo cambia todo.'],
+};
+
+/** Título y frase de ánimo del ritmo; `falta` ya viene dicho («$40» o «8 %»). */
+export function fraseDelRitmo({ ritmo, ahoraMs, falta = null }) {
+    if (!TITULOS[ritmo]) return null;
+    const lista = ANIMO[ritmo];
+    const animo = lista[Math.floor(ahoraMs / 600_000) % lista.length];
+    const detalle = ritmo === 'bajo' && falta ? `Faltan ${falta} para ir al ritmo de esta hora. ${animo}` : animo;
+    return { titulo: TITULOS[ritmo], detalle };
+}
+
+/** La tarjeta de cuando va bien. Nombra el bono sólo si está encendido. */
+export function fraseDeVaBien({ esMeta, bonoActivo }) {
+    if (esMeta && bonoActivo) return 'Hoy va mejor que un día normal. Cada venta de más te acerca al bono del mes.';
+    if (esMeta) return 'Hoy va mejor que un día normal. Cada venta de más suma a la meta del mes.';
+    return 'Hoy va mejor que un día normal. Cada venta de más suma.';
+}

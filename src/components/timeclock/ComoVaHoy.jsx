@@ -6,8 +6,9 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Notice from '../common/Notice';
 import { LoadingState } from '../common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchComoVaLaSalaHoy, fetchParaVenderEnLaSala } from '@nucleo/data/metas';
-import { armarDia, datosDeApoyo, ideaDelMomento, relojDelDia, ritmoDelDia } from '@nucleo/utils/comoVaHoy';
+import { fetchBonoActivo, fetchComoVaLaSalaHoy, fetchParaVenderEnLaSala } from '@nucleo/data/metas';
+import { armarDia, datosDeApoyo, fraseDeVaBien, fraseDelRitmo, ideaDelMomento, relojDelDia, ritmoDelDia } from '@nucleo/utils/comoVaHoy';
+import { diaSV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { venceTexto } from '@nucleo/utils/venceCorto';
@@ -18,9 +19,9 @@ const CADA_MS = 120_000;
 const VENDER_CADA_MS = 600_000;
 
 const TONO = {
-    arriba: { icono: TrendingUp, clase: 'text-success-text', fondo: 'bg-success/10', titulo: 'Vas arriba de lo esperado' },
-    ritmo: { icono: Target, clase: 'text-brand-text', fondo: 'bg-brand/10', titulo: 'Vas al ritmo' },
-    bajo: { icono: TrendingDown, clase: 'text-warning-text', fondo: 'bg-warning/10', titulo: 'Vas bajo de lo esperado' },
+    arriba: { icono: TrendingUp, clase: 'text-success-text', fondo: 'bg-success/10' },
+    ritmo: { icono: Target, clase: 'text-brand-text', fondo: 'bg-brand/10' },
+    bajo: { icono: TrendingDown, clase: 'text-warning-text', fondo: 'bg-warning/10' },
 };
 
 const pct = (v) => `${Math.round(v * 100)} %`;
@@ -59,6 +60,17 @@ export default function ComoVaHoy({ sala, ahora, onAgregar = null }) {
         return () => { clearTimeout(primera); clearInterval(id); };
     }, [puedeVer, sala, leer]);
 
+    // ¿El bono está encendido este mes? Mientras no se sepa (o si falla), NO:
+    // nombrar un bono apagado es peor que no nombrar uno encendido.
+    const mes = diaSV(ahora).slice(0, 7);
+    const [bono, setBono] = useState({ mes: null, activo: false });
+    useEffect(() => {
+        let vivo = true;
+        fetchBonoActivo(mes).then((activo) => { if (vivo) setBono({ mes, activo }); }).catch(() => {});
+        return () => { vivo = false; };
+    }, [mes]);
+    const bonoActivo = bono.mes === mes && bono.activo;
+
     const [vender, setVender] = useState(null);
     useEffect(() => {
         if (!sala) return undefined;
@@ -95,6 +107,9 @@ export default function ComoVaHoy({ sala, ahora, onAgregar = null }) {
     const vendedores = dia.vendedores ?? [];
     const productos = dia.productos ?? [];
     const ap = cuenta?.apoyo;
+    const frase = cuenta?.ritmo
+        ? fraseDelRitmo({ ritmo: cuenta.ritmo, ahoraMs: ahora, falta: `${cifra(falta)}${esMeta && !montos ? ' de la meta del día' : ''}` })
+        : null;
 
     return (
         <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
@@ -104,12 +119,8 @@ export default function ComoVaHoy({ sala, ahora, onAgregar = null }) {
                         <div className={`flex items-center gap-4 rounded-[var(--radius-card)] p-4 ${tono.fondo}`}>
                             <tono.icono size={32} className={`${tono.clase} shrink-0`} aria-hidden="true" />
                             <div className="min-w-0 flex-1">
-                                <p className={`text-title-lg font-black ${tono.clase}`}>{tono.titulo}</p>
-                                <p className="text-body-sm text-content-2">
-                                    {cuenta.ritmo === 'bajo'
-                                        ? `Faltan ${cifra(falta)}${esMeta && !montos ? ' de la meta del día' : ''} para ir al ritmo de esta hora. ¡Todavía se alcanza!`
-                                        : cuenta.ritmo === 'arriba' ? '¡Buen trabajo, equipo! Sigan así hasta el cierre.' : 'Mantengan el paso para llegar a la meta.'}
-                                </p>
+                                <p className={`text-title-lg font-black ${tono.clase}`}>{frase.titulo}</p>
+                                <p className="text-body-sm text-content-2">{frase.detalle}</p>
                             </div>
                             {alRitmo != null && (
                                 <div className="text-right shrink-0">
@@ -174,7 +185,7 @@ export default function ComoVaHoy({ sala, ahora, onAgregar = null }) {
                 {cuenta?.ritmo === 'arriba' && (
                     <section data-surface="card" className="p-4 flex items-start gap-3">
                         <PartyPopper size={24} className="text-success-text shrink-0" aria-hidden="true" />
-                        <p className="text-body text-content">Hoy van mejor que un día normal.{esMeta ? ' Cada venta de más acerca el bono del mes.' : ' Cada venta de más suma.'}</p>
+                        <p className="text-body text-content">{fraseDeVaBien({ esMeta, bonoActivo })}</p>
                     </section>
                 )}
                 {vender && vender.sala === sala && (
@@ -184,7 +195,7 @@ export default function ComoVaHoy({ sala, ahora, onAgregar = null }) {
                                 clave: `${p.id}-${p.promocion}`, id: p.id, nombre: p.nombre, foto: p.foto_url,
                                 detalle: p.promocion,
                                 chip: p.fin ? `Hasta el ${fechaCorta(p.fin)}` : 'Vigente', chipTono: 'brand',
-                                extra: Number(p.bono) > 0 ? `Bono ${formatMoney(p.bono)}${Number(p.unidades_por_bono) > 1 ? ` cada ${p.unidades_por_bono}` : ''}` : null,
+                                extra: bonoActivo && Number(p.bono) > 0 ? `Bono ${formatMoney(p.bono)}${Number(p.unidades_por_bono) > 1 ? ` cada ${p.unidades_por_bono}` : ''}` : null,
                             }))} />
                         <Lista icono={Sparkles} titulo="Ofrécelos hoy" onAgregar={onAgregar} vacio="Nada que sugerir por ahora."
                             nota="Se venden bien y la sucursal los tiene."

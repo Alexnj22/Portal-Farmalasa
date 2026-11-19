@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { armarDia, ritmoDelDia, relojDelDia } from '@nucleo/utils/comoVaHoy.js';
+import { armarDia, fraseDeVaBien, fraseDelRitmo, ritmoDelDia, relojDelDia } from '@nucleo/utils/comoVaHoy.js';
 
 const tipica = [{ hora: 8, total: 100 }, { hora: 9, total: 100 }, { hora: 10, total: 200 }];
 
@@ -56,5 +56,22 @@ describe('datosDeApoyo', () => {
         expect(d.ventasVsNormal).toBe(17);   // 14 contra 12
         expect(d.horaFuerte).toBe(10);
         expect(d.vsSemanaPasada).toBe(50);   // 0.15 contra 0.1
+    });
+});
+
+describe('frases del kiosco', () => {
+    it('con el bono apagado no nombra el bono', () => {
+        expect(fraseDeVaBien({ esMeta: true, bonoActivo: false })).not.toMatch(/bono/i);
+        expect(fraseDeVaBien({ esMeta: false, bonoActivo: true })).not.toMatch(/bono/i);
+        expect(fraseDeVaBien({ esMeta: true, bonoActivo: true })).toMatch(/bono/);
+        for (const ritmo of ['arriba', 'ritmo', 'bajo']) {
+            for (let i = 0; i < 6; i++) {
+                expect(fraseDelRitmo({ ritmo, ahoraMs: i * 600_000, falta: '$40' }).detalle).not.toMatch(/bono/i);
+            }
+        }
+    });
+    it('vas bajo dice cuánto falta', () => {
+        expect(fraseDelRitmo({ ritmo: 'bajo', ahoraMs: 0, falta: '$40' }).detalle).toMatch(/^Faltan \$40 para ir al ritmo/);
+        expect(fraseDelRitmo({ ritmo: null, ahoraMs: 0 })).toBeNull();
     });
 });

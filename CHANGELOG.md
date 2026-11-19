@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.4 — El kiosco no nombra el bono si está apagado
+
+- «Cómo va hoy» del kiosco decía «Cada venta de más acerca el bono del mes»
+  aunque el bono estuviera apagado. Ahora pregunta `metas_bono_activo` del mes
+  y sólo nombra el bono si está encendido (si no lo sabe, no lo nombra). El
+  «Bono $X» de las promociones sigue el mismo interruptor.
+- Frases nuevas de ánimo para arriba, al ritmo y bajo, que rotan cada 10
+  minutos (`fraseDelRitmo`, `fraseDeVaBien` en `src/utils/comoVaHoy.js`), con
+  prueba de que ninguna nombra el bono estando apagado.
+- Novedades: no — gate:novedades valoró 0 de 4.
+
 ## v2.1579.3 — El kiosco calcula el IVA del crédito fiscal como la caja
 
 - Crédito fiscal desde el kiosco: suma los subtotales de la preventa tal como vienen (a 2 decimales), igual que la caja al cargarla; ya no los recalcula a 4. Visto en el ensayo: la CCF 415913 de Salud 2 cobró IVA $0.46 y el kiosco calculaba $0.45.

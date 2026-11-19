@@ -1,67 +1,66 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route, useParams, useLocation } from 'react-router-dom';
+import { Outlet, ScrollRestoration, useLocation, useParams } from 'react-router-dom';
 import Inicio from './pages/Inicio';
-import Album from './pages/Album';
 import { modoDemo } from './lib/api';
 import { boda } from './config';
 import { pruebasDisponibles } from './lib/reloj';
+import { pantalla } from './lib/precarga';
 import AppMarco from './components/AppMarco';
+import ErrorRuta, { limpiarMarcaDeRecarga } from './components/ErrorRuta';
+import Esqueleto from './components/Esqueleto';
 
 const PanelPruebas = lazy(() => import('./components/PanelPruebas'));
-
-// El panel y la pantalla en vivo no los descarga ningún invitado que no entre ahí.
-const Admin = lazy(() => import('./pages/admin/Admin'));
-const Pantalla = lazy(() => import('./pages/Pantalla'));
-const Canciones = lazy(() => import('./pages/Canciones'));
-const Juegos = lazy(() => import('./pages/juegos/Juegos'));
-const Trivia = lazy(() => import('./pages/juegos/Trivia'));
-const Bingo = lazy(() => import('./pages/juegos/Bingo'));
-const Retos = lazy(() => import('./pages/juegos/Retos'));
-const Dj = lazy(() => import('./pages/Dj'));
-const Evento = lazy(() => import('./pages/app/Evento'));
-const Confirmar = lazy(() => import('./pages/app/Confirmar'));
-const Mensajes = lazy(() => import('./pages/app/Mensajes'));
-const Hoy = lazy(() => import('./pages/app/Hoy'));
-const Mas = lazy(() => import('./pages/app/Mas'));
 
 function ConCodigo() {
   const { codigo } = useParams();
   return <Inicio codigo={codigo} />;
 }
 
-export default function App() {
+/** Marco de todo el sitio: aviso de la demo, la pantalla y el panel de pruebas. */
+function Raiz() {
   const { pathname } = useLocation();
   useEffect(() => { document.title = `${boda.novios.firma} · Nuestra boda`; }, []);
+  // Si la página lleva un rato funcionando, la recarga por versión nueva vuelve a estar permitida.
+  useEffect(() => { const t = setTimeout(limpiarMarcaDeRecarga, 10000); return () => clearTimeout(t); }, []);
   const esPantalla = pathname.startsWith('/pantalla') || pathname.startsWith('/dj');
   return (
     <>
       {modoDemo && !esPantalla && (
         <div className="cinta-demo">Versión de prueba: lo que hagas se guarda sólo en este navegador.</div>
       )}
-      <Suspense fallback={<p className="centro suave" style={{ padding: 60 }}>Cargando…</p>}>
-        <Routes>
-          <Route element={<AppMarco />}>
-            <Route path="/" element={<Inicio />} />
-            <Route path="/i/:codigo" element={<ConCodigo />} />
-            <Route path="/evento" element={<Evento />} />
-            <Route path="/confirmar" element={<Confirmar />} />
-            <Route path="/mensajes" element={<Mensajes />} />
-            <Route path="/hoy" element={<Hoy />} />
-            <Route path="/mas" element={<Mas />} />
-            <Route path="/album" element={<Album />} />
-            <Route path="/canciones" element={<Canciones />} />
-            <Route path="/juego" element={<Juegos />} />
-            <Route path="/juego/trivia" element={<Trivia />} />
-            <Route path="/juego/bingo" element={<Bingo />} />
-            <Route path="/juego/retos" element={<Retos />} />
-            <Route path="*" element={<Inicio />} />
-          </Route>
-          <Route path="/pantalla" element={<Pantalla />} />
-          <Route path="/dj" element={<Dj />} />
-          <Route path="/admin/*" element={<Admin />} />
-        </Routes>
-      </Suspense>
+      <Outlet />
       {pruebasDisponibles && !esPantalla && <Suspense fallback={null}><PanelPruebas /></Suspense>}
+      {/* Cambiar de pestaña vuelve arriba; «atrás» vuelve a donde estabas. */}
+      <ScrollRestoration />
     </>
   );
 }
+
+// Fuera de la barra de pestañas (proyector, DJ, panel): su propio Suspense.
+const suelta = (ruta) => {
+  const P = pantalla(ruta);
+  return <Suspense fallback={<Esqueleto />}><P /></Suspense>;
+};
+// Dentro de la barra: el Suspense vive en AppMarco (la barra no parpadea).
+const enMarco = (ruta) => { const P = pantalla(ruta); return <P />; };
+
+/** Las rutas del sitio (createBrowserRouter, en main.jsx). */
+export const rutas = [{
+  element: <Raiz />,
+  errorElement: <ErrorRuta />,
+  children: [
+    {
+      element: <AppMarco />,
+      children: [
+        { path: '/', element: <Inicio /> },
+        { path: '/i/:codigo', element: <ConCodigo /> },
+        ...['/evento', '/confirmar', '/mensajes', '/hoy', '/mas', '/album', '/canciones', '/juego', '/juego/trivia', '/juego/bingo', '/juego/retos']
+          .map((r) => ({ path: r, element: enMarco(r) })),
+        { path: '*', element: <Inicio /> },
+      ],
+    },
+    { path: '/pantalla', element: suelta('/pantalla') },
+    { path: '/dj', element: suelta('/dj') },
+    { path: '/admin/*', element: suelta('/admin') },
+  ],
+}];

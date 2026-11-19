@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { t } from '../lib/idioma';
 import Visor from './Visor';
+import { imagenAdaptable, ANCHOS_GALERIA } from '../lib/fotos';
 
 /**
  * Las fotos de los novios en una tira que se desliza de lado con el dedo
@@ -38,7 +39,7 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
       <div className="pista" ref={pista} onScroll={alDeslizar}>
         {items.map((f, n) => (
           <button type="button" key={f.url} className={`foto-h ${n % 3 === 1 ? 'ancha' : ''}`} onClick={() => setAbierta(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
-            <img src={f.url} alt="" loading={n < 3 ? 'eager' : 'lazy'} decoding="async" />
+            <img {...imagenAdaptable(f.url, ANCHOS_GALERIA, '(min-width: 720px) 48vw, 88vw')} alt="" loading="lazy" decoding="async" />
             <span className="num">{String(n + 1).padStart(2, '0')}</span>
           </button>
         ))}

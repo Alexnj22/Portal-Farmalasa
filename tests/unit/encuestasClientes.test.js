@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    cumpleCondicion, recorrido, preguntasEnOrden, primeraSinContestar, quitarPregunta, cambiarTipo,
+    cumpleCondicion, recorrido, preguntasEnOrden, cuantasPreguntas, primeraSinContestar, quitarPregunta, cambiarTipo,
     muestraSugerida, metaTotal, telefonoValido, textoDeValor, tablaDeRespuestas, lecturaNps, categoriasDe,
     nuevaOpcion, idNuevo, operadoresPara, tramoNps, guionDeEscala, escalaNumerica, escalaDePregunta,
 } from '@nucleo/utils/encuestasClientes';
@@ -91,6 +91,13 @@ describe('recorrido — qué ve el cliente y qué se manda', () => {
         ] }] };
         expect(preguntasEnOrden(c).map((p) => p.numeroVisible)).toEqual([1, null, 2]);
         expect(preguntasEnOrden(c).map((p) => p.numero)).toEqual([1, 2, 3]);
+    });
+    it('cuantasPreguntas cuenta las que se le hacen a todos', () => {
+        const c = { secciones: [{ id: 's', preguntas: [
+            { id: 'a', tipo: 'unica', texto: 'A' },
+            { id: 'a_otro', tipo: 'texto', texto: '¿Cuál?', condicion: { pregunta: 'a', operador: 'incluye', valor: 'otro' } },
+        ] }] };
+        expect(cuantasPreguntas(c)).toBe(1);
     });
 });
 

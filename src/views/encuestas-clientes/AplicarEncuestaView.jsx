@@ -10,7 +10,7 @@ import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { preguntasEnOrden, enlaceDeEncuesta, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
+import { cuantasPreguntas, enlaceDeEncuesta, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import { leer, guardar } from '../../plataforma/almacen';
@@ -243,7 +243,7 @@ export default function AplicarEncuestaView() {
                     <div className="grid gap-4 md:grid-cols-2">
                         {visibles.map((e) => {
                             const s = enCampo ? null : e.sucursales.find((x) => x.branch_id === efectivo.sala);
-                            const n = preguntasEnOrden(e.cuestionario).length;
+                            const n = cuantasPreguntas(e.cuestionario);
                             const zonas = enCampo ? zonasDe(e) : [];
                             const zona = enCampo ? zonaDe(e) : null;
                             const puedeEntrevistar = enCampo ? campoListo && (!zonas.length || !!zona) : e.canales.includes('entrevista');

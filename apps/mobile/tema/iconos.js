@@ -84,6 +84,8 @@ export const ICONOS = {
   CalendarDays: i('calendar', require('@expo/material-symbols/calendar_month.xml')),
   Cake: i('birthday.cake', require('@expo/material-symbols/cake.xml')),
   X: i('xmark', require('@expo/material-symbols/close.xml')),
+  ChevronLeft: i('chevron.left', require('@expo/material-symbols/chevron_left.xml')),
+  MapPin: i('mappin.and.ellipse', require('@expo/material-symbols/location_on.xml')),
   Flashlight: i('flashlight.on.fill', require('@expo/material-symbols/flashlight_on.xml')),
   FlashlightOff: i('flashlight.off.fill', require('@expo/material-symbols/flashlight_off.xml')),
   ScanLine: i('barcode.viewfinder', require('@expo/material-symbols/barcode_scanner.xml')),

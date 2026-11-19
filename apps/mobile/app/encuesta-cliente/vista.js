@@ -3,7 +3,7 @@
 // con su recorrido y sus condiciones), para probarlo sin guardar nada. Al
 // terminar no se envía: se avisa que era una prueba.
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { fetchEncuesta } from '@nucleo/data/encuestasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -21,16 +21,12 @@ export default function VistaPrevia() {
   }, [id]);
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Vista previa' }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
-        <Aviso texto="Así la ve el cliente. Es una prueba: al terminar no se guarda nada." />
-        {error ? <Aviso tono="freno" texto={error} /> : !encuesta ? <Cargando /> : (
-          <View>
-            <Formulario key={vuelta} encuesta={encuesta} onEntregarMuestra={async () => {}}
-              onEnviar={async () => { setTimeout(() => setVuelta((v) => v + 1), 2500); return null; }} />
-          </View>
-        )}
-      </ScrollView>
+      <Stack.Screen options={{ ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: 'transparent' }, title: 'Vista previa' }} />
+      {error ? <View style={{ padding: 16 }}><Aviso tono="freno" texto={error} /></View> : !encuesta ? <Cargando /> : (
+        <Formulario key={vuelta} encuesta={encuesta} onEntregarMuestra={async () => {}}
+          contexto="Así la ve el cliente. Es una prueba: no se guarda nada."
+          onEnviar={async () => { setTimeout(() => setVuelta((v) => v + 1), 2500); return null; }} />
+      )}
     </>
   );
 }

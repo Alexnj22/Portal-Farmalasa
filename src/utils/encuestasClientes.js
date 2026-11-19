@@ -165,6 +165,15 @@ export function preguntasEnOrden(cuestionario) {
 }
 
 /**
+ * Cuántas preguntas le van a hacer al cliente: sin las condicionales (el
+ * «¿Cuál?» de «Otro»). La tarjeta de Aplicar decía «15 preguntas» de una
+ * encuesta de 10 (2026-11-19).
+ */
+export function cuantasPreguntas(cuestionario) {
+    return preguntasEnOrden(cuestionario).filter((p) => p.numeroVisible).length;
+}
+
+/**
  * Al cambiar el tipo de una pregunta se conserva lo que sigue teniendo sentido
  * (texto, dimensión, obligatoria) y se descarta lo que no (opciones de un
  * tipo sin opciones).

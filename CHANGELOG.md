@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.4 — Encuestas en la app: la entrevista sin saltos, con progreso y botones fijos y un diseño nuevo
+
+- **La entrevista ya no salta.** Al pasar de pregunta se quedaba el desplazamiento de la anterior: la siguiente aparecía a media pantalla o se movía sola. Ahora cada pregunta nace arriba, con su propio desplazamiento.
+- **Progreso fijo arriba y botones fijos abajo.** El lugar y la zona, la barra de avance y la sección quedan arriba. «Siguiente» y el botón redondo para volver quedan abajo, y suben con el teclado.
+- **Diseño nuevo.** Una tarjeta por pregunta, con su número y el texto grande. Las opciones van a lo ancho, con círculo o casilla. La escala va en cuadros iguales, y cada pregunta entra deslizándose. Si falta contestar, la tarjeta se sacude y lo dice.
+- Lo que aparece al marcar («Marcó 8 de 10», «Llevas 2») ya tiene su lugar reservado y no empuja nada.
+- Las opciones sin marcar tenían la letra blanca fija: en tema claro casi no se leían.
+- La ayuda que repetía lo que ya dice la pantalla («Seleccione hasta tres opciones», «1 = nada · 10 = muy») ya no sale dos veces.
+- «Salir» arriba, con confirmación si ya hay respuestas. El gesto de volver ya no saca de la entrevista a media marcha.
+- La pantalla final dice cuánto duró la entrevista.
+- La tarjeta de la encuesta dice cuántas preguntas se le hacen al cliente (10, no 15: no cuenta los «¿Cuál?»), en la app y en el portal.
+- La ubicación en la tarjeta de campo tiene alto fijo: al llegar no mueve la tarjeta.
+
 ## v2.1583.3 — La pantalla «Hay novedades» ya no vuelve a salir por un tropiezo de red
 
 - Web: si al entrar no se pudo leer qué novedades ya revisó la persona (caída momentánea, un 521 el 2026-11-19 a las 4:23 p. m.), la pantalla de entrada salía otra vez como si no hubiera visto nada. Ahora reintenta una vez y, si sigue sin respuesta, no sale.

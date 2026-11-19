@@ -18,7 +18,7 @@ import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEncuestas } from '@nucleo/data/encuestasClientes';
-import { canalDe, estadoDe, GRUPOS, preguntasEnOrden, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
+import { canalDe, estadoDe, GRUPOS, cuantasPreguntas, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
@@ -113,8 +113,8 @@ export default function EncuestasClientes() {
                   </View>
                   {e.objetivo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={2}>{e.objetivo}</Text> : null}
                   <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-                    {(plantillas ? [`${preguntasEnOrden(e.cuestionario).length} preguntas`, `cambió ${fechaTexto(e.updated_at, { day: 'numeric', month: 'short' })}`]
-                      : [`${preguntasEnOrden(e.cuestionario).length} preguntas`, (e.canales || []).map((c) => canalDe(c).label).join(', '), resumenDeCierre(e, e.sucursales || [], fechaTexto)]).filter(Boolean).join(' · ')}
+                    {(plantillas ? [`${cuantasPreguntas(e.cuestionario)} preguntas`, `cambió ${fechaTexto(e.updated_at, { day: 'numeric', month: 'short' })}`]
+                      : [`${cuantasPreguntas(e.cuestionario)} preguntas`, (e.canales || []).map((c) => canalDe(c).label).join(', '), resumenDeCierre(e, e.sucursales || [], fechaTexto)]).filter(Boolean).join(' · ')}
                   </Text>
                 </View>
               </Vidrio>

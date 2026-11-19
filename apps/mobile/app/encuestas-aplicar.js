@@ -23,7 +23,7 @@ import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
-import { enlaceDeEncuesta, preguntasEnOrden, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
+import { enlaceDeEncuesta, cuantasPreguntas, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -139,39 +139,33 @@ export default function EncuestasAplicar() {
   if (entrevista) {
     const encuesta = entrevista;
     const zona = enCampo ? zonaDe(encuesta) : null;
+    // La entrevista ocupa la pantalla: la barra opaca (la pantalla empieza
+    // debajo de ella, no detrás) y sin el gesto de volver, que sacaba de
+    // Aplicar encuesta a media entrevista. Para salir está «Salir».
     return (
       <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: encuesta.nombre, headerLargeTitle: false }} />
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-          keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          <View style={{ marginHorizontal: 20, gap: 6 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {enCampo ? `Entrevista en ${zona ? nombreDeZona(zonasDe(encuesta), zona) : 'campo'}${lugar ? ` · ${lugar}` : ''}` : `Entrevista en ${nombreSala ?? 'la sucursal'}`}
-            </Text>
-            <Aviso texto="Lee cada pregunta tal como está escrita y marca lo que responde el cliente, sin sugerirle la respuesta." />
-          </View>
-          <Formulario encuesta={encuesta} onEntregarMuestra={marcarMuestraEntregada}
-            onReiniciar={() => { if (seCerro.current) { seCerro.current = false; volver(); } }}
-            onEnviar={async (respuestas, contacto, segundos, referencia) => {
-              let r;
-              if (enCampo) {
-                // La ubicación se lee al guardar: el encuestador camina.
-                const p = await leerPosicion({ espera: 8000 });
-                if (p) setGps(p);
-                const pos = p || (gpsListo ? gps : null);
-                r = await guardarEntrevistaCampo(encuesta.id,
-                  { lugar: lugar || null, zona, ...(pos ? { lat: pos.lat, lng: pos.lng, precision: pos.precision } : {}) },
-                  { respuestas, contacto, segundos, referencia });
-              } else {
-                r = await guardarEntrevista(encuesta.id, efectivo.sala, { respuestas, contacto, segundos, referencia });
-              }
-              if (r?.cerrada) { seCerro.current = true; listo('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!'); }
-              return r;
-            }} />
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Volver a las encuestas" borde color={colorSistema.texto2} onPress={volver} />
-          </View>
-        </ScrollView>
+        <Stack.Screen options={{ ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: 'transparent' },
+          title: 'Entrevista', headerLargeTitle: false, headerBackVisible: false, gestureEnabled: false }} />
+        <Formulario encuesta={encuesta} onEntregarMuestra={marcarMuestraEntregada} onSalir={volver}
+          contexto={enCampo ? [zona ? nombreDeZona(zonasDe(encuesta), zona) : 'Campo', lugar].filter(Boolean).join(' · ') : nombreSala ?? 'La sucursal'}
+          instruccion="Lee cada pregunta tal como está escrita y marca lo que responde el cliente, sin sugerirle la respuesta."
+          onReiniciar={() => { if (seCerro.current) { seCerro.current = false; volver(); } }}
+          onEnviar={async (respuestas, contacto, segundos, referencia) => {
+            let r;
+            if (enCampo) {
+              // La ubicación se lee al guardar: el encuestador camina.
+              const p = await leerPosicion({ espera: 8000 });
+              if (p) setGps(p);
+              const pos = p || (gpsListo ? gps : null);
+              r = await guardarEntrevistaCampo(encuesta.id,
+                { lugar: lugar || null, zona, ...(pos ? { lat: pos.lat, lng: pos.lng, precision: pos.precision } : {}) },
+                { respuestas, contacto, segundos, referencia });
+            } else {
+              r = await guardarEntrevista(encuesta.id, efectivo.sala, { respuestas, contacto, segundos, referencia });
+            }
+            if (r?.cerrada) { seCerro.current = true; listo('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!'); }
+            return r;
+          }} />
       </>
     );
   }
@@ -214,14 +208,15 @@ export default function EncuestasAplicar() {
               <View style={{ gap: 8 }}>
                 <Campo multiline={false} value={donde?.lugar || ''} onChangeText={escribirLugar}
                   placeholder="Lugar: p. ej. Mercado de Soyapango" maxLength={120} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {/* Alto fijo: al llegar la ubicación (o «Reintentar») la tarjeta no salta. */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 32 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
                     {gps === 'buscando' ? 'Buscando la ubicación…'
                       : gpsListo ? `Ubicación activa${gps.precision ? ` (±${Math.round(gps.precision)} m)` : ''}`
                         : 'Sin ubicación: escribe el lugar.'}
                   </Text>
                   {gps === 'sin' ? (
-                    <Pressable onPress={buscarUbicacion} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
+                    <Pressable onPress={buscarUbicacion} hitSlop={12} style={{ height: 32, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Reintentar</Text>
                     </Pressable>
                   ) : null}
@@ -242,7 +237,7 @@ export default function EncuestasAplicar() {
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{e.nombre}</Text>
               {e.objetivo ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={3}>{e.objetivo}</Text> : null}
               <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                <Pildora texto={`${preguntasEnOrden(e.cuestionario).length} preguntas`} color={MARCA.azulClaro} />
+                <Pildora texto={`${cuantasPreguntas(e.cuestionario)} preguntas`} color={MARCA.azulClaro} />
                 {e.fecha_fin ? <Pildora texto={`Hasta el ${fechaTexto(e.fecha_fin, { day: 'numeric', month: 'short' })}`} color={MARCA.violeta} /> : null}
                 {e.incentivo_tipo === 'muestra' ? <Pildora texto="🎁 Muestra médica" color={MARCA.verde} /> : null}
                 {e.incentivo_tipo === 'puntos' ? <Pildora texto={`🎁 ${e.incentivo_puntos} puntos`} color={MARCA.verde} /> : null}

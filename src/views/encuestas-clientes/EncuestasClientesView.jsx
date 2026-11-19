@@ -26,7 +26,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { estadoDe, GRUPOS, canalDe, preguntasEnOrden, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
+import { estadoDe, GRUPOS, canalDe, cuantasPreguntas, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
 import {
     fetchEncuestas, fetchDimensiones, fetchSalas, fetchPoblacion, crearEncuesta, duplicarEncuesta, guardarDiseno,
 } from '@nucleo/data/encuestasClientes';
@@ -225,7 +225,7 @@ function TablaEncuestas({ filas, plantillas, onAbrir }) {
                             </div>
                         </DataCell>
                         {!plantillas && <DataCell><Badge variant={est.variant}>{est.label}</Badge></DataCell>}
-                        <DataCell><span className="text-body-sm text-content-2">{preguntasEnOrden(e.cuestionario).length} preguntas</span></DataCell>
+                        <DataCell><span className="text-body-sm text-content-2">{cuantasPreguntas(e.cuestionario)} preguntas</span></DataCell>
                         {!plantillas && (
                             <>
                                 <DataCell>

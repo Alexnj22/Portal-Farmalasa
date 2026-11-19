@@ -16,10 +16,11 @@ const yaAbierto = (codigo) => { try { return sessionStorage.getItem(LS) === codi
 const FIN = 4400;
 
 /**
- * La apertura de una invitación personal, como abrir un sobre de verdad:
- * llega flotando entre luces y polvo dorado; al tocar el lacre, se parte, la
- * solapa se abre, la tarjeta sale del sobre y queda al centro, y sus nombres
- * se convierten en los de la portada (View Transitions; sin la API, fundido).
+ * La apertura de una invitación personal, como abrir un sobre de verdad: un
+ * sobre carbón con el canto en lámina champán y lacre oliva. Al tocar el
+ * lacre, se parte, la solapa se abre, la tarjeta de lino sale y queda al
+ * centro, y sus nombres se convierten en los de la portada (View Transitions;
+ * sin la API, fundido). Un polvo champán muy fino y breve, nada de confeti.
  * Una vez por visita; nunca con movimiento reducido ni en modo fácil.
  */
 export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
@@ -43,15 +44,6 @@ export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
     fijarContenedor(dialogo.current);
     return () => { raiz.classList.remove('con-sobre'); fijarContenedor(null); };
   }, [vivo]);
-  // Polvo dorado que sube despacio mientras espera (nunca con la pestaña oculta).
-  useEffect(() => {
-    if (estado !== 'cerrado') return undefined;
-    const i = setInterval(() => {
-      if (document.hidden) return;
-      lanzar({ tipo: 'oro', cantidad: 2, x: Math.random() * innerWidth, y: innerHeight * (0.55 + Math.random() * 0.45), fuerza: 1.1 });
-    }, 480);
-    return () => clearInterval(i);
-  }, [estado]);
 
   if (!vivo) return null;
 
@@ -82,9 +74,8 @@ export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
     vibrar([12, 30, 24]);
     const r = sello.current?.getBoundingClientRect();
     const x = r ? r.left + r.width / 2 : innerWidth / 2; const y = r ? r.top + r.height / 2 : innerHeight / 2;
-    lanzar({ tipo: 'oro', cantidad: 50, x, y, fuerza: 6 });
-    despues(1500, () => lanzar({ tipo: 'oro', cantidad: 34, x: innerWidth / 2, y: y - 80, fuerza: 5 }));
-    despues(2500, () => { lanzar({ tipo: 'petalo', cantidad: 34, lluvia: true }); lanzar({ tipo: 'confeti', cantidad: 56, x: innerWidth / 2, y: innerHeight * 0.4, fuerza: 10 }); });
+    // Un soplo de polvo champán desde el lacre, y nada más.
+    lanzar({ tipo: 'oro', cantidad: 22, x, y, fuerza: 3.4 });
     setEstado('abriendo');
     despues(FIN, terminar);
   };
@@ -97,8 +88,7 @@ export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
   return (
     <dialog ref={dialogo} className={`sobre-escena ${estado}`} aria-label={t(`Invitación para ${para}`, `Invitation for ${para}`)}
       onCancel={(e) => { e.preventDefault(); if (estado === 'cerrado') abrir(); }}>
-      <div className="luces" aria-hidden>{Array.from({ length: 7 }, (_, i) => <span key={i} style={{ '--i': i, '--y': (i * 37) % 70 }} />)}</div>
-      <p className="sobre-arriba"><span>{t('Hay una invitación', 'There is an invitation')}</span> <span>{t('para ti', 'for you')}</span></p>
+      <p className="sobre-arriba"><span className="versalita">{t('Hay una invitación', 'There is an invitation')}</span> <span className="sobre-arriba-grande">{t('para ti', 'for you')}</span></p>
 
       <div className="sobre-flota">
         <div className="sobre-suelo" aria-hidden />
@@ -106,6 +96,7 @@ export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
           <div className="sobre-fondo" />
           <div className="sobre-tarjeta">
             <span className="tarjeta-mono" aria-hidden>{monograma.replace('&', '')[0]}<em>&amp;</em>{monograma.replace('&', '').slice(-1)}</span>
+            <span className="tarjeta-filete" aria-hidden />
             <span className="tarjeta-nombres" ref={nombres}>{boda.novios.ella} <em>&amp;</em> {boda.novios.el}</span>
             <span className="tarjeta-texto">{t('te invitan a celebrar su boda', 'invite you to their wedding')}</span>
             <span className="tarjeta-fecha">{fecha}</span>
@@ -115,11 +106,17 @@ export default function Sobre({ codigo, para, monograma, fecha, desactivado }) {
             <span className="sobre-para"><small>{t('Para', 'For')}</small>{para}</span>
           </div>
           <div className="solapa-sombra" aria-hidden><span /></div>
-          <div className="sobre-solapa" aria-hidden><span className="cara-afuera" /><span className="cara-adentro" /></div>
-          <div className="sobre-brillo" aria-hidden />
+          <div className="sobre-solapa" aria-hidden>
+            <span className="cara-afuera">
+              {/* El canto de la solapa en lámina champán, con un brillo que pasa. */}
+              <svg className="canto" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="1.2,0.8 50,97.5 98.8,0.8" /></svg>
+              <span className="brillo-lamina" />
+            </span>
+            <span className="cara-adentro" />
+          </div>
           <button ref={sello} type="button" className="sello" onClick={(e) => { e.stopPropagation(); e.currentTarget.blur(); abrir(); }} aria-label={t('Abrir la invitación', 'Open the invitation')}>
-            <span className="sello-mitad izq"><span>{monograma}</span></span>
-            <span className="sello-mitad der"><span>{monograma}</span></span>
+            <span className="sello-mitad izq"><span>{monograma.replace('&', '')[0]}<em>&amp;</em>{monograma.replace('&', '').slice(-1)}</span></span>
+            <span className="sello-mitad der"><span>{monograma.replace('&', '')[0]}<em>&amp;</em>{monograma.replace('&', '').slice(-1)}</span></span>
             <span className="sello-onda" aria-hidden />
           </button>
         </div>

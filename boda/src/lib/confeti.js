@@ -2,10 +2,11 @@
 // dorado. Un solo rAF mientras haya partículas vivas; después el lienzo se va.
 import { sinMovimiento } from './movimiento';
 
+// Champán mate, lino y oliva: la paleta del sitio, sin colores de fiesta.
 const COLORES = {
-  oro: ['#e9c77b', '#f6dfa4', '#d4a94f', '#fff3cf'],
-  petalo: ['#f3d6cf', '#ead1c4', '#fbeee6', '#e2b8ab', '#f7e4dc'],
-  confeti: ['#6b7f5e', '#c9a77c', '#e9c77b', '#f3d6cf', '#8c6a5d', '#fbf6ec'],
+  oro: ['#c9ad7e', '#dcc7a2', '#b39467', '#ede7db'],
+  petalo: ['#ede7db', '#e2d8c6', '#d6c9b2', '#f4efe6'],
+  confeti: ['#c9ad7e', '#ede7db', '#91976d', '#b39467', '#d6c9b2'],
 };
 let lienzo = null; let ctx = null; let parts = []; let cuadro = 0;
 let ancho = 0; let alto = 0;

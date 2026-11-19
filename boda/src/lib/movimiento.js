@@ -8,10 +8,10 @@ export const sinMovimiento = () =>
  * desplaza, con el progreso del elemento a través de la pantalla (0 → 1).
  * Un solo requestAnimationFrame por cuadro; sólo escribe transform/opacidad.
  */
-export function useProgresoScroll(ref, alMover, { inicio = 1, fin = 0 } = {}) {
+export function useProgresoScroll(ref, alMover, { inicio = 1, fin = 0, activo = true } = {}) {
   useEffect(() => {
     const el = ref.current;
-    if (!el) return undefined;
+    if (!el || !activo) return undefined;
     let cuadro = 0;
     const medir = () => {
       cuadro = 0;
@@ -27,5 +27,5 @@ export function useProgresoScroll(ref, alMover, { inicio = 1, fin = 0 } = {}) {
     window.addEventListener('scroll', pedir, { passive: true });
     window.addEventListener('resize', pedir);
     return () => { window.removeEventListener('scroll', pedir); window.removeEventListener('resize', pedir); cancelAnimationFrame(cuadro); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activo]); // eslint-disable-line react-hooks/exhaustive-deps
 }

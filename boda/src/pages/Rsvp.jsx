@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { boda, fechaBoda } from '../config';
 import { limiteConfirmar, plazoVencido, diasParaConfirmar, descargarIcs, enlaceGoogleCalendar } from '../lib/fechas';
@@ -6,6 +6,15 @@ import { t, locale } from '../lib/idioma';
 import { enlaceInvitacion } from '../lib/codigo';
 import QR from '../components/QR';
 import { useFacil } from '../lib/facil';
+import { vibrar } from '../lib/confeti';
+
+/** Un número que rueda al cambiar (sube si crece, baja si achica). */
+function NumeroRueda({ valor }) {
+  const antes = useRef(valor);
+  const baja = valor < antes.current;
+  antes.current = valor;
+  return <span className={`numero-rueda ${baja ? 'baja' : ''}`}><span key={valor}>{valor}</span></span>;
+}
 
 /*
  * Confirmación de una invitación.
@@ -37,6 +46,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
   const [cancion, setCancion] = useState(grupo.cancion || '');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
+  const [recien, setRecien] = useState(false); // acaba de confirmar: palomita animada
 
   const facil = useFacil();
   const visibles = filas.filter((f) => !f.quitar);
@@ -75,6 +85,8 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
       alResponder(r);
       setFilas(filasIniciales(r.personas));
       setEditando(false);
+      setRecien(true);
+      vibrar(8);
       document.getElementById('confirmar')?.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
       setError(err.message || t('No se pudo enviar. Intenta de nuevo.', 'Could not send. Please try again.'));
@@ -107,6 +119,12 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
     const dia = fechaBoda.toLocaleDateString(locale(), { day: 'numeric', month: 'long', timeZone: boda.zonaHoraria });
     return (
       <div className="rsvp-hecho">
+        {recien && (
+          <svg className="palomita" viewBox="0 0 64 64" aria-hidden>
+            <circle cx="32" cy="32" r="30" />
+            <path d="M19 33.5 28 42l17-19" />
+          </svg>
+        )}
         {cabeza}
         {van.length ? <>
           <p className="titular">{t(`¡Nos vemos el ${dia}!`, `See you on ${dia}!`)}</p>
@@ -144,7 +162,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
             <a className="btn claro" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">{t('Google Calendar', 'Google Calendar')}</a>
             <button type="button" className="btn claro" onClick={descargarIcs}>{t('Apple / Outlook', 'Apple / Outlook')}</button>
           </>}
-          {!cerrado && !vencido && <button type="button" className="btn" onClick={() => setEditando(true)}>{t('Cambiar mi respuesta', 'Change my answer')}</button>}
+          {!cerrado && !vencido && <button type="button" className="btn" onClick={() => { setRecien(false); setEditando(true); }}>{t('Cambiar mi respuesta', 'Change my answer')}</button>}
         </div>
         {!cerrado && vencido && <p className="chico" style={{ marginTop: 16, color: 'var(--oliva-claro)' }}>{t('El plazo para cambiar la respuesta terminó. Si necesitas algo, escríbenos.', 'The deadline to change your answer has passed. If you need anything, message us.')}</p>}
       </div>
@@ -169,7 +187,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
 
   // ── Formulario ───────────────────────────────────────────────
   const resumen = cuenta.van
-    ? t(`Asisten ${cuenta.van} de ${grupo.pases}`, `${cuenta.van} of ${grupo.pases} attending`)
+    ? t(<>Asisten <NumeroRueda valor={cuenta.van} /> de {grupo.pases}</>, <><NumeroRueda valor={cuenta.van} /> of {grupo.pases} attending</>)
     : cuenta.no && !cuenta.faltan.length ? t('Nadie podrá asistir', 'No one can attend') : t('Elige quién asistirá', "Choose who's coming");
   const detalleResumen = cuenta.faltan.length
     ? t(`Falta responder por ${cuenta.faltan.length === 1 ? (cuenta.faltan[0].nombre || 'tu acompañante') : `${cuenta.faltan.length} personas`}`,

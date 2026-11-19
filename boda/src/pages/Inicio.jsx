@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { faseActual, faseAlMenos } from '../lib/fase';
 import { fechaLarga, fechaCorta, descargarIcs, enlaceGoogleCalendar, limiteConfirmar } from '../lib/fechas';
@@ -12,14 +12,20 @@ import FraseRevelada from '../components/FraseRevelada';
 import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
-import CintaEntrada from '../components/CintaEntrada';
-import Sobre from '../components/Sobre';
-import Presentacion from '../components/Presentacion';
 import { BotonFacil } from '../components/Facil';
+import BotonMusica from '../components/BotonMusica';
+import { NavEscritorio } from '../components/AppMarco';
+import { imagenAdaptable } from '../lib/fotos';
+import { precargar } from '../lib/precarga';
 import Icono from '../components/Iconos';
 import { useInvitacion, usarCodigo } from '../lib/miInvitacion';
 import { AhoraCompacto } from '../components/EnVivo';
 import { useFacil } from '../lib/facil';
+
+// Lo que no hace falta para pintar la portada se baja aparte.
+const Sobre = lazy(() => import('../components/Sobre'));
+const Presentacion = lazy(() => import('../components/Presentacion'));
+const CintaEntrada = lazy(() => import('../components/CintaEntrada'));
 
 /** Una palabra que entra letra por letra (cada letra sube desde su renglón). */
 function Letras({ texto, desde = 0 }) {
@@ -45,9 +51,12 @@ export default function Inicio({ codigo }) {
   const { inv } = useInvitacion();
   const facil = useFacil();
   const [presentar, setPresentar] = useState(null); // fotos de la presentación abierta
-  const abrirPresentacion = () => api.listarFotos().then((f) => setPresentar(f)).catch(() => {});
+  const [errorFotos, setErrorFotos] = useState('');
+  const abrirPresentacion = () => api.listarFotos().then((f) => { setErrorFotos(''); setPresentar(f); })
+    .catch((e) => { console.error('Presentación', e); setErrorFotos(t('No pudimos traer las fotos. Prueba de nuevo.', "We couldn't load the photos. Please try again.")); });
   const [arriba, setArriba] = useState(true);
   const portada = useRef(null);
+  const centinela = useRef(null);
 
   // Paralaje para navegadores sin animaciones ligadas al scroll (Safari < 26):
   // un solo rAF por cuadro que escribe una variable CSS, sin estado de React,
@@ -67,15 +76,18 @@ export default function Inicio({ codigo }) {
     return () => { window.removeEventListener('scroll', pedir); cancelAnimationFrame(cuadro); };
   }, []);
 
-  // La barra de navegación es transparente mientras se ve la portada y lino
-  // al dejarla. Un IntersectionObserver: no corre nada en cada cuadro de scroll.
+  // La cabecera es transparente sólo mientras NADA pasa por debajo: un
+  // centinela invisible arriba de la portada; en cuanto el texto se acerca
+  // (16 px de scroll), la cabecera se vuelve sólida con desenfoque.
+  // Un IntersectionObserver: no corre nada en cada cuadro de scroll.
   useEffect(() => {
-    const el = portada.current;
+    const el = centinela.current;
     if (!el || !('IntersectionObserver' in window)) { setArriba(false); return undefined; }
-    const io = new IntersectionObserver(([e]) => setArriba(e.isIntersecting), { rootMargin: '-64px 0px -70% 0px' });
+    const io = new IntersectionObserver(([e]) => setArriba(e.isIntersecting), { rootMargin: '-64px 0px 0px 0px' });
     io.observe(el);
     return () => io.disconnect();
   }, []);
+  const foto = imagenAdaptable(boda.portada);
 
   const titulo = fase === 'save-the-date' ? 'Save the date'
     : fase === 'recuerdos' ? t('¡Gracias por acompañarnos!', 'Thank you for celebrating with us!')
@@ -85,21 +97,23 @@ export default function Inicio({ codigo }) {
     <>
       {/* Con enlace personal, el sobre con el nombre; sin él, el telón. */}
       {codigo
-        ? inv?.grupo && inv.grupo.codigo === codigo.toUpperCase() && <Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} musica={boda.musica} desactivado={facil} />
+        ? inv?.grupo && inv.grupo.codigo === codigo.toUpperCase() && <Suspense fallback={null}><Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} desactivado={facil} /></Suspense>
         : !facil && <Telon monograma={`${novios.ella[0]} & ${novios.el[0]}`} para="" />}
-      {presentar && <Presentacion fotos={presentar} alCerrar={() => setPresentar(null)} />}
+      {presentar && <Suspense fallback={null}><Presentacion fotos={presentar} alCerrar={() => setPresentar(null)} /></Suspense>}
       <nav className={`nav ${arriba ? 'sobre-foto' : ''}`}>
         <div className="contenedor">
-          <a href="#inicio" className="marca">{novios.ella[0]} & {novios.el[0]}</a>
-          <div className="nav-acciones"><BotonFacil /><BotonIdioma /></div>
+          <a href="#inicio" className="marca">{novios.ella[0]} &amp; {novios.el[0]}</a>
+          <NavEscritorio fase={fase} />
+          <div className="nav-acciones"><BotonMusica /><BotonFacil /><BotonIdioma /></div>
         </div>
       </nav>
 
-      {codigo && <CintaEntrada codigo={codigo} />}
+      {codigo && <Suspense fallback={null}><CintaEntrada codigo={codigo} /></Suspense>}
 
       {/* ── Portada ── */}
       <header id="inicio" className="portada" ref={portada}>
-        <div className="portada-foto"><img src={boda.portada} alt="" fetchpriority="high" /></div>
+        <span ref={centinela} className="centinela-nav" aria-hidden />
+        <div className="portada-foto"><img {...foto} alt="" fetchpriority="high" decoding="async" /></div>
         <div className="portada-texto">
           <div className="portada-arriba">
             <p className="versalita">{titulo}</p>
@@ -132,7 +146,10 @@ export default function Inicio({ codigo }) {
         </div>
       </div>
 
-      {fase !== 'recuerdos' && (
+      {errorFotos && <p className="aviso error contenedor" role="alert" style={{ marginTop: 16 }}>{errorFotos}</p>}
+
+      {/* En la fase boda ya no hay nada que contar: la cuenta regresiva se va. */}
+      {fase !== 'recuerdos' && fase !== 'boda' && (
         <section id="faltan" className="faltan">
           <div className="contenedor">
             <Revelar as="p" className="versalita suave">{t('Faltan', 'Countdown')}</Revelar>
@@ -227,7 +244,7 @@ function Accesos({ fase, inv, boda, abrirPresentacion }) {
         const clase = `acceso ${x.fuerte ? 'fuerte' : ''} ${x.hecho ? 'hecho' : ''}`;
         return x.boton
           ? <button key={k} type="button" className={clase} onClick={x.boton}>{cuerpo}</button>
-          : <Link key={k} to={x.a} className={clase}>{cuerpo}</Link>;
+          : <Link key={k} to={x.a} viewTransition className={clase} onPointerEnter={() => precargar(x.a)} onPointerDown={() => precargar(x.a)} onFocus={() => precargar(x.a)}>{cuerpo}</Link>;
       })}
     </section>
   );

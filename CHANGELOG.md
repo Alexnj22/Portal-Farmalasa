@@ -21,13 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-<<<<<<< HEAD
 ## v2.1579.5 — Vender muestra IVA y retención, y agrega compras pasadas con su cantidad
 
 - Vender: con crédito fiscal, o si el cliente retiene, el panel muestra sumas sin IVA, IVA 13 %, retención y el total que se espera. La caja confirma el monto al cobrar.
 - Vender: «Agregar» de una compra pasada repite su cantidad y su presentación (antes ponía 1), también en «Agregar toda la compra».
 - Novedades: no — kiosco piloto en Salud 4.
->>>>>>> 45d152a80 (feat(preventa): Vender muestra IVA y retención, y agrega compras pasadas con su cantidad (v2.1579.4))
 
 ## v2.1579.4 — El kiosco no nombra el bono si está apagado
 
@@ -39,7 +37,6 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
   minutos (`fraseDelRitmo`, `fraseDeVaBien` en `src/utils/comoVaHoy.js`), con
   prueba de que ninguna nombra el bono estando apagado.
 - Novedades: no — gate:novedades valoró 0 de 4.
-=======
 ## v2.1579.3 — El kiosco calcula el IVA del crédito fiscal como la caja
 
 - Crédito fiscal desde el kiosco: suma los subtotales de la preventa tal como vienen (a 2 decimales), igual que la caja al cargarla; ya no los recalcula a 4. Visto en el ensayo: la CCF 415913 de Salud 2 cobró IVA $0.46 y el kiosco calculaba $0.45.

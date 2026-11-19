@@ -1,0 +1,11 @@
+/* El sobre en WebGL: el lienzo ocupa la escena; los textos flotan encima. */
+.sobre-3d { display: block; padding: 0; }
+.sobre-marco { position: absolute; inset: 0; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.sobre-3d.abriendo .sobre-marco, .sobre-3d.saliendo .sobre-marco { cursor: default; }
+.sobre-lienzo { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 1.4s var(--salida); }
+.sobre-3d.listo .sobre-lienzo { opacity: 1; }
+.sobre-3d .sobre-arriba { position: absolute; left: 0; right: 0; top: calc(max(10svh, 56px) + env(safe-area-inset-top)); pointer-events: none; }
+.sobre-3d .sobre-ayuda { position: absolute; left: 0; right: 0; bottom: calc(max(14svh, 84px) + env(safe-area-inset-bottom)); justify-content: center; pointer-events: none; }
+.sobre-3d .sobre-saltar, .sobre-3d .sobre-musica { z-index: 1; }
+body:has(.cinta-demo) .sobre-3d .sobre-arriba { top: calc(max(10svh, 56px) + 34px); }
+.sobre-marco:focus { outline: none; }

@@ -10,7 +10,7 @@ import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { preguntasEnOrden, enlaceDeEncuesta } from '@nucleo/utils/encuestasClientes';
+import { preguntasEnOrden, enlaceDeEncuesta, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import { leer, guardar } from '../../plataforma/almacen';
@@ -30,11 +30,15 @@ import FormularioEncuesta from './FormularioEncuesta';
  * está y todo lo que haga ese rato queda en esa sala). Sin sala asignada hoy
  * no hay valor por defecto: antes arrancaba en la primera de la lista y una
  * distracción mandaba las respuestas a otra sucursal.
+ *
+ * Zonas de campo (2026-11-19): si la encuesta las tiene, quien encuesta elige
+ * la zona en la tarjeta de esa encuesta antes de entrevistar, y vale para las
+ * siguientes del día hasta que la cambie. La base rechaza guardar sin zona.
  */
 
 const CLAVE = 'encuestas.aplicar.donde';
 
-/** Lo elegido HOY en este aparato: `{ sala: id }` o `{ campo: true, lugar }`. */
+/** Lo elegido HOY en este aparato: `{ sala: id }` o `{ campo: true, lugar, zonas: { [encuestaId]: zonaId } }`. */
 function leerDonde() {
     try {
         const d = JSON.parse(leer(CLAVE) || 'null');
@@ -96,12 +100,22 @@ export default function AplicarEncuestaView() {
     const nombreSala = efectivo?.sala ? salas.find((s) => s.id === efectivo.sala)?.nombre : null;
 
     const elegir = (v) => {
-        const d = v === OPCION_CAMPO ? { campo: true, lugar: donde?.lugar || '' } : { sala: Number(v) };
+        const d = v === OPCION_CAMPO ? { campo: true, lugar: donde?.lugar || '', zonas: donde?.zonas || {} } : { sala: Number(v) };
         setDonde(d);
         guardarDonde(d);
     };
     const escribirLugar = (lugar) => {
-        const d = { campo: true, lugar };
+        const d = { campo: true, lugar, zonas: donde?.zonas || {} };
+        setDonde(d);
+        guardarDonde(d);
+    };
+    // La zona elegida para cada encuesta (sólo si sigue existiendo en ella).
+    const zonaDe = (e) => {
+        const id = donde?.zonas?.[e.id];
+        return zonasDe(e).some((z) => z.id === id) ? id : null;
+    };
+    const elegirZona = (encuestaId, zonaId) => {
+        const d = { campo: true, lugar: donde?.lugar || '', zonas: { ...(donde?.zonas || {}), [encuestaId]: zonaId } };
         setDonde(d);
         guardarDonde(d);
     };
@@ -133,6 +147,7 @@ export default function AplicarEncuestaView() {
 
     if (entrevistando) {
         const encuesta = entrevistando;
+        const zona = enCampo ? zonaDe(encuesta) : null;
         return (
             <GlassViewLayout icon={Mic} title="Aplicar encuesta" transparentBody>
                 <div className="p-4 md:p-6 flex justify-center">
@@ -143,7 +158,7 @@ export default function AplicarEncuestaView() {
                                 <p className="text-body-lg font-semibold text-content">{encuesta.nombre}</p>
                                 <p className="text-micro text-content-3 flex items-center gap-1">
                                     {enCampo
-                                        ? <><MapPin size={12} />Campo{lugar ? ` · ${lugar}` : ''}</>
+                                        ? <><MapPin size={12} />{zona ? nombreDeZona(zonasDe(encuesta), zona) : 'Campo'}{lugar ? ` · ${lugar}` : ''}</>
                                         : <><Store size={12} />{nombreSala}</>}
                                 </p>
                             </div>
@@ -161,7 +176,7 @@ export default function AplicarEncuestaView() {
                                         const p = (await leerPosicion({ espera: 6000 })) || (gpsListo ? gps : null);
                                         if (p) setGps(p);
                                         r = await guardarEntrevistaCampo(encuesta.id,
-                                            { lugar: lugar || null, ...(p ? { lat: p.lat, lng: p.lng, precision: p.precision } : {}) },
+                                            { lugar: lugar || null, zona, ...(p ? { lat: p.lat, lng: p.lng, precision: p.precision } : {}) },
                                             { respuestas, contacto, segundos, referencia });
                                     } else {
                                         r = await guardarEntrevista(encuesta.id, efectivo.sala, { respuestas, contacto, segundos, referencia });
@@ -229,7 +244,9 @@ export default function AplicarEncuestaView() {
                         {visibles.map((e) => {
                             const s = enCampo ? null : e.sucursales.find((x) => x.branch_id === efectivo.sala);
                             const n = preguntasEnOrden(e.cuestionario).length;
-                            const puedeEntrevistar = enCampo ? campoListo : e.canales.includes('entrevista');
+                            const zonas = enCampo ? zonasDe(e) : [];
+                            const zona = enCampo ? zonaDe(e) : null;
+                            const puedeEntrevistar = enCampo ? campoListo && (!zonas.length || !!zona) : e.canales.includes('entrevista');
                             return (
                                 <section key={e.id} data-surface="card" className="p-4 space-y-3 flex flex-col">
                                     <div>
@@ -246,6 +263,12 @@ export default function AplicarEncuestaView() {
                                         <p className="text-micro text-content-3">
                                             {s.respuestas} respuesta{s.respuestas === 1 ? '' : 's'} en esta sucursal{s.meta ? ` de ${s.meta}` : ''}
                                         </p>
+                                    )}
+                                    {zonas.length > 0 && (
+                                        <LiquidSelect value={zona || ''} placeholder="¿En qué zona estás?" clearable={false}
+                                            ariaLabel={`Zona para ${e.nombre}`} icon={MapPin}
+                                            options={zonas.map((z) => ({ value: z.id, label: `${z.nombre} · ${avanceDeZona(z)}` }))}
+                                            onChange={(v) => v && elegirZona(e.id, v)} />
                                     )}
                                     <div className="flex flex-wrap gap-2 mt-auto pt-1">
                                         {(enCampo || e.canales.includes('entrevista')) && (

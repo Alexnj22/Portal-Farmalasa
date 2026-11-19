@@ -11,6 +11,10 @@
 // (`guardarEntrevistaCampo`, núcleo). El cuestionario es
 // `componentes/encuestas/Formulario` (una pregunta por pantalla). «Modo
 // tablet» abre la encuesta pública de la sala a pantalla completa.
+//
+// Zonas de campo (2026-11-19): si la encuesta las tiene, se elige la zona en
+// su tarjeta antes de entrevistar y vale para las siguientes del día. La base
+// rechaza guardar sin zona.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
@@ -19,7 +23,7 @@ import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
-import { enlaceDeEncuesta, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
+import { enlaceDeEncuesta, preguntasEnOrden, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -96,10 +100,19 @@ export default function EncuestasAplicar() {
   const nombreSala = efectivo?.sala ? salas.find((s) => s.id === efectivo.sala)?.nombre : null;
 
   const elegir = (v) => {
-    const d = v === CAMPO ? { campo: true, lugar: donde?.lugar || '' } : { sala: Number(v) };
+    const d = v === CAMPO ? { campo: true, lugar: donde?.lugar || '', zonas: donde?.zonas || {} } : { sala: Number(v) };
     setDonde(d); guardarDonde(d); setEligiendo(false);
   };
-  const escribirLugar = (lugar) => { const d = { campo: true, lugar }; setDonde(d); guardarDonde(d); };
+  const escribirLugar = (lugar) => { const d = { campo: true, lugar, zonas: donde?.zonas || {} }; setDonde(d); guardarDonde(d); };
+  // La zona elegida para cada encuesta (sólo si sigue existiendo en ella).
+  const zonaDe = (e) => {
+    const id = donde?.zonas?.[e.id];
+    return zonasDe(e).some((z) => z.id === id) ? id : null;
+  };
+  const elegirZona = (encuestaId, zonaId) => {
+    const d = { campo: true, lugar: donde?.lugar || '', zonas: { ...(donde?.zonas || {}), [encuestaId]: zonaId } };
+    setDonde(d); guardarDonde(d);
+  };
 
   // En campo el permiso de ubicación se pide al elegirlo, no en medio de la primera entrevista.
   const buscarUbicacion = useCallback(async () => {
@@ -125,6 +138,7 @@ export default function EncuestasAplicar() {
 
   if (entrevista) {
     const encuesta = entrevista;
+    const zona = enCampo ? zonaDe(encuesta) : null;
     return (
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: encuesta.nombre, headerLargeTitle: false }} />
@@ -132,7 +146,7 @@ export default function EncuestasAplicar() {
           keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <View style={{ marginHorizontal: 20, gap: 6 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {enCampo ? `Entrevista en campo${lugar ? ` · ${lugar}` : ''}` : `Entrevista en ${nombreSala ?? 'la sucursal'}`}
+              {enCampo ? `Entrevista en ${zona ? nombreDeZona(zonasDe(encuesta), zona) : 'campo'}${lugar ? ` · ${lugar}` : ''}` : `Entrevista en ${nombreSala ?? 'la sucursal'}`}
             </Text>
             <Aviso texto="Lee cada pregunta tal como está escrita y marca lo que responde el cliente, sin sugerirle la respuesta." />
           </View>
@@ -146,7 +160,7 @@ export default function EncuestasAplicar() {
                 if (p) setGps(p);
                 const pos = p || (gpsListo ? gps : null);
                 r = await guardarEntrevistaCampo(encuesta.id,
-                  { lugar: lugar || null, ...(pos ? { lat: pos.lat, lng: pos.lng, precision: pos.precision } : {}) },
+                  { lugar: lugar || null, zona, ...(pos ? { lat: pos.lat, lng: pos.lng, precision: pos.precision } : {}) },
                   { respuestas, contacto, segundos, referencia });
               } else {
                 r = await guardarEntrevista(encuesta.id, efectivo.sala, { respuestas, contacto, segundos, referencia });
@@ -220,6 +234,9 @@ export default function EncuestasAplicar() {
         {efectivo && !eligiendo ? visibles.map((e) => {
           const s = enCampo ? null : e.sucursales.find((x) => x.branch_id === efectivo.sala);
           const llevas = enCampo ? null : s?.respuestas ?? 0;
+          const zonas = enCampo ? zonasDe(e) : [];
+          const zona = enCampo ? zonaDe(e) : null;
+          const puedeEmpezar = enCampo && campoListo && (!zonas.length || !!zona);
           return (
             <Tarjeta key={e.id}>
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{e.nombre}</Text>
@@ -235,10 +252,18 @@ export default function EncuestasAplicar() {
                   {`${llevas}${s.meta ? ` de ${s.meta}` : ''} respuesta${(s.meta || llevas) === 1 ? '' : 's'} en ${s.nombre}`}
                 </Text>
               ) : null}
+              {zonas.length ? (
+                <View style={{ gap: 2 }}>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>¿En qué zona estás?</Text>
+                  <Opciones valor={zona} onCambiar={(v) => elegirZona(e.id, v)}
+                    opciones={zonas.map((z) => ({ id: z.id, label: z.nombre, detalle: `${avanceDeZona(z)} respuestas` }))} />
+                </View>
+              ) : null}
               {(enCampo ? e.canales.includes('campo') : e.canales.includes('entrevista')) ? (
-                <BotonGrande texto="Entrevistar" color={MARCA.azul} deshabilitado={enCampo && !campoListo} onPress={() => setEntrevista(e)} />
+                <BotonGrande texto="Entrevistar" color={MARCA.azul} deshabilitado={enCampo && !puedeEmpezar} onPress={() => setEntrevista(e)} />
               ) : null}
               {enCampo && !campoListo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Escribe el lugar o activa la ubicación para empezar.</Text> : null}
+              {enCampo && campoListo && zonas.length && !zona ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Elige la zona para empezar.</Text> : null}
               {!enCampo && e.canales.includes('kiosco') && s ? (
                 <BotonGrande texto="Modo tablet: que el cliente conteste solo" borde color={MARCA.azulClaro}
                   onPress={() => WebBrowser.openBrowserAsync(enlaceDeEncuesta(s.token_tablet || s.token, true, PORTAL_URL), { presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN })

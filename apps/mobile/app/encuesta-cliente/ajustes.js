@@ -18,6 +18,7 @@ import { fetchEncuesta, fetchPoblacion, fetchSalas, filaDeSucursales, guardarDis
 import {
   CANALES, INCENTIVOS, canalesCon, conMetaDeSucursal, conMetasSugeridas, metaTotal, muestraSugerida, numeroDeMetaEscrito,
   sucursalesCon, sugeridaDeLaEncuesta,
+  zonasDe, metaDeZonas, conZonaNueva, conZonaCambiada, sinZona,
 } from '@nucleo/utils/encuestasClientes';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -112,7 +113,10 @@ export default function AjustesEncuesta() {
   const porSala = encuesta.alcance === 'sucursales';
   const meta = metaTotal(encuesta, sucursales);
   const sugerida = sugeridaDeLaEncuesta(encuesta, sucursales, poblacion);
-  const conEntrevista = (encuesta.canales || []).includes('entrevista');
+  const conEntrevista = (encuesta.canales || []).includes('entrevista') || (encuesta.canales || []).includes('campo');
+  const enCampo = (encuesta.canales || []).includes('campo');
+  const zonas = zonasDe(encuesta);
+  const metaZonas = metaDeZonas(zonas);
 
   return (
     <>
@@ -164,11 +168,42 @@ export default function AjustesEncuesta() {
                     ) : null}
                   </View>
                 ) : null}
-                {!porSala ? (
+                {!porSala && metaZonas ? (
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Meta: ${formatQty(metaZonas)} respuestas, la suma de las zonas de campo.`}</Text>
+                ) : null}
+                {!porSala && !metaZonas ? (
                   <Campo multiline={false} editable={editable} keyboardType="number-pad" placeholder="Meta de respuestas (sin meta)" value={encuesta.meta_total == null ? '' : String(encuesta.meta_total)}
                     onChangeText={(v) => set('meta_total')(numeroDeMetaEscrito(v))} />
                 ) : null}
               </Seccion>
+              {enCampo || zonas.length ? (
+                <Seccion titulo="Zonas de campo" pie="Quien encuesta elige la zona en cada entrevista. Con meta, la encuesta termina cuando todas llegan a la suya. Sin zonas, sólo se pide el lugar.">
+                  {!enCampo ? <Aviso tono="cuidado" texto="Las zonas sólo se usan en campo. Marca «Campo» o quítalas." /> : null}
+                  {zonas.map((z, i) => (
+                    <View key={z.id} style={{ gap: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 8 : 0 }}>
+                      <Campo multiline={false} editable={editable} maxLength={60} placeholder="Zona: p. ej. Chalatenango Norte" value={z.nombre}
+                        onChangeText={(v) => set('zonas_campo')(conZonaCambiada(zonas, z.id, { nombre: v }))} />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                          <Campo multiline={false} editable={editable} keyboardType="number-pad" placeholder="Meta de esta zona" value={z.meta == null ? '' : String(z.meta)}
+                            onChangeText={(v) => set('zonas_campo')(conZonaCambiada(zonas, z.id, { meta: v }))} />
+                        </View>
+                        {editable ? (
+                          <Tocable onPress={() => set('zonas_campo')(sinZona(zonas, z.id))} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Quitar la zona ${z.nombre || i + 1}`}
+                            style={{ minHeight: 44, justifyContent: 'center' }}>
+                            <Text style={{ color: MARCA.rojo, fontSize: 15 }}>Quitar</Text>
+                          </Tocable>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))}
+                  {editable && enCampo && zonas.length < 30 ? (
+                    <Tocable onPress={() => { Haptics.selectionAsync().catch(() => {}); set('zonas_campo')(conZonaNueva(zonas)); }} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Agregar zona</Text>
+                    </Tocable>
+                  ) : null}
+                </Seccion>
+              ) : null}
               <Seccion titulo="Cuándo" pie={`Se cierra con lo primero que pase: la fecha${meta ? ` o las ${meta} respuestas` : ''}. Sin fecha de inicio, empieza el día que se publica.`}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Desde</Text>
@@ -188,7 +223,7 @@ export default function AjustesEncuesta() {
                 {encuesta.incentivo_tipo !== 'ninguno' ? (
                   <Aviso texto={`Sólo lo recibe quien deja su teléfono y acepta el consentimiento, una vez al mes por encuesta.${encuesta.incentivo_tipo === 'puntos' ? ' Los puntos se acreditan solos en su cuenta.' : ''}${encuesta.incentivo_tipo === 'muestra' ? ' La entrega quien entrevista, y la marca como entregada.' : ''}`} />
                 ) : null}
-                {encuesta.incentivo_tipo === 'muestra' && !conEntrevista ? <Aviso tono="cuidado" texto="La muestra médica sólo se entrega en entrevista. Marca ese canal." /> : null}
+                {encuesta.incentivo_tipo === 'muestra' && !conEntrevista ? <Aviso tono="cuidado" texto="La muestra médica sólo se entrega en persona. Marca «Entrevista» o «Campo»." /> : null}
                 {encuesta.incentivo_tipo === 'puntos' ? (
                   <Campo multiline={false} editable={editable} keyboardType="number-pad" placeholder="Puntos por responder" value={encuesta.incentivo_puntos == null ? '' : String(encuesta.incentivo_puntos)}
                     onChangeText={(v) => set('incentivo_puntos')(numeroDeMetaEscrito(v))} />

@@ -16750,6 +16750,7 @@ export type Database = {
           respuestas: Json
           telefono: string | null
           telefono_hash: string | null
+          zona: string | null
         }
         Insert: {
           branch_id?: number | null
@@ -16773,6 +16774,7 @@ export type Database = {
           respuestas: Json
           telefono?: string | null
           telefono_hash?: string | null
+          zona?: string | null
         }
         Update: {
           branch_id?: number | null
@@ -16796,6 +16798,7 @@ export type Database = {
           respuestas?: Json
           telefono?: string | null
           telefono_hash?: string | null
+          zona?: string | null
         }
         Relationships: [
           {
@@ -16969,6 +16972,7 @@ export type Database = {
           texto_consentimiento: string
           updated_at: string
           version: number
+          zonas_campo: Json
         }
         Insert: {
           alcance?: string
@@ -17002,6 +17006,7 @@ export type Database = {
           texto_consentimiento?: string
           updated_at?: string
           version?: number
+          zonas_campo?: Json
         }
         Update: {
           alcance?: string
@@ -17035,6 +17040,7 @@ export type Database = {
           texto_consentimiento?: string
           updated_at?: string
           version?: number
+          zonas_campo?: Json
         }
         Relationships: [
           {

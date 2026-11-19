@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1582.0 — Encuestas de campo: zonas con su meta
+
+Pedido del usuario (2026-11-19): la investigación de mercado se aplica en Chalatenango Norte, Centro y Sur, 100 en cada uno. Quien encuesta elige la zona de una lista (el usuario descartó deducirla del GPS).
+
+- Base (`20261119212428_encuestas_cliente_zonas_de_campo`): `encuestas_cliente.zonas_campo` ([{id, nombre, meta}]) y `encuesta_cliente_respuestas.zona`. `encuesta_cliente_registrar` exige una zona válida cuando la encuesta las tiene; con zonas con meta, la encuesta se cierra cuando todas llegan a la suya (en meta general reemplazan al total). Avance, para aplicar, ubicaciones, exportar, duplicar y los problemas antes de enviar conocen las zonas. Probado en el entorno de pruebas: sin zona y zona inventada se rechazan, una zona pasada no cierra, la última zona en llegar cierra, y una encuesta sin zonas sigue igual.
+- Web y app: Ajustes define las zonas y su meta; Aplicar pide la zona en la tarjeta de la encuesta (vale para las siguientes del día); Avance muestra cada zona con su barra; el mapa dice la zona de cada punto; el CSV lleva la columna Zona.
+- Novedades: no — decisión del usuario (2026-11-19): lo usan pocas personas y se les explica en persona.
+
 ## v2.1581.1 — Reglas de la salida de caja y del ingreso al inventario en un solo lugar; Cambiar lote al despachar
 
 - Núcleo: las reglas de la salida de caja (boleta repetida, frenos de la foto, lo que la foto corrige y avisa) viven en `src/utils/salidaDeCaja.js` y las usan `SalidaDeBolsa` (web) y Sacar dinero (app); la lectura del ingreso al inventario vive en `leerIngresoAlInventario` (`recepcionDePedido.js`) y la usan Recepción (web) y Recibir pedido (app). La web no cambia de comportamiento.

@@ -21,7 +21,7 @@ const sinError = ({ data, error }) => {
 const CAMPOS_DISENO = [
     'nombre', 'objetivo', 'cuestionario', 'canales', 'alcance', 'meta_total', 'fecha_inicio', 'fecha_fin',
     'incentivo_tipo', 'incentivo_puntos', 'incentivo_descripcion', 'texto_consentimiento',
-    'mensaje_bienvenida', 'mensaje_cierre',
+    'mensaje_bienvenida', 'mensaje_cierre', 'zonas_campo',
 ];
 
 // ── Catálogos ──────────────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ export async function fetchPoblacion() {
 
 const LISTA_SELECT = 'id, nombre, objetivo, es_plantilla, estado, version, origen_id, canales, alcance, meta_total, '
     + 'fecha_inicio, fecha_fin, incentivo_tipo, incentivo_puntos, created_by, created_at, updated_at, '
-    + 'enviada_at, aprobada_at, publicada_at, cerrada_at, cuestionario, sucursales:encuesta_cliente_sucursales(branch_id, meta)';
+    + 'enviada_at, aprobada_at, publicada_at, cerrada_at, cuestionario, zonas_campo, sucursales:encuesta_cliente_sucursales(branch_id, meta)';
 
 export async function fetchEncuestas() {
     return sinError(await supabase.from('encuestas_cliente').select(LISTA_SELECT)
@@ -296,8 +296,8 @@ export async function guardarEntrevista(encuestaId, branchId, { respuestas, cont
 
 /**
  * Guardar una entrevista de CAMPO: sin sucursal, con dónde se hizo.
- * `ubicacion` = { lugar?, lat?, lng?, precision? } — la base exige el lugar o
- * las coordenadas.
+ * `ubicacion` = { lugar?, lat?, lng?, precision?, zona? } — la base exige el
+ * lugar o las coordenadas, y la zona si la encuesta tiene zonas.
  */
 export async function guardarEntrevistaCampo(encuestaId, ubicacion, { respuestas, contacto, segundos, referencia }) {
     const { data, error } = await supabase.rpc('encuesta_cliente_entrevistar_campo', {
@@ -306,7 +306,7 @@ export async function guardarEntrevistaCampo(encuestaId, ubicacion, { respuestas
     });
     if (error) throw mensajeDe(error);
     const r = /** @type {{ id?: string, repetida?: boolean } | null} */ (data);
-    if (!r?.repetida) anotar('ENCUESTA_CLIENTE_ENTREVISTA', r?.id, { encuesta: encuestaId, campo: ubicacion?.lugar || true });
+    if (!r?.repetida) anotar('ENCUESTA_CLIENTE_ENTREVISTA', r?.id, { encuesta: encuestaId, campo: ubicacion?.lugar || true, zona: ubicacion?.zona || null });
     return data;
 }
 

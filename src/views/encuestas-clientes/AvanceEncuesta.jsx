@@ -11,7 +11,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
-import { canalDe, enlaceDeEncuesta, metaTotal } from '@nucleo/utils/encuestasClientes';
+import { canalDe, enlaceDeEncuesta, metaTotal, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { fetchAvance } from '@nucleo/data/encuestasClientes';
 import IncentivosEncuesta from './IncentivosEncuesta';
 import { abrirAfiche, imprimirAfiche } from './aficheQr';
@@ -142,6 +142,30 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
                     )}
                 </ul>
             </section>
+
+            {avance.por_zona?.length > 0 && (
+                <section data-surface="card" className="p-4 space-y-3">
+                    <TituloDeSeccion nivel="seccion">Por zona de campo</TituloDeSeccion>
+                    <ul className="space-y-3">
+                        {avance.por_zona.map((z) => {
+                            const pct = z.meta ? Math.min(100, (z.respuestas / z.meta) * 100) : null;
+                            return (
+                                <li key={z.id} className="space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-body-sm font-semibold text-content flex-1 min-w-0">{z.nombre}</span>
+                                        <span className="text-body-sm text-content-2">{avanceDeZona(z)}</span>
+                                    </div>
+                                    {pct != null && (
+                                        <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden" data-medida="dato">
+                                            <div className={`h-full ${pct >= 100 ? 'bg-success' : 'bg-brand'}`} style={{ width: `${pct}%` }} />
+                                        </div>
+                                    )}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
+            )}
 
             <section data-surface="card" className="p-4 space-y-2">
                 <TituloDeSeccion nivel="seccion">Por canal</TituloDeSeccion>

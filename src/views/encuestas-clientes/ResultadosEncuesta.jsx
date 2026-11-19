@@ -293,7 +293,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                     </div>
 
                     {(!sala || Number(sala) === CAMPO) && (datos.por_canal?.campo || 0) > 0 && (
-                        <UbicacionesDeCampo encuestaId={encuesta.id} />
+                        <UbicacionesDeCampo encuestaId={encuesta.id} zonas={encuesta.zonas_campo} />
                     )}
 
                     <section data-surface="card" className="p-4 space-y-5">

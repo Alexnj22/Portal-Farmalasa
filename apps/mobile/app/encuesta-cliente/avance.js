@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { asignarIncentivo, fetchAvance, fetchEncuesta, fetchIncentivos, fetchPersonas } from '@nucleo/data/encuestasClientes';
 import { buscarClientes } from '@nucleo/data/customers';
-import { canalDe, enlaceDeEncuesta, metaTotal } from '@nucleo/utils/encuestasClientes';
+import { canalDe, enlaceDeEncuesta, metaTotal, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { armarAfiche, nombreDelAfiche } from '@nucleo/utils/aficheQr';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
@@ -182,6 +182,28 @@ export default function AvanceEncuesta() {
                 })}
               </Seccion>
             </View>
+            {avance.por_zona?.length ? (
+              <View style={{ marginHorizontal: 16 }}>
+                <Seccion titulo="Por zona de campo">
+                  {avance.por_zona.map((z, i) => {
+                    const pct = z.meta ? Math.min(100, (z.respuestas / z.meta) * 100) : null;
+                    return (
+                      <View key={z.id} style={{ gap: 6, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{z.nombre}</Text>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{avanceDeZona(z)}</Text>
+                        </View>
+                        {pct != null ? (
+                          <View style={{ height: 8, borderRadius: 4, backgroundColor: colorSistema.separador, overflow: 'hidden' }}>
+                            <View style={{ width: `${pct}%`, height: 8, backgroundColor: pct >= 100 ? MARCA.verde : MARCA.azulClaro }} />
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </Seccion>
+              </View>
+            ) : null}
             <View style={{ marginHorizontal: 16 }}>
               <Seccion titulo="Por canal">
                 {encuesta.canales.map((c) => (

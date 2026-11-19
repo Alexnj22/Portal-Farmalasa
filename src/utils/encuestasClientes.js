@@ -490,14 +490,20 @@ export function muestraSugerida(N, margen = 0.05, z = 1.96) {
     return Math.ceil(n0 / (1 + (n0 - 1) / N));
 }
 
-/** Meta total de una encuesta: la general o la suma de las cuotas. */
+/**
+ * Meta total de una encuesta: la general o la suma de las cuotas. Con zonas de
+ * campo que tienen meta, éstas reemplazan a la general (la encuesta termina
+ * cuando todas llegan a la suya) y se suman a las de sucursal.
+ */
 export function metaTotal(encuesta, sucursales = []) {
+    const zonas = metaDeZonas(zonasDe(encuesta));
     if (encuesta?.alcance === 'sucursales') {
-        const suma = sucursales.reduce((a, s) => a + (Number(s.meta) || 0), 0);
+        const suma = sucursales.reduce((a, s) => a + (Number(s.meta) || 0), 0) + (zonas || 0);
         return suma || null;
     }
-    return encuesta?.meta_total || null;
+    return zonas || encuesta?.meta_total || null;
 }
+
 
 /** Resumen corto de cuándo termina: «Hasta el 15 nov · 384 respuestas». */
 export function resumenDeCierre(encuesta, sucursales, fechaTexto) {
@@ -571,10 +577,10 @@ export function categoriasDe(pregunta) {
 /** El CSV de respuestas: una columna por pregunta, con el valor en palabras. */
 export function tablaDeRespuestas(cuestionario, filas, { fechaHora }) {
     const preguntas = preguntasEnOrden(cuestionario);
-    const headers = ['Fecha', 'Sucursal', 'Canal', 'Lugar', 'Latitud', 'Longitud', 'Entrevistó', 'NPS',
+    const headers = ['Fecha', 'Sucursal', 'Canal', 'Zona', 'Lugar', 'Latitud', 'Longitud', 'Entrevistó', 'NPS',
         ...preguntas.map((p) => `${p.numero}. ${p.texto}`), 'Nombre', 'Teléfono', 'Duración (s)'];
     const rows = filas.map((f) => [
-        fechaHora(f.fecha), f.sucursal, canalDe(f.canal).label,
+        fechaHora(f.fecha), f.sucursal, canalDe(f.canal).label, textoSeguroParaHoja(f.zona || ''),
         // El lugar lo escribe el encuestador: también va neutralizado.
         textoSeguroParaHoja(f.lugar || ''), f.lat ?? '', f.lng ?? '',
         f.entrevistador || '', f.nps ?? '',
@@ -730,3 +736,39 @@ export const encuestaBorrable = (e, puedeEditar) => !!puedeEditar && e?.estado =
  */
 export const ORIGEN_DEL_PORTAL = 'https://portal.farmasalud.lat';
 export const enlaceDeEncuesta = (token, tablet = false, origen = ORIGEN_DEL_PORTAL) => `${origen}/e/${token}${tablet ? '?modo=tablet' : ''}`;
+
+// ── Zonas de campo (2026-11-19) ─────────────────────────────────────────────
+// Una encuesta de campo puede repartirse en zonas con su meta («Chalatenango
+// Norte · 100»). Quien encuesta ELIGE la zona de una lista: el usuario
+// descartó deducirla del GPS. Viven en `encuestas_cliente.zonas_campo` como
+// [{ id, nombre, meta }]; la respuesta guarda el `id`.
+
+/** Las zonas de una encuesta (siempre un arreglo). */
+export function zonasDe(encuesta) {
+    return Array.isArray(encuesta?.zonas_campo) ? encuesta.zonas_campo : [];
+}
+
+/** La suma de las metas de las zonas; `null` si ninguna tiene meta. */
+export function metaDeZonas(zonas) {
+    const conMeta = (zonas || []).filter((z) => Number(z?.meta) > 0);
+    return conMeta.length ? conMeta.reduce((a, z) => a + Number(z.meta), 0) : null;
+}
+
+/** Agregar una zona vacía al final. */
+export const conZonaNueva = (zonas) => [...(zonas || []), { id: idNuevo((zonas || []).map((z) => z.id), 'z'), nombre: '', meta: null }];
+
+/** Cambiar el nombre o la meta (escrita a mano) de una zona. */
+export const conZonaCambiada = (zonas, id, cambios) => (zonas || []).map((z) => (z.id !== id ? z : {
+    ...z,
+    ...('nombre' in cambios ? { nombre: String(cambios.nombre ?? '').slice(0, 60) } : {}),
+    ...('meta' in cambios ? { meta: numeroDeMetaEscrito(cambios.meta) } : {}),
+}));
+
+/** Quitar una zona. */
+export const sinZona = (zonas, id) => (zonas || []).filter((z) => z.id !== id);
+
+/** El nombre de una zona por su id («Sin zona» si no está). */
+export const nombreDeZona = (zonas, id) => (zonas || []).find((z) => z.id === id)?.nombre || (id ? 'Zona quitada' : 'Sin zona');
+
+/** «12 de 100» / «12» para la lista del selector y el avance. */
+export const avanceDeZona = (z) => (Number(z?.meta) > 0 ? `${z.respuestas ?? 0} de ${z.meta}` : `${z?.respuestas ?? 0}`);

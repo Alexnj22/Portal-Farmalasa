@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Store, Target, CalendarRange, Gift, MessageSquare, Lightbulb } from 'lucide-react';
+import { Store, Target, CalendarRange, Gift, MessageSquare, Lightbulb, MapPin, Plus, X } from 'lucide-react';
 import Checkbox from '../../components/common/Checkbox';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -10,7 +10,7 @@ import Button from '../../components/common/Button';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import {
     CANALES, INCENTIVOS, muestraSugerida, metaTotal, numeroDeMetaEscrito, canalesCon, sucursalesCon, conMetaDeSucursal,
-    conMetasSugeridas, sugeridaDeLaEncuesta,
+    conMetasSugeridas, sugeridaDeLaEncuesta, zonasDe, metaDeZonas, conZonaNueva, conZonaCambiada, sinZona,
 } from '@nucleo/utils/encuestasClientes';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
@@ -37,6 +37,10 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
     const alternarSala = (id, on) => onSucursales(sucursalesCon(sucursales, id, on));
     const metaDeSala = (id, v) => onSucursales(conMetaDeSucursal(sucursales, id, v));
     const usarSugeridas = () => onSucursales(conMetasSugeridas(sucursales, poblacion));
+    const enCampo = encuesta.canales.includes('campo');
+    const zonas = zonasDe(encuesta);
+    const metaZonas = metaDeZonas(zonas);
+    const setZonas = (z) => onChange({ zonas_campo: z });
 
     return (
         <div className="space-y-5">
@@ -68,7 +72,8 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                             {porSala
                                 ? 'Cada sucursal tiene su cuota: la encuesta termina cuando todas la cumplen.'
                                 : 'Se reparte en las sucursales elegidas y cuenta el total.'}
-                            {encuesta.canales.includes('campo') && ' Las respuestas de campo cuentan para la meta general, no para las cuotas.'}
+                            {enCampo && !metaZonas && ' Las respuestas de campo cuentan para la meta general, no para las cuotas.'}
+                            {enCampo && metaZonas && ' Las de campo cuentan en la meta de su zona.'}
                         </p>
                         <div className="divide-y divide-border-card rounded-xl border border-border-card">
                             {salas.map((s) => {
@@ -108,7 +113,12 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                                 ) : null}
                             </div>
                         )}
-                        {!porSala && (
+                        {!porSala && metaZonas && (
+                            <p className="text-body-sm text-content-2">
+                                Meta: <strong>{formatQty(metaZonas)} respuestas</strong>, la suma de las zonas de campo.
+                            </p>
+                        )}
+                        {!porSala && !metaZonas && (
                             <div className="max-w-xs">
                                 <PortalInput label="Meta de respuestas" name="meta_total" inputMode="numeric" maskType="INTEGER"
                                     value={encuesta.meta_total ?? ''} readOnly={soloLectura} placeholder="Sin meta"
@@ -116,6 +126,43 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                             </div>
                         )}
                     </Bloque>
+
+                    {(enCampo || zonas.length > 0) && (
+                        <Bloque titulo="Zonas de campo" icono={MapPin}>
+                            <p className="text-micro text-content-3">
+                                Quien encuesta elige la zona en cada entrevista. Con meta, la encuesta termina cuando todas llegan a la suya.
+                                Sin zonas, sólo se pide el lugar.
+                            </p>
+                            {!enCampo && (
+                                <Notice variant="warning" compact>Las zonas sólo se usan en campo. Marca «Campo» o quítalas.</Notice>
+                            )}
+                            {zonas.length > 0 && (
+                                <div className="divide-y divide-border-card rounded-xl border border-border-card">
+                                    {zonas.map((z, i) => (
+                                        <div key={z.id} className="flex items-center gap-2 px-3 py-2">
+                                            <div className="flex-1 min-w-0">
+                                                <PortalInput name={`zona-${z.id}`} aria-label={`Zona ${i + 1}`} value={z.nombre} maxLength={60}
+                                                    readOnly={soloLectura} placeholder="Ej. Chalatenango Norte"
+                                                    onChange={(e) => setZonas(conZonaCambiada(zonas, z.id, { nombre: e.target.value }))} />
+                                            </div>
+                                            <div className="w-28 shrink-0">
+                                                <PortalInput name={`zona-meta-${z.id}`} aria-label={`Meta de la zona ${i + 1}`} inputMode="numeric"
+                                                    maskType="INTEGER" placeholder="Meta" value={z.meta ?? ''} readOnly={soloLectura}
+                                                    onChange={(e) => setZonas(conZonaCambiada(zonas, z.id, { meta: e.target.value }))} />
+                                            </div>
+                                            {!soloLectura && (
+                                                <Button variant="ghost" size="sm" icon={X} iconOnly aria-label={`Quitar la zona ${z.nombre || i + 1}`}
+                                                    onClick={() => setZonas(sinZona(zonas, z.id))} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {!soloLectura && enCampo && zonas.length < 30 && (
+                                <Button variant="ghost" size="sm" icon={Plus} onClick={() => setZonas(conZonaNueva(zonas))}>Agregar zona</Button>
+                            )}
+                        </Bloque>
+                    )}
 
                     <Bloque titulo="Cuándo" icono={CalendarRange}>
                         <div className="grid sm:grid-cols-2 gap-3">

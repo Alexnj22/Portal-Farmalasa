@@ -162,9 +162,9 @@ describe('resultados y CSV', () => {
             respuestas: { encontro: true, espera: 'a', nps: 9, atributos: ['a', 'b'] },
             contacto_nombre: 'Ana', telefono: '77771234', duracion_seg: 40,
         }], { fechaHora: () => 'F' });
-        expect(headers[8]).toBe('1. ¿Encontraste todo?');
+        expect(headers[9]).toBe('1. ¿Encontraste todo?');
         expect(headers.at(-2)).toBe('Teléfono');
-        expect(rows[0]).toEqual(['F', 'Salud 1', 'QR o enlace', '', '', '', '', 9, 'Sí', '', 'Poco', '9', '', 'Confianza; Precio', 'Ana', '77771234', 40]);
+        expect(rows[0]).toEqual(['F', 'Salud 1', 'QR o enlace', '', '', '', '', '', 9, 'Sí', '', 'Poco', '9', '', 'Confianza; Precio', 'Ana', '77771234', 40]);
     });
 });
 
@@ -281,10 +281,10 @@ describe('campo — respuestas sin sucursal', () => {
         const { headers, rows } = tablaDeRespuestas({ secciones: [] },
             [{ fecha: '2026-11-07', sucursal: 'Campo', canal: 'campo', lugar: '=HYPERLINK("x")', lat: 13.7, lng: -89.2 }],
             { fechaHora: (x) => x });
-        expect(headers.slice(0, 6)).toEqual(['Fecha', 'Sucursal', 'Canal', 'Lugar', 'Latitud', 'Longitud']);
+        expect(headers.slice(0, 7)).toEqual(['Fecha', 'Sucursal', 'Canal', 'Zona', 'Lugar', 'Latitud', 'Longitud']);
         expect(rows[0][2]).toBe('Campo (fuera de las sucursales)');
-        expect(String(rows[0][3]).startsWith('=')).toBe(false);
-        expect(rows[0][4]).toBe(13.7);
+        expect(String(rows[0][4]).startsWith('=')).toBe(false);
+        expect(rows[0][5]).toBe(13.7);
     });
 });
 

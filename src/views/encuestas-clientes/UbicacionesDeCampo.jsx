@@ -5,7 +5,7 @@ import Notice from '../../components/common/Notice';
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import { LoadingState } from '../../components/common/StateViews';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { lecturaNps } from '@nucleo/utils/encuestasClientes';
+import { lecturaNps, nombreDeZona } from '@nucleo/utils/encuestasClientes';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { fetchUbicaciones } from '@nucleo/data/encuestasClientes';
 import { loadLeaflet } from '../../plataforma/mapas';
@@ -28,7 +28,9 @@ const colorDe = (nps) => {
     return v('--color-danger');
 };
 
-export default function UbicacionesDeCampo({ encuestaId }) {
+const SIN_ZONAS = [];
+
+export default function UbicacionesDeCampo({ encuestaId, zonas = SIN_ZONAS }) {
     const [datos, setDatos] = useState(null);
     const [error, setError] = useState(null);
     const mapa = useRef(null);
@@ -56,11 +58,11 @@ export default function UbicacionesDeCampo({ encuestaId }) {
             }).addTo(m);
             const capa = L.featureGroup(puntos.map((p) => L.circleMarker([p.lat, p.lng], {
                 radius: 7, weight: 2, color: colorDe(p.nps), fillColor: colorDe(p.nps), fillOpacity: 0.6,
-            }).bindTooltip(`${p.lugar || 'Sin nombre'}${p.nps != null ? ` · recomendación ${p.nps}` : ''}`))).addTo(m);
+            }).bindTooltip(`${zonas.length ? `${nombreDeZona(zonas, p.zona)} · ` : ''}${p.lugar || 'Sin nombre'}${p.nps != null ? ` · recomendación ${p.nps}` : ''}`))).addTo(m);
             m.fitBounds(capa.getBounds(), { padding: [24, 24], maxZoom: 16 });
         }).catch((e) => { if (!cancelado) setError(e); });
         return () => { cancelado = true; instancia.current?.remove(); instancia.current = null; };
-    }, [puntos]);
+    }, [puntos, zonas]);
 
     if (error) return <Notice variant="danger" compact>{mensajeAmigable(error, 'No se pudo cargar dónde se hicieron.')}</Notice>;
     if (!datos) return <LoadingState label="Buscando ubicaciones…" />;

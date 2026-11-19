@@ -178,7 +178,12 @@ export default function EncuestasAplicar() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Aplicar encuesta', headerLargeTitle: true }} />
+      {/* Las opciones de la barra se SUMAN a las anteriores: lo que la entrevista
+          cambió (sin «volver», sin gesto, barra opaca) hay que devolverlo aquí.
+          Sin esto, al salir de una entrevista la pantalla quedaba sin forma de
+          regresar y había que cerrar la app (usuario, 2026-11-19). */}
+      <Stack.Screen options={{ ...BARRA_NATIVA, headerTransparent: !!BARRA_NATIVA.headerTransparent, headerStyle: BARRA_NATIVA.headerStyle,
+        headerBackVisible: true, gestureEnabled: true, title: 'Aplicar encuesta', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

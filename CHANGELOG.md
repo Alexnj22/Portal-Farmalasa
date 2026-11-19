@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.6 — Aplicar encuesta: al salir de una entrevista se vuelve a poder regresar
+
+- **Al salir de una entrevista ya se puede regresar.** La entrevista quita el botón de volver y el gesto, para no salir a media marcha. Al volver a la lista no se devolvían, y había que cerrar la app. Ahora la lista los repone.
+- Base: `encuesta_cliente_lugares_de_campo()` (migración `20261119230209`), los lugares de campo ya usados por todo el equipo, agrupados sin mayúsculas, tildes ni espacios de sobra, con su centro. Es la base para sugerir el lugar; la pantalla llega en la próxima versión.
+
 ## v2.1583.5 — La app: compras desde el portal, frases del día, lectura de Saly, mapa de encuestas y varios lotes por caja; buscadores corregidos
 
 - App: Compras con el filtro «Cómo entró» y la marca «Desde el portal»; libro de compras completo anota en la bitácora (ver documento, exportes) y encuentra «repetido»; Ventas perdidas exporta toda la pestaña y lo anota; despachar un traslado admite una caja con varios lotes; Ofertas con «Frases del día» (crear, editar, pausar, borrar); encuestas a clientes con la lectura de Saly y el mapa de ubicaciones de campo; el chat abre en el primer mensaje sin leer.

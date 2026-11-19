@@ -35700,6 +35700,7 @@ export type Database = {
         Args: { p_cuestionario: Json; p_r: Json }
         Returns: Json
       }
+      encuesta_cliente_lugares_de_campo: { Args: never; Returns: Json }
       encuesta_cliente_muestra_entregada: {
         Args: { p_respuesta: string }
         Returns: Json

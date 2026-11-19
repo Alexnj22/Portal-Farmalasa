@@ -13,13 +13,14 @@ Los novios usan además el panel (`/admin`, registro *product*): lista de invita
 Un solo sitio que acompaña toda la boda: save the date, invitación con confirmación, el día (álbum compartido y pantalla en vivo) y los recuerdos. Éxito: todos confirman sin ayuda y sin dudas, los novios saben exactamente cuántos van y quién se sienta dónde, y el álbum junta las fotos de todos.
 
 ## Brand Personality
-Moderna, serena, cálida. Lino, arquitectura, luz de tarde. Habla en segunda persona, corto y con cariño, sin cursilería. La emoción la ponen las fotos y la tipografía grande, no los adornos.
+Cinematográfica, serena, exclusiva. Una sala a oscuras, lino y champán, como una joyería o un hotel de lujo. Habla en segunda persona, corto y con cariño, sin cursilería. La emoción la ponen las fotos y la tipografía grande, no los adornos.
 
 ## Anti-references
 - Invitación de plantilla con letra manuscrita, filigranas, arcos florales y dorado brillante.
 - Sitio de boda tipo «The Knot»: tarjetas iguales con íconos, banners, todo centrado.
-- Revista editorial (serif itálica + etiquetas en monoespaciada + columnas con filetes).
-- Vidrio esmerilado y degradados decorativos.
+- Revista editorial con etiquetas en monoespaciada y columnas densas (los filetes finos y la cursiva del título sí son del sistema; la densidad no).
+- Degradados decorativos y paneles de vidrio por todas partes (el vidrio oscuro queda sólo en la cabecera y la barra).
+- Animaciones de texto: letras que suben, palabras que se encienden, cintas que corren.
 
 ## Design Principles
 1. **La confirmación es el centro.** Cada pantalla deja claro qué falta hacer; confirmar menos personas que pases es un caso normal, no un error.

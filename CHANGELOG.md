@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1581.1 — Reglas de la salida de caja y del ingreso al inventario en un solo lugar; Cambiar lote al despachar
+
+- Núcleo: las reglas de la salida de caja (boleta repetida, frenos de la foto, lo que la foto corrige y avisa) viven en `src/utils/salidaDeCaja.js` y las usan `SalidaDeBolsa` (web) y Sacar dinero (app); la lectura del ingreso al inventario vive en `leerIngresoAlInventario` (`recepcionDePedido.js`) y la usan Recepción (web) y Recibir pedido (app). La web no cambia de comportamiento.
+- App: Sacar dinero guarda borrador y avisa remesadora distinta y «Se tomó de la boleta»; Meter dinero avisa «Este comprobante es del POS de X». Despachar un traslado revisa los lotes antes y tiene «Cambiar lote». `LoteDeLaCaja` admite corregir (excluir el lote mal y otra fecha); se borró la copia de Corregir lote. Cargar compra usa el mismo permiso que la web (`cargar_compra`).
+
 ## v2.1581.0 — La app hace lo mismo que la web en corrección de caja, traslados, conteos, cobros y facturación
 
 Segunda tanda de la auditoría app contra web del 2026-11-19 (trabas de operación):

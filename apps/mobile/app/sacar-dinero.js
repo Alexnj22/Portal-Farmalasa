@@ -20,10 +20,16 @@
 // número, de qué fue («Remesa Money Gram WS») y la remesadora, igual que
 // `SalidaDeBolsa`. Faltaba: la sala anotaba remesas como «POS Promerica» a
 // secas y con el monto escrito a mano (P8181, Salud 4, 2026-11-19).
+//
+// Lo que frena, lo que se avisa, la boleta repetida y lo que la foto corrige
+// salen del núcleo (`utils/salidaDeCaja.js`), el mismo que usa `SalidaDeBolsa`:
+// los dos lados dicen las mismas palabras. Lo escrito se guarda como borrador
+// y se OFRECE al volver, como en el portal (nunca se repone solo).
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import useBorrador from '@nucleo/hooks/useBorrador';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
@@ -34,7 +40,11 @@ import { choqueDeSentido, lecturaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
+import {
+  avisoDeLaFoto as avisoDeLaFotoSalida, loQuePoneLaFoto, problemaDeLaBoleta as problemaDeLaBoletaSalida,
+  problemaDeLaFoto as problemaDeLaFotoSalida, textoDeLoCorregido, textoDeLoTomado,
+} from '@nucleo/utils/salidaDeCaja';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -44,16 +54,6 @@ import Identidad from '../componentes/Identidad';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { comprobanteDelMovimiento, reimprimirEtiqueta, valeDeLaSalida } from '../componentes/cortes/papel';
-
-// Para cruzar la remesadora impresa con la lista: sin tildes, sin espacios ni signos.
-const pegado = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-/* Las mismas tres ayudas de `SalidaDeBolsa` (viven en el componente del portal,
- * no en el núcleo): comparar nombres como la edge `leer-boleta`, la fecha corta
- * del aviso de boleta repetida y «a, b y c» para el aviso de lo que se pisó. */
-const normalizarNombre = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
-const fechaCorta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '');
-const juntarConY = (partes) => (partes.length <= 1 ? (partes[0] || '') : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`);
-const soloDigitos = (v) => String(v ?? '').replace(/\D+/g, '').replace(/^0+/, '');
 
 export default function SacarDinero() {
   usePantallaDespierta('sacar-dinero'); // se cuenta efectivo: la pantalla no se apaga
@@ -85,8 +85,10 @@ export default function SacarDinero() {
    * una foto sin revisar o con la revisión en error no deja registrar
    * (`SalidaDeBolsa`, `problemaDeLaFoto` y «La foto no se revisó»). */
   const [revision, setRevision] = useState(null);
-  // Lo que la foto cambió de lo que ya estaba escrito (portal: `pisados`).
+  // Lo que la foto cambió de lo que ya estaba escrito (portal: `pisados`) y
+  // lo que llenó sola (portal: `deLaFoto`): uno corrige y el otro llena.
   const [pisados, setPisados] = useState([]);
+  const [deLaFoto, setDeLaFoto] = useState([]);
   const [aviso, setAviso] = useState(null);
   const [sentido, setSentido] = useState(null);
   const [montoCerrado, setMontoCerrado] = useState(false);
@@ -96,6 +98,27 @@ export default function SacarDinero() {
   const [conceptos, setConceptos] = useState([]);
   const [motivoSinFoto, setMotivoSinFoto] = useState('');
   const [clave] = useState(() => `app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+
+  /* La salida a medio escribir se guarda sola, como en el portal
+   * (`SalidaDeBolsa`): la sesión de sala se cierra a los 5 minutos. La foto y
+   * su lectura NO entran: al recuperar, el comprobante tiene que volver a
+   * tomarse y revisarse. Y se OFRECE, no se repone: lo que vuelve es el motivo
+   * por el que sale dinero, y reponerlo en silencio es registrarlo sin mirarlo. */
+  const { recuperado, cuando, descartar } = useBorrador(
+    sala ? `salida_de_bolsa_${sala}` : null, { tipo, monto, entidad, boleta, nota },
+  );
+  const [borradorVisto, setBorradorVisto] = useState(false);
+  const ofrecerBorrador = !borradorVisto && !!recuperado
+    && Object.values(recuperado).some((v) => String(v ?? '').trim() !== '');
+  const reponerBorrador = () => {
+    if (recuperado?.tipo) setTipo(recuperado.tipo);
+    if (recuperado?.monto) setMonto(recuperado.monto);
+    if (recuperado?.entidad) setEntidad(recuperado.entidad);
+    if (recuperado?.boleta) setBoleta(recuperado.boleta);
+    if (recuperado?.nota) setNota(recuperado.nota);
+    setBorradorVisto(true);
+  };
+  const tirarBorrador = () => { descartar(); setBorradorVisto(true); };
 
   useEffect(() => {
     let vivo = true;
@@ -120,22 +143,32 @@ export default function SacarDinero() {
   const laFotoManda = t?.foto === 'OBLIGATORIA' && !!t?.pide_boleta;
 
   const olvidarLectura = () => {
-    setLectura(null); setRevision(null); setPisados([]); setAviso(null); setSentido(null); setMontoCerrado(false); setBoletaCerrada(false);
+    setLectura(null); setRevision(null); setPisados([]); setDeLaFoto([]); setAviso(null); setSentido(null); setMontoCerrado(false); setBoletaCerrada(false);
   };
 
   // Al poner la foto se lee; al quitarla se olvida lo que dijo.
   const alCambiarFotos = async (lista) => {
     setFotos(lista);
+    /* La foto anterior se va ENTERA, como en el portal: también lo que puso en
+     * el formulario. Si su monto se quedara, viajaría como «lo esperado» a la
+     * lectura de la foto nueva y el papel se compararía contra otro papel. */
+    const montoAhora = deLaFoto.includes('el monto') ? '' : monto;
+    const boletaAhora = deLaFoto.includes('el número') ? '' : boleta;
+    const notaAhora = deLaFoto.includes('de qué fue') ? '' : nota;
+    if (montoAhora !== monto) setMonto('');
+    if (boletaAhora !== boleta) setBoleta('');
+    if (notaAhora !== nota) setNota('');
     olvidarLectura();
     const f = lista[0];
     if (!f || !laFotoManda) return;
     setLeyendo(true);
+    const nAhora = String(montoAhora).trim() === '' ? NaN : Number(String(montoAhora).replace(',', '.'));
     /* Lo escrito viaja como lo ESPERADO, igual que el portal: el servidor lo
      * coteja contra el papel y su `veredicto` frena si no cuadra. */
     const r = await leerBoleta(f, {
       entidad: entidad.trim() || null,
-      numeroBoleta: boleta.trim() || null,
-      monto: Number.isFinite(n) && n > 0 ? n : null,
+      numeroBoleta: boletaAhora.trim() || null,
+      monto: Number.isFinite(nAhora) && nAhora > 0 ? nAhora : null,
     });
     setLeyendo(false);
     setRevision(r ?? { error: true });
@@ -143,34 +176,24 @@ export default function SacarDinero() {
     setAviso(l.aviso);
     if (l.error) return;
     setLectura(l.lectura);
-    /* Lo que el papel pisa se DICE (portal, `pisados`): un dato escrito que
-     * cambia solo y en silencio es la forma de que nadie confíe en el que quedó. */
-    const queda = [];
-    const habiaMonto = String(monto).trim();
-    if (l.monto != null) {
-      if (habiaMonto && Math.abs(Number(habiaMonto.replace(',', '.')) - Number(l.monto)) > 0.005) queda.push('el monto');
-      if (r?.montoConfianza === 'CONTRADICHO') queda.push('el monto, que la boleta dice dos veces y no coinciden');
-    }
-    if (l.boleta != null && boleta.trim() && soloDigitos(boleta) !== soloDigitos(l.boleta)) queda.push('el número');
-    if (l.concepto != null && nota.trim() && normalizarNombre(nota) !== normalizarNombre(l.concepto)) queda.push('de qué fue');
+    /* Qué pone el papel, qué corrige de lo escrito y qué se llenó solo: la
+     * misma regla del portal (`loQuePoneLaFoto`, núcleo). El papel gana y lo
+     * que pisa se DICE; la remesadora sólo si el papel dice remesa y está en
+     * la lista («RIA» cabe dentro de «FERRETERIA»). */
+    const { campos, puestos, pisados: queda } = loQuePoneLaFoto(r, {
+      monto: String(montoAhora).replace(',', '.'), boleta: boletaAhora, nota: notaAhora, entidad,
+      opciones: opcionesEntidad, etiquetaEntidad: t?.etiqueta_entidad, laFotoManda,
+    });
+    if (campos.monto != null) setMonto(campos.monto);
+    if (campos.boleta != null) setBoleta(campos.boleta);
+    if (campos.entidad != null) setEntidad(campos.entidad);
+    if (campos.nota != null) setNota(campos.nota);
     setPisados(queda);
-    if (l.monto != null) setMonto(l.monto);
-    if (l.boleta != null) setBoleta(l.boleta);
-    if (l.concepto != null) setNota(l.concepto);
-    setMontoCerrado(!!l.puesto.monto);
-    setBoletaCerrada(!!l.puesto.boleta);
+    setDeLaFoto(puestos);
+    // El monto se cierra sólo si la boleta lo imprime dos veces y coinciden.
+    setMontoCerrado(campos.monto != null && r?.montoConfianza === 'CONFIRMADO');
+    setBoletaCerrada(campos.boleta != null);
     setSentido(choqueDeSentido(r, false));
-    /* La remesadora SÓLO si el papel dice que es remesa y lo que nombra está en
-     * la lista: arriba va el banco del POS, que no es la remesadora, y «RIA»
-     * cabe dentro de «FERRETERIA» (ver `SalidaDeBolsa`). */
-    const leido = r?.leido || {};
-    const diceRemesa = String(leido.tipo_operacion || '').toUpperCase() === 'REMESA' || !!String(leido.red_remesas || '').trim();
-    // Como el portal: sólo si nadie la eligió todavía.
-    if (diceRemesa && !entidad.trim() && opcionesEntidad.length) {
-      const impresos = [leido.red_remesas, ...(Array.isArray(leido.nombres) ? leido.nombres : []), leido.entidad].map(pegado).filter(Boolean);
-      const acierto = opcionesEntidad.find((o) => impresos.some((nom) => nom.includes(pegado(o)) || pegado(o).includes(nom)));
-      if (acierto) setEntidad(acierto);
-    }
   };
   const n = String(monto).trim() === '' ? NaN : Number(String(monto).replace(',', '.'));
   const eleccion = useMemo(() => elegirOrigen({
@@ -191,34 +214,27 @@ export default function SacarDinero() {
     return () => { vivo = false; clearTimeout(id); };
   }, [t, boleta, sala]);
 
-  /* La boleta ya usada, con las dos salidas del portal (`problemaDeLaBoleta`):
-   * mismo motivo y misma entidad es la MISMA boleta y frena; otra entidad es
-   * otro correlativo que dio el mismo número, y sólo se avisa. */
-  const problemaDeLaBoleta = useMemo(() => {
-    if (!repetida.length) return null;
-    const mismaEnt = repetida.find((o) => o.tipo === tipo && normalizarNombre(o.entidad) === normalizarNombre(entidad));
-    const o = mismaEnt || repetida[0];
-    const cuando = fechaCorta(String(o.registrado_at || '').slice(0, 10));
-    if (mismaEnt) {
-      return { bloquea: true, texto: `La boleta ${o.numero_boleta} de ${o.entidad} ya se registró en esta sucursal el ${cuando} por ${formatMoney(o.monto)} (${o.folio}).` };
-    }
-    return { bloquea: false, texto: `Ese número ya lo usó una boleta de ${o.entidad || 'otra entidad'} el ${cuando} (${o.folio}). Si son dos boletas distintas, puedes seguir.` };
-  }, [repetida, tipo, entidad]);
+  /* La boleta ya usada (núcleo, `problemaDeLaBoleta`): mismo motivo y misma
+   * entidad es la MISMA boleta y frena; otra entidad es otro correlativo que
+   * dio el mismo número, y sólo se avisa. */
+  const problemaDeLaBoleta = useMemo(
+    () => problemaDeLaBoletaSalida(repetida, { tipo, entidad }),
+    [repetida, tipo, entidad],
+  );
 
-  /* Lo que dijo el lector, con los mismos frenos del portal (`problemaDeLaFoto`).
-   * Sólo donde el papel manda: en los demás motivos la foto no se lee. */
-  const problemaDeLaFoto = useMemo(() => {
-    if (!laFotoManda || !fotos.length || !revision) return null;
-    if (revision.error) return { bloquea: true, texto: 'No se pudo revisar la foto. Vuelve a elegirla para intentar de nuevo.' };
-    const l = revision.leido || {};
-    switch (revision.veredicto) {
-      case 'NO_ES_BOLETA': return { bloquea: true, texto: `La foto no parece la boleta${l.motivo ? `: ${l.motivo}` : '.'}` };
-      case 'ILEGIBLE': return { bloquea: true, texto: 'La boleta no se lee en la foto. Acércate, sostén el papel plano y evita el reflejo.' };
-      case 'MONTO_NO_COINCIDE': return { bloquea: true, texto: `La boleta dice ${l.monto != null ? formatMoney(l.monto) : 'otro monto'} y la salida es de ${formatMoney(n)}.` };
-      case 'BOLETA_NO_COINCIDE': return { bloquea: true, texto: `El número de la boleta de la foto es ${l.numero_boleta || 'otro'} y aquí dice ${boleta.trim()}.` };
-      default: return null;
-    }
-  }, [laFotoManda, fotos.length, revision, n, boleta]);
+  /* Lo que dijo el lector, con los mismos frenos del portal (núcleo,
+   * `problemaDeLaFoto`). Sólo donde el papel manda: en los demás motivos la
+   * foto no se lee. El aviso de la entidad (`avisoDeLaFoto`) NO frena: la
+   * boleta del POS lleva arriba el banco, no la remesadora. */
+  const conLaFoto = laFotoManda && fotos.length > 0;
+  const problemaDeLaFoto = useMemo(
+    () => (conLaFoto ? problemaDeLaFotoSalida(revision, { monto: n, boleta, entidad }) : null),
+    [conLaFoto, revision, n, boleta, entidad],
+  );
+  const avisoDeLaFoto = useMemo(
+    () => (conLaFoto ? avisoDeLaFotoSalida(revision, { monto: n, boleta, entidad }) : null),
+    [conLaFoto, revision, n, boleta, entidad],
+  );
 
   // El mismo orden de `faltaEnElFormulario` del portal.
   const pideEntidad = !!t?.etiqueta_entidad && !t?.entidad_la_dice_el_papel;
@@ -260,6 +276,7 @@ export default function SacarDinero() {
           lectura: fotoUrl ? lectura : null,
         });
         if (r?.error) { if (t.pide_receptor) setIdentidad(null); throw r.error; }
+        descartar(); // el dinero ya salió: el borrador se va
         const papel = r?.movimiento ? await comprobanteDelMovimiento(r.movimiento, {
           etiqueta: t.etiqueta, detalle: [entidadDicha, nota.trim()].filter(Boolean).join(' · '),
           persona: identidad?.persona?.name || entidad.trim(), comoSeComprobo: r.movimiento.recibido_metodo,
@@ -277,6 +294,7 @@ export default function SacarDinero() {
           motivoSinComprobante: sinComprobante ? motivoSinFoto.trim() : '',
         });
         if (error) { if (t.pide_receptor) setIdentidad(null); throw error; }
+        descartar(); // el dinero ya salió: el borrador se va
         // El rastro de la lectura, como en el portal. Es auditoría: falla en silencio.
         if (lectura && fotoUrl) guardarLecturaDeBoleta(data.id, lectura);
         /* La parte de la caja de una mixta, como el portal: después de la bolsa
@@ -339,6 +357,16 @@ export default function SacarDinero() {
             <Dato rotulo="En bolsas" valor={formatMoney(totalDisponible(bolsas))} />
           </Seccion>
 
+          {ofrecerBorrador ? (
+            <Seccion titulo="Salida sin terminar">
+              <Aviso tono="cuidado" texto={`Quedaron cambios sin guardar${cuando ? ` de las ${hora12(new Date(cuando))}` : ''}.`} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}><BotonGrande texto="Recuperar" onPress={reponerBorrador} /></View>
+                <View style={{ flex: 1 }}><BotonGrande texto="Descartar" borde onPress={tirarBorrador} /></View>
+              </View>
+            </Seccion>
+          ) : null}
+
           <Seccion titulo="Motivo">
             <Opciones opciones={tipos.filter((x) => x.activo).map((x) => ({ id: x.codigo, label: x.etiqueta, detalle: x.leyenda || null }))}
               valor={tipo} onCambiar={(v) => { setTipo(v); setEntidad(''); setBoleta(''); setFotos([]); setIdentidad(null); olvidarLectura(); }} />
@@ -350,10 +378,10 @@ export default function SacarDinero() {
               {laFotoManda ? <Fotos fotos={fotos} onCambiar={alCambiarFotos} max={1} documento /> : null}
               {aviso ? <Aviso tono={montoCerrado ? 'nota' : 'cuidado'} texto={aviso} /> : null}
               {sentido ? <Aviso tono="cuidado" texto={sentido} /> : null}
-              {!leyendo && problemaDeLaFoto ? <Aviso tono="freno" texto={problemaDeLaFoto.texto} /> : null}
-              {!leyendo && pisados.length ? (
-                <Aviso tono="cuidado" texto={`La boleta dice otra cosa: ${pisados.length === 1 ? `se corrigió ${pisados[0]}` : `se corrigieron ${juntarConY(pisados)}`} que habías escrito. Si el papel no dice eso, quita la foto y vuelve a tomarla.`} />
-              ) : null}
+              {!leyendo && problemaDeLaFoto ? <Aviso tono={problemaDeLaFoto.bloquea ? 'freno' : 'cuidado'} texto={problemaDeLaFoto.texto} /> : null}
+              {!leyendo && avisoDeLaFoto ? <Aviso tono="cuidado" texto={avisoDeLaFoto.texto} /> : null}
+              {!leyendo && pisados.length ? <Aviso tono="cuidado" texto={textoDeLoCorregido(pisados)} /> : null}
+              {!leyendo && deLaFoto.length ? <Aviso tono="nota" texto={textoDeLoTomado(deLaFoto)} /> : null}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{montoCerrado ? 'Monto (confirmado por la boleta)' : 'Monto'}</Text>
                 <View style={{ minWidth: 140 }}><Campo multiline={false} value={monto} editable={!montoCerrado} onChangeText={(v) => setMonto(v.replace(/[^\d.,]/g, ''))} keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} /></View>

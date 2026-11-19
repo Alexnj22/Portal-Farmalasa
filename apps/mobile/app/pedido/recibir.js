@@ -43,7 +43,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { construirCajasEspeciales } from '@nucleo/utils/cajasEspeciales';
 import { estadoDeHojas } from '@nucleo/utils/hojasRecepcion';
-import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, leerIngresoAlInventario, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -326,15 +326,15 @@ function Recibir() {
   };
 
   // Meter al inventario lo recién contado, sin hacer esperar a la sala: la
-  // misma lectura de la respuesta que `ingresarAlInventario` del portal. Nunca
+  // misma lectura de la respuesta que el portal (`leerIngresoAlInventario`). Nunca
   // lanza: lo contado ya quedó guardado.
   const ingresar = async (itemIds) => {
     if (!itemIds.length) return { ok: true };
     try {
       const erp = await recibirTrasladoPedido(pedidoId, sucId, { itemIds, enSegundoPlano: true });
-      if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') { console.error('ingreso al inventario:', erp.codigo, erp.error); return { ok: false, error: null }; }
-      if (erp.completo === false && !erp.en_segundo_plano) return { ok: false, error: `entraron ${erp.recibidas ?? 0} de ${erp.pedidas ?? itemIds.length}` };
-      return { ok: true, enCurso: erp.en_segundo_plano === true };
+      const { registrar, ...leido } = leerIngresoAlInventario(erp, itemIds.length);
+      if (registrar) console.error('ingreso al inventario:', ...registrar);
+      return leido;
     } catch (e) {
       console.error('ingreso al inventario:', e);
       return { ok: false, error: null };

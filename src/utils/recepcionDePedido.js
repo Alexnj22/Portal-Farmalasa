@@ -194,3 +194,32 @@ export function renglonContado(r, { fQty, fPres, problema = null, nota = null, c
     const cantidad_problema = (error_tipo === 'danado' || error_tipo === 'vencido') ? (cantProblema ?? 1) : null;
     return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota || null, error_tipo, cantidad_problema };
 }
+
+/**
+ * Qué quiere decir la respuesta del ingreso al inventario de una recepción
+ * (`recibirTrasladoPedido`). La leían igual, copiada, el modal del portal y la
+ * pantalla de la app: una sola lectura para los dos.
+ *
+ * - `NADA_QUE_RECIBIR` no es un fallo: ya estaba adentro.
+ * - «Entraron 20 de 37» (`completo === false` con respuesta directa) no es
+ *   terminar, aunque `ok` venga en `true`: lo que falta lo levanta el
+ *   reintento de la tarjeta del pedido.
+ * - `en_segundo_plano`: aceptado y entrando; `enCurso: true`.
+ *
+ * El texto de error del servidor NO se devuelve para la pantalla (es técnico y
+ * a veces nombra al sistema de origen): `registrar` es el que lo deja en la
+ * consola; `error` sólo trae el «entraron N de M».
+ *
+ * @param {object | null | undefined} erp la respuesta
+ * @param {number} pedidas cuántos renglones se mandaron (si la respuesta no lo dice)
+ * @returns {{ ok: boolean, error?: string | null, enCurso?: boolean, registrar?: [string, string] }}
+ */
+export function leerIngresoAlInventario(erp, pedidas = 0) {
+    if (!erp?.ok && erp?.codigo !== 'NADA_QUE_RECIBIR') {
+        return { ok: false, error: null, registrar: [erp?.codigo ?? null, erp?.error ?? null] };
+    }
+    if (erp.completo === false && !erp.en_segundo_plano) {
+        return { ok: false, error: `entraron ${erp.recibidas ?? 0} de ${erp.pedidas ?? pedidas}` };
+    }
+    return { ok: true, enCurso: erp.en_segundo_plano === true };
+}

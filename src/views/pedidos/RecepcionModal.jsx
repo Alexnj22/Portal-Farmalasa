@@ -30,7 +30,7 @@ import { alcanceDeRecepcion, construirCajasEspeciales } from '@nucleo/utils/caja
 import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hojasRecepcion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, leerIngresoAlInventario, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
@@ -1191,21 +1191,14 @@ export default function RecepcionModal({
         if (!itemIds.length) return { ok: true };
         try {
             const erp = await recibirTrasladoPedido(pedido.id, sucursalId, { itemIds, enSegundoPlano });
-            // El texto de la respuesta va a la consola y NO a la pantalla: es
-            // del servidor, a veces técnico y a veces nombra al sistema de
-            // origen. La sala necesita saber qué pasó y qué hacer, no eso.
-            if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') {
-                console.error('ingreso al inventario:', erp.codigo, erp.error);
-                return { ok: false, error: null };
-            }
-            // Con la respuesta directa, «entraron 20 de 37» no es un fallo pero
-            // tampoco es haber terminado — y antes se leía como éxito porque
-            // sólo se miraba `ok`. Lo que falta queda 'enviada' y lo levanta el
-            // reintento de la tarjeta.
-            if (erp.completo === false && !erp.en_segundo_plano) {
-                return { ok: false, error: `entraron ${erp.recibidas ?? 0} de ${erp.pedidas ?? itemIds.length}` };
-            }
-            return { ok: true, enCurso: erp.en_segundo_plano === true };
+            // La lectura vive en `leerIngresoAlInventario` (la usa también la
+            // app). El texto del servidor va a la consola y NO a la pantalla:
+            // es técnico y a veces nombra al sistema de origen. Con la
+            // respuesta directa, «entraron 20 de 37» no es haber terminado; lo
+            // que falta queda 'enviada' y lo levanta el reintento de la tarjeta.
+            const { registrar, ...leido } = leerIngresoAlInventario(erp, itemIds.length);
+            if (registrar) console.error('ingreso al inventario:', ...registrar);
+            return leido;
         } catch (e) {
             console.error('ingreso al inventario:', e);
             return { ok: false, error: null };

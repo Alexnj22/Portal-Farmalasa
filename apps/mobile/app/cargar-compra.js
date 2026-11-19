@@ -213,7 +213,8 @@ function Accion({ texto, color = MARCA.azulClaro, onPress, ocupado }) {
 
 export default function CargarCompra() {
   const { hasPermission } = useAuth();
-  const puedeEditar = hasPermission('compras', 'can_edit') || hasPermission('facturas_compra', 'can_edit');
+  // El mismo permiso que la web (CargarCompraView): quien carga tiene `cargar_compra`.
+  const puedeEditar = hasPermission('cargar_compra', 'can_edit') || hasPermission('compras', 'can_edit');
   const [tab, setTab] = useState('facturas');
   const [busca, setBusca] = useState('');
   const [dias, setDias] = useState('30');

@@ -19,13 +19,13 @@
 // la aplicación de inyección (`APLICACION`) va a `aplicacion-inyeccion` y el
 // resto —el abono para apartar— a `abono-apartado`.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { anotarIngreso, boletaYaEnCaja, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, leerBoleta } from '@nucleo/data/bolsas';
+import { anotarIngreso, boletaYaEnCaja, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, leerBoleta, posDeLaLectura } from '@nucleo/data/bolsas';
 import { ordenarTiposPorUso } from '@nucleo/utils/tiposPorUso';
 import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { choqueDeSentido, frenoDelMonto, lecturaDeBoleta, PISTA_DE_DETALLE, problemaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
@@ -85,6 +85,11 @@ export default function MeterDinero() {
   const [cotejado, setCotejado] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [sentido, setSentido] = useState(null);
+  /* La sala de la terminal POS que imprimió la boleta, si es OTRA (portal,
+   * `posDeOtra`): avisa y no frena. `fotoVigente` descarta la respuesta de una
+   * foto que ya se cambió. */
+  const [posDeOtra, setPosDeOtra] = useState(null);
+  const fotoVigente = useRef(0);
   const [repetidas, setRepetidas] = useState({ clave: null, filas: SIN_FILAS });
   const [guardando, setGuardando] = useState(false);
   const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
@@ -146,13 +151,14 @@ export default function MeterDinero() {
       else router.replace({ pathname: '/portal', params: { ruta: `/caja?sala=${sala}` } });
       return;
     }
-    setCodigo(v); setPago(FORMA_DE_PAGO_INICIAL); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setDeLaFoto({});
+    setCodigo(v); setPago(FORMA_DE_PAGO_INICIAL); setFotos([]); setLectura(null); setAviso(null); setSentido(null); setPosDeOtra(null); fotoVigente.current += 1; setDeLaFoto({});
   };
 
   // Al poner la foto se lee; al quitarla se olvida lo que dijo.
   const alCambiarFotos = async (lista) => {
     setFotos(lista);
-    setAviso(null); setSentido(null); setLectura(null); setDeLaFoto({}); setCotejado(false);
+    setAviso(null); setSentido(null); setPosDeOtra(null); setLectura(null); setDeLaFoto({}); setCotejado(false);
+    const esta = ++fotoVigente.current;
     const f = lista[0];
     if (!f) return;
     setLeyendo(true);
@@ -169,6 +175,9 @@ export default function MeterDinero() {
     if (l.aMano) setAMano(true);
     if (l.monto != null && !l.puesto.monto) setIntentosSinComprobar((k) => k + 1);
     setSentido(choqueDeSentido(r, true));
+    // ¿Salió de la terminal POS de otra sala? También avisa, no frena.
+    const pos = await posDeLaLectura(l.lectura);
+    if (esta === fotoVigente.current) setPosDeOtra(pos && Number(pos.branch_id) !== Number(sala) ? pos.sala : null);
   };
 
   const frenoMonto = fotos.length && !noEfectivo
@@ -269,6 +278,9 @@ export default function MeterDinero() {
             </View>
           ) : null}
           {sentido && !noEfectivo ? <Aviso tono="cuidado" texto={sentido} /> : null}
+          {posDeOtra && !leyendo && !noEfectivo ? (
+            <Aviso tono="nota" texto={`Este comprobante es del POS de ${posDeOtra}. Se anota en esta caja, y su número de boleta no se confunde con los del POS de esta sucursal.`} />
+          ) : null}
 
           {tipo ? (
             <Seccion titulo="El ingreso">

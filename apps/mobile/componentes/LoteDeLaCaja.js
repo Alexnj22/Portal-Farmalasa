@@ -7,7 +7,14 @@
 // el choque con un lote ya registrado y la fecha que viaja. El valor es
 // `{ lote, vence: 'AAAA-MM', nuevo?, envio }`; `envio` lo pone este componente
 // (`{ lote, vence: 'AAAA-MM-DD' }` cuando se puede mandar, `null` mientras no).
-import { useEffect, useState } from 'react';
+//
+// Para CORREGIR un lote (`app/corregir-lote.js`), los dos agregados del gemelo
+// web, que nadie más usa:
+//   · `excluir` ({ lote, fecha }): el par que se corrige no cuenta como
+//     «registrado» (si no, corregirle la fecha chocaría consigo mismo).
+//   · `permitirOtraFecha`: con el mismo número registrado con otra fecha,
+//     además de «Usar …» ofrece «Esa fecha también está mal».
+import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Presionable as Pressable } from './Tocable';
 import { fetchLotesConocidosDeProducto } from '@nucleo/data/traslados';
@@ -42,18 +49,33 @@ function Chip({ texto, onPress, color = MARCA.azulClaro }) {
   );
 }
 
-export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange, soloVence = false }) {
-  const [conocidos, setConocidos] = useState([]);
+export default function LoteDeLaCaja({
+  erpProductId, producto, valor, onChange, soloVence = false, excluir = null, permitirOtraFecha = false,
+}) {
+  const [todos, setTodos] = useState([]);
   useEffect(() => {
     if (soloVence) return undefined;
     let vivo = true;
-    fetchLotesConocidosDeProducto(erpProductId).then((l) => { if (vivo) setConocidos(l); });
+    fetchLotesConocidosDeProducto(erpProductId).then((l) => { if (vivo) setTodos(l ?? []); });
     return () => { vivo = false; };
   }, [erpProductId, soloVence]);
+  const exLote = String(excluir?.lote ?? '').trim().toUpperCase();
+  const exFecha = String(excluir?.fecha ?? '').slice(0, 10);
+  const conocidos = useMemo(() => (exLote
+    ? todos.filter((c) => !(c.lote === exLote && c.fecha === exFecha))
+    : todos), [todos, exLote, exFecha]);
 
-  const motivo = soloVence ? motivoDeVenceDeCaja(valor) : motivoDeLoteDeCaja(valor, conocidos);
-  const envio = motivo ? null : soloVence ? venceDeCajaParaEnviar(valor) : loteDeCajaParaEnviar(valor, conocidos);
-  const choque = soloVence ? null : choqueDeLote(valor, conocidos);
+  const choqueCrudo = soloVence ? null : choqueDeLote(valor, conocidos);
+  // «Esa fecha también está mal»: sólo vale mientras siga siendo el MISMO
+  // número que chocó; si cambia lo escrito, se vuelve a preguntar.
+  const otraFechaVale = permitirOtraFecha && choqueCrudo?.mismoNumero
+    && valor?.otraFecha === String(valor?.lote || '').trim().toUpperCase();
+  const choque = otraFechaVale ? null : choqueCrudo;
+  const motivo = soloVence || otraFechaVale ? motivoDeVenceDeCaja(valor) : motivoDeLoteDeCaja(valor, conocidos);
+  const envio = motivo ? null
+    : soloVence ? venceDeCajaParaEnviar(valor)
+    : otraFechaVale ? { lote: String(valor.lote).trim().toUpperCase(), vence: venceDeCajaParaEnviar(valor).vence }
+    : loteDeCajaParaEnviar(valor, conocidos);
   const tocado = Boolean(valor?.lote || valor?.vence);
 
   const envioLote = envio ? envio.lote : null;
@@ -104,10 +126,16 @@ export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange, 
             {!choque.mismoNumero ? (
               <Chip texto="No, es otro lote" color={colorSistema.texto2} onPress={() => onChange({ ...valor, nuevo: true })} />
             ) : null}
+            {choque.mismoNumero && permitirOtraFecha ? (
+              <Chip texto="Esa fecha también está mal" color={MARCA.ambar}
+                onPress={() => onChange({ ...valor, otraFecha: String(valor?.lote || '').trim().toUpperCase() })} />
+            ) : null}
           </View>
         </View>
       ) : motivo ? (
         <Aviso tono={tocado ? 'cuidado' : 'nota'} texto={motivo} />
+      ) : otraFechaVale ? (
+        <Aviso tono="nota" texto={`El lote ${choqueCrudo.lote} sigue registrado con ${mesAnio(choqueCrudo.vence)}: corrígelo también.`} />
       ) : null}
     </View>
   );

@@ -29,7 +29,8 @@ const ORIGEN = { codigo_barras: ['Código de barras', MARCA.verde], aprendido: [
 export default function PropuestaDeCompra() {
   const { id, proveedor, fecha, total } = useLocalSearchParams();
   const { hasPermission } = useAuth();
-  const puedeEditar = hasPermission('compras', 'can_edit') || hasPermission('facturas_compra', 'can_edit');
+  // El mismo permiso que la web (CargarCompraView): quien carga tiene `cargar_compra`.
+  const puedeEditar = hasPermission('cargar_compra', 'can_edit') || hasPermission('compras', 'can_edit');
   const [p, setP] = useState(null);
   const [error, setError] = useState('');
   const [elegidos, setElegidos] = useState({});

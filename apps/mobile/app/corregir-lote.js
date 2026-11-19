@@ -21,9 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarConExistencia, corregirLoteEnSala, fetchLotesEnUnidades, fetchSucursalEnConteo } from '@nucleo/data/inventoryMovements';
-import { fetchExigenciasDe, fetchLotesConocidosDeProducto } from '@nucleo/data/traslados';
-import { choqueDeLote, loteDeCajaParaEnviar, motivoDeLoteDeCaja, motivoDeVenceDeCaja, venceDeCajaParaEnviar } from '@nucleo/utils/loteDeCaja';
-import { venceNormal } from '@nucleo/utils/cobroDeAplicacion';
+import { fetchExigenciasDe } from '@nucleo/data/traslados';
 import { esLoteGenerico } from '@nucleo/utils/unidadesInventario';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { BRANCH_A_ERP } from '@nucleo/constants/erp';
@@ -34,6 +32,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { avisar, fallo, listo, trabajando } from '../componentes/Progreso';
+import LoteDeLaCaja from '../componentes/LoteDeLaCaja';
 
 // El vencimiento se guarda como día 1 del mes: se muestra como en el empaque.
 const fmtVence = (d) => {
@@ -43,100 +42,6 @@ const fmtVence = (d) => {
 const yaVencio = (d) => !!d && String(d).slice(0, 10) <= hoySV();
 const rotulo = (l) => (esLoteGenerico(l.lote) ? 'Sin lote asignado' : `Lote ${l.lote}`);
 const norm = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
-const mesAnio = (v) => { const [a, m] = String(v).split('-'); return `${m}/${a}`; };
-const aGuardado = (t) => {
-  const limpio = String(t).replace(/[^\d/]/g, '').slice(0, 7);
-  const v = venceNormal(limpio);
-  return /^\d{4}-\d{2}$/.test(v) ? v : limpio;
-};
-const aPantalla = (v) => (/^\d{4}-\d{2}$/.test(String(v)) ? mesAnio(v) : String(v ?? ''));
-
-function Chip({ texto, onPress, color = MARCA.azulClaro }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({
-      minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 22,
-      borderWidth: 1, borderColor: color, opacity: pressed ? 0.6 : 1,
-    })}>
-      <Text style={{ color, fontSize: 14, fontWeight: '600' }}>{texto}</Text>
-    </Pressable>
-  );
-}
-
-/* El lote correcto. Es `componentes/LoteDeLaCaja.js` con los dos agregados que
- * el portal le dio SÓLO para corregir (`src/views/traslados/LoteDeLaCaja.jsx`):
- *   · `excluir`: el par que se corrige no cuenta como «registrado» (si no,
- *     corregirle la fecha chocaría consigo mismo).
- *   · `permitirOtraFecha`: con el mismo número registrado con otra fecha,
- *     ofrece «Esa fecha también está mal».
- * Vive aquí porque esta tarea no podía tocar el componente compartido; cuando
- * se pueda, estos dos agregados van a `LoteDeLaCaja.js` y esto se borra. */
-function LoteCorrecto({ erpProductId, producto, valor, onChange, excluir, permitirOtraFecha }) {
-  const [todos, setTodos] = useState([]);
-  useEffect(() => {
-    let vivo = true;
-    fetchLotesConocidosDeProducto(erpProductId).then((l) => { if (vivo) setTodos(l ?? []); }).catch(() => {});
-    return () => { vivo = false; };
-  }, [erpProductId]);
-  const exLote = String(excluir?.lote ?? '').trim().toUpperCase();
-  const exFecha = String(excluir?.fecha ?? '').slice(0, 10);
-  const conocidos = useMemo(() => (exLote ? todos.filter((c) => !(c.lote === exLote && c.fecha === exFecha)) : todos), [todos, exLote, exFecha]);
-
-  const choqueCrudo = choqueDeLote(valor, conocidos);
-  const otraFechaVale = permitirOtraFecha && choqueCrudo?.mismoNumero && valor?.otraFecha === String(valor?.lote || '').trim().toUpperCase();
-  const choque = otraFechaVale ? null : choqueCrudo;
-  const motivo = otraFechaVale ? motivoDeVenceDeCaja(valor) : motivoDeLoteDeCaja(valor, conocidos);
-  const envio = motivo ? null
-    : otraFechaVale ? { lote: String(valor.lote).trim().toUpperCase(), vence: venceDeCajaParaEnviar(valor).vence }
-    : loteDeCajaParaEnviar(valor, conocidos);
-  const tocado = Boolean(valor?.lote || valor?.vence);
-
-  const envioLote = envio ? envio.lote : null;
-  const envioVence = envio?.vence ?? null;
-  useEffect(() => {
-    if ((valor?.envio?.lote ?? null) !== envioLote || (valor?.envio?.vence ?? null) !== envioVence)
-      onChange({ ...valor, envio: envioVence ? { lote: envioLote, vence: envioVence } : null });
-  }, [envioLote, envioVence, valor, onChange]);
-
-  const usar = (c) => onChange({ lote: c.lote, vence: c.vence, envio: valor?.envio ?? null });
-  const escrito = String(valor?.lote || '').trim().toUpperCase();
-  const sugeridos = conocidos.filter((c) => !escrito || c.lote.startsWith(escrito)).slice(0, 6);
-
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Lote correcto</Text>
-      <Campo multiline={false} value={valor?.lote ?? ''} autoCapitalize="characters" autoCorrect={false}
-        accessibilityLabel={`Lote de ${producto}`} placeholder="Lote"
-        onChangeText={(t) => {
-          const lote = t.toUpperCase();
-          const c = conocidos.find((k) => k.lote === lote);
-          onChange({ ...valor, lote, nuevo: false, ...(c && !valor?.vence ? { vence: c.vence } : {}) });
-        }} />
-      {sugeridos.length && !(sugeridos.length === 1 && sugeridos[0].lote === escrito) ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {sugeridos.map((c) => <Chip key={`${c.lote}|${c.fecha}`} texto={`${c.lote} · ${mesAnio(c.vence)}`} onPress={() => usar(c)} />)}
-        </View>
-      ) : null}
-      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Vencimiento correcto</Text>
-      <Campo multiline={false} value={aPantalla(valor?.vence)} placeholder="MM/AAAA" keyboardType="numbers-and-punctuation"
-        accessibilityLabel={`Vencimiento de ${producto}`}
-        onChangeText={(t) => onChange({ ...valor, vence: aGuardado(t), nuevo: false })} />
-      {choque ? (
-        <View style={{ gap: 8 }}>
-          <Aviso tono="cuidado" texto={choque.mismoNumero
-            ? `El lote ${choque.lote} ya está registrado con vencimiento ${mesAnio(choque.vence)}. Un lote tiene un solo vencimiento. Revisa la caja.`
-            : `¿Es el lote ${choque.lote} · ${mesAnio(choque.vence)}? Se parece al que escribiste.`} />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            <Chip texto={`Usar ${choque.lote} · ${mesAnio(choque.vence)}`} onPress={() => usar(choque)} />
-            {!choque.mismoNumero ? <Chip texto="No, es otro lote" color={colorSistema.texto2} onPress={() => onChange({ ...valor, nuevo: true })} /> : null}
-            {choque.mismoNumero && permitirOtraFecha ? (
-              <Chip texto="Esa fecha también está mal" color={MARCA.ambar} onPress={() => onChange({ ...valor, otraFecha: String(valor?.lote || '').trim().toUpperCase() })} />
-            ) : null}
-          </View>
-        </View>
-      ) : motivo ? <Aviso tono={tocado ? 'cuidado' : 'nota'} texto={motivo} /> : null}
-    </View>
-  );
-}
 
 function Fila({ titulo, detalle, detalleColor, derecha, onPress, deshabilitada, primera }) {
   return (
@@ -381,7 +286,7 @@ export default function CorregirLote() {
                 </View>
               </Seccion>
               <Seccion titulo="Lo correcto">
-                <LoteCorrecto erpProductId={producto.erp_product_id} producto={producto.descripcion} valor={caja} onChange={setCaja}
+                <LoteDeLaCaja erpProductId={producto.erp_product_id} producto={producto.descripcion} valor={caja} onChange={setCaja}
                   excluir={esLoteGenerico(origen.lote) ? null : { lote: origen.lote, fecha: origen.vence }}
                   permitirOtraFecha={!esLoteGenerico(origen.lote)} />
                 <Campo value={motivo} onChangeText={setMotivo} placeholder="¿Por qué se corrige? (obligatorio)" />

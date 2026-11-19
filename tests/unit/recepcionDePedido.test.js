@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cantidadEnOtraPresentacion, esperadoEnDespacho, excesoGrande, renglonContado, renglonTodoOk, toDispatch } from '@nucleo/utils/recepcionDePedido';
+import { cantidadEnOtraPresentacion, esperadoEnDespacho, excesoGrande, renglonContado, renglonTodoOk, toDispatch, leerIngresoAlInventario } from '@nucleo/utils/recepcionDePedido';
 import { tipoDeLlegada } from '@nucleo/data/llegadaDePedido';
 
 // 24 unidades enviadas, se despachan en cajas de 12.
@@ -60,5 +60,30 @@ describe('cantidadEnOtraPresentacion', () => {
     });
     it('cero se queda en cero', () => {
         expect(cantidadEnOtraPresentacion(0, 1, 50)).toBe(0);
+    });
+});
+
+describe('leerIngresoAlInventario', () => {
+    it('ok directo y completo', () => {
+        expect(leerIngresoAlInventario({ ok: true, completo: true }, 3)).toEqual({ ok: true, enCurso: false });
+    });
+    it('NADA_QUE_RECIBIR no es un fallo', () => {
+        expect(leerIngresoAlInventario({ ok: false, codigo: 'NADA_QUE_RECIBIR' }, 3)).toEqual({ ok: true, enCurso: false });
+    });
+    it('un fallo no trae el texto del servidor para la pantalla', () => {
+        const r = leerIngresoAlInventario({ ok: false, codigo: 'X', error: 'detalle técnico' }, 3);
+        expect(r.ok).toBe(false);
+        expect(r.error).toBeNull();
+        expect(r.registrar).toEqual(['X', 'detalle técnico']);
+    });
+    it('sin respuesta es un fallo', () => {
+        expect(leerIngresoAlInventario(null, 2)).toMatchObject({ ok: false, error: null });
+    });
+    it('entraron N de M no es terminar aunque ok venga en true', () => {
+        expect(leerIngresoAlInventario({ ok: true, completo: false, recibidas: 20, pedidas: 37 }, 40)).toEqual({ ok: false, error: 'entraron 20 de 37' });
+        expect(leerIngresoAlInventario({ ok: true, completo: false }, 5)).toEqual({ ok: false, error: 'entraron 0 de 5' });
+    });
+    it('en segundo plano: aceptado y entrando', () => {
+        expect(leerIngresoAlInventario({ ok: true, completo: false, en_segundo_plano: true }, 5)).toEqual({ ok: true, enCurso: true });
     });
 });

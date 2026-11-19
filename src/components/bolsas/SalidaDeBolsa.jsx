@@ -19,13 +19,16 @@ import {
 } from '@nucleo/data/bolsas';
 import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
-import { conceptoDelPapel } from '@nucleo/utils/conceptoDelPapel';
+import {
+    avisoDeLaFoto as avisoDeLaFotoSalida, fechaCorta, juntarConY, loQuePoneLaFoto,
+    problemaDeLaBoleta as problemaDeLaBoletaSalida, problemaDeLaFoto as problemaDeLaFotoSalida,
+    textoDeLoCorregido, textoDeLoTomado,
+} from '@nucleo/utils/salidaDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { hora12 } from '@nucleo/utils/hora';
-import { fechaTexto } from '@nucleo/utils/fecha';
 
 /* El editor de la foto se baja al elegir el archivo, no al abrir el formulario:
  * arrastra el canónico de recorte, y la mayoría de las salidas del día no piden
@@ -97,74 +100,10 @@ const EditorDeDocumento = lazy(() => import('../common/EditorDeDocumento'));
  * carné era pedir algo que no existe.
  */
 
-// El mediodía en UTC y no la fecha pelada: `2026-08-15` interpretado como
-// medianoche se corre un día para atrás con el huso de la sala.
-const fechaCorta = (f) => (f ? fechaTexto(f, {
-    day: 'numeric', month: 'short' }) : '');
-
-/**
- * «el monto», «el monto y el número», «el monto, el número y la remesadora».
- *
- * Existe para el aviso de lo que llenó la foto. Con `join(', ')` la lista de
- * tres se lee como una enumeración de máquina; la coma final antes del último
- * es lo que la vuelve una frase.
- */
-const juntarConY = (partes) => (
-    partes.length <= 1 ? (partes[0] || '')
-        : `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`
-);
-
-/**
- * Un nombre de comercio comparable: sin tildes, sin puntuación, en mayúsculas.
- *
- * Es la MISMA `norm` que usa la edge function `leer-boleta` para decidir si la
- * boleta nombra a la entidad. Escrita dos veces porque viven en dos runtimes
- * —y no hay un módulo compartido entre `src/` y `supabase/functions/`— pero es
- * una sola regla: si una se cambia, la otra queda diciendo algo distinto sobre
- * el mismo papel.
- */
-const normalizarNombre = (v) => String(v ?? '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
-
-/**
- * El mismo nombre, sin los espacios. Para cotejar contra el catálogo y NADA más.
- *
- * La red se imprime de las dos formas: «MoneyGram» en unas boletas y «MONEY
- * GRAM WS» en otras, y el catálogo dice «MONEYGRAM». Con el espacio en el medio
- * ninguna de las dos contiene a la otra, así que el emparejamiento fallaba —
- * medido sobre las boletas guardadas: **4 de 10 remesas de MoneyGram**.
- *
- * Mientras la remesadora se elegía a mano eso no se notaba: el desplegable
- * quedaba vacío y la persona la elegía. Desde que la dice el papel, no
- * emparejar significa **guardar la remesa sin remesadora**, y sin campo donde
- * verlo.
- *
- * No reemplaza a `normalizarNombre`: aquélla es la regla compartida con la edge
- * function y tocarla haría que las dos digan cosas distintas del mismo papel.
- */
-const pegado = (v) => normalizarNombre(v).replace(/ /g, '');
-
-/**
- * Cómo se cuenta que la boleta no nombra a la entidad que se eligió.
- *
- * En un solo lugar porque lo dicen dos caminos —el aviso nuevo del servidor y
- * el veredicto viejo que puede venir de una respuesta en vuelo— y dos textos
- * para el mismo hecho se separan el día que alguien mejora uno.
- *
- * `warning` y no `danger`: no es un error de quien lo registra. La boleta de
- * una remesa la imprime el POS y arriba lleva el banco que procesa el cobro
- * —«BANCO PROMERICA»—, así que muchas no nombran a la remesadora en absoluto.
- * Lo que prueba que la foto es de ESTA operación son el monto y el número, y
- * ésos sí frenan.
- */
-function avisoDeEntidad(leido, entidad) {
-    return {
-        tono: 'warning', bloquea: false,
-        texto: `La boleta dice ${leido.entidad || 'otro nombre'} y no nombra a ${entidad.trim()}. `
-             + 'Si es la boleta correcta, puedes guardarla: el monto y el número sí coinciden.',
-    };
-}
+/* Las reglas del formulario —qué frena la foto, qué se avisa, la boleta
+ * repetida, lo que la foto corrige y cómo se dice— viven en el núcleo
+ * (`utils/salidaDeCaja.js`) desde el 2026-11-19: la app del teléfono las usa
+ * igual, con las mismas palabras. */
 
 /**
  * @param sala           de qué sucursal es esta salida. Hasta ahora salía de la
@@ -588,132 +527,19 @@ export default function SalidaDeBolsa({
          *
          * Y lo que no se pudo leer se queda vacío: ahí sí hay que digitarlo,
          * que es la mitad «a no ser que no se distinga bien» del pedido. */
-        const l = r?.leido || {};
-        const puestos = [];
-        const pisados = [];
-        if (l.es_boleta) {
-            /* ── El papel GANA, y por eso los campos se cierran ──────────────
-             *
-             * Pedido del usuario (2026-08-29): «la boleta y el monto que no se
-             * puedan modificar si al subir la foto se detecta». Hasta hoy la
-             * foto sólo llenaba lo VACÍO, y eso dejaba un hueco que costó una
-             * remesa: en Salud 4 alguien escribió el número primero, el campo
-             * quedó editable, y el portal terminó discutiéndole a quien tenía
-             * razón. Si el papel lo dice, el papel manda.
-             *
-             * Lo que se pisa se DICE. Un dato escrito que cambia solo y en
-             * silencio es la forma más rápida de que nadie vuelva a confiar en
-             * el que quedó. Y quitar la foto devuelve los campos: si el lector
-             * se equivocó —le pasó con la referencia de Promerica— nadie puede
-             * quedar encerrado con un número que no es. */
-            const montoLeido = Number(l.monto);
-            if (Number.isFinite(montoLeido) && montoLeido > 0) {
-                const habia = monto.trim();
-                if (habia && Math.abs(Number(habia) - montoLeido) > 0.005) pisados.push('el monto');
-                setMonto(String(l.monto));
-                /* Se llena siempre; se CIERRA sólo si el papel lo confirma.
-                 *
-                 * Regla del usuario (2026-09-05): «si no está seguro el
-                 * resultado, debe decirlo y permitir poner el monto manualmente
-                 * y marcarlo». Y «seguro» es concreto: que la boleta imprima el
-                 * total MÁS DE UNA VEZ y las dos lecturas coincidan.
-                 *
-                 * El pedido del 2026-08-29 —«la boleta y el monto que no se
-                 * puedan modificar si al subir la foto se detecta»— no se cae:
-                 * lo que cambia es qué cuenta como detectado.
-                 *
-                 * `CONTRADICHO` es el papel diciendo dos cosas —pasó con la
-                 * boleta 018540 del cajón: dice US$240.50 y se leyó 248.50,
-                 * porque estas impresoras escriben el cero con una barra
-                 * diagonal que a la resolución en que la foto viaja se confunde
-                 * con un 8—. `UNICO` es el papel diciéndolo una sola vez: no es
-                 * un error, pero tampoco hay con qué comprobarlo, y cerrar el
-                 * campo ahí afirma algo que nadie verificó. */
-                if (r?.montoConfianza === 'CONFIRMADO') puestos.push('el monto');
-                else if (r?.montoConfianza === 'CONTRADICHO') {
-                    pisados.push('el monto, que la boleta dice dos veces y no coinciden');
-                }
-            }
-            if (l.numero_boleta) {
-                const habia = boleta.trim();
-                const distinto = habia
-                    && habia.replace(/\D+/g, '').replace(/^0+/, '')
-                       !== String(l.numero_boleta).replace(/\D+/g, '').replace(/^0+/, '');
-                if (distinto) pisados.push('el número');
-                setBoleta(String(l.numero_boleta));
-                puestos.push('el número');
-            }
-            /* La entidad SÓLO si el papel dice que es una REMESA, y sólo si lo
-             * que nombra está en la lista.
-             *
-             * Es el único campo que no se puede copiar tal cual: arriba de la
-             * boleta suele ir el banco del POS —«BANCO PROMERICA»—, que no es
-             * la remesadora, así que escribirlo pondría en el vale una entidad
-             * que no atendió la operación.
-             *
-             * ── Por qué se pregunta primero si es una remesa (2026-09-02) ────
-             * Porque un retiro de efectivo NO tiene remesadora, y buscarla igual
-             * la inventa: la búsqueda es por contención de cadenas y «RIA» tiene
-             * tres letras, así que **«FERRETERIA» la contiene**. Medido sobre
-             * las boletas guardadas: una compra en «FERRETERIA DON GENARO»
-             * quedaba con remesadora RIA.
-             *
-             * Mientras el campo se elegía a mano eso no llegaba a escribirse
-             * —se autollenaba un desplegable a la vista y la persona lo
-             * corregía—. Desde que la dice el papel, un acierto falso se guarda
-             * sin que nadie pueda verlo. Y la pregunta es la del usuario: «si es
-             * remesa, el papel también tiene la remesadora y dice remesa».
-             *
-             * Vale `red_remesas` como prueba además de `tipo_operacion`: si el
-             * lector nombró la red, es una remesa aunque no haya sabido
-             * rotularla. */
-            const diceRemesa = String(l.tipo_operacion || '').toUpperCase() === 'REMESA'
-                || !!String(l.red_remesas || '').trim();
-            if (!entidad.trim() && opciones.length && diceRemesa) {
-                // `red_remesas` primero: es la que ENTREGA el dinero. `entidad` es
-                // la cabecera —el banco del POS— y va al final justamente por eso.
-                const impresos = [l.red_remesas, ...(Array.isArray(l.nombres) ? l.nombres : []), l.entidad];
-                const acierto = opciones.find((o) =>
-                    impresos.some((nom) => pegado(nom) && (
-                        pegado(nom).includes(pegado(o.value))
-                        || pegado(o.value).includes(pegado(nom))
-                    )));
-                if (acierto) {
-                    setEntidad(acierto.value);
-                    puestos.push(t?.etiqueta_entidad?.toLowerCase() || 'la entidad');
-                }
-            }
-
-            /* ── Y QUÉ FUE ───────────────────────────────────────────────────
-             *
-             * Pedido del usuario (2026-09-02), sobre las salidas del POS: «que
-             * el concepto se llene solo según el voucher de la foto, junto al
-             * número de boleta y monto». Es lo mismo que ya hace la entrada
-             * desde el 1-sep, y con la MISMA función (`conceptoDelPapel`) para
-             * que el mismo papel no diga dos cosas según por dónde entró.
-             *
-             * Sólo cuando el papel manda. En los motivos que no lo tienen —un
-             * gasto, un anticipo— la nota es lo que alguien quiso anotar, y
-             * escribirle encima «Compra en FERRETERIA DON GENARO» borraría el
-             * único dato que ese motivo no puede deducir.
-             *
-             * A diferencia del monto y del número, este campo NO queda cerrado.
-             * Esos dos identifican la operación y el servidor los coteja contra
-             * el papel; esto es una frase derivada, y dejarla abierta es lo que
-             * permite agregarle lo que el papel no dice —«retira don Ruti»— sin
-             * volver a tomar la foto. */
-            if (laFotoManda) {
-                const queFue = conceptoDelPapel(l);
-                if (queFue) {
-                    const habia = nota.trim();
-                    if (habia && normalizarNombre(habia) !== normalizarNombre(queFue)) {
-                        pisados.push('de qué fue');
-                    }
-                    setNota(queFue);
-                    puestos.push('de qué fue');
-                }
-            }
-        }
+        /* El papel GANA (2026-08-29) y lo que pisa se DICE; la entidad sólo si
+         * el papel dice que es remesa y está en la lista; «de qué fue» sólo
+         * donde el papel manda. La regla entera, con su historia, está en
+         * `loQuePoneLaFoto` (núcleo): la app la usa igual. */
+        const { campos, puestos, pisados } = loQuePoneLaFoto(r, {
+            monto, boleta, nota, entidad,
+            opciones: opciones.map((o) => o.value),
+            etiquetaEntidad: t?.etiqueta_entidad, laFotoManda,
+        });
+        if (campos.monto != null) setMonto(campos.monto);
+        if (campos.boleta != null) setBoleta(campos.boleta);
+        if (campos.entidad != null) setEntidad(campos.entidad);
+        if (campos.nota != null) setNota(campos.nota);
         setDeLaFoto(puestos);
         setPisadosPorLaFoto(pisados);
 
@@ -733,42 +559,10 @@ export default function SalidaDeBolsa({
      * sacando otra foto o corrigiendo el dato), no se pudo leer (se arregla
      * reintentando), o todo bien.
      */
-    const problemaDeLaFoto = useMemo(() => {
-        if (!foto || !lectura) return null;
-        if (lectura.error) {
-            return {
-                tono: 'warning', bloquea: true, reintentable: true,
-                texto: 'No se pudo revisar la foto. Vuelve a elegirla para intentar de nuevo.',
-            };
-        }
-        const l = lectura.leido || {};
-        switch (lectura.veredicto) {
-            case 'OK': return null;
-            case 'NO_ES_BOLETA':
-                return { tono: 'danger', bloquea: true,
-                    texto: `La foto no parece la boleta${l.motivo ? `: ${l.motivo}` : '.'}` };
-            case 'ILEGIBLE':
-                return { tono: 'danger', bloquea: true,
-                    texto: 'La boleta no se lee en la foto. Acércate, sostén el papel plano y evita el reflejo.' };
-            case 'MONTO_NO_COINCIDE':
-                return { tono: 'danger', bloquea: true,
-                    texto: `La boleta dice ${l.monto != null ? formatMoney(l.monto) : 'otro monto'} y la salida es de ${formatMoney(n)}.` };
-            case 'BOLETA_NO_COINCIDE':
-                return { tono: 'danger', bloquea: true,
-                    texto: `El número de la boleta de la foto es ${l.numero_boleta || 'otro'} y aquí dice ${boleta.trim()}.` };
-            // Se dice, pero NO frena. La boleta de una remesa la imprime el
-            // POS y arriba lleva el banco que procesa el cobro —«BANCO
-            // PROMERICA»—, no la remesadora: reportado el 2026-08-21, una
-            // remesa real quedó trabada por eso. Desde entonces el servidor lo
-            // manda en `avisos` y el veredicto ya no lo usa; este caso queda
-            // por las respuestas viejas que puedan estar en vuelo, para que
-            // tampoco frenen.
-            case 'ENTIDAD_NO_COINCIDE':
-                return avisoDeEntidad(l, entidad);
-            default:
-                return null;
-        }
-    }, [foto, lectura, n, boleta, entidad]);
+    const problemaDeLaFoto = useMemo(
+        () => (foto ? problemaDeLaFotoSalida(lectura, { monto: n, boleta, entidad }) : null),
+        [foto, lectura, n, boleta, entidad],
+    );
 
     /* Si el servidor llegó a comparar ALGO contra lo escrito.
      *
@@ -805,7 +599,7 @@ export default function SalidaDeBolsa({
      * detiene el guardado y el otro no, y mezclarlos es exactamente cómo se
      * pierde esa diferencia la próxima vez que alguien toque este bloque. */
     const avisoDeLaFoto = useMemo(() => {
-        if (!foto || !lectura || lectura.error || problemaDeLaFoto) return null;
+        if (!foto) return null;
 
         /* Acá vivía el aviso de «el papel habla de otra cosa que el motivo
          * elegido». Se fue con el motivo que lo hacía posible: mientras existió
@@ -814,9 +608,8 @@ export default function SalidaDeBolsa({
          * así que ya no hay dos respuestas que enfrentar, y el servidor ya no
          * recibe `esperado.tipo`. Lo que el papel dice sobre la operación se ve
          * escrito en «Qué fue», que es donde sirve. */
-        const hay = (lectura.avisos || []).some((a) => a.campo === 'entidad');
-        return hay ? avisoDeEntidad(lectura.leido || {}, entidad) : null;
-    }, [foto, lectura, problemaDeLaFoto, entidad]);
+        return avisoDeLaFotoSalida(lectura, { monto: n, boleta, entidad });
+    }, [foto, lectura, n, boleta, entidad]);
 
     /* ── ¿Esta boleta ya se registró en esta sala? ───────────────────────────
      *
@@ -859,25 +652,10 @@ export default function SalidaDeBolsa({
      * repetir el bug de la entidad que se arregló hoy, esta vez desde el otro
      * lado.
      */
-    const problemaDeLaBoleta = useMemo(() => {
-        if (!repetida.length) return null;
-        const mismaEnt = repetida.find((o) => o.tipo === tipo
-            && normalizarNombre(o.entidad) === normalizarNombre(entidad));
-        const o = mismaEnt || repetida[0];
-        const cuando = fechaCorta(String(o.registrado_at || '').slice(0, 10));
-        if (mismaEnt) {
-            return {
-                tono: 'danger', bloquea: true,
-                texto: `La boleta ${o.numero_boleta} de ${o.entidad} ya se registró en esta sucursal `
-                     + `el ${cuando} por ${formatMoney(o.monto)} (${o.folio}).`,
-            };
-        }
-        return {
-            tono: 'warning', bloquea: false,
-            texto: `Ese número ya lo usó una boleta de ${o.entidad || 'otra entidad'} el ${cuando} `
-                 + `(${o.folio}). Si son dos boletas distintas, puedes seguir.`,
-        };
-    }, [repetida, tipo, entidad]);
+    const problemaDeLaBoleta = useMemo(
+        () => problemaDeLaBoletaSalida(repetida, { tipo, entidad }),
+        [repetida, tipo, entidad],
+    );
 
     /** Lo que falta ANTES de identificar a nadie. */
     const faltaEnElFormulario = useMemo(() => {
@@ -1616,17 +1394,12 @@ export default function SalidaDeBolsa({
                             mirar, o se desconfía y se vuelve a escribir. */}
                         {!leyendo && pisadosPorLaFoto.length > 0 && (
                             <Notice variant="warning" compact icon={AlertTriangle}>
-                                {pisadosPorLaFoto.length === 1
-                                    ? `La boleta dice otra cosa: se corrigió ${pisadosPorLaFoto[0]} que habías escrito.`
-                                    : `La boleta dice otra cosa: se corrigieron ${juntarConY(pisadosPorLaFoto)} que habías escrito.`}
-                                {' '}Si el papel no dice eso, quita la foto y vuelve a tomarla.
+                                {textoDeLoCorregido(pisadosPorLaFoto)}
                             </Notice>
                         )}
                         {!leyendo && deLaFoto.length > 0 && (
                             <Notice variant="info" compact icon={ScanLine}>
-                                {deLaFoto.length === 1
-                                    ? `Se tomó de la boleta ${deLaFoto[0]}. Si no dice eso, vuelve a tomar la foto.`
-                                    : `Se tomaron de la boleta ${juntarConY(deLaFoto)}. Si alguno no dice eso, vuelve a tomar la foto.`}
+                                {textoDeLoTomado(deLaFoto)}
                             </Notice>
                         )}
 

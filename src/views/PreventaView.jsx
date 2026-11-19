@@ -40,7 +40,7 @@ import { imprimirDocumento } from '@nucleo/utils/imprimirDiferido';
 import { ticketDeCobroKiosco } from '@nucleo/utils/ticketDeCobroKiosco';
 import { estadoDeCaja } from '@nucleo/data/bolsas';
 import {
-    MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarLinea, datosQueFaltan, descuentoDePuntos, estadoDePreventa,
+    MAX_PRODUCTOS, NOMBRE_DE_PROGRAMA, PAGOS, agregarConCantidad, agregarLinea, datosQueFaltan, desgloseDeVenta, descuentoDePuntos, estadoDePreventa,
     faltanParaCcf, diferenciasDelCobro, lineasDeVenta, lineasParaCotizar, lineasParaEnviar, maximoDePuntos, opcionesDePresentacion, montoDelCorreo, mesDeVencimiento, mismoLote, planDeLotes, queCompletar, nombreDeComprobante, nombreDeLista, opcionesDePrecio,
     porQueEsaLista, problemasDeVenta, sePuedeAnular, sePuedeCorregir, totalesDe, vencePronto,
 } from '@nucleo/utils/preventaDirecta';
@@ -249,6 +249,11 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const puntos = Math.trunc(Number(venta.puntos) || 0);
     const descPuntos = descuentoDePuntos(puntos, info?.puntos?.valor);
     const aPagar = Math.max(0, Math.round((totales.total - descPuntos) * 100) / 100);
+    // Crédito fiscal o cliente que retiene: sumas, IVA y retención antes de
+    // enviar (usuario, 2026-11-19: «no me sale»). Sólo se MUESTRA.
+    const desgloseVenta = useMemo(() => (venta.cliente
+        ? desgloseDeVenta({ lineas: cotizacion?.lineas, documento: venta.documento, retencionPct: info?.retencion_pct, descuento: descPuntos })
+        : null), [venta.cliente, venta.documento, cotizacion?.lineas, info?.retencion_pct, descPuntos]);
     const maxPuntos = maximoDePuntos(info, totales.total);
 
     // Todo lo que impide enviar, con qué hacer. Las acciones que el usuario
@@ -285,14 +290,27 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         agregadoDeFuera.current = agregarDesdeFuera.n;
         agregarRef.current(agregarDesdeFuera.producto);
     }, [agregarDesdeFuera]);
+    // Lo de una compra pasada entra con SU cantidad y SU presentación
+    // (usuario, 2026-11-19: agregó 50 unidades y la preventa puso 1).
+    const deCompra = (lineas, p) => agregarConCantidad(lineas, { id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url },
+        Number(p.factor) || 1, Number(p.cantidad) || 1);
+    const agregarDeCompra = (p) => {
+        const f = Number(p.factor) || 1;
+        if (venta.lineas.length >= MAX_PRODUCTOS && !venta.lineas.some((l) => l.producto_id === Number(p.producto_id) && l.factor === f)) {
+            showToast('Llegaste al tope', `Una preventa lleva hasta ${MAX_PRODUCTOS} productos. Envía esta y empieza otra.`, 'warning');
+            return;
+        }
+        cambiar({ lineas: deCompra(venta.lineas, p) });
+        if (!tactil) setFoco({ cantidad: `${Number(p.producto_id)}-${f}` });
+    };
     const agregarVarios = (productos) => {
         let lineas = venta.lineas;
         for (const p of productos) {
             if (lineas.length >= MAX_PRODUCTOS) break;
-            lineas = agregarLinea(lineas, { id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url }, 1);
+            lineas = deCompra(lineas, p);
         }
         cambiar({ lineas });
-        showToast('Agregados', `${productos.length} producto(s) de esa compra. Revisa las cantidades.`, 'success');
+        showToast('Agregados', `${productos.length} producto(s) de esa compra, con sus cantidades.`, 'success');
         alBuscador();
     };
 
@@ -690,7 +708,9 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                 <Cliente holgada={enKiosco} cliente={venta.cliente} info={info} cotizacion={cotizacion} alerta={clienteConProblema}
                                     faltanCcf={faltanCcf} puedeEditar={puedeEditarClientes} puedeCrear={puedeCrearClientes}
                                     onElegir={elegirCliente} onEditar={editarCliente} onCrear={crearCliente}
-                                    onAgregar={(p) => agregarProducto({ id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url })}
+                                    onAgregar={(p) => (p.cantidad != null
+                                        ? agregarDeCompra(p)
+                                        : agregarProducto({ id: p.producto_id, nombre: p.nombre, foto_url: p.foto_url }))}
                                     onAgregarVarios={agregarVarios} />
 
                                 <section data-surface="card" className="p-3 space-y-2">
@@ -785,12 +805,29 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                         <div className="flex justify-between"><dt className="text-content-3">Puntos ({puntos})</dt>
                                             <dd className="tabular-nums text-success-text font-bold">−{formatMoney(descPuntos)}</dd></div>
                                     )}
+                                    {desgloseVenta && (
+                                        <>
+                                            <div className="flex justify-between"><dt className="text-content-3">Sumas{desgloseVenta.ccf ? ' sin IVA' : ''}</dt>
+                                                <dd className="tabular-nums">{formatMoney(desgloseVenta.sumas)}</dd></div>
+                                            {desgloseVenta.ccf && (
+                                                <div className="flex justify-between"><dt className="text-content-3">IVA 13 %</dt>
+                                                    <dd className="tabular-nums">{formatMoney(desgloseVenta.iva)}</dd></div>
+                                            )}
+                                            {desgloseVenta.retencion > 0 && (
+                                                <div className="flex justify-between"><dt className="text-content-3">Retención {Number(info?.retencion_pct)} %</dt>
+                                                    <dd className="tabular-nums">−{formatMoney(desgloseVenta.retencion)}</dd></div>
+                                            )}
+                                        </>
+                                    )}
                                     <div className="flex items-end justify-between pt-1">
                                         <dt className="text-caption font-bold text-content-2">A pagar</dt>
                                         <dd className={`text-display font-black tabular-nums leading-none ${cotizando ? 'text-content-3' : 'text-content'}`}>
-                                            {formatMoney(aPagar)}
+                                            {formatMoney(desgloseVenta ? desgloseVenta.total : aPagar)}
                                         </dd>
                                     </div>
+                                    {desgloseVenta && (
+                                        <p className="text-micro text-content-3">La caja confirma el monto al cobrar.</p>
+                                    )}
                                 </dl>
 
                                 {!cobrando && (

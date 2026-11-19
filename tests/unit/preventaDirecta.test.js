@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    agregarLinea, estadoDePreventa, faltaParaEnviar, lineasDeVenta, lineasParaCotizar, nombreDeLista,
+    agregarConCantidad, agregarLinea, desgloseDeVenta, estadoDePreventa, faltaParaEnviar, lineasDeVenta, lineasParaCotizar, nombreDeLista,
     diferenciasDelCobro, porQueEsaLista, sePuedeAnular, opcionesDePrecio, faltaEnPuntos, maximoDePuntos, descuentoDePuntos, sePuedeCorregir, totalesDe, MAX_PRODUCTOS,
 } from '@nucleo/utils/preventaDirecta.js';
 
@@ -126,5 +126,22 @@ describe('diferenciasDelCobro', () => {
         ]);
         expect(d.map((x) => x.alerta)).toEqual([true, false, true]);
         expect(diferenciasDelCobro(null)).toEqual([]);
+    });
+});
+
+describe('agregar de una compra pasada y desglose (2026-11-19)', () => {
+    it('entra con su cantidad y su presentación, y suma si ya estaba', () => {
+        const a = agregarConCantidad([], { id: 2129, nombre: 'ENANTYUM' }, 1, 50);
+        expect(a).toHaveLength(1);
+        expect(a[0]).toMatchObject({ producto_id: 2129, factor: 1, cantidad: 50 });
+        expect(agregarConCantidad(a, { id: 2129 }, 1, 2)[0].cantidad).toBe(52);
+        expect(agregarConCantidad(a, { id: 2129 }, 100, 1)).toHaveLength(2);
+    });
+    it('crédito fiscal como la caja: 50 × $1.90 = $95 → sumas $84.07, IVA $10.93', () => {
+        expect(desgloseDeVenta({ lineas: [{ subtotal: 95 }], documento: 'credito_fiscal' })).toMatchObject({ sumas: 84.07, iva: 10.93, total: 95 });
+        expect(desgloseDeVenta({ lineas: [{ subtotal: 95 }], documento: 'consumidor_final' })).toBeNull();
+        // Retiene 1 % desde $100 de sumas: CCF 410964 (sumas 345.29 → IVA 44.89, retención 3.45, total 386.73).
+        expect(desgloseDeVenta({ lineas: [{ subtotal: 390.18 }], documento: 'credito_fiscal', retencionPct: 1 }))
+            .toMatchObject({ sumas: 345.29, iva: 44.89, retencion: 3.45, total: 386.73 });
     });
 });

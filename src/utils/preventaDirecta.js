@@ -125,6 +125,43 @@ export function agregarLinea(lineas, producto, factor = 1) {
 
 const centavos = (v) => Math.round(Number(v || 0) * 100) / 100;
 
+/**
+ * Agregar con su cantidad: lo de una compra pasada entra como se compró
+ * (usuario, 2026-11-19: «agregué esas 50 y la preventa me puso 1»). Si el
+ * producto ya está en esa presentación, suma. Tope 999 como a mano.
+ */
+export function agregarConCantidad(lineas, producto, factor = 1, cantidad = 1) {
+    const f = Number(factor) || 1;
+    const n = Math.max(1, Math.round(Number(cantidad) || 1));
+    const i = lineas.findIndex((l) => l.producto_id === Number(producto.id) && l.factor === f);
+    if (i >= 0) return lineas.map((l, j) => (j === i ? { ...l, cantidad: Math.min(999, (Number(l.cantidad) || 0) + n) } : l));
+    if (lineas.length >= MAX_PRODUCTOS) return lineas;
+    return [...lineas, { ...lineaNueva(producto, f), cantidad: Math.min(999, n) }];
+}
+
+/**
+ * El desglose de un crédito fiscal (o de un cliente que retiene) ANTES de
+ * enviar, como lo hace la caja con una preventa: cada producto sin IVA a 2
+ * decimales, el descuento de puntos restado de esa suma, IVA 13 % sobre ella y
+ * la retención del cliente desde $100. Es lo que se espera: la cifra final la
+ * da la caja al cobrar. null = consumidor final sin retención (no hay nada que
+ * desglosar).
+ */
+export function desgloseDeVenta({ lineas, documento, retencionPct, descuento = 0 }) {
+    const ccf = documento === 'credito_fiscal';
+    const pct = Number(retencionPct) || 0;
+    if (!ccf && pct <= 0) return null;
+    const conIva = (lineas ?? []).reduce((t, l) => t + Number(l.subtotal || 0), 0) - Number(descuento || 0);
+    const sumas = ccf
+        ? centavos((lineas ?? []).reduce((t, l) => t + centavos(Number(l.subtotal || 0) / 1.13), 0) - Number(descuento || 0))
+        : centavos(conIva);
+    const iva = ccf ? centavos(sumas * 0.13) : 0;
+    const base = ccf ? sumas : sumas / 1.13;
+    const retencion = pct > 0 && sumas >= 100 ? centavos(base * (pct / 100)) : 0;
+    return { sumas, iva, retencion, total: centavos(sumas + iva - retencion), ccf };
+}
+
+
 /** Los totales de una cotización: lo que cobra, lo que costaría a precio Regular y lo que se ahorra. */
 export function totalesDe(cotizacion) {
     const filas = cotizacion?.lineas ?? [];

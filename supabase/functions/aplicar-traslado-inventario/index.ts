@@ -595,12 +595,29 @@ Deno.serve(async (req) => {
         if (e) console.error("[aplicar-traslado-inventario] soltar el candado de recibir:", e.message);
       };
 
-      const cookie = await sesionEn(erpDestino);
+      /* ── Lo que puede fallar ANTES de recibir suelta el candado (2026-11-19) ──
+       * Abrir la sesión, devolver lotes huérfanos, preguntar el estado y leer
+       * la pantalla de recepción no reciben nada. Si una de ellas lanzaba, el
+       * `catch` general contestaba 500 con el candado puesto, y el reintento
+       * de la MISMA persona seis segundos después recibía «Alguien más de tu
+       * sucursal está recibiendo este traslado» durante tres minutos. Pasó el
+       * 2026-11-19 en Salud 4 (traslado 66103: 500 a las 15:38:55, 409 a las
+       * 15:39:01). */
+      const antesDeEnviar = async <T>(paso: () => Promise<T>): Promise<T> => {
+        try {
+          return await paso();
+        } catch (e) {
+          await soltarCandado();
+          throw e;
+        }
+      };
+
+      const cookie = await antesDeEnviar(() => sesionEn(erpDestino));
 
       // Productos que una llamada MUERTA dejó sin control de lote (ver los
       // frenos del destrabe, más abajo): se les devuelve antes que nada. La
       // ficha es una sola para todas las salas, así que cualquier sesión sirve.
-      await reactivarLotesHuerfanos(admin, cookie);
+      await antesDeEnviar(() => reactivarLotesHuerfanos(admin, cookie));
 
       /* ── ¿Sigue esperando entrar? ─────────────────────────────────────────
        *
@@ -623,7 +640,7 @@ Deno.serve(async (req) => {
        * `desconocido` no frena nada: si no se pudo preguntar, se hace lo de
        * siempre. Una guarda que corta con lo que no sabe deja de recibir por
        * culpa de una consulta secundaria. */
-      const antesDeRecibir = await estadoDeRecepcion(cookie, idTraslado);
+      const antesDeRecibir = await antesDeEnviar(() => estadoDeRecepcion(cookie, idTraslado));
       if (antesDeRecibir === "anulado") {
         await soltarCandado();
         return json({
@@ -643,8 +660,8 @@ Deno.serve(async (req) => {
           msg: "El sistema ya lo tenía recibido; no se volvió a cargar.",
         });
 
-      const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idTraslado)}`,
-        undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+      const pagina = await antesDeEnviar(() => pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idTraslado)}`,
+        undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } }));
 
       // El servidor pre-rellena la tabla entera: producto, presentación, costo,
       // precio, lo esperado y el vencimiento. Acá no hay nada que elegir, así

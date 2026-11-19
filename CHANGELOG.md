@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1579.6 — Recibir un traslado: un fallo previo ya no deja el traslado trabado
+
+- `aplicar-traslado-inventario`: si algo falla antes de enviar la recepción (abrir la sesión, devolver lotes, preguntar el estado, leer la pantalla), se suelta el candado de recibir. Antes el 500 lo dejaba puesto y el reintento de la misma persona veía «Alguien más de tu sucursal está recibiendo este traslado» durante 3 minutos (Salud 4, traslado 66103, 2026-11-19). Función desplegada (v77, con JWT).
+- Novedades: no — arreglo interno, no cambia lo que se ve.
+
 ## v2.1579.5 — Vender muestra IVA y retención, y agrega compras pasadas con su cantidad
 
 - Vender: con crédito fiscal, o si el cliente retiene, el panel muestra sumas sin IVA, IVA 13 %, retención y el total que se espera. La caja confirma el monto al cobrar.

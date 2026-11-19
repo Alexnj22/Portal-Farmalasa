@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.3 — La pantalla «Hay novedades» ya no vuelve a salir por un tropiezo de red
+
+- Web: si al entrar no se pudo leer qué novedades ya revisó la persona (caída momentánea, un 521 el 2026-11-19 a las 4:23 p. m.), la pantalla de entrada salía otra vez como si no hubiera visto nada. Ahora reintenta una vez y, si sigue sin respuesta, no sale.
+
 ## v2.1583.2 — Horarios: la cobertura de una semana pasada ya no se edita
 
 - Web, Horarios: la fila de quien viene a cubrir respeta la semana pasada y el permiso de editar (no se abre la celda ni se quita), igual que las filas propias y que la app.

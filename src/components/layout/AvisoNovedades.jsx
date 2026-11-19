@@ -29,11 +29,12 @@ export default function AvisoNovedades({ empId, roleId, hasPermission, bloqueado
     const { pathname, search } = useLocation();
     const forzado = new URLSearchParams(search).get('aviso') === 'novedades';
     const puede = hasPermission?.('novedades', 'can_view');
-    const { vistas, marcar } = useNovedadesVistas(empId);
+    const { vistas, marcar, leido } = useNovedadesVistas(empId);
     // Se decide UNA vez, cuando ya se sabe qué vio: después no reaparece por navegar.
+    // Si la base no respondió, no sale: no saber no es «no la vio» (2026-11-19).
     const [toca, setToca] = useState(null);
     if (toca === null && (forzado || vistas !== null)) {
-        setToca(forzado || (hoySV() >= DESDE && !vistas.has(CLAVE) && !pathname.startsWith('/novedades')));
+        setToca(forzado || (leido && hoySV() >= DESDE && !vistas.has(CLAVE) && !pathname.startsWith('/novedades')));
     }
     if (!tanda || !puede || bloqueado || !toca) return null;
     return <Entrada roleId={roleId} hasPermission={hasPermission} onVista={() => marcar(CLAVE)} />;

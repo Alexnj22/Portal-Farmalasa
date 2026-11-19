@@ -45,8 +45,16 @@ export default function useNovedadesVistas(empId) {
         vivo.current = true;
         if (!empId) return () => { vivo.current = false; };
         (async () => {
+            // Un tropiezo de red (pasó un 521 el 2026-11-19) no puede leerse como
+            // «no vio nada»: se reintenta una vez y, si sigue fallando, `leido`
+            // queda en false para que la pantalla de entrada no salga.
             let enBase = new Set();
-            try { enBase = await fetchMisVistas(empId); } catch { /* sigue vacío */ }
+            let leido = false;
+            for (let intento = 0; intento < 2 && !leido; intento++) {
+                if (intento) await new Promise((r) => setTimeout(r, 1500));
+                try { enBase = await fetchMisVistas(empId); leido = true; } catch { /* reintenta */ }
+                if (!vivo.current) return;
+            }
             const { claves, borrar } = leerLegado(empId);
             const faltan = claves.filter((c) => !enBase.has(c));
             let subido = true;
@@ -57,7 +65,7 @@ export default function useNovedadesVistas(empId) {
             // cuando ya quedó en la base (si no, se reintenta la próxima vez).
             claves.forEach((c) => enBase.add(c));
             if (subido) borrar.forEach((k) => { try { almacen.borrar(k); } catch { /* nada */ } });
-            if (vivo.current) setEstado({ emp: empId, set: enBase });
+            if (vivo.current) setEstado({ emp: empId, set: enBase, leido });
         })();
         return () => { vivo.current = false; };
     }, [empId]);
@@ -74,5 +82,7 @@ export default function useNovedadesVistas(empId) {
         marcarVistas(lista).catch(() => { /* queda marcada en pantalla; se vuelve a intentar al abrirla */ });
     }, []);
 
-    return { vistas, marcar };
+    // `leido`: la base respondió. Sin eso, `vistas` es sólo lo que se sabe localmente.
+    const leido = !empId || (estado.emp === empId && estado.leido === true);
+    return { vistas, marcar, leido };
 }

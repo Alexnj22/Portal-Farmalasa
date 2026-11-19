@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.5 — La app: compras desde el portal, frases del día, lectura de Saly, mapa de encuestas y varios lotes por caja; buscadores corregidos
+
+- App: Compras con el filtro «Cómo entró» y la marca «Desde el portal»; libro de compras completo anota en la bitácora (ver documento, exportes) y encuentra «repetido»; Ventas perdidas exporta toda la pestaña y lo anota; despachar un traslado admite una caja con varios lotes; Ofertas con «Frases del día» (crear, editar, pausar, borrar); encuestas a clientes con la lectura de Saly y el mapa de ubicaciones de campo; el chat abre en el primer mensaje sin leer.
+- Web y app: siete buscadores pasaban los argumentos de `tokenMatch` al revés y casi no encontraban nada (frases, historias, banners, erróneos y por llegar de Cargar compra, registro por lote, mayoristas).
+- Novedades: no — lo decidió el usuario (2026-11-19).
+
 ## v2.1583.4 — Encuestas en la app: la entrevista sin saltos, con progreso y botones fijos y un diseño nuevo
 
 - **La entrevista ya no salta.** Al pasar de pregunta se quedaba el desplazamiento de la anterior: la siguiente aparecía a media pantalla o se movía sola. Ahora cada pregunta nace arriba, con su propio desplazamiento.

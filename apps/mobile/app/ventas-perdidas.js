@@ -147,13 +147,22 @@ export default function VentasPerdidas() {
     { id: 'quien', titulo: 'Reportó', activa: quienFiltro, porDefecto: 'todos', onCambiar: setQuienFiltro,
       opciones: [{ id: 'todos', label: 'Todos' }, ...[...new Set((filas || []).map((r) => String(r.reportado_por)).filter((x) => x && x !== 'null'))].map((id) => ({ id, label: porId.get(id) ? shortEmployeeName(porId.get(id)) : 'Alguien' }))] },
   ];
-  // El mismo CSV del portal (columnas y orden), anotado como salida de datos.
-  const exportar = () => compartirCsv({
-    headers: ['Fecha', 'Producto', 'Buscado como', 'Cantidad', 'Principio activo', 'Laboratorio', 'Sucursal', 'Reportado por'],
-    rows: visibles.map((r) => [fechaHora12(r.created_at, { day: '2-digit', month: 'short', year: 'numeric' }), r.descripcion || r.producto_buscado || '', r.producto_buscado || '', r.cantidad ?? '',
-      r.principio_activo || '', r.laboratorio || '', nombreDeSala(r.branch_id) || '', porId.get(String(r.reportado_por))?.name || '']),
-    nombre: `ventas_perdidas_${estado}_${hoySV()}`, modulo: 'ventas_perdidas', detalle: { tab: estado },
-  }).catch((e) => fallo('No se pudo exportar', mensajeAmigable(e)));
+  // El mismo CSV del portal: columnas, orden y TODAS las filas de la pestaña
+  // (los filtros de sucursal y de quién reportó no recortan el archivo, como en
+  // el portal, que no los tiene). Salida de datos anotada, y en la bitácora
+  // `EXPORT_VENTAS_PERDIDAS` con el mismo detalle del portal.
+  const exportar = async () => {
+    const todas = filas || [];
+    try {
+      const compartido = await compartirCsv({
+        headers: ['Fecha', 'Producto', 'Buscado como', 'Cantidad', 'Principio activo', 'Laboratorio', 'Sucursal', 'Reportado por'],
+        rows: todas.map((r) => [fechaHora12(r.created_at, { day: '2-digit', month: 'short', year: 'numeric' }), r.descripcion || r.producto_buscado || '', r.producto_buscado || '', r.cantidad ?? '',
+          r.principio_activo || '', r.laboratorio || '', nombreDeSala(r.branch_id) || '', porId.get(String(r.reportado_por))?.name || '']),
+        nombre: `ventas_perdidas_${estado}_${hoySV()}`, modulo: 'ventas_perdidas', detalle: { tab: estado },
+      });
+      if (compartido) useStaffStore.getState().appendAuditLog('EXPORT_VENTAS_PERDIDAS', null, { count: todas.length, tab: estado });
+    } catch (e) { fallo('No se pudo exportar', mensajeAmigable(e)); }
+  };
 
   const marcar = useCallback(async (r) => {
     setProcesando(r.id);
@@ -167,7 +176,7 @@ export default function VentasPerdidas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_FIJA, title: 'Ventas perdidas' }} />
-      <MenuDeFiltros grupos={grupos} extra={puedeDescargar && visibles.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
+      <MenuDeFiltros grupos={grupos} extra={puedeDescargar && filas?.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'pendiente', label: 'Pendientes' }, { id: 'procesado', label: 'Procesados' }]} />

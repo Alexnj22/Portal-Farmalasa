@@ -16,18 +16,21 @@
 // las respuestas, el resumen de los comentarios con IA (guardado para todos;
 // se rehace sólo cuando entran comentarios nuevos), las rondas de la encuesta,
 // y los accesos a Ajustes (`ajustes`) y al Avance con sus enlaces (`avance`).
+// Y la lectura de Saly (`componentes/encuestas/LecturaDeSaly`) y dónde se
+// hizo en campo, con su mapa (`componentes/encuestas/UbicacionesDeCampo`).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
-  fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas, guardarResumen,
+  fetchComentarios, fetchEncuesta, fetchEventos, fetchLectura, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas,
+  fetchUbicaciones, guardarLectura, guardarResumen,
 } from '@nucleo/data/encuestasClientes';
 import { preguntarASaly } from '@nucleo/data/ia';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
-import { archivoDeEncuesta, estadoDe, estadoDelResumen, lecturaNps, loteParaResumir, resumenDeCierre, tablaDeRespuestas } from '@nucleo/utils/encuestasClientes';
+import { CAMPO, archivoDeEncuesta, estadoDe, estadoDelResumen, lecturaNps, loteParaResumir, resumenDeCierre, tablaDeRespuestas } from '@nucleo/utils/encuestasClientes';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../../componentes/Segmentos';
@@ -45,6 +48,9 @@ import PreguntaPorPregunta from '../../componentes/encuestas/Distribucion';
 import { compartirCsv } from '../../componentes/fiscal/csv';
 import { fallo, trabajando, cerrarProgreso } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import LecturaDeSaly from '../../componentes/encuestas/LecturaDeSaly';
+import UbicacionesDeCampo from '../../componentes/encuestas/UbicacionesDeCampo';
+import { paqueteParaSaly } from '@nucleo/utils/encuestasLectura';
 
 const EVENTO = {
   creada: 'creó la encuesta', enviada: 'la envió a revisión', aprobada: 'la aprobó', rechazada: 'la devolvió con cambios',
@@ -65,6 +71,8 @@ export default function EncuestaCliente() {
   const [rondas, setRondas] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [resumiendo, setResumiendo] = useState(false);
+  const [lecturaSaly, setLecturaSaly] = useState(null);
+  const [leyendo, setLeyendo] = useState(false);
   const [problemas, setProblemas] = useState([]);
   const [eventos, setEventos] = useState([]);
   const [personas, setPersonas] = useState({});
@@ -77,6 +85,7 @@ export default function EncuestaCliente() {
         fetchComentarios(id, sala).then(setComentarios).catch(() => setComentarios([]));
         fetchRondas(id).then(setRondas).catch(() => setRondas([]));
         fetchResumen(id, sala).then(setResumen).catch(() => setResumen(null));
+        fetchLectura(id, sala).then(setLecturaSaly).catch(() => setLecturaSaly(null));
       }
       if (e?.estado === 'borrador') fetchProblemas(id).then(setProblemas).catch(() => setProblemas([]));
       fetchEventos(id).then(async (ev) => {
@@ -127,6 +136,32 @@ export default function EncuestaCliente() {
     setResumiendo(false);
   };
   const estResumen = estadoDelResumen(resumen);
+
+  // La LECTURA de Saly (como el portal, 2026-11-07): los números ya contados
+  // más los cruces entre preguntas (núcleo, `paqueteParaSaly`), y ella dice qué
+  // significan y qué hacer. Se guarda y todos ven la misma.
+  const nombreDelFiltro = sala == null ? 'todas las sucursales'
+    : (salasConRespuestas.find((x) => Number(x.branch_id) === sala)?.nombre || 'esta sucursal');
+  const leerResultados = async () => {
+    setLeyendo(true);
+    try {
+      const enCampo = sala === CAMPO;
+      const [todas, ubic] = await Promise.all([
+        fetchRespuestasParaExportar(encuesta.id),
+        (sala == null || enCampo) && (datos?.por_canal?.campo || 0) > 0 ? fetchUbicaciones(encuesta.id).catch(() => null) : null,
+      ]);
+      const filas = sala != null ? todas.filter((f) => Number(f.branch_id ?? CAMPO) === sala) : todas;
+      const paquete = paqueteParaSaly({
+        encuesta, datos, filas, comentarios: comentarios || [], lugares: ubic?.por_lugar || [], filtro: sala != null ? nombreDelFiltro : null,
+      });
+      const { data, error: e } = await preguntarASaly({ action: 'analyze-customer-survey-results', payload: { datos: paquete } });
+      if (e) throw e;
+      if (!data?.aiSummary) throw new Error('Saly no devolvió la lectura.');
+      await guardarLectura(encuesta.id, sala, data.aiSummary, filas.length);
+      setLecturaSaly(await fetchLectura(encuesta.id, sala));
+    } catch (e) { fallo('Saly no pudo leer los resultados', mensajeAmigable(e, 'Intenta de nuevo.')); }
+    setLeyendo(false);
+  };
 
   const est = encuesta ? estadoDe(encuesta.estado) : null;
   const nps = datos?.nps;
@@ -196,6 +231,7 @@ export default function EncuestaCliente() {
                       <Kpi icono="Users" rotulo="Respuestas" valor={String(datos.total)} color={MARCA.azul}
                         apoyo={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${CANAL[c] ?? c}`).join(' · ')} />
                     </FilaDeKpis>
+                    <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo} onActualizar={leerResultados} />
                     {nps.respuestas > 0 ? (
                       <Seccion titulo="Recomendación">
                         <View style={{ flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', backgroundColor: colorSistema.separador }}>
@@ -234,6 +270,9 @@ export default function EncuestaCliente() {
                           </View>
                         ))}
                       </Seccion>
+                    ) : null}
+                    {(sala == null || sala === CAMPO) && (datos.por_canal?.campo || 0) > 0 ? (
+                      <UbicacionesDeCampo encuestaId={encuesta.id} zonas={encuesta.zonas_campo} />
                     ) : null}
                     {datos.por_pregunta?.some((p) => p.tipo !== 'texto') ? (
                       <Seccion titulo="Pregunta por pregunta">

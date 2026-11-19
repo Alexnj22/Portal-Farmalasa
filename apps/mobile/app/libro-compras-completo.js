@@ -8,7 +8,10 @@
 // los montos, sólo con `libro_compras_completo_ver_montos`. «Exportar CSV»
 // comparte el MISMO archivo del portal (`csvDelLibroCompleto` /
 // `csvDelDeclarable`, núcleo) con `libro_compras_completo_descargar`. Sin
-// tope de filas: se pagina de 40 en 40.
+// tope de filas: se pagina de 40 en 40. Exportar y abrir un documento se
+// anotan en la bitácora con las mismas acciones y detalles del portal
+// (`LIBRO_COMPRAS_COMPLETO_EXPORT`, `…_DECLARABLE_EXPORT`, `…_VER_DOCUMENTO`),
+// y la búsqueda encuentra «repetido», el rótulo que esas filas llevan puesto.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
@@ -68,12 +71,27 @@ export default function LibroComprasCompleto() {
   const t = useMemo(() => totalesDelLibro(filas), [filas]);
   const td = useMemo(() => (esDecl ? totalesDeclarable(filas) : null), [filas, esDecl]);
   const vistas = useMemo(() => filasDeLaPestana(filas, pestana)
-    .filter((r) => !texto.trim() || tokenMatch(texto.trim(), r.proveedor, r.documento_completo, r.nit)), [filas, pestana, texto]);
+    .filter((r) => !texto.trim() || tokenMatch(texto.trim(), r.proveedor, r.documento_completo, r.nit,
+      Number(r.veces_en_el_libro || 1) > 1 ? 'repetido' : null)), [filas, pestana, texto]);
   const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? '';
   const exportar = async () => {
     try {
       const csv = esDecl ? csvDelDeclarable(filas, td, mes) : csvDelLibroCompleto(filas, t, nombreSala, mes);
-      await compartirCsv({ headers: csv.headers, rows: csv.rows, nombre: csv.archivo, modulo: esDecl ? 'libro_compras_declarable' : 'libro_compras_completo', detalle: { mes } });
+      const compartido = await compartirCsv({ headers: csv.headers, rows: csv.rows, nombre: csv.archivo, modulo: esDecl ? 'libro_compras_declarable' : 'libro_compras_completo', detalle: { mes } });
+      if (!compartido) return;
+      if (esDecl) {
+        useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_DECLARABLE_EXPORT', mes, {
+          documentos: td.docs, credito_fiscal: td.credito,
+          sin_contar: td.sinCuenta,
+          documentos_repetidos: Math.round(td.repDocs),
+          credito_repetido: td.repCredito,
+        });
+      } else {
+        useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_COMPLETO_EXPORT', mes, {
+          documentos: t.docs, credito_fiscal: t.credito,
+          sin_registrar: t.sinCompra,
+        });
+      }
     } catch (e) { fallo('No se pudo armar el CSV', e?.message || ''); }
   };
   const grupos = todas && !esDecl ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: 'ALL', onCambiar: setSala,
@@ -131,7 +149,11 @@ export default function LibroComprasCompleto() {
           const repetido = Number(r.veces_en_el_libro || 1) > 1;
           return (
             <Pressable key={`${r.dte_id ?? ''}-${r.documento_completo}-${i}`} disabled={!abre}
-              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/factura-compra/[id]', params: { id: String(r.dte_id), fecha: r.fecha } }); }}
+              onPress={() => {
+                Haptics.selectionAsync().catch(() => {});
+                useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_VER_DOCUMENTO', String(r.dte_id ?? ''), { documento: r.documento_completo, tipo: r.documento_tipo });
+                router.push({ pathname: '/factura-compra/[id]', params: { id: String(r.dte_id), fecha: r.fecha } });
+              }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed && abre ? 0.98 : 1 }] })}>
               <Vidrio radio={16} interactivo={!!abre} tinte={repetido ? 'rgba(240,68,56,0.10)' : esDecl && !r.computa_credito ? 'rgba(247,144,9,0.08)' : undefined}>
                 <View style={{ padding: 12, gap: 4 }}>

@@ -57,7 +57,7 @@ export default function BannersPanel({ busqueda, puedeEditar, showToast }) {
 
     const filas = useMemo(() => (banners ?? [])
         .filter((b) => !fEstado || estadoDeOferta(b, hoy).key === fEstado)
-        .filter((b) => !busqueda || tokenMatch(b.titulo, busqueda)), [banners, fEstado, busqueda, hoy]);
+        .filter((b) => !busqueda || tokenMatch(busqueda, b.titulo)), [banners, fEstado, busqueda, hoy]);
 
     const alternar = async (b) => {
         try {

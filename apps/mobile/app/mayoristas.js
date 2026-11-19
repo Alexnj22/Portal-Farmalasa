@@ -136,7 +136,7 @@ export default function Mayoristas() {
 
   const pendientes = useMemo(() => solicitudesPendientes(filas).length, [filas]);
   const lista = useMemo(() => (tab === 'historial'
-    ? (historial ?? []).filter((h) => !busqueda || tokenMatch(h.customers?.name ?? '', busqueda))
+    ? (historial ?? []).filter((h) => !busqueda || tokenMatch(busqueda, h.customers?.name ?? ''))
     : filasDeMayoristas(filas, { tab, busqueda, soloCumplen, orden, soloConNombre, verDescartados })),
   [tab, historial, filas, busqueda, soloCumplen, orden, soloConNombre, verDescartados]);
   const { visibles, scroll } = useEnTramos(lista, 40, `${tab}|${busqueda}|${soloCumplen}|${soloConNombre}|${verDescartados}|${orden}`);

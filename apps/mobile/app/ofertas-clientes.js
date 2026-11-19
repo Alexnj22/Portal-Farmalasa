@@ -11,8 +11,8 @@
 // Pre-registros: el toque abre la búsqueda de su ficha por documento para
 // vincularla, o descartarlo (`preregistro/[id]`).
 //
-// Las cinco pestañas del portal: Ofertas, Historias (`componentes/ofertas/
-// Historias`), Banners (`Banners`), Reservas de todas las salas (`Reservas`,
+// Las pestañas del portal: Ofertas, Historias (`componentes/ofertas/
+// Historias`), Banners (`Banners`), Frases del día (`Frases`), Reservas de todas las salas (`Reservas`,
 // con `ofertas_clientes` editar) y Pre-registros.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Image, ScrollView, Text, View } from 'react-native';
@@ -44,6 +44,7 @@ import Historias, { ESTADOS_DE_HISTORIA, abrirHistoria } from '../componentes/of
 import Banners, { abrirBanner } from '../componentes/ofertas/Banners';
 import Reservas from '../componentes/ofertas/Reservas';
 import Envio from '../componentes/ofertas/Envio';
+import Frases, { ESTADOS_DE_FRASE, abrirFrase, frasesCargadas } from '../componentes/ofertas/Frases';
 
 const rango = (o) => `${fechaTexto(o.inicio, { day: 'numeric', month: 'short' })} – ${fechaTexto(o.fin, { day: 'numeric', month: 'short' })}`;
 
@@ -103,14 +104,19 @@ export default function OfertasClientes() {
     opciones: [{ id: 'todas', label: 'Todas' }, ...ESTADOS_DE_OFERTA.map((e) => ({ id: e.value, label: e.label }))],
   }] : pestana === 'historias' ? [{
     id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todas', onCambiar: setEstado, opciones: ESTADOS_DE_HISTORIA,
+  }] : pestana === 'frases' ? [{
+    id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'todas', onCambiar: setEstado, opciones: ESTADOS_DE_FRASE,
   }] : [];
   const cambiarPestana = (p) => { setPestana(p); setEstado('todas'); };
   const nuevo = !puedeEditar ? null
     : pestana === 'ofertas' ? { icono: 'plus', etiqueta: 'Nueva oferta', onPress: () => abrir(null) }
       : pestana === 'historias' ? { icono: 'plus', etiqueta: 'Nueva historia', onPress: () => abrirHistoria(null) }
-        : pestana === 'banners' ? { icono: 'plus', etiqueta: 'Nuevo banner', onPress: () => abrirBanner(null) } : null;
+        : pestana === 'banners' ? { icono: 'plus', etiqueta: 'Nuevo banner', onPress: () => abrirBanner(null) }
+          : pestana === 'frases' ? { icono: 'plus', etiqueta: 'Nueva frase', onPress: () => abrirFrase(null, frasesCargadas()) } : null;
   const pestanas = [
     { id: 'ofertas', label: 'Ofertas' }, { id: 'historias', label: 'Historias' }, { id: 'banners', label: 'Banners' },
+    // La frase del día de la app de clientes: le gana a las que trae la app.
+    { id: 'frases', label: 'Frases del día' },
     ...(puedeEditar ? [{ id: 'reservas', label: 'Reservas' }] : []),
     ...(veClientes ? [{ id: 'preregistros', label: 'Pre-registros' }] : []),
   ];
@@ -149,7 +155,7 @@ export default function OfertasClientes() {
       <Stack.Screen options={{
         ...BARRA_FIJA, title: 'Ofertas para clientes',
         headerSearchBarOptions: {
-          placeholder: pestana === 'preregistros' ? 'Nombre o documento' : pestana === 'historias' ? 'Buscar historia' : pestana === 'banners' ? 'Buscar banner' : 'Buscar oferta', hideWhenScrolling: false,
+          placeholder: pestana === 'preregistros' ? 'Nombre o documento' : pestana === 'historias' ? 'Buscar historia' : pestana === 'banners' ? 'Buscar banner' : pestana === 'frases' ? 'Buscar frase' : 'Buscar oferta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
@@ -163,6 +169,7 @@ export default function OfertasClientes() {
 
         {pestana === 'historias' ? <Historias busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
           : pestana === 'banners' ? <Banners busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
+          : pestana === 'frases' ? <Frases busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
           : pestana === 'reservas' ? <><Envio puedeEditar={puedeEditar} /><Reservas todas recarga={vuelta} /></>
           : pestana === 'ofertas' ? (
           ofertas == null ? <Cargando /> : (

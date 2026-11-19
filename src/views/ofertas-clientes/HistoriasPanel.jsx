@@ -64,7 +64,7 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
 
     const filas = useMemo(() => (historias ?? [])
         .filter((h) => !fEstado || estadoDeHistoria(h).key === fEstado)
-        .filter((h) => !busqueda || tokenMatch(`${h.titulo} ${h.texto ?? ''}`, busqueda)), [historias, fEstado, busqueda]);
+        .filter((h) => !busqueda || tokenMatch(busqueda, h.titulo, h.texto ?? '')), [historias, fEstado, busqueda]);
 
     // Una que ya terminó se vuelve a publicar: se retira y se publica, y la base
     // le renueva las 24 horas.

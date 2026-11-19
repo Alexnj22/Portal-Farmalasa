@@ -233,7 +233,7 @@ function Historial({ busqueda, onAbrir }) {
     const [filas, setFilas] = useState(null);
     useEffect(() => { fetchHistorialMayoristas().then(setFilas).catch(() => setFilas([])); }, []);
     if (!filas) return <LoadingState label="Cargando historial" />;
-    const lista = filas.filter((h) => !busqueda || tokenMatch(h.customers?.name ?? '', busqueda));
+    const lista = filas.filter((h) => !busqueda || tokenMatch(busqueda, h.customers?.name ?? ''));
     if (!lista.length) return <EmptyState icon={History} title="Sin movimientos" subtitle="Aquí queda cada solicitud, aprobación, cambio de precio y retiro." />;
     return (
         <DataTable

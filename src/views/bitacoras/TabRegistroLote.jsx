@@ -172,7 +172,7 @@ export default function TabRegistroLote({ registro, cargando, error, filtro, bus
     const visibles = useMemo(() => filas.filter(f => {
         const estado = estadoDeFila(f);
         if (filtro !== 'todos' && estado !== filtro && !(filtro === 'sin_base' && estado === 'sin_lote')) return false;
-        return !busqueda || tokenMatch(`${f.producto} ${f.lote}`, busqueda);
+        return !busqueda || tokenMatch(busqueda, f.producto, f.lote);
     }), [filas, filtro, busqueda]);
 
     const { page, pageSize, totalPages, setPage, setPageSize, resetPage } =

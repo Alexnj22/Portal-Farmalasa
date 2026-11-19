@@ -54,7 +54,7 @@ export default function FrasesPanel({ busqueda, puedeEditar, showToast }) {
     const estados = useMemo(() => estadosDeFrases(frases ?? [], hoy), [frases, hoy]);
     const filas = useMemo(() => (frases ?? [])
         .filter((f) => !fEstado || estados.get(f.id)?.key === fEstado)
-        .filter((f) => !busqueda || tokenMatch(f.texto, busqueda)), [frases, estados, fEstado, busqueda]);
+        .filter((f) => !busqueda || tokenMatch(busqueda, f.texto)), [frases, estados, fEstado, busqueda]);
     const deHoy = useMemo(() => fraseDeUnDia(frases ?? [], hoy, hoy), [frases, hoy]);
     const deManana = useMemo(() => fraseDeUnDia(frases ?? [], sumarDias(hoy, 1), hoy), [frases, hoy]);
     const enCola = useMemo(() => [...estados.values()].filter((e) => e.key === 'cola').length, [estados]);

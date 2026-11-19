@@ -49,7 +49,7 @@ export function filasDeMayoristas(filas, { tab, busqueda = '', soloCumplen = tru
             : tab === 'mayoristas' ? f.estado === 'aprobado'
                 : f.estado !== 'aprobado' && f.estado !== 'solicitado' && (!soloCumplen || f.cumple)
                     && (verDescartados || f.estado !== 'descartado') && (!soloConNombre || !!f.precio_en_nombre)))
-        .filter((f) => !busqueda || tokenMatch(`${f.nombre ?? ''} ${f.documento ?? ''}`, busqueda))
+        .filter((f) => !busqueda || tokenMatch(busqueda, f.nombre ?? '', f.documento ?? ''))
         .sort((a, b) => (orden === 'promedio' ? b.prom_3m - a.prom_3m
             : orden === 'reciente' ? String(b.ultima_compra ?? '').localeCompare(String(a.ultima_compra ?? ''))
                 : b.a_mayoreo - a.a_mayoreo));

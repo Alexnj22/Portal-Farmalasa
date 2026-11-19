@@ -179,7 +179,7 @@ export function TabRegistro({ busca }) {
     }, [desde, hasta]);
 
     const vista = useMemo(() => (filas ?? []).filter(f => !busca
-        || tokenMatch(`${f.producto ?? ''} ${f.descripcion_proveedor ?? ''} ${f.proveedor_nombre ?? ''} ${f.numero_documento ?? ''} ${f.lote ?? ''}`, busca)),
+        || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? '', f.lote ?? '')),
     [filas, busca]);
     const difieren = vista.filter(f => f.en_sistema === 'difiere').length;
 
@@ -310,7 +310,7 @@ export function TabPorLlegar({ puedeEditar, busca }) {
         cargar();
     };
     const vista = (filas ?? []).filter(f => !busca
-        || tokenMatch(`${f.producto ?? ''} ${f.descripcion_proveedor ?? ''} ${f.proveedor_nombre ?? ''} ${f.numero_documento ?? ''}`, busca));
+        || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? ''));
     const abiertos = vista.filter(f => f.abierto);
     const monto = abiertos.reduce((t, f) => t + Number(f.monto || 0), 0);
 

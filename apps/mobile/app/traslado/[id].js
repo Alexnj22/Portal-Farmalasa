@@ -49,6 +49,8 @@ import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulari
 import { MAYUSCULAS } from '../../tema/mayusculas';
 import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 import LoteDeLaCaja, { LOTE_DE_CAJA_VACIO } from '../../componentes/LoteDeLaCaja';
+import VariosLotesDeLaCaja from '../../componentes/traslados/VariosLotesDeLaCaja';
+import { FILA_DE_VARIOS_LOTES, faltaEnVariosLotes, variosLotesParaEnviar } from '@nucleo/utils/loteDeCaja';
 
 function Bloque({ titulo, children }) {
   return (
@@ -123,6 +125,10 @@ export default function Traslado() {
   const [regulados, setRegulados] = useState(null);     // Set de erp_product_id
   const [perecederos, setPerecederos] = useState(null); // Set: perecedero SIN control de lote
   const [cajas, setCajas] = useState({});          // { 'L|pos' | 'V|pos': valor de LoteDeLaCaja }
+  // La caja que viene de varios lotes (portal, 2026-11-16): { [posicion]: filas
+  // de VariosLotesDeLaCaja }. Si está, reemplaza al lote único de esa posición
+  // y sale un elemento por lote, con sus unidades (`variosLotesParaEnviar`).
+  const [variosLotes, setVariosLotes] = useState({});
   /* Lo demás que el servidor puede contestar al despachar (portal:
    * `DecisionTraslado`, 2026-11-05):
    *   · `CAJA_EN_UNIDADES`: ningún lote completa la presentación; se ofrece
@@ -266,10 +272,13 @@ export default function Traslado() {
     x.valor.sinAsignar ? cajas[`L|${x.pos}`]?.envio?.vence : x.valor.vence, items[x.pos], hoy));
   const sinAceptar = cajaEnUnidades.find((c) => !aceptaUnidades.has(c.posicion));
   // Lo que falta, UNO y en orden, como el portal (`faltaParaConfirmar`).
-  const sinCaja = pidenLote.find((x) => !cajas[`L|${x.posicion}`]?.envio);
+  const faltaEnVarios = pidenLote.map((x) => (variosLotes[x.posicion]
+    ? { x, falta: faltaEnVariosLotes(variosLotes[x.posicion], x.unidades) } : null)).find((v) => v?.falta);
+  const sinCaja = pidenLote.find((x) => !variosLotes[x.posicion] && !cajas[`L|${x.posicion}`]?.envio);
   const sinElegir = lineasLote.find((x) => x.abierto && !x.valor);
   const sinVence = pidenVence.find((x) => !cajas[`V|${x.posicion}`]?.envio);
-  const faltaParaEnviar = sinCaja ? `Copia el lote y el vencimiento de la caja de ${sinCaja.producto}.`
+  const faltaParaEnviar = faltaEnVarios ? `${faltaEnVarios.x.producto}: ${faltaEnVarios.falta}`
+    : sinCaja ? `Copia el lote y el vencimiento de la caja de ${sinCaja.producto}.`
     : sinElegir ? `Elige el lote que sale de ${sinElegir.producto}.`
     : sinVence ? `Copia el vencimiento de la caja de ${sinVence.producto}.`
     : esperandoRespuesta ? `Espera la respuesta de ${salaQuePide} o cambia el lote.`
@@ -278,7 +287,9 @@ export default function Traslado() {
   const enviar = async () => {
     setOcupado(true); trabajando('Enviando traslado…');
     const r = await despacharTraslado(fila.id, recortado ? porQue.trim() : '', recortado ? aceptadas : null,
-      pidenLote.map((x) => ({ posicion: x.posicion, ...cajas[`L|${x.posicion}`].envio })),
+      pidenLote.flatMap((x) => (variosLotes[x.posicion]
+        ? variosLotesParaEnviar(x.posicion, variosLotes[x.posicion])
+        : [{ posicion: x.posicion, ...cajas[`L|${x.posicion}`].envio }])),
       [...conEleccion.values()].map((x) => ({ posicion: x.pos, lote: x.valor.lote, vence: x.valor.vence })),
       [...aceptaUnidades],
       pidenVence.map((x) => ({ posicion: x.posicion, vence: cajas[`V|${x.posicion}`].envio.vence })));
@@ -561,9 +572,25 @@ export default function Traslado() {
                   <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
                     {`${x.producto} · ${x.unidades} ${x.unidades === 1 ? 'unidad' : 'unidades'}. ${x.solo ? 'Copia el vencimiento que trae la caja.' : 'Copia el lote y el vencimiento que trae la caja.'}`}
                   </Text>
-                  <LoteDeLaCaja soloVence={x.solo} erpProductId={items[x.posicion]?.erp_product_id} producto={x.producto}
-                    valor={cajas[x.k] ?? (dp?.sin_asignar ? { lote: dp.lote, vence: String(dp.vence).slice(0, 7) } : LOTE_DE_CAJA_VACIO)}
-                    onChange={(v) => setCajas((c) => ({ ...c, [x.k]: v }))} />
+                  {!x.solo && variosLotes[x.posicion] ? (
+                    <VariosLotesDeLaCaja erpProductId={items[x.posicion]?.erp_product_id} producto={x.producto} total={x.unidades}
+                      filas={variosLotes[x.posicion]}
+                      onChange={(filas) => setVariosLotes((c) => ({ ...c, [x.posicion]: filas }))}
+                      onUnSoloLote={() => setVariosLotes(({ [x.posicion]: _, ...resto }) => resto)} />
+                  ) : (
+                    <LoteDeLaCaja soloVence={x.solo} erpProductId={items[x.posicion]?.erp_product_id} producto={x.producto}
+                      valor={cajas[x.k] ?? (dp?.sin_asignar ? { lote: dp.lote, vence: String(dp.vence).slice(0, 7) } : LOTE_DE_CAJA_VACIO)}
+                      onChange={(v) => setCajas((c) => ({ ...c, [x.k]: v }))} />
+                  )}
+                  {/* Una caja que no es de un solo lote: se escribe cada uno con sus
+                      unidades y sale un renglón por lote, como el portal. */}
+                  {!x.solo && !variosLotes[x.posicion] && x.unidades > 1 ? (
+                    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVariosLotes((c) => ({ ...c, [x.posicion]: [FILA_DE_VARIOS_LOTES(), FILA_DE_VARIOS_LOTES()] })); }}
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>La caja trae más de un lote</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 );
               })}

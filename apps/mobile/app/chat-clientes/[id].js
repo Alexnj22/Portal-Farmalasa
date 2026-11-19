@@ -32,7 +32,7 @@ import { useEquipoDelChat } from '@nucleo/hooks/useBandejaDelChat';
 import { COLUMNAS_PRESENCIA, EMOJIS_DE_REACCION, MENSAJES_POR_PAGINA, fetchConversaciones, fetchMensajes, fetchMensajesCambiados, fetchPresenciaDeConversaciones, fetchReacciones, quitarFotoDeCliente, reaccionarAMensaje, resolverConversacion, responderConversacion, subirAudioDelEquipo, subirFotoDelEquipo, tomarConversacion } from '@nucleo/data/chatClientes';
 import { fusionar, guardarHilo, leerHilo } from '@nucleo/data/chatHilo';
 import { escribeAhora, useRelojDeEscritura } from '@nucleo/hooks/escrituraDelChat';
-import { cambiaDeDia, empiezaTanda, etiquetaDeDia, nombreCortoDeCliente, nombreDeAutor, nombreDeCliente, recorteDeMensaje } from '@nucleo/utils/chatClientes';
+import { cambiaDeDia, empiezaTanda, etiquetaDeDia, nombreCortoDeCliente, nombreDeAutor, nombreDeCliente, primerSinLeer, recorteDeMensaje } from '@nucleo/utils/chatClientes';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import { estrellas, miReaccion } from '@nucleo/utils/chatPersonal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -68,6 +68,19 @@ function SeparadorDeDia({ valor }) {
     <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 4 }}>
       <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
         backgroundColor: 'rgba(127,127,127,0.14)', overflow: 'hidden' }}>{etiquetaDeDia(valor)}</Text>
+    </View>
+  );
+}
+
+// La franja «N mensajes nuevos» antes del primero sin leer (como el portal).
+function FranjaDeNuevos({ n }) {
+  const texto = `${n} ${n === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}`;
+  return (
+    <View accessibilityRole="text" accessibilityLabel={texto} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 10 }}>
+      <View style={{ flex: 1, height: 1, backgroundColor: `${MARCA.azulClaro}4D` }} />
+      <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '700', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
+        backgroundColor: `${MARCA.azulClaro}22`, overflow: 'hidden' }}>{texto}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: `${MARCA.azulClaro}4D` }} />
     </View>
   );
 }
@@ -208,6 +221,13 @@ export default function ConversacionDelChat() {
   const [menu, setMenu] = useState(null);
   const [reacciones, setReacciones] = useState(() => enMemoria?.reacciones ?? new Map());
   const [presencia, setPresencia] = useState(null);
+  // Lo sin leer AL ABRIR (antes de tomarla) y dónde va la franja, como el
+  // portal: el hilo se abre en el primero sin leer, no al fondo.
+  const [sinLeerAlAbrir] = useState(() => Number(conversacionRecordada(id)?.sin_leer_equipo) || 0);
+  const [divisor, setDivisor] = useState(null); // { id, n }
+  const irAlDivisor = useRef(false);
+  const listaRef = useRef(null);
+  const reintentoDivisor = useRef(false);
   const mensajesRef = useRef(null);
   const reaccionIds = useRef(new Set());
   useEffect(() => { mensajesRef.current = mensajes; }, [mensajes]);
@@ -267,6 +287,8 @@ export default function ConversacionDelChat() {
     let vivo = true;
     Promise.resolve(fetchMensajes(id)).then((filas) => {
       if (!vivo) return;
+      const primero = primerSinLeer(filas, sinLeerAlAbrir);
+      if (primero != null) { setDivisor({ id: primero, n: sinLeerAlAbrir }); irAlDivisor.current = true; }
       // Los temporales (lo que se está enviando) se conservan al final.
       setMensajes((prev) => [...filas, ...(prev ?? []).filter((m) => m.temporal)]); setHayAnteriores(filas.length >= MENSAJES_POR_PAGINA);
       asegurarEquipo(filas.flatMap((m) => [m.employee_id, m.cita?.employee_id]));
@@ -397,6 +419,15 @@ export default function ConversacionDelChat() {
   };
   const invertidos = (mensajes ?? []).map((m, i, todos) => ({ m, nuevaTanda: empiezaTanda(m, todos[i - 1]) || cambiaDeDia(m, todos[i - 1]), nuevoDia: cambiaDeDia(m, todos[i - 1]),
     finDeTanda: !todos[i + 1] || empiezaTanda(todos[i + 1], m) || cambiaDeDia(todos[i + 1], m) })).reverse();
+  // Al abrir con mensajes sin leer, la lista salta a la franja (una vez).
+  const indiceDivisor = divisor ? invertidos.findIndex((x) => x.m.id === divisor.id) : -1;
+  useEffect(() => {
+    if (!irAlDivisor.current || indiceDivisor < 0) return undefined;
+    irAlDivisor.current = false;
+    // En la lista invertida, `viewPosition: 1` deja el renglón arriba de la pantalla.
+    const t = setTimeout(() => listaRef.current?.scrollToIndex({ index: indiceDivisor, viewPosition: 1, animated: false }), 60);
+    return () => clearTimeout(t);
+  }, [indiceDivisor]);
   const fotoCliente = c ? <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={26} conversacion={c} /> : null;
 
   return (
@@ -468,10 +499,18 @@ export default function ConversacionDelChat() {
             {error && !mensajes ? <ErrorConReintento mensaje={error} onReintentar={() => { setError(null); setC(conversacionRecordada(id)); }} /> : null}
             {!mensajes && !error ? <Cargando /> : null}
             {mensajes ? (
-              <FlatList inverted style={{ flex: 1 }} data={invertidos} keyExtractor={(x) => String(x.m.id)}
+              <FlatList ref={listaRef} inverted style={{ flex: 1 }} data={invertidos} keyExtractor={(x) => String(x.m.id)}
+                // Un renglón todavía sin medir: se acerca por el promedio y se reintenta.
+                onScrollToIndexFailed={(info) => {
+                  listaRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false });
+                  if (reintentoDivisor.current) return;
+                  reintentoDivisor.current = true;
+                  setTimeout(() => listaRef.current?.scrollToIndex({ index: info.index, viewPosition: 1, animated: false }), 120);
+                }}
                 renderItem={({ item }) => (
                   <View>
                   {item.nuevoDia ? <SeparadorDeDia valor={item.m.created_at} /> : null}
+                  {divisor?.id === item.m.id ? <FranjaDeNuevos n={divisor.n} /> : null}
                   <DeslizarParaResponder activo={puedeResponder && item.m.autor !== 'sistema' && !item.m.temporal} onResponder={() => responderA(item.m)}>
                   <Burbuja m={item.m} nuevaTanda={item.nuevaTanda} finDeTanda={item.finDeTanda} onFoto={setFoto} onOpciones={opciones} clienteFoto={fotoCliente}
                     autor={item.m.employee_id ? equipo.get(item.m.employee_id) ?? { id: item.m.employee_id } : null}

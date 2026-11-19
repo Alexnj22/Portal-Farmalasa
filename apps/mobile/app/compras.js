@@ -7,15 +7,22 @@
 //     desde/hasta, como el selector de fechas del portal.
 //   · Productos: el historial de compra de cada producto
 //     (`componentes/fiscal/ProductosComprados`).
-// Todo el dinero, sólo con `compras_ver_montos`. Vincular un proveedor sigue
-// en el portal.
+// Filtro «cómo entró» (desde el portal / a mano) y la marca «cargada desde el
+// portal» con quién y cuándo, como el portal (`fetchIdsDesdePortal`,
+// `fetchCargadasDesdePortal`).
+// Todo el dinero, sólo con `compras_ver_montos`. El portal no vincula el
+// proveedor desde Compras: se vincula en la ficha del proveedor
+// («Registrado como»), que en la app es `proveedor/[id]`.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { fetchPurchaseReceiptsPage, fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount } from '@nucleo/data/compras';
+import { fetchCargadasDesdePortal, fetchIdsDesdePortal, fetchPurchaseReceiptsPage, fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount } from '@nucleo/data/compras';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { fechaHora12 } from '@nucleo/utils/hora';
+import Avatar from '../componentes/Avatar';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
@@ -38,6 +45,12 @@ import ProductosComprados from '../componentes/fiscal/ProductosComprados';
 import { useAuth } from '@nucleo/context/AuthContext';
 
 const POR_PAGINA = 30;
+// «Cómo entró», con los mismos valores que `ORIGENES` del portal.
+const ORIGENES = [
+  { id: 'todas', label: 'Todas' },
+  { id: 'portal', label: 'Desde el portal' },
+  { id: 'mano', label: 'A mano' },
+];
 
 export default function Compras() {
   // Sin `compras_ver_montos` la lista no lleva dinero (igual que el portal).
@@ -53,6 +66,8 @@ export default function Compras() {
   const [sinProveedor, setSinProveedor] = useState(false);
   const [proveedores, setProveedores] = useState([]);
   const [sinVincular, setSinVincular] = useState(0);
+  const [origen, setOrigen] = useState('todas');
+  const [delPortal, setDelPortal] = useState({});
   const [texto, setTexto] = useState('');
   const busqueda = useTextoRebotado(texto, 350).trim();
   const [datos, setDatos] = useState({ filas: [], total: 0 });
@@ -70,7 +85,7 @@ export default function Compras() {
     return n.desde > n.hasta ? ('desde' in cambio ? { ...n, hasta: n.desde } : { ...n, desde: n.hasta }) : n;
   });
 
-  useEffect(() => { setPagina(0); }, [desde, hasta, busqueda, proveedorId, sinProveedor]);
+  useEffect(() => { setPagina(0); }, [desde, hasta, busqueda, proveedorId, sinProveedor, origen]);
   useEffect(() => {
     fetchSuppliersBasic().then(({ data }) => setProveedores(data || []));
     fetchUnlinkedPurchaseReceiptsCount().then(({ count }) => setSinVincular(count || 0));
@@ -79,19 +94,35 @@ export default function Compras() {
     const yo = ++pedido.current;
     setCargando(true);
     const from = pagina * POR_PAGINA;
-    const { data, count, error: e } = await fetchPurchaseReceiptsPage({ from, to: from + POR_PAGINA - 1, dateStart: desde, dateEnd: hasta, searchTerm: busqueda || null, sinProveedor, supplierId: proveedorId === 'todos' ? null : proveedorId });
+    const filtroOrigen = origen === 'todas' ? '' : origen;
+    let idsPortal = null;
+    let eOrigen = null;
+    if (filtroOrigen) {
+      const r = await fetchIdsDesdePortal();
+      if (yo !== pedido.current) return;
+      eOrigen = r.error;
+      idsPortal = r.ids;
+    }
+    const { data, count, error: e } = await fetchPurchaseReceiptsPage({ from, to: from + POR_PAGINA - 1, dateStart: desde, dateEnd: hasta, searchTerm: busqueda || null, sinProveedor, supplierId: proveedorId === 'todos' ? null : proveedorId, origen: filtroOrigen, idsPortal });
     if (yo !== pedido.current) return;
-    setError(e ? mensajeAmigable(e) : null);
+    // Si no se pudo saber qué entró desde el portal, el filtro no es confiable: se dice.
+    setError(e ? mensajeAmigable(e) : eOrigen ? 'No se pudo saber cuáles entraron desde el portal. Intenta de nuevo.' : null);
     guardarCompras(data);
     setDatos((d) => ({ filas: pagina === 0 ? (data || []) : [...d.filas, ...(data || [])], total: count || 0 }));
     setCargando(false);
-  }, [desde, hasta, busqueda, pagina, sinProveedor, proveedorId]);
+    const { porCompra, error: eCarga } = await fetchCargadasDesdePortal((data || []).map((r) => r.erp_purchase_id));
+    if (yo !== pedido.current) return;
+    if (eCarga) console.warn('[compras] no se pudo leer qué entró desde el portal:', eCarga.message);
+    setDelPortal((d) => (pagina === 0 ? porCompra : { ...d, ...porCompra }));
+  }, [desde, hasta, busqueda, pagina, sinProveedor, proveedorId, origen]);
   useEffect(() => { cargar(); }, [cargar]);
 
   const totalMes = datos.filas.reduce((s, r) => s + Number(r.total || 0), 0);
   const grupos = tab === 'facturas' ? [{
     id: 'prov', titulo: 'Proveedor', activa: proveedorId, porDefecto: 'todos', onCambiar: (v) => { setProveedorId(v); setSinProveedor(false); },
     opciones: [{ id: 'todos', label: 'Todos' }, ...proveedores.map((p) => ({ id: String(p.id), label: p.nombre }))],
+  }, {
+    id: 'origen', titulo: 'Cómo entró', activa: origen, porDefecto: 'todas', onCambiar: setOrigen, opciones: ORIGENES,
   }] : [];
 
   return (
@@ -147,6 +178,7 @@ export default function Compras() {
         {datos.filas.map((r) => {
           const items = Array.isArray(r.purchase_receipt_items) ? r.purchase_receipt_items.length : 0;
           const proveedor = r.suppliers?.nombre || r.proveedor || 'Sin proveedor';
+          const carga = delPortal[r.erp_purchase_id];
           return (
             <Pressable key={r.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/compra/[id]', params: { id: String(r.id) } }); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
@@ -162,7 +194,17 @@ export default function Compras() {
                   <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                     {!r.estado || r.estado === 'VIGENTE' ? <Pildora texto="Vigente" color={MARCA.verde} /> : <Pildora texto={r.estado} color={MARCA.rojo} />}
                     {!r.supplier_id ? <Pildora texto="Proveedor sin vincular" color={MARCA.ambar} /> : null}
+                    {carga ? <Pildora texto="Desde el portal" color={MARCA.azulClaro} /> : null}
+                    {carga?.estado === 'sin_verificar' ? <Pildora texto="Sin comprobar" color={MARCA.ambar} /> : null}
                   </View>
+                  {carga ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Cargada desde el portal por</Text>
+                      <Avatar empleado={{ id: carga.employee_id, name: carga.empleado }} tamano={20} />
+                      <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{shortEmployeeName(carga.empleado)}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`· ${fechaHora12(carga.cargada_el, { day: '2-digit', month: '2-digit', year: 'numeric' })}`}</Text>
+                    </View>
+                  ) : null}
                 </View>
               </Vidrio>
             </Pressable>

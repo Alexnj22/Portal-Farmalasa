@@ -263,7 +263,7 @@ export default function AntibioticosDeBitacoras() {
   const lotesVisibles = useMemo(() => filasLotes.filter((f) => {
     const e = estadoDeFila(f);
     if (filtroLotes !== 'todos' && e !== filtroLotes && !(filtroLotes === 'sin_base' && e === 'sin_lote')) return false;
-    return !busqueda || tokenMatch(`${f.producto} ${f.lote}`, busqueda);
+    return !busqueda || tokenMatch(busqueda, f.producto, f.lote);
   }), [filasLotes, filtroLotes, busqueda]);
   const primerMes = registro?.inicial_de !== 'foto';
   const desdeCuando = useMemo(() => {

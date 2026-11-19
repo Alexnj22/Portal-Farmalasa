@@ -340,7 +340,7 @@ export function PestanaRegistro({ busca }) {
     return () => { vivo = false; };
   }, [rango]);
   const vista = useMemo(() => (filas ?? []).filter((f) => !busca?.trim()
-    || tokenMatch(`${f.producto ?? ''} ${f.descripcion_proveedor ?? ''} ${f.proveedor_nombre ?? ''} ${f.numero_documento ?? ''} ${f.lote ?? ''}`, busca)), [filas, busca]);
+    || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? '', f.lote ?? '')), [filas, busca]);
   const difieren = vista.filter((f) => f.en_sistema === 'difiere').length;
 
   // Las mismas 33 columnas que descarga el portal.

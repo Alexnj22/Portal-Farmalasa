@@ -23,6 +23,10 @@ export default function Resumen({ grupos, mesas }) {
   }, [grupos, mesas]);
 
   const dias = Math.ceil((fechaBoda - Date.now()) / 864e5);
+  // «2027-03-15» → «15 de marzo de 2027» (a mediodía, para que ningún huso lo corra de día).
+  const limite = boda.confirmarAntesDe
+    ? new Date(`${boda.confirmarAntesDe}T12:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
   const pct = grupos.length ? Math.round((r.respondieron / grupos.length) * 100) : 0;
 
   return (
@@ -30,19 +34,19 @@ export default function Resumen({ grupos, mesas }) {
       <div className="kpis">
         <div className="kpi"><b>{dias > 0 ? dias : '¡Hoy!'}</b><span>días para la boda</span></div>
         <div className="kpi"><b>{grupos.length}</b><span>invitaciones · {r.pases} pases</span></div>
-        <div className="kpi"><b style={{ color: 'var(--verde)' }}>{r.si}</b><span>confirmados{r.ninos ? ` (${r.ninos} niños)` : ''}</span></div>
-        <div className="kpi"><b style={{ color: 'var(--rojo)' }}>{r.no}</b><span>no asistirán</span></div>
+        <div className="kpi"><b style={{ color: 'var(--oliva)' }}>{r.si}</b><span>confirmados{r.ninos ? ` (${r.ninos} niños)` : ''}</span></div>
+        <div className="kpi"><b style={{ color: 'var(--terracota)' }}>{r.no}</b><span>no asistirán</span></div>
         <div className="kpi"><b>{r.enDuda}</b><span>lugares sin respuesta</span></div>
         <div className="kpi"><b>{r.abiertas}</b><span>invitaciones abiertas</span></div>
         <div className="kpi"><b>{r.capacidad}</b><span>sillas en {mesas.length} mesas</span></div>
-        <div className="kpi"><b style={{ color: r.sinMesa ? 'var(--rojo)' : undefined }}>{r.sinMesa}</b><span>confirmados sin mesa</span></div>
+        <div className="kpi"><b style={{ color: r.sinMesa ? 'var(--terracota)' : undefined }}>{r.sinMesa}</b><span>confirmados sin mesa</span></div>
       </div>
 
       <div className="tarjeta" style={{ marginBottom: 20 }}>
         <div className="herramientas" style={{ justifyContent: 'space-between', margin: 0 }}>
-          <b>Respuestas: {r.respondieron} de {grupos.length} invitaciones</b><span className="suave chico">Fecha límite: {boda.confirmarAntesDe}</span>
+          <b>Respuestas: {r.respondieron} de {grupos.length} invitaciones <span className="suave">· {pct}%</span></b>{limite && <span className="suave chico">Fecha límite: {limite}</span>}
         </div>
-        <div className="barra" style={{ marginTop: 10 }}><div style={{ width: `${pct}%` }} /></div>
+        <div className="barra barra-respuestas" style={{ marginTop: 10 }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Respuestas recibidas"><div style={{ '--pct': pct / 100 }} /></div>
         <p className="chico suave" style={{ margin: '10px 0 0' }}>
           Pases por lado: {r.porLado.map(([l, n]) => `${l} ${n}`).join(' · ')}
         </p>

@@ -17,11 +17,11 @@ export default function CintaEntrada({ codigo }) {
     api.sesion()
       .then((u) => (u ? api.grupoPorCodigo(codigo) : null))
       .then((x) => { if (vivo) setG(x); })
-      .catch(() => {});
+      .catch((e) => { console.error('Registro de llegada', e); if (vivo) setError(e.message); });
     return () => { vivo = false; };
   }, [codigo]);
 
-  if (!g) return null;
+  if (!g) return error ? <div className="cinta-entrada" role="alert">No se pudo leer esta invitación: {error}</div> : null;
   const van = g.personas.filter((p) => p.asistira);
   const mesas = [...new Set(van.map((p) => p.mesa).filter(Boolean))];
 

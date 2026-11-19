@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { contenido, t, useIdioma } from '../../lib/idioma';
-import { api } from '../../lib/api';
+import { useAvisos } from '../../lib/avisos';
 import { horaCorta } from '../../lib/fechas';
 import { useInvitacion } from '../../lib/miInvitacion';
 import { PaginaApp } from '../../components/AppMarco';
@@ -13,12 +12,7 @@ export default function Hoy() {
   const idioma = useIdioma();
   const boda = contenido(idioma);
   const { inv } = useInvitacion();
-  const [avisos, setAvisos] = useState([]);
-  useEffect(() => {
-    const cargar = () => api.listarAvisos().then(setAvisos).catch(() => {});
-    cargar();
-    return api.suscribirAvisos(cargar);
-  }, []);
+  const { avisos, error } = useAvisos();
   const conMesa = (inv?.personas || []).filter((p) => p.asistira && p.mesa);
   return (
     <PaginaApp titulo={<>{t('Hoy nos', 'Today we')} <em>{t('casamos', 'marry')}</em></>}>
@@ -30,6 +24,7 @@ export default function Hoy() {
         </div>
       ) : <DondeMeSiento />}
       <AhoraEnLaBoda itinerario={boda.itinerario} />
+      {error && <p className="aviso error" role="alert">{t('No pudimos leer los avisos de los novios. Revisa tu señal.', "We couldn't load the couple's notices. Check your signal.")}</p>}
       {avisos.length > 0 && (
         <section className="bloque-app">
           <h2 className="sub-app">{t('Avisos de los novios', 'From the couple')}</h2>

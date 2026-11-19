@@ -50,11 +50,16 @@ function JuegoControl() {
   const preguntas = boda.juego?.preguntas || [];
   const [estado, setEstado] = useState(null);
   const [error, setError] = useState('');
+  const [sinCorrectas, setSinCorrectas] = useState('');
   const cargar = () => api.estadoJuego().then(setEstado).catch((e) => setError(e.message));
   useEffect(() => { cargar(); return api.suscribirJuego(cargar); }, []);
   // Las respuestas buenas viven en config.js; la base guarda una copia para puntuar.
+  // Si no se guarda, el juego no puede puntuar: eso se dice, no se calla.
   useEffect(() => {
-    api.guardarAjuste?.('juego_correctas', preguntas.map((q) => q.correcta ?? -1).join(',')).catch(() => {});
+    if (!preguntas.length) return;
+    api.guardarAjuste('juego_correctas', preguntas.map((q) => q.correcta ?? -1).join(','))
+      .then(() => setSinCorrectas(''))
+      .catch((e) => { console.error('juego_correctas', e); setSinCorrectas(e.message || 'Error'); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const ir = async (cambio) => { try { setError(''); await api.controlarJuego(cambio); cargar(); } catch (e) { setError(e.message); } };
   if (!preguntas.length) return <div className="tarjeta"><h3>Juego</h3><p className="chico suave">Agrega preguntas en <code>juego.preguntas</code> de src/config.js.</p></div>;
@@ -68,6 +73,7 @@ function JuegoControl() {
       {estado && <p><b>{q ? `Pregunta ${p + 1} de ${preguntas.length}: ${q.p}` : estado.fase === 'final' ? 'Juego terminado' : 'Sin empezar'}</b><br />
         <span className="chico suave">{estado.fase === 'abierta' ? `Respondiendo… ${estado.total} respuestas` : estado.fase === 'revelada' ? `Respuesta mostrada (${q?.opciones[q.correcta]})` : ''}</span></p>}
       {error && <p className="aviso error">{error}</p>}
+      {sinCorrectas && <p className="aviso error" role="alert">No se pudieron guardar las respuestas correctas del juego, así que no va a poder dar puntos ({sinCorrectas}). Recarguen esta página antes de empezar.</p>}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {estado?.fase === 'abierta' && <button className="btn chico" onClick={() => ir({ pregunta: p, fase: 'revelada' })}>Mostrar la respuesta</button>}
         {estado?.fase !== 'abierta' && p + 1 < preguntas.length && estado?.fase !== 'final' && (
@@ -82,12 +88,14 @@ function JuegoControl() {
 
 function CancionesAdmin() {
   const [lista, setLista] = useState([]);
-  const cargar = () => api.listarCanciones().then(setLista).catch(() => {});
+  const [error, setError] = useState('');
+  const cargar = () => api.listarCanciones().then((l) => { setLista(l); setError(''); }).catch((e) => { console.error('Canciones', e); setError(e.message); });
   useEffect(() => { cargar(); return api.suscribirCanciones(cargar); }, []);
   const marcar = async (c, cambios) => { await api.marcarCancion(c.id, cambios); cargar(); };
   return (
     <div className="tarjeta">
       <h3>Canciones pedidas ({lista.filter((c) => !c.tocada).length})</h3>
+      {error && <p className="aviso error">No se pudo leer la lista: {error}</p>}
       <p className="chico suave">Pídanle al DJ que abra <a href="/dj" target="_blank" rel="noreferrer">{window.location.origin}/dj</a>: se ordena sola por votos.</p>
       {lista.map((c) => (
         <div key={c.id} className="fila-admin" style={{ opacity: c.tocada ? 0.5 : 1 }}>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { boda as config, fechaBoda } from '../config';
 import { api } from '../lib/api';
+import { useAvisos } from '../lib/avisos';
 import { ahora } from '../lib/reloj';
 import { t } from '../lib/idioma';
 import { horaCorta } from '../lib/fechas';
@@ -85,17 +86,11 @@ export function AhoraCompacto({ itinerario }) {
 // ── Avisos de los novios ────────────────────────────────────────────────────
 const LS_VISTO = 'boda-aviso-cerrado';
 /** Banda arriba con el último aviso de las últimas 6 horas. Llega al instante. */
-export function AvisoEnVivo() {
-  const [aviso, setAviso] = useState(null);
+export function AvisoEnVivo({ fase }) {
+  const { avisos } = useAvisos({ activo: fase === 'boda' });
+  const ultimo = avisos[0];
+  const aviso = ultimo && Date.now() - new Date(ultimo.created_at) < 6 * 36e5 ? ultimo : null;
   const [cerrado, setCerrado] = useState(() => { try { return localStorage.getItem(LS_VISTO); } catch { return null; } });
-  useEffect(() => {
-    const cargar = () => api.listarAvisos().then((xs) => {
-      const a = xs[0];
-      setAviso(a && Date.now() - new Date(a.created_at) < 6 * 36e5 ? a : null);
-    }).catch(() => {});
-    cargar();
-    return api.suscribirAvisos(cargar);
-  }, []);
   if (!aviso || cerrado === aviso.id) return null;
   return (
     <div className="aviso-vivo" role="status">

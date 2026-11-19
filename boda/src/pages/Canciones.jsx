@@ -18,7 +18,7 @@ function Muestra({ url }) {
     if (!a.current) { a.current = new Audio(url); a.current.onended = () => setOn(false); a.current.onpause = () => setOn(false); }
     if (on) { a.current.pause(); return; }
     if (sonando && sonando !== a.current) sonando.pause();
-    sonando = a.current; a.current.play().then(() => setOn(true)).catch(() => {});
+    sonando = a.current; a.current.play().then(() => setOn(true)).catch((err) => { console.warn('Muestra', err); setOn(false); });
   };
   return (
     <button type="button" className={`muestra ${on ? 'sonando' : ''}`} onClick={alternar} aria-label={on ? t('Pausar muestra', 'Pause preview') : t('Escuchar 30 segundos', 'Play 30-second preview')}>
@@ -47,7 +47,7 @@ export default function Canciones() {
 
   const cargar = () => {
     api.listarCanciones().then(setLista).catch((e) => setError(e.message));
-    api.misVotos(yo).then((v) => setMios(new Set(v))).catch(() => {});
+    api.misVotos(yo).then((v) => setMios(new Set(v))).catch((e) => console.error('Mis votos', e));
   };
   useEffect(() => { cargar(); return api.suscribirCanciones(cargar); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -27,11 +27,12 @@ function PantallaJuego() {
   const [e, setE] = useState(null);
   const [admin, setAdmin] = useState(false);
   const [auto, setAuto] = useState(false);
+  const [falla, setFalla] = useState('');
   const quedan = useQuedan(e, seg);
   useEffect(() => {
-    const cargar = () => api.estadoJuego().then(setE).catch(() => {});
+    const cargar = () => api.estadoJuego().then((x) => { setE(x); setFalla(''); }).catch((err) => { console.error('Juego', err); setFalla(err.message); });
     cargar();
-    api.sesion().then((u) => setAdmin(!!u)).catch(() => {});
+    api.sesion().then((u) => setAdmin(!!u)).catch((err) => console.error('Sesión', err));
     return api.suscribirJuego(cargar);
   }, []);
 
@@ -62,6 +63,7 @@ function PantallaJuego() {
   return (
     <div className="pantalla pantalla-juego" onDoubleClick={() => document.documentElement.requestFullscreen?.()}>
       <div className="juego-cabeza"><span className="script">{boda.novios.firma}</span><span>{juego.titulo}</span></div>
+      {falla && <p className="pantalla-falla" role="alert">Sin conexión con el juego ({falla}). Revisen el internet de esta computadora.</p>}
       {!e || (!q && e.fase !== 'final') ? (
         <div className="juego-centro portada-juego">
           <p className="juego-num">{t('Trivia en vivo', 'Live trivia')}</p>
@@ -107,13 +109,14 @@ function PantallaJuego() {
 function PantallaFotos() {
   const [fotos, setFotos] = useState([]);
   const [i, setI] = useState(0);
+  const [falla, setFalla] = useState('');
   const nuevas = useRef([]);
   // La clave viene en ?k= (el panel la pone en el enlace); el invitado no la puede leer de la base.
   const [clave, setClave] = useState(() => new URLSearchParams(window.location.search).get('k') || '');
 
   useEffect(() => {
-    api.listarFotos().then(setFotos).catch(() => {});
-    if (!clave) api.leerClaveAlbum().then((c) => c && setClave(c)).catch(() => {});
+    api.listarFotos().then((f) => { setFotos(f); setFalla(''); }).catch((err) => { console.error('Fotos', err); setFalla(err.message); });
+    if (!clave) api.leerClaveAlbum().then((c) => c && setClave(c)).catch((err) => console.error('Clave del álbum', err));
     return api.suscribirFotos((f) => {
       nuevas.current.push(f);
       setFotos((xs) => [f, ...xs]);
@@ -148,6 +151,7 @@ function PantallaFotos() {
         <div className="script">{boda.novios.firma}</div>
         {f?.autor && <div style={{ fontSize: '1.125rem', marginTop: 6 }}>{f.autor}{f.momento ? ` · ${f.momento}` : ''}</div>}
       </div>
+      {falla && <p className="pantalla-falla" role="alert">Sin conexión con el álbum ({falla}). Revisen el internet de esta computadora.</p>}
       <div className="qr-esquina">
         <QR texto={enlace} tam={130} />
         <div>Sube tus fotos</div>

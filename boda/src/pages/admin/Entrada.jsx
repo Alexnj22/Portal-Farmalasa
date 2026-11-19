@@ -35,7 +35,7 @@ export default function Entrada({ grupos, mesas, recargar }) {
   return (
     <>
       <div className="kpis">
-        <div className="kpi"><b style={{ color: 'var(--verde)' }}>{llegaron}</b><span>personas ya llegaron</span></div>
+        <div className="kpi"><b style={{ color: 'var(--oliva)' }}>{llegaron}</b><span>personas ya llegaron</span></div>
         <div className="kpi"><b>{Math.max(0, confirmados - llegaron)}</b><span>confirmados por llegar</span></div>
         <div className="kpi"><b>{grupos.filter((g) => g.llegada_at).length}</b><span>invitaciones registradas</span></div>
       </div>

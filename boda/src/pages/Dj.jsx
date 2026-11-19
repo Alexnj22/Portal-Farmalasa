@@ -7,15 +7,16 @@ import { enlaceSpotify, enlaceYoutube, enlaceApple } from '../lib/musica';
 export default function Dj() {
   const [lista, setLista] = useState([]);
   const [copiado, setCopiado] = useState(false);
+  const [error, setError] = useState('');
   useEffect(() => {
-    const cargar = () => api.listarCanciones().then(setLista).catch(() => {});
+    const cargar = () => api.listarCanciones().then((l) => { setLista(l); setError(''); }).catch((e) => { console.error('Canciones', e); setError(e.message); });
     cargar();
     return api.suscribirCanciones(cargar);
   }, []);
   const pendientes = lista.filter((c) => !c.tocada);
   const copiar = () => {
     navigator.clipboard?.writeText(pendientes.map((c, i) => `${i + 1}. ${c.titulo}${c.artista ? ` – ${c.artista}` : ''}`).join('\n'))
-      .then(() => { setCopiado(true); setTimeout(() => setCopiado(false), 2000); }).catch(() => {});
+      .then(() => { setCopiado(true); setTimeout(() => setCopiado(false), 2000); }).catch((e) => { console.error('Copiar', e); setError('No se pudo copiar la lista'); });
   };
   return (
     <div className="pantalla-dj">
@@ -23,6 +24,7 @@ export default function Dj() {
         <span className="mono-dj">{boda.novios.firma}</span>
         <span>Canciones pedidas · {pendientes.length} <button type="button" className="btn-dj" onClick={copiar}>{copiado ? '✓ Copiada' : 'Copiar lista'}</button></span>
       </header>
+      {error && <p className="pantalla-falla" role="alert" style={{ position: 'static', transform: 'none', margin: '12px auto', width: 'fit-content' }}>{error}</p>}
       <ol>
         {pendientes.map((c, i) => (
           <li key={c.id}>

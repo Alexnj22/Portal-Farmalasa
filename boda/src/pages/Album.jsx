@@ -1,40 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { boda } from '../config';
 import { api } from '../lib/api';
 import { t, useIdioma, rotuloMomento } from '../lib/idioma';
 import { PaginaApp } from '../components/AppMarco';
 import Mosaico from '../components/Mosaico';
-import Presentacion from '../components/Presentacion';
+import { Bloque } from '../components/Esqueleto';
+import { encolar, procesar, pendientes, escuchar } from '../lib/colaSubidas';
+
+const Presentacion = lazy(() => import('../components/Presentacion'));
 
 const LS_CLAVE = 'boda-clave-album';
 const LS_AUTOR = 'boda-autor';
 const leerLS = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
 const guardarLS = (k, v) => { try { localStorage.setItem(k, v); } catch { /* modo privado */ } };
-
-// La señal del salón se cae: un error de red se reintenta solo (y si el
-// teléfono quedó sin conexión, se espera a que vuelva). Un error que no se
-// arregla reintentando —clave mala, archivo no permitido— no se reintenta.
-const PERMANENTE = /clave|tipo de archivo|pesado|demasiadas|no se pueden subir|mime|size|exceeded/i;
-const ESPERAS = [2000, 5000, 12000];
-const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
-const hayRed = () => new Promise((r) => {
-  if (navigator.onLine !== false) { r(); return; }
-  window.addEventListener('online', () => r(), { once: true });
-});
-
-async function subirConReintentos(f, datos, alReintentar) {
-  for (let intento = 0; ; intento++) {
-    try {
-      await hayRed();
-      return await api.subirFoto(f, datos);
-    } catch (e) {
-      if (PERMANENTE.test(e.message || '') || intento >= ESPERAS.length) throw e;
-      alReintentar();
-      await dormir(ESPERAS[intento]);
-    }
-  }
-}
 
 export default function Album() {
   useIdioma();
@@ -61,7 +40,7 @@ export default function Album() {
     api.verificarClaveAlbum(clave).then((ok) => {
       setClaveOk(ok);
       if (ok) guardarLS(LS_CLAVE, clave);
-    }).catch(() => setClaveOk(false));
+    }).catch((e) => { console.error('Clave del álbum', e); setClaveOk(false); });
   }, [clave]);
 
   useEffect(() => {
@@ -69,14 +48,23 @@ export default function Album() {
     return api.suscribirFotos((f) => setFotos((xs) => (xs.some((x) => x.id === f.id) ? xs : [f, ...xs])));
   }, []);
 
-  // Cerrar la pestaña a mitad de una subida pierde lo que falta: se avisa.
-  const subiendo = !!subida && subida.hechas + subida.fallas < subida.total;
+  // La cola de subidas vive en IndexedDB: cerrar la página no pierde fotos.
+  // Al entrar (y al volver la señal) se retoma lo que haya quedado.
   useEffect(() => {
-    if (!subiendo) return undefined;
-    const avisar = (e) => { e.preventDefault(); e.returnValue = ''; };
-    window.addEventListener('beforeunload', avisar);
-    return () => window.removeEventListener('beforeunload', avisar);
-  }, [subiendo]);
+    const alVolverRed = () => pendientes().then((p) => p.length && procesar(p)).catch((e) => console.error(e));
+    alVolverRed();
+    window.addEventListener('online', alVolverRed);
+    const fuera = escuchar((p) => {
+      setSubida(p);
+      if (p && p.hechas + p.fallas >= p.total) {
+        if (p.error) setError(p.error);
+        api.listarFotos().then(setFotos).catch((e) => console.error('Álbum', e));
+        if (entrada.current) entrada.current.value = '';
+      }
+    });
+    return () => { window.removeEventListener('online', alVolverRed); fuera(); };
+  }, []);
+  const subiendo = !!subida && subida.hechas + subida.fallas < subida.total;
 
   const visibles = useMemo(
     () => (filtro === 'Todas' ? fotos : filtro === 'Mías' ? fotos.filter((f) => autor && f.autor === autor) : fotos.filter((f) => f.momento === filtro)),
@@ -88,29 +76,8 @@ export default function Album() {
     if (!lista.length) return;
     setError('');
     guardarLS(LS_AUTOR, autor);
-    let hechas = 0; let fallas = 0; let reintentando = 0;
-    const pintar = () => setSubida({ total: lista.length, hechas, fallas, reintentando });
-    pintar();
-    // De a 3 en paralelo: rápido sin ahogar la conexión del salón.
-    const cola = [...lista];
-    const trabajador = async () => {
-      while (cola.length) {
-        const f = cola.shift();
-        try {
-          if (f.size > 25 * 1024 * 1024 && f.type.startsWith('video/')) throw new Error(t('Video muy pesado (máx. 25 MB)', 'Video too large (max. 25 MB)'));
-          await subirConReintentos(f, { autor, momento, clave }, () => { reintentando++; pintar(); });
-          hechas++;
-        } catch (e) {
-          fallas++;
-          setError(e.message);
-        }
-        pintar();
-      }
-    };
-    await Promise.all([trabajador(), trabajador(), trabajador()]);
-    if (entrada.current) entrada.current.value = '';
-    api.listarFotos().then(setFotos).catch(() => {});
-    setTimeout(() => setSubida(null), 4000);
+    const items = await encolar(lista, { autor, momento, clave });
+    procesar(items);
   }
 
   const filtros = [
@@ -124,7 +91,8 @@ export default function Album() {
     <PaginaApp titulo={<>{t('Álbum', 'Shared')} <em>{t('compartido', 'album')}</em></>}
       bajada={`${n} ${n === 1 ? t('recuerdo', 'memory') : t('recuerdos', 'memories')}${n ? '' : t(', por ahora', ' so far')} · ${boda.novios.hashtag}`}
       accion={n > 1 && <button type="button" className="btn claro" onClick={() => setPresentar(true)}>▶ {t('Ver como presentación', 'Play as slideshow')}</button>}>
-        {presentar && <Presentacion fotos={visibles.length > 1 ? visibles : fotos} alCerrar={() => setPresentar(false)} />}
+        {presentar && <Suspense fallback={null}><Presentacion fotos={visibles.length > 1 ? visibles : fotos} alCerrar={() => setPresentar(false)} /></Suspense>}
+        {claveOk === null && <Bloque alto={180} className="esq-subida" />}
 
         {claveOk === false && (
           <form className="clave-album" onSubmit={(e) => { e.preventDefault(); setClave(claveEscrita.trim().toUpperCase()); }}>
@@ -159,10 +127,11 @@ export default function Album() {
                   {subiendo
                     ? `${t('Subiendo', 'Uploading')} ${subida.hechas + subida.fallas + 1} ${t('de', 'of')} ${subida.total}…`
                     : `${t('¡Listo!', 'Done!')} ${subida.hechas} ${subida.hechas === 1 ? t('subida', 'uploaded') : t('subidas', 'uploaded')}${subida.fallas ? `, ${subida.fallas} ${t('con error', 'failed')}` : ''}. ${t('Gracias.', 'Thank you.')}`}
+                  {subiendo && <><br />{t('Si cierras la página, las que faltan se suben solas cuando vuelvas.', 'If you close the page, the rest will upload when you come back.')}</>}
                 </p>
                 {subiendo && subida.reintentando > 0 && (
                   <p className="chico" style={{ margin: '4px 0 0', color: 'var(--oliva-claro)' }}>
-                    {t('La señal está débil: reintentando solo. No cierres esta página.', "Weak signal: retrying automatically. Don't close this page.")}
+                    {t('La señal está débil: reintentando solo.', 'Weak signal: retrying automatically.')}
                   </p>
                 )}
               </div>
@@ -172,9 +141,9 @@ export default function Album() {
         )}
         {!claveOk && error && <p className="aviso error">{error}</p>}
 
-        <div className="filtros" role="tablist" aria-label={t('Filtrar por momento', 'Filter by moment')}>
+        <div className="filtros" role="group" aria-label={t('Filtrar por momento', 'Filter by moment')}>
           {filtros.map(([valor, rotulo]) => (
-            <button key={valor} role="tab" aria-selected={filtro === valor} className={filtro === valor ? 'activo' : ''} onClick={() => setFiltro(valor)}>{rotulo}</button>
+            <button key={valor} type="button" aria-pressed={filtro === valor} className={filtro === valor ? 'activo' : ''} onClick={() => setFiltro(valor)}>{rotulo}</button>
           ))}
         </div>
 

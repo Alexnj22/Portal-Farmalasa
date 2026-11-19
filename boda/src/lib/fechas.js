@@ -46,9 +46,11 @@ export function descargarIcs() {
     'END:VEVENT', 'END:VCALENDAR',
   ].join('\r\n');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([texto], { type: 'text/calendar' }));
+  const url = URL.createObjectURL(new Blob([texto], { type: 'text/calendar' }));
+  a.href = url;
   a.download = 'boda.ics';
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000); // se libera cuando la descarga ya tomó el archivo
 }
 
 export function enlaceGoogleCalendar() {

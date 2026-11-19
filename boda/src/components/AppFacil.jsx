@@ -110,7 +110,7 @@ export default function AppFacil() {
           <a className="facil-boton" href={`https://wa.me/${boda.contacto.whatsapp}`} target="_blank" rel="noreferrer"><Icono n="whatsapp" tam={30} /><span>{t('Escribir por WhatsApp', 'Message on WhatsApp')}</span></a>
         </>}
         {faseAlMenos(fase, 'boda') && (
-          <button type="button" className="facil-boton" onClick={() => api.listarFotos().then(setFotos).catch(() => {})}><Icono n="fotos" tam={30} /><span>{t('Ver las fotos', 'See the photos')}</span></button>
+          <button type="button" className="facil-boton" onClick={() => api.listarFotos().then(setFotos).catch((e) => { console.error('Fotos', e); alert(t('No pudimos abrir las fotos. Revisa tu señal.', "We couldn't open the photos. Check your signal.")); })}><Icono n="fotos" tam={30} /><span>{t('Ver las fotos', 'See the photos')}</span></button>
         )}
       </div>
 

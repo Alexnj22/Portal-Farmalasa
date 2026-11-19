@@ -8,7 +8,7 @@ export default function Compartir({ mesas }) {
   const [clave, setClave] = useState('');
   const [nueva, setNueva] = useState('');
   const [aviso, setAviso] = useState('');
-  useEffect(() => { api.leerClaveAlbum().then((c) => { setClave(c); setNueva(c); }).catch(() => {}); }, []);
+  useEffect(() => { api.leerClaveAlbum().then((c) => { setClave(c); setNueva(c); }).catch((e) => { console.error('Clave del álbum', e); setAviso(`No se pudo leer la clave del álbum: ${e.message}`); }); }, []);
 
   const origen = window.location.origin;
   const album = `${origen}/album?k=${clave}`;
@@ -48,7 +48,7 @@ export default function Compartir({ mesas }) {
         {(mesas.length ? mesas : [{ id: 'x', nombre: '' }]).map((m) => (
           <div key={m.id} className="qr-tarjeta">
             <div className="script" style={{ fontSize: '1.8rem' }}>{boda.novios.firma}</div>
-            {m.nombre && <div style={{ fontFamily: 'var(--serif)', fontSize: '1.3rem' }}>{m.nombre}</div>}
+            {m.nombre && <div style={{ fontFamily: 'var(--display)', fontSize: '1.3rem' }}>{m.nombre}</div>}
             {clave && <QR texto={album} tam={160} />}
             <div className="chico">📸 Escanea y comparte tus fotos de la boda</div>
             <div className="chico suave">{boda.novios.hashtag}</div>

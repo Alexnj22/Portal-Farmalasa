@@ -119,7 +119,7 @@ Invitaciones de ejemplo: `DEMO01` familia de 4 con 3 nombres (sobra un lugar par
 - Cada foto se reduce en el teléfono antes de subir (~400 KB) y se sube también una **miniatura** de ~480 px: el álbum, el panel y el fondo de la pantalla en vivo muestran la miniatura, y la grande sólo se baja al abrir la foto. Así el álbum carga rápido con el wifi del salón y no se gasta el límite de descarga del plan gratuito.
 - Los videos llevan como portada un cuadro del primer segundo.
 - Las fotos HEIC que el navegador no sabe abrir (Chrome en Android, Windows) se convierten a JPG en el teléfono; el convertidor sólo se descarga si hace falta.
-- Si la señal se cae a mitad de la subida, se reintenta solo (y espera a que vuelva la conexión). Cerrar la página a mitad de una subida pide confirmación.
+- Si la señal se cae a mitad de la subida, se reintenta solo (y espera a que vuelva la conexión). Cada foto se guarda en el teléfono (IndexedDB) antes de subirla: si el invitado cierra la página o se queda sin batería, las que faltan se suben solas la próxima vez que abra el sitio, sin duplicarse (`src/lib/colaSubidas.js`).
 
 
 ## Segunda ronda: lo que trae ahora

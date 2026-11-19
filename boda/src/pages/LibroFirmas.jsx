@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { fechaHora } from '../lib/fechas';
 import { t } from '../lib/idioma';
@@ -15,7 +15,8 @@ function Grabadora({ audio, setAudio }) {
   const [error, setError] = useState('');
   const rec = useRef(null);
   const reloj = useRef(null);
-  const url = audio ? URL.createObjectURL(audio) : null;
+  // Un objectURL por grabación (no uno por render), y se libera al cambiarla.
+  const url = useMemo(() => (audio ? URL.createObjectURL(audio) : null), [audio]);
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
   useEffect(() => () => { clearInterval(reloj.current); rec.current?.stream?.getTracks().forEach((x) => x.stop()); }, []);
   if (!puedeGrabar()) return null;
@@ -67,7 +68,9 @@ export default function LibroFirmas() {
   // ok: 'visible' | 'revision' (los novios aprueban antes de mostrarlo)
   const [estado, setEstado] = useState({ enviando: false, error: '', ok: '' });
 
-  const cargar = () => api.listarMensajes().then(setMensajes).catch(() => {});
+  const [errorLista, setErrorLista] = useState('');
+  const cargar = () => api.listarMensajes().then((m) => { setMensajes(m); setErrorLista(''); })
+    .catch((e) => { console.error('Mensajes', e); setErrorLista(e.message); });
   useEffect(() => { cargar(); }, []);
 
   async function enviar(e) {
@@ -94,6 +97,7 @@ export default function LibroFirmas() {
         {estado.ok === 'revision' && <p className="aviso ok">{t('¡Gracias! Tu mensaje aparecerá aquí en cuanto los novios lo lean.', 'Thank you! Your message will appear here once the couple reads it.')}</p>}
         <div><button className="btn" disabled={estado.enviando}>{estado.enviando ? t('Enviando…', 'Sending…') : t('Firmar el libro', 'Sign the guestbook')}</button></div>
       </form>
+      {errorLista && <p className="aviso error" role="alert">{t('No pudimos cargar los mensajes. Revisa tu señal y vuelve a abrir esta página.', "We couldn't load the messages. Check your signal and reopen this page.")}</p>}
       <ul className="firmas">
         {mensajes.map((m) => (
           <li key={m.id}>

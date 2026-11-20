@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.7 — Un evento cancelado en la ficha deja de ofrecer Cancelar
+
+Al cancelar una novedad en la ficha de una persona, el evento seguía sin «CANCELADO» y con el botón «Cancelar» hasta recargar la página. Pasó con la recontratación de Richard Quintanilla. La base ya lo tenía cancelado. La ficha leía la metadata de la vista `employee_timeline`, que no se vuelve a leer después de cancelar, en lugar de la fila de `employee_events` que el store sí actualiza. `historialDeFicha` ahora usa la metadata de la fila real. Arregla también la app, que usa la misma función.
+
+Gemelo: personal — la corrección está en `src/utils/historialDeFicha.js`, compartida por portal y app.
+
 ## v2.1585.6 — Reservas: cerrar con la venta que ya se hizo en caja
 
 Lo que pidió el usuario con la R-000164: no cancelarla, sino **amarrarla a la venta ya hecha**. La sucursal había sacado los $6.60 del anticipo con una salida de efectivo, así que la clienta pagó una sola vez.

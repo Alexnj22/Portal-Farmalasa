@@ -59,11 +59,16 @@ const mismoMomento = (a, b) => a && b && new Date(a).getTime() === new Date(b).g
 export function historialDeFicha(filas = [], eventos = []) {
     const usados = new Set();
     return (filas || []).map((ev) => {
-        const m = meta(ev.metadata);
         const real = (eventos || []).find((e) => !usados.has(e.id) && e.type === ev.event_type
             && String(e.date).slice(0, 10) === String(ev.event_date).slice(0, 10)
             && (mismoMomento(e.created_at, ev.created_at) || !ev.created_at));
         if (real) usados.add(real.id);
+        // La metadata de la fila real manda sobre la de la vista. Cancelar o
+        // corregir actualiza `emp.history` en el store, pero la vista
+        // `employee_timeline` no se vuelve a leer: con la metadata de la vista,
+        // el evento recién cancelado seguía sin «CANCELADO» y con el botón
+        // «Cancelar» (2026-11-20, la recontratación de una persona).
+        const m = { ...meta(ev.metadata), ...(real ? meta(real.metadata) : {}) };
         return {
             id: real?.id ?? `${ev.event_type}_${ev.event_date}_${ev.created_at}`,
             eventoId: real?.id ?? null,

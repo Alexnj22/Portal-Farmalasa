@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
     const hallazgos: Array<{
       branchId: number; mes: string;
       erpN: number; portalN: number; erpTotal: number; portalTotal: number;
-      desde: string; hasta: string;
+      desde: string; hasta: string; enCamino?: boolean;
     }> = [];
     const revisados: any[] = [];
 
@@ -265,13 +265,61 @@ Deno.serve(async (req) => {
         if (h.erpN !== h.portalN || Math.abs(h.erpTotal - h.portalTotal) > TOLERANCIA) quedan.push(h);
       } catch (e: any) {
         problemas.push(`traer faltantes (${h.branchId}, ${h.mes}): ${e?.message ?? e}`);
+        // Dejar de ESPERAR no detiene la descarga: sync-erp-purchases sigue
+        // corriendo y puede terminar segundos después. Pasó el 2026-11-20:
+        // Bodega/noviembre, el plazo venció, se avisó «falta 1 factura» a la
+        // 01:21 y la factura entró a la 01:22. Se marca para volver a contar.
+        const nombre = e?.name ?? '';
+        if (nombre === 'TimeoutError' || nombre === 'AbortError') h.enCamino = true;
         quedan.push(h);
       }
     }
     hallazgos.splice(0, hallazgos.length, ...quedan);
 
+    // ── La descarga que siguió sola ───────────────────────────────────────
+    // Se vuelve a contar cada 5 s mientras quede tiempo. Lo que entró en ese
+    // lapso no se avisa. Si sigue faltando, la descarga puede estar todavía en
+    // curso: la primera noche se anota y se calla, y se avisa si la noche
+    // siguiente encuentra la MISMA diferencia (misma clave que el aviso). Así
+    // una descarga que vence siempre no queda muda: avisa con un día de atraso.
+    const TOPE_ESPERA_MS = PRESUPUESTO_MS + 10_000;
+    const enEspera: any[] = [];
+    if (hallazgos.some(h => h.enCamino)) {
+      const cuadra = (h: any) => h.erpN === h.portalN && Math.abs(h.erpTotal - h.portalTotal) <= TOLERANCIA;
+      while (hallazgos.some(h => h.enCamino && !cuadra(h)) && Date.now() - arranque + 5_000 < TOPE_ESPERA_MS) {
+        await new Promise(r => setTimeout(r, 5_000));
+        for (const h of hallazgos.filter(x => x.enCamino && !cuadra(x))) {
+          try {
+            const antes = h.portalN;
+            const ahora = await contarPortal(h.branchId, h.desde, h.hasta, h.mes);
+            h.portalN = ahora.portalN; h.portalTotal = ahora.portalTotal;
+            if (h.portalN > antes) recuperados.push({ branchId: h.branchId, mes: h.mes, traidos: h.portalN - antes });
+          } catch (e: any) {
+            problemas.push(`volver a contar (${h.branchId}, ${h.mes}): ${e?.message ?? e}`);
+          }
+        }
+      }
+      const siguen: typeof hallazgos = [];
+      for (const h of hallazgos) {
+        if (!h.enCamino) { siguen.push(h); continue; }
+        if (cuadra(h)) continue;
+        const { data: ins, error: espErr } = await supabase
+          .from('sync_alert_log')
+          .upsert(
+            { domain: 'purchases-cuadre-espera', scope_key: `${h.branchId}|${h.mes}`, alert_key: `${h.erpN}-${h.erpTotal.toFixed(2)}` },
+            { onConflict: 'domain,scope_key,alert_key', ignoreDuplicates: true },
+          )
+          .select('id');
+        // Sin poder anotar la espera, se avisa: perder el aviso es peor.
+        if (espErr) { problemas.push(`sync_alert_log espera: ${espErr.message}`); siguen.push(h); continue; }
+        if (ins && ins.length > 0) enEspera.push({ branchId: h.branchId, mes: h.mes, erpN: h.erpN, portalN: h.portalN });
+        else siguen.push(h);   // ya se esperó una noche con esta misma diferencia
+      }
+      hallazgos.splice(0, hallazgos.length, ...siguen);
+    }
+
     if (hallazgos.length === 0 && duplicados.length === 0 && problemas.length === 0) {
-      return new Response(JSON.stringify({ ok: true, revisados: revisados.length, diferencias: 0, recuperados }), {
+      return new Response(JSON.stringify({ ok: true, revisados: revisados.length, diferencias: 0, recuperados, enEspera }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -377,7 +425,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         ok: true, revisados: revisados.length, diferencias: hallazgos.length,
-        enviadas, hallazgos, recuperados,
+        enviadas, hallazgos, recuperados, enEspera,
         proveedores_duplicados: duplicados.length, duplicados,
         problemas,
       }),

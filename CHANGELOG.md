@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.2 — Compras: el cuadre nocturno no avisa una factura que ya está entrando
+
+- `check-purchases-reconciliation`: si el plazo para traer lo que falta vence, ya no avisa en el acto. La descarga sigue sola (el 2026-11-20 avisó «a Bodega le falta 1 factura» a la 01:21 y la factura entró a la 01:22). Ahora vuelve a contar cada 5 s mientras le queda tiempo; si sigue faltando, la primera noche lo anota (`sync_alert_log`, dominio `purchases-cuadre-espera`) y avisa si la noche siguiente ve la misma diferencia.
+- Novedades: no — es un aviso técnico para Sistemas, el personal no lo ve.
+
 ## v2.1584.1 — La app del personal vuelve a su diseño de siempre
 
 - Se quita la línea Papel de la app del personal (v2.1584.0): el usuario la vio y en el teléfono sólo cambiaba el tema. Vuelven los 24 archivos visuales a como estaban y sale `tema/papel.js`. Se quedan los filtros «Todas».

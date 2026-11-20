@@ -118,5 +118,21 @@ export async function leerPosicion({ espera = 10000 } = {}) {
     }
 }
 
-/** ¿El permiso de ubicación está negado? En el navegador no se pregunta: nunca. */
-export async function ubicacionNegada() { return false; }
+/**
+ * ¿El permiso de ubicación está negado? Aplicar encuesta en campo no deja
+ * empezar sin él (usuario, 2026-11-20). En el navegador del portal también
+ * da `true`: `vercel.json` apaga la ubicación en todo el sitio
+ * (`geolocation=()`), y en campo se encuesta con la app.
+ */
+export async function ubicacionNegada() {
+    try {
+        if (esNativo()) {
+            const Geo = await getGeo();
+            const r = await Geo.checkPermissions();
+            return r.location === 'denied';
+        }
+        if (typeof navigator === 'undefined' || !navigator.geolocation) return true;
+        const q = await navigator.permissions?.query?.({ name: 'geolocation' });
+        return q?.state === 'denied';
+    } catch { return false; }
+}

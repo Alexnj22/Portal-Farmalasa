@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.3 — Encuestas de campo: sin permiso de ubicación no se puede encuestar
+
+Revisión en producción del 2026-11-20: las 3 respuestas de campo del día
+(iPhone) entraron sin coordenadas, sólo con el lugar escrito. El teléfono
+no dio la ubicación y la pantalla lo aceptaba. Pedido del usuario: «que no
+permita si el permiso fue negado».
+
+- Aplicar encuesta en campo (portal y app): con el permiso de ubicación
+  negado, «Entrevistar» queda deshabilitado y se dice por qué. En la app,
+  «Abrir Ajustes» lleva al permiso, y al volver se lee de nuevo solo. Si el
+  permiso se quita a media entrevista, no se guarda: el error lo dice y la
+  respuesta no se pierde.
+- Sin señal pero CON permiso se sigue pudiendo, con el lugar escrito.
+- `ubicacionNegada()` del portal ya no devuelve siempre `false`: pregunta a
+  Capacitor o a `navigator.permissions`. En el navegador da `true` porque
+  `vercel.json` apaga la ubicación (`geolocation=()`): en campo se encuesta
+  con la app.
+- App: la línea «Elige la zona para empezar» pintaba un `0` suelto con una
+  encuesta de campo sin zonas (`zonas.length && …`).
+
+Hallado en la misma revisión: un Android rechazado 15 veces con «Elige la
+zona» corría la versión anterior a las zonas. No había preguntado por
+actualizaciones desde el 19-nov.
+
 ## v2.1584.2 — Compras: el cuadre nocturno no avisa una factura que ya está entrando
 
 - `check-purchases-reconciliation`: si el plazo para traer lo que falta vence, ya no avisa en el acto. La descarga sigue sola (el 2026-11-20 avisó «a Bodega le falta 1 factura» a la 01:21 y la factura entró a la 01:22). Ahora vuelve a contar cada 5 s mientras le queda tiempo; si sigue faltando, la primera noche lo anota (`sync_alert_log`, dominio `purchases-cuadre-espera`) y avisa si la noche siguiente ve la misma diferencia.

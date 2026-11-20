@@ -16,7 +16,7 @@
 // su tarjeta antes de entrevistar y vale para las siguientes del día. La base
 // rechaza guardar sin zona.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutAnimation, ScrollView, Text, View } from 'react-native';
+import { AppState, LayoutAnimation, Linking, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
@@ -35,7 +35,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 import { PORTAL_URL } from '../plataforma/config';
 import { leer, guardar } from '../plataforma/almacen';
-import { leerPosicion } from '../plataforma/ubicacion';
+import { leerPosicion, ubicacionNegada } from '../plataforma/ubicacion';
 import Formulario from '../componentes/encuestas/Formulario';
 
 // La misma clave que el portal: lo elegido vale para HOY.
@@ -120,10 +120,18 @@ export default function EncuestasAplicar() {
   const buscarUbicacion = useCallback(async () => {
     setGps('buscando');
     const p = await leerPosicion({ espera: 12000 });
-    setGps(p || 'sin');
+    // Sin permiso no se encuesta en campo (usuario, 2026-11-20): cada
+    // respuesta tiene que decir dónde se hizo.
+    setGps(p || ((await ubicacionNegada()) ? 'negado' : 'sin'));
     return p;
   }, []);
   useEffect(() => { if (enCampo && gps === null) buscarUbicacion(); }, [enCampo, gps, buscarUbicacion]);
+  // Al volver de Ajustes con el permiso dado, se lee de nuevo sin tocar nada.
+  useEffect(() => {
+    if (!enCampo || gps !== 'negado') return undefined;
+    const sub = AppState.addEventListener('change', (estado) => { if (estado === 'active') buscarUbicacion(); });
+    return () => sub.remove();
+  }, [enCampo, gps, buscarUbicacion]);
   // Los lugares ya usados: si falla, no se sugiere nada y se escribe a mano.
   useEffect(() => {
     if (!enCampo) return;
@@ -132,7 +140,7 @@ export default function EncuestasAplicar() {
 
   const lugar = (donde?.lugar || '').trim();
   const gpsListo = !!gps && typeof gps === 'object';
-  const campoListo = enCampo && (!!lugar || gpsListo);
+  const campoListo = enCampo && gps !== 'negado' && (!!lugar || gpsListo);
   const sugeridos = useMemo(() => (enCampo ? sugerenciasDeLugar(lugares, donde?.lugar || '', gpsListo ? gps : null) : []),
     [enCampo, lugares, donde?.lugar, gpsListo, gps]);
   const claveSugeridos = sugeridos.map((x) => x.lugar).join('|');
@@ -171,6 +179,10 @@ export default function EncuestasAplicar() {
               // La ubicación se lee al guardar: el encuestador camina.
               const p = await leerPosicion({ espera: 8000 });
               if (p) setGps(p);
+              else if (await ubicacionNegada()) {
+                setGps('negado');
+                throw new Error('Sin permiso de ubicación no se puede guardar. Actívalo en Ajustes y vuelve a enviar.');
+              }
               const pos = p || (gpsListo ? gps : null);
               r = await guardarEntrevistaCampo(encuesta.id,
                 { lugar: lugar || null, zona, ...(pos ? { lat: pos.lat, lng: pos.lng, precision: pos.precision } : {}) },
@@ -255,11 +267,18 @@ export default function EncuestasAplicar() {
                   <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
                     {gps === 'buscando' ? 'Buscando la ubicación…'
                       : gpsListo ? `Ubicación activa${gps.precision ? ` (±${Math.round(gps.precision)} m)` : ''}`
-                        : 'Sin ubicación: escribe el lugar.'}
+                        : gps === 'negado' ? 'Sin permiso de ubicación.'
+                          : 'Sin ubicación: escribe el lugar.'}
                   </Text>
                   {gps === 'sin' ? (
                     <Pressable onPress={buscarUbicacion} hitSlop={12} style={{ height: 32, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Reintentar</Text>
+                    </Pressable>
+                  ) : null}
+                  {gps === 'negado' ? (
+                    <Pressable onPress={() => Linking.openSettings()} hitSlop={12} style={{ height: 32, justifyContent: 'center' }}
+                      accessibilityRole="button" accessibilityLabel="Abrir Ajustes para dar el permiso de ubicación">
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 15 }}>Abrir Ajustes</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -299,8 +318,9 @@ export default function EncuestasAplicar() {
               {(enCampo ? e.canales.includes('campo') : e.canales.includes('entrevista')) ? (
                 <BotonGrande texto="Entrevistar" color={MARCA.azul} deshabilitado={enCampo && !puedeEmpezar} onPress={() => setEntrevista(e)} />
               ) : null}
-              {enCampo && !campoListo ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Escribe el lugar o activa la ubicación para empezar.</Text> : null}
-              {enCampo && campoListo && zonas.length && !zona ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Elige la zona para empezar.</Text> : null}
+              {enCampo && gps === 'negado' ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Da el permiso de ubicación a FarmaSalud para empezar.</Text> : null}
+              {enCampo && !campoListo && gps !== 'negado' ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Escribe el lugar o activa la ubicación para empezar.</Text> : null}
+              {enCampo && campoListo && zonas.length > 0 && !zona ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Elige la zona para empezar.</Text> : null}
               {!enCampo && e.canales.includes('kiosco') && s ? (
                 <BotonGrande texto="Modo tablet: que el cliente conteste solo" borde color={MARCA.azulClaro}
                   onPress={() => WebBrowser.openBrowserAsync(enlaceDeEncuesta(s.token_tablet || s.token, true, PORTAL_URL), { presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN })

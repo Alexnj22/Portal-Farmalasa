@@ -15,7 +15,7 @@ import { cuantasPreguntas, enlaceDeEncuesta, zonasDe, nombreDeZona, avanceDeZona
 import { fetchParaAplicar, fetchLugaresDeCampo, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import { leer, guardar } from '../../plataforma/almacen';
-import { leerPosicion } from '../../plataforma/ubicacion';
+import { leerPosicion, ubicacionNegada } from '../../plataforma/ubicacion';
 import FormularioEncuesta from './FormularioEncuesta';
 
 /**
@@ -57,7 +57,7 @@ export default function AplicarEncuestaView() {
     const [encuestas, setEncuestas] = useState([]);
     const [miSala, setMiSala] = useState(null);
     const [donde, setDonde] = useState(leerDonde);   // null = falta elegir
-    const [gps, setGps] = useState(null);             // null | 'buscando' | 'sin' | { lat, lng, precision }
+    const [gps, setGps] = useState(null);             // null | 'buscando' | 'sin' | 'negado' | { lat, lng, precision }
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [entrevistando, setEntrevistando] = useState(null); // la encuesta
@@ -126,7 +126,9 @@ export default function AplicarEncuestaView() {
     const buscarUbicacion = useCallback(async () => {
         setGps('buscando');
         const p = await leerPosicion({ espera: 12000 });
-        setGps(p || 'sin');
+        // Sin permiso no se encuesta en campo (usuario, 2026-11-20): cada
+        // respuesta tiene que decir dónde se hizo.
+        setGps(p || ((await ubicacionNegada()) ? 'negado' : 'sin'));
         return p;
     }, []);
     useEffect(() => {
@@ -142,7 +144,7 @@ export default function AplicarEncuestaView() {
 
     const lugar = (donde?.lugar || '').trim();
     const gpsListo = !!gps && typeof gps === 'object';
-    const campoListo = enCampo && (!!lugar || gpsListo);
+    const campoListo = enCampo && gps !== 'negado' && (!!lugar || gpsListo);
     const sugeridos = useMemo(() => (enCampo ? sugerenciasDeLugar(lugares, donde?.lugar || '', gpsListo ? gps : null) : []),
         [enCampo, lugares, donde?.lugar, gpsListo, gps]);
 
@@ -185,6 +187,10 @@ export default function AplicarEncuestaView() {
                                         // durante la jornada. Si no llega, vale la última buena.
                                         const p = (await leerPosicion({ espera: 6000 })) || (gpsListo ? gps : null);
                                         if (p) setGps(p);
+                                        else if (await ubicacionNegada()) {
+                                            setGps('negado');
+                                            throw new Error('Sin permiso de ubicación no se puede guardar. Actívalo y vuelve a enviar.');
+                                        }
                                         r = await guardarEntrevistaCampo(encuesta.id,
                                             { lugar: lugar || null, zona, ...(p ? { lat: p.lat, lng: p.lng, precision: p.precision } : {}) },
                                             { respuestas, contacto, segundos, referencia });
@@ -251,7 +257,13 @@ export default function AplicarEncuestaView() {
                                 {gps === 'sin' && <span>El teléfono no dio la ubicación: se guarda sólo el lugar que escribas.</span>}
                                 {gps === 'sin' && <Button variant="ghost" size="sm" onClick={buscarUbicacion}>Reintentar</Button>}
                             </div>
-                            {!campoListo && gps !== 'buscando' && (
+                            {gps === 'negado' && (
+                                <Notice variant="danger" compact>
+                                    <span>Sin permiso de ubicación no puedes encuestar en campo. Actívalo en los ajustes del teléfono, o usa la app FarmaSalud.</span>
+                                    <Button variant="ghost" size="sm" onClick={buscarUbicacion}>Reintentar</Button>
+                                </Notice>
+                            )}
+                            {!campoListo && gps !== 'buscando' && gps !== 'negado' && (
                                 <Notice variant="warning" compact>Escribe el lugar donde estás para poder empezar.</Notice>
                             )}
                         </>

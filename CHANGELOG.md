@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.5 — Prórroga: el adjunto se llama «Contrato firmado»
+
+En la acción «Prórroga de contrato» el adjunto decía «Respaldo» y no quedaba
+claro si era el contrato o el acuse del Ministerio. Ahora dice «Contrato
+firmado (obligatorio)» y la ayuda aclara que el acuse se sube después en
+Editar. Portal y app.
+
+Gemelo: staff_list — en `apps/mobile/app/empleado/accion.js`.
+
 ## v2.1585.4 — Reservas: el aviso de venta en caja manda a cancelar
 
 El texto de v2.1585.1 decía «si no pagó, avisa a Soporte», pero eso ya lo resuelve «Cancelar reserva»: `reserva_cambiar_estado` detecta la venta (`reserva_ventas_del_producto`) y pregunta si se descontó el anticipo («Sí, se descontó» cancela sin saldo a favor). Ahora el aviso manda ahí.

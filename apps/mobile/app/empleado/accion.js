@@ -323,8 +323,8 @@ export default function AccionDePersonal() {
               </Seccion>
 
               {eventoAEditar ? null : (
-                <Seccion titulo={`Respaldo ${respaldoObligatorio(f.type, f) ? '(obligatorio)' : '(opcional)'}`}
-                  pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'La carta de renuncia, la de despido o el finiquito' : r.esProrroga ? 'El contrato firmado. Queda también en su expediente' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
+                <Seccion titulo={`${r.esProrroga ? 'Contrato firmado' : 'Respaldo'} ${respaldoObligatorio(f.type, f) ? '(obligatorio)' : '(opcional)'}`}
+                  pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'La carta de renuncia, la de despido o el finiquito' : r.esProrroga ? 'El contrato nuevo. Queda también en su expediente. El acuse se sube después en Editar' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
                   <Fila rotulo={archivo ? archivo.name : 'Sin archivo'}>
                     <Pressable hitSlop={8} onPress={adjuntar} style={{ minHeight: 44, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 16, fontWeight: '700' }}>{archivo ? 'Cambiar' : 'Adjuntar'}</Text>

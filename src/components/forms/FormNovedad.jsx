@@ -648,13 +648,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         de abrir un modal encima del formulario. */}
                     <div data-campo="file">
                     <FileField
-                        label={`Respaldo ${respaldoObligatorio(formData?.type, formData) ? '(Obligatorio)' : '(Opcional)'}`}
+                        label={`${isProrroga ? 'Contrato firmado' : 'Respaldo'} ${respaldoObligatorio(formData?.type, formData) ? '(Obligatorio)' : '(Opcional)'}`}
                         accept=".pdf,image/jpeg,image/png,image/webp"
                         maxSizeMB={10}
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
                         file={formData?.file}
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
-                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (documentoDeBaja(formData) || 'el respaldo de la baja') : isProrroga ? 'el contrato firmado. Queda también en su expediente' : 'el respaldo'} (PDF, JPG o PNG)`}
+                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (documentoDeBaja(formData) || 'el respaldo de la baja') : isProrroga ? 'el contrato nuevo. Queda también en su expediente. El acuse se sube después en Editar' : 'el respaldo'} (PDF, JPG o PNG)`}
                     />
                     </div>
                 </>

@@ -4,8 +4,8 @@ import { PIEZAS } from './piezasTrazos';
 /**
  * El cierre de la página: los nombres apilados del diseñador y su ornamento
  * debajo. Al llegar a la vista, los nombres entran como tinta y el ornamento
- * se abre desde el centro hacia los lados; después, cada tanto, un destello
- * lo recorre.
+ * se abre desde el centro hacia los lados; después queda fijo y, cada tanto,
+ * un destello lo recorre.
  */
 export default function CierreNombres({ texto }) {
   const raiz = useRef(null);
@@ -18,7 +18,8 @@ export default function CierreNombres({ texto }) {
     return () => io.disconnect();
   }, []);
   const n = PIEZAS.nombresApilados;
-  const o = PIEZAS.icono;
+  // El ornamento sin su «&» (el quinto trazo del archivo del diseñador).
+  const o = { ...PIEZAS.icono, d: PIEZAS.icono.d.slice(0, 4) };
   return (
     <div ref={raiz} className={`cierre ${visto ? 'visto' : ''}`} role="img" aria-label={texto}>
       <svg className="cierre-nombres" viewBox={n.vista} aria-hidden focusable="false">

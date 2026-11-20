@@ -289,8 +289,9 @@ export default function Inicio({ codigo }) {
 
       </>}
 
-      {/* ── Nuestra historia: la foto queda fija y cambia con cada capítulo ── */}
-      <Historia novios={novios} historia={boda.historia} respaldo={boda.fotoHistoria} />
+      {/* ── Nuestra historia: la foto queda fija y cambia con cada capítulo.
+          Va en la invitación, no en el save the date. ── */}
+      {fase !== 'save-the-date' && <Historia novios={novios} historia={boda.historia} respaldo={boda.fotoHistoria} />}
 
       <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
 

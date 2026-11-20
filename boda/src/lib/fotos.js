@@ -5,11 +5,11 @@
  * Una foto propia (/fotos/nombre.jpg) se sirve desde sus copias ya reducidas
  * /fotos/nombre-<ancho>.jpg (ver LOCALES), hechas desde fotos-originales/.
  */
-const LOCALES = [480, 640, 800, 960, 1200, 1400, 1800, 2400];
+const LOCALES = [480, 640, 800, 960, 1200, 1400, 1800, 2400, 3200];
 const local = (url) => /^\/fotos\/[\w-]+\.jpg$/.test(url || '');
 const cercano = (w) => LOCALES.find((a) => a >= w) || LOCALES[LOCALES.length - 1];
-export const ANCHOS_PORTADA = [640, 960, 1400, 1800];
-export const ANCHOS_GALERIA = [480, 800, 1200];
+export const ANCHOS_PORTADA = [640, 960, 1400, 1800, 2400, 3200];
+export const ANCHOS_GALERIA = [480, 800, 1200, 1800];
 
 const acepta = (url) => /^https:\/\/images\.unsplash\.com\//.test(url || '');
 

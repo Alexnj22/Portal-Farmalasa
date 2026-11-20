@@ -24,7 +24,7 @@ export const boda = {
 
   // Hora local del lugar. El desfase (-06:00 = El Salvador) evita que el
   // contador cambie según la zona del invitado.
-  fecha: '2027-04-17T15:00:00-06:00',
+  fecha: '2027-02-13T15:00:00-06:00', // TODO confirmar la hora (3:00 p. m. de ejemplo)
   zonaHoraria: 'America/El_Salvador',
 
   // Fases del sitio. Con 'auto' se decide por fecha:
@@ -34,9 +34,10 @@ export const boda = {
   //   después                         → recuerdos
   // Para forzar una: 'save-the-date' | 'invitacion' | 'boda' | 'recuerdos'.
   // (Para previsualizar sin tocar esto: agregar ?fase=boda a la dirección.)
-  fase: 'auto',
-  invitacionesDesde: '2027-01-15',
-  confirmarAntesDe: '2027-03-15',
+  // Por ahora sólo el save the date: fijo, para que no cambie solo por fecha.
+  fase: 'save-the-date',
+  invitacionesDesde: '2026-12-15',
+  confirmarAntesDe: '2027-01-23',
 
   frase: 'Con la bendición de Dios y de nuestros padres, queremos compartir con ustedes el día más feliz de nuestras vidas.',
 

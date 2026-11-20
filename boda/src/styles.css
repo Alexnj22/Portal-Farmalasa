@@ -86,12 +86,7 @@ body {
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: clip;
   font-optical-sizing: auto;
 }
-/* Grano de película, quieto y apenas perceptible. Sólo con ratón: en el
-   teléfono una capa fija a pantalla completa cuesta al desplazar. */
-@media (hover: hover) and (pointer: fine) { body::after {
-  content: ''; position: fixed; inset: 0; z-index: var(--z-grano); pointer-events: none; opacity: 0.045;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-} }
+/* (Sin grano de película: sobre las fotos se leía como pixelado.) */
 img { max-width: 100%; display: block; }
 a { color: inherit; text-underline-offset: 0.24em; text-decoration-thickness: 1px; }
 h1, h2, h3 { font-weight: 400; line-height: 1.04; margin: 0 0 0.5em; text-wrap: balance; }
@@ -262,7 +257,6 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
   .portada h1 .linea-2 { padding-left: 0.9em; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .portada-foto { will-change: transform; }
   @supports (animation-timeline: scroll()) {
     .portada-foto { animation: paralaje linear both; animation-timeline: scroll(root block); animation-range: 0 100svh; }
   }
@@ -302,21 +296,37 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
   .dividida > .dividida-titulo { position: sticky; top: calc(var(--nav) + 48px); }
 }
 
-/* Cuenta regresiva: numerales finos entre filetes, sin tarjetas. */
-.cuenta { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--linea); margin: 0 0 clamp(32px, 6vw, 56px); }
-.cuenta div { padding: clamp(20px, 4vw, 32px) 0; border-bottom: 1px solid var(--linea); min-width: 0; }
-.cuenta div:first-child { grid-column: 1 / -1; }
-.cuenta div:nth-child(2) { border-right: 1px solid var(--linea); padding-right: 20px; }
-.cuenta div:nth-child(3) { padding-left: 22px; }
-.cuenta b { display: block; font: 400 clamp(3.6rem, 16vw, 6.5rem)/0.86 var(--display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums lining-nums; }
-.cuenta div:first-child b { font-size: clamp(6.4rem, 36vw, 12rem); }
-.cuenta span { display: block; margin-top: 14px; font: 500 0.8125rem/1 var(--sans); letter-spacing: 0.34em; text-transform: uppercase; color: var(--texto-2); }
+/* Cuenta regresiva: numerales finos entre filetes, con dígitos que ruedan
+   como un contador mecánico. Días al frente; horas, minutos y segundos detrás. */
+.cuenta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--linea); margin: 0 0 clamp(32px, 6vw, 56px); position: relative; }
+.cuenta::after { content: ''; position: absolute; left: 0; top: -1px; height: 1px; width: 100%; background: var(--acento); transform-origin: left; transform: scaleX(0); transition: transform 2.2s var(--salida); }
+.cuenta.vista::after { transform: scaleX(1); }
+.cuenta-celda { padding: clamp(20px, 4vw, 32px) 0; border-bottom: 1px solid var(--linea); min-width: 0; }
+.cuenta-celda:first-child { grid-column: 1 / -1; }
+.cuenta-celda + .cuenta-celda { padding-left: clamp(14px, 3vw, 28px); }
+.cuenta-celda:nth-child(2) { padding-left: 0; }
+.cuenta-celda:nth-child(2), .cuenta-celda:nth-child(3) { border-right: 1px solid var(--linea); }
+.cuenta b { display: flex; font: 400 clamp(3rem, 13vw, 6.5rem)/1 var(--display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums lining-nums; }
+.cuenta-celda:first-child b { font-size: clamp(6.4rem, 36vw, 12rem); }
+.cuenta-celda:last-child b { color: var(--acento); }
+.cuenta-celda > span { display: block; margin-top: 14px; font: 500 0.8125rem/1 var(--sans); letter-spacing: 0.34em; text-transform: uppercase; color: var(--texto-2); }
+.rueda { display: inline-block; height: 1em; overflow: hidden; margin: 0 -0.01em; }
+.rueda-tira { display: flex; flex-direction: column; transform: translateY(calc(var(--d, 0) * -1em)); }
+.rueda-tira > span { display: block; height: 1em; line-height: 1; text-align: center; }
+.cuenta-celda > span { opacity: 0; transform: translateY(8px); transition: opacity .9s var(--salida), transform .9s var(--salida); transition-delay: calc(.5s + var(--orden) * .12s); }
+.cuenta.vista .cuenta-celda > span { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: no-preference) {
+  /* Cada segundo, un giro corto; al aparecer, un giro largo desde cero, escalonado. */
+  .rueda-tira { transition: transform .7s cubic-bezier(.2, .9, .1, 1); }
+  .cuenta.entrando .rueda-tira { transition-duration: 2.4s; transition-delay: calc(var(--orden) * .12s); }
+}
+@media (prefers-reduced-motion: reduce) { .cuenta-celda > span, .cuenta::after { transition: none; } }
 @media (min-width: 900px) {
-  .cuenta { grid-template-columns: 1.5fr 1fr 1fr; }
-  .cuenta div:first-child { grid-column: auto; border-right: 1px solid var(--linea); padding-right: 28px; }
-  .cuenta div:nth-child(2) { padding-left: 28px; }
-  .cuenta div:nth-child(3) { padding-left: 28px; }
-  .cuenta b, .cuenta div:first-child b { font-size: clamp(5rem, 9vw, 10rem); }
+  .cuenta { grid-template-columns: 1.6fr 1fr 1fr 1fr; }
+  .cuenta-celda:first-child { grid-column: auto; border-right: 1px solid var(--linea); padding-right: 28px; }
+  .cuenta-celda:nth-child(2) { padding-left: 28px; }
+  .cuenta b, .cuenta-celda:first-child b { font-size: clamp(4.4rem, 8vw, 9.5rem); }
+  .cuenta-celda:first-child b { font-size: clamp(5.6rem, 11vw, 12rem); }
 }
 .faltan-pie { display: flex; justify-content: space-between; align-items: center; gap: 18px 24px; flex-wrap: wrap; }
 .grande-fecha { font: italic 400 clamp(1.6rem, 5vw, 2.5rem)/1.15 var(--display); margin: 0; }
@@ -341,6 +351,10 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
 .escena-frase .filete-corto { width: 1px; height: 56px; background: var(--acento); margin: 0 auto 40px; transform-origin: top; }
 .escena-frase blockquote { margin: 0 auto; max-width: 19ch; font: 400 clamp(2rem, 8.2vw, 4.6rem)/1.12 var(--display); letter-spacing: -0.015em; text-wrap: balance; }
 .escena-frase blockquote em { font-style: italic; }
+/* Palabra por palabra: apagada hasta que el desplazamiento la alcanza (--p). */
+.frase-al-bajar { --p: 1; }
+.frase-al-bajar .pal { opacity: clamp(0.14, calc(var(--p) * (var(--n) + 3) - var(--i)), 1); transition: opacity .25s linear; }
+.frase-al-bajar .cursiva { font-style: italic; color: var(--acento); }
 .escena-frase figcaption { margin-top: 40px; }
 
 /* La foto que se abre al bajar (Nuestra historia). Por defecto, abierta. */
@@ -372,7 +386,11 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
 
 /* Capítulos de la historia */
 .capitulos { list-style: none; margin: 0; padding: 0; }
-.hito { padding: clamp(64px, 13vw, 136px) 0; border-top: 1px solid var(--linea); }
+.hito { position: relative; padding: clamp(64px, 13vw, 136px) 0; border-top: 1px solid var(--linea); overflow: clip; }
+.hito > :not(.hito-anio) { position: relative; z-index: 1; }
+.hito-anio { position: absolute; right: -0.04em; top: 50%; translate: 0 -50%; font: italic 400 clamp(7rem, 34vw, 20rem)/0.8 var(--display); letter-spacing: -0.05em; color: transparent; -webkit-text-stroke: 1px oklch(0.78 0.07 80 / 0.28); pointer-events: none; user-select: none; }
+.mascara { display: block; overflow: clip; padding-bottom: 0.08em; }
+.capitulos { position: relative; }
 .hito:first-child { border-top: 0; }
 .hito h3 { margin: 0 0 22px; font: 400 clamp(2.8rem, 12vw, 6.4rem)/0.95 var(--display); letter-spacing: -0.022em; }
 .hito h3 em { font-style: italic; }
@@ -431,6 +449,19 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
   }
 }
 @keyframes revelar { from { opacity: 0; transform: translateY(18px); } }
+@keyframes anio-cruza { from { transform: translateX(14%); } to { transform: translateX(-10%); } }
+@keyframes sube-titulo { from { transform: translateY(105%); } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .hito-anio { animation: anio-cruza linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+    .hito .mascara > * { animation: sube-titulo linear both; animation-timeline: view(); animation-range: entry 30% entry 100%; }
+    .hito .revelar, .hito.revelar { animation-range: entry 0% entry 70%; }
+  }
+  @supports not (animation-timeline: view()) {
+    .hito .mascara > * { transition: transform 1.2s var(--salida) .15s; }
+    .hito.esperando:not(.visto) .mascara > * { transform: translateY(105%); }
+  }
+}
 @keyframes filete-dibuja { from { transform: scale(0, 1); } }
 .escena-frase .revelar .filete-corto { animation-name: filete-baja; }
 @keyframes filete-baja { from { transform: scaleY(0); } }

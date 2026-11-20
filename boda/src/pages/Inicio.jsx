@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { faseActual } from '../lib/fase';
-import { fechaLarga, fechaCorta, descargarIcs, enlaceGoogleCalendar, limiteConfirmar } from '../lib/fechas';
+import { fechaLarga, descargarIcs, enlaceGoogleCalendar, limiteConfirmar } from '../lib/fechas';
 import { api } from '../lib/api';
 import { t, useIdioma, contenido, BotonIdioma } from '../lib/idioma';
 import Countdown from '../components/Countdown';
@@ -15,7 +15,6 @@ import BotonMusica from '../components/BotonMusica';
 import { NavEscritorio, Monograma } from '../components/AppMarco';
 import { imagenAdaptable } from '../lib/fotos';
 import { precargar } from '../lib/precarga';
-import { romano } from '../lib/romanos';
 import Icono from '../components/Iconos';
 import { useInvitacion, usarCodigo } from '../lib/miInvitacion';
 import { AhoraCompacto } from '../components/EnVivo';
@@ -26,21 +25,56 @@ const Sobre = lazy(() => import('../components/Sobre'));
 const Presentacion = lazy(() => import('../components/Presentacion'));
 const CintaEntrada = lazy(() => import('../components/CintaEntrada'));
 
-/** 17 · IV · 2027: el mes en romanos, como en una invitación grabada. */
+/** 13 · FEB · 2027: el mes con letras (en romanos, «II» se leía como 11). */
+const MESES = { es: 'ENE FEB MAR ABR MAY JUN JUL AGO SEP OCT NOV DIC', en: 'JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC' };
 const fechaPuntos = () => {
   const [a, m, d] = fechaBoda.toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' }).split('-');
-  return `${Number(d)} · ${romano(Number(m))} · ${a}`;
+  const mes = t(MESES.es, MESES.en).split(' ')[Number(m) - 1];
+  return `${Number(d)} · ${mes} · ${a}`;
 };
 
 // Las franjas del cine se retiran una vez por visita; al volver a la portada,
 // el texto sólo se funde.
 const VISTA = 'boda-portada-abierta';
 
-/** Las últimas palabras de una frase, en cursiva. */
-function FraseConCursiva({ texto, ultimas = 3 }) {
+/**
+ * La frase se va encendiendo palabra por palabra mientras se baja (--p de 0 a
+ * 1, escrito por un solo rAF y sólo mientras la frase se ve). Las últimas
+ * palabras, en cursiva champán.
+ */
+function FraseAlBajar({ texto, ultimas = 3 }) {
+  const ref = useRef(null);
   const p = texto.trim().split(/\s+/);
   const corte = Math.max(0, p.length - ultimas);
-  return <>{p.slice(0, corte).join(' ')} <em>{p.slice(corte).join(' ')}</em></>;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (sinMovimiento()) { el.style.setProperty('--p', '1'); return undefined; }
+    let cuadro = 0;
+    const medir = () => {
+      cuadro = 0;
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // 0 cuando la frase asoma por abajo; 1 cuando su centro pasa el 40 % de la pantalla.
+      const q = (vh - r.top) / (vh * 0.6 + r.height * 0.5);
+      el.style.setProperty('--p', Math.min(1, Math.max(0, q)).toFixed(3));
+    };
+    const pedir = () => { if (!cuadro) cuadro = requestAnimationFrame(medir); };
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { window.addEventListener('scroll', pedir, { passive: true }); medir(); }
+      else window.removeEventListener('scroll', pedir);
+    });
+    io.observe(el);
+    return () => { io.disconnect(); window.removeEventListener('scroll', pedir); cancelAnimationFrame(cuadro); };
+  }, []);
+  return (
+    <blockquote ref={ref} className="frase-al-bajar" style={{ '--n': p.length }} aria-label={texto}>
+      {p.map((w, i) => {
+        const pal = <span key={i} className={`pal ${i >= corte ? 'cursiva' : ''}`} style={{ '--i': i }} aria-hidden>{w}</span>;
+        return i < p.length - 1 ? [pal, ' '] : pal;
+      })}
+    </blockquote>
+  );
 }
 
 export default function Inicio({ codigo }) {
@@ -159,7 +193,7 @@ export default function Inicio({ codigo }) {
             <Revelar><Capitulo texto={t('Faltan', 'Countdown')} /></Revelar>
             <Countdown />
             <Revelar className="faltan-pie">
-              <p className="grande-fecha">{fase === 'save-the-date' ? fechaCorta() : fechaLarga()}</p>
+              <p className="grande-fecha">{fechaLarga()}</p>
               <div className="acciones">
                 <a className="btn claro chico" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
                 <button type="button" className="btn claro chico" onClick={descargarIcs}>Apple / Outlook</button>
@@ -171,11 +205,11 @@ export default function Inicio({ codigo }) {
 
       {fase !== 'save-the-date' && <Accesos fase={fase} inv={inv} abrirPresentacion={abrirPresentacion} />}
 
-      {/* ── La frase: una escena tipográfica, quieta ── */}
+      {/* ── La frase: se enciende palabra por palabra al bajar ── */}
       <figure className="escena-frase">
         <Revelar>
           <span className="filete-corto" aria-hidden />
-          <blockquote><FraseConCursiva texto={boda.frase} /></blockquote>
+          <FraseAlBajar texto={boda.frase} />
           <figcaption className="versalita suave">{novios.firma}</figcaption>
         </Revelar>
       </figure>
@@ -195,8 +229,9 @@ export default function Inicio({ codigo }) {
           <ol className="capitulos">
             {boda.historia.map((h, i) => (
               <Revelar as="li" key={i} className="hito">
+                <span className="hito-anio" aria-hidden>{h.fecha}</span>
                 <Capitulo numero={i + 1} texto={`${t('Capítulo', 'Chapter')} · ${h.fecha}`} />
-                <div><Titulo texto={h.titulo} as="h3" /><p>{h.texto}</p></div>
+                <div><span className="mascara"><Titulo texto={h.titulo} as="h3" /></span><p>{h.texto}</p></div>
               </Revelar>
             ))}
           </ol>

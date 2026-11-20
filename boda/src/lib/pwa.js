@@ -8,10 +8,17 @@ export function registrarServiceWorker(router) {
   if (import.meta.env.DEV || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
   let hayNueva = false;
   let actualizar = null;
+  const t0 = Date.now();
   import('virtual:pwa-register')
     .then(({ registerSW }) => {
       actualizar = registerSW({
-        onNeedRefresh() { hayNueva = true; },
+        // Si la versión nueva aparece apenas abierta la página (el invitado
+        // todavía no hizo nada), se activa ya: si no, quien sólo mira la
+        // portada se quedaría con la versión vieja para siempre.
+        onNeedRefresh() {
+          if (Date.now() - t0 < 4000 && actualizar) actualizar(true);
+          else hayNueva = true;
+        },
         onRegisterError(e) { console.error('Service worker', e); },
       });
     })

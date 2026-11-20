@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.6 — Personal: aviso de contrato por vencer y «No lo devolverá» en la baja
+
+**Contrato por vencer.** Un contrato temporal venció el 18 de noviembre y la
+tarjeta de la persona sólo avisaba de la anualidad de la junta: nada en el
+portal miraba `contract_end_date`. `finDeContrato` (`utils/alertasDePersona`)
+avisa en la tarjeta de Personal —portal y app, que comparten las alertas— desde
+30 días antes del fin de un contrato Temporal o de Servicios de alguien activo:
+«Contrato vence en N d», «Contrato vence hoy», «Contrato vencido». La prórroga
+sube la fecha de fin, así que registrarla apaga el aviso sola.
+
+**«No lo devolverá».** En el cierre de una baja, cada artículo (carné,
+uniforme, llaves, equipo) tenía «Devolvió / No devolvió / No tenía». Un
+uniforme que nunca iba a volver dejaba la baja en «cierre pendiente» para
+siempre, y la única salida era marcar «No tenía», que es falso. La cuarta
+respuesta `NO_DEVOLVERA` cuenta como respondida: la baja se cierra y queda
+escrito qué no se recuperó.
+
+Gemelo: staff_list — la alerta sale del núcleo y la pinta `TarjetaPersona`; la respuesta nueva está en `apps/mobile/componentes/personal/BajaLegal.js`.
+
 ## v2.1584.5 — fix(compras): «X 60TAB» se lee como caja de 60
 
 NOR-GEROM FORTE 75 MG «X 60TAB» × 1 se proponía como 65 unidades. Con la pieza

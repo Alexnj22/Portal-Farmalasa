@@ -34,6 +34,8 @@ const DEVOLUCION = [
     // decía si no lo devolvió o si nunca lo tuvo (2026-11-14, pedido del usuario).
     { value: 'SI', label: 'Devolvió', tone: 'success' },
     { value: 'NO', label: 'No devolvió', tone: 'warning' },
+    // No va a volver: cierra la baja y deja escrito que no se recuperó (2026-11-20).
+    { value: 'NO_DEVOLVERA', label: 'No lo devolverá', tone: 'danger' },
     { value: 'NA', label: 'No tenía', tone: 'neutro' },
 ];
 
@@ -442,6 +444,9 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                                 {activos.pendientes.length > 0 && (
                                     <Badge variant="warning" size="sm" uppercase={false}>No devolvió: {activos.pendientes.map((a) => a.texto.toLowerCase()).join(', ')}</Badge>
                                 )}
+                                {activos.noVolveran.length > 0 && (
+                                    <Badge variant="danger" size="sm" uppercase={false}>No lo devolverá: {activos.noVolveran.map((a) => a.texto.toLowerCase()).join(', ')}</Badge>
+                                )}
                             </div>
                             <ul className="divide-y divide-border-card">
                                 {activos.items.map((a) => (
@@ -456,6 +461,9 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             </ul>
                             {activos.pendientes.length > 0 && (
                                 <p className="text-caption text-content-3">Anota en las observaciones qué no devolvió y cuándo lo va a hacer.</p>
+                            )}
+                            {activos.noVolveran.length > 0 && (
+                                <p className="text-caption text-content-3">Anota en las observaciones qué se hizo, por ejemplo si se descontó.</p>
                             )}
                         </div>
 

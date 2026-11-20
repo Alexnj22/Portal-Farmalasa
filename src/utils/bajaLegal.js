@@ -100,8 +100,13 @@ export const pendientesDeBaja = (motivo) => PENDIENTES_DE_BAJA.filter((p) => !p.
 
 /**
  * Lo que se le entregó y tiene que devolver, uno por uno. Cada artículo tiene
- * tres respuestas: `SI` (lo devolvió), `NO` (queda pendiente) o `NA` (nunca se
- * le entregó). Se guarda en `activosDevueltos: { carne: 'SI', … }`.
+ * cuatro respuestas: `SI` (lo devolvió), `NO` (queda pendiente), `NO_DEVOLVERA`
+ * (no va a volver: la baja se cierra y queda escrito que no se recuperó) o `NA`
+ * (nunca se le entregó). Se guarda en `activosDevueltos: { carne: 'SI', … }`.
+ *
+ * `NO_DEVOLVERA` nació el 2026-11-20: con sólo «No devolvió» una baja cuyo
+ * uniforme nunca iba a volver quedaba en «cierre pendiente» para siempre, y la
+ * única salida era marcar «No tenía», que es falso.
  */
 export const ACTIVOS_DE_BAJA = [
     { clave: 'carne', texto: 'Carné', pregunta: 'el carné' },
@@ -121,8 +126,9 @@ export function estadoDeActivos(d = {}) {
     const items = ACTIVOS_DE_BAJA.map((a) => ({ ...a, estado: viejo ? 'SI' : (guardado[a.clave] || null) }));
     const respondidos = items.filter((i) => i.estado).length;
     const pendientes = items.filter((i) => i.estado === 'NO');
+    const noVolveran = items.filter((i) => i.estado === 'NO_DEVOLVERA');
     const sinResponder = items.filter((i) => !i.estado);
-    return { items, respondidos, pendientes, sinResponder, completo: sinResponder.length === 0 && pendientes.length === 0 };
+    return { items, respondidos, pendientes, noVolveran, sinResponder, completo: sinResponder.length === 0 && pendientes.length === 0 };
 }
 
 /** El cambio de UN artículo, con `entregoActivos` recalculado. Lo usan la web y la app. */

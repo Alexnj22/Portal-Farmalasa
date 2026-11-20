@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback, useSyncExternalStore, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
+  Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert, CalendarClock,
   Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
   Pencil, Trash2, RefreshCw, ShieldCheck, UserMinus, CalendarDays, AlertTriangle, ChevronRight, KeyRound, IdCard, ClipboardCheck,
 } from 'lucide-react';
@@ -108,7 +108,7 @@ const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 // se queda solo y las alertas bajan a su propia línea.
 // Las alertas viven en el núcleo (`utils/alertasDePersona`, también las usa la
 // app); acá se les pega el componente del ícono.
-const ICONOS_DE_ALERTA = { AlertCircle, ShieldAlert, Cake, Medal };
+const ICONOS_DE_ALERTA = { AlertCircle, ShieldAlert, CalendarClock, Cake, Medal };
 const alertasDe = (emp) => alertasDePersona(emp).map((a) => ({ ...a, icon: ICONOS_DE_ALERTA[a.icono] }));
 
 const cargosDe = (emp) => [emp.role, emp.secondary_role || emp.secondaryRole].filter(Boolean);

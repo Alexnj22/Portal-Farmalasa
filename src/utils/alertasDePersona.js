@@ -9,7 +9,8 @@
  */
 import { faltantesDelExpediente } from './expediente';
 import { getExpiringDocuments } from './documentExpiry';
-import { hoySV, diaSV } from './fecha';
+import { hoySV, diaSV, diasEntre, fechaTexto } from './fecha';
+import { contratoConPlazo } from './contrato';
 
 // «Hoy» es el de la sala, no el del reloj del equipo (`utils/fecha`): con
 // `new Date()` el «¡Hoy cumple!» y el aniversario saltaban de día según la
@@ -45,6 +46,28 @@ export function pendientesDePersona(emp) {
 /** Sólo los rótulos — para el `title` de la píldora. */
 export const datosPendientesDePersona = (emp) => pendientesDePersona(emp).map(f => f.label);
 
+/** Desde cuántos días antes del fin se avisa un contrato a plazo. */
+export const DIAS_DE_AVISO_CONTRATO = 30;
+
+/**
+ * El fin de un contrato a plazo (Temporal o Servicios) de alguien que sigue
+ * activo: `{ dias, fin }` si vence en los próximos 30 días o ya venció, o null.
+ * La fecha de fin ya trae la última prórroga (`EmployeeFormModal` la sube al
+ * prorrogar), así que una prórroga registrada apaga el aviso sola.
+ *
+ * Nació el 2026-11-20: un contrato temporal venció el 18 de noviembre y la
+ * tarjeta sólo avisaba de la anualidad de la junta. Nada en el portal miraba
+ * `contract_end_date`, y la persona siguió trabajando con el contrato vencido
+ * sin que nadie lo viera.
+ */
+export function finDeContrato(emp, hoy = hoySV()) {
+    if (!emp || emp.status === 'INACTIVO' || emp.status === 'LIQUIDADO') return null;
+    const fin = emp.contract_end_date ? String(emp.contract_end_date).slice(0, 10) : null;
+    if (!fin || !contratoConPlazo(emp.contract_type)) return null;
+    const dias = diasEntre(diaDe(hoy), fin);
+    return dias <= DIAS_DE_AVISO_CONTRATO ? { dias, fin } : null;
+}
+
 export function alertasDePersona(emp, hoy = hoySV()) {
     const salida = [];
     const faltan = [];
@@ -57,6 +80,19 @@ export function alertasDePersona(emp, hoy = hoySV()) {
             key: 'pendiente', icono: 'AlertCircle', variante: 'warning',
             texto: faltan.length === 1 ? 'Falta 1 dato' : `Faltan ${faltan.length} datos`,
             title: `Información pendiente: ${faltan.join(', ')}`,
+        });
+    }
+
+    const contrato = finDeContrato(emp, dia);
+    if (contrato) {
+        const { dias, fin } = contrato;
+        const fecha = fechaTexto(fin, { day: 'numeric', month: 'short', year: 'numeric' });
+        salida.push({
+            key: 'contrato', icono: 'CalendarClock', variante: dias <= 7 ? 'danger' : 'warning',
+            texto: dias < 0 ? 'Contrato vencido' : dias === 0 ? 'Contrato vence hoy' : `Contrato vence en ${dias} d`,
+            title: dias < 0
+                ? `El contrato venció el ${fecha}. Registra la prórroga o la baja.`
+                : `El contrato vence el ${fecha}.`,
         });
     }
 

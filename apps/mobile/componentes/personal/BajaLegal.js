@@ -35,11 +35,12 @@ const larga = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: '
 const DEVOLUCION = [
   { id: 'SI', label: 'Devolvió', get color() { return colorSistema.verde; } },
   { id: 'NO', label: 'No devolvió', get color() { return colorSistema.naranja; } },
+  { id: 'NO_DEVOLVERA', label: 'No lo devolverá', get color() { return colorSistema.rojo; } },
   { id: 'NA', label: 'No tenía', get color() { return colorSistema.texto2; } },
 ];
 function Devolucion({ valor, onCambiar }) {
   return (
-    <View style={{ flexDirection: 'row', gap: 6 }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
       {DEVOLUCION.map((o) => {
         const activa = valor === o.id;
         return (

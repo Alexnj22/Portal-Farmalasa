@@ -173,6 +173,18 @@ describe('cierre pendiente de una baja registrada', () => {
     });
 });
 
+describe('lo que no va a volver (2026-11-20)', () => {
+    it('«No lo devolverá» cierra la devolución y la baja sale del cierre pendiente', async () => {
+        const { estadoDeActivos, cierrePendienteDeBaja } = await import('@nucleo/utils/bajaLegal');
+        const activosDevueltos = { carne: 'NO_DEVOLVERA', uniforme: 'NO_DEVOLVERA', llaves: 'NA', equipo: 'NA' };
+        const e = estadoDeActivos({ activosDevueltos });
+        expect(e.completo).toBe(true);
+        expect(e.pendientes).toEqual([]);
+        expect(e.noVolveran.map((a) => a.clave)).toEqual(['carne', 'uniforme']);
+        expect(cierrePendienteDeBaja({ motivo: 'DESPIDO_CON_INDEMNIZACION', hasFiniquito: true, activosDevueltos }).map((x) => x.clave)).not.toContain('activosDevueltos');
+    });
+});
+
 describe('renuncia sin la hoja oficial (2026-11-18)', () => {
     const base = { date: '2026-11-15', ultimoDiaLaborado: '2026-11-10', terminationReason: 'RENUNCIA', sinHojaOficial: true };
     const emp = { hire_date: '2025-06-01' };

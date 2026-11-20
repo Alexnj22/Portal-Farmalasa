@@ -39,6 +39,20 @@ describe('ingresoDeCaja', () => {
         it('«trae el monto una sola vez» salta a la casilla', () => {
             expect(frenoDelMonto({ lectura: unico, monto: '19.87', intentos: 1, unaSolaVez: true }).paso).toBe('COTEJAR');
         });
+        it('boleta de un solo monto («Pagos de tarjeta»): va directo a la casilla', () => {
+            const tarjeta = { montoConfianza: 'UNICO', leido: { monto: 215, operacion_impresa: 'PAGOS DE TARJETA' } };
+            expect(frenoDelMonto({ lectura: tarjeta, monto: '215', intentos: 1 })).toMatchObject({ paso: 'COTEJAR', bloquea: true });
+            const pagoRapido = { montoConfianza: 'UNICO', leido: { monto: 5, operacion_impresa: 'Servicio de pago rápido' } };
+            expect(frenoDelMonto({ lectura: pagoRapido, monto: '5', intentos: 1 }).paso).toBe('COTEJAR');
+        });
+        it('boleta de un solo monto pero CONTRADICHA: sigue pidiendo otra foto', () => {
+            const t = { montoConfianza: 'CONTRADICHO', leido: { monto: 215, operacion_impresa: 'PAGOS DE TARJETA' } };
+            expect(frenoDelMonto({ lectura: t, monto: '215', intentos: 1 }).paso).toBe('OTRA_FOTO');
+        });
+        it('boleta que trae el monto dos veces (luz): sigue pidiendo otra foto', () => {
+            const luz = { montoConfianza: 'UNICO', leido: { monto: 12, operacion_impresa: 'PAGO DE LUZ' } };
+            expect(frenoDelMonto({ lectura: luz, monto: '12', intentos: 1 }).paso).toBe('OTRA_FOTO');
+        });
         it('monto escrito distinto al leído: es a mano, no frena', () => {
             expect(frenoDelMonto({ lectura: unico, monto: '18.87', intentos: 1 })).toBeNull();
         });

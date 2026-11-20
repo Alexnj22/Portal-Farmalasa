@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.3 — Las boletas que traen el monto una vez no piden otra foto
+
+- Al anotar un movimiento de caja, las boletas de «Pagos de tarjeta», «Compra»,
+  «Retiros», «Servicio de pago rápido» y «Retiros con tarjeta» ya no piden otra
+  foto: van directo a «Lo comparé con el papel». Imprimen el total una sola vez
+  (medido sobre todas las lecturas guardadas: 59 de 60, 27 de 27, 11 de 11, 9 de
+  10, 5 de 5), así que una segunda foto no tenía con qué comprobarlo. Caso:
+  boleta 001371 de $215. Una lectura contradicha sigue pidiendo otra foto.
+  (`boletaDeUnSoloMonto` en `src/utils/ingresoDeCaja.js`; lo usan el portal y
+  la app.)
+- Gemelo: caja — el cambio vive en la lógica compartida que leen los dos lados.
+
 ## v2.1585.2 — Prórroga: contrato obligatorio y los 8 días desde la firma; cierre de la baja legible
 
 - **El contrato firmado es obligatorio** en la acción «Prórroga de contrato»

@@ -99,6 +99,27 @@ export function lecturaDeBoleta(r, { pideBoleta = false } = {}) {
  * @param cotejado  marcó la casilla
  *   → null | { paso: 'OTRA_FOTO'|'COTEJAR', bloquea, texto, casilla? }
  */
+/**
+ * Las boletas que imprimen el monto UNA sola vez, por el rótulo de la operación
+ * que trae el papel (`leido.operacion_impresa`). A estas no se les pide otra
+ * foto: una segunda foto del mismo papel tampoco trae un segundo total.
+ *
+ * Medido el 2026-11-20 sobre todas las lecturas guardadas (caja y bolsas):
+ * «Pagos de tarjeta» 59 sin comprobar contra 1 comprobada, «Compra» 27 contra 0,
+ * «Retiros» 11–0, «Servicio de pago rápido» 9–0, «Retiros con tarjeta» 5–0. Las
+ * de luz, teléfono o remesa sí lo traen dos veces (1,950 contra 38 en luz), y
+ * ahí la segunda foto sigue sirviendo. Lo pidió el usuario tras la boleta 001371
+ * de $215, que pidió otra foto sin motivo.
+ */
+const OPERACIONES_DE_UN_SOLO_MONTO = new Set([
+    'PAGOS DE TARJETA', 'COMPRA', 'RETIROS', 'SERVICIO DE PAGO RAPIDO', 'RETIROS CON TARJETA',
+]);
+const normalizarOperacion = (v) => String(v ?? '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toUpperCase().replace(/\s+/g, ' ').trim();
+export const boletaDeUnSoloMonto = (leido) =>
+    OPERACIONES_DE_UN_SOLO_MONTO.has(normalizarOperacion(leido?.operacion_impresa));
+
 export function frenoDelMonto({ lectura, monto, intentos = 0, unaSolaVez = false, cotejado = false }) {
     const leido = Number(lectura?.leido?.monto);
     if (!lectura || !Number.isFinite(leido) || leido <= 0) return null;
@@ -109,7 +130,10 @@ export function frenoDelMonto({ lectura, monto, intentos = 0, unaSolaVez = false
      * del PDF ni siquiera hay otra foto que tomar. Lo que podía comprobarlo
      * (que los renglones sumen el total) ya lo intentó el lector. */
     const deProveedor = lectura?.leido?.clase === 'PROVEEDOR';
-    if (intentos < 2 && !unaSolaVez && !deProveedor) {
+    /* `CONTRADICHO` sí pide otra foto aunque la boleta sea de un solo monto: el
+     * papel trajo dos lecturas distintas, o sea que una está mal leída. */
+    const unSoloMonto = lectura.montoConfianza !== 'CONTRADICHO' && boletaDeUnSoloMonto(lectura?.leido);
+    if (intentos < 2 && !unaSolaVez && !deProveedor && !unSoloMonto) {
         return {
             paso: 'OTRA_FOTO', bloquea: true,
             texto: lectura.montoConfianza === 'CONTRADICHO'

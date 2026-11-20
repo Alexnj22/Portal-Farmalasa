@@ -57,8 +57,8 @@ export const boda = {
   // La foto que se abre a pantalla completa al bajar a «Nuestra historia» (vertical u horizontal).
   fotoHistoria: '/fotos/beso.jpg',
   // Fondo de «Faltan N días» en el save the date (si no, la primera de la galería).
-  fotoFaltan: '/fotos/balcon.jpg',
-  fotoFaltanEnfoque: '50% 22%',
+  fotoFaltan: '/fotos/beso.jpg',
+  fotoFaltanEnfoque: '50% 48%',
   galeria: [
     '/fotos/abrazo.jpg',
     '/fotos/portada.jpg', // la 2.ª va en el marco ancho

@@ -242,7 +242,7 @@ export default function Inicio({ codigo }) {
 
       {fase !== 'save-the-date' && <Accesos fase={fase} inv={inv} abrirPresentacion={abrirPresentacion} />}
 
-      {/* El save the date es corto: portada, cuánto falta, fotos y cierre. */}
+      {/* El save the date es corto: portada, cuánto falta, historia, fotos y cierre. */}
       {fase !== 'save-the-date' && <>
       {/* ── La frase: se enciende palabra por palabra al bajar ── */}
       <figure className="escena-frase">
@@ -253,9 +253,10 @@ export default function Inicio({ codigo }) {
         </Revelar>
       </figure>
 
+      </>}
+
       {/* ── Nuestra historia: la foto queda fija y cambia con cada capítulo ── */}
       <Historia novios={novios} historia={boda.historia} respaldo={boda.fotoHistoria} />
-      </>}
 
       <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
 

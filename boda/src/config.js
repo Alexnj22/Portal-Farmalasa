@@ -59,11 +59,12 @@ export const boda = {
     '/fotos/balcon.jpg',
   ],
 
+  // Cada capítulo con su foto (opcional; enfoque = qué punto queda a la vista): queda fija al lado y cambia al bajar.
   historia: [
-    { fecha: '2018', titulo: 'Nos conocimos', texto: 'Un amigo en común, una fiesta y una conversación que no terminó.' },
-    { fecha: '2019', titulo: 'Primera cita', texto: 'Pupusas, lluvia y la certeza de que había algo especial.' },
-    { fecha: '2023', titulo: 'Nuestro primer viaje', texto: 'Descubrimos que también somos buenos compañeros de aventura.' },
-    { fecha: '2026', titulo: '¡Dijo que sí!', texto: 'Frente al mar, con el corazón a mil.' },
+    { fecha: '2018', foto: '/fotos/abrazo.jpg', titulo: 'Nos conocimos', texto: 'Un amigo en común, una fiesta y una conversación que no terminó.' },
+    { fecha: '2019', foto: '/fotos/balcon.jpg', titulo: 'Primera cita', texto: 'Pupusas, lluvia y la certeza de que había algo especial.' },
+    { fecha: '2023', foto: '/fotos/portada.jpg', enfoque: '74% 50%', titulo: 'Nuestro primer viaje', texto: 'Descubrimos que también somos buenos compañeros de aventura.' },
+    { fecha: '2026', foto: '/fotos/beso.jpg', titulo: '¡Dijo que sí!', texto: 'Frente al mar, con el corazón a mil.' },
   ],
 
   // Lugares: lat/lng se sacan de Google Maps (clic derecho → copiar coordenadas).

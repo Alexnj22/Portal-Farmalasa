@@ -1021,3 +1021,40 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
   .nav, .no-imprimir, .cinta-demo, .pruebas-boton, .barra-app { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+/* ═══════════════ Nuestra historia: foto fija que cambia con cada capítulo ═══════════════ */
+.historia { padding: var(--aire) 0 calc(var(--aire) * 0.6); scroll-margin-top: var(--nav); }
+.historia-cabeza { margin-bottom: clamp(36px, 6vw, 72px); }
+.historia-cabeza h2 { margin: 12px 0 0; }
+.historia-cuerpo { position: relative; }
+.historia-visor { position: sticky; top: calc(var(--nav) + 12px); z-index: 2; height: 52svh; margin: 0 calc(-1 * var(--margen)); background: var(--fondo, var(--c-noche-honda)); }
+.historia-marco { position: relative; height: 100%; overflow: hidden; background: var(--superficie); }
+.historia-marco img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.08); transition: opacity 1.1s var(--salida), transform 6s cubic-bezier(.2, .6, .2, 1); }
+.historia-marco img.activa { opacity: 1; transform: scale(1); }
+.historia-marco::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, oklch(0.12 0.006 105 / 0.7)); pointer-events: none; }
+.historia-anio { position: absolute; z-index: 1; left: var(--margen); bottom: 18px; font: italic 400 clamp(3rem, 14vw, 7rem)/0.9 var(--display); letter-spacing: -0.03em; color: var(--c-lino); animation: anio-entra .9s var(--salida) both; }
+@keyframes anio-entra { from { opacity: 0; transform: translateY(24px); filter: blur(6px); } }
+.historia-indice { display: none; }
+.historia-capitulos { list-style: none; margin: 0; padding: 0; }
+.historia-cap { min-height: 64svh; display: flex; flex-direction: column; justify-content: center; padding: 48px 0; border-bottom: 1px solid var(--linea); opacity: .28; transition: opacity .8s var(--salida); }
+.historia-cap:last-child { border-bottom: 0; }
+.historia-cap.activo { opacity: 1; }
+.historia-cap h3 { margin: 0 0 18px; font: 400 clamp(2.6rem, 11vw, 5.6rem)/0.95 var(--display); letter-spacing: -0.022em; }
+.historia-cap h3 em { font-style: italic; }
+.historia-cap p { margin: 0; max-width: 34ch; color: var(--texto-2); font-size: clamp(1.0625rem, 1.5vw, 1.25rem); font-weight: 300; line-height: 1.65; }
+.historia-cap .capitulo { transition: color .6s; }
+@media (min-width: 900px) {
+  .historia-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(48px, 7vw, 120px); align-items: start; }
+  .historia-visor { top: calc(var(--nav) + 4svh); height: calc(100svh - var(--nav) - 8svh); margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; background: none; }
+  .historia-marco { grid-column: 2; grid-row: 1; border-radius: var(--radio-foto); }
+  .historia-indice { display: flex; grid-column: 1; grid-row: 1; flex-direction: column; justify-content: center; gap: 22px; list-style: none; margin: 0; padding: 0; font: 500 0.75rem/1 var(--sans); letter-spacing: 0.3em; color: var(--texto-2); }
+  .historia-indice li { position: relative; padding-left: 0; opacity: .45; transition: opacity .6s, color .6s, transform .6s var(--salida); writing-mode: vertical-rl; transform: rotate(180deg); }
+  .historia-indice li.activo { opacity: 1; color: var(--acento); }
+  .historia-cap { min-height: 82svh; padding: 0; border-bottom: 0; }
+  .historia-anio { left: 28px; bottom: 24px; font-size: clamp(4rem, 7vw, 7.5rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .historia-marco img { transition: opacity .3s; transform: none; }
+  .historia-anio { animation: none; }
+  .historia-cap { transition: none; }
+}

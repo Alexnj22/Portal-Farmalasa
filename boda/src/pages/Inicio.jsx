@@ -13,7 +13,7 @@ import Revelar from '../components/Revelar';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
 import { NavEscritorio, Monograma } from '../components/AppMarco';
-import { imagenAdaptable } from '../lib/fotos';
+import { imagenAdaptable, ANCHOS_PORTADA } from '../lib/fotos';
 import { precargar } from '../lib/precarga';
 import Icono from '../components/Iconos';
 import { useInvitacion, usarCodigo } from '../lib/miInvitacion';
@@ -131,7 +131,6 @@ export default function Inicio({ codigo }) {
     return () => io.disconnect();
   }, []);
   const foto = imagenAdaptable(boda.portada);
-  const fotoHistoria = imagenAdaptable(boda.fotoHistoria || boda.galeria[1] || boda.galeria[0]);
 
   const titulo = fase === 'save-the-date' ? 'Save the date'
     : fase === 'recuerdos' ? t('Gracias por acompañarnos', 'Thank you for celebrating with us')
@@ -214,29 +213,8 @@ export default function Inicio({ codigo }) {
         </Revelar>
       </figure>
 
-      {/* ── Nuestra historia: la foto se abre al bajar ── */}
-      <section id="historia" className="seccion-historia" aria-labelledby="titulo-historia">
-        <div className="escena-foto">
-          <div className="escena-pin">
-            <img {...fotoHistoria} alt="" loading="lazy" decoding="async" />
-            <div className="escena-titulo">
-              <p className="versalita">{novios.ella} &amp; {novios.el}</p>
-              <Titulo texto={t('Nuestra historia', 'Our story')} as="h2" id="titulo-historia" />
-            </div>
-          </div>
-        </div>
-        <div className="contenedor">
-          <ol className="capitulos">
-            {boda.historia.map((h, i) => (
-              <Revelar as="li" key={i} className="hito">
-                <span className="hito-anio" aria-hidden>{h.fecha}</span>
-                <Capitulo numero={i + 1} texto={`${t('Capítulo', 'Chapter')} · ${h.fecha}`} />
-                <div><span className="mascara"><Titulo texto={h.titulo} as="h3" /></span><p>{h.texto}</p></div>
-              </Revelar>
-            ))}
-          </ol>
-        </div>
-      </section>
+      {/* ── Nuestra historia: la foto queda fija y cambia con cada capítulo ── */}
+      <Historia novios={novios} historia={boda.historia} respaldo={boda.fotoHistoria} />
 
       <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
 
@@ -260,6 +238,56 @@ export default function Inicio({ codigo }) {
         </div>
       </footer>
     </>
+  );
+}
+
+/**
+ * Nuestra historia: a un lado, la foto del capítulo que se está leyendo, fija;
+ * al otro, los capítulos. Al bajar, la foto se funde con la siguiente (con un
+ * acercamiento lento) y el índice de años marca dónde vas. En el teléfono la
+ * foto queda arriba y los capítulos pasan debajo.
+ */
+function Historia({ novios, historia, respaldo }) {
+  const [activo, setActivo] = useState(0);
+  const caps = useRef([]);
+  useEffect(() => {
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) setActivo(Number(e.target.dataset.i)); });
+    }, { rootMargin: '-62% 0px -34% 0px' });
+    caps.current.forEach((el) => el && io.observe(el));
+    return () => io.disconnect();
+  }, [historia.length]);
+  return (
+    <section id="historia" className="historia" aria-labelledby="titulo-historia">
+      <div className="contenedor">
+        <Revelar className="historia-cabeza">
+          <p className="versalita">{novios.ella} &amp; {novios.el}</p>
+          <Titulo texto={t('Nuestra historia', 'Our story')} as="h2" id="titulo-historia" />
+        </Revelar>
+        <div className="historia-cuerpo">
+          <div className="historia-visor" aria-hidden>
+            <div className="historia-marco">
+              {historia.map((h, i) => (h.foto || respaldo) && (
+                <img key={i} className={i === activo ? 'activa' : ''} style={h.enfoque ? { objectPosition: h.enfoque } : undefined} {...imagenAdaptable(h.foto || respaldo, ANCHOS_PORTADA, '(min-width: 900px) 46vw, 100vw')} alt="" loading="lazy" decoding="async" />
+              ))}
+              <span className="historia-anio" key={activo}>{historia[activo]?.fecha}</span>
+            </div>
+            <ol className="historia-indice">
+              {historia.map((h, i) => <li key={i} className={i === activo ? 'activo' : ''}>{h.fecha}</li>)}
+            </ol>
+          </div>
+          <ol className="historia-capitulos">
+            {historia.map((h, i) => (
+              <li key={i} data-i={i} ref={(el) => { caps.current[i] = el; }} className={`historia-cap ${i === activo ? 'activo' : ''}`}>
+                <Capitulo numero={i + 1} texto={`${t('Capítulo', 'Chapter')} · ${h.fecha}`} />
+                <Titulo texto={h.titulo} as="h3" />
+                <p>{h.texto}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
   );
 }
 

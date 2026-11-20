@@ -1,17 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { SOLIDO, TRAZOS } from './logoStdTrazos';
 
-// La pieza del diseñador mide 752 × 138 y va en un renglón. Aquí se corta en
-// dos ventanas del mismo dibujo (viewBox): «Save THE» arriba y «Date» abajo,
-// como la composición de la portada. Nada se redibuja: sólo se encuadra.
-const CORTE = 440;
-const ALTO = 138.64;
-const RENGLONES = [
-  { clase: 'l1', x: 0, ancho: CORTE },
-  { clase: 'l2', x: CORTE, ancho: 753.14 - CORTE },
-];
-// «THE» (entre «Save» y «Date») va en beige.
-const THE = { x: 290, ancho: CORTE - 290 };
+// La pieza del diseñador, tal cual: un renglón de 753 × 139, un color.
+const VISTA = '0 0 753.14 138.64';
 
 /**
  * «Save THE Date» del diseñador: el contorno (Recurso 5) se dibuja de
@@ -32,20 +23,22 @@ export default function LogoStd() {
   }, []);
   return (
     <span className="std-logo" ref={raiz}>
-      {RENGLONES.map((r) => (
-        <svg key={r.clase} className={r.clase} viewBox={`${r.x} 0 ${r.ancho} ${ALTO}`} aria-hidden focusable="false">
-          <defs>
-            <clipPath id={`the-${r.clase}`}><rect x={THE.x} y="0" width={THE.ancho} height={ALTO} /></clipPath>
-          </defs>
-          <g className="std-solido" transform="translate(0.5 0.5)">
-            <path d={SOLIDO} />
-            <path className="std-the-solido" d={SOLIDO} clipPath={`url(#the-${r.clase})`} />
-          </g>
-          <g className="std-contorno">
-            {TRAZOS.map(([, d], i) => <path key={i} d={d} pathLength="1" />)}
-          </g>
-        </svg>
-      ))}
+      <svg viewBox={VISTA} aria-hidden focusable="false">
+        <defs>
+          <clipPath id="std-forma"><path d={SOLIDO} transform="translate(0.5 0.5)" /></clipPath>
+          <linearGradient id="std-luz" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stopColor="#fff" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <g className="std-solido" transform="translate(0.5 0.5)"><path d={SOLIDO} /></g>
+        {/* Un destello que cruza la tinta recién puesta. */}
+        <g clipPath="url(#std-forma)"><rect className="std-destello" x="-180" y="-20" width="160" height="180" fill="url(#std-luz)" /></g>
+        <g className="std-contorno">
+          {TRAZOS.map(([, d], i) => <path key={i} d={d} pathLength="1" />)}
+        </g>
+      </svg>
     </span>
   );
 }

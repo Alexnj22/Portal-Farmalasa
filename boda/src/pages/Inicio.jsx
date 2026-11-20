@@ -134,9 +134,9 @@ export default function Inicio({ codigo }) {
     const centro = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${s.toFixed(3)})`;
     const viaje = el.animate([
       { transform: centro, offset: 0 },
-      { transform: centro, offset: 0.64, easing: 'cubic-bezier(.72, 0, .16, 1)' },
+      { transform: centro, offset: 0.68, easing: 'cubic-bezier(.72, 0, .16, 1)' },
       { transform: 'none', offset: 1 },
-    ], { duration: 3900, fill: 'backwards' });
+    ], { duration: 4400, fill: 'backwards' });
     return () => { viaje.cancel(); html.classList.remove('std-intro'); };
   }, [codigo]);
 

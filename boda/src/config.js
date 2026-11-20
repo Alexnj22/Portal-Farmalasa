@@ -19,7 +19,7 @@ export const boda = {
     ella: 'Alessandra',
     // Cómo se firma en el sitio y en el WhatsApp
     firma: 'Alessandra & Eduardo',
-    hashtag: '#AlessandraYEduardo2027',
+    hashtag: '#AlessandraYEduardo',
   },
 
   // Hora local del lugar. El desfase (-06:00 = El Salvador) evita que el

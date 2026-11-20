@@ -299,7 +299,7 @@ export default function Inicio({ codigo }) {
           <Capitulo texto={t('Los esperamos', 'We hope to see you')} />
           <CierreNombres texto={`${novios.ella} ${t('y', 'and')} ${novios.el}`} />
           <div className="pie-filas">
-            <p>{fechaLarga()}</p>
+            <p>{fechaLarga().replace(/^./, (l) => l.toUpperCase())}</p>
             <p>{novios.hashtag}</p>
             {fase !== 'save-the-date' && boda.contacto?.whatsapp && (
               <p>

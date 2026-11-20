@@ -10,6 +10,7 @@ import { sinMovimiento } from '../lib/movimiento';
 import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
+import LogoStd from '../components/LogoStd';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
 import { NavEscritorio, Monograma } from '../components/AppMarco';
@@ -86,51 +87,6 @@ function FraseAlBajar({ texto, ultimas = 3 }) {
   );
 }
 
-/** Cada letra sube desde su máscara, una tras otra (--k = su turno). */
-function Letras({ texto, desde = 0 }) {
-  return (
-    <span className="letras">
-      {texto.split('').map((l, i) => <span key={i} className="letra" style={{ '--k': desde + i }}><span>{l}</span></span>)}
-    </span>
-  );
-}
-
-/**
- * Encima de cada letra del título, la misma letra en SVG con sólo el contorno:
- * el trazo se dibuja (stroke-dashoffset) como a pluma y después se rellena.
- * Va DENTRO del título, así que viaja con él y calza exacto. Cuando el
- * diseñador mande su SVG, sus trazos reemplazan a estas letras.
- */
-function dibujarTrazo(titulo, caja) {
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('class', 'std-trazo');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('width', caja.width); svg.setAttribute('height', caja.height);
-  const piezas = [...titulo.querySelectorAll('.letra > span, .std-the')];
-  piezas.forEach((pieza, k) => {
-    // La línea base se mide con un marcador de alto cero apoyado en ella.
-    const marca = document.createElement('i');
-    marca.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
-    pieza.appendChild(marca);
-    const base = marca.getBoundingClientRect().top;
-    marca.remove();
-    const r = pieza.getBoundingClientRect();
-    const cs = getComputedStyle(pieza);
-    const txt = document.createElementNS(ns, 'text');
-    txt.textContent = pieza.textContent;
-    txt.setAttribute('x', (r.left - caja.left).toFixed(1));
-    txt.setAttribute('y', (base - caja.top).toFixed(1));
-    txt.style.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-    txt.style.letterSpacing = cs.letterSpacing;
-    txt.style.setProperty('--k', pieza.classList.contains('std-the') ? 4.5 : k);
-    if (pieza.classList.contains('std-the')) txt.classList.add('the');
-    svg.appendChild(txt);
-  });
-  titulo.appendChild(svg);
-  return svg;
-}
-
 export default function Inicio({ codigo }) {
   const idioma = useIdioma();
   const boda = contenido(idioma);
@@ -176,13 +132,12 @@ export default function Inicio({ codigo }) {
     const dx = window.innerWidth / 2 - (r.left + r.width / 2);
     const dy = window.innerHeight / 2 - (r.top + r.height / 2);
     const centro = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${s.toFixed(3)})`;
-    const trazo = dibujarTrazo(el, caja);
     const viaje = el.animate([
       { transform: centro, offset: 0 },
-      { transform: centro, offset: 0.62, easing: 'cubic-bezier(.72, 0, .16, 1)' },
+      { transform: centro, offset: 0.64, easing: 'cubic-bezier(.72, 0, .16, 1)' },
       { transform: 'none', offset: 1 },
     ], { duration: 3900, fill: 'backwards' });
-    return () => { viaje.cancel(); trazo.remove(); html.classList.remove('std-intro'); };
+    return () => { viaje.cancel(); html.classList.remove('std-intro'); };
   }, [codigo]);
 
   // Paralaje para navegadores sin animaciones ligadas al scroll (Safari < 26):
@@ -249,9 +204,7 @@ export default function Inicio({ codigo }) {
           </div>
           {/* En el save the date, la frase ES lo principal; los nombres la firman. */}
           {fase === 'save-the-date' && (
-            <p className="std-titulo" ref={tituloStd} aria-hidden>
-              <Letras texto="Save" desde={0} /> <em className="std-the">the</em> <Letras texto="Date" desde={5} />
-            </p>
+            <p className="std-titulo" ref={tituloStd} aria-hidden><LogoStd /></p>
           )}
           <h1 className={fase === 'save-the-date' ? 'firma-std' : undefined} aria-label={`${fase === 'save-the-date' ? 'Save the date: ' : ''}${novios.ella} ${t('y', 'and')} ${novios.el}`}>
             <span className="linea-1" aria-hidden>{novios.ella}</span>

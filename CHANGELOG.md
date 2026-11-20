@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.4 — Reservas: el aviso de venta en caja manda a cancelar
+
+El texto de v2.1585.1 decía «si no pagó, avisa a Soporte», pero eso ya lo resuelve «Cancelar reserva»: `reserva_cambiar_estado` detecta la venta (`reserva_ventas_del_producto`) y pregunta si se descontó el anticipo («Sí, se descontó» cancela sin saldo a favor). Ahora el aviso manda ahí.
+
+Gemelo: reservas — el texto vive en `reservasDeSala.js`, que usan el portal y la app.
+
 ## v2.1585.3 — Las boletas que traen el monto una vez no piden otra foto
 
 - Al anotar un movimiento de caja, las boletas de «Pagos de tarjeta», «Compra»,

@@ -136,7 +136,7 @@ export function textoDeVentaAparte(x) {
     const v = vendidaAparte(x);
     if (!v) return '';
     return `El ${fechaHora12(v.at)} se le vendió este producto en caja por ${formatMoney(Number(v.total ?? 0))}, sin pasar por la reserva. `
-        + 'Pregúntale a la caja si el cliente pagó otra vez. Si pagó, cancela la reserva y lo pagado queda a favor suyo. Si no pagó, avisa a Soporte para cerrarla.';
+        + 'Cancela la reserva: te va a preguntar si en esa venta se le descontó el anticipo. Si pagó completo, lo pagado queda a favor suyo.';
 }
 
 /**

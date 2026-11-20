@@ -56,7 +56,13 @@ function FraseAlBajar({ texto, ultimas = 3 }) {
     let cuadro = 0;
     const medir = () => {
       cuadro = 0;
-      const r = el.getBoundingClientRect();
+      // Lo que mide es el TEXTO (la caja es más ancha que sus renglones).
+    const partes = [...el.children].map((c) => c.getBoundingClientRect());
+    const izq = Math.min(...partes.map((p) => p.left)); const der = Math.max(...partes.map((p) => p.right));
+    const arr = Math.min(...partes.map((p) => p.top)); const aba = Math.max(...partes.map((p) => p.bottom));
+    const r = { left: izq, top: arr, width: der - izq, height: aba - arr };
+    const caja = el.getBoundingClientRect();
+    el.style.transformOrigin = `${(izq + r.width / 2 - caja.left).toFixed(1)}px ${(arr + r.height / 2 - caja.top).toFixed(1)}px`;
       const vh = window.innerHeight;
       // 0 cuando la frase asoma por abajo; 1 cuando su centro pasa el 40 % de la pantalla.
       const q = (vh - r.top) / (vh * 0.6 + r.height * 0.5);
@@ -118,6 +124,34 @@ export default function Inicio({ codigo }) {
     if (yaAbierta) document.documentElement.classList.add('ya-abierta');
   }, []);
 
+  // Save the date, primera carga: la frase aparece sola al centro de la
+  // pantalla y después viaja a su lugar en la portada (FLIP), mientras la foto
+  // se abre detrás. Con enlace personal no: ahí abre el sobre.
+  const tituloStd = useRef(null);
+  useLayoutEffect(() => {
+    const el = tituloStd.current;
+    if (!el || yaAbierta || codigo || sinMovimiento() || !el.animate) return undefined;
+    const html = document.documentElement;
+    html.classList.add('std-intro');
+    // Lo que mide es el TEXTO (la caja es más ancha que sus renglones).
+    const partes = [...el.children].map((c) => c.getBoundingClientRect());
+    const izq = Math.min(...partes.map((p) => p.left)); const der = Math.max(...partes.map((p) => p.right));
+    const arr = Math.min(...partes.map((p) => p.top)); const aba = Math.max(...partes.map((p) => p.bottom));
+    const r = { left: izq, top: arr, width: der - izq, height: aba - arr };
+    const caja = el.getBoundingClientRect();
+    el.style.transformOrigin = `${(izq + r.width / 2 - caja.left).toFixed(1)}px ${(arr + r.height / 2 - caja.top).toFixed(1)}px`;
+    const s = Math.min(1.5, (window.innerWidth * 0.84) / r.width, (window.innerHeight * 0.6) / r.height);
+    const dx = window.innerWidth / 2 - (r.left + r.width / 2);
+    const dy = window.innerHeight / 2 - (r.top + r.height / 2);
+    const centro = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${s.toFixed(3)})`;
+    const viaje = el.animate([
+      { transform: centro, offset: 0 },
+      { transform: centro, offset: 0.54, easing: 'cubic-bezier(.72, 0, .16, 1)' },
+      { transform: 'none', offset: 1 },
+    ], { duration: 3300, fill: 'backwards' });
+    return () => { viaje.cancel(); html.classList.remove('std-intro'); };
+  }, [codigo]);
+
   // Paralaje para navegadores sin animaciones ligadas al scroll (Safari < 26):
   // un solo rAF por cuadro que escribe una variable CSS, sin estado de React,
   // y sólo mientras la portada se ve.
@@ -172,6 +206,7 @@ export default function Inicio({ codigo }) {
       <header id="inicio" className={`portada ${fase === 'save-the-date' ? 'std' : ''}`} ref={portada}>
         <span ref={centinela} className="centinela-nav" aria-hidden />
         <div className="portada-foto"><img {...foto} style={boda.portadaEnfoque ? { objectPosition: boda.portadaEnfoque } : undefined} alt="" fetchpriority="high" decoding="async" /></div>
+        {fase === 'save-the-date' && <span className="std-brillo" aria-hidden />}
         <span className="franja arriba" aria-hidden />
         <span className="franja abajo" aria-hidden />
         <div className="portada-texto">
@@ -181,7 +216,7 @@ export default function Inicio({ codigo }) {
           </div>
           {/* En el save the date, la frase ES lo principal; los nombres la firman. */}
           {fase === 'save-the-date' && (
-            <p className="std-titulo" aria-hidden>
+            <p className="std-titulo" ref={tituloStd} aria-hidden>
               <Letras texto="Save" desde={0} /> <em className="std-the">the</em> <Letras texto="Date" desde={5} />
             </p>
           )}

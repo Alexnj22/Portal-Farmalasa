@@ -1084,7 +1084,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
   html:not(.ya-abierta) .portada.std .portada-arriba { animation: aparecer 1.2s var(--salida) 2.7s both; }
   html.con-sobre .portada.std *, html.con-sobre .portada.std .portada-pie::before { animation-play-state: paused !important; }
 }
-@keyframes rendija { from { clip-path: inset(0 49.6% 0 49.6%); filter: brightness(.35); } 60% { filter: brightness(.8); } to { clip-path: inset(0 0 0 0); filter: none; } }
+@keyframes rendija { from { clip-path: inset(0 50% 0 50%); filter: brightness(.35); } 60% { filter: brightness(.8); } to { clip-path: inset(0 0 0 0); filter: none; } }
 @keyframes acercar-std { from { transform: scale(1.32); } to { transform: scale(1.04); } }
 @keyframes letra-sube { from { transform: translateY(108%) rotate(6deg); } }
 @keyframes the-entra { from { opacity: 0; filter: blur(10px); transform: translateY(0.2em); } }
@@ -1115,3 +1115,23 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 }
 @keyframes faltan-paralaje { from { transform: translateY(-8svh) scale(1.08); } to { transform: translateY(8svh) scale(1); } }
 @keyframes dias-crece { from { transform: scale(.82); opacity: .2; letter-spacing: .08em; } }
+
+/* Primera carga del save the date: la frase sola al centro, luego a su lugar
+   (el viaje lo hace Inicio.jsx con la Web Animations API). Todo lo demás
+   espera a que la frase llegue. */
+.std-titulo { transform-origin: 50% 50%; will-change: transform; }
+.std-brillo { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html.std-intro .std-brillo { display: block; position: fixed; left: 50%; top: 50%; z-index: 0; width: 120vmax; height: 120vmax; translate: -50% -50%; pointer-events: none;
+    background: radial-gradient(closest-side, oklch(0.8 0.08 80 / 0.22), oklch(0.8 0.08 80 / 0.06) 45%, transparent 70%); animation: brillo 2.8s ease-out .1s both; }
+  html.std-intro:not(.ya-abierta) .portada.std .letra > span { animation-delay: calc(.25s + var(--k) * 0.08s); animation-duration: 1.4s; }
+  html.std-intro:not(.ya-abierta) .portada.std .std-the { animation-delay: .8s; animation-duration: 1.6s; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-foto img { animation-delay: 1.85s, 1.85s; animation-duration: 2s, 4.4s; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-pie::before { animation-delay: 2.9s; }
+  html.std-intro:not(.ya-abierta) .portada.std h1 { animation-delay: 3s; }
+  html.std-intro:not(.ya-abierta) .portada.std .fecha-puntos { animation-delay: 3.15s; }
+  html.std-intro:not(.ya-abierta) .portada.std .acciones { animation-delay: 3.45s; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-arriba { animation-delay: 3.55s; }
+  html.std-intro .nav { animation: fundido 1s var(--salida) 3.3s both; }
+}
+@keyframes brillo { 0% { opacity: 0; transform: scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(1.15); } }

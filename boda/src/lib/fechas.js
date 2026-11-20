@@ -59,6 +59,17 @@ export function descargarIcs() {
   setTimeout(() => URL.revokeObjectURL(url), 60_000); // se libera cuando la descarga ya tomó el archivo
 }
 
+/**
+ * «Guardar la fecha»: un solo botón que hace lo correcto en cada teléfono.
+ * iPhone, iPad y Mac abren /boda.ics (un archivo real, que Calendario ofrece
+ * agregar; la descarga de un blob en Safari no lo hace). El resto, Google
+ * Calendar, que es el calendario de Android.
+ */
+export function guardarFecha() {
+  const apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+  return apple ? { href: '/boda.ics' } : { href: enlaceGoogleCalendar(), target: '_blank', rel: 'noreferrer' };
+}
+
 export function enlaceGoogleCalendar() {
   const fin = new Date(fechaBoda.getTime() + 10 * 3600e3);
   const conHora = boda.horaConfirmada !== false;

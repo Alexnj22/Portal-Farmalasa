@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { faseActual } from '../lib/fase';
-import { fechaLarga, descargarIcs, enlaceGoogleCalendar, limiteConfirmar } from '../lib/fechas';
+import { fechaLarga, descargarIcs, enlaceGoogleCalendar, limiteConfirmar, guardarFecha } from '../lib/fechas';
 import { api } from '../lib/api';
 import { t, useIdioma, contenido, BotonIdioma } from '../lib/idioma';
 import Countdown from '../components/Countdown';
@@ -225,7 +225,7 @@ export default function Inicio({ codigo }) {
               {fase === 'recuerdos' && <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>}
               {fase === 'recuerdos' && <Link className="btn claro-sobre-foto" to="/album">{t('Ver el álbum', 'See the album')}</Link>}
               {fase === 'invitacion' && <Link className="btn" to="/confirmar">{inv?.grupo?.respondido_at ? t('Ver mi invitación', 'My invitation') : t('Confirmar asistencia', 'RSVP')}</Link>}
-              {fase === 'save-the-date' && <a className="btn" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">{t('Guardar la fecha', 'Save the date')}</a>}
+              {fase === 'save-the-date' && <a className="btn" {...guardarFecha()}>{t('Guardar la fecha', 'Save the date')}</a>}
             </div>
           </div>
         </div>
@@ -244,10 +244,6 @@ export default function Inicio({ codigo }) {
             <Countdown />
             <Revelar className="faltan-std-pie">
               <p className="grande-fecha">{fechaLarga()}</p>
-              <div className="acciones">
-                <a className="btn" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
-                <button type="button" className="btn claro-sobre-foto" onClick={descargarIcs}>Apple / Outlook</button>
-              </div>
             </Revelar>
           </div>
         </section>
@@ -318,16 +314,32 @@ export default function Inicio({ codigo }) {
  * acercamiento lento) y el índice de años marca dónde vas. En el teléfono la
  * foto queda arriba y los capítulos pasan debajo.
  */
+/**
+ * La historia como una escena fija: la sección mide un tramo de pantalla por
+ * capítulo y la escena (foto + texto) se queda quieta mientras uno baja; lo
+ * que cambia es el capítulo, según cuánto se avanzó dentro de la sección.
+ */
 function Historia({ novios, historia, respaldo }) {
   const [activo, setActivo] = useState(0);
-  const caps = useRef([]);
+  const cuerpo = useRef(null);
+  const n = historia.length;
   useEffect(() => {
-    const io = new IntersectionObserver((es) => {
-      es.forEach((e) => { if (e.isIntersecting) setActivo(Number(e.target.dataset.i)); });
-    }, { rootMargin: '-62% 0px -34% 0px' });
-    caps.current.forEach((el) => el && io.observe(el));
-    return () => io.disconnect();
-  }, [historia.length]);
+    let cuadro = 0;
+    const medir = () => {
+      cuadro = 0;
+      const el = cuerpo.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const tramo = r.height - window.innerHeight * 0.75;
+      const p = tramo > 0 ? Math.min(0.9999, Math.max(0, -r.top / tramo)) : 0;
+      setActivo(Math.floor(p * n));
+    };
+    const alMover = () => { if (!cuadro) cuadro = requestAnimationFrame(medir); };
+    medir();
+    window.addEventListener('scroll', alMover, { passive: true });
+    window.addEventListener('resize', alMover);
+    return () => { window.removeEventListener('scroll', alMover); window.removeEventListener('resize', alMover); cancelAnimationFrame(cuadro); };
+  }, [n]);
   return (
     <section id="historia" className="historia" aria-labelledby="titulo-historia">
       <div className="contenedor">
@@ -335,27 +347,29 @@ function Historia({ novios, historia, respaldo }) {
           <p className="versalita">{novios.ella} &amp; {novios.el}</p>
           <Titulo texto={t('Nuestra historia', 'Our story')} as="h2" id="titulo-historia" />
         </Revelar>
-        <div className="historia-cuerpo">
-          <div className="historia-visor" aria-hidden>
-            <div className="historia-marco">
-              {historia.map((h, i) => (h.foto || respaldo) && (
-                <img key={i} className={i === activo ? 'activa' : ''} style={h.enfoque ? { objectPosition: h.enfoque } : undefined} {...imagenAdaptable(h.foto || respaldo, ANCHOS_PORTADA, '(min-width: 900px) 46vw, 100vw')} alt="" loading="lazy" decoding="async" />
-              ))}
-              <span className="historia-anio" key={activo}>{historia[activo]?.fecha}</span>
+        <div className="historia-cuerpo" ref={cuerpo} style={{ '--n': n }}>
+          <div className="historia-escena">
+            <div className="historia-visor" aria-hidden>
+              <div className="historia-marco">
+                {historia.map((h, i) => (h.foto || respaldo) && (
+                  <img key={i} className={i === activo ? 'activa' : ''} style={h.enfoque ? { objectPosition: h.enfoque } : undefined} {...imagenAdaptable(h.foto || respaldo, ANCHOS_PORTADA, '(min-width: 900px) 46vw, 100vw')} alt="" loading="lazy" decoding="async" />
+                ))}
+                <span className="historia-anio" key={activo}>{historia[activo]?.fecha}</span>
+              </div>
+              <ol className="historia-indice">
+                {historia.map((h, i) => <li key={i} className={i === activo ? 'activo' : ''}>{h.fecha}</li>)}
+              </ol>
             </div>
-            <ol className="historia-indice">
-              {historia.map((h, i) => <li key={i} className={i === activo ? 'activo' : ''}>{h.fecha}</li>)}
+            <ol className="historia-capitulos">
+              {historia.map((h, i) => (
+                <li key={i} className={`historia-cap ${i === activo ? 'activo' : ''}`}>
+                  <Capitulo numero={i + 1} texto={`${t('Capítulo', 'Chapter')} · ${h.fecha}`} />
+                  <Titulo texto={h.titulo} as="h3" />
+                  <p>{h.texto}</p>
+                </li>
+              ))}
             </ol>
           </div>
-          <ol className="historia-capitulos">
-            {historia.map((h, i) => (
-              <li key={i} data-i={i} ref={(el) => { caps.current[i] = el; }} className={`historia-cap ${i === activo ? 'activo' : ''}`}>
-                <Capitulo numero={i + 1} texto={`${t('Capítulo', 'Chapter')} · ${h.fecha}`} />
-                <Titulo texto={h.titulo} as="h3" />
-                <p>{h.texto}</p>
-              </li>
-            ))}
-          </ol>
         </div>
       </div>
     </section>

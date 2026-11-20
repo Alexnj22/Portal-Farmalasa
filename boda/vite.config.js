@@ -58,12 +58,45 @@ function precargaFuentes() {
   };
 }
 
+// /boda.ics: el evento como archivo real (Calendario del iPhone lo ofrece
+// agregar al abrirlo). Sale de src/config.js; sin hora confirmada, de todo el día.
+function calendario() {
+  const ics = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const dia = (d) => d.toLocaleDateString('en-CA', { timeZone: boda.zonaHoraria }).replaceAll('-', '');
+  const texto = () => {
+    const ini = new Date(boda.fecha);
+    const conHora = boda.horaConfirmada !== false;
+    const lugar = conHora ? boda.lugares?.[0] : null;
+    return [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//boda//ES', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+      `UID:${ics(ini)}@boda`, `DTSTAMP:${ics(new Date())}`,
+      ...(conHora ? [`DTSTART:${ics(ini)}`, `DTEND:${ics(new Date(ini.getTime() + 10 * 3600e3))}`]
+        : [`DTSTART;VALUE=DATE:${dia(ini)}`, `DTEND;VALUE=DATE:${dia(new Date(ini.getTime() + 864e5))}`]),
+      `SUMMARY:Boda de ${boda.novios.firma}`,
+      ...(lugar ? [`LOCATION:${lugar.nombre}, ${lugar.direccion}`] : []),
+      ...(boda.sitio ? [`URL:${boda.sitio}`, `DESCRIPTION:${boda.sitio}`] : []),
+      'BEGIN:VALARM', 'TRIGGER:-P7D', 'ACTION:DISPLAY', 'DESCRIPTION:¡Falta una semana!', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR', '',
+    ].join('\r\n');
+  };
+  return {
+    name: 'calendario',
+    configureServer(server) {
+      server.middlewares.use('/boda.ics', (_req, res) => {
+        res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+        res.end(texto());
+      });
+    },
+    generateBundle() { this.emitFile({ type: 'asset', fileName: 'boda.ics', source: texto() }); },
+  };
+}
+
 // La noche del sitio (oklch 0.16 0.008 105) para la barra del sistema y el arranque.
 const NOCHE = '#0e0d0a';
 
 export default defineConfig({
   plugins: [
-    react(), vistaPrevia(), precargaFuentes(),
+    react(), vistaPrevia(), precargaFuentes(), calendario(),
     VitePWA({
       // La actualización la decide src/lib/pwa.js (en la siguiente navegación).
       registerType: 'prompt',
@@ -91,7 +124,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,woff2,svg}'],
         globIgnores: ['**/heic2any-*.js', '**/Admin-*.js', '**/PanelPruebas-*.js', '**/Pantalla-*.js', '**/Dj-*.js', '**/client-zip-*.js', '**/leaflet-src-*.js'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/assets\//],
+        navigateFallbackDenylist: [/^\/assets\//, /\.ics$/],
         cleanupOutdatedCaches: true,
         // Sólo las fotos del config. NUNCA Supabase (datos y álbum en vivo):
         // ninguna regla las toca, así que van siempre a la red.

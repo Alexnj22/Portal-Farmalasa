@@ -1338,18 +1338,18 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
   .cierre.visto .cierre-destello { animation-delay: 3.2s; }
 }
 
-/* «Así somos»: el título y las fotos entran como tinta, una tras otra, y un
-   destello cruza cada foto (el lenguaje del Save the Date). */
+/* «Así somos»: el título entra como tinta; las fotos suben y aparecen una
+   tras otra y un destello cruza cada una. Sólo opacidad y transform en las
+   fotos (las anima la tarjeta gráfica): una máscara o un filtro sobre fotos
+   grandes se repinta en cada cuadro y la tira se trababa. */
 @media (prefers-reduced-motion: no-preference) {
-  .galeria-h .galeria-cabeza h2, .galeria-h .foto-h img {
-    -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido));
-    mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido));
-  }
-  .galeria-h:not(.vista) .galeria-cabeza h2, .galeria-h:not(.vista) .foto-h img { --barrido: -10%; }
+  .galeria-h .galeria-cabeza h2 { -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido)); mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido)); }
+  .galeria-h:not(.vista) .galeria-cabeza h2 { --barrido: -10%; }
   .galeria-h.vista .galeria-cabeza h2 { animation: tinta-entra 1.4s cubic-bezier(.45, .05, .3, 1) both; }
-  .galeria-h.vista .foto-h img { animation: tinta-entra 1.6s cubic-bezier(.45, .05, .3, 1) both, foto-asienta 2.4s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(.25s + var(--i) * .22s); }
-  .galeria-h .foto-h::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, oklch(0.97 0.03 85 / 0.38) 50%, transparent 65%); transform: translateX(-110%); }
-  .galeria-h.vista .foto-h::after { animation: foto-destello 1.3s cubic-bezier(.5, 0, .3, 1) both; animation-delay: calc(1.3s + var(--i) * .22s); }
+  .galeria-h:not(.vista) .foto-h { opacity: 0; }
+  .galeria-h.vista .foto-h { animation: foto-entra 1.2s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(.2s + var(--i) * .16s); }
+  .galeria-h .foto-h::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, oklch(0.97 0.03 85 / 0.32) 50%, transparent 65%); transform: translateX(-110%); }
+  .galeria-h.vista .foto-h::after { animation: foto-destello 1.2s cubic-bezier(.5, 0, .3, 1) both; animation-delay: calc(.9s + var(--i) * .16s); }
 }
-@keyframes foto-asienta { from { transform: scale(1.08); filter: brightness(1.25) saturate(.8); } }
+@keyframes foto-entra { from { opacity: 0; transform: translateY(28px) scale(.97); } }
 @keyframes foto-destello { to { transform: translateX(110%); } }

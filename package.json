@@ -91,6 +91,7 @@
     "gate:alcance": "node scripts/alcance-gate.mjs",
     "gate:seguridad": "node scripts/seguridad-gate.mjs",
     "gate:app-nativa": "node scripts/app-nativa-gate.mjs",
+    "gate:gemelos": "node scripts/gemelos-gate.mjs",
     "gate:novedades": "node scripts/novedades-gate.mjs",
     "gate:app-secciones": "node scripts/app-secciones-gate.mjs",
     "gate:app-colores": "node scripts/app-colores-gate.mjs",

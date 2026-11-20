@@ -778,6 +778,12 @@ Informe completo: `docs/AUDITORIA-PORTAL-2026-08-23.md`.
   `apps/mobile` (iOS con SwiftUI/`@expo/ui`, Android con las piezas `.android.js`)
   registrada en `apps/mobile/pantallas.js`, o en `EXCEPCIONES` de
   `scripts/app-nativa-gate.mjs` con su motivo.
+- **Un cambio de pantalla va en los dos lados** (2026-11-19): lo que se agrega
+  o cambia en el portal (`src/views`, `src/components`) va también en la app
+  (`apps/mobile/app`, `componentes`), y al revés, en el mismo commit. Si de
+  verdad no va allá, la entrada del CHANGELOG lo dice: `Gemelo: <modulo> —
+  <motivo>` o `Gemelo: <modulo> — en <ruta del otro lado>`. Una pantalla nueva
+  se agrega a `scripts/gemelos.json`. Lo vigila `gate:gemelos`.
 - **La base es un CONTRATO**: `src/types/database.ts` son los tipos de
   producción. Al cambiar la base, `npm run tipos:base` y commitear los tipos con
   la migración.
@@ -829,6 +835,7 @@ Por qué existe cada uno: `docs/reglas/gates.md` y el encabezado de su script.
 | `gate:movil` | elementos con variante móvil canónica escritos a mano | si toca `src/views` o `src/components` | no | DESIGN.md §32 |
 | `gate:rutas` | direcciones en español, título de pestaña, ningún ítem del menú al 404 | si toca `App.jsx` o `moduleMap.js` | no | DESIGN.md §33 |
 | `gate:app-nativa` | todo módulo tiene pantalla nativa o excepción | si toca `moduleMap.js`, `App.jsx` o `apps/mobile/pantallas.js` | no | `scripts/app-nativa-gate.mjs` |
+| `gate:gemelos` | un archivo de pantalla preparado de un lado (portal o app) lleva su gemelo del mismo módulo, o `Gemelo: <modulo> — <motivo>` en el CHANGELOG; toda pantalla está en `scripts/gemelos.json` | `--hook` si toca `src/views`, `src/components`, `apps/mobile/app` o `apps/mobile/componentes` | no | `scripts/gemelos-gate.mjs` |
 | `gate:novedades` | cada novedad le sale sólo a quien puede abrir lo que explica (foto `scripts/db/permisos-de-cargos.json`); módulo o widget nuevo trae su novedad (trinquete `scripts/novedades-baseline.json`); si lo preparado puntúa como algo que el personal tiene que saber (`-- --valorar`), su CHANGELOG dice `Novedades: <id>` o `Novedades: no — <motivo>` | si toca pantallas, `novedades.js`, `moduleMap.js`, `version.js` o la foto | no | `scripts/novedades-gate.mjs` |
 | `gate:app-secciones` | en la app del personal, las secciones de una pantalla (`Segmentos`) van fijas arriba en `FijoArriba`, no dentro de la lista | si toca `apps/mobile/app` o `componentes` | no | `apps/mobile/componentes/FijoArriba.js` |
 | `gate:app-colores` | en la app del personal, el azul de la marca y `colorSistema` se leen al pintar: ni escritos a mano ni congelados al cargar el módulo (en Android no seguirían al color del sistema) | si toca `apps/mobile/app` o `componentes` | no | `scripts/app-colores-gate.mjs` |

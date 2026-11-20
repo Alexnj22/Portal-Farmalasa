@@ -257,6 +257,19 @@ if git diff --cached --name-only | grep -qE '^(src/constants/novedades\.js|src/c
   node scripts/novedades-gate.mjs --hook || exit 1
 fi
 
+# gemelos-gate: un cambio de pantalla va en los dos lados (2026-11-19, pedido
+# del usuario: «que al agregar / modificar algo nuevo sea en mobile o en web,
+# siempre esté en ambos lugares»). Ese día se encontraron ~80 diferencias entre
+# el portal y la app porque cada lado cambiaba solo. Corre si el commit toca
+# `src/views`, `src/components`, `apps/mobile/app` o `apps/mobile/componentes`:
+# si se prepara pantalla de un módulo en un lado y nada del otro, falla salvo
+# `Gemelo: <modulo> — <motivo>` en el CHANGELOG; una pantalla nueva sin mapear en
+# `scripts/gemelos.json` también falla. Lo del núcleo no cuenta (es uno solo).
+# Local y en ms.
+if git diff --cached --name-only | grep -qE '^(src/views|src/components|apps/mobile/app|apps/mobile/componentes)/'; then
+  node scripts/gemelos-gate.mjs --hook || exit 1
+fi
+
 # app-secciones-gate: las secciones de una pantalla de la app (un Segmentos que
 # cambia lo que se ve) van fijas arriba, en <FijoArriba>, no dentro de la lista
 # (2026-11-11, pedido del usuario: «debe ser canónico»). Local y en ms.

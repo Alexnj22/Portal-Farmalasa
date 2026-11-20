@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.7 — gate:gemelos: un cambio de pantalla va en la web y en la app
+
+- Nuevo `gate:gemelos` (pre-commit): si un commit cambia una pantalla de un módulo en el portal y no en la app (o al revés), falla, salvo `Gemelo: <modulo> — <motivo>` en esta entrada. Una pantalla nueva sin mapear en `scripts/gemelos.json` también falla. El núcleo cuenta para los dos lados. Lo pidió el usuario el 2026-11-19 tras encontrar ~80 diferencias entre la app y el portal.
+
 ## v2.1583.6 — Aplicar encuesta: al salir de una entrevista se vuelve a poder regresar
 
 - **Al salir de una entrevista ya se puede regresar.** La entrevista quita el botón de volver y el gesto, para no salir a media marcha. Al volver a la lista no se devolvían, y había que cerrar la app. Ahora la lista los repone.

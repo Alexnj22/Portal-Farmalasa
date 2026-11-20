@@ -1,0 +1,1095 @@
+{
+  "_leeme": [
+    "Mapa de gemelos web ↔ app, por módulo (clave de MODULE_MAP). Lo lee scripts/gemelos-gate.mjs (npm run gate:gemelos).",
+    "Un patrón es una ruta exacta o un glob (`*` = un tramo, `**` = cualquier cosa debajo). Gana el MÁS ESPECÍFICO: una ruta exacta le gana a un glob, y un glob más largo a uno más corto; si empatan, el archivo es de todos los módulos que empatan.",
+    "genericas: piezas compartidas por todos (no son pantalla de un módulo). soloWeb/soloApp: lo que por decisión vive en un solo lado, con su motivo; `modulo:<clave>` declara un módulo entero de un solo lado.",
+    "mismaPantalla: claves de MODULE_MAP que abren la MISMA pantalla que otra. notas: lo que el gate le recuerda a quien toca ese módulo.",
+    "Generado el 2026-11-19 siguiendo imports (y rutas de expo-router) desde la vista de App.jsx y la pantalla de pantallas.js; revisado a mano. Un archivo nuevo en una carpeta ya mapeada queda mapeado solo; uno fuera de todo patrón hace fallar el gate."
+  ],
+  "genericas": {
+    "src/components/common/": "piezas genéricas del portal (DataTable, LiquidSelect, ModalShell…), las usan todos los módulos",
+    "src/components/layout/": "el chasis del portal: menú, barra, campana",
+    "src/components/forms/": "campos de formulario genéricos",
+    "src/components/GlassViewLayout.jsx": "el marco de toda vista",
+    "src/components/MotionProvider.jsx": "animación global",
+    "src/components/motionFunciones.js": "animación global",
+    "apps/mobile/componentes/*": "piezas genéricas de la app (Boton, Lista, Segmentos, Formulario…): las usan todas las pantallas",
+    "apps/mobile/componentes/formulario/": "campos de formulario genéricos de la app",
+    "apps/mobile/componentes/comunes/": "reexporta las piezas genéricas",
+    "apps/mobile/app/_layout.js": "el navegador raíz de expo-router, no una pantalla",
+    "apps/mobile/app/**/_layout.js": "navegadores de expo-router, no pantallas",
+    "apps/mobile/app/+native-intent.js": "traduce enlaces entrantes (chasis)",
+    "apps/mobile/app/+not-found.js": "ruta desconocida (chasis)",
+    "apps/mobile/app/index.js": "la entrada: redirige según la sesión (chasis)",
+    "apps/mobile/app/visor.js": "el visor de archivos de la app: lo usa todo lo que abre un documento",
+    "apps/mobile/componentes/inicio/marca.js": "colores y marca del Inicio, la importan 70 pantallas",
+    "apps/mobile/componentes/avisos/Piezas.js": "piezas de tarjeta compartidas por 60 pantallas",
+    "apps/mobile/componentes/inicio/Kpi.js": "la cifra grande, compartida por 30 pantallas",
+    "apps/mobile/componentes/inicio/Widget.js": "el marco de un widget, compartido",
+    "apps/mobile/componentes/fiscal/csv.js": "exportar CSV desde el teléfono, compartido por 5 módulos",
+    "apps/mobile/componentes/personas/Formulario.js": "piezas de formulario de personas, compartidas"
+  },
+  "mismaPantalla": {
+    "caja_vales": "cortes_caja",
+    "requests_personales": "requests"
+  },
+  "notas": {
+    "distribucion": "Las acciones de dinero o Hacienda de Torogoz (facturar, invalidar, contingencia, notas de crédito, cobros, caja del vendedor, liquidación, depósitos, cierre del día) se hacen SÓLO en el portal por decisión del usuario del 2026-10-07 (apps/mobile/componentes/torogoz/soloConsulta.js). Si el cambio es de una de ellas: «Gemelo: distribucion — acción de dinero, sólo web (soloConsulta.js)»."
+  },
+  "soloWeb": {
+    "src/views/AccessDeniedView.jsx": "rutas del chasis web (sin acceso, 404, prueba en bruto): la app tiene las suyas en expo-router",
+    "src/views/MisPuntosView.jsx": "`/mis-puntos` es la página pública del cliente, no del personal: la app del cliente es otra (apps/clientes)",
+    "src/views/NoAccessView.jsx": "rutas del chasis web (sin acceso, 404, prueba en bruto): la app tiene las suyas en expo-router",
+    "src/views/NotFoundView.jsx": "rutas del chasis web (sin acceso, 404, prueba en bruto): la app tiene las suyas en expo-router",
+    "src/views/RawTestView.jsx": "rutas del chasis web (sin acceso, 404, prueba en bruto): la app tiene las suyas en expo-router",
+    "src/views/TimeClockView.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/saly/**": "la burbuja de Saly es del portal de escritorio; en la app Saly vive dentro de cada pantalla que la usa",
+    "src/components/timeclock/AuthPromptPanel.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/BarraDeDemo.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/EarlyExitForm.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/FeedbackOverlay.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/IdleScanPanel.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/KioskConfigModal.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/PasaTuCarne.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/SelfDeclareShiftPanel.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "src/components/timeclock/iconosDelKiosco.jsx": "el kiosco de marcación (`/kiosk`) corre en la tableta de la sala, no en la app del personal",
+    "modulo:encuesta": "FUERA_DE_LA_APP (apps/mobile/pantallas.js): el usuario la ocultó de la app el 2026-11-12 («lo vamos a ocultar de la app»)",
+    "modulo:encuesta_admin": "FUERA_DE_LA_APP (apps/mobile/pantallas.js): el usuario la ocultó de la app el 2026-11-12",
+    "modulo:entrevistas": "próximamente: no tiene pantalla en ningún lado (EXCEPCIONES de scripts/app-nativa-gate.mjs)",
+    "modulo:ios_test": "diagnóstico del dispositivo: el portal prueba el navegador y la app prueba el teléfono; cada lado mide lo suyo"
+  },
+  "soloApp": {
+    "apps/mobile/app/pestana-rapida.js": "pestañas propias de la app (Menú, Buscar, Rápida, Yo): en el portal eso es la barra lateral y el menú del usuario, que son chasis",
+    "apps/mobile/app/portal.js": "el portal incrustado dentro de la app (estrategia mixta): pieza de la plataforma",
+    "apps/mobile/app/ventas-hoy.js": "«Ventas de hoy» no existe en el portal: es una pantalla nativa (pantallas.js)",
+    "apps/mobile/app/(tabs)/buscar/index.js": "pestañas propias de la app (Menú, Buscar, Rápida, Yo): en el portal eso es la barra lateral y el menú del usuario, que son chasis",
+    "apps/mobile/app/(tabs)/menu/index.js": "pestañas propias de la app (Menú, Buscar, Rápida, Yo): en el portal eso es la barra lateral y el menú del usuario, que son chasis",
+    "apps/mobile/app/(tabs)/rapida/index.js": "pestañas propias de la app (Menú, Buscar, Rápida, Yo): en el portal eso es la barra lateral y el menú del usuario, que son chasis",
+    "apps/mobile/app/(tabs)/yo/index.js": "pestañas propias de la app (Menú, Buscar, Rápida, Yo): en el portal eso es la barra lateral y el menú del usuario, que son chasis",
+    "apps/mobile/componentes/torogoz/soloConsulta.js": "el interruptor que deja Torogoz SÓLO CONSULTA en la app (decisión del usuario 2026-10-07): no tiene par en el portal",
+    "modulo:ios_test": "diagnóstico del dispositivo: la app prueba el teléfono y el portal el navegador; cada lado mide lo suyo"
+  },
+  "modulos": {
+    "announcements": {
+      "web": [
+        "src/views/AnnouncementsView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/gestionar-avisos.js"
+      ]
+    },
+    "auditview": {
+      "web": [
+        "src/views/AuditView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/auditoria-del-sistema.js",
+        "apps/mobile/componentes/sistema/csv.js"
+      ]
+    },
+    "bitacoras": {
+      "web": [
+        "src/components/bitacoras/**",
+        "src/views/BitacorasView.jsx",
+        "src/views/bitacoras/**"
+      ],
+      "app": [
+        "apps/mobile/app/bitacora-correccion.js",
+        "apps/mobile/app/bitacoras-antibioticos.js",
+        "apps/mobile/app/bitacoras-cierre.js",
+        "apps/mobile/app/bitacoras-config.js",
+        "apps/mobile/app/bitacoras-lotes.js",
+        "apps/mobile/app/bitacoras-regencia.js",
+        "apps/mobile/app/bitacoras.js",
+        "apps/mobile/app/folio.js",
+        "apps/mobile/app/libro-receta.js",
+        "apps/mobile/app/receta/[id].js",
+        "apps/mobile/componentes/bitacoras/**"
+      ]
+    },
+    "bolsas": {
+      "web": [
+        "src/components/bolsas/**",
+        "src/views/BolsasView.jsx",
+        "src/views/bolsas/**"
+      ],
+      "app": [
+        "apps/mobile/app/bolsas-sala.js",
+        "apps/mobile/app/bolsas.js",
+        "apps/mobile/app/conteos-bolsas.js",
+        "apps/mobile/app/deposito/[id].js",
+        "apps/mobile/app/depositos-banco.js",
+        "apps/mobile/app/finalizar-efectivo.js",
+        "apps/mobile/componentes/caja/DetalleDeBolsa.js",
+        "apps/mobile/componentes/caja/ResolverDiferencia.js",
+        "apps/mobile/componentes/caja/depositoElegido.js",
+        "apps/mobile/componentes/cortes/papel.js"
+      ]
+    },
+    "branches": {
+      "web": [
+        "src/components/UnifiedModal.jsx",
+        "src/views/BranchDetailView.jsx",
+        "src/views/BranchesView.jsx",
+        "src/views/branch-tabs/**"
+      ],
+      "app": [
+        "apps/mobile/app/sucursal/**",
+        "apps/mobile/app/sucursales.js",
+        "apps/mobile/componentes/sucursal/AccionesDelDocumento.js"
+      ]
+    },
+    "captura_foto": {
+      "web": [
+        "src/views/CapturaDeFotoView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/foto/[secreto].js"
+      ]
+    },
+    "cargar_compra": {
+      "web": [
+        "src/views/purchases/**"
+      ],
+      "app": [
+        "apps/mobile/app/cargar-compra.js",
+        "apps/mobile/app/propuesta-compra/[id].js",
+        "apps/mobile/componentes/compras/**"
+      ]
+    },
+    "carne_temporal": {
+      "web": [
+        "src/components/personal/BotonCarneDePapel.jsx",
+        "src/components/personal/ElegirSalaDeImpresion.jsx",
+        "src/views/CarnesDelDiaView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/carnes-del-dia.js",
+        "apps/mobile/componentes/personas/CarneDePapel.js"
+      ]
+    },
+    "chat_clientes": {
+      "web": [
+        "src/views/chat-clientes/**",
+        "src/views/chat-clientes/etiquetas.js"
+      ],
+      "app": [
+        "apps/mobile/app/chat-clientes.js",
+        "apps/mobile/app/chat-clientes/**",
+        "apps/mobile/componentes/chat/**"
+      ]
+    },
+    "cierre_periodo": {
+      "web": [
+        "src/views/contabilidad/CierrePeriodoView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/cierre-periodo.js"
+      ]
+    },
+    "clientes": {
+      "web": [
+        "src/views/ClientesView.jsx",
+        "src/views/clientes/**"
+      ],
+      "app": [
+        "apps/mobile/app/cliente-nuevo.js",
+        "apps/mobile/app/cliente/[id].js",
+        "apps/mobile/app/clientes.js",
+        "apps/mobile/componentes/clientes/**",
+        "apps/mobile/componentes/clientes/ElegirGiro.js"
+      ]
+    },
+    "compras": {
+      "web": [
+        "src/views/ComprasView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/compra/[id].js",
+        "apps/mobile/app/compras.js",
+        "apps/mobile/componentes/compras/compras.js",
+        "apps/mobile/componentes/fiscal/ProductosComprados.js"
+      ]
+    },
+    "conteo_inventario": {
+      "web": [
+        "src/components/inventario/**",
+        "src/components/inventario/NuevaConsultaExistencia.jsx",
+        "src/views/ConteoInventarioView.jsx",
+        "src/views/inventario/**"
+      ],
+      "app": [
+        "apps/mobile/app/consultas-existencia.js",
+        "apps/mobile/app/conteo/**",
+        "apps/mobile/app/conteos.js",
+        "apps/mobile/componentes/chat/acompanante.js",
+        "apps/mobile/componentes/conteos/**"
+      ]
+    },
+    "corte_z": {
+      "web": [
+        "src/views/contabilidad/CorteZView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/corte-z.js"
+      ]
+    },
+    "cortes_caja": {
+      "web": [
+        "src/components/bolsas/IdentidadDeQuienRetira.jsx",
+        "src/components/bolsas/SalidaDeBolsa.jsx",
+        "src/components/caja/BonosPorPagar.jsx",
+        "src/components/caja/CampoLote.jsx",
+        "src/components/caja/DialogoAbono.jsx",
+        "src/components/caja/DialogoAplicacion.jsx",
+        "src/components/caja/DialogoMapfre.jsx",
+        "src/components/caja/DialogoReenviarIngreso.jsx",
+        "src/components/caja/EsperaDeLaCaja.jsx",
+        "src/components/caja/FormaDePago.jsx",
+        "src/components/caja/VouchersDelDia.jsx",
+        "src/components/cortes/**",
+        "src/views/CortesView.jsx",
+        "src/views/MiCajaView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/abono-apartado.js",
+        "apps/mobile/app/aplicacion-inyeccion.js",
+        "apps/mobile/app/asentar-diferencias.js",
+        "apps/mobile/app/bono-sin-confirmar.js",
+        "apps/mobile/app/caja-dia.js",
+        "apps/mobile/app/caja-diferencias.js",
+        "apps/mobile/app/caja-movimientos.js",
+        "apps/mobile/app/corregir-movimiento.js",
+        "apps/mobile/app/corte/[id].js",
+        "apps/mobile/app/cortes.js",
+        "apps/mobile/app/diferencia-corte.js",
+        "apps/mobile/app/efectivo.js",
+        "apps/mobile/app/hacer-corte.js",
+        "apps/mobile/app/mapfre-asegurado.js",
+        "apps/mobile/app/meter-dinero.js",
+        "apps/mobile/app/pagar-bono.js",
+        "apps/mobile/app/reenviar-ingreso.js",
+        "apps/mobile/app/sacar-dinero.js",
+        "apps/mobile/componentes/caja/**",
+        "apps/mobile/componentes/cortes/**",
+        "apps/mobile/componentes/cortes/papel.js"
+      ]
+    },
+    "cotizaciones": {
+      "web": [
+        "src/views/CotizacionesView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/cotizacion/**",
+        "apps/mobile/app/cotizaciones.js",
+        "apps/mobile/componentes/cotizaciones/cache.js"
+      ]
+    },
+    "cuentas_por_cobrar": {
+      "web": [
+        "src/views/CuentasPorCobrarView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/cobrar-credito.js",
+        "apps/mobile/app/credito/**",
+        "apps/mobile/app/cuentas-por-cobrar.js",
+        "apps/mobile/componentes/creditos/edad.js"
+      ]
+    },
+    "cuentas_por_pagar": {
+      "web": [
+        "src/views/purchases/CuentasPorPagarView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/cuentas-por-pagar.js",
+        "apps/mobile/app/cxp-proveedor/[nit].js"
+      ]
+    },
+    "cumplimiento": {
+      "web": [
+        "src/views/CumplimientoView.jsx",
+        "src/views/cumplimiento/**"
+      ],
+      "app": [
+        "apps/mobile/app/cumplimiento-registro.js",
+        "apps/mobile/app/cumplimiento.js",
+        "apps/mobile/componentes/comercial/elegido.js"
+      ]
+    },
+    "datos_personales": {
+      "web": [
+        "src/views/SolicitudesDatosView.jsx",
+        "src/views/datos/**"
+      ],
+      "app": [
+        "apps/mobile/app/incidente-datos/[id].js",
+        "apps/mobile/app/solicitud-datos/[id].js",
+        "apps/mobile/app/solicitudes-datos.js",
+        "apps/mobile/componentes/datos/**"
+      ]
+    },
+    "distribucion": {
+      "web": [
+        "src/views/DistribucionVentaView.jsx",
+        "src/views/DistribucionView.jsx",
+        "src/views/distribucion/**"
+      ],
+      "app": [
+        "apps/mobile/app/torogoz/**",
+        "apps/mobile/componentes/torogoz/**",
+        "apps/mobile/componentes/torogoz/venta/Piezas.js"
+      ]
+    },
+    "emp_announcements": {
+      "web": [
+        "src/views/employee/EmployeeAnnouncementsView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/comunicados.js"
+      ]
+    },
+    "emp_documents": {
+      "web": [
+        "src/views/employee/EmployeeDocumentsView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/mis-documentos.js"
+      ]
+    },
+    "emp_profile": {
+      "web": [
+        "src/views/employee/EmployeeProfileView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/mi-perfil.js",
+        "apps/mobile/componentes/perfil/Piezas.js"
+      ]
+    },
+    "encuesta": {
+      "web": [
+        "src/views/EncuestaView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/encuesta.js",
+        "apps/mobile/componentes/encuestas/AnalisisClima.js"
+      ]
+    },
+    "encuesta_admin": {
+      "web": [
+        "src/views/EncuestaAdminView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/encuesta-admin.js",
+        "apps/mobile/app/encuesta-interna/**",
+        "apps/mobile/componentes/encuestas/interna.js"
+      ]
+    },
+    "encuestas_aplicar": {
+      "web": [
+        "src/views/encuestas-clientes/AplicarEncuestaView.jsx",
+        "src/views/encuestas-clientes/EncuestaPublicaView.jsx",
+        "src/views/encuestas-clientes/FormularioEncuesta.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/encuestas-aplicar.js",
+        "apps/mobile/componentes/encuestas/Formulario.js"
+      ]
+    },
+    "encuestas_clientes": {
+      "web": [
+        "src/views/encuestas-clientes/**"
+      ],
+      "app": [
+        "apps/mobile/app/encuesta-cliente/**",
+        "apps/mobile/app/encuestas-clientes.js",
+        "apps/mobile/componentes/encuestas/Ciclo.js",
+        "apps/mobile/componentes/encuestas/Distribucion.js",
+        "apps/mobile/componentes/encuestas/LecturaDeSaly.js",
+        "apps/mobile/componentes/encuestas/UbicacionesDeCampo.js"
+      ]
+    },
+    "facturacion": {
+      "web": [
+        "src/views/FacturacionView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/facturacion.js",
+        "apps/mobile/componentes/fiscal/NoEfectivo.js",
+        "apps/mobile/componentes/fiscal/Resueltas.js",
+        "apps/mobile/componentes/fiscal/Saltos.js"
+      ]
+    },
+    "facturas_compra": {
+      "web": [
+        "src/views/purchases/FacturasCompraView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/factura-compra/[id].js",
+        "apps/mobile/app/factura-compra/revision.js",
+        "apps/mobile/app/facturas-compra.js",
+        "apps/mobile/componentes/compras/DetectarCodigo.js",
+        "apps/mobile/componentes/compras/documentos.js",
+        "apps/mobile/componentes/compras/zipDeFacturas.js"
+      ]
+    },
+    "fotos_productos": {
+      "web": [
+        "src/components/srs/SrsBuscadorWidget.jsx",
+        "src/views/FotosProductosView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/fotos-productos.js"
+      ]
+    },
+    "galeria": {
+      "web": [
+        "src/views/marketing/Galeria.jsx",
+        "src/views/marketing/GaleriaView.jsx",
+        "src/views/marketing/iconos.js"
+      ],
+      "app": [
+        "apps/mobile/app/galeria.js"
+      ]
+    },
+    "gestion_stock": {
+      "web": [
+        "src/views/GestionStockView.jsx",
+        "src/views/inventario/TabParados.jsx",
+        "src/views/inventario/TabSinMinMax.jsx",
+        "src/views/inventario/salasDeStock.js"
+      ],
+      "app": [
+        "apps/mobile/app/enviar-producto.js",
+        "apps/mobile/app/gestion-stock.js",
+        "apps/mobile/componentes/inventario/envioSugerido.js"
+      ]
+    },
+    "impresion": {
+      "web": [
+        "src/components/impresion/CajasDeImpresion.jsx",
+        "src/views/ImpresionView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/impresion.js"
+      ]
+    },
+    "inventario": {
+      "web": [
+        "src/components/inventario/NuevaConsultaExistencia.jsx",
+        "src/views/InventarioView.jsx",
+        "src/views/inventario/TabInventario.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/consulta-existencia/**",
+        "apps/mobile/app/inventario.js",
+        "apps/mobile/app/producto/**",
+        "apps/mobile/componentes/producto/**"
+      ]
+    },
+    "inyecciones": {
+      "web": [
+        "src/components/caja/Contador.jsx",
+        "src/views/InyeccionesView.jsx",
+        "src/views/inyecciones/**"
+      ],
+      "app": [
+        "apps/mobile/app/inyeccion-asignar.js",
+        "apps/mobile/app/inyeccion-ficha.js",
+        "apps/mobile/app/inyeccion-ml.js",
+        "apps/mobile/app/inyecciones.js",
+        "apps/mobile/app/libro-inyeccion.js",
+        "apps/mobile/componentes/comercial/elegido.js",
+        "apps/mobile/componentes/inyecciones/**"
+      ]
+    },
+    "ios_test": {
+      "web": [
+        "src/views/IOSTestView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/prueba-ios.js"
+      ]
+    },
+    "laboratorios": {
+      "web": [
+        "src/views/LaboratoriosView.jsx",
+        "src/views/productos/TabLaboratorios.jsx",
+        "src/views/productos/TabPoliticaVencimiento.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/laboratorios.js",
+        "apps/mobile/componentes/fiscal/PoliticaVencimiento.js"
+      ]
+    },
+    "libro_compras_completo": {
+      "web": [
+        "src/views/contabilidad/LibroComprasCompletoView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/factura-compra/[id].js",
+        "apps/mobile/app/libro-compras-completo.js",
+        "apps/mobile/componentes/compras/DetectarCodigo.js"
+      ]
+    },
+    "libros_iva": {
+      "web": [
+        "src/views/contabilidad/CofNocheSinEnvio.jsx",
+        "src/views/contabilidad/LibrosIvaView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/libros-iva.js",
+        "apps/mobile/componentes/fiscal/CofNocheSinEnvio.js",
+        "apps/mobile/componentes/fiscal/DetalleDeLibro.js",
+        "apps/mobile/componentes/fiscal/archivosDelDte.js",
+        "apps/mobile/componentes/fiscal/zip.js"
+      ]
+    },
+    "login": {
+      "web": [
+        "src/views/LoginView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/entrar.js",
+        "apps/mobile/app/recuperar-contrasena.js"
+      ]
+    },
+    "maintenance": {
+      "web": [
+        "src/components/mantenimiento/AvisoDelPortal.jsx",
+        "src/views/MaintenanceView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/mantenimiento.js"
+      ]
+    },
+    "marketing": {
+      "web": [
+        "src/views/marketing/**",
+        "src/views/marketing/Galeria.jsx",
+        "src/views/marketing/iconos.js",
+        "src/views/promociones/Campo.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/marketing-ajustes.js",
+        "apps/mobile/app/marketing-anotar.js",
+        "apps/mobile/app/marketing-duplicar.js",
+        "apps/mobile/app/marketing-editar.js",
+        "apps/mobile/app/marketing-pauta.js",
+        "apps/mobile/app/marketing-pieza/[id].js",
+        "apps/mobile/app/marketing-solicitud.js",
+        "apps/mobile/app/marketing-versiones.js",
+        "apps/mobile/app/marketing.js",
+        "apps/mobile/componentes/comercial/elegido.js",
+        "apps/mobile/componentes/marketing/**"
+      ]
+    },
+    "mayoristas": {
+      "web": [
+        "src/components/caja/PersonaConFoto.jsx",
+        "src/views/mayoristas/MayoristasView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/mayorista/[id].js",
+        "apps/mobile/app/mayoristas.js",
+        "apps/mobile/componentes/mayoristas/elegido.js"
+      ]
+    },
+    "metas": {
+      "web": [
+        "src/views/metas/**",
+        "src/views/metas/BarraAvance.jsx",
+        "src/views/metas/RankingVendedores.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/meta-gasto.js",
+        "apps/mobile/app/meta-nueva.js",
+        "apps/mobile/app/meta-sala/[id].js",
+        "apps/mobile/app/metas.js",
+        "apps/mobile/componentes/metas/**"
+      ]
+    },
+    "minmax": {
+      "web": [
+        "src/views/MinMaxView.jsx",
+        "src/views/productos/**"
+      ],
+      "app": [
+        "apps/mobile/app/agotados.js",
+        "apps/mobile/app/minmax-cero.js",
+        "apps/mobile/app/minmax-config.js",
+        "apps/mobile/app/minmax-historial.js",
+        "apps/mobile/app/minmax-matriz.js",
+        "apps/mobile/app/minmax-motivo.js",
+        "apps/mobile/app/minmax-producto.js",
+        "apps/mobile/app/minmax-sala.js",
+        "apps/mobile/app/producto/**",
+        "apps/mobile/componentes/minmax/**",
+        "apps/mobile/componentes/producto/**"
+      ]
+    },
+    "monitor": {
+      "web": [
+        "src/views/AttendanceMonitorView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/monitor.js",
+        "apps/mobile/componentes/personas/Piezas.js"
+      ]
+    },
+    "notificaciones": {
+      "web": [
+        "src/views/NotificacionesView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/avisos.js",
+        "apps/mobile/app/leer-avisos.js",
+        "apps/mobile/app/notificaciones.js",
+        "apps/mobile/componentes/avisos/**"
+      ]
+    },
+    "novedades": {
+      "web": [
+        "src/components/caja/PersonaConFoto.jsx",
+        "src/views/NovedadesView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/novedades.js"
+      ]
+    },
+    "ofertas_clientes": {
+      "web": [
+        "src/views/ofertas-clientes/**"
+      ],
+      "app": [
+        "apps/mobile/app/banner/[id].js",
+        "apps/mobile/app/frase/[id].js",
+        "apps/mobile/app/historia-vistas.js",
+        "apps/mobile/app/historia/[id].js",
+        "apps/mobile/app/oferta/[id].js",
+        "apps/mobile/app/ofertas-clientes.js",
+        "apps/mobile/app/preregistro/[id].js",
+        "apps/mobile/app/reserva-receta.js",
+        "apps/mobile/componentes/ofertas/**"
+      ]
+    },
+    "orphan_objects": {
+      "web": [
+        "src/views/OrphanObjectsView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/objetos-huerfanos.js"
+      ]
+    },
+    "overview": {
+      "web": [
+        "src/components/UnifiedModal.jsx",
+        "src/components/caja/DialogoRetirar.jsx",
+        "src/views/DashboardView.jsx",
+        "src/views/dashboard/AccionesDeEncargoV2.jsx",
+        "src/views/dashboard/AcomodarModal.jsx",
+        "src/views/dashboard/AvisosDeReserva.jsx",
+        "src/views/dashboard/CorregirLoteSala.jsx",
+        "src/views/dashboard/DetalleDeReserva.jsx",
+        "src/views/dashboard/EncabezadoDeLista.jsx",
+        "src/views/dashboard/FilaConAcciones.jsx",
+        "src/views/dashboard/GraficaTendencia.jsx",
+        "src/views/dashboard/InstrumentoBaldosa.jsx",
+        "src/views/dashboard/PasarAVencidosBodega.jsx",
+        "src/views/dashboard/Prorroga.jsx",
+        "src/views/dashboard/ResolverReserva.jsx",
+        "src/views/dashboard/RevisarReceta.jsx",
+        "src/views/dashboard/TarjetaCompacta.jsx",
+        "src/views/dashboard/TarjetaDeReserva.jsx",
+        "src/views/dashboard/VistazoWidget.jsx",
+        "src/views/dashboard/WidgetAnnulmentRequest.jsx",
+        "src/views/dashboard/WidgetBitacoras.jsx",
+        "src/views/dashboard/WidgetBolsasSala.jsx",
+        "src/views/dashboard/WidgetClientes.jsx",
+        "src/views/dashboard/WidgetConsultaPrecios.jsx",
+        "src/views/dashboard/WidgetCortesSala.jsx",
+        "src/views/dashboard/WidgetDatoPedido.jsx",
+        "src/views/dashboard/WidgetEncargos.jsx",
+        "src/views/dashboard/WidgetInventoryMovement.jsx",
+        "src/views/dashboard/WidgetInventorySearch.jsx",
+        "src/views/dashboard/WidgetMetaSala.jsx",
+        "src/views/dashboard/WidgetMinMaxRequest.jsx",
+        "src/views/dashboard/WidgetPreventa.jsx",
+        "src/views/dashboard/WidgetRecetasPendientes.jsx",
+        "src/views/dashboard/WidgetReservas.jsx",
+        "src/views/dashboard/WidgetTransferRequests.jsx",
+        "src/views/dashboard/WidgetVendedores.jsx",
+        "src/views/dashboard/baldosas/**",
+        "src/views/dashboard/inventario/PreciosDelProducto.jsx",
+        "src/views/dashboard/inventario/salas.js",
+        "src/views/dashboard/reservaVista.js",
+        "src/views/dashboard/tamanoWidget.js",
+        "src/views/dashboard/useSolicitudEnInicio.jsx",
+        "src/views/metas/BarraAvance.jsx",
+        "src/views/metas/RankingVendedores.jsx",
+        "src/views/solicitudes/PuntosDelCambio.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/(tabs)/inicio/index.js",
+        "apps/mobile/app/consulta-precios.js",
+        "apps/mobile/app/personalizar-inicio.js",
+        "apps/mobile/app/precio/[id].js",
+        "apps/mobile/componentes/inicio/**",
+        "apps/mobile/componentes/inicio/MiniSala.js",
+        "apps/mobile/componentes/inicio/SelectorDeSala.js",
+        "apps/mobile/componentes/perfil/codigoDeKiosco.js"
+      ]
+    },
+    "payroll": {
+      "web": [
+        "src/components/UnifiedModal.jsx",
+        "src/views/PayrollView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/boleta/[id].js",
+        "apps/mobile/app/nomina.js",
+        "apps/mobile/app/nomina/**"
+      ]
+    },
+    "pedidos": {
+      "web": [
+        "src/views/PedidosView.jsx",
+        "src/views/pedidos/**"
+      ],
+      "app": [
+        "apps/mobile/app/pedido/**",
+        "apps/mobile/app/pedidos.js",
+        "apps/mobile/componentes/pedidos/**",
+        "apps/mobile/componentes/ruta/BolsasDeLaRuta.js"
+      ]
+    },
+    "permissions": {
+      "web": [
+        "src/views/PermissionsView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/permisos.js"
+      ]
+    },
+    "preventa": {
+      "web": [
+        "src/components/caja/BuscarFicha.jsx",
+        "src/components/caja/DeOtraSala.jsx",
+        "src/components/caja/DialogoApartar.jsx",
+        "src/components/caja/FormaDePago.jsx",
+        "src/components/caja/cobrarAnticipo.js",
+        "src/components/timeclock/CajaDelKiosco.jsx",
+        "src/components/timeclock/ComoVaHoy.jsx",
+        "src/components/timeclock/GraficaDelDia.jsx",
+        "src/components/timeclock/TramitesDelKiosco.jsx",
+        "src/components/timeclock/datosDeLaCola.js",
+        "src/components/timeclock/demoDelKiosco.js",
+        "src/components/timeclock/piezasDelKiosco.jsx",
+        "src/components/timeclock/sesionDeCaja.js",
+        "src/components/timeclock/tramites.js",
+        "src/components/timeclock/useKioscoDeCaja.js",
+        "src/views/KioscoEnPortalView.jsx",
+        "src/views/PreventaView.jsx",
+        "src/views/chat-clientes/ClienteAvatar.jsx",
+        "src/views/chat-clientes/etiquetas.js",
+        "src/views/dashboard/InstrumentoBaldosa.jsx",
+        "src/views/dashboard/LanzadorSolicitud.jsx",
+        "src/views/dashboard/PedirTrasladoModal.jsx",
+        "src/views/dashboard/inventario/PanelDeInventario.jsx",
+        "src/views/dashboard/inventario/salas.js",
+        "src/views/dashboard/soloModal.js"
+      ],
+      "app": [
+        "apps/mobile/app/cliente/[id].js",
+        "apps/mobile/app/pedir-traslado.js",
+        "apps/mobile/app/preventa.js",
+        "apps/mobile/app/reserva-anticipo.js",
+        "apps/mobile/componentes/clientes/ElegirGiro.js",
+        "apps/mobile/componentes/preventa/**",
+        "apps/mobile/componentes/reservas/ComoLlega.js",
+        "apps/mobile/componentes/reservas/PorCobrar.js",
+        "apps/mobile/componentes/reservas/ProductoNuevo.js",
+        "apps/mobile/componentes/reservas/cobrar.js",
+        "apps/mobile/componentes/torogoz/venta/Piezas.js"
+      ]
+    },
+    "productos": {
+      "web": [
+        "src/components/inventario/NuevaConsultaExistencia.jsx",
+        "src/components/srs/SrsEnriquecerModal.jsx",
+        "src/views/ProductosView.jsx",
+        "src/views/productos/TabCatalogo.jsx",
+        "src/views/productos/TabPresentaciones.jsx",
+        "src/views/productos/TabRentabilidad.jsx",
+        "src/views/productos/TabRevisionFactor.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/presentaciones.js",
+        "apps/mobile/app/producto/**",
+        "apps/mobile/app/producto/enriquecer-srs.js",
+        "apps/mobile/app/producto/revision-factor.js",
+        "apps/mobile/app/productos.js",
+        "apps/mobile/app/rentabilidad.js",
+        "apps/mobile/componentes/producto/**"
+      ]
+    },
+    "promociones": {
+      "web": [
+        "src/views/promociones/**",
+        "src/views/promociones/Campo.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/descuento/[id].js",
+        "apps/mobile/app/promocion-laboratorio/[id].js",
+        "apps/mobile/app/promocion-producto/**",
+        "apps/mobile/app/promocion-reactivar/[id].js",
+        "apps/mobile/app/promocion/[id].js",
+        "apps/mobile/app/promociones.js",
+        "apps/mobile/componentes/promociones/**"
+      ]
+    },
+    "proveedores": {
+      "web": [
+        "src/views/purchases/PanelDeducibilidad.jsx",
+        "src/views/purchases/ProveedoresView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/proveedor/[id].js",
+        "apps/mobile/app/proveedores-fiscal.js",
+        "apps/mobile/app/proveedores-lote.js",
+        "apps/mobile/app/proveedores.js",
+        "apps/mobile/componentes/compras/proveedores.js"
+      ]
+    },
+    "puntos": {
+      "web": [
+        "src/views/PuntosView.jsx",
+        "src/views/puntos/**"
+      ],
+      "app": [
+        "apps/mobile/app/asignar-cuenta.js",
+        "apps/mobile/app/puntos-cliente/[id].js",
+        "apps/mobile/app/puntos-nivel.js",
+        "apps/mobile/app/puntos-regalo.js",
+        "apps/mobile/app/puntos.js",
+        "apps/mobile/componentes/inicio/SelectorDeSala.js",
+        "apps/mobile/componentes/puntos/**"
+      ]
+    },
+    "reclamos_clientes": {
+      "web": [
+        "src/components/caja/PersonaConFoto.jsx",
+        "src/views/ReclamosClientesView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/reclamos-clientes.js"
+      ]
+    },
+    "requests": {
+      "web": [
+        "src/views/RequestsView.jsx",
+        "src/views/dashboard/CorregirLoteSala.jsx",
+        "src/views/dashboard/PasarAVencidosBodega.jsx",
+        "src/views/dashboard/WidgetAnnulmentRequest.jsx",
+        "src/views/dashboard/WidgetInventoryMovement.jsx",
+        "src/views/dashboard/WidgetMinMaxRequest.jsx",
+        "src/views/solicitudes/DetalleSolicitud.jsx",
+        "src/views/solicitudes/FaltaAntesDeAprobar.jsx",
+        "src/views/solicitudes/ModalNuevaOperativa.jsx",
+        "src/views/solicitudes/ModalNuevaPersonal.jsx",
+        "src/views/solicitudes/PersonasSolicitud.jsx",
+        "src/views/solicitudes/PuntosDelCambio.jsx",
+        "src/views/solicitudes/TarjetaSolicitud.jsx",
+        "src/views/solicitudes/VentaDeSolicitud.jsx",
+        "src/views/solicitudes/familiasOperativas.js"
+      ],
+      "app": [
+        "apps/mobile/app/corregir-lote.js",
+        "apps/mobile/app/nueva-solicitud.js",
+        "apps/mobile/app/nueva/**",
+        "apps/mobile/app/solicitud/[id].js",
+        "apps/mobile/app/solicitudes.js",
+        "apps/mobile/componentes/solicitudes/**",
+        "apps/mobile/componentes/solicitudes/PasoDeSemana.js"
+      ]
+    },
+    "reservas": {
+      "web": [
+        "src/components/caja/DialogoRetirar.jsx",
+        "src/views/ReservasView.jsx",
+        "src/views/dashboard/AccionesDeEncargoV2.jsx",
+        "src/views/dashboard/AvisosDeReserva.jsx",
+        "src/views/dashboard/DetalleDeReserva.jsx",
+        "src/views/dashboard/EncabezadoDeLista.jsx",
+        "src/views/dashboard/FilaConAcciones.jsx",
+        "src/views/dashboard/Prorroga.jsx",
+        "src/views/dashboard/ResolverReserva.jsx",
+        "src/views/dashboard/RevisarReceta.jsx",
+        "src/views/dashboard/TarjetaCompacta.jsx",
+        "src/views/dashboard/TarjetaDeReserva.jsx",
+        "src/views/dashboard/WidgetEncargos.jsx",
+        "src/views/dashboard/WidgetReservas.jsx",
+        "src/views/dashboard/reservaVista.js"
+      ],
+      "app": [
+        "apps/mobile/app/encargo-accion.js",
+        "apps/mobile/app/reserva-anticipo.js",
+        "apps/mobile/app/reserva-devolucion.js",
+        "apps/mobile/app/reserva-llamada.js",
+        "apps/mobile/app/reserva-prorroga.js",
+        "apps/mobile/app/reserva-receta.js",
+        "apps/mobile/app/reserva-resolver.js",
+        "apps/mobile/app/reserva-retirar.js",
+        "apps/mobile/app/reserva-saldo.js",
+        "apps/mobile/app/reserva/[id].js",
+        "apps/mobile/app/reservas-sala.js",
+        "apps/mobile/componentes/reservas/ComoLlega.js",
+        "apps/mobile/componentes/reservas/Encargos.js",
+        "apps/mobile/componentes/reservas/PorCobrar.js",
+        "apps/mobile/componentes/reservas/ProductoNuevo.js",
+        "apps/mobile/componentes/reservas/TarjetaDeReserva.js",
+        "apps/mobile/componentes/reservas/cobrar.js",
+        "apps/mobile/componentes/reservas/piezas.js",
+        "apps/mobile/componentes/reservas/useAccionesDeReserva.js"
+      ]
+    },
+    "resumen_fiscal": {
+      "web": [
+        "src/views/contabilidad/ResumenFiscalView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/resumen-fiscal.js"
+      ]
+    },
+    "roles": {
+      "web": [
+        "src/views/RolesView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/cargos.js",
+        "apps/mobile/componentes/sistema/**"
+      ]
+    },
+    "schedules": {
+      "web": [
+        "src/components/UnifiedModal.jsx",
+        "src/views/SchedulesView.jsx",
+        "src/views/schedule-tabs/**"
+      ],
+      "app": [
+        "apps/mobile/app/horarios.js",
+        "apps/mobile/app/horarios/**",
+        "apps/mobile/app/monitor-ventas.js",
+        "apps/mobile/componentes/inicio/MiniSala.js",
+        "apps/mobile/componentes/personas/EditorDeDia.js",
+        "apps/mobile/componentes/personas/GraficaTx.js",
+        "apps/mobile/componentes/personas/Hora.ios.js",
+        "apps/mobile/componentes/personas/Hora.js",
+        "apps/mobile/componentes/personas/Piezas.js"
+      ]
+    },
+    "sesiones": {
+      "web": [
+        "src/components/sesiones/BloqueoModal.jsx",
+        "src/views/SesionesView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/sesiones.js"
+      ]
+    },
+    "staff_list": {
+      "web": [
+        "src/components/UnifiedModal.jsx",
+        "src/components/personal/CarneDelDia.jsx",
+        "src/components/personal/SancionModal.jsx",
+        "src/components/practicantes/SeccionDeLaPractica.jsx",
+        "src/views/EmployeeDetailView.jsx",
+        "src/views/personal/**"
+      ],
+      "app": [
+        "apps/mobile/app/empleado/**",
+        "apps/mobile/app/personal.js",
+        "apps/mobile/app/seguro-de-vida.js",
+        "apps/mobile/componentes/personal/BajaLegal.js",
+        "apps/mobile/componentes/personas/**",
+        "apps/mobile/componentes/sucursal/elegirArchivo.js"
+      ]
+    },
+    "sync_health": {
+      "web": [
+        "src/views/SyncHealthView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/actualizacion-de-datos.js"
+      ]
+    },
+    "time_audit": {
+      "web": [
+        "src/views/AttendanceAuditView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/auditoria-de-tiempos.js",
+        "apps/mobile/componentes/personas/CorregirMarcas.js",
+        "apps/mobile/componentes/personas/Piezas.js",
+        "apps/mobile/componentes/personas/Quincena.js"
+      ]
+    },
+    "traslados": {
+      "web": [
+        "src/components/caja/CampoLote.jsx",
+        "src/views/TrasladosView.jsx",
+        "src/views/dashboard/EnviarProductoModal.jsx",
+        "src/views/solicitudes/DetalleSolicitud.jsx",
+        "src/views/solicitudes/FaltaAntesDeAprobar.jsx",
+        "src/views/solicitudes/PersonasSolicitud.jsx",
+        "src/views/solicitudes/PuntosDelCambio.jsx",
+        "src/views/solicitudes/VentaDeSolicitud.jsx",
+        "src/views/traslados/**"
+      ],
+      "app": [
+        "apps/mobile/app/enviar-producto.js",
+        "apps/mobile/app/envio/[id].js",
+        "apps/mobile/app/faltante-tardio.js",
+        "apps/mobile/app/faltantes.js",
+        "apps/mobile/app/pedir-traslado.js",
+        "apps/mobile/app/retiro.js",
+        "apps/mobile/app/traslado/[id].js",
+        "apps/mobile/app/traslados.js",
+        "apps/mobile/componentes/solicitudes/PasoDeSemana.js",
+        "apps/mobile/componentes/traslados/**"
+      ]
+    },
+    "vacation_plan": {
+      "web": [
+        "src/views/VacationPlanView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/vacaciones.js",
+        "apps/mobile/app/vacaciones/plan.js",
+        "apps/mobile/componentes/personas/Hora.ios.js",
+        "apps/mobile/componentes/personas/Hora.js",
+        "apps/mobile/componentes/personas/Vacaciones.js"
+      ]
+    },
+    "ventas": {
+      "web": [
+        "src/components/facturacion/DocumentoParaCliente.jsx",
+        "src/views/VentasView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/producto-vendido/[id].js",
+        "apps/mobile/app/vendedor/[cod].js",
+        "apps/mobile/app/venta/[id].js",
+        "apps/mobile/app/ventas.js",
+        "apps/mobile/componentes/ventas/**"
+      ]
+    },
+    "ventas_perdidas": {
+      "web": [
+        "src/views/VentasPperdidasView.jsx"
+      ],
+      "app": [
+        "apps/mobile/app/ventas-perdidas.js"
+      ]
+    }
+  }
+}

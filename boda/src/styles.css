@@ -1070,7 +1070,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 .portada.std .portada-pie::before { content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: oklch(0.93 0.018 85 / 0.3); transform-origin: left; }
 @media (prefers-reduced-motion: no-preference) {
   /* 1 · La foto se abre desde una rendija al centro, de la oscuridad a la luz. */
-  html:not(.ya-abierta) .portada.std .portada-foto img { animation: rendija 1.9s cubic-bezier(.77, 0, .18, 1) .15s both, acercar-std 4.2s cubic-bezier(.2, .7, .1, 1) .15s both; }
+  html:not(.ya-abierta) .portada.std .portada-foto img { animation: florece 2.8s cubic-bezier(.33, .05, .2, 1) .15s both, acercar-std 5s cubic-bezier(.2, .7, .1, 1) .15s both; }
   /* 2 · Save · the · Date: letra por letra, desde su máscara. */
   .portada.std .std-titulo { animation: none; }
   html:not(.ya-abierta) .portada.std .letra > span { animation: letra-sube 1.25s cubic-bezier(.2, .9, .1, 1) both; animation-delay: calc(1.05s + var(--k) * 0.075s); }
@@ -1084,6 +1084,17 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
   html:not(.ya-abierta) .portada.std .portada-arriba { animation: aparecer 1.2s var(--salida) 2.7s both; }
   html.con-sobre .portada.std *, html.con-sobre .portada.std .portada-pie::before { animation-play-state: paused !important; }
 }
+/* La foto florece desde el centro, donde estaba la frase: un círculo de bordes
+   muy suaves que se abre, como luz que se derrama, con desenfoque y
+   sobreexposición que se asientan. */
+@property --luz { syntax: '<percentage>'; inherits: false; initial-value: 150%; }
+@keyframes florece {
+  from { --luz: 0%; filter: blur(18px) brightness(1.7) saturate(.6); opacity: 0; }
+  12% { opacity: 1; }
+  70% { filter: blur(2px) brightness(1.1) saturate(.95); }
+  to { --luz: 150%; filter: none; opacity: 1; }
+}
+.portada.std .portada-foto img { -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 calc(var(--luz) - 40%), transparent var(--luz)); mask-image: radial-gradient(circle at 50% 50%, #000 calc(var(--luz) - 40%), transparent var(--luz)); }
 @keyframes rendija { from { clip-path: inset(0 50% 0 50%); filter: brightness(.35); } 60% { filter: brightness(.8); } to { clip-path: inset(0 0 0 0); filter: none; } }
 @keyframes acercar-std { from { transform: scale(1.32); } to { transform: scale(1.04); } }
 @keyframes letra-sube { from { transform: translateY(108%) rotate(6deg); } }
@@ -1126,7 +1137,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
     background: radial-gradient(closest-side, oklch(0.8 0.08 80 / 0.22), oklch(0.8 0.08 80 / 0.06) 45%, transparent 70%); animation: brillo 2.8s ease-out .1s both; }
   html.std-intro:not(.ya-abierta) .portada.std .letra > span { animation-delay: calc(.25s + var(--k) * 0.08s); animation-duration: 1.4s; }
   html.std-intro:not(.ya-abierta) .portada.std .std-the { animation-delay: .8s; animation-duration: 1.6s; }
-  html.std-intro:not(.ya-abierta) .portada.std .portada-foto img { animation-delay: 1.85s, 1.85s; animation-duration: 2s, 4.4s; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-foto img { animation-delay: 1.85s, 1.85s; animation-duration: 2.8s, 5s; }
   html.std-intro:not(.ya-abierta) .portada.std .portada-pie::before { animation-delay: 2.9s; }
   html.std-intro:not(.ya-abierta) .portada.std h1 { animation-delay: 3s; }
   html.std-intro:not(.ya-abierta) .portada.std .fecha-puntos { animation-delay: 3.15s; }

@@ -9,6 +9,11 @@
 //     duración.
 // Todo cambio pide confirmación. Los rótulos de los frenos, el tiempo restante
 // y las opciones salen del núcleo (`mantenimiento`, `bannerPortal`).
+//
+// Como el portal: sin `can_edit` sobre un módulo, su candado no se puede poner
+// (el interruptor se apaga y dice «Sin permiso para bloquear»), pero uno puesto
+// sí se puede terminar. El motivo y la duración sólo los cambia quien puso el
+// candado; los demás los ven en sólo lectura.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Modal, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
@@ -37,7 +42,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 const info = (key) => MODULE_INFO[key] || { label: key, desc: '', group: 'Otros' };
 
-function Fila({ titulo, detalle, extra, valor, onCambiar, ocupado, primero, onTocar }) {
+function Fila({ titulo, detalle, extra, valor, onCambiar, ocupado, primero, onTocar, deshabilitado = false, nota = null }) {
   return (
     <Pressable disabled={!onTocar} onPress={onTocar}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: primero ? 0 : 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador, opacity: pressed ? 0.7 : 1 })}>
@@ -45,8 +50,9 @@ function Fila({ titulo, detalle, extra, valor, onCambiar, ocupado, primero, onTo
         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{titulo}</Text>
         {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text> : null}
         {extra ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>{extra}</Text> : null}
+        {nota ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{nota}</Text> : null}
       </View>
-      {ocupado ? <Indicador /> : <Conmutador value={valor} onValueChange={onCambiar} />}
+      {ocupado ? <Indicador /> : <Conmutador value={valor} disabled={deshabilitado} onValueChange={onCambiar} />}
     </Pressable>
   );
 }
@@ -106,8 +112,9 @@ function Franja() {
   );
 }
 
-// Motivo y duración de un candado puesto.
-function EditarCandado({ k, lock, onCerrar, onGuardar }) {
+// Motivo y duración de un candado puesto. Sólo quien lo puso los cambia
+// (`esMio`); a los demás se les muestran en sólo lectura, como en el portal.
+function EditarCandado({ k, lock, esMio, onCerrar, onGuardar }) {
   const [motivo, setMotivo] = useState(lock?.reason ?? '');
   const [horas, setHoras] = useState(lock ? horasDelCandado(lock) : '4');
   if (!k) return null;
@@ -117,13 +124,22 @@ function EditarCandado({ k, lock, onCerrar, onGuardar }) {
         <EncabezadoDeHoja titulo={info(k).label} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
           {lock ? <Aviso texto={`En mantenimiento · ${tiempoRestante(lock.expires_at)}${lock.locked_by_name ? ` · lo puso ${lock.locked_by_name}` : ''}`} /> : null}
-          <Seccion titulo="Motivo" pie="Lo ven quienes intenten editar mientras dure.">
-            <Campo value={motivo} onChangeText={setMotivo} placeholder="Ej. Reconteo de inventario" />
-          </Seccion>
-          <Seccion titulo="Duración">
-            <Opciones opciones={HORAS_DE_CANDADO.map((h) => ({ id: h.value, label: h.label }))} valor={horas} onCambiar={setHoras} />
-          </Seccion>
-          <BotonGrande texto="Guardar" onPress={() => onGuardar(k, motivo.trim() || null, Number(horas))} />
+          {esMio ? (<>
+            <Seccion titulo="Motivo" pie="Lo ven quienes intenten editar mientras dure.">
+              <Campo value={motivo} onChangeText={setMotivo} placeholder="Ej. Reconteo de inventario" />
+            </Seccion>
+            <Seccion titulo="Duración">
+              <Opciones opciones={HORAS_DE_CANDADO.map((h) => ({ id: h.value, label: h.label }))} valor={horas} onCambiar={setHoras} />
+            </Seccion>
+            <BotonGrande texto="Guardar" onPress={() => onGuardar(k, motivo.trim() || null, Number(horas))} />
+          </>) : (<>
+            <Seccion titulo="Motivo" pie="Sólo quien puso el candado lo cambia.">
+              <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{lock?.reason || 'Sin motivo escrito'}</Text>
+            </Seccion>
+            <Seccion titulo="Duración">
+              <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{HORAS_DE_CANDADO.find((h) => String(h.value) === String(horas))?.label ?? `${horas} h`}</Text>
+            </Seccion>
+          </>)}
         </ScrollView>
       </ConAurora>
     </Modal>
@@ -131,7 +147,11 @@ function EditarCandado({ k, lock, onCerrar, onGuardar }) {
 }
 
 export default function Mantenimiento() {
-  const { moduleLocks, refreshModuleLocks } = useAuth();
+  const { moduleLocks, refreshModuleLocks, rolePerms, isModuleLocked } = useAuth();
+  // `isModuleLocked` es false cuando el candado es mío (igual que el portal).
+  // Recién puesto, la lista de candados puede no traerlo todavía: ese es mío.
+  const esMio = (key) => !!activos[key] && !isModuleLocked?.(key);
+  const puedo = (key) => !!rolePerms?.[key]?.can_edit;
   const [bloqueables, setBloqueables] = useState(null);
   const [traslado, setTraslado] = useState(null);
   const [ocupado, setOcupado] = useState(null);
@@ -173,15 +193,18 @@ export default function Mantenimiento() {
       setOcupado(null);
     });
   };
+  // Devuelve si quedó puesto: sin eso, la hoja del motivo no se abre.
   const poner = (key, motivo, horas, contexto) => (async () => {
     setOcupado(key); trabajando('Guardando…');
     const { error } = await lockModule(key, motivo, horas, contexto);
     if (error) fallo(info(key).label, mensajeAmigable(error)); else { listo(info(key).label, `En mantenimiento por ${horas === 1 ? '1 hora' : `${horas} horas`}.`); await cargar(); }
     setOcupado(null);
+    return !error;
   })();
   const alternarModulo = (key, ponerlo) => {
     const nombre = info(key).label;
     if (ponerlo) {
+      if (!puedo(key)) { fallo(nombre, 'Sin permiso para bloquear.'); return; }
       // Primero cuánto dura; el motivo se escribe después, en su hoja.
       Haptics.selectionAsync().catch(() => {});
       ActionSheetIOS.showActionSheetWithOptions({
@@ -189,8 +212,8 @@ export default function Mantenimiento() {
         options: [...HORAS_DE_CANDADO.map((h) => h.label), 'Cancelar'], cancelButtonIndex: HORAS_DE_CANDADO.length,
       }, async (i) => {
         if (i >= HORAS_DE_CANDADO.length) return;
-        await poner(key, null, Number(HORAS_DE_CANDADO[i].value), { via: 'app' });
-        setEditando(key);
+        const ok = await poner(key, null, Number(HORAS_DE_CANDADO[i].value), { via: 'app' });
+        if (ok) setEditando(key);
       });
       return;
     }
@@ -235,7 +258,8 @@ export default function Mantenimiento() {
                   const l = activos[k];
                   return <Fila key={k} primero={!i} titulo={info(k).label}
                     detalle={l ? [l.reason || 'Sin motivo escrito', l.locked_by_name ? `por ${l.locked_by_name}` : null].filter(Boolean).join(' · ') : info(k).desc}
-                    extra={l ? tiempoRestante(l.expires_at) : null} valor={!!l} ocupado={ocupado === k}
+                    extra={l ? `${tiempoRestante(l.expires_at)}${esMio(k) ? ' · Tuyo' : ''}` : null} valor={!!l} ocupado={ocupado === k}
+                    deshabilitado={!l && !puedo(k)} nota={!l && !puedo(k) ? 'Sin permiso para bloquear' : null}
                     onCambiar={(v) => alternarModulo(k, v)} onTocar={l ? () => setEditando(k) : undefined} />;
                 })}
               </Seccion>
@@ -245,7 +269,7 @@ export default function Mantenimiento() {
         )}
       </ScrollView>
       {editando ? (
-        <EditarCandado k={editando} lock={activos[editando]} onCerrar={() => setEditando(null)}
+        <EditarCandado k={editando} lock={activos[editando]} esMio={!activos[editando] || esMio(editando)} onCerrar={() => setEditando(null)}
           onGuardar={async (k, motivo, horas) => { setEditando(null); await poner(k, motivo, horas, { via: 'app', edit: 'motivo' }); }} />
       ) : null}
     </>

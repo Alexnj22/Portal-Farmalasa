@@ -12,16 +12,20 @@
 // un widget y la tarjeta que se acababa de tocar saltaba de sitio (2026-11-09,
 // «se mueve de un solo»). «Hoy» va siempre primero.
 //
+// Comercial, RRHH y Operación siguen el acomodo que el SU publicó en el portal
+// (`fetchDashboardCanon`), como en el escritorio; sin acomodo publicado, el
+// uso. General es de cada quien. Ver `ordenWebDeLaPestana` en `uso.js`.
+//
 // Los widgets que la persona apagó (en el portal o en «Personalizar el
 // Inicio», que se abre al final) no salen: es la misma preferencia
 // (`user_dashboard_prefs.widgets`).
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutAnimation, ScrollView, Text } from 'react-native';
 import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Refrescar from '../../../componentes/Refrescar';
 import { router, useFocusEffect } from 'expo-router';
 import { leer, guardar } from '@plataforma/almacen';
-import { fetchUserDashboardPrefs } from '@nucleo/data/dashboard';
+import { fetchDashboardCanon, fetchUserDashboardPrefs } from '@nucleo/data/dashboard';
 import { colorSistema } from '../../../componentes/Formulario';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -30,7 +34,7 @@ import Encabezado, { saludo } from '../../../componentes/inicio/Encabezado';
 import Segmentos from '../../../componentes/Segmentos';
 import FijoArriba from '../../../componentes/FijoArriba';
 import useDatosInicio from '../../../componentes/inicio/useDatosInicio';
-import { anotar, ordenar } from '../../../componentes/inicio/uso';
+import { anotar, ordenar, ordenarSegunWeb, ordenWebDeLaPestana } from '../../../componentes/inicio/uso';
 import { Hoy, SECCIONES, WIDGET_WEB } from '../../../componentes/inicio/Secciones';
 import { abrirRuta, abrirSolicitud } from '../../../pantallas';
 import { Recarga } from '../../../componentes/inicio/useDato';
@@ -44,7 +48,7 @@ const PESTANAS = [
 ];
 
 export default function Inicio() {
-  const { user, getScope } = useAuth();
+  const { user, getScope, isSU } = useAuth();
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
   const comunicados = useStaffStore((s) => s.announcements);
@@ -60,6 +64,28 @@ export default function Inicio() {
   const [apagados, setApagados] = useState(() => {
     try { return new Set(JSON.parse(leer(claveApagados) || '[]')); } catch { return new Set(); }
   });
+  // El acomodo de las pestañas temáticas: el publicado (`canon`) y, para quien
+  // puede acomodarlas (SU), el suyo del portal (`propio`). Arranca con lo
+  // último que se supo, para no reacomodar las tarjetas al llegar la base.
+  const claveAcomodo = `inicio.acomodo.${user?.id ?? 'anon'}`;
+  const [acomodo, setAcomodo] = useState(() => {
+    try { return JSON.parse(leer(claveAcomodo) || '{}'); } catch { return {}; }
+  });
+  const recordarAcomodo = useCallback((cambio) => setAcomodo((antes) => {
+    const nuevo = { ...antes, ...cambio };
+    if (JSON.stringify(nuevo) === JSON.stringify(antes)) return antes;
+    try { guardar(claveAcomodo, JSON.stringify(nuevo)); } catch { /* sin almacén: sólo no se recuerda */ }
+    return nuevo;
+  }), [claveAcomodo]);
+  // El publicado se lee una vez por apertura: el orden no se mueve a mitad de la sesión.
+  useEffect(() => {
+    let vivo = true;
+    Promise.resolve(fetchDashboardCanon()).then(({ data, error }) => {
+      if (!vivo || error) return;
+      recordarAcomodo({ canon: Object.fromEntries((data || []).map((f) => [f.tab_id, f.orden || []])) });
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, [recordarAcomodo]);
   useFocusEffect(useCallback(() => {
     let vivo = true;
     if (user?.id) {
@@ -68,10 +94,14 @@ export default function Inicio() {
         const ids = (Array.isArray(data?.widgets) ? data.widgets : []).filter((w) => w.enabled === false).map((w) => w.id);
         try { guardar(claveApagados, JSON.stringify(ids)); } catch { /* sin almacén: sólo no se recuerda */ }
         setApagados((antes) => (antes.size === ids.length && ids.every((id) => antes.has(id)) ? antes : new Set(ids)));
+        // Sólo cuenta como «suyo» lo que el portal marca como acomodado.
+        const propio = isSU ? Object.fromEntries(['comercial', 'rrhh', 'operacion']
+          .filter((t) => data?.arranged?.[t] && data?.layout?.[t]).map((t) => [t, data.layout[t]])) : {};
+        recordarAcomodo({ propio });
       }).catch(() => {});
     }
     return () => { vivo = false; };
-  }, [user?.id, claveApagados]));
+  }, [user?.id, claveApagados, isSU, recordarAcomodo]));
 
   const sala = salaDelUsuario(user);
   const nombreSala = (sucursales || []).find((b) => String(b.id) === String(sala))?.name;
@@ -91,7 +121,10 @@ export default function Inicio() {
     return s && !(WIDGET_WEB[s.id] && apagados.has(WIDGET_WEB[s.id])) && (!s.permiso || [].concat(s.permiso).some((x) => puede(x))) && (!s.visible || s.visible(datos));
   };
   const pestanas = PESTANAS.filter((p) => p.id === 'general' || SECCIONES.some((s) => s.pestanas.includes(p.id) && visibles(s.id)) || puede('dash_kpi'));
-  const secciones = orden
+  const ordenDeLaPestana = useMemo(
+    () => ordenarSegunWeb(orden, ordenWebDeLaPestana(pestana, acomodo), WIDGET_WEB),
+    [orden, pestana, acomodo]);
+  const secciones = ordenDeLaPestana
     .map((id) => SECCIONES.find((s) => s.id === id))
     .filter((s) => s && s.pestanas.includes(pestana) && visibles(s.id));
 

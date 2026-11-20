@@ -35,6 +35,9 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { cuandoLlego, etiquetaDeAccion, RESUELTA_LABEL, severidadDelTitulo, tituloSinEmoji } from '@nucleo/utils/notificacionTexto';
 import { puedeDecidirAviso, trasladoPorResolver } from '@nucleo/utils/accionesDeAviso';
 import { esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
+import { reimprimirImpresion } from '@nucleo/data/impresion';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { datosDeDecision, datosDeDiferencia, datosDeRespuesta, datosDeSolicitud, diferenciaMeToca } from '@nucleo/utils/avisosDeOperacion';
 import { datosDeDiferenciasPendientes } from '@nucleo/utils/faltanteDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -103,6 +106,7 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
   const marcarLeido = useStaffStore((s) => s.markNotificationRead);
   const [expandida, setExpandida] = useState(false);
   const [ocupado, setOcupado] = useState(false);
+  const [reimpreso, setReimpreso] = useState(false);
 
   const t = armarDeCierres(n) || armarDeOperacion(n, { expandida }) || armarDeSolicitudes(n, { expandida });
   const sinLeer = !n.read_at;
@@ -144,6 +148,24 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
   const abrirCorte = (accionDelCorte) => {
     if (!n.read_at) marcarLeido?.(n.id, { quitar: false });
     router.push({ pathname: '/corte/[id]', params: { id: String(corte.id), fecha: corte.fecha ?? n.metadata?.fecha ?? '', accion: accionDelCorte } });
+  };
+
+  // El ticket que no salió (`IMPRESION_VENCIDA`) se vuelve a mandar desde el
+  // aviso, como en la campana del portal. La base lo deja salir UNA vez por
+  // ticket; acá se recuerda que ya se mandó para decirlo en vez de ofrecerlo.
+  const reimprimible = !sinAcciones && n.type === 'IMPRESION_VENCIDA' && Number.isFinite(Number(n.metadata?.impresion_id));
+  const reimprimir = async () => {
+    if (ocupado || reimpreso) return;
+    if (!n.read_at) marcarLeido?.(n.id, { quitar: false });
+    setOcupado(true);
+    const { error } = await reimprimirImpresion(Number(n.metadata.impresion_id));
+    setOcupado(false);
+    if (error) {
+      useToastStore.getState().showToast('No se pudo reimprimir', mensajeAmigable(error, 'No se pudo volver a mandar el ticket.'), 'error');
+      return;
+    }
+    setReimpreso(true);
+    useToastStore.getState().showToast('Se mandó otra vez', 'Sale en la caja en unos segundos.', 'success');
   };
 
   return (
@@ -193,6 +215,9 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
             </View>
           ) : !sinAcciones && difMeToca ? (
             <Boton texto="Resolver la diferencia" principal onPress={onAbrir} />
+          ) : null}
+          {reimprimible ? (
+            <Boton texto={reimpreso ? 'Se mandó otra vez' : 'Reimprimir'} principal={!reimpreso} ocupado={ocupado || reimpreso} onPress={reimprimir} />
           ) : null}
           {pie}
         </View>

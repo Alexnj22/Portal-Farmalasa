@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
-import { personalNormativoDeSucursal } from '@nucleo/utils/expedienteDeSucursal';
+import { analisisDePersonal, MIN_PERSONAL_SIMULTANEO } from '@nucleo/utils/personalDeSucursal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import BotonIA from '../../components/common/BotonIA';
@@ -15,7 +14,6 @@ import {
 } from 'lucide-react';
 import AlertModal from '../../components/common/AlertModal';
 import Notice from '../../components/common/Notice';
-import { calculateMinimumStaff } from '@nucleo/utils/staffHelpers';
 
 import { fetchBranchHourlySalesAll } from '@nucleo/data/schedules';
 import { clickable } from '@nucleo/utils/clickable';
@@ -221,83 +219,23 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         fetchHistoricalSales();
     }, [fetchHistoricalSales]);
 
-    const branchType = liveBranch?.type || 'FARMACIA';
-    const isFarmacia = branchType === 'FARMACIA';
-    const isAdmin    = branchType === 'ADMINISTRATIVA';
-
-    // Leadership detection — role labels differ by branch type
-    // Núcleo (`jefaturaDeSucursal`): la misma detección que la ficha de la app.
-    const { jefe: jefeEmp, subjefe: subjefeEmp } = jefaturaDeSucursal(currentStaff, branchType);
-
-    const legalData = liveBranch?.settings?.legal || {};
-    // Núcleo (`personalNormativoDeSucursal`): la misma resolución que el punto
-    // de la pestaña en `BranchDetailView`. Lee `nursingRegents` y, si la sala
-    // todavía no se migró, `nurses`; y una persona dada de baja NO cuenta como
-    // asignada — su plaza sale como vacía.
-    const { regente: regentEmp, referente: referentEmp, enfermeria } = personalNormativoDeSucursal(legalData, employees);
-    const hasInjections = isFarmacia && legalData.injections === true;
-
-    const generalStaff = currentStaff.filter(e => {
-        const isJefe = e.id === jefeEmp?.id || e.id === subjefeEmp?.id;
-        const isRegent = e.id === regentEmp?.id || e.id === referentEmp?.id;
-        const isNurse = enfermeria.some(n => String(n.empleado.id) === String(e.id));
-        return !isJefe && !isRegent && !isNurse;
-    });
-
-    const complianceIssues = [];
-    let reqCount = 0;
-    let metCount = 0;
-
-    const checkItem = (isMet, text, isDoc = false) => {
-        reqCount++;
-        if (isMet) metCount++;
-        else complianceIssues.push({ isDoc, text });
-    };
-
-    const regentMissingDocs = [];
-    const referentMissingDocs = [];
-
-    if (isFarmacia) {
-        checkItem(!!jefeEmp, 'Jefe de Sucursal');
-        checkItem(!!subjefeEmp, 'Subjefe de Sucursal');
-        checkItem(!!regentEmp, 'Regente Farmacéutico');
-        if (regentEmp) {
-            if (!legalData.regentCredentialUrl) { regentMissingDocs.push('Credencial'); checkItem(false, 'Regente: Faltan Credenciales', true); } else { checkItem(true, 'Credencial Regente'); }
-            if (!legalData.regentInscriptionUrl) { regentMissingDocs.push('Inscripción'); checkItem(false, 'Regente: Falta Inscripción', true); } else { checkItem(true, 'Inscripción Regente'); }
-        } else {
-            checkItem(false, 'Regente: Faltan Credenciales', true);
-            checkItem(false, 'Regente: Falta Inscripción', true);
-        }
-        checkItem(!!referentEmp, 'Farmacovigilancia');
-        if (referentEmp) {
-            if (!legalData.farmacovigilanciaAuthUrl) { referentMissingDocs.push('Autorización'); checkItem(false, 'Farmaco.: Falta Autorización', true); } else { checkItem(true, 'Auth Farmacovigilancia'); }
-        } else {
-            checkItem(false, 'Farmaco.: Falta Autorización', true);
-        }
-        if (hasInjections) {
-            checkItem(enfermeria.length > 0, 'Regente Enfermería');
-            checkItem(!!legalData.nursingServicePermitUrl, 'Permiso CSSP Inyecciones', true);
-            const hasAnyCarne = enfermeria.some(({ fila }) => fila.carneUrl || fila.carneFile);
-            const hasAnyLicencia = enfermeria.some(({ fila }) => fila.licenciaUrl || fila.licenciaFile);
-            checkItem(hasAnyCarne, 'Enfermero: Falta Carné', true);
-            checkItem(hasAnyLicencia, 'Enfermero: Falta Licencia', true);
-        }
-    }
-
-    const complianceScore = reqCount > 0 ? Math.round((metCount / reqCount) * 100) : 100;
+    // Núcleo (`analisisDePersonal`): jefatura, regente/referente/enfermería
+    // (`personalNormativoDeSucursal`: una persona dada de baja NO cuenta como
+    // asignada), la «Salud legal» y el mínimo de personal. La ficha de la app
+    // lee lo mismo.
+    const analisis = analisisDePersonal({ sucursal: liveBranch, personal: currentStaff, empleados: employees, ventasPorHora: historicalSales });
+    const {
+        esFarmacia: isFarmacia, esAdministrativa: isAdmin, inyecta: hasInjections,
+        jefe: jefeEmp, subjefe: subjefeEmp, regente: regentEmp, referente: referentEmp, enfermeria,
+        general: generalStaff, faltas: complianceIssues, saludLegal: complianceScore,
+        docsFaltanRegente: regentMissingDocs, docsFaltanReferente: referentMissingDocs,
+        wfm: wfmData, cobertura: coverageStaffCount, hayDeficit: isStaffDeficit, avance: wfmProgress,
+    } = analisis;
     const scoreTheme = complianceScore === 100 ? 'bg-success' : complianceScore >= 70 ? 'bg-warning' : 'bg-danger';
     const textTheme = complianceScore === 100 ? 'text-success-text' : complianceScore >= 70 ? 'text-warning-text' : 'text-danger-text';
 
-    const MIN_CONCURRENT_STAFF = 2;
-    const branchCreationDate = liveBranch?.opening_date || liveBranch?.created_at || null;
-
-    // El cálculo base corre silenciosamente, siempre garantizando el mínimo operativo.
-    const wfmData = calculateMinimumStaff(liveBranch?.weekly_hours || liveBranch?.weeklyHours, historicalSales, MIN_CONCURRENT_STAFF, 80, 0.15, branchCreationDate);
+    const MIN_CONCURRENT_STAFF = MIN_PERSONAL_SIMULTANEO;
     const { minStaff, baseStaffHours, extraVolumeHours, wfmApplied, peakHour, shrinkageHours, totalLaborHoursNeeded, isNewBranch } = wfmData;
-
-    const coverageStaffCount = (jefeEmp ? 1 : 0) + (subjefeEmp ? 1 : 0) + generalStaff.length + (hasInjections ? enfermeria.length : 0);
-    const isStaffDeficit = coverageStaffCount < minStaff;
-    const wfmProgress = minStaff > 0 ? Math.min(100, Math.round((coverageStaffCount / minStaff) * 100)) : 0;
 
     const handleEditHROperative = (e) => {
         if (e) e.stopPropagation();
@@ -312,16 +250,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         setIsGeneratingAi(true);
 
         try {
-            const wfmSnapshot = {
-                personalActivo: currentStaff.length,
-                minimoRequerido: minStaff,
-                deficitPersonal: isStaffDeficit ? minStaff - coverageStaffCount : 0,
-                jefatura: jefeEmp ? 'Asignada' : 'Faltante',
-                regenteFarmacia: regentEmp ? 'Asignado' : 'Faltante',
-                referenteFarmaco: referentEmp ? 'Asignado' : 'Faltante',
-                enfermeria: hasInjections ? (enfermeria.length > 0 ? 'Asignada' : 'Faltante') : 'No aplica',
-                cumplimientoLegal: `${complianceScore}%`
-            };
+            const wfmSnapshot = analisis.fotoParaIA;
 
             const { data: aiResponse, error: aiError } = await analizarSucursal({
                 branchName: liveBranch?.name || 'la sucursal',

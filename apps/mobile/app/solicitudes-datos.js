@@ -21,6 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { alarmasDePlazo, crearSolicitud, DERECHOS, ESTADOS, fetchSolicitudes, filtrarSolicitudes, plazoDe } from '@nucleo/data/solicitudesDatos';
 import { papelDeSolicitudDeDatos } from '@nucleo/generated/formularioDatos';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -43,7 +44,9 @@ const ROTULO = Object.fromEntries(DERECHOS.map((d) => [d.clave, d.rotulo]));
 const fecha = (v) => (v ? fechaTexto(v, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
 // El formulario numerado sale por AirPrint o como PDF para mandarlo a otra impresora.
-function sacarFormulario(folio) {
+// `alReimprimir` deja la huella en la bitácora, como el portal
+// (`REIMPRIMIR_SOLICITUD_DATOS`): sólo cuando de verdad se mandó a imprimir.
+function sacarFormulario(folio, alReimprimir) {
   const html = papelDeSolicitudDeDatos(folio);
   ActionSheetIOS.showActionSheetWithOptions(
     { title: `Formulario ${folio}`, options: ['Imprimir', 'Compartir en PDF', 'Cancelar'], cancelButtonIndex: 2 },
@@ -51,6 +54,8 @@ function sacarFormulario(folio) {
       try {
         if (i === 0) await imprimirPapel(html);
         else if (i === 1) await compartirPdf({ html, nombre: `Solicitud ${folio}` });
+        else return;
+        alReimprimir?.();
       } catch (e) {
         fallo('No se pudo imprimir', mensajeAmigable(e));
       }
@@ -153,7 +158,8 @@ export default function SolicitudesDatos() {
                       {s.descripcion ? <Text style={{ color: colorSistema.texto, fontSize: 14, marginTop: 8 }}>{s.descripcion}</Text> : null}
                       <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
                         <View style={{ flex: 1 }}>
-                          <BotonGrande texto="Reimprimir" borde onPress={() => sacarFormulario(s.folio_txt)} />
+                          <BotonGrande texto="Reimprimir" borde onPress={() => sacarFormulario(s.folio_txt, () =>
+                            useStaffStore.getState().appendAuditLog?.('REIMPRIMIR_SOLICITUD_DATOS', String(s.id), { folio: s.folio_txt }))} />
                         </View>
                         <View style={{ flex: 1 }}>
                           <BotonGrande texto={s.estado === 'RESUELTA' ? 'Ver' : s.estado === 'IMPRESA' ? 'Registrar' : 'Abrir'} color={MARCA.azul}

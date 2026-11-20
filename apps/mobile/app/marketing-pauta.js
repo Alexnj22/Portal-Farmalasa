@@ -3,6 +3,9 @@
 // impresiones, interacciones, mensajes, clics). Un resultado vacío es «todavía
 // no se anotó», no cero: `guardarPauta` del núcleo lo guarda así. El
 // presupuesto no puede pasar el tope del mes (lo fija gerencia).
+//
+// Una pauta NUEVA guarda borrador con la clave del portal
+// (`marketing_pauta_<pieza>`) y lo ofrece al volver (Recuperar / Descartar).
 import { volver } from '../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
@@ -19,6 +22,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { guardarPieza as recordarPieza, piezaElegida } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
 import Tocable from '../componentes/Tocable';
+import BorradorOfrecido, { useBorradorOfrecido } from '../componentes/formulario/BorradorOfrecido';
 
 const CAMPOS = ['redes', 'objetivo', 'publico', 'presupuesto', 'fecha_inicio', 'fecha_fin', 'gastado', 'alcance', 'impresiones', 'interacciones', 'mensajes', 'clics', 'notas'];
 const RESULTADOS = [['gastado', 'Gastado ($)'], ['alcance', 'Alcance'], ['impresiones', 'Impresiones'], ['interacciones', 'Interacciones'], ['mensajes', 'Mensajes'], ['clics', 'Clics']];
@@ -48,6 +52,8 @@ export default function PautaDePieza() {
   const [guardando, setGuardando] = useState(false);
   const limite = Number(sel?.mes?.presupuesto_pauta) || 0;
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+  const nueva = !pieza?.pauta;
+  const borrador = useBorradorOfrecido(nueva && pieza?.id ? `marketing_pauta_${pieza.id}` : null, form, (b) => setForm((f) => ({ ...f, ...b })));
 
   useEffect(() => {
     fetchCatalogos().then((c) => setRedes((c.redes || []).filter((r) => r.activo))).catch(() => {});
@@ -68,7 +74,7 @@ export default function PautaDePieza() {
   };
   const guardar = async () => {
     setGuardando(true);
-    try { const pauta = await guardarPauta(pieza.id, form); recordarPieza({ ...pieza, pauta, pautar: true }, sel.mes, sel.firmas); listo('Pauta guardada', pieza.titulo); volver('/marketing'); }
+    try { const pauta = await guardarPauta(pieza.id, form); borrador.descartar(); recordarPieza({ ...pieza, pauta, pautar: true }, sel.mes, sel.firmas); listo('Pauta guardada', pieza.titulo); volver('/marketing'); }
     catch (e) { fallo('No se pudo guardar la pauta', mensajeAmigable(e, 'Revisa los montos e intenta de nuevo.')); }
     finally { setGuardando(false); }
   };
@@ -86,6 +92,7 @@ export default function PautaDePieza() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{pieza.titulo}</Text>
+          <BorradorOfrecido borrador={borrador} titulo="Pauta sin terminar" />
           <Seccion titulo="El plan" pie={limite ? `Presupuesto del mes ${formatMoney(limite)} · otras piezas ${formatMoney(otros)} · queda ${formatMoney(Math.max(libre, 0))}` : 'Un supervisor o administrador todavía no fija el presupuesto del mes.'}>
             <Tocable onPress={() => {
               const opciones = [...OBJETIVOS_PAUTA.map((o) => o.label), 'Cancelar'];

@@ -15,7 +15,7 @@ import { fetchPendingApprovalRequests } from '@nucleo/data/dashboard';
 import { fetchPresentesPorDia } from '@nucleo/data/employees';
 import { rotuloDeSolicitud } from '@nucleo/store/slices/requestsSlice';
 import { getTodayAttendanceStatus } from '@nucleo/utils/helpers';
-import { empleadosActivos, presentesEl, problemaDeSucursal } from '@nucleo/utils/inicio';
+import { empleadosActivos, presentesEl, problemasPorSala } from '@nucleo/utils/inicio';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -138,7 +138,10 @@ export function Turnos({ ctx }) {
 }
 
 // ── Ausencias de hoy ────────────────────────────────────────────────────────
-const TIPO_AUSENCIA = { VACATION: MARCA.ambar, DISABILITY: MARCA.rojo, PERMIT: MARCA.verde };
+// Sale de la ficha (`fetchAusenciasDeHoy`, la misma del portal): cada fila es
+// `{ employee_id, clave, hasta }`. `undefined` = leyendo; `null` = no se pudo.
+const TIPO_AUSENCIA = { VACATION: MARCA.ambar, DISABILITY: MARCA.rojo, PERMIT: MARCA.verde, SUSPENSION: MARCA.rojo };
+const rotuloDeAusencia = (clave) => (clave === 'SUSPENSION' ? 'Suspensión' : rotuloDeSolicitud(clave));
 
 export function Ausencias({ datos: d, ctx }) {
   const porId = new Map((ctx.empleados || []).map((e) => [String(e.id), e]));
@@ -150,16 +153,16 @@ export function Ausencias({ datos: d, ctx }) {
   });
   return (
     <Widget titulo="Ausencias de hoy" icono="UserX" color={MARCA.rojo} cuenta={lista.length} onAbrir={() => ctx.abrir('/solicitudes')}>
-      {lista.length ? lista.slice(0, 6).map((a, i) => {
-        const e = porId.get(String(a.employee_id));
-        const m = a.metadata || {};
-        const hasta = m.endDate || (m.permissionDates || []).slice(-1)[0];
-        return (
-          <Renglon key={a.id} primero={!i} titulo={shortEmployeeName(e)} izquierda={<Avatar empleado={e} tamano={28} />}
-            detalle={`${rotuloDeSolicitud(a.type)}${hasta ? ` · hasta ${fechaTexto(String(hasta).slice(0, 10))}` : ''}`}
-            derecha={<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TIPO_AUSENCIA[a.type] ?? MARCA.gris }} />} />
-        );
-      }) : <Vacio texto="Nadie falta" bien />}
+      {d.ausencias === undefined ? <Esqueleto lineas={2} />
+        : d.ausencias === null ? <Vacio texto="No se pudieron leer las ausencias" />
+        : lista.length ? lista.slice(0, 6).map((a, i) => {
+          const e = porId.get(String(a.employee_id));
+          return (
+            <Renglon key={a.employee_id} primero={!i} titulo={shortEmployeeName(e)} izquierda={<Avatar empleado={e} tamano={28} />}
+              detalle={`${rotuloDeAusencia(a.clave)}${a.hasta ? ` · hasta ${fechaTexto(String(a.hasta).slice(0, 10))}` : ''}`}
+              derecha={<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TIPO_AUSENCIA[a.clave] ?? MARCA.gris }} />} />
+          );
+        }) : <Vacio texto="Nadie falta" bien />}
     </Widget>
   );
 }
@@ -279,11 +282,14 @@ export function Cumpleanos({ ctx }) {
 }
 
 // ── Alertas de sucursales ───────────────────────────────────────────────────
-export function AlertasSucursales({ ctx }) {
+// Los problemas de la ficha más los operativos del día (cortes sin confirmar,
+// caja sin cerrar, sala sin ventas), con la misma cuenta del portal.
+export function AlertasSucursales({ datos: d, ctx }) {
   const alcance = ctx.getScope?.('dash_branches') === 'BRANCH';
+  const problemas = problemasPorSala(ctx.sucursales, d?.alertasOp);
   const lista = (ctx.sucursales || [])
     .filter((b) => !alcance || String(b.id) === String(ctx.sala))
-    .map((b) => ({ b, problema: problemaDeSucursal(b) }))
+    .map((b) => ({ b, problema: (problemas.get(String(b.id)) || []).join(' · ') }))
     .filter((x) => x.problema);
   const edita = ctx.puede('dash_branches', 'can_edit');
   return (

@@ -12,7 +12,7 @@ import { fetchMetaSala } from '@nucleo/data/metas';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { cumplenEl, empleadosActivos, presentesEl, problemaDeSucursal, sumarSalas } from '@nucleo/utils/inicio';
+import { cumplenEl, empleadosActivos, presentesEl, problemasPorSala, sumarSalas } from '@nucleo/utils/inicio';
 import { Titulo } from './Tarjeta';
 import Widget, { Chip, Cuenta, Esqueleto, Renglon, Vacio } from './Widget';
 import SelectorDeSala, { salasDeVenta } from './SelectorDeSala';
@@ -44,7 +44,8 @@ export function Hoy({ pestana, datos, ctx }) {
   const deVentas = (datos.ventas || []).filter((v) => !alcanceSala || v.branchId === String(sala));
   const ventasTotal = deVentas.reduce((s, v) => s + v.total, 0);
   const porHora = sumarSalas(deVentas).porHora ?? [];
-  const alertas = (sucursales || []).filter((b) => problemaDeSucursal(b)).length;
+  // Los de la ficha más los operativos del día, como el portal.
+  const alertas = problemasPorSala(sucursales, datos.alertasOp).size;
   const ausentes = (datos.ausencias || []).length;
   const facturado = (datos.facturas || []).reduce((s, f) => s + (Number(f.total) || 0), 0);
   // Lo que falta decidir sale de «Por decidir» (la misma lista de la pestaña
@@ -63,7 +64,7 @@ export function Hoy({ pestana, datos, ctx }) {
     ausentes: <Kpi key="au" icono="UserX" rotulo="Ausencias" valor={`${ausentes}`} apoyo={ausentes ? 'hoy' : 'Nadie falta'} color={MARCA.rojo} pide={ausentes > 0} />,
     facturado: <Kpi key="f" icono="BarChart2" rotulo="Facturado hoy" valor={dinero(facturado)} color={MARCA.ambar} onPress={puede('facturacion') ? () => abrir('/facturacion') : null} />,
     documentos: <Kpi key="d" icono="FileText" rotulo="Facturas" valor={`${(datos.facturas || []).length}`} apoyo="hoy" color={MARCA.violeta} />,
-    cotizaciones: <Kpi key="c" icono="Receipt" rotulo="Cotizaciones" valor={`${(datos.cotizaciones || []).length}`} apoyo="activas, 30 días" color={MARCA.azul} onPress={puede('cotizaciones') ? () => abrir('/cotizaciones') : null} />,
+    cotizaciones: <Kpi key="c" icono="Receipt" rotulo="Cotizaciones" valor={`${datos.cotizaciones?.n ?? 0}`} apoyo="activas" color={MARCA.azul} onPress={puede('cotizaciones') ? () => abrir('/cotizaciones') : null} />,
     traslados: <Kpi key="t" icono="ArrowLeftRight" rotulo="Traslados" valor={`${datos.traslados ?? 0}`} apoyo="por confirmar" color={MARCA.azul} pide={(datos.traslados ?? 0) > 0} onPress={() => abrir('/traslados')} />,
     cortes: <Kpi key="co" icono="Wallet" rotulo="Cortes" valor={`${datos.cortes ?? 0}`} apoyo="por confirmar" color={MARCA.verde} pide={(datos.cortes ?? 0) > 0} onPress={() => abrir('/cortes')} />,
   };

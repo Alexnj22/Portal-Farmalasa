@@ -6,6 +6,8 @@
 
 import { ordenDeSala } from '../constants/erp';
 import { afluencia, horarioDeSala } from './afluencia';
+import { fechaTexto } from './fecha';
+import { hora12 } from './hora';
 
 // Las salas siempre en el orden del negocio (La Popular, Salud 1…), nunca por
 // venta: así cada una está donde uno la busca todos los días.
@@ -38,6 +40,25 @@ export function problemaDeSucursal(b) {
         if (d <= 60) return `Contrato vence en ${d} días`;
     }
     return null;
+}
+
+/**
+ * Los problemas de cada sala para «Alertas de sucursales»: los de la ficha
+ * (`problemaDeSucursal`) más los OPERATIVOS del día (`fetchAlertasOperativas`:
+ * cortes sin confirmar, caja de un día anterior sin cerrar, sala sin ventas en
+ * 2 h). Devuelve `Map<branchId(string), string[]>`; una sala sin problemas no
+ * está. Lo usan el tablero del portal y el Inicio de la app.
+ */
+export function problemasPorSala(sucursales = [], alertasOp = []) {
+    const m = new Map();
+    const add = (id, t) => { const k = String(id); if (!m.has(k)) m.set(k, []); m.get(k).push(t); };
+    (sucursales || []).forEach((b) => { const i = problemaDeSucursal(b); if (i) add(b.id, i); });
+    (alertasOp || []).forEach((a) => {
+        if (a.cortes_sin_confirmar > 0) add(a.branch_id, a.cortes_sin_confirmar === 1 ? '1 corte sin confirmar' : `${a.cortes_sin_confirmar} cortes sin confirmar`);
+        if (a.caja_sin_cerrar_desde) add(a.branch_id, `Caja sin cerrar desde el ${fechaTexto(a.caja_sin_cerrar_desde, { day: 'numeric', month: 'short' })}`);
+        if (a.sin_ventas) add(a.branch_id, a.sin_ventas_desde ? `Sin ventas desde las ${hora12(a.sin_ventas_desde)}` : 'Sin ventas hoy');
+    });
+    return m;
 }
 
 /**

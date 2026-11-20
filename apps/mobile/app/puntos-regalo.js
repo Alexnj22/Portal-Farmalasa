@@ -4,7 +4,8 @@
 //   · entrada — sumar (o restar, con motivo) al inventario de una sucursal.
 //   · enviar — de una sucursal a otra; la de destino lo confirma al recibirlo.
 // Qué le falta para guardarse lo dice el núcleo (`faltaEnRegalo`), lo mismo
-// del portal. Lo escrito se guarda como borrador. Sólo administración (quien
+// del portal. Lo escrito se guarda como borrador (la misma llave del portal)
+// y al volver se OFRECE con Recuperar / Descartar, nunca se repone solo. Sólo administración (quien
 // edita los niveles); la base lo vuelve a exigir.
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
@@ -12,7 +13,6 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { ajustarPromocional, enviarPromocional, guardarPromocional } from '@nucleo/data/puntos';
 import { TITULO_DIALOGO_REGALO, faltaEnRegalo } from '@nucleo/utils/nivelesDePuntos';
-import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -23,6 +23,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { leer } from '../componentes/comercial/elegido';
 import { volver } from '../componentes/volver';
+import BorradorOfrecido, { useBorradorOfrecido } from '../componentes/formulario/BorradorOfrecido';
 
 const Rotulo = ({ texto }) => <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{texto}</Text>;
 
@@ -36,13 +37,14 @@ export default function PuntosRegalo() {
   const bodega = salas.find((o) => /bodega/i.test(o.label))?.id ?? '';
   // El borrador sobrevive al cierre de sesión por inactividad (la misma llave del portal).
   const llave = `puntos_regalo_${modo}_${promo?.id ?? 'nuevo'}`;
-  const [f, setF] = useState(() => loadDraft(llave) ?? ({
+  const [f, setF] = useState(() => ({
     nombre: promo?.nombre ?? '', descripcion: promo?.descripcion ?? '',
     costo: promo?.costo != null ? String(promo.costo) : '', activo: promo?.activo ?? true,
     sala: bodega, hacia: dato?.hacia ?? '', cantidad: dato?.cantidad ? String(dato.cantidad) : '', nota: '',
   }));
   const [guardando, setGuardando] = useState(false);
-  const poner = (k, v) => setF((x) => { const n = { ...x, [k]: v }; saveDraft(llave, n); return n; });
+  const borrador = useBorradorOfrecido(llave, f, (b) => setF((x) => ({ ...x, ...b })));
+  const poner = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const n = Number(f.cantidad);
   const falta = faltaEnRegalo(modo, f);
   const necesitaPromo = modo !== 'nuevo';
@@ -61,7 +63,7 @@ export default function PuntosRegalo() {
         await enviarPromocional(promo.id, Number(f.sala), Number(f.hacia), n);
         listo('Traslado anotado', 'La sucursal lo confirma al recibirlo.');
       }
-      clearDraft(llave);
+      borrador.descartar();
       volver('/puntos');
     } catch (e) { fallo('No se pudo guardar', mensajeAmigable(e)); }
     setGuardando(false);
@@ -75,6 +77,7 @@ export default function PuntosRegalo() {
           contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}>
           {necesitaPromo && !promo ? <Aviso tono="freno" texto="Vuelve a Puntos › Premios y elige el regalo otra vez." /> : (
             <>
+              <BorradorOfrecido borrador={borrador} titulo="Regalo sin terminar" />
               {promo && modo !== 'editar' ? <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{promo.nombre}</Text> : null}
               {modo === 'nuevo' || modo === 'editar' ? (
                 <Seccion titulo="El regalo" pie="El costo sirve para saber cuánto cuesta el programa en regalos.">

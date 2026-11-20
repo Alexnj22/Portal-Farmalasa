@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.9 — La app: inicio, avisos, sucursales, kioscos, laboratorios, mantenimiento y borradores igual que el portal
+
+- App, inicio: «Ausencias de hoy» lee los eventos de la ficha (salía siempre vacío), «Cotizaciones activas» cuenta todas (marcaba 0), «Alertas de sucursales» suma cortes sin confirmar, caja sin cerrar y sala sin ventas (`problemasPorSala` en `src/utils/inicio.js`, la usa también el portal), top productos marca los bajo su mínimo, franja «por vencer», y las pestañas siguen el acomodo publicado.
+- App: «Reimprimir» en el aviso de ticket que no salió; reimprimir una solicitud de datos queda en la bitácora; el CSV de auditoría se anota con el mismo módulo que el portal; ticket de vinculación de kioscos; ajustes de laboratorios para la app de clientes; pestaña Personal de la sucursal con salud legal, mínimo de personal y diagnóstico (`src/utils/personalDeSucursal.js`, la usa también el portal); resumen diario de cada sala; Mantenimiento con el mismo freno de permisos y candado ajeno; quitar Super Usuario pide confirmación; borradores ofrecidos en ofertas, marketing, premios, descuentos y promoción nueva.
+- Gemelo: notificaciones — la web ya lo hacía: src/components/common/useAccionesDeAviso.jsx
+- Gemelo: datos_personales — la web ya lo hacía: src/views/SolicitudesDatosView.jsx
+- Gemelo: auditview — la web ya lo hacía: src/views/AuditView.jsx
+- Gemelo: laboratorios — la web ya lo hacía: src/views/productos/TabLaboratorios.jsx
+- Gemelo: maintenance — la web ya lo hacía: src/views/MaintenanceView.jsx
+- Gemelo: permissions — la web ya lo hacía: src/views/PermissionsView.jsx
+- Gemelo: ofertas_clientes — la web ya lo hacía: src/views/ofertas-clientes/OfertaModal.jsx
+- Gemelo: marketing — la web ya lo hacía: PautaModal.jsx y PiezaModal.jsx
+- Gemelo: puntos — la web ya lo hacía: src/views/puntos/PremiosDelPrograma.jsx
+- Gemelo: promociones — la web ya lo hacía: DescuentoModal.jsx y PromocionModal.jsx
+
 ## v2.1583.8 — Encuestas de campo: el lugar se sugiere por cercanía o por lo que escribes
 
 - **El lugar de campo ya no se escribe dos veces distinto.** Debajo del campo «Lugar» salen los lugares que ya registró el equipo.

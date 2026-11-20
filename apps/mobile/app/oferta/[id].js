@@ -9,6 +9,10 @@
 //    texto, imagen, color.
 // Se guarda con `guardarOferta` del núcleo, el mismo del portal; la imagen va al
 // bucket privado con `subirImagen`, que ahora acepta lo que da el teléfono.
+//
+// Lo escrito se guarda como borrador con la clave del portal
+// (`oferta_cliente_<id|nueva>`) y se OFRECE al volver (Recuperar / Descartar),
+// nunca se repone solo. La imagen no entra: se vuelve a elegir.
 import { useMemo, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
@@ -28,6 +32,7 @@ import Fecha from '../../componentes/formulario/Fecha';
 import { colorDeAcento, ofertaElegida } from '../../componentes/ofertas/acentos';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import BorradorOfrecido, { useBorradorOfrecido } from '../../componentes/formulario/BorradorOfrecido';
 
 // El rótulo encima de un campo: con el campo lleno, el texto de ayuda ya no se
 // ve y no se sabe qué es cada caja.
@@ -53,6 +58,7 @@ export default function EditarOferta() {
   });
   const [foto, setFoto] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const borrador = useBorradorOfrecido(`oferta_cliente_${oferta.id ?? 'nueva'}`, f, (b) => setF((x) => ({ ...x, ...b })));
   const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
   const alternarSala = (sid) => setF((x) => ({ ...x, branch_ids: x.branch_ids.includes(sid) ? x.branch_ids.filter((b) => b !== sid) : [...x.branch_ids, sid] }));
   const productos = Array.isArray(oferta.productos) ? oferta.productos : [];
@@ -87,6 +93,7 @@ export default function EditarOferta() {
           productos, foto_at: oferta.foto_at ?? null, inicio: oferta.inicio, fin: oferta.fin, branch_ids: oferta.branch_ids ?? null,
         } : { inicio: f.inicio, fin: f.fin, branch_ids: f.branch_ids.length ? f.branch_ids : null }),
       });
+      borrador.descartar();
       listo('Oferta guardada', f.publicada ? 'Se ve en la app durante sus fechas.' : 'Queda sin publicar.');
       router.back();
     } catch (e) {
@@ -118,6 +125,7 @@ export default function EditarOferta() {
             </View>
           </Tocable>
 
+          <BorradorOfrecido borrador={borrador} titulo="Oferta sin terminar" />
           {deDescuento ? <Aviso texto="Las fechas, las sucursales y los precios siguen al descuento. Si lo corriges o lo borras, la app se actualiza sola." /> : null}
           {deDescuento && oferta.sin_receta > 0 ? <Aviso tono="cuidado" texto={`${oferta.sin_receta === 1 ? 'Un producto bajo receta no se muestra' : `${oferta.sin_receta} productos bajo receta no se muestran`} en la app. El descuento sigue valiendo en caja.`} /> : null}
           {deDescuento && !productos.length ? <Aviso tono="cuidado" texto="Todos los productos de este descuento van bajo receta: no hay nada que anunciar." /> : null}

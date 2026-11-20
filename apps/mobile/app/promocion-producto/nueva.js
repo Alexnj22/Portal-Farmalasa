@@ -28,7 +28,6 @@ import {
   problemasDelDescuentoDeLaPromocion, renglonDePromocionNuevo,
 } from '@nucleo/utils/promocionesUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -38,8 +37,11 @@ import { MARCA } from '../../componentes/inicio/marca';
 import AgregarProductos from '../../componentes/promociones/AgregarProductos';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import BorradorOfrecido, { useBorradorOfrecido } from '../../componentes/formulario/BorradorOfrecido';
 
 const BORRADOR = 'promocion_nueva';
+// Hay borrador cuando tiene nombre o algún producto (lo general siempre trae algo).
+const BORRADOR_VALE = (b) => !!(b?.nombre || b?.renglones?.length);
 const DESC_NUEVO = { activo: false, tipo: '%', monto: '', todas: true, branchId: '', finPropio: '' };
 
 function Rotulo({ texto }) {
@@ -84,30 +86,19 @@ export default function NuevaPromocionProducto() {
   const [creada, setCreada] = useState(null);
   const creadaRef = useRef(null);
   const promoCreada = creada?.id ?? null;
-  const repuesto = useRef(false);
 
   useEffect(() => { fetchProveedoresDelSistema().then(setProveedores).catch(() => setProveedores([])); }, []);
 
-  // El borrador: reponerlo una vez, preguntando; guardarlo mientras se escribe.
-  useEffect(() => {
-    if (repuesto.current) return;
-    repuesto.current = true;
-    const b = loadDraft(BORRADOR);
-    if (!b || !(b.nombre || b.renglones?.length)) return;
-    Alert.alert('Promoción sin terminar', `Tienes «${b.nombre || 'sin nombre'}» a medio armar.`, [
-      { text: 'Empezar de nuevo', style: 'destructive', onPress: () => clearDraft(BORRADOR) },
-      { text: 'Seguirla', onPress: () => {
-        setNombre(b.nombre || ''); setNota(b.nota || '');
-        setRenglones(Array.isArray(b.renglones) ? b.renglones : []);
-        if (b.desc) setDesc((d) => ({ ...d, ...b.desc }));
-        if (b.general) setGeneral((g) => ({ ...g, ...b.general }));
-      } },
-    ]);
-  }, []);
-  useEffect(() => {
-    if (creada || !(nombre || renglones.length)) return;
-    saveDraft(BORRADOR, { nombre, nota, renglones, desc, general });
-  }, [creada, nombre, nota, renglones, desc, general]);
+  // El borrador, con la clave del portal (`promocion_nueva`): se guarda
+  // mientras se escribe y al volver se OFRECE (Recuperar / Descartar), nunca
+  // se repone solo. Deja de guardarse en cuanto la promoción se creó.
+  const valorDelBorrador = useMemo(() => ({ nombre, nota, renglones, desc, general }), [nombre, nota, renglones, desc, general]);
+  const borrador = useBorradorOfrecido(BORRADOR, valorDelBorrador, (b) => {
+    setNombre(b.nombre || ''); setNota(b.nota || '');
+    setRenglones(Array.isArray(b.renglones) ? b.renglones : []);
+    if (b.desc) setDesc((d) => ({ ...d, ...b.desc }));
+    if (b.general) setGeneral((g) => ({ ...g, ...b.general }));
+  }, { activo: !creada, vale: BORRADOR_VALE });
 
   // Cambiar lo general lo aplica a los productos que nadie ajustó a mano.
   const cambiarGeneral = (campo, v) => {
@@ -190,7 +181,7 @@ export default function NuevaPromocionProducto() {
     if (res.creada && !creadaRef.current) {
       creadaRef.current = { id: res.id, activada: res.activada, errorActivar: res.errorActivar };
       setCreada(creadaRef.current);
-      clearDraft(BORRADOR);
+      borrador.descartar();
     }
     if (res.errorCrear) { fallo('No se pudo crear la promoción', aviso.fallos.join(' ')); return; }
     if (res.descuento === 'avisos') {
@@ -224,6 +215,7 @@ export default function NuevaPromocionProducto() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           {promoCreada ? <Aviso tono="cuidado" texto="La promoción ya quedó creada. Lo único pendiente es el descuento." /> : null}
+          <BorradorOfrecido borrador={borrador} titulo="Promoción sin terminar" />
           <Seccion titulo="La promoción">
             <Rotulo texto="Nombre" />
             <Campo multiline={false} value={nombre} onChangeText={setNombre} placeholder="El nombre que va a ver la sucursal" editable={!promoCreada} />

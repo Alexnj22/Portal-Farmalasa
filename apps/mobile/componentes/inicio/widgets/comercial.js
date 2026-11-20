@@ -3,7 +3,7 @@
 // productos que más venden, quién está vendiendo y los cortes de caja.
 import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { fetchRecentCotizaciones, fetchTodayInvoicesSummary } from '@nucleo/data/dashboard';
+import { fetchBajoMinimo, fetchTodayInvoicesSummary } from '@nucleo/data/dashboard';
 import { fetchTopProductosDelMes } from '@nucleo/data/ventas';
 import { fetchMesEnCurso } from '@nucleo/data/metas';
 import { fetchCortesResumen } from '@nucleo/data/cortes';
@@ -13,7 +13,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { conTramoPorSalaYDia, resumenDeCortes } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { ORDENES_RANKING, SUFIJO_RANKING, rankingDeVendedores } from '@nucleo/utils/metasUtils';
-import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { diasDesde, diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import Widget, { Esqueleto, Renglon, Vacio } from '../Widget';
 import { useDato, datos } from '../useDato';
 import { colorSistema } from '../../Formulario';
@@ -62,25 +62,26 @@ export function Facturacion({ ctx }) {
 }
 
 // ── Cotizaciones activas ────────────────────────────────────────────────────
-export function Cotizaciones({ ctx }) {
-  const hoy = hoySV();
-  const { dato, cargando } = useDato(`cotizaciones:${hoy}`, async () => {
-    const filas = datos(await fetchRecentCotizaciones(sumarDias(hoy, -30))) || [];
-    return filas.filter((c) => c.status === 'ACTIVA');
-  });
-  const lista = dato || [];
-  const total = lista.reduce((s, c) => s + (Number(c.total) || 0), 0);
+// Las ACTIVAS sin ventana de fechas (`fetchCotizacionesActivas`, leídas en
+// `useDatosInicio`), de la más vieja a la más nueva: la que más tiempo lleva
+// abierta es la que pide seguimiento. `undefined` = leyendo; `null` = falló.
+export function Cotizaciones({ datos: d, ctx }) {
+  const c = d?.cotizaciones;
+  const lista = c?.lista || [];
+  const total = lista.reduce((s, x) => s + (Number(x.total) || 0), 0);
+  const vieja = diasDesde(lista[0]?.fecha);
   return (
-    <Widget titulo="Cotizaciones activas" icono="Receipt" color={MARCA.azul} cuenta={lista.length}
+    <Widget titulo="Cotizaciones activas" icono="Receipt" color={MARCA.azul} cuenta={c?.n ?? 0}
       onAbrir={ctx.puede('cotizaciones') ? () => ctx.abrir('/cotizaciones') : null}>
-      {cargando && !dato ? <Esqueleto lineas={3} /> : lista.length ? (
+      {c === undefined ? <Esqueleto lineas={3} /> : c === null ? <Vacio texto="No se pudieron leer las cotizaciones" /> : c.n ? (
         <View>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginBottom: 4 }}>
-            <Text style={{ color: MARCA.verde, fontWeight: '800', fontSize: 17 }}>{dinero0(total)}</Text>  en los últimos 30 días
+            <Text style={{ color: MARCA.verde, fontWeight: '800', fontSize: 17 }}>{dinero0(total)}</Text>
+            {vieja > 0 ? <Text style={{ color: vieja >= 15 ? MARCA.ambar : colorSistema.texto2 }}>{`  · la más vieja, hace ${vieja} día${vieja === 1 ? '' : 's'}`}</Text> : null}
           </Text>
-          {lista.slice(0, 4).map((c, i) => (
-            <Renglon key={c.id} primero={!i} titulo={c.customer_name || 'Cliente'} detalle={`N.º ${c.numero} · ${fechaTexto(String(c.fecha).slice(0, 10))}`}
-              derecha={formatMoney(c.total)} />
+          {lista.slice(0, 4).map((x, i) => (
+            <Renglon key={x.id} primero={!i} titulo={x.customer_name || 'Cliente'} detalle={`N.º ${x.numero} · ${fechaTexto(String(x.fecha).slice(0, 10))}`}
+              derecha={formatMoney(x.total)} />
           ))}
         </View>
       ) : <Vacio texto="Ninguna activa" />}
@@ -89,28 +90,56 @@ export function Cotizaciones({ ctx }) {
 }
 
 // ── Lo que más se vende este mes ────────────────────────────────────────────
+// Con la marca de los que están bajo su mínimo (`fetchBajoMinimo`, como el
+// portal): en una sala, «mín. existencia/mínimo»; en la red, en cuántas salas.
+// Si esa lectura falla, el top se ve igual, sin marcas.
 export function TopProductos({ ctx }) {
   const hoy = hoySV();
-  const { dato, cargando } = useDato(`top:${hoy}`, async () =>
-    datos(await fetchTopProductosDelMes({ p_fini: `${hoy.slice(0, 7)}-01`, p_ffin: hoy, p_limite: 10 })) || []);
-  const lista = (dato || []).slice(0, 6);
+  const sala = ctx.getScope?.('dash_top_productos') === 'ALL' ? null : (Number(ctx.sala) || null);
+  const { dato, cargando } = useDato(`top:${hoy}:${sala ?? 'red'}`, async () => {
+    const top = datos(await fetchTopProductosDelMes({ p_fini: `${hoy.slice(0, 7)}-01`, p_ffin: hoy, p_limite: 10 })) || [];
+    const ids = top.map((p) => p.erp_product_id).filter((x) => x != null);
+    const bajo = ids.length
+      ? await Promise.resolve(fetchBajoMinimo(ids, sala)).then(({ data, error }) => {
+        if (error) { console.warn('inicio', 'bajo mínimo', error.message); return {}; }
+        return Object.fromEntries((data || []).map((f) => [f.erp_product_id, f]));
+      }).catch(() => ({}))
+      : {};
+    return { top, bajo };
+  });
+  const lista = (dato?.top || []).slice(0, 6);
+  const bajo = dato?.bajo || {};
+  const bajos = (dato?.top || []).filter((p) => bajo[p.erp_product_id]).length;
   const max = Number(lista[0]?.neto) || 1;
   return (
     <Widget titulo="Lo que más se vende" icono="TrendingUp" color={MARCA.violeta} onAbrir={ctx.puede('ventas') ? () => ctx.abrir('/ventas') : null}>
       {cargando && !dato ? <Esqueleto lineas={4} /> : lista.length ? (
         <View style={{ gap: 9 }}>
-          {lista.map((p, i) => (
-            <View key={`${p.descripcion}-${i}`} style={{ gap: 4 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Text style={{ width: 16, color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{i + 1}</Text>
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>{p.descripcion}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{dinero0(p.neto)}</Text>
+          {bajos ? (
+            <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '700' }}>{`${bajos} del top bajo su mínimo`}</Text>
+          ) : null}
+          {lista.map((p, i) => {
+            const b = bajo[p.erp_product_id];
+            return (
+              <View key={`${p.erp_product_id ?? p.descripcion}-${i}`} style={{ gap: 4 }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={{ width: 16, color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{i + 1}</Text>
+                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>{p.descripcion}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] }}>{dinero0(p.neto)}</Text>
+                </View>
+                <View style={{ marginLeft: 24, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.18)' }}>
+                    <View style={{ width: `${Math.max(4, (Number(p.neto) / max) * 100)}%`, height: '100%', borderRadius: 3, backgroundColor: MARCA.violeta }} />
+                  </View>
+                  {b ? (
+                    <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                      {sala ? `mín. ${b.existencia}/${b.minimo}` : `bajo mín. (${b.salas_bajo})`}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
-              <View style={{ marginLeft: 24, height: 5, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.18)' }}>
-                <View style={{ width: `${Math.max(4, (Number(p.neto) / max) * 100)}%`, height: '100%', borderRadius: 3, backgroundColor: MARCA.violeta }} />
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       ) : <Vacio texto="Todavía sin ventas este mes" />}
     </Widget>

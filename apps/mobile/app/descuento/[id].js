@@ -8,7 +8,9 @@
 // que más pierde (`ordenarPorPerdida`). El solape con otro descuento y el
 // alcance de sala los decide el servidor: si avisa, se ofrece «Guardar de todos
 // modos». Forma, validación y lo que se manda salen del núcleo, los mismos del
-// portal. Guarda borrador con el id en la clave.
+// portal. Guarda borrador con el id en la clave (la misma del portal,
+// `descuento_<id>`) y lo OFRECE al volver (Recuperar / Descartar): reponerlo
+// solo cambiaría un precio sin que nadie lo mire.
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
@@ -23,7 +25,6 @@ import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -34,6 +35,7 @@ import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { leer } from '../../componentes/comercial/elegido';
 import { volver } from '../../componentes/volver';
 import Tocable from '../../componentes/Tocable';
+import BorradorOfrecido, { useBorradorOfrecido } from '../../componentes/formulario/BorradorOfrecido';
 
 export default function CorregirDescuento() {
   const { id } = useLocalSearchParams();
@@ -53,11 +55,13 @@ export default function CorregirDescuento() {
   useEffect(() => {
     let vivo = true;
     fetchDescuento(id)
-      .then((d) => { if (vivo) setF({ ...formaDeDescuento(d, hoySV()), ...(loadDraft(clave) || {}) }); })
+      .then((d) => { if (vivo) setF(formaDeDescuento(d, hoySV())); })
       .catch((e) => { if (vivo) setError(mensajeAmigable(e, 'No se pudo cargar el descuento.')); });
     return () => { vivo = false; };
-  }, [id, clave]);
-  useEffect(() => { if (f) saveDraft(clave, f); }, [clave, f]);
+  }, [id]);
+  // Se guarda recién cuando el descuento cargó: si no, lo leído de la base
+  // pisaría el borrador antes de ofrecerlo.
+  const borrador = useBorradorOfrecido(clave, f, (b) => setF((x) => ({ ...x, ...b })), { activo: !!f });
 
   const ids = useMemo(() => (f?.productos || []).map((p) => p.id).join(','), [f]);
   useEffect(() => {
@@ -86,7 +90,7 @@ export default function CorregirDescuento() {
     try {
       const r = await guardarDescuento(payloadDeDescuento(f, { id, salaPorDefecto: salas[0]?.id ?? null, forzar }));
       if (r?.avisos) { setAvisos(r.avisos); fallo('Revisa antes de guardar', r.avisos.map((a) => a.texto).join('\n')); setGuardando(false); return; }
-      clearDraft(clave);
+      borrador.descartar();
       listo('Descuento guardado', 'Rige en la caja desde ahora.');
       volver('/promociones');
     } catch (e) { fallo('No se pudo guardar el descuento', mensajeAmigable(e)); }
@@ -106,6 +110,7 @@ export default function CorregirDescuento() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           {error ? <Aviso tono="freno" texto={error} /> : !f ? <Cargando /> : (
             <>
+              <BorradorOfrecido borrador={borrador} titulo="Descuento sin terminar" />
               <Seccion titulo="Nombre del descuento">
                 <Campo multiline={false} placeholder="Cómo se va a reconocer en la lista" value={f.descripcion} onChangeText={set('descripcion')} />
               </Seccion>

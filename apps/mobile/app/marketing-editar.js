@@ -34,6 +34,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { guardarPieza as recordarPieza, piezaElegida } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
 import Tocable from '../componentes/Tocable';
+import BorradorOfrecido, { useBorradorOfrecido } from '../componentes/formulario/BorradorOfrecido';
 
 function Rotulo({ texto }) {
   return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginBottom: -4 }}>{texto}</Text>;
@@ -86,6 +87,10 @@ export default function EditarPiezaDeMarketing() {
   const [nuevos, setNuevos] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+  // Una pieza NUEVA guarda borrador con la clave del portal
+  // (`marketing_pieza_<mes>`) y lo ofrece al volver; los diseños no entran.
+  const borrador = useBorradorOfrecido(!pieza && mesFila?.id ? `marketing_pieza_${mesFila.id}` : null, form,
+    (b) => setForm((f) => ({ ...f, ...b })));
 
   useEffect(() => {
     fetchCatalogos().then((c) => {
@@ -142,6 +147,7 @@ export default function EditarPiezaDeMarketing() {
       }
       // El detalle que la abrió lee la pieza recordada: que vea lo guardado.
       if (pieza) recordarPieza({ ...pieza, ...fila, pauta: form.pautar ? { ...(pieza.pauta || {}), presupuesto: Number(form.monto) || 0 } : null }, mesFila, firmas);
+      borrador.descartar();
       listo(pieza ? 'Pieza guardada' : 'Pieza agregada', form.titulo.trim());
       volver('/marketing');
     } catch (e) {
@@ -158,6 +164,7 @@ export default function EditarPiezaDeMarketing() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Mes de ${etiquetaMes(mesTexto)}`}</Text>
+          <BorradorOfrecido borrador={borrador} titulo="Pieza sin terminar" />
           <Seccion titulo="La pieza">
             <Rotulo texto="Título" />
             <Campo multiline={false} value={form.titulo} onChangeText={set('titulo')} placeholder="De qué trata" />

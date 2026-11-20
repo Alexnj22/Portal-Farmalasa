@@ -6,6 +6,7 @@ import { Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchSalasQueCubro } from '@nucleo/data/traslados';
 import { fetchFaltantesConStockEnOtraSala } from '@nucleo/data/inventory';
+import { contarPorVencer } from '@nucleo/data/inventoryMovements';
 import { BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { fetchBitacoraDia, fetchLibro, pendientesDelDia } from '@nucleo/data/bitacoras';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
@@ -30,13 +31,53 @@ export const PERMISOS_DE_AJUSTE = AJUSTES.map((a) => a.permiso);
 
 export function PedirAjuste({ ctx }) {
   const mias = AJUSTES.filter((a) => ctx.puede(a.permiso));
+  // La sala del ajuste de inventario, como la baldosa del portal: la propia;
+  // con alcance «todas» y sin sala, La Popular.
+  const erpAjuste = BRANCH_A_ERP[ctx?.sala] ?? (ctx.getScope?.('dash_inv_movement') === 'ALL' ? 5 : null);
   return (
     <Widget titulo="Pedir un ajuste" icono="ClipboardList" color={MARCA.ambar} onAbrir={() => router.push('/nueva-solicitud')} accion="Todas">
-      {mias.map((a, i) => (
+      {mias.map((a, i) => (a.permiso === 'dash_inv_movement' && erpAjuste ? (
+        <PorVencer key={a.ruta} ajuste={a} erp={erpAjuste} primero={!i} />
+      ) : (
         <Renglon key={a.ruta} primero={!i} titulo={a.titulo} detalle={a.detalle}
           izquierda={<Chip icono={a.icono} color={a.color} tamano={30} />} onPress={() => router.push(a.ruta)} />
-      ))}
+      )))}
     </Widget>
+  );
+}
+
+// El ajuste de inventario con lo que vence (`contarPorVencer`, el de la
+// baldosa del portal): vencidas, en 7 y en 30 días. Lo que vence pronto
+// todavía se puede trasladar o rebajar. La franja reparte los tres tramos
+// sobre su total: compara urgencias entre sí.
+function PorVencer({ ajuste: a, erp, primero }) {
+  const { dato } = useDato(`por-vencer:${erp}`, async () => {
+    const r = await contarPorVencer({ erpSucursalId: erp });
+    if (r.error) throw r.error;
+    return r;
+  });
+  const total = dato ? dato.vencidas + dato.en7 + dato.en30 : 0;
+  const detalle = dato
+    ? [dato.vencidas ? `${dato.vencidas} vencido${dato.vencidas === 1 ? '' : 's'}` : 'Sin vencidos',
+      dato.en7 ? `${dato.en7} en 7 d` : null, dato.en30 ? `${dato.en30} en 30 d` : null].filter(Boolean).join(' · ')
+    : a.detalle;
+  const tramos = dato && total ? [
+    { frac: dato.vencidas / total, color: MARCA.rojo },
+    { frac: dato.en7 / total, color: MARCA.ambar },
+    { frac: dato.en30 / total, color: MARCA.amarillo },
+  ].filter((t) => t.frac > 0) : [];
+  return (
+    <View>
+      <Renglon primero={primero} titulo={a.titulo} detalle={detalle}
+        izquierda={<Chip icono={a.icono} color={a.color} tamano={30} />}
+        derecha={dato?.vencidas ? <Cuenta n={dato.vencidas} color={MARCA.rojo} /> : undefined}
+        onPress={() => router.push(a.ruta)} />
+      {tramos.length ? (
+        <View style={{ flexDirection: 'row', height: 5, borderRadius: 3, overflow: 'hidden', gap: 2, marginLeft: 42, marginBottom: 6 }}>
+          {tramos.map((t, i) => <View key={i} style={{ flex: t.frac, backgroundColor: t.color }} />)}
+        </View>
+      ) : null}
+    </View>
   );
 }
 

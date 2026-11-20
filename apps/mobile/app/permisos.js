@@ -142,11 +142,17 @@ export default function Permisos() {
       setGuardando(null);
       if (e) { fallo('No se pudo cambiar', mensajeAmigable(e)); cargar(); } else listo(valor ? 'Ahora es Super Usuario' : 'Ya no es Super Usuario', cargo.name);
     };
+    // Los dos sentidos piden confirmación, como el portal: encenderlo da todo;
+    // apagarlo le quita el acceso total a todo el que tenga el cargo.
     if (valor) {
       Alert.alert('¿Hacerlo Super Usuario?', `Todo el que tenga el cargo «${cargo.name}» entrará a todos los módulos, sin importar lo que diga cada uno.`, [
         { text: 'Cancelar', style: 'cancel' }, { text: 'Sí, dar acceso total', style: 'destructive', onPress: hacer },
       ]);
-    } else hacer();
+    } else {
+      Alert.alert('¿Quitar el acceso total?', `El cargo «${cargo.name}» vuelve a regirse por los permisos de cada módulo.`, [
+        { text: 'Cancelar', style: 'cancel' }, { text: 'Sí, quitarlo', onPress: hacer },
+      ]);
+    }
   };
   const cambiarInactividad = async (v) => {
     const n = Number(v);

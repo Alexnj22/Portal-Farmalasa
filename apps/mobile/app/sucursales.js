@@ -11,6 +11,10 @@
 // Como el portal: los kioscos activos «N / 3» de cada una, la dirección con
 // municipio y departamento, y en el menú «Alquiladas / Propias». Inactiva =
 // sin nadie asignado Y sin kioscos (no sólo sin gente).
+//
+// Y como la tarjeta del portal, la línea de Saly: lo más urgente del resumen
+// de ayer de cada sala (`fetchResumenDeSalas`, `LineaDeSaly`). Si no se puede
+// leer, la tarjeta sale igual sin la línea: es un extra.
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
@@ -19,6 +23,7 @@ import { kioscosActivos } from '@nucleo/utils/kioscos';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
+import { fetchResumenDeSalas } from '@nucleo/data/resumenSala';
 import { abiertaAhora, ahoraEnSV, alertasDeSucursal, horarioDeHoy, ORDEN_DE_TIPOS, TIPOS_DE_SUCURSAL } from '@nucleo/utils/sucursales';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -30,6 +35,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { Vacio } from '../componentes/formulario/Piezas';
 import { MAYUSCULAS } from '../tema/mayusculas';
+import { LineaDeSaly } from '../componentes/sucursal/ResumenDeSala';
 
 export default function Sucursales() {
   const sucursales = useStaffStore((s) => s.branches);
@@ -45,6 +51,14 @@ export default function Sucursales() {
       .then((pares) => { if (vivo) setKioscos(Object.fromEntries(pares)); });
     return () => { vivo = false; };
   }, [sucursales]);
+  const [resumenes, setResumenes] = useState(() => new Map());
+  useEffect(() => {
+    let vivo = true;
+    fetchResumenDeSalas().then(({ resumenes: lista, error }) => {
+      if (vivo && !error) setResumenes(new Map((lista || []).map((r) => [String(r.branch_id), r])));
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
   const { dia, hora } = ahoraEnSV();
   const ahora = Date.now();
 
@@ -105,6 +119,7 @@ export default function Sucursales() {
                       {[tipo === 'FARMACIA' ? `Hoy ${horarioDeHoy(b, dia)}` : null, `${gente.length} persona${gente.length === 1 ? '' : 's'}`, kioscos[b.id] != null ? `${kioscos[b.id]}/3 marcadores` : null].filter(Boolean).join(' · ')}
                     </Text>
                     {alertas.hasAlerts ? <Pildora texto={alertas.message} color={alertas.critica ? MARCA.rojo : MARCA.ambar} /> : null}
+                    <LineaDeSaly resumen={resumenes.get(String(b.id))} />
                   </View>
                 </Vidrio>
               </Pressable>

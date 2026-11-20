@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas, contraSemanaPasada } from '@nucleo/utils/inicio';
+import { nivelDeVolumen, presentesEl, problemaDeSucursal, problemasPorSala as problemasDeLasSalas, promediosDeVentas, contraSemanaPasada } from '@nucleo/utils/inicio';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
@@ -2355,17 +2355,7 @@ const DashboardView = ({ openModal }) => {
   const hayMarcaciones  = useMemo(()=>employees.some(e=>(e.attendance||[]).length>0),[employees]);
   // Problemas de cada sala: los de la ficha (`problemaDeSucursal`) más los
   // OPERATIVOS del día (`inicio_alertas_operativas`). Una sala, una tarjeta.
-  const problemasPorSala = useMemo(() => {
-    const m = new Map();
-    const add = (id, t) => { const k = String(id); if (!m.has(k)) m.set(k, []); m.get(k).push(t); };
-    branches.forEach(b => { const i = getBranchIssue(b); if (i) add(b.id, i); });
-    alertasOp.forEach(a => {
-      if (a.cortes_sin_confirmar > 0) add(a.branch_id, a.cortes_sin_confirmar === 1 ? '1 corte sin confirmar' : `${a.cortes_sin_confirmar} cortes sin confirmar`);
-      if (a.caja_sin_cerrar_desde) add(a.branch_id, `Caja sin cerrar desde el ${fechaTexto(a.caja_sin_cerrar_desde, { day: 'numeric', month: 'short' })}`);
-      if (a.sin_ventas) add(a.branch_id, a.sin_ventas_desde ? `Sin ventas desde las ${hora12(a.sin_ventas_desde)}` : 'Sin ventas hoy');
-    });
-    return m;
-  }, [branches, alertasOp]);
+  const problemasPorSala = useMemo(() => problemasDeLasSalas(branches, alertasOp), [branches, alertasOp]);
   const branchAlerts    = useMemo(()=>branches.filter(b=>problemasPorSala.has(String(b.id))),[branches, problemasPorSala]);
 
   const trendScopeIsBranch = getScope('dash_trend') !== 'ALL';

@@ -134,7 +134,7 @@ export default function AuditoriaDelSistema() {
         todas.push(...(data || []));
         if ((data || []).length < 1000) break;
       }
-      await compartirCsv({ headers: COLUMNAS_CSV_BITACORA, rows: filasCsvDeBitacora(todas, hora12ConSegundos), nombre: `auditoria ${hoySV()}`, modulo: 'auditoria' });
+      await compartirCsv({ headers: COLUMNAS_CSV_BITACORA, rows: filasCsvDeBitacora(todas, hora12ConSegundos), nombre: `auditoria ${hoySV()}`, modulo: 'auditview' });
     } catch (e) { fallo('No se pudo exportar', e?.message || ''); }
     finally { setExportando(false); }
   };

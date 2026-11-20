@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { contraSemanaPasada, conTodasLasSalas, nivelDeVolumen, presentesEl, problemaDeSucursal, saludoDeLaHora, promediosDeVentas, ventasPorSala } from '@nucleo/utils/inicio';
+import { contraSemanaPasada, conTodasLasSalas, nivelDeVolumen, presentesEl, problemaDeSucursal, problemasPorSala, saludoDeLaHora, promediosDeVentas, ventasPorSala } from '@nucleo/utils/inicio';
 
 describe('inicio', () => {
+    it('junta los problemas de la ficha y los operativos por sala', () => {
+        const salas = [{ id: 4, address: 'x', phone: '1' }, { id: 5, phone: '1' }, { id: 6, address: 'y', cell: '2' }];
+        const m = problemasPorSala(salas, [
+            { branch_id: 4, cortes_sin_confirmar: 2, caja_sin_cerrar_desde: null, sin_ventas: false },
+            { branch_id: 5, cortes_sin_confirmar: 1, sin_ventas: true, sin_ventas_desde: null },
+            { branch_id: 6, cortes_sin_confirmar: 0, sin_ventas: false },
+        ]);
+        expect(m.get('4')).toEqual(['2 cortes sin confirmar']);
+        expect(m.get('5')).toEqual(['Sin dirección registrada', '1 corte sin confirmar', 'Sin ventas hoy']);
+        expect(m.has('6')).toBe(false);
+        expect(problemasPorSala(salas, null).size).toBe(1);
+    });
+
     it('cuenta presentes una vez por persona y por sala', () => {
         const emps = [
             { id: 1, branchId: 4, attendance: [{ timestamp: '2026-09-30T08:00:00' }, { timestamp: '2026-09-30T12:00:00' }] },

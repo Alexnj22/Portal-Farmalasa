@@ -136,7 +136,8 @@
       "app": [
         "apps/mobile/app/sucursal/**",
         "apps/mobile/app/sucursales.js",
-        "apps/mobile/componentes/sucursal/AccionesDelDocumento.js"
+        "apps/mobile/componentes/sucursal/AccionesDelDocumento.js",
+        "apps/mobile/componentes/sucursal/ResumenDeSala.js"
       ]
     },
     "captura_foto": {

@@ -1,7 +1,14 @@
-// La ficha de una sucursal, NATIVA — `BranchDetailView` en cuatro pestañas:
-//   · Resumen   — alertas, dirección completa (Mapas · compartir), teléfonos
+// La ficha de una sucursal, NATIVA — `BranchDetailView` en cinco pestañas:
+//   · Resumen   — lo que Saly contó de ayer con sus números y los 14 días
+//                 anteriores (`ResumenDeSala`, la pestaña «Resumen» del
+//                 portal), alertas, dirección completa (Mapas · compartir), teléfonos
 //                 (llamar · WhatsApp), kioscos N/3, horario de la semana, la
 //                 gente asignada y la completitud del perfil en barras.
+//   · Personal  — como la pestaña Personal del portal (`TabStaff`): la «Salud
+//                 legal» (jefatura, regente, referente y, si la sala inyecta,
+//                 enfermería con sus documentos), el mínimo de personal contra
+//                 la cobertura real (`calculateMinimumStaff`) y el análisis con
+//                 IA (`analizarSucursal`). Todo sale de `analisisDePersonal`.
 //   · Expediente — los documentos que le tocan a ESTA sala (permisos, personal,
 //                 infraestructura y los propios), cada uno con su estado: falta,
 //                 vencido, vence en N días o al día (`expedienteDeSucursal`).
@@ -30,7 +37,9 @@ import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, horar
 import { SIN_DATO, documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
 import { gastosPorMes, serviciosDeSucursal, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 import { DIMENSIONES_DEL_HISTORIAL, csvDelHistorial, dimensionDelRegistro, historialConApertura, lecturaDelRegistro, papelDelHistorial, rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
-import { analizarHistorial } from '@nucleo/data/ia';
+import { analizarHistorial, analizarSucursal } from '@nucleo/data/ia';
+import { fetchBranchHourlySalesAll } from '@nucleo/data/schedules';
+import { analisisDePersonal, MIN_PERSONAL_SIMULTANEO } from '@nucleo/utils/personalDeSucursal';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { CATEGORIAS_DOCUMENTO } from '@nucleo/data/constants';
 import { formatTime12h } from '@nucleo/utils/helpers';
@@ -56,6 +65,7 @@ import Grafica from '../../componentes/metas/Graficas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { MARCA } from '../../componentes/inicio/marca';
 import AccionesDelDocumento from '../../componentes/sucursal/AccionesDelDocumento';
+import { ResumenDeSala } from '../../componentes/sucursal/ResumenDeSala';
 import { ofrecerPapel } from '../../componentes/pdf';
 import { compartirCsv } from '../../componentes/fiscal/csv';
 
@@ -88,9 +98,103 @@ function Barra({ rotulo, pct }) {
   );
 }
 
-// El «Diagnóstico» con IA se quitó el 2026-10-29 (pedido del usuario): sólo
-// le repetía a la IA lo que la ficha ya muestra. Vuelve como resumen diario
-// por sala — ver `docs/PENDIENTES.md` §A Operación (31 y 32).
+// El «Diagnóstico» con IA del Resumen se quitó el 2026-10-29 (pedido del
+// usuario). El análisis del PERSONAL sí sigue en el portal (`TabStaff`), y
+// vive en la pestaña Personal de abajo.
+
+// La pestaña Personal: lo mismo que `TabStaff` del portal, leído del núcleo.
+function Personal({ b, gente, empleados }) {
+  const [ventas, setVentas] = useState(null);
+  const [errorVentas, setErrorVentas] = useState(null);
+  const [pensando, setPensando] = useState(false);
+  const [resumen, setResumen] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    Promise.resolve(fetchBranchHourlySalesAll(b.id))
+      .then(({ data, error }) => { if (error) throw error; if (vivo) { setVentas(data || []); setErrorVentas(null); } })
+      .catch((e) => { if (vivo) { setVentas([]); setErrorVentas(mensajeAmigable(e, 'No se pudieron leer las ventas por hora de la sucursal.')); } });
+    return () => { vivo = false; };
+  }, [b.id]);
+  const a = useMemo(() => analisisDePersonal({ sucursal: b, personal: gente, empleados: empleados || [], ventasPorHora: ventas || [] }), [b, gente, empleados, ventas]);
+  const w = a.wfm;
+  const analizar = async () => {
+    setPensando(true);
+    try {
+      const { data, error } = await analizarSucursal({ branchName: b.name || 'la sucursal', branchData: JSON.stringify(a.fotoParaIA) });
+      if (error) throw error;
+      if (!data?.success) throw new Error('Fallo en la generación del resumen.');
+      setResumen(data.aiSummary);
+    } catch {
+      setResumen('No se pudo analizar la estructura de personal. Revisa la conexión e intenta de nuevo.');
+    } finally { setPensando(false); }
+  };
+  const abrir = (e) => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/[id]', params: { id: String(e.id) } }); };
+  const Cargo = ({ rotulo, emp, falta, docs = [], primero }) => (
+    <Pressable disabled={!emp} onPress={() => emp && abrir(emp)}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador, paddingTop: primero ? 0 : 8, opacity: pressed ? 0.6 : 1 })}>
+      {emp ? <Avatar empleado={emp} tamano={36} /> : null}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{rotulo}</Text>
+        <Text style={{ color: emp ? colorSistema.texto : MARCA.rojo, fontSize: 15, fontWeight: '600' }}>{emp ? shortEmployeeName(emp) : falta}</Text>
+        {docs.length ? <Text style={{ color: MARCA.rojo, fontSize: 13 }}>{`Falta: ${docs.join(', ')}`}</Text> : null}
+      </View>
+      {emp ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text> : null}
+    </Pressable>
+  );
+  if (!a.esFarmacia) {
+    return <Aviso texto="La salud legal y el mínimo de personal se miden en las farmacias." />;
+  }
+  return (
+    <>
+      <Seccion titulo={`Salud legal · ${a.saludLegal}%`}>
+        <Barra rotulo="Cargos y documentos" pct={a.saludLegal} />
+        {a.faltas.length ? a.faltas.map((f, i) => (
+          <Text key={i} style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>{`• ${f.text}`}</Text>
+        )) : <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '600' }}>Cumple todo: cargos y documentos.</Text>}
+      </Seccion>
+      <Seccion titulo="Regencia">
+        <Cargo primero rotulo="Regente farmacéutico" emp={a.regente} falta="Falta regente" docs={a.docsFaltanRegente} />
+        <Cargo rotulo="Farmacovigilancia" emp={a.referente} falta="Falta referente" docs={a.docsFaltanReferente} />
+        {a.inyecta ? (a.enfermeria.length ? a.enfermeria.map(({ empleado, fila }) => {
+          const docs = [...(fila.carneUrl || fila.carneFile ? [] : ['carné']), ...(fila.licenciaUrl || fila.licenciaFile ? [] : ['licencia'])];
+          return <Cargo key={empleado.id} rotulo="Regente de enfermería" emp={empleado} docs={docs} />;
+        }) : <Cargo rotulo="Regente de enfermería" falta="Falta enfermería (la sucursal inyecta)" />) : null}
+      </Seccion>
+      <Seccion titulo={a.hayDeficit ? `Mínimo de personal · faltan ${a.deficit}` : 'Mínimo de personal'}
+        pie={errorVentas ? `${errorVentas} El mínimo sale sólo del horario.` : null}>
+        {ventas == null ? <Cargando /> : (<>
+          <Barra rotulo={`Cobertura: ${a.cobertura} de ${w.minStaff}`} pct={a.avance} />
+          {w.wfmApplied ? (<>
+            <Dato primero rotulo={`Seguridad (mín. ${MIN_PERSONAL_SIMULTANEO} por turno)`} valor={`${w.baseStaffHours} h`} />
+            <Dato rotulo="Picos de venta" valor={`+${w.extraVolumeHours} h`} />
+            <Dato rotulo="Margen de ausencias (15%)" valor={`+${w.shrinkageHours} h`} />
+            {w.peakHour ? <Dato rotulo="Hora pico" valor={`${w.peakHour.dayName} a las ${w.peakHour.hour}:00`} /> : null}
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
+              {`La sucursal necesita ${w.totalLaborHoursNeeded} h a la semana. Con 44 h por persona, son ${w.minStaff} operativos. Tienes ${a.cobertura}.`}
+            </Text>
+          </>) : w.isNewBranch ? (
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
+              {`Sucursal nueva: tiene menos de 3 meses. Por ahora el cálculo usa sólo la cobertura mínima (${MIN_PERSONAL_SIMULTANEO} por turno): ${w.minStaff} operativos.`}
+            </Text>
+          ) : (
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
+              {`Con el horario de la sucursal, necesitas al menos ${w.minStaff} operativos para cubrir los turnos.`}
+            </Text>
+          )}
+        </>)}
+      </Seccion>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <Boton texto={pensando ? 'Analizando…' : 'Diagnóstico de personal con IA'} color={MARCA.violetaClaro} onPress={() => { if (!pensando && ventas != null) analizar(); }} />
+      </View>
+      {pensando ? <Seccion titulo="Diagnóstico con IA"><Indicador /></Seccion> : resumen ? (
+        <Seccion titulo="Diagnóstico con IA">
+          <Text selectable style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{String(resumen).replace(/[*#]+/g, '')}</Text>
+          <Boton texto="Cerrar el diagnóstico" onPress={() => setResumen(null)} />
+        </Seccion>
+      ) : null}
+    </>
+  );
+}
 
 function Resumen({ b, gente, kioscos, puedeEditar }) {
   const { dia, hora } = ahoraEnSV();
@@ -112,6 +216,7 @@ function Resumen({ b, gente, kioscos, puedeEditar }) {
   };
   return (
     <>
+      <ResumenDeSala branchId={b.id} />
       {alertas.hasAlerts ? (
         <Seccion titulo={`Alertas · ${alertas.list.length}`}>
           {alertas.list.map((a, i) => (
@@ -425,8 +530,8 @@ export default function Sucursal() {
       <FijoArriba>
         <Segmentos activa={pestana} onCambiar={setPestana}
           opciones={b.expedienteOculto
-            ? [{ id: 'resumen', label: 'Resumen' }, { id: 'historial', label: 'Historial' }]
-            : [{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Datos' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
+            ? [{ id: 'resumen', label: 'Resumen' }, { id: 'personal', label: 'Personal' }, { id: 'historial', label: 'Historial' }]
+            : [{ id: 'resumen', label: 'Resumen' }, { id: 'personal', label: 'Personal' }, { id: 'expediente', label: 'Datos' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
       </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <View style={{ gap: 6, marginHorizontal: 4 }}>
@@ -438,6 +543,7 @@ export default function Sucursal() {
           </View>
         </View>
         {pestana === 'resumen' ? <Resumen b={b} gente={gente} kioscos={kioscos} puedeEditar={puedeEditar} /> : null}
+        {pestana === 'personal' ? <Personal b={b} gente={gente} empleados={empleados} /> : null}
         {pestana === 'expediente' && !b.expedienteOculto ? <Expediente b={b} puedeEditar={puedeEditar} /> : null}
         {pestana === 'gastos' && !b.expedienteOculto ? <Gastos b={b} puedeEditar={puedeEditar} /> : null}
         {pestana === 'historial' ? <Historial b={b} empleados={empleados} /> : null}

@@ -10,12 +10,13 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  cambiarEstadoReserva, codigoDeReserva, enviarPreventa, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, prorrogarReserva, ventasDelError, whatsappDe,
+  amarrarReservaAVenta, cambiarEstadoReserva, codigoDeReserva, enviarPreventa, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, prorrogarReserva, ventasDelError, whatsappDe,
 } from '@nucleo/data/reservas';
 import { puedeEnviarPreventa } from '@nucleo/utils/preventa';
 import { modoDeProrroga } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaHora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fallo, listo, trabajando } from '../Progreso';
 
@@ -196,6 +197,37 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
     ]);
   };
 
+  // Cerrar con la venta que la caja ya hizo por fuera (2026-11-20), como el portal.
+  const amarrarConVenta = async (r, x, seDesconto) => {
+    setOcupada(r.id);
+    try {
+      const res = await amarrarReservaAVenta(x.id, x.vendida_aparte.invoice_id, seDesconto);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      listo('Reserva cerrada', res?.saldo_favor
+        ? `Quedó entregada con esa venta. ${formatMoney(Number(res.saldo_favor))} quedan a favor del cliente.`
+        : 'Quedó entregada con esa venta. No queda saldo a favor.');
+    } catch (e) {
+      fallo('No se pudo cerrar', mensajeAmigable(e, 'Intenta de nuevo.'));
+    } finally { setOcupada(null); releer(); }
+  };
+
+  const amarrar = (r, x) => {
+    if (!x?.vendida_aparte) return;
+    const v = x.vendida_aparte;
+    const anticipo = Number(x.anticipo ?? 0);
+    const que = `El ${fechaHora12(v.at)} se le vendió ${x.cantidad} × ${x.producto} en caja por ${formatMoney(Number(v.total ?? 0))}. La reserva queda entregada con esa venta. No se deshace.`;
+    Alert.alert(`Cerrar ${r.pedido ?? codigoDeReserva(r.id)} con esa venta`,
+      anticipo > 0 ? `${que}\n\n¿En esa venta se le descontó el anticipo de ${formatMoney(anticipo)}? Si pagó la venta completa, el anticipo queda a su favor.` : que,
+      anticipo > 0 ? [
+        { text: 'Sí, se descontó', onPress: () => amarrarConVenta(r, x, true) },
+        { text: 'Pagó completo', onPress: () => amarrarConVenta(r, x, false) },
+        { text: 'Ahora no', style: 'cancel' },
+      ] : [
+        { text: 'Cerrar reserva', onPress: () => amarrarConVenta(r, x, true) },
+        { text: 'Ahora no', style: 'cancel' },
+      ]);
+  };
+
   // Resolver y traer de otra sala: el MISMO `reserva-resolver`, sobre el renglón que lo necesita.
   const resolver = (x) => router.push({ pathname: '/reserva-resolver', params: { id: String(x.id), sala: String(x.branch_id ?? sala) } });
   const verReceta = (r) => router.push({ pathname: '/reserva-receta', params: verTodas || (r.branch_id == null && sala == null)
@@ -221,6 +253,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
       // Reglamento v2, cláusula 9 (lo habilita la base con `registrar_llamada`).
       case 'llamada': router.push({ pathname: '/reserva-llamada', params: {
         reserva: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id), cliente: String(r.cliente ?? ''), telefono: String(r.telefono ?? '') } }); break;
+      case 'amarrar': amarrar(r, a.renglon); break;
       case 'cancelar': cancelar(r); break;
       default: break;
     }

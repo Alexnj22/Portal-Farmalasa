@@ -43,6 +43,18 @@ export async function cambiarEstadoReserva(id, estado, motivo = null, anticipoEn
     return sinError(await supabase.rpc('reserva_cambiar_estado', args));
 }
 
+/**
+ * Cierra una reserva con la venta que ya se le hizo en caja por fuera
+ * (`vendida_aparte`, 2026-11-20): queda retirada y amarrada a esa factura.
+ * `anticipoDescontado` true = el anticipo se usó en esa venta (no deja saldo a
+ * favor); false = pagó la factura completa (el anticipo queda a su favor).
+ */
+export async function amarrarReservaAVenta(id, invoiceId, anticipoDescontado) {
+    return sinError(await supabase.rpc('reserva_amarrar_a_venta', {
+        p_id: Number(id), p_invoice_id: Number(invoiceId), p_anticipo_descontado: !!anticipoDescontado,
+    }));
+}
+
 /** Las facturas que trae un `VENTA_YA_FACTURADA`, o null si el error es otro. */
 export function ventasDelError(err) {
     if (err?.message !== 'VENTA_YA_FACTURADA') return null;

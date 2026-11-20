@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    detalleDelRenglonDeReserva, estadoDeReserva, textoDeFaltante, textoDeVentaAparte, vendidaAparte,
+    accionesDeReservaNucleo, detalleDelRenglonDeReserva, estadoDeReserva, textoDeFaltante, textoDeVentaAparte, vendidaAparte,
 } from '@nucleo/utils/reservasDeSala';
 
 // (2026-11-20) R-000164 de Salud 1: lista el 13 nov y vendida en caja media
@@ -27,5 +27,12 @@ describe('reserva vendida en caja por fuera', () => {
 
     it('cerrada: no avisa', () => {
         expect(vendidaAparte(lista({ estado: 'retirada', vendida_aparte: venta }))).toBeNull();
+    });
+
+    it('sólo ofrece cerrar con esa venta o cancelar', () => {
+        const r = lista({ vendida_aparte: venta, anticipo: 6.6 });
+        expect(accionesDeReservaNucleo(r).map((a) => a.k)).toEqual(['amarrar', 'cancelar']);
+        expect(accionesDeReservaNucleo(r)[0].renglon).toBe(r);
+        expect(accionesDeReservaNucleo(r, { soloLectura: true })).toEqual([]);
     });
 });

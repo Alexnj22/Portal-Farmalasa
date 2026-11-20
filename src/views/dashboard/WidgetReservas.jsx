@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowLeftRight, ArrowRight, Banknote, Building2, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, ArrowRight, Banknote, Building2, CalendarPlus, CheckCircle2, FileCheck, HandCoins, Link2, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -25,9 +25,10 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaHora12 } from '@nucleo/utils/hora';
 import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import {
-    buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor, ventasDelError,
+    amarrarReservaAVenta, buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, usarSaldoAFavor, ventasDelError,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
     devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver, reservaPorTraer, prorrogarReserva,
 } from '@nucleo/data/reservas';
@@ -143,6 +144,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const [errorCarga, setErrorCarga] = useState(null);
     // La reserva (o el pedido) que se está por cancelar: pide confirmación y motivo.
     const [cancelando, setCancelando] = useState(null);
+    const [amarrando, setAmarrando] = useState(null);
     const [ventaFacturada, setVentaFacturada] = useState(null);
     const [ocupada, setOcupada] = useState(null);
     const [whatsapp, setWhatsapp] = useState(null);
@@ -373,6 +375,23 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         }
     };
 
+    // Cerrar con la venta que ya se hizo en caja (2026-11-20).
+    const amarrar = async ({ r, x }, seDesconto) => {
+        setOcupada(r.id);
+        try {
+            const res = await amarrarReservaAVenta(x.id, x.vendida_aparte.invoice_id, seDesconto);
+            setAmarrando(null);
+            showToast('Reserva cerrada', res?.saldo_favor
+                ? `Quedó entregada con esa venta. ${formatMoney(Number(res.saldo_favor))} quedan a favor del cliente.`
+                : 'Quedó entregada con esa venta. No queda saldo a favor.', 'success');
+        } catch (err) {
+            showToast('No se pudo cerrar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setOcupada(null);
+            cargar();
+        }
+    };
+
     // Lo que se puede hacer con una reserva, EN ORDEN de importancia (2026-10-22).
     // La tarjeta muestra las dos primeras con su nombre; todas, también las
     // menores, viven en el detalle. Una sola lista para las dos piezas: si cada
@@ -392,12 +411,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             prorrogar: { icon: CalendarPlus, onClick: () => prorrogar(r) },
             pedir_prorroga: { icon: CalendarPlus, onClick: () => setPidiendoProrroga(r) },
             llamada: { icon: PhoneCall, onClick: () => setLlamando(r) },
+            amarrar: { icon: Link2, onClick: (a) => setAmarrando({ r, x: a.renglon }) },
             cancelar: { icon: XCircle, onClick: () => setCancelando(r) },
         };
         return accionesDeReservaNucleo(r, { soloLectura, puedeRecetas, puedePreventa })
             .filter((a) => hacer[a.k])
             .map((a) => ({ ...a, icon: hacer[a.k].icon, onClick: () => hacer[a.k].onClick(a),
-                loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar', 'cancelar'].includes(a.k) }));
+                loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar', 'amarrar', 'cancelar'].includes(a.k) }));
     };
 
     // Cobra quien puede apartar en SU sala: el efectivo entra a ESE cajón. Se
@@ -921,6 +941,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     etiqueta="Motivo (queda en la bitácora)" boton="Cancelar reserva" onCerrar={() => setCancelando(null)}
                     onConfirmar={(motivo) => cancelar(cancelando, motivo)} />
             )}
+            {amarrando && (
+                <CerrarConVenta caso={amarrando} ocupada={ocupada === amarrando.r.id}
+                    onCerrar={() => setAmarrando(null)} onDecidir={(seDesconto) => amarrar(amarrando, seDesconto)} />
+            )}
             {ventaFacturada && (
                 <VentaYaFacturada caso={ventaFacturada} ocupada={ocupada === ventaFacturada.r.id}
                     onCerrar={() => setVentaFacturada(null)}
@@ -1137,6 +1161,44 @@ function VentaYaFacturada({ caso, ocupada, onCerrar, onDecidir }) {
                 <Button variant="secondary" onClick={onCerrar} disabled={ocupada}>Ahora no</Button>
                 <Button variant="secondary" loading={ocupada} onClick={() => onDecidir(false)}>Pagó completo</Button>
                 <Button loading={ocupada} onClick={() => onDecidir(true)}>Sí, se descontó</Button>
+            </LiquidModal.Footer>
+        </LiquidModal>
+    );
+}
+
+// Cerrar una reserva con la venta que la caja ya hizo por fuera (2026-11-20).
+function CerrarConVenta({ caso, ocupada, onCerrar, onDecidir }) {
+    const { r, x } = caso;
+    const v = x.vendida_aparte;
+    const codigo = r.pedido ?? codigoDeReserva(r.id);
+    const anticipo = Number(x.anticipo ?? 0);
+    return (
+        <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={`Cerrar ${codigo} con esa venta`}>
+            <LiquidModal.Header titulo={`Cerrar ${codigo} con esa venta`} onClose={onCerrar} />
+            <LiquidModal.Body>
+                <div className="space-y-3">
+                    <p className="text-body-sm text-content-2">
+                        El {fechaHora12(v.at)} se le vendió {x.cantidad} × {x.producto} en caja por <b className="text-content">{formatMoney(Number(v.total ?? 0))}</b>.
+                        La reserva queda entregada con esa venta. No se deshace.
+                    </p>
+                    {anticipo > 0 ? (
+                        <p className="text-body-sm text-content-2">
+                            ¿En esa venta se le descontó el anticipo de <b className="text-content">{formatMoney(anticipo)}</b>?
+                            Si pagó la venta completa, el anticipo queda a su favor.
+                        </p>
+                    ) : null}
+                </div>
+            </LiquidModal.Body>
+            <LiquidModal.Footer>
+                <Button variant="secondary" onClick={onCerrar} disabled={ocupada}>Ahora no</Button>
+                {anticipo > 0 ? (
+                    <>
+                        <Button variant="secondary" loading={ocupada} onClick={() => onDecidir(false)}>Pagó completo</Button>
+                        <Button loading={ocupada} onClick={() => onDecidir(true)}>Sí, se descontó</Button>
+                    </>
+                ) : (
+                    <Button loading={ocupada} onClick={() => onDecidir(true)}>Cerrar reserva</Button>
+                )}
             </LiquidModal.Footer>
         </LiquidModal>
     );

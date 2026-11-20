@@ -2392,6 +2392,7 @@ export type Database = {
           updated_at: string
           vence_at: string | null
           vencida_motivo: string | null
+          venta_amarrada_id: number | null
         }
         Insert: {
           ajuste_de?: number | null
@@ -2474,6 +2475,7 @@ export type Database = {
           updated_at?: string
           vence_at?: string | null
           vencida_motivo?: string | null
+          venta_amarrada_id?: number | null
         }
         Update: {
           ajuste_de?: number | null
@@ -2556,6 +2558,7 @@ export type Database = {
           updated_at?: string
           vence_at?: string | null
           vencida_motivo?: string | null
+          venta_amarrada_id?: number | null
         }
         Relationships: [
           {
@@ -40132,6 +40135,14 @@ export type Database = {
           p_cantidad: number
           p_id: number
           p_motivo?: string
+        }
+        Returns: Json
+      }
+      reserva_amarrar_a_venta: {
+        Args: {
+          p_anticipo_descontado: boolean
+          p_id: number
+          p_invoice_id: number
         }
         Returns: Json
       }

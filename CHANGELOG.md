@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.6 — Reservas: cerrar con la venta que ya se hizo en caja
+
+Lo que pidió el usuario con la R-000164: no cancelarla, sino **amarrarla a la venta ya hecha**. La sucursal había sacado los $6.60 del anticipo con una salida de efectivo, así que la clienta pagó una sola vez.
+
+- Acción **Cerrar con esa venta** cuando la reserva trae `vendida_aparte`. Reemplaza a Retirar, Enviar a caja y Prorrogar (ya no tienen sentido); queda también Cancelar.
+- Pregunta si en esa venta se descontó el anticipo: «Sí, se descontó» no deja saldo a favor; «Pagó completo» deja el anticipo a favor (misma regla que al cancelar).
+- `reserva_amarrar_a_venta(p_id, p_invoice_id, p_anticipo_descontado)`: la factura tiene que salir de `reserva_ventas_del_producto` y no estar amarrada a otra reserva; deja la reserva `retirada` con `app_reservas.venta_amarrada_id` (único, sin FK porque `sales_invoices` es tabla caliente) y la bitácora `RESERVA_RETIRADA` con `por: venta_en_caja` (migración `20261120222601`).
+- Portal (`WidgetReservas`) y app del personal (`useAccionesDeReserva`).
+
 ## v2.1585.5 — Prórroga: el adjunto se llama «Contrato firmado»
 
 En la acción «Prórroga de contrato» el adjunto decía «Respaldo» y no quedaba

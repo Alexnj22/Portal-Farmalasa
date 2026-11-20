@@ -136,7 +136,7 @@ export function textoDeVentaAparte(x) {
     const v = vendidaAparte(x);
     if (!v) return '';
     return `El ${fechaHora12(v.at)} se le vendió este producto en caja por ${formatMoney(Number(v.total ?? 0))}, sin pasar por la reserva. `
-        + 'Cancela la reserva: te va a preguntar si en esa venta se le descontó el anticipo. Si pagó completo, lo pagado queda a favor suyo.';
+        + 'Si esa venta fue la entrega de esta reserva, toca «Cerrar con esa venta»: te va a preguntar si se le descontó el anticipo.';
 }
 
 /**
@@ -309,6 +309,15 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
         // también la que espera receta (la base lo permite). Quien no revisa
         // recetas no la aparta, pero sí la cancela si el cliente lo pide.
         if (!soloLectura) lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
+        return lista;
+    }
+    // Ya se vendió en caja por fuera (2026-11-20): apartar, retirar o mandar a
+    // caja ya no tiene sentido. Se cierra amarrada a esa venta, o se cancela.
+    const vendida = filas.find((x) => vendidaAparte(x));
+    if (vendida) {
+        if (!soloLectura) lista.push({ k: 'amarrar', label: 'Cerrar con esa venta', renglon: vendida,
+            title: 'Esa venta en caja fue la entrega: la reserva queda retirada y amarrada a esa factura' });
+        lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
         return lista;
     }
     const hayPendiente = filas.some((x) => x.estado === 'pendiente');

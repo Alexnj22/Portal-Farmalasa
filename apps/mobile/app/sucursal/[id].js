@@ -7,8 +7,8 @@
 //   · Personal  — como la pestaña Personal del portal (`TabStaff`): la «Salud
 //                 legal» (jefatura, regente, referente y, si la sala inyecta,
 //                 enfermería con sus documentos), el mínimo de personal contra
-//                 la cobertura real (`calculateMinimumStaff`) y el análisis con
-//                 IA (`analizarSucursal`). Todo sale de `analisisDePersonal`.
+//                 la cobertura real (`calculateMinimumStaff`). Todo sale de
+//                 `analisisDePersonal`.
 //   · Expediente — los documentos que le tocan a ESTA sala (permisos, personal,
 //                 infraestructura y los propios), cada uno con su estado: falta,
 //                 vencido, vence en N días o al día (`expedienteDeSucursal`).
@@ -37,7 +37,7 @@ import { abiertaAhora, ahoraEnSV, alertasDeSucursal, completitudDelPerfil, horar
 import { SIN_DATO, documentosDeSucursal, estadoDeDocumento, vencimientoEfectivo } from '@nucleo/utils/expedienteDeSucursal';
 import { gastosPorMes, serviciosDeSucursal, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 import { DIMENSIONES_DEL_HISTORIAL, csvDelHistorial, dimensionDelRegistro, historialConApertura, lecturaDelRegistro, papelDelHistorial, rotuloDelRegistro } from '@nucleo/utils/historialDeSucursal';
-import { analizarHistorial, analizarSucursal } from '@nucleo/data/ia';
+import { analizarHistorial } from '@nucleo/data/ia';
 import { fetchBranchHourlySalesAll } from '@nucleo/data/schedules';
 import { analisisDePersonal, MIN_PERSONAL_SIMULTANEO } from '@nucleo/utils/personalDeSucursal';
 import { registrarEgreso } from '@nucleo/data/egreso';
@@ -98,16 +98,13 @@ function Barra({ rotulo, pct }) {
   );
 }
 
-// El «Diagnóstico» con IA del Resumen se quitó el 2026-10-29 (pedido del
-// usuario). El análisis del PERSONAL sí sigue en el portal (`TabStaff`), y
-// vive en la pestaña Personal de abajo.
+// El «Diagnóstico» con IA se quitó del Resumen el 2026-10-29 y del Personal
+// el 2026-11-19, en la app y en el portal (pedido del usuario).
 
 // La pestaña Personal: lo mismo que `TabStaff` del portal, leído del núcleo.
 function Personal({ b, gente, empleados }) {
   const [ventas, setVentas] = useState(null);
   const [errorVentas, setErrorVentas] = useState(null);
-  const [pensando, setPensando] = useState(false);
-  const [resumen, setResumen] = useState(null);
   useEffect(() => {
     let vivo = true;
     Promise.resolve(fetchBranchHourlySalesAll(b.id))
@@ -117,17 +114,6 @@ function Personal({ b, gente, empleados }) {
   }, [b.id]);
   const a = useMemo(() => analisisDePersonal({ sucursal: b, personal: gente, empleados: empleados || [], ventasPorHora: ventas || [] }), [b, gente, empleados, ventas]);
   const w = a.wfm;
-  const analizar = async () => {
-    setPensando(true);
-    try {
-      const { data, error } = await analizarSucursal({ branchName: b.name || 'la sucursal', branchData: JSON.stringify(a.fotoParaIA) });
-      if (error) throw error;
-      if (!data?.success) throw new Error('Fallo en la generación del resumen.');
-      setResumen(data.aiSummary);
-    } catch {
-      setResumen('No se pudo analizar la estructura de personal. Revisa la conexión e intenta de nuevo.');
-    } finally { setPensando(false); }
-  };
   const abrir = (e) => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/[id]', params: { id: String(e.id) } }); };
   const Cargo = ({ rotulo, emp, falta, docs = [], primero }) => (
     <Pressable disabled={!emp} onPress={() => emp && abrir(emp)}
@@ -183,15 +169,6 @@ function Personal({ b, gente, empleados }) {
           )}
         </>)}
       </Seccion>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        <Boton texto={pensando ? 'Analizando…' : 'Diagnóstico de personal con IA'} color={MARCA.violetaClaro} onPress={() => { if (!pensando && ventas != null) analizar(); }} />
-      </View>
-      {pensando ? <Seccion titulo="Diagnóstico con IA"><Indicador /></Seccion> : resumen ? (
-        <Seccion titulo="Diagnóstico con IA">
-          <Text selectable style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{String(resumen).replace(/[*#]+/g, '')}</Text>
-          <Boton texto="Cerrar el diagnóstico" onPress={() => setResumen(null)} />
-        </Seccion>
-      ) : null}
     </>
   );
 }

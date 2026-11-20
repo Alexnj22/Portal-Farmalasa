@@ -2,15 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { analisisDePersonal, MIN_PERSONAL_SIMULTANEO } from '@nucleo/utils/personalDeSucursal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
-import BotonIA from '../../components/common/BotonIA';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
-import { AiThinkingState } from '../../components/common/StateViews';
 import {
     ShieldCheck, Award, AlertTriangle, User, Pencil,
     Star, HeartPulse, Briefcase, CalendarDays, Phone, MapPin,
     Copy, Check, MessageCircle, ShieldAlert, Calculator, Plus, FileX,
-    CircleUserRound, BarChart3, TrendingUp, Clock, Hourglass, Sparkles, ArrowLeft, Activity, X
+    CircleUserRound, BarChart3, TrendingUp, Clock, Hourglass, ArrowLeft, Activity, X
 } from 'lucide-react';
 import AlertModal from '../../components/common/AlertModal';
 import Notice from '../../components/common/Notice';
@@ -18,7 +16,6 @@ import Notice from '../../components/common/Notice';
 import { fetchBranchHourlySalesAll } from '@nucleo/data/schedules';
 import { clickable } from '@nucleo/utils/clickable';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { analizarSucursal } from '@nucleo/data/ia';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
@@ -189,11 +186,6 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         return () => { vivo.current = false; };
     }, []);
 
-    // 🤖 ESTADOS DE IA (STAFF)
-    const [aiMode, setAiMode] = useState(false);
-    const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-    const [aiSummaryData, setAiSummaryData] = useState(null);
-
     const fetchHistoricalSales = useCallback(async () => {
         if (!liveBranch?.id) return;
         setIsLoadingWfm(true);
@@ -240,34 +232,6 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const handleEditHROperative = (e) => {
         if (e) e.stopPropagation();
         setInfoAlert({ isOpen: true, title: "Cambiar sucursal o cargo", message: "Cambia la sucursal o el cargo desde Personal." });
-    };
-
-    // ========================================================================
-    // 🤖 FUNCIÓN MAESTRA: GENERAR DIAGNÓSTICO WFM CON IA
-    // ========================================================================
-    const generateStaffAiSummary = async () => {
-        setAiMode(true);
-        setIsGeneratingAi(true);
-
-        try {
-            const wfmSnapshot = analisis.fotoParaIA;
-
-            const { data: aiResponse, error: aiError } = await analizarSucursal({
-                branchName: liveBranch?.name || 'la sucursal',
-                branchData: JSON.stringify(wfmSnapshot),
-            });
-
-            if (aiError) throw new Error(aiError.message);
-            if (!aiResponse?.success) throw new Error("Fallo en la generación del resumen.");
-
-            setAiSummaryData(aiResponse.aiSummary);
-
-        } catch (error) {
-            console.error("Error al generar resumen IA:", error);
-            setAiSummaryData("No se pudo analizar la estructura de personal. Revisa la conexión e intenta de nuevo.");
-        } finally {
-            setIsGeneratingAi(false);
-        }
     };
 
     return (
@@ -369,81 +333,16 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         </div>
                     </div>}
 
-                    {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
-                    {isFarmacia && <BotonIA
-                        className="ml-1 z-sidebar animate-in zoom-in-95"
-                        activo={aiMode}
-                        onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        etiqueta="Diagnóstico de personal"
-                        etiquetaActiva="Cerrar el diagnóstico"
-                    />}
                 </div>
             </div>
 
             {/* ============================================================================ */}
-            {/* 🎭 CONTENEDOR DE TRANSICIÓN FLUIDA ENTRE MODO NORMAL Y MODO IA               */}
+            {/* El «Diagnóstico de personal» con IA se quitó el 2026-11-19 (pedido del usuario: ya se había quitado de la ficha el 2026-10-29). */}
             {/* ============================================================================ */}
             <div className="relative w-full">
 
-                {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
-                <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
-                    <div className="w-full max-w-4xl mx-auto py-2">
-                        <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
-
-                            {/* 🔮 Esferas de Energía Animatedas de Fondo */}
-                            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                                <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
-                                <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
-                                <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-9/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
-                            </div>
-
-                            <div className="relative z-base flex flex-col items-center justify-center text-center">
-
-                                <div className="relative w-16 h-16 flex items-center justify-center mb-6">
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[5px] opacity-70"></div>
-                                    <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-border-card">
-                                        <Sparkles size={28} className="text-white" strokeWidth={2} />
-                                    </div>
-                                </div>
-
-                                <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico de personal</h2>
-                                <p className="text-body-lg font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
-
-                                {isGeneratingAi ? (
-                                    /* SKELETON DE CARGA NEURONAL */
-                                    <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 animate-pulse relative z-base">
-                                        <AiThinkingState size="sm" title="Analizando organización" className="mb-2" />
-                                        <div className="space-y-4">
-                                            <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
-                                            <div className="h-3 bg-indigo-200/50 rounded-full w-full mb-2"></div>
-                                            <div className="h-3 bg-indigo-200/50 rounded-full w-5/6 mb-6"></div>
-                                            <div className="h-3 bg-purple-200/50 rounded-full w-full mb-2"></div>
-                                            <div className="h-3 bg-purple-200/50 rounded-full w-4/5 mb-2"></div>
-                                            <div className="h-3 bg-purple-200/50 rounded-full w-2/3"></div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    /* RESULTADO DE LA IA */
-                                    <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base">
-                                        {aiSummaryData?.split('\n').map((paragraph, index) => (
-                                            <div key={index} className="relative mb-6 last:mb-0 group/p">
-                                                <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-[var(--dur-slow)]"></div>
-                                                <p className="text-body md:text-subtitle font-medium text-content-2 leading-relaxed text-justify pl-5">
-                                                    {paragraph.split('**').map((text, i) => (
-                                                        i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
-                                                    ))}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 {/* 🏢 VISTA NORMAL (ORGANIGRAMA Y DASHBOARD) */}
-                <div inert={aiMode ? true : undefined} className={`transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
+                <div className="w-full">
 
                     {isLoadingWfm ? (
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */

@@ -4,7 +4,7 @@
  * (`apps/mobile/app/sucursal/[id].js`): la «Salud legal» (jefatura, regente,
  * referente de farmacovigilancia y, si la sala inyecta, enfermería con sus
  * documentos), el mínimo de personal (`calculateMinimumStaff`) contra la
- * cobertura real, y la foto que se le manda a la IA (`analizarSucursal`).
+ * cobertura real.
  *
  * Vivía dentro de la pestaña del portal; se movió acá para que la app no lo
  * copie. Pura: no lee la base ni el navegador.
@@ -81,23 +81,10 @@ export function analisisDePersonal({ sucursal, personal = [], empleados = [], ve
     const deficit = Math.max(0, wfm.minStaff - cobertura);
     const avance = wfm.minStaff > 0 ? Math.min(100, Math.round((cobertura / wfm.minStaff) * 100)) : 0;
 
-    // Lo que se le manda a la IA: el mismo resumen en los dos lados.
-    const fotoParaIA = {
-        personalActivo: personal.length,
-        minimoRequerido: wfm.minStaff,
-        deficitPersonal: deficit,
-        jefatura: jefe ? 'Asignada' : 'Faltante',
-        regenteFarmacia: regente ? 'Asignado' : 'Faltante',
-        referenteFarmaco: referente ? 'Asignado' : 'Faltante',
-        enfermeria: inyecta ? (enfermeria.length > 0 ? 'Asignada' : 'Faltante') : 'No aplica',
-        cumplimientoLegal: `${saludLegal}%`,
-    };
-
     return {
         esFarmacia, esAdministrativa: tipo === 'ADMINISTRATIVA', inyecta,
         jefe, subjefe, regente, referente, enfermeria, general,
         faltas, saludLegal, docsFaltanRegente, docsFaltanReferente,
         wfm, cobertura, deficit, hayDeficit: cobertura < wfm.minStaff, avance,
-        fotoParaIA,
     };
 }

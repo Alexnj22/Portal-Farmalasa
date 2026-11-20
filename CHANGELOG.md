@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.11 — Sin el diagnóstico de personal con IA en la ficha de la sucursal
+
+- Sucursales, pestaña Personal: se quita el «Diagnóstico de personal» con IA en el portal y en la app (pedido del usuario, 2026-11-19; el del Resumen ya se había quitado el 2026-10-29). `analisisDePersonal` ya no arma la foto para la IA.
+
 ## v2.1583.10 — Encuestas: el estado de arriba cambia apenas envías a revisión, apruebas o publicas
 
 - En el detalle de una encuesta, el estado de arriba no cambiaba al enviar a revisión. Seguía diciendo «Borrador» hasta recargar la página, aunque el envío sí se hacía. Ahora toma el estado que devuelve la base apenas responde. Vale también para aprobar, devolver, publicar, cerrar y archivar.

@@ -1280,15 +1280,15 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 .cierre-nombres { width: min(78vw, 520px); fill: var(--c-lino); }
 .cierre-icono { width: min(64vw, 400px); fill: var(--c-champan); }
 .cierre-destello { display: none; }
-@property --abre { syntax: '<percentage>'; inherits: false; initial-value: 60%; }
+@property --abre { syntax: '<percentage>'; inherits: false; initial-value: 70%; }
 @media (prefers-reduced-motion: no-preference) {
   .cierre-nombres { -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido)); mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido)); --barrido: -10%; }
-  .cierre-icono { opacity: 0; -webkit-mask-image: linear-gradient(90deg, transparent calc(50% - var(--abre)), #000 calc(50% - var(--abre) + 9%), #000 calc(50% + var(--abre) - 9%), transparent calc(50% + var(--abre))); mask-image: linear-gradient(90deg, transparent calc(50% - var(--abre)), #000 calc(50% - var(--abre) + 9%), #000 calc(50% + var(--abre) - 9%), transparent calc(50% + var(--abre))); --abre: 0%; }
+  .cierre-icono { opacity: 0; -webkit-mask-image: linear-gradient(90deg, transparent calc(50% - var(--abre)), #000 calc(50% - var(--abre) + 22%), #000 calc(50% + var(--abre) - 22%), transparent calc(50% + var(--abre))); mask-image: linear-gradient(90deg, transparent calc(50% - var(--abre)), #000 calc(50% - var(--abre) + 22%), #000 calc(50% + var(--abre) - 22%), transparent calc(50% + var(--abre))); --abre: 0%; }
   .cierre.visto .cierre-nombres { animation: tinta-entra 1.6s cubic-bezier(.45, .05, .3, 1) .1s both; }
-  .cierre.visto .cierre-icono { animation: ornamento-abre 2.2s cubic-bezier(.3, .05, .15, 1) 1s both; }
+  .cierre.visto .cierre-icono { animation: ornamento-abre 3.4s cubic-bezier(.25, .1, .25, 1) .9s both; }
   .cierre.visto .cierre-destello { display: inline; animation: cierre-destello 6s cubic-bezier(.5, 0, .3, 1) 3s infinite; }
 }
-@keyframes ornamento-abre { from { --abre: 0%; opacity: 0; transform: scale(.92); filter: drop-shadow(0 0 0 transparent) blur(4px); } 30% { opacity: 1; } 60% { filter: drop-shadow(0 0 18px oklch(0.87 0.039 80 / 0.55)); } to { --abre: 60%; opacity: 1; transform: none; filter: drop-shadow(0 0 0 transparent); } }
+@keyframes ornamento-abre { from { --abre: 0%; opacity: 0; } 25% { opacity: .9; } to { --abre: 70%; opacity: 1; } }
 @keyframes cierre-destello { 0% { transform: translateX(0); } 35%, 100% { transform: translateX(980px); } }
 
 /* «FALTAN 86 DÍAS» en una sola línea; la fecha larga debajo. */
@@ -1303,3 +1303,29 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 .faltan-titulo { color: var(--c-champan); }
 .faltan-titulo .pieza { width: clamp(52px, 13vw, 96px); }
 .cuenta.solo-dias .cuenta-celda > span .pieza { width: calc(clamp(52px, 13vw, 96px) * 0.628); }
+
+/* «FALTAN 86 DÍAS» como una frase: las dos palabras apoyadas en la línea
+   base del número, a los lados, con columnas iguales para que el número
+   quede justo al centro. Debajo, la fecha entre dos filetes. */
+.faltan-std-texto { --cifra: clamp(7rem, min(40vw, 30svh), 20rem); grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); width: 100%; max-width: 1100px; }
+@media (orientation: landscape) { .faltan-std-texto { --cifra: clamp(8rem, min(26vw, 44svh), 24rem); } }
+.faltan-std-texto .cuenta.solo-dias b { font-size: var(--cifra); }
+.faltan-std-texto > :first-child { grid-column: 1; grid-row: 1; justify-self: end; align-self: end; }
+.faltan-std-texto > .cuenta { grid-column: 2 / 4; grid-row: 1; display: grid; grid-template-columns: subgrid; align-self: stretch; }
+.faltan-std-texto > .cuenta .cuenta-celda { display: contents; }
+.faltan-std-texto > .cuenta .cuenta-celda > b { grid-column: 1; }
+.faltan-std-texto > .cuenta .cuenta-celda > span { grid-column: 2; justify-self: start; align-self: end; }
+/* Sobre la línea base de las cifras (≈ 0.17 de su tamaño desde abajo). */
+.faltan-titulo, .cuenta.solo-dias .cuenta-celda > span { margin: 0 0 calc(var(--cifra) * 0.17) !important; }
+.faltan-std-texto > .faltan-std-pie { grid-column: 1 / -1; grid-row: 2; margin-top: clamp(8px, 2svh, 24px); }
+
+/* La fecha larga: más chica, en beige, entre dos filetes. */
+.faltan-std .fecha-pieza { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 2.4vw, 22px); color: var(--c-champan); }
+.faltan-std .fecha-pieza::before, .faltan-std .fecha-pieza::after { content: ''; flex: none; width: clamp(22px, 7vw, 80px); height: 1px; background: oklch(0.87 0.039 80 / 0.55); }
+.faltan-std .fecha-pieza .pieza { width: min(58vw, 360px); margin: 0; }
+
+/* Mientras se abre el save the date, lo de abajo espera: que no asome nada
+   bajo la portada negra (en el teléfono se veía la foto de «Faltan»). */
+@media (prefers-reduced-motion: no-preference) {
+  html.std-intro:not(.ya-abierta) .portada.std ~ * { animation: fundido .8s var(--salida) 4.2s both; }
+}

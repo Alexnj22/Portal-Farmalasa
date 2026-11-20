@@ -11,8 +11,6 @@ import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { colorSistema } from './Formulario';
 import { MARCA } from './inicio/marca';
-import { papel } from '../tema/papel';
-import { usePreferenciaDeTema } from '../tema/preferencia';
 
 const MANCHAS = [
   { id: 'verde', color: '#8EC30F', cx: '12%', cy: '8%', r: '55%' },
@@ -31,13 +29,6 @@ export default function Aurora() {
   const oscuro = useColorScheme() === 'dark';
   if (Platform.OS === 'android') {
     return <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colorSistema.fondo }]} />;
-  }
-  // Papel y Sólido (la línea Mostrador, 2026-11-19): el fondo es el PAPEL
-  // liso, sin manchas — como el portal, que con Mostrador apaga orbes y ondas.
-  // La aurora queda para quien eligió Liquid Glass (el vidrio la necesita).
-  const estilo = usePreferenciaDeTema((s) => s.estilo);
-  if (estilo !== 'vidrio') {
-    return <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: papel(oscuro).fondo }]} />;
   }
   const base = oscuro ? '#08070D' : '#F3F2F8';
   const fuerza = oscuro ? 0.42 : 0.30;

@@ -9,7 +9,7 @@
 // del sistema para los ejes y el de la marca para las barras; igual en iPhone
 // y Android.
 import { useMemo, useRef, useState } from 'react';
-import { PanResponder, Platform, Text, View } from 'react-native';
+import { PanResponder, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Svg, { Line, Rect } from 'react-native-svg';
 import Vidrio from './Vidrio';
@@ -24,10 +24,7 @@ const corta = (h) => (h === 12 ? '12' : h < 12 ? `${h}a` : `${h - 12}p`);
  * @param extra    opcional, un texto por hora para la etiqueta («8 tickets»)
  * @param formato  cómo se escribe un valor
  */
-// iPhone, línea Mostrador · Gráficas: sólo la escala de la MARCA (el verde
-// queda para el éxito), así que el color se ignora y las barras son la marca.
-export default function GraficaHoras({ valores = [], desde = 7, color: pedido = MARCA.verde, alto = 180, formato = (v) => String(v), extra, resumen }) {
-  const color = Platform.OS === 'ios' ? MARCA.azul : pedido;
+export default function GraficaHoras({ valores = [], desde = 7, color = MARCA.verde, alto = 180, formato = (v) => String(v), extra, resumen }) {
   const [ancho, setAncho] = useState(0);
   const [elegida, setElegida] = useState(null);
   const ultima = useRef(null);

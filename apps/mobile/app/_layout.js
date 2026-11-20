@@ -21,7 +21,6 @@ import BurbujaFlotante from '../componentes/chat/BurbujaFlotante';
 import { escucharToques, registrarAvisos } from '../componentes/avisos';
 import AvisoDeInactividad from '../componentes/AvisoDeInactividad';
 import { aplicarTemaGuardado } from '../tema/preferencia';
-import { PAPEL } from '../tema/papel';
 // Define la tarea del GPS de fondo de las rutas: iOS relanza la app sin pantalla
 // para entregar posiciones, y la tarea tiene que existir desde el arranque.
 import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
@@ -88,11 +87,8 @@ function CampanaEnVivo() {
 // del portal el título grande salía oscuro sobre oscuro (usuario, 2026-09-30).
 // El fondo de las pantallas es transparente: detrás está la aurora (una sola,
 // en la raíz) que da la personalidad de la marca a toda la app.
-// Con la línea Mostrador (2026-11-19) la barra opaca, el texto y el acento
-// de la navegación son los de Papel (tema/papel.js); la barra sigue siendo la
-// del sistema.
-const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent', card: PAPEL.claro.fondo, text: PAPEL.claro.tinta, primary: PAPEL.claro.marca, border: PAPEL.claro.linea } };
-const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent', card: PAPEL.oscuro.fondo, text: PAPEL.oscuro.tinta, primary: PAPEL.oscuro.marca, border: PAPEL.oscuro.linea } };
+const CLARO = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent', card: '#F9F9F9' } };
+const OSCURO = { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent', card: '#1C1C1E' } };
 
 // En Android cada pantalla tiene su fondo OPACO (la superficie de Material) y
 // entra con la animación de Material: con fondos transparentes sobre un fondo
@@ -148,10 +144,10 @@ export default function Raiz() {
               // (fondo de superficie, íconos en el color del texto).
               ...(ANDROID ? { animation: 'slide_from_right', contentStyle: { backgroundColor: colorSistema.fondo },
                 headerStyle: { backgroundColor: colorSistema.fondo }, headerShadowVisible: false } : {}),
-              headerTintColor: ANDROID ? colorSistema.texto : tema.color.marcaTexto,
-              // El título en la tinta de Papel (la flecha y los botones, en
-              // la marca).
-              headerTitleStyle: { color: ANDROID ? (oscuro ? '#FFFFFF' : '#000000') : tema.color.texto },
+              headerTintColor: ANDROID ? colorSistema.texto : tema.color.marca,
+              // El título en el color del sistema (la flecha y los botones sí,
+              // en el de la marca).
+              headerTitleStyle: { color: oscuro ? '#FFFFFF' : '#000000' },
               // Sólo la flecha: el nombre de la pantalla anterior es el de la
               // barra de pestañas, que no significa nada para quien la usa.
               headerBackButtonDisplayMode: 'minimal',

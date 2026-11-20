@@ -123,7 +123,7 @@ function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
     <Pressable disabled={!alTocar} onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar?.(); }}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 14, paddingRight: 12,
         backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
-      <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
         <IconoFijo name={icono} size={17} color="#FFFFFF" />
       </View>
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 50,

@@ -4,7 +4,6 @@
 // puede.
 import { Appearance, Platform } from 'react-native';
 import { paletaDe } from '../../tema/material';
-import { mezclar, PAPEL, papel } from '../../tema/papel';
 
 export const MARCA = { rosa: '#E0457B', amarillo: '#EAB308', azulInfo: '#1192E8', gris: '#8E8E93', azul: '#0052CC', azulClaro: '#3B82F6', verde: '#12B76A', ambar: '#F79009', rojo: '#F04438', violeta: '#6929C4', violetaClaro: '#A78BFA' };
 
@@ -19,28 +18,7 @@ export const MARCA = { rosa: '#E0457B', amarillo: '#EAB308', azulInfo: '#1192E8'
 //     oscuro, saturado en claro —, el que se lee sobre el fondo.
 // Sin alfa (#RRGGBB): muchas pantallas le pegan una transparencia («+ '22'»).
 // Verde, ámbar, rojo y violeta son SEMÁNTICOS (estado) y no cambian.
-// En iPhone, la línea Mostrador (Papel, tema/papel.js, 2026-11-19): la marca
-// es el MAGENTA y los estados son los de Papel, leídos del modo actual:
-//   · `azul`: el relleno de la marca (texto blanco encima: 7.1 en claro, 5.0
-//     en oscuro).
-//   · `azulClaro`: la marca como texto o ícono (en oscuro, aclarada hacia la
-//     tinta para leerse sobre el casi negro).
-//   · `verde`/`ambar`/`rojo`: éxito, aviso y falla. La app los usa como texto
-//     y como relleno a la vez, y ~540 sitios los leen al CARGAR el módulo
-//     (`const TONO = { bien: MARCA.verde }`): por eso son UN hex fijo para los
-//     dos modos, la mezcla 40 % del token oscuro + 60 % del claro de Papel. Se
-//     lee sobre el papel (≥ 3.8) y sobre el casi negro (≥ 4.4), y el blanco
-//     encima se lee mejor que sobre el verde y el ámbar de antes (2.6 y 2.3).
-// Los nombres se quedan (`azul`) porque los escriben ~850 sitios: cambiarlos
-// es tocar cada pantalla sin cambiar nada de lo que se ve.
-if (Platform.OS === 'ios') {
-  const de = (token) => ({ enumerable: true, get: () => papel()[token] });
-  Object.defineProperty(MARCA, 'azul', de('marca'));
-  Object.defineProperty(MARCA, 'azulClaro', de('marcaTexto'));
-  MARCA.verde = mezclar(PAPEL.oscuro.exito, PAPEL.claro.exito, 0.4);
-  MARCA.ambar = mezclar(PAPEL.oscuro.aviso, PAPEL.claro.aviso, 0.4);
-  MARCA.rojo = mezclar(PAPEL.oscuro.error, PAPEL.claro.error, 0.4);
-}
+// En iPhone nada cambia: es el azul de la marca.
 if (Platform.OS === 'android') {
   const primario = (oscuro, fijo) => () => {
     const p = paletaDe(oscuro())?.primary;

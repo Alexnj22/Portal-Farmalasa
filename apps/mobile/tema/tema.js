@@ -5,15 +5,8 @@
 // La app usa los temas SÓLIDOS (`solid` / `solid-dark`): el vidrio del portal
 // depende de `backdrop-filter`, que en el teléfono cuesta batería y no aporta
 // información.
-//
-// Línea Mostrador (2026-11-19, docs/DISENO-MOSTRADOR.md §0): los COLORES son los
-// doce de Papel (tema/papel.js) y las formas, las de Relieve — tarjeta 28 y
-// todo control en píldora. Las medidas táctiles siguen saliendo de tokens.json.
-// En Android la marca es el color del SISTEMA (`MARCA.azul`, Material You).
-import { Platform, useColorScheme } from 'react-native';
+import { useColorScheme } from 'react-native';
 import tokens from '@nucleo/constants/tokens.json';
-import { papel, RADIO } from './papel';
-import { MARCA } from '../componentes/inicio/marca';
 
 const REM = 16;
 
@@ -25,34 +18,31 @@ export function medida(valor) {
   return m[2] === 'rem' ? Number(m[1]) * REM : Number(m[1]);
 }
 
-function armar(nombre, oscuro) {
+function armar(nombre) {
   const t = tokens.temas[nombre];
   const tactil = tokens.variantes.tactil;
-  const p = papel(oscuro);
   return {
     nombre,
     color: {
-      get marca() { return Platform.OS === 'android' ? MARCA.azul : p.marca; },
-      get marcaTexto() { return Platform.OS === 'android' ? MARCA.azulClaro : p.marcaTexto; },
-      marcaSuave: p.marcaSuave,
-      fondo: p.fondo,
-      tarjeta: p.superficie,
-      hundida: p.hundida,
-      borde: p.linea,
-      texto: p.tinta,
-      texto2: p.tinta2,
-      texto3: p.tinta3,
-      peligro: p.error,
-      peligroTexto: p.error,
-      exito: p.exito,
-      exitoTexto: p.exito,
-      aviso: p.aviso,
-      avisoTexto: p.aviso,
+      marca: t.brand,
+      marcaTexto: t['brand-text'],
+      fondo: t['bg-page'],
+      tarjeta: t['surface-card'],
+      borde: t['border-card'],
+      texto: t['text-primary'],
+      texto2: t['text-secondary'],
+      texto3: t['text-tertiary'],
+      peligro: t.danger,
+      peligroTexto: t['danger-text'],
+      exito: t.success,
+      exitoTexto: t['success-text'],
+      aviso: t.warning,
+      avisoTexto: t['warning-text'],
     },
     radio: {
-      tarjeta: RADIO.tarjeta,
-      control: RADIO.pildora,
-      boton: RADIO.pildora,
+      tarjeta: medida(t['card-radius']),
+      control: medida(t['input-radius']),
+      boton: medida(t['btn-radius']),
     },
     // El teléfono usa la densidad TÁCTIL del portal: blanco de dedo de 44.
     tam: {
@@ -69,8 +59,8 @@ function armar(nombre, oscuro) {
   };
 }
 
-const CLARO = armar('solid', false);
-const OSCURO = armar('solid-dark', true);
+const CLARO = armar('solid');
+const OSCURO = armar('solid-dark');
 
 /** Un color de la paleta con transparencia, para el fondo de un tono. */
 export function suave(hex, alfa = 0.12) {

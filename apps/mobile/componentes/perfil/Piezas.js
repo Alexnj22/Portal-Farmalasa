@@ -29,7 +29,7 @@ export const fechaCorta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 
 export function FilaConIcono({ icono, color = MARCA.azulClaro, rotulo, valor, extra, primero }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: primero ? 0 : 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
-      <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}26` }}>
+      <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}26` }}>
         <IconoFijo name={iconoDe(icono)} size={15} color={color} />
       </View>
       <View style={{ flex: 1, gap: 1 }}>

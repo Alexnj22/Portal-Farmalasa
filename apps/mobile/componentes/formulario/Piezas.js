@@ -3,7 +3,7 @@
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
 import { useRef, useState } from 'react';
-import { Animated, Appearance, InputAccessoryView, Keyboard, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { Animated, InputAccessoryView, Keyboard, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -16,12 +16,8 @@ import { colorSistema } from '../Formulario';
 import { FONDO_CONTROL, MARCA, tintaSobre } from '../inicio/marca';
 import IconoFijo from '../IconoFijo';
 import { MAYUSCULAS } from '../../tema/mayusculas';
-import { papel, pozo, relieve } from '../../tema/papel';
 
 const ANDROID = Platform.OS === 'android';
-const IOS = Platform.OS === 'ios';
-// iPhone, línea Mostrador: el modo se lee al pintar para el relieve y el pozo.
-const oscuroAhora = () => Appearance.getColorScheme() === 'dark';
 
 /** Lo que se ve mientras llega una pantalla: siempre a la misma altura. */
 // Android: el indicador de carga de Material 3 Expressive (la forma que va
@@ -53,24 +49,18 @@ export function Vacio({ titulo, detalle, children, enSeccion = false, icono, ton
   const bien = (tono ?? (AL_DIA.test(texto) ? 'bien' : 'neutro')) === 'bien';
   const color = bien ? MARCA.verde : colorSistema.texto2;
   const nombre = icono ?? (bien ? 'AlDia' : BUSQUEDA.test(texto) ? 'Search' : FILTRO.test(texto) ? 'Filtro' : 'Bandeja');
-  // iPhone, línea Mostrador · Vacíos A «Círculo hundido»: el ícono en un pozo
-  // redondo de 72 con sombra interior; el tono lo tiñe al 14 %.
-  const o = oscuroAhora();
-  const circulo = IOS
-    ? { width: 72, height: 72, borderRadius: 36, backgroundColor: bien ? `${MARCA.verde}24` : papel(o).hundida, boxShadow: pozo(o) }
-    : { width: 88, height: 88, borderRadius: 44, backgroundColor: bien ? `${MARCA.verde}24` : FONDO_CONTROL, borderWidth: 1, borderColor: bien ? `${MARCA.verde}40` : colorSistema.separador };
   return (
     <View style={{ alignItems: 'center', marginTop: 56, paddingHorizontal: 32, gap: 8 }} accessibilityRole="summary">
-      <View style={[{ alignItems: 'center', justifyContent: 'center', marginBottom: 8 }, circulo]}>
-        <IconoFijo name={iconoDe(nombre)} size={IOS ? 32 : 40} color={color} />
+      <View style={{ width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+        backgroundColor: bien ? `${MARCA.verde}24` : FONDO_CONTROL, borderWidth: 1, borderColor: bien ? `${MARCA.verde}40` : colorSistema.separador }}>
+        <IconoFijo name={iconoDe(nombre)} size={40} color={color} />
       </View>
-      <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '600', letterSpacing: IOS ? -0.3 : 0, textAlign: 'center' }}>{titulo ?? children}</Text>
-      {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 15, lineHeight: 20, textAlign: 'center', maxWidth: 300 }}>{detalle}</Text> : null}
+      <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{titulo ?? children}</Text>
+      {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 15, lineHeight: 20, textAlign: 'center' }}>{detalle}</Text> : null}
       {accion ? (
         <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); accion.onPress?.(); }} accessibilityRole="button" hitSlop={8}
-          style={({ pressed }) => ({ marginTop: 10, minHeight: 44, paddingHorizontal: 20, borderRadius: 999, justifyContent: 'center',
-            backgroundColor: IOS ? papel(o).superficie : FONDO_CONTROL, boxShadow: IOS ? relieve(o, 'control') : undefined,
-            opacity: pressed ? 0.6 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+          style={({ pressed }) => ({ marginTop: 10, minHeight: 44, paddingHorizontal: 20, borderRadius: 22, justifyContent: 'center',
+            backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.6 : 1 })}>
           <Text style={{ color: colorSistema.acento, fontSize: 16, fontWeight: '600' }}>{accion.texto}</Text>
         </Pressable>
       ) : null}
@@ -103,11 +93,8 @@ export function PantallaSinDato({ titulo = '', texto, detalle, cargando = false 
 export function Ficha({ texto, activa, onPress, color = MARCA.azul, deshabilitada }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }} disabled={deshabilitada} accessibilityRole="button" accessibilityState={{ selected: !!activa }}
-      // iPhone, línea Mostrador: píldora con relieve; la elegida, sólida.
-      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: activa ? (IOS ? deAccion(color) : color) : (IOS ? papel(oscuroAhora()).superficie : FONDO_CONTROL),
-        boxShadow: IOS ? relieve(oscuroAhora(), 'control') : undefined,
-        opacity: deshabilitada ? 0.45 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: activa ? color : FONDO_CONTROL, opacity: deshabilitada ? 0.4 : pressed ? 0.7 : 1 })}>
       <Text style={{ color: activa ? '#fff' : colorSistema.texto, fontSize: 15, fontWeight: activa ? '700' : '500' }}>{texto}</Text>
     </Pressable>
   );
@@ -183,10 +170,8 @@ export function Campo({ multiline = true, style, onSiguiente, ...props }) {
     <>
       <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline}
         inputAccessoryViewID={numerico ? id : undefined} {...props}
-        // Línea Mostrador · Campos B «Pozo»: papel hundido con sombra interior;
-        // píldora si es de una línea, 22 si es de varias.
-        style={[{ minHeight: 44, borderRadius: multiline ? 22 : 999, paddingHorizontal: 16, paddingVertical: 11, fontSize: 16, color: colorSistema.texto,
-          backgroundColor: papel(oscuroAhora()).hundida, boxShadow: pozo(oscuroAhora()) }, style]} />
+        style={[{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colorSistema.texto,
+          backgroundColor: FONDO_CONTROL }, style]} />
       {numerico ? <BarraListo id={id} onSiguiente={onSiguiente} /> : null}
     </>
   );
@@ -223,16 +208,7 @@ export function Opciones({ opciones, valor, onCambiar, color = MARCA.azulClaro }
 }
 
 // En Android el color por omisión es el primario del sistema (Material You).
-// iPhone, línea Mostrador: la ACCIÓN va en la marca. El verde queda para el
-// éxito, no para un botón (Diálogos C: «Aprobar» se pinta con la marca), y la
-// marca-texto (`azulClaro`, clara en oscuro) como relleno se vuelve la marca.
-function deAccion(color) {
-  if (!IOS) return color;
-  return color === MARCA.verde || color === MARCA.azulClaro ? MARCA.azul : color;
-}
-
-export function BotonGrande({ texto, color: pedido = ANDROID ? colorSistema.acento : MARCA.azul, onPress, deshabilitado, borde = false }) {
-  const color = deAccion(pedido);
+export function BotonGrande({ texto, color = ANDROID ? colorSistema.acento : MARCA.azul, onPress, deshabilitado, borde = false }) {
   // El toque se siente: un golpe leve en cada botón de acción de la app, así
   // ninguna pantalla tiene que acordarse de pedirlo.
   const tocar = onPress ? (e) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); onPress(e); } : undefined;
@@ -259,13 +235,9 @@ export function BotonGrande({ texto, color: pedido = ANDROID ? colorSistema.acen
   return (
     <Pressable onPress={tocar} disabled={deshabilitado} accessibilityRole="button"
       // iOS: se achica al apretar.
-      // Línea Mostrador · Botón B «Brillo»: píldora, aro de luz interior y
-      // resplandor del color; apretado, escala .96; apagado, .45.
-      style={({ pressed }) => ({ minHeight: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
+      style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
         backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color,
-        boxShadow: borde || deshabilitado || typeof color !== 'string' ? undefined
-          : `inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 2px rgba(0,0,0,0.08), 0 8px 20px -8px ${color}99`,
-        opacity: deshabilitado ? 0.45 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+        opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Text style={letra}>{texto}</Text>
     </Pressable>
   );
@@ -286,19 +258,6 @@ export function Dato({ rotulo, valor, primero, fuerte }) {
 /** Un aviso dentro de un formulario: freno (rojo), cuidado (ámbar) o nota. */
 export function Aviso({ texto, tono = 'nota' }) {
   const color = tono === 'freno' ? MARCA.rojo : tono === 'cuidado' ? MARCA.ambar : colorSistema.texto2;
-  // iPhone, línea Mostrador · Avisos A: el freno y el cuidado son una ficha del
-  // tono al 10 %, radio 16, con el ícono en un círculo de 28 del tono y el
-  // texto en tinta 2. La nota sigue siendo una línea discreta.
-  if (IOS && tono !== 'nota') {
-    return (
-      <View accessibilityRole="alert" style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, backgroundColor: `${color}1A` }}>
-        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
-          <IconoFijo name={iconoDe('AlertTriangle')} size={15} color={color} />
-        </View>
-        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 14, fontWeight: '500', lineHeight: 19 }}>{texto}</Text>
-      </View>
-    );
-  }
   return <Text style={{ color, fontSize: 14, fontWeight: tono === 'nota' ? '400' : '600', marginHorizontal: 4 }}>{texto}</Text>;
 }
 

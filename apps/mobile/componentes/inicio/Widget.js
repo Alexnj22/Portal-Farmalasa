@@ -25,8 +25,7 @@ const tocar = (fn) => (fn ? () => { Haptics.selectionAsync().catch(() => {}); fn
 
 export function Chip({ icono, color, tamano = 26 }) {
   return (
-    // Línea Mostrador: el ícono del encabezado en un CÍRCULO teñido.
-    <View style={{ width: tamano, height: tamano, borderRadius: tamano / 2, backgroundColor: `${color}24`, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ width: tamano, height: tamano, borderRadius: tamano * 0.3, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
       <IconoFijo name={iconoDe(icono)} size={tamano * 0.58} color={color} />
     </View>
   );
@@ -97,8 +96,7 @@ export function Esqueleto({ lineas = 3 }) {
   return (
     <View style={{ gap: 10, paddingVertical: 4 }}>
       {Array.from({ length: lineas }).map((_, i) => (
-        // Línea Mostrador · Esqueleto: píldora en pozo (el relleno hundido).
-        <Animated.View key={i} style={{ height: 14, width: `${90 - i * 18}%`, borderRadius: 999, backgroundColor: colorSistema.relleno, opacity: v }} />
+        <Animated.View key={i} style={{ height: 14, width: `${90 - i * 18}%`, borderRadius: 7, backgroundColor: 'rgba(127,127,127,0.35)', opacity: v }} />
       ))}
     </View>
   );

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.1 — La app del personal vuelve a su diseño de siempre
+
+- Se quita la línea Papel de la app del personal (v2.1584.0): el usuario la vio y en el teléfono sólo cambiaba el tema. Vuelven los 24 archivos visuales a como estaban y sale `tema/papel.js`. Se quedan los filtros «Todas».
+- Novedades: no — revierte v2.1584.0, que salió sin aviso por decisión del usuario.
+- Gemelo: overview — sólo visual: deshace el tema de la app; el portal no cambia.
+- Gemelo: emp_profile — sólo visual: deshace el tema de la app; el portal no cambia.
+
 ## v2.1584.0 — La app del personal con la línea Papel en iPhone
 
 - La app del personal toma la línea de diseño nueva (Portal 2.0), sólo JavaScript y por aire, sin tocar lo nativo (misma huella): paleta Papel claro y oscuro casi negro con la marca magenta (`tema/papel.js`), estilo «Papel» por defecto en Cuenta › Estilo (quien eligió Liquid Glass o Sólido lo conserva), botones píldora con brillo, campos en pozo, segmentado en pozo con ficha, íconos de encabezado y cifras en círculo.

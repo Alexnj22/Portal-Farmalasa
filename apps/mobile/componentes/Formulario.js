@@ -19,7 +19,6 @@ import IconoFijo from './IconoFijo';
 import Vidrio from './Vidrio';
 import { MAYUSCULAS } from '../tema/mayusculas';
 import { MARCA } from './inicio/marca';
-import { dinamico } from '../tema/papel';
 
 const ios = Platform.OS === 'ios';
 // Fuera de iPhone, cada color se lee como GETTER y devuelve el del modo ACTUAL
@@ -61,23 +60,8 @@ const deAndroid = (k, claro, noche) => () => {
   const p = DE_LA_PALETA[k] ? paletaDe(o) : null;
   return (p && p[DE_LA_PALETA[k]]) || (o ? noche : claro);
 };
-// iPhone: la línea Mostrador (Papel, tema/papel.js) en vez de los grises del
-// sistema. Siguen siendo colores DINÁMICOS (`DynamicColorIOS`): el sistema los
-// cambia solos de claro a oscuro, igual que los `PlatformColor` de antes, y
-// las piezas de @expo/ui los aceptan. Lo que no está en la tabla sigue con el
-// color del sistema.
-const DE_PAPEL = { fondo: 'fondo', fila: 'superficie', texto: 'tinta', texto2: 'tinta2', placeholder: 'tinta3',
-  separador: 'linea', rojo: 'error', verde: 'exito', naranja: 'aviso', acento: 'marcaTexto', relleno: 'hundida' };
-const deIos = (k, nativo) => () => (DE_PAPEL[k] ? dinamico(DE_PAPEL[k]) : PlatformColor(nativo));
 for (const [k, [nativo, claro, noche]] of Object.entries(COLORES)) {
-  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? deIos(k, nativo) : deAndroid(k, claro, noche) });
-}
-// Los tres tonos de Papel que no tenían par en el sistema (iPhone): el texto
-// de rótulos, la marca suave de lo elegido y el pozo de lo hundido.
-if (ios) {
-  for (const [k, token] of [['texto3', 'tinta3'], ['marcaSuave', 'marcaSuave'], ['hundida', 'hundida'], ['superficie', 'superficie']]) {
-    Object.defineProperty(colorSistema, k, { enumerable: true, get: () => dinamico(token) });
-  }
+  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? () => PlatformColor(nativo) : deAndroid(k, claro, noche) });
 }
 // El tinte del acento sobre vidrio: el azul de la marca en iPhone y el primario
 // del sistema en Android (se lee al pintar, así sigue al color nuevo).
@@ -112,8 +96,8 @@ export function Grupo({ titulo, pie, children, vidrio = true }) {
         // Android: el subtítulo de lista de Material 3 — primario, 14, medio.
         : { color: colorSistema.acento, fontSize: 14, fontWeight: '500', marginLeft: 16, marginBottom: 8 }}>{titulo}</Text> : null}
       {vidrio
-        ? <Vidrio radio={ios ? 28 : 16}>{contenido}</Vidrio>
-        : <View style={{ backgroundColor: colorSistema.fila, borderRadius: ios ? 28 : 16, overflow: 'hidden' }}>{contenido}</View>}
+        ? <Vidrio radio={ios ? 26 : 16}>{contenido}</Vidrio>
+        : <View style={{ backgroundColor: colorSistema.fila, borderRadius: ios ? 26 : 16, overflow: 'hidden' }}>{contenido}</View>}
       {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 16, marginTop: 6 }}>{pie}</Text> : null}
     </View>
   );

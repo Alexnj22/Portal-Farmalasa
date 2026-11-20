@@ -187,6 +187,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (ev && eventoVigente(ev) && canEdit) openModal('newEvent', datosParaCorregir(ev, emp.id));
     }, [corregir, timeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // `?accion=prorroga|baja`: llega desde «Contratos vencidos» de Personal y
+    // abre la novedad ya elegida (2026-11-20). La baja va por fin del plazo,
+    // con la fecha en que venció el contrato. Una sola vez: el parámetro se quita.
+    const accion = params.get('accion');
+    useEffect(() => {
+        if (!accion || !emp?.id || typeof openModal !== 'function') return;
+        setParams(p => { const q = new URLSearchParams(p); q.delete('accion'); return q; }, { replace: true });
+        if (!canEdit) return;
+        const fin = emp.contract_end_date ? String(emp.contract_end_date).slice(0, 10) : null;
+        if (accion === 'prorroga') openModal('newEvent', { type: 'CONTRACT_EXTENSION', employeeId: emp.id, date: hoySV() });
+        if (accion === 'baja') openModal('newEvent', { type: 'TERMINATION', employeeId: emp.id, terminationReason: 'VENCIMIENTO_PLAZO', date: fin || hoySV(), ultimoDiaLaborado: fin || undefined });
+    }, [accion, emp?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const ausenciasData = useMemo(() => {
         const mes = `${ausenciasCalMonth.getFullYear()}-${String(ausenciasCalMonth.getMonth() + 1).padStart(2, '0')}`;
         let list = ausenciasFiltradas(timeline, { mes, dia: ausenciasSelectedDay });

@@ -8,10 +8,11 @@ import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, horasAlCambiarContrato, horasValidas, sucursalesPorArea } from '@nucleo/utils/reingresoYRecontratacion';
+import { CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, horasAlCambiarContrato, horasValidas, sucursalesPorArea, contratoVencido, avisoDeContratoNuevo } from '@nucleo/utils/reingresoYRecontratacion';
 import { contratoConPlazo } from '@nucleo/utils/contrato';
 
 import IconoEnCaja from '../common/IconoEnCaja';
+import Notice from '../common/Notice';
 // Los contratos, las áreas y las horas salen del núcleo (`reingresoYRecontratacion`).
 const CONTRACT_TYPE_OPTIONS = CONTRATOS_DE_RECONTRATACION;
 const portalProps = {
@@ -31,6 +32,10 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
     ]);
     const roleOpts = (roles || []).map(r => ({ value: String(r.id), label: r.name }));
 
+    // Activa con el contrato vencido: no es un reingreso, es el contrato que
+    // sigue al que venció (`rehireEmployee` cierra el anterior).
+    const finAnterior = contratoVencido(formData);
+    const aviso = avisoDeContratoNuevo(formData, formData.rehire_hire_date);
     const lastExit = formData.contract_end_date
         ? fechaTexto(formData.contract_end_date, { day: '2-digit', month: 'long', year: 'numeric' })
         : 'No registrada';
@@ -48,17 +53,19 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     <AvatarConEstado emp={formData} px={64} marco="" />
                 </IconoEnCaja>
                 <div className="min-w-0">
-                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>
+                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">{finAnterior ? 'Contrato nuevo para' : 'Recontratando a'}</p>
                     <p className="font-black text-content text-body-xl leading-tight truncate">{formData.name}</p>
                     <p className="text-label text-content-3 font-medium mt-0.5">
                         {/* El código de carné ya no se muestra: es la contraseña con la
                             que se entra al portal, y esta tarjeta es sólo para reconocer a
                             quién se está recontratando. Se ve y se edita en Personal, con
                             el permiso que corresponde. */}
-                        Última salida: <span className="font-black text-content-2">{lastExit}</span>
+                        {finAnterior ? 'Su contrato venció el' : 'Última salida:'} <span className="font-black text-content-2">{lastExit}</span>
                     </p>
                 </div>
             </div>
+
+            {aviso && <Notice variant="info" compact>{aviso}</Notice>}
 
             {/* NUEVO CONTRATO */}
             <div className={island}>

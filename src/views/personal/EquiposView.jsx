@@ -38,6 +38,7 @@ import { TIPO_FICHA_PRACTICANTE, PASANTIA_VACIA, pasantiaDe, fichaConPasantia, f
 import { fetchHorasDePracticantes } from '@nucleo/data/practicantes';
 import { fetchCredenciales, fetchUltimasBajas } from '@nucleo/data/employees';
 import { ultimaBajaPorPersona } from '@nucleo/utils/bajaLegal';
+import { contratosVencidos } from '@nucleo/utils/reingresoYRecontratacion';
 import { TERMINATION_REASONS } from '@nucleo/data/constants';
 import { formatDate } from '@nucleo/utils/helpers';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -123,6 +124,7 @@ const MOTIVO_CORTO = {
   DESPIDO_SIN_RESPONSABILIDAD: 'Despido justificado',
   DESPIDO_CON_RESPONSABILIDAD: 'Despido con indemnización',
   ABANDONO: 'Abandono',
+  VENCIMIENTO_PLAZO: 'Fin de contrato',
 };
 
 // ── ¿Trabaja en esta sala? ────────────────────────────────────────────────
@@ -764,6 +766,58 @@ function CierresPendientes({ filas, canEdit, onCompletar }) {
   );
 }
 
+// ── Contratos vencidos (2026-11-20) ─────────────────────────────────────────
+// Quien sigue activo con su contrato a plazo ya vencido. Nada lo mostraba: un
+// interinato venció y la persona siguió activa días después, sin prórroga ni
+// contrato nuevo. Cada fila ofrece las tres salidas posibles: prorrogar (si
+// siguió trabajando sin días de por medio), contrato nuevo (si hubo días sin
+// contrato) o dar de baja por fin del plazo.
+function ContratosVencidos({ filas, canEdit, onProrrogar, onContratoNuevo, onBaja }) {
+  const [abierto, setAbierto] = useState(false);
+  if (!filas.length) return null;
+  const visibles = abierto ? filas : filas.slice(0, 3);
+  return (
+    <div data-surface="card" data-tono="danger" className="space-y-3 p-4">
+      <div className="flex items-center gap-3">
+        <IconoEnCaja tono="danger"><CalendarClock size={18} /></IconoEnCaja>
+        <div className="min-w-0 flex-1">
+          <p className="text-body font-black text-content">
+            {filas.length === 1 ? '1 contrato vencido' : `${filas.length} contratos vencidos`}
+          </p>
+          <p className="text-caption text-content-3">Siguen activos con el contrato vencido. Prorroga, haz un contrato nuevo o da de baja.</p>
+        </div>
+      </div>
+      <ul className="divide-y divide-border-card">
+        {visibles.map(({ emp, fin, diasVencido }) => (
+          <li key={emp.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <AvatarConEstado emp={emp} px={36} mostrarChip={false} />
+              <div className="min-w-0">
+                <p className="truncate text-body-sm font-bold text-content">{shortEmployeeName(emp)}</p>
+                <p className="text-caption text-content-3">
+                  {`Venció el ${formatDate(fin)} · ${diasVencido === 1 ? 'hace 1 día' : `hace ${diasVencido} días`}`}
+                </p>
+              </div>
+            </div>
+            {canEdit && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Button variant="secondary" size="sm" icon={CalendarClock} onClick={() => onProrrogar(emp)}>Prorrogar</Button>
+                <Button tone="success" soft size="sm" icon={RefreshCw} onClick={() => onContratoNuevo(emp)}>Contrato nuevo</Button>
+                <Button variant="ghost" size="sm" icon={UserMinus} onClick={() => onBaja(emp)}>Dar de baja</Button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {filas.length > 3 && (
+        <Button variant="ghost" size="sm" icon={ChevronRight} onClick={() => setAbierto(v => !v)}>
+          {abierto ? 'Ver menos' : `Ver los ${filas.length}`}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch, setSelectedBranch, openModal }) {
   const navigate = useNavigate();
   const employees = useStaff(s => s.employees);
@@ -865,6 +919,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     .map(emp => ({ emp, baja: bajaDe(emp) }))
     .filter(x => x.baja?.cierrePendiente?.length)
     .sort((a, b) => String(a.baja.fecha).localeCompare(String(b.baja.fecha))), [enAlcance, bajaDe]);
+  // Los contratos vencidos de quien sigue activo, con el mismo alcance que la lista.
+  const vencidos = useMemo(() => contratosVencidos(soloPersonalEnPlanilla(enAlcance.filter(e => !esDeBaja(e)))
+    .filter(e => !selectedBranch || selectedBranch === 'ALL' || cubreLaSala(e, selectedBranch))),
+  [enAlcance, selectedBranch]);
   // La sala en la que se la muestra: la suya, o —si está de baja— la última que tuvo.
   const salaDe = useCallback(emp => (esDeBaja(emp)
     ? (bajaDe(emp)?.sucursalId || 0)
@@ -1219,6 +1277,13 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
             </FilterBar.Section>
           </FilterBar>
         </div>
+
+        {!cargando && !esExternos && !esPracticantes && (vista === 'todos' || vista === 'activos') && (
+          <ContratosVencidos filas={vencidos} canEdit={canEdit}
+            onProrrogar={emp => navigate(`/personal/empleado/${emp.id}?accion=prorroga`)}
+            onContratoNuevo={recontratar}
+            onBaja={emp => navigate(`/personal/empleado/${emp.id}?accion=baja`)} />
+        )}
 
         {!cargando && (vista === 'todos' || vista === 'bajas') && (
           <CierresPendientes filas={cierresPendientes} canEdit={canEdit}

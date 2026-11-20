@@ -4,6 +4,8 @@
 // La escritura es del store: `vacationRecallEmployee` y `rehireEmployee`.
 
 import { contratoConPlazo } from './contrato';
+import { finDeContrato } from './alertasDePersona';
+import { diasEntre, fechaTexto, hoySV } from './fecha';
 
 /** Las vacaciones que está gozando HOY (no canceladas), si las hay. */
 export function vacacionEnCurso(empleado, hoy) {
@@ -53,6 +55,40 @@ export const horasValidas = (h) => {
     return Number.isInteger(n) && n >= 1 && n <= 44;
 };
 
+// ── Contrato vencido y contrato nuevo (2026-11-20) ──────────────────────────
+//
+// Un contrato a plazo vence y la persona sigue ACTIVA en el portal: nada lo
+// cerraba. Pasó con un interinato que venció el 18 de noviembre y siguió con
+// otro desde el 23: para recontratar había que dar de baja primero y después
+// recontratar, dos pasos que nadie sabía que existían. Ahora, a quien tiene el
+// contrato vencido se le registra el contrato nuevo de una vez: el store cierra
+// el anterior por fin del plazo (Art. 48 ord. 1.º CT) y abre el nuevo.
+
+const fechaCorta = (dia) => fechaTexto(dia, { day: 'numeric', month: 'long' });
+
+/** El fin del contrato a plazo de quien sigue activo con él ya vencido (`AAAA-MM-DD`), o null. */
+export function contratoVencido(empleado, hoy = hoySV()) {
+    const c = finDeContrato(empleado, hoy);
+    return c && c.dias < 0 ? c.fin : null;
+}
+
+/** Los días sin contrato entre el fin del anterior y el ingreso del nuevo (sin contar ninguno de los dos). */
+export const diasSinContrato = (fin, ingreso) => (fin && ingreso ? diasEntre(fin, ingreso) - 1 : null);
+
+/**
+ * Quienes siguen activos con el contrato vencido, del que venció primero al
+ * último: `[{ emp, fin, diasVencido }]`.
+ */
+export function contratosVencidos(empleados = [], hoy = hoySV()) {
+    return (empleados || [])
+        .map((emp) => {
+            const fin = contratoVencido(emp, hoy);
+            return fin ? { emp, fin, diasVencido: diasEntre(fin, hoy) } : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.fin.localeCompare(b.fin));
+}
+
 /**
  * Qué falta para poder recontratar, en palabras, o `null` si está completo.
  *
@@ -60,8 +96,14 @@ export const horasValidas = (h) => {
  * formulario no los pedía y `rehireEmployee` los guardaba en null: la ficha
  * quedaba TEMPORAL sin respaldo, que el Art. 25 presume indefinido.
  */
-export function faltaParaRecontratar(f = {}) {
+export function faltaParaRecontratar(f = {}, empleado = null) {
     if (!(f.rehire_hire_date && f.rehire_branch_id && f.rehire_role_id)) return 'Fecha de ingreso, sucursal y cargo son obligatorios.';
+    const vencio = empleado ? contratoVencido(empleado) : null;
+    if (vencio) {
+        const dias = diasSinContrato(vencio, f.rehire_hire_date);
+        if (dias < 0) return `El contrato nuevo tiene que empezar después del ${fechaCorta(vencio)}, cuando terminó el anterior.`;
+        if (dias === 0) return 'Empieza al día siguiente del fin del anterior: eso es una prórroga, no un contrato nuevo.';
+    }
     if (!horasValidas(f.rehire_weekly_hours ?? 44)) return 'Las horas semanales van de 1 a 44 (Art. 161).';
     const tipo = f.rehire_contract_type || 'INDEFINIDO';
     // La fecha de fin la pide todo contrato con plazo —Temporal y Servicios—,
@@ -79,7 +121,31 @@ export function faltaParaRecontratar(f = {}) {
 }
 
 /** ¿Se puede recontratar ya? */
-export const recontratacionCompleta = (f = {}) => faltaParaRecontratar(f) === null;
+export const recontratacionCompleta = (f = {}, empleado = null) => faltaParaRecontratar(f, empleado) === null;
+
+/** Los valores con que arranca el contrato nuevo: el mismo contrato, sucursal, cargo y horas, desde hoy. */
+export function contratoNuevoInicial(empleado, hoy = hoySV()) {
+    const base = recontratacionInicial(hoy);
+    return {
+        ...base,
+        rehire_contract_type: empleado?.contract_type || base.rehire_contract_type,
+        rehire_weekly_hours: String(empleado?.weekly_contracted_hours ?? base.rehire_weekly_hours),
+        rehire_branch_id: empleado?.branch_id ?? empleado?.branchId ?? null,
+        rehire_role_id: empleado?.role_id ?? null,
+        rehire_secondary_role_id: empleado?.secondary_role_id ?? null,
+        rehire_temporal_legal_basis: empleado?.contract_temporal_legal_basis || null,
+        rehire_temporal_reason: empleado?.contract_temporal_reason || '',
+    };
+}
+
+/** La línea que explica qué va a pasar al guardar un contrato nuevo. */
+export function avisoDeContratoNuevo(empleado, ingreso, hoy = hoySV()) {
+    const fin = contratoVencido(empleado, hoy);
+    if (!fin) return null;
+    const dias = diasSinContrato(fin, ingreso);
+    const sin = dias > 0 ? ` Quedan ${dias === 1 ? '1 día' : `${dias} días`} sin contrato.` : '';
+    return `El contrato anterior terminó el ${fechaCorta(fin)}. Al guardar, se cierra por fin del plazo y empieza el nuevo.${sin}`;
+}
 
 /** Lo que se le manda a `rehireEmployee`. */
 export const datosDeRecontratacion = (f = {}) => ({

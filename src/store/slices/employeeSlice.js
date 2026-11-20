@@ -7,10 +7,10 @@ import {
     codigoDeCarneLibre, duiDisponible,
     upsertEducationCatalogEntries, insertEmployee, updateEmployee as updateEmployeeRow, updateEmployeeReturning,
     guardarDatosProtegidos,
-    insertEmployeeEventRaw, fetchAttendanceSince, cuentaDeAcceso,
+    insertEmployeeEventRaw, insertEmployeeEventConId, fetchAttendanceSince, cuentaDeAcceso,
     insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
 } from '../../data/employees';
-import { insertEmployeeBranches, deleteEmployeeBranches } from '../../data/system';
+import { insertEmployeeBranches, deleteEmployeeBranches, updateEmployeeEventMetadata } from '../../data/system';
 import { usuarioDesdeNombre } from '../../utils/nameUtils';
 import { aplicarPendientes } from '../../data/documentosCompartidos';
 // Un día a la vez: reescribir el roster entero pisa lo que otra sesión guardó
@@ -54,6 +54,7 @@ async function anotarCambiosDelDui(get, id, nombre, branchId, form) {
 }
 import { revisarNup } from '../../utils/nupAfp';
 import { contratoConPlazo } from '../../utils/contrato';
+import { contratoVencido, diasSinContrato } from '../../utils/reingresoYRecontratacion';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -1605,6 +1606,47 @@ export const createEmployeeSlice = (set, get) => ({
         if (aPlazo && !(rehireData.contract_temporal_legal_basis && String(rehireData.contract_temporal_reason ?? '').trim())) {
             throw Object.assign(new Error('Un contrato a plazo necesita fecha de fin, base legal y motivo (Art. 25).'), { userFacing: true });
         }
+        // ── Contrato nuevo sobre un contrato vencido (2026-11-20) ───────────
+        //
+        // Quien sigue ACTIVO sólo se recontrata si su contrato a plazo ya
+        // venció: el anterior se cierra por fin del plazo (Art. 48 ord. 1.º CT)
+        // con un TERMINATION que NO toca la ficha —no la deja inactiva, no le
+        // quita sucursales ni le cierra la cuenta, porque en el mismo paso
+        // vuelve a quedar activa— y se anota `porContratoNuevo` para que no
+        // aparezca como una baja con cierre pendiente. A un activo con el
+        // contrato vigente no se lo recontrata: se le prorroga.
+        const activo = !['INACTIVO', 'LIQUIDADO'].includes(String(emp.status || '').toUpperCase());
+        const finAnterior = activo ? contratoVencido(emp) : null;
+        if (activo && !finAnterior) {
+            throw Object.assign(new Error('Esta persona está activa y su contrato sigue vigente. Para extenderlo, registra una prórroga.'), { userFacing: true });
+        }
+        const sinContrato = finAnterior ? diasSinContrato(finAnterior, rehireData.hire_date) : null;
+        if (finAnterior && !(sinContrato > 0)) {
+            throw Object.assign(new Error(sinContrato === 0
+                ? 'El contrato nuevo empieza al día siguiente del fin del anterior: eso es una prórroga, no un contrato nuevo.'
+                : 'El contrato nuevo tiene que empezar después del fin del anterior.'), { userFacing: true });
+        }
+        let finDeContratoId = null;
+        if (finAnterior) {
+            const { data: fila, error: errFin } = await insertEmployeeEventConId({
+                employee_id: id,
+                type: 'TERMINATION',
+                date: finAnterior,
+                note: `Fin del plazo del contrato. Sigue con un contrato nuevo desde el ${rehireData.hire_date.split('-').reverse().join('/')}.`,
+                metadata: {
+                    terminationReason: 'VENCIMIENTO_PLAZO',
+                    ultimoDiaLaborado: finAnterior,
+                    porContratoNuevo: true,
+                    contratoAnterior: { tipo: emp.contract_type || null, inicio: emp.contract_start_date || emp.hire_date || null, fin: finAnterior },
+                    previousValues: { branch_id: emp.branch_id ?? emp.branchId ?? null, role_id: emp.role_id ?? null },
+                },
+            });
+            // Sin el cierre del anterior no se abre el nuevo: quedarían dos
+            // contratos encimados en el historial.
+            if (errFin) throw errFin;
+            finDeContratoId = fila?.id ?? null;
+        }
+
         const dbPayload = {
             status: 'ACTIVO',
             branch_id: parseInt(rehireData.branch_id, 10),
@@ -1642,15 +1684,32 @@ export const createEmployeeSlice = (set, get) => ({
         // que se notara; el import se renombró a `updateEmployeeRow` para que
         // los dos símbolos dejen de llamarse igual.)
         const { dbPayload: filaPlanaRehire, protegido: protegidoRehire } = partirPorLlave(dbPayload);
-        if (protegidoRehire) await guardarDatosProtegidos(id, protegidoRehire);
+        // Si la ficha no se pudo escribir, el fin de contrato recién anotado se
+        // cancela: el historial no puede decir que terminó un contrato que
+        // sigue igual en la ficha. (La tabla no admite borrar: se marca.)
+        const deshacerFin = async (err) => {
+            if (finDeContratoId) {
+                await updateEmployeeEventMetadata(finDeContratoId, {
+                    terminationReason: 'VENCIMIENTO_PLAZO', porContratoNuevo: true, status: 'CANCELLED',
+                    cancelledAt: new Date().toISOString(), cancelReason: 'No se pudo guardar el contrato nuevo.',
+                });
+            }
+            throw err;
+        };
+        try {
+            if (protegidoRehire) await guardarDatosProtegidos(id, protegidoRehire);
+        } catch (e) { await deshacerFin(e); }
         const { error } = await updateEmployeeRow(id, filaPlanaRehire);
-        if (error) throw error;
+        if (error) await deshacerFin(error);
 
         // Levantar el ban de la cuenta Auth aplicado en la baja. `invoke` no
         // rechaza cuando falla: se mira la respuesta, y el aviso se lanza al
         // final, con la recontratación ya reflejada en la bitácora y en memoria.
+        // Quien seguía activo nunca tuvo la cuenta cerrada.
         let avisoDeCuenta = null;
-        try { await cuentaDeAcceso(id, 'enable'); } catch (e) { avisoDeCuenta = e; }
+        if (!activo) {
+            try { await cuentaDeAcceso(id, 'enable'); } catch (e) { avisoDeCuenta = e; }
+        }
 
         const roles = get().roles;
         const mainRoleName = roles.find(r => String(r.id) === String(dbPayload.role_id))?.name || null;
@@ -1659,11 +1718,12 @@ export const createEmployeeSlice = (set, get) => ({
             employee_id: id,
             type: 'REHIRE',
             date: rehireData.hire_date,
-            note: rehireData.notes || 'Recontratación',
+            note: rehireData.notes || (finAnterior ? 'Contrato nuevo' : 'Recontratación'),
             metadata: {
-                previous_status: 'INACTIVO',
+                previous_status: activo ? 'ACTIVO' : 'INACTIVO',
                 new_role: mainRoleName,
                 target_branch_id: dbPayload.branch_id,
+                ...(finAnterior ? { contratoAnteriorFin: finAnterior, diasSinContrato: sinContrato, finDeContratoId } : {}),
             }
         });
         // Sin este renglón el historial no dice que la persona volvió.
@@ -1672,10 +1732,11 @@ export const createEmployeeSlice = (set, get) => ({
         }
 
         await get().appendAuditLog('RECONTRATACION', id, {
-            timeline_title: `Recontratación: ${emp.name}`,
+            timeline_title: finAnterior ? `Contrato nuevo: ${emp.name}` : `Recontratación: ${emp.name}`,
             dimension: 'HR',
             branch_id: dbPayload.branch_id,
             new_value: 'Recontratado',
+            ...(finAnterior ? { old_value: `Contrato vencido el ${finAnterior}` } : {}),
             notas: rehireData.notes || ''
         });
 

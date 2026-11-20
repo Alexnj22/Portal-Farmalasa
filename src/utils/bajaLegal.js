@@ -66,6 +66,7 @@ export const DOCUMENTO_DE_BAJA = {
     DESPIDO_SIN_RESPONSABILIDAD: 'la carta de despido con la causal y los hechos, firmada',
     DESPIDO_CON_RESPONSABILIDAD: 'la carta de despido firmada o el finiquito',
     ABANDONO: 'el acta de inasistencias y la carta de terminación firmadas por el patrono (el portal las arma: «Imprimir acta y carta»). Si todavía no están firmadas, la baja se registra igual y queda pendiente en el cierre',
+    VENCIMIENTO_PLAZO: 'el contrato a plazo que venció (si no está ya en el expediente) o el aviso de fin de contrato',
 };
 
 /**
@@ -144,7 +145,9 @@ export function conActivo(d = {}, clave, estado) {
  * —con acceso al sistema— hasta que alguien escaneara un papel (2026-11-14:
  * Talento Humano no pudo dar de baja a dos personas).
  */
-export const respaldoDeBajaObligatorio = (motivo) => motivo !== 'ABANDONO';
+// El fin del plazo no lo firma nadie: el respaldo es el propio contrato, que ya
+// está en el expediente. Pedir otro archivo frenaba una baja que la ley da sola.
+export const respaldoDeBajaObligatorio = (motivo) => motivo !== 'ABANDONO' && motivo !== 'VENCIMIENTO_PLAZO';
 
 /**
  * ¿Los días de ausencia configuran la causal 12 (o el abandono)? La ley dice
@@ -305,6 +308,15 @@ export function avisosDeBaja(d = {}, empleado = {}) {
             avisos.push(`Preaviso de ${preaviso} días: la ley pide 15 (30 en cargos de dirección) para la prestación por renuncia. Revisa con el abogado si se paga.`);
         }
     }
+    if (d.terminationReason === 'VENCIMIENTO_PLAZO') {
+        const fin = empleado?.contract_end_date ? String(empleado.contract_end_date).slice(0, 10) : null;
+        const tipo = empleado?.contract_type;
+        if (tipo && tipo !== 'TEMPORAL' && tipo !== 'SERVICIOS') {
+            avisos.push('Su contrato no tiene plazo: no puede terminar por fin del plazo. Revisa el motivo.');
+        } else if (fin && fecha(d.date) && d.date > fin) {
+            avisos.push(`El contrato venció el ${fin.split('-').reverse().join('/')}. Si siguió trabajando después, el contrato se presume por tiempo indefinido (Art. 25 CT) y ya no termina por el plazo.`);
+        }
+    }
     if (d.terminationReason === 'RENUNCIA' && d.sinHojaOficial) {
         avisos.push('Sin la hoja oficial, la renuncia no queda firmada ante el Ministerio de Trabajo. Guarda el mensaje y la carta como respaldo.');
     }
@@ -341,6 +353,10 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
 
     const despidoInjusto = motivo === 'DESPIDO_CON_RESPONSABILIDAD';
     const renuncia = motivo === 'RENUNCIA';
+    // Fin del plazo (Art. 48 ord. 1.º): termina sin responsabilidad, así que la
+    // ley (Arts. 187 y 202) no obliga los proporcionales. Muchas empresas los
+    // pagan igual: queda `revisar`, no cero ni sumado.
+    const finDelPlazo = motivo === 'VENCIMIENTO_PLAZO';
     // Con responsabilidad del patrono (Arts. 187 y 202 CT) o por renuncia
     // (Art. 9 LRPERV) los proporcionales se pagan. Con causa justa o abandono,
     // NO: sólo la vacación de un año ya cumplido que no se gozó (Art. 187, parte
@@ -359,7 +375,11 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
     const diasAguinaldo = Math.max(0, dias(desde, baja));
     const aguinaldo = diasDeAguinaldo(anios) * diario * (Math.min(diasAguinaldo, 365) / 365);
 
-    const rubros = [
+    const BASE_FIN_DEL_PLAZO = 'Fin del plazo: termina sin responsabilidad (Art. 48 CT) y la ley no obliga este pago. Confírmalo con el contador.';
+    const rubros = finDelPlazo ? [
+        { clave: 'vacaciones', texto: 'Vacaciones proporcionales', monto: redondear(vacaciones), aplica: 'revisar', base: BASE_FIN_DEL_PLAZO },
+        { clave: 'aguinaldo', texto: 'Aguinaldo proporcional', monto: redondear(aguinaldo), aplica: 'revisar', base: BASE_FIN_DEL_PLAZO },
+    ] : [
         { clave: 'vacaciones', texto: 'Vacaciones proporcionales', monto: conProporcionales ? redondear(vacaciones) : 0, aplica: conProporcionales,
             base: conProporcionales
                 ? `15 días + 30% × ${diasDelAnioEnCurso} de 365 días del año de servicio en curso`
@@ -455,6 +475,9 @@ const TEXTO_CORTO_DE_CIERRE = {
  */
 export function cierrePendienteDeBaja(baja = {}) {
     if (!baja?.motivo && !baja?.terminationReason) return [];
+    // El fin de un contrato que siguió con otro (`porContratoNuevo`): la persona
+    // no se fue, no hay nada que devolver ni aviso de retiro que dar.
+    if (baja.porContratoNuevo === true || baja.porContratoNuevo === 'true') return [];
     const motivo = baja.motivo || baja.terminationReason;
     const verdad = (v) => v === true || v === 'true';
     const faltan = [];

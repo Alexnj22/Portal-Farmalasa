@@ -11,6 +11,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, datosDeRecontratacion, faltaParaRecontratar, horasAlCambiarContrato, recontratacionCompleta, recontratacionInicial, sucursalesPorArea,
+  contratoVencido, contratoNuevoInicial, avisoDeContratoNuevo,
 } from '@nucleo/utils/reingresoYRecontratacion';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { contratoConPlazo } from '@nucleo/utils/contrato';
@@ -34,7 +35,8 @@ export default function Recontratar() {
   const roles = useStaffStore((s) => s.roles);
   const recontratar = useStaffStore((s) => s.rehireEmployee);
   const emp = useMemo(() => (empleados || []).find((e) => String(e.id) === String(id)), [empleados, id]);
-  const [f, setF] = useState(() => recontratacionInicial(hoySV()));
+  // Activa con el contrato vencido: el mismo contrato, sucursal y cargo (2026-11-20).
+  const [f, setF] = useState(() => (contratoVencido(emp) ? contratoNuevoInicial(emp, hoySV()) : recontratacionInicial(hoySV())));
   const [busca, setBusca] = useState('');
   const [enviando, setEnviando] = useState(false);
   const pon = (c) => setF((p) => ({ ...p, ...c }));
@@ -42,19 +44,25 @@ export default function Recontratar() {
   const [repuesto, setRepuesto] = useState(false);
   if (recuperado && !repuesto) { setRepuesto(true); setF((p) => ({ ...p, ...recuperado })); }
   if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
+  const vencio = contratoVencido(emp);
+  const aviso = avisoDeContratoNuevo(emp, f.rehire_hire_date);
+  const completa = recontratacionCompleta(f, emp);
 
   const grupos = sucursalesPorArea(sucursales || []);
   const cargos = [...(roles || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'))
     .filter((c) => !busca.trim() || tokenMatch(busca.trim(), c.name));
 
-  const guardar = () => Alert.alert('¿Recontratar?', `${shortEmployeeName(emp)} vuelve a estar activa desde el ${fechaTexto(f.rehire_hire_date, { day: 'numeric', month: 'long', year: 'numeric' })}, con su historial.`, [
+  const desde = fechaTexto(f.rehire_hire_date, { day: 'numeric', month: 'long', year: 'numeric' });
+  const guardar = () => Alert.alert(vencio ? '¿Registrar el contrato nuevo?' : '¿Recontratar?', vencio
+    ? `Se cierra el contrato que venció y ${shortEmployeeName(emp)} sigue con el nuevo desde el ${desde}.`
+    : `${shortEmployeeName(emp)} vuelve a estar activa desde el ${desde}, con su historial.`, [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Recontratar', onPress: async () => {
-      setEnviando(true); trabajando('Recontratando…');
+    { text: vencio ? 'Registrar' : 'Recontratar', onPress: async () => {
+      setEnviando(true); trabajando(vencio ? 'Registrando…' : 'Recontratando…');
       try {
         await recontratar(emp.id, datosDeRecontratacion(f));
         descartar();
-        listo('Recontratación registrada', `${shortEmployeeName(emp)} ha sido recontratado/a.`);
+        listo(vencio ? 'Contrato nuevo registrado' : 'Recontratación registrada', vencio ? `Se cerró el contrato anterior de ${shortEmployeeName(emp)} y empezó el nuevo.` : `${shortEmployeeName(emp)} ha sido recontratado/a.`);
         volver(`/empleado/${emp.id}`);
       } catch (e) { fallo('No se recontrató', mensajeAmigable(e, 'Error al procesar la recontratación.')); }
       finally { setEnviando(false); }
@@ -63,12 +71,13 @@ export default function Recontratar() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Recontratación', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: vencio ? 'Contrato nuevo' : 'Recontratación', headerLargeTitle: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
           <Avatar empleado={emp} tamano={64} />
           <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{emp.name}</Text>
-          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Última salida: ${emp.contract_end_date ? fechaTexto(emp.contract_end_date, { day: '2-digit', month: 'long', year: 'numeric' }) : 'No registrada'}`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${vencio ? 'Su contrato venció el' : 'Última salida:'} ${emp.contract_end_date ? fechaTexto(emp.contract_end_date, { day: '2-digit', month: 'long', year: 'numeric' }) : 'No registrada'}`}</Text>
+          {aviso ? <Aviso tono="nota" texto={aviso} /> : null}
           <Seccion titulo="Ingreso y contrato">
             <Fecha valor={f.rehire_hire_date} onCambiar={(v) => pon({ rehire_hire_date: v })} />
             <Opciones valor={f.rehire_contract_type} onCambiar={(v) => pon({ rehire_contract_type: v, rehire_weekly_hours: horasAlCambiarContrato(v, f.rehire_weekly_hours) })}
@@ -111,8 +120,8 @@ export default function Recontratar() {
           <Seccion titulo="Notas">
             <Campo value={f.rehire_notes || ''} onChangeText={(t) => pon({ rehire_notes: t })} placeholder="Ej.: regresa tras cierre de proyecto externo, período de prueba…" />
           </Seccion>
-          {!recontratacionCompleta(f) ? <Aviso tono="cuidado" texto={faltaParaRecontratar(f)} /> : null}
-          <BotonGrande texto={enviando ? 'Recontratando…' : 'Recontratar'} color={MARCA.verde} deshabilitado={!recontratacionCompleta(f) || enviando} onPress={guardar} />
+          {!completa ? <Aviso tono="cuidado" texto={faltaParaRecontratar(f, emp)} /> : null}
+          <BotonGrande texto={enviando ? (vencio ? 'Registrando…' : 'Recontratando…') : (vencio ? 'Registrar el contrato nuevo' : 'Recontratar')} color={MARCA.verde} deshabilitado={!completa || enviando} onPress={guardar} />
         </ScrollView>
       </KeyboardAvoidingView>
     </>

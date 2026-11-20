@@ -49,7 +49,7 @@ import { imprimirEtiquetaDeCarne } from '../../plataforma/carnePrint';
 import { anotar } from '@nucleo/data/audit';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 import { anularCarneTemporal, carneVigente, fetchCarnesTemporales } from '@nucleo/data/carneTemporal';
-import { vacacionEnCurso } from '@nucleo/utils/reingresoYRecontratacion';
+import { vacacionEnCurso, contratoVencido } from '@nucleo/utils/reingresoYRecontratacion';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { useCarneDePapel } from '../../componentes/personas/CarneDePapel';
@@ -146,6 +146,7 @@ export default function Empleado() {
   const cumple = cumpleEn(emp.birth_date || emp.birthDate, hoy);
   const areas = (emp.assigned_branch_ids || []).map((b) => (sucursales || []).find((s) => String(s.id) === String(b))?.name).filter(Boolean);
   const inactiva = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'].includes(emp.status);
+  const vencio = contratoVencido(emp);
   // Lo mismo que las tarjetas de arriba del perfil del portal: la edad y las
   // tardanzas acumuladas de las marcas que trae la ficha.
   const edad = calcAge(emp.birth_date || emp.birthDate, hoy);
@@ -233,6 +234,18 @@ export default function Empleado() {
 
         {hasPermission?.('staff_list', 'can_edit') && inactiva ? (
           <BotonGrande texto="Recontratar" color={MARCA.verde} onPress={() => router.push({ pathname: '/empleado/recontratar', params: { id: String(emp.id) } })} />
+        ) : null}
+
+        {/* Activa con el contrato vencido (2026-11-20): las tres salidas, como
+            «Contratos vencidos» del portal. Prórroga si siguió sin días de por
+            medio; contrato nuevo si hubo días sin contrato; o la baja. */}
+        {hasPermission?.('staff_list', 'can_edit') && !inactiva && vencio ? (
+          <Seccion titulo={`Contrato vencido el ${fechaTexto(vencio, { day: 'numeric', month: 'long' })}`}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sigue activa con el contrato vencido. Elige qué pasó.</Text>
+            <BotonGrande texto="Prorrogar" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id), tipo: 'CONTRACT_EXTENSION' } })} />
+            <BotonGrande texto="Contrato nuevo" color={MARCA.verde} onPress={() => router.push({ pathname: '/empleado/recontratar', params: { id: String(emp.id) } })} />
+            <BotonGrande texto="Dar de baja" color={MARCA.rojo} onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id), tipo: 'TERMINATION', motivo: 'VENCIMIENTO_PLAZO', fecha: vencio } })} />
+          </Seccion>
         ) : null}
 
         {/* Lo que hay que saber, diciendo QUÉ (usuario, 2026-11-12: «me dice

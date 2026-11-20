@@ -55,7 +55,7 @@ function Fila({ rotulo, children }) {
 }
 
 export default function AccionDePersonal() {
-  const { id, tipo, evento } = useLocalSearchParams();
+  const { id, tipo, evento, motivo: motivoDeBaja, fecha: fechaDeBaja } = useLocalSearchParams();
   const empleados = useStaffStore((s) => s.employees);
   const sucursales = useStaffStore((s) => s.branches);
   const roles = useStaffStore((s) => s.roles);
@@ -70,6 +70,9 @@ export default function AccionDePersonal() {
       const meta = typeof eventoAEditar.metadata === 'string' ? JSON.parse(eventoAEditar.metadata || '{}') : (eventoAEditar.metadata || {});
       return { ...meta, type: eventoAEditar.type, date: eventoAEditar.date, endDate: eventoAEditar.endDate ?? meta.endDate ?? null, note: eventoAEditar.note || '', manualEndDateOverride: true };
     }
+    // `motivo` y `fecha` llegan de «Contrato vencido» de la ficha: la baja
+    // por fin del plazo, con el día en que venció (2026-11-20).
+    if (tipo === 'TERMINATION' && motivoDeBaja) return { type: tipo, date: fechaDeBaja || hoySV(), terminationReason: motivoDeBaja, ...(fechaDeBaja ? { ultimoDiaLaborado: fechaDeBaja } : {}) };
     return { type: tipo || '', date: hoySV() };
   });
   const [archivo, setArchivo] = useState(null);

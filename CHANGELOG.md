@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1587.0 — Contratos vencidos: contrato nuevo en un paso y aviso en Personal
+
+Lo pidió el usuario tras el caso de Richard Quintanilla: su interinato venció el 18/11, el contrato nuevo empezó el 23/11 y en el portal seguía activo con el contrato vencido. Para recontratarlo había que darle de baja primero y después recontratar.
+
+- **Contrato nuevo en un paso.** A quien sigue activo con el contrato a plazo vencido, «Recontratar» se llama **Contrato nuevo** y propone el mismo contrato, sucursal, cargo y horas. Al guardar, `rehireEmployee` cierra el anterior con una baja por **fin del plazo** el día que venció (`porContratoNuevo`, sin tocar la ficha, las sucursales ni la cuenta) y abre el nuevo. Si empieza al día siguiente del vencimiento, lo frena: eso es una prórroga. Si la ficha no se puede escribir, la baja recién anotada se marca cancelada.
+- **Motivo de baja nuevo: «Fin del plazo del contrato»** (Art. 48 ord. 1.º CT). No pide archivo de respaldo (el contrato ya está en el expediente). Las vacaciones y el aguinaldo proporcionales quedan para revisar, no se suman. Avisa si la baja es posterior al vencimiento (Art. 25) o si el contrato no tenía plazo. El fin de un contrato que siguió con otro no sale en «bajas con el cierre pendiente».
+- **Aviso «Contratos vencidos»** en Personal → Equipos, con **Prorrogar**, **Contrato nuevo** y **Dar de baja** (ésta ya con el motivo y la fecha del vencimiento). En la ficha, `?accion=prorroga|baja` abre esa novedad.
+- Lógica en `reingresoYRecontratacion.js` (`contratoVencido`, `contratosVencidos`, `diasSinContrato`, `contratoNuevoInicial`, `avisoDeContratoNuevo`), probada en `tests/unit/contratoVencido.test.js`.
+
+Gemelo: staff_list — en `apps/mobile/app/personal.js` (aviso de contratos vencidos), `empleado/[id].js` (las tres salidas), `empleado/recontratar.js` (contrato nuevo) y `empleado/accion.js` (baja con motivo y fecha).
+
 ## v2.1586.0 — Resultados de encuestas con filtros y gráficas
 
 Pedido del usuario: más flexibilidad y ver mejor los resultados de Encuestas a clientes.
@@ -40,7 +51,7 @@ Gemelo: encuestas_clientes — la app del personal va en la entrega siguiente, l
 
 Al cancelar una novedad en la ficha de una persona, el evento seguía sin «CANCELADO» y con el botón «Cancelar» hasta recargar la página. Pasó con la recontratación de Richard Quintanilla. La base ya lo tenía cancelado. La ficha leía la metadata de la vista `employee_timeline`, que no se vuelve a leer después de cancelar, en lugar de la fila de `employee_events` que el store sí actualiza. `historialDeFicha` ahora usa la metadata de la fila real. Arregla también la app, que usa la misma función.
 
-Gemelo: personal — la corrección está en `src/utils/historialDeFicha.js`, compartida por portal y app.
+Gemelo: staff_list — la corrección está en `src/utils/historialDeFicha.js`, compartida por portal y app.
 
 ## v2.1585.6 — Reservas: cerrar con la venta que ya se hizo en caja
 

@@ -41,6 +41,9 @@ import { soloNoEmpleados, soloPersonalEnPlanilla, esFichaQueNoEsEmpleado } from 
 import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
 import { pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
+import { contratosVencidos } from '@nucleo/utils/reingresoYRecontratacion';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
@@ -100,6 +103,40 @@ function FranjaDelSeguro({ personas }) {
       <Text style={{ color, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{`Seguro · ${estado?.texto ?? '…'}`}</Text>
       <Text style={{ color, fontSize: 14, fontWeight: '700' }}>›</Text>
     </Pressable>
+  );
+}
+
+/**
+ * «Contratos vencidos» (2026-11-20), como en el portal: quien sigue activo con
+ * su contrato a plazo ya vencido. Tocar a alguien abre su ficha, que es donde
+ * están las tres salidas (prorrogar, contrato nuevo o dar de baja).
+ */
+function ContratosVencidos({ filas }) {
+  if (!filas.length) return null;
+  const rojo = MARCA.rojo;
+  return (
+    <View style={{ marginHorizontal: 12 }}>
+      <Vidrio radio={14}>
+        <View style={{ padding: 12, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <IconoFijo name={iconoDe('CalendarClock')} size={16} color={rojo} />
+            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>
+              {filas.length === 1 ? '1 contrato vencido' : `${filas.length} contratos vencidos`}
+            </Text>
+          </View>
+          {filas.map(({ emp, fin, diasVencido }) => (
+            <Pressable key={emp.id} accessibilityRole="button" onPress={() => router.push(`/empleado/${emp.id}`)}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{shortEmployeeName(emp)}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Venció el ${fechaTexto(fin, { day: 'numeric', month: 'short' })} · ${diasVencido === 1 ? 'hace 1 día' : `hace ${diasVencido} días`}`}</Text>
+              </View>
+              <IconoFijo name={ICONO.siguiente} size={13} color={colorSistema.texto2} />
+            </Pressable>
+          ))}
+        </View>
+      </Vidrio>
+    </View>
   );
 }
 
@@ -198,6 +235,10 @@ export default function Personal() {
     Promise.resolve(compartirCsv({ headers, rows, nombre, modulo: 'personal' })).catch(() => {});
   };
 
+  // Los contratos vencidos del alcance (y de la sala elegida), sólo en Planilla.
+  const vencidos = useMemo(() => (tipo === 'personal'
+    ? contratosVencidos(soloPersonalEnPlanilla(plantilla).filter((e) => sala === 'todas' || cubreLaSala(e, sala)))
+    : []), [tipo, plantilla, sala]);
   const buscando = !!texto.trim();
   const todasPlegadas = secciones.length > 0 && secciones.every((s) => plegadas.has(s.id));
   const Cabecera = (
@@ -207,6 +248,7 @@ export default function Personal() {
         <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', flexGrow: 1 }}>{`${total} ${tipo === 'practicantes' ? 'practicante' : 'persona'}${total === 1 ? '' : 's'}`}</Text>
         {tipo === 'personal' && (vista === 'todos' || vista === 'activos') ? <FranjaDelSeguro personas={enPlanilla} /> : null}
       </View>
+      {!buscando && (vista === 'todos' || vista === 'activos') ? <ContratosVencidos filas={vencidos} /> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginHorizontal: 20 }}>
         {secciones.length > 1 && !buscando ? (
           <Pressable hitSlop={8} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setPlegadas(todasPlegadas ? new Set() : new Set(secciones.map((s) => s.id))); }}

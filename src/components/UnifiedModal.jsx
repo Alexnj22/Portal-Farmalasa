@@ -26,7 +26,7 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { analizarDocumento } from '@nucleo/data/ia';
 import { problemaDelPago, registroDelPago } from '@nucleo/utils/pagoDeSucursal';
 import { ajustesConDocumentoPropio, documentoPropio, fechaLeidaQueSeAplica, problemaDelDocumentoPropio, rutaDelDocumentoPropio } from '@nucleo/utils/expedienteDeSucursal';
-import { faltaParaRecontratar, datosDeRecontratacion, ingresoCompleto } from '@nucleo/utils/reingresoYRecontratacion';
+import { faltaParaRecontratar, datosDeRecontratacion, ingresoCompleto, contratoVencido } from '@nucleo/utils/reingresoYRecontratacion';
 
 // -------------------------
 // CARGA DIFERIDA
@@ -418,7 +418,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "manageKiosks": return "Marcadores de la sucursal";
             case "newEmployee": return esFichaDePracticante ? "Nuevo practicante" : "Nuevo empleado";
             case "editEmployee": return esFichaDePracticante ? "Actualizar practicante" : "Actualizar información";
-            case "rehireEmployee": return "Recontratación";
+            case "rehireEmployee": return contratoVencido(formData) ? "Contrato nuevo" : "Recontratación";
             case "vacationRecall": return "Ingreso en vacaciones";
             case "newBranch": return "Nueva sucursal";
             case "editBranch": return "Configuración general";
@@ -950,7 +950,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         }
 
         if (type === "rehireEmployee") {
-            const falta = faltaParaRecontratar(formData);
+            const falta = faltaParaRecontratar(formData, formData);
             if (falta) {
                 setValidationError(falta);
                 return;
@@ -958,9 +958,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             setIsSaving(true);
             try {
                 const { rehireEmployee } = useStaff.getState();
+                const esContratoNuevo = !!contratoVencido(formData);
                 await rehireEmployee(formData.id, datosDeRecontratacion(formData));
                 const { showToast } = useToastStore.getState();
-                if (showToast) showToast("Recontratación Registrada", `${formData.name} ha sido recontratado/a exitosamente.`, "success");
+                if (showToast) showToast(esContratoNuevo ? "Contrato nuevo registrado" : "Recontratación registrada",
+                    esContratoNuevo ? `Se cerró el contrato anterior y empezó el nuevo de ${shortEmployeeName(formData)}.` : `${shortEmployeeName(formData)} ha sido recontratado/a.`, "success");
                 descartarBorrador();   // la recontratación existe: el borrador ya no sirve
                 onClose();
             } catch (err) {

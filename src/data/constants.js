@@ -58,6 +58,10 @@ export const TERMINATION_REASONS = {
   DESPIDO_SIN_RESPONSABILIDAD: { label: 'Despido SIN responsabilidad' },
   DESPIDO_CON_RESPONSABILIDAD: { label: 'Despido CON responsabilidad' },
   ABANDONO: { label: 'Abandono de trabajo' },
+  // Art. 48 ord. 1.º CT: el contrato a plazo termina al cumplirse el plazo, sin
+  // responsabilidad para nadie (2026-11-20). Antes no había cómo decirlo y la
+  // persona quedaba activa con el contrato vencido.
+  VENCIMIENTO_PLAZO: { label: 'Fin del plazo del contrato' },
 };
 
 // Tipo de incapacidad → `employee_events.metadata.disabilityType`.

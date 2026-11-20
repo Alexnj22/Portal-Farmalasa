@@ -36,6 +36,7 @@ const MisPuntosView = lazy(() => import("./views/MisPuntosView"));
 import LiquidToast from './components/common/LiquidToast';
 import { LoadingState } from './components/common/StateViews';
 import { hoySV } from '@nucleo/utils/fecha';
+import { contratoVencido, contratoNuevoInicial, recontratacionInicial } from '@nucleo/utils/reingresoYRecontratacion';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { quincenaPorDefecto } from '@nucleo/utils/quincena';
 import { useColasEnEspera } from '@nucleo/hooks/useColasEnEspera';
@@ -508,11 +509,11 @@ function MainApp() {
                 ...(data || {}),
             });
         } else if (type === "rehireEmployee") {
+            // A quien sigue activo con el contrato vencido se le propone el
+            // mismo contrato, sucursal y cargo (`contratoNuevoInicial`).
             setFormData({
                 ...(data || {}),
-                rehire_hire_date: hoySV(),
-                rehire_contract_type: 'INDEFINIDO',
-                rehire_weekly_hours: '44',
+                ...(contratoVencido(data) ? contratoNuevoInicial(data, hoySV()) : recontratacionInicial(hoySV())),
             });
         } else if (type === "vacationRecall") {
             setFormData({ employee: data?.employee || data || {} });

@@ -90,10 +90,10 @@ describe('las claves son el contrato con las pantallas que agrupan por ellas', (
         ]);
     });
 
-    it('TERMINATION_REASONS tiene las cuatro causas legales', () => {
+    it('TERMINATION_REASONS tiene las cinco causas legales', () => {
         expect(Object.keys(TERMINATION_REASONS)).toEqual([
             'RENUNCIA', 'DESPIDO_SIN_RESPONSABILIDAD',
-            'DESPIDO_CON_RESPONSABILIDAD', 'ABANDONO',
+            'DESPIDO_CON_RESPONSABILIDAD', 'ABANDONO', 'VENCIMIENTO_PLAZO',
         ]);
     });
 

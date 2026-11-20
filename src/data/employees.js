@@ -231,6 +231,11 @@ export function insertEmployeeEventRaw(payload) {
     return supabase.from('employee_events').insert([payload]);
 }
 
+/** Igual, pero devuelve el id de la fila (`{ data: { id } }`): el contrato nuevo amarra su fin de contrato. */
+export function insertEmployeeEventConId(payload) {
+    return supabase.from('employee_events').insert([payload]).select('id').single();
+}
+
 // ── Asistencia ────────────────────────────────────────────────────────────
 
 // Paginada (auditoría 2026-10-21): era un `select('*')` sin `range` ni orden,
@@ -369,7 +374,8 @@ export async function fetchUltimasBajas() {
         // claves, no el `metadata` entero: lleva la liquidación y las notas.
         .select('id, employee_id, date, motivo:metadata->>terminationReason, estado:metadata->>status, sucursal:metadata->previousValues->>branch_id, cargo:metadata->previousValues->>role_id, '
             + 'hasFiniquito:metadata->hasFiniquito, entregoActivos:metadata->entregoActivos, activosDevueltos:metadata->activosDevueltos, '
-            + 'avisoIsssAfp:metadata->avisoIsssAfp, constanciaEntregada:metadata->constanciaEntregada, cartaEntregada:metadata->cartaEntregada')
+            + 'avisoIsssAfp:metadata->avisoIsssAfp, constanciaEntregada:metadata->constanciaEntregada, cartaEntregada:metadata->cartaEntregada, '
+            + 'porContratoNuevo:metadata->porContratoNuevo')
         .eq('type', 'TERMINATION').order('id'));
     return filas || [];
 }

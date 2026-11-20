@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.8 — Encuestas de campo: el lugar se sugiere por cercanía o por lo que escribes
+
+- **El lugar de campo ya no se escribe dos veces distinto.** Debajo del campo «Lugar» salen los lugares que ya registró el equipo.
+  - Sin escribir nada, los que están a menos de 300 m: «¿Estás en alguno de estos?».
+  - Al escribir («merc»), los que coinciden, sin importar tildes ni mayúsculas. Primero los cercanos, después los más usados, con su distancia.
+  - Un toque y queda elegido. Se puede seguir escribiendo un lugar nuevo.
+- Va en la app y en el portal. Usa `encuesta_cliente_lugares_de_campo()` (v2.1583.6).
+
+Gemelo: encuestas_aplicar — en apps/mobile/app/encuestas-aplicar.js
+
 ## v2.1583.7 — gate:gemelos: un cambio de pantalla va en la web y en la app
 
 - Nuevo `gate:gemelos` (pre-commit): si un commit cambia una pantalla de un módulo en el portal y no en la app (o al revés), falla, salvo `Gemelo: <modulo> — <motivo>` en esta entrada. Una pantalla nueva sin mapear en `scripts/gemelos.json` también falla. El núcleo cuenta para los dos lados. Lo pidió el usuario el 2026-11-19 tras encontrar ~80 diferencias entre la app y el portal.

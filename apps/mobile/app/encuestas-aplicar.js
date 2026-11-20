@@ -16,15 +16,16 @@
 // su tarjeta antes de entrevistar y vale para las siguientes del día. La base
 // rechaza guardar sin zona.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { LayoutAnimation, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
+import { fetchParaAplicar, fetchLugaresDeCampo, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import { enlaceDeEncuesta, cuantasPreguntas, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { sugerenciasDeLugar, distanciaDeLugar } from '@nucleo/utils/lugaresDeCampo';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -64,6 +65,7 @@ export default function EncuestasAplicar() {
   const [donde, setDonde] = useState(leerDonde);
   const [eligiendo, setEligiendo] = useState(false);
   const [gps, setGps] = useState(null); // null | 'buscando' | 'sin' | { lat, lng, precision }
+  const [lugares, setLugares] = useState([]); // los lugares de campo ya usados por el equipo
   const seCerro = useRef(false);
   const [error, setError] = useState(null);
   const [entrevista, setEntrevista] = useState(null);
@@ -122,10 +124,23 @@ export default function EncuestasAplicar() {
     return p;
   }, []);
   useEffect(() => { if (enCampo && gps === null) buscarUbicacion(); }, [enCampo, gps, buscarUbicacion]);
+  // Los lugares ya usados: si falla, no se sugiere nada y se escribe a mano.
+  useEffect(() => {
+    if (!enCampo) return;
+    fetchLugaresDeCampo().then(setLugares).catch(() => setLugares([]));
+  }, [enCampo]);
 
   const lugar = (donde?.lugar || '').trim();
   const gpsListo = !!gps && typeof gps === 'object';
   const campoListo = enCampo && (!!lugar || gpsListo);
+  const sugeridos = useMemo(() => (enCampo ? sugerenciasDeLugar(lugares, donde?.lugar || '', gpsListo ? gps : null) : []),
+    [enCampo, lugares, donde?.lugar, gpsListo, gps]);
+  const claveSugeridos = sugeridos.map((x) => x.lugar).join('|');
+  const claveAnterior = useRef('');
+  if (claveAnterior.current !== claveSugeridos) {
+    claveAnterior.current = claveSugeridos;
+    LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
+  }
 
   const visibles = useMemo(() => {
     if (!efectivo) return [];
@@ -213,6 +228,28 @@ export default function EncuestasAplicar() {
               <View style={{ gap: 8 }}>
                 <Campo multiline={false} value={donde?.lugar || ''} onChangeText={escribirLugar}
                   placeholder="Lugar: p. ej. Mercado de Soyapango" maxLength={120} />
+                {/* Los lugares que ya usó el equipo: cerca de aquí o que coinciden con lo escrito.
+                    Elegir uno evita que el mismo sitio quede con dos nombres. */}
+                {sugeridos.length ? (
+                  <View style={{ gap: 6 }}>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                      {(donde?.lugar || '').trim() ? 'Ya registrados' : '¿Estás en alguno de estos?'}
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {sugeridos.map((x) => (
+                        <Pressable key={x.lugar} onPress={() => escribirLugar(x.lugar)}
+                          accessibilityRole="button" accessibilityLabel={`Usar ${x.lugar}`}
+                          style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center',
+                            backgroundColor: 'rgba(127,127,127,0.14)', borderWidth: 1, borderColor: x.cerca ? MARCA.azulClaro : 'rgba(127,127,127,0.2)' }}>
+                          <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{x.lugar}</Text>
+                          {x.distancia != null ? (
+                            <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{distanciaDeLugar(x.distancia)}</Text>
+                          ) : null}
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
                 {/* Alto fijo: al llegar la ubicación (o «Reintentar») la tarjeta no salta. */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 32 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>

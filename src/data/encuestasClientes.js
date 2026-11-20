@@ -392,3 +392,8 @@ export async function guardarResumen(id, branchId, texto, hasta) {
         p_id: id, p_branch: branchId, p_texto: texto, p_hasta: hasta,
     }));
 }
+
+/** Los lugares de campo ya usados por todo el equipo, para sugerirlos (ver `utils/lugaresDeCampo.js`). */
+export async function fetchLugaresDeCampo() {
+    return sinError(await supabase.rpc('encuesta_cliente_lugares_de_campo')) || [];
+}

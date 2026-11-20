@@ -10,8 +10,9 @@ import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { sugerenciasDeLugar, distanciaDeLugar } from '@nucleo/utils/lugaresDeCampo';
 import { cuantasPreguntas, enlaceDeEncuesta, zonasDe, nombreDeZona, avanceDeZona } from '@nucleo/utils/encuestasClientes';
-import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
+import { fetchParaAplicar, fetchLugaresDeCampo, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import { leer, guardar } from '../../plataforma/almacen';
 import { leerPosicion } from '../../plataforma/ubicacion';
@@ -132,9 +133,18 @@ export default function AplicarEncuestaView() {
         if (enCampo && gps === null) buscarUbicacion();
     }, [enCampo, gps, buscarUbicacion]);
 
+    // Los lugares ya usados por el equipo: si falla, se escribe a mano.
+    const [lugares, setLugares] = useState([]);
+    useEffect(() => {
+        if (!enCampo) return;
+        fetchLugaresDeCampo().then(setLugares).catch(() => setLugares([]));
+    }, [enCampo]);
+
     const lugar = (donde?.lugar || '').trim();
     const gpsListo = !!gps && typeof gps === 'object';
     const campoListo = enCampo && (!!lugar || gpsListo);
+    const sugeridos = useMemo(() => (enCampo ? sugerenciasDeLugar(lugares, donde?.lugar || '', gpsListo ? gps : null) : []),
+        [enCampo, lugares, donde?.lugar, gpsListo, gps]);
 
     const visibles = useMemo(() => {
         if (!efectivo) return [];
@@ -220,6 +230,20 @@ export default function AplicarEncuestaView() {
                         <>
                             <PortalInput label="Lugar" name="lugar-campo" value={donde?.lugar || ''} maxLength={120}
                                 placeholder="Ej. Mercado de Soyapango" onChange={(e) => escribirLugar(e.target.value)} />
+                            {sugeridos.length > 0 && (
+                                <div className="space-y-1.5">
+                                    <p className="text-micro text-content-3">{lugar ? 'Ya registrados' : '¿Estás en alguno de estos?'}</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {sugeridos.map((x) => (
+                                            <Button key={x.lugar} variant={x.cerca ? 'secondary' : 'ghost'} size="sm"
+                                                className="min-h-[var(--tap-min)]" onClick={() => escribirLugar(x.lugar)}>
+                                                <MapPin size={12} />{x.lugar}
+                                                {x.distancia != null && <span className="text-content-3 font-normal">· {distanciaDeLugar(x.distancia)}</span>}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <div className="text-micro text-content-3 flex flex-wrap items-center gap-1.5" aria-live="polite">
                                 <Navigation size={12} />
                                 {gps === 'buscando' && <span>Buscando tu ubicación…</span>}

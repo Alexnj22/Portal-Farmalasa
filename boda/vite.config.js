@@ -74,7 +74,8 @@ function calendario() {
         : [`DTSTART;VALUE=DATE:${dia(ini)}`, `DTEND;VALUE=DATE:${dia(new Date(ini.getTime() + 864e5))}`]),
       `SUMMARY:Boda de ${boda.novios.firma}`,
       ...(lugar ? [`LOCATION:${lugar.nombre}, ${lugar.direccion}`] : []),
-      ...(boda.sitio ? [`URL:${boda.sitio}`, `DESCRIPTION:${boda.sitio}`] : []),
+      // Sin la dirección de ejemplo: sólo cuando el sitio ya tiene la suya.
+      ...(boda.sitio && !/ejemplo/.test(boda.sitio) ? [`URL:${boda.sitio}`, `DESCRIPTION:${boda.sitio}`] : []),
       'BEGIN:VALARM', 'TRIGGER:-P7D', 'ACTION:DISPLAY', 'DESCRIPTION:¡Falta una semana!', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR', '',
     ].join('\r\n');

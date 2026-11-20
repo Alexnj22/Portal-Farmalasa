@@ -1283,12 +1283,9 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 @property --abre { syntax: '<percentage>'; inherits: false; initial-value: 70%; }
 @media (prefers-reduced-motion: no-preference) {
   .cierre-nombres { -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido)); mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido)); --barrido: -10%; }
-  .cierre-icono { opacity: 0; -webkit-mask-image: linear-gradient(90deg, transparent calc(50% - var(--abre)), #000 calc(50% - var(--abre) + 22%), #000 calc(50% + var(--abre) - 22%), transparent calc(50% + var(--abre))); mask-image: linear-gradient(90deg, transparent calc(50% - var(--abre)), #000 calc(50% - var(--abre) + 22%), #000 calc(50% + var(--abre) - 22%), transparent calc(50% + var(--abre))); --abre: 0%; }
   .cierre.visto .cierre-nombres { animation: tinta-entra 1.6s cubic-bezier(.45, .05, .3, 1) .1s both; }
-  .cierre.visto .cierre-icono { animation: ornamento-abre 3.4s cubic-bezier(.25, .1, .25, 1) .9s both; }
   .cierre.visto .cierre-destello { display: inline; animation: cierre-destello 6s cubic-bezier(.5, 0, .3, 1) 3s infinite; }
 }
-@keyframes ornamento-abre { from { --abre: 0%; opacity: 0; } 25% { opacity: .9; } to { --abre: 70%; opacity: 1; } }
 @keyframes cierre-destello { 0% { transform: translateX(0); } 35%, 100% { transform: translateX(980px); } }
 
 /* «FALTAN 86 DÍAS» en una sola línea; la fecha larga debajo. */
@@ -1328,4 +1325,15 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
    bajo la portada negra (en el teléfono se veía la foto de «Faltan»). */
 @media (prefers-reduced-motion: no-preference) {
   html.std-intro:not(.ya-abierta) .portada.std ~ * { animation: fundido .8s var(--salida) 4.2s both; }
+}
+
+/* Ornamento del cierre: la pluma (contorno con punta de luz y chispas) y la
+   tinta que lo sigue de izquierda a derecha; el contorno se apaga al final. */
+.cierre-contorno { display: none; }
+.cierre-contorno path { fill: none; stroke: var(--c-champan); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0 99999; }
+@media (prefers-reduced-motion: no-preference) {
+  .cierre:not(.visto) .cierre-trazo { opacity: 0; }
+  .cierre.visto .cierre-contorno { display: inline; filter: drop-shadow(0 0 4px oklch(0.87 0.039 80 / 0.9)); animation: fundido-sale .8s ease 3.2s forwards; }
+  .cierre.visto .cierre-trazo { -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--tinta) - 14%), transparent var(--tinta)); mask-image: linear-gradient(90deg, #000 calc(var(--tinta) - 14%), transparent var(--tinta)); animation: tinta 1.8s cubic-bezier(.45, .05, .35, 1) 1.6s both; }
+  .cierre.visto .cierre-destello { animation-delay: 4.2s; }
 }

@@ -4,8 +4,11 @@
 //              `Appearance.setColorScheme`, que cambia TODA la app (los colores
 //              del sistema, `useColorScheme` y `colorSistema` lo siguen solos).
 //              «Sistema» es lo que hacía la app hasta ahora.
-//   · Estilo — Vidrio (Liquid Glass) o Sólido: con Sólido, `Vidrio` pinta la
-//              superficie opaca de las filas en vez del vidrio.
+//   · Estilo — Papel (la línea Mostrador del portal, 2026-11-19: fondo de
+//              papel y tarjetas con relieve; el que trae la app), Vidrio
+//              (Liquid Glass sobre la aurora) o Sólido (la superficie opaca
+//              de las filas, sin vidrio ni relieve). Quien ya había elegido
+//              Vidrio o Sólido lo conserva.
 // Se guarda en el TELÉFONO, como en el portal («Se guarda para el teléfono. En
 // la computadora puedes tener otro tema»).
 import { Appearance } from 'react-native';
@@ -16,7 +19,7 @@ const CLAVE_MODO = 'app_tema_modo';
 const CLAVE_ESTILO = 'app_tema_estilo';
 
 export const MODOS = [{ id: 'sistema', label: 'Como el teléfono' }, { id: 'claro', label: 'Claro' }, { id: 'oscuro', label: 'Oscuro' }];
-export const ESTILOS = [{ id: 'vidrio', label: 'Liquid Glass' }, { id: 'solido', label: 'Sólido' }];
+export const ESTILOS = [{ id: 'papel', label: 'Papel' }, { id: 'vidrio', label: 'Liquid Glass' }, { id: 'solido', label: 'Sólido' }];
 
 const leerSeguro = (clave, valido, porDefecto) => {
   try { const v = leer(clave); return valido.some((x) => x.id === v) ? v : porDefecto; } catch { return porDefecto; }
@@ -31,7 +34,7 @@ function aplicarModo(modo) {
 
 export const usePreferenciaDeTema = create((set) => ({
   modo: leerSeguro(CLAVE_MODO, MODOS, 'sistema'),
-  estilo: leerSeguro(CLAVE_ESTILO, ESTILOS, 'vidrio'),
+  estilo: leerSeguro(CLAVE_ESTILO, ESTILOS, 'papel'),
   ponerModo: (modo) => {
     try { guardar(CLAVE_MODO, modo); } catch { /* sin almacén: vale hasta cerrar la app */ }
     aplicarModo(modo);

@@ -9,6 +9,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { usePaleta } from '../../tema/material';
+import { dinamico } from '../../tema/papel';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { usePestanaRapida } from '../../componentes/pestanaRapida';
@@ -70,7 +71,11 @@ export default function Pestanas() {
     backgroundColor: p.surfaceContainer, indicatorColor: p.secondaryContainer, rippleColor: p.primary,
     iconColor: { default: p.onSurfaceVariant, selected: p.onSecondaryContainer },
     labelStyle: { default: { color: p.onSurfaceVariant }, selected: { color: p.onSurface } },
-  } : {};
+  } : {
+    // iPhone: la barra de vidrio del sistema con la pestaña elegida en la
+    // marca (línea Mostrador); cambia sola de claro a oscuro.
+    tintColor: dinamico('marcaTexto'),
+  };
   return (
     <NativeTabs labelVisibilityMode="labeled" {...colores}>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">

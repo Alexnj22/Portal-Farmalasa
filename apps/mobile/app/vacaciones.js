@@ -101,7 +101,7 @@ export default function Vacaciones() {
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'ALL', onCambiar: setEstado,
       opciones: [{ id: 'ALL', label: 'Todos' }, ...Object.entries(ESTADO_PLAN).map(([k, l]) => ({ id: k, label: l }))] },
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-      opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'ALL', label: 'Todas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
 
   const puedeEditar = hasPermission('vacation_plan', 'can_edit');

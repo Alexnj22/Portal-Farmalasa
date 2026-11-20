@@ -195,7 +195,7 @@ export default function Metas() {
   const opcionesSala = useMemo(() => SALAS_VENTA.map((id) => ({ id: String(id), label: salaNombre(id) })).sort((a, b) => a.label.localeCompare(b.label)), [salaNombre]);
   const salasVisibles = useMemo(() => (todas ? null : new Set([String(user?.branchId)])), [todas, user?.branchId]);
 
-  const grupoSala = { id: 'sala', titulo: 'Sucursal', opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...opcionesSala], activa: sala, porDefecto: 'todas', onCambiar: setSala };
+  const grupoSala = { id: 'sala', titulo: 'Sucursal', opciones: [{ id: 'todas', label: 'Todas' }, ...opcionesSala], activa: sala, porDefecto: 'todas', onCambiar: setSala };
   const grupos = pestana === 'tablero' ? (todas ? [grupoSala] : [])
     : pestana === 'bono' ? (todas ? [{ id: 'sala', titulo: 'Sucursal', opciones: opcionesSala, activa: salaBono, porDefecto: propia, onCambiar: setSalaBono }] : [])
       : [

@@ -8,10 +8,36 @@ import FichasAndroid from './FichasAndroid';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from './marca';
+import { papel, relieve } from '../../tema/papel';
+import { usePreferenciaDeTema } from '../../tema/preferencia';
+import { useColorScheme } from 'react-native';
 
 export default function Pestanas({ opciones, activa, onCambiar }) {
+  const conVidrio = usePreferenciaDeTema((s) => s.estilo === 'vidrio');
+  const oscuro = useColorScheme() === 'dark';
   if (opciones.length < 2) return null;
   if (Platform.OS === 'android') return <FichasAndroid opciones={opciones} activa={activa} onCambiar={onCambiar} />;
+  // Papel / Sólido (línea Mostrador · «Chip de filtro»): píldora con relieve;
+  // la elegida, la marca sólida con texto blanco.
+  if (!conVidrio) {
+    const p = papel(oscuro);
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 6, gap: 8 }}>
+        {opciones.map((o) => {
+          const esta = o.id === activa;
+          return (
+            <Pressable key={o.id} accessibilityRole="tab" accessibilityState={{ selected: esta }}
+              onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(o.id); }}
+              style={({ pressed }) => ({ borderRadius: 999, backgroundColor: esta ? p.marca : p.superficie, boxShadow: relieve(oscuro, 'control'),
+                transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+              <Text style={{ paddingHorizontal: 16, paddingVertical: 8, fontSize: 15, fontWeight: esta ? '600' : '500',
+                color: esta ? '#FFFFFF' : p.tinta2 }}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    );
+  }
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
       {opciones.map((o) => {

@@ -184,7 +184,7 @@ export default function Personal() {
   const grupos = [
     ...(tipo === 'personal' ? [{ id: 'estado', titulo: 'Ver', activa: vista, porDefecto: 'todos', onCambiar: setVista,
       opciones: [{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Activos' }, { id: 'ausentes', label: 'Ausentes' }] }] : []),
-    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas] }] : []),
+    ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas' }, ...salas] }] : []),
   ];
   // Quién entra en la póliza: la misma lista que usa la vista del seguro.
   const enPlanilla = useMemo(() => soloPersonalEnPlanilla((empleados || []).filter((e) => e.status === 'ACTIVO')), [empleados]);

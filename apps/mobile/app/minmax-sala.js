@@ -279,7 +279,7 @@ export default function MinMaxSala() {
       if (r.saltadas.length) partes.push(`Con borradores sin revisar (no se recalcularon): ${r.saltadas.map((id) => ERP_NAMES[id]).join(', ')}`);
       if (r.fallidas.length) partes.push(`Error en: ${r.fallidas.map((id) => ERP_NAMES[id]).join(', ')}`);
       if (partes.length) fallo('Calcular', partes.join('. '));
-      else listo('Todas las sucursales', `${r.filas.toLocaleString()} borradores generados`);
+      else listo('Todas', `${r.filas.toLocaleString()} borradores generados`);
       await cargar();
       setVista('cambios');
     } finally { setOcupado(false); }

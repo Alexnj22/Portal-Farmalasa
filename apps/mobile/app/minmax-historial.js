@@ -115,7 +115,7 @@ export default function MinMaxHistorial() {
     const meta = HISTORIAL_MINMAX_META[log.action] || { label: log.action, variante: 'neutral' };
     const persona = quienEs(datos.indice, log.user_id, log.user_name);
     const sol = d.request_id ? datos.sols.find((s) => s.id === d.request_id) : null;
-    const salaTxt = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas las sucursales' : (ERP_NAMES[d.sucursal_id] || '');
+    const salaTxt = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Todas' : (ERP_NAMES[d.sucursal_id] || '');
     const fmt = (v) => (v == null ? '—' : String(v));
     const vigenteId = datos.fila?.ajuste_solicitud_id;
     return (

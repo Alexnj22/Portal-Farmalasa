@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { usePreferenciaDeTema } from '../tema/preferencia';
 import { usePaleta } from '../tema/material';
+import { papel, relieve, RADIO } from '../tema/papel';
 
 const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
@@ -14,6 +15,30 @@ const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassA
 // Glass. Sin él se pone encima como capa de color: si no, en Android y en iOS
 // viejo la píldora elegida quedaba blanca con el texto blanco encima (visto en
 // el emulador, Horarios, 2026-10-12).
+// Papel (la línea Mostrador): los radios de la app se llevan a los
+// concéntricos de la línea — tarjeta 28, pieza interior 22, renglón 16.
+const radioPapel = (r) => (r >= 20 ? RADIO.tarjeta : r >= 16 ? RADIO.variasLineas : RADIO.renglon);
+
+// El estilo que pasa quien llama se reparte: lo que acomoda a los hijos
+// (dirección, separación, relleno) va a la vista de adentro, que es la que los
+// contiene; el tamaño, los márgenes y la transformación, a la de afuera.
+const DE_ADENTRO = /^(flexDirection|flexWrap|gap|rowGap|columnGap|alignItems|justifyContent|alignContent|padding.*)$/;
+function repartir(style) {
+  const plano = StyleSheet.flatten(style) || {};
+  const fuera = {};
+  const dentro = {};
+  for (const [k, v] of Object.entries(plano)) (DE_ADENTRO.test(k) ? dentro : fuera)[k] = v;
+  return { fuera, dentro };
+}
+
+// Sobre papel no hay vidrio que mezcle: un tinte fuerte de lo ELEGIDO (35 %
+// o más, el que lleva texto blanco encima) se pinta sólido, como la marca
+// sólida del portal; uno suave se queda como fondo teñido.
+function tintePapel(tinte) {
+  const m = typeof tinte === 'string' && tinte.match(/^(#[0-9a-f]{6})([0-9a-f]{2})$/i);
+  return m && parseInt(m[2], 16) >= 0x59 ? m[1] : tinte;
+}
+
 const Tinte = ({ color, radio }) => (color ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: color, borderRadius: radio }]} /> : null);
 
 export default function Vidrio({ style, children, radio = 22, interactivo = false, tinte }) {
@@ -22,12 +47,22 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   // opaca de las filas del sistema, sin vidrio ni desenfoque.
   const solido = usePreferenciaDeTema((s) => s.estilo === 'solido');
   const paleta = usePaleta();
+  const conPapel = usePreferenciaDeTema((s) => s.estilo === 'papel');
   const forma = { borderRadius: radio, overflow: 'hidden' };
-  if (solido && Platform.OS === 'ios') {
+  // Papel (el estilo de la app desde 2026-11-19, DISENO-MOSTRADOR §0): la
+  // superficie de papel con RELIEVE — luz interior, contacto y ambiente — en
+  // vez de vidrio. La sombra va en una vista de afuera sin recorte (con
+  // `overflow: hidden` iOS no la pinta) y el contenido se recorta adentro.
+  if ((conPapel || solido) && Platform.OS === 'ios') {
+    const p = papel(oscuro);
+    const r = radioPapel(radio);
+    const { fuera, dentro } = repartir(style);
     return (
-      <View style={[forma, { backgroundColor: oscuro ? '#1C1C1E' : '#FFFFFF' }, style]}>
-        <Tinte color={tinte} radio={radio} />
-        {children}
+      <View style={[{ borderRadius: r, backgroundColor: p.superficie }, solido ? { borderWidth: StyleSheet.hairlineWidth, borderColor: p.linea } : { boxShadow: relieve(oscuro) }, fuera]}>
+        <View style={[{ flexGrow: 1, borderRadius: r, overflow: 'hidden' }, dentro]}>
+          <Tinte color={tintePapel(tinte)} radio={r} />
+          {children}
+        </View>
       </View>
     );
   }

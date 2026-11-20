@@ -282,7 +282,7 @@ export default function Ventas() {
   const grupos = [
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'mes', onCambiar: setPeriodo, opciones: PERIODOS },
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: buscando && mostrar === 'canjeo' ? 'todas' : mostrar, porDefecto: 'todas', onCambiar: setMostrar,
       opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }, { id: 'canjeo', label: 'Canjeó puntos' }] },
     // El estado de los puntos va por la lista paginada (como el portal): con búsqueda o receta no aplica.

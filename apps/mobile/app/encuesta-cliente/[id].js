@@ -114,7 +114,7 @@ export default function EncuestaCliente() {
   // ── Resultados de una sucursal, CSV y resumen con IA (como el portal) ──
   const salasConRespuestas = datos?.por_sucursal || [];
   const filtrosDeSala = salasConRespuestas.length ? [{ id: 'sala', titulo: 'Sucursal', activa: sala == null ? '' : String(sala), porDefecto: '', onCambiar: (v) => { setDatos(null); setSala(v ? Number(v) : null); },
-    opciones: [{ id: '', label: 'Todas las sucursales' }, ...salasConRespuestas.map((x) => ({ id: String(x.branch_id), label: x.nombre }))] }] : [];
+    opciones: [{ id: '', label: 'Todas' }, ...salasConRespuestas.map((x) => ({ id: String(x.branch_id), label: x.nombre }))] }] : [];
   const exportar = async () => {
     trabajando('Armando el archivo…');
     try {

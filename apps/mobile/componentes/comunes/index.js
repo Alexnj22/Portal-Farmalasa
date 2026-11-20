@@ -1,40 +1,73 @@
 // Las piezas de la app: el equivalente de `components/common` del portal, con
 // los mismos tokens. Una pieza nueva va acá y no dentro de una pantalla.
-import { Text, TextInput, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, Animated, Text, TextInput, View, useColorScheme } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import { suave, useTema } from '../../tema/tema';
+import { relieve } from '../../tema/papel';
 
 const TONOS = { success: ['exito', 'exitoTexto'], warning: ['aviso', 'avisoTexto'], danger: ['peligro', 'peligroTexto'] };
 
 /** Una tarjeta, con tono opcional (success | warning | danger). */
+// Línea Mostrador: la tarjeta lleva RELIEVE en vez de borde; con tono, es la
+// ficha del tono al 10 % sin borde (Avisos A).
 export function Tarjeta({ tono, style, children }) {
   const t = useTema();
+  const oscuro = useColorScheme() === 'dark';
   const [base] = TONOS[tono] || [];
   return (
     <View style={[{
-      backgroundColor: base ? suave(t.color[base], 0.08) : t.color.tarjeta,
-      borderColor: base ? suave(t.color[base], 0.45) : t.color.borde,
-      borderWidth: 1, borderRadius: t.radio.tarjeta, padding: 12, gap: 8,
+      backgroundColor: base ? suave(t.color[base], 0.1) : t.color.tarjeta,
+      boxShadow: base ? undefined : relieve(oscuro),
+      borderRadius: base ? 16 : t.radio.tarjeta, padding: base ? 12 : 16, gap: 8,
     }, style]}>{children}</View>
   );
 }
 
-export function Insignia({ tono, children }) {
+// Línea Mostrador · Insignia «Punto vivo»: píldora del tono al 14 % con su
+// punto; el punto late sólo en lo vivo (`vivo`).
+export function Insignia({ tono, children, punto = false, vivo = false }) {
   const t = useTema();
   const [base, texto] = TONOS[tono] || [];
+  const color = texto ? t.color[texto] : t.color.texto2;
   return (
-    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: base ? suave(t.color[base], 0.15) : suave(t.color.texto3, 0.12) }}>
-      <Text style={{ fontSize: t.texto.caption + 2, fontWeight: '800', color: texto ? t.color[texto] : t.color.texto2 }}>{children}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: base ? suave(t.color[base], 0.14) : suave(t.color.texto3, 0.12) }}>
+      {punto || vivo ? <PuntoVivo color={color} vivo={vivo} /> : null}
+      <Text style={{ fontSize: t.texto.caption + 2, fontWeight: '600', color }}>{children}</Text>
     </View>
   );
+}
+
+/** El punto de una insignia: late (opacidad) sólo si `vivo`, y no late con
+ *  «reducir movimiento». */
+export function PuntoVivo({ color, vivo = false, tam = 6 }) {
+  const v = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!vivo) return undefined;
+    let lazo = null;
+    let vigente = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((quieto) => {
+      if (quieto || !vigente) return;
+      lazo = Animated.loop(Animated.sequence([
+        Animated.timing(v, { toValue: 0.35, duration: 800, useNativeDriver: true }),
+        Animated.timing(v, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ]));
+      lazo.start();
+    }).catch(() => {});
+    return () => { vigente = false; lazo?.stop(); };
+  }, [vivo, v]);
+  return <Animated.View style={{ width: tam, height: tam, borderRadius: tam / 2, backgroundColor: color, opacity: v }} />;
 }
 
 export function Aviso({ tono = 'warning', children }) {
   const t = useTema();
   const [base, texto] = TONOS[tono] || TONOS.warning;
+  // Línea Mostrador · Avisos A: ficha del tono al 10 %, radio 16, sin borde;
+  // el punto del tono y el texto en tinta 2.
   return (
-    <View accessibilityRole="alert" style={{ padding: 12, borderRadius: t.radio.tarjeta, backgroundColor: suave(t.color[base], 0.1), borderWidth: 1, borderColor: suave(t.color[base], 0.4) }}>
-      <Text style={{ color: t.color[texto], fontSize: t.texto.cuerpo + 1, fontWeight: '600' }}>{children}</Text>
+    <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: 10, padding: 12, borderRadius: 16, backgroundColor: suave(t.color[base], 0.1) }}>
+      <View style={{ width: 8, height: 8, borderRadius: 4, marginTop: 6, backgroundColor: t.color[texto] }} />
+      <Text style={{ flex: 1, color: t.color.texto2, fontSize: t.texto.cuerpo + 1, fontWeight: '500' }}>{children}</Text>
     </View>
   );
 }

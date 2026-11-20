@@ -177,7 +177,7 @@ export default function Facturacion() {
   const marcadas = useMemo(() => (datos?.[cola] || []).filter((r) => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length, [datos, cola, visitedIds]);
   const grupos = [
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-      opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'ALL', label: 'Todas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     ...(cola === 'obs' && conteos.length ? [{ id: 'obs', titulo: 'Observación', activa: obsCode, porDefecto: 'todos', onCambiar: setObsCode,
       opciones: [{ id: 'todos', label: 'Todas' }, ...conteos.map(([c, k]) => ({ id: c, label: `${metaObs(c).label} · ${k}` }))] }] : []),
   ];

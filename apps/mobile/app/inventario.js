@@ -252,7 +252,7 @@ export default function Inventario() {
 
   const grupos = [
     { id: 'sala', titulo: 'Sucursal', activa: sala, porDefecto: miErp == null ? 'todas' : String(miErp), onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...ERP_ORDEN.map((id) => ({ id: String(id), label: ERP_NAMES[id] }))] },
+      opciones: [{ id: 'todas', label: 'Todas' }, ...ERP_ORDEN.map((id) => ({ id: String(id), label: ERP_NAMES[id] }))] },
     ...(esBodega ? [{ id: 'area', titulo: 'Ubicación', activa: areaVencidos, porDefecto: 'no', onCambiar: setAreaVencidos,
       opciones: [{ id: 'no', label: 'Toda la bodega' }, { id: 'si', label: 'Solo área de vencidos' }] }] : []),
     { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,

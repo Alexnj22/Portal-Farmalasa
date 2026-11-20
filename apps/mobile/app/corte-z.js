@@ -214,7 +214,7 @@ export default function CorteZ() {
   };
   const elegirPdf = () => {
     Haptics.selectionAsync().catch(() => {});
-    const opciones = [`Todas las sucursales (${filas.length})`, ...filas.map((f) => f.sucursal), 'Cancelar'];
+    const opciones = [`Todas (${filas.length})`, ...filas.map((f) => f.sucursal), 'Cancelar'];
     ActionSheetIOS.showActionSheetWithOptions({ title: `Cierre mensual · ${etiquetaPeriodo(desde)}`, options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {
       if (i === 0) pdfDe(filas, `Corte Z ${etiquetaPeriodo(desde)} · todas las sucursales`);
       else if (i > 0 && i <= filas.length) pdfDe([filas[i - 1]], `Corte Z ${etiquetaPeriodo(desde)} · ${filas[i - 1].sucursal}`);
@@ -222,7 +222,7 @@ export default function CorteZ() {
   };
 
   const grupos = puedeElegirSucursal && conCorte.length > 1 ? [{ id: 'sucursal', titulo: 'Sucursal', activa: sucursal, porDefecto: 'todas', onCambiar: setSucursal,
-    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...conCorte] }] : [];
+    opciones: [{ id: 'todas', label: 'Todas' }, ...conCorte] }] : [];
 
   return (
     <>

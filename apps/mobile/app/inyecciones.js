@@ -474,7 +474,7 @@ export default function Inyecciones() {
   const [libreBit, setLibreBit] = useState(() => ({ desde: sumarDias(hoySV(), -30), hasta: hoySV() }));
   const [estadoBit, setEstadoBit] = useState('todas');
   const grupoSala = salaPropia ? [] : [{ id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
-    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...(sucursales || []).map((b) => ({ id: String(b.id), label: b.name }))] }];
+    opciones: [{ id: 'todas', label: 'Todas' }, ...(sucursales || []).map((b) => ({ id: String(b.id), label: b.name }))] }];
   const grupos = pestana === 'por-cobrar' ? [
     { id: 'periodo', titulo: 'Período', activa: rango, porDefecto: periodos[0].id, onCambiar: setRango, opciones: periodos },
     ...grupoSala,

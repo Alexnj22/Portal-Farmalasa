@@ -123,7 +123,7 @@ export default function AuditoriaDeTiempos() {
   };
   const conAlgo = filas.filter((f) => f.s.length).length;
   const grupos = todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-    opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
+    opciones: [{ id: 'ALL', label: 'Todas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
   const ir = (n) => { Haptics.selectionAsync().catch(() => {}); setDia((d) => sumarDias(d, n)); setAbierto(null); };
 
   return (

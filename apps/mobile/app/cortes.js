@@ -183,7 +183,7 @@ export default function Cortes() {
     { id: 'diferencia', titulo: 'Diferencia', activa: diferencia, porDefecto: 'TODAS', onCambiar: setDiferencia,
       opciones: [{ id: 'TODAS', label: 'Todas' }, { id: 'ok', label: 'Cuadraron' }, { id: 'sobra', label: 'Con exceso' }, { id: 'falta', label: 'Con faltante' }] },
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((s) => ({ id: s, label: nombre(s) }))] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas' }, ...salas.map((s) => ({ id: s, label: nombre(s) }))] }] : []),
   ];
 
   return (

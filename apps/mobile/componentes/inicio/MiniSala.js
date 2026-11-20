@@ -9,7 +9,7 @@
 // deben ser interactivos o al menos como funcionan en el portal». Tocarla abre
 // la sala en «Ventas de hoy».
 import { useEffect, useRef } from 'react';
-import { Animated, Text, View } from 'react-native';
+import { Animated, Platform, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import tokens from '@nucleo/constants/tokens.json';
@@ -19,10 +19,18 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from './marca';
 import { MAYUSCULAS } from '../../tema/mayusculas';
+import { mezclar, papel } from '../../tema/papel';
 
 const T = tokens.temas.dark;
+// iPhone, línea Mostrador: la escala de la MARCA, como el portal (`--txvol-*`
+// del bloque Mostrador): muerta gris cálido, normal marca al 60 %, pico la
+// marca, crítica el error. Se lee al pintar (getters) para seguir al modo.
+const IOS = Platform.OS === 'ios';
 export const COLOR_VOLUMEN = {
-  muerta: T['txvol-muerta'], normal: T['txvol-normal'], pico: T['txvol-pico'], critica: T['txvol-critica'],
+  get muerta() { const p = papel(); return IOS ? mezclar(p.tinta3, p.superficie, 0.4) : T['txvol-muerta']; },
+  get normal() { const p = papel(); return IOS ? mezclar(p.marca, p.superficie, 0.6) : T['txvol-normal']; },
+  get pico() { const p = papel(); return IOS ? p.marca : T['txvol-pico']; },
+  get critica() { return IOS ? papel().error : T['txvol-critica']; },
 };
 export const VERDE = MARCA.verde;
 
@@ -56,7 +64,7 @@ export default function MiniSala({ sala, nombre, desde = 7, alto = 46, onPress, 
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }}
       style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Vidrio radio={20} interactivo tinte={activa ? 'rgba(18,183,106,0.22)' : undefined}>
+      <Vidrio radio={20} interactivo tinte={activa ? `${MARCA.azul}26` : undefined}>
         <View style={{ padding: 12, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{nombre}</Text>
@@ -74,7 +82,7 @@ export default function MiniSala({ sala, nombre, desde = 7, alto = 46, onPress, 
                 <View key={i} style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center' }}>
                   {esAhora ? <Latido /> : null}
                   <View style={{
-                    width: '100%', borderTopLeftRadius: 2, borderTopRightRadius: 2,
+                    width: '100%', borderRadius: 999,
                     height: t > 0 ? Math.max(3, (t / max) * (alto - 8)) : 2,
                     backgroundColor: COLOR_VOLUMEN[nivelDeVolumen(t)], opacity: t > 0 ? 1 : 0.35,
                   }} />

@@ -56,7 +56,7 @@ export default function VentasHoy() {
   // que elegir y el menú no aparece.
   const grupos = soloMiSala ? [] : [{
     id: 'sala', titulo: 'Sucursal', activa: elegida, porDefecto: 'todas', onCambiar: setElegida,
-    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...visibles.map((s) => ({ id: s.branchId, label: nombre(s.branchId) }))],
+    opciones: [{ id: 'todas', label: 'Todas' }, ...visibles.map((s) => ({ id: s.branchId, label: nombre(s.branchId) }))],
   }];
 
   const s = useMemo(() => (elegida === 'todas' ? sumarSalas(visibles) : visibles.find((x) => x.branchId === elegida)) ?? sumarSalas([]),
@@ -91,7 +91,7 @@ export default function VentasHoy() {
                 extra={(s.ticketsPorHora ?? []).map((t) => `${t} ticket${t === 1 ? '' : 's'}`)}
                 resumen={(
                   <View>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{elegida === 'todas' ? 'Todas las sucursales' : nombre(elegida)}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{elegida === 'todas' ? 'Todas' : nombre(elegida)}</Text>
                     <Text style={{ color: colorSistema.texto, fontSize: 30, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }}>{formatMoney(s.total)}</Text>
                   </View>
                 )} />

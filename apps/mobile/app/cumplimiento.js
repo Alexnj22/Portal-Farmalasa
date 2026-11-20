@@ -480,7 +480,7 @@ export default function Cumplimiento() {
 
   const grupos = alcanceTodas && seccion !== 'resumen' && seccion !== 'mercado' ? [{
     id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSalaElegida,
-    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((o) => ({ id: o.value, label: o.label }))],
+    opciones: [{ id: 'todas', label: 'Todas' }, ...salas.map((o) => ({ id: o.value, label: o.label }))],
   }] : [];
 
   return (

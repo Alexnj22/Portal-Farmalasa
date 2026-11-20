@@ -11,9 +11,10 @@
 // Sólo vistas de React Native: nada de capas SwiftUI (`Host`), que dentro de
 // algo que se desplaza no siguen a su lugar (ver componentes/IconoFijo.ios.js).
 import { useEffect, useRef } from 'react';
-import { PlatformColor, ScrollView, Text, View, useColorScheme } from 'react-native';
+import { ScrollView, Text, View, useColorScheme } from 'react-native';
 import { Presionable as Pressable } from './Tocable';
 import * as Haptics from 'expo-haptics';
+import { dinamico, papel, pozo, relieve } from '../tema/papel';
 
 export default function PistaSegmentada({ opciones, activa, onCambiar, margen = 16 }) {
   const oscuro = useColorScheme() === 'dark';
@@ -26,7 +27,9 @@ export default function PistaSegmentada({ opciones, activa, onCambiar, margen = 
     if (p) scroll.current?.scrollTo({ x: Math.max(0, p.x - 24), animated: true });
   }, [activa]);
   return (
-    <View style={{ marginHorizontal: margen, borderRadius: 999, padding: 3, backgroundColor: PlatformColor('tertiarySystemFill'), overflow: 'hidden' }}>
+    // Línea Mostrador · Segmentado «Pozo con luz»: el riel hundido (papel
+    // hundido con sombra interior) y la ficha clara con relieve encima.
+    <View style={{ marginHorizontal: margen, borderRadius: 999, padding: 3, backgroundColor: papel(oscuro).hundida, boxShadow: pozo(oscuro), overflow: 'hidden' }}>
       <ScrollView ref={scroll} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 2, flexGrow: 1 }}>
         {opciones.map((o) => {
           const esta = o.id === activa;
@@ -35,9 +38,10 @@ export default function PistaSegmentada({ opciones, activa, onCambiar, margen = 
               onLayout={(e) => { xs.current[o.id] = e.nativeEvent.layout; }}
               onPress={() => { if (!esta) { Haptics.selectionAsync().catch(() => {}); onCambiar(o.id); } }}
               style={{ flexGrow: 1, minHeight: 32, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-                backgroundColor: esta ? (oscuro ? 'rgba(255,255,255,0.24)' : '#FFFFFF') : 'transparent',
-                shadowColor: '#000', shadowOpacity: esta && !oscuro ? 0.12 : 0, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }}>
-              <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: esta ? '600' : '500', color: PlatformColor('label') }}>{o.label}</Text>
+                backgroundColor: esta ? papel(oscuro).superficie : 'transparent',
+                boxShadow: esta ? relieve(oscuro, 'control') : undefined,
+                borderTopWidth: esta ? 1.5 : 0, borderTopColor: esta ? `${papel(oscuro).marca}80` : 'transparent' }}>
+              <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: esta ? '600' : '500', color: esta ? dinamico('tinta') : dinamico('tinta2') }}>{o.label}</Text>
             </Pressable>
           );
         })}

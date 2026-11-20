@@ -88,7 +88,7 @@ export default function CajaDiferencias() {
       opciones: [{ id: 'PENDIENTES', label: 'Lo pendiente' }, { id: 'TODOS', label: 'Todos los días' },
         ...Object.entries(ESTADO_DIF).map(([k, [l]]) => ({ id: k, label: l }))] },
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
 
   return (

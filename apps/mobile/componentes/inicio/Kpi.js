@@ -28,7 +28,7 @@ export default function Kpi({ icono, rotulo, valor, apoyo, color, pide = false, 
         <Vidrio radio={20} interactivo={!!onPress} style={ANDROID ? { flex: 1 } : { flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] }}>
           <View style={{ flex: 1, padding: 14, gap: 4, minHeight: 112 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-              <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: `${color}24`, alignItems: 'center', justifyContent: 'center' }}>
                 <IconoFijo name={iconoDe(icono)} size={14} color={color} />
               </View>
               <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>{rotulo}</Text>
@@ -81,8 +81,8 @@ export function Curva({ valores = [], color, alto = 28 }) {
 export function Avance({ parte = 0, total = 0, color }) {
   const pct = total > 0 ? Math.min(1, parte / total) : 0;
   return (
-    <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.25)', overflow: 'hidden' }}>
-      <View style={{ width: `${pct * 100}%`, height: '100%', borderRadius: 3, backgroundColor: color }} />
+    <View style={{ height: 6, borderRadius: 999, backgroundColor: colorSistema.relleno, overflow: 'hidden' }}>
+      <View style={{ width: `${pct * 100}%`, height: '100%', borderRadius: 999, backgroundColor: color }} />
     </View>
   );
 }

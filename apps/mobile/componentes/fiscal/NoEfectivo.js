@@ -224,9 +224,9 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
                   style={{ minHeight: 44, justifyContent: 'center' }}>
                   <Pildora texto={`${confTipo ? ROTULO[confTipo] ?? confTipo : 'Todas las formas'} ▾`} color={confTipo ? MARCA.azulClaro : colorSistema.texto2} />
                 </Tocable>
-                <Tocable onPress={() => elegirUna('Sucursal', [{ id: '', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))], setConfSala)}
+                <Tocable onPress={() => elegirUna('Sucursal', [{ id: '', label: 'Todas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))], setConfSala)}
                   style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Pildora texto={`${confSala ? nombreSala(confSala) : 'Todas las sucursales'} ▾`} color={confSala ? MARCA.azulClaro : colorSistema.texto2} />
+                  <Pildora texto={`${confSala ? nombreSala(confSala) : 'Todas'} ▾`} color={confSala ? MARCA.azulClaro : colorSistema.texto2} />
                 </Tocable>
                 {confTipo || confSala ? (
                   <Tocable onPress={() => { setConfTipo(''); setConfSala(''); }} style={{ minHeight: 44, justifyContent: 'center' }}>

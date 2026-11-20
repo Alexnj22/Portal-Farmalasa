@@ -185,7 +185,7 @@ export default function CuentasPorCobrar() {
     .sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const grupos = [
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: (v) => { setSala(v); setVendedor(''); },
-      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     { id: 'vendedor', titulo: 'Vendedor', activa: vendedor, porDefecto: '', onCambiar: setVendedor,
       opciones: [{ id: '', label: 'Todos los vendedores' }, ...opcionesVendedor] },
     { id: 'orden', titulo: 'Orden', activa: orden, porDefecto: 'ANTIGUOS', onCambiar: setOrden,

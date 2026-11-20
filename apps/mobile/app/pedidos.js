@@ -221,7 +221,7 @@ export default function Pedidos() {
 
   const grupos = vista === 'metricas' ? [] : [
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
-      opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...ERP_ORDEN.map((e) => ({ id: String(e), label: ERP_NAMES[e] }))] }] : []),
+      opciones: [{ id: 'todas', label: 'Todas' }, ...ERP_ORDEN.map((e) => ({ id: String(e), label: ERP_NAMES[e] }))] }] : []),
     { id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'all', onCambiar: setEstado,
       opciones: ESTADOS_DEL_TABLERO.map((e) => ({ id: e.value, label: e.label })) },
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'mes', onCambiar: setPeriodo,

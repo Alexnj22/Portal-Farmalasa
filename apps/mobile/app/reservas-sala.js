@@ -188,7 +188,7 @@ export default function ReservasDeSala() {
   };
 
   const filtrosSala = todas && salasDeVenta.length ? [{ id: 'sala', titulo: 'Sucursal', activa: salaFija, porDefecto: 'todas', onCambiar: setSalaFija,
-    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salasDeVenta.map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
+    opciones: [{ id: 'todas', label: 'Todas' }, ...salasDeVenta.map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
 
   return (
     <>
@@ -199,7 +199,7 @@ export default function ReservasDeSala() {
         refreshControl={<Refrescar refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={filtrosSala} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
-          {!sala && !verTodas ? 'Las reservas son de una sucursal de ventas.' : `${verTodas ? 'Todas las sucursales' : nombreSala}${recetas ? ` · ${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : ''}`}
+          {!sala && !verTodas ? 'Las reservas son de una sucursal de ventas.' : `${verTodas ? 'Todas' : nombreSala}${recetas ? ` · ${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : ''}`}
         </Text>
         {conteo && (sala || verTodas) && !esBodega ? (
           <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16 }}>

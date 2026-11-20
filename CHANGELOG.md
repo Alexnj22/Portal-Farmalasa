@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.0 — La app del personal con la línea Papel en iPhone
+
+- La app del personal toma la línea de diseño nueva (Portal 2.0), sólo JavaScript y por aire, sin tocar lo nativo (misma huella): paleta Papel claro y oscuro casi negro con la marca magenta (`tema/papel.js`), estilo «Papel» por defecto en Cuenta › Estilo (quien eligió Liquid Glass o Sólido lo conserva), botones píldora con brillo, campos en pozo, segmentado en pozo con ficha, íconos de encabezado y cifras en círculo.
+- Los botones verdes de acción salen en la marca; el verde queda para lo que salió bien.
+- Avatares con el arco del turno (escala 24/40/64/104, una forma por estado además del color).
+- Vacíos con círculo hundido, avisos como ficha del tono, esqueleto en pozo, insignia con punto vivo.
+- Filtros de sucursal: «Todas» en vez de «Todas las sucursales».
+- Pestañas, menús, hojas y listas de iOS siguen siendo las del sistema; la letra queda la del sistema.
+- Novedades: no — el usuario decidió mandarla sin aviso (2026-11-20).
+- Gemelo: corte_z — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: cortes_caja — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: cuentas_por_cobrar — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: cumplimiento — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: emp_profile — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: encuestas_clientes — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: facturacion — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: inventario — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: inyecciones — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: metas — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: minmax — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: monitor — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: overview — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: payroll — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: pedidos — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: promociones — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: requests — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: reservas — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: staff_list — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: time_audit — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: traslados — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: vacation_plan — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+- Gemelo: ventas — sólo visual (línea Papel y «Todas»); el portal lo recibe con el Portal 2.0, preparado en el worktree portal-mostrador.
+
 ## v2.1583.13 — El enlace viejo de Cortes abre la pestaña Cortes
 
 - `/cortes` redirigía a `/caja?pestana=cortes`, pero Efectivo lee la pestaña de `?tab=` (`usePestanaEnUrl`): quien entraba por un favorito o un aviso viejo caía en «Hoy». Ahora abre «Cortes» y conserva la consulta.

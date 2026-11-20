@@ -123,7 +123,7 @@ export default function Nomina() {
   const grupos = [
     { id: 'estado', titulo: 'Estado', activa: estadoFiltro, porDefecto: 'ALL', onCambiar: (v) => { setEstadoFiltro(v); setPeriodoId(null); }, opciones: ESTADOS },
     ...(todas ? [{ id: 'sala', titulo: 'Sucursal', activa: salaElegida, porDefecto: 'ALL', onCambiar: setSala,
-      opciones: [{ id: 'ALL', label: 'Todas las sucursales' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
+      opciones: [{ id: 'ALL', label: 'Todas' }, ...[...(sucursales || [])].sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)).map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
   ];
   const estadoKey = periodo?.status || 'DRAFT';
   const estado = ESTADO_PLANILLA[estadoKey] ?? null;

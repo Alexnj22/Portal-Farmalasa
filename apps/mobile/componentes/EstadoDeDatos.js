@@ -66,7 +66,7 @@ export default function EstadoDeDatos({ margen = 16 }) {
       <Vidrio radio={20} interactivo={puedeAbrir}>
         <View style={{ paddingHorizontal: 14, paddingVertical: 10, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 34 }}>
-            <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
               <IconoFijo name={iconoDe(icono)} size={17} color="#FFFFFF" />
             </View>
             <View style={{ flex: 1 }}>

@@ -295,7 +295,7 @@ export default function Solicitudes() {
     // El selector de sala es del ALCANCE, no de los datos (decisión del
     // usuario, 2026-08-21): con «mi sucursal» no se ofrece filtrar por las demás.
     ...(criterios.branchId === null && !criterios.soloMiasId
-      ? [{ id: 'sala', titulo: 'Sucursal', opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...salas], activa: sala, porDefecto: 'todas', onCambiar: setSala }]
+      ? [{ id: 'sala', titulo: 'Sucursal', opciones: [{ id: 'todas', label: 'Todas' }, ...salas], activa: sala, porDefecto: 'todas', onCambiar: setSala }]
       : []),
     ...(!soloMioEnTodo
       ? [{ id: 'quien', titulo: 'De quién', opciones: [{ id: 'TODAS', label: 'Todos' }, { id: 'MIAS', label: 'Solo yo' }], activa: quien, porDefecto: 'TODAS', onCambiar: setQuien }]

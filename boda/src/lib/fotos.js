@@ -9,6 +9,10 @@ const LOCALES = [480, 640, 800, 960, 1200, 1400, 1800, 2400, 3200];
 const local = (url) => /^\/fotos\/[\w-]+\.(jpg|webp)$/.test(url || '');
 const cercano = (w) => LOCALES.find((a) => a >= w) || LOCALES[LOCALES.length - 1];
 export const ANCHOS_PORTADA = [640, 960, 1400, 1800, 2400, 3200];
+// Foto a pantalla completa (object-fit: cover). En un teléfono parado la
+// pantalla es más alta que ancha y la foto (3:2) se recorta a lo alto: el
+// ancho que se ve es el alto × 1.5, no el ancho de la pantalla.
+export const SIZES_PANTALLA = '(max-aspect-ratio: 1/1) 150vh, 100vw';
 export const ANCHOS_GALERIA = [480, 800, 1200, 1800];
 
 const acepta = (url) => /^https:\/\/images\.unsplash\.com\//.test(url || '');

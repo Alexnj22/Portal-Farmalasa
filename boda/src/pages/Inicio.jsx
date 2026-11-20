@@ -17,7 +17,7 @@ import { VISTA_NOMBRES, NOMBRES } from '../components/nombresTrazos';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
 import { NavEscritorio, Monograma } from '../components/AppMarco';
-import { imagenAdaptable, ANCHOS_PORTADA } from '../lib/fotos';
+import { imagenAdaptable, ANCHOS_PORTADA, SIZES_PANTALLA } from '../lib/fotos';
 import { precargar } from '../lib/precarga';
 import Icono from '../components/Iconos';
 import { useInvitacion, usarCodigo } from '../lib/miInvitacion';
@@ -170,7 +170,7 @@ export default function Inicio({ codigo }) {
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  const foto = imagenAdaptable(boda.portada);
+  const foto = imagenAdaptable(boda.portada, ANCHOS_PORTADA, SIZES_PANTALLA);
 
   const titulo = fase === 'save-the-date' ? 'Save the date'
     : fase === 'recuerdos' ? t('Gracias por acompañarnos', 'Thank you for celebrating with us')
@@ -241,8 +241,8 @@ export default function Inicio({ codigo }) {
       {fase === 'save-the-date' && (
         <section id="faltan" className="faltan-std" aria-label={t('Cuánto falta', 'Countdown')}>
           <div className="faltan-std-foto" aria-hidden>
-            <img {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, '100vw')} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
-            <img className="reflejo" {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, '100vw')} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
+            <img {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, SIZES_PANTALLA)} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
+            <img className="reflejo" {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, SIZES_PANTALLA)} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
           </div>
           <div className="faltan-std-texto">
             <Revelar>{idioma === 'es'

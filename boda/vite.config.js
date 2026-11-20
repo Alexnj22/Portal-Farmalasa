@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { boda } from './src/config.js';
-import { imagenAdaptable, ANCHOS_PORTADA } from './src/lib/fotos.js';
+import { imagenAdaptable, ANCHOS_PORTADA, SIZES_PANTALLA } from './src/lib/fotos.js';
 
 // Vista previa del enlace (WhatsApp, Facebook, iMessage): esos servicios no
 // corren JavaScript, así que el título, el texto y la foto tienen que estar
@@ -16,23 +16,21 @@ function vistaPrevia() {
   const absoluta = (u) => (/^https?:\/\//.test(u) ? u : `${sitio}${u.startsWith('/') ? '' : '/'}${u}`);
   // Sin la fecha: la tarjeta invita a entrar a verla.
   const titulo = boda.novios.firma;
-  const texto = 'Guarda la fecha, confirma tu asistencia y comparte tus fotos.';
+  // Sin descripción: por ahora es el save the date, no la invitación.
   const imagen = boda.portadaCompartir || boda.portada;
   const etiquetas = [
     `<title>${esc(titulo)}</title>`,
-    `<meta name="description" content="${esc(texto)}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:title" content="${esc(titulo)}" />`,
-    `<meta property="og:description" content="${esc(texto)}" />`,
     imagen && `<meta property="og:image" content="${esc(absoluta(imagen))}" />`,
     sitio && `<meta property="og:url" content="${esc(sitio)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
   ].filter(Boolean).join('\n    ');
   // La foto de la portada es lo más grande que pinta la primera pantalla: se
   // pide desde el HTML, antes de que corra el JavaScript.
-  const p = imagenAdaptable(boda.portada, ANCHOS_PORTADA, '100vw');
+  const p = imagenAdaptable(boda.portada, ANCHOS_PORTADA, SIZES_PANTALLA);
   const precargaFoto = p.srcSet
-    ? `<link rel="preload" as="image" imagesrcset="${esc(p.srcSet)}" imagesizes="100vw" fetchpriority="high" />`
+    ? `<link rel="preload" as="image" imagesrcset="${esc(p.srcSet)}" imagesizes="${esc(p.sizes)}" fetchpriority="high" />`
     : `<link rel="preload" as="image" href="${esc(p.src)}" fetchpriority="high" />`;
   return {
     name: 'vista-previa',

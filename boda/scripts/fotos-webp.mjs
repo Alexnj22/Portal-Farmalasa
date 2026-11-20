@@ -12,7 +12,7 @@ import { chromium } from '../../../Portal-Farmalasa/node_modules/playwright/inde
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(raiz, 'public/fotos');
 const ANCHOS = [480, 640, 800, 960, 1200, 1400, 1800, 2400, 3200];
-const CALIDAD = 0.74;
+const CALIDAD = 0.82;
 const nombres = fs.readdirSync(dir).filter((f) => /-3200\.jpg$/.test(f)).map((f) => f.replace(/-3200\.jpg$/, ''));
 
 const b = await chromium.launch();

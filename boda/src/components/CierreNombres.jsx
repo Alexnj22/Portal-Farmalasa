@@ -24,9 +24,22 @@ export default function CierreNombres({ texto }) {
   const icono = useRef(null);
   useEffect(() => {
     if (!visto || !icono.current?.animate || sinMovimiento()) return undefined;
-    let limpiar = null;
-    const espera = setTimeout(() => { limpiar = escribir(icono.current, { selector: '.cierre-contorno path', escritura: 1600, inicio: 0 }); }, 150);
-    return () => { clearTimeout(espera); limpiar?.(); };
+    const svg = icono.current;
+    const paths = [...svg.querySelectorAll('.cierre-contorno path')];
+    const medio = svg.viewBox.baseVal.width / 2;
+    const izq = paths.filter((p) => { const b = p.getBBox(); return b.x + b.width / 2 < medio; });
+    const der = paths.filter((p) => !izq.includes(p));
+    let limpiar = [];
+    // Dos plumas a la vez, desde el centro hacia afuera: el ornamento es
+    // simétrico y se escribe como un espejo.
+    const espera = setTimeout(() => {
+      const comun = { escritura: 2100, inicio: 0, cadencia: 48 };
+      limpiar = [
+        escribir(svg, { ...comun, elementos: izq, ordenar: (a, b) => b.x - a.x }),
+        escribir(svg, { ...comun, elementos: der, ordenar: (a, b) => a.fin - b.fin }),
+      ];
+    }, 150);
+    return () => { clearTimeout(espera); limpiar.forEach((f) => f?.()); };
   }, [visto]);
   const n = PIEZAS.nombresApilados;
   // El ornamento sin su «&» (el quinto trazo del archivo del diseñador).

@@ -7,10 +7,10 @@ const NS = 'http://www.w3.org/2000/svg';
  * dejando la línea dorada y soltando chispas de luz. La usan el Save the
  * Date de la portada y el ornamento del cierre. Devuelve la limpieza.
  */
-export function escribir(svg, { selector, escritura: ESCRITURA = 1900, inicio: INICIO = 250 }) {
-  const trazos = [...svg.querySelectorAll(selector)]
-    .map((p) => ({ p, x: p.getBBox().x, largo: p.getTotalLength() }))
-    .sort((a, b) => a.x - b.x);
+export function escribir(svg, { selector, elementos, escritura: ESCRITURA = 1900, inicio: INICIO = 250, cadencia = 26, ordenar = (a, b) => a.x - b.x }) {
+  const trazos = [...(elementos || svg.querySelectorAll(selector))]
+    .map((p) => { const b = p.getBBox(); return { p, x: b.x, fin: b.x + b.width, largo: p.getTotalLength() }; })
+    .sort(ordenar);
   const total = trazos.reduce((s, t) => s + t.largo, 0) || 1;
   let t = INICIO;
   trazos.forEach((tr) => {
@@ -47,7 +47,7 @@ export function escribir(svg, { selector, escritura: ESCRITURA = 1900, inicio: I
     punta.setAttribute('cx', pt.x.toFixed(1));
     punta.setAttribute('cy', pt.y.toFixed(1));
     punta.style.opacity = e < INICIO ? '0' : '1';
-    if (e > INICIO && ahora - ultima > 26) {
+    if (e > INICIO && ahora - ultima > cadencia) {
       ultima = ahora;
       const c = document.createElementNS(NS, 'circle');
       c.setAttribute('cx', pt.x.toFixed(1)); c.setAttribute('cy', pt.y.toFixed(1));

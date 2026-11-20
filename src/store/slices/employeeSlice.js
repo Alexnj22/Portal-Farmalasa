@@ -812,7 +812,7 @@ export const createEmployeeSlice = (set, get) => ({
                     ? (formData.contract_end_date || null) : null,
                 contrato_prorrogas: Array.isArray(formData.contrato_prorrogas)
                     ? formData.contrato_prorrogas.filter(p => p?.hasta).map(p => ({
-                        desde: p.desde || null, hasta: p.hasta, motivo: (p.motivo || '').trim(),
+                        desde: p.desde || null, hasta: p.hasta, motivo: (p.motivo || '').trim(), ...(p.firmada ? { firmada: p.firmada } : {}),
                       }))
                     : [],
                 contract_temporal_legal_basis: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_legal_basis || null) : null,
@@ -1354,7 +1354,7 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.contrato_prorrogas !== undefined) {
                 dbPayload.contrato_prorrogas = Array.isArray(updatedData.contrato_prorrogas)
                     ? updatedData.contrato_prorrogas.filter(p => p?.hasta).map(p => ({
-                        desde: p.desde || null, hasta: p.hasta, motivo: (p.motivo || '').trim() }))
+                        desde: p.desde || null, hasta: p.hasta, motivo: (p.motivo || '').trim(), ...(p.firmada ? { firmada: p.firmada } : {}) }))
                     : [];
             }
             // Servicios profesionales también tiene plazo: sólo se limpia la

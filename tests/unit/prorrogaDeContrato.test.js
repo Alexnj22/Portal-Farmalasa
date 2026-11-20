@@ -31,3 +31,20 @@ describe('prórroga de contrato', () => {
         expect(validarNovedad({ formData: { ...base, newEndDate: '2027-01-31', _editingEventId: 'x' }, empleado: yaProrrogado }).ok).toBe(true);
     });
 });
+
+describe('los 8 días del Ministerio cuentan desde la firma de la prórroga', () => {
+    it('usa `firmada` y no el fin del contrato anterior', async () => {
+        const { estadoRemisionMtps } = await import('@nucleo/utils/contrato');
+        const datos = {
+            contract_type: 'TEMPORAL', contrato_fecha_celebracion: '2026-10-19',
+            contrato_prorrogas: [{ desde: '2026-11-18', hasta: '2027-02-18', motivo: 'x', firmada: '2026-11-20' }],
+        };
+        expect(estadoRemisionMtps(datos, new Date(2026, 10, 20)).limite).toBe('2026-11-28');
+        const sinFirma = { ...datos, contrato_prorrogas: [{ desde: '2026-11-18', hasta: '2027-02-18' }] };
+        expect(estadoRemisionMtps(sinFirma, new Date(2026, 10, 20)).limite).toBe('2026-11-26');
+    });
+    it('el contrato firmado es obligatorio en la prórroga', async () => {
+        const { respaldoObligatorio } = await import('@nucleo/utils/novedadDePersonal');
+        expect(respaldoObligatorio('CONTRACT_EXTENSION')).toBe(true);
+    });
+});

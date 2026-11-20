@@ -450,11 +450,14 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                             </div>
                             <ul className="divide-y divide-border-card">
                                 {activos.items.map((a) => (
-                                    <li key={a.clave} className="flex flex-col sm:flex-row sm:items-center gap-2 py-2">
-                                        <span className="flex-1 min-w-0 text-body-sm text-content-2">
+                                    // La pregunta arriba y las cuatro respuestas en grilla abajo: en
+                                    // una fila, el riel de cuatro le quitaba el ancho a la pregunta y
+                                    // la partía en una letra por renglón (2026-11-20).
+                                    <li key={a.clave} className="flex flex-col gap-2 py-3">
+                                        <span className="min-w-0 text-body-sm text-content-2">
                                             ¿Devolvió {a.pregunta}?{a.detalle && <span className="block text-caption text-content-3">{a.detalle}</span>}
                                         </span>
-                                        <SegmentedControl size="sm" label={`${a.texto}: ¿lo devolvió?`} options={DEVOLUCION} value={a.estado}
+                                        <SegmentedControl size="sm" layout="block" columns={2} label={`${a.texto}: ¿lo devolvió?`} options={DEVOLUCION} value={a.estado}
                                             onChange={(v) => setFormData((prev) => ({ ...prev, ...conActivo(prev, a.clave, v) }))} />
                                     </li>
                                 ))}

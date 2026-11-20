@@ -75,14 +75,17 @@ export function estadoRemisionMtps(datos, hoy = new Date()) {
     // una ficha prorrogada mostraba «remitido» para siempre — la prórroga se
     // quedaba sin remitir y nada lo decía.
     //
-    // Se toma la prórroga más reciente que tenga fecha `desde`: es la fecha del
-    // acto. Y `mtps_remitido_fecha` se compara CONTRA ella — una remisión
+    // Se toma la prórroga más reciente: su `firmada` (el día que se firmó,
+    // desde 2026-11-20 lo guarda la acción «Prórroga de contrato») o, en las
+    // de antes, su `desde`. `desde` es el fin del contrato anterior y no el
+    // acto: contar desde ahí quitaba los días entre el vencimiento y la firma.
+    // Y `mtps_remitido_fecha` se compara CONTRA esa fecha — una remisión
     // anterior a la última prórroga no cubre esa prórroga.
     const prorrogas = Array.isArray(datos?.contrato_prorrogas) ? datos.contrato_prorrogas : [];
     let acto = firma;
     let porProrroga = false;
     for (const p of prorrogas) {
-        const d = fechaLocal(p?.desde);
+        const d = fechaLocal(p?.firmada || p?.desde);
         if (d && d > acto) { acto = d; porProrroga = true; }
     }
 

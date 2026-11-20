@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.2 — Prórroga: contrato obligatorio y los 8 días desde la firma; cierre de la baja legible
+
+- **El contrato firmado es obligatorio** en la acción «Prórroga de contrato»
+  (`respaldoObligatorio`): por cada prórroga va el contrato nuevo.
+- **Los 8 días del Ministerio cuentan desde la firma.** La acción guarda
+  `firmada` en cada eslabón de `contrato_prorrogas` y `estadoRemisionMtps` la
+  usa (las de antes siguen con `desde`, que es el fin del contrato anterior y
+  quitaba los días entre el vencimiento y la firma). Los dos guardados de la
+  ficha en `employeeSlice` conservan `firmada` al sanear la lista.
+- **El cierre de la baja se lee bien**: cada pregunta («¿Devolvió el carné?»)
+  va arriba y las cuatro respuestas en una grilla de 2×2 debajo. En una fila,
+  el riel de cuatro le quitaba el ancho a la pregunta y la partía en una letra
+  por renglón.
+
+Gemelo: staff_list — la app ya mostraba la pregunta arriba de sus respuestas; la regla del contrato obligatorio y la fecha de firma salen del núcleo.
+
 ## v2.1585.1 — Reservas: aviso cuando ya se vendió en caja
 
 La R-000164 de Salud 1 quedó lista el 13 nov y la caja la vendió media hora

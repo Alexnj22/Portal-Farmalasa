@@ -127,10 +127,12 @@ export const TIPOS_PROGRAMABLES = ['PROMOTION', 'TRANSFER', 'SALARY', 'CODE_CHAN
 export const estaDadoDeBaja = (empleado) =>
     String(empleado?.status || '').toUpperCase() === 'INACTIVO' || empleado?.effectiveStatus === 'Inactivo';
 
-/** ¿Este archivo es obligatorio? (la boleta de la incapacidad y el respaldo de
- *  la baja; en el abandono no: lo firma el patrono después, ver `bajaLegal`). */
+/** ¿Este archivo es obligatorio? (la boleta de la incapacidad, el contrato
+ *  firmado de la prórroga y el respaldo de la baja; en el abandono no: lo firma
+ *  el patrono después, ver `bajaLegal`). */
 export const respaldoObligatorio = (type, formData = {}) =>
-    type === 'DISABILITY' || (type === 'TERMINATION' && respaldoDeBajaObligatorio(formData?.terminationReason));
+    type === 'DISABILITY' || type === 'CONTRACT_EXTENSION'
+    || (type === 'TERMINATION' && respaldoDeBajaObligatorio(formData?.terminationReason));
 
 /**
  * ¿Se puede guardar? `{ ok, motivo }` — `motivo` sólo cuando hay algo que

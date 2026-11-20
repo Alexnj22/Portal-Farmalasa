@@ -795,7 +795,9 @@ export const createSystemSlice = (set, get) => ({
                 if (!(hasta > finAnterior)) throw usuario(`El nuevo fin tiene que ser después del ${finAnterior}.`);
                 const cadena = Array.isArray(base?.contrato_prorrogas) ? base.contrato_prorrogas : [];
                 empUpdates.contract_end_date = hasta;
-                empUpdates.contrato_prorrogas = [...cadena, { desde: finAnterior, hasta, motivo: String(eventData.note || '').trim() }];
+                // `firmada`: el día del acto. Los 8 días del Art. 18 cuentan desde ahí,
+                // no desde `desde` (el fin del contrato anterior).
+                empUpdates.contrato_prorrogas = [...cadena, { desde: finAnterior, hasta, motivo: String(eventData.note || '').trim(), firmada: primaryDate }];
                 Object.assign(localPatch, empUpdates);
             } else if (eventData.type === 'CODE_CHANGE') {
                 const cleanCode = String(eventData.newCode ?? '').trim();

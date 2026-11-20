@@ -276,11 +276,11 @@ const PermissionGuard = ({ moduleKey, children }) => {
  * descarta — la persona llegaría a la lista general en vez de a su solicitud,
  * que es la mitad de lo que el aviso prometía.
  */
-/** `/cortes` → `/caja?pestana=cortes`, conservando lo que traiga la consulta. */
+/** `/cortes` → `/caja?tab=cortes`, conservando lo que traiga la consulta. */
 const IrAEfectivo = () => {
     const { search, hash } = useLocation();
     const q = new URLSearchParams(search);
-    q.set('pestana', 'cortes');
+    q.set('tab', 'cortes'); // usePestanaEnUrl lee `tab`; con `pestana` caía en «Hoy».
     return <Navigate to={`/caja?${q.toString()}${hash}`} replace />;
 };
 

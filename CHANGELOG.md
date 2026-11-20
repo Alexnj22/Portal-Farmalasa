@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.13 — El enlace viejo de Cortes abre la pestaña Cortes
+
+- `/cortes` redirigía a `/caja?pestana=cortes`, pero Efectivo lee la pestaña de `?tab=` (`usePestanaEnUrl`): quien entraba por un favorito o un aviso viejo caía en «Hoy». Ahora abre «Cortes» y conserva la consulta.
+- Novedades: no — gate:novedades valoró 0 de 4.
+
 ## v2.1583.12 — Pruebas al día con lo que ya cambió
 
 - Tres pruebas se habían quedado atrás de cambios hechos a propósito: `webpSignedUrl` ya no reescribe al render (v2.1500.43), y una baja sale en su última sucursal y sólo en «De baja» (2026-11-11 y 2026-11-14). La cuarta era real: en Envíos, la fila «¿Vino de más?» tenía la letra de rótulo en el `<label>`; pasa al texto, sin cambio visible.

@@ -13,6 +13,10 @@ import { MemoryRouter } from 'react-router-dom';
 
 const rpc = vi.fn();
 vi.mock('@nucleo/supabaseClient', () => ({ supabase: { rpc: (...a) => rpc(...a) } }));
+// Desde el 2026-11-11 una baja se muestra en la ÚLTIMA sucursal que tuvo, que
+// sale de su evento de baja (`fetchUltimasBajas`), no de la ficha.
+const bajas = vi.fn(async () => []);
+vi.mock('@nucleo/data/employees', async (orig) => ({ ...(await orig()), fetchUltimasBajas: (...a) => bajas(...a) }));
 
 const practicantesData = { fetchPracticantes: vi.fn() };
 vi.mock('@nucleo/data/practicantes', () => ({
@@ -176,17 +180,24 @@ describe('L6 — el filtro de sucursal ve las salas que la persona cubre', () =>
 });
 
 describe('L7 — quien está de baja no es jefatura ni cuenta en la sala', () => {
-    it('la jefa liquidada sale aparte y el pulso no la cuenta', () => {
+    it('la jefa liquidada sale aparte y el pulso no la cuenta', async () => {
         estado = base({ employees: [
             persona('e-1', 'Jefa Liquidada', 19, 'Jefe/a de Sala', 44, { status: 'LIQUIDADO' }),
             persona('e-2', 'Dependiente Uno', 30, 'Dependiente de Farmacia', 44),
         ] });
+        bajas.mockResolvedValue([{ id: 1, employee_id: 'e-1', date: '2026-11-01', sucursal: '44', cargo: '19' }]);
+        // En el reparto de la sala no es jefatura ni cuenta en el pulso…
         const c = montar();
-        const lugar = (l) => [...c.querySelectorAll(`[data-lugar="${l}"]`)].map(t => t.querySelector('p').textContent);
-        expect(lugar('jefatura')).not.toContain('Jefa Liquidada');
-        expect(lugar('baja')).toEqual(['Jefa Liquidada']);
+        const lugar = (cont, l) => [...cont.querySelectorAll(`[data-lugar="${l}"]`)].map(t => t.querySelector('p').textContent);
+        expect(lugar(c, 'jefatura')).not.toContain('Jefa Liquidada');
+        expect(lugar(c, 'baja')).toEqual([]);
         expect(c.textContent).toContain('1 persona');
-        expect(c.textContent).toContain('1 de baja');
+        // …y sale aparte sólo en «De baja» (2026-11-14), en su última sucursal.
+        cleanup();
+        const d = montar({ ruta: '/personal?tab=bajas' });
+        await waitFor(() => expect(lugar(d, 'baja')).toEqual(['Jefa Liquidada']));
+        bajas.mockReset();
+        bajas.mockResolvedValue([]);
     });
 });
 

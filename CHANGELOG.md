@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.12 — Pruebas al día con lo que ya cambió
+
+- Tres pruebas se habían quedado atrás de cambios hechos a propósito: `webpSignedUrl` ya no reescribe al render (v2.1500.43), y una baja sale en su última sucursal y sólo en «De baja» (2026-11-11 y 2026-11-14). La cuarta era real: en Envíos, la fila «¿Vino de más?» tenía la letra de rótulo en el `<label>`; pasa al texto, sin cambio visible.
+- Gemelo: traslados — sólo el marcado de la fila de Envíos, sin cambio visible ni de comportamiento.
+
 ## v2.1583.11 — Sin el diagnóstico de personal con IA en la ficha de la sucursal
 
 - Sucursales, pestaña Personal: se quita el «Diagnóstico de personal» con IA en el portal y en la app (pedido del usuario, 2026-11-19; el del Resumen ya se había quitado el 2026-10-29). `analisisDePersonal` ya no arma la foto para la IA.

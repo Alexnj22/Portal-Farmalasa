@@ -397,8 +397,9 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                                 queda. Se descuenta de la sala que envió y se
                                 suma a la tuya al confirmar. */}
                             {d.que === DECISIONES_ENVIO.aceptar && (
-                                <label className="flex items-center gap-2 text-caption text-content-2 font-semibold">
-                                    <span className="flex-1">¿Vino de más? Cuántos {l.presentacion_tipo ?? ''} de más</span>
+                                <label className="flex items-center gap-2">
+                                    {/* Fila de texto + campo, no el rótulo de un campo: la letra va en el texto. */}
+                                    <span className="flex-1 text-caption text-content-2 font-semibold">¿Vino de más? Cuántos {l.presentacion_tipo ?? ''} de más</span>
                                     <PortalInput
                                         name={`demas-${l.posicion}`}
                                         value={d.demas ?? ''}

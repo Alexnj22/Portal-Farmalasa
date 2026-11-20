@@ -147,11 +147,12 @@ describe('firmar en LOTE lo privado, y dejar pasar lo demás', () => {
 });
 
 describe('la versión liviana de una foto ya firmada', () => {
-    it('reescribe al endpoint de render conservando el token', () => {
-        // El token sigue valiendo porque está firmado sobre el path.
-        // 168 kB PNG → 20 kB WEBP, medido sobre las fotos de perfil.
+    it('ya NO reescribe al endpoint de render: la firmada se devuelve tal cual', () => {
+        // Desde v2.1500.43 (2026-11-10): el render del almacenamiento cobra por
+        // foto distinta del mes; las fotos de personal se guardan ya en WebP y
+        // la copia chica se hace al subir.
         const firmada = 'https://x/storage/v1/object/sign/empleados/a.png?token=T';
-        expect(webpSignedUrl(firmada)).toBe('https://x/storage/v1/render/image/sign/empleados/a.png?token=T');
+        expect(webpSignedUrl(firmada)).toBe(firmada);
     });
 
     it('lo que no es una URL firmada se devuelve tal cual', () => {

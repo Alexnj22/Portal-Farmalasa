@@ -3,6 +3,14 @@ import { describe, it, expect } from 'vitest';
 import { elegirFactor, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
 
 describe('elegirFactor', () => {
+    it('NOR-GEROM «X 60TAB» (pieza pegada): el costo subió 8 % y es la caja de 60, no 65', () => {
+        const d = 'NOR-GEROM FORTE 75 MG X 60TAB LSVF11598 V. 01-10-2027 1';
+        expect(tamanosEnLaDescripcion(d)).toEqual([60]);
+        expect(tamanosEnLaDescripcion('MEBEZOL X 30ML')).toEqual([]);
+        expect(tamanoDeCajaEnLaDescripcion('CAJA X 100CAPS')).toBe(100);
+        expect(elegirFactor({ delDoc: null, pistas: tamanosEnLaDescripcion(d), vinetaUno: 0.30, aprendido: null, costoNeto: 9.93, costoUnidad: 0.1527, presentaciones: [1, 10, 60] }))
+            .toEqual({ factor: 60, origen: 'costo' });
+    });
     it('MELOFLEX: lo aprendido (1, de agosto) pierde contra el precio: caja de 10', () => {
         expect(elegirFactor({ delDoc: null, aprendido: 1, costoNeto: 4.8995, costoUnidad: 0.49, presentaciones: [1, 10] }))
             .toEqual({ factor: 10, origen: 'costo', corrige: 1 });

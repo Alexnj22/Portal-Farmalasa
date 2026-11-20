@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.5 — fix(compras): «X 60TAB» se lee como caja de 60
+
+NOR-GEROM FORTE 75 MG «X 60TAB» × 1 se proponía como 65 unidades. Con la pieza
+pegada al número no había borde de palabra, así que la descripción no daba
+ninguna pista de tamaño; el costo subió 8 % y el precio solo redondeó a 65.
+`tamanosEnLaDescripcion` y `tamanoDeCajaEnLaDescripcion` aceptan ahora la pieza
+pegada (TAB, CAP, COMP, SOBRE, UND…), sin tomar medidas («X 30ML»).
+Desplegadas `leer-dte-json` y `cargar-compra-erp`.
+
+Novedades: no — corrección interna de la propuesta de carga, nada nuevo que aprender.
+
 ## v2.1584.4 — Puntos Salud: mensaje más claro al no encontrar al cliente
 
 Del 14 al 20-nov, 12 de los 21 intentos fallidos de entrar a Puntos Salud

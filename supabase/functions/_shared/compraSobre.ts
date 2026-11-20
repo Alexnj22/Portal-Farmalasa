@@ -349,9 +349,16 @@ export function factorEnLaDescripcion(t: string): number | null {
  * el producto ya tiene una presentación de ese tamaño. A $10.91 contra $0.19 la
  * unidad, el precio solo daba 57 —el costo subió 15 %— y la caja es de 50.
  */
-/** Los tamaños que nombra la descripción («X 30 TAB», «X50»): sólo pistas. */
+/**
+ * Los tamaños que nombra la descripción («X 30 TAB», «X50»): sólo pistas.
+ * También con la pieza pegada al número: «NOR-GEROM FORTE 75 MG X 60TAB»
+ * (2026-11-20) no daba ninguna pista —entre «60» y «TAB» no hay borde de
+ * palabra—, el costo había subido 8 % y el precio solo propuso 65 por caja.
+ */
+const PIEZA_PEGADA = "(?=(?:TAB|TABS|TABL|TABLETAS?|CAP|CAPS|CAPSULAS?|COMP|COMPRIMIDOS?|GRAG|GRAGEAS?|SOBRES?|AMP|AMPOLLAS?|UND|UNDS|UNIDADES|PZ|PIEZAS?|PERLAS?)\\b)";
 export function tamanosEnLaDescripcion(t: string): number[] {
-  return [...String(t ?? "").matchAll(/\bX\s*(\d{1,3})\b/gi)].map((m) => Number(m[1])).filter((n) => n >= 2 && n <= 500);
+  return [...String(t ?? "").matchAll(new RegExp(`\\bX\\s*(\\d{1,3})(?:\\b|${PIEZA_PEGADA})`, "gi"))]
+    .map((m) => Number(m[1])).filter((n) => n >= 2 && n <= 500);
 }
 
 /**
@@ -391,7 +398,8 @@ export function tamanoDeCajaEnLaDescripcion(t: string): number | null {
   const doc = factorEnLaDescripcion(s) ?? factorDebilEnLaDescripcion(s);
   if (doc) return doc;
   if (!empaqueEnLaDescripcion(s)) return null;
-  const n = [...new Set([...s.matchAll(/\bX\s*(\d{1,3})\b(?!\s*(?:[.,]\d|%|(?:ML|CC|L|LT|LTS|G|GR|GRS|GRAMOS|MG|MCG|KG|OZ|UI)\b))/gi)]
+  const re = new RegExp(`\\bX\\s*(\\d{1,3})(?:\\b|${PIEZA_PEGADA})(?!\\s*(?:[.,]\\d|%|(?:ML|CC|L|LT|LTS|G|GR|GRS|GRAMOS|MG|MCG|KG|OZ|UI)\\b))`, "gi");
+  const n = [...new Set([...s.matchAll(re)]
     .map((m) => Number(m[1])).filter((x) => x >= 2 && x <= 500))];
   return n.length === 1 ? n[0] : null;
 }

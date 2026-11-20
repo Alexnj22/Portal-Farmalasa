@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Outlet, ScrollRestoration, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Outlet, ScrollRestoration, useLocation, useParams } from 'react-router-dom';
 import Inicio from './pages/Inicio';
 import { modoDemo } from './lib/api';
 import { boda } from './config';
@@ -26,6 +26,10 @@ function Raiz() {
   const esPantalla = pathname.startsWith('/pantalla') || pathname.startsWith('/dj');
   // El save the date se muestra limpio: sin el aviso de la demo ni el panel de pruebas.
   const limpio = faseActual() === 'save-the-date';
+  // En el save the date sólo existe la portada: el panel, el álbum, la
+  // confirmación, la pantalla y el DJ todavía no son para los invitados (y en
+  // la demo mostrarían datos de muestra). Cualquier otra dirección vuelve a /.
+  if (limpio && pathname !== '/') return <Navigate to="/" replace />;
   return (
     <>
       {modoDemo && !esPantalla && !limpio && (

@@ -47,7 +47,7 @@ export const boda = {
 
   // Fotos: ponerlas en /public/fotos/ y referirlas como '/fotos/archivo.jpg'.
   // Las de ejemplo vienen de Unsplash (libres de uso).
-  portada: '/fotos/portada.jpg',
+  portada: '/fotos/portada.webp',
   // Qué punto de la portada queda a la vista cuando la pantalla la recorta
   // (en el teléfono, vertical). Horizontal y vertical, en %: los novios están a la derecha.
   portadaEnfoque: '76% 55%',
@@ -55,23 +55,23 @@ export const boda = {
   // Ideal: horizontal, 1200×630, menos de 300 KB.
   portadaCompartir: '/fotos/compartir-2.jpg',
   // La foto que se abre a pantalla completa al bajar a «Nuestra historia» (vertical u horizontal).
-  fotoHistoria: '/fotos/beso.jpg',
+  fotoHistoria: '/fotos/beso.webp',
   // Fondo de «Faltan N días» en el save the date (si no, la primera de la galería).
-  fotoFaltan: '/fotos/beso.jpg',
+  fotoFaltan: '/fotos/beso.webp',
   fotoFaltanEnfoque: '50% 48%',
   galeria: [
-    '/fotos/abrazo.jpg',
-    '/fotos/portada.jpg', // la 2.ª va en el marco ancho
-    '/fotos/beso.jpg',
-    '/fotos/balcon.jpg',
+    '/fotos/abrazo.webp',
+    '/fotos/portada.webp', // la 2.ª va en el marco ancho
+    '/fotos/beso.webp',
+    '/fotos/balcon.webp',
   ],
 
   // Cada capítulo con su foto (opcional; enfoque = qué punto queda a la vista): queda fija al lado y cambia al bajar.
   historia: [
-    { fecha: '2018', foto: '/fotos/abrazo.jpg', titulo: 'Nos conocimos', texto: 'Un amigo en común, una fiesta y una conversación que no terminó.' },
-    { fecha: '2019', foto: '/fotos/balcon.jpg', titulo: 'Primera cita', texto: 'Pupusas, lluvia y la certeza de que había algo especial.' },
-    { fecha: '2023', foto: '/fotos/portada.jpg', enfoque: '74% 50%', titulo: 'Nuestro primer viaje', texto: 'Descubrimos que también somos buenos compañeros de aventura.' },
-    { fecha: '2026', foto: '/fotos/beso.jpg', titulo: '¡Dijo que sí!', texto: 'Frente al mar, con el corazón a mil.' },
+    { fecha: '2018', foto: '/fotos/abrazo.webp', titulo: 'Nos conocimos', texto: 'Un amigo en común, una fiesta y una conversación que no terminó.' },
+    { fecha: '2019', foto: '/fotos/balcon.webp', titulo: 'Primera cita', texto: 'Pupusas, lluvia y la certeza de que había algo especial.' },
+    { fecha: '2023', foto: '/fotos/portada.webp', enfoque: '74% 50%', titulo: 'Nuestro primer viaje', texto: 'Descubrimos que también somos buenos compañeros de aventura.' },
+    { fecha: '2026', foto: '/fotos/beso.webp', titulo: '¡Dijo que sí!', texto: 'Frente al mar, con el corazón a mil.' },
   ],
 
   // Lugares: lat/lng se sacan de Google Maps (clic derecho → copiar coordenadas).

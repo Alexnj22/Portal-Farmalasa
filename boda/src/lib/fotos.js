@@ -6,7 +6,7 @@
  * /fotos/nombre-<ancho>.jpg (ver LOCALES), hechas desde fotos-originales/.
  */
 const LOCALES = [480, 640, 800, 960, 1200, 1400, 1800, 2400, 3200];
-const local = (url) => /^\/fotos\/[\w-]+\.jpg$/.test(url || '');
+const local = (url) => /^\/fotos\/[\w-]+\.(jpg|webp)$/.test(url || '');
 const cercano = (w) => LOCALES.find((a) => a >= w) || LOCALES[LOCALES.length - 1];
 export const ANCHOS_PORTADA = [640, 960, 1400, 1800, 2400, 3200];
 export const ANCHOS_GALERIA = [480, 800, 1200, 1800];
@@ -14,7 +14,7 @@ export const ANCHOS_GALERIA = [480, 800, 1200, 1800];
 const acepta = (url) => /^https:\/\/images\.unsplash\.com\//.test(url || '');
 
 export function conAncho(url, w, calidad = 72) {
-  if (local(url)) return url.replace(/\.jpg$/, `-${cercano(w)}.jpg`);
+  if (local(url)) return url.replace(/\.(jpg|webp)$/, (_, ext) => `-${cercano(w)}.${ext}`);
   if (!acepta(url)) return url;
   const u = new URL(url);
   u.searchParams.set('w', String(w));

@@ -1299,3 +1299,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 .cuenta.solo-dias .cuenta-celda { display: flex; align-items: center; gap: clamp(14px, 3vw, 36px); }
 .cuenta.solo-dias .cuenta-celda > span .pieza { margin: 0; }
 .faltan-titulo .pieza, .cuenta.solo-dias .cuenta-celda > span .pieza { width: clamp(52px, 13vw, 96px); }
+/* FALTAN y DÍAS: misma letra (misma escala del diseño) y el beige de DÍAS. */
+.faltan-titulo { color: var(--c-champan); }
+.faltan-titulo .pieza { width: clamp(52px, 13vw, 96px); }
+.cuenta.solo-dias .cuenta-celda > span .pieza { width: calc(clamp(52px, 13vw, 96px) * 0.628); }

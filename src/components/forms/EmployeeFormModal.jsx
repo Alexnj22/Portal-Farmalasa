@@ -1789,13 +1789,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ...prev,
         herramientas_entregadas: (prev.herramientas_entregadas || []).map((h, i) => i === idx ? { ...h, ...patch } : h),
     }));
-    // Una prórroga arranca donde termina el contrato vigente: `desde` se toma
-    // del fin actual y no se pide, porque es un dato que el portal ya sabe y
-    // pedirlo invita a escribir uno que no coincide con la cadena.
-    const agregarProrroga = () => setFormData(prev => ({
-        ...prev,
-        contrato_prorrogas: [...(prev.contrato_prorrogas || []), { desde: prev.contract_end_date || null, hasta: null, motivo: '' }],
-    }));
+    // Una prórroga NUEVA ya no se agrega acá (2026-11-20): es la acción
+    // «Prórroga de contrato», que queda en el historial y guarda el contrato
+    // firmado. Esta lista queda para ver la cadena y corregir un eslabón.
     const actualizarProrroga = (idx, patch) => setFormData(prev => {
         const lista = (prev.contrato_prorrogas || []).map((p, i) => i === idx ? { ...p, ...patch } : p);
         // El fin del contrato pasa a ser el de la última prórroga con fecha: si
@@ -4620,11 +4616,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                                             <CalendarClock size={12} strokeWidth={2.5} /> Prórrogas
                                         </p>
-                                        <Button variant="ghost" icon={Plus} onClick={agregarProrroga}
-                                            disabled={!formData.contract_end_date}
-                                            title={formData.contract_end_date ? 'Registrar una prórroga' : 'Primero la fecha de fin'}>
-                                            Prorrogar
-                                        </Button>
+                                        <span className="text-caption text-content-3 font-medium">Para prorrogar, usa la acción Prórroga de contrato.</span>
                                     </div>
                                     {/* La ley NO dice cuándo se puede prorrogar y cuándo no:
                                         no hay ningún artículo que limite el número de

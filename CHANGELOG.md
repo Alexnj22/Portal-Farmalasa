@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.0 — Personal: la prórroga de contrato es una acción
+
+Prorrogar era sólo cambiar un dato en «Editar»: no quedaba en el historial de
+la persona ni pedía el contrato firmado. Ahora es la acción **Prórroga de
+contrato** (`CONTRACT_EXTENSION`), junto a traslado, cambio de cargo y las
+demás:
+
+- Se ofrece sólo a quien sigue trabajando con un contrato Temporal o de
+  Servicios con fecha de fin (`admiteProrroga`).
+- Pide la fecha de la firma (no futura: una prórroga no se programa), el nuevo
+  fin —posterior al vigente—, el motivo y el contrato firmado (opcional).
+- `registerEmployeeEvent` escribe `contract_end_date` y suma el eslabón a
+  `contrato_prorrogas` (desde el fin anterior). Cancelarla lo revierte; al
+  corregirla parte de la foto de antes de ella. `mismoValor` compara listas
+  por contenido (antes `String()` daba «[object Object]» para cualquiera).
+- El contrato adjunto va también a la casilla «Contrato de Trabajo Firmado»
+  del expediente, con el anterior en su historial. Cancelar la prórroga no lo
+  quita de ahí.
+- Avisa los 8 días del Ministerio de Trabajo (Art. 18) y, desde la segunda, la
+  presunción del Art. 25.
+- En «Editar», la lista de prórrogas queda para ver la cadena y corregir: el
+  botón «Prorrogar» se cambió por un aviso que manda a la acción.
+- `historialDeFicha`: una categoría igual a la clave del tipo (lo que devuelve
+  `employee_timeline` para un tipo que no traduce) ya no se muestra; se usa el
+  rótulo del catálogo.
+
+Gemelo: staff_list — la acción está en `apps/mobile/app/empleado/accion.js` y el aviso de Editar en `apps/mobile/componentes/personas/ficha/Contrato.js`.
+
 ## v2.1584.6 — Personal: aviso de contrato por vencer y «No lo devolverá» en la baja
 
 **Contrato por vencer.** Un contrato temporal venció el 18 de noviembre y la

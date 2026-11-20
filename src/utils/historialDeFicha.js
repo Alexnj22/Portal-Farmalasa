@@ -19,6 +19,7 @@ const VARIANTE_EVENTO = {
     EMPLEADO_DESVINCULADO_SUCURSAL: 'danger',
     UNASSIGNED: 'danger',
     REHIRE: 'success',
+    CONTRACT_EXTENSION: 'success',
     VACATION_RECALL: 'warning',
     DISABILITY: 'danger',
     VACATION: 'success',
@@ -67,7 +68,10 @@ export function historialDeFicha(filas = [], eventos = []) {
             id: real?.id ?? `${ev.event_type}_${ev.event_date}_${ev.created_at}`,
             eventoId: real?.id ?? null,
             type: ev.event_type,
-            category: ev.category,
+            // `employee_timeline` traduce sólo los tipos que conoce y al resto
+            // le pone la clave cruda («CONTRACT_EXTENSION»). Una categoría igual
+            // al tipo no es un rótulo: se deja vacía y la pantalla usa el del catálogo.
+            category: ev.category && ev.category !== ev.event_type ? ev.category : null,
             date: ev.event_date,
             endDate: ev.event_end_date,
             note: ev.note || m.note || m.details?.note || 'Evento registrado en el portal.',

@@ -26,6 +26,7 @@ import {
   opcionesDeNovedad, plazaOcupada, rasgosDeNovedad, respaldoObligatorio, validarNovedad,
 } from '@nucleo/utils/novedadDePersonal';
 import { pinDeKiosco } from '@nucleo/utils/pinDeKiosco';
+import { esContratoCivil } from '@nucleo/utils/contrato';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
@@ -164,7 +165,7 @@ export default function AccionDePersonal() {
           {eventoAEditar || tipo ? null : (
             <Seccion titulo="Tipo de acción">
               <Opciones valor={f.type} onCambiar={(v) => setF({ type: v, date: hoySV(), note: f.note || '' })}
-                opciones={opcionesDeNovedad().map((o) => ({ id: o.value, label: o.label }))} />
+                opciones={opcionesDeNovedad(emp).map((o) => ({ id: o.value, label: o.label }))} />
             </Seccion>
           )}
 
@@ -222,7 +223,7 @@ export default function AccionDePersonal() {
                   }} />
                 </Seccion>
               ) : (
-                <Seccion titulo={r.esRango ? 'Período' : 'Fecha efectiva'}>
+                <Seccion titulo={r.esRango ? 'Período' : r.esProrroga ? 'Fecha de la firma' : 'Fecha efectiva'}>
                   <Fila rotulo={r.esRango ? 'Primer día de ausencia' : 'Fecha'}>
                     <Fecha valor={f.date} onCambiar={(v) => pon({
                       date: v,
@@ -288,6 +289,19 @@ export default function AccionDePersonal() {
                 </Seccion>
               ) : null}
 
+              {r.esProrroga ? (
+                <Seccion titulo="Contrato"
+                  pie={esContratoCivil(emp.contract_type)
+                    ? 'Es un contrato de servicios profesionales: su prórroga no se manda al Ministerio de Trabajo.'
+                    : `Tienes 8 días para mandar el ejemplar al Ministerio de Trabajo (Art. 18).${(emp.contrato_prorrogas || []).length >= 1 ? ' Si el puesto es permanente, encadenar plazos lo presume indefinido (Art. 25).' : ''}`}>
+                  <Dato primero rotulo={emp.contract_end_date && String(emp.contract_end_date).slice(0, 10) < hoySV() ? 'Venció el' : 'Vence el'} valor={larga(emp.contract_end_date)} />
+                  <Dato rotulo="Prórrogas" valor={(emp.contrato_prorrogas || []).length ? String(emp.contrato_prorrogas.length) : 'Ninguna'} />
+                  <Fila rotulo="Nuevo fin">
+                    <Fecha valor={f.newEndDate} desde={emp.contract_end_date || undefined} onCambiar={(v) => pon({ newEndDate: v })} />
+                  </Fila>
+                </Seccion>
+              ) : null}
+
               {r.esSalario ? (
                 <Seccion titulo="Salario">
                   <Dato primero rotulo="Salario actual" valor={salarioActual ? formatMoney(salarioActual) : '—'} />
@@ -305,12 +319,12 @@ export default function AccionDePersonal() {
 
               <Seccion titulo="Observaciones o justificación">
                 <Campo value={f.note || ''} onChangeText={(t) => pon({ note: t })} style={{ minHeight: 90 }}
-                  placeholder={r.esIncapacidad ? 'Diagnóstico o detalles breves…' : r.esBaja ? 'Notas de entrega de activos o pendientes…' : 'Detalla los motivos de esta acción…'} />
+                  placeholder={r.esIncapacidad ? 'Diagnóstico o detalles breves…' : r.esBaja ? 'Notas de entrega de activos o pendientes…' : r.esProrroga ? 'Por qué se prorroga el contrato…' : 'Detalla los motivos de esta acción…'} />
               </Seccion>
 
               {eventoAEditar ? null : (
                 <Seccion titulo={`Respaldo ${respaldoObligatorio(f.type, f) ? '(obligatorio)' : '(opcional)'}`}
-                  pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'La carta de renuncia, la de despido o el finiquito' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
+                  pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'La carta de renuncia, la de despido o el finiquito' : r.esProrroga ? 'El contrato firmado. Queda también en su expediente' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
                   <Fila rotulo={archivo ? archivo.name : 'Sin archivo'}>
                     <Pressable hitSlop={8} onPress={adjuntar} style={{ minHeight: 44, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 16, fontWeight: '700' }}>{archivo ? 'Cambiar' : 'Adjuntar'}</Text>

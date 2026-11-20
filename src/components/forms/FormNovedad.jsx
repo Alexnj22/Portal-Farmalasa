@@ -25,7 +25,8 @@ import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { hoySV } from '@nucleo/utils/fecha';
+import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
+import { esContratoCivil } from '@nucleo/utils/contrato';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -63,6 +64,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const isCodeChange = type === 'CODE_CHANGE'; 
     const isPermission = type === 'PERMIT';
     const isSupport = type === 'SUPPORT';
+    const isProrroga = type === 'CONTRACT_EXTENSION';
     const isTransfer = type === 'TRANSFER' || type === 'SUPPORT' || formData?.isTransferAndPromotion;
     const isTemporalRange = ['VACATION', 'DISABILITY', 'SUPPORT'].includes(type); // Rango continuo
 
@@ -139,7 +141,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         // El tercer dato es el CAMPO que falta: el aviso del pie lleva hasta él.
         onValidationChange(ok && !faltaRespaldo, faltaRespaldo ? 'Falta adjuntar el respaldo.' : motivo, faltaRespaldo ? 'file' : (campo ?? null));
     }, [formData, activeEmployee, employees, roles, holidays, onValidationChange]);
-    const actionOptions = useMemo(() => opcionesDeNovedad(), []);
+    const actionOptions = useMemo(() => opcionesDeNovedad(activeEmployee), [activeEmployee]);
     const branchOptions = useMemo(() => {
         if (!branches) return [];
         return branches.filter(b => String(b.id) !== String(activeEmployee?.branchId || activeEmployee?.branch_id)).map(b => ({ value: String(b.id), label: b.name }));
@@ -163,7 +165,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <label className={labelClasses}>Tipo de Acción de Personal</label>
                 <LiquidSelect
                     value={formData?.type || ''}
-                    onChange={(val) => setFormData(prev => ({ ...prev, type: val }))} 
+                    onChange={(val) => setFormData(prev => ({ ...prev, type: val, ...(val === 'CONTRACT_EXTENSION' && !prev.date ? { date: hoySV() } : {}) }))} 
                     options={actionOptions}
                     placeholder="Elige el tipo de acción"
                     icon={GitPullRequest}
@@ -348,7 +350,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     /* SI ES RANGO O FECHA ÚNICA */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="relative z-sidebar animate-in fade-in">
-                            <label className={labelClasses}>{isTemporalRange ? 'Primer Día de Ausencia' : isTermination ? 'Fecha de la baja (la de la firma)' : 'Fecha Efectiva'}</label>
+                            <label className={labelClasses}>{isTemporalRange ? 'Primer Día de Ausencia' : isTermination ? 'Fecha de la baja (la de la firma)' : isProrroga ? 'Fecha de la firma' : 'Fecha Efectiva'}</label>
                             <div className="h-[40px]">
                                 <LiquidDatePicker
                                     value={formData?.date || ''}
@@ -537,6 +539,46 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     </div>
                 )}
 
+                {/* Prórroga de contrato (2026-11-20): el fin vigente, el nuevo y
+                    el plazo del Ministerio que vuelve a abrir. */}
+                {isProrroga && (() => {
+                    const fin = activeEmployee?.contract_end_date ? String(activeEmployee.contract_end_date).slice(0, 10) : null;
+                    const larga = (d) => fechaTexto(d, { day: 'numeric', month: 'long', year: 'numeric' });
+                    const vencido = fin && fin < hoySV();
+                    const prorrogas = Array.isArray(activeEmployee?.contrato_prorrogas) ? activeEmployee.contrato_prorrogas.length : 0;
+                    return (
+                        <div data-surface="card" className="col-span-1 md:col-span-2 relative z-tabs animate-in fade-in p-5 space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div data-surface="card" className="bg-surface-card-hover/80 p-3 text-center">
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">{vencido ? 'Venció el' : 'Vence el'}</p>
+                                    <p className={`text-label font-black leading-tight ${vencido ? 'text-danger-text' : 'text-content-2'}`}>{fin ? larga(fin) : '—'}</p>
+                                </div>
+                                <div data-surface="card" className="bg-surface-card-hover/80 p-3 text-center">
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Prórrogas</p>
+                                    <p className="text-label font-black text-content-2 leading-tight">{prorrogas === 0 ? 'Ninguna' : prorrogas}</p>
+                                </div>
+                            </div>
+                            <div data-campo="newEndDate" className="max-w-xs">
+                                <label className={labelClasses}>Nuevo fin del contrato</label>
+                                <div className="h-[40px]">
+                                    <LiquidDatePicker
+                                        value={formData?.newEndDate || ''}
+                                        onChange={(val) => setFormData(prev => ({ ...prev, newEndDate: val || null }))}
+                                        icon={CalendarClock}
+                                        hasError={!formData?.newEndDate}
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-caption text-content-3 font-medium leading-snug">
+                                {esContratoCivil(activeEmployee?.contract_type)
+                                    ? 'Es un contrato de servicios profesionales: su prórroga no se manda al Ministerio de Trabajo.'
+                                    : 'Tienes 8 días para mandar el ejemplar al Ministerio de Trabajo (Art. 18).'}
+                                {prorrogas >= 1 && !esContratoCivil(activeEmployee?.contract_type) && ' Si el puesto es permanente, encadenar plazos lo presume indefinido (Art. 25).'}
+                            </p>
+                        </div>
+                    );
+                })()}
+
                 {isSalary && (() => {
                     const currentSalary = activeEmployee?.base_salary || activeEmployee?.salary;
                     const currentRole = activeEmployee?.role || activeEmployee?.main_role?.name || '—';
@@ -593,7 +635,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
  <PortalTextarea
      rows="3"
      textareaClassName="hide-scrollbar"
-     placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Escribe los motivos de esta acción..."}
+     placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : isProrroga ? "Por qué se prorroga el contrato..." : "Escribe los motivos de esta acción..."}
      value={formData?.note || ''}
      onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
  />
@@ -612,7 +654,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
                         file={formData?.file}
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
-                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (documentoDeBaja(formData) || 'el respaldo de la baja') : 'el respaldo'} (PDF, JPG o PNG)`}
+                        hint={`Adjunta ${isDisability ? 'la boleta médica' : isTermination ? (documentoDeBaja(formData) || 'el respaldo de la baja') : isProrroga ? 'el contrato firmado. Queda también en su expediente' : 'el respaldo'} (PDF, JPG o PNG)`}
                     />
                     </div>
                 </>

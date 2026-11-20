@@ -10,7 +10,6 @@
 //    lugar y período);
 //  · las prórrogas (sólo al editar: en el alta no hay nada que prorrogar), la
 //    cuenta regresiva de la firma y la del ejemplar del Ministerio (Art. 18).
-import { View } from 'react-native';
 import { ART20_ADVERTENCIA, FORMA_ESTIPULACION_OPTIONS, LUGAR_PAGO_OPTIONS, MEDIO_PAGO_OPTIONS, PLAZO_DE_PAGO, REGLAMENTO_LUGAR_PAGO,
   TIPOS_DE_CONTRATO, TEMPORAL_LEGAL_BASIS_OPTIONS, contratoConPlazo, esContratoCivil, estadoFirmaDelContrato, estadoRemisionMtps,
   horarioParaElContrato } from '@nucleo/utils/contrato';
@@ -19,7 +18,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { Dato, Seccion } from '../../formulario/Piezas';
 import { CampoFecha } from '../Formulario';
-import { CampoConRotulo, Elegir, Enlace, Nota, Subtarjeta, Subtitulo, op } from './Piezas';
+import { CampoConRotulo, Elegir, Nota, Subtarjeta, Subtitulo, op } from './Piezas';
 
 const largo = (iso) => (iso ? fechaTexto(iso, { day: '2-digit', month: 'long', year: 'numeric' }) : '—');
 
@@ -119,10 +118,9 @@ export default function Contrato({ form, setForm, cambiar, esAlta, veSalario, sa
                 : 'Prorrogar vuelve a abrir los 8 días para remitir el ejemplar al Ministerio (Art. 18).'} />
             </Subtarjeta>
           ))}
-          <View>
-            <Enlace texto={form.contract_end_date ? 'Prorrogar' : 'Prorrogar (primero la fecha de fin)'} deshabilitado={!form.contract_end_date}
-              onPress={() => setForm((f) => ({ ...f, contrato_prorrogas: [...(f.contrato_prorrogas || []), { desde: f.contract_end_date || null, hasta: null, motivo: '' }] }))} />
-          </View>
+          {/* Una prórroga nueva es la acción «Prórroga de contrato» (2026-11-20):
+              queda en el historial y guarda el contrato. Acá sólo se corrige. */}
+          <Nota texto="Para prorrogar, usa la acción Prórroga de contrato." />
         </>
       ) : null}
 

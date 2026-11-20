@@ -7,11 +7,27 @@
 import { EVENT_TYPES } from '../data/constants';
 import { buscarCargo } from './roles';
 import { primerProblemaDeBaja, respaldoDeBajaObligatorio } from './bajaLegal';
+import { contratoConPlazo } from './contrato';
+import { hoySV, fechaTexto } from './fecha';
 
-/** Las acciones que se ofrecen: los turnos van por Horarios y las sanciones por su propio diálogo. */
-export const opcionesDeNovedad = () => Object.keys(EVENT_TYPES)
+/**
+ * ¿Se le puede registrar una prórroga? Sigue trabajando y su contrato tiene
+ * plazo (Temporal o Servicios) con fecha de fin. A un indefinido no hay nada
+ * que prorrogar, y a quien ya salió se lo recontrata.
+ */
+export const admiteProrroga = (empleado) => !!empleado
+    && !['INACTIVO', 'LIQUIDADO'].includes(String(empleado.status || '').toUpperCase())
+    && contratoConPlazo(empleado.contract_type)
+    && !!empleado.contract_end_date;
+
+/**
+ * Las acciones que se ofrecen: los turnos van por Horarios y las sanciones por
+ * su propio diálogo. La prórroga, sólo a quien tiene un contrato que prorrogar.
+ */
+export const opcionesDeNovedad = (empleado = null) => Object.keys(EVENT_TYPES)
     .filter((key) => key !== 'SHIFT_CHANGE')
     .filter((key) => !EVENT_TYPES[key].soloPorSancion)
+    .filter((key) => key !== 'CONTRACT_EXTENSION' || admiteProrroga(empleado))
     .map((key) => ({ value: key, label: EVENT_TYPES[key].label }));
 
 /** Qué es cada tipo, para decidir campos y validaciones. */
@@ -25,6 +41,7 @@ export function rasgosDeNovedad(type, formData = {}) {
         esIncapacidad: type === 'DISABILITY',
         esCodigo: type === 'CODE_CHANGE',
         esPermiso: type === 'PERMIT',
+        esProrroga: type === 'CONTRACT_EXTENSION',
         esApoyo,
         esTraslado: type === 'TRANSFER' || esApoyo || !!formData?.isTransferAndPromotion,
         // Rango continuo de días (inicio y fin).
@@ -148,6 +165,20 @@ export function validarNovedad({ formData = {}, empleado, empleados = [], roles 
         // `campo`: a dónde lleva el clic en el aviso del pie (2026-11-14).
         const falta = primerProblemaDeBaja(formData, empleado);
         if (falta) return { ok: false, motivo: falta.problema, campo: falta.campo };
+    }
+    if (r.esProrroga) {
+        if (!formData._editingEventId && !admiteProrroga(empleado)) {
+            return { ok: false, motivo: 'Sólo se prorroga un contrato temporal o de servicios con fecha de fin.' };
+        }
+        // La fecha es la de la firma: una prórroga no se programa.
+        if (formData.date > hoySV()) return { ok: false, motivo: 'La fecha de la firma no puede ser futura.' };
+        if (!formData.newEndDate) return { ok: false, motivo: null };
+        // Al corregir, el fin vigente ya es el de esta misma prórroga: lo
+        // compara el store contra el que había antes de ella.
+        const fin = String(empleado?.contract_end_date || '').slice(0, 10);
+        if (!formData._editingEventId && fin && formData.newEndDate <= fin) {
+            return { ok: false, motivo: `El nuevo fin tiene que ser después del ${fechaTexto(fin, { day: 'numeric', month: 'short', year: 'numeric' })}.`, campo: 'newEndDate' };
+        }
     }
     if (r.esCodigo && !formData.newCode) return { ok: false, motivo: null };
     if (r.esCodigo && formData.hasConflict) return { ok: false, motivo: 'El código ya está en uso por otro empleado.' };

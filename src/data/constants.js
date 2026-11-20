@@ -20,6 +20,10 @@ export const EVENT_TYPES = {
   SHIFT_CHANGE: { label: 'Cambio de turno', color: 'bg-chart-9/10 text-chart-9-text', icono: 'Watch', requiresDuration: false, defaultDocType: 'MEMO' },
   TERMINATION: { label: 'Liquidación/Renuncia', color: 'bg-danger text-white', icono: 'LogOut', requiresDuration: false, defaultDocType: 'CONTRACT' },
   REHIRE: { label: 'Recontratación', color: 'bg-success/10 text-success-text', icono: 'RefreshCw', requiresDuration: false, defaultDocType: 'CONTRACT' },
+  // Extiende un contrato a plazo de alguien que sigue trabajando (2026-11-20).
+  // Antes era sólo un dato en «Editar»: no quedaba en el historial ni pedía el
+  // contrato. Escribe `contract_end_date` y suma a `contrato_prorrogas`.
+  CONTRACT_EXTENSION: { label: 'Prórroga de contrato', color: 'bg-success/10 text-success-text', icono: 'CalendarClock', requiresDuration: false, defaultDocType: 'CONTRACT' },
 
   // ── Régimen disciplinario del RIT Art. 83 ─────────────────────────────────
   // `soloPorSancion` las saca del selector de «nueva novedad» SIN sacarlas del

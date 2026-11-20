@@ -32,6 +32,7 @@ import * as almacen from '@plataforma/almacen';
 import { emitir } from '@plataforma/eventos';
 import { irA } from '@plataforma/navegacion';
 import { hoySV, lunesDe } from '../../utils/fecha';
+import { documentoReemplazado, parcheDeArchivoNuevo } from '../../utils/documentosDelExpediente';
 
 // Un error que la pantalla muestra tal cual.
 const usuario = (mensaje) => Object.assign(new Error(mensaje), { userFacing: true });
@@ -40,6 +41,12 @@ const usuario = (mensaje) => Object.assign(new Error(mensaje), { userFacing: tru
 // número cuando los dos lo son: `numeric` vuelve de la base como 500 y la
 // novedad pudo guardar "500.00".
 const mismoValor = (actual, escrito) => {
+    // Una lista u objeto (la cadena de prórrogas) se compara por contenido:
+    // `String()` de cualquier objeto da «[object Object]» y dos cadenas
+    // distintas parecían la misma.
+    if ((actual && typeof actual === 'object') || (escrito && typeof escrito === 'object')) {
+        return JSON.stringify(actual ?? null) === JSON.stringify(escrito ?? null);
+    }
     if (String(actual ?? '') === String(escrito ?? '')) return true;
     if (actual == null || escrito == null || actual === '' || escrito === '') return false;
     return !Number.isNaN(Number(actual)) && Number(actual) === Number(escrito);
@@ -773,6 +780,23 @@ export const createSystemSlice = (set, get) => ({
                 }
                 empUpdates.base_salary = newSalary;
                 localPatch.base_salary = newSalary;
+            } else if (eventData.type === 'CONTRACT_EXTENSION') {
+                // La prórroga como acción (2026-11-20). Arranca donde termina el
+                // contrato vigente y se SUMA a la cadena: cada eslabón vuelve a
+                // abrir los 8 días del Art. 18 y la cadena completa es la que
+                // importa ante el Art. 25. Al CORREGIR, la ficha ya tiene esta
+                // misma prórroga aplicada: se parte de la foto de antes de ella.
+                if (isScheduled) throw usuario('La fecha de la firma no puede ser futura.');
+                const base = options.previousValues && 'contract_end_date' in options.previousValues
+                    ? options.previousValues : currentEmp;
+                const finAnterior = base?.contract_end_date ? String(base.contract_end_date).slice(0, 10) : null;
+                const hasta = String(eventData.newEndDate || '').slice(0, 10);
+                if (!finAnterior) throw usuario('Este contrato no tiene fecha de fin: no hay nada que prorrogar.');
+                if (!(hasta > finAnterior)) throw usuario(`El nuevo fin tiene que ser después del ${finAnterior}.`);
+                const cadena = Array.isArray(base?.contrato_prorrogas) ? base.contrato_prorrogas : [];
+                empUpdates.contract_end_date = hasta;
+                empUpdates.contrato_prorrogas = [...cadena, { desde: finAnterior, hasta, motivo: String(eventData.note || '').trim() }];
+                Object.assign(localPatch, empUpdates);
             } else if (eventData.type === 'CODE_CHANGE') {
                 const cleanCode = String(eventData.newCode ?? '').trim();
                 if (cleanCode) {
@@ -916,6 +940,27 @@ export const createSystemSlice = (set, get) => ({
                         throw usuario(`El evento quedó registrado pero el documento no se pudo adjuntar: ${docErr.message}`);
                     }
                     docObject = newDoc;
+                }
+                // El contrato de la prórroga va también a su casilla del
+                // expediente («Contrato de Trabajo Firmado»), donde el anterior
+                // queda en el historial. Se lee la fila fresca: la copia del
+                // store puede no tener lo que otra pantalla guardó.
+                if (eventData.type === 'CONTRACT_EXTENSION') {
+                    const { data: fila, error: filaErr } = await fetchEmployeeById(employeeId);
+                    const lista = Array.isArray(fila?.employee_documents) ? fila.employee_documents : null;
+                    if (filaErr || !lista) {
+                        throw usuario('La prórroga quedó registrada pero el contrato no se pudo poner en el expediente. Súbelo en Documentos.');
+                    }
+                    const quien = safeJsonParse(almacen.leer('sb_user'));
+                    const anterior = lista.find((d) => d.category === 'CONTRATO');
+                    const nuevaLista = documentoReemplazado(lista, 'CONTRATO',
+                        parcheDeArchivoNuevo(anterior, { url, file_name: file.name }),
+                        { quien: quien?.name || '', quienId: quien?.id || null, hoy: todayLocal });
+                    const { error: expErr } = await updateEmployeeFields(employeeId, { employee_documents: nuevaLista });
+                    if (expErr) {
+                        throw usuario('La prórroga quedó registrada pero el contrato no se pudo poner en el expediente. Súbelo en Documentos.');
+                    }
+                    localPatch.employee_documents = nuevaLista;
                 }
             }
 

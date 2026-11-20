@@ -33,12 +33,12 @@ const fechaPuntos = () => {
   return `${Number(d)} · ${mes} · ${a}`;
 };
 
-// Las franjas del cine se retiran una vez por visita; al volver a la portada,
-// el texto sólo se funde.
-const VISTA = 'boda-portada-abierta';
-// Se decide UNA vez por carga de página (StrictMode corre el efecto dos veces:
-// sin esto, la segunda vuelta veía su propia marca y se saltaba la apertura).
+// La apertura sale en cada carga de la página (también al actualizar). Sólo
+// se salta al volver a la portada desde otra pantalla del sitio.
+// (StrictMode monta dos veces seguidas: esa segunda vuelta sigue siendo la
+// primera carga; por eso la marca se pone un momento después.)
 let yaAbierta = null;
+let proximaYaAbierta = false;
 
 /**
  * La frase se va encendiendo palabra por palabra mientras se baja (--p de 0 a
@@ -151,12 +151,8 @@ export default function Inicio({ codigo }) {
   // ¿Ya se abrió la portada en esta visita? Antes de pintar, para que las
   // franjas no asomen ni un cuadro.
   useLayoutEffect(() => {
-    if (yaAbierta === null) {
-      try {
-        yaAbierta = !!sessionStorage.getItem(VISTA);
-        if (!yaAbierta) sessionStorage.setItem(VISTA, '1');
-      } catch { yaAbierta = true; }
-    }
+    if (yaAbierta === null) { yaAbierta = false; setTimeout(() => { proximaYaAbierta = true; }, 1000); }
+    else if (proximaYaAbierta) yaAbierta = true;
     if (yaAbierta) document.documentElement.classList.add('ya-abierta');
   }, []);
 

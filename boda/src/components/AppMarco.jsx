@@ -12,6 +12,7 @@ import { BotonFacil } from './Facil';
 import { AvisoEnVivo } from './EnVivo';
 import BotonMusica from './BotonMusica';
 import Esqueleto from './Esqueleto';
+import { VISTA_MONO, MONO } from './monogramaTrazos';
 
 // Los abuelos tienen su propia app; nadie más la descarga.
 const AppFacil = lazy(() => import('./AppFacil'));
@@ -147,8 +148,13 @@ export function PaginaApp({ titulo, bajada, children, variante = '', accion }) {
 }
 
 /** El monograma de la cabecera: «A & E» en Bodoni, el & en cursiva champán. */
+/** El monograma A&E del diseñador (disenio/monograma-AyE.svg), en beige. */
 export function Monograma() {
-  return <><span>{boda.novios.ella[0]}</span><em>&amp;</em><span>{boda.novios.el[0]}</span></>;
+  return (
+    <svg className="monograma" viewBox={VISTA_MONO} role="img" aria-label={`${boda.novios.ella[0]} & ${boda.novios.el[0]}`}>
+      {MONO.map((d, i) => <path key={i} d={d} />)}
+    </svg>
+  );
 }
 
 export { faseAlMenos };

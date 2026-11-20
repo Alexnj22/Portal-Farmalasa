@@ -1174,7 +1174,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 /* ═══════════════ «Save THE Date» del diseñador (LogoStd.jsx) ═══════════════ */
 /* La pieza va como la entregó el diseñador: un renglón, sin recomponer. */
 .portada .std-titulo { display: block; max-width: none; width: min(100%, 1000px); line-height: 0; letter-spacing: 0; }
-@media (orientation: landscape) { .portada .std-titulo { width: min(50vw, 960px); } }
+@media (orientation: landscape) { .portada .std-titulo { width: min(44vw, 900px); } }
 .std-logo { display: block; }
 .std-logo svg { display: block; width: 100%; height: auto; overflow: visible; }
 .std-solido path { fill: var(--c-lino); }
@@ -1199,3 +1199,23 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 @keyframes trazo-logo { to { stroke-dashoffset: 0; } }
 @keyframes tinta { from { --tinta: 0%; } to { --tinta: 115%; } }
 @keyframes destello { from { transform: translateX(0); } to { transform: translateX(1100px); } }
+
+/* Monograma del diseñador en la cabecera */
+.marca .monograma { display: block; height: 30px; width: auto; fill: var(--c-champan); }
+
+/* Nombres del save the date (disenio/nombres.svg: IvyPresto Text Light en
+   versales, «&» SemiBold Italic, beige). Mientras no esté la fuente de Adobe,
+   la display del sitio. */
+.nombres-std { display: block; font-family: 'ivypresto-text', 'IvyPresto Text', var(--display); font-weight: 300; font-size: clamp(1.25rem, 5.4vw, 3.2rem); letter-spacing: 0; line-height: 1.1; color: var(--c-champan); white-space: nowrap; }
+.nombres-std em { font-style: italic; font-weight: 600; padding: 0 0.12em; }
+@media (orientation: landscape) { .nombres-std { font-size: clamp(1.4rem, 2.9vw, 3.2rem); } }
+
+/* Teléfono (vertical): la portada del save the date, centrada. */
+@media (orientation: portrait) {
+  .portada.std .portada-texto { text-align: center; }
+  .portada.std .portada-arriba { justify-items: center; }
+  .portada.std .std-titulo { margin-inline: auto; width: 100%; }
+  .portada.std h1.firma-std { justify-content: center; margin-inline: auto; }
+  .portada.std .portada-pie { flex-direction: column; justify-content: center; gap: 18px; }
+  .portada.std .portada-pie::before { transform-origin: center; }
+}

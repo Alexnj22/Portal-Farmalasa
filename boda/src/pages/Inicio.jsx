@@ -207,8 +207,13 @@ export default function Inicio({ codigo }) {
             <p className="std-titulo" ref={tituloStd} aria-hidden><LogoStd /></p>
           )}
           <h1 className={fase === 'save-the-date' ? 'firma-std' : undefined} aria-label={`${fase === 'save-the-date' ? 'Save the date: ' : ''}${novios.ella} ${t('y', 'and')} ${novios.el}`}>
-            <span className="linea-1" aria-hidden>{novios.ella}</span>
-            <span className="linea-2" aria-hidden><em className="amp">&amp;</em> <em>{novios.el}</em></span>
+            {fase === 'save-the-date' ? (
+              // Como en disenio/nombres.svg: versales finas, «&» en cursiva, en beige.
+              <span className="nombres-std" aria-hidden>{novios.ella.toUpperCase()} <em>&amp;</em> {novios.el.toUpperCase()}</span>
+            ) : <>
+              <span className="linea-1" aria-hidden>{novios.ella}</span>
+              <span className="linea-2" aria-hidden><em className="amp">&amp;</em> <em>{novios.el}</em></span>
+            </>}
           </h1>
           <div className="portada-pie">
             {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : <p className={`fecha-puntos ${fase === 'save-the-date' ? 'grande' : ''}`}>{fechaPuntos()}</p>}

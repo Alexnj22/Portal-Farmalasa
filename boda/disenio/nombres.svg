@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 693.08 64.46">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 {
+        font-family: IvyPrestoText-Light, 'IvyPresto Text';
+        font-weight: 300;
+      }
+
+      .cls-2 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-3 {
+        letter-spacing: 0em;
+      }
+
+      .cls-7 {
+        font-family: IvyPrestoText-SemiBoldItalic, 'IvyPresto Text';
+        font-style: italic;
+        font-weight: 600;
+      }
+
+      .cls-4 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-8 {
+        fill: #e2d2b8;
+        font-size: 56.1px;
+      }
+
+      .cls-6 {
+        letter-spacing: 0em;
+      }
+    </style>
+  </defs>
+  <g id="Capa_1-2" data-name="Capa 1">
+    <text class="cls-8" transform="translate(0 48.47)"><tspan class="cls-5" x="0" y="0">ALES</tspan><tspan class="cls-4" x="131.84" y="0">S</tspan><tspan class="cls-5" x="161.01" y="0">AN</tspan><tspan class="cls-6" x="237.09" y="0">D</tspan><tspan class="cls-5" x="278.88" y="0">R</tspan><tspan class="cls-1" x="314.17" y="0">A</tspan><tspan class="cls-5" x="347.72" y="0" xml:space="preserve">  </tspan><tspan class="cls-7" x="371.06" y="0">&amp;</tspan><tspan class="cls-5" x="411.34" y="0" xml:space="preserve"> E</tspan><tspan class="cls-3" x="457.73" y="0">D</tspan><tspan class="cls-2" x="499.64" y="0">U</tspan><tspan class="cls-5" x="537.4" y="0">ARDO</tspan></text>
+  </g>
+</svg>

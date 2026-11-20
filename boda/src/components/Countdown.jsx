@@ -1,6 +1,7 @@
+import Pieza from './Pieza';
 import { useEffect, useRef, useState } from 'react';
 import { boda, fechaBoda } from '../config';
-import { t } from '../lib/idioma';
+import { t, idioma } from '../lib/idioma';
 import { ahora } from '../lib/reloj';
 import { sinMovimiento } from '../lib/movimiento';
 
@@ -96,7 +97,7 @@ export default function Countdown() {
         return (
           <div key={i} className="cuenta-celda" style={{ '--orden': i }}>
             <b>{digitos.map((d, j) => <Rueda key={digitos.length - j} d={visto ? d : 0} />)}</b>
-            <span>{k}</span>
+            {soloDias && v !== 1 && idioma() === 'es' ? <span><Pieza nombre="dias" texto="días" /></span> : <span>{k}</span>}
           </div>
         );
       })}

@@ -11,6 +11,7 @@ import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
 import LogoStd from '../components/LogoStd';
+import Pieza from '../components/Pieza';
 import { VISTA_NOMBRES, NOMBRES } from '../components/nombresTrazos';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
@@ -219,7 +220,9 @@ export default function Inicio({ codigo }) {
             </>}
           </h1>
           <div className="portada-pie">
-            {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : <p className={`fecha-puntos ${fase === 'save-the-date' ? 'grande' : ''}`}>{fechaPuntos()}</p>}
+            {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : (fase === 'save-the-date' && idioma === 'es'
+              ? <p className="fecha-puntos fecha-pieza"><Pieza nombre="fechaCorta" texto={fechaLarga()} /></p>
+              : <p className={`fecha-puntos ${fase === 'save-the-date' ? 'grande' : ''}`}>{fechaPuntos()}</p>)}
             <div className="acciones">
               {fase === 'boda' && <Link className="btn" to="/album">{t('Subir fotos al álbum', 'Upload photos')}</Link>}
               {fase === 'recuerdos' && <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>}
@@ -238,12 +241,17 @@ export default function Inicio({ codigo }) {
         <section id="faltan" className="faltan-std" aria-label={t('Cuánto falta', 'Countdown')}>
           <div className="faltan-std-foto" aria-hidden>
             <img {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, '100vw')} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
+            <img className="reflejo" {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, '100vw')} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
           </div>
           <div className="faltan-std-texto">
-            <Revelar><p className="versalita">{t('Faltan', 'Only')}</p></Revelar>
+            <Revelar>{idioma === 'es'
+              ? <p className="faltan-titulo"><Pieza nombre="faltan" texto="Faltan" /></p>
+              : <p className="versalita">{t('Faltan', 'Only')}</p>}</Revelar>
             <Countdown />
             <Revelar className="faltan-std-pie">
-              <p className="grande-fecha">{fechaLarga()}</p>
+              {idioma === 'es'
+                ? <p className="grande-fecha fecha-pieza"><Pieza nombre="fechaLarga" texto={fechaLarga()} /></p>
+                : <p className="grande-fecha">{fechaLarga()}</p>}
             </Revelar>
           </div>
         </section>

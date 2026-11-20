@@ -11,6 +11,7 @@ import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
 import LogoStd from '../components/LogoStd';
+import { VISTA_NOMBRES, NOMBRES } from '../components/nombresTrazos';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
 import { NavEscritorio, Monograma } from '../components/AppMarco';
@@ -208,8 +209,10 @@ export default function Inicio({ codigo }) {
           )}
           <h1 className={fase === 'save-the-date' ? 'firma-std' : undefined} aria-label={`${fase === 'save-the-date' ? 'Save the date: ' : ''}${novios.ella} ${t('y', 'and')} ${novios.el}`}>
             {fase === 'save-the-date' ? (
-              // Como en disenio/nombres.svg: versales finas, «&» en cursiva, en beige.
-              <span className="nombres-std" aria-hidden>{novios.ella.toUpperCase()} <em>&amp;</em> {novios.el.toUpperCase()}</span>
+              // Los nombres del diseñador (disenio/nombres.svg), tal cual.
+              <svg className="nombres-std" viewBox={VISTA_NOMBRES} aria-hidden focusable="false">
+                {NOMBRES.map((d, i) => <path key={i} d={d} />)}
+              </svg>
             ) : <>
               <span className="linea-1" aria-hidden>{novios.ella}</span>
               <span className="linea-2" aria-hidden><em className="amp">&amp;</em> <em>{novios.el}</em></span>

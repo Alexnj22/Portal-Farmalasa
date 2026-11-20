@@ -1203,12 +1203,12 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 /* Monograma del diseñador en la cabecera */
 .marca .monograma { display: block; height: 30px; width: auto; fill: var(--c-champan); }
 
-/* Nombres del save the date (disenio/nombres.svg: IvyPresto Text Light en
-   versales, «&» SemiBold Italic, beige). Mientras no esté la fuente de Adobe,
-   la display del sitio. */
-.nombres-std { display: block; font-family: 'ivypresto-text', 'IvyPresto Text', var(--display); font-weight: 300; font-size: clamp(1.25rem, 5.4vw, 3.2rem); letter-spacing: 0; line-height: 1.1; color: var(--c-champan); white-space: nowrap; }
-.nombres-std em { font-style: italic; font-weight: 600; padding: 0 0.12em; }
-@media (orientation: landscape) { .nombres-std { font-size: clamp(1.4rem, 2.9vw, 3.2rem); } }
+/* Nombres del save the date (disenio/nombres.svg), en beige: un poco más
+   angostos que Save the Date, como en el diseño (677 contra 753). */
+.portada h1.firma-std { width: min(100%, 1000px); }
+@media (orientation: landscape) { .portada h1.firma-std { width: min(44vw, 900px); } }
+.nombres-std { display: block; width: 78%; height: auto; fill: var(--c-champan); }
+@media (orientation: portrait) { .nombres-std { margin-inline: auto; } }
 
 /* Teléfono (vertical): la portada del save the date, centrada. */
 @media (orientation: portrait) {

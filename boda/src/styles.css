@@ -1135,3 +1135,26 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
   html.std-intro .nav { animation: fundido 1s var(--salida) 3.3s both; }
 }
 @keyframes brillo { 0% { opacity: 0; transform: scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(1.15); } }
+
+/* El trazo a pluma de la primera carga (lo arma dibujarTrazo en Inicio.jsx). */
+.std-titulo { position: relative; }
+.std-trazo { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; animation: fundido-sale .5s ease 2.55s forwards; }
+.std-trazo text { fill: var(--c-lino); fill-opacity: 0; stroke: var(--c-champan); stroke-width: 1.1; stroke-linejoin: round; stroke-dasharray: 2600; stroke-dashoffset: 2600;
+  animation: trazo 2s cubic-bezier(.55, .05, .3, 1) both, relleno .9s ease both; animation-delay: calc(.2s + var(--k) * .13s), calc(1.55s + var(--k) * .06s); }
+.std-trazo text.the { fill: var(--c-champan); }
+@keyframes trazo { to { stroke-dashoffset: 0; } }
+@keyframes relleno { to { fill-opacity: 1; stroke-opacity: .25; } }
+@keyframes mostrar { to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  /* Con el trazo, las letras de verdad esperan escondidas y aparecen debajo
+     justo cuando el relleno las iguala. Todo lo demás se corre 0,6 s. */
+  html.std-intro:not(.ya-abierta) .portada.std .letra > span, html.std-intro:not(.ya-abierta) .portada.std .std-the { opacity: 0; transform: none; filter: none; animation: mostrar .01s linear 2.5s forwards; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-foto img { animation-delay: 2.45s, 2.45s; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-pie::before { animation-delay: 3.5s; }
+  html.std-intro:not(.ya-abierta) .portada.std h1 { animation-delay: 3.6s; }
+  html.std-intro:not(.ya-abierta) .portada.std .fecha-puntos { animation-delay: 3.75s; }
+  html.std-intro:not(.ya-abierta) .portada.std .acciones { animation-delay: 4.05s; }
+  html.std-intro:not(.ya-abierta) .portada.std .portada-arriba { animation-delay: 4.15s; }
+  html.std-intro .nav { animation-delay: 3.9s; }
+  html.std-intro .std-brillo { animation-duration: 3.4s; }
+}

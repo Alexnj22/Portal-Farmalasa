@@ -789,3 +789,72 @@ export const nombreDeZona = (zonas, id) => (zonas || []).find((z) => z.id === id
 
 /** «12 de 100» / «12» para la lista del selector y el avance. */
 export const avanceDeZona = (z) => (Number(z?.meta) > 0 ? `${z.respuestas ?? 0} de ${z.meta}` : `${z?.respuestas ?? 0}`);
+
+// ── Filtros y gráficas de Resultados (2026-11-20) ──────────────────────────
+// El filtro lo aplica la base (`encuesta_cliente_filtra`); acá sólo se arma
+// lo que se le manda y se cuenta lo que se ve.
+
+/** Los filtros de Resultados como los pide la base; `null` si no hay ninguno. */
+export function filtrosParaLaBase(f = {}) {
+    const out = {};
+    for (const k of ['desde', 'hasta', 'entrevistador', 'zona']) if (f?.[k]) out[k] = String(f[k]);
+    if (f?.pregunta && f.valor != null && f.valor !== '') { out.pregunta = String(f.pregunta); out.valor = String(f.valor); }
+    return Object.keys(out).length ? out : null;
+}
+
+/** Cuántos filtros hay puestos: el rango de fechas cuenta uno, y la respuesta también. */
+export function cuantosFiltros(f = {}) {
+    const b = filtrosParaLaBase(f);
+    if (!b) return 0;
+    return (b.desde || b.hasta ? 1 : 0) + (b.entrevistador ? 1 : 0) + (b.zona ? 1 : 0) + (b.pregunta ? 1 : 0);
+}
+
+/** Las preguntas por las que se puede filtrar, con sus respuestas posibles. */
+export function preguntasFiltrables(cuestionario) {
+    return preguntasEnOrden(cuestionario)
+        .map((p) => ({ p, cats: categoriasDe(p) }))
+        .filter(({ cats }) => cats.length > 0)
+        .map(({ p, cats }) => ({
+            value: p.id, label: `${p.numero}. ${p.texto}`,
+            opciones: cats.map((c) => ({ value: c.clave, label: c.label })),
+        }));
+}
+
+/**
+ * La meta y las respuestas del lugar elegido, para el tablero. Cuenta todas
+ * las respuestas del lugar (no sólo las del filtro de fechas o de respuesta):
+ * la meta es de la encuesta, no de un recorte. `meta: null` = sin meta.
+ */
+export function metaDelFiltro(encuesta, avance, { branchId = null, zona = '' } = {}) {
+    if (!avance) return null;
+    if (zona) {
+        const z = (avance.por_zona || []).find((x) => x.id === zona);
+        return { meta: Number(z?.meta) > 0 ? Number(z.meta) : null, respuestas: z?.respuestas ?? 0 };
+    }
+    if (branchId === CAMPO) return { meta: metaDeZonas(zonasDe(encuesta)), respuestas: avance.campo ?? 0 };
+    if (branchId != null) {
+        const s = (avance.por_sucursal || []).find((x) => Number(x.branch_id) === branchId);
+        return { meta: encuesta?.alcance === 'sucursales' && Number(s?.meta) > 0 ? Number(s.meta) : null, respuestas: s?.respuestas ?? 0 };
+    }
+    return { meta: metaTotal(encuesta, avance.por_sucursal || []), respuestas: avance.total ?? 0 };
+}
+
+/**
+ * Cómo se dibuja una pregunta: `dona` cuando se elige UNA respuesta y son
+ * pocas (las porciones suman el 100 %); `barras` en la múltiple (cada opción
+ * sobre el total de personas, no suman 100) y en las de muchas opciones.
+ */
+export function graficaDe(p) {
+    if (p.tipo === 'ranking' || p.tipo === 'numero' || p.tipo === 'texto') return p.tipo;
+    if (p.tipo === 'multiple' || p.tipo === 'nps') return 'barras';
+    return categoriasDe(p).length <= 7 ? 'dona' : 'barras';
+}
+
+/** Las porciones de una pregunta: cantidad y % sobre quienes la respondieron. */
+export function porcionesDe(p) {
+    const total = p.respuestas || 0;
+    return categoriasDe(p).map((c) => {
+        const n = Number(p.conteo?.[c.clave]) || 0;
+        return { clave: c.clave, label: c.label, n, pct: total ? (n / total) * 100 : 0 };
+    });
+}

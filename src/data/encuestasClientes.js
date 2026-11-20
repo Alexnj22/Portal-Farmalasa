@@ -350,13 +350,15 @@ export async function asignarIncentivo(incentivoId, customerId) {
 // sin techo y PostgREST corta en 1000 sin avisar.
 
 /** NPS, dimensiones, distribución por pregunta, por sucursal y por canal. */
-export async function fetchResultados(id, branchId = null) {
-    return sinError(await supabase.rpc('encuesta_cliente_resultados', { p_id: id, p_branch: branchId }));
+// `filtros`: lo que arma `filtrosParaLaBase` (fechas, entrevistador, zona,
+// una respuesta); `null` = sin filtro. El filtro lo aplica la base.
+export async function fetchResultados(id, branchId = null, filtros = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_resultados', { p_id: id, p_branch: branchId, p_filtros: filtros }));
 }
 
 /** Las respuestas abiertas, las 400 más recientes. */
-export async function fetchComentarios(id, branchId = null) {
-    return sinError(await supabase.rpc('encuesta_cliente_comentarios', { p_id: id, p_branch: branchId })) || [];
+export async function fetchComentarios(id, branchId = null, filtros = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_comentarios', { p_id: id, p_branch: branchId, p_filtros: filtros })) || [];
 }
 
 /** Las rondas de la misma encuesta (versiones publicadas), con su NPS. */
@@ -365,8 +367,8 @@ export async function fetchRondas(id) {
 }
 
 /** Una fila por respuesta, para el CSV. */
-export async function fetchRespuestasParaExportar(id) {
-    return sinError(await supabase.rpc('encuesta_cliente_respuestas_para_exportar', { p_id: id })) || [];
+export async function fetchRespuestasParaExportar(id, branchId = null, filtros = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_respuestas_para_exportar', { p_id: id, p_branch: branchId, p_filtros: filtros })) || [];
 }
 
 /** El resumen de IA guardado y cuántos comentarios nuevos entraron desde entonces. */

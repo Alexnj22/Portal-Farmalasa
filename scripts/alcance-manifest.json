@@ -587,6 +587,13 @@
       ],
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
+    "encuesta_cliente_respuestas_para_exportar": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
     "encuesta_cliente_resultados": {
       "guarda": "modulo-de-red",
       "modulos": [

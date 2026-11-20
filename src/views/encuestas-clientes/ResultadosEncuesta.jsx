@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Gauge, Users, Smile, Frown, Download, MessageSquareText, History, AlertTriangle, Store, Phone,
+    Target, UserRound, MapPin, ListFilter, X,
 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -8,6 +9,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import RangeDatePicker from '../../components/common/RangeDatePicker';
 import { LoadingState } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -15,11 +17,16 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { lecturaNps, categoriasDe, CAMPO, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
+import {
+    lecturaNps, CAMPO, tablaDeRespuestas, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen, preguntasEnOrden,
+    filtrosParaLaBase, cuantosFiltros, preguntasFiltrables, metaDelFiltro,
+} from '@nucleo/utils/encuestasClientes';
 import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
-    fetchLectura, guardarLectura, fetchUbicaciones,
+    fetchLectura, guardarLectura, fetchUbicaciones, fetchAvance,
 } from '@nucleo/data/encuestasClientes';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import GraficaDePregunta from './GraficaDePregunta';
 import { paqueteParaSaly, estadoDeLectura, avisoDeLectura } from '@nucleo/utils/encuestasLectura';
 import LecturaDeSaly from './SalyLeeResultados';
 import { useSalyEnPantalla } from '../../components/saly/salyAyudaStore';
@@ -37,10 +44,21 @@ import PuntoDeEstado from '../../components/common/PuntoDeEstado';
  * entre rondas, los comentarios con su resumen y el CSV.
  *
  * Todo lo cuenta la base (`encuesta_cliente_resultados`): acá sólo se pinta.
+ *
+ * Filtros (2026-11-20, pedido del usuario): sucursal, fechas, entrevistador,
+ * zona y una respuesta («sólo quienes dijeron X»). Los aplica la base con un
+ * solo juez (`encuesta_cliente_filtra`) para los resultados, los comentarios
+ * y el CSV, así que lo que se ve y lo que se exporta es lo mismo. La lectura
+ * de Saly y el resumen son de la sucursal entera: con otro filtro puesto, no
+ * se rehacen.
  */
+const SIN_FILTROS = { desde: '', hasta: '', entrevistador: '', zona: '', pregunta: '', valor: '' };
+
 export default function ResultadosEncuesta({ encuesta }) {
     const showToast = useToastStore((s) => s.showToast);
     const [sala, setSala] = useState('');
+    const [filtros, setFiltros] = useState(SIN_FILTROS);
+    const [avance, setAvance] = useState(null);
     const [datos, setDatos] = useState(null);
     const [comentarios, setComentarios] = useState([]);
     const [rondas, setRondas] = useState([]);
@@ -55,12 +73,14 @@ export default function ResultadosEncuesta({ encuesta }) {
     const [cargadoPara, setCargadoPara] = useState(undefined);
     // Lo que se le pidió a Saly al tocarla: `{ b }` (null = todas).
     const [pedido, setPedido] = useState(null);
-    // Las sucursales y el total de TODA la encuesta: con un filtro puesto,
-    // `por_sucursal` trae sólo la elegida, y la lista no puede encogerse.
-    const [todas, setTodas] = useState({ salas: [], total: 0 });
     const lecturaRef = useRef(null);
 
     const branchId = sala ? Number(sala) : null;
+    const clave = JSON.stringify(filtrosParaLaBase(filtros));
+    const filtrosBase = useMemo(() => JSON.parse(clave), [clave]);
+    const nFiltros = cuantosFiltros(filtros);
+    const conFiltros = nFiltros > 0;
+    const poner = (cambios) => setFiltros((f) => ({ ...f, ...cambios }));
     // Sólo pinta la ÚLTIMA carga pedida: al cambiar rápido de sucursal, una
     // respuesta lenta de la anterior no puede quedar bajo el filtro nuevo.
     const vigente = useRef(0);
@@ -68,16 +88,14 @@ export default function ResultadosEncuesta({ encuesta }) {
         const n = (vigente.current += 1);
         try {
             const [d, c, r, res, lec] = await Promise.all([
-                fetchResultados(encuesta.id, branchId), fetchComentarios(encuesta.id, branchId), fetchRondas(encuesta.id),
+                fetchResultados(encuesta.id, branchId, filtrosBase), fetchComentarios(encuesta.id, branchId, filtrosBase), fetchRondas(encuesta.id),
                 fetchResumen(encuesta.id, branchId), fetchLectura(encuesta.id, branchId),
             ]);
             if (n !== vigente.current) return;
             setLecturaSaly(lec);
             setDatos(d);
-            setCargadoPara(branchId);
-            if (branchId == null) {
-                setTodas({ salas: (d?.por_sucursal || []).map((s) => ({ value: String(s.branch_id), label: s.nombre, respuestas: s.respuestas })), total: d?.total || 0 });
-            }
+            // Saly sólo lee con la sucursal entera en pantalla (sin otro filtro).
+            setCargadoPara(filtrosBase ? undefined : branchId);
             setComentarios(c);
             setRondas(r);
             setResumen(res);
@@ -85,25 +103,41 @@ export default function ResultadosEncuesta({ encuesta }) {
         } catch (err) {
             if (n === vigente.current) setError(err);
         }
-    }, [encuesta.id, branchId]);
+    }, [encuesta.id, branchId, filtrosBase]);
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga de los resultados
+    // La meta es de la encuesta: se lee una vez (la misma cuenta que Avance).
+    useEffect(() => { fetchAvance(encuesta.id).then(setAvance).catch(() => setAvance(null)); }, [encuesta.id]);
 
     // El número de cada pregunta es el del cuestionario (el mismo del CSV, del
     // constructor y de los avisos de la base), no su posición en esta lista.
     const numeroDe = useMemo(() => Object.fromEntries(preguntasEnOrden(encuesta.cuestionario).map((p) => [p.id, p.numero])),
         [encuesta.cuestionario]);
-    const salas = todas.salas;
+    // Las opciones de cada filtro vienen contadas sobre TODA la encuesta: con
+    // un filtro puesto, las listas no se encogen.
+    const opciones = datos?.filtros;
+    const salas = useMemo(() => (opciones?.sucursales || [])
+        .map((x) => ({ value: String(x.branch_id), label: x.nombre, respuestas: x.respuestas })), [opciones]);
+    const todas = { salas, total: datos?.total_encuesta ?? 0 };
+    const entrevistadores = useMemo(() => (opciones?.entrevistadores || [])
+        .map((x) => ({ value: x.id, label: `${shortEmployeeName(x.nombre)} (${x.respuestas})` })), [opciones]);
+    const zonas = useMemo(() => (opciones?.zonas || [])
+        .map((x) => ({ value: x.id, label: `${x.nombre} (${x.respuestas})` })), [opciones]);
+    const preguntas = useMemo(() => preguntasFiltrables(encuesta.cuestionario), [encuesta.cuestionario]);
+    const preguntaElegida = preguntas.find((q) => q.value === filtros.pregunta);
+    const meta = metaDelFiltro(encuesta, avance, { branchId, zona: filtros.zona });
+    const filtrarPorRespuesta = (pregunta, valor) => poner(valor == null ? { pregunta: '', valor: '' } : { pregunta, valor });
+    const quitarTodo = () => { setFiltros(SIN_FILTROS); setSala(''); };
 
     const exportar = async () => {
         setExportando(true);
         try {
-            const todas = await fetchRespuestasParaExportar(encuesta.id);
-            // Con una sucursal elegida se exporta esa, igual que lo que se ve.
-            const filas = branchId ? todas.filter((f) => Number(f.branch_id ?? CAMPO) === branchId) : todas;
+            // Lo mismo que se ve: la base aplica la sucursal y los filtros.
+            const filas = await fetchRespuestasParaExportar(encuesta.id, branchId, filtrosBase);
             const { headers, rows } = tablaDeRespuestas(encuesta.cuestionario, filas,
                 { fechaHora: (f) => `${fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${hora12(f)}` });
             const nombreSala = branchId ? salas.find((x) => Number(x.value) === branchId)?.label : null;
-            exportCsv(headers, rows, `${archivoDeEncuesta(nombreSala ? `${encuesta.nombre}-${nombreSala}` : encuesta.nombre)}.csv`, 'encuestas_clientes');
+            const nombre = [encuesta.nombre, nombreSala, conFiltros ? 'filtrado' : null].filter(Boolean).join('-');
+            exportCsv(headers, rows, `${archivoDeEncuesta(nombre)}.csv`, 'encuestas_clientes');
         } catch (err) {
             showToast('No se pudo exportar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
@@ -144,11 +178,10 @@ export default function ResultadosEncuesta({ encuesta }) {
         setLeyendo(true);
         try {
             const enCampo = branchId === CAMPO;
-            const [todas, ubic] = await Promise.all([
-                fetchRespuestasParaExportar(encuesta.id),
+            const [filas, ubic] = await Promise.all([
+                fetchRespuestasParaExportar(encuesta.id, branchId),
                 (!branchId || enCampo) && (datos?.por_canal?.campo || 0) > 0 ? fetchUbicaciones(encuesta.id).catch(() => null) : null,
             ]);
-            const filas = branchId ? todas.filter((f) => Number(f.branch_id ?? CAMPO) === branchId) : todas;
             const nombreSala = branchId ? salas.find((x) => Number(x.value) === branchId)?.label : null;
             const paquete = paqueteParaSaly({
                 encuesta, datos, filas, comentarios, lugares: ubic?.por_lugar || [], filtro: nombreSala,
@@ -172,6 +205,7 @@ export default function ResultadosEncuesta({ encuesta }) {
     // lo que ella lee son lo mismo), y cuando esos números ya están en
     // pantalla, lee —si hace falta— y lleva la vista a su lectura.
     const pedirLectura = (b) => {
+        setFiltros(SIN_FILTROS);
         setSala(b == null ? '' : String(b));
         setPedido({ b: b ?? null });
     };
@@ -211,37 +245,96 @@ export default function ResultadosEncuesta({ encuesta }) {
     const nps = datos.nps;
     const lectura = lecturaNps(nps.puntaje);
     const pct = (n) => (nps.respuestas ? (n / nps.respuestas) * 100 : 0);
+    const recortado = conFiltros || !!sala;
+    const canales = Object.entries(datos.por_canal || {})
+        .map(([c, n]) => `${n} ${c === 'qr' ? 'QR' : c === 'kiosco' ? 'tablet' : c === 'app' ? 'app' : c === 'campo' ? 'campo' : 'entrevista'}`).join(' · ');
 
     return (
         <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-2">
-                <div className="w-56">
-                    <LiquidSelect value={sala} placeholder="Todas las sucursales" icon={Store} ariaLabel="Sucursal"
-                        options={salas} onChange={(v) => setSala(v || '')} />
+            <section data-surface="card" className="p-3 space-y-2.5" aria-label="Filtros de resultados">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="w-full sm:w-60">
+                        <LiquidSelect value={sala} placeholder="Todas las sucursales" icon={Store} ariaLabel="Sucursal"
+                            options={salas} clearable onChange={(v) => setSala(v || '')} />
+                    </div>
+                    <div className="w-full sm:w-56">
+                        <RangeDatePicker startDate={filtros.desde} endDate={filtros.hasta} months={1} compact shortcuts
+                            placeholder="Cualquier fecha" label="fechas"
+                            onRangeChange={(desde, hasta) => poner({ desde: desde || '', hasta: hasta || desde || '' })} />
+                    </div>
+                    {entrevistadores.length > 1 && (
+                        <div className="w-full sm:w-56">
+                            <LiquidSelect value={filtros.entrevistador} placeholder="Quién entrevistó" icon={UserRound} ariaLabel="Quién entrevistó"
+                                options={entrevistadores} clearable onChange={(v) => poner({ entrevistador: v || '' })} />
+                        </div>
+                    )}
+                    {zonas.length > 0 && (
+                        <div className="w-full sm:w-52">
+                            <LiquidSelect value={filtros.zona} placeholder="Todas las zonas" icon={MapPin} ariaLabel="Zona"
+                                options={zonas} clearable onChange={(v) => poner({ zona: v || '' })} />
+                        </div>
+                    )}
+                    <div className="hidden sm:block flex-1" />
+                    <Button variant="secondary" icon={Download} loading={exportando} disabled={!datos.total} onClick={exportar}>
+                        {recortado ? 'Exportar lo filtrado' : 'Exportar CSV'}
+                    </Button>
                 </div>
-                <div className="flex-1" />
-                <Button variant="secondary" icon={Download} loading={exportando} disabled={!datos.total} onClick={exportar}>
-                    {sala ? 'Exportar CSV de la sucursal' : 'Exportar CSV'}
-                </Button>
-            </div>
+                {preguntas.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="w-full sm:flex-1 sm:min-w-64">
+                            <LiquidSelect value={filtros.pregunta} placeholder="Filtrar por una respuesta" icon={ListFilter} ariaLabel="Pregunta"
+                                options={preguntas} clearable onChange={(v) => poner({ pregunta: v || '', valor: '' })} />
+                        </div>
+                        {preguntaElegida && (
+                            <div className="w-full sm:w-64">
+                                <LiquidSelect value={filtros.valor} placeholder="¿Qué respondieron?" ariaLabel="Respuesta"
+                                    options={preguntaElegida.opciones} clearable onChange={(v) => poner({ valor: v || '' })} />
+                            </div>
+                        )}
+                    </div>
+                )}
+                {recortado && (
+                    <div className="flex flex-wrap items-center gap-2 text-body-sm text-content-2">
+                        <span>Viendo <strong className="text-content tabular-nums">{datos.total}</strong> de {datos.total_encuesta} respuestas.</span>
+                        <Button variant="ghost" size="sm" icon={X} onClick={quitarTodo}>Quitar filtros</Button>
+                    </div>
+                )}
+            </section>
 
             {!datos.total ? (
-                <Notice variant="info" compact>Todavía no hay respuestas{sala ? ' en esta sucursal' : ''}.</Notice>
+                <Notice variant="info" compact>{recortado ? 'No hay respuestas con estos filtros.' : 'Todavía no hay respuestas.'}</Notice>
             ) : (
                 <>
                     <CarrilCards ariaLabel="Resumen de resultados">
-                        <StatCard icon={Gauge} label="NPS" value={nps.puntaje ?? '—'} sub={lectura.label}
-                            valueCls={lectura.variant === 'danger' ? 'text-danger' : lectura.variant === 'success' ? 'text-success' : undefined} />
                         <StatCard icon={Users} label="Respuestas" value={datos.total}
-                            sub={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${c === 'qr' ? 'QR' : c === 'kiosco' ? 'tablet' : c === 'app' ? 'app' : c === 'campo' ? 'campo' : 'entrevista'}`).join(' · ')} />
-                        <StatCard icon={Smile} label="Promotores" value={formatPct(pct(nps.promotores), { decimales: 0 })} sub={`${nps.promotores} dieron 9 o 10`} />
-                        <StatCard icon={Frown} label="Detractores" value={formatPct(pct(nps.detractores), { decimales: 0 })}
-                            valueCls={nps.detractores ? 'text-danger' : undefined} sub={`${nps.detractores} dieron 0 a 6`} />
+                            sub={recortado ? `de ${datos.total_encuesta} en total` : canales} />
+                        {meta?.meta ? (
+                            <StatCard icon={Target} label="Meta" value={formatPct(Math.min(100, (meta.respuestas / meta.meta) * 100), { decimales: 0 })}
+                                sub={`${meta.respuestas} de ${meta.meta}`}
+                                valueCls={meta.respuestas >= meta.meta ? 'text-success' : undefined} />
+                        ) : null}
+                        {nps.respuestas > 0 && (
+                            <StatCard icon={Gauge} label="NPS" value={nps.puntaje ?? '—'} sub={lectura.label}
+                                valueCls={lectura.variant === 'danger' ? 'text-danger' : lectura.variant === 'success' ? 'text-success' : undefined} />
+                        )}
+                        {nps.respuestas > 0 && (
+                            <StatCard icon={Smile} label="Promotores" value={formatPct(pct(nps.promotores), { decimales: 0 })} sub={`${nps.promotores} dieron 9 o 10`} />
+                        )}
+                        {nps.respuestas > 0 && (
+                            <StatCard icon={Frown} label="Detractores" value={formatPct(pct(nps.detractores), { decimales: 0 })}
+                                valueCls={nps.detractores ? 'text-danger' : undefined} sub={`${nps.detractores} dieron 0 a 6`} />
+                        )}
+                        <StatCard icon={MessageSquareText} label="Con comentario" value={datos.con_texto ?? 0}
+                            sub={datos.total ? `${formatPct(((datos.con_texto ?? 0) / datos.total) * 100, { decimales: 0 })} escribió algo` : null} />
                     </CarrilCards>
 
                     <div ref={lecturaRef} className="scroll-mt-4">
-                        <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo}
-                            onActualizar={leerResultados} />
+                        {conFiltros ? (
+                            <Notice variant="info" compact>La lectura de Saly es de {nombreDelFiltro}. Quita los filtros para verla.</Notice>
+                        ) : (
+                            <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo}
+                                onActualizar={leerResultados} />
+                        )}
                     </div>
 
                     {nps.respuestas > 0 && (
@@ -273,7 +366,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                                 </ul>
                             </section>
                         )}
-                        {!sala && datos.por_sucursal.length > 1 && (
+                        {!sala && datos.por_sucursal.length > 1 && datos.por_sucursal.some((s) => s.nps != null) && (
                             <section data-surface="card" className="p-4 space-y-3">
                                 <TituloDeSeccion nivel="seccion">NPS por sucursal</TituloDeSeccion>
                                 <ul className="space-y-2">
@@ -296,11 +389,19 @@ export default function ResultadosEncuesta({ encuesta }) {
                         <UbicacionesDeCampo encuestaId={encuesta.id} zonas={encuesta.zonas_campo} />
                     )}
 
-                    <section data-surface="card" className="p-4 space-y-5">
-                        <TituloDeSeccion nivel="seccion">Pregunta por pregunta</TituloDeSeccion>
-                        {datos.por_pregunta.filter((p) => p.tipo !== 'texto').map((p, i) => (
-                            <Distribucion key={p.id} p={p} numero={numeroDe[p.id] ?? i + 1} />
-                        ))}
+                    <section className="space-y-3">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                            <TituloDeSeccion nivel="seccion" className="flex-1">Pregunta por pregunta</TituloDeSeccion>
+                            <span className="text-micro text-content-3">Toca una respuesta para ver sólo a quienes la eligieron.</span>
+                        </div>
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            {datos.por_pregunta.filter((p) => p.tipo !== 'texto').map((p, i) => (
+                                <div key={p.id} data-surface="card" className="p-4">
+                                    <GraficaDePregunta p={p} numero={numeroDe[p.id] ?? i + 1}
+                                        filtroActivo={filtrosBase} onFiltrar={filtrarPorRespuesta} />
+                                </div>
+                            ))}
+                        </div>
                     </section>
 
                     <section data-surface="card" className="p-4 space-y-3">
@@ -312,8 +413,8 @@ export default function ResultadosEncuesta({ encuesta }) {
                                 // Cuándo se puede rehacer y qué dice el botón: núcleo (`estadoDelResumen`).
                                 const r = estadoDelResumen(resumen);
                                 return (
-                                    <Button variant="secondary" size="sm" icon={SalyIcono} loading={resumiendo} disabled={!r.puede}
-                                        title={r.ayuda || 'Resume los comentarios con IA y lo guarda para todos'}
+                                    <Button variant="secondary" size="sm" icon={SalyIcono} loading={resumiendo} disabled={!r.puede || conFiltros}
+                                        title={conFiltros ? 'Quita los filtros para resumir' : (r.ayuda || 'Resume los comentarios con IA y lo guarda para todos')}
                                         onClick={resumir}>
                                         {r.boton}
                                     </Button>
@@ -391,46 +492,6 @@ function Barra({ label, valor, max, cls = 'bg-brand', sub }) {
                 <div className={`h-full ${cls}`} style={{ width: `${ancho}%` }} />
             </div>
         </li>
-    );
-}
-
-/** La distribución de una pregunta: barras por opción, o el promedio si es un número. */
-function Distribucion({ p, numero }) {
-    const cats = categoriasDe(p);
-    const total = p.respuestas || 0;
-    let cuerpo;
-    if (p.tipo === 'ranking') {
-        const orden = Object.entries(p.ranking || {}).sort((a, b) => a[1] - b[1]);
-        cuerpo = (
-            <ol className="space-y-1 text-body-sm text-content">
-                {orden.map(([id, pos], i) => (
-                    <li key={id}>{i + 1}. {p.opciones?.find((o) => o.id === id)?.texto || id}
-                        <span className="text-micro text-content-3"> · posición promedio {pos}</span></li>
-                ))}
-            </ol>
-        );
-    } else if (p.tipo === 'numero') {
-        cuerpo = <p className="text-body-sm text-content">Promedio: <strong>{p.promedio ?? '—'}</strong></p>;
-    } else {
-        const max = Math.max(1, ...cats.map((c) => p.conteo?.[c.clave] || 0));
-        cuerpo = (
-            <ul className="space-y-1.5">
-                {cats.map((c) => {
-                    const n = p.conteo?.[c.clave] || 0;
-                    return <Barra key={c.clave} label={c.label} valor={n} max={max}
-                        sub={total ? formatPct((n / total) * 100, { decimales: 0 }) : null} />;
-                })}
-            </ul>
-        );
-    }
-    return (
-        <div className="space-y-2 rounded-xl" data-saly-ancla={`pregunta-${p.id}`}>
-            <div className="flex flex-wrap items-baseline gap-2">
-                <p className="text-body-sm font-semibold text-content flex-1"><span className="text-content-3">{numero}.</span> {p.texto}</p>
-                <span className="text-micro text-content-3">{tipoDe(p.tipo).corto} · {total} resp.{p.puntaje != null ? ` · ${p.puntaje}/100` : ''}</span>
-            </div>
-            {cuerpo}
-        </div>
     );
 }
 

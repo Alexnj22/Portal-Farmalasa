@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1586.0 — Resultados de encuestas con filtros y gráficas
+
+Pedido del usuario: más flexibilidad y ver mejor los resultados de Encuestas a clientes.
+
+- **Filtros** en Resultados: sucursal, fechas, quién entrevistó, zona de campo y una respuesta («sólo quienes dijeron X»). Tocar una respuesta en cualquier gráfica también filtra. Los aplica la base con un solo juez, `encuesta_cliente_filtra`, que leen `encuesta_cliente_resultados`, `encuesta_cliente_comentarios` y `encuesta_cliente_respuestas_para_exportar` (migración `20261120224453`, firma nueva con `p_filtros jsonb` opcional; la llamada vieja sigue igual). Así lo que se ve, los comentarios y el CSV son siempre las mismas respuestas. El CSV ya no filtra la sucursal en el navegador.
+- **Tablero** arriba: respuestas (y de cuántas, si hay filtro), avance contra la meta del lugar elegido, NPS con promotores y detractores sólo si la encuesta lo pregunta, y cuántos dejaron comentario.
+- **Gráficas por pregunta**: dona cuando se elige una respuesta entre pocas, barras en la múltiple y en el NPS. SVG propio, sin `recharts` en la vista.
+- La lectura de Saly y el resumen de comentarios son de la sucursal entera: con otro filtro puesto se avisa y no se rehacen.
+- Los comentarios de campo ahora salen en la lista (antes el `JOIN` a sucursales los dejaba fuera).
+
+Verificado en producción con la sesión del usuario: la encuesta de comunicación con el filtro «No sabía que existía» da 103 de 267 y todas las gráficas se recalculan; el filtro de la base dio los mismos números que el conteo por opción.
+
+Novedades: no — lo decidió el usuario.
+Gemelo: encuestas_clientes — la app del personal va en la entrega siguiente, lo pidió el usuario.
+
 ## v2.1585.7 — Un evento cancelado en la ficha deja de ofrecer Cancelar
 
 Al cancelar una novedad en la ficha de una persona, el evento seguía sin «CANCELADO» y con el botón «Cancelar» hasta recargar la página. Pasó con la recontratación de Richard Quintanilla. La base ya lo tenía cancelado. La ficha leía la metadata de la vista `employee_timeline`, que no se vuelve a leer después de cancelar, en lugar de la fila de `employee_events` que el store sí actualiza. `historialDeFicha` ahora usa la metadata de la fila real. Arregla también la app, que usa la misma función.

@@ -2760,6 +2760,10 @@
    "area": "encuestas-clientes",
    "por": "código"
   },
+  "encuesta_cliente_filtra": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
   "encuesta_cliente_guardar_lectura": {
    "area": "encuestas-clientes",
    "por": "código"

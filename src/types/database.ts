@@ -35631,7 +35631,7 @@ export type Database = {
       }
       encuesta_cliente_cerrar_vencidas: { Args: never; Returns: number }
       encuesta_cliente_comentarios: {
-        Args: { p_branch?: number; p_id: string }
+        Args: { p_branch?: number; p_filtros?: Json; p_id: string }
         Returns: Json
       }
       encuesta_cliente_con_texto: {
@@ -35675,6 +35675,13 @@ export type Database = {
       encuesta_cliente_enviar: {
         Args: { p_id: string; p_nota?: string }
         Returns: Json
+      }
+      encuesta_cliente_filtra: {
+        Args: {
+          p_f: Json
+          p_r: Database["public"]["Tables"]["encuesta_cliente_respuestas"]["Row"]
+        }
+        Returns: boolean
       }
       encuesta_cliente_guardar_lectura: {
         Args: {
@@ -35749,11 +35756,11 @@ export type Database = {
         Returns: number
       }
       encuesta_cliente_respuestas_para_exportar: {
-        Args: { p_id: string }
+        Args: { p_branch?: number; p_filtros?: Json; p_id: string }
         Returns: Json
       }
       encuesta_cliente_resultados: {
-        Args: { p_branch?: number; p_id: string }
+        Args: { p_branch?: number; p_filtros?: Json; p_id: string }
         Returns: Json
       }
       encuesta_cliente_resumen: {

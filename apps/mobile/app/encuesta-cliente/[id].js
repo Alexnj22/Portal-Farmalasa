@@ -104,8 +104,10 @@ export default function EncuestaCliente() {
 
   // Tras una acción: la copia nueva se abre; si no, se relee ésta.
   const hecho = (r) => {
-    if (typeof r === 'string' && r !== String(id)) router.replace({ pathname: '/encuesta-cliente/[id]', params: { id: r } });
-    else cargar();
+    if (typeof r === 'string' && r !== String(id)) { router.replace({ pathname: '/encuesta-cliente/[id]', params: { id: r } }); return; }
+    // El estado que devuelve la base se pinta ya, como en el portal; la relectura completa el resto.
+    if (typeof r?.estado === 'string') setEncuesta((e) => (e ? { ...e, estado: r.estado } : e));
+    cargar();
   };
   const devuelta = encuesta?.estado === 'borrador' ? eventos.find((e) => e.tipo === 'rechazada' || e.tipo === 'enviada') : null;
 

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1583.10 — Encuestas: el estado de arriba cambia apenas envías a revisión, apruebas o publicas
+
+- En el detalle de una encuesta, el estado de arriba no cambiaba al enviar a revisión. Seguía diciendo «Borrador» hasta recargar la página, aunque el envío sí se hacía. Ahora toma el estado que devuelve la base apenas responde. Vale también para aprobar, devolver, publicar, cerrar y archivar.
+
+- Igual en la app del personal.
+
 ## v2.1583.9 — La app: inicio, avisos, sucursales, kioscos, laboratorios, mantenimiento y borradores igual que el portal
 
 - App, inicio: «Ausencias de hoy» lee los eventos de la ficha (salía siempre vacío), «Cotizaciones activas» cuenta todas (marcaba 0), «Alertas de sucursales» suma cortes sin confirmar, caja sin cerrar y sala sin ventas (`problemasPorSala` en `src/utils/inicio.js`, la usa también el portal), top productos marca los bajo su mínimo, franja «por vencer», y las pestañas siguen el acomodo publicado.

@@ -176,6 +176,11 @@ export default function EncuestaDetalle({
                 throw new Error('El último cambio no se guardó. Revisa la conexión y vuelve a intentarlo.');
             }
             const r = await fn();
+            // El estado que devuelve la base se pinta YA: tras «Enviar a
+            // revisión» el encabezado seguía en «Borrador» hasta recargar la
+            // página (2026-11-19). Todas las del ciclo devuelven `estado`; la
+            // relectura de abajo completa el resto.
+            if (typeof r?.estado === 'string') setEncuesta((e) => (e ? { ...e, estado: r.estado } : e));
             showToast(exito, encuesta?.nombre, 'success');
             setDialogo(null);
             onCambio?.();

@@ -32,13 +32,19 @@ function ics(d) {
 }
 
 /** Archivo .ics para "Agregar al calendario" (Apple, Outlook, etc.). */
+// Sin hora confirmada: evento de todo el día (AAAAMMDD), sin lugar.
+const diaIcs = (d) => d.toLocaleDateString('en-CA', { timeZone: tz }).replaceAll('-', '');
+const diaSiguiente = (d) => new Date(d.getTime() + 864e5);
+
 export function descargarIcs() {
   const fin = new Date(fechaBoda.getTime() + 10 * 3600e3);
-  const lugar = boda.lugares[0];
+  const conHora = boda.horaConfirmada !== false;
+  const lugar = conHora ? boda.lugares[0] : null;
   const texto = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//boda//ES', 'BEGIN:VEVENT',
     `UID:${ics(fechaBoda)}@boda`, `DTSTAMP:${ics(new Date())}`,
-    `DTSTART:${ics(fechaBoda)}`, `DTEND:${ics(fin)}`,
+    ...(conHora ? [`DTSTART:${ics(fechaBoda)}`, `DTEND:${ics(fin)}`]
+      : [`DTSTART;VALUE=DATE:${diaIcs(fechaBoda)}`, `DTEND;VALUE=DATE:${diaIcs(diaSiguiente(fechaBoda))}`]),
     `SUMMARY:${t('Boda de', 'Wedding of')} ${boda.novios.firma}`,
     `LOCATION:${lugar ? `${lugar.nombre}, ${lugar.direccion}` : ''}`,
     `DESCRIPTION:${window.location.origin}`,
@@ -55,11 +61,12 @@ export function descargarIcs() {
 
 export function enlaceGoogleCalendar() {
   const fin = new Date(fechaBoda.getTime() + 10 * 3600e3);
-  const lugar = boda.lugares[0];
+  const conHora = boda.horaConfirmada !== false;
+  const lugar = conHora ? boda.lugares[0] : null;
   const p = new URLSearchParams({
     action: 'TEMPLATE',
     text: `${t('Boda de', 'Wedding of')} ${boda.novios.firma}`,
-    dates: `${ics(fechaBoda)}/${ics(fin)}`,
+    dates: conHora ? `${ics(fechaBoda)}/${ics(fin)}` : `${diaIcs(fechaBoda)}/${diaIcs(diaSiguiente(fechaBoda))}`,
     details: window.location.origin,
     location: lugar ? `${lugar.nombre}, ${lugar.direccion}` : '',
   });

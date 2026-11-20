@@ -36,6 +36,9 @@ const fechaPuntos = () => {
 // Las franjas del cine se retiran una vez por visita; al volver a la portada,
 // el texto sólo se funde.
 const VISTA = 'boda-portada-abierta';
+// Se decide UNA vez por carga de página (StrictMode corre el efecto dos veces:
+// sin esto, la segunda vuelta veía su propia marca y se saltaba la apertura).
+let yaAbierta = null;
 
 /**
  * La frase se va encendiendo palabra por palabra mientras se baja (--p de 0 a
@@ -77,6 +80,15 @@ function FraseAlBajar({ texto, ultimas = 3 }) {
   );
 }
 
+/** Cada letra sube desde su máscara, una tras otra (--k = su turno). */
+function Letras({ texto, desde = 0 }) {
+  return (
+    <span className="letras">
+      {texto.split('').map((l, i) => <span key={i} className="letra" style={{ '--k': desde + i }}><span>{l}</span></span>)}
+    </span>
+  );
+}
+
 export default function Inicio({ codigo }) {
   const idioma = useIdioma();
   const boda = contenido(idioma);
@@ -97,10 +109,13 @@ export default function Inicio({ codigo }) {
   // ¿Ya se abrió la portada en esta visita? Antes de pintar, para que las
   // franjas no asomen ni un cuadro.
   useLayoutEffect(() => {
-    try {
-      if (sessionStorage.getItem(VISTA)) document.documentElement.classList.add('ya-abierta');
-      else sessionStorage.setItem(VISTA, '1');
-    } catch { document.documentElement.classList.add('ya-abierta'); }
+    if (yaAbierta === null) {
+      try {
+        yaAbierta = !!sessionStorage.getItem(VISTA);
+        if (!yaAbierta) sessionStorage.setItem(VISTA, '1');
+      } catch { yaAbierta = true; }
+    }
+    if (yaAbierta) document.documentElement.classList.add('ya-abierta');
   }, []);
 
   // Paralaje para navegadores sin animaciones ligadas al scroll (Safari < 26):
@@ -154,7 +169,7 @@ export default function Inicio({ codigo }) {
       {codigo && <Suspense fallback={null}><CintaEntrada codigo={codigo} /></Suspense>}
 
       {/* ── Portada ── */}
-      <header id="inicio" className="portada" ref={portada}>
+      <header id="inicio" className={`portada ${fase === 'save-the-date' ? 'std' : ''}`} ref={portada}>
         <span ref={centinela} className="centinela-nav" aria-hidden />
         <div className="portada-foto"><img {...foto} style={boda.portadaEnfoque ? { objectPosition: boda.portadaEnfoque } : undefined} alt="" fetchpriority="high" decoding="async" /></div>
         <span className="franja arriba" aria-hidden />
@@ -165,7 +180,11 @@ export default function Inicio({ codigo }) {
             {inv?.grupo && <p className="saludo">{t('Para', 'For')} {inv.grupo.nombre}</p>}
           </div>
           {/* En el save the date, la frase ES lo principal; los nombres la firman. */}
-          {fase === 'save-the-date' && <p className="std-titulo" aria-hidden><span>Save</span> <em>the</em> <span>Date</span></p>}
+          {fase === 'save-the-date' && (
+            <p className="std-titulo" aria-hidden>
+              <Letras texto="Save" desde={0} /> <em className="std-the">the</em> <Letras texto="Date" desde={5} />
+            </p>
+          )}
           <h1 className={fase === 'save-the-date' ? 'firma-std' : undefined} aria-label={`${fase === 'save-the-date' ? 'Save the date: ' : ''}${novios.ella} ${t('y', 'and')} ${novios.el}`}>
             <span className="linea-1" aria-hidden>{novios.ella}</span>
             <span className="linea-2" aria-hidden><em className="amp">&amp;</em> <em>{novios.el}</em></span>
@@ -186,7 +205,26 @@ export default function Inicio({ codigo }) {
       {errorFotos && <p className="aviso error contenedor" role="alert" style={{ marginTop: 16 }}>{errorFotos}</p>}
 
       {/* En la fase boda ya no hay nada que contar: la cuenta regresiva se va. */}
-      {fase !== 'recuerdos' && fase !== 'boda' && (
+      {fase === 'save-the-date' && (
+        <section id="faltan" className="faltan-std" aria-label={t('Cuánto falta', 'Countdown')}>
+          <div className="faltan-std-foto" aria-hidden>
+            <img {...imagenAdaptable(boda.fotoFaltan || boda.galeria[0], ANCHOS_PORTADA, '100vw')} alt="" loading="lazy" decoding="async" style={boda.fotoFaltanEnfoque ? { objectPosition: boda.fotoFaltanEnfoque } : undefined} />
+          </div>
+          <div className="faltan-std-texto">
+            <Revelar><p className="versalita">{t('Faltan', 'Only')}</p></Revelar>
+            <Countdown />
+            <Revelar className="faltan-std-pie">
+              <p className="grande-fecha">{fechaLarga()}</p>
+              <div className="acciones">
+                <a className="btn" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
+                <button type="button" className="btn claro-sobre-foto" onClick={descargarIcs}>Apple / Outlook</button>
+              </div>
+            </Revelar>
+          </div>
+        </section>
+      )}
+
+      {fase !== 'recuerdos' && fase !== 'boda' && fase !== 'save-the-date' && (
         <section id="faltan" className="seccion-inicio faltan">
           <div className="contenedor">
             <Revelar><Capitulo texto={t('Faltan', 'Countdown')} /></Revelar>
@@ -204,6 +242,8 @@ export default function Inicio({ codigo }) {
 
       {fase !== 'save-the-date' && <Accesos fase={fase} inv={inv} abrirPresentacion={abrirPresentacion} />}
 
+      {/* El save the date es corto: portada, cuánto falta, fotos y cierre. */}
+      {fase !== 'save-the-date' && <>
       {/* ── La frase: se enciende palabra por palabra al bajar ── */}
       <figure className="escena-frase">
         <Revelar>
@@ -215,6 +255,7 @@ export default function Inicio({ codigo }) {
 
       {/* ── Nuestra historia: la foto queda fija y cambia con cada capítulo ── */}
       <Historia novios={novios} historia={boda.historia} respaldo={boda.fotoHistoria} />
+      </>}
 
       <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
 
@@ -227,7 +268,7 @@ export default function Inicio({ codigo }) {
           <div className="pie-filas">
             <p>{fechaLarga()}</p>
             <p>{novios.hashtag}</p>
-            {boda.contacto?.whatsapp && (
+            {fase !== 'save-the-date' && boda.contacto?.whatsapp && (
               <p>
                 <a href={`https://wa.me/${boda.contacto.whatsapp}`} target="_blank" rel="noreferrer">
                   {t(`¿Dudas? Escríbele a ${boda.contacto.nombre}`, `Questions? Message ${boda.contacto.nombre}`)}

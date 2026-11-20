@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { fechaBoda } from '../config';
+import { boda, fechaBoda } from '../config';
 import { t } from '../lib/idioma';
 import { ahora } from '../lib/reloj';
 import { sinMovimiento } from '../lib/movimiento';
 
+// Sin hora confirmada sólo se cuentan días (hasta la medianoche del día de la boda).
+const soloDias = boda.horaConfirmada === false;
+
 function partes() {
   const ms = Math.max(0, fechaBoda - ahora());
+  if (soloDias) {
+    const d = Math.ceil(ms / 864e5);
+    return [[d === 1 ? t('día', 'day') : t('días', 'days'), d, 1]];
+  }
   const dias = Math.floor(ms / 864e5);
   return [
     [dias === 1 ? t('día', 'day') : t('días', 'days'), dias, 1],
@@ -77,13 +84,13 @@ export default function Countdown() {
   useEffect(() => {
     if (!enPantalla) return undefined;
     setP(partes());
-    const reloj = setInterval(() => setP(partes()), 1000);
+    const reloj = setInterval(() => setP(partes()), soloDias ? 60000 : 1000);
     return () => clearInterval(reloj);
   }, [enPantalla]);
 
   const texto = p.slice(0, 3).map(([k, v]) => `${v} ${k}`).join(', ');
   return (
-    <div ref={raiz} className={`cuenta ${visto ? 'vista' : ''} ${entrando ? 'entrando' : ''}`} role="timer" aria-label={`${t('Faltan', 'Countdown')}: ${texto}`}>
+    <div ref={raiz} className={`cuenta ${soloDias ? 'solo-dias' : ''} ${visto ? 'vista' : ''} ${entrando ? 'entrando' : ''}`} role="timer" aria-label={`${t('Faltan', 'Countdown')}: ${texto}`}>
       {p.map(([k, v, min], i) => {
         const digitos = String(v).padStart(min, '0').split('').map(Number);
         return (

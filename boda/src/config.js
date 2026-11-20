@@ -24,7 +24,11 @@ export const boda = {
 
   // Hora local del lugar. El desfase (-06:00 = El Salvador) evita que el
   // contador cambie según la zona del invitado.
-  fecha: '2027-02-13T15:00:00-06:00', // TODO confirmar la hora (3:00 p. m. de ejemplo)
+  fecha: '2027-02-13T00:00:00-06:00',
+  // Sin hora todavía: la cuenta regresiva sólo cuenta días y «Guardar la fecha»
+  // crea un evento de todo el día, sin lugar. Al saber la hora, ponerla en
+  // `fecha` (p. ej. T15:00:00-06:00) y cambiar esto a true.
+  horaConfirmada: false,
   zonaHoraria: 'America/El_Salvador',
 
   // Fases del sitio. Con 'auto' se decide por fecha:
@@ -52,6 +56,9 @@ export const boda = {
   portadaCompartir: '/fotos/compartir.jpg',
   // La foto que se abre a pantalla completa al bajar a «Nuestra historia» (vertical u horizontal).
   fotoHistoria: '/fotos/beso.jpg',
+  // Fondo de «Faltan N días» en el save the date (si no, la primera de la galería).
+  fotoFaltan: '/fotos/balcon.jpg',
+  fotoFaltanEnfoque: '50% 22%',
   galeria: [
     '/fotos/abrazo.jpg',
     '/fotos/portada.jpg', // la 2.ª va en el marco ancho

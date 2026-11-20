@@ -12,6 +12,7 @@ import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
 import LogoStd from '../components/LogoStd';
 import Pieza from '../components/Pieza';
+import CierreNombres from '../components/CierreNombres';
 import { VISTA_NOMBRES, NOMBRES } from '../components/nombresTrazos';
 import { BotonFacil } from '../components/Facil';
 import BotonMusica from '../components/BotonMusica';
@@ -296,9 +297,7 @@ export default function Inicio({ codigo }) {
       <footer className="pie-sitio">
         <div className="contenedor">
           <Capitulo texto={t('Los esperamos', 'We hope to see you')} />
-          <p className="nombres-gigantes" aria-label={`${novios.ella} ${t('y', 'and')} ${novios.el}`}>
-            <span aria-hidden>{novios.ella}</span><span aria-hidden className="segundo"><em className="amp">&amp;</em> <em>{novios.el}</em></span>
-          </p>
+          <CierreNombres texto={`${novios.ella} ${t('y', 'and')} ${novios.el}`} />
           <div className="pie-filas">
             <p>{fechaLarga()}</p>
             <p>{novios.hashtag}</p>

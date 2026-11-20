@@ -297,7 +297,9 @@ export default function Inicio({ codigo }) {
 
       <footer className="pie-sitio">
         <div className="contenedor">
-          <Capitulo texto={t('Los esperamos', 'We hope to see you')} />
+          <Capitulo texto={fase === 'save-the-date'
+            ? t('La invitación te llegará pronto', 'Your invitation is on its way')
+            : t('Los esperamos', 'We hope to see you')} />
           <CierreNombres texto={`${novios.ella} ${t('y', 'and')} ${novios.el}`} />
           <div className="pie-filas">
             <p>{fechaLarga().replace(/^./, (l) => l.toUpperCase())}</p>

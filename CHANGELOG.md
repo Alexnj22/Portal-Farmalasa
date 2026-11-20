@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1585.1 — Reservas: aviso cuando ya se vendió en caja
+
+La R-000164 de Salud 1 quedó lista el 13 nov y la caja la vendió media hora
+después como venta suelta, sin «Enviar a caja». La reserva sólo se cierra sola
+por la factura de su preventa, así que siguió «Lista para retirar» (con «Falta
+1 en la sucursal») una semana. La R-000154 de Salud 5 estaba igual.
+
+- `reservas_de_sucursal` manda `vendida_aparte`: la primera venta válida de la
+  misma sucursal, al mismo cliente, con el mismo producto, hecha después de
+  crear la reserva y que no sea factura de ninguna preventa (migración
+  `20261120214340`).
+- La tarjeta dice **Ya se vendió en caja** (gana al faltante, que es
+  consecuencia de la misma venta) y el detalle explica qué hacer: preguntar si
+  el cliente pagó otra vez; si pagó, cancelar (lo pagado queda a favor); si
+  no, Soporte la cierra. Sólo avisa: no cierra nada sola.
+- Lógica en `reservasDeSala.js` (portal y app), prueba en
+  `tests/unit/reservaVendidaAparte.test.js`.
+
 ## v2.1585.0 — Personal: la prórroga de contrato es una acción
 
 Prorrogar era sólo cambiar un dato en «Editar»: no quedaba en el historial de

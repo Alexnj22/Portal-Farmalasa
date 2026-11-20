@@ -5,6 +5,7 @@
 import { codigoDeEncargo, codigoDeReserva, reservaPorResolver, reservaPorTraer } from '../data/reservas';
 import { fechaTexto } from './fecha';
 import { formatMoney } from './formatNumber';
+import { fechaHora12 } from './hora';
 import { puedeEnviarPreventa } from './preventa';
 
 const ABIERTAS = ['en_revision', 'pendiente', 'lista'];
@@ -123,6 +124,22 @@ export const TRASLADO = Object.fromEntries(Object.entries(TRASLADO_DE_RESERVA)
 export const renglonesDe = (r) => r?.renglones ?? [r];
 
 /**
+ * La venta que la caja le hizo a este cliente, de este producto, en esta
+ * sucursal, después de reservarlo y sin pasar por «Enviar a caja»
+ * (`vendida_aparte` de `reservas_de_sucursal`, 2026-11-20). La R-000164 de
+ * Salud 1 siguió «Lista para retirar» una semana después de venderse así.
+ */
+export const vendidaAparte = (x) => (['pendiente', 'lista'].includes(x?.estado) && x?.vendida_aparte?.at ? x.vendida_aparte : null);
+
+/** Qué hacer con un renglón que ya se vendió en caja; vacío si no. */
+export function textoDeVentaAparte(x) {
+    const v = vendidaAparte(x);
+    if (!v) return '';
+    return `El ${fechaHora12(v.at)} se le vendió este producto en caja por ${formatMoney(Number(v.total ?? 0))}, sin pasar por la reserva. `
+        + 'Pregúntale a la caja si el cliente pagó otra vez. Si pagó, cancela la reserva y lo pagado queda a favor suyo. Si no pagó, avisa a Soporte para cerrarla.';
+}
+
+/**
  * Cuántas faltan en la sala para entregar un renglón LISTO, en su
  * presentación (2026-11-03). Lo calcula la base (`faltan_en_sala` de
  * `reservas_de_sucursal`): apartar no descuenta el inventario y la caja no
@@ -133,7 +150,7 @@ export const faltanEnSala = (x) => (x?.estado === 'lista' ? Math.max(0, Number(x
 
 /** Qué hacer con un renglón listo al que le falta producto; vacío si está completo. */
 export function textoDeFaltante(x) {
-    if (!faltanEnSala(x)) return '';
+    if (!faltanEnSala(x) || vendidaAparte(x)) return '';
     const hay = Math.max(0, Number(x.hay_en_sala) || 0);
     return `La existencia de la sucursal es ${hay} de ${x.cantidad}. Antes de que llegue el cliente: si están en el estante, pide una carga de inventario; si no, pídelas a otra sucursal desde Inventario.`;
 }
@@ -149,6 +166,9 @@ export function estadoDeReserva(r) {
             ? { label: 'Esperando otra foto', variant: 'info' }
             : { label: 'Receta por revisar', variant: 'warning', tono: 'warning' };
     }
+    // Ya se vendió en caja por fuera (2026-11-20): va antes que el faltante,
+    // que en ese caso es consecuencia de la misma venta.
+    if (filas.some((x) => vendidaAparte(x))) return { label: 'Ya se vendió en caja', variant: 'danger', tono: 'danger' };
     // Lista, pero la sala ya no la tiene entera (2026-11-03): va primero porque
     // es lo único que puede dejar al cliente en el mostrador sin su producto.
     const conFalta = filas.filter((x) => faltanEnSala(x) > 0);
@@ -198,6 +218,8 @@ export const recetaLegible = (estado) => ({
  * portal (v2.1349.3).
  */
 export function detalleDelRenglonDeReserva(x) {
+    const vendida = vendidaAparte(x);
+    if (vendida) return `Se vendió en caja el ${fechaHora12(vendida.at)}`;
     if (x.estado === 'pendiente' && x.traslado_estado) {
         const de = x.traslado_sala ? ` de ${x.traslado_sala}` : '';
         const llegaron = Number(x.traslado_llegaron ?? 0);

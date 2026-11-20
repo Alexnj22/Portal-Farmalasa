@@ -9,7 +9,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { codigoDeReserva, whatsappDe } from '@nucleo/data/reservas';
 import { textoDeProrroga } from '@nucleo/utils/reservasDeSala';
 import { diferenciasDelCobro } from '@nucleo/utils/preventaDirecta';
-import { TRASLADO, cuentasDeReserva, estadoDeReserva, faltanEnSala, formaDePagoLegible, renglonesDe, telefonoLegible, textoDeFaltante } from './reservaVista';
+import { TRASLADO, cuentasDeReserva, estadoDeReserva, faltanEnSala, formaDePagoLegible, renglonesDe, telefonoLegible, textoDeFaltante, textoDeVentaAparte } from './reservaVista';
 import { HistorialDeAvisos, InsigniaDeNivel } from './AvisosDeReserva';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
@@ -111,6 +111,12 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                                                 {x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sucursal.')}
                                                 {Number(x.traslado_llegaron) > 0 && ` Llegaron ${x.traslado_llegaron} de ${x.cantidad}.`}
                                             </span>
+                                        </div>
+                                    )}
+                                    {textoDeVentaAparte(x) && (
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <Badge variant="danger" uppercase={false}>Ya se vendió en caja</Badge>
+                                            <span className="text-caption text-content-2 break-words">{textoDeVentaAparte(x)}</span>
                                         </div>
                                     )}
                                     {textoDeFaltante(x) && (

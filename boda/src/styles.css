@@ -1061,6 +1061,65 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
   .historia-anio { animation: none; }
   .historia-cap { transition: opacity .3s; transform: none; }
 }
+@keyframes anio-entra { from { opacity: 0; transform: translateY(24px); filter: blur(6px); } }
+
+/* ═══════════════ Save the date: apertura y «faltan N días» ═══════════════ */
+.std-titulo .letras { display: inline-flex; }
+.std-titulo .letra { display: inline-block; overflow: clip; padding-bottom: 0.06em; margin-bottom: -0.06em; }
+.std-titulo .letra > span { display: inline-block; }
+.std-the { display: inline-block; }
+/* La portada del save the date tiene su propia apertura (sin franjas de cine). */
+.portada.std .franja { display: none !important; }
+.portada.std .portada-pie { border-top-color: transparent; position: relative; }
+.portada.std .portada-pie::before { content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: oklch(0.93 0.018 85 / 0.3); transform-origin: left; }
+@media (prefers-reduced-motion: no-preference) {
+  /* 1 · La foto se abre desde una rendija al centro, de la oscuridad a la luz. */
+  html:not(.ya-abierta) .portada.std .portada-foto img { animation: florece 2.8s cubic-bezier(.33, .05, .2, 1) .15s both, acercar-std 5s cubic-bezier(.2, .7, .1, 1) .15s both; }
+  /* 2 · Save · the · Date: letra por letra, desde su máscara. */
+  .portada.std .std-titulo { animation: none; }
+  html:not(.ya-abierta) .portada.std .letra > span { animation: letra-sube 1.25s cubic-bezier(.2, .9, .1, 1) both; animation-delay: calc(1.05s + var(--k) * 0.075s); }
+  html:not(.ya-abierta) .portada.std .std-the { animation: the-entra 1.4s var(--salida) 1.45s both; }
+  /* 3 · El filete se dibuja; nombres, fecha y botón llegan detrás. */
+  html:not(.ya-abierta) .portada.std .portada-pie::before { animation: filete-dibuja 1.6s cubic-bezier(.7, 0, .2, 1) 1.9s both; }
+  html:not(.ya-abierta) .portada.std h1 { animation: aparecer 1.3s var(--salida) 2.05s both; }
+  html:not(.ya-abierta) .portada.std .portada-pie { animation: none; }
+  html:not(.ya-abierta) .portada.std .fecha-puntos { animation: fecha-abre 1.8s var(--salida) 2.25s both; }
+  html:not(.ya-abierta) .portada.std .acciones { animation: aparecer 1.2s var(--salida) 2.6s both; }
+  html:not(.ya-abierta) .portada.std .portada-arriba { animation: aparecer 1.2s var(--salida) 2.7s both; }
+  html.con-sobre .portada.std *, html.con-sobre .portada.std .portada-pie::before { animation-play-state: paused !important; }
+}
+/* La foto florece desde el centro, donde estaba la frase: un círculo de bordes
+   muy suaves que se abre, como luz que se derrama, con desenfoque y
+   sobreexposición que se asientan. */
+@property --luz { syntax: '<percentage>'; inherits: false; initial-value: 150%; }
+@keyframes florece {
+  from { --luz: 0%; filter: blur(18px) brightness(1.7) saturate(.6); opacity: 0; }
+  12% { opacity: 1; }
+  70% { filter: blur(2px) brightness(1.1) saturate(.95); }
+  to { --luz: 150%; filter: none; opacity: 1; }
+}
+.portada.std .portada-foto img { -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 calc(var(--luz) - 40%), transparent var(--luz)); mask-image: radial-gradient(circle at 50% 50%, #000 calc(var(--luz) - 40%), transparent var(--luz)); }
+@keyframes rendija { from { clip-path: inset(0 50% 0 50%); filter: brightness(.35); } 60% { filter: brightness(.8); } to { clip-path: inset(0 0 0 0); filter: none; } }
+@keyframes acercar-std { from { transform: scale(1.32); } to { transform: scale(1.04); } }
+@media (orientation: landscape) { .portada .std-titulo { width: min(44vw, 900px); } }
+
+/* Mejora de la apertura: los nombres y la fecha entran como tinta, de
+   izquierda a derecha, en lugar de sólo aparecer. */
+@property --barrido { syntax: '<percentage>'; inherits: false; initial-value: 130%; }
+@keyframes tinta-entra { from { --barrido: -10%; opacity: .2; } to { --barrido: 130%; opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.ya-abierta) .portada.std h1 .nombres-std,
+  html:not(.ya-abierta) .portada.std .fecha-pieza .pieza {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido));
+    mask-image: linear-gradient(90deg, #000 calc(var(--barrido) - 30%), transparent var(--barrido));
+    animation: tinta-entra 1.5s cubic-bezier(.45, .05, .3, 1) both;
+  }
+  html:not(.ya-abierta) .portada.std h1 .nombres-std { animation-delay: 2.1s; }
+  html:not(.ya-abierta) .portada.std .fecha-pieza .pieza { animation-delay: 2.4s; }
+  html.std-intro:not(.ya-abierta) .portada.std h1 .nombres-std { animation-delay: 4.1s; }
+  html.std-intro:not(.ya-abierta) .portada.std .fecha-pieza .pieza { animation-delay: 4.35s; }
+}
+
 @keyframes letra-sube { from { transform: translateY(108%) rotate(6deg); } }
 @keyframes the-entra { from { opacity: 0; filter: blur(10px); transform: translateY(0.2em); } }
 @keyframes fecha-abre { from { opacity: 0; letter-spacing: 0.9em; } }
@@ -1207,7 +1266,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 .portada .fecha-pieza .pieza { width: clamp(130px, 34vw, 200px); }
 @media (orientation: portrait) { .portada .fecha-pieza .pieza { margin-inline: auto; } }
 .faltan-titulo { margin: 0; line-height: 0; color: var(--c-lino); }
-.faltan-titulo .pieza { width: clamp(84px, 22vw, 128px); margin-inline: auto; }
-.cuenta.solo-dias .cuenta-celda > span .pieza { width: clamp(64px, 18vw, 104px); margin: 6px auto 0; color: var(--c-champan); }
+.faltan-titulo .pieza { width: clamp(60px, 15vw, 84px); margin-inline: auto; }
+.cuenta.solo-dias .cuenta-celda > span .pieza { width: clamp(44px, 11vw, 66px); margin: 6px auto 0; color: var(--c-champan); }
 .faltan-std .fecha-pieza { color: var(--c-lino); }
 .faltan-std .fecha-pieza .pieza { width: min(84vw, 560px); margin-inline: auto; }

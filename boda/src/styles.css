@@ -1290,3 +1290,12 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 }
 @keyframes ornamento-abre { from { --abre: 0%; opacity: 0; transform: scale(.92); filter: drop-shadow(0 0 0 transparent) blur(4px); } 30% { opacity: 1; } 60% { filter: drop-shadow(0 0 18px oklch(0.87 0.039 80 / 0.55)); } to { --abre: 60%; opacity: 1; transform: none; filter: drop-shadow(0 0 0 transparent); } }
 @keyframes cierre-destello { 0% { transform: translateX(0); } 35%, 100% { transform: translateX(980px); } }
+
+/* «FALTAN 86 DÍAS» en una sola línea; la fecha larga debajo. */
+.faltan-std-texto { grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: clamp(14px, 3vw, 36px); }
+.faltan-std-texto > :first-child { grid-column: 1; }
+.faltan-std-texto > .cuenta { grid-column: 2; margin: 0; }
+.faltan-std-texto > .faltan-std-pie { grid-column: 1 / -1; margin-top: clamp(16px, 3svh, 32px); }
+.cuenta.solo-dias .cuenta-celda { display: flex; align-items: center; gap: clamp(14px, 3vw, 36px); }
+.cuenta.solo-dias .cuenta-celda > span .pieza { margin: 0; }
+.faltan-titulo .pieza, .cuenta.solo-dias .cuenta-celda > span .pieza { width: clamp(52px, 13vw, 96px); }

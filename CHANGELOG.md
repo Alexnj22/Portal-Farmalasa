@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1584.4 — Puntos Salud: mensaje más claro al no encontrar al cliente
+
+Del 14 al 20-nov, 12 de los 21 intentos fallidos de entrar a Puntos Salud
+fueron de 4 clientes con OTRO teléfono en su ficha. Veían «No encontramos ese
+registro. Revisa los datos.» y no sabían qué hacer. Ahora `app-clientes`
+contesta: «No te encontramos con esos datos. ¿Cambiaste de teléfono? Pide en
+cualquier sucursal que lo actualicen.» Sale igual en todo «no encontrado», así
+no dice si un DUI es cliente. La app muestra el texto del servidor: llega a web,
+iPhone y Android sin compilar.
+
+Gemelo: puntos — sólo cambia la función del servidor; las dos apps muestran su texto.
+
 ## v2.1584.3 — Encuestas de campo: sin permiso de ubicación no se puede encuestar
 
 Revisión en producción del 2026-11-20: las 3 respuestas de campo del día

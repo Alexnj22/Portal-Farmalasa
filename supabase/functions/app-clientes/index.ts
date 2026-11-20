@@ -595,7 +595,9 @@ async function documentoAnonimizado(admin: any, doc: string): Promise<boolean> {
 const NO_ENCONTRADO = {
   ok: false,
   motivo: "no_encontrado",
-  mensaje: "No encontramos ese registro. Revisa los datos.",
+  // 2026-11-20: casi todos los «no encontrado» eran clientes con otro
+  // teléfono en la ficha. El texto les da la salida sin decir si el DUI existe.
+  mensaje: "No te encontramos con esos datos. ¿Cambiaste de teléfono? Pide en cualquier sucursal que lo actualicen.",
 };
 
 // La misma regla que `public.venta_valida(estado)`: anulada o invalidada no cuenta.

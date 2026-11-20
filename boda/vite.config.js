@@ -9,15 +9,13 @@ import { imagenAdaptable, ANCHOS_PORTADA } from './src/lib/fotos.js';
 // escritos en el HTML. Se arman al compilar desde src/config.js.
 function vistaPrevia() {
   const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const fecha = new Date(boda.fecha).toLocaleDateString('es', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: boda.zonaHoraria,
-  });
   // Mientras el config tenga la dirección de ejemplo, la de Vercel (sirve para
   // probar la vista previa en un despliegue).
   const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
   const sitio = (/ejemplo/.test(boda.sitio || '') && vercel ? `https://${vercel}` : (boda.sitio || '')).replace(/\/$/, '');
   const absoluta = (u) => (/^https?:\/\//.test(u) ? u : `${sitio}${u.startsWith('/') ? '' : '/'}${u}`);
-  const titulo = `${boda.novios.firma} · ${fecha}`;
+  // Sin la fecha: la tarjeta invita a entrar a verla.
+  const titulo = boda.novios.firma;
   const texto = 'Guarda la fecha, confirma tu asistencia y comparte tus fotos.';
   const imagen = boda.portadaCompartir || boda.portada;
   const etiquetas = [

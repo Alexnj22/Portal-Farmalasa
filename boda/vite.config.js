@@ -130,6 +130,12 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/assets\//, /\.ics$/],
         cleanupOutdatedCaches: true,
+        // La versión nueva toma el control apenas se instala, aunque la página
+        // abierta sea vieja: si no, quien tenía el sitio guardado seguía con el
+        // cascarón viejo pidiendo piezas que ya no existen (pantalla de error).
+        // No recarga nada por su cuenta; eso lo sigue decidiendo pwa.js.
+        skipWaiting: true,
+        clientsClaim: true,
         // Sólo las fotos del config. NUNCA Supabase (datos y álbum en vivo):
         // ninguna regla las toca, así que van siempre a la red.
         runtimeCaching: [{

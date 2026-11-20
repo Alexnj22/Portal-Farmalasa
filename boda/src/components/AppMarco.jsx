@@ -93,7 +93,7 @@ export default function AppMarco() {
   const { fase } = useFase();
   // Un solo tema, oscuro; el modo fácil vuelve a papel claro (ver DESIGN.md).
   useEffect(() => {
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', facil ? '#f5f0e4' : '#0e0d0a');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', facil ? '#f5f0e4' : '#68693f');
   }, [facil]);
   // Fotos que quedaron a medio subir (se cerró la página): se retoman solas.
   useEffect(() => enRatoLibre(() => {

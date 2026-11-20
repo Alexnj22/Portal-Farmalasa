@@ -128,15 +128,17 @@ export default function Inicio({ codigo }) {
         <span className="franja abajo" aria-hidden />
         <div className="portada-texto">
           <div className="portada-arriba">
-            <p className="versalita">{titulo}</p>
+            {fase !== 'save-the-date' && <p className="versalita">{titulo}</p>}
             {inv?.grupo && <p className="saludo">{t('Para', 'For')} {inv.grupo.nombre}</p>}
           </div>
-          <h1 aria-label={`${novios.ella} ${t('y', 'and')} ${novios.el}`}>
+          {/* En el save the date, la frase ES lo principal; los nombres la firman. */}
+          {fase === 'save-the-date' && <p className="std-titulo" aria-hidden><span>Save</span> <em>the</em> <span>Date</span></p>}
+          <h1 className={fase === 'save-the-date' ? 'firma-std' : undefined} aria-label={`${fase === 'save-the-date' ? 'Save the date: ' : ''}${novios.ella} ${t('y', 'and')} ${novios.el}`}>
             <span className="linea-1" aria-hidden>{novios.ella}</span>
             <span className="linea-2" aria-hidden><em className="amp">&amp;</em> <em>{novios.el}</em></span>
           </h1>
           <div className="portada-pie">
-            {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : <p className="fecha-puntos">{fechaPuntos()}</p>}
+            {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : <p className={`fecha-puntos ${fase === 'save-the-date' ? 'grande' : ''}`}>{fechaPuntos()}</p>}
             <div className="acciones">
               {fase === 'boda' && <Link className="btn" to="/album">{t('Subir fotos al álbum', 'Upload photos')}</Link>}
               {fase === 'recuerdos' && <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>}
@@ -167,7 +169,7 @@ export default function Inicio({ codigo }) {
         </section>
       )}
 
-      <Accesos fase={fase} inv={inv} abrirPresentacion={abrirPresentacion} />
+      {fase !== 'save-the-date' && <Accesos fase={fase} inv={inv} abrirPresentacion={abrirPresentacion} />}
 
       {/* ── La frase: una escena tipográfica, quieta ── */}
       <figure className="escena-frase">

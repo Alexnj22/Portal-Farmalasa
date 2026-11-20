@@ -240,6 +240,19 @@ select option { background: var(--superficie); color: var(--texto); }
 .portada .btn.claro-sobre-foto { background: transparent; color: var(--c-lino); border-color: oklch(0.93 0.018 85 / 0.5); }
 .portada .btn.claro-sobre-foto:hover { border-color: var(--c-lino); }
 html.vt-sobre .portada h1 { view-transition-name: nombres; }
+/* Save the date: la frase manda; los nombres firman debajo y la fecha se lee de lejos. */
+.std-titulo {
+  margin: auto 0 0; font: 400 clamp(4rem, min(21vw, 26svh), 15rem)/0.84 var(--display); letter-spacing: -0.03em;
+  display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.18em;
+}
+.std-titulo em { font-style: italic; color: var(--c-champan); font-size: 0.62em; }
+.std-titulo { text-shadow: 0 2px 30px oklch(0.1 0.005 105 / 0.45); }
+/* Acostado, en dos renglones para no tapar a los novios (van a la derecha). */
+@media (orientation: landscape) { .std-titulo { max-width: 4em; } }
+.portada h1.firma-std { margin: clamp(14px, 2.4svh, 26px) 0 0; font-size: clamp(1.9rem, min(8.4vw, 7svh), 4.4rem); line-height: 1; flex-direction: row; flex-wrap: wrap; column-gap: 0.28em; }
+.portada h1.firma-std .linea-2 { padding-left: 0; }
+.fecha-puntos.grande { font-size: clamp(1rem, 3.6vw, 1.5rem); letter-spacing: 0.32em; }
+body:not(:has(.barra-app)) { --barra-aire: env(safe-area-inset-bottom, 0px); }
 body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
 @media (orientation: landscape) and (max-height: 560px) {
   .portada, body:has(.cinta-demo) .portada { height: auto; min-height: 100svh; }
@@ -257,14 +270,15 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
   html:not(.ya-abierta):not(.desde-sobre):not(.facil) .franja { display: block; position: absolute; left: 0; right: 0; z-index: 3; height: 13svh; background: var(--c-noche-honda); pointer-events: none; }
   .franja.arriba { top: 0; animation: franja-arriba 1.9s var(--salida) .3s both; }
   .franja.abajo { bottom: 0; animation: franja-abajo 1.9s var(--salida) .3s both; }
-  .portada-arriba, .portada h1, .portada-pie { animation: aparecer 1.4s var(--salida) both; }
+  .portada-arriba, .portada h1, .portada-pie, .std-titulo { animation: aparecer 1.4s var(--salida) both; }
+  .std-titulo { animation-delay: .7s; }
   .portada-arriba { animation-delay: 1.15s; }
   .portada h1 { animation-delay: .9s; }
   .portada-pie { animation-delay: 1.4s; }
   html.ya-abierta .portada-arriba, html.ya-abierta .portada h1, html.ya-abierta .portada-pie { animation-delay: .1s; animation-duration: 1s; }
   /* Del sobre a la portada: la tarjeta YA se volvió los nombres. */
   html.desde-sobre .portada-foto img, html.desde-sobre .portada h1 { animation: none; }
-  html.con-sobre .portada-foto img, html.con-sobre .portada-arriba, html.con-sobre .portada h1, html.con-sobre .portada-pie { animation-play-state: paused; }
+  html.con-sobre .portada-foto img, html.con-sobre .portada-arriba, html.con-sobre .portada h1, html.con-sobre .portada-pie, html.con-sobre .std-titulo { animation-play-state: paused; }
 }
 @keyframes paralaje { to { transform: translate3d(0, 30svh, 0); } }
 @keyframes acercar { from { transform: scale(1.16); } to { transform: scale(1.04); } }
@@ -344,6 +358,15 @@ body:has(.cinta-demo) .portada { height: calc(100svh - 30px); }
   }
 }
 @supports not (animation-timeline: view()) { .escena-foto { height: auto; } .escena-pin { position: relative; height: 92svh; } }
+/* Acostado, una foto vertical a pantalla completa sólo muestra la fachada: va
+   entera a la derecha, con el título a su izquierda. */
+@media (orientation: landscape) and (min-width: 900px) {
+  .escena-pin { grid-template-columns: 1fr minmax(0, 46%); grid-template-rows: minmax(0, 1fr); background: var(--c-noche-honda); }
+  .escena-pin img { min-height: 0; }
+  .escena-pin img { grid-area: 1 / 2; object-position: 50% 58%; }
+  .escena-pin::after { grid-area: 1 / 2; background: linear-gradient(90deg, var(--c-noche-honda) 0%, transparent 22%), linear-gradient(180deg, transparent 70%, oklch(0.12 0.006 105 / 0.5) 100%); }
+  .escena-titulo { grid-area: 1 / 1; align-self: center; padding: 0 var(--margen); font-size: clamp(3.4rem, 7.4vw, 8.5rem); }
+}
 @keyframes abre-escena { from { clip-path: inset(24% 16% 24% 16%); } to { clip-path: inset(0); } }
 @keyframes titulo-escena { from { opacity: 0; transform: translateY(20px); } }
 

@@ -26,9 +26,9 @@ export function pestanas(fase) {
     ['/', 'inicio', t('Inicio', 'Home')], ['/mensajes', 'mensajes', t('Mensajes', 'Messages')],
     ['/album', 'fotos', t('Fotos', 'Photos'), true], ['/evento', 'lugar', t('La boda', 'Wedding')], ['/mas', 'mas', t('Más', 'More')],
   ];
-  if (fase === 'save-the-date') return [
-    ['/', 'inicio', t('Inicio', 'Home')], ['/confirmar', 'calendario', t('Tu lugar', 'Your seat'), true], ['/mas', 'mas', t('Más', 'More')],
-  ];
+  // Save the date: una sola página, sin menú (la barra y la cabecera se ocultan
+  // con menos de dos pestañas).
+  if (fase === 'save-the-date') return [['/', 'inicio', t('Inicio', 'Home')]];
   return [
     ['/', 'inicio', t('Inicio', 'Home')], ['/evento', 'lugar', t('Dónde', 'Where')],
     ['/confirmar', 'confirmar', t('Confirmar', 'RSVP'), true], ['/mensajes', 'mensajes', t('Mensajes', 'Messages')], ['/mas', 'mas', t('Más', 'More')],
@@ -52,6 +52,7 @@ function BarraApp({ fase }) {
   const activa = lista.findIndex(([a]) => esActiva(a, pathname));
   // En un rato libre se bajan las pestañas de esta fase: tocar una ya no espera.
   useEffect(() => enRatoLibre(() => lista.forEach(([a]) => precargar(a))), [fase]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (lista.length < 2) return null;
   return (
     <nav className="barra-app" aria-label={t('Secciones', 'Sections')} style={{ '--n': lista.length }}>
       {lista.map(([a, icono, txt, centro], i) => {
@@ -74,6 +75,7 @@ export function NavEscritorio({ fase = faseActual() }) {
   const { pathname } = useLocation();
   const lista = pestanas(fase);
   const activa = lista.findIndex(([a]) => esActiva(a, pathname));
+  if (lista.length < 2) return null;
   return (
     <nav className="nav-escritorio" aria-label={t('Secciones', 'Sections')}>
       {lista.map(([a, , txt, centro], i) => (

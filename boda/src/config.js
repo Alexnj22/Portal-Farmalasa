@@ -53,7 +53,7 @@ export const boda = {
   portadaEnfoque: '76% 55%',
   // Foto para la vista previa del enlace en WhatsApp (opcional; si no, la portada).
   // Ideal: horizontal, 1200×630, menos de 300 KB.
-  portadaCompartir: '/fotos/compartir.jpg',
+  portadaCompartir: '/fotos/compartir-2.jpg',
   // La foto que se abre a pantalla completa al bajar a «Nuestra historia» (vertical u horizontal).
   fotoHistoria: '/fotos/beso.jpg',
   // Fondo de «Faltan N días» en el save the date (si no, la primera de la galería).

@@ -5,6 +5,7 @@ import { modoDemo } from './lib/api';
 import { boda } from './config';
 import { pruebasDisponibles } from './lib/reloj';
 import { pantalla } from './lib/precarga';
+import { faseActual } from './lib/fase';
 import AppMarco from './components/AppMarco';
 import ErrorRuta, { limpiarMarcaDeRecarga } from './components/ErrorRuta';
 import Esqueleto from './components/Esqueleto';
@@ -23,13 +24,15 @@ function Raiz() {
   // Si la página lleva un rato funcionando, la recarga por versión nueva vuelve a estar permitida.
   useEffect(() => { const t = setTimeout(limpiarMarcaDeRecarga, 10000); return () => clearTimeout(t); }, []);
   const esPantalla = pathname.startsWith('/pantalla') || pathname.startsWith('/dj');
+  // El save the date se muestra limpio: sin el aviso de la demo ni el panel de pruebas.
+  const limpio = faseActual() === 'save-the-date';
   return (
     <>
-      {modoDemo && !esPantalla && (
+      {modoDemo && !esPantalla && !limpio && (
         <div className="cinta-demo">Versión de prueba: lo que hagas se guarda sólo en este navegador.</div>
       )}
       <Outlet />
-      {pruebasDisponibles && !esPantalla && <Suspense fallback={null}><PanelPruebas /></Suspense>}
+      {pruebasDisponibles && !esPantalla && !limpio && <Suspense fallback={null}><PanelPruebas /></Suspense>}
       {/* Cambiar de pestaña vuelve arriba; «atrás» vuelve a donde estabas. */}
       <ScrollRestoration />
     </>

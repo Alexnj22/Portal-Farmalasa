@@ -63,3 +63,28 @@ export function escribir(svg, { selector, elementos, escritura: ESCRITURA = 1900
   return () => { cancelAnimationFrame(cuadro); trazos.forEach((x) => x.anim.cancel()); chispas.remove(); punta.remove(); };
 }
 
+
+/**
+ * Lleva un número de `desde` a `hasta` cuadro a cuadro y se lo pasa a `poner`.
+ * Para máscaras: Safari no aplica una máscara CSS a un elemento DENTRO de un
+ * SVG, así que esas piezas usan un <mask> de SVG y esto le mueve el
+ * rectángulo; y en HTML, Safari tampoco repinta una máscara animada por CSS
+ * con @property. Escrito en cada cuadro, anda en todos.
+ */
+export function animarValor(poner, { desde, hasta, duracion, retraso = 0 }) {
+  const curva = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+  poner(desde);
+  const t0 = performance.now() + retraso;
+  let cuadro = 0;
+  const paso = (ahora) => {
+    const q = Math.min(1, Math.max(0, (ahora - t0) / duracion));
+    poner(desde + (hasta - desde) * curva(q));
+    if (q < 1) cuadro = requestAnimationFrame(paso);
+  };
+  cuadro = requestAnimationFrame(paso);
+  return () => cancelAnimationFrame(cuadro);
+}
+
+/** animarValor sobre una propiedad personalizada de CSS (p. ej. '--barrido'). */
+export const barrer = (el, prop, opciones, unidad = '%') =>
+  animarValor((v) => el.style.setProperty(prop, `${v.toFixed(2)}${unidad}`), opciones);

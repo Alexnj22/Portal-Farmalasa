@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { boda } from '../config';
 
 /*
  * Modo fácil (letra grande): para los abuelos. Letra más grande, contraste
@@ -12,6 +13,7 @@ let porInvitacion = false;
 const oyentes = new Set();
 
 export const facilActivo = () => {
+  if (boda.letraGrande === false) return false;
   const elegido = leerLS();
   return elegido === '1' || (elegido == null && porInvitacion);
 };

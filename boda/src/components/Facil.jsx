@@ -1,3 +1,4 @@
+import { boda } from '../config';
 import { useEffect, useRef, useState } from 'react';
 import { useFacil, cambiarFacil } from '../lib/facil';
 import { t, idioma } from '../lib/idioma';
@@ -7,6 +8,7 @@ import Icono from './Iconos';
 /** Botón «Aa» de la barra: prende o apaga la letra grande. */
 export function BotonFacil() {
   const facil = useFacil();
+  if (boda.letraGrande === false) return null;
   return (
     <button type="button" className="btn claro chico boton-facil" aria-pressed={facil} onClick={() => cambiarFacil(!facil)}
       title={facil ? t('Volver a la letra normal', 'Back to normal text') : t('Letra grande', 'Large text')}>

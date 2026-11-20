@@ -12,7 +12,11 @@ export const boda = {
   // Idiomas del sitio para los invitados. Con ['es'] no aparece el botón de
   // idioma. El inglés toma sus textos del bloque `en` (al final del archivo);
   // lo que no esté traducido ahí se muestra en español.
-  idiomas: ['es', 'en'],
+  // Por ahora sólo español ('en' agrega la versión en inglés y su botón).
+  idiomas: ['es'],
+  // Botón «Aa» de letra grande. Apagado por ahora; se puede volver a
+  // encender para la invitación.
+  letraGrande: false,
 
   novios: {
     el: 'Eduardo',

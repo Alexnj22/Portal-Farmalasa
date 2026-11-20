@@ -1333,7 +1333,7 @@ html.vt-sobre::view-transition-old(barra), html.vt-sobre::view-transition-old(ca
 .cierre-contorno path { fill: none; stroke: var(--c-champan); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 0 99999; }
 @media (prefers-reduced-motion: no-preference) {
   .cierre:not(.visto) .cierre-trazo { opacity: 0; }
-  .cierre.visto .cierre-contorno { display: inline; filter: drop-shadow(0 0 4px oklch(0.87 0.039 80 / 0.9)); animation: fundido-sale .8s ease 3.2s forwards; }
-  .cierre.visto .cierre-trazo { -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--tinta) - 14%), transparent var(--tinta)); mask-image: linear-gradient(90deg, #000 calc(var(--tinta) - 14%), transparent var(--tinta)); animation: tinta 1.8s cubic-bezier(.45, .05, .35, 1) 1.6s both; }
-  .cierre.visto .cierre-destello { animation-delay: 4.2s; }
+  .cierre.visto .cierre-contorno { display: inline; filter: drop-shadow(0 0 4px oklch(0.87 0.039 80 / 0.9)); animation: fundido-sale .8s ease 2.1s forwards; }
+  .cierre.visto .cierre-trazo { -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--tinta) - 14%), transparent var(--tinta)); mask-image: linear-gradient(90deg, #000 calc(var(--tinta) - 14%), transparent var(--tinta)); animation: tinta 1.7s cubic-bezier(.45, .05, .35, 1) .55s both; }
+  .cierre.visto .cierre-destello { animation-delay: 3.2s; }
 }

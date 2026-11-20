@@ -15,17 +15,17 @@ export default function CierreNombres({ texto }) {
   useEffect(() => {
     const el = raiz.current;
     if (!el || !('IntersectionObserver' in window)) { setVisto(true); return undefined; }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisto(true); io.disconnect(); } }, { threshold: 0.35 });
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisto(true); io.disconnect(); } }, { threshold: 0.6 });
     io.observe(el);
     return () => io.disconnect();
   }, []);
   // El ornamento lo escribe la misma pluma del Save the Date, con sus chispas,
-  // apenas los nombres terminan de entrar.
+  // al mismo tiempo que entran los nombres.
   const icono = useRef(null);
   useEffect(() => {
     if (!visto || !icono.current?.animate || sinMovimiento()) return undefined;
     let limpiar = null;
-    const espera = setTimeout(() => { limpiar = escribir(icono.current, { selector: '.cierre-contorno path', escritura: 1700, inicio: 0 }); }, 1100);
+    const espera = setTimeout(() => { limpiar = escribir(icono.current, { selector: '.cierre-contorno path', escritura: 1600, inicio: 0 }); }, 150);
     return () => { clearTimeout(espera); limpiar?.(); };
   }, [visto]);
   const n = PIEZAS.nombresApilados;

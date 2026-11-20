@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { t } from '../lib/idioma';
 import Visor from './Visor';
 import { imagenAdaptable, conAncho, ANCHOS_GALERIA } from '../lib/fotos';
@@ -12,6 +12,17 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
   const barra = useRef(null);
   const [abierta, setAbierta] = useState(null);
   const [extremos, setExtremos] = useState({ inicio: true, fin: false });
+  // Al llegar a la vista, las fotos entran como tinta y un destello las cruza
+  // (el mismo lenguaje del Save the Date). Una vez.
+  const seccion = useRef(null);
+  const [vista, setVista] = useState(false);
+  useEffect(() => {
+    const el = seccion.current;
+    if (!el || !('IntersectionObserver' in window)) { setVista(true); return undefined; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVista(true); io.disconnect(); } }, { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const alDeslizar = () => {
     const el = pista.current;
@@ -28,7 +39,7 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
 
   const items = fotos.map((original) => ({ original, url: conAncho(original, 1800) }));
   return (
-    <section id="fotos" className="galeria-h">
+    <section id="fotos" ref={seccion} className={`galeria-h ${vista ? 'vista' : ''}`}>
       <div className="contenedor galeria-cabeza">
         <h2>{titulo}</h2>
         <div className="flechas">
@@ -38,7 +49,7 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
       </div>
       <div className="pista" ref={pista} onScroll={alDeslizar}>
         {items.map((f, n) => (
-          <button type="button" key={f.original} className={`foto-h ${n % 3 === 1 ? 'ancha' : ''}`} onClick={() => setAbierta(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
+          <button type="button" key={f.original} className={`foto-h ${n % 3 === 1 ? 'ancha' : ''}`} style={{ '--i': n }} onClick={() => setAbierta(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
             <img {...imagenAdaptable(f.original, ANCHOS_GALERIA, '(min-width: 720px) 48vw, 88vw')} alt="" loading="lazy" decoding="async" />
             <span className="num">{String(n + 1).padStart(2, '0')}</span>
           </button>

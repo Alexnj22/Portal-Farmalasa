@@ -92,3 +92,17 @@ describe('graficaDe y porcionesDe', () => {
         expect(porcionesDe({ tipo: 'si_no', respuestas: 0 }).every((c) => c.n === 0 && c.pct === 0)).toBe(true);
     });
 });
+
+describe('rangoDePeriodo', async () => {
+    const { rangoDePeriodo, PERIODOS } = await import('@nucleo/utils/encuestasClientes');
+    it('cuenta hacia atrás desde hoy, ambos incluidos', () => {
+        expect(rangoDePeriodo('hoy', '2026-11-20')).toEqual({ desde: '2026-11-20', hasta: '2026-11-20' });
+        expect(rangoDePeriodo('7d', '2026-11-20')).toEqual({ desde: '2026-11-14', hasta: '2026-11-20' });
+        expect(rangoDePeriodo('30d', '2026-03-01')).toEqual({ desde: '2026-01-31', hasta: '2026-03-01' });
+        expect(rangoDePeriodo('mes', '2026-11-20')).toEqual({ desde: '2026-11-01', hasta: '2026-11-20' });
+    });
+    it('cualquier fecha no filtra', () => {
+        expect(rangoDePeriodo('todo', '2026-11-20')).toEqual({ desde: '', hasta: '' });
+        expect(PERIODOS[0].id).toBe('todo');
+    });
+});

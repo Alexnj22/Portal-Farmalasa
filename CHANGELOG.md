@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1586.1 — Resultados de encuestas con filtros y gráficas en la app
+
+La app del personal recibe lo mismo que el portal en v2.1586.0. Lo pidió el usuario.
+
+- **Filtros** en el menú nativo de filtros: sucursal, fecha (hoy, últimos 7 o 30 días, este mes), quién entrevistó y zona. La respuesta se elige tocándola en la gráfica y sale como ficha para quitarla. Los aplica la base con el mismo juez del portal, y el CSV exporta lo filtrado.
+- **Tablero**: respuestas, avance contra la meta, NPS sólo si la encuesta lo pregunta, y cuántos dejaron comentario.
+- **Gráficas por pregunta**: dona o barras con `react-native-svg`, con la forma y las porciones del núcleo (`graficaDe`, `porcionesDe`). La numeración es la del cuestionario.
+- Nuevo en el núcleo: `PERIODOS` y `rangoDePeriodo`, con pruebas.
+- Con un filtro puesto, la lectura de Saly y el resumen avisan y no se rehacen, igual que en el portal.
+
+Novedades: no — lo decidió el usuario para esta función (v2.1586.0).
+Gemelo: encuestas_clientes — en `src/views/encuestas-clientes/ResultadosEncuesta.jsx` (v2.1586.0).
+
 ## v2.1586.0 — Resultados de encuestas con filtros y gráficas
 
 Pedido del usuario: más flexibilidad y ver mejor los resultados de Encuestas a clientes.

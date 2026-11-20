@@ -2,6 +2,7 @@
 // para ver y probar el sitio completo sin crear nada. Nada sale del navegador.
 import { comprimirImagen, blobADataUrl } from './imagen';
 import { boda } from '../config';
+import { conAncho } from './fotos';
 import { ahora as reloj } from './reloj';
 import { nuevoCodigo } from './codigo';
 
@@ -130,7 +131,7 @@ function fotosDeMuestra() {
   const autores = ['Andrea', 'Luis', 'Tía Rosa', 'Marta', 'Carlos', 'Sofía'];
   return (boda.galeria || []).map((g, i) => {
     const src = typeof g === 'string' ? g : g.src;
-    return { id: `muestra-${i}`, ruta: `muestra/${i}.jpg`, url: src, mini: src.replace(/w=\d+/, 'w=600'),
+    return { id: `muestra-${i}`, ruta: `muestra/${i}.jpg`, url: conAncho(src, 1400), mini: conAncho(src, 640),
       autor: autores[i % autores.length], momento: boda.momentos[i % boda.momentos.length], oculta: false,
       created_at: new Date(Date.now() - (i + 1) * 6e5).toISOString() };
   });

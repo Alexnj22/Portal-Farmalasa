@@ -2,14 +2,19 @@
  * Fotos del config en el tamaño justo. Las de Unsplash (y cualquier servicio
  * que acepte ?w=) se piden en varios anchos con `auto=format` (AVIF/WebP si el
  * teléfono los entiende): un iPhone baja la de 960 px, no la de 1800.
- * Una foto propia (/fotos/…) se usa tal cual.
+ * Una foto propia (/fotos/nombre.jpg) se sirve desde sus copias ya reducidas
+ * /fotos/nombre-<ancho>.jpg (ver LOCALES), hechas desde fotos-originales/.
  */
+const LOCALES = [480, 640, 800, 960, 1200, 1400, 1800, 2400];
+const local = (url) => /^\/fotos\/[\w-]+\.jpg$/.test(url || '');
+const cercano = (w) => LOCALES.find((a) => a >= w) || LOCALES[LOCALES.length - 1];
 export const ANCHOS_PORTADA = [640, 960, 1400, 1800];
 export const ANCHOS_GALERIA = [480, 800, 1200];
 
 const acepta = (url) => /^https:\/\/images\.unsplash\.com\//.test(url || '');
 
 export function conAncho(url, w, calidad = 72) {
+  if (local(url)) return url.replace(/\.jpg$/, `-${cercano(w)}.jpg`);
   if (!acepta(url)) return url;
   const u = new URL(url);
   u.searchParams.set('w', String(w));
@@ -22,7 +27,7 @@ export function conAncho(url, w, calidad = 72) {
 
 /** { src, srcSet, sizes } para un <img>. */
 export function imagenAdaptable(url, anchos = ANCHOS_PORTADA, sizes = '100vw') {
-  if (!acepta(url)) return { src: url };
+  if (!acepta(url) && !local(url)) return { src: url };
   return {
     src: conAncho(url, anchos[Math.min(1, anchos.length - 1)]),
     srcSet: anchos.map((w) => `${conAncho(url, w)} ${w}w`).join(', '),

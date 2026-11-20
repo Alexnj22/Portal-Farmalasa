@@ -42,19 +42,20 @@ export const boda = {
 
   // Fotos: ponerlas en /public/fotos/ y referirlas como '/fotos/archivo.jpg'.
   // Las de ejemplo vienen de Unsplash (libres de uso).
-  portada: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1800&q=80',
+  portada: '/fotos/portada.jpg',
+  // Qué punto de la portada queda a la vista cuando la pantalla la recorta
+  // (en el teléfono, vertical). Horizontal y vertical, en %: los novios están a la derecha.
+  portadaEnfoque: '76% 55%',
   // Foto para la vista previa del enlace en WhatsApp (opcional; si no, la portada).
   // Ideal: horizontal, 1200×630, menos de 300 KB.
-  portadaCompartir: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=630&fit=crop&q=75',
+  portadaCompartir: '/fotos/compartir.jpg',
   // La foto que se abre a pantalla completa al bajar a «Nuestra historia» (vertical u horizontal).
-  fotoHistoria: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1800&q=80',
+  fotoHistoria: '/fotos/beso.jpg',
   galeria: [
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1200&q=80',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80',
-    'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&q=80',
-    'https://images.unsplash.com/photo-1529636798458-92182e662485?w=1200&q=80',
-    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=1200&q=80',
-    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80',
+    '/fotos/abrazo.jpg',
+    '/fotos/portada.jpg', // la 2.ª va en el marco ancho
+    '/fotos/beso.jpg',
+    '/fotos/balcon.jpg',
   ],
 
   historia: [

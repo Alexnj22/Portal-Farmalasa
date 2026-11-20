@@ -123,7 +123,7 @@ export default function Inicio({ codigo }) {
       {/* ── Portada ── */}
       <header id="inicio" className="portada" ref={portada}>
         <span ref={centinela} className="centinela-nav" aria-hidden />
-        <div className="portada-foto"><img {...foto} alt="" fetchpriority="high" decoding="async" /></div>
+        <div className="portada-foto"><img {...foto} style={boda.portadaEnfoque ? { objectPosition: boda.portadaEnfoque } : undefined} alt="" fetchpriority="high" decoding="async" /></div>
         <span className="franja arriba" aria-hidden />
         <span className="franja abajo" aria-hidden />
         <div className="portada-texto">

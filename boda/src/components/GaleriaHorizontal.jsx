@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { t } from '../lib/idioma';
 import Visor from './Visor';
-import { imagenAdaptable, ANCHOS_GALERIA } from '../lib/fotos';
+import { imagenAdaptable, conAncho, ANCHOS_GALERIA } from '../lib/fotos';
 
 /**
  * Las fotos de los novios en una tira que se desliza de lado con el dedo
@@ -26,7 +26,7 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
     el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' });
   };
 
-  const items = fotos.map((url) => ({ url }));
+  const items = fotos.map((original) => ({ original, url: conAncho(original, 1800) }));
   return (
     <section id="fotos" className="galeria-h">
       <div className="contenedor galeria-cabeza">
@@ -38,8 +38,8 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
       </div>
       <div className="pista" ref={pista} onScroll={alDeslizar}>
         {items.map((f, n) => (
-          <button type="button" key={f.url} className={`foto-h ${n % 3 === 1 ? 'ancha' : ''}`} onClick={() => setAbierta(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
-            <img {...imagenAdaptable(f.url, ANCHOS_GALERIA, '(min-width: 720px) 48vw, 88vw')} alt="" loading="lazy" decoding="async" />
+          <button type="button" key={f.original} className={`foto-h ${n % 3 === 1 ? 'ancha' : ''}`} onClick={() => setAbierta(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
+            <img {...imagenAdaptable(f.original, ANCHOS_GALERIA, '(min-width: 720px) 48vw, 88vw')} alt="" loading="lazy" decoding="async" />
             <span className="num">{String(n + 1).padStart(2, '0')}</span>
           </button>
         ))}

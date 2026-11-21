@@ -37,7 +37,7 @@ import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
-import {
+import { opcionesCerrarConVenta,
     accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
     modoDeProrroga, origenDelSaldo, plazoDeRetiro, quienRevisaLaReceta, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
 } from '@nucleo/utils/reservasDeSala';
@@ -1092,16 +1092,11 @@ function CerrarConVenta({ caso, ocupada, onCerrar, onDecidir }) {
     const { r, x } = caso;
     const v = x.vendida_aparte;
     const codigo = r.pedido ?? codigoDeReserva(r.id);
-    const anticipo = Number(x.anticipo ?? 0);
     // 2026-11-21: tocar una opción ya no cierra. Se elige, se lee qué hace
     // cada una y se confirma aparte (un toque de curiosidad cerró la R-000164).
+    // El texto sale del núcleo: cambia si el anticipo ya cubría el precio.
+    const { anticipo, pregunta, opciones } = opcionesCerrarConVenta(x);
     const [eleccion, setEleccion] = useState(null);
-    const opciones = [
-        { k: true, titulo: 'Se le descontó el anticipo',
-          texto: `En caja pagó sólo lo que faltaba. No queda nada a su favor. Elige esta también si ya se le devolvió el anticipo en efectivo.` },
-        { k: false, titulo: 'Pagó la venta completa',
-          texto: `En caja pagó el precio entero, aparte del anticipo. Los ${formatMoney(anticipo)} del anticipo quedan a su favor para otra compra o para devolvérselos.` },
-    ];
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={`Cerrar ${codigo} con esa venta`}>
             <LiquidModal.Header titulo={`Cerrar ${codigo} con esa venta`} onClose={onCerrar} />
@@ -1113,10 +1108,8 @@ function CerrarConVenta({ caso, ocupada, onCerrar, onDecidir }) {
                     </p>
                     {anticipo > 0 ? (
                         <>
-                            <p className="text-body-sm text-content-2">
-                                Dejó un anticipo de <b className="text-content">{formatMoney(anticipo)}</b>. ¿Qué pasó con él en esa venta?
-                            </p>
-                            <div role="radiogroup" aria-label="Qué pasó con el anticipo" className="space-y-3">
+                            <p className="text-body-sm text-content-2">{pregunta}</p>
+                            <div role="radiogroup" aria-label="Qué pasó en caja" className="space-y-3">
                                 {opciones.map((o) => (
                                     <div key={String(o.k)} className="space-y-1">
                                         <Button className="w-full" variant={eleccion === o.k ? 'primary' : 'secondary'}

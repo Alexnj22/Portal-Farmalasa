@@ -792,3 +792,40 @@ export function plazoAlApartar(reglas) {
 export function textoDeNivel(nivel) {
     return nivel?.prioridad ? `Cliente ${nivel.nombre} · con prioridad` : null;
 }
+
+/**
+ * Lo que dice «Cerrar con esa venta» de cada opción (2026-11-21). Depende de si
+ * el anticipo ya cubría el precio: con la R-000164 ($6.60 de $6.60) «pagó sólo
+ * lo que faltaba» confundía, porque no faltaba nada. Una sola fuente para el
+ * portal y la app. `k` es lo que recibe `amarrarReservaAVenta`
+ * (true = el anticipo se usó en esa venta).
+ */
+export function opcionesCerrarConVenta(x) {
+    const anticipo = Number(x?.anticipo ?? 0);
+    const total = Math.round(Number(x?.precio ?? 0) * Number(x?.cantidad ?? 1) * 100) / 100;
+    const vendida = Number(x?.vendida_aparte?.total ?? total);
+    const cubria = total > 0 && anticipo >= total - 0.004;
+    const falta = Math.max(Math.round((total - anticipo) * 100) / 100, 0);
+    const devuelto = 'Elige esta también si ya se le devolvió el anticipo en efectivo.';
+    return {
+        anticipo, cubria,
+        pregunta: cubria
+            ? `Dejó un anticipo de ${formatMoney(anticipo)}: ya había pagado todo el precio. ¿Qué pasó en caja?`
+            : `Dejó un anticipo de ${formatMoney(anticipo)} de ${formatMoney(total)}. ¿Qué pasó en caja?`,
+        opciones: cubria ? [
+            { k: true, titulo: 'Se usó el anticipo', corto: 'Se usó el anticipo',
+              texto: `En caja no pagó nada más: la venta se cubrió con lo que ya había pagado. No queda nada a su favor. ${devuelto}`,
+              confirma: 'Se usó el anticipo. No queda nada a su favor.' },
+            { k: false, titulo: 'Volvió a pagar en caja', corto: 'Volvió a pagar',
+              texto: `En caja pagó otra vez ${formatMoney(vendida)}. Los ${formatMoney(anticipo)} del anticipo quedan a su favor para otra compra o para devolvérselos.`,
+              confirma: `Volvió a pagar en caja. Los ${formatMoney(anticipo)} del anticipo quedan a su favor.` },
+        ] : [
+            { k: true, titulo: 'Se le descontó el anticipo', corto: 'Se le descontó',
+              texto: `En caja pagó sólo los ${formatMoney(falta)} que faltaban. No queda nada a su favor. ${devuelto}`,
+              confirma: 'Se le descontó el anticipo. No queda nada a su favor.' },
+            { k: false, titulo: 'Pagó la venta completa', corto: 'Pagó completo',
+              texto: `En caja pagó los ${formatMoney(vendida)} completos, aparte del anticipo. Los ${formatMoney(anticipo)} quedan a su favor para otra compra o para devolvérselos.`,
+              confirma: `Pagó la venta completa. Los ${formatMoney(anticipo)} del anticipo quedan a su favor.` },
+        ],
+    };
+}

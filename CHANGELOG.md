@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1589.1 — Cerrar con la venta de caja: texto según si el anticipo cubría todo
+
+Lo señaló el usuario sobre la R-000164 ($6.60 de anticipo por un producto de $6.60): «pagó sólo lo que faltaba» confunde cuando no faltaba nada.
+
+- Si el anticipo cubría todo el precio, el diálogo lo dice («ya había pagado todo el precio») y las opciones son **Se usó el anticipo** y **Volvió a pagar en caja**.
+- Si fue parcial, dice cuánto faltaba y cuánto pagó en caja con montos, no «lo que faltaba» ni «el precio entero».
+- El texto vive una vez en el núcleo (`opcionesCerrarConVenta`), para el portal y la app.
+
+Gemelo: reservas — en `apps/mobile/componentes/reservas/useAccionesDeReserva.js`
+
 ## v2.1589.0 — Saldo a favor: se ve y se usa en Preventa
 
 Auditoría que pidió el usuario («cómo sale en preventa / venta si tiene saldo a favor»). El saldo a favor no aparecía al vender: había que acordarse del código y convertirlo desde Reservas.

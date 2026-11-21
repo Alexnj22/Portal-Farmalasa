@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1589.0 — Saldo a favor: se ve y se usa en Preventa
+
+Auditoría que pidió el usuario («cómo sale en preventa / venta si tiene saldo a favor»). El saldo a favor no aparecía al vender: había que acordarse del código y convertirlo desde Reservas.
+
+- **Preventa muestra el saldo a favor del cliente** (de su ficha o de su cuenta unida), con «Usar»: se confirma al titular y lo usado se descuenta en esa misma venta, como puntos. Lo que deja usar se acota a lo que la venta permite descontar.
+- **Un saldo de menos de $1 ya se puede canjear entero**: antes chocaba con el mínimo de 100 puntos.
+- **Empresas y clientes que no canjean puntos**: el saldo ya no se convierte en puntos que nadie puede usar; se dice que se devuelve en efectivo.
+- **La vuelta de una hora espera a la preventa**: si el saldo convertido está en una preventa que todavía no se factura, ya no se quitan los puntos (antes la factura los descontaba sin saldo y el saldo quedaba disponible otra vez).
+- **Anular el cobro de un encargo confirmado más barato** anula también el saldo a favor de la diferencia (si ya se usó, queda anotado como irregularidad).
+- Un encargo pagado con el producto sugerido por Bodega (sin código propio) ya puede pasar a saldo a favor; antes fallaba.
+- El diálogo «Usar saldo a favor» vive una sola vez (`src/components/caja/UsarSaldoAFavor.jsx`) para Reservas y Preventa.
+
+Migraciones: `20261121152330_saldo_favor_en_preventa_y_sin_perderse`, `20261121152619_encargo_saldo_sin_producto`. Probadas en producción con datos que se deshacen.
+
+Novedades: no — lo decidió el usuario (2026-11-21).
+
 ## v2.1588.1 — Cerrar una reserva con la venta de caja explica cada opción
 
 Lo reportó el usuario: en la R-000164 de Salud 1 tocó «Pagó completo» para ver qué explicaba y la reserva se cerró en el acto, dejando $6.60 a favor del cliente (que la sucursal ya le había devuelto en efectivo).

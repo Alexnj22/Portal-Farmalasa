@@ -36,6 +36,8 @@ import {
 } from '@nucleo/utils/preventaDirecta';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { tomarSaldoUsado } from '../componentes/reservas/saldoUsado';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -268,6 +270,14 @@ export default function Preventa() {
     ? desgloseDeVenta({ lineas: cotizacion?.lineas, documento: venta.documento, retencionPct: info?.retencion_pct, descuento: descPuntos })
     : null), [venta.cliente, venta.documento, cotizacion?.lineas, info?.retencion_pct, descPuntos]);
   const maxPuntos = maximoDePuntos(info, totales.total);
+  // Saldo a favor (2026-11-21): cuánto deja usar esta venta, y lo usado vuelve sumado a los puntos.
+  const topeDeSaldo = Math.max(0, Math.min(
+    Math.round((totales.total - Number(info?.minimo_a_pagar ?? 0.05) - descPuntos) * 100) / 100,
+    (Number(info?.puntos?.tope ?? 10000) - puntos) / 100));
+  useFocusEffect(useCallback(() => {
+    const usado = tomarSaldoUsado();
+    if (usado > 0) setVenta((v) => ({ ...v, puntos: String((Math.trunc(Number(v.puntos) || 0)) + Math.round(usado * 100)) }));
+  }, []));
 
   const problemas = useMemo(() => {
     if (errorCotizar) return [{ clave: 'cotizar', titulo: errorCotizar, ayuda: 'Revisa la conexión e intenta de nuevo.', acciones: [{ id: 'reintentar', label: 'Reintentar' }] }];
@@ -490,6 +500,22 @@ export default function Preventa() {
                     <Eleccion rotulo="Comprobante" valor={venta.documento} opciones={DOCUMENTOS} onCambiar={(v) => cambiar({ documento: v })} />
                     <Eleccion rotulo="Tipo de pago" valor={venta.pago} opciones={PAGOS} onCambiar={(v) => cambiar({ pago: v || 'contado' })} />
                     {problemas.some((p) => p.clave === 'credito') ? <Aviso tono="freno" texto="El crédito necesita un cliente con datos." /> : null}
+
+                    {info?.saldos_favor?.length > 0 ? (
+                      <View style={{ borderRadius: 14, padding: 12, gap: 8, backgroundColor: `${MARCA.azulClaro}1A` }}>
+                        {info.saldos_favor.map((sf) => (
+                          <View key={sf.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }}>
+                              <Text style={{ fontWeight: '900' }}>{formatMoney(Number(sf.monto))}</Text> a favor · {sf.codigo} · vence {fechaTexto(sf.vence, { day: 'numeric', month: 'short' })}
+                            </Text>
+                            {info.puntos?.puede_canjear && topeDeSaldo > 0
+                              ? <BotonChico texto="Usar" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/reserva-saldo', params: { id: String(sf.id), codigo: sf.codigo, tope: topeDeSaldo.toFixed(2), preventa: '1' } })} /> : null}
+                          </View>
+                        ))}
+                        {!info.puntos?.puede_canjear ? <Aviso texto="Este cliente no canjea puntos: su saldo se devuelve en efectivo desde Reservas." /> : null}
+                        {info.puntos?.puede_canjear && topeDeSaldo <= 0 ? <Aviso texto="Agrega productos para poder descontarlo." /> : null}
+                      </View>
+                    ) : null}
 
                     {info?.puntos?.puede_canjear ? (
                       <View style={{ borderRadius: 14, padding: 12, gap: 8, backgroundColor: `${MARCA.verde}1A` }}>

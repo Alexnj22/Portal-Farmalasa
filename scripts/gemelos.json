@@ -809,6 +809,7 @@
         "apps/mobile/componentes/reservas/ComoLlega.js",
         "apps/mobile/componentes/reservas/PorCobrar.js",
         "apps/mobile/componentes/reservas/ProductoNuevo.js",
+        "apps/mobile/componentes/reservas/saldoUsado.js",
         "apps/mobile/componentes/reservas/cobrar.js",
         "apps/mobile/componentes/torogoz/venta/Piezas.js"
       ]
@@ -916,6 +917,7 @@
     "reservas": {
       "web": [
         "src/components/caja/DialogoRetirar.jsx",
+        "src/components/caja/UsarSaldoAFavor.jsx",
         "src/views/ReservasView.jsx",
         "src/views/dashboard/AccionesDeEncargoV2.jsx",
         "src/views/dashboard/AvisosDeReserva.jsx",

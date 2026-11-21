@@ -58,6 +58,7 @@ const FormularioPedirASala = lazy(() =>
     import('./dashboard/inventario/PanelDeInventario').then((m) => ({ default: m.FormularioPedirASala })));
 import { ModalConRanuras } from './dashboard/LanzadorSolicitud';
 const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
+import UsarSaldoAFavor from '../components/caja/UsarSaldoAFavor';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Preventa — vender desde el portal y que la venta llegue armada a caja.
@@ -255,6 +256,11 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         ? desgloseDeVenta({ lineas: cotizacion?.lineas, documento: venta.documento, retencionPct: info?.retencion_pct, descuento: descPuntos })
         : null), [venta.cliente, venta.documento, cotizacion?.lineas, info?.retencion_pct, descPuntos]);
     const maxPuntos = maximoDePuntos(info, totales.total);
+    // Cuánto saldo a favor deja usar esta venta (2026-11-21): lo que falta para el mínimo a pagar y el tope de puntos.
+    const [usandoSaldo, setUsandoSaldo] = useState(null);
+    const topeDeSaldo = Math.max(0, Math.min(
+        Math.round((totales.total - Number(info?.minimo_a_pagar ?? 0.05) - descPuntos) * 100) / 100,
+        (Number(info?.puntos?.tope ?? 10000) - puntos) / 100));
 
     // Todo lo que impide enviar, con qué hacer. Las acciones que el usuario
     // no puede usar no se ofrecen.
@@ -756,6 +762,39 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                 {cobrando && venta.pago !== 'contado' && (
                                     <DatosDelPago pago={venta.pago} detalle={detallePago} terminales={terminales}
                                         onCambiar={(c) => setDetallePago((d) => ({ ...d, ...c }))} />
+                                )}
+
+                                {info?.saldos_favor?.length > 0 && (
+                                    // Saldo a favor (2026-11-21): se ofrece aquí mismo. Se confirma al titular y se descuenta como puntos.
+                                    <div className="rounded-xl bg-brand/10 p-2.5 space-y-2" data-campo="saldo-favor">
+                                        {info.saldos_favor.map((sf) => (
+                                            <div key={sf.id} className="flex items-center gap-2">
+                                                <Wallet size={16} className="shrink-0 text-brand-text" />
+                                                <p className="flex-1 min-w-0 text-body-sm text-content">
+                                                    <span className="font-black tabular-nums">{formatMoney(Number(sf.monto))}</span> a favor
+                                                    <span className="text-micro text-content-3"> · {sf.codigo} · vence {fechaTexto(sf.vence, { day: 'numeric', month: 'short' })}</span>
+                                                </p>
+                                                {info.puntos?.puede_canjear && topeDeSaldo > 0 && (
+                                                    <Button size="sm" variant="secondary" onClick={() => setUsandoSaldo(sf)}>Usar</Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {!info.puntos?.puede_canjear && (
+                                            <p className="text-micro text-content-3">Este cliente no canjea puntos: su saldo se devuelve en efectivo desde Reservas.</p>
+                                        )}
+                                        {info.puntos?.puede_canjear && topeDeSaldo <= 0 && (
+                                            <p className="text-micro text-content-3">Agrega productos para poder descontarlo.</p>
+                                        )}
+                                    </div>
+                                )}
+                                {usandoSaldo && (
+                                    <UsarSaldoAFavor saldo={{ id: usandoSaldo.id, pedido: usandoSaldo.codigo }} tope={topeDeSaldo} enPreventa
+                                        onCerrar={() => setUsandoSaldo(null)}
+                                        onUsado={(r) => {
+                                            setUsandoSaldo(null);
+                                            cambiar({ puntos: String(puntos + Math.round(Number(r?.monto ?? 0) * 100)) });
+                                            setVuelta((n) => n + 1);
+                                        }} />
                                 )}
 
                                 {info?.puntos?.puede_canjear && (!enKiosco || info.puntos.disponibles >= info.puntos.minimo_canje) && (

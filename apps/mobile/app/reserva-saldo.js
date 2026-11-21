@@ -6,6 +6,8 @@
 //   2. Se elige cuánto usar, con lo que queda como tope.
 //   3. Ese monto pasa a puntos del cliente y la caja lo descuenta como
 //      cualquier canje, en una factura a su nombre.
+// Desde Preventa (2026-11-21) llega con `tope` (lo que la venta deja
+// descontar) y `preventa=1`: lo usado vuelve a la venta (`saldoUsado`).
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -18,15 +20,19 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { Aviso, BotonGrande, Campo, Dato, Seccion, exigeParametro } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
+import { dejarSaldoUsado } from '../componentes/reservas/saldoUsado';
 
 function UsarSaldo() {
-  const { id, codigo } = useLocalSearchParams();
+  const { id, codigo, tope: topeTexto, preventa } = useLocalSearchParams();
+  const enPreventa = preventa === '1';
+  const tope = topeTexto == null ? null : Number(topeTexto);
   const [prueba, setPrueba] = useState('');
   const [fila, setFila] = useState(null);
   const [monto, setMonto] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState('');
-  const disponible = Number(fila?.saldo_favor ?? 0);
+  const tieneAFavor = Number(fila?.saldo_favor ?? 0);
+  const disponible = tope == null ? tieneAFavor : Math.max(0, Math.min(tieneAFavor, tope || 0));
   const pedido = Math.round(Number(String(monto).replace(',', '.')) * 100) / 100;
   const montoValido = pedido > 0 && pedido <= disponible + 0.0001;
 
@@ -36,7 +42,7 @@ function UsarSaldo() {
       const f = ((await buscarSaldoAFavor(codigo, prueba)) || []).find((x) => String(x.id) === String(id));
       if (!f) setError('Ese saldo ya no está disponible.');
       else if (!f.confirmado) setError('No coincide con el cliente de este saldo. Escanea su tarjeta de Puntos Salud o escribe su DUI o su teléfono registrado.');
-      else { setFila(f); setMonto(Number(f.saldo_favor).toFixed(2)); }
+      else { setFila(f); setMonto(Math.max(0, tope == null ? Number(f.saldo_favor) : Math.min(Number(f.saldo_favor), tope || 0)).toFixed(2)); }
     } catch (e) { setError(mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };
 
@@ -45,7 +51,13 @@ function UsarSaldo() {
     try {
       const r = await usarSaldoAFavor(id, pedido, prueba);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      listo('Saldo listo para descontar', `Descuenta ${formatMoney(Number(r?.monto ?? pedido))} con puntos.${Number(r?.queda) > 0 ? ` Le quedan ${formatMoney(Number(r.queda))}.` : ''}`);
+      const queda = Number(r?.queda) > 0 ? ` Le quedan ${formatMoney(Number(r.queda))}.` : '';
+      if (enPreventa) {
+        dejarSaldoUsado(Number(r?.monto ?? pedido));
+        listo('Saldo aplicado', `${formatMoney(Number(r?.monto ?? pedido))} se descuentan en esta venta.${queda}`);
+      } else {
+        listo('Saldo listo para descontar', `Descuenta ${formatMoney(Number(r?.monto ?? pedido))} con puntos.${queda}`);
+      }
       router.back();
     } catch (e) { fallo('No se pudo usar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };
@@ -63,8 +75,8 @@ function UsarSaldo() {
           </>
         ) : (
           <>
-            <Seccion titulo={fila.cliente ?? 'Cliente'} pie="Lo que uses pasa a sus puntos. En caja, factura a su nombre y descuéntalo con puntos.">
-              <Dato rotulo="Tiene a favor" valor={formatMoney(disponible)} primero fuerte />
+            <Seccion titulo={fila.cliente ?? 'Cliente'} pie={enPreventa ? 'Lo que uses se descuenta en esta venta.' : 'Lo que uses pasa a sus puntos. En caja, factura a su nombre y descuéntalo con puntos.'}>
+              <Dato rotulo="Tiene a favor" valor={formatMoney(tieneAFavor)} primero fuerte />
               <Dato rotulo="Vale hasta" valor={fechaTexto(fila.saldo_favor_vence, { day: 'numeric', month: 'short' })} />
             </Seccion>
             <Seccion titulo="Cuánto usa" pie={`Hasta ${formatMoney(disponible)}.`}>

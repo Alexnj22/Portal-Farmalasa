@@ -1472,16 +1472,18 @@ Deno.serve(async (req) => {
      * nunca el navegador; y el crédito tiene que ser de ESE cliente: abonar
      * el anticipo de una persona al crédito de otra no da error en el origen
      * y no se deshace. Después cae al abono de siempre. */
-    let anticipoAplicado: { apartado: { reserva_id?: number; encargo_id?: number }; codigo: string; monto: number; reclamo: number } | null = null;
+    let anticipoAplicado: { apartado: { reserva_id?: number; encargo_id?: number; saldo_uso_id?: number }; codigo: string; monto: number; reclamo: number } | null = null;
     if (accion === "aplicar_anticipo") {
       const sala = Number(body.sala);
       const credito = String(body.credito ?? "").trim();
       const ref = body.apartado && typeof body.apartado === "object" ? body.apartado as Record<string, unknown> : null;
-      if (!ref || !(ref.reserva_id || ref.encargo_id)) return responder({ ok: false, error: "Falta qué se retira." }, 400);
+      if (!ref || !(ref.reserva_id || ref.encargo_id || ref.saldo_uso_id)) return responder({ ok: false, error: "Falta qué se retira." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
         return responder({ ok: false, error: "Sólo puedes retirar en tu propia sucursal." }, 403);
       }
-      const apartado = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) } : { encargo_id: Number(ref.encargo_id) };
+      // Un saldo a favor apartado para pagar una factura (2026-11-21) se abona igual que un anticipo.
+      const apartado = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) }
+        : ref.encargo_id ? { encargo_id: Number(ref.encargo_id) } : { saldo_uso_id: Number(ref.saldo_uso_id) };
       const { data: v, error: errV } = await supabase.rpc("apartado_para_retirar", { p_branch_id: sala, p_apartado: apartado });
       if (errV || !v) return responder({ ok: false, error: errV?.message || "No se pudo leer lo apartado." }, 409);
       if (v.aplicado) return responder({ ok: false, error: "El anticipo de esto ya se aplicó." }, 409);

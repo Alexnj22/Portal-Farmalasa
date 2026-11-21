@@ -244,6 +244,34 @@ export async function usarSaldoAFavor(id, monto, prueba) {
 }
 
 /**
+ * Saldo a favor como PAGO (2026-11-21): se aparta `monto` (baja el saldo y
+ * nace un uso), se factura la compra completa y después se aplica como el
+ * anticipo de un retiro: el vale (si salió de efectivo y lo demás también se
+ * paga en efectivo) o el abono al crédito. Devuelve
+ * `{ uso_id, monto, queda, codigo, cliente, efectivo }`.
+ */
+export async function apartarSaldoAFavor(id, monto, prueba) {
+    return sinError(await supabase.rpc('saldo_favor_apartar', {
+        p_id: Number(id), p_monto: Number(monto), p_prueba: String(prueba ?? '').trim(),
+    }));
+}
+
+/** Soltar un saldo apartado que no se va a usar: el monto vuelve al saldo. */
+export async function soltarSaldoAFavor(usoId, motivo = null) {
+    return sinError(await supabase.rpc('saldo_favor_soltar', { p_uso: Number(usoId), p_motivo: motivo }));
+}
+
+/** Ligar el saldo apartado a la preventa que lo lleva (si se descarta, se suelta solo). */
+export async function ligarSaldoAPreventa(usoId, preventaId) {
+    return sinError(await supabase.rpc('saldo_favor_ligar_preventa', { p_uso: Number(usoId), p_preventa: Number(preventaId) }));
+}
+
+/** El saldo apartado de la sucursal que falta aplicar a su factura. */
+export async function fetchSaldoPorAplicar(branchId) {
+    return (sinError(await supabase.rpc('saldo_favor_por_aplicar', { p_branch: Number(branchId) }))) ?? [];
+}
+
+/**
  * Devolver en dinero un saldo a favor (2026-10-19): sólo administración
  * (`dash_reservas_devolver_saldo`), con motivo. La devolución se hace afuera;
  * acá queda quién la autorizó, cuándo, cuánto y por qué, y el saldo deja de

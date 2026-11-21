@@ -418,6 +418,7 @@ export type Database = {
           monto: number
           movimiento_id: number | null
           reserva_id: number | null
+          saldo_uso_id: number | null
         }
         Insert: {
           branch_id: number
@@ -430,6 +431,7 @@ export type Database = {
           monto: number
           movimiento_id?: number | null
           reserva_id?: number | null
+          saldo_uso_id?: number | null
         }
         Update: {
           branch_id?: number
@@ -442,6 +444,7 @@ export type Database = {
           monto?: number
           movimiento_id?: number | null
           reserva_id?: number | null
+          saldo_uso_id?: number | null
         }
         Relationships: [
           {
@@ -449,6 +452,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apartado_aplicaciones_saldo_uso_id_fkey"
+            columns: ["saldo_uso_id"]
+            isOneToOne: false
+            referencedRelation: "saldo_favor_usos"
             referencedColumns: ["id"]
           },
         ]
@@ -29281,6 +29291,90 @@ export type Database = {
           },
         ]
       }
+      saldo_favor_usos: {
+        Row: {
+          aplicado_at: string | null
+          branch_id: number
+          confirmado_con: string | null
+          creado_por: string | null
+          created_at: string
+          customer_id: number
+          estado: string
+          id: number
+          liberado_at: string | null
+          monto: number
+          motivo: string | null
+          preventa_id: number | null
+          reserva_id: number
+        }
+        Insert: {
+          aplicado_at?: string | null
+          branch_id: number
+          confirmado_con?: string | null
+          creado_por?: string | null
+          created_at?: string
+          customer_id: number
+          estado?: string
+          id?: never
+          liberado_at?: string | null
+          monto: number
+          motivo?: string | null
+          preventa_id?: number | null
+          reserva_id: number
+        }
+        Update: {
+          aplicado_at?: string | null
+          branch_id?: number
+          confirmado_con?: string | null
+          creado_por?: string | null
+          created_at?: string
+          customer_id?: number
+          estado?: string
+          id?: never
+          liberado_at?: string | null
+          monto?: number
+          motivo?: string | null
+          preventa_id?: number | null
+          reserva_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saldo_favor_usos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_usos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_usos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_usos_preventa_id_fkey"
+            columns: ["preventa_id"]
+            isOneToOne: false
+            referencedRelation: "preventas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saldo_favor_usos_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "app_reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_alert_log: {
         Row: {
           alert_key: string
@@ -40657,11 +40751,29 @@ export type Database = {
         }
         Returns: number
       }
+      saldo_favor_apartar: {
+        Args: { p_id: number; p_monto: number; p_prueba: string }
+        Returns: Json
+      }
       saldo_favor_buscar: {
         Args: { p_codigo: string; p_prueba?: string }
         Returns: Json
       }
       saldo_favor_dias: { Args: never; Returns: number }
+      saldo_favor_es_efectivo: { Args: { p_reserva: number }; Returns: boolean }
+      saldo_favor_ligar_preventa: {
+        Args: { p_preventa: number; p_uso: number }
+        Returns: undefined
+      }
+      saldo_favor_por_aplicar: { Args: { p_branch: number }; Returns: Json }
+      saldo_favor_soltar: {
+        Args: { p_motivo?: string; p_uso: number }
+        Returns: Json
+      }
+      saldo_favor_soltar_sin_permiso: {
+        Args: { p_motivo: string; p_uso: number }
+        Returns: Json
+      }
       saly_ayuda_calificar: {
         Args: { p_id: number; p_util: boolean }
         Returns: boolean

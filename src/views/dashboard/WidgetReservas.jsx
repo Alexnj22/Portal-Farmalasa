@@ -29,7 +29,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { cobrarAnticipo } from '../../components/caja/cobrarAnticipo';
 import UsarSaldoAFavor from '../../components/caja/UsarSaldoAFavor';
 import {
-    amarrarReservaAVenta, buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, marcarAvisadaPorWhatsapp, ventasDelError,
+    amarrarReservaAVenta, buscarSaldoAFavor, cambiarEstadoReserva, codigoDeReserva, devolverSaldoAFavor, enviarPreventa, fetchReservasDeSucursal, fetchSaldoPorAplicar, marcarAvisadaPorWhatsapp, soltarSaldoAFavor, ventasDelError,
     mensajeDeReservaLista, whatsappDe, HORAS_RECETA_URGENTE,
     devolucionesPorEntregar, marcarDevolucionEntregada, negarDevolucionEnEfectivo, pedirDevolucionEnEfectivo, reservaPorResolver, reservaPorTraer, prorrogarReserva,
 } from '@nucleo/data/reservas';
@@ -186,6 +186,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // saldo vale en cualquier sucursal, así que el código del cliente se busca
     // también fuera de esta sala cuando aquí no aparece.
     const [saldosDeFuera, setSaldosDeFuera] = useState([]);
+    // Saldo a favor apartado para pagar una factura (2026-11-21): falta
+    // aplicarlo con el vale o el abono al crédito, como el anticipo de un retiro.
+    const [porAplicar, setPorAplicar] = useState([]);
+    const [aplicando, setAplicando] = useState(null);
+    const [soltando, setSoltando] = useState(null);
 
     // Sólo la última lectura escribe: al cambiar de sala, la respuesta de la
     // anterior no puede pisar a la nueva.
@@ -194,9 +199,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         const mia = ++secuencia.current;
         if (!miSala && !todas) { setCargando(false); return; }
         try {
-            const leidas = await fetchReservasDeSucursal(miSala, true);
+            const [leidas, pendientesDeAplicar] = await Promise.all([
+                fetchReservasDeSucursal(miSala, true),
+                miSala && !todas ? fetchSaldoPorAplicar(miSala).catch((e) => { console.error('WidgetReservas: saldo por aplicar', e); return []; }) : [],
+            ]);
             if (mia !== secuencia.current) return;
             setFilas(leidas);
+            setPorAplicar(pendientesDeAplicar ?? []);
             setAhora(Date.now());
             setErrorCarga(null);
         } catch (err) {
@@ -454,6 +463,46 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 onClose={() => setRetirando([])}
                 onListo={() => { setRetirando((q) => q.slice(1)); cargar(); }} />
         </Suspense>
+    ) : aplicando ? (
+        <Suspense fallback={null}>
+            <DialogoRetirar key={`s${aplicando}`} sala={miSala} referencia={{ saldo_uso_id: aplicando }}
+                onClose={() => setAplicando(null)}
+                onListo={() => { setAplicando(null); cargar(); }} />
+        </Suspense>
+    ) : null;
+    const soltarSaldo = async (u) => {
+        setSoltando(u.id);
+        try {
+            await soltarSaldoAFavor(u.id, 'No se usó');
+            showToast('Saldo devuelto', `${formatMoney(Number(u.monto))} vuelven al saldo a favor de ${u.codigo}.`, 'success');
+            cargar();
+        } catch (e) {
+            showToast('No se pudo soltar', mensajeAmigable(e), 'error');
+        } finally {
+            setSoltando(null);
+        }
+    };
+    const seccionPorAplicar = porAplicar.length > 0 ? (
+        <div className="space-y-1.5">
+            <Encabezado titulo="Saldo por aplicar" n={porAplicar.length} ayuda="Ya se apartó. Aplícalo a su factura." />
+            <ul className="space-y-1.5 min-w-0">
+                {porAplicar.map((u) => (
+                    <li key={u.id}>
+                        <FilaConAcciones icon={Wallet}
+                            titulo={`${formatMoney(Number(u.monto))} de ${String(u.cliente ?? '').split(/\s+/).slice(0, 1).join(' ')}`}
+                            detalle={`${u.codigo} · ${u.efectivo ? 'salió de efectivo' : 'salió de tarjeta o en línea'}${u.preventa_id
+                                ? (u.facturada_at ? ' · la preventa ya se facturó' : ' · su preventa espera en caja') : ''}`}
+                            acciones={soloLectura ? null : (
+                                <>
+                                    <Button variant="ghost" size="xs" icon={XCircle} loading={soltando === u.id}
+                                        onClick={() => soltarSaldo(u)}>No se usó</Button>
+                                    <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => setAplicando(u.id)}>Aplicar</Button>
+                                </>
+                            )} />
+                    </li>
+                ))}
+            </ul>
+        </div>
     ) : null;
     // ── Apartar desde la pantalla de Reservas (2026-11-05) ──────────────────
     // Pedido del usuario: «en comercial - reservas, que se pueda crear una
@@ -496,7 +545,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     if (!miSala && !todas) {
         return <EmptyState icon={ShoppingBag} compact title="Sin sucursal asignada" subtitle="Las reservas son de una sucursal." />;
     }
-    if (!filas.length && !saldosDeFuera.length) {
+    if (!filas.length && !saldosDeFuera.length && !porAplicar.length) {
         return (
             <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
                 <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2'}>
@@ -780,6 +829,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     <span className="text-label text-content-3">y {abiertas.length - MAX_FILAS} más</span>
                 )
             )}
+            {seccionPorAplicar}
             {saldos.length > 0 && (
                 <div className="space-y-1.5">
                     <Encabezado titulo="Saldos a favor" n={saldos.length} ayuda="Se usan en cualquier sucursal" />
@@ -928,7 +978,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             )}
             {usando && (
                 <UsarSaldoAFavor saldo={usando} onCerrar={() => setUsando(null)}
-                    onUsado={() => { setSaldosDeFuera([]); setUsando(null); cargar(); }} />
+                    onUsado={(r) => { setSaldosDeFuera([]); setUsando(null); cargar(); if (r?.uso_id) setAplicando(r.uso_id); }} />
             )}
             {devolver && (
                 <DevolverSaldo saldo={devolver} onCerrar={() => setDevolver(null)}

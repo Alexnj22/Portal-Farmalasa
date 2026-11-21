@@ -1,21 +1,22 @@
-// Usar un saldo a favor en caja (2026-10-21): funciona como un crédito.
+// Usar un saldo a favor en caja: funciona como un crédito.
 //   1. Se confirma al titular: su tarjeta de Puntos Salud (o el QR de la app),
 //      el DUI o el teléfono de la ficha. Lo decide la base
 //      (`saldo_favor_buscar` con la prueba); con sólo el código no se ve ni el
 //      nombre ni el monto.
 //   2. Se elige cuánto usar, con lo que queda como tope (`tope` lo acota más:
-//      en Preventa, lo que la venta deja descontar).
-//   3. Ese monto pasa a puntos del cliente y la caja lo descuenta como
-//      cualquier canje de puntos, en una factura a SU nombre. La bitácora la
-//      escribe `reserva_usar_saldo_favor`.
-// Lo abren Reservas (WidgetReservas) y Preventa (2026-11-21).
+//      en Preventa, lo que la venta deja pagar con él).
+//   3. Desde el 2026-11-21 el saldo es un PAGO, no un descuento: se APARTA
+//      (`saldo_favor_apartar`), la compra se factura completa y el saldo se
+//      aplica después como el anticipo de un retiro (vale o abono al crédito).
+//      Así queda en la factura y en el libro.
+// Lo abren Reservas (WidgetReservas) y Preventa.
 import React, { useState } from 'react';
 import { CheckCircle2, Wallet } from 'lucide-react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import Notice from '../common/Notice';
 import PortalInput from '../common/PortalInput';
-import { buscarSaldoAFavor, codigoDeReserva, usarSaldoAFavor } from '@nucleo/data/reservas';
+import { apartarSaldoAFavor, buscarSaldoAFavor, codigoDeReserva } from '@nucleo/data/reservas';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -49,12 +50,12 @@ export default function UsarSaldoAFavor({ saldo, tope = null, enPreventa = false
     const usar = async () => {
         setTrabajando(true); setError('');
         try {
-            const r = await usarSaldoAFavor(saldo.id, pedido, prueba);
+            const r = await apartarSaldoAFavor(saldo.id, pedido, prueba);
             const queda = Number(r?.queda) > 0 ? ` Le quedan ${formatMoney(Number(r.queda))}.` : '';
-            showToast(enPreventa ? 'Saldo aplicado' : 'Saldo listo para descontar',
+            showToast('Saldo apartado',
                 enPreventa
-                    ? `${formatMoney(Number(r?.monto ?? pedido))} se descuentan en esta venta.${queda}`
-                    : `Descuenta ${formatMoney(Number(r?.monto ?? pedido))} con puntos en la factura de ${String(fila.cliente ?? '').split(/\s+/)[0]}.${queda}`, 'success');
+                    ? `${formatMoney(Number(r?.monto ?? pedido))} pagan parte de esta venta.${queda}`
+                    : `${formatMoney(Number(r?.monto ?? pedido))} para la factura de ${String(fila.cliente ?? '').split(/\s+/)[0]}.${queda}`, 'success');
             onUsado(r);
         } catch (err) { setError(mensajeAmigable(err, 'Intenta de nuevo.')); }
         finally { setTrabajando(false); }
@@ -77,8 +78,8 @@ export default function UsarSaldoAFavor({ saldo, tope = null, enPreventa = false
                             <p className="text-body-sm text-content-2">
                                 {fila.cliente} tiene {formatMoney(tieneAFavor)} a favor (vale hasta el {fechaTexto(fila.saldo_favor_vence, { day: 'numeric', month: 'short' })}).
                                 {enPreventa
-                                    ? ' Lo que uses se descuenta en esta venta.'
-                                    : ' Lo que uses pasa a sus puntos. En caja, factura a su nombre y descuéntalo con puntos.'}
+                                    ? ' Lo que uses paga parte de esta venta. La factura sale por el total.'
+                                    : ' Lo que uses paga parte de su compra. Factura el total a su nombre y después aplica el saldo.'}
                             </p>
                             <PortalInput label="Cuánto usa" name="monto" inputMode="decimal" maskType="DECIMAL" prefix="$"
                                 value={monto} onChange={(e) => setMonto(e.target.value)}

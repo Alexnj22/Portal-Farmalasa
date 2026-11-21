@@ -59,6 +59,7 @@ const FormularioPedirASala = lazy(() =>
 import { ModalConRanuras } from './dashboard/LanzadorSolicitud';
 const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 import UsarSaldoAFavor from '../components/caja/UsarSaldoAFavor';
+import { ligarSaldoAPreventa, soltarSaldoAFavor } from '@nucleo/data/reservas';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Preventa — vender desde el portal y que la venta llegue armada a caja.
@@ -107,7 +108,7 @@ const DIAS = [{ value: '1', label: 'Hoy' }, { value: '7', label: '7 días' }, { 
 // guarda.
 const PAGOS_DE_COBRO = [...PAGOS, { value: 'bitcoin', label: 'Bitcoin' }];
 
-const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null };
+const VACIA = { cliente: null, lineas: [], documento: 'consumidor_final', pago: 'contado', puntos: '', nota: '', corrigiendo: null, saldo: null };
 // Cobrando en el kiosco: la misma mano, con lo que hace falta para cobrar.
 const TECLAS_COBRO = [['F2', 'Cobrar'], ['F9', 'Escribir lo recibido'], ['F3', 'Buscar producto'], ['F4', 'Cambiar cliente'],
     ['F7', 'Ver en otras sucursales'], ['F10', 'Anular la preventa'], ['Supr', 'Quitar el producto elegido'], ['Esc', 'Cerrar la preventa sin cobrar']];
@@ -256,11 +257,22 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         ? desgloseDeVenta({ lineas: cotizacion?.lineas, documento: venta.documento, retencionPct: info?.retencion_pct, descuento: descPuntos })
         : null), [venta.cliente, venta.documento, cotizacion?.lineas, info?.retencion_pct, descPuntos]);
     const maxPuntos = maximoDePuntos(info, totales.total);
-    // Cuánto saldo a favor deja usar esta venta (2026-11-21): lo que falta para el mínimo a pagar y el tope de puntos.
+    // Saldo a favor (2026-11-21): es un PAGO, no un descuento. La factura sale
+    // por el total; el saldo apartado se aplica después como el anticipo de un
+    // retiro. Si salió de efectivo y lo demás se paga en efectivo, contado; si
+    // no, al crédito (el saldo se abona y lo que falte se cobra allí).
     const [usandoSaldo, setUsandoSaldo] = useState(null);
-    const topeDeSaldo = Math.max(0, Math.min(
-        Math.round((totales.total - Number(info?.minimo_a_pagar ?? 0.05) - descPuntos) * 100) / 100,
-        (Number(info?.puntos?.tope ?? 10000) - puntos) / 100));
+    const saldoUsado = Number(venta.saldo?.monto ?? 0);
+    const topeDeSaldo = Math.max(0, Math.round((aPagar - saldoUsado) * 100) / 100);
+    const saldoAlCredito = Boolean(venta.saldo) && !(venta.saldo.efectivo && venta.pago === 'contado');
+    const pagoQueViaja = saldoAlCredito ? 'credito' : venta.pago;
+    const quitarSaldo = async () => {
+        const s = venta.saldo;
+        cambiar({ saldo: null });
+        if (!s?.uso_id) return;
+        try { await soltarSaldoAFavor(s.uso_id, 'Se quitó de la preventa'); }
+        catch (e) { showToast('No se pudo devolver el saldo', `${mensajeAmigable(e)} Suéltalo desde Reservas.`, 'warning'); }
+    };
 
     // Todo lo que impide enviar, con qué hacer. Las acciones que el usuario
     // no puede usar no se ofrecen.
@@ -396,15 +408,24 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     const enviar = async () => {
         if (bloqueada || enviando || !puedeVender) return;
         setEnviando(true);
+        const notaSaldo = venta.saldo ? `Saldo ${venta.saldo.codigo} $${saldoUsado.toFixed(2)}: facturar total` : '';
         const r = await enviarPreventaDirecta({
-            branchId: sala, customerId: clienteId, documento: venta.documento, pago: venta.pago, puntos, nota: venta.nota,
+            branchId: sala, customerId: clienteId, documento: venta.documento, pago: pagoQueViaja, puntos,
+            nota: [notaSaldo, venta.nota].filter(Boolean).join(' · ').slice(0, 120),
             lineas: lineasParaEnviar(venta.lineas), preventaId: venta.corrigiendo?.id ?? null,
             // Lo que se ve es lo que se manda: si la base calcula otro total, frena.
             totalEsperado: aPagar,
         });
         setEnviando(false);
         if (!r?.ok) { showToast('No llegó a caja', `${r?.error ?? 'Algo falló.'} Revisa la venta e intenta de nuevo.`, 'error'); setVuelta((n) => n + 1); return; }
-        setResultado({ ...r, total: aPagar, puntos, cliente: venta.cliente?.name ?? null });
+        // El saldo apartado queda ligado a su preventa: si se descarta, vuelve solo.
+        const idPreventa = Number(typeof r.preventa === 'object' ? r.preventa?.id : r.preventa);
+        if (venta.saldo?.uso_id && idPreventa > 0) {
+            ligarSaldoAPreventa(venta.saldo.uso_id, idPreventa)
+                .catch((e) => console.error('PreventaView: ligar saldo a la preventa', e));
+        }
+        setResultado({ ...r, total: aPagar, puntos, cliente: venta.cliente?.name ?? null,
+            saldo: venta.saldo ? { ...venta.saldo, alCredito: saldoAlCredito } : null });
         setVenta(VACIA);
         clearDraft(claveBorrador);
         recargar();
@@ -764,26 +785,35 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                         onCambiar={(c) => setDetallePago((d) => ({ ...d, ...c }))} />
                                 )}
 
-                                {info?.saldos_favor?.length > 0 && (
+                                {!cobrando && (info?.saldos_favor?.length > 0 || venta.saldo) && (
                                     // Saldo a favor (2026-11-21): se ofrece aquí mismo. Se confirma al titular y se descuenta como puntos.
                                     <div className="rounded-xl bg-brand/10 p-2.5 space-y-2" data-campo="saldo-favor">
-                                        {info.saldos_favor.map((sf) => (
+                                        {(info?.saldos_favor ?? []).map((sf) => (
                                             <div key={sf.id} className="flex items-center gap-2">
                                                 <Wallet size={16} className="shrink-0 text-brand-text" />
                                                 <p className="flex-1 min-w-0 text-body-sm text-content">
                                                     <span className="font-black tabular-nums">{formatMoney(Number(sf.monto))}</span> a favor
                                                     <span className="text-micro text-content-3"> · {sf.codigo} · vence {fechaTexto(sf.vence, { day: 'numeric', month: 'short' })}</span>
                                                 </p>
-                                                {info.puntos?.puede_canjear && topeDeSaldo > 0 && (
+                                                {venta.saldo?.reserva_id === sf.id ? (
+                                                    <span className="text-body-sm font-black tabular-nums text-brand-text">−{formatMoney(saldoUsado)}</span>
+                                                ) : !venta.saldo && topeDeSaldo > 0 && (
                                                     <Button size="sm" variant="secondary" onClick={() => setUsandoSaldo(sf)}>Usar</Button>
+                                                )}
+                                                {venta.saldo?.reserva_id === sf.id && (
+                                                    <Button size="sm" variant="ghost" icon={X} iconOnly aria-label="No usar el saldo" onClick={quitarSaldo} />
                                                 )}
                                             </div>
                                         ))}
-                                        {!info.puntos?.puede_canjear && (
-                                            <p className="text-micro text-content-3">Este cliente no canjea puntos: su saldo se devuelve en efectivo desde Reservas.</p>
+                                        {!venta.saldo && topeDeSaldo <= 0 && (
+                                            <p className="text-micro text-content-3">Agrega productos para poder usarlo.</p>
                                         )}
-                                        {info.puntos?.puede_canjear && topeDeSaldo <= 0 && (
-                                            <p className="text-micro text-content-3">Agrega productos para poder descontarlo.</p>
+                                        {venta.saldo && (
+                                            <p className="text-micro text-content-3">
+                                                {saldoAlCredito
+                                                    ? 'Va al crédito por el total. Cuando caja la facture, aplica el saldo en Reservas y cobra lo que falte en Cuentas por cobrar.'
+                                                    : 'Va al contado por el total. Cuando caja la facture, aplica el saldo en Reservas: sale un vale por el saldo.'}
+                                            </p>
                                         )}
                                     </div>
                                 )}
@@ -792,8 +822,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                         onCerrar={() => setUsandoSaldo(null)}
                                         onUsado={(r) => {
                                             setUsandoSaldo(null);
-                                            cambiar({ puntos: String(puntos + Math.round(Number(r?.monto ?? 0) * 100)) });
-                                            setVuelta((n) => n + 1);
+                                            cambiar({ saldo: { uso_id: r.uso_id, reserva_id: usandoSaldo.id, monto: Number(r.monto), codigo: r.codigo, efectivo: Boolean(r.efectivo) } });
                                         }} />
                                 )}
 
@@ -858,10 +887,18 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                                             )}
                                         </>
                                     )}
+                                    {saldoUsado > 0 && (
+                                        <>
+                                            <div className="flex justify-between"><dt className="text-content-3">Total de la factura</dt>
+                                                <dd className="tabular-nums">{formatMoney(desgloseVenta ? desgloseVenta.total : aPagar)}</dd></div>
+                                            <div className="flex justify-between"><dt className="text-content-3">Saldo a favor ({venta.saldo.codigo})</dt>
+                                                <dd className="tabular-nums text-brand-text font-bold">−{formatMoney(saldoUsado)}</dd></div>
+                                        </>
+                                    )}
                                     <div className="flex items-end justify-between pt-1">
-                                        <dt className="text-caption font-bold text-content-2">A pagar</dt>
+                                        <dt className="text-caption font-bold text-content-2">{saldoUsado > 0 ? 'Le falta pagar' : 'A pagar'}</dt>
                                         <dd className={`text-display font-black tabular-nums leading-none ${cotizando ? 'text-content-3' : 'text-content'}`}>
-                                            {formatMoney(desgloseVenta ? desgloseVenta.total : aPagar)}
+                                            {formatMoney(Math.max(0, (desgloseVenta ? desgloseVenta.total : aPagar) - saldoUsado))}
                                         </dd>
                                     </div>
                                     {desgloseVenta && (
@@ -1895,6 +1932,13 @@ function Hecho({ resultado, onOtra, onVer }) {
             </p>
             <p className="text-body-sm text-content-3">Dile al cliente que pase a caja con el número #{resultado.referencia}.</p>
             {(resultado.avisos ?? []).map((a) => <Notice key={a} variant="warning">{a}</Notice>)}
+            {resultado.saldo && (
+                <Notice variant="info">
+                    {resultado.saldo.alCredito
+                        ? `Caja la factura al crédito por el total. Después, en Reservas › Saldo por aplicar, abona los ${formatMoney(Number(resultado.saldo.monto))} del saldo ${resultado.saldo.codigo}. Lo que falte se cobra en Cuentas por cobrar.`
+                        : `Caja la factura al contado por el total y cobra lo que falte. Después, en Reservas › Saldo por aplicar, haz el vale por los ${formatMoney(Number(resultado.saldo.monto))} del saldo ${resultado.saldo.codigo}.`}
+                </Notice>
+            )}
             <div className="flex flex-wrap justify-center gap-2 pt-2">
                 {/* El foco queda aquí: Enter empieza la siguiente. */}
                 <Button icon={Plus} onClick={onOtra} autoFocus>Nueva preventa</Button>

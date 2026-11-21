@@ -29,7 +29,8 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
-  buscarSaldoAFavor, codigoDeReserva, fetchProrrogasPendientes, fetchReservasDeSucursal, HORAS_RECETA_URGENTE, devolucionesPorEntregar,
+  buscarSaldoAFavor, codigoDeReserva, fetchProrrogasPendientes, fetchReservasDeSucursal, fetchSaldoPorAplicar, HORAS_RECETA_URGENTE, devolucionesPorEntregar,
+  soltarSaldoAFavor,
 } from '@nucleo/data/reservas';
 import {
   accionesDeReservaNucleo, agruparPorPedido, quienRevisaLaReceta, codigoCompleto, conteoDeReservas, listaDePrecioDelGrupo, origenDelSaldo, pilaDelCliente,
@@ -46,7 +47,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
-import { fallo } from '../componentes/Progreso';
+import { fallo, listo } from '../componentes/Progreso';
 import { Accion } from '../componentes/reservas/piezas';
 import TarjetaDeReserva from '../componentes/reservas/TarjetaDeReserva';
 import { permisosDeReservas, useAccionesDeReserva } from '../componentes/reservas/useAccionesDeReserva';
@@ -111,12 +112,20 @@ export default function ReservasDeSala() {
   const [filas, setFilas] = useState(null);
   const [codigo, setCodigo] = useState('');
   const [saldosDeFuera, setSaldosDeFuera] = useState([]);
+  // Saldo apartado para pagar una factura (2026-11-21): falta aplicarlo.
+  const [porAplicar, setPorAplicar] = useState([]);
   const [recargando, setRecargando] = useState(false);
   const [recarga, setRecarga] = useState(0);
 
   const cargar = useCallback(async () => {
     if (!sala && !verTodas) { setFilas([]); return; }
-    try { setFilas(await fetchReservasDeSucursal(sala, true)); setAhora(Date.now()); } catch (e) { fallo('No se pudieron cargar', mensajeAmigable(e, '')); setFilas((f) => f ?? []); }
+    try {
+      const [leidas, pendientes] = await Promise.all([
+        fetchReservasDeSucursal(sala, true),
+        sala && !verTodas ? fetchSaldoPorAplicar(sala).catch((e) => { console.error('reservas-sala: saldo por aplicar', e); return []; }) : [],
+      ]);
+      setFilas(leidas); setPorAplicar(pendientes ?? []); setAhora(Date.now());
+    } catch (e) { fallo('No se pudieron cargar', mensajeAmigable(e, '')); setFilas((f) => f ?? []); }
   }, [sala, verTodas]);
   useEffect(() => { const t = setInterval(cargar, REFRESCO_MS); return () => clearInterval(t); }, [cargar]);
   // Al volver de revisar una receta, de apartar o de retirar, se relee.
@@ -136,7 +145,15 @@ export default function ReservasDeSala() {
     return () => { vivo = false; };
   }, [completo, sala]);
 
-  const usarSaldo = (r) => router.push({ pathname: '/reserva-saldo', params: { id: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id) } });
+  const usarSaldo = (r) => router.push({ pathname: '/reserva-saldo', params: { id: String(r.id), codigo: r.pedido ?? codigoDeReserva(r.id), ...(sala ? { sala: String(sala) } : {}) } });
+  const aplicarSaldo = (u) => router.push({ pathname: '/reserva-retirar', params: { id: String(u.id), tipo: 'saldo', sala: String(sala) } });
+  const soltarSaldo = async (u) => {
+    try {
+      await soltarSaldoAFavor(u.id, 'No se usó');
+      listo('Saldo devuelto', `${formatMoney(Number(u.monto))} vuelven al saldo a favor de ${u.codigo}.`);
+      cargar();
+    } catch (e) { fallo('No se pudo soltar', mensajeAmigable(e)); }
+  };
   // El detalle de la tarjeta: todo lo que la tarjeta resume, con todos los productos.
   const abrir = (r) => router.push({ pathname: '/reserva/[id]', params: r.branch_id != null || sala != null
     ? { id: String(r.id), sala: String(r.branch_id ?? sala) } : { id: String(r.id), todas: '1' } });
@@ -227,7 +244,7 @@ export default function ReservasDeSala() {
           </Seccion>
         ) : null}
         {filas && buscado && !visibles.length && !saldosDeFuera.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`No hay una reserva abierta con ese código${verTodas ? '' : ' en esta sucursal'}.`} /></View> : null}
-        {filas && !abiertas.length && !saldos.length && (sala || verTodas) && !esBodega ? <Vacio titulo="Sin reservas" detalle="Cuando un cliente aparte algo desde la app, aparece aquí." /> : null}
+        {filas && !abiertas.length && !saldos.length && !porAplicar.length && (sala || verTodas) && !esBodega ? <Vacio titulo="Sin reservas" detalle="Cuando un cliente aparte algo desde la app, aparece aquí." /> : null}
 
         {secciones.map((s) => (
           <View key={s.clave} style={{ gap: 10 }}>
@@ -241,8 +258,28 @@ export default function ReservasDeSala() {
           </View>
         ))}
 
+        {porAplicar.length ? (
+          <Seccion titulo={`Saldo por aplicar · ${porAplicar.length}`} pie="Ya se apartó. Aplícalo a su factura con el vale o el abono al crédito.">
+            {porAplicar.map((u, i) => (
+              <View key={u.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{formatMoney(Number(u.monto))} de {String(u.cliente ?? '').split(/\s+/)[0]}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
+                    {u.codigo} · {u.efectivo ? 'salió de efectivo' : 'salió de tarjeta o en línea'}{u.preventa_id ? (u.facturada_at ? ' · la preventa ya se facturó' : ' · su preventa espera en caja') : ''}
+                  </Text>
+                </View>
+                {soloLectura ? null : (
+                  <View style={{ gap: 6, alignItems: 'flex-end' }}>
+                    <Accion texto="Aplicar" color={MARCA.verde} onPress={() => aplicarSaldo(u)} />
+                    <Accion texto="No se usó" color={MARCA.rojo} onPress={() => soltarSaldo(u)} />
+                  </View>
+                )}
+              </View>
+            ))}
+          </Seccion>
+        ) : null}
         {saldos.length ? (
-          <Seccion titulo={`Saldos a favor · ${saldos.length}`} pie="Se usan en cualquier sucursal y se descuentan en caja.">
+          <Seccion titulo={`Saldos a favor · ${saldos.length}`} pie="Se usan en cualquier sucursal y pagan parte de una compra.">
             {saldos.map((r, i) => {
               const deOtra = verTodas || String(r.branch_id) !== String(sala);
               return (

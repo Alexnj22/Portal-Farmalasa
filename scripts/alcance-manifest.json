@@ -1006,6 +1006,10 @@
       "guarda": "alcance",
       "motivo": "Lo pagado de una reserva o encargo para retirarlo: la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes; service_role la usa desde operar-caja y creditos-erp."
     },
+    "saldo_favor_por_aplicar": {
+      "guarda": "alcance",
+      "motivo": "Saldos a favor apartados para pagar una factura de la sala: reserva_puede_manejar(p_branch) (sala propia o quien maneja reservas)."
+    },
     "apartado_entregar": {
       "guarda": "alcance",
       "motivo": "Entrega lo apartado sin pago o con el anticipo ya aplicado: la sala propia (compara contra auth_employee_branch_id) o quien edita Ofertas para clientes."

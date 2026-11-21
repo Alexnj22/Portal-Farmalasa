@@ -21,6 +21,41 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1590.0 — Saldo a favor: se paga con él, la factura sale completa
+
+El saldo a favor deja de ser un descuento con puntos y pasa a ser un **pago**,
+como el anticipo de un retiro. Antes el anticipo que generó el saldo no
+quedaba en ninguna factura: la venta salía por el total menos el saldo.
+
+- **Se aparta, no se gasta**: «Usar» (Reservas o Preventa) llama a
+  `saldo_favor_apartar`, que baja el saldo y deja un uso en
+  `saldo_favor_usos`. Si no se usa, «No se usó» lo devuelve
+  (`saldo_favor_soltar`); si la preventa se descarta, vuelve solo (trigger
+  `preventas_soltar_saldo`).
+- **La factura sale por el total**. Si el saldo salió de efectivo y lo demás
+  se paga en efectivo: contado y después un vale «Aplica anticipo» por el
+  saldo. Si no: crédito por el total, se le abona el saldo y lo que falte se
+  cobra en Cuentas por cobrar. Es la misma maquinaria del retiro
+  (`apartado_para_retirar` con `saldo_uso_id`, `operar-caja` y
+  `creditos-erp`).
+- **Reservas › Saldo por aplicar** lista lo apartado de la sucursal con
+  «Aplicar» y «No se usó». Preventa muestra «Total de la factura», «Saldo a
+  favor» y «Le falta pagar», manda el pago correcto y le avisa a caja en la
+  nota.
+- Preventa sólo ofrece el saldo de la ficha elegida (el vale y el abono van a
+  nombre del dueño). El camino viejo (`reserva_usar_saldo_favor`) queda
+  cerrado con aviso.
+- Devolver en dinero un saldo con un uso apartado queda bloqueado hasta
+  aplicarlo o soltarlo.
+
+Migraciones `20261121155122_saldo_favor_como_pago` y
+`20261121155548_saldo_favor_pago_ajustes`. Edge functions `operar-caja` (v91)
+y `creditos-erp` (v51) desplegadas.
+
+Gemelo: reservas — en apps/mobile/app/reservas-sala.js
+Gemelo: preventa — en apps/mobile/app/preventa.js
+Novedades: no — lo decidió el usuario (2026-11-21).
+
 ## v2.1589.1 — Cerrar con la venta de caja: texto según si el anticipo cubría todo
 
 Lo señaló el usuario sobre la R-000164 ($6.60 de anticipo por un producto de $6.60): «pagó sólo lo que faltaba» confunde cuando no faltaba nada.

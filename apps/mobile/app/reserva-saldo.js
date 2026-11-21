@@ -1,18 +1,19 @@
-// Usar un saldo a favor en caja, NATIVO (2026-10-21) — gemela del diálogo
-// `UsarSaldo` de `WidgetReservas`. Funciona como un crédito:
+// Usar un saldo a favor en caja, NATIVO (2026-10-21) — gemela de
+// `src/components/caja/UsarSaldoAFavor.jsx`. Funciona como un crédito:
 //   1. Se confirma al titular: su tarjeta de Puntos Salud (o el QR de la app),
 //      el DUI o el teléfono de la ficha. Lo decide la base
 //      (`saldo_favor_buscar` con la prueba).
 //   2. Se elige cuánto usar, con lo que queda como tope.
-//   3. Ese monto pasa a puntos del cliente y la caja lo descuenta como
-//      cualquier canje, en una factura a su nombre.
+//   3. Desde el 2026-11-21 es un PAGO: se aparta, la compra se factura
+//      completa y el saldo se aplica como el anticipo de un retiro
+//      (`reserva-retirar` con `tipo=saldo`).
 // Desde Preventa (2026-11-21) llega con `tope` (lo que la venta deja
 // descontar) y `preventa=1`: lo usado vuelve a la venta (`saldoUsado`).
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { buscarSaldoAFavor, usarSaldoAFavor } from '@nucleo/data/reservas';
+import { apartarSaldoAFavor, buscarSaldoAFavor } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -23,7 +24,7 @@ import { fallo, listo } from '../componentes/Progreso';
 import { dejarSaldoUsado } from '../componentes/reservas/saldoUsado';
 
 function UsarSaldo() {
-  const { id, codigo, tope: topeTexto, preventa } = useLocalSearchParams();
+  const { id, codigo, tope: topeTexto, preventa, sala } = useLocalSearchParams();
   const enPreventa = preventa === '1';
   const tope = topeTexto == null ? null : Number(topeTexto);
   const [prueba, setPrueba] = useState('');
@@ -49,16 +50,18 @@ function UsarSaldo() {
   const usar = async () => {
     setOcupado(true); setError('');
     try {
-      const r = await usarSaldoAFavor(id, pedido, prueba);
+      const r = await apartarSaldoAFavor(id, pedido, prueba);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       const queda = Number(r?.queda) > 0 ? ` Le quedan ${formatMoney(Number(r.queda))}.` : '';
       if (enPreventa) {
-        dejarSaldoUsado(Number(r?.monto ?? pedido));
-        listo('Saldo aplicado', `${formatMoney(Number(r?.monto ?? pedido))} se descuentan en esta venta.${queda}`);
+        dejarSaldoUsado({ uso_id: r.uso_id, reserva_id: Number(id), monto: Number(r.monto), codigo: r.codigo, efectivo: Boolean(r.efectivo) });
+        listo('Saldo apartado', `${formatMoney(Number(r?.monto ?? pedido))} pagan parte de esta venta.${queda}`);
+        router.back();
       } else {
-        listo('Saldo listo para descontar', `Descuenta ${formatMoney(Number(r?.monto ?? pedido))} con puntos.${queda}`);
+        listo('Saldo apartado', `Factura el total a su nombre y aplica los ${formatMoney(Number(r?.monto ?? pedido))}.${queda}`);
+        if (sala) router.replace({ pathname: '/reserva-retirar', params: { id: String(r.uso_id), tipo: 'saldo', sala: String(sala) } });
+        else router.back();
       }
-      router.back();
     } catch (e) { fallo('No se pudo usar', mensajeAmigable(e, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };
 
@@ -75,7 +78,7 @@ function UsarSaldo() {
           </>
         ) : (
           <>
-            <Seccion titulo={fila.cliente ?? 'Cliente'} pie={enPreventa ? 'Lo que uses se descuenta en esta venta.' : 'Lo que uses pasa a sus puntos. En caja, factura a su nombre y descuéntalo con puntos.'}>
+            <Seccion titulo={fila.cliente ?? 'Cliente'} pie={enPreventa ? 'Lo que uses paga parte de esta venta. La factura sale por el total.' : 'Lo que uses paga parte de su compra. Factura el total a su nombre y después aplica el saldo.'}>
               <Dato rotulo="Tiene a favor" valor={formatMoney(tieneAFavor)} primero fuerte />
               <Dato rotulo="Vale hasta" valor={fechaTexto(fila.saldo_favor_vence, { day: 'numeric', month: 'short' })} />
             </Seccion>

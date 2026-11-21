@@ -25,7 +25,10 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
  *     resto se cobra en Cuentas por cobrar, con su forma de pago.
  * Sin nada pagado se entrega y se factura como cualquier venta.
  *
- * `referencia`: `{ reserva_id }` o `{ encargo_id }`.
+ * `referencia`: `{ reserva_id }`, `{ encargo_id }` o `{ saldo_uso_id }`.
+ *
+ * Un saldo a favor apartado (2026-11-21) se aplica igual: es un pago que ya
+ * entró, y la compra se factura completa. No hay nada que entregar.
  */
 export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
     const showToast = useToastStore((s) => s.showToast);
@@ -46,10 +49,13 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
     }, [sala, referencia]);
 
     const pagado = Number(v?.pagado ?? 0);
+    const esSaldo = v?.tipo === 'saldo';
     const todoEfectivo = v && Number(v.otras_formas) <= 0.004 && Number(v.en_linea) <= 0.004;
     // Contado sólo si TODO lo pagado fue efectivo de la caja y el resto también.
     const alContado = pagado > 0 && todoEfectivo && resto === 'efectivo';
     const sinPago = v && (pagado <= 0.004 || v.prueba || v.aplicado);
+    // Un saldo a favor no sabe cuánto falta: lo que falte es el resto de la compra.
+    const preguntaResto = todoEfectivo && (esSaldo || Number(v?.saldo) > 0.004);
     // Bodega lo confirmó más barato de lo que dejó en efectivo (2026-11-21): se le devuelve.
     const devolver = Number(v?.a_devolver ?? 0);
 
@@ -78,7 +84,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                 tipo: 'APLICA_ANTICIPO', aplicar: referencia, clave });
             if (r?.error || r?.ok === false) throw r.error || new Error('No se pudo hacer el vale.');
             if (r.aviso) showToast('El vale salió, con un pendiente', r.aviso, 'warning');
-            terminar('Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el anticipo de ${v.codigo}.${devolver > 0.004 ? ` Devuélvele ${formatMoney(devolver)}.` : ''}`);
+            terminar(esSaldo ? 'Saldo aplicado' : 'Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el ${esSaldo ? 'saldo a favor' : 'anticipo'} de ${v.codigo}.${devolver > 0.004 ? ` Devuélvele ${formatMoney(devolver)}.` : ''}`);
         } catch (e) {
             showToast('No se pudo hacer el vale', mensajeAmigable(e), 'error');
         } finally {
@@ -106,7 +112,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
             if (r?.error || r?.ok === false) throw r.error || new Error('No se pudo abonar.');
             if (r.aviso) showToast('Abonado, con un pendiente', r.aviso, 'warning');
             const queda = Number(r.saldo_despues ?? 0);
-            terminar('Retirado', `${formatMoney(pagado)} del anticipo abonado al crédito.${queda > 0.004
+            terminar(esSaldo ? 'Saldo aplicado' : 'Retirado', `${formatMoney(pagado)} del ${esSaldo ? 'saldo a favor' : 'anticipo'} abonado al crédito.${queda > 0.004
                 ? ` Quedan ${formatMoney(queda)} por cobrar en Cuentas por cobrar.` : ''}`);
         } catch (e) {
             showToast('No se pudo abonar', mensajeAmigable(e), 'error');
@@ -117,7 +123,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
 
     return (
         <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Retirar lo apartado">
-            <LiquidModal.Header titulo={`Retirar ${v?.codigo ?? ''}`}
+            <LiquidModal.Header titulo={`${esSaldo ? 'Aplicar saldo' : 'Retirar'} ${v?.codigo ?? ''}`}
                 subtitulo={v ? `${v.producto} · ${v.cliente}` : null}
                 onClose={ocupado ? undefined : onClose} />
             <LiquidModal.Body>
@@ -125,12 +131,19 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                     <p className="text-body-sm text-content-3">Cargando…</p>
                 ) : (
                     <div className="space-y-4">
+                        {esSaldo ? (
+                            <dl className="grid grid-cols-2 gap-2 text-body-sm">
+                                <div><dt className="text-content-3">Saldo que paga</dt><dd className="font-semibold text-content">{formatMoney(pagado)}</dd></div>
+                                <div><dt className="text-content-3">Salió de</dt><dd className="font-semibold text-content">{todoEfectivo ? 'Efectivo' : 'Tarjeta o en línea'}</dd></div>
+                            </dl>
+                        ) : (
                         <dl className="grid grid-cols-3 gap-2 text-body-sm">
                             <div><dt className="text-content-3">Total</dt><dd className="font-semibold text-content">{formatMoney(Number(v.total))}</dd></div>
                             <div><dt className="text-content-3">Pagado</dt><dd className="font-semibold text-content">{formatMoney(pagado)}</dd></div>
                             <div><dt className="text-content-3">Falta</dt><dd className="font-semibold text-content">{formatMoney(Number(v.saldo))}</dd></div>
                         </dl>
-                        {pagado > 0 && !sinPago && (
+                        )}
+                        {pagado > 0 && !sinPago && !esSaldo && (
                             <p className="text-caption text-content-3">
                                 {[Number(v.efectivo) > 0 && `${formatMoney(Number(v.efectivo))} en efectivo`,
                                   Number(v.otras_formas) > 0 && `${formatMoney(Number(v.otras_formas))} con tarjeta o transferencia`,
@@ -139,18 +152,31 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                         )}
 
                         {!v.listo ? (
-                            <Notice variant="warning">Todavía no está listo para retirar.</Notice>
+                            <Notice variant="warning">{esSaldo ? 'Ese saldo ya no está apartado.' : 'Todavía no está listo para retirar.'}</Notice>
+                        ) : esSaldo && v.aplicado ? (
+                            <Notice variant="info" icon={Receipt}>El saldo ya se aplicó a su factura.</Notice>
                         ) : sinPago ? (
                             <Notice variant="info" icon={Receipt}>
                                 {v.aplicado ? 'El anticipo ya se aplicó a su factura.' : 'No tiene nada pagado.'} Factúralo como cualquier venta y márcalo entregado.
                             </Notice>
                         ) : (
                             <>
-                                {todoEfectivo && Number(v.saldo) > 0.004 && (
+                                {preguntaResto && (
                                     <SegmentedControl label="¿Cómo paga lo que falta?" value={resto} onChange={setResto}
                                         options={[{ value: 'efectivo', label: 'Efectivo' }, { value: 'otra', label: 'Tarjeta o transferencia' }]} />
                                 )}
-                                {alContado ? (
+                                {esSaldo ? (alContado ? (
+                                    <Notice variant="info" icon={Wallet}>
+                                        1. Factura <b>al contado</b> a nombre de {v.cliente} por el total de la compra y cobra en efectivo lo que falte.<br />
+                                        2. Aprieta «Hacer el vale». Saca de la caja los {formatMoney(pagado)} del saldo, porque la factura los vuelve a contar.
+                                    </Notice>
+                                ) : (
+                                    <Notice variant="info" icon={CreditCard}>
+                                        1. Factura <b>al crédito</b> a nombre de {v.cliente} por el total de la compra.<br />
+                                        2. Busca el crédito y abónale los {formatMoney(pagado)} del saldo (comprobante {v.codigo}).<br />
+                                        3. Cobra lo que falte en Cuentas por cobrar, con su forma de pago.
+                                    </Notice>
+                                )) : alContado ? (
                                     <Notice variant="info" icon={Wallet}>
                                         1. Factura <b>al contado</b> por {formatMoney(Number(v.total))}
                                         {Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.<br />
@@ -187,7 +213,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="ghost" onClick={onClose} disabled={ocupado}>Cancelar</Button>
-                {v?.listo && (sinPago ? (
+                {v?.listo && !(esSaldo && v.aplicado) && (sinPago ? (
                     <Button variant="primary" loading={ocupado} onClick={entregar}>Entregado</Button>
                 ) : alContado ? (
                     <Button variant="primary" loading={ocupado} onClick={hacerVale}>Hacer el vale</Button>

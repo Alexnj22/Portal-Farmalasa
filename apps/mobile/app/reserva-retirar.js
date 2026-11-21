@@ -32,7 +32,9 @@ const RESTO = [{ id: 'efectivo', label: 'Efectivo' }, { id: 'otra', label: 'Tarj
 
 function RetirarApartado() {
   const { id, tipo, sala } = useLocalSearchParams();
-  const referencia = tipo === 'encargo' ? { encargo_id: Number(id) } : { reserva_id: Number(id) };
+  // `tipo=saldo` (2026-11-21): un saldo a favor apartado se aplica igual que un anticipo.
+  const referencia = tipo === 'encargo' ? { encargo_id: Number(id) } : tipo === 'saldo' ? { saldo_uso_id: Number(id) } : { reserva_id: Number(id) };
+  const esSaldo = tipo === 'saldo';
   const [v, setV] = useState(null);
   const [error, setError] = useState(null);
   const [resto, setResto] = useState('efectivo');
@@ -42,7 +44,7 @@ function RetirarApartado() {
 
   useEffect(() => {
     let vivo = true;
-    fetchParaRetirar(sala, tipo === 'encargo' ? { encargo_id: Number(id) } : { reserva_id: Number(id) })
+    fetchParaRetirar(sala, tipo === 'encargo' ? { encargo_id: Number(id) } : tipo === 'saldo' ? { saldo_uso_id: Number(id) } : { reserva_id: Number(id) })
       .then((x) => { if (vivo) setV(x); })
       .catch((e) => { if (vivo) setError(mensajeAmigable(e)); });
     return () => { vivo = false; };
@@ -54,6 +56,8 @@ function RetirarApartado() {
   // Bodega lo confirmó más barato de lo que dejó en efectivo (2026-11-21): se le devuelve.
   const devolver = Number(v?.a_devolver ?? 0);
   const sinPago = v && (pagado <= 0.004 || v.prueba || v.aplicado);
+  const preguntaResto = todoEfectivo && (esSaldo || Number(v?.saldo) > 0.004);
+  const deQue = esSaldo ? 'saldo a favor' : 'anticipo';
 
   const correr = async (texto, fn) => {
     setOcupado(true); trabajando(texto);
@@ -74,14 +78,14 @@ function RetirarApartado() {
   });
 
   const hacerVale = () => Alert.alert(`¿Hacer el vale de ${formatMoney(Number(v.efectivo))}?`,
-    'Primero factura al contado por el total. El vale saca de la caja el anticipo, que la factura vuelve a contar.', [
+    `Primero factura al contado por el total. El vale saca de la caja el ${deQue}, que la factura vuelve a contar.`, [
       { text: 'Volver', style: 'cancel' },
       { text: 'Hacer el vale', onPress: () => correr('Haciendo el vale…', async () => {
         const r = await anotarSalida({ sala, monto: Number(v.efectivo), concepto: `Aplica anticipo ${v.codigo}`,
           tipo: 'APLICA_ANTICIPO', aplicar: referencia, clave });
         if (r?.error || r?.ok === false) throw r.error || new Error('No se pudo hacer el vale.');
         if (r.aviso) fallo('El vale salió, con un pendiente', r.aviso);
-        else listo('Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el anticipo de ${v.codigo}.${devolver > 0.004 ? ` Devuélvele ${formatMoney(devolver)}.` : ''}`);
+        else listo(esSaldo ? 'Saldo aplicado' : 'Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el ${deQue} de ${v.codigo}.${devolver > 0.004 ? ` Devuélvele ${formatMoney(devolver)}.` : ''}`);
       }) },
     ]);
 
@@ -101,34 +105,42 @@ function RetirarApartado() {
   const abonar = (c) => Alert.alert(`¿Abonar ${formatMoney(pagado)}?`,
     `Al crédito de la factura ${c.numero_doc || c.factura_erp}, con el comprobante ${v.codigo}.`, [
       { text: 'Volver', style: 'cancel' },
-      { text: 'Abonar', onPress: () => correr('Abonando el anticipo…', async () => {
+      { text: 'Abonar', onPress: () => correr(`Abonando el ${deQue}…`, async () => {
         const r = await aplicarAnticipoACredito({ sala, apartado: referencia, credito: c.credito_erp });
         if (r?.error || r?.ok === false) throw r.error || new Error('No se pudo abonar.');
         const queda = Number(r.saldo_despues ?? 0);
         if (r.aviso) fallo('Abonado, con un pendiente', r.aviso);
-        else listo('Retirado', queda > 0.004 ? `Quedan ${formatMoney(queda)} por cobrar en Cuentas por cobrar.` : 'El crédito quedó pagado.');
+        else listo(esSaldo ? 'Saldo aplicado' : 'Retirado', queda > 0.004 ? `Quedan ${formatMoney(queda)} por cobrar en Cuentas por cobrar.` : 'El crédito quedó pagado.');
       }) },
     ]);
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: v?.codigo ? `Retirar ${v.codigo}` : 'Retirar' }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: `${esSaldo ? 'Aplicar saldo' : 'Retirar'}${v?.codigo ? ` ${v.codigo}` : ''}` }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {error ? <Aviso tono="freno" texto={error} /> : !v ? <Indicador /> : (
           <>
-            <Seccion titulo={v.cliente ?? 'Cliente'} pie={v.producto}>
-              <Dato rotulo="Total" valor={formatMoney(Number(v.total))} />
-              <Dato rotulo="Pagado" valor={formatMoney(pagado)} />
-              <Dato rotulo="Falta" valor={formatMoney(Number(v.saldo))} fuerte />
-            </Seccion>
-            {!v.listo ? <Aviso tono="cuidado" texto="Todavía no está listo para retirar." /> : sinPago ? (
+            {esSaldo ? (
+              <Seccion titulo={v.cliente ?? 'Cliente'} pie="Saldo a favor apartado para su factura.">
+                <Dato rotulo="Saldo que paga" valor={formatMoney(pagado)} fuerte />
+                <Dato rotulo="Salió de" valor={todoEfectivo ? 'Efectivo' : 'Tarjeta o en línea'} />
+              </Seccion>
+            ) : (
+              <Seccion titulo={v.cliente ?? 'Cliente'} pie={v.producto}>
+                <Dato rotulo="Total" valor={formatMoney(Number(v.total))} />
+                <Dato rotulo="Pagado" valor={formatMoney(pagado)} />
+                <Dato rotulo="Falta" valor={formatMoney(Number(v.saldo))} fuerte />
+              </Seccion>
+            )}
+            {!v.listo ? <Aviso tono="cuidado" texto={esSaldo ? 'Ese saldo ya no está apartado.' : 'Todavía no está listo para retirar.'} />
+            : esSaldo && v.aplicado ? <Aviso texto="El saldo ya se aplicó a su factura." /> : sinPago ? (
               <>
                 <Aviso texto={`${v.aplicado ? 'El anticipo ya se aplicó a su factura.' : 'No tiene nada pagado.'} Factúralo como cualquier venta y márcalo entregado.`} />
                 <BotonGrande texto={ocupado ? 'Entregando…' : 'Entregado'} color={MARCA.verde} deshabilitado={ocupado} onPress={entregar} />
               </>
             ) : (
               <>
-                {todoEfectivo && Number(v.saldo) > 0.004 ? (
+                {preguntaResto ? (
                   <>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>¿Cómo paga lo que falta?</Text>
                     <Segmentos opciones={RESTO} activa={resto} onCambiar={(x) => { setResto(x); setCandidatos(null); }} margen={0} />
@@ -136,13 +148,17 @@ function RetirarApartado() {
                 ) : null}
                 {alContado ? (
                   <>
-                    <Aviso texto={`1. Factura AL CONTADO por ${formatMoney(Number(v.total))}${Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.\n2. Haz el vale: saca de la caja los ${formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.${devolver > 0.004
+                    <Aviso texto={esSaldo
+                      ? `1. Factura AL CONTADO a nombre de ${v.cliente} por el total de la compra y cobra en efectivo lo que falte.\n2. Haz el vale: saca de la caja los ${formatMoney(pagado)} del saldo, que la factura vuelve a contar.`
+                      : `1. Factura AL CONTADO por ${formatMoney(Number(v.total))}${Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.\n2. Haz el vale: saca de la caja los ${formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.${devolver > 0.004
                       ? `\n3. Devuélvele ${formatMoney(devolver)} en efectivo al cliente: Bodega lo consiguió más barato.` : ''}`} />
                     <BotonGrande texto={ocupado ? 'Haciendo el vale…' : 'Hacer el vale'} color={MARCA.verde} deshabilitado={ocupado} onPress={hacerVale} />
                   </>
                 ) : (
                   <>
-                    <Aviso texto={`1. Factura AL CRÉDITO a nombre de ${v.cliente} por ${formatMoney(Number(v.total))}.\n2. Busca el crédito y abónale los ${formatMoney(pagado)} ya pagados (comprobante ${v.codigo}).${Number(v.saldo) > 0.004 ? `\n3. Cobra los ${formatMoney(Number(v.saldo))} que faltan en Cuentas por cobrar.` : ''}`} />
+                    <Aviso texto={esSaldo
+                      ? `1. Factura AL CRÉDITO a nombre de ${v.cliente} por el total de la compra.\n2. Busca el crédito y abónale los ${formatMoney(pagado)} del saldo (comprobante ${v.codigo}).\n3. Cobra lo que falte en Cuentas por cobrar.`
+                      : `1. Factura AL CRÉDITO a nombre de ${v.cliente} por ${formatMoney(Number(v.total))}.\n2. Busca el crédito y abónale los ${formatMoney(pagado)} ya pagados (comprobante ${v.codigo}).${Number(v.saldo) > 0.004 ? `\n3. Cobra los ${formatMoney(Number(v.saldo))} que faltan en Cuentas por cobrar.` : ''}`} />
                     {candidatos ? (candidatos.length ? (
                       <Seccion titulo="Sus créditos de estos días">
                         {candidatos.map((c) => (

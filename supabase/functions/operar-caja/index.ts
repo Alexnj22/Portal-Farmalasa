@@ -2378,11 +2378,13 @@ Deno.serve(async (req) => {
        * al crédito, ver `aplicar_anticipo` de creditos-erp). Una vez por
        * reserva o encargo: lo frena su índice único. */
       const esAplicaAnticipo = !esEntrada && String(body.tipo ?? "") === "APLICA_ANTICIPO";
-      let aplicaRef: { reserva_id?: number; encargo_id?: number } | null = null;
+      let aplicaRef: { reserva_id?: number; encargo_id?: number; saldo_uso_id?: number } | null = null;
       if (esAplicaAnticipo) {
         const ref = body.aplicar && typeof body.aplicar === "object" ? body.aplicar as Record<string, unknown> : null;
-        if (!ref || !(ref.reserva_id || ref.encargo_id)) return json({ ok: false, error: "Falta qué se retira." }, 400);
-        aplicaRef = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) } : { encargo_id: Number(ref.encargo_id) };
+        if (!ref || !(ref.reserva_id || ref.encargo_id || ref.saldo_uso_id)) return json({ ok: false, error: "Falta qué se retira." }, 400);
+        // Un saldo a favor apartado para pagar una factura (2026-11-21) se aplica igual que un anticipo.
+        aplicaRef = ref.reserva_id ? { reserva_id: Number(ref.reserva_id) }
+          : ref.encargo_id ? { encargo_id: Number(ref.encargo_id) } : { saldo_uso_id: Number(ref.saldo_uso_id) };
         const { data: v, error: errV } = await supabase.rpc("apartado_para_retirar", { p_branch_id: sala, p_apartado: aplicaRef });
         if (errV || !v) return json({ ok: false, error: errV?.message || "No se pudo leer lo apartado." }, 409);
         if (v.aplicado) return json({ ok: false, error: "El anticipo de esto ya se aplicó." }, 409);

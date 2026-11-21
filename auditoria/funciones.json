@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-17T15:39:51.348Z",
+ "generado": "2026-11-21T16:02:48.683Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -1449,6 +1449,10 @@
    "area": "ventas",
    "por": "cron"
   },
+  "cobro_caja_ensayo_comparar": {
+   "area": "cortes-efectivo",
+   "por": "cron"
+  },
   "cobros_portal_en_efectivo": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -1463,6 +1467,10 @@
   },
   "cola_espejo_portal_erp": {
    "area": "facturacion-dte",
+   "por": "código"
+  },
+  "como_va_la_sala_hoy": {
+   "area": "plataforma",
    "por": "código"
   },
   "compactar_busqueda": {
@@ -1680,8 +1688,8 @@
    "por": "código"
   },
   "conteo_busqueda_aproximada": {
-   "area": "inventario",
-   "por": "código"
+   "area": "productos",
+   "por": "tablas"
   },
   "conteo_caja_encolar": {
    "area": "inventario",
@@ -2635,11 +2643,11 @@
    "area": "app-clientes",
    "por": "llamada"
   },
-  "encargo_vincular_producto": {
+  "encargo_sin_anticipo": {
    "area": "app-clientes",
    "por": "código"
   },
-  "encargo_sin_anticipo": {
+  "encargo_vincular_producto": {
    "area": "app-clientes",
    "por": "código"
   },
@@ -2781,6 +2789,10 @@
    "por": "código"
   },
   "encuesta_cliente_limpiar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_lugares_de_campo": {
    "area": "encuestas-clientes",
    "por": "código"
   },
@@ -3260,8 +3272,8 @@
    "por": "código"
   },
   "get_conteo_products_count": {
-   "area": "inventario",
-   "por": "código"
+   "area": "productos",
+   "por": "tablas"
   },
   "get_conteo_products_page": {
    "area": "inventario",
@@ -3520,8 +3532,8 @@
    "por": "código"
   },
   "get_meta_sala": {
-   "area": "plataforma",
-   "por": "transversal"
+   "area": "metas",
+   "por": "código"
   },
   "get_metas_autorizadores": {
    "area": "metas",
@@ -4178,6 +4190,10 @@
    "area": "acceso",
    "por": "código"
   },
+  "kiosco_caja_estado": {
+   "area": "acceso",
+   "por": "código"
+  },
   "kiosco_cubre_empleado": {
    "area": "personal",
    "por": "tablas"
@@ -4199,8 +4215,8 @@
    "por": "código"
   },
   "kiosco_sucursal": {
-   "area": "acceso",
-   "por": "tablas"
+   "area": "app-clientes",
+   "por": "código"
   },
   "kiosco_ticket_emitir": {
    "area": "acceso",
@@ -4770,6 +4786,10 @@
    "area": "minmax",
    "por": "trigger"
   },
+  "notificar_vence_corto": {
+   "area": "compras",
+   "por": "código"
+  },
   "notify_branch": {
    "area": "compras",
    "por": "llamada"
@@ -4822,6 +4842,10 @@
    "area": "minmax",
    "por": "llamada"
   },
+  "para_vender_en_la_sala": {
+   "area": "metas",
+   "por": "código"
+  },
   "parte_como_en_la_ficha": {
    "area": "personal",
    "por": "llamada"
@@ -4848,7 +4872,7 @@
    "manual": true
   },
   "podar_renglones_de_compra": {
-   "area": "compras",
+   "area": "facturacion-dte",
    "por": "código"
   },
   "pos_de_otra_sala": {
@@ -4884,6 +4908,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "preventa_credito_del_cliente": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
+  },
   "preventa_directa_preparar": {
    "area": "app-clientes",
    "por": "código"
@@ -4905,7 +4933,7 @@
    "por": "tablas"
   },
   "preventa_puntos_del_cliente": {
-   "area": "facturacion-dte",
+   "area": "ventas",
    "por": "tablas"
   },
   "preventa_registrar": {
@@ -4919,6 +4947,10 @@
   "preventas_de_sala": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "preventas_soltar_saldo": {
+   "area": "app-clientes",
+   "por": "trigger"
   },
   "preview_metas_gasto": {
    "area": "metas",
@@ -5823,6 +5855,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "reserva_amarrar_a_venta": {
+   "area": "app-clientes",
+   "por": "código"
+  },
   "reserva_amarrar_traslados": {
    "area": "app-clientes",
    "por": "tablas"
@@ -6218,13 +6254,37 @@
    "area": "ventas",
    "por": "tablas"
   },
+  "saldo_favor_apartar": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
   "saldo_favor_buscar": {
-   "area": "app-clientes",
+   "area": "cortes-efectivo",
    "por": "código"
   },
   "saldo_favor_dias": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "saldo_favor_es_efectivo": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "saldo_favor_ligar_preventa": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "saldo_favor_por_aplicar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "saldo_favor_soltar": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "saldo_favor_soltar_sin_permiso": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "sales_invoice_items_congelar_costo": {
    "area": "ventas",
@@ -6443,11 +6503,11 @@
    "por": "código"
   },
   "sync_purchase_receipt_items_batch": {
-   "area": "compras",
+   "area": "facturacion-dte",
    "por": "código"
   },
   "sync_purchase_receipts_batch": {
-   "area": "compras",
+   "area": "facturacion-dte",
    "por": "código"
   },
   "sync_suppliers_batch": {

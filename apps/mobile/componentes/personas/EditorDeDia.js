@@ -13,7 +13,7 @@ import { Presionable as Pressable } from '../Tocable';
 import Conmutador from '../Interruptor';
 import { resolverTurnoDelDia } from '@nucleo/utils/turnoDelDia';
 import {
-  datosDelDiaParaGuardar, horasDelTurno, limitesDeLaSalaElDia, reparosDeLaCelda, turnosQueCabenElDia,
+  avisosDeLaCelda, datosDelDiaParaGuardar, horasDelTurno, limitesDeLaSalaElDia, reparosDeLaCelda, turnosQueCabenElDia,
 } from '@nucleo/utils/edicionDeHorario';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -87,6 +87,8 @@ export default function EditorDeDia({ fecha, dia, actual, turnos, sala, onGuarda
       .map((r) => `${DIAS.find((x) => x.id === d)?.largo}: ${r}`));
     return [...propios, ...otros];
   }, [f, turnos, limites, dias, dia, sala]);
+  // Las horas extra se dicen y no frenan (como en el portal, 2026-11-21).
+  const avisos = useMemo(() => avisosDeLaCelda(f, turnos), [f, turnos]);
 
   const opciones = [
     { id: 'OFF', label: 'Libre / descanso' },
@@ -154,6 +156,7 @@ export default function EditorDeDia({ fecha, dia, actual, turnos, sala, onGuarda
       ) : null}
 
       {reparos.map((r) => <Aviso key={r} tono="freno" texto={r} />)}
+      {reparos.length === 0 ? avisos.map((t) => <Aviso key={t} tono="cuidado" texto={t} />) : null}
       <BotonGrande texto={guardando ? 'Guardando…' : dias.length > 1 ? `Guardar ${dias.length} días` : trabaja ? 'Guardar el día' : 'Asignar descanso'} color={trabaja ? MARCA.azul : MARCA.violeta}
         deshabilitado={guardando || reparos.length > 0}
         onPress={() => onGuardar(datosDelDiaParaGuardar(f), dias)} />

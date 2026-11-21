@@ -15,7 +15,7 @@ import {
     resolverTurnoDelDia, tramosDeLaJornada, aMinutos,
 } from './turnoDelDia';
 export {
-    claveDeDia, resolverTurnoDelDia, tramosDeLaJornada, reparosDelDia,
+    claveDeDia, resolverTurnoDelDia, tramosDeLaJornada, reparosDelDia, avisosDelDia,
     descansoInsuficiente, aMinutos, aHora,
     HORAS_SEMANA_DIURNA, HORAS_SEMANA_NOCTURNA,
     HORAS_JORNADA_DIURNA, HORAS_JORNADA_NOCTURNA,

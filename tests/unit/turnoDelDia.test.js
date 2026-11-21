@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     resolverTurnoDelDia, minutosNocturnosDe, tramosDeLaJornada,
-    reparosDelDia, descansoInsuficiente, claveDeDia, aMinutos, aHora,
+    reparosDelDia, avisosDelDia, descansoInsuficiente, claveDeDia, aMinutos, aHora,
     HORAS_SEMANA_DIURNA, HORAS_JORNADA_DIURNA,
 } from '@nucleo/utils/turnoDelDia';
 
@@ -188,9 +188,12 @@ describe('los tramos que se pintan', () => {
 });
 
 describe('reparos del reglamento', () => {
-    it('una jornada de más de ocho horas se reporta', () => {
-        const r = resolverTurnoDelDia({ customStart: '07:00', customEnd: '17:00' }, TURNOS);
-        expect(reparosDelDia(r).join(' ')).toMatch(/limita a 8/);
+    // Pasar de ocho horas son horas extra: se avisan y NO frenan el guardado
+    // (2026-11-21, el domingo de 10 h de La Popular no se podía editar).
+    it('una jornada de más de ocho horas es un aviso de horas extra, no un reparo', () => {
+        const r = resolverTurnoDelDia({ customStart: '08:00', customEnd: '19:00', hasLunch: true, lunchStart: '12:30' }, TURNOS);
+        expect(reparosDelDia(r)).toEqual([]);
+        expect(avisosDelDia(r)).toEqual(['La jornada dura 10 h: 2 h son extra.']);
     });
 
     it('con la pausa descontada, 7:00 a 16:00 cabe en las ocho', () => {
@@ -200,7 +203,8 @@ describe('reparos del reglamento', () => {
 
     it('la jornada nocturna se limita a siete', () => {
         const r = resolverTurnoDelDia({ customStart: '20:00', customEnd: '04:00' }, TURNOS);
-        expect(reparosDelDia(r).join(' ')).toMatch(/nocturna/);
+        expect(avisosDelDia(r).join(' ')).toMatch(/1 h son extra.*nocturna/);
+        expect(avisosDelDia(resolverTurnoDelDia({ customStart: '07:00', customEnd: '15:00' }, TURNOS))).toEqual([]);
     });
 
     // La ventana fija de 11:00 a 14:30 que había en el editor rechazaba estas

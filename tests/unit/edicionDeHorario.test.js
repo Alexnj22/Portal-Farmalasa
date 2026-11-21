@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    datosDelDiaParaGuardar, gruposDelCatalogo, limitesDeLaSalaElDia, reparosDeLaCelda,
+    avisosDeLaCelda, datosDelDiaParaGuardar, gruposDelCatalogo, HORAS_PROPIAS, limitesDeLaSalaElDia, reparosDeLaCelda,
     revisionDelTurno, turnosQueCabenElDia,
 } from '@nucleo/utils/edicionDeHorario';
 
@@ -28,6 +28,17 @@ describe('edicionDeHorario', () => {
         expect(datosDelDiaParaGuardar({ turno: '', inicio: '' })).toMatchObject({ isOff: true });
         expect(datosDelDiaParaGuardar({ turno: '1', inicio: '07:00', fin: '15:00', conPausa: true, pausa: '12:00' }))
             .toEqual({ shiftId: '1', customStart: '07:00', customEnd: '15:00', hasLunch: true, lunchStart: '12:00', hasLactation: false, lactationStart: null, isOff: false });
+    });
+    it('«Horas propias» se guarda sin turno y con sus horas', () => {
+        expect(datosDelDiaParaGuardar({ turno: HORAS_PROPIAS, inicio: '13:00', fin: '21:00' }))
+            .toMatchObject({ shiftId: '', customStart: '13:00', customEnd: '21:00', isOff: false });
+        expect(reparosDeLaCelda({ turno: HORAS_PROPIAS, inicio: '13:00', fin: '21:00' }, [], {})).toEqual([]);
+    });
+    it('las horas extra se avisan y no son reparo', () => {
+        const celda = { turno: HORAS_PROPIAS, inicio: '08:00', fin: '20:00', conPausa: true, pausa: '12:00' };
+        expect(reparosDeLaCelda(celda, [], {})).toEqual([]);
+        expect(avisosDeLaCelda(celda, [])).toEqual(['La jornada dura 11 h: 3 h son extra.']);
+        expect(avisosDeLaCelda({ turno: 'OFF' }, [])).toEqual([]);
     });
     it('no deja entrada igual a salida', () => {
         expect(reparosDeLaCelda({ turno: '', inicio: '08:00', fin: '08:00' }, [], {})).toHaveLength(1);

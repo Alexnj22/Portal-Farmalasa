@@ -251,13 +251,11 @@ export function reparosDelDia(resuelto, { horaDeApertura = null, horaDeCierre = 
     const reparos = [];
     if (!resuelto?.trabaja) return reparos;
 
-    const horas = resuelto.minutosPagados / 60;
-    const tope  = resuelto.esJornadaNocturna ? HORAS_JORNADA_NOCTURNA : HORAS_JORNADA_DIURNA;
-    if (horas > tope) {
-        reparos.push(resuelto.esJornadaNocturna
-            ? `La jornada es nocturna y dura ${redondear(horas)} h: el reglamento la limita a ${HORAS_JORNADA_NOCTURNA}.`
-            : `La jornada dura ${redondear(horas)} h y el reglamento la limita a ${HORAS_JORNADA_DIURNA}.`);
-    }
+    // La jornada más larga que el tope NO es un reparo: son horas extra, y el
+    // Código de Trabajo las permite (se pagan con recargo). Hasta el
+    // 2026-11-21 estaba acá y el editor no dejaba guardar el domingo de 10 h
+    // que la sala trabaja de verdad, mientras la grilla lo pintaba igual. Vive
+    // en `avisosDelDia`: se dice, no frena.
 
     if (resuelto.pausa) {
         let ini = aMinutos(resuelto.inicio);
@@ -298,6 +296,21 @@ export function reparosDelDia(resuelto, { horaDeApertura = null, horaDeCierre = 
     }
 
     return reparos;
+}
+
+/** Lo que conviene saber de un día y NO impide guardarlo. Hoy, las horas
+ *  extra: lo que pasa de 8 h (7 si la jornada es nocturna, Art. 16) se paga
+ *  como extraordinario desde el límite DIARIO, sin compensar entre días. */
+export function avisosDelDia(resuelto) {
+    const avisos = [];
+    if (!resuelto?.trabaja) return avisos;
+    const horas = resuelto.minutosPagados / 60;
+    const tope  = resuelto.esJornadaNocturna ? HORAS_JORNADA_NOCTURNA : HORAS_JORNADA_DIURNA;
+    if (horas > tope) {
+        const extra = redondear(horas - tope);
+        avisos.push(`La jornada dura ${redondear(horas)} h: ${extra} h son extra${resuelto.esJornadaNocturna ? ' (es nocturna, su jornada es de 7 h)' : ''}.`);
+    }
+    return avisos;
 }
 
 /** RIT Art. 21 · entre el fin de una jornada y el inicio de la siguiente deben

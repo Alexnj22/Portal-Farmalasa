@@ -488,7 +488,9 @@ const ScheduleCalendar = memo(({
         return employeesInView.filter(emp => !emp.esPracticante).map(emp => {
             let rawSchedule = weeklyRosters[emp.id] || {};
             const parsed = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
-            return { ...parsed, name: emp.name };
+            // Nombre corto, como la app: el aviso de almuerzos salía con los
+            // cuatro nombres de cada persona (2026-11-21).
+            return { ...parsed, name: shortEmployeeName(emp) };
         });
     }, [employeesInView, weeklyRosters]);
 

@@ -10,7 +10,7 @@ import { X, Bot, Clock, Flame, AlertTriangle, Building2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
 import { useStaffStore } from '@nucleo/store/staffStore'; 
-import { timeToMins, formatHourAMPM, resolverTurnoDelDia, reparosDelDia } from '@nucleo/utils/scheduleHelpers';
+import { timeToMins, formatHourAMPM, resolverTurnoDelDia, reparosDelDia, avisosDelDia } from '@nucleo/utils/scheduleHelpers';
 import ModalShell from '../../../components/common/ModalShell';
 import HojaMovil from '../../../components/common/HojaMovil';
 import useMediaQuery from '../../../plataforma/useMediaQuery';
@@ -20,7 +20,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia } from '@nucleo/utils/edicionDeHorario';
+import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia, HORAS_PROPIAS } from '@nucleo/utils/edicionDeHorario';
 
 import IconoEnCaja from '../../../components/common/IconoEnCaja';
 // «16:00» → «4:00 p. m.», del canónico.
@@ -35,6 +35,9 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const [shiftId, setShiftId] = useState(() => {
         if (currentData?.shiftId) return String(currentData.shiftId);
         if (currentData?.isOff) return 'OFF';
+        // Un día con horas y sin turno del catálogo es «Horas propias»: así
+        // lo dice el desplegable en vez de quedar en «Seleccionar turno…».
+        if (currentData?.customStart) return HORAS_PROPIAS;
         return '';
     });
     
@@ -56,7 +59,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     // Sale de `resolverTurnoDelDia`, igual que la pantalla, el kiosco y la
     // planilla. Antes acá había una copia con su propia aritmética.
     const resuelto = useMemo(() => resolverTurnoDelDia({
-        shiftId: showTimePickers ? shiftId : '',
+        shiftId: (showTimePickers && shiftId !== HORAS_PROPIAS) ? shiftId : '',
         customStart, customEnd,
         hasLunch, lunchStart,
         hasLactation, lactationStart,
@@ -102,6 +105,9 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             : {});
     }, [resuelto, showTimePickers, customStart, customEnd, branchLimits]);
 
+    // Lo que se dice sin frenar: las horas extra (`avisosDelDia`).
+    const avisos = useMemo(() => (showTimePickers ? avisosDelDia(resuelto) : []), [resuelto, showTimePickers]);
+
     // Los turnos que caben ese día: núcleo (`turnosQueCabenElDia`), el mismo de la app.
     const filteredShifts = useMemo(() => {
         if (!shifts || !filterBranch) return [];
@@ -118,7 +124,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const elegirTurno = (nuevo) => {
         if (nuevo === shiftId) return;
         setShiftId(nuevo);
-        if (!nuevo || nuevo === 'OFF' || nuevo === 'NO_SHIFTS') return;
+        if (!nuevo || nuevo === 'OFF' || nuevo === 'NO_SHIFTS' || nuevo === HORAS_PROPIAS) return;
         const template = filteredShifts.find(s => String(s.id) === String(nuevo));
         if (!template) return;
         setCustomStart(template.start_time?.substring(0, 5) || template.start);
@@ -215,12 +221,16 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         if (branchLimits.isClosedToday) {
             return [...baseOptions, { value: 'NO_SHIFTS', label: 'La sucursal cierra este día' }];
         }
+        // «Horas propias» va siempre: sin ella, con el catálogo vacío o sin un
+        // turno que quepa, un descanso no se podía volver día trabajado
+        // (2026-11-21). La app ya la tenía.
+        const horasPropias = { value: HORAS_PROPIAS, label: 'Horas propias' };
         if (filteredShifts.length === 0) {
-            return [...baseOptions, { value: 'NO_SHIFTS', label: 'Ningún turno cabe en este horario' }];
+            return [...baseOptions, horasPropias];
         }
 
         return [
-            ...baseOptions, 
+            ...baseOptions, horasPropias,
             ...filteredShifts.map(s => {
                 const startRaw = s.start_time?.substring(0, 5) || s.start?.substring(0, 5) || '';
                 const endRaw = s.end_time?.substring(0, 5) || s.end?.substring(0, 5) || '';
@@ -240,6 +250,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     // (2026-11-14). Antes «no elegiste turno» apagaba el botón sin decir nada.
     const queFalta = shiftId === 'NO_SHIFTS' ? { texto: 'Ningún turno cabe este día. Elige «Libre / descanso».', campo: 'turno' }
         : (!shiftId && !customStart) ? { texto: 'Elige un turno.', campo: 'turno' }
+        : (shiftId === HORAS_PROPIAS && (!customStart || !customEnd)) ? { texto: 'Escribe la entrada y la salida.', campo: 'horas' }
         : reparos.length > 0 ? { texto: reparos[0], campo: 'horas' }
         : null;
     const isSaveDisabled = Boolean(queFalta);
@@ -369,6 +380,17 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                 )}
                             </div>
                             
+                        </div>
+                    )}
+
+                    {avisos.length > 0 && reparos.length === 0 && (
+                        <div data-surface="card" data-tono="warning" className="p-3 flex gap-2.5 mt-2">
+                            <Flame size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
+                            <div className="flex flex-col gap-1">
+                                {avisos.map((t, i) => (
+                                    <p key={i} className="text-label font-medium text-warning-text leading-snug">{t}</p>
+                                ))}
+                            </div>
                         </div>
                     )}
 

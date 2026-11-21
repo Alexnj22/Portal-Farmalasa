@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1591.2 — Horarios: horas propias sin catálogo y las horas extra avisan sin frenar
+
+Auditoría de Horarios del 2026-11-21, con La Popular como primera sala con
+horario real (cargado del CSV del usuario):
+
+- **Las horas extra ya no frenan el guardado.** `reparosDelDia` trataba una
+  jornada de más de 8 h (7 nocturna) como reparo, así que el editor no dejaba
+  guardar el domingo de 10 h ni el sábado de 11 h que la sala trabaja, mientras
+  la grilla los pintaba igual. El Código de Trabajo las permite (se pagan como
+  extraordinarias desde el límite diario): ahora viven en `avisosDelDia` /
+  `avisosDeLaCelda` y se dicen («La jornada dura 10 h: 2 h son extra.») sin
+  apagar Guardar. Portal y app.
+- **«Horas propias» en el editor del portal.** Con el catálogo de turnos vacío
+  (o sin un turno que quepa) el desplegable sólo ofrecía «Libre» y «Ningún
+  turno cabe», que bloqueaba: un descanso no se podía volver día trabajado. La
+  app ya tenía la opción; ahora el portal también (`HORAS_PROPIAS`, que se
+  guarda como `shiftId: ''`, la forma de siempre). Un día manual abre como
+  «Horas propias» en vez de «Seleccionar turno…».
+- **El aviso de almuerzos usa el nombre corto** (`shortEmployeeName`): salía
+  con los cuatro nombres de cada persona. La app ya lo pasaba corto.
+
+Verificado en el entorno de pruebas (La Popular, catálogo vacío): el día de
+10 h abre como «Horas propias», avisa las 2 h extra, guarda y escribe
+`shiftId: ''`. Pruebas de `turnoDelDia` y `edicionDeHorario` en verde.
+
 ## v2.1591.1 — Inventario y rebajas exigen permiso y alcance
 
 Seguridad (base de datos, migración `20261121163052`). Hallado en la auditoría

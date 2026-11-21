@@ -10,9 +10,14 @@
 //
 // El día en sí lo sigue resolviendo `resolverTurnoDelDia` (un día de horario se
 // resuelve en UN solo sitio): acá sólo se arma lo que se le pasa y lo que sale.
-import { aMinutos, resolverTurnoDelDia, reparosDelDia } from './turnoDelDia';
+import { aMinutos, resolverTurnoDelDia, reparosDelDia, avisosDelDia } from './turnoDelDia';
 import { tokenMatch } from './searchUtils';
 import { hora12 } from './hora';
+
+/** El valor del desplegable para «escribo la entrada y la salida» sin turno
+ *  del catálogo. En el portal el selector no admite un valor vacío como
+ *  opción (es el «sin elegir»); la app usa `''`. Los dos se guardan igual. */
+export const HORAS_PROPIAS = 'HORAS_PROPIAS';
 
 const hhmm = (t) => (t ? String(t).substring(0, 5) : '');
 const horaLimpia = (t) => String(t || '').replace(/[^0-9:]/g, '').trim();
@@ -98,12 +103,13 @@ export function horasDelTurno(turno) {
 
 /**
  * Lo que se escribe para un día. `turno` es el id del catálogo, `'OFF'` para
- * libre, o vacío para horas propias. Un día sin turno y sin hora de entrada
- * queda libre. Es la forma exacta que leen el kiosco, la planilla y la grilla.
+ * libre, o vacío / `HORAS_PROPIAS` para horas propias. Un día sin turno y sin
+ * hora de entrada queda libre. Es la forma exacta que leen el kiosco, la
+ * planilla y la grilla.
  */
 export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, conLactancia, lactancia }) {
     const libreElegido = turno === 'OFF';
-    const id = (libreElegido || turno === 'NO_SHIFTS') ? '' : (turno || '');
+    const id = (libreElegido || turno === 'NO_SHIFTS' || turno === HORAS_PROPIAS) ? '' : (turno || '');
     const libre = libreElegido || (!id && !inicio);
     return {
         shiftId: id,
@@ -122,11 +128,20 @@ export function reparosDeLaCelda({ turno, inicio, fin, conPausa, pausa, conLacta
     if (turno === 'OFF' || turno === 'NO_SHIFTS') return [];
     if (inicio && fin && aMinutos(inicio) === aMinutos(fin)) return ['La hora de entrada y la de salida no pueden ser la misma.'];
     const r = resolverTurnoDelDia({
-        shiftId: turno || '', customStart: inicio, customEnd: fin,
+        shiftId: turno === HORAS_PROPIAS ? '' : (turno || ''), customStart: inicio, customEnd: fin,
         hasLunch: conPausa, lunchStart: pausa, hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
     }, turnos || []);
     return reparosDelDia(r, limites?.hayHorario && !limites.cerrada
         ? { horaDeApertura: limites.apertura, horaDeCierre: limites.cierre } : {});
+}
+
+/** Lo que conviene saber de una celda y no impide guardarla (horas extra). */
+export function avisosDeLaCelda({ turno, inicio, fin, conPausa, pausa, conLactancia, lactancia }, turnos) {
+    if (turno === 'OFF' || turno === 'NO_SHIFTS') return [];
+    return avisosDelDia(resolverTurnoDelDia({
+        shiftId: turno === HORAS_PROPIAS ? '' : (turno || ''), customStart: inicio, customEnd: fin,
+        hasLunch: conPausa, lunchStart: pausa, hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
+    }, turnos || []));
 }
 
 /**
@@ -169,7 +184,7 @@ export function revisionDelTurno(form, turnos, editando = null) {
             customStart: form.start, customEnd: form.end,
             hasLunch: Boolean(form.lunchStart), lunchStart: form.lunchStart, lunchMinutes: form.lunchMinutes,
         }, []);
-        reparosDelDia(r).forEach((texto) => alertas.push({ type: 'warning', text: texto }));
+        [...avisosDelDia(r), ...reparosDelDia(r)].forEach((texto) => alertas.push({ type: 'warning', text: texto }));
         const repetido = (turnos || []).some((t) => esActivo(t)
             && iniDe(t) === form.start && finDe(t) === form.end
             && (editando ? !editando.all_ids.includes(t.id) : true));

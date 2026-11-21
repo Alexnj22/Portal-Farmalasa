@@ -743,7 +743,29 @@
       "guarda": "alcance"
     },
     "para_vender_en_la_sala": {
-      "guarda": "alcance"
+      "guarda": "alcance",
+      "motivo": "Guarda `preventa_puede(auth_employee_id(), p_branch, ...)`: la sala propia, las que cubre ahora o scope ALL del módulo preventa."
+    },
+    "preventa_cliente": {
+      "guarda": "alcance",
+      "motivo": "Guarda `preventa_puede(auth_employee_id(), p_branch, ...)`: la sala propia, las que cubre ahora o scope ALL del módulo preventa."
+    },
+    "preventa_lotes": {
+      "guarda": "alcance",
+      "motivo": "Guarda `preventa_puede(auth_employee_id(), p_branch, ...)`: la sala propia, las que cubre ahora o scope ALL del módulo preventa."
+    },
+    "preventa_cotizar": {
+      "guarda": "alcance",
+      "motivo": "Guarda `preventa_puede(auth_employee_id(), p_branch, ...)`: la sala propia, las que cubre ahora o scope ALL del módulo preventa. Sin sesión (auth.uid() nulo) la llama sólo el servidor."
+    },
+    "preventas_de_sala": {
+      "guarda": "alcance",
+      "motivo": "Guarda `preventa_puede(auth_employee_id(), p_branch, ...)`: la sala propia, las que cubre ahora o scope ALL del módulo preventa."
+    },
+    "kiosco_ticket_emitir": {
+      "guarda": "modulo-de-red",
+      "modulos": ["kiosco_vincular"],
+      "motivo": "Emite el ticket que vincula un kiosco a una sucursal: sólo quien tiene kiosco_vincular (Supervisión de ventas), no la sala."
     },
     "get_meta_sala": {
       "guarda": "alcance"

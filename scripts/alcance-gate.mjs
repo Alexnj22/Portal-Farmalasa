@@ -78,7 +78,9 @@ const CON_MOTIVO = ['sin-sala', 'publica', 'deuda', 'modulo-de-red', 'cruza-por-
 const ALCANCE_EDGE = /\balcanceTodo\b|\bpuedeObrarPor\b/;
 // `reserva_puede_manejar` (2026-10-21): la sala de la ficha O la de su horario
 // de hoy (`empleado_sala_de_hoy`), o quien edita ofertas — la guarda única de reservas.
-const ALCANCE_RPC = /auth_module_scope|auth_employee_branch_id|auth_employee_erp_sucursal_id|auth_can_edit_scope_all|alcance_de_ventas|bitacora_exigir_acceso|facturas_sala_guarda|reserva_puede_manejar/i;
+const ALCANCE_RPC = /auth_module_scope|auth_employee_branch_id|auth_employee_erp_sucursal_id|auth_can_edit_scope_all|alcance_de_ventas|bitacora_exigir_acceso|facturas_sala_guarda|reserva_puede_manejar|preventa_puede/i;
+// `preventa_puede` (2026-11-21): compara `e.branch_id = p_branch`, scope ALL o las
+// salas que cubre ahora — es la guarda de sala de toda la familia de Preventa.
 /* El secreto se valida con el ayudante o escrito a mano contra el encabezado
  * (`apply-scheduled-employee-events`, `backup-critical-tables`): las dos formas
  * cuentan, lo que no cuenta es nombrarlo sin compararlo. */

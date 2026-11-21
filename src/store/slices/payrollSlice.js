@@ -451,7 +451,7 @@ export const createPayrollSlice = (set, get) => ({
                 const contrato = contratoDe.get(empId);
                 const inc = incapacidades.get(empId);
                 return diasPagadosDeQuincena(tsPorPersona.get(empId), {
-                    contratados: contrato.dias, desde: contrato.desde, hasta: contrato.hasta,
+                    contratados: contrato.dias, desde: contrato.desde, hasta: contrato.hasta, huecos: contrato.huecos,
                     incapacidadesValidadas: inc?.validadas, incapacidadesPendientes: inc?.pendientes,
                     suspensiones: suspensiones.get(empId),
                 });

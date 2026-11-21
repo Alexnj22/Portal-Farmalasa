@@ -178,19 +178,30 @@ export function esAusenciaDescontable(ts) {
  * 2026-10-22): ese día todavía cuenta y se paga. Que el cron la deje INACTIVO
  * esa madrugada no cambia la planilla.
  * Una baja anterior o igual al ingreso es de un contrato viejo (recontratación)
- * y no cuenta.
+ * y no cuenta — salvo que caiga DENTRO de esta misma quincena: entonces el
+ * contrato viejo también tuvo días acá y se pagan los dos tramos (2026-11-21:
+ * un interinato terminó el 18 y el contrato nuevo empezó el 23; la quincena
+ * pagaba sólo del 23 al 30 y se perdían el 16, 17 y 18). Los días entre los dos
+ * contratos no se pagan y van en `huecos`, para que una ausencia ahí no se
+ * descuente dos veces.
  *
- * Devuelve `{ dias, desde, hasta }`; `dias = 0` si no estuvo contratada.
+ * Devuelve `{ dias, desde, hasta, huecos }`; `dias = 0` si no estuvo contratada.
  */
 export function contratoEnQuincena({ start, end }, ingreso = null, baja = null) {
     const ing = diaDe(ingreso);
     const bj  = diaDe(baja);
+    if (ing && bj && bj < ing && bj >= start && ing <= end) {
+        const viejo = diasEntre(start, bj) + 1;
+        const nuevo = diasEntre(ing, end) + 1;
+        const huecos = diasEntre(bj, ing) > 1 ? [{ desde: sumarDias(bj, 1), hasta: sumarDias(ing, -1) }] : [];
+        return { dias: Math.min(DIAS_DE_QUINCENA, viejo + nuevo), desde: start, hasta: end, huecos };
+    }
     const desde = ing && ing > start ? ing : start;
     const ultimo = bj && (!ing || bj > ing) ? bj : null;
     const hasta = ultimo && ultimo < end ? ultimo : end;
-    if (hasta < desde) return { dias: 0, desde, hasta };
-    if (desde === start && hasta === end) return { dias: DIAS_DE_QUINCENA, desde, hasta };
-    return { dias: Math.min(DIAS_DE_QUINCENA, diasEntre(desde, hasta) + 1), desde, hasta };
+    if (hasta < desde) return { dias: 0, desde, hasta, huecos: [] };
+    if (desde === start && hasta === end) return { dias: DIAS_DE_QUINCENA, desde, hasta, huecos: [] };
+    return { dias: Math.min(DIAS_DE_QUINCENA, diasEntre(desde, hasta) + 1), desde, hasta, huecos: [] };
 }
 
 const enAlgunRango = (dia, rangos) => (rangos || []).some(r => r.desde <= dia && dia <= r.hasta);
@@ -231,9 +242,10 @@ const eventoAnulado = (ev) => {
  *           suspensiones?: Array<{desde, hasta, descuento: boolean|null}> }} [opciones]
  */
 export function diasPagadosDeQuincena(timesheets, opciones = {}) {
-    const { contratados = DIAS_DE_QUINCENA, desde = null, hasta = null,
+    const { contratados = DIAS_DE_QUINCENA, desde = null, hasta = null, huecos = [],
             incapacidadesValidadas = [], incapacidadesPendientes = [], suspensiones = [] } = opciones;
-    const dentro = (dia) => !((desde && dia < desde) || (hasta && dia > hasta));
+    // Fuera del contrato: antes, después, o en los días sin contrato entre dos.
+    const dentro = (dia) => !((desde && dia < desde) || (hasta && dia > hasta)) && !enAlgunRango(dia, huecos);
     const descontar = new Set();
     const pendientes = new Set();
     const suspPendientes = new Set();

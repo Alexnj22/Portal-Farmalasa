@@ -145,15 +145,28 @@ describe('ingreso o salida a mitad de quincena: según días contratados', () =>
         expect(contratoEnQuincena(q2, '2026-10-16', null).dias).toBe(15);
     });
     it('ingreso a mitad: desde su fecha de ingreso', () => {
-        expect(contratoEnQuincena(q1, '2026-10-10', null)).toEqual({ dias: 6, desde: '2026-10-10', hasta: '2026-10-15' });
+        expect(contratoEnQuincena(q1, '2026-10-10', null)).toEqual({ dias: 6, desde: '2026-10-10', hasta: '2026-10-15', huecos: [] });
         expect(contratoEnQuincena(q1, '2026-10-16', null).dias).toBe(0);
     });
     it('baja a mitad: el día en que se firma la baja todavía se paga', () => {
-        expect(contratoEnQuincena(q1, '2020-01-01', '2026-10-08')).toEqual({ dias: 8, desde: '2026-10-01', hasta: '2026-10-08' });
+        expect(contratoEnQuincena(q1, '2020-01-01', '2026-10-08')).toEqual({ dias: 8, desde: '2026-10-01', hasta: '2026-10-08', huecos: [] });
         expect(contratoEnQuincena(q1, '2020-01-01', '2026-10-01').dias).toBe(1);
         expect(contratoEnQuincena(q1, '2020-01-01', '2026-10-15').dias).toBe(15);
         // una baja anterior al reingreso es de otro contrato
         expect(contratoEnQuincena(q1, '2026-10-05', '2026-03-01').dias).toBe(11);
+    });
+    it('contrato que termina y otro que empieza en la misma quincena: se pagan los dos tramos', () => {
+        const q = { start: '2026-11-16', end: '2026-11-30' };
+        // del 16 al 18 (3) y del 23 al 30 (8); del 19 al 22 no hubo contrato
+        expect(contratoEnQuincena(q, '2026-11-23', '2026-11-18')).toEqual({
+            dias: 11, desde: '2026-11-16', hasta: '2026-11-30', huecos: [{ desde: '2026-11-19', hasta: '2026-11-22' }],
+        });
+        // sin días de por medio no hay hueco
+        expect(contratoEnQuincena(q, '2026-11-19', '2026-11-18').huecos).toEqual([]);
+        // una ausencia en el hueco no se descuenta: ya no se paga
+        const c = contratoEnQuincena(q, '2026-11-23', '2026-11-18');
+        const ts = [{ work_date: '2026-11-20', is_absent: true }, { work_date: '2026-11-25', is_absent: true }];
+        expect(diasPagadosDeQuincena(ts, { contratados: c.dias, desde: c.desde, hasta: c.hasta, huecos: c.huecos }).dias).toBe(10);
     });
     it('las ausencias se descuentan sólo dentro del contrato', () => {
         const ts = [{ work_date: '2026-10-03', is_absent: true }, { work_date: '2026-10-12', is_absent: true }];

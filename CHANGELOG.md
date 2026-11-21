@@ -21,11 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1587.1 — Planilla: dos contratos en la misma quincena pagan los dos tramos
+## v2.1587.2 — Planilla: dos contratos en la misma quincena pagan los dos tramos
 
 Si en una quincena terminó un contrato y empezó otro (el interinato de Richard Quintanilla terminó el 18/11 y el nuevo empezó el 23/11), la planilla tomaba sólo el contrato nuevo: pagaba del 23 al 30 y se perdían el 16, 17 y 18. `contratoEnQuincena` ahora suma los dos tramos (11 días en ese caso). Los días entre los dos contratos no se pagan y van en `huecos`, que `diasPagadosDeQuincena` excluye para no descontar ahí una ausencia. Ya pasaba con cualquier recontratación dentro de una quincena.
 
 Gemelo: payroll — la regla está en `src/utils/planilla.js`, que usan portal y app.
+
+## v2.1587.1 — (versión consumida por una unión; el cambio va en v2.1587.2)
 
 ## v2.1587.0 — Contratos vencidos: contrato nuevo en un paso y aviso en Personal
 

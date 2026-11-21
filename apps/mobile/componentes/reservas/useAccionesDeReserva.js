@@ -12,7 +12,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import {
   amarrarReservaAVenta, cambiarEstadoReserva, codigoDeReserva, enviarPreventa, marcarAvisadaPorWhatsapp, mensajeDeReservaLista, prorrogarReserva, ventasDelError, whatsappDe,
 } from '@nucleo/data/reservas';
-import { puedeEnviarPreventa } from '@nucleo/utils/preventa';
+import { cierreAlFacturar, puedeEnviarPreventa } from '@nucleo/utils/preventa';
 import { modoDeProrroga, opcionesCerrarConVenta } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -177,7 +177,7 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
           const notas = [
             res.cliente_generico ? 'Va como cliente frecuente. El código de la reserva va en la nota.' : '',
             ...(res.avisos ?? []),
-            res.externo_id ? 'Al facturarla, la reserva se cierra sola.' : 'Al facturarla, ciérrala con «Retirar».',
+            cierreAlFacturar(res, r.renglones ?? [r]),
           ].filter(Boolean).join(' ');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           (res.avisos?.length ? fallo : listo)(`Preventa #${res.referencia} en caja`, notas);

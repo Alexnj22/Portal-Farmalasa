@@ -156,7 +156,23 @@ export function notaDeLaVenta({ codigo, cliente, nombre, pagado, faltaPagar, doc
 export function puedeEnviarPreventa(r) {
     if (!r || !ESTADOS_CON_PREVENTA.includes(r.estado)) return false;
     if (r.bajo_receta && r.origen === 'app' && r.receta_estado !== 'aprobada') return false;
+    // Ya facturada (2026-11-21, R-000177): la venta salió; otra preventa
+    // vendería el producto dos veces. Lo que queda es cerrarla con «Retirar».
+    if (r.preventa_estado === 'facturada') return false;
     return !PREVENTA_VIVA.includes(r.preventa_estado);
+}
+
+/**
+ * Qué pasa con la reserva cuando la caja factura su preventa: la frase del
+ * aviso tras «Enviar a caja», en el portal y en la app. Con anticipo, la base
+ * lo aplica sola al facturarse (2026-11-21, R-000177: quedó «Lista» con la
+ * venta hecha porque nadie apretó «Retirar»).
+ */
+export function cierreAlFacturar(res, renglones = []) {
+    if (!res?.externo_id) return 'Al facturarla, ciérrala con «Retirar».';
+    return renglones.some((x) => Number(x?.anticipo) > 0.004)
+        ? 'Al facturarla, se aplica el anticipo y la reserva se cierra sola.'
+        : 'Al facturarla, la reserva se cierra sola.';
 }
 
 /** Lo que la sala lee de la preventa de una reserva, en una línea. */
@@ -165,7 +181,11 @@ export function textoDePreventa(r) {
     const ref = r.preventa_ref ? ` #${r.preventa_ref}` : '';
     if (r.preventa_estado === 'enviando') return 'Enviando la preventa…';
     // Se cobró distinto de lo prometido (2026-11-17): también en Reservas.
-    if (r.preventa_estado === 'facturada') return `Facturada${r.factura ? ` · ${r.factura}` : ''}${r.cobro_distinto?.alerta ? ' · se cobró distinto' : ''}`;
+    if (r.preventa_estado === 'facturada') {
+        // Facturada y todavía abierta: falta aplicar lo pagado (2026-11-21).
+        const abierta = ESTADOS_CON_PREVENTA.includes(r.estado);
+        return `Facturada${r.factura ? ` · ${r.factura}` : ''}${r.cobro_distinto?.alerta ? ' · se cobró distinto' : ''}${abierta ? ' · termínala con «Retirar»' : ''}`;
+    }
     if (r.preventa_estado === 'sin_enlace') return `Preventa${ref} en caja · al facturar, ciérrala con «Retirar»`;
     return `Preventa${ref} en caja`;
 }

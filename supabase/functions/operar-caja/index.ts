@@ -488,16 +488,54 @@ Deno.serve(async (req) => {
      * fiscal), y SÓLO para esta acción, que no firma nada a nombre de nadie:
      * cada ingreso viaja a nombre de quien lo anotó. */
     const automatico = accion === "mandar_pendientes" && body.automatico === true;
-    if (automatico) {
+    /* ── EL ANTICIPO SE APLICA SOLO AL FACTURARSE LA PREVENTA (2026-11-21) ──
+     *
+     * La R-000177 de Salud 3 se envió a caja, se facturó por el total y quedó
+     * «Lista para retirar» cinco días: el cierre por factura no la cerraba
+     * porque tenía $3.00 de anticipo sin aplicar, y sólo avisaba «termínala
+     * con Retirar». Ahora `preventas_cerrar_facturadas` pide ESTE mismo vale
+     * (el de «Retirar») apenas ve la factura. Entra con el secreto del
+     * circuito fiscal y sólo para un vale de retiro de una reserva cuya
+     * preventa YA está facturada en esta sucursal; firma quien envió la
+     * preventa, que es quien la vendió. Lo demás —monto = anticipo en
+     * efectivo, una sola vez por reserva— lo frena el mismo camino de abajo. */
+    const valeAutomatico = accion === "salida" && body.automatico === true
+      && String(body.tipo ?? "") === "APLICA_ANTICIPO";
+    if (automatico || valeAutomatico) {
       const secreto = secretoDeCircuito("fiscal");
       if (!secreto || req.headers.get("x-cierre-automatico") !== secreto) {
         return json({ ok: false, error: "UNAUTHORIZED" }, 401);
       }
     }
-    const quienOAuto = automatico ? null : await requireActiveEmployeeUser(req, supabase);
+    let quienDelVale: Awaited<ReturnType<typeof requireActiveEmployeeUser>> = null;
+    if (valeAutomatico) {
+      const reservaId = Number((body.aplicar as Record<string, unknown> | undefined)?.reserva_id);
+      const preventaId = Number(body.preventa_id);
+      if (!Number.isInteger(reservaId) || !Number.isInteger(preventaId)) {
+        return json({ ok: false, error: "Falta la reserva o la preventa." }, 400);
+      }
+      const { data: pv, error: errPv } = await supabase.from("preventas")
+        .select("id, estado, branch_id, enviada_por, reservas_ids").eq("id", preventaId).maybeSingle();
+      if (errPv) return json({ ok: false, error: errPv.message }, 503);
+      const { data: rv, error: errRv } = await supabase.from("app_reservas")
+        .select("id, branch_id, preventa_id").eq("id", reservaId).maybeSingle();
+      if (errRv) return json({ ok: false, error: errRv.message }, 503);
+      if (!pv || pv.estado !== "facturada" || Number(pv.branch_id) !== sala || !rv
+          || Number(rv.preventa_id) !== preventaId || Number(rv.branch_id) !== sala
+          || !(pv.reservas_ids ?? []).map(Number).includes(reservaId)) {
+        return json({ ok: false, error: "Esa reserva no tiene una preventa facturada en esta sucursal." }, 409);
+      }
+      const { data: emp, error: errEmp } = await supabase.from("employees")
+        .select("id, status, code, name").eq("id", pv.enviada_por).maybeSingle();
+      if (errEmp) return json({ ok: false, error: errEmp.message }, 503);
+      if (!emp || emp.status !== "ACTIVO") return json({ ok: false, error: "Quien envió la preventa ya no está activo." }, 409);
+      quienDelVale = emp as NonNullable<typeof quienDelVale>;
+      body.aplicar = { reserva_id: reservaId };
+    }
+    const quienOAuto = automatico ? null : (quienDelVale ?? await requireActiveEmployeeUser(req, supabase));
     if (!automatico && !quienOAuto) return json({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
-    // En automático `quien` no existe y no se lee: la única acción posible es
-    // `mandar_pendientes`, que no usa a quien llama.
+    // En `mandar_pendientes` automático `quien` no existe y no se lee: esa
+    // acción no usa a quien llama. En el vale automático es quien envió la preventa.
     const quien = quienOAuto as NonNullable<typeof quienOAuto>;
     /* Tres permisos distintos y no uno, porque son tres actos distintos:
      *
@@ -511,11 +549,13 @@ Deno.serve(async (req) => {
     const [modulo, accionDelPermiso]: [string, "can_view" | "can_edit" | "can_approve"] = ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
       ? ["requests_caja", "can_approve"]
       : ["caja_vales", accion === "estado" ? "can_view" : "can_edit"];   // `abono` incluido: es un ingreso
-    // En automático no hay a quién preguntarle: lo autorizó el secreto de arriba.
-    const permisoOAuto = automatico ? null : await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
+    // En automático no hay a quién preguntarle: lo autorizó el secreto de arriba
+    // (el vale automático, además, ya comprobó la preventa facturada en esta sala).
+    const sinPreguntar = automatico || valeAutomatico;
+    const permisoOAuto = sinPreguntar ? null : await permisoDeModulo(supabase, quien.id, modulo, accionDelPermiso);
     const permiso = permisoOAuto as NonNullable<typeof permisoOAuto>;
-    if (!automatico && permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
-    if (!automatico && !permiso.puede) {
+    if (!sinPreguntar && permiso.roto) return json({ ok: false, error: permiso.roto }, 503);
+    if (!sinPreguntar && !permiso.puede) {
       return json({ ok: false, error: ["aplicar_correccion", "rechazar_autorizacion"].includes(accion)
         ? "No tienes permiso para decidir las correcciones de caja."
         : "No tienes permiso para operar la caja desde el portal." }, 403);
@@ -530,7 +570,7 @@ Deno.serve(async (req) => {
      * `aplicar_correccion` y `corregir` no pasan por acá —van contra un
      * movimiento que se relee de la base, con su propia sala— así que el freno
      * se aplica a lo que sí toca una caja por número de sala. */
-    if (!automatico && !["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
+    if (!sinPreguntar && !["aplicar_correccion", "corregir", "rechazar_autorizacion"].includes(accion)
         && !permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
       return json({ ok: false, error: "Solo puedes operar la caja de tu propia sucursal." }, 403);
     }

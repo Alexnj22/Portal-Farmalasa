@@ -735,7 +735,7 @@ export const AREAS = [
         // `creditos-erp` va acá y no en Facturación: abonar a un crédito mete
         // EFECTIVO al cajón, y ese dinero cuenta para el corte del mismo día.
         edge: ['sync-cortes-caja', 'sync-aperturas-caja', 'anotar-vales-caja', 'hacer-corte-caja', 'operar-caja',
-               'cierre-automatico-caja', 'ensayo-cobro-caja',
+               'cierre-automatico-caja', 'ensayo-cobro-caja', 'aplicar-anticipo-facturado',
                'creditos-erp', 'sync-creditos', 'avisar-creditos-vencidos', 'leer-pago-de-credito'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.

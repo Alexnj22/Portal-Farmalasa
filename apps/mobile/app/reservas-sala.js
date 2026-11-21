@@ -236,6 +236,13 @@ export default function ReservasDeSala() {
             <Accion texto="Reservar con anticipo · apartar o encargar" onPress={() => router.push('/reserva-anticipo')} />
           </View>
         ) : null}
+        {/* Lo retirado y cancelado (2026-11-21): la pestaña «Terminadas» del portal. */}
+        {(sala || verTodas) && !esBodega ? (
+          <View style={{ marginHorizontal: 16, flexDirection: 'row' }}>
+            <Accion texto="Ver terminadas" color={colorSistema.texto2}
+              onPress={() => router.push({ pathname: '/reservas-terminadas', params: verTodas ? { todas: '1' } : { sala: String(sala) } })} />
+          </View>
+        ) : null}
         {pedido.renglones.length ? (
           <Seccion titulo={`Pedido ${pedido.pedido}`} pie={pedido.prueba ? 'PAGO DE PRUEBA. Cóbralo en caja.' : pedido.pagado ? (pedido.renglones[0].origen === 'sucursal' ? 'Pagado.' : 'Pagado en línea. En caja NO se cobra.')
             : anticipoPedido > 0.004 ? `Anticipo ${formatMoney(anticipoPedido)} · falta ${formatMoney(pedido.total - anticipoPedido)} al retirar.` : 'Se cobra en caja.'}>

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Clock, FileText, MapPin, MoreHorizontal, Phone, Smartphone, Store, Truck } from 'lucide-react';
+import { Clock, FileText, MapPin, MoreHorizontal, Phone, Receipt, Smartphone, Store, Truck } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { codigoDeReserva } from '@nucleo/data/reservas';
+import { textoDePreventa } from '@nucleo/utils/preventa';
 import { cuentasDeReserva, estadoDeReserva, renglonesDe, telefonoLegible } from './reservaVista';
 import { InsigniaDeNivel } from './AvisosDeReserva';
 import {
@@ -49,6 +50,10 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
     const ocultos = filas.length - visibles.length;
     const [principal, segunda] = acciones;
     const hayMas = acciones.length > 2;
+    // En qué quedó su venta en caja (2026-11-21): facturada y abierta es lo
+    // que dejó la R-000177 «Lista» con la venta ya hecha.
+    const preventa = textoDePreventa(r);
+    const preventaPendiente = r.preventa_estado === 'facturada' && preventa.includes('Retirar');
 
     return (
         <article data-surface="card" data-tono={estado.tono === 'danger' ? 'danger' : undefined} className="h-full flex flex-col min-w-0">
@@ -121,6 +126,11 @@ export default function TarjetaDeReserva({ r, todas = false, acciones = [], onAb
                     ) : plazoDeReserva(r) && (
                         <span className="flex items-center gap-1 mt-2 text-caption text-content-3 min-w-0">
                             <Clock size={12} className="shrink-0" aria-hidden /> <span className="truncate">{plazoDeReserva(r)}</span>
+                        </span>
+                    )}
+                    {preventa && (
+                        <span className={`flex items-center gap-1 mt-1 text-caption min-w-0 ${preventaPendiente ? 'font-semibold text-warning-text' : 'text-content-3'}`}>
+                            <Receipt size={12} className="shrink-0" aria-hidden /> <span className="truncate" title={preventa}>{preventa}</span>
                         </span>
                     )}
                 </span>

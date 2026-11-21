@@ -36,7 +36,7 @@ import {
 import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
-import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
+import { cierreAlFacturar, puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import { opcionesCerrarConVenta,
     accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
     modoDeProrroga, origenDelSaldo, plazoDeRetiro, quienRevisaLaReceta, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
@@ -379,7 +379,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             const notas = [
                 res.cliente_generico ? 'Va como cliente frecuente. El código de la reserva va en la nota.' : '',
                 ...(res.avisos ?? []),
-                res.externo_id ? 'Al facturarla, la reserva se cierra sola.' : 'Al facturarla, ciérrala con «Retirar».',
+                cierreAlFacturar(res, r.renglones ?? [r]),
             ].filter(Boolean).join(' ');
             showToast(`Preventa #${res.referencia} en caja`, notas, res.avisos?.length ? 'warning' : 'success');
         } catch (err) {

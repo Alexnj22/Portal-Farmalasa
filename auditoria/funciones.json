@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-21T16:32:21.495Z",
+ "generado": "2026-11-21T16:45:05.514Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -4928,6 +4928,10 @@
    "area": "app-clientes",
    "por": "código"
   },
+  "preventa_pedir_vale_de_anticipo": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
   "preventa_preparar": {
    "area": "app-clientes",
    "por": "código"
@@ -5864,6 +5868,10 @@
    "por": "código"
   },
   "reserva_amarrar_traslados": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "reserva_anticipo_solo_efectivo": {
    "area": "app-clientes",
    "por": "tablas"
   },

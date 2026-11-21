@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    armarVenta, clienteDeLaVenta, codigoDeVendedor, notaDeLaVenta, puedeEnviarPreventa, textoDePreventa,
+    armarVenta, cierreAlFacturar, clienteDeLaVenta, codigoDeVendedor, notaDeLaVenta, puedeEnviarPreventa, textoDePreventa,
 } from '@nucleo/utils/preventa';
 
 const base = {
@@ -55,10 +55,21 @@ describe('preventa — la pantalla', () => {
         expect(puedeEnviarPreventa({ estado: 'lista', preventa_estado: 'viva' })).toBe(false);
         expect(puedeEnviarPreventa({ estado: 'lista', preventa_estado: 'fallida' })).toBe(true);
         expect(puedeEnviarPreventa({ estado: 'en_revision' })).toBe(false);
+        expect(puedeEnviarPreventa({ estado: 'lista', preventa_estado: 'facturada' })).toBe(false);
         expect(puedeEnviarPreventa({ estado: 'pendiente', origen: 'app', bajo_receta: true, receta_estado: 'pendiente' })).toBe(false);
     });
     it('dice en qué quedó', () => {
         expect(textoDePreventa({ preventa_estado: 'viva', preventa_ref: '32' })).toBe('Preventa #32 en caja');
         expect(textoDePreventa({ preventa_estado: 'fallida' })).toBe('');
+        expect(textoDePreventa({ estado: 'lista', preventa_estado: 'facturada', factura: '53' })).toBe('Facturada · 53 · termínala con «Retirar»');
+        expect(textoDePreventa({ estado: 'retirada', preventa_estado: 'facturada', factura: '53' })).toBe('Facturada · 53');
+    });
+});
+
+describe('cierreAlFacturar', () => {
+    it('con anticipo dice que se aplica solo', () => {
+        expect(cierreAlFacturar({ externo_id: '1' }, [{ anticipo: 3 }])).toBe('Al facturarla, se aplica el anticipo y la reserva se cierra sola.');
+        expect(cierreAlFacturar({ externo_id: '1' }, [{ anticipo: 0 }])).toBe('Al facturarla, la reserva se cierra sola.');
+        expect(cierreAlFacturar({}, [{ anticipo: 3 }])).toBe('Al facturarla, ciérrala con «Retirar».');
     });
 });

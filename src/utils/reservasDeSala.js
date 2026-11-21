@@ -56,6 +56,27 @@ export const coincideCodigo = (r, codigo) => {
     return !!buscado && (codigoLimpio(codigoDeReserva(r.id)).includes(buscado) || codigoLimpio(r.pedido).includes(buscado));
 };
 
+/** Estados con los que una reserva ya terminó. */
+export const ESTADOS_TERMINADA = ['retirada', 'cancelada'];
+
+/**
+ * Las terminadas (2026-11-21, «¿cómo puedo ver reservas finalizadas?»): de la
+ * lista de los últimos 30 días que da la base, las retiradas y canceladas, la
+ * más reciente primero; con código, sólo las que coinciden.
+ */
+export function reservasTerminadas(filas, codigo = '') {
+    const lista = (filas || []).filter((r) => ESTADOS_TERMINADA.includes(r.estado));
+    const buscadas = codigoLimpio(codigo) ? lista.filter((r) => coincideCodigo(r, codigo)) : lista;
+    return [...buscadas].sort((a, b) => String(b.cerrada_at ?? b.creada ?? '').localeCompare(String(a.cerrada_at ?? a.creada ?? '')));
+}
+
+/** Cómo terminó: `{ label, variant }`. Una cancelada por plazo dice «Venció». */
+export function estadoDeTerminada(r) {
+    if (r?.estado === 'retirada') return { label: 'Retirada', variant: 'success' };
+    if (r?.vencida_motivo) return { label: 'Venció', variant: 'warning' };
+    return { label: 'Cancelada', variant: 'neutral' };
+}
+
 /** Las que coinciden con el código escrito; sin código, todas (o las primeras `max`). */
 export function reservasPorCodigo(filas, codigo, max = null) {
     const abiertas = reservasAbiertas(filas);

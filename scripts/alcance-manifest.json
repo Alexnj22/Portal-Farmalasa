@@ -114,6 +114,9 @@
     "cierre-automatico-caja": {
       "guarda": "cron"
     },
+    "aplicar-anticipo-facturado": {
+      "guarda": "cron"
+    },
     "ensayo-cobro-caja": {
       "guarda": "cron"
     },

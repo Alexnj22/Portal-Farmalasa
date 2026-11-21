@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { PackageCheck, PackageSearch, Plus, ShoppingBag, Wallet } from 'lucide-react';
+import { Archive, ClipboardList, PackageCheck, PackageSearch, Plus, ShoppingBag, Wallet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetReservas from './dashboard/WidgetReservas';
+import ReservasTerminadas from './dashboard/ReservasTerminadas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -25,10 +26,12 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 //
 // ── El alcance decide qué salas ────────────────────────────────────────────
 // Con alcance «todas» se ven las de toda la red; con «su sala» (o sin alcance
-// declarado), sólo la propia. Sin pestañas a propósito: abiertas, saldos a
-// favor y encargos son una sola lista de trabajo y el buscador por código
-// cruza las tres —partirlas obligaría a saber de antemano en cuál está el
-// código que el cliente muestra en el teléfono—.
+// declarado), sólo la propia. Abiertas, saldos a favor y encargos son UNA
+// lista de trabajo y el buscador por código cruza las tres —partirlas
+// obligaría a saber de antemano en cuál está el código que el cliente muestra
+// en el teléfono—. La única pestaña aparte es «Terminadas» (2026-11-21,
+// «¿cómo puedo ver reservas finalizadas?»): lo retirado y cancelado de los
+// últimos 30 días, sólo para mirar, con su propio buscador por código.
 //
 // ── Ver y editar ───────────────────────────────────────────────────────────
 // `reservas.can_view` deja mirar; `can_edit` deja apartar, entregar, cancelar y
@@ -36,6 +39,11 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 // receta de la app tiene su propio permiso (`recetas_app`) y no cambia acá.
 // ═══════════════════════════════════════════════════════════════════════════
 // Las métricas del carril (§17.0): lo que hay que hacer, lo que espera al cliente y lo que se le debe.
+const PESTANAS = [
+    { key: 'abiertas', label: 'Abiertas', icon: ClipboardList },
+    { key: 'terminadas', label: 'Terminadas', icon: Archive },
+];
+
 const METRICAS = [
     { clave: 'preparar', label: 'Por preparar', icon: PackageSearch, iconBg: 'bg-warning/10', iconCls: 'text-warning-text', valueCls: 'text-warning-text' },
     { clave: 'listas', label: 'Listas para retirar', icon: PackageCheck, iconBg: 'bg-success/10', iconCls: 'text-success-text', valueCls: 'text-success-text' },
@@ -56,6 +64,8 @@ export default function ReservasView() {
     const [sala, setSala] = usePestanaEnUrl(opciones, 'todas', 'sala');
     const fija = todas && sala !== 'todas' ? Number(sala) : undefined;
     const [codigo, setCodigo] = useState('');
+    const [pestana, setPestana] = usePestanaEnUrl(PESTANAS, 'abiertas');
+    const terminadas = pestana === 'terminadas';
     const [nueva, setNueva] = useState(false);
     const [conteo, setConteo] = useState(null);
     // Apartar (2026-11-05, «que se pueda crear una nueva»): quien edita
@@ -69,7 +79,7 @@ export default function ReservasView() {
     return (
         <GlassViewLayout icon={ShoppingBag} title="Reservas" transparentBody
             filtersContent={(
-                <ViewTabBar tabs={[]} searchValue={codigo} onSearchChange={setCodigo}
+                <ViewTabBar tabs={PESTANAS} activeTab={pestana} onTabChange={setPestana} searchValue={codigo} onSearchChange={setCodigo}
                     placeholder="Escanea o escribe el código (R-… o P-…)" />
             )}>
             <div className="p-4 md:p-6 space-y-6">
@@ -91,9 +101,16 @@ export default function ReservasView() {
                         </FilterBar>
                     </div>
                 </div>
-                <WidgetReservas key={sala} todas={todas && fija == null} sala={fija} completa soloLectura={!puedeEditar}
-                    codigo={codigo} nueva={nueva} onNuevaCerrada={() => setNueva(false)} onConteo={setConteo}
-                    salasParaApartar={salasParaApartar} />
+                {/* Abiertas sigue montada en «Terminadas»: da el conteo del
+                    carril y el alta de «Nueva reserva» vive en ella. */}
+                <div className={terminadas ? 'hidden' : undefined}>
+                    <WidgetReservas key={sala} todas={todas && fija == null} sala={fija} completa soloLectura={!puedeEditar}
+                        codigo={codigo} nueva={nueva} onNuevaCerrada={() => setNueva(false)} onConteo={setConteo}
+                        salasParaApartar={salasParaApartar} />
+                </div>
+                {terminadas && (
+                    <ReservasTerminadas key={`t-${sala}`} todas={todas && fija == null} sala={todas ? fija : miSala} codigo={codigo} />
+                )}
             </div>
         </GlassViewLayout>
     );

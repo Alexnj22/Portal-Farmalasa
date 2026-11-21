@@ -33474,6 +33474,7 @@ export type Database = {
       auth_module_locked: { Args: { p_modules: string[] }; Returns: boolean }
       auth_module_scope: { Args: { p_module_key: string }; Returns: string }
       auth_no_bloqueado: { Args: never; Returns: boolean }
+      auth_puede_ver_inventario: { Args: never; Returns: boolean }
       auth_rango: { Args: never; Returns: number }
       auth_supervisa_faltantes: { Args: never; Returns: boolean }
       auth_ve_costos: { Args: never; Returns: boolean }
@@ -38985,6 +38986,16 @@ export type Database = {
         Args: { p_branch: number; p_ids: number[] }
         Returns: Json
       }
+      preventa_pedir_vale_de_anticipo: {
+        Args: {
+          p_branch: number
+          p_codigo: string
+          p_monto: number
+          p_preventa: number
+          p_reserva: number
+        }
+        Returns: number
+      }
       preventa_preparar: {
         Args: { p_employee: string; p_reservas: number[] }
         Returns: Json
@@ -40253,6 +40264,10 @@ export type Database = {
       reserva_amarrar_traslados: {
         Args: { p_requests: string[]; p_reserva: number; p_resto: boolean }
         Returns: undefined
+      }
+      reserva_anticipo_solo_efectivo: {
+        Args: { p_id: number }
+        Returns: number
       }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
       reserva_avisar_sala: {

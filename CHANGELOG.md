@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.0 — Reservas: el anticipo se aplica solo al facturarse y se ven las terminadas
+
+Reservas con anticipo: se cierran solas al facturarse, y se ven las terminadas.
+
+La R-000177 de Salud 3 (sucursal 4) se envió a caja con $3.00 de anticipo en
+efectivo, se facturó por $5.20 y siguió «Lista para retirar» cinco días,
+ofreciendo «Enviar a caja» otra vez. El cierre por factura salta toda reserva
+con anticipo sin aplicar y sólo avisaba «termínala con «Retirar»».
+
+- Base (migración `20261121164429`): si todo lo pagado fue efectivo de la caja
+  y la reserva está lista, `preventas_cerrar_facturadas` pide el vale del
+  anticipo apenas ve la factura. Reintenta durante 30 minutos y, si no sale,
+  avisa una vez a la sucursal que la termine con «Retirar». Funciones nuevas
+  `reserva_anticipo_solo_efectivo` y `preventa_pedir_vale_de_anticipo`.
+- Edge: `aplicar-anticipo-facturado` (nueva, `--no-verify-jwt`, secreto del
+  circuito fiscal) releva el pedido a `operar-caja`. `operar-caja` acepta el
+  vale `APLICA_ANTICIPO` automático sólo para una reserva cuya preventa ya está
+  facturada en esa sucursal; firma quien envió la preventa. Probado: una
+  preventa que no corresponde vuelve 409 sin mover dinero.
+- Pantalla: «Enviar a caja» ya no aparece si la preventa está facturada (la
+  base ya lo frenaba). La tarjeta dice «Facturada · termínala con «Retirar»»
+  mientras siga abierta. Pestaña «Terminadas» en Reservas (retiradas y
+  canceladas de 30 días, con factura) y su gemela en la app.
+
+Gemelo: reservas — en apps/mobile/app/reservas-terminadas.js y reservas-sala.js.
+Novedades: no — decisión del usuario.
+
 ## v2.1591.2 — Horarios: horas propias sin catálogo y las horas extra avisan sin frenar
 
 Auditoría de Horarios del 2026-11-21, con La Popular como primera sala con

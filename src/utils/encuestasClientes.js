@@ -12,6 +12,8 @@
 // la respuesta a otra ANTERIOR cumple. La base rechaza una condición que mire
 // hacia adelante.
 
+import { hoySV, sumarDias } from './fecha';
+
 /**
  * Tipos de pregunta. Deben coincidir con `v_tipos` de
  * `encuesta_cliente_problemas_de`. `numerica` = su respuesta es un número que
@@ -857,4 +859,27 @@ export function porcionesDe(p) {
         const n = Number(p.conteo?.[c.clave]) || 0;
         return { clave: c.clave, label: c.label, n, pct: total ? (n / total) * 100 : 0 };
     });
+}
+
+/**
+ * Los períodos del filtro de fechas en la app (un menú nativo no lleva
+ * calendario). `todo` = sin filtro. Los días son de El Salvador.
+ */
+export const PERIODOS = [
+    { id: 'todo', label: 'Cualquier fecha' },
+    { id: 'hoy', label: 'Hoy' },
+    { id: '7d', label: 'Últimos 7 días' },
+    { id: '30d', label: 'Últimos 30 días' },
+    { id: 'mes', label: 'Este mes' },
+];
+
+/** `{ desde, hasta }` de un período de `PERIODOS` (vacíos = sin filtro). */
+export function rangoDePeriodo(periodo, hoy = hoySV()) {
+    switch (periodo) {
+        case 'hoy': return { desde: hoy, hasta: hoy };
+        case '7d': return { desde: sumarDias(hoy, -6), hasta: hoy };
+        case '30d': return { desde: sumarDias(hoy, -29), hasta: hoy };
+        case 'mes': return { desde: `${hoy.slice(0, 7)}-01`, hasta: hoy };
+        default: return { desde: '', hasta: '' };
+    }
 }

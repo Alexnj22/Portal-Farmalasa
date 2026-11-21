@@ -18,19 +18,28 @@
 // y los accesos a Ajustes (`ajustes`) y al Avance con sus enlaces (`avance`).
 // Y la lectura de Saly (`componentes/encuestas/LecturaDeSaly`) y dónde se
 // hizo en campo, con su mapa (`componentes/encuestas/UbicacionesDeCampo`).
-import { useCallback, useEffect, useRef, useState } from 'react';
+//
+// Filtros (2026-11-20, gemelo del portal): sucursal, período, quién
+// entrevistó y zona en el menú de filtros; una respuesta, tocándola en la
+// gráfica. Los aplica la base (`encuesta_cliente_filtra`) para los
+// resultados, los comentarios y el CSV. La lectura de Saly y el resumen son
+// de la sucursal entera: con otro filtro puesto, no se rehacen.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   fetchComentarios, fetchEncuesta, fetchEventos, fetchLectura, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas,
-  fetchUbicaciones, guardarLectura, guardarResumen,
+  fetchUbicaciones, guardarLectura, guardarResumen, fetchAvance,
 } from '@nucleo/data/encuestasClientes';
 import { preguntarASaly } from '@nucleo/data/ia';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
-import { CAMPO, archivoDeEncuesta, estadoDe, estadoDelResumen, lecturaNps, loteParaResumir, resumenDeCierre, tablaDeRespuestas } from '@nucleo/utils/encuestasClientes';
+import {
+  CAMPO, archivoDeEncuesta, estadoDe, estadoDelResumen, lecturaNps, loteParaResumir, resumenDeCierre, tablaDeRespuestas,
+  filtrosParaLaBase, metaDelFiltro, PERIODOS, rangoDePeriodo, porcionesDe, preguntasEnOrden,
+} from '@nucleo/utils/encuestasClientes';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../../componentes/Segmentos';
@@ -68,6 +77,11 @@ export default function EncuestaCliente() {
   const [error, setError] = useState(null);
 
   const [sala, setSala] = useState(null);
+  const [periodo, setPeriodo] = useState('todo');
+  const [entrevistador, setEntrevistador] = useState('');
+  const [zona, setZona] = useState('');
+  const [respuesta, setRespuesta] = useState(null); // { pregunta, valor }
+  const [avance, setAvance] = useState(null);
   const [rondas, setRondas] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [resumiendo, setResumiendo] = useState(false);
@@ -77,12 +91,21 @@ export default function EncuestaCliente() {
   const [eventos, setEventos] = useState([]);
   const [personas, setPersonas] = useState({});
 
+  const clave = JSON.stringify(filtrosParaLaBase({ ...rangoDePeriodo(periodo), entrevistador, zona, ...(respuesta || {}) }));
+  const filtros = useMemo(() => JSON.parse(clave), [clave]);
+  const conFiltros = !!filtros;
+  // Sólo pinta la última carga pedida: al cambiar rápido de filtro, una
+  // respuesta lenta de la anterior no queda bajo el filtro nuevo.
+  const vigente = useRef(0);
   const cargar = useCallback(() => {
+    const n = (vigente.current += 1);
     fetchEncuesta(id).then((e) => {
       setEncuesta(e || false);
       if (e && ['publicada', 'cerrada', 'archivada'].includes(e.estado)) {
-        fetchResultados(id, sala).then(setDatos).catch((x) => setError(x?.message || 'No se pudieron cargar los resultados.'));
-        fetchComentarios(id, sala).then(setComentarios).catch(() => setComentarios([]));
+        fetchResultados(id, sala, filtros).then((d) => { if (n === vigente.current) setDatos(d); })
+          .catch((x) => setError(x?.message || 'No se pudieron cargar los resultados.'));
+        fetchComentarios(id, sala, filtros).then((c) => { if (n === vigente.current) setComentarios(c); }).catch(() => setComentarios([]));
+        fetchAvance(id).then(setAvance).catch(() => setAvance(null));
         fetchRondas(id).then(setRondas).catch(() => setRondas([]));
         fetchResumen(id, sala).then(setResumen).catch(() => setResumen(null));
         fetchLectura(id, sala).then(setLecturaSaly).catch(() => setLecturaSaly(null));
@@ -93,7 +116,7 @@ export default function EncuestaCliente() {
         try { setPersonas(await fetchPersonas((ev || []).map((x) => x.autor_id))); } catch { /* el historial se pinta sin caras */ }
       }).catch(() => setEventos([]));
     }).catch((x) => { setError(x?.message || 'No se pudo cargar la encuesta.'); setEncuesta(false); });
-  }, [id, sala]);
+  }, [id, sala, filtros]);
   useEffect(() => { cargar(); }, [cargar]);
   // Al volver de diseñar las preguntas, «Falta para enviarla» se relee.
   const primera = useRef(true);
@@ -112,17 +135,40 @@ export default function EncuestaCliente() {
   const devuelta = encuesta?.estado === 'borrador' ? eventos.find((e) => e.tipo === 'rechazada' || e.tipo === 'enviada') : null;
 
   // ── Resultados de una sucursal, CSV y resumen con IA (como el portal) ──
-  const salasConRespuestas = datos?.por_sucursal || [];
-  const filtrosDeSala = salasConRespuestas.length ? [{ id: 'sala', titulo: 'Sucursal', activa: sala == null ? '' : String(sala), porDefecto: '', onCambiar: (v) => { setDatos(null); setSala(v ? Number(v) : null); },
-    opciones: [{ id: '', label: 'Todas' }, ...salasConRespuestas.map((x) => ({ id: String(x.branch_id), label: x.nombre }))] }] : [];
+  // Las opciones de cada filtro vienen contadas sobre TODA la encuesta.
+  const opciones = datos?.filtros;
+  const salasConRespuestas = opciones?.sucursales || [];
+  const cambiar = (fn) => (v) => { setDatos(null); fn(v); };
+  const numeroDe = useMemo(() => Object.fromEntries(preguntasEnOrden(encuesta?.cuestionario).map((q) => [q.id, q.numero])), [encuesta?.cuestionario]);
+  const preguntaDe = datos?.por_pregunta?.find((q) => q.id === respuesta?.pregunta);
+  const textoDeRespuesta = preguntaDe ? porcionesDe(preguntaDe).find((c) => c.clave === respuesta.valor)?.label : null;
+  const grupos = [
+    { id: 'sala', titulo: 'Sucursal', activa: sala == null ? '' : String(sala), porDefecto: '', onCambiar: cambiar((v) => setSala(v ? Number(v) : null)),
+      opciones: [{ id: '', label: 'Todas' }, ...salasConRespuestas.map((x) => ({ id: String(x.branch_id), label: x.nombre }))] },
+    { id: 'periodo', titulo: 'Fecha', activa: periodo, porDefecto: 'todo', onCambiar: cambiar(setPeriodo),
+      opciones: PERIODOS.map((x) => ({ id: x.id, label: x.label })) },
+    { id: 'entrevistador', titulo: 'Quién entrevistó', activa: entrevistador, porDefecto: '', onCambiar: cambiar(setEntrevistador),
+      opciones: (opciones?.entrevistadores || []).length > 1
+        ? [{ id: '', label: 'Todos' }, ...opciones.entrevistadores.map((x) => ({ id: x.id, label: `${shortEmployeeName(x.nombre)} (${x.respuestas})` }))] : [] },
+    { id: 'zona', titulo: 'Zona', activa: zona, porDefecto: '', onCambiar: cambiar(setZona),
+      opciones: (opciones?.zonas || []).length ? [{ id: '', label: 'Todas' }, ...opciones.zonas.map((x) => ({ id: x.id, label: `${x.nombre} (${x.respuestas})` }))] : [] },
+    // La respuesta se elige tocándola en la gráfica: una sola opción, así que
+    // no sale en el menú, sólo como ficha para quitarla.
+    { id: 'respuesta', titulo: 'Respuesta', activa: respuesta ? 'si' : '', porDefecto: '', onCambiar: cambiar(() => setRespuesta(null)),
+      opciones: respuesta ? [{ id: 'si', label: textoDeRespuesta ? `«${textoDeRespuesta}»` : 'Una respuesta' }] : [] },
+  ];
+  const filtrarPorRespuesta = (pregunta, valor) => { setDatos(null); setRespuesta(valor == null ? null : { pregunta, valor }); };
+  const meta = encuesta ? metaDelFiltro(encuesta, avance, { branchId: sala, zona }) : null;
   const exportar = async () => {
     trabajando('Armando el archivo…');
     try {
-      const filas = await fetchRespuestasParaExportar(encuesta.id);
+      // Lo mismo que se ve: la base aplica la sucursal y los filtros.
+      const filas = await fetchRespuestasParaExportar(encuesta.id, sala, filtros);
       const { headers, rows } = tablaDeRespuestas(encuesta.cuestionario, filas,
         { fechaHora: (f) => `${fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${hora12(f)}` });
       cerrarProgreso();
-      await compartirCsv({ headers, rows, nombre: archivoDeEncuesta(encuesta.nombre), modulo: 'encuestas_clientes' });
+      const nombre = [encuesta.nombre, sala != null ? nombreDelFiltro : null, conFiltros ? 'filtrado' : null].filter(Boolean).join('-');
+      await compartirCsv({ headers, rows, nombre: archivoDeEncuesta(nombre), modulo: 'encuestas_clientes' });
     } catch (e) { fallo('No se pudo exportar', mensajeAmigable(e, 'Intenta de nuevo.')); }
   };
   const resumir = async () => {
@@ -148,11 +194,10 @@ export default function EncuestaCliente() {
     setLeyendo(true);
     try {
       const enCampo = sala === CAMPO;
-      const [todas, ubic] = await Promise.all([
-        fetchRespuestasParaExportar(encuesta.id),
+      const [filas, ubic] = await Promise.all([
+        fetchRespuestasParaExportar(encuesta.id, sala),
         (sala == null || enCampo) && (datos?.por_canal?.campo || 0) > 0 ? fetchUbicaciones(encuesta.id).catch(() => null) : null,
       ]);
-      const filas = sala != null ? todas.filter((f) => Number(f.branch_id ?? CAMPO) === sala) : todas;
       const paquete = paqueteParaSaly({
         encuesta, datos, filas, comentarios: comentarios || [], lugares: ubic?.por_lugar || [], filtro: sala != null ? nombreDelFiltro : null,
       });
@@ -173,7 +218,7 @@ export default function EncuestaCliente() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: encuesta?.nombre ?? 'Encuesta', headerLargeTitle: false }} />
-      <MenuDeFiltros grupos={filtrosDeSala} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {encuesta == null ? <Cargando /> : !encuesta ? (
           <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error || 'Esa encuesta no existe o no tienes acceso.'} /></View>
@@ -215,13 +260,19 @@ export default function EncuestaCliente() {
             {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas." /></View>
             ) : !datos && !error ? <Cargando /> : datos && !datos.total ? (
-              <Vacio titulo="Todavía no hay respuestas." />
+              <>
+                <FiltrosActivos grupos={grupos} />
+                <Vacio titulo={conFiltros || sala != null ? 'No hay respuestas con estos filtros.' : 'Todavía no hay respuestas.'} />
+              </>
             ) : datos ? (
               <>
-                <FiltrosActivos grupos={filtrosDeSala} />
-                <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 16 }}>
+                <FiltrosActivos grupos={grupos} />
+                <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                  <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
+                    {conFiltros || sala != null ? `Viendo ${datos.total} de ${datos.total_encuesta} respuestas.` : ''}
+                  </Text>
                   <Tocable onPress={exportar} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
-                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar CSV</Text>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{conFiltros || sala != null ? 'Exportar lo filtrado' : 'Exportar CSV'}</Text>
                   </Tocable>
                 </View>
                 {/* seccion-en-linea: paneles de una ficha de detalle, debajo de su encabezado (como un perfil del iPhone); fijos arriba quedarían antes del nombre (2026-11-12) */}
@@ -229,11 +280,25 @@ export default function EncuestaCliente() {
                 {vista === 'resultados' ? (
                   <>
                     <FilaDeKpis>
-                      <Kpi icono="Gauge" rotulo="NPS" valor={String(nps.puntaje ?? '—')} color={colorDeVariante(lectura.variant)} apoyo={lectura.label} />
                       <Kpi icono="Users" rotulo="Respuestas" valor={String(datos.total)} color={MARCA.azul}
-                        apoyo={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${CANAL[c] ?? c}`).join(' · ')} />
+                        apoyo={conFiltros || sala != null ? `de ${datos.total_encuesta} en total` : Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${CANAL[c] ?? c}`).join(' · ')} />
+                      {meta?.meta ? (
+                        <Kpi icono="Target" rotulo="Meta" valor={formatPct(Math.min(100, (meta.respuestas / meta.meta) * 100), { decimales: 0 })}
+                          color={meta.respuestas >= meta.meta ? MARCA.verde : MARCA.azulClaro} apoyo={`${meta.respuestas} de ${meta.meta}`} />
+                      ) : null}
                     </FilaDeKpis>
-                    <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo} onActualizar={leerResultados} />
+                    <FilaDeKpis>
+                      {nps.respuestas > 0 ? (
+                        <Kpi icono="Gauge" rotulo="NPS" valor={String(nps.puntaje ?? '—')} color={colorDeVariante(lectura.variant)} apoyo={lectura.label} />
+                      ) : null}
+                      <Kpi icono="MessageSquareText" rotulo="Con comentario" valor={String(datos.con_texto ?? 0)} color={MARCA.violeta}
+                        apoyo={datos.total ? `${formatPct(((datos.con_texto ?? 0) / datos.total) * 100, { decimales: 0 })} escribió algo` : ''} />
+                    </FilaDeKpis>
+                    {conFiltros ? (
+                      <View style={{ marginHorizontal: 16 }}><Aviso texto={`La lectura de Saly es de ${nombreDelFiltro}. Quita los filtros para verla.`} /></View>
+                    ) : (
+                      <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo} onActualizar={leerResultados} />
+                    )}
                     {nps.respuestas > 0 ? (
                       <Seccion titulo="Recomendación">
                         <View style={{ flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', backgroundColor: colorSistema.separador }}>
@@ -262,7 +327,7 @@ export default function EncuestaCliente() {
                         ))}
                       </Seccion>
                     ) : null}
-                    {datos.por_sucursal?.length > 1 ? (
+                    {datos.por_sucursal?.length > 1 && datos.por_sucursal.some((s) => s.nps != null) ? (
                       <Seccion titulo="NPS por sucursal">
                         {datos.por_sucursal.map((s, i) => (
                           <View key={s.branch_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: i ? 8 : 0 }}>
@@ -278,7 +343,8 @@ export default function EncuestaCliente() {
                     ) : null}
                     {datos.por_pregunta?.some((p) => p.tipo !== 'texto') ? (
                       <Seccion titulo="Pregunta por pregunta">
-                        <PreguntaPorPregunta preguntas={datos.por_pregunta} />
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca una respuesta para ver sólo a quienes la eligieron.</Text>
+                        <PreguntaPorPregunta preguntas={datos.por_pregunta} numeroDe={numeroDe} filtro={filtros} onFiltrar={filtrarPorRespuesta} />
                       </Seccion>
                     ) : null}
                   </>
@@ -289,10 +355,11 @@ export default function EncuestaCliente() {
                         <View style={{ padding: 12, gap: 6 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Resumen de los comentarios</Text>
-                            <Tocable disabled={!estResumen.puede || resumiendo} onPress={resumir} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: !estResumen.puede || resumiendo ? 0.45 : 1 }}>
+                            <Tocable disabled={!estResumen.puede || resumiendo || conFiltros} onPress={resumir} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: !estResumen.puede || resumiendo || conFiltros ? 0.45 : 1 }}>
                               <Text style={{ color: MARCA.violetaClaro, fontSize: 14, fontWeight: '700' }}>{resumiendo ? 'Resumiendo…' : estResumen.boton}</Text>
                             </Tocable>
                           </View>
+                          {conFiltros ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Quita los filtros para resumir.</Text> : null}
                           {estResumen.ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{estResumen.ayuda}</Text> : null}
                           {resumen?.texto ? (
                             <>

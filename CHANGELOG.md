@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1587.1 — Planilla: dos contratos en la misma quincena pagan los dos tramos
+
+Si en una quincena terminó un contrato y empezó otro (el interinato de Richard Quintanilla terminó el 18/11 y el nuevo empezó el 23/11), la planilla tomaba sólo el contrato nuevo: pagaba del 23 al 30 y se perdían el 16, 17 y 18. `contratoEnQuincena` ahora suma los dos tramos (11 días en ese caso). Los días entre los dos contratos no se pagan y van en `huecos`, que `diasPagadosDeQuincena` excluye para no descontar ahí una ausencia. Ya pasaba con cualquier recontratación dentro de una quincena.
+
+Gemelo: payroll — la regla está en `src/utils/planilla.js`, que usan portal y app.
+
 ## v2.1587.0 — Contratos vencidos: contrato nuevo en un paso y aviso en Personal
 
 Lo pidió el usuario tras el caso de Richard Quintanilla: su interinato venció el 18/11, el contrato nuevo empezó el 23/11 y en el portal seguía activo con el contrato vencido. Para recontratarlo había que darle de baja primero y después recontratar.
@@ -31,6 +37,19 @@ Lo pidió el usuario tras el caso de Richard Quintanilla: su interinato venció 
 - Lógica en `reingresoYRecontratacion.js` (`contratoVencido`, `contratosVencidos`, `diasSinContrato`, `contratoNuevoInicial`, `avisoDeContratoNuevo`), probada en `tests/unit/contratoVencido.test.js`.
 
 Gemelo: staff_list — en `apps/mobile/app/personal.js` (aviso de contratos vencidos), `empleado/[id].js` (las tres salidas), `empleado/recontratar.js` (contrato nuevo) y `empleado/accion.js` (baja con motivo y fecha).
+
+## v2.1586.1 — Resultados de encuestas con filtros y gráficas en la app
+
+La app del personal recibe lo mismo que el portal en v2.1586.0. Lo pidió el usuario.
+
+- **Filtros** en el menú nativo de filtros: sucursal, fecha (hoy, últimos 7 o 30 días, este mes), quién entrevistó y zona. La respuesta se elige tocándola en la gráfica y sale como ficha para quitarla. Los aplica la base con el mismo juez del portal, y el CSV exporta lo filtrado.
+- **Tablero**: respuestas, avance contra la meta, NPS sólo si la encuesta lo pregunta, y cuántos dejaron comentario.
+- **Gráficas por pregunta**: dona o barras con `react-native-svg`, con la forma y las porciones del núcleo (`graficaDe`, `porcionesDe`). La numeración es la del cuestionario.
+- Nuevo en el núcleo: `PERIODOS` y `rangoDePeriodo`, con pruebas.
+- Con un filtro puesto, la lectura de Saly y el resumen avisan y no se rehacen, igual que en el portal.
+
+Novedades: no — lo decidió el usuario para esta función (v2.1586.0).
+Gemelo: encuestas_clientes — en `src/views/encuestas-clientes/ResultadosEncuesta.jsx` (v2.1586.0).
 
 ## v2.1586.0 — Resultados de encuestas con filtros y gráficas
 

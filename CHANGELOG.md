@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1591.0 — Encargo que no se consiguió: se devuelve sin autorización
+
+Decisión del usuario: cuando la empresa queda mal (Bodega no consigue el
+encargo o el proveedor no lo entrega), el cliente elige entre su dinero y un
+saldo a favor, y la devolución **no pasa por administración**. Si el cliente
+desiste, sigue pidiendo autorización (cláusula 8.4).
+
+- **Rechazo con anticipo**: el saldo nace con `devolucion_sin_autorizar =
+  'no_conseguido'`. En Reservas, la sucursal ve «Devolver en dinero»; al
+  apretarlo, pasa a «Devoluciones por entregar» y sale con el vale de siempre.
+  El aviso al cliente dice que se le devuelve si lo pide.
+- **El proveedor no entregó**: «Devolución completa» queda devuelta en el
+  acto, sin aviso a administración. Si eligió otro producto y después pide su
+  dinero, se le devuelve igual (`'no_entrego'`).
+- `reserva_saldo_devolver` acepta a la sucursal cuando el saldo trae la
+  marca; `reservas_de_sucursal` manda `devolucion_libre`.
+
+Migraciones `20261121161530_encargo_no_conseguido_devolucion_libre` y
+`20261121162227_no_entrego_sin_autorizar`. El reglamento y el procedimiento de
+reservas todavía no lo dicen: queda anotado para revisarlos con el usuario.
+
+Gemelo: reservas — en apps/mobile/app/reservas-sala.js
+
 ## v2.1590.0 — Saldo a favor: se paga con él, la factura sale completa
 
 El saldo a favor deja de ser un descuento con puntos y pasa a ser un **pago**,

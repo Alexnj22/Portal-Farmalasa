@@ -3,6 +3,8 @@
 // efectivo es la excepción:
 //   · `pedir`: la sala lo pide con un motivo y administración recibe el aviso;
 //   · `autorizar` / `negar`: administración (`dash_reservas_devolver_saldo`);
+//   · `devolver` (2026-11-21): un encargo que no se consiguió (cláusula 4.6
+//     del reglamento) lo devuelve la sala sin autorización;
 //   · `entregar`: ya autorizada, sale de la caja de la sala como vale
 //     «Devolución a un cliente» y queda amarrado a la reserva.
 import { useRef, useState } from 'react';
@@ -27,6 +29,10 @@ const MODOS = {
     titulo: 'Autorizar devolución', rotulo: 'Motivo de la devolución', boton: 'Autorizar', color: MARCA.verde,
     pie: 'La sucursal lo entrega con un vale de su caja. El saldo ya no se puede usar en caja.',
   },
+  devolver: {
+    titulo: 'Devolver en dinero', rotulo: 'Motivo', boton: 'Devolver', color: MARCA.verde,
+    pie: 'No se consiguió, así que el cliente puede pedir su dinero sin autorización. Después lo entregas desde Devoluciones por entregar, con un vale de tu caja.',
+  },
   negar: {
     titulo: 'No autorizar', rotulo: 'Motivo (se le dice a la sucursal)', boton: 'No autorizar', color: MARCA.rojo,
     pie: 'El saldo sigue a favor del cliente para usarlo en caja.',
@@ -41,7 +47,7 @@ export default function DevolucionDeSaldo() {
   const { id, modo = 'pedir', codigo, monto: montoParam, cliente, sala, motivo: motivoPedido } = useLocalSearchParams();
   const m = MODOS[modo] ?? MODOS.pedir;
   const monto = Number(montoParam ?? 0);
-  const [motivo, setMotivo] = useState(modo === 'autorizar' ? String(motivoPedido ?? '') : '');
+  const [motivo, setMotivo] = useState(modo === 'autorizar' ? String(motivoPedido ?? '') : modo === 'devolver' ? 'No se consiguió el encargo' : '');
   const [ocupado, setOcupado] = useState(false);
   const clave = useRef(null);
 
@@ -54,6 +60,9 @@ export default function DevolucionDeSaldo() {
       } else if (modo === 'autorizar') {
         await devolverSaldoAFavor(id, motivo.trim());
         listo('Devolución autorizada', 'La sucursal la entrega con un vale de su caja.');
+      } else if (modo === 'devolver') {
+        await devolverSaldoAFavor(id, motivo.trim());
+        listo('Devolución lista', 'Entrégala desde Devoluciones por entregar: sale con un vale de tu caja.');
       } else if (modo === 'negar') {
         await negarDevolucionEnEfectivo(id, motivo.trim());
         listo('Devolución no autorizada', 'La sucursal recibe el aviso.');

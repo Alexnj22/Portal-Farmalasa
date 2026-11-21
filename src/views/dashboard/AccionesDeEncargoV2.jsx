@@ -67,9 +67,10 @@ export function CambiarFecha({ encargo, onClose, onGuardar }) {
 }
 
 // Cláusula 4.6: el proveedor no entregó. Es el CLIENTE quien elige: aplicar lo
-// pagado a otro producto (saldo a favor) o la devolución completa, que se
-// tramita como devolución en efectivo (cláusula 8.3, procedimiento §5): la sala
-// la pide, administración la autoriza o la niega, y la sala la entrega.
+// pagado a otro producto (saldo a favor) o la devolución completa. Desde el
+// 2026-11-21 la devolución no pasa por administración (decisión del usuario:
+// cuando la empresa queda mal, se devuelve sin autorizar): queda lista y la sala
+// la entrega con el vale de «Devoluciones por entregar».
 export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
     const [eleccion, setEleccion] = useState('devolucion');
     const [nota, setNota] = useState('');
@@ -86,8 +87,8 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
                         options={[{ value: 'devolucion', label: 'Devolución completa' }, { value: 'saldo', label: 'Otro producto' }]} />
                     <Notice variant="info" compact icon={eleccion === 'devolucion' ? PackageX : Wallet}>
                         {eleccion === 'devolucion'
-                            ? `Se pide la devolución de ${formatMoney(pagadoDeEncargo(encargo))} en efectivo. Un supervisor o administrador la autoriza o la niega. Cuando esté autorizada, se entrega desde Reservas. Mientras tanto, queda a su favor.`
-                            : `Lo pagado queda a su favor por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal. No se deshace.`}
+                            ? `Se le devuelven ${formatMoney(pagadoDeEncargo(encargo))} en efectivo, sin autorización. Entrégalo desde Reservas › Devoluciones por entregar, con un vale de tu caja.`
+                            : `Lo pagado queda a su favor por ${vigenciaDelSaldo(reglas)}, para otro producto en cualquier sucursal. Si después pide su dinero, se le devuelve.`}
                     </Notice>
                     <PortalTextarea label="Nota (opcional)" rows={2} value={nota} maxLength={200} onChange={(e) => setNota(e.target.value)}
                         placeholder="Ej. El proveedor lo descontinuó" />
@@ -97,7 +98,7 @@ export function NoEntrego({ encargo, reglas, onClose, onResolver }) {
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
                 <Button icon={eleccion === 'devolucion' ? PackageX : Wallet} loading={enviando}
                     onClick={async () => { setEnviando(true); try { await onResolver(eleccion, nota.trim() || null); } catch (err) { avisarFallo(showToast, err); } finally { setEnviando(false); } }}>
-                    {eleccion === 'devolucion' ? 'Pedir la devolución' : 'Dejar a su favor'}
+                    {eleccion === 'devolucion' ? 'Devolver' : 'Dejar a su favor'}
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

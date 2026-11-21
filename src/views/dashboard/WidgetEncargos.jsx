@@ -206,9 +206,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, p
     const resolverNoEntrego = async (eleccion, nota) => {
         try {
             const r = await proveedorNoEntregoEncargo(noEntrego.id, eleccion, nota);
-            showToast(eleccion === 'devolucion' ? 'Devolución pedida' : 'Quedó como saldo a favor',
+            showToast(eleccion === 'devolucion' ? 'Devolución lista' : 'Quedó como saldo a favor',
                 eleccion === 'devolucion'
-                    ? `${formatMoney(r?.monto)} por autorizar (${r?.reserva}). Cuando un supervisor o administrador la autorice, se entrega desde Reservas.`
+                    ? `${formatMoney(r?.monto)} (${r?.reserva}). Entrégalo desde Reservas › Devoluciones por entregar, con un vale de tu caja.`
                     : `${formatMoney(r?.monto)} a favor del cliente (${r?.reserva}).`, 'success');
             setNoEntrego(null);
             cargar();

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-21T16:02:48.683Z",
+ "generado": "2026-11-21T16:24:25.626Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",

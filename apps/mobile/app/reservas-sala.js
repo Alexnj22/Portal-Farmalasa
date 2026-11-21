@@ -304,7 +304,9 @@ export default function ReservasDeSala() {
                         </>
                       ) : <Pildora texto="Efectivo pedido" color={MARCA.ambar} />)
                         : puedeDevolver && r.confirmado !== false ? <Accion texto="Devolver en dinero" onPress={() => devolucion(r, 'autorizar')} />
-                          : !deOtra && r.confirmado !== false ? <Accion texto="Pedir en efectivo" onPress={() => devolucion(r, 'pedir')} /> : null}
+                          // Encargo que no se consiguió (cláusula 4.6): la sala lo devuelve sin autorización.
+                          : !deOtra && r.confirmado !== false && r.devolucion_libre ? <Accion texto="Devolver en dinero" onPress={() => devolucion(r, 'devolver')} />
+                            : !deOtra && r.confirmado !== false ? <Accion texto="Pedir en efectivo" onPress={() => devolucion(r, 'pedir')} /> : null}
                     </View>
                   )}
                 </View>

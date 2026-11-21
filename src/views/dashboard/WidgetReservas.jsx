@@ -130,6 +130,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const miSala = sala ?? (todas ? null
         : alcanceTodas ? (salaElegida || salasDeVenta[0]?.value || null)
         : (user?.branchId ?? user?.branch_id ?? null));
+    // Un encargo que no se consiguió o que el proveedor no entregó (2026-11-21:
+    // la empresa quedó mal):
+    // si el cliente pide su dinero, la sucursal se lo devuelve sin autorización.
+    const devuelveLaSala = (r) => !puedeDevolver && r.devolucion_libre && !r.devolucion_pedida_at
+        && r.confirmado !== false && String(r.branch_id) === String(miSala);
     const filaDeSala = (branches || []).find((b) => String(b.id) === String(miSala));
     const nombreSala = filaDeSala?.name ?? '';
     // Bodega no tiene reservas propias, pero ve TODOS los encargos (2026-10-07).
@@ -843,7 +848,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                 { k: 'usar', label: 'Usar en caja', icon: CheckCircle2, onClick: () => usarSaldo(r) },
                                 puedeDevolver && r.devolucion_pedida_at && { k: 'negar', label: 'No autorizar', icon: XCircle, onClick: () => setNegando(r) },
                                 puedeDevolver && !r.devolucion_pedida_at && { k: 'devolver', label: 'Devolver en dinero', icon: Banknote, onClick: () => setDevolver(r) },
-                                !puedeDevolver && !r.devolucion_pedida_at && String(r.branch_id) === String(miSala)
+                                devuelveLaSala(r) && { k: 'devolver', label: 'Devolver en dinero', icon: Banknote, onClick: () => setDevolver(r) },
+                                !puedeDevolver && !r.devolucion_libre && !r.devolucion_pedida_at && String(r.branch_id) === String(miSala)
                                     && { k: 'pedir', label: 'Pedir en efectivo', icon: Banknote, onClick: () => setPidiendoDevolucion(r) },
                             ].filter(Boolean);
                             return (
@@ -856,7 +862,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                             { rotulo: 'A favor', valor: Number(r.saldo_favor), tono: 'text-success-text' },
                                             ...(Number(r.saldo_favor_inicial) > Number(r.saldo_favor) ? [{ rotulo: 'De', valor: Number(r.saldo_favor_inicial), tono: 'text-content-3' }] : []),
                                         ]}
-                                        aviso={r.devolucion_pedida_at ? `Pide el dinero en efectivo${r.devolucion_pedida_motivo ? `: ${r.devolucion_pedida_motivo}` : ''}` : null}
+                                        aviso={r.devolucion_pedida_at ? `Pide el dinero en efectivo${r.devolucion_pedida_motivo ? `: ${r.devolucion_pedida_motivo}` : ''}`
+                                            : r.devolucion_libre ? 'No se consiguió: si pide su dinero, se le devuelve.' : null}
                                         plazo={vence} acciones={acc} />
                                 </li>
                             );
@@ -885,7 +892,10 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                             {puedeDevolver && r.devolucion_pedida_at && (
                                                 <Button variant="ghost" size="xs" icon={XCircle} onClick={() => setNegando(r)}>No autorizar</Button>
                                             )}
-                                            {!puedeDevolver && !r.devolucion_pedida_at && r.confirmado !== false && String(r.branch_id) === String(miSala) && (
+                                            {devuelveLaSala(r) && (
+                                                <Button variant="ghost" size="xs" icon={Banknote} onClick={() => setDevolver(r)}>Devolver en dinero</Button>
+                                            )}
+                                            {!puedeDevolver && !r.devolucion_libre && !r.devolucion_pedida_at && r.confirmado !== false && String(r.branch_id) === String(miSala) && (
                                                 <Button variant="ghost" size="xs" icon={Banknote} onClick={() => setPidiendoDevolucion(r)}>Pedir en efectivo</Button>
                                             )}
                                             <Button variant="secondary" size="xs" icon={CheckCircle2} onClick={() => usarSaldo(r)}>Usar en caja</Button>
@@ -1055,7 +1065,8 @@ function AvisoWhatsapp({ reserva, onCerrar, onEnviado }) {
 // del cobro en línea, o caja); acá queda quién la autorizó, cuándo, cuánto y
 // por qué —en la fila y en la bitácora—, y el saldo deja de poder usarse.
 function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appendAuditLog, showToast }) {
-    const [motivo, setMotivo] = useState('');
+    const libre = Boolean(saldo.devolucion_libre) && !saldo.devolucion_pedida_at;
+    const [motivo, setMotivo] = useState(libre ? 'No se consiguió el encargo' : '');
     const [enviando, setEnviando] = useState(false);
     const monto = Number(saldo.saldo_favor);
     const confirmar = async () => {
@@ -1063,7 +1074,9 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
         try {
             await devolverSaldoAFavor(saldo.id, motivo);
             appendAuditLog?.('RESERVA_SALDO_FAVOR_DEVUELTO', String(saldo.id), { monto, motivo: motivo.trim(), pedido: saldo.pedido ?? null })?.catch?.(() => {});
-            showToast('Devolución autorizada', `${formatMoney(monto)} · el saldo ya no se puede usar en caja.`, 'success');
+            showToast(libre ? 'Devolución lista' : 'Devolución autorizada', libre
+                ? `Entrega ${formatMoney(monto)} desde Devoluciones por entregar: sale con un vale de tu caja.`
+                : `${formatMoney(monto)} · el saldo ya no se puede usar en caja.`, 'success');
             onDevuelto();
         } catch (err) {
             showToast('No se pudo autorizar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -1077,8 +1090,9 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
             <LiquidModal.Body>
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
-                        {saldo.pedido ?? codigoDeReserva(saldo.id)} · {saldo.producto} · {origenDelSaldo(saldo)}. Al autorizarla, el saldo ya no se puede
-                        usar en caja. {saldo.devolucion_pedida_at
+                        {saldo.pedido ?? codigoDeReserva(saldo.id)} · {saldo.producto} · {origenDelSaldo(saldo)}. {libre
+                            ? 'No se consiguió, así que el cliente puede pedir su dinero sin autorización. Después lo entregas desde Devoluciones por entregar, con un vale de tu caja.'
+                            : 'Al autorizarla, el saldo ya no se puede usar en caja.'} {libre ? null : saldo.devolucion_pedida_at
                             ? `La sucursal lo pidió («${saldo.devolucion_pedida_motivo ?? ''}») y lo entrega con un vale de su caja.`
                             : 'La devolución del dinero se hace aparte.'}
                     </p>
@@ -1089,7 +1103,7 @@ function DevolverSaldo({ saldo, onCerrar, onDevuelto, devolverSaldoAFavor, appen
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onCerrar}>Ahora no</Button>
                 <Button variant="destructive" icon={Banknote} loading={enviando} disabled={motivo.trim().length < 3}
-                    onClick={confirmar}>Autorizar devolución</Button>
+                    onClick={confirmar}>{libre ? 'Devolver' : 'Autorizar devolución'}</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

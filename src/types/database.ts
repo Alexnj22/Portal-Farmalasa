@@ -2342,6 +2342,7 @@ export type Database = {
           devolucion_pedida_at: string | null
           devolucion_pedida_motivo: string | null
           devolucion_pedida_por: string | null
+          devolucion_sin_autorizar: string | null
           direccion_entrega: string | null
           documento: string
           entrega: string
@@ -2425,6 +2426,7 @@ export type Database = {
           devolucion_pedida_at?: string | null
           devolucion_pedida_motivo?: string | null
           devolucion_pedida_por?: string | null
+          devolucion_sin_autorizar?: string | null
           direccion_entrega?: string | null
           documento?: string
           entrega?: string
@@ -2508,6 +2510,7 @@ export type Database = {
           devolucion_pedida_at?: string | null
           devolucion_pedida_motivo?: string | null
           devolucion_pedida_por?: string | null
+          devolucion_sin_autorizar?: string | null
           direccion_entrega?: string | null
           documento?: string
           entrega?: string

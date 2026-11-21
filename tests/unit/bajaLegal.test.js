@@ -105,6 +105,17 @@ describe('liquidación estimada', () => {
         expect(l.rubros.find((r) => r.clave === 'vacaciones').aplica).toBe(true);
         expect(l.total).toBeGreaterThan(0);
     });
+    it('lo ya pagado se ve pero sale del total; lo que no corresponde no se marca', () => {
+        const sin = liquidacionEstimada({ ...base, ingreso: '2025-06-01', motivo: 'RENUNCIA' });
+        const con = liquidacionEstimada({ ...base, ingreso: '2025-06-01', motivo: 'RENUNCIA', yaPagados: ['aguinaldo', 'prestacionRenuncia'] });
+        const agu = con.rubros.find((r) => r.clave === 'aguinaldo');
+        expect(agu.yaPagado).toBe(true);
+        expect(agu.monto).toBe(sin.rubros.find((r) => r.clave === 'aguinaldo').monto);
+        expect(con.total).toBeCloseTo(sin.total - agu.monto, 2);
+        expect(con.yaPagado).toBe(agu.monto);
+        expect(con.rubros.find((r) => r.clave === 'prestacionRenuncia').yaPagado).toBeUndefined();
+        expect(sin.yaPagado).toBe(0);
+    });
     it('renuncia sin preaviso: la prestación queda a revisar (Art. 2 LRPERV)', () => {
         const l = liquidacionEstimada({ ...base, motivo: 'RENUNCIA', preavisoDias: 3 });
         expect(l.rubros.find((r) => r.clave === 'prestacionRenuncia').aplica).toBe('revisar');

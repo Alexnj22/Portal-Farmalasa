@@ -11,7 +11,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import { irAlCampo } from '../../plataforma/irAlCampo';
 import { TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
 import {
-    CAUSALES_ART_50, documentoDeBaja, DIAS_DE_LA_SEMANA, SALARIO_MINIMO_INICIAL, avisosDeBaja, pendientesDeBaja, diasDePreaviso, liquidacionEstimada,
+    CAUSALES_ART_50, documentoDeBaja, DIAS_DE_LA_SEMANA, SALARIO_MINIMO_INICIAL, avisosDeBaja, pendientesDeBaja, diasDePreaviso, liquidacionEstimada, rubroSePuedeMarcarPagado,
     requisitosDeBaja, respaldoDeBajaObligatorio, estadoDeActivos, conActivo,
 } from '@nucleo/utils/bajaLegal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -149,14 +149,21 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
     const acordado = Number(String(acordadoTexto).replace(',', '.'));
 
     const preavisoDias = diasDePreaviso(formData);
+    // Lo que la empresa ya pagó antes de la baja (el aguinaldo de diciembre,
+    // unas vacaciones adelantadas): se ve, pero no se suma otra vez.
+    const yaPagados = formData?.rubrosYaPagados;
     const liquidacion = useMemo(() => liquidacionEstimada({
-        motivo, salarioMensual: salario, ingreso, baja: formData?.date, salarioMinimoMensual: minimo, preavisoDias,
-    }), [motivo, salario, ingreso, formData?.date, minimo, preavisoDias]);
+        motivo, salarioMensual: salario, ingreso, baja: formData?.date, salarioMinimoMensual: minimo, preavisoDias, yaPagados,
+    }), [motivo, salario, ingreso, formData?.date, minimo, preavisoDias, yaPagados]);
+    const marcarPagado = (clave, pagado) => setFormData((prev) => {
+        const antes = Array.isArray(prev?.rubrosYaPagados) ? prev.rubrosYaPagados : [];
+        return { ...prev, rubrosYaPagados: pagado ? [...new Set([...antes, clave])] : antes.filter((c) => c !== clave) };
+    });
 
     // La estimación se guarda con la baja: es lo que se le dijo a quien
     // registró, con el mínimo que se usó. Sólo se escribe si cambió.
     useEffect(() => {
-        const nueva = liquidacion ? { total: liquidacion.total, rubros: liquidacion.rubros, aniosDeServicio: liquidacion.aniosDeServicio } : null;
+        const nueva = liquidacion ? { total: liquidacion.total, yaPagado: liquidacion.yaPagado, rubros: liquidacion.rubros, aniosDeServicio: liquidacion.aniosDeServicio } : null;
         if (JSON.stringify(nueva) !== JSON.stringify(formData?.liquidacionEstimada ?? null)) {
             setFormData((prev) => ({ ...prev, liquidacionEstimada: nueva, salarioMinimoUsado: minimoTexto }));
         }
@@ -388,19 +395,30 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                                         <ul className="divide-y divide-border-card">
                                             {liquidacion.rubros.map((r) => (
                                                 <li key={r.clave} className="flex justify-between gap-3 py-2 text-body-sm">
-                                                    <span className={r.aplica === true ? 'text-content' : 'text-content-3'}>
+                                                    <span className={r.aplica === true && !r.yaPagado ? 'text-content' : 'text-content-3'}>
                                                         {r.texto}
-                                                        {r.aplica === 'revisar' && <Badge variant="warning" size="sm" uppercase={false} className="ml-2">Consultar con el abogado · no se suma</Badge>}
-                                                        {r.aplica === false && <Badge variant="neutral" size="sm" uppercase={false} className="ml-2">No corresponde</Badge>}
+                                                        {r.yaPagado
+                                                            ? <Badge variant="success" size="sm" uppercase={false} className="ml-2">Ya se pagó · no se suma</Badge>
+                                                            : <>
+                                                                {r.aplica === 'revisar' && <Badge variant="warning" size="sm" uppercase={false} className="ml-2">Consultar con el abogado · no se suma</Badge>}
+                                                                {r.aplica === false && <Badge variant="neutral" size="sm" uppercase={false} className="ml-2">No corresponde</Badge>}
+                                                            </>}
                                                         <span className="block text-caption text-content-3">{r.base}</span>
+                                                        {rubroSePuedeMarcarPagado(r) && (
+                                                            <Checkbox size="sm" checked={!!r.yaPagado} onChange={(v) => marcarPagado(r.clave, v)}
+                                                                label={<span className="text-caption text-content-2">Ya se pagó</span>} />
+                                                        )}
                                                     </span>
-                                                    <span className={`font-bold tabular-nums ${r.aplica === true ? 'text-content' : 'text-content-3'}`}>{formatMoney(r.monto)}</span>
+                                                    <span className={`font-bold tabular-nums ${r.yaPagado ? 'text-content-3 line-through' : r.aplica === true ? 'text-content' : 'text-content-3'}`}>{formatMoney(r.monto)}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                         <div className="flex justify-between border-t border-border-card pt-2 text-body font-black">
                                             <span>Total estimado</span><span className="tabular-nums">{formatMoney(liquidacion.total)}</span>
                                         </div>
+                                        {liquidacion.yaPagado > 0 && (
+                                            <p className="text-caption text-content-2">Ya se pagaron {formatMoney(liquidacion.yaPagado)}. No están en el total.</p>
+                                        )}
                                         <p className="text-caption text-content-3">
                                             Calculado con {liquidacion.aniosDeServicio} años de servicio. Los días trabajados del último período se pagan en la planilla, no aquí. Es una estimación: confírmala con el contador o el abogado antes de pagar.
                                         </p>

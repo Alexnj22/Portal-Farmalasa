@@ -12,7 +12,7 @@ import Interruptor from '../Interruptor';
 import { TERMINATION_REASONS, opcionesDeCatalogo } from '@nucleo/data/constants';
 import {
   CAUSALES_ART_50, DIAS_DE_LA_SEMANA, documentoDeBaja, SALARIO_MINIMO_INICIAL,
-  avisosDeBaja, diasDePreaviso, liquidacionEstimada, pendientesDeBaja, estadoDeActivos, conActivo,
+  avisosDeBaja, diasDePreaviso, liquidacionEstimada, rubroSePuedeMarcarPagado, pendientesDeBaja, estadoDeActivos, conActivo,
 } from '@nucleo/utils/bajaLegal';
 import { htmlDeActaYCarta } from '@nucleo/utils/papelDeBaja';
 import { registrarEgreso } from '@nucleo/data/egreso';
@@ -112,13 +112,19 @@ export default function BajaLegal({ f, pon, emp }) {
   const acordado = Number(String(acordadoTexto).replace(',', '.'));
   const preavisoDias = diasDePreaviso(f);
 
+  // Lo que la empresa ya pagó antes de la baja: se ve, pero no se suma otra vez (igual que el portal).
+  const yaPagados = f.rubrosYaPagados;
   const liquidacion = useMemo(() => liquidacionEstimada({
-    motivo, salarioMensual: salario, ingreso, baja: f.date, salarioMinimoMensual: minimo, preavisoDias,
-  }), [motivo, salario, ingreso, f.date, minimo, preavisoDias]);
+    motivo, salarioMensual: salario, ingreso, baja: f.date, salarioMinimoMensual: minimo, preavisoDias, yaPagados,
+  }), [motivo, salario, ingreso, f.date, minimo, preavisoDias, yaPagados]);
+  const marcarPagado = (clave, pagado) => {
+    const antes = Array.isArray(f.rubrosYaPagados) ? f.rubrosYaPagados : [];
+    pon({ rubrosYaPagados: pagado ? [...new Set([...antes, clave])] : antes.filter((c) => c !== clave) });
+  };
 
   // La estimación se guarda con la baja, con el mínimo que se usó (igual que el portal).
   useEffect(() => {
-    const nueva = liquidacion ? { total: liquidacion.total, rubros: liquidacion.rubros, aniosDeServicio: liquidacion.aniosDeServicio } : null;
+    const nueva = liquidacion ? { total: liquidacion.total, yaPagado: liquidacion.yaPagado, rubros: liquidacion.rubros, aniosDeServicio: liquidacion.aniosDeServicio } : null;
     if (JSON.stringify(nueva) !== JSON.stringify(f.liquidacionEstimada ?? null)) pon({ liquidacionEstimada: nueva, salarioMinimoUsado: minimoTexto });
   }, [liquidacion]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -224,18 +230,24 @@ export default function BajaLegal({ f, pon, emp }) {
                       {liquidacion.rubros.map((r) => (
                         <View key={r.clave} style={{ flexDirection: 'row', gap: 10, paddingVertical: 6 }}>
                           <View style={{ flex: 1 }}>
-                            <Text style={{ color: r.aplica === true ? colorSistema.texto : colorSistema.texto2, fontSize: 15 }}>
-                              {`${r.texto}${r.aplica === 'revisar' ? ' — a revisar, no se suma' : r.aplica === false ? ' — no corresponde' : ''}`}
+                            <Text style={{ color: r.aplica === true && !r.yaPagado ? colorSistema.texto : colorSistema.texto2, fontSize: 15 }}>
+                              {`${r.texto}${r.yaPagado ? ' — ya se pagó, no se suma' : r.aplica === 'revisar' ? ' — a revisar, no se suma' : r.aplica === false ? ' — no corresponde' : ''}`}
                             </Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{r.base}</Text>
+                            {rubroSePuedeMarcarPagado(r) ? (
+                              <Fila rotulo="Ya se pagó"><Interruptor value={!!r.yaPagado} onValueChange={(v) => marcarPagado(r.clave, v)} /></Fila>
+                            ) : null}
                           </View>
-                          <Text style={{ color: r.aplica === true ? colorSistema.texto : colorSistema.texto2, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(r.monto)}</Text>
+                          <Text style={{ color: r.aplica === true && !r.yaPagado ? colorSistema.texto : colorSistema.texto2, textDecorationLine: r.yaPagado ? 'line-through' : 'none', fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(r.monto)}</Text>
                         </View>
                       ))}
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>Total estimado</Text>
                         <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(liquidacion.total)}</Text>
                       </View>
+                      {liquidacion.yaPagado > 0 ? (
+                        <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Ya se pagaron ${formatMoney(liquidacion.yaPagado)}. No están en el total.`}</Text>
+                      ) : null}
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Con ${liquidacion.aniosDeServicio} años de servicio. Los días trabajados del último período se pagan en la planilla, no aquí.`}</Text>
                     </>
                   ) : null}

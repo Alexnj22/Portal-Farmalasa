@@ -334,13 +334,19 @@ export function diasDeAguinaldo(anios) {
     return 15;
 }
 
+/** ¿Se le puede marcar «Ya se pagó»? Sólo si corresponde (o está a revisar) y tiene monto. */
+export const rubroSePuedeMarcarPagado = (r) => !!r && r.aplica !== false && r.monto > 0;
+
 /**
  * La liquidación estimada.
  *
- * @param {{ motivo: string, salarioMensual: number, ingreso: string, baja: string, salarioMinimoMensual: number, preavisoDias?: number|null }} p
- * @returns {{ rubros: Array<{ clave: string, texto: string, monto: number, aplica: true|false|'revisar', base: string }>, total: number, aniosDeServicio: number } | null}
+ * `yaPagados`: claves de los rubros que la empresa ya pagó antes de la baja
+ * (p. ej. el aguinaldo de diciembre o unas vacaciones adelantadas). Se siguen
+ * mostrando con su monto, pero no entran al total (2026-11-21).
+ * @param {{ motivo: string, salarioMensual: number, ingreso: string, baja: string, salarioMinimoMensual: number, preavisoDias?: number|null, yaPagados?: string[] }} p
+ * @returns {{ rubros: Array<{ clave: string, texto: string, monto: number, aplica: true|false|'revisar', base: string, yaPagado?: true }>, total: number, yaPagado: number, aniosDeServicio: number } | null}
  */
-export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, salarioMinimoMensual, preavisoDias = null }) {
+export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, salarioMinimoMensual, preavisoDias = null, yaPagados = [] }) {
     const sm = Number(salarioMensual);
     const min = Number(salarioMinimoMensual);
     if (!(sm > 0) || !fecha(ingreso) || !fecha(baja) || !(min > 0) || dias(ingreso, baja) < 0) return null;
@@ -430,8 +436,16 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
                     : `15 días × ${aniosCompletos} años completos, salario diario topado en 2 mínimos (Art. 8 LRPERV)` });
     }
 
-    const total = redondear(rubros.filter((r) => r.aplica === true).reduce((s, r) => s + r.monto, 0));
-    return { rubros, total, aniosDeServicio: Math.round(anios * 100) / 100 };
+    // Lo ya pagado se marca sólo donde había algo que pagar: un rubro que no
+    // corresponde no se puede «haber pagado» en esta cuenta.
+    const pagados = new Set(Array.isArray(yaPagados) ? yaPagados : []);
+    for (const r of rubros) {
+        if (pagados.has(r.clave) && rubroSePuedeMarcarPagado(r)) r.yaPagado = true;
+    }
+    const sumar = (lista) => redondear(lista.reduce((s, r) => s + r.monto, 0));
+    const total = sumar(rubros.filter((r) => r.aplica === true && !r.yaPagado));
+    const yaPagado = sumar(rubros.filter((r) => r.yaPagado));
+    return { rubros, total, yaPagado, aniosDeServicio: Math.round(anios * 100) / 100 };
 }
 
 /**

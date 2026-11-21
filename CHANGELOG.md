@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.3 — Baja: marcar lo que ya se pagó de la liquidación
+
+En la liquidación de una baja, cada rubro con monto (vacaciones, aguinaldo,
+quincena 25, indemnización, prestación) trae la casilla **«Ya se pagó»**. El
+rubro se sigue viendo con su monto, tachado, y sale del total; debajo del total
+se dice cuánto ya se pagó. Antes la única salida era escribir a mano el «Total
+que se pagará».
+
+- `liquidacionEstimada` recibe `yaPagados` (claves) y devuelve `yaPagado`; un
+  rubro que no corresponde no se puede marcar (`rubroSePuedeMarcarPagado`).
+- Se guarda en la baja como `rubrosYaPagados`, junto a la estimación.
+- Portal (`BajaLegal.jsx`) y app (`componentes/personal/BajaLegal.js`) a la vez.
+
+Gemelo: staff_list — el lado del portal es src/components/forms/BajaLegal.jsx (preparado en este commit), que el mapa trata como formulario genérico
+
+Novedades: no — el gate valoró 0 de 4 (nada visible para el personal; lo usa quien registra bajas)
+
+_(pendiente de redactar)_
+
 ## v2.1592.2 — El horario asegura el apoyo y la asistencia queda en pausa sin kiosco
 
 Auditoría de horarios y apoyos (2026-11-21). El apoyo se escribía dos veces:

@@ -215,12 +215,20 @@ export function useAccionesDeReserva({ sala, nombreSala = '', verTodas = false, 
     if (!x?.vendida_aparte) return;
     const v = x.vendida_aparte;
     const anticipo = Number(x.anticipo ?? 0);
-    const que = `El ${fechaHora12(v.at)} se le vendió ${x.cantidad} × ${x.producto} en caja por ${formatMoney(Number(v.total ?? 0))}. La reserva queda entregada con esa venta. No se deshace.`;
-    Alert.alert(`Cerrar ${r.pedido ?? codigoDeReserva(r.id)} con esa venta`,
-      anticipo > 0 ? `${que}\n\n¿En esa venta se le descontó el anticipo de ${formatMoney(anticipo)}? Si pagó la venta completa, el anticipo queda a su favor.` : que,
+    const titulo = `Cerrar ${r.pedido ?? codigoDeReserva(r.id)} con esa venta`;
+    const que = `El ${fechaHora12(v.at)} se le vendió ${x.cantidad} × ${x.producto} en caja por ${formatMoney(Number(v.total ?? 0))}. Al cerrar, la reserva queda entregada con esa venta. No se deshace.`;
+    // 2026-11-21: elegir una opción ya no cierra; se confirma aparte, como en el portal.
+    const confirmar = (seDesconto) => Alert.alert(titulo, seDesconto
+      ? 'Se le descontó el anticipo. No queda nada a su favor.'
+      : `Pagó la venta completa. Los ${formatMoney(anticipo)} del anticipo quedan a su favor.`, [
+      { text: 'Cerrar reserva', onPress: () => amarrarConVenta(r, x, seDesconto) },
+      { text: 'Atrás', style: 'cancel', onPress: () => amarrar(r, x) },
+    ]);
+    Alert.alert(titulo,
+      anticipo > 0 ? `${que}\n\nDejó un anticipo de ${formatMoney(anticipo)}. ¿Qué pasó con él en esa venta?\n\n• Se le descontó: en caja pagó sólo lo que faltaba. No queda nada a su favor. Elige esta también si ya se le devolvió en efectivo.\n\n• Pagó completo: en caja pagó el precio entero, aparte del anticipo. El anticipo queda a su favor.` : que,
       anticipo > 0 ? [
-        { text: 'Sí, se descontó', onPress: () => amarrarConVenta(r, x, true) },
-        { text: 'Pagó completo', onPress: () => amarrarConVenta(r, x, false) },
+        { text: 'Se le descontó', onPress: () => confirmar(true) },
+        { text: 'Pagó completo', onPress: () => confirmar(false) },
         { text: 'Ahora no', style: 'cancel' },
       ] : [
         { text: 'Cerrar reserva', onPress: () => amarrarConVenta(r, x, true) },

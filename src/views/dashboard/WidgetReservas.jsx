@@ -1172,6 +1172,15 @@ function CerrarConVenta({ caso, ocupada, onCerrar, onDecidir }) {
     const v = x.vendida_aparte;
     const codigo = r.pedido ?? codigoDeReserva(r.id);
     const anticipo = Number(x.anticipo ?? 0);
+    // 2026-11-21: tocar una opción ya no cierra. Se elige, se lee qué hace
+    // cada una y se confirma aparte (un toque de curiosidad cerró la R-000164).
+    const [eleccion, setEleccion] = useState(null);
+    const opciones = [
+        { k: true, titulo: 'Se le descontó el anticipo',
+          texto: `En caja pagó sólo lo que faltaba. No queda nada a su favor. Elige esta también si ya se le devolvió el anticipo en efectivo.` },
+        { k: false, titulo: 'Pagó la venta completa',
+          texto: `En caja pagó el precio entero, aparte del anticipo. Los ${formatMoney(anticipo)} del anticipo quedan a su favor para otra compra o para devolvérselos.` },
+    ];
     return (
         <LiquidModal open onClose={onCerrar} maxWidth="max-w-md" ariaLabel={`Cerrar ${codigo} con esa venta`}>
             <LiquidModal.Header titulo={`Cerrar ${codigo} con esa venta`} onClose={onCerrar} />
@@ -1179,23 +1188,33 @@ function CerrarConVenta({ caso, ocupada, onCerrar, onDecidir }) {
                 <div className="space-y-3">
                     <p className="text-body-sm text-content-2">
                         El {fechaHora12(v.at)} se le vendió {x.cantidad} × {x.producto} en caja por <b className="text-content">{formatMoney(Number(v.total ?? 0))}</b>.
-                        La reserva queda entregada con esa venta. No se deshace.
+                        Al cerrar, la reserva queda entregada con esa venta. No se deshace.
                     </p>
                     {anticipo > 0 ? (
-                        <p className="text-body-sm text-content-2">
-                            ¿En esa venta se le descontó el anticipo de <b className="text-content">{formatMoney(anticipo)}</b>?
-                            Si pagó la venta completa, el anticipo queda a su favor.
-                        </p>
+                        <>
+                            <p className="text-body-sm text-content-2">
+                                Dejó un anticipo de <b className="text-content">{formatMoney(anticipo)}</b>. ¿Qué pasó con él en esa venta?
+                            </p>
+                            <div role="radiogroup" aria-label="Qué pasó con el anticipo" className="space-y-3">
+                                {opciones.map((o) => (
+                                    <div key={String(o.k)} className="space-y-1">
+                                        <Button className="w-full" variant={eleccion === o.k ? 'primary' : 'secondary'}
+                                            role="radio" aria-checked={eleccion === o.k} disabled={ocupada}
+                                            onClick={() => setEleccion(o.k)}>
+                                            {o.titulo}
+                                        </Button>
+                                        <p className="text-micro text-content-3 leading-snug">{o.texto}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     ) : null}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onCerrar} disabled={ocupada}>Ahora no</Button>
                 {anticipo > 0 ? (
-                    <>
-                        <Button variant="secondary" loading={ocupada} onClick={() => onDecidir(false)}>Pagó completo</Button>
-                        <Button loading={ocupada} onClick={() => onDecidir(true)}>Sí, se descontó</Button>
-                    </>
+                    <Button loading={ocupada} disabled={eleccion === null} onClick={() => onDecidir(eleccion)}>Cerrar reserva</Button>
                 ) : (
                     <Button loading={ocupada} onClick={() => onDecidir(true)}>Cerrar reserva</Button>
                 )}

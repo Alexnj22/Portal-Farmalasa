@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1588.1 — Cerrar una reserva con la venta de caja explica cada opción
+
+Lo reportó el usuario: en la R-000164 de Salud 1 tocó «Pagó completo» para ver qué explicaba y la reserva se cerró en el acto, dejando $6.60 a favor del cliente (que la sucursal ya le había devuelto en efectivo).
+
+- **Elegir ya no cierra.** Cada opción («Se le descontó el anticipo» / «Pagó la venta completa») dice qué pasa con el anticipo, y se confirma aparte con «Cerrar reserva». En la app, una segunda alerta confirma la elección.
+- «Se le descontó» aclara que también es la opción si el anticipo ya se devolvió en efectivo.
+- La R-000164 se regresó a mano a «lista», sin saldo a favor y sin la venta amarrada (bitácora `RESERVA_CIERRE_REVERTIDO`).
+
+Gemelo: reservas — en `apps/mobile/componentes/reservas/useAccionesDeReserva.js`
+
 ## v2.1588.0 — Encargos: anticipo antes de que Bodega confirme
 
 Lo pidió el usuario: un producto que no hay en ninguna sucursal, pero que ya tuvimos (tiene precio), se encarga, y si el cliente dejaba un anticipo no había cómo darle ingreso. El dinero sólo podía entrar después de que Bodega confirmara precio y fecha.

@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.2 — El horario asegura el apoyo y la asistencia queda en pausa sin kiosco
+
+Auditoría de horarios y apoyos (2026-11-21). El apoyo se escribía dos veces:
+en Personal (`employee_events` SUPPORT, que da sucursal y cargo al entrar) y
+en Horarios (`schedule_coverage`, dónde y a qué hora). Daniela quedó de apoyo
+en Salud 3 sólo en el horario y habría entrado al portal como Salud 1.
+
+- Migración `20261121173737_el_horario_asegura_el_apoyo`: un trigger en
+  `schedule_coverage` mantiene un apoyo automático (`origen: 'horario'`) por
+  persona, sucursal y semana con los días que no cubre ya un apoyo puesto a
+  mano. El de Personal manda y conserva su cargo; quitar la cobertura nunca
+  toca uno puesto a mano. Probado en el entorno de pruebas.
+- Datos: apoyos de Daniela (Salud 3, 23–26 nov) y Juan Meléndez (Salud 3 como
+  Dependiente, 12 y 19 dic).
+- Cron `consolidate-timesheets-daily` apagado con permiso del usuario: sin
+  marcaciones, cada persona con turno salía como falta descontable. Se
+  reenciende cuando vuelvan a marcar.
+
+Novedades: no — cambio interno de la base, no cambia ninguna pantalla.
+Gemelo: horarios — sólo base de datos, sin pantalla.
+
 ## v2.1592.1 — Horarios: días partidos como almuerzo largo
 
 La celda del día (portal y app) tiene ahora la hora de **regreso** del

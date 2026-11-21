@@ -444,7 +444,7 @@
       "modulos": [
         "promociones"
       ],
-      "motivo": "DEFINER para resolver al vendedor por código (employees.code no es legible por authenticated). Exige promociones, que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+      "motivo": "DEFINER para resolver al vendedor por código (employees.code no es legible por authenticated). Exige promociones, que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla. Desde 2026-11-21 además fuerza la sucursal propia si el alcance de promociones no es ALL."
     },
     "ajustar_resumen_promocion": {
       "guarda": "modulo-de-red",
@@ -1060,6 +1060,18 @@
     "elegir_sala_activa": {
       "guarda": "sin-sala",
       "motivo": "Revisado 2026-11-13: sólo cambia la sala ACTIVA de quien llama, y únicamente a una de las que tiene asignadas en `employee_branches` (si no, SALA_NO_CUBIERTA). No lee ni escribe datos de ninguna sala."
+    },
+    "inventory_grouped": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "El inventario no tiene alcance por sala (hasScope apagado en permissionModules.js): ver las 7 es por diseño. Desde 2026-11-21 exige permiso de ver inventario (auth_puede_ver_inventario, la misma regla que la policy inventory_select); antes no exigía nada."
+    },
+    "inventory_proximos_count": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "El inventario no tiene alcance por sala (hasScope apagado en permissionModules.js): ver las 7 es por diseño. Desde 2026-11-21 exige permiso de ver inventario (auth_puede_ver_inventario, la misma regla que la policy inventory_select); antes no exigía nada."
+    },
+    "inventory_inversion": {
+      "guarda": "cruza-por-diseno",
+      "motivo": "El inventario no tiene alcance por sala (hasScope apagado): ver las 7 es por diseño. Exige inventario can_view."
     }
   },
   "buckets_abiertos": {

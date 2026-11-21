@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1591.1 — Inventario y rebajas exigen permiso y alcance
+
+Seguridad (base de datos, migración `20261121163052`). Hallado en la auditoría
+de filtros del 2026-11-21:
+
+- `inventory_grouped` e `inventory_proximos_count` eran SECURITY DEFINER y no
+  pedían ningún permiso: cualquier sesión leía el inventario de las 7 salas
+  saltándose la policy `inventory_select`. Ahora exigen la misma regla
+  (`auth_puede_ver_inventario`, nueva). Probado en el branch: la cuenta con
+  permiso ve igual; una sesión sin empleado recibe 42501.
+- `rebajas_en_ventas` filtraba la sucursal sin mirar el alcance: si el alcance
+  de Promociones no es ALL, ahora fuerza la sucursal propia.
+- `gate:alcance` no las veía porque el parámetro se llama `p_erp_id`: la regex
+  ahora lo cuenta, y las tres funciones de inventario quedan declaradas.
+
+Gemelo: inventario — sin pantalla, sólo base de datos.
+Novedades: no — cambio interno de seguridad, nadie con permiso nota diferencia.
+
 ## v2.1591.0 — Encargo que no se consiguió: se devuelve sin autorización
 
 Decisión del usuario: cuando la empresa queda mal (Bodega no consigue el

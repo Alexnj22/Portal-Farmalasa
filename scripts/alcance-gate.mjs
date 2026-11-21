@@ -137,7 +137,9 @@ if (!arg('--hook')) {
              has_function_privilege('authenticated', p.oid, 'EXECUTE') as autenticado
         from pg_proc p join pg_namespace n on n.oid = p.pronamespace
        where n.nspname = 'public' and p.prosecdef
-         and pg_get_function_identity_arguments(p.oid) ~* '(branch|sala|sucursal)'`);
+         and pg_get_function_identity_arguments(p.oid) ~* '(branch|sala|sucursal|\\mp_erp_id integer)'`);
+    // `p_erp_id integer` es el id de sucursal del inventario (inventory_grouped y
+    // familia). Sin esto el gate no las veía y quedaron sin permiso (2026-11-21).
     const porNombre = new Map();
     for (const r of rpcs) porNombre.set(r.nombre, { ...r, src: (porNombre.get(r.nombre)?.src ?? '') + r.src,
       autenticado: r.autenticado || porNombre.get(r.nombre)?.autenticado });

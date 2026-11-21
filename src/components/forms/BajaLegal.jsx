@@ -36,7 +36,9 @@ const DEVOLUCION = [
     { value: 'NO', label: 'No devolvió', tone: 'warning' },
     // No va a volver: cierra la baja y deja escrito que no se recuperó (2026-11-20).
     { value: 'NO_DEVOLVERA', label: 'No lo devolverá', tone: 'danger' },
-    { value: 'NA', label: 'No tenía', tone: 'neutro' },
+    // Gris SÓLIDO, no `neutro`: `neutro` es blanco con sombra, pensado para un
+    // riel gris; en esta grilla de cuadros blancos elegirlo no se veía (2026-11-21).
+    { value: 'NA', label: 'No tenía', tone: 'chart-8' },
 ];
 
 /**

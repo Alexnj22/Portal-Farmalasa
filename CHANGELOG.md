@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.4 — Baja: «No tenía» se ve al elegirlo
+
+En «¿Devolvió…?» de la baja, la respuesta **«No tenía»** usaba el tono `neutro`
+(blanco con sombra), que sobre la grilla de cuadros blancos no se distinguía:
+parecía que no se marcaba. Ahora es gris sólido (`chart-8`), como el badge
+neutro sólido. La app ya lo pintaba con color propio.
+
+Gemelo: staff_list — la app ya pinta «No tenía» con su color (apps/mobile/componentes/personal/BajaLegal.js); el lado del portal es src/components/forms/BajaLegal.jsx, que el mapa trata como formulario genérico
+
+_(pendiente de redactar)_
+
 ## v2.1592.3 — Baja: marcar lo que ya se pagó de la liquidación
 
 En la liquidación de una baja, cada rubro con monto (vacaciones, aguinaldo,

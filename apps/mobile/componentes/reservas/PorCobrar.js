@@ -59,11 +59,13 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
   const n = Number(monto);
   const estadoPago = estadoDeFormaDePago(pago, n);
   const esEncargo = elegido?.tipo === 'encargo';
+  // Sin confirmar (2026-11-21): sólo en caja, contra el precio de referencia.
+  const porConfirmar = !!elegido?.porConfirmar;
   // Sin el 100 % (2026-11-18): adelanto en caja o sin anticipo, a cargo de quien lo cobra.
   const sinCobro = esEncargo && cobroEn === 'sin';
   const adelanto = esEncargo && cobroEn === 'caja' && n > 0 && n < elegido.saldo - 0.004;
   const quien = shortEmployeeName(user ?? '');
-  const falta = !elegido || sinCobro ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
+  const falta = !elegido || sinCobro ? null : porConfirmar && cobroEn !== 'caja' ? 'Un encargo sin confirmar se cobra en caja.' : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
     : esEncargo && cobroEn === 'enlace' && Math.abs(n - elegido.saldo) > 0.004 ? 'Por enlace, un encargo se paga completo. Un adelanto se cobra en caja.'
       : cobroEn === 'caja' ? estadoPago.falta : null;
 
@@ -89,7 +91,8 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
     const metodo = FORMAS_DE_PAGO.find((x) => x.value === pago.forma)?.label ?? 'Efectivo';
     Alert.alert(cobroEn === 'enlace' ? `¿Crear un enlace por ${formatMoney(n)}?` : adelanto ? `¿Dejar ${formatMoney(n)} de adelanto?` : `¿Cobrar ${formatMoney(n)}?`,
       `${elegido.codigo} · ${elegido.producto} · ${shortEmployeeName(elegido.cliente ?? '')}${cobroEn === 'caja' ? ` (${metodo})` : ''}${adelanto
-        ? `. Faltan ${formatMoney(redondear(elegido.saldo - n))} al retirar. Quedas como responsable (${quien}).` : ''}`, [
+        ? (porConfirmar ? `. El resto se cobra al retirar, con el precio que confirme Bodega. Quedas como responsable (${quien}).`
+          : `. Faltan ${formatMoney(redondear(elegido.saldo - n))} al retirar. Quedas como responsable (${quien}).`) : ''}${porConfirmar ? ' El precio puede cambiar.' : ''}`, [
         { text: 'Volver', style: 'cancel' },
         { text: cobroEn === 'enlace' ? 'Crear y compartir' : adelanto ? 'Quedo como responsable' : 'Cobrar e imprimir', onPress: async () => {
           setEnviando(true); trabajando(cobroEn === 'enlace' ? 'Creando el enlace…' : 'Cobrando…');
@@ -102,7 +105,7 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
             } else {
               const r = await cobrarAnticipoEnLaApp({ sala, nombreSala, user, clave: clave.current, monto: redondear(n), pago,
                 apartado: apartadoPorCobrar(elegido),
-                papel: { cliente: elegido.cliente, producto: elegido.producto, cantidad: elegido.cantidad, precio: elegido.precio } });
+                papel: { cliente: elegido.cliente, producto: elegido.producto, cantidad: elegido.cantidad, precio: elegido.precio, porConfirmar } });
               if (!r.ok) throw r.error;
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               if (r.aviso) fallo('Cobrado, con un pendiente', r.aviso);
@@ -120,7 +123,7 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
   if (!filas.length) return <Aviso texto="No hay encargos confirmados ni reservas con saldo en esta sucursal." />;
   return (
     <>
-      <Seccion titulo="Por cobrar" pie="Un encargo confirmado: el total, un adelanto o sin anticipo, a tu cargo. Una reserva, lo que falte.">
+      <Seccion titulo="Por cobrar" pie="Un encargo confirmado: el total, un adelanto o sin anticipo, a tu cargo. Sin confirmar: un anticipo con el precio aprox. Una reserva, lo que falte.">
         {filas.map((f, i) => {
           const esta = elegido?.clave === f.clave;
           return (
@@ -130,7 +133,7 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${esta ? '✓ ' : ''}${f.codigo} · ${f.producto}`}</Text>
                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(f.saldo)}</Text>
               </View>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${shortEmployeeName(f.cliente ?? '')} · ${f.tipo === 'encargo' ? 'Encargo confirmado' : 'Reserva: falta este saldo'}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${shortEmployeeName(f.cliente ?? '')} · ${f.porConfirmar ? 'Encargo sin confirmar: precio aprox.' : f.tipo === 'encargo' ? 'Encargo confirmado' : 'Reserva: falta este saldo'}`}</Text>
             </Pressable>
           );
         })}
@@ -138,9 +141,10 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
       {elegido ? (
         <>
           <Seccion titulo="Dónde paga">
-            <Segmentos opciones={[{ id: 'caja', label: 'En caja' }, { id: 'enlace', label: 'Enlace de pago' }, ...(esEncargo ? [{ id: 'sin', label: 'Sin anticipo' }] : [])]}
+            <Segmentos opciones={porConfirmar ? [{ id: 'caja', label: 'En caja' }] : [{ id: 'caja', label: 'En caja' }, { id: 'enlace', label: 'Enlace de pago' }, ...(esEncargo ? [{ id: 'sin', label: 'Sin anticipo' }] : [])]}
               activa={cobroEn} onCambiar={setCobroEn} margen={0} />
           </Seccion>
+          {porConfirmar ? <Aviso texto={`Bodega todavía no confirma el precio. ${formatMoney(elegido.saldo)} es el precio de hoy en el catálogo. Si sube, el cliente paga la diferencia al retirar. Si baja, se le devuelve: en efectivo si pagó en efectivo, o como saldo a favor.`} /> : null}
           {sinCobro ? (
             <Aviso tono="cuidado" texto={`No se cobra nada ahora. El cliente paga ${formatMoney(elegido.saldo)} al retirar y Compras lo pide igual. Quedas como responsable (${quien}).`} />
           ) : (
@@ -149,7 +153,8 @@ export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }
                 onChangeText={(v) => setMonto(dinero(v))} style={{ textAlign: 'center', fontWeight: '700' }} />
             </Seccion>
           )}
-          {adelanto ? <Aviso tono="cuidado" texto={`Deja ${formatMoney(n)} de adelanto. Faltan ${formatMoney(redondear(elegido.saldo - n))} al retirar. Quedas como responsable (${quien}).`} /> : null}
+          {adelanto ? <Aviso tono="cuidado" texto={porConfirmar ? `Deja ${formatMoney(n)} de adelanto. El resto se cobra al retirar, con el precio que confirme Bodega. Quedas como responsable (${quien}).`
+            : `Deja ${formatMoney(n)} de adelanto. Faltan ${formatMoney(redondear(elegido.saldo - n))} al retirar. Quedas como responsable (${quien}).`} /> : null}
           {cobroEn === 'caja' ? <FormaDePago valor={pago} onCambiar={setPago} monto={n || null} /> : null}
           {falta ? <Aviso tono="cuidado" texto={falta} /> : null}
           <BotonGrande texto={enviando ? 'Guardando…' : sinCobro ? 'Aceptar sin anticipo' : `${cobroEn === 'enlace' ? 'Crear enlace de pago' : 'Cobrar'} ${formatMoney(n || 0)}`}

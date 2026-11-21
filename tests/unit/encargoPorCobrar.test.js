@@ -92,3 +92,41 @@ describe('encargo sin el 100 %', () => {
         expect(encargoCancelableSinPago(e)).toBe(false);
     });
 });
+
+import { encargoAnticipable } from '@nucleo/utils/reservasDeSala';
+import { construirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
+
+// Anticipo antes de que Bodega confirme (2026-11-21): contra el precio de la
+// viñeta, y el papel dice que puede cambiar.
+describe('encargo sin confirmar con anticipo', () => {
+    const sol = { id: 40, estado: 'solicitado', pago_estado: 'pendiente', anticipo: null, precio_unitario: null,
+        precio_referencia: 26.2, cantidad: 2, reserva_id: null, cliente: 'X', producto: 'P' };
+    it('con precio de referencia se puede cobrar; sin él, no', () => {
+        expect(encargoAnticipable(sol)).toBe(true);
+        expect(encargoPorCobrar(sol)).toBe(true);
+        expect(encargoPorCobrar({ ...sol, precio_referencia: null })).toBe(false);
+        expect(encargoPorCobrar({ ...sol, pago_estado: 'anticipo', abonado: 10 })).toBe(false);
+    });
+    it('«Por cobrar» lo lista con el total de referencia y marcado por confirmar', () => {
+        const [f] = porCobrarDeSala([sol], []);
+        expect(f).toMatchObject({ clave: 'e40', saldo: 52.4, precio: 26.2, porConfirmar: true });
+        expect(porCobrarDeSala([base], [])[0].porConfirmar).toBe(false);
+    });
+    it('la cifra: precio aprox. antes de cobrar, el anticipo después', () => {
+        expect(cifraDeEncargo(sol)).toEqual({ rotulo: 'Precio aprox.', valor: 52.4, cobrado: false });
+        expect(cifraDeEncargo({ ...sol, pago_estado: 'anticipo', abonado: 10 })).toEqual({ rotulo: 'Anticipo', valor: 10, cobrado: true });
+    });
+    it('si desiste antes de confirmar, lo que dejó pasa a saldo a favor', () => {
+        expect(encargoPasaASaldo({ ...sol, pago_estado: 'anticipo', abonado: 10 })).toBe(true);
+        expect(encargoPasaASaldo(sol)).toBe(false);
+    });
+    it('el papel dice que el precio puede cambiar', () => {
+        const d = construirConstanciaDeReserva({ codigo: 'E-000040', producto: 'P', cantidad: 2, precio: 26.2, anticipo: 10,
+            metodo: 'Efectivo', sala: 'Centro', porConfirmar: true });
+        expect(d.encabezado.titulo).toBe('ENCARGO E-000040');
+        expect(d.totales.map((t) => t[0])).toEqual(['Total aprox.', 'Anticipo (Efectivo)', 'Falta aprox.']);
+        expect(d.pie[0]).toMatch(/PRECIO POR CONFIRMAR/);
+        // El rollo sólo imprime ASCII y corta en la columna 54.
+        for (const l of d.pie) { expect(l).toMatch(/^[\x20-\x7e]*$/); expect(l.length).toBeLessThanOrEqual(54); }
+    });
+});

@@ -50,6 +50,8 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
     // Contado sólo si TODO lo pagado fue efectivo de la caja y el resto también.
     const alContado = pagado > 0 && todoEfectivo && resto === 'efectivo';
     const sinPago = v && (pagado <= 0.004 || v.prueba || v.aplicado);
+    // Bodega lo confirmó más barato de lo que dejó en efectivo (2026-11-21): se le devuelve.
+    const devolver = Number(v?.a_devolver ?? 0);
 
     const terminar = (titulo, detalle) => {
         showToast(titulo, detalle, 'success');
@@ -76,7 +78,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                 tipo: 'APLICA_ANTICIPO', aplicar: referencia, clave });
             if (r?.error || r?.ok === false) throw r.error || new Error('No se pudo hacer el vale.');
             if (r.aviso) showToast('El vale salió, con un pendiente', r.aviso, 'warning');
-            terminar('Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el anticipo de ${v.codigo}.`);
+            terminar('Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el anticipo de ${v.codigo}.${devolver > 0.004 ? ` Devuélvele ${formatMoney(devolver)}.` : ''}`);
         } catch (e) {
             showToast('No se pudo hacer el vale', mensajeAmigable(e), 'error');
         } finally {
@@ -153,6 +155,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                                         1. Factura <b>al contado</b> por {formatMoney(Number(v.total))}
                                         {Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.<br />
                                         2. Aprieta «Hacer el vale». Saca de la caja los {formatMoney(Number(v.efectivo))} del anticipo, porque la factura los vuelve a contar.
+                                        {devolver > 0.004 && <><br />3. Devuélvele <b>{formatMoney(devolver)}</b> en efectivo al cliente: Bodega lo consiguió más barato.</>}
                                     </Notice>
                                 ) : (
                                     <Notice variant="info" icon={CreditCard}>

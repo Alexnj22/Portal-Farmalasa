@@ -523,10 +523,24 @@ export function notaDeEncargo(e) {
 }
 
 /**
+ * Un encargo que Bodega todavía no confirma, de un producto con precio en el
+ * catálogo (2026-11-21): admite un anticipo contra ese precio de REFERENCIA
+ * (`precio_referencia`, la viñeta, de `encargos_de_sucursal`). Sin mínimo y
+ * hasta ese total; el precio final lo pone Bodega. La base repite la regla
+ * (`apartado_cotizar`).
+ */
+export const encargoAnticipable = (e) => e?.estado === 'solicitado' && Number(e?.precio_referencia) > 0;
+
+/**
  * Un encargo con precio confirmado cuyo pago todavía no entró (2026-11-04): se
  * cobra completo en caja. El resto de una reserva no, ése va con la reserva.
  */
-export const encargoPorCobrar = (e) => e?.estado === 'confirmado' && e?.pago_estado === 'pendiente' && !e?.reserva && !e?.reserva_id;
+export const encargoPorCobrar = (e) => (e?.estado === 'confirmado' || encargoAnticipable(e))
+    && e?.pago_estado === 'pendiente' && !e?.reserva && !e?.reserva_id;
+
+/** El total de referencia de un encargo sin confirmar, o null. */
+const totalDeReferencia = (e) => (encargoAnticipable(e)
+    ? Math.round(Number(e.precio_referencia) * Number(e.cantidad || 1) * 100) / 100 : null);
 
 /**
  * La cifra de plata de la tarjeta de un encargo. `anticipo` guarda lo que el
@@ -536,6 +550,13 @@ export const encargoPorCobrar = (e) => e?.estado === 'confirmado' && e?.pago_est
  * `null` si no hay monto.
  */
 export function cifraDeEncargo(e) {
+    // Sin confirmar (2026-11-21): lo que dejó, o el total de referencia por cobrar.
+    if (e?.estado === 'solicitado') {
+        if (e?.pago_estado === 'anticipo' && Number(e?.abonado) > 0) return { rotulo: 'Anticipo', valor: Number(e.abonado), cobrado: true };
+        const ref = totalDeReferencia(e);
+        if (ref && encargoPorCobrar(e)) return { rotulo: 'Precio aprox.', valor: ref, cobrado: false };
+        return null;
+    }
     const valor = Number(e?.anticipo);
     if (!(valor > 0)) return null;
     if (encargoPorCobrar(e)) return { rotulo: 'Por cobrar', valor, cobrado: false };
@@ -612,6 +633,9 @@ export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
     const llega = e?.fecha_estimada ? fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'long' }) : null;
     switch (e?.estado) {
         case 'solicitado':
+            if (e?.pago_estado === 'anticipo' && Number(e?.abonado) > 0) {
+                return `Dejó ${formatMoney(Number(e.abonado))} de anticipo. Compras averigua a qué precio y cuándo llega, y aprieta «Confirmar»: queda aceptado solo. Si el precio sube, falta la diferencia al retirar; si baja, se le devuelve. Si no se consigue, lo que dejó queda a su favor.`;
+            }
             return 'Compras averigua si se consigue, a qué precio y cuándo llega, y aprieta «Confirmar». Si no se consigue, «No se puede conseguir».';
         case 'confirmado':
             if (e?.reserva || e?.reserva_id) return 'El cliente decide si acepta el precio nuevo; se resuelve desde su reserva.';
@@ -693,7 +717,8 @@ export const pagadoDeEncargo = (e) => (e?.pago_estado === 'anticipo' ? Number(e?
 
 /** Hay algo pagado que puede quedar a favor: el total o un adelanto (2026-11-18). */
 export const encargoPasaASaldo = (e) => !e?.reserva && ['pagado', 'anticipo'].includes(e?.pago_estado)
-    && ['aceptado', 'pedido', 'listo'].includes(e?.estado);
+    // Antes de que Bodega confirme (2026-11-21), un anticipo también.
+    && (['aceptado', 'pedido', 'listo'].includes(e?.estado) || (e?.estado === 'solicitado' && e?.pago_estado === 'anticipo'));
 
 /**
  * Se cobró en caja como una venta normal y nadie lo pasó por el portal
@@ -727,10 +752,17 @@ export function fichaDeProductoNuevo(e) {
  */
 export function porCobrarDeSala(encargos, reservas) {
     const r2 = (n) => Math.round(Number(n) * 100) / 100;
-    const e = (encargos ?? []).filter(encargoPorCobrar).map((x) => ({
-        clave: `e${x.id}`, tipo: 'encargo', id: x.id, codigo: codigoDeEncargo(x.id), cliente: x.cliente, producto: x.producto,
-        cantidad: x.cantidad, precio: Number(x.precio_unitario), saldo: Number(x.anticipo), fecha: x.fecha_estimada,
-    }));
+    // Sin confirmar (2026-11-21): con el precio de referencia, y `porConfirmar`
+    // para que la pantalla y el papel digan que el precio puede cambiar.
+    const e = (encargos ?? []).filter(encargoPorCobrar).map((x) => {
+        const porConfirmar = x.estado === 'solicitado';
+        return {
+            clave: `e${x.id}`, tipo: 'encargo', id: x.id, codigo: codigoDeEncargo(x.id), cliente: x.cliente, producto: x.producto,
+            cantidad: x.cantidad, porConfirmar,
+            precio: Number(porConfirmar ? x.precio_referencia : x.precio_unitario),
+            saldo: porConfirmar ? totalDeReferencia(x) : Number(x.anticipo), fecha: x.fecha_estimada,
+        };
+    });
     const r = (reservas ?? []).filter((x) => x.origen === 'sucursal' && ['lista', 'pendiente'].includes(x.estado)
         && Number(x.precio) * Number(x.cantidad) - Number(x.anticipo || 0) > 0.004).map((x) => ({
         clave: `r${x.id}`, tipo: 'reserva', id: x.id, codigo: codigoDeReserva(x.id), cliente: x.cliente,

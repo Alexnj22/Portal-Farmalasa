@@ -38,6 +38,7 @@ export async function cobrarAnticipoEnLaApp({ sala, nombreSala, user, clave, mon
     enCamino: a.traslado_desde ?? papel?.enCamino ?? null, producto: papel?.producto, cantidad: papel?.cantidad, precio: papel?.precio,
     renglones: papel?.renglones, anticipo: Number(a.anticipo), metodo: FORMAS_DE_PAGO.find((f) => f.value === pago?.forma)?.label ?? 'Efectivo',
     venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(user?.name ?? ''), reglas,
+    porConfirmar: !!(a.por_confirmar ?? papel?.porConfirmar),
   }), sala, `Reserva ${a.codigo}`);
   return { ok: true, apartado: a, aviso: r.aviso ?? null, papel: hoja };
 }

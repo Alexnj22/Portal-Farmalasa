@@ -25,14 +25,17 @@ const recortar = (t, n) => (String(t ?? '').length > n ? `${String(t).slice(0, n
 // de donde viene por traslado; ahí no hay plazo todavía —empieza al llegar—.
 // `renglones` (2026-10-22): un pedido de varios productos con un solo cobro;
 // sin él, el producto único de siempre.
-export function construirConstanciaDeReserva({ codigo, cliente, telefono, producto, cantidad, precio, renglones, anticipo, metodo, venceAt, enCamino, sala, atendio, ahora = new Date(), reglas = null }) {
+// `porConfirmar` (2026-11-21): el anticipo de un ENCARGO que Bodega todavía no
+// confirma. El total es el precio de hoy en el catálogo y el papel lo dice:
+// puede cambiar, y si cambia, se paga la diferencia o se devuelve.
+export function construirConstanciaDeReserva({ codigo, cliente, telefono, producto, cantidad, precio, renglones, anticipo, metodo, venceAt, enCamino, sala, atendio, ahora = new Date(), reglas = null, porConfirmar = false }) {
     const lista = renglones?.length ? renglones : [{ producto, cantidad, precio }];
     const total = Math.round(lista.reduce((t, r) => t + Number(r.precio) * Number(r.cantidad), 0) * 100) / 100;
     const saldo = Math.round((total - Number(anticipo)) * 100) / 100;
     return {
         titulo: '',
         encabezado: {
-            titulo: `${renglones?.length ? 'PEDIDO' : 'RESERVA'} ${codigo}`,
+            titulo: `${porConfirmar ? 'ENCARGO' : renglones?.length ? 'PEDIDO' : 'RESERVA'} ${codigo}`,
             lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null,
                 venceAt ? `Hasta el ${fechaHora(new Date(venceAt))}` : (enCamino ? `Viene de ${String(enCamino).toUpperCase()}` : null)].filter(Boolean),
         },
@@ -47,14 +50,20 @@ export function construirConstanciaDeReserva({ codigo, cliente, telefono, produc
         // pagar»): en el rollo el destacado es doble alto y en negrita, y
         // «Falta pagar» salía más grande que el propio código de la reserva.
         totales: [
-            ['Total', formatMoney(total)],
+            [porConfirmar ? 'Total aprox.' : 'Total', formatMoney(total)],
             [`Anticipo (${metodo})`, formatMoney(Number(anticipo))],
-            ['Falta pagar', formatMoney(saldo)],
+            [porConfirmar ? 'Falta aprox.' : 'Falta pagar', formatMoney(Math.max(saldo, 0))],
         ],
         codigos: [{ valor: codigo, simbologia: 'CODE128' }],
         // «Si no la retiras: 60 dias a tu favor» no se entendía: lo que queda
         // a favor es el ANTICIPO, como saldo para otra compra.
-        pie: [
+        pie: porConfirmar ? [
+            'PRECIO POR CONFIRMAR: puede cambiar.',
+            'Te avisamos el precio y para cuando llega.',
+            'Si sube, pagas la diferencia al retirar.',
+            'Si baja, te devolvemos lo que dejaste de mas.',
+            'Trae este papel para retirar.',
+        ] : [
             ...(enCamino && !venceAt ? ['Te avisamos cuando llegue.'] : []),
             'Trae este papel para retirar.',
             // Partido a mano: el pie viaja tal cual y el rollo cortaría a

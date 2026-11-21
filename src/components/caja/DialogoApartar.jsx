@@ -353,14 +353,14 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
             } else if (soloEncargo) {
                 const todas = [...lineas, ...(producto && elegida ? [lineaActual] : [])];
                 const r = await crearEncargosEnSucursal({ branchId: sala, customerId: cliente.id, lineas: todas, nota });
-                showToast(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · Compras confirma precios y fechas; después se cobra en «Por cobrar».`, 'success');
+                showToast(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · Compras confirma precios y fechas. Si deja anticipo, cóbralo en «Por cobrar».`, 'success');
                 for (const e of r) await imprimirEncargo(e.codigo, e.producto_nombre, false, e.cantidad);
                 clearDraft(llave(sala));
                 onClose();
             } else {
                 const r = await crearEncargoEnSucursal({ branchId: sala, customerId: cliente.id, productoId: producto.id,
                     productoNombre: nombreProducto, factor: elegida.factor, cantidad: cant, nota });
-                showToast('Encargo registrado', `${r.codigo} · Compras confirma el precio y la fecha; después se cobra en «Por cobrar».`, 'success');
+                showToast('Encargo registrado', `${r.codigo} · Compras confirma el precio y la fecha. Si deja anticipo, cóbralo en «Por cobrar».`, 'success');
                 await imprimirEncargo(r.codigo, nombreProducto, false);
                 clearDraft(llave(sala));
                 onClose();
@@ -494,8 +494,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                         </Notice>
                     ) : modo === 'encargo' ? (
                         <Notice variant="warning" compact icon={Truck}>
-                            <b>Se encarga.</b> Compras confirma precio y fecha; cuando el cliente acepte se cobra completo en «Por cobrar».
-                            Ahora no se cobra nada.
+                            <b>Se encarga.</b> Compras confirma precio y fecha. Si el cliente quiere dejar anticipo, regístralo y cóbralo en «Por cobrar».
                         </Notice>
                     ) : null}
                     {conAnticipo && opciones.baja_rotacion && (
@@ -918,11 +917,14 @@ function PorCobrar({ sala, atiende = null, ocupado, onCobrar, elegirClave = null
     const n = Number(monto);
     const estadoPago = estadoDeFormaDePago(pago, n);
     const esEncargo = elegido?.tipo === 'encargo';
+    // Sin confirmar (2026-11-21): sólo en caja, contra el precio de referencia.
+    const porConfirmar = !!elegido?.porConfirmar;
     // Sin el 100 % (2026-11-18): adelanto en caja o sin anticipo, a cargo de quien lo cobra.
     const adelanto = esEncargo && cobroEn === 'caja' && n > 0 && n < elegido.saldo - 0.004;
     const sinCobro = esEncargo && cobroEn === 'sin';
     const falta = !elegido ? null
         : sinCobro ? (responsableOk ? null : 'Marca que quedas como responsable.')
+            : porConfirmar && cobroEn !== 'caja' ? 'Un encargo sin confirmar se cobra en caja.'
             : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`
                 : esEncargo && cobroEn === 'enlace' && Math.abs(n - elegido.saldo) > 0.004 ? 'Por enlace, un encargo se paga completo. Un adelanto se cobra en caja.'
                     : adelanto && !responsableOk ? 'Marca que quedas como responsable.'
@@ -947,7 +949,7 @@ function PorCobrar({ sala, atiende = null, ocupado, onCobrar, elegirClave = null
             const ok = await onCobrar({
                 clave: claveDeEnvio.current, monto: redondear(n), pago,
                 apartado: apartadoPorCobrar(elegido),
-                papel: { cliente: elegido.cliente, producto: elegido.producto, cantidad: elegido.cantidad, precio: elegido.precio },
+                papel: { cliente: elegido.cliente, producto: elegido.producto, cantidad: elegido.cantidad, precio: elegido.precio, porConfirmar },
             });
             if (ok) { setElegido(null); setVuelta((v) => v + 1); }
         } catch (e) {
@@ -973,7 +975,8 @@ function PorCobrar({ sala, atiende = null, ocupado, onCobrar, elegirClave = null
                                 <span className="text-body-sm font-bold tabular-nums">{formatMoney(f.saldo)}</span>
                             </div>
                             <p className="text-caption text-content-3">
-                                {shortEmployeeName(f.cliente ?? '')} · {f.tipo === 'encargo' ? 'Encargo confirmado: el total, un adelanto o sin anticipo' : 'Reserva: falta este saldo'}
+                                {shortEmployeeName(f.cliente ?? '')} · {f.porConfirmar ? 'Encargo sin confirmar: precio aprox., puede cambiar'
+                                    : f.tipo === 'encargo' ? 'Encargo confirmado: el total, un adelanto o sin anticipo' : 'Reserva: falta este saldo'}
                             </p>
                         </button>
                     </li>
@@ -993,7 +996,15 @@ function PorCobrar({ sala, atiende = null, ocupado, onCobrar, elegirClave = null
             {elegido && (
                 <>
                     <ComoPaga valor={cobroEn} onCambiar={(v) => { setCobroEn(v); setResponsableOk(false); }}
-                        formas={[...(cobraEnCaja ? ['caja', 'enlace'] : ['enlace']), ...(esEncargo ? ['sin'] : [])]} />
+                        formas={porConfirmar ? ['caja'] : [...(cobraEnCaja ? ['caja', 'enlace'] : ['enlace']), ...(esEncargo ? ['sin'] : [])]} />
+                    {porConfirmar && (
+                        <Notice variant="info" compact>
+                            <b>Bodega todavía no confirma el precio.</b> {formatMoney(elegido.saldo)} es el precio de hoy en el catálogo. Si sube, el cliente paga la diferencia al retirar. Si baja, se le devuelve: en efectivo si pagó en efectivo, o como saldo a favor.
+                        </Notice>
+                    )}
+                    {porConfirmar && !cobraEnCaja && (
+                        <Notice variant="warning" compact>Un encargo sin confirmar sólo se cobra en la caja de su sucursal.</Notice>
+                    )}
                     {sinCobro ? (
                         <SinAnticipo encargo total={elegido.saldo} confirmado={responsableOk} onConfirmar={setResponsableOk} atiende={atiende} />
                     ) : (
@@ -1003,7 +1014,9 @@ function PorCobrar({ sala, atiende = null, ocupado, onCobrar, elegirClave = null
                     {adelanto && (
                         <div className="space-y-3">
                             <Notice variant="warning" compact>
-                                <b>Deja {formatMoney(n)} de adelanto.</b> Faltan {formatMoney(redondear(elegido.saldo - n))}, que se cobran al retirar. Compras lo pide igual.
+                                <b>Deja {formatMoney(n)} de adelanto.</b> {porConfirmar
+                                    ? 'El resto se cobra al retirar, con el precio que confirme Bodega.'
+                                    : `Faltan ${formatMoney(redondear(elegido.saldo - n))}, que se cobran al retirar. Compras lo pide igual.`}
                             </Notice>
                             <Checkbox checked={responsableOk} onChange={setResponsableOk}
                                 label={`Quedo como responsable de este encargo${atiende ? ` (${shortEmployeeName(atiende)})` : ''}`}

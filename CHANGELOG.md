@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1588.0 — Encargos: anticipo antes de que Bodega confirme
+
+Lo pidió el usuario: un producto que no hay en ninguna sucursal, pero que ya tuvimos (tiene precio), se encarga, y si el cliente dejaba un anticipo no había cómo darle ingreso. El dinero sólo podía entrar después de que Bodega confirmara precio y fecha.
+
+- **Se cobra antes de la confirmación**, en «Por cobrar», con el precio de hoy en el catálogo (la viñeta) como referencia: sin mínimo y hasta ese total. Sólo en la caja de la sucursal (sin enlace de pago). El papel sale como ENCARGO, con «Total aprox.» y «PRECIO POR CONFIRMAR: puede cambiar».
+- **Al confirmar Bodega, queda aceptado solo**: el cliente ya se comprometió. Si el precio subió, la diferencia se cobra al retirar, a cargo de quien cobró el anticipo, como todo adelanto.
+- **Si bajó y dejó de más**: si pagó en efectivo, se le devuelve en efectivo al retirar. El vale del anticipo saca todo lo que entró, la factura cuenta el total nuevo y el cajón cuadra con la devolución (`a_devolver` de `apartado_para_retirar`). Con otra forma de pago, la diferencia pasa a saldo a favor al confirmar.
+- **Si Bodega no lo consigue, o el cliente desiste antes**, lo que dejó queda a su favor, y desde ahí se puede pedir la devolución en efectivo.
+- Medido antes de decidir: de los últimos 12 encargos confirmados, Bodega dio un precio entre 0 % y 22 % menor que la viñeta. Pagar de más va a ser lo normal, no la excepción.
+
+Base: `apartado_cotizar`, `apartado_aplicar`, `encargo_responder`, `app_encargos_seguir` (el aviso a la sala dice qué queda), `encargo_pasar_a_saldo`, `encargo_proveedor_no_entrego`, `apartado_para_retirar` y `encargos_de_sucursal` (`precio_referencia`, `a_devolver`). Probado en producción dentro de una transacción deshecha: efectivo de más (devuelve $6.20), tarjeta de más (saldo a favor $6.20), adelanto con precio más alto (falta $20, con responsable), rechazo (saldo a favor) y desistimiento (saldo a favor).
+
+Gemelo: reservas — «Por cobrar» y «Retirar» cambian en los dos lados (`apps/mobile/componentes/reservas/PorCobrar.js`, `apps/mobile/app/reserva-retirar.js`).
+
 ## v2.1587.2 — Planilla: dos contratos en la misma quincena pagan los dos tramos
 
 Si en una quincena terminó un contrato y empezó otro (el interinato de Richard Quintanilla terminó el 18/11 y el nuevo empezó el 23/11), la planilla tomaba sólo el contrato nuevo: pagaba del 23 al 30 y se perdían el 16, 17 y 18. `contratoEnQuincena` ahora suma los dos tramos (11 días en ese caso). Los días entre los dos contratos no se pagan y van en `huecos`, que `diasPagadosDeQuincena` excluye para no descontar ahí una ausencia. Ya pasaba con cualquier recontratación dentro de una quincena.

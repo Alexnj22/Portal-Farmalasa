@@ -43,6 +43,7 @@ export async function cobrarAnticipo({ sala, nombreSala, userId, quienAtiende, c
             cantidad: papel?.cantidad, precio: papel?.precio, renglones: papel?.renglones, anticipo: Number(a.anticipo),
             metodo: FORMAS_DE_PAGO.find((f) => f.value === pago?.forma)?.label ?? 'Efectivo',
             venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(quienAtiende ?? ''), reglas,
+            porConfirmar: !!(a.por_confirmar ?? papel?.porConfirmar),
         }, { sala });
     } catch (e) {
         return { ok: true, apartado: a, aviso: r.aviso ?? avisoFoto, papel: e };

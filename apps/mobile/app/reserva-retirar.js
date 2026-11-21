@@ -51,6 +51,8 @@ function RetirarApartado() {
   const pagado = Number(v?.pagado ?? 0);
   const todoEfectivo = v && Number(v.otras_formas) <= 0.004 && Number(v.en_linea) <= 0.004;
   const alContado = pagado > 0 && todoEfectivo && resto === 'efectivo';
+  // Bodega lo confirmó más barato de lo que dejó en efectivo (2026-11-21): se le devuelve.
+  const devolver = Number(v?.a_devolver ?? 0);
   const sinPago = v && (pagado <= 0.004 || v.prueba || v.aplicado);
 
   const correr = async (texto, fn) => {
@@ -79,7 +81,7 @@ function RetirarApartado() {
           tipo: 'APLICA_ANTICIPO', aplicar: referencia, clave });
         if (r?.error || r?.ok === false) throw r.error || new Error('No se pudo hacer el vale.');
         if (r.aviso) fallo('El vale salió, con un pendiente', r.aviso);
-        else listo('Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el anticipo de ${v.codigo}.`);
+        else listo('Retirado', `Vale de ${formatMoney(Number(v.efectivo))} por el anticipo de ${v.codigo}.${devolver > 0.004 ? ` Devuélvele ${formatMoney(devolver)}.` : ''}`);
       }) },
     ]);
 
@@ -134,7 +136,8 @@ function RetirarApartado() {
                 ) : null}
                 {alContado ? (
                   <>
-                    <Aviso texto={`1. Factura AL CONTADO por ${formatMoney(Number(v.total))}${Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.\n2. Haz el vale: saca de la caja los ${formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.`} />
+                    <Aviso texto={`1. Factura AL CONTADO por ${formatMoney(Number(v.total))}${Number(v.saldo) > 0.004 ? ` y cobra ${formatMoney(Number(v.saldo))} en efectivo` : ''}.\n2. Haz el vale: saca de la caja los ${formatMoney(Number(v.efectivo))} del anticipo, que la factura vuelve a contar.${devolver > 0.004
+                      ? `\n3. Devuélvele ${formatMoney(devolver)} en efectivo al cliente: Bodega lo consiguió más barato.` : ''}`} />
                     <BotonGrande texto={ocupado ? 'Haciendo el vale…' : 'Hacer el vale'} color={MARCA.verde} deshabilitado={ocupado} onPress={hacerVale} />
                   </>
                 ) : (

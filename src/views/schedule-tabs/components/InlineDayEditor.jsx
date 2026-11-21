@@ -20,7 +20,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia, HORAS_PROPIAS } from '@nucleo/utils/edicionDeHorario';
+import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia, HORAS_PROPIAS, regresoDeLaPausa, minutosDeLaPausa } from '@nucleo/utils/edicionDeHorario';
 
 import IconoEnCaja from '../../../components/common/IconoEnCaja';
 // «16:00» → «4:00 p. m.», del canónico.
@@ -45,6 +45,13 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const [customEnd, setCustomEnd] = useState(currentData?.customEnd || '');
     const [hasLunch, setHasLunch] = useState(currentData?.hasLunch || false);
     const [lunchStart, setLunchStart] = useState(currentData?.lunchStart || '12:00');
+    // El regreso del almuerzo: un día partido es un almuerzo largo (núcleo,
+    // `regresoDeLaPausa`). Cambiar la salida mueve el regreso con ella.
+    const [lunchEnd, setLunchEnd] = useState(() => regresoDeLaPausa(currentData?.lunchStart || '12:00', currentData?.lunchMinutes));
+    const cambiarSalidaAlmuerzo = (v) => {
+        setLunchEnd(prev => regresoDeLaPausa(v, minutosDeLaPausa(lunchStart, prev)));
+        setLunchStart(v);
+    };
     const [hasLactation, setHasLactation] = useState(currentData?.hasLactation || false);
     const [lactationStart, setLactationStart] = useState(currentData?.lactationStart || '15:00');
 
@@ -61,10 +68,10 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const resuelto = useMemo(() => resolverTurnoDelDia({
         shiftId: (showTimePickers && shiftId !== HORAS_PROPIAS) ? shiftId : '',
         customStart, customEnd,
-        hasLunch, lunchStart,
+        hasLunch, lunchStart, lunchMinutes: minutosDeLaPausa(lunchStart, lunchEnd),
         hasLactation, lactationStart,
         isOff: !showTimePickers,
-    }, shifts), [shiftId, customStart, customEnd, hasLunch, lunchStart, hasLactation, lactationStart, showTimePickers, shifts]);
+    }, shifts), [shiftId, customStart, customEnd, hasLunch, lunchStart, lunchEnd, hasLactation, lactationStart, showTimePickers, shifts]);
 
     const netHours = resuelto.trabaja
         ? (resuelto.minutosPagados / 60).toFixed(1).replace('.0', '')
@@ -100,10 +107,13 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         if (customStart && customEnd && timeToMins(customStart) === timeToMins(customEnd)) {
             return ['La hora de entrada y la de salida no pueden ser la misma.'];
         }
+        if (hasLunch && lunchStart && lunchEnd && timeToMins(lunchEnd) <= timeToMins(lunchStart)) {
+            return ['El regreso del almuerzo tiene que ser después de la salida.'];
+        }
         return reparosDelDia(resuelto, branchLimits.hasValidHours && !branchLimits.isClosedToday
             ? { horaDeApertura: branchLimits.minOpen, horaDeCierre: branchLimits.maxClose }
             : {});
-    }, [resuelto, showTimePickers, customStart, customEnd, branchLimits]);
+    }, [resuelto, showTimePickers, customStart, customEnd, hasLunch, lunchStart, lunchEnd, branchLimits]);
 
     // Lo que se dice sin frenar: las horas extra (`avisosDelDia`).
     const avisos = useMemo(() => (showTimePickers ? avisosDelDia(resuelto) : []), [resuelto, showTimePickers]);
@@ -135,6 +145,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         if (template.lunch_start) {
             setHasLunch(true);
             setLunchStart(String(template.lunch_start).substring(0, 5));
+            setLunchEnd(regresoDeLaPausa(String(template.lunch_start).substring(0, 5), template.lunch_minutes));
         }
     };
 
@@ -207,7 +218,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         // La forma de lo que se guarda: núcleo (`datosDelDiaParaGuardar`).
         onSave(dayId, datosDelDiaParaGuardar({
             turno: shiftId, inicio: customStart, fin: customEnd,
-            conPausa: hasLunch, pausa: lunchStart, conLactancia: hasLactation, lactancia: lactationStart,
+            conPausa: hasLunch, pausa: lunchStart, regreso: lunchEnd, conLactancia: hasLactation, lactancia: lactationStart,
         }));
         onClose();
     };
@@ -352,15 +363,22 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 {...clickable(() => setHasLunch(!hasLunch))}
-                                className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-[var(--dur-slow)] group/row cursor-pointer"
+                                className="flex flex-wrap items-center justify-between gap-y-2 bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-[var(--dur-slow)] group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <Checkbox checked={hasLunch} size="sm" />
                                     <span className="text-body-sm font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
                                 {hasLunch && (
-                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-[var(--dur-slow)]" {...clickable((e) => e.stopPropagation())}>
-                                        <TimePicker12 value={lunchStart} onChange={setLunchStart} />
+                                    <div className="w-full grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-1 duration-[var(--dur-slow)]" {...clickable((e) => e.stopPropagation())}>
+                                        <div>
+                                            <span className={rotuloCampo('text-content-2')}>Sale</span>
+                                            <TimePicker12 value={lunchStart} onChange={cambiarSalidaAlmuerzo} />
+                                        </div>
+                                        <div>
+                                            <span className={rotuloCampo('text-content-2')}>Regresa</span>
+                                            <TimePicker12 value={lunchEnd} onChange={setLunchEnd} />
+                                        </div>
                                     </div>
                                 )}
                             </div>

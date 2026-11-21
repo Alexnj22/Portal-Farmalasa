@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.1 — Horarios: días partidos como almuerzo largo
+
+La celda del día (portal y app) tiene ahora la hora de **regreso** del
+almuerzo, además de la de salida. Un día partido —7:00 a 12:00 y 3:00 a
+9:00 p. m.— se escribe como entrada 7:00, salida 9:00 p. m., almuerzo de
+12:00 a 3:00: las horas pagadas salen solas (11 h) y las extra se avisan.
+Lo pidió el usuario para la jefa de Salud 4, que paga con días partidos horas
+que debe.
+
+- Se guarda como `lunchMinutes` en el día, sólo cuando la pausa no es de una
+  hora. `resolverTurnoDelDia` y `public.turno_del_dia` ya lo leían: la
+  planilla, la grilla y quién está en turno no cambian.
+- Mover la salida a almorzar arrastra el regreso con la misma duración. Un
+  regreso antes de la salida no deja guardar.
+- Verificado en el entorno de pruebas: la grilla pinta los dos tramos, el
+  editor abre con 12:00 → 3:00 p. m. y 11 h pagadas, y al guardar conserva los
+  180 minutos.
+
+Carga de horarios (sólo datos, sin código): La Popular, Salud 1 a 5 y Bodega,
+desde los CSV de Talento Humano. Los de Bodega que van a sucursal quedan como
+apoyo.
+
 ## v2.1592.0 — Reservas: el anticipo se aplica solo al facturarse y se ven las terminadas
 
 Reservas con anticipo: se cierran solas al facturarse, y se ven las terminadas.

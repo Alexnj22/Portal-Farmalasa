@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     avisosDeLaCelda, datosDelDiaParaGuardar, gruposDelCatalogo, HORAS_PROPIAS, limitesDeLaSalaElDia, reparosDeLaCelda,
-    revisionDelTurno, turnosQueCabenElDia,
+    revisionDelTurno, turnosQueCabenElDia, regresoDeLaPausa, minutosDeLaPausa, horasDelTurno,
 } from '@nucleo/utils/edicionDeHorario';
 
 const sala = { name: 'Salud 1', weekly_hours: { 1: { isOpen: true, start: '07:00', end: '19:00' }, 0: { isOpen: false } } };
@@ -55,5 +55,31 @@ describe('edicionDeHorario', () => {
         expect(revisionDelTurno({ start: '10:00', end: '18:00' }, turnos)).toMatchObject({ autoName: 'Cierre', hasBlockingError: false });
         const grupo = gruposDelCatalogo(turnos)[0];
         expect(revisionDelTurno({ start: '07:00', end: '15:00' }, turnos, grupo).hasBlockingError).toBe(false);
+    });
+
+    describe('día partido = almuerzo largo (2026-11-21)', () => {
+        const partido = { turno: HORAS_PROPIAS, inicio: '07:00', fin: '21:00', conPausa: true, pausa: '12:00', regreso: '15:00' };
+
+        it('guarda la duración sólo cuando no es la hora de siempre', () => {
+            expect(datosDelDiaParaGuardar(partido).lunchMinutes).toBe(180);
+            expect('lunchMinutes' in datosDelDiaParaGuardar({ ...partido, regreso: '13:00' })).toBe(false);
+            expect('lunchMinutes' in datosDelDiaParaGuardar({ ...partido, regreso: undefined })).toBe(false);
+        });
+
+        it('paga las dos mitades y avisa las horas extra', () => {
+            expect(avisosDeLaCelda(partido, [])).toEqual(['La jornada dura 11 h: 3 h son extra.']);
+        });
+
+        it('el regreso antes de la salida frena', () => {
+            expect(reparosDeLaCelda({ ...partido, regreso: '11:00' }, [], null)).toEqual(['El regreso del almuerzo tiene que ser después de la salida.']);
+        });
+
+        it('el regreso sale de la duración y la duración del regreso', () => {
+            expect(regresoDeLaPausa('12:00')).toBe('13:00');
+            expect(regresoDeLaPausa('12:00', 300)).toBe('17:00');
+            expect(minutosDeLaPausa('12:00', '17:00')).toBe(300);
+            expect(minutosDeLaPausa('12:00', null)).toBe(60);
+            expect(horasDelTurno({ start: '07:00', end: '21:00', lunch_start: '12:00:00', lunch_minutes: 180 }).regreso).toBe('15:00');
+        });
     });
 });

@@ -10,7 +10,7 @@
 //
 // El día en sí lo sigue resolviendo `resolverTurnoDelDia` (un día de horario se
 // resuelve en UN solo sitio): acá sólo se arma lo que se le pasa y lo que sale.
-import { aMinutos, resolverTurnoDelDia, reparosDelDia, avisosDelDia } from './turnoDelDia';
+import { aMinutos, aHora, resolverTurnoDelDia, reparosDelDia, avisosDelDia, MINUTOS_DE_PAUSA } from './turnoDelDia';
 import { tokenMatch } from './searchUtils';
 import { hora12 } from './hora';
 
@@ -98,7 +98,30 @@ export function horasDelTurno(turno) {
         inicio: iniDe(turno), fin: finDe(turno),
         conPausa: Boolean(turno.lunch_start),
         pausa: turno.lunch_start ? hhmm(turno.lunch_start) : null,
+        regreso: turno.lunch_start ? regresoDeLaPausa(hhmm(turno.lunch_start), turno.lunch_minutes) : null,
     };
+}
+
+/* La pausa se escribe como «sale a almorzar» y «regresa». Casi siempre es una
+ * hora, pero un día PARTIDO (7:00–12:00 y 3:00–9:00 p. m.) es lo mismo con una
+ * pausa larga: sale 12:00, regresa 3:00. Así el día sigue teniendo una entrada
+ * y una salida —lo que leen la planilla, el kiosco y la grilla— y las horas
+ * pagadas salen solas. Lo pidió el usuario el 2026-11-21 para la jefa de
+ * Salud 4, que paga horas que debe con días partidos. Los dos resolvedores
+ * (`resolverTurnoDelDia` y `public.turno_del_dia`) ya leían `lunchMinutes`. */
+
+/** La hora de regreso de una pausa que empieza en `pausa` y dura `minutos`. */
+export function regresoDeLaPausa(pausa, minutos = MINUTOS_DE_PAUSA) {
+    if (!pausa) return null;
+    return aHora((aMinutos(pausa) + Number(minutos ?? MINUTOS_DE_PAUSA)) % 1440);
+}
+
+/** Cuánto dura la pausa entre la salida y el regreso. Sin regreso, una hora. */
+export function minutosDeLaPausa(pausa, regreso) {
+    if (!pausa || !regreso) return MINUTOS_DE_PAUSA;
+    let m = aMinutos(regreso) - aMinutos(pausa);
+    if (m < 0) m += 1440;
+    return m;
 }
 
 /**
@@ -107,7 +130,7 @@ export function horasDelTurno(turno) {
  * hora de entrada queda libre. Es la forma exacta que leen el kiosco, la
  * planilla y la grilla.
  */
-export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, conLactancia, lactancia }) {
+export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia }) {
     const libreElegido = turno === 'OFF';
     const id = (libreElegido || turno === 'NO_SHIFTS' || turno === HORAS_PROPIAS) ? '' : (turno || '');
     const libre = libreElegido || (!id && !inicio);
@@ -117,6 +140,10 @@ export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, co
         customEnd: libre ? '' : (fin || ''),
         hasLunch: libre ? false : Boolean(conPausa),
         lunchStart: (conPausa && !libre) ? pausa : null,
+        // Sólo cuando no es la hora de siempre: el día común conserva la forma
+        // de antes, y el que no trae la clave se resuelve con 60 minutos.
+        ...((conPausa && !libre && regreso && minutosDeLaPausa(pausa, regreso) !== MINUTOS_DE_PAUSA)
+            ? { lunchMinutes: minutosDeLaPausa(pausa, regreso) } : {}),
         hasLactation: libre ? false : Boolean(conLactancia),
         lactationStart: (conLactancia && !libre) ? lactancia : null,
         isOff: libre,
@@ -124,23 +151,26 @@ export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, co
 }
 
 /** Lo que el reglamento y la sala no dejan guardar en un día con horas. */
-export function reparosDeLaCelda({ turno, inicio, fin, conPausa, pausa, conLactancia, lactancia }, turnos, limites) {
+export function reparosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia }, turnos, limites) {
     if (turno === 'OFF' || turno === 'NO_SHIFTS') return [];
     if (inicio && fin && aMinutos(inicio) === aMinutos(fin)) return ['La hora de entrada y la de salida no pueden ser la misma.'];
+    if (conPausa && pausa && regreso && aMinutos(regreso) <= aMinutos(pausa)) return ['El regreso del almuerzo tiene que ser después de la salida.'];
     const r = resolverTurnoDelDia({
         shiftId: turno === HORAS_PROPIAS ? '' : (turno || ''), customStart: inicio, customEnd: fin,
-        hasLunch: conPausa, lunchStart: pausa, hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
+        hasLunch: conPausa, lunchStart: pausa, lunchMinutes: minutosDeLaPausa(pausa, regreso),
+        hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
     }, turnos || []);
     return reparosDelDia(r, limites?.hayHorario && !limites.cerrada
         ? { horaDeApertura: limites.apertura, horaDeCierre: limites.cierre } : {});
 }
 
 /** Lo que conviene saber de una celda y no impide guardarla (horas extra). */
-export function avisosDeLaCelda({ turno, inicio, fin, conPausa, pausa, conLactancia, lactancia }, turnos) {
+export function avisosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia }, turnos) {
     if (turno === 'OFF' || turno === 'NO_SHIFTS') return [];
     return avisosDelDia(resolverTurnoDelDia({
         shiftId: turno === HORAS_PROPIAS ? '' : (turno || ''), customStart: inicio, customEnd: fin,
-        hasLunch: conPausa, lunchStart: pausa, hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
+        hasLunch: conPausa, lunchStart: pausa, lunchMinutes: minutosDeLaPausa(pausa, regreso),
+        hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
     }, turnos || []));
 }
 

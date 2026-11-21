@@ -13,7 +13,7 @@ import { Presionable as Pressable } from '../Tocable';
 import Conmutador from '../Interruptor';
 import { resolverTurnoDelDia } from '@nucleo/utils/turnoDelDia';
 import {
-  avisosDeLaCelda, datosDelDiaParaGuardar, horasDelTurno, limitesDeLaSalaElDia, reparosDeLaCelda, turnosQueCabenElDia,
+  avisosDeLaCelda, datosDelDiaParaGuardar, horasDelTurno, limitesDeLaSalaElDia, minutosDeLaPausa, regresoDeLaPausa, reparosDeLaCelda, turnosQueCabenElDia,
 } from '@nucleo/utils/edicionDeHorario';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -34,6 +34,8 @@ const estadoInicial = (actual) => ({
   fin: actual?.customEnd || '16:00',
   conPausa: Boolean(actual?.hasLunch),
   pausa: actual?.lunchStart || '12:00',
+  // Un día partido es un almuerzo largo: sale 12:00, regresa 3:00 p. m.
+  regreso: regresoDeLaPausa(actual?.lunchStart || '12:00', actual?.lunchMinutes),
   conLactancia: Boolean(actual?.hasLactation),
   lactancia: actual?.lactationStart || '15:00',
 });
@@ -73,12 +75,12 @@ export default function EditorDeDia({ fecha, dia, actual, turnos, sala, onGuarda
   const elegir = (id) => {
     if (id === 'OFF' || id === '') { setF((x) => ({ ...x, turno: id })); return; }
     const h = horasDelTurno(ofrecidos.find((t) => String(t.id) === String(id)));
-    setF((x) => ({ ...x, turno: id, ...(h ? { inicio: h.inicio, fin: h.fin, ...(h.conPausa ? { conPausa: true, pausa: h.pausa } : {}) } : {}) }));
+    setF((x) => ({ ...x, turno: id, ...(h ? { inicio: h.inicio, fin: h.fin, ...(h.conPausa ? { conPausa: true, pausa: h.pausa, regreso: h.regreso } : {}) } : {}) }));
   };
 
   const trabaja = f.turno !== 'OFF';
   const resuelto = useMemo(() => resolverTurnoDelDia(trabaja ? {
-    shiftId: f.turno, customStart: f.inicio, customEnd: f.fin, hasLunch: f.conPausa, lunchStart: f.pausa,
+    shiftId: f.turno, customStart: f.inicio, customEnd: f.fin, hasLunch: f.conPausa, lunchStart: f.pausa, lunchMinutes: minutosDeLaPausa(f.pausa, f.regreso),
     hasLactation: f.conLactancia, lactationStart: f.lactancia, isOff: false,
   } : { isOff: true }, turnos || []), [f, trabaja, turnos]);
   const reparos = useMemo(() => {
@@ -117,7 +119,9 @@ export default function EditorDeDia({ fecha, dia, actual, turnos, sala, onGuarda
           </Seccion>
           <Seccion>
             <Interruptor titulo="Almuerzo" valor={f.conPausa} onCambiar={cambiar('conPausa')}>
-              <FilaHora rotulo="Sale a almorzar" valor={f.pausa} onCambiar={cambiar('pausa')} />
+              <FilaHora rotulo="Sale a almorzar" valor={f.pausa}
+                onCambiar={(v) => setF((x) => ({ ...x, pausa: v, regreso: regresoDeLaPausa(v, minutosDeLaPausa(x.pausa, x.regreso)) }))} />
+              <FilaHora rotulo="Regresa" valor={f.regreso} onCambiar={cambiar('regreso')} />
             </Interruptor>
             <Interruptor titulo="Lactancia" valor={f.conLactancia} onCambiar={cambiar('conLactancia')}>
               <FilaHora rotulo="Hora de lactancia" valor={f.lactancia} onCambiar={cambiar('lactancia')} />

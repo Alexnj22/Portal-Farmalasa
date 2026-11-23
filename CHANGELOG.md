@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.14 — La fecha en Android ya queda la que se toca
+
+Reportado desde Bodega (conteo de inventario): «en unos teléfonos no les deja
+poner la fecha». Los cuatro que contaban hoy usan Android.
+
+- **Se guardaba el día anterior.** El calendario de Material entrega la fecha
+  como medianoche UTC y `componentes/formulario/Fecha.js` la leía en hora local
+  (UTC−6): tocar el 1-sep-2027 guardaba el 31-ago-2027, y como el selector
+  emitía apenas abría, «Aceptar» sin tocar guardaba ayer. Cada intento corría la
+  fecha un día. Ahora se lee en UTC (la app de clientes ya lo hacía así).
+- **El calendario no cabía** en pantallas chicas o con letra grande y dejaba
+  «Aceptar» fuera. Ahora es `DatePickerDialog`, el diálogo del sistema, que se
+  acomoda solo y permite escribir la fecha con el lápiz. La vista nativa está
+  en todas las compilaciones desde septiembre: va por aire.
+- Afecta a todo `Fecha` en Android (conteo, solicitudes, cortes, personal,
+  rango de fechas). iPhone no cambia.
+
+Gemelo: conteo_inventario — sólo Android de la app; el portal usa `LiquidDatePicker`, que no tiene el defecto.
+
 ## v2.1592.13 — La ficha que no cargó ya no se puede guardar encima
 
 Si la lectura de una ficha fallaba (red o consulta), varios formularios de

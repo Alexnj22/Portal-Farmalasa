@@ -33,7 +33,11 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 const hora = (iso) => fechaHora12(iso);
 
 export default function AvisoDelPortal() {
-    const { banner, recargar } = useBannerPortal();
+    const { banner, cargando, error: errorCarga, recargar } = useBannerPortal();
+    // Sin el aviso leído no se escribe (2026-11-23): con la lectura fallida el
+    // formulario salía vacío y apagado, y «Guardar» mandaba `activo: false`
+    // —apagaba un aviso encendido—. Mientras carga, tampoco.
+    const leido = !cargando && !errorCarga;
 
     const [guardando, setGuardando] = useState(false);
 
@@ -92,6 +96,7 @@ export default function AvisoDelPortal() {
     }, [texto, textoCorto, variante, recargar]);
 
     const guardar = useCallback(async () => {
+        if (!leido) return;
         setGuardando(true);
         // `BANNER_PORTAL_EDIT` lo anota `guardarBannerPortal`.
         const { error } = await guardarBannerPortal({ activo, texto, textoCorto, variante });
@@ -107,7 +112,21 @@ export default function AvisoDelPortal() {
             'success',
         );
         await recargar();
-    }, [activo, texto, textoCorto, variante, recargar]);
+    }, [leido, activo, texto, textoCorto, variante, recargar]);
+
+    if (errorCarga && !banner) {
+        return (
+            <div className="flex flex-col gap-2.5 pt-1">
+                <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">
+                    Aviso en el portal
+                </span>
+                <Notice variant="danger">
+                    <span>{mensajeAmigable(errorCarga, 'No se pudo cargar el aviso.')}</span>
+                    <Button variant="ghost" size="sm" onClick={() => recargar()}>Reintentar</Button>
+                </Notice>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-2.5 pt-1">
@@ -133,7 +152,7 @@ export default function AvisoDelPortal() {
                     </div>
                     <Switch
                         checked={activo}
-                        disabled={guardando || (!activo && sinTexto)}
+                        disabled={guardando || !leido || (!activo && sinTexto)}
                         onChange={alternar}
                         aria-label="Mostrar la franja de aviso en el portal"
                     />
@@ -197,7 +216,7 @@ export default function AvisoDelPortal() {
                         size="sm"
                         onClick={guardar}
                         loading={guardando}
-                        disabled={!sucio || sinTexto}
+                        disabled={!leido || !sucio || sinTexto}
                     >
                         Guardar texto y apariencia
                     </Button>

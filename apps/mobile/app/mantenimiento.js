@@ -39,6 +39,7 @@ import ConAurora from '../componentes/ConAurora';
 import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { ErrorConReintento } from '../componentes/ListaPaginada';
 
 const info = (key) => MODULE_INFO[key] || { label: key, desc: '', group: 'Otros' };
 
@@ -61,7 +62,11 @@ function Fila({ titulo, detalle, extra, valor, onCambiar, ocupado, primero, onTo
 // como en el portal: apagarla en una emergencia no espera a que alguien termine
 // de redactar, y el texto queda para la próxima vez.
 function Franja() {
-  const { banner, recargar } = useBannerPortal();
+  const { banner, cargando, error: errorCarga, recargar } = useBannerPortal();
+  // Sin el aviso leído no se escribe (2026-11-23): con la lectura fallida salía
+  // vacío y apagado, y guardar mandaba `activo: false` —apagaba un aviso
+  // encendido—.
+  const leido = !cargando && !errorCarga;
   const [borrador, setBorrador] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const base = useMemo(() => ({ texto: banner?.texto ?? '', textoCorto: banner?.texto_corto ?? '', variante: banner?.variante ?? 'obra' }), [banner]);
@@ -84,6 +89,7 @@ function Franja() {
       } },
     ]);
   const guardar = async () => {
+    if (!leido) return;
     setGuardando(true);
     const { error } = await guardarBannerPortal({ activo, texto, textoCorto, variante });
     setGuardando(false);
@@ -92,6 +98,15 @@ function Franja() {
     listo('Aviso guardado', activo ? 'Ya se ve con el texto nuevo.' : 'Queda listo para cuando lo enciendas.');
     recargar();
   };
+
+  if (errorCarga && !banner) {
+    return (
+      <Seccion titulo="Aviso en el portal">
+        <ErrorConReintento mensaje={mensajeAmigable(errorCarga, 'No se pudo cargar el aviso.')} onReintentar={() => recargar()} />
+      </Seccion>
+    );
+  }
+  if (cargando) return <Seccion titulo="Aviso en el portal"><Indicador /></Seccion>;
 
   return (
     <Seccion titulo="Aviso en el portal" pie="Aparece arriba de todo, para todo el mundo, hasta que lo apagues.">

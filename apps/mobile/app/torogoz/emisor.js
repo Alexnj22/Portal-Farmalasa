@@ -27,6 +27,7 @@ import { CampoConRotulo, Rotulo } from '../../componentes/personas/Formulario';
 import Segmentos from '../../componentes/Segmentos';
 import Avatar from '../../componentes/Avatar';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { ErrorConReintento } from '../../componentes/ListaPaginada';
 import {
   ElegirActividad, ElegirLargo, ElegirUbicacion, Interruptor, Nota, PETROLEO, useEmisor,
 } from '../../componentes/torogoz/comercial/Piezas';
@@ -63,7 +64,7 @@ export default function EmisorTorogoz() {
   const { hasPermission } = useAuth();
   const puede = !!hasPermission?.('distribucion_config', 'can_edit');
   const ro = !puede;
-  const { emisor, recargar } = useEmisor();
+  const { emisor, error: errorCarga, recargar } = useEmisor();
   const [f, setF] = useState(EMISOR_VACIO);
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -77,8 +78,8 @@ export default function EmisorTorogoz() {
   useEffect(() => { if (huella !== null) setF(emisorAFormulario(JSON.parse(huella))); }, [huella]);
 
   // Sólo el alta guarda borrador: al editar, los datos ya están en la base.
-  const { recuperado, descartar } = useBorrador(emisor === null && puede ? 'distribucion-emisor' : null, f,
-    { activo: emisor === null, vale: (v) => !!v?.nombre?.trim() });
+  const { recuperado, descartar } = useBorrador(emisor === null && !errorCarga && puede ? 'distribucion-emisor' : null, f,
+    { activo: emisor === null && !errorCarga, vale: (v) => !!v?.nombre?.trim() });
   const repuesto = useRef(false);
   useEffect(() => {
     if (repuesto.current || !recuperado || emisor) return;
@@ -108,6 +109,7 @@ export default function EmisorTorogoz() {
   };
 
   const guardar = () => {
+    if (errorCarga) return;
     setIntento(true);
     if (lista.length) { fallo('Falta algo', lista[0]); return; }
     Alert.alert('Guardar los datos de la empresa', 'Salen impresos en cada factura que se emita.', [
@@ -122,6 +124,15 @@ export default function EmisorTorogoz() {
       } },
     ]);
   };
+
+  if (errorCarga && !emisor) {
+    return (
+      <>
+        <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Empresa' }} />
+        <ErrorConReintento mensaje={errorCarga} onReintentar={recargar} />
+      </>
+    );
+  }
 
   if (emisor === undefined) {
     return (

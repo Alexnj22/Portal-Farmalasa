@@ -35,6 +35,7 @@ import {
     updateProductCategoria, insertProductCategory, guardarUbicacionesProducto,
     updateProductDevolutivo, updateProductFoto, fetchVisibleEnApp, setVisibleEnApp, fetchEsInsumo, marcarInsumo, fetchProductCounts,
     fetchIdsModificadosDesde, fetchIdsPorMargen, fetchProductsList, fetchIndicadoresDeCatalogo, fetchProductDetail,
+    fetchPrincipiosDeProducto,
 } from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
@@ -708,7 +709,7 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false, c
 // fueran dos componentes, el día que alguien agregue una sección la agregaría en
 // uno solo — que es exactamente cómo este proyecto acumuló las cuatro copias de
 // la fila expandida que v2.62.4 tuvo que reunificar.
-function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, comoPanel = false }) {
+export function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onReintentarPrincipios, onCategoryUpdated, onClose, categories, onCategoryCreated, comoPanel = false }) {
     const { maxPriceLevel, hasPermission } = useAuth();
     const canSeeCosts = hasPermission('productos_ver_costos');
 
@@ -859,6 +860,9 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior)
     );
     const principles = data?.principles || [];
+    // Si la lectura de los principios falló, el editor no se pinta (2026-11-23):
+    // abría vacío, y su guardado automático reemplazaba la lista entera.
+    const principiosNoCargaron = !loadingRow && (!data || !!data.principlesError);
     const hasChanges = Object.keys(changesMap).length > 0 || prodLog.length > 0;
 
     const inactiveCount  = precios.filter(pp => pp.activo === false).length;
@@ -1196,11 +1200,18 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     </Button>
                                 )}
                             </div>
-                            <PrincipiosEditor
-                                productId={product.id}
-                                initial={principles}
-                                onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
-                            />
+                            {principiosNoCargaron ? (
+                                <Notice variant="danger" icon={AlertTriangle}>
+                                    <span>No se pudieron cargar los principios activos.</span>
+                                    <Button variant="ghost" size="sm" onClick={() => onReintentarPrincipios?.(product.id)}>Reintentar</Button>
+                                </Notice>
+                            ) : (
+                                <PrincipiosEditor
+                                    productId={product.id}
+                                    initial={principles}
+                                    onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
+                                />
+                            )}
                             {showSrs && !PA_PRESETS.includes(product.principio_activo) && (
                                 <div className={`mt-3 border-t ${xk.srsDivider} pt-3`}>
                                     <SrsBuscadorWidget initialQuery={product.nombre} />
@@ -1492,7 +1503,7 @@ export default function TabCatalogo({
                 const firstErr = results.find(r => r.error)?.error;
                 if (firstErr) console.error('prefetchRow failed:', firstErr.message);
                 const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }, { data: precioHistory }] = results;
-                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] } }));
+                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], principlesError: !!results[3]?.error, purchases: purchases || [], precioHistory: precioHistory || [] } }));
             } catch { /* silent */ }
         }, 120);
     }, [expandedCache, canSeeCosts]);
@@ -1511,7 +1522,7 @@ export default function TabCatalogo({
             const firstErr = results.find(r => r.error)?.error;
             if (firstErr) console.error('toggleRow: expand product failed:', firstErr.message);
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }, { data: precioHistory }] = results;
-            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] } }));
+            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], principlesError: !!results[3]?.error, purchases: purchases || [], precioHistory: precioHistory || [] } }));
         } catch (e) {
             console.error('TabCatalogo.jsx: ', e);
             useToastStore.getState().showToast('No se pudo abrir el detalle', 'El detalle del producto no cargó. Intenta de nuevo.', 'error');
@@ -1523,8 +1534,20 @@ export default function TabCatalogo({
     }, []);
 
     const handlePrinciplesUpdated = useCallback((productId, saved, text) => {
-        setExpandedCache(c => ({ ...c, [productId]: { ...(c[productId] || {}), principles: saved } }));
+        setExpandedCache(c => ({ ...c, [productId]: { ...(c[productId] || {}), principles: saved, principlesError: false } }));
         setProducts(ps => ps.map(p => p.id === productId ? { ...p, principio_activo: text } : p));
+    }, []);
+
+    // Releer sólo los principios cuando su lectura falló (2026-11-23): el editor
+    // no se ofrece sin ellos, porque guardar reemplaza la lista entera.
+    const handleReintentarPrincipios = useCallback(async (productId) => {
+        try {
+            const principles = await fetchPrincipiosDeProducto(productId);
+            setExpandedCache(c => ({ ...c, [productId]: { ...(c[productId] || {}), principles, principlesError: false } }));
+        } catch (e) {
+            console.error('TabCatalogo: principios', e);
+            useToastStore.getState().showToast('No se pudieron cargar los principios activos', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
+        }
     }, []);
 
     const handleCategoryUpdated = useCallback((productId, cat) => {
@@ -1756,6 +1779,7 @@ export default function TabCatalogo({
                                         branches={branches}
                                         onPhotoUpdated={handlePhotoUpdated}
                                         onPrinciplesUpdated={handlePrinciplesUpdated}
+                                        onReintentarPrincipios={handleReintentarPrincipios}
                                         onCategoryUpdated={handleCategoryUpdated}
                                         onClose={() => setExpandedId(null)}
                                         categories={catOptions.map(o => o.value)}
@@ -1797,6 +1821,7 @@ export default function TabCatalogo({
                         branches={branches}
                         onPhotoUpdated={handlePhotoUpdated}
                         onPrinciplesUpdated={handlePrinciplesUpdated}
+                        onReintentarPrincipios={handleReintentarPrincipios}
                         onCategoryUpdated={handleCategoryUpdated}
                         onClose={() => setExpandedId(null)}
                         categories={catOptions.map(o => o.value)}

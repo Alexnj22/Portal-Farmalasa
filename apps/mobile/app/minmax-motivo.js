@@ -24,6 +24,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { ErrorConReintento } from '../componentes/ListaPaginada';
 
 const COLUMNAS = 'manual_motivo, manual_nota, manual_cliente_unidades, manual_cliente_dias, manual_at, manual_por';
 
@@ -40,17 +41,25 @@ export default function MinMaxMotivo() {
   const [unidades, setUnidades] = useState('');
   const [dias, setDias] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  // La carga que falló (2026-11-23): el `error` se ignoraba y la excepción
+  // dejaba `{}`; el formulario salía en «Sin motivo» y «Guardar» borraba el
+  // motivo real. Sin la fila leída no hay formulario.
+  const [fallaCarga, setFallaCarga] = useState(null);
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
-    fetchStockParams(Number(producto), Number(sala), COLUMNAS).then(({ data }) => {
-      const d = data ?? {};
+    setFallaCarga(null); // eslint-disable-line react-hooks/set-state-in-effect -- reintento
+    fetchStockParams(Number(producto), Number(sala), COLUMNAS).then(({ data, error }) => {
+      if (error) throw error;
+      if (!data) throw new Error('No se encontró el producto en esta sucursal.');
+      const d = data;
       setFila(d);
       setMotivo(d.manual_motivo ?? '');
       setNota(d.manual_nota ?? '');
       setUnidades(d.manual_cliente_unidades != null ? String(d.manual_cliente_unidades) : '');
       setDias(d.manual_cliente_dias != null ? String(d.manual_cliente_dias) : '');
-    }).catch(() => setFila({}));
-  }, [producto, sala]);
+    }).catch((e) => setFallaCarga(mensajeAmigable(e, 'No se pudo cargar el motivo.')));
+  }, [producto, sala, intento]);
 
   const falta = faltaEnMotivoDeAjuste({ motivo, nota, unidades, dias });
   const opciones = [
@@ -61,7 +70,7 @@ export default function MinMaxMotivo() {
   ];
 
   const guardar = async () => {
-    if (falta || ocupado) return;
+    if (falta || ocupado || !fila) return;
     const patch = patchDeMotivoDeAjuste({ motivo, nota, unidades, dias });
     setOcupado(true);
     trabajando('Guardando el motivo…');
@@ -85,7 +94,8 @@ export default function MinMaxMotivo() {
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4, marginTop: -10 }}>{`${ERP_NAMES[Number(sala)] ?? ''} · Por qué está puesto a mano`}</Text>
-          {fila == null ? <Cargando /> : !puede ? (
+          {fila == null && fallaCarga ? <ErrorConReintento mensaje={fallaCarga} onReintentar={() => setIntento((n) => n + 1)} />
+            : fila == null ? <Cargando /> : !puede ? (
             <>
               <Aviso tono="nota" texto={fila.manual_motivo ? `Motivo: ${MOTIVO_AJUSTE[fila.manual_motivo]?.label ?? fila.manual_motivo}${fila.manual_nota ? ` · ${fila.manual_nota}` : ''}` : 'Sin motivo.'} />
               <Aviso tono="freno" texto="Solo quien edita el Mín/Máx de esta sucursal puede poner el motivo." />

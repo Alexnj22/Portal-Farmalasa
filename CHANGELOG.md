@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.15 — Más formularios que no cargaron ya no se pueden guardar encima
+
+Segunda tanda del arreglo de v2.1592.13: más formularios de edición que, si la
+lectura fallaba, se pintaban vacíos y se podían guardar encima del dato real.
+Ahora muestran el error con «Reintentar» y no dejan guardar hasta haber leído.
+
+- Distribución → **Empresa** (portal y app): con la carga fallida se pintaba
+  como alta y «Guardar» creaba una SEGUNDA empresa emisora. En la app,
+  `useEmisor` ya no confunde «falló» con «no hay empresa» (expone `error`).
+- Mantenimiento → **Aviso en el portal** (portal y app): `useBannerPortal`
+  se tragaba el error; el formulario salía vacío y apagado, y guardar mandaba
+  `activo: false` —apagaba un aviso encendido—. El hook ahora expone `error`;
+  la franja de arriba sigue apagándose sola ante un error, como antes.
+- Productos → Catálogo → **principios activos** del detalle (portal): el
+  error se anotaba en la consola y el editor abría vacío; su guardado
+  automático reemplazaba la lista entera. Ahora se relee con «Reintentar».
+- App: **Motivo del ajuste de Mín/Máx** (`minmax-motivo.js`, guardar borraba
+  el motivo real) y **Ajustes del chat** (`chat-clientes/ajustes.js`, guardar
+  pisaba los dos mensajes automáticos).
+
+Pruebas: `tests/unit/avisoDelPortalSinLeer.test.jsx`,
+`tests/unit/avisoDelPortalPantalla.test.jsx`, `tests/unit/principiosSinLeer.test.jsx`.
+
+Gemelo: productos — los principios de la app ya se corrigieron en v2.1592.13.
+Gemelo: chat_clientes — el portal (`AjustesDelChat.jsx`) ya no dejaba guardar sin la fila leída.
+Gemelo: minmax — el portal (`MotivoAjusteModal`) ya frenaba la carga fallida.
+
 ## v2.1592.14 — La fecha en Android ya queda la que se toca
 
 Reportado desde Bodega (conteo de inventario): «en unos teléfonos no les deja

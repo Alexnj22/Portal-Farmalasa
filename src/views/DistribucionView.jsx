@@ -3,6 +3,7 @@ import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriang
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
+import Button from '../components/common/Button';
 import { useMarca } from '../plataforma/useMarca';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor } from '@nucleo/data/distribucion';
@@ -181,7 +182,12 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             transparentBody
         >
             {error && (
-                <div className="p-5 md:p-6"><Notice variant="danger" icon={AlertTriangle}>{error}</Notice></div>
+                <div className="p-5 md:p-6">
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <span>{error}</span>
+                        <Button variant="ghost" size="sm" onClick={cargarEmisor}>Reintentar</Button>
+                    </Notice>
+                </div>
             )}
             {!cargando && !error && !emisor && tab !== 'emisor' && tab !== 'inicio' && (
                 <div className="p-5 md:p-6">
@@ -243,7 +249,10 @@ export default function DistribucionView({ seccion = 'inicio' }) {
             )}
             {visitadas.has('emisor') && (
                 <div className={tab === 'emisor' ? '' : 'hidden'}>
-                    <Seccion><TabEmisor {...comunes} onGuardado={cargarEmisor} /></Seccion>
+                    {/* Sólo con la empresa leída (2026-11-23): con la carga fallida
+                        TabEmisor se pintaba como alta vacía y «Guardar» creaba
+                        una SEGUNDA empresa emisora. */}
+                    {!cargando && !error && <Seccion><TabEmisor {...comunes} onGuardado={cargarEmisor} /></Seccion>}
                 </div>
             )}
         </GlassViewLayout>

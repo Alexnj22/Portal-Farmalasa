@@ -28,12 +28,19 @@ const ANDROID = Platform.OS === 'android';
 /** El color de la distribuidora (COLORES_DISTRIBUIDORA.petroleo). */
 export const PETROLEO = COLOR_PETROLEO;
 
-/** La empresa que factura (una sola fila). Se relee al volver a la pantalla. */
+/** La empresa que factura (una sola fila). Se relee al volver a la pantalla.
+ *  `error` (2026-11-23): la lectura que falló ya no se confunde con «no hay
+ *  empresa» — la pantalla Empresa la pintaba como alta vacía y «Guardar»
+ *  creaba una segunda empresa emisora. `emisor` sigue en `null` para las
+ *  pantallas que sólo preguntan si hay. */
 export function useEmisor() {
-  const [emisor, setEmisor] = useState(undefined);   // undefined = cargando; null = no hay
-  const cargar = useCallback(() => fetchEmisor().then(setEmisor).catch(() => setEmisor(null)), []);
+  const [emisor, setEmisor] = useState(undefined);   // undefined = cargando; null = no hay (o falló: ver `error`)
+  const [error, setError] = useState(null);
+  const cargar = useCallback(() => fetchEmisor()
+    .then((e) => { setError(null); setEmisor(e); })
+    .catch((e) => { setError(e?.message || 'No se pudieron cargar los datos de la empresa.'); setEmisor(null); }), []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  return { emisor, recargar: cargar };
+  return { emisor, error, recargar: cargar };
 }
 
 /** Las filas que se tocaron en una lista viajan acá a su pantalla (la dirección sólo lleva el id). */

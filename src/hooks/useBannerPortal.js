@@ -18,10 +18,15 @@ export function useBannerPortal() {
     const id = useId();
     const [banner, setBanner] = useState(null);
     const [cargando, setCargando] = useState(true);
+    // El error se EXPONE (2026-11-23): la franja sigue apagada ante un error,
+    // pero quien EDITA el aviso tiene que saber que no se leyó — si no, ve el
+    // formulario vacío y guardar apagaría un aviso que está encendido.
+    const [error, setError] = useState(null);
 
     const recargar = useCallback(async () => {
         const { data, error } = await fetchBannerPortal();
         setBanner(error ? null : (data ?? null));
+        setError(error ?? null);
         setCargando(false);
         return { data, error };
     }, []);
@@ -46,5 +51,5 @@ export function useBannerPortal() {
         return () => { vivo = false; supabase.removeChannel(ch); };
     }, [recargar, id]);
 
-    return { banner, cargando, recargar };
+    return { banner, cargando, error, recargar };
 }

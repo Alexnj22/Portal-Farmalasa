@@ -25,6 +25,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
+import { ErrorConReintento } from '../../componentes/ListaPaginada';
 import { EstadoDeLaFarmacia } from '../../componentes/chat/Encabezado';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 
@@ -90,13 +91,18 @@ export default function AjustesDelChat() {
   const [f, setF] = useState({ mensaje_abierto: '', mensaje_cerrado: '' });
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
+  // La carga que falló (2026-11-23): antes dejaba `fila = {}` y pintaba los
+  // editores vacíos y el interruptor encendido; guardar pisaba los dos mensajes
+  // reales. Sin lo leído no hay editores ni interruptor.
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
     let vivo = true;
+    setError(''); // eslint-disable-line react-hooks/set-state-in-effect -- reintento
     fetchAjustesDelChat()
       .then((r) => { if (!vivo) return; setFila(r ?? {}); setF({ mensaje_abierto: r?.mensaje_abierto ?? '', mensaje_cerrado: r?.mensaje_cerrado ?? '' }); })
-      .catch((e) => { if (vivo) { setError(e?.message || 'No se pudieron leer los mensajes.'); setFila({}); } });
+      .catch((e) => { if (vivo) setError(e?.message || 'No se pudieron leer los mensajes.'); });
     return () => { vivo = false; };
-  }, []);
+  }, [intento]);
   const editor = useMemo(() => (fila?.updated_by ? (empleados || []).find((e) => String(e.id) === String(fila.updated_by)) ?? null : null), [empleados, fila]);
   const cambiado = !!fila && (f.mensaje_abierto !== (fila.mensaje_abierto ?? '') || f.mensaje_cerrado !== (fila.mensaje_cerrado ?? ''));
   const valido = f.mensaje_abierto.trim() && f.mensaje_cerrado.trim();
@@ -130,7 +136,7 @@ export default function AjustesDelChat() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <Aviso texto="Respuestas automáticas que recibe el cliente al escribir. El horario sale de las sucursales: los feriados y los horarios especiales se aplican solos." />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}><EstadoDeLaFarmacia estado={estado} /></View>
-          {error ? <Aviso tono="freno" texto={error} /> : null}
+          {error && !fila ? <ErrorConReintento mensaje={error} onReintentar={() => setIntento((n) => n + 1)} /> : error ? <Aviso tono="freno" texto={error} /> : null}
           {fila ? (
             <Seccion titulo="Respuestas automáticas">
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -143,7 +149,7 @@ export default function AjustesDelChat() {
               </Text>
             </Seccion>
           ) : null}
-          {!fila ? <Cargando /> : CAMPOS.map((c) => (
+          {!fila ? (error ? null : <Cargando />) : CAMPOS.map((c) => (
             <Editor key={c.clave} campo={c} valor={f[c.clave]} estado={estado} deshabilitado={!puedeEditar || guardando}
               onCambio={(v) => setF((x) => ({ ...x, [c.clave]: v }))} />
           ))}

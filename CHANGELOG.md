@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.19 — «Cuándo se vende más» ya no se queda cargando ni muestra otra sucursal
+
+- El efecto que lee las ventas por hora del Inicio hacía `fetch().then(...)`
+  sin `.catch` y sin guarda de cancelación. Si la lectura (o el armado de los
+  promedios) lanzaba, nadie apagaba la carga y la tarjeta quedaba con el
+  esqueleto para siempre; y al cambiar rápido de sucursal, la respuesta de la
+  anterior podía llegar después y pintar sus números.
+- Ahora pasa por `lecturaCancelable` (`src/utils/lecturaCancelable.js`): sólo
+  la lectura vigente escribe, la carga se apaga en toda salida y un error deja
+  «No se pudieron leer las ventas» con «Reintentar». Sin otro cambio visual.
+- La consulta no era la causa: `ventas_por_hora_de_sala` ya devuelve un solo
+  JSON y en producción tarda 64 ms de media (701 máx).
+- Prueba: `tests/unit/lecturaCancelable.test.js` (con el patrón viejo fallan 3
+  de 4).
+
+Gemelo: overview — en apps/mobile/componentes/inicio/widgets/ventasPorHora.js (la app lee con `useDato`: clave por sucursal, `vivo` y `.catch` con error propio; no tiene el defecto)
+
 ## v2.1592.18 — Inicio: las baldosas se piden a la vez y el tablero se monta antes
 
 Mejora 4 del plan de tiempos de carga, la parte que aplica a este portal.

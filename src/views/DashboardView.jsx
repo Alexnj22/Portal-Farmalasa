@@ -74,6 +74,7 @@ import {
     fetchDashboardCanon, upsertDashboardCanon, fetchBajoMinimo } from '@nucleo/data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
 import { clickable } from '@nucleo/utils/clickable';
+import { lecturaCancelable } from '@nucleo/utils/lecturaCancelable';
 import { reacomodar } from '@nucleo/utils/acomodoWidgets';
 import { permitirEscapeDelScroll } from '../plataforma/scrollEncadenado';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -1979,6 +1980,8 @@ const DashboardView = ({ openModal }) => {
   const [todayLoading,   setTodayLoading]   = useState(false);
   const [todayError,     setTodayError]     = useState(false);
   const [salesError,     setSalesError]     = useState(false);
+  // «Reintentar» de «Cuándo se vende más»: vuelve a correr la lectura.
+  const [salesReintento, setSalesReintento] = useState(0);
   const [factError,      setFactError]      = useState(false);
   const [cotizError,     setCotizError]     = useState(false);
   const [topProdError,   setTopProdError]   = useState(false);
@@ -2175,7 +2178,7 @@ const DashboardView = ({ openModal }) => {
   useRefrescoEnVivo(() => cargarHoy(false), { ms: 5 * 60 * 1000, activo: branches.length > 0 });
 
   useEffect(() => {
-    if (!salesBranch) { setSalesStats({ days:[], generalHours:[], specificHours:{} }); return; }
+    if (!salesBranch) { setSalesStats({ days:[], generalHours:[], specificHours:{} }); setSalesLoading(false); return; }
     setSalesLoading(true); setSalesView('DAYS');
     const since = new Date(); since.setDate(since.getDate()-90);
     // Staffing-based color thresholds (10 min/tx → 6 tx/hr per employee)
@@ -2189,8 +2192,12 @@ const DashboardView = ({ openModal }) => {
         return { ...item, color, height: hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%' };
       });
     };
-    fetchBranchHourlySalesRange(salesBranch, localDateStr(since))
-      .then(({ data, error }) => {
+    // Cancelable y con error (2026-11-23): sin `.catch`, una lectura que lanzaba
+    // dejaba el esqueleto para siempre, y al cambiar rápido de sucursal la
+    // respuesta de la anterior podía llegar después y pintar sus números.
+    setSalesError(false);
+    return lecturaCancelable(() => fetchBranchHourlySalesRange(salesBranch, localDateStr(since)), {
+      alLlegar: ({ data, error }) => {
         setSalesError(!!error);
         const cb = branches.find(b=>String(b.id)===String(salesBranch));
         const { dias, horas, porDia } = promediosDeVentas(data, cb);
@@ -2198,9 +2205,11 @@ const DashboardView = ({ openModal }) => {
         const fH = horas.map(h => ({ ...h, label: formatHourAMPM(h.hour) }));
         const fS = Object.fromEntries(Object.entries(porDia).map(([d, arr]) => [d, arr.map(h => ({ ...h, label: formatHourAMPM(h.hour) }))]));
         setSalesStats({ days:applyColors(fD), generalHours:applyColors(fH), specificHours:Object.fromEntries([1,2,3,4,5,6,0].map(d=>[d,applyColors(fS[d])])) });
-        setSalesLoading(false);
-      });
-  }, [salesBranch, branches]);
+      },
+      alFallar: (e) => { console.error('[dash] ventas por hora', e); setSalesError(true); },
+      alTerminar: () => setSalesLoading(false),
+    });
+  }, [salesBranch, branches, salesReintento]);
 
   // ── Comercial data effects ─────────────────────────────────────────────────
   const cargarCotizaciones = useCallback(() => {
@@ -3037,7 +3046,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
-                  if (salesError) return <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las ventas" />;
+                  if (salesError) return <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las ventas" action={<Button size="sm" variant="secondary" onClick={() => setSalesReintento(n => n + 1)}>Reintentar</Button>} />;
                   if (!chartData?.length) return <EmptyState linea icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})}

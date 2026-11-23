@@ -17729,6 +17729,7 @@ export type Database = {
         Row: {
           branch_id: number | null
           created_at: string
+          device_id: string | null
           exito: boolean
           id: number
           metodo: string | null
@@ -17739,6 +17740,7 @@ export type Database = {
         Insert: {
           branch_id?: number | null
           created_at?: string
+          device_id?: string | null
           exito: boolean
           id?: never
           metodo?: string | null
@@ -17749,6 +17751,7 @@ export type Database = {
         Update: {
           branch_id?: number | null
           created_at?: string
+          device_id?: string | null
           exito?: boolean
           id?: never
           metodo?: string | null

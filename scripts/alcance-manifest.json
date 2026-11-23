@@ -516,11 +516,8 @@
       "motivo": "Detalle de una solicitud de cambio de MIN·MAX: la sala propia, o MIN·MAX, o la bandeja de solicitudes. Decisión del usuario (2026-10-02): Jefe/a de Compras ve otras salas «al desplegar el producto», no sala por sala. Hasta el 2026-10-02 no pedía nada."
     },
     "crear_codigo_de_vinculacion": {
-      "guarda": "modulo-de-red",
-      "modulos": [
-        "impresion"
-      ],
-      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+      "guarda": "alcance",
+      "motivo": "Desde 2026-11-23 (20261123165422): exige auth_module_scope('impresion') = 'ALL' o que p_branch_id sea la sucursal propia. Antes sólo miraba el módulo."
     },
     "crear_conteo_inventario": {
       "guarda": "alcance"
@@ -766,9 +763,8 @@
       "motivo": "Guarda `preventa_puede(auth_employee_id(), p_branch, ...)`: la sala propia, las que cubre ahora o scope ALL del módulo preventa."
     },
     "kiosco_ticket_emitir": {
-      "guarda": "modulo-de-red",
-      "modulos": ["kiosco_vincular"],
-      "motivo": "Emite el ticket que vincula un kiosco a una sucursal: sólo quien tiene kiosco_vincular (Supervisión de ventas), no la sala."
+      "guarda": "alcance",
+      "motivo": "Emite el ticket que vincula un kiosco a una sucursal. Desde 2026-11-23 (20261123165422): exige kiosco_vincular y además auth_module_scope('kiosco_vincular') = 'ALL' o que p_branch_id sea la sucursal propia."
     },
     "get_meta_sala": {
       "guarda": "alcance"

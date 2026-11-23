@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.11 — Kiosco: el número de empleado ya no identifica
+
+Tres arreglos de seguridad del kiosco, aprobados por el usuario el 2026-11-23.
+Migración `20261123165422_kiosco_codigo_publico_topes_y_vinculacion`.
+
+- **El número de empleado ya no identifica.** `kiosco_identificar`,
+  `identificar_por_carne`, `retiro_firmar_carne`, `probar_identidad_por_carne`,
+  `_carne_a_empleado` y `verificar_persona` caían a `employees.code`, que es
+  público. Ahora sólo el PIN del carné o el carné de papel. Medido antes en
+  producción: los 55 activos tienen PIN de 8 y ninguno coincide con su código;
+  todos los flujos vivos leen el carné con lector o cámara.
+- **El freno del kiosco cuenta por equipo**, no por sucursal
+  (`intentos_identidad.device_id`): 20 fallos en un equipo ya no dejan sin
+  marcar a la sucursal entera.
+- **Tope del PIN y del código de autorización:** además de 10 fallos / 5 min por
+  equipo, 10 por empleado en 24 h y 30 por sucursal en 24 h.
+- **Vinculación por alcance:** `kiosco_ticket_emitir` y
+  `crear_codigo_de_vinculacion` exigen alcance ALL en el módulo o la sucursal
+  propia.
+
+Gemelo: acceso — sólo base y tipos, sin pantalla en ningún lado.
+
 ## v2.1592.10 — Las cajas de impresión guardan su clave como hash
 
 `impresion_dispositivos.token` era un uuid en claro que nunca vence: con él

@@ -43,7 +43,7 @@
       "area": "acceso",
       "guarda": "device_token",
       "estado": "hallada-2026-08-23",
-      "motivo": "El kiosco identifica por carné antes de que exista sesión. Entra por kiosco_sucursal(device_id, device_token): sin token válido no hace nada."
+      "motivo": "El kiosco identifica por carné antes de que exista sesión. Entra por kiosco_sucursal(device_id, device_token): sin token válido no hace nada. Desde 2026-11-23 sólo acepta el PIN del carné o el carné de papel (no el número de empleado) y el freno de 20 fallos/15 min cuenta por equipo, no por sucursal."
     },
     {
       "nombre": "kiosco_marcar",

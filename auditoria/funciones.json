@@ -2026,6 +2026,11 @@
    "por": "código",
    "manual": true
   },
+  "decidir_descanso_semanal": {
+   "area": "asistencia",
+   "por": "a mano",
+   "manual": true
+  },
   "decidir_descuento_de_suspension": {
    "area": "personal",
    "por": "código"
@@ -2041,6 +2046,11 @@
   "decidir_excedente": {
    "area": "promociones",
    "por": "código"
+  },
+  "decidir_horas_extra": {
+   "area": "asistencia",
+   "por": "a mano",
+   "manual": true
   },
   "declarar_faltante_tardio": {
    "area": "traslados",

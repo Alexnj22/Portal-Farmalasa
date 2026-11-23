@@ -289,6 +289,12 @@ export function pendienteDeTH(entry) {
     const partes = [];
     if (inc) partes.push(`${inc} ${inc === 1 ? 'día' : 'días'} de incapacidad sin validar`);
     if (sus) partes.push(`${sus} ${sus === 1 ? 'día' : 'días'} de suspensión sin decidir el descuento`);
+    // Reglas de pago (2026-11-23): las horas de más esperan pago o banco
+    // (CT Art. 169/170) y la pérdida del descanso, que se confirme (RIT Art. 26).
+    const ext = Number(entry?.extras_por_decidir_horas) || 0;
+    const des = Number(entry?.descanso_por_decidir_semanas) || 0;
+    if (ext) partes.push(`${ext} h de más sin decidir si se pagan o van al banco`);
+    if (des) partes.push(`${des} ${des === 1 ? 'semana' : 'semanas'} con el descanso en duda`);
     return partes.length ? partes.join(' · ') : null;
 }
 
@@ -308,11 +314,24 @@ export function mensajeDePendientesDeTH(renglones) {
     if (!lista.length) return null;
     const inc = lista.filter(r => Number(r.incapacidad_pendiente_dias) > 0).length;
     const sus = lista.filter(r => Number(r.suspension_pendiente_dias) > 0).length;
+    const ext = lista.filter(r => Number(r.extras_por_decidir_horas) > 0).length;
+    const des = lista.filter(r => Number(r.descanso_por_decidir_semanas) > 0).length;
     const personas = (n) => `${n} ${n === 1 ? 'persona' : 'personas'}`;
-    const que = [
+    const largas = [
         inc ? `${personas(inc)} con incapacidad sin validar (en Solicitudes)` : null,
         sus ? `${personas(sus)} con suspensión sin decidir el descuento (en su historial)` : null,
-    ].filter(Boolean).join(' y ');
+        ext ? `${personas(ext)} con horas de más sin decidir (en Auditoría de tiempos)` : null,
+        des ? `${personas(des)} con el descanso semanal en duda (en Auditoría de tiempos)` : null,
+    ].filter(Boolean);
+    // Con tres o más motivos, la forma corta: el toast no pasa de 240.
+    const cortas = [
+        inc ? `${personas(inc)} con incapacidad sin validar` : null,
+        sus ? `${personas(sus)} con suspensión sin decidir` : null,
+        ext ? `${personas(ext)} con horas de más` : null,
+        des ? `${personas(des)} con el descanso en duda` : null,
+    ].filter(Boolean);
+    const partes = largas.length > 2 ? cortas : largas;
+    const que = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}` : partes[0];
     return `Falta que Talento Humano decida: ${que}. Después vuelve a generar la planilla.`;
 }
 

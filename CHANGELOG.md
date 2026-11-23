@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1595.0 — Las reglas de pago de las horas: Talento Humano decide
+
+Reglas decididas por el usuario el 2026-11-23. Base legal: CT y RIT
+(`docs/legal/`); detalle y artículos en `docs/reglas/reglas-de-pago.md`. El
+cron de consolidación sigue apagado: hoy no hay marcas ni planillas.
+
+- **Horas de más (CT Arts. 169 y 170)**: Talento Humano decide en CADA caso si
+  van a pago (× 2, de noche × 2,25) o al banco de horas. Sin decidir no se pagan
+  ni se bancan y la planilla no se aprueba. Antes iban al banco solas. Se decide
+  en Auditoría de tiempos, panel «Por decidir» (`decidir_horas_extra`, firma
+  `auth_employee_id()`). Si una reconsolidación cambia las horas, la decisión
+  vuelve a «por decidir».
+- **Día de descanso trabajado (CT Art. 175, RIT Art. 30)**: + 50 % por las
+  horas y un día compensatorio (CT Art. 176, contado en el renglón). La
+  consolidación lo marca (`timesheets.is_rest_day_worked`).
+- **Asueto trabajado (CT Art. 192)**: salario ordinario + 100 %.
+- **Nocturno (CT Art. 168)**: 25 %; en descanso o asueto, la extra y el
+  nocturno se calculan sobre el salario extraordinario del día (Arts. 175 y 192
+  inc. 2).
+- **Tardanza (RIT Arts. 23, 25 y 26; CT Art. 171)**: se suman los minutos de la
+  semana con 10 de tolerancia; si pasa, o la semana quedó incompleta sin causa,
+  se propone «pierde el pago del descanso» y Talento Humano lo confirma o lo
+  justifica (`descanso_semanal_decisiones`). Nunca se descuentan minutos ni
+  horas. Las amonestaciones (RIT Art. 82) no son automáticas.
+- Sin horario (descanso trabajado o sin horario publicado), el tope del día es
+  la jornada legal de 8 h (7 nocturna, RIT Art. 16).
+- Migración `20261123231716`; pruebas en `tests/unit/reglasDePago.test.js`, un
+  caso por regla.
+
+Gemelo: time_audit — las decisiones de pago las toma Talento Humano en el portal, junto a la planilla; la app sólo consulta la auditoría.
+Gemelo: payroll — la app de nómina ya muestra lo pendiente de Talento Humano con `pendienteDeTH`, que ahora incluye las horas y el descanso.
+
 ## v2.1594.0 — La jornada partida: la pausa del día, de cualquier duración
 
 Aprobado por el usuario el 2026-11-23: «debe estar preparado el portal ante

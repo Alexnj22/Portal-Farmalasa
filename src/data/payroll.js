@@ -65,7 +65,7 @@ async function todasOError(armar) {
 
 export function fetchTimesheetsForPeriod(startDate, endDate) {
     return todasOError(() => supabase.from('timesheets')
-        .select('id, employee_id, is_absent, absence_type, work_date, nocturnal_hours, nocturnal_overtime_hours, overtime_hours')
+        .select('id, employee_id, is_absent, absence_type, work_date, regular_hours, nocturnal_hours, nocturnal_overtime_hours, overtime_hours, late_minutes, is_holiday_worked, is_rest_day_worked, extra_decision')
         .gte('work_date', startDate)
         .lte('work_date', endDate)
         .order('work_date').order('id'));
@@ -137,17 +137,20 @@ export async function fetchSolicitudesDeIncapacidad(startDate, endDate) {
  */
 export function fetchRenglonesPendientesDeTH(periodId) {
     return supabase.from('payroll_entries')
-        .select('employee_id, incapacidad_pendiente_dias, suspension_pendiente_dias')
+        .select('employee_id, incapacidad_pendiente_dias, suspension_pendiente_dias, extras_por_decidir_horas, descanso_por_decidir_semanas')
         .eq('period_id', periodId)
-        .or('incapacidad_pendiente_dias.gt.0,suspension_pendiente_dias.gt.0')
+        .or('incapacidad_pendiente_dias.gt.0,suspension_pendiente_dias.gt.0,extras_por_decidir_horas.gt.0,descanso_por_decidir_semanas.gt.0')
         .order('employee_id')
         .range(0, 1999);
 }
 
 /** Refresca sólo las marcas de «pendiente de Talento Humano» de un renglón editado. */
-export function updatePendientesDeTH(periodId, employeeId, { incapacidad, suspension }) {
+export function updatePendientesDeTH(periodId, employeeId, { incapacidad, suspension, extras = 0, descanso = 0 }) {
     return supabase.from('payroll_entries')
-        .update({ incapacidad_pendiente_dias: incapacidad, suspension_pendiente_dias: suspension })
+        .update({
+            incapacidad_pendiente_dias: incapacidad, suspension_pendiente_dias: suspension,
+            extras_por_decidir_horas: extras, descanso_por_decidir_semanas: descanso,
+        })
         .eq('period_id', periodId).eq('employee_id', employeeId);
 }
 
@@ -215,3 +218,29 @@ export function deleteEarnedOvertimeBank(periodId, employeeIds = null) {
 export function insertOvertimeBank(rowOrRows) {
     return supabase.from('overtime_bank').insert(rowOrRows);
 }
+
+// ── Lo que decide Talento Humano (reglas de pago, 2026-11-23) ────────────────
+
+// Las semanas en que se propuso perder el pago del descanso y lo que se
+// decidió (RIT Arts. 25 y 26). Una fila por persona y semana.
+export function fetchDecisionesDeDescanso(desdeLunes, hastaLunes) {
+    return todasOError(() => supabase.from('descanso_semanal_decisiones')
+        .select('employee_id, semana, decision, motivo, minutos_tarde, nota, decidido_por, updated_at')
+        .gte('semana', desdeLunes)
+        .lte('semana', hastaLunes)
+        .order('semana').order('id'));
+}
+
+// Horas de más de uno o varios días: PAGO o BANCO (CT Art. 169/170). La firma
+// la pone la base (`auth_employee_id()`), no el navegador.
+export function decidirHorasExtra(ids, decision) {
+    return supabase.rpc('decidir_horas_extra', { p_ids: ids, p_decision: decision });
+}
+
+export function decidirDescansoSemanal({ employeeId, semana, decision, motivo, minutosTarde = 0, nota = null }) {
+    return supabase.rpc('decidir_descanso_semanal', {
+        p_employee_id: employeeId, p_semana: semana, p_decision: decision,
+        p_motivo: motivo, p_minutos_tarde: minutosTarde, p_nota: nota,
+    });
+}
+

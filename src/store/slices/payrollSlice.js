@@ -1,7 +1,7 @@
 import {
     fetchPayrollPeriods as fetchPayrollPeriodsData, insertPayrollPeriod, updatePayrollPeriod,
     fetchPayrollEntriesByPeriod, deletePendingPayrollEntries, insertPayrollEntries, updatePayrollEntry as updatePayrollEntryData,
-    fetchTimesheetsForPeriod, fetchApprovedAdvances, fetchVacationPlansOverlapping,
+    fetchTimesheetsForPeriod, fetchApprovedAdvances, fetchVacationPlansOverlapping, fetchDecisionesDeDescanso,
     fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank, fetchPayrollEntriesNoRegenerables,
     fetchAnticiposYaDescontados, deleteAnticiposDelPeriodo, insertAnticiposEnPlanilla,
     fetchNovedadesParaPlanilla, fetchSolicitudesDeIncapacidad, fetchRenglonesPendientesDeTH,
@@ -9,6 +9,7 @@ import {
 } from '../../data/payroll';
 import { esPersonalEnPlanilla } from '../../utils/tipoDeFicha';
 import { diasEntre } from '../../utils/fecha';
+import { pagoDeLosDias, semanasConDescansoEnDuda, lunesDe, DECISION_DESCANSO } from '../../utils/reglasDePago';
 // Las reglas de la quincena (`utils/planilla`) llegan por `import()` dentro de
 // cada acción: sólo hacen falta al crear, aprobar o generar una planilla, y
 // como import estático viajaban en el ARRANQUE que baja todo el mundo tras cada
@@ -351,9 +352,18 @@ export const createPayrollSlice = (set, get) => ({
                 .filter(e => !parseFloat(e.base_salary || 0))
                 .map(e => e.name || String(e.id));
 
-            // #2 — Load timesheets including nocturnal + diurnal OT columns
-            const { data: sheets, error: sheetsErr } = await fetchTimesheetsForPeriod(period.start_date, period.end_date);
+            // Los días consolidados. Se leen desde el LUNES de la primera semana
+            // cuyo domingo cae en la quincena: el descanso semanal (RIT Art. 26)
+            // se juzga por semana entera, y cada semana en la quincena de su
+            // domingo. Lo demás sólo mira los días de la quincena.
+            const lunesInicial = lunesDe(period.start_date);
+            const { data: sheetsSemana, error: sheetsErr } = await fetchTimesheetsForPeriod(lunesInicial, period.end_date);
             if (sheetsErr) throw new Error(`No se pudieron cargar los timesheets del período: ${sheetsErr.message}`);
+            const sheets = (sheetsSemana || []).filter(s => String(s.work_date).slice(0, 10) >= period.start_date);
+            const { data: decisionesDescanso, error: decDescErr } = await fetchDecisionesDeDescanso(lunesInicial, period.end_date);
+            if (decDescErr) throw new Error(`No se pudieron cargar las decisiones del descanso semanal: ${decDescErr.message}`);
+            const semanasEnDuda = semanasConDescansoEnDuda(sheetsSemana, decisionesDescanso,
+                { desde: period.start_date, hasta: period.end_date });
 
             // Los días que se pagan NO salen de contar marcaciones: la quincena
             // paga 15 días (la mitad del mensual) menos las ausencias que se
@@ -361,18 +371,20 @@ export const createPayrollSlice = (set, get) => ({
             // trabajadas dejaba sin pagar el descanso semanal y los asuetos, y
             // sin marcaciones pagaba los días de calendario (H3, 2026-10-21).
             const tsPorPersona = new Map();
-            const noctMap      = new Map();
-            const noctOTMap    = new Map();
-            const diurnalOTMap = new Map();
             for (const s of sheets || []) {
                 const key = String(s.employee_id);
-                if (!tsPorPersona.has(key)) { tsPorPersona.set(key, []); noctMap.set(key, 0); noctOTMap.set(key, 0); diurnalOTMap.set(key, 0); }
+                if (!tsPorPersona.has(key)) tsPorPersona.set(key, []);
                 tsPorPersona.get(key).push(s);
-                noctMap.set(key,   (noctMap.get(key)   || 0) + (s.nocturnal_hours          || 0));
-                noctOTMap.set(key, (noctOTMap.get(key) || 0) + (s.nocturnal_overtime_hours  || 0));
-                // Diurnal OT = total OT minus the nocturnal portion (they overlap in the timesheet)
-                const diurnalOT = Math.max(0, (s.overtime_hours || 0) - (s.nocturnal_overtime_hours || 0));
-                diurnalOTMap.set(key, (diurnalOTMap.get(key) || 0) + diurnalOT);
+            }
+            // Lo que cada persona gana de más por sus días (reglas de pago,
+            // `utils/reglasDePago.js`): nocturnas (CT Art. 168), extra que
+            // Talento Humano mandó a PAGO (Art. 169), descanso (Art. 175) y
+            // asueto (Art. 192). Las que mandó al BANCO van al banco; las que no
+            // decidió, a ninguna parte.
+            const tarifaHoraDe = (emp) => parseFloat(((parseFloat(emp.base_salary || 0) / 30) / 8).toFixed(4));
+            const pagoDe = new Map();
+            for (const emp of employees) {
+                pagoDe.set(String(emp.id), pagoDeLosDias(tsPorPersona.get(String(emp.id)), tarifaHoraDe(emp)));
             }
 
             // Anticipos: los aprobados en un día de ESTA quincena (hora de El
@@ -473,15 +485,23 @@ export const createPayrollSlice = (set, get) => ({
                 // con tipo y no se descuentan. Sumarlas aparte las pagaría dos veces.
                 const { dias, pendientes, suspensionPendiente } = diasDe(empId);
                 const advance    = advanceMap.get(empId)?.monto || 0;
-                const noctOrd    = parseFloat((noctMap.get(empId) || 0).toFixed(2));
+                const pago       = pagoDe.get(empId);
                 const vacBonus   = vacBonusMap.get(empId) || 0;
+                // RIT Arts. 25/26, CT Art. 171: sólo cuenta la pérdida del
+                // descanso que Talento Humano CONFIRMÓ; la propuesta sin decidir
+                // no descuenta y traba la aprobación.
+                const semanas    = semanasEnDuda.filter(w => String(w.employee_id) === empId);
+                const perdidas   = semanas.filter(w => w.decision === DECISION_DESCANSO.PIERDE).length;
+                const porDecidir = semanas.filter(w => !w.decision).length;
 
-                // Nocturnal OT goes to the bank — HR decides pay vs compensate
-                const calc = calcPayrollEntry(emp, dias, {
-                    salary_advance:       advance,
-                    night_hours_ordinary: noctOrd,
-                    vacation_bonus:       vacBonus,
-                    order_discount:       ordenMap.get(empId) || 0,
+                const calc = calcPayrollEntry(emp, Math.max(0, dias - perdidas), {
+                    salary_advance:        advance,
+                    night_hours_ordinary:  pago.horasNocturnasOrdinarias,
+                    extra_hours_diurnal:   pago.horasExtraPagoDiurnas,
+                    extra_hours_nocturnal: pago.horasExtraPagoNocturnas,
+                    holiday_surcharge:     pago.montoDiasEspeciales,
+                    vacation_bonus:        vacBonus,
+                    order_discount:        ordenMap.get(empId) || 0,
                 });
                 return {
                     period_id:   periodId,
@@ -495,6 +515,10 @@ export const createPayrollSlice = (set, get) => ({
                     // no se aprueba.
                     incapacidad_pendiente_dias: pendientes,
                     suspension_pendiente_dias:  suspensionPendiente,
+                    extras_por_decidir_horas:     pago.horasPorDecidir,
+                    descanso_por_decidir_semanas: porDecidir,
+                    descanso_perdido_semanas:     perdidas,
+                    descansos_compensatorios:     pago.compensatorios,
                 };
             });
 
@@ -503,7 +527,11 @@ export const createPayrollSlice = (set, get) => ({
             // posterior nunca destrabaría la aprobación.
             for (const emp of employees.filter(e => yaFijados.has(String(e.id)))) {
                 const { pendientes, suspensionPendiente } = diasDe(String(emp.id));
-                const { error: marcaErr } = await updatePendientesDeTH(periodId, emp.id, { incapacidad: pendientes, suspension: suspensionPendiente });
+                const { error: marcaErr } = await updatePendientesDeTH(periodId, emp.id, {
+                    incapacidad: pendientes, suspension: suspensionPendiente,
+                    extras: pagoDe.get(String(emp.id))?.horasPorDecidir || 0,
+                    descanso: semanasEnDuda.filter(w => String(w.employee_id) === String(emp.id) && !w.decision).length,
+                });
                 if (marcaErr) throw new Error(`No se pudo actualizar lo pendiente de Talento Humano en un pago editado: ${marcaErr.message}`);
             }
 
@@ -535,10 +563,12 @@ export const createPayrollSlice = (set, get) => ({
             const { error: delBankErr } = await deleteEarnedOvertimeBank(periodId, idsDelAlcance);
             if (delBankErr) throw new Error(`No se pudo rehacer el banco de horas: ${delBankErr.message}`);
             const bankRows = [];
+            // Sólo las horas que Talento Humano mandó al BANCO (CT Art. 169/170).
+            // Hasta el 2026-11-23 iban todas solas.
             for (const emp of employees) {
                 const empId    = String(emp.id);
-                const diurnal  = parseFloat((diurnalOTMap.get(empId) || 0).toFixed(2));
-                const nocturnal = parseFloat((noctOTMap.get(empId)   || 0).toFixed(2));
+                const diurnal  = pagoDe.get(empId)?.bancoDiurnas || 0;
+                const nocturnal = pagoDe.get(empId)?.bancoNocturnas || 0;
                 if (diurnal  > 0) bankRows.push({ employee_id: emp.id, hours: diurnal,   type: 'EARNED', subtype: 'DIURNAL',   period_id: periodId });
                 if (nocturnal > 0) bankRows.push({ employee_id: emp.id, hours: nocturnal, type: 'EARNED', subtype: 'NOCTURNAL', period_id: periodId });
             }
@@ -560,6 +590,9 @@ export const createPayrollSlice = (set, get) => ({
                 anticipos_rezagados: aRegenerar.reduce((n, e) => n + (advanceMap.get(String(e.id))?.solicitudes || []).filter(x => x.rezagado).length, 0),
                 con_incapacidad_pendiente: rows.filter(r => r.incapacidad_pendiente_dias > 0).length,
                 con_suspension_sin_decidir: rows.filter(r => r.suspension_pendiente_dias > 0).length,
+                con_extras_por_decidir: rows.filter(r => r.extras_por_decidir_horas > 0).length,
+                con_descanso_por_decidir: rows.filter(r => r.descanso_por_decidir_semanas > 0).length,
+                descansos_perdidos: rows.reduce((n, r) => n + (r.descanso_perdido_semanas || 0), 0),
                 ingreso_o_baja_en_quincena: [...contratoDe.values()].filter(c => c.dias < 15).length,
             });
             return {

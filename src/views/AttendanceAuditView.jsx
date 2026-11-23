@@ -45,6 +45,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, tiposDeMarcaParaCorregir, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
 
 import IconoEnCaja from '../components/common/IconoEnCaja';
+import PorDecidirPanel from '../components/asistencia/PorDecidirPanel';
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
 const PUNCH_TYPE_LABELS = ROTULO_MARCA;   // núcleo (`auditoriaDeTiempos`)
@@ -848,6 +849,11 @@ const AttendanceAuditView = () => {
     })).sort((a, b) => getRoleOrder(a.emp.role) - getRoleOrder(b.emp.role));
   }, [employees, filterBranch, search, quincenaByEmployee]);
 
+  // Quienes entran al panel «Por decidir»: los mismos de la vista (sucursal).
+  const visiblePorDecidir = useMemo(() => (filterBranch
+    ? employees.filter(e => String(e.branchId) === filterBranch)
+    : employees), [employees, filterBranch]);
+
   const handleApproveAllForEmployee = useCallback(async (emp) => {
     if (isDemoMode) { showToast('Demo', 'En modo demo no se aprueban las horas.', 'info'); return; }
     const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
@@ -1097,6 +1103,10 @@ const AttendanceAuditView = () => {
 
         {/* Barra de filtros: cuerpo, a la derecha (§17) */}
         <div className="flex justify-end">{filtrosCuerpo}</div>
+
+        {/* Horas de más y descanso semanal: lo decide Talento Humano (reglas de pago). */}
+        <PorDecidirPanel desde={selectedQuincena} hasta={quincenaEnd} empleados={visiblePorDecidir}
+          canEdit={canEdit} enDemo={isDemoMode} />
 
         {/* SHIFT_EXCEPTION review panel */}
         {shiftExceptions.length > 0 && (

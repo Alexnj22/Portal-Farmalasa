@@ -339,21 +339,28 @@ export function consolidarDia(
   const nocturnosReales = nocturnosDe(efectivos);
 
   // El tope del día: lo PAGADO del horario (la pausa ya descontada) y nunca
-  // más que la jornada legal. Sin horario: lo que trabajó, como antes.
-  let minutosTope = minutosNetos;
-  let nocturnosProgramados = 0;
+  // más que la jornada legal (RIT Art. 16; CT Art. 161). Sin horario —día de
+  // descanso trabajado o sin horario publicado— el tope es la jornada legal:
+  // lo que pase de 8 h (7 si fue nocturna) es extra (CT Art. 169; en descanso,
+  // CT Art. 175 inciso 2) y queda por decidir como cualquier otra.
+  let nocturnosProgramados = nocturnosReales;
+  let minutosTope: number;
   if (turno) {
     let programado: Intervalo[] = [[turno.inicio.getTime(), turno.fin.getTime()]];
     if (turno.pausa) programado = restar(programado, [turno.pausa.inicio.getTime(), turno.pausa.fin.getTime()]);
     nocturnosProgramados = nocturnosDe(programado);
     const esNocturna = nocturnosProgramados > 4 * 60;      // RIT Art. 16
     minutosTope = Math.min(Math.max(0, turno.minutosPagados), esNocturna ? TOPE_NOCTURNO_MIN : TOPE_DIURNO_MIN);
+  } else {
+    minutosTope = nocturnosReales > 4 * 60 ? TOPE_NOCTURNO_MIN : TOPE_DIURNO_MIN;
   }
 
   const minutosRegulares = Math.min(minutosNetos, minutosTope);
   const minutosExtra = Math.max(0, minutosNetos - minutosTope);
-  const minutosNocturnos = Math.min(nocturnosReales, nocturnosProgramados);
-  const minutosNocturnosExtra = Math.max(0, nocturnosReales - nocturnosProgramados);
+  // Lo nocturno se reparte DENTRO de lo regular y lo extra: nunca más horas
+  // nocturnas extra que horas extra.
+  const minutosNocturnosExtra = Math.min(minutosExtra, Math.max(0, nocturnosReales - nocturnosProgramados));
+  const minutosNocturnos = Math.min(minutosRegulares, nocturnosReales - minutosNocturnosExtra);
 
   // Tardanza: contra el inicio del horario, o contra el fin de la lactancia si
   // va pegada a la entrada (entra después, con derecho).

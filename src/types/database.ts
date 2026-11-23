@@ -11461,6 +11461,60 @@ export type Database = {
           },
         ]
       }
+      descanso_semanal_decisiones: {
+        Row: {
+          created_at: string
+          decidido_por: string
+          decision: string
+          employee_id: string
+          id: number
+          minutos_tarde: number
+          motivo: string
+          nota: string | null
+          semana: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decidido_por: string
+          decision: string
+          employee_id: string
+          id?: never
+          minutos_tarde?: number
+          motivo: string
+          nota?: string | null
+          semana: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decidido_por?: string
+          decision?: string
+          employee_id?: string
+          id?: never
+          minutos_tarde?: number
+          motivo?: string
+          nota?: string | null
+          semana?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "descanso_semanal_decisiones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "descanso_semanal_decisiones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       descuentos_espejo: {
         Row: {
           borrado_at: string | null
@@ -21414,10 +21468,14 @@ export type Database = {
           branch_id: number | null
           created_at: string | null
           days_worked: number | null
+          descanso_perdido_semanas: number
+          descanso_por_decidir_semanas: number
+          descansos_compensatorios: number
           edit_history: Json | null
           employee_id: string
           extra_hours_diurnal: number | null
           extra_hours_nocturnal: number | null
+          extras_por_decidir_horas: number
           holiday_surcharge: number | null
           id: string
           incapacidad_pendiente_dias: number
@@ -21449,10 +21507,14 @@ export type Database = {
           branch_id?: number | null
           created_at?: string | null
           days_worked?: number | null
+          descanso_perdido_semanas?: number
+          descanso_por_decidir_semanas?: number
+          descansos_compensatorios?: number
           edit_history?: Json | null
           employee_id: string
           extra_hours_diurnal?: number | null
           extra_hours_nocturnal?: number | null
+          extras_por_decidir_horas?: number
           holiday_surcharge?: number | null
           id?: string
           incapacidad_pendiente_dias?: number
@@ -21484,10 +21546,14 @@ export type Database = {
           branch_id?: number | null
           created_at?: string | null
           days_worked?: number | null
+          descanso_perdido_semanas?: number
+          descanso_por_decidir_semanas?: number
+          descansos_compensatorios?: number
           edit_history?: Json | null
           employee_id?: string
           extra_hours_diurnal?: number | null
           extra_hours_nocturnal?: number | null
+          extras_por_decidir_horas?: number
           holiday_surcharge?: number | null
           id?: string
           incapacidad_pendiente_dias?: number
@@ -31292,9 +31358,13 @@ export type Database = {
           actual_start_time: string | null
           created_at: string | null
           employee_id: string
+          extra_decidida_el: string | null
+          extra_decidida_por: string | null
+          extra_decision: string | null
           id: string
           is_absent: boolean | null
           is_holiday_worked: boolean | null
+          is_rest_day_worked: boolean
           late_minutes: number | null
           nocturnal_hours: number | null
           nocturnal_overtime_hours: number | null
@@ -31311,9 +31381,13 @@ export type Database = {
           actual_start_time?: string | null
           created_at?: string | null
           employee_id: string
+          extra_decidida_el?: string | null
+          extra_decidida_por?: string | null
+          extra_decision?: string | null
           id?: string
           is_absent?: boolean | null
           is_holiday_worked?: boolean | null
+          is_rest_day_worked?: boolean
           late_minutes?: number | null
           nocturnal_hours?: number | null
           nocturnal_overtime_hours?: number | null
@@ -31330,9 +31404,13 @@ export type Database = {
           actual_start_time?: string | null
           created_at?: string | null
           employee_id?: string
+          extra_decidida_el?: string | null
+          extra_decidida_por?: string | null
+          extra_decision?: string | null
           id?: string
           is_absent?: boolean | null
           is_holiday_worked?: boolean | null
+          is_rest_day_worked?: boolean
           late_minutes?: number | null
           nocturnal_hours?: number | null
           nocturnal_overtime_hours?: number | null
@@ -34976,6 +35054,17 @@ export type Database = {
         }
         Returns: Json
       }
+      decidir_descanso_semanal: {
+        Args: {
+          p_decision: string
+          p_employee_id: string
+          p_minutos_tarde?: number
+          p_motivo: string
+          p_nota?: string
+          p_semana: string
+        }
+        Returns: undefined
+      }
       decidir_descuento_de_suspension: {
         Args: { p_con_descuento: boolean; p_evento_id: string }
         Returns: undefined
@@ -34998,6 +35087,10 @@ export type Database = {
       decidir_excedente: {
         Args: { p_aprobar: boolean; p_id: number; p_motivo?: string }
         Returns: Json
+      }
+      decidir_horas_extra: {
+        Args: { p_decision: string; p_ids: string[] }
+        Returns: number
       }
       declarar_faltante_tardio: {
         Args: { p_faltantes: Json; p_request_id: string }

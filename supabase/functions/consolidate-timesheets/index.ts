@@ -205,6 +205,7 @@ Deno.serve(async (req) => {
 
     // Pre-cargar timesheets existentes del día en un Map (evita un SELECT por empleado)
     const timesheetIdMap = new Map<string, number>();
+    const extraPrevia = new Map<string, number>();
     if (idsAConsolidar.length > 0) {
       // ACOTADA POR EL DATO: `employee_id` se repite en `timesheets` (una fila
       // por persona y día), pero el `.eq('work_date', …)` fija UN día, así que
@@ -212,12 +213,15 @@ Deno.serve(async (req) => {
       // un máximo de 7 marcaciones en un mismo día.
       const { data: existingTs, error: existingTsErr } = await supabase
         .from('timesheets')
-        .select('id, employee_id')
+        .select('id, employee_id, overtime_hours')
         .eq('work_date', workDate)
         .in('employee_id', idsAConsolidar);
       // El Map vacío hace creer que no hay timesheet previo y se duplica el día.
       if (existingTsErr) throw new Error(`timesheets del ${workDate}: ${existingTsErr.message}`);
-      for (const t of existingTs || []) timesheetIdMap.set(String(t.employee_id), t.id);
+      for (const t of existingTs || []) {
+        timesheetIdMap.set(String(t.employee_id), t.id);
+        extraPrevia.set(String(t.employee_id), Number(t.overtime_hours) || 0);
+      }
     }
 
     let upserted = 0;
@@ -314,6 +318,10 @@ Deno.serve(async (req) => {
       // Ausente = ninguna marca. Quien olvidó la entrada pero marcó otras
       // cosas NO es ausente (no se le descuenta el día): queda INCOMPLETE.
       const isAbsent    = dia.sinMarcas;
+      // Día de descanso trabajado (CT Art. 175, RIT Art. 30): tenía horario
+      // publicado esa semana, ese día no trabajaba, y marcó. Sin horario
+      // publicado no se sabe cuál era su descanso: no se marca.
+      const isRestDayWorked = !isAbsent && !!scheduleData && isOffInRoster && !(exception?.customStart && exception?.customEnd);
       const actualStart = dia.inicioReal;
       const actualEnd   = dia.finReal;
       const regularHours     = dia.minutosRegulares / 60;
@@ -347,10 +355,16 @@ Deno.serve(async (req) => {
                                      ? 'SUSPENSION'
                                      : (isAbsent ? (absenceTypeMap.get(empId) || null) : null),
         is_holiday_worked:         !isAbsent && isHoliday,
+        is_rest_day_worked:        isRestDayWorked,
         // INCOMPLETE gana: una salida generada sobre un día al que además le
         // falta la entrada sigue siendo un día por revisar.
         status:                    dia.incompleta ? 'INCOMPLETE' : (autoPunched ? 'AUTO_PUNCHED' : 'PENDING'),
         updated_at:                new Date().toISOString(),
+        // Si las horas de más cambiaron, la decisión de Talento Humano (pago o
+        // banco, CT Art. 169/170) era sobre otras horas: vuelve a «por decidir».
+        ...(existingId && extraPrevia.get(empId) !== parseFloat(overtimeHours.toFixed(2))
+          ? { extra_decision: null, extra_decidida_por: null, extra_decidida_el: null }
+          : {}),
       };
 
       const { error: upsertErr } = existingId

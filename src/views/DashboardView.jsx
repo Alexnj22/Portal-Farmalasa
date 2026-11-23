@@ -48,30 +48,6 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import GlassViewLayout from '../components/GlassViewLayout';
 import SearchInput from '../components/common/SearchInput';
-/* Las dos baldosas del dinero se bajan al PINTARSE, no al entrar al Inicio.
- *
- * Arrastran el diagnóstico de cortes y la capa de datos de bolsas —los dos
- * módulos más pesados de este circuito— y sólo se dibujan para quien tiene el
- * permiso y con la baldosa acomodada en su tablero. Se difieren al pasar la
- * campana a `lazy` (2026-08-24): esos módulos salieron del cierre del entry y
- * caían enteros acá, dejando el Inicio en 102 kB contra un techo de 99.
- *
- * Sin `Suspense` propio: `WidgetCard` ya vive dentro del que envuelve al
- * tablero, y una baldosa que aparece un instante después no corre nada — cada
- * una tiene su lugar reservado por la rejilla. */
-const WidgetCortesSala = lazy(() => import('./dashboard/WidgetCortesSala'));
-const WidgetBolsasSala = lazy(() => import('./dashboard/WidgetBolsasSala'));
-/* Reservas de la app (2026-10-06), por lo mismo que las dos de arriba: sólo se
- * dibuja con `dash_reservas` y la baldosa acomodada, y su cierre —encargos, el
- * alta con anticipo, el buscador de producto, el calendario y la ticketera de
- * la constancia— le sumaba ~25 kB al Inicio de TODO el mundo (99 → 130 kB). */
-const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
-// Buscar, abrir y crear clientes desde el Inicio (2026-11-15).
-const WidgetClientes = lazy(() => import('./dashboard/WidgetClientes'));
-const WidgetPreventa = lazy(() => import('./dashboard/WidgetPreventa'));
-// Precios por presentación y lote, hasta Mayoreo Plus (2026-11-15). Aparte de
-// «Consulta de inventario» a pedido del usuario: un widget, una pregunta.
-const WidgetConsultaPrecios = lazy(() => import('./dashboard/WidgetConsultaPrecios'));
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
@@ -138,6 +114,34 @@ const WidgetRecetasPendientes = alPintarse(() => import('./dashboard/WidgetRecet
 const WidgetTransferRequests = alPintarse(() => import('./dashboard/WidgetTransferRequests'));
 const WidgetMetaSala = alPintarse(() => import('./dashboard/WidgetMetaSala'));
 const WidgetVendedores = alPintarse(() => import('./dashboard/WidgetVendedores'));
+/* Las dos baldosas del dinero se bajan al PINTARSE, no al entrar al Inicio.
+ *
+ * Arrastran el diagnóstico de cortes y la capa de datos de bolsas —los dos
+ * módulos más pesados de este circuito— y sólo se dibujan para quien tiene el
+ * permiso y con la baldosa acomodada en su tablero. Se difieren al pasar la
+ * campana a `lazy` (2026-08-24): esos módulos salieron del cierre del entry y
+ * caían enteros acá, dejando el Inicio en 102 kB contra un techo de 99.
+ *
+ * 2026-11-23: ahora con `Suspense` PROPIO (`alPintarse`), como las demás.
+ * Sin él suspendían el `Suspense` de la ruta: el Inicio entero no se montaba
+ * hasta que llegaba la última baldosa, y como cada una se descubría recién
+ * cuando resolvía la anterior, los trozos se pedían en cascada (4.8 → 7.1 s en
+ * Slow 4G) y las lecturas del tablero (acomodo, solicitudes, ventas) salían
+ * recién a los 7.6 s. Con su propio límite el tablero se monta al llegar su
+ * código, todas las baldosas se piden a la vez y los datos salen en paralelo. */
+const WidgetCortesSala = alPintarse(() => import('./dashboard/WidgetCortesSala'));
+const WidgetBolsasSala = alPintarse(() => import('./dashboard/WidgetBolsasSala'));
+/* Reservas de la app (2026-10-06), por lo mismo que las dos de arriba: sólo se
+ * dibuja con `dash_reservas` y la baldosa acomodada, y su cierre —encargos, el
+ * alta con anticipo, el buscador de producto, el calendario y la ticketera de
+ * la constancia— le sumaba ~25 kB al Inicio de TODO el mundo (99 → 130 kB). */
+const WidgetReservas = alPintarse(() => import('./dashboard/WidgetReservas'));
+// Buscar, abrir y crear clientes desde el Inicio (2026-11-15).
+const WidgetClientes = alPintarse(() => import('./dashboard/WidgetClientes'));
+const WidgetPreventa = alPintarse(() => import('./dashboard/WidgetPreventa'));
+// Precios por presentación y lote, hasta Mayoreo Plus (2026-11-15). Aparte de
+// «Consulta de inventario» a pedido del usuario: un widget, una pregunta.
+const WidgetConsultaPrecios = alPintarse(() => import('./dashboard/WidgetConsultaPrecios'));
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit

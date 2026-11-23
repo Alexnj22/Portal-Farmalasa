@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.18 — Inicio: las baldosas se piden a la vez y el tablero se monta antes
+
+Mejora 4 del plan de tiempos de carga, la parte que aplica a este portal.
+
+- Seis baldosas del Inicio (cortes y bolsas de la sucursal, reservas, clientes,
+  preventa y consulta de precios) eran `lazy` SIN `Suspense` propio, así que
+  suspendían el de la ruta: el tablero entero no se montaba hasta que llegaba la
+  última, y como React descubre la siguiente recién al resolver la anterior, los
+  trozos se pedían en seis olas (4.8 → 7.1 s) y las lecturas del tablero salían
+  a los 7.6 s. Ahora usan `alPintarse` (su propio `Suspense` vacío, como las
+  demás): todas se piden a la vez a los 4.8 s y las lecturas salen a los 4.9 s.
+- Medido con el mismo método del plan (build de pruebas, Slow 4G, CPU ×4,
+  usuario de pruebas), Inicio en frío: última respuesta de la base 8.9 → 7.3 s,
+  hasta quieto 8.9 → 7.4 s, LCP 8.5 → 6.0 s; Inicio tras entrar, hasta quieto
+  12.0 → 7.3 s. Se ve igual (capturas de General, Comercial y Operación).
+- El «×6 por sucursal» de `get_meta_sala`, `ventas_por_hora_de_sala` y
+  `preventas_de_sala` que mide el plan es del Inicio nuevo, no de éste: acá
+  cada una sale UNA vez. Por eso no se hizo la función que las junta.
+
+Gemelo: overview — sólo cambia cómo el portal baja el código de las baldosas; la app no lo hace así.
+
 ## v2.1592.17 — Carga más liviana: entrada sin el motor de animación y miniaturas de fotos chicas
 
 Mejoras de tiempo de carga aprobadas el 2026-11-23 (diagnóstico en el plan de

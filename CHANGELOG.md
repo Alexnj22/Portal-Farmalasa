@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.13 — La ficha que no cargó ya no se puede guardar encima
+
+Si la lectura de una ficha fallaba (red o consulta), varios formularios de
+edición se pintaban igual con los valores vacíos de un alta y «Guardar»
+encendido: guardar pisaba el registro real. Ahora, si la carga falla, no hay
+formulario: el error con «Reintentar», y el guardado queda apagado hasta que la
+ficha cargó bien. Sin cambio visual cuando carga.
+
+- Promociones → **Corregir descuento** (`DescuentoModal`) y **Editar promoción
+  por laboratorio** (`PromocionLaboratorioModal`, y su gemelo en la app). «No
+  existe» (respuesta vacía) cuenta como falla. El borrador del descuento ya no
+  se graba sobre un formulario que no cargó.
+- Ofertas → **Entrega a domicilio** (`EnvioPanel` y `componentes/ofertas/Envio.js`):
+  nacía con la entrega APAGADA; guardar la apagaba.
+- Personal → **Seguro de vida colectivo** (portal y app): la póliza no se pinta
+  si la carga falló; antes «Guardar» insertaba una segunda póliza.
+- App: **Mín/Máx → Parámetros** (`minmax-config.js`): el `error` de la lectura
+  se ignoraba, el formulario nacía con `{}` y NaN contaba como cambio —guardar
+  mandaba NaN a la configuración de todo el catálogo—. En el portal, el panel
+  de parámetros de Mín/Máx ofrecía los valores por defecto para guardar; ahora
+  dice que no cargó, con «Reintentar». **Producto → Principios activos** y
+  **Producto → Ubicaciones** (app): abrían vacíos y guardar borraba todo.
+
+Mayoristas (detalle) no pierde datos en esta versión: las acciones usan la fila
+de la lista, no el detalle; si el detalle falla se queda en «Cargando».
+
+Pruebas: `tests/unit/formularioQueNoCargo.test.jsx`.
+
+Gemelo: promociones — el mismo arreglo en los dos lados; «Corregir descuento» de la app ya no pintaba el formulario sin carga.
+Gemelo: productos — principios y ubicaciones sólo fallaban así en la app; el editor de principios del portal queda anotado aparte.
+
+
 ## v2.1592.12 — Vender: el traslado llega a la sucursal de la venta
 
 Dos fallas de «Pedir a otras sucursales» (v2.1592.9):

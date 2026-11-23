@@ -18,6 +18,7 @@ import { BotonGrande, Campo, Ficha, Seccion, Cargando } from '../../componentes/
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
+import { ErrorConReintento } from '../../componentes/ListaPaginada';
 
 export default function UbicacionesDelProducto() {
   const { id, nombre } = useLocalSearchParams();
@@ -25,11 +26,19 @@ export default function UbicacionesDelProducto() {
   const branches = useStaffStore((s) => s.branches);
   const [locs, setLocs] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // La carga que falló (2026-11-23): el `error` de la consulta se ignoraba y la
+  // excepción abría la grilla VACÍA; «Guardar» mandaba cada sucursal a borrar
+  // y el producto se quedaba sin ubicaciones. Sin lo leído no hay grilla.
+  const [fallaCarga, setFallaCarga] = useState(null);
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
     if (!branches?.length) return;
-    Promise.resolve(fetchUbicacionesDeProducto(productId)).then(({ data }) => setLocs(ubicacionesEditables(branches, data ?? [])))
-      .catch((e) => { fallo('No se pudo cargar', mensajeAmigable(e)); setLocs(ubicacionesEditables(branches, [])); });
-  }, [productId, branches]);
+    setFallaCarga(null); // eslint-disable-line react-hooks/set-state-in-effect -- reintento
+    Promise.resolve(fetchUbicacionesDeProducto(productId))
+      .then(({ data, error }) => { if (error) throw error; setLocs(ubicacionesEditables(branches, data ?? [])); })
+      .catch((e) => setFallaCarga(mensajeAmigable(e, 'No se pudieron cargar las ubicaciones.')));
+  }, [productId, branches, intento]);
+  if (fallaCarga && !locs) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ubicaciones' }} /><ErrorConReintento mensaje={fallaCarga} onReintentar={() => setIntento((n) => n + 1)} /></>;
   if (!locs) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ubicaciones' }} /><Cargando /></>;
 
   const set = (i, campo, v) => setLocs((ls) => ls.map((l, j) => (j === i ? { ...l, [campo]: v } : l)));

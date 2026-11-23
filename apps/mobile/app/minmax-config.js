@@ -30,14 +30,30 @@ import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
+import { ErrorConReintento } from '../componentes/ListaPaginada';
 
 function Parametros({ puede }) {
   const [orig, setOrig] = useState(null);
   const [form, setForm] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  /* La carga que falló (2026-11-23). `fetchStockConfigFull` devuelve
+     `{ data, error }` sin lanzar, y el error se ignoraba: el formulario nacía
+     con `{}`, `Number(undefined) !== Number(undefined)` lo daba por cambiado y
+     «Guardar» mandaba NaN a la configuración de todo el catálogo. Sin la fila
+     leída no hay formulario. */
+  const [fallaCarga, setFallaCarga] = useState(null);
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
-    Promise.resolve(fetchStockConfigFull()).then(({ data }) => { setOrig(data ?? {}); setForm(data ?? {}); }).catch((e) => fallo('No se pudo cargar', mensajeAmigable(e)));
-  }, []);
+    setFallaCarga(null); // eslint-disable-line react-hooks/set-state-in-effect -- reintento
+    Promise.resolve(fetchStockConfigFull())
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!data) throw new Error('No se encontró la configuración.');
+        setOrig(data); setForm(data);
+      })
+      .catch((e) => setFallaCarga(mensajeAmigable(e, 'No se pudo cargar la configuración.')));
+  }, [intento]);
+  if (fallaCarga && !form) return <ErrorConReintento mensaje={fallaCarga} onReintentar={() => setIntento((n) => n + 1)} />;
   if (!form) return <Cargando />;
   const motivo = validarConfigMinMax(form);
   const cambio = SECCIONES_CONFIG_MINMAX.some((s) => s.campos.some((c) => Number(form[c.k]) !== Number(orig[c.k])));

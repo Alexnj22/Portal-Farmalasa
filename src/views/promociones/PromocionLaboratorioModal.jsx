@@ -60,9 +60,16 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
 
     const [catalogo, setCatalogo] = useState([]);
     const [proveedores, setProveedores] = useState([]);
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(editando);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
+    /* La carga que falló (2026-11-23). Antes el error se anotaba DENTRO del
+       formulario y el formulario se pintaba igual: nombre vacío, sin
+       laboratorios, niveles por defecto y «Guardar cambios» listo en cuanto
+       se completara lo mínimo — y guardar reemplazaba la promoción real con
+       eso. Sin promoción leída no hay formulario ni guardado. */
+    const [fallaCarga, setFallaCarga] = useState(null);
+    const [intentoCarga, setIntentoCarga] = useState(0);
 
     useEffect(() => {
         if (!open) return;
@@ -80,9 +87,11 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
         let vivo = true;
         setCargando(true);
         setFallo(null);
+        setFallaCarga(null);
         fetchPromocionLaboratorio(promocionId)
             .then((p) => {
-                if (!vivo || !p) return;
+                if (!vivo) return;
+                if (!p) { setFallaCarga('No se encontró la promoción.'); return; }
                 setNombre(p.nombre || '');
                 setMes(p.year_month || '');
                 setLabs(Array.isArray(p.laboratorios) ? p.laboratorios : []);
@@ -96,10 +105,10 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                 setSupplierId(p.supplier_id == null ? '' : String(p.supplier_id));
                 setNota(p.nota || '');
             })
-            .catch((e) => { if (vivo) setFallo(mensajeAmigable(e, 'No se pudo cargar la promoción.')); })
+            .catch((e) => { if (vivo) setFallaCarga(mensajeAmigable(e, 'No se pudo cargar la promoción.')); })
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
-    }, [open, editando, promocionId]);
+    }, [open, editando, promocionId, intentoCarga]);
 
     const valor = useMemo(
         () => ({ nombre, mes, labs, niveles, umbrales, paga, supplierId, nota }),
@@ -166,6 +175,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
     );
 
     const guardar = async () => {
+        if (editando && fallaCarga) return;
         setFallo(null);
         setGuardando(true);
         try {
@@ -199,7 +209,12 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                 onClose={onClose} />
 
             <LiquidModal.Body>
-                {cargando ? <LoadingState label="Cargando la promoción…" /> : (
+                {cargando ? <LoadingState label="Cargando la promoción…" /> : fallaCarga ? (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <span>{fallaCarga}</span>
+                        <Button variant="ghost" size="sm" onClick={() => setIntentoCarga((n) => n + 1)}>Reintentar</Button>
+                    </Notice>
+                ) : (
                     <div className="space-y-4">
                         {hayBorrador && !editando && (
                             <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />
@@ -401,7 +416,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                     icon={FlaskConical}
                     onClick={guardar}
                     loading={guardando}
-                    disabled={problemas.length > 0 || cargando}
+                    disabled={problemas.length > 0 || cargando || !!fallaCarga}
                 >
                     {editando ? 'Guardar cambios' : 'Crear promoción'}
                 </Button>

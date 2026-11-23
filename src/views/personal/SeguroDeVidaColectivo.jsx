@@ -101,7 +101,12 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                 onClose={onClose} enfocarCierre />
 
             <LiquidModal.Body className="flex flex-col gap-5">
-                    {fallo && <Notice variant="danger" compact>{fallo}</Notice>}
+                    {fallo && (
+                        <Notice variant="danger" compact>
+                            <span>{fallo}</span>
+                            <Button variant="ghost" size="sm" onClick={cargar}>Reintentar</Button>
+                        </Notice>
+                    )}
 
                     {pagos === null ? (
                         <div className="flex justify-center py-8"><LoadingState variant="inline" label="Cargando…" /></div>
@@ -207,12 +212,16 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                             </section>
 
                             {/* ── 3. La póliza ────────────────────────────────── */}
-                            <Poliza poliza={poliza} canEdit={canEdit}
+                            {/* Sin la póliza leída no se pinta (2026-11-23): con la
+                                carga fallida nacía con los valores por defecto y
+                                «Guardar» insertaba una SEGUNDA póliza que después
+                                podía salir como la vigente. */}
+                            {!fallo && <Poliza poliza={poliza} canEdit={canEdit}
                                 onGuardada={(p) => {
                                     setPoliza(p);
                                     appendAuditLog?.('SEGURO_VIDA_POLIZA', String(p.id), { suma: p.suma_asegurada, tasa: p.tasa_por_millar });
                                     toast('Póliza guardada', '', 'success');
-                                }} />
+                                }} />}
 
                             {/* ── Los años anteriores ─────────────────────────── */}
                             {(pagos || []).filter(p => p.anio !== vigente).length > 0 && (

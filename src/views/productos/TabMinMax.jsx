@@ -228,7 +228,7 @@ function FirmaDeAjuste({ rotulo, quien, persona, px = 20, clase = 'text-micro fo
 // Bloque 6.C (continuación): el estado/fetch de este componente vive en el
 // hook useMinMaxData (./tabminmax/useMinMaxData.js) — mismos nombres, misma
 // lógica, extracción mecánica. Este archivo queda solo con el JSX.
-export default function TabMinMax({ searchTerm = '', config, onConfigChange, lockedErpId }) {
+export default function TabMinMax({ searchTerm = '', config, onConfigChange, onRecargarConfig, lockedErpId }) {
     const cycleDays = config?.cycle_days ?? 45;
 
     const { hasPermission, getScope } = useAuth();
@@ -484,6 +484,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4 w-full min-w-0">
 
             {/* ── Config panel ── */}
+            {/* Sin la configuración leída no hay panel para guardarla (2026-11-23). */}
+            {configOpen && !config && (
+                <Notice variant="danger">
+                    <span>No se pudo cargar la configuración.</span>
+                    <Button variant="ghost" size="sm" onClick={() => onRecargarConfig?.()}>Reintentar</Button>
+                </Notice>
+            )}
             {configOpen && config && (
                 <ConfigPanel
                     config={config}

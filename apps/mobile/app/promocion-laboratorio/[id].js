@@ -31,6 +31,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { Icono } from '../../componentes/promociones/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import { ErrorConReintento } from '../../componentes/ListaPaginada';
 
 const BORRADOR = 'promocion_laboratorio';
 const PAGA = [{ id: '', label: 'Todavía no se sabe' }, { id: 'empresa', label: 'La empresa' }, { id: 'proveedor', label: 'Un proveedor' }];
@@ -87,6 +88,11 @@ export default function PromocionLaboratorio() {
   const [proveedores, setProveedores] = useState([]);
   const [cargando, setCargando] = useState(!!editando);
   const [guardando, setGuardando] = useState(false);
+  // La carga que falló (2026-11-23): antes sólo avisaba y pintaba el formulario
+  // vacío con «Guardar cambios», que pisaba la promoción real. Sin promoción
+  // leída no hay formulario: el error con «Reintentar».
+  const [fallaCarga, setFallaCarga] = useState(null);
+  const [intentoCarga, setIntentoCarga] = useState(0);
   const repuesto = useRef(false);
 
   useEffect(() => {
@@ -97,9 +103,12 @@ export default function PromocionLaboratorio() {
   useEffect(() => {
     if (!editando) return undefined;
     let vivo = true;
+    setCargando(true); // eslint-disable-line react-hooks/set-state-in-effect -- reintento: vuelve a cargar
+    setFallaCarga(null);
     fetchPromocionLaboratorio(id)
       .then((p) => {
-        if (!vivo || !p) return;
+        if (!vivo) return;
+        if (!p) { setFallaCarga('No se encontró la promoción.'); return; }
         setNombre(p.nombre || '');
         setMes(p.year_month || '');
         setLabs(Array.isArray(p.laboratorios) ? p.laboratorios : []);
@@ -109,10 +118,10 @@ export default function PromocionLaboratorio() {
         setSupplierId(p.supplier_id == null ? '' : String(p.supplier_id));
         setNota(p.nota || '');
       })
-      .catch((e) => { if (vivo) fallo('No se pudo cargar la promoción', mensajeAmigable(e, 'Intenta de nuevo.')); })
+      .catch((e) => { if (vivo) setFallaCarga(mensajeAmigable(e, 'No se pudo cargar la promoción.')); })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
-  }, [editando, id]);
+  }, [editando, id, intentoCarga]);
 
   // Alta: reponer el borrador una vez, preguntando.
   useEffect(() => {
@@ -154,6 +163,7 @@ export default function PromocionLaboratorio() {
   const hayVacias = salas.some((s) => !salaTiene(s.id));
 
   const guardar = async () => {
+    if (editando && fallaCarga) return;
     if (problemas.length) { Alert.alert('Falta algo', problemas.join('\n')); return; }
     setGuardando(true);
     try {
@@ -173,7 +183,9 @@ export default function PromocionLaboratorio() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: editando ? 'Editar promoción' : 'Por laboratorio', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        {cargando ? <Cargando /> : (
+        {cargando ? <Cargando /> : fallaCarga ? (
+          <ErrorConReintento mensaje={fallaCarga} onReintentar={() => setIntentoCarga((n) => n + 1)} />
+        ) : (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
             <Seccion titulo="La promoción">
               <Campo multiline={false} value={nombre} onChangeText={setNombre} maxLength={120} placeholder="Nombre" />

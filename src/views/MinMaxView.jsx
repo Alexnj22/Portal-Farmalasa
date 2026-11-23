@@ -58,6 +58,10 @@ export default function MinMaxView() {
     const [rawSearch, setRawSearch, debouncedSearch] = useBusqueda();
     const [config,          setConfig]          = useState(DEFAULT_CONFIG);
     const [configLoaded,    setConfigLoaded]    = useState(false);
+    // La lectura que falló (2026-11-23): antes quedaba DEFAULT_CONFIG y el panel
+    // de parámetros lo ofrecía para guardar, pisando la configuración real de
+    // todo el catálogo con los valores por defecto.
+    const [configFalla,     setConfigFalla]     = useState(false);
     const [lockedErpId,     setLockedErpId]     = useState(null);
 
 
@@ -65,6 +69,7 @@ export default function MinMaxView() {
         const { data, error } = await fetchStockConfigFull();
         if (error) console.error('MinMaxView: fetch stock_config failed:', error.message);
         if (data) setConfig({ ...DEFAULT_CONFIG, ...data });
+        setConfigFalla(!!error || !data);
         setConfigLoaded(true);
     }, []);
 
@@ -96,7 +101,8 @@ export default function MinMaxView() {
             {configLoaded && activeTab === 'sucursal' && (
                 <TabMinMax
                     searchTerm={debouncedSearch}
-                    config={config}
+                    config={configFalla ? null : config}
+                    onRecargarConfig={loadConfig}
                     onConfigChange={setConfig}
                     lockedErpId={lockedErpId}
                 />

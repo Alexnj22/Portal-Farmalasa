@@ -170,13 +170,17 @@ export default function SeguroDeVida() {
                 </Vidrio>
               </View>
 
-              {/* 3. La póliza */}
-              <Poliza poliza={poliza} puedeEditar={puedeEditar}
-                onGuardada={(p) => {
-                  setPoliza(p);
-                  appendAuditLog?.('SEGURO_VIDA_POLIZA', String(p.id), { suma: p.suma_asegurada, tasa: p.tasa_por_millar });
-                  listo('Póliza guardada', '');
-                }} />
+              {/* 3. La póliza. Sin la póliza leída no se pinta (2026-11-23): con la
+                  carga fallida nacía con los valores por defecto y «Guardar»
+                  insertaba una SEGUNDA póliza. */}
+              {!error ? (
+                <Poliza poliza={poliza} puedeEditar={puedeEditar}
+                  onGuardada={(p) => {
+                    setPoliza(p);
+                    appendAuditLog?.('SEGURO_VIDA_POLIZA', String(p.id), { suma: p.suma_asegurada, tasa: p.tasa_por_millar });
+                    listo('Póliza guardada', '');
+                  }} />
+              ) : null}
 
               {/* Los años anteriores */}
               {anteriores.length ? (

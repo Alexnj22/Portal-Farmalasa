@@ -78,6 +78,13 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
     const [cargando, setCargando] = useState(editando);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
+    /* La carga que falló (2026-11-23). Antes el error sólo se anotaba y el
+       formulario se pintaba igual, con los valores de `vacio` y «Guardar»
+       encendido: corregir y guardar pisaba el descuento real con lo que se
+       hubiera tecleado sobre un formulario en blanco. Ahora, sin descuento
+       leído, no hay formulario ni guardado: el error con «Reintentar». */
+    const [fallaCarga, setFallaCarga] = useState(null);
+    const [intentoCarga, setIntentoCarga] = useState(0);
     const [avisos, setAvisos] = useState([]);
     const [precios, setPrecios] = useState([]);   // [{ id, nombre, precio, costo }]
 
@@ -92,7 +99,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
      * en la clave, un borrador sólo puede volver a su propio descuento.
      */
     const { recuperado, cuando, descartar, hayBorrador } = useBorrador(
-        `descuento_${descuentoId}`, f, { activo: open && editando && !cargando },
+        `descuento_${descuentoId}`, f, { activo: open && editando && !cargando && !fallaCarga },
     );
     const reponer = () => { if (recuperado) setF((x) => ({ ...x, ...recuperado })); descartar(); };
 
@@ -102,15 +109,17 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
         let vivo = true;
         setCargando(true);
         setFallo(null);
+        setFallaCarga(null);
         fetchDescuento(descuentoId)
             .then((d) => {
                 if (!vivo) return;
+                if (!d) { setFallaCarga('No se encontró el descuento.'); return; }
                 setF(formaDeDescuento(d, hoySV()));
             })
-            .catch((e) => { if (vivo) setFallo(mensajeAmigable(e, 'No se pudo cargar el descuento.')); })
+            .catch((e) => { if (vivo) setFallaCarga(mensajeAmigable(e, 'No se pudo cargar el descuento.')); })
             .finally(() => { if (vivo) setCargando(false); });
         return () => { vivo = false; };
-    }, [open, editando, descuentoId]);
+    }, [open, editando, descuentoId, intentoCarga]);
 
     // ── Los precios de los productos elegidos ──────────────────────────────
     const ids = useMemo(() => f.productos.map((p) => p.id).join(','), [f.productos]);
@@ -150,6 +159,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
     const problemas = useMemo(() => problemasAlCorregirDescuento(f, alcanceTodo), [f, alcanceTodo]);
 
     const enviar = async (forzar) => {
+        if (fallaCarga) return;
         setFallo(null);
         setGuardando(true);
         try {
@@ -174,7 +184,12 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
             <LiquidModal.Header titulo={titulo} onClose={onClose} />
 
             <LiquidModal.Body>
-                {cargando ? <LoadingState label="Cargando el descuento…" /> : (
+                {cargando ? <LoadingState label="Cargando el descuento…" /> : fallaCarga ? (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <span>{fallaCarga}</span>
+                        <Button variant="ghost" size="sm" onClick={() => setIntentoCarga((n) => n + 1)}>Reintentar</Button>
+                    </Notice>
+                ) : (
                     <div className="space-y-4">
                         {hayBorrador && (
                             <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />
@@ -304,7 +319,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
 
             <PieDeModal izquierda={(
                 <span className="text-caption text-content-3">
-                    {problemas.length ? problemas[0] : 'Empieza a descontar en la fecha de inicio.'}
+                    {fallaCarga ? '' : problemas.length ? problemas[0] : 'Empieza a descontar en la fecha de inicio.'}
                 </span>
             )}>
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
@@ -321,7 +336,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                     <Button
                         icon={Check}
                         loading={guardando}
-                        disabled={problemas.length > 0 || cargando}
+                        disabled={problemas.length > 0 || cargando || !!fallaCarga}
                         onClick={() => enviar(false)}
                     >
                         Guardar cambios

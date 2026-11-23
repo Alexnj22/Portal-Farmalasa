@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Truck } from 'lucide-react';
+import { AlertTriangle, Truck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Switch from '../../components/common/Switch';
+import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
@@ -26,13 +27,26 @@ export default function EnvioPanel({ puedeEditar, showToast }) {
     const appendAuditLog = useStaff((st) => st.appendAuditLog);
     const [cfg, setCfg] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    /* La carga que falló (2026-11-23). Antes sólo se anotaba en la consola y el
+       panel nacía con la entrega APAGADA y el costo vacío: escribir un costo y
+       guardar apagaba la entrega a domicilio sin que nadie lo pidiera. Sin los
+       ajustes leídos no hay formulario: el error con «Reintentar». */
+    const [fallaCarga, setFallaCarga] = useState(null);
+    const [intento, setIntento] = useState(0);
 
     useEffect(() => {
+        setFallaCarga(null);
         fetchAjustesEnvio().then((d) => setCfg({
             activo: !!d?.envio_activo, costo: String(d?.envio_costo ?? ''), gratisDesde: d?.envio_gratis_desde == null ? '' : String(d.envio_gratis_desde), nota: d?.envio_nota ?? '',
-        })).catch((err) => { console.error('EnvioPanel', err); setCfg({ activo: false, costo: '', gratisDesde: '', nota: '' }); });
-    }, []);
+        })).catch((err) => { console.error('EnvioPanel', err); setFallaCarga(mensajeAmigable(err, 'No se pudieron cargar los ajustes de envío.')); });
+    }, [intento]);
 
+    if (fallaCarga && !cfg) return (
+        <Notice variant="danger" icon={AlertTriangle}>
+            <span>{fallaCarga}</span>
+            <Button variant="ghost" size="sm" onClick={() => setIntento((n) => n + 1)}>Reintentar</Button>
+        </Notice>
+    );
     if (!cfg) return <SkeletonText lines={2} />;
     const costo = Number(cfg.costo);
     // Lo que falta y su campo (2026-11-14): las mismas condiciones que apagaban

@@ -14,6 +14,7 @@ import { colorSistema } from '../Formulario';
 import { BotonGrande, Campo, Seccion, Cargando } from '../formulario/Piezas';
 import Interruptor from '../Interruptor';
 import { fallo, listo } from '../Progreso';
+import { ErrorConReintento } from '../ListaPaginada';
 
 const Rotulo = ({ texto }) => <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', marginBottom: -4, marginLeft: 2 }}>{texto}</Text>;
 
@@ -21,11 +22,17 @@ export default function Envio({ puedeEditar }) {
   const { user } = useAuth();
   const [cfg, setCfg] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // La carga que falló (2026-11-23): antes nacía con la entrega APAGADA y el
+  // costo vacío, y guardar apagaba la entrega. Sin lo leído no hay formulario.
+  const [fallaCarga, setFallaCarga] = useState(null);
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
+    setFallaCarga(null); // eslint-disable-line react-hooks/set-state-in-effect -- reintento
     fetchAjustesEnvio().then((d) => setCfg({
       activo: !!d?.envio_activo, costo: String(d?.envio_costo ?? ''), gratisDesde: d?.envio_gratis_desde == null ? '' : String(d.envio_gratis_desde), nota: d?.envio_nota ?? '',
-    })).catch(() => setCfg({ activo: false, costo: '', gratisDesde: '', nota: '' }));
-  }, []);
+    })).catch((e) => setFallaCarga(mensajeAmigable(e, 'No se pudieron cargar los ajustes de envío.')));
+  }, [intento]);
+  if (fallaCarga && !cfg) return <ErrorConReintento mensaje={fallaCarga} onReintentar={() => setIntento((n) => n + 1)} />;
   if (!cfg) return <Cargando />;
   const costo = Number(cfg.costo);
   const valido = cfg.costo !== '' && costo >= 0 && (cfg.gratisDesde === '' || Number(cfg.gratisDesde) > 0);

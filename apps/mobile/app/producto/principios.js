@@ -25,6 +25,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
+import { ErrorConReintento } from '../../componentes/ListaPaginada';
 
 /* El buscador del SRS: consulta, de a 10, con espera al escribir. */
 function BuscadorSrs({ inicial, onUsar }) {
@@ -90,9 +91,17 @@ export default function PrincipiosDelProducto() {
   const productId = Number(id);
   const [ed, setEd] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  // La carga que falló (2026-11-23): antes abría el editor VACÍO y «Guardar»
+  // reemplazaba todos los principios del producto por ninguno. Sin lo leído
+  // no hay editor: el error con «Reintentar».
+  const [fallaCarga, setFallaCarga] = useState(null);
+  const [intento, setIntento] = useState(0);
   useEffect(() => {
-    Promise.resolve(fetchPrincipiosDeProducto(productId)).then((d) => setEd(editorDePrincipios(d))).catch((e) => { fallo('No se pudo cargar', mensajeAmigable(e)); setEd(editorDePrincipios([])); });
-  }, [productId]);
+    setFallaCarga(null); // eslint-disable-line react-hooks/set-state-in-effect -- reintento
+    Promise.resolve(fetchPrincipiosDeProducto(productId)).then((d) => setEd(editorDePrincipios(d)))
+      .catch((e) => setFallaCarga(mensajeAmigable(e, 'No se pudieron cargar los principios activos.')));
+  }, [productId, intento]);
+  if (fallaCarga && !ed) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Principios activos' }} /><ErrorConReintento mensaje={fallaCarga} onReintentar={() => setIntento((n) => n + 1)} /></>;
   if (!ed) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Principios activos' }} /><Cargando /></>;
 
   const set = (i, campo, v) => setEd((e) => ({ ...e, items: e.items.map((p, j) => (j === i ? { ...p, [campo]: v } : p)) }));

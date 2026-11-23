@@ -13,8 +13,8 @@ const admin       = supabaseUrl && serviceKey ? createClient(supabaseUrl, servic
 // oráculo que distingue un carné válido/activo de uno inválido. Solo se cuentan
 // intentos FALLIDOS (NOT_FOUND/INACTIVE) por IP — un login exitoso nunca suma,
 // así que un kiosco con tráfico real de múltiples empleados jamás lo dispara.
-const RATE_LIMIT_WINDOW_MIN = 10;
-const RATE_LIMIT_MAX_FAILURES = 15;
+// Los números (15 por IP en 10 minutos, y 300 en toda la red para el
+// diagnóstico) viven en `login_intento_reservar`, en la base.
 
 const SELECT_COLS = `
     id,
@@ -53,26 +53,37 @@ function getClientIp(req: Request): string {
   return "unknown";
 }
 
-async function isRateLimited(ip: string): Promise<boolean> {
-  if (!admin) return false;
-  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MIN * 60_000).toISOString();
-  const { count, error } = await admin
-    .from("login_rate_limit")
-    .select("id", { count: "exact", head: true })
-    .eq("client_ip", ip)
-    .gte("created_at", since);
-  if (error) return false; // fail-open: no bloquear login real por un error de la tabla de rate-limit
-  return (count ?? 0) >= RATE_LIMIT_MAX_FAILURES;
+// ── El tope, atómico (2026-11-23, auditoría del login) ──────────────────────
+// Antes se CONTABA y, si había lugar, se anotaba el fallo DESPUÉS y sin
+// esperar: treinta pedidos a la vez leían todos «0 fallos» y pasaban los
+// treinta, y si la tabla fallaba el tope quedaba ABIERTO. Ahora el intento se
+// RESERVA antes de mirar nada, en una sola llamada que la base serializa por
+// IP (`login_intento_reservar`): el pedido 16 de la ráfaga ya ve 15 reservas.
+// La reserva se suelta cuando el intento NO fue un fallo de credencial (entró,
+// o falló la base); un fallo la deja puesta y cuenta para el tope.
+// Si la base no contesta, se cierra: 503, nunca «pasá».
+type Reserva = { id: number } | "TOPE" | "CAIDO";
+
+async function reservarIntento(ip: string, conTopeDeRed: boolean): Promise<Reserva> {
+  if (!admin) return "CAIDO";
+  const { data, error } = await admin.rpc("login_intento_reservar", { p_ip: ip, p_tope_red: conTopeDeRed });
+  if (error) {
+    console.error("[ensure_user_by_code] login_intento_reservar:", error.message);
+    return "CAIDO";
+  }
+  if (data == null) return "TOPE";
+  return { id: Number(data) };
 }
 
-function recordFailure(ip: string): void {
+async function soltarReserva(id: number): Promise<void> {
   if (!admin) return;
-  // Sin `await` a propósito (no demora la respuesta), pero el error se dice:
-  // un tope que no anota es un tope que no existe.
-  admin.from("login_rate_limit").insert({ client_ip: ip })
-    .then(({ error }: { error: { message: string } | null }) => {
-      if (error) console.error("[ensure_user_by_code] login_rate_limit:", error.message);
-    });
+  const { error } = await admin.from("login_rate_limit").delete().eq("id", id);
+  if (error) console.error("[ensure_user_by_code] soltar reserva:", error.message);
+}
+
+// A quien llama sin sesión no se le cuenta qué falló adentro: va al log.
+function errorInterno(etiqueta: string, detalle: unknown): void {
+  console.error(`[ensure_user_by_code] ${etiqueta}:`, detalle);
 }
 
 // ── Identidad de quien ya tiene sesión ───────────────────────────────────────
@@ -114,14 +125,18 @@ async function resolveEmployeeFromSession(uid: string) {
 // Decisión del usuario: se contesta, con dos frenos. El portal sólo pregunta
 // DESPUÉS de un intento fallido, y cada pregunta cuenta como un fallo en el
 // mismo tope por IP que el login por código (15 en 10 minutos): alcanza para
-// quien se equivocó, no para barrer la lista.
+// quien se equivocó, no para barrer la lista. Además lleva un tope de RED (300
+// en 10 minutos, medido: el máximo real fue 10) contra quien reparte el barrido
+// entre muchas IP. El carné no lo lleva: un barrido no le sirve (el PIN no se
+// adivina) y un tope de red le permitiría a un extraño dejar sin entrar a todas
+// las sucursales a la hora de entrada.
+//
+// La reserva la hace quien llama (es la que cuenta la pregunta).
 //
 // Nunca dice nada de la contraseña más allá de «el usuario existe y está en
 // regla»: la clave la sigue juzgando Auth, no esta función.
-async function diagnosticarUsuario(entrada: string, ip: string) {
+async function diagnosticarUsuario(entrada: string) {
   if (!admin) return { ok: false, error: "MISSING_ENV" };
-  if (await isRateLimited(ip)) return { ok: true, estado: "DEMASIADOS_INTENTOS" };
-  recordFailure(ip);
 
   const usuario = entrada.trim().toLowerCase();
   // Sin `%` ni `_`: el `ilike` de abajo los leería como comodines.
@@ -129,7 +144,7 @@ async function diagnosticarUsuario(entrada: string, ip: string) {
 
   const { data: filas, error } = await admin
     .from("employees").select("id, status").ilike("username", usuario).limit(1);
-  if (error) return { ok: false, error: "DB_ERROR" };
+  if (error) { errorInterno("diagnóstico employees", error.message); return { ok: false, error: "DB_ERROR" }; }
   const emp = filas?.[0];
   if (!emp) return { ok: true, estado: "NO_EXISTE" };
   if (emp.status && emp.status !== "ACTIVO") return { ok: true, estado: "INACTIVO" };
@@ -292,7 +307,10 @@ Deno.serve(async (req: Request) => {
 
     // ═══ Diagnóstico de un login fallido ═══
     if (typeof body?.diagnosticar_usuario === "string") {
-      return json(await diagnosticarUsuario(body.diagnosticar_usuario, clientIp));
+      const r = await reservarIntento(clientIp, true);
+      if (r === "CAIDO") return json({ ok: false, error: "NO_DISPONIBLE" }, 503);
+      if (r === "TOPE") return json({ ok: true, estado: "DEMASIADOS_INTENTOS" });
+      return json(await diagnosticarUsuario(body.diagnosticar_usuario));
     }
 
     const raw  = typeof body?.code === "string" ? body.code.trim() : "";
@@ -302,154 +320,177 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: "CODE_INVALID" });
     }
 
-    if (await isRateLimited(clientIp)) {
-      return json({ ok: false, error: "RATE_LIMITED" }, 429);
-    }
+    const reserva = await reservarIntento(clientIp, false);
+    if (reserva === "CAIDO") return json({ ok: false, error: "NO_DISPONIBLE" }, 503);
+    if (reserva === "TOPE") return json({ ok: false, error: "RATE_LIMITED" }, 429);
+    // Sólo un fallo de credencial deja la reserva puesta; lo demás la suelta.
+    let fueFallo = false;
+    try {
 
-    const clean = raw.toUpperCase();
+      const clean = raw.toUpperCase();
 
-    // ── Sólo el PIN del carné, NUNCA el número de empleado (2026-10-14) ──
-    //
-    // Antes se buscaba primero por `code` y, si no, por `kiosk_pin`. O sea que
-    // el número a secas —el mismo que es código de vendedor, impreso en las
-    // facturas y repartido a todo el que ve Ventas— abría la sesión de esa
-    // persona: alcanzaba con llamar a esta función con `125`. La pantalla de
-    // inicio ya rechazaba teclearlo (exige velocidad de lector), pero ese freno
-    // vive en el navegador y quien llama directo se lo salta.
-    //
-    // Medido antes de cerrarlo: las 26 cuentas `<número>@staff.local` no se
-    // usaban desde el 2026-07-11, y las 36 personas de la última semana
-    // entraron con el PIN. Esas cuentas quedaron además bloqueadas: con la
-    // contraseña igual al número se entraba sin pasar por acá.
-    //
-    // Límite conocido: el PIN se DERIVA del número con una fórmula sin secreto
-    // (`derivar_kiosk_pin`). El arreglo de fondo es un PIN al azar, y exige
-    // reimprimir los carnés — decisión del usuario: por ahora no.
-    let { data: rows, error: dbError } = await admin
-      .from("employees")
-      .select(SELECT_COLS)
-      .eq("kiosk_pin", clean)
-      .limit(1);
+      // ── Sólo el PIN del carné, NUNCA el número de empleado (2026-10-14) ──
+      //
+      // Antes se buscaba primero por `code` y, si no, por `kiosk_pin`. O sea que
+      // el número a secas —el mismo que es código de vendedor, impreso en las
+      // facturas y repartido a todo el que ve Ventas— abría la sesión de esa
+      // persona: alcanzaba con llamar a esta función con `125`. La pantalla de
+      // inicio ya rechazaba teclearlo (exige velocidad de lector), pero ese freno
+      // vive en el navegador y quien llama directo se lo salta.
+      //
+      // Medido antes de cerrarlo: las 26 cuentas `<número>@staff.local` no se
+      // usaban desde el 2026-07-11, y las 36 personas de la última semana
+      // entraron con el PIN. Esas cuentas quedaron además bloqueadas: con la
+      // contraseña igual al número se entraba sin pasar por acá.
+      //
+      // Límite conocido: el PIN se DERIVA del número con una fórmula sin secreto
+      // (`derivar_kiosk_pin`). El arreglo de fondo es un PIN al azar, y exige
+      // reimprimir los carnés — decisión del usuario: por ahora no.
+      let { data: rows, error: dbError } = await admin
+        .from("employees")
+        .select(SELECT_COLS)
+        .eq("kiosk_pin", clean)
+        .limit(1);
 
-    // Tercero, el carné de PAPEL del día. Va al final porque es la excepción
-    // —dura hasta medianoche y hay pocos vivos a la vez—, igual que en las tres
-    // funciones de la base que leen un carné. Lo resuelve la base: acá no se
-    // sabe ni se puede saber cuál es el secreto, sólo si alguien lo reconoce.
-    let porCarneTemporal = false;
-    if (!dbError && !rows?.length) {
-      const { data: quien, error: errCarne } = await admin.rpc("resolver_carne_temporal", { p_valor: raw });
-      // Una falla de la base NO es un carné inválido: contestar NOT_FOUND la
-      // disfrazaba de «escaneaste mal» y además sumaba un intento fallido.
-      if (errCarne) return json({ ok: false, error: "DB_ERROR", details: errCarne.message });
-      if (quien) {
-        porCarneTemporal = true;
-        ({ data: rows, error: dbError } = await admin
-          .from("employees")
-          .select(SELECT_COLS)
-          .eq("id", quien as string)
-          .limit(1));
+      // Tercero, el carné de PAPEL del día. Va al final porque es la excepción
+      // —dura hasta medianoche y hay pocos vivos a la vez—, igual que en las tres
+      // funciones de la base que leen un carné. Lo resuelve la base: acá no se
+      // sabe ni se puede saber cuál es el secreto, sólo si alguien lo reconoce.
+      let porCarneTemporal = false;
+      if (!dbError && !rows?.length) {
+        const { data: quien, error: errCarne } = await admin.rpc("resolver_carne_temporal", { p_valor: raw });
+        // Una falla de la base NO es un carné inválido: contestar NOT_FOUND la
+        // disfrazaba de «escaneaste mal» y además sumaba un intento fallido.
+        if (errCarne) { errorInterno("resolver_carne_temporal", errCarne.message); return json({ ok: false, error: "DB_ERROR" }); }
+        if (quien) {
+          porCarneTemporal = true;
+          ({ data: rows, error: dbError } = await admin
+            .from("employees")
+            .select(SELECT_COLS)
+            .eq("id", quien as string)
+            .limit(1));
+        }
       }
-    }
 
-    if (dbError) return json({ ok: false, error: "DB_ERROR", details: dbError.message });
-    if (!rows?.length) {
-      recordFailure(clientIp);
-      return json({ ok: false, error: "NOT_FOUND" });
-    }
-
-    const employee = rows[0];
-
-    if (employee.status && employee.status !== "ACTIVO") {
-      recordFailure(clientIp);
-      return json({ ok: false, error: "INACTIVE" });
-    }
-
-    // La cuenta del carné de papel la creó `emitir-carne-temporal` cuando se
-    // imprimió, con el secreto por contraseña. Acá NO se crea: si no existe, el
-    // papel no vale — crearla con lo que se acaba de escanear convertiría este
-    // endpoint en una fábrica de cuentas.
-    if (porCarneTemporal) {
-      const email = `carne-${employee.id}@staff.local`;
-      const { data: cuenta, error: errCuenta } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
-      if (errCuenta) return json({ ok: false, error: "DB_ERROR", details: errCuenta.message });
-      if (!cuenta) {
-        recordFailure(clientIp);
+      if (dbError) { errorInterno("employees por PIN", dbError.message); return json({ ok: false, error: "DB_ERROR" }); }
+      if (!rows?.length) {
+        fueFallo = true;
         return json({ ok: false, error: "NOT_FOUND" });
       }
-      return json({ ok: true, isNewUser: false, user: { email, isKiosk: true } });
+
+      const employee = rows[0];
+
+      if (employee.status && employee.status !== "ACTIVO") {
+        fueFallo = true;
+        return json({ ok: false, error: "INACTIVE" });
+      }
+
+      // ── Los cargos de administración no entran por carné (2026-11-23) ──
+      // Gerente General, Administrador, Jefe/a de Talento Humano y Supervisor/a
+      // de Ventas entran SÓLO con usuario y contraseña: un carné se pierde o se
+      // presta, y el de ellos abre todo. Lo decide la base
+      // (`empleado_es_de_administracion`, sobre `cargos_de_administracion()`):
+      // cargo principal, secundario y el del apoyo vigente. Se contesta igual
+      // que un carné inválido para no revelar nada, y cuenta como fallo. Su
+      // código y su PIN no se tocan: otras partes los usan.
+      const { data: esAdmin, error: errAdmin } = await admin
+        .rpc("empleado_es_de_administracion", { p_employee_id: employee.id });
+      if (errAdmin) { errorInterno("empleado_es_de_administracion", errAdmin.message); return json({ ok: false, error: "DB_ERROR" }); }
+      if (esAdmin === true) {
+        fueFallo = true;
+        return json({ ok: false, error: "NOT_FOUND" });
+      }
+
+      // La cuenta del carné de papel la creó `emitir-carne-temporal` cuando se
+      // imprimió, con el secreto por contraseña. Acá NO se crea: si no existe, el
+      // papel no vale — crearla con lo que se acaba de escanear convertiría este
+      // endpoint en una fábrica de cuentas.
+      if (porCarneTemporal) {
+        const email = `carne-${employee.id}@staff.local`;
+        const { data: cuenta, error: errCuenta } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
+        if (errCuenta) { errorInterno("cuenta_de_carne_temporal", errCuenta.message); return json({ ok: false, error: "DB_ERROR" }); }
+        if (!cuenta) {
+          fueFallo = true;
+          return json({ ok: false, error: "NOT_FOUND" });
+        }
+        return json({ ok: true, isNewUser: false, user: { email, isKiosk: true } });
+      }
+
+      // Se encontró por PIN (es la única búsqueda que queda), así que la cuenta es
+      // siempre la del PIN. Ya no se crea la `<número>@staff.local`.
+      const email = `${employee.kiosk_pin.toLowerCase()}@staff.local`;
+      // Contraseña al azar que nadie conoce (etapa 2, 2026-11-03): se entra SÓLO
+      // con el pase de abajo. Con `password: kiosk_pin` cada cuenta nueva
+      // reabría la puerta que la etapa 2 cerró en las existentes.
+      const claveAlAzar = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+      const createPayload: Record<string, unknown> = {
+        email,
+        password: claveAlAzar,
+        email_confirm: true,
+        user_metadata: { code: employee.code, kiosk: true },
+      };
+
+      // ── Crear usuario Auth solo si no existe ──
+      const createRes = await admin.auth.admin.createUser(createPayload);
+      const isNewUser = !createRes.error;
+      if (createRes.error) {
+        const msg        = (createRes.error.message || "").toLowerCase();
+        const isExisting = msg.includes("already") || msg.includes("exists") ||
+                           msg.includes("registered") || msg.includes("duplicate");
+        if (!isExisting) { errorInterno("createUser", createRes.error.message); return json({ ok: false, error: "AUTH_CREATE_ERROR" }); }
+      }
+
+      // El uid de estas cuentas lo genera Auth, así que no coincide con employees.id:
+      // sin esta fila, las funciones auth_* no pueden resolver al empleado y la cuenta
+      // queda sin permisos. Falla cerrada, nunca abierta.
+      //
+      // Y también cuando la cuenta YA existía (2026-10-14): si la primera vez el
+      // `createUser` entró pero el enlace falló, el reintento caía en «already
+      // exists», se saltaba esto y la persona entraba SIN permisos para siempre.
+      // El upsert es idempotente, así que repetirlo no cuesta nada.
+      let authId: string | null = createRes.data?.user?.id ?? null;
+      if (!authId) {
+        const { data: existente, error: errExiste } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
+        if (errExiste) { errorInterno("cuenta existente", errExiste.message); return json({ ok: false, error: "DB_ERROR" }); }
+        authId = (existente as string | null) ?? null;
+      }
+      if (authId) {
+        const { error: linkErr } = await admin
+          .from("employee_auth_accounts")
+          .upsert({ auth_user_id: authId, employee_id: employee.id },
+                  { onConflict: "auth_user_id" });
+        if (linkErr) { errorInterno("employee_auth_accounts", linkErr.message); return json({ ok: false, error: "LINK_ERROR" }); }
+      }
+
+      // ── El pase de un solo uso (2026-10-28, SEGURIDAD-Y-ACCESO §3.1) ──
+      //
+      // La contraseña de esta cuenta ES el PIN, y el PIN sale del número con una
+      // fórmula sin secreto: con el número de alguien se podía ir directo a Auth
+      // —sin pasar por esta función, su tope ni su registro— y abrir su sesión.
+      // El navegador entra ahora con este pase (`verifyOtp({ token_hash })`), que
+      // sólo esta función puede emitir y que vale una vez. Así la única puerta
+      // del carné es ésta, que es la que se puede vigilar (horario, sala, tope).
+      //
+      // Etapa 1: el pase CONVIVE con la contraseña. Si no se pudo emitir, el
+      // navegador entra como antes. Cuando los registros muestren que nadie usa
+      // el camino viejo, las contraseñas de estas cuentas se cambian a un valor
+      // al azar (etapa 2) y la puerta de atrás queda cerrada.
+      //
+      // Etapa 2 (2026-11-03): las contraseñas ya son al azar, así que sin pase
+      // no hay entrada — se contesta el error en vez de devolver un usuario con
+      // el que el navegador no puede hacer nada.
+      const { data: pase, error: errPase } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+      if (errPase) console.error("[ensure_user_by_code] generateLink:", errPase.message);
+      const tokenHash = (pase?.properties as { hashed_token?: string } | undefined)?.hashed_token ?? null;
+      if (!tokenHash) return json({ ok: false, error: "PASE_ERROR" });
+
+      return json({ ok: true, isNewUser, user: { email, isKiosk: true, token_hash: tokenHash } });
+    } finally {
+      if (!fueFallo) await soltarReserva(reserva.id);
     }
-
-    // Se encontró por PIN (es la única búsqueda que queda), así que la cuenta es
-    // siempre la del PIN. Ya no se crea la `<número>@staff.local`.
-    const email = `${employee.kiosk_pin.toLowerCase()}@staff.local`;
-    // Contraseña al azar que nadie conoce (etapa 2, 2026-11-03): se entra SÓLO
-    // con el pase de abajo. Con `password: kiosk_pin` cada cuenta nueva
-    // reabría la puerta que la etapa 2 cerró en las existentes.
-    const claveAlAzar = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-    const createPayload: Record<string, unknown> = {
-      email,
-      password: claveAlAzar,
-      email_confirm: true,
-      user_metadata: { code: employee.code, kiosk: true },
-    };
-
-    // ── Crear usuario Auth solo si no existe ──
-    const createRes = await admin.auth.admin.createUser(createPayload);
-    const isNewUser = !createRes.error;
-    if (createRes.error) {
-      const msg        = (createRes.error.message || "").toLowerCase();
-      const isExisting = msg.includes("already") || msg.includes("exists") ||
-                         msg.includes("registered") || msg.includes("duplicate");
-      if (!isExisting) return json({ ok: false, error: "AUTH_CREATE_ERROR", details: createRes.error.message });
-    }
-
-    // El uid de estas cuentas lo genera Auth, así que no coincide con employees.id:
-    // sin esta fila, las funciones auth_* no pueden resolver al empleado y la cuenta
-    // queda sin permisos. Falla cerrada, nunca abierta.
-    //
-    // Y también cuando la cuenta YA existía (2026-10-14): si la primera vez el
-    // `createUser` entró pero el enlace falló, el reintento caía en «already
-    // exists», se saltaba esto y la persona entraba SIN permisos para siempre.
-    // El upsert es idempotente, así que repetirlo no cuesta nada.
-    let authId: string | null = createRes.data?.user?.id ?? null;
-    if (!authId) {
-      const { data: existente, error: errExiste } = await admin.rpc("cuenta_de_carne_temporal", { p_email: email });
-      if (errExiste) return json({ ok: false, error: "DB_ERROR", details: errExiste.message });
-      authId = (existente as string | null) ?? null;
-    }
-    if (authId) {
-      const { error: linkErr } = await admin
-        .from("employee_auth_accounts")
-        .upsert({ auth_user_id: authId, employee_id: employee.id },
-                { onConflict: "auth_user_id" });
-      if (linkErr) return json({ ok: false, error: "LINK_ERROR", details: linkErr.message });
-    }
-
-    // ── El pase de un solo uso (2026-10-28, SEGURIDAD-Y-ACCESO §3.1) ──
-    //
-    // La contraseña de esta cuenta ES el PIN, y el PIN sale del número con una
-    // fórmula sin secreto: con el número de alguien se podía ir directo a Auth
-    // —sin pasar por esta función, su tope ni su registro— y abrir su sesión.
-    // El navegador entra ahora con este pase (`verifyOtp({ token_hash })`), que
-    // sólo esta función puede emitir y que vale una vez. Así la única puerta
-    // del carné es ésta, que es la que se puede vigilar (horario, sala, tope).
-    //
-    // Etapa 1: el pase CONVIVE con la contraseña. Si no se pudo emitir, el
-    // navegador entra como antes. Cuando los registros muestren que nadie usa
-    // el camino viejo, las contraseñas de estas cuentas se cambian a un valor
-    // al azar (etapa 2) y la puerta de atrás queda cerrada.
-    //
-    // Etapa 2 (2026-11-03): las contraseñas ya son al azar, así que sin pase
-    // no hay entrada — se contesta el error en vez de devolver un usuario con
-    // el que el navegador no puede hacer nada.
-    const { data: pase, error: errPase } = await admin.auth.admin.generateLink({ type: "magiclink", email });
-    if (errPase) console.error("[ensure_user_by_code] generateLink:", errPase.message);
-    const tokenHash = (pase?.properties as { hashed_token?: string } | undefined)?.hashed_token ?? null;
-    if (!tokenHash) return json({ ok: false, error: "PASE_ERROR", details: errPase?.message ?? "sin pase" });
-
-    return json({ ok: true, isNewUser, user: { email, isKiosk: true, token_hash: tokenHash } });
 
   } catch (e) {
-    return json({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) });
+    errorInterno("sin manejar", String((e as Error)?.message ?? e));
+    return json({ ok: false, error: "UNHANDLED" });
   }
 });

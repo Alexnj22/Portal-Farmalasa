@@ -684,7 +684,13 @@ export const AuthProvider = ({ children }) => {
     soltarVisibilidad(onVisibilityChange, true);
   };
 
-  const clearErpCache  = () => ERP_CACHE_KEYS.forEach(k => almacen.borrar(k));
+  // También la caché de Ventas por producto (`ppv<versión>_…`, VentasView):
+  // lleva el COSTO de cada producto y quedaba en un equipo compartido después
+  // de cerrar sesión (auditoría del login, 2026-11-22).
+  const clearErpCache  = () => {
+    ERP_CACHE_KEYS.forEach(k => almacen.borrar(k));
+    try { almacen.claves().filter(k => /^ppv\d+_/.test(k)).forEach(k => almacen.borrar(k)); } catch { /* sin almacenamiento */ }
+  };
   const clearAuthCache = () => {
     almacen.borrar(LS_USER);
     almacen.borrar(LS_LAST);

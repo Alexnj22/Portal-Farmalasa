@@ -16,8 +16,12 @@ import { mensajeAmigable } from '../utils/errorMessages';
  */
 const GENERICO = 'Usuario o contraseña incorrectos.';
 const MENSAJE_DE_ESTADO = {
-    NO_EXISTE: 'Usuario incorrecto.',
-    CONTRASENA: 'Contraseña incorrecta.',
+    // «No existe» y «contraseña mala» dicen lo mismo a propósito (2026-11-22,
+    // auditoría del login): distinguirlos le confirmaba a cualquiera, desde
+    // afuera, qué usuarios existen. Los demás estados sólo los ve quien ya
+    // escribió un usuario real y le dicen qué hacer.
+    NO_EXISTE: GENERICO,
+    CONTRASENA: GENERICO,
     INACTIVO: 'Usuario dado de baja.',
     BLOQUEADO: 'Usuario bloqueado.',
     SIN_ACCESO: 'Usuario sin acceso al portal.',

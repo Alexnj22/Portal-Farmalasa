@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.6 — Login: tope de intentos y mensajes que no revelan
+
+Arreglo de seguridad, publicado aparte del Portal 2.0 (auditoría del login,
+aprobado por el usuario).
+
+- **Tope de intentos atómico.** `ensure_user_by_code` contaba los fallos y
+  anotaba el nuevo después y sin esperar: una ráfaga paralela pasaba entera, y
+  si la tabla fallaba el tope quedaba abierto. Ahora cada intento se reserva
+  antes de mirar nada con `login_intento_reservar` (migración
+  `20261123135409`, serializada por IP): 15 por IP en 10 minutos, y 300 en toda
+  la red sólo para el diagnóstico de usuario (medido: el máximo real de la red
+  fue 10). El carné no lleva tope de red, para que nadie pueda dejar sin entrar
+  a todas las sucursales a la hora de entrada. La reserva se suelta si el
+  intento no fue un fallo de credencial. Si la base no contesta: 503, cerrado.
+  Probado en el entorno de pruebas: ráfaga de 30 carnés malos a la vez → 15
+  pasaron, 16 recibieron 429; un carné bueno entra y no deja reserva.
+- **Los cargos de administración no entran por carné** (Gerente General,
+  Administrador, Jefe/a de Talento Humano, Supervisor/a de Ventas): cargo
+  principal, secundario o de apoyo vigente, decidido en la base
+  (`empleado_es_de_administracion` sobre `cargos_de_administracion()`). Se les
+  contesta igual que a un carné inválido. Su código y su PIN no se tocan.
+- Las respuestas a quien no tiene sesión ya no llevan `details` con el error
+  interno; va al log.
+- `src/data/auth.js`: «usuario no existe» y «contraseña mala» dicen lo mismo
+  («Usuario o contraseña incorrectos.»): distinguirlos revelaba qué usuarios
+  existen.
+- Al cerrar sesión se borra también la caché de Ventas por producto (`ppv*_`),
+  que lleva costos.
+
+Gemelo: login — la app nativa comparte `src/data/auth.js` y `AuthContext` por @nucleo, así que hereda el mensaje único; no tiene carné
+
 ## v2.1592.5 — Login: el lector de carné ya no cae en el usuario
 
 Arreglo de seguridad, publicado aparte del Portal 2.0. En `/login` el lector de

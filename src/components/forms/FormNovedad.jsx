@@ -27,6 +27,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
 import { esContratoCivil } from '@nucleo/utils/contrato';
+import { periodoDeLactancia, avisoDelParto } from '@nucleo/utils/lactancia';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -388,6 +389,53 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         holidays={holidays}
                                         />
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Maternidad: la fecha del parto (RIT Arts. 59–61). De ella sale
+                            la lactancia, que no se marca a mano (`lactancia.js`). */}
+                        {isDisability && formData?.disabilityType === 'MATERNIDAD' && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
+                                <div data-campo="fechaPartoProbable" className="relative z-header">
+                                    <label className={labelClasses}>Fecha probable del parto</label>
+                                    <div className="h-[40px]">
+                                        <LiquidDatePicker
+                                            value={formData?.fechaPartoProbable || ''}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, fechaPartoProbable: val || null }))}
+                                            icon={CalendarClock}
+                                        />
+                                    </div>
+                                </div>
+                                <div data-campo="fechaPartoReal" className="relative z-header">
+                                    <label className={labelClasses}>Fecha real del parto</label>
+                                    <div className="h-[40px]">
+                                        <LiquidDatePicker
+                                            value={formData?.fechaPartoReal || ''}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, fechaPartoReal: val || null }))}
+                                            icon={CalendarClock}
+                                        />
+                                    </div>
+                                </div>
+                                {(() => {
+                                    const aviso = avisoDelParto(formData || {});
+                                    const lactancia = periodoDeLactancia(formData?.date, formData || {});
+                                    return (
+                                        <div className="sm:col-span-2 flex flex-col gap-1 px-1">
+                                            {aviso && (
+                                                <p className="text-caption font-bold text-warning-text">
+                                                    Con el parto real, la maternidad llega al menos al {fechaTexto(aviso.finMinimo, { day: 'numeric', month: 'short', year: 'numeric' })} (10 semanas después del parto).
+                                                </p>
+                                            )}
+                                            {lactancia ? (
+                                                <p className="text-caption font-bold text-content-3">
+                                                    Lactancia del {fechaTexto(lactancia.desde, { day: 'numeric', month: 'short' })} al {fechaTexto(lactancia.hasta, { day: 'numeric', month: 'short', year: 'numeric' })}: hasta 1 hora al día.
+                                                </p>
+                                            ) : (
+                                                <p className="text-caption font-bold text-content-3">La real se anota cuando se conozca. Con ella se calcula la lactancia.</p>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
 

@@ -53,6 +53,8 @@ import ModalShell from '../components/common/ModalShell';
 
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { lactanciaVigente } from '@nucleo/utils/lactancia';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 
@@ -173,6 +175,24 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     // con el id sintético de antes «Editar», «Cancelar» y «Adjuntar» no
     // encontraban la fila.
     const timeline = useMemo(() => historialDeFicha(timelineData, emp?.history || []), [timelineData, emp]);
+    // La lactancia se DERIVA de la maternidad (RIT Art. 61, `lactancia.js`).
+    const lactancia = useMemo(() => lactanciaVigente(emp?.history || [], hoySV()), [emp]);
+    const terminarLactancia = useStaffStore((s) => s.terminarLactancia);
+    const [terminandoLactancia, setTerminandoLactancia] = useState(null);   // null = cerrado; 'AAAA-MM-DD' = abierto
+    const [guardandoLactancia, setGuardandoLactancia] = useState(false);
+    const confirmarFinDeLactancia = useCallback(async () => {
+        if (!lactancia || !terminandoLactancia) return;
+        setGuardandoLactancia(true);
+        try {
+            await terminarLactancia(lactancia.eventoId, emp.id, terminandoLactancia);
+            useToastStore.getState().showToast('Lactancia terminada', `Último día: ${fechaTexto(terminandoLactancia, { day: 'numeric', month: 'long' })}.`, 'success');
+            setTerminandoLactancia(null);
+        } catch (err) {
+            useToastStore.getState().showToast('No se pudo guardar', mensajeAmigable(err), 'error');
+        } finally {
+            setGuardandoLactancia(false);
+        }
+    }, [lactancia, terminandoLactancia, terminarLactancia, emp]);
 
     // `?corregir=<evento>`: llega desde «Bajas con el cierre pendiente» de
     // Personal y abre la corrección de esa novedad (2026-11-14). Una sola vez:
@@ -598,6 +618,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <span className="text-caption font-black text-content-2 uppercase tracking-widest">
                                             CÓD: {emp.code || 'S/N'}
                                         </span>
+                                        {lactancia && (
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="info">Lactancia hasta el {fechaTexto(lactancia.hasta, { day: 'numeric', month: 'short', year: 'numeric' })}</Badge>
+                                                {canEdit && (
+                                                    <Button size="sm" variant="secondary" onClick={() => setTerminandoLactancia(hoySV())} aria-label="Terminar la lactancia antes">Terminar</Button>
+                                                )}
+                                            </div>
+                                        )}
                                         {canEdit && (
                                             <div className="flex gap-2 mt-3 justify-center animate-in fade-in duration-[var(--dur-slow)]">
                                                 <Button icon={Pencil} disabled={!canEdit} onClick={handleEditProfile}>Editar</Button>
@@ -1234,6 +1262,27 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 </div>
             </div>
         </GlassViewLayout>
+
+        {terminandoLactancia !== null && (
+            <ConfirmModal
+                isOpen={terminandoLactancia !== null}
+                onClose={() => !guardandoLactancia && setTerminandoLactancia(null)}
+                onConfirm={confirmarFinDeLactancia}
+                title="Terminar la lactancia"
+                message={(
+                    <div className="flex flex-col gap-3 text-left">
+                        <p>¿Cuál es el último día con lactancia?</p>
+                        <div className="h-[40px]">
+                            <LiquidDatePicker value={terminandoLactancia || ''} onChange={(v) => setTerminandoLactancia(v || '')} icon={CalendarDays} />
+                        </div>
+                    </div>
+                )}
+                confirmText="Terminar"
+                isDestructive={false}
+                isProcessing={guardandoLactancia}
+                confirmDisabled={!terminandoLactancia || !lactancia || terminandoLactancia < lactancia.desde}
+            />
+        )}
 
         {showResetConfirm && (
             <ConfirmModal

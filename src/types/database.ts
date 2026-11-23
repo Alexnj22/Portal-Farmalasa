@@ -38331,6 +38331,21 @@ export type Database = {
         Args: { p_nombre: string; p_nombre_app: string }
         Returns: string
       }
+      lactancia_hasta: {
+        Args: { p_employee_id: string; p_fecha: string }
+        Returns: string
+      }
+      lactancia_periodo: {
+        Args: { p_inicio: string; p_metadata: Json }
+        Returns: {
+          desde: string
+          hasta: string
+        }[]
+      }
+      lactancia_vigente: {
+        Args: { p_employee_id: string; p_fecha: string }
+        Returns: boolean
+      }
       liberar_parada_de_ruta: {
         Args: {
           p_actor: string

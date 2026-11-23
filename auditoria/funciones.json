@@ -4273,6 +4273,21 @@
    "por": "manual",
    "manual": true
   },
+  "lactancia_hasta": {
+   "area": "personal",
+   "por": "manual",
+   "manual": true
+  },
+  "lactancia_periodo": {
+   "area": "personal",
+   "por": "manual",
+   "manual": true
+  },
+  "lactancia_vigente": {
+   "area": "personal",
+   "por": "manual",
+   "manual": true
+  },
   "liberar_parada_de_ruta": {
    "area": "pedidos",
    "por": "tablas"

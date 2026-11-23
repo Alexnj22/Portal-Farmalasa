@@ -41,6 +41,7 @@ import { cumpleEn, historialDePerfil, semanaDelPerfil, tiempoEnLaEmpresa } from 
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { lactanciaVigente } from '@nucleo/utils/lactancia';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { calcAge } from '@nucleo/utils/ageUtils';
@@ -135,6 +136,8 @@ export default function Empleado() {
   const sala = useMemo(() => (sucursales || []).find((b) => String(b.id) === String(emp?.branchId ?? emp?.branch_id)), [sucursales, emp]);
   const historial = useMemo(() => historialDePerfil(emp?.history || [], emp?.hire_date || emp?.hireDate, sala?.name), [emp, sala]);
   const semana = useMemo(() => semanaDelPerfil(emp?.weeklySchedule, turnos || [], hoy), [emp, turnos, hoy]);
+  // La lactancia sale de la maternidad (RIT Art. 61, `lactancia.js`).
+  const lactancia = useMemo(() => lactanciaVigente(emp?.history || [], hoy), [emp, hoy]);
   if (!emp) return <PantallaSinDato texto="No se encontró a esta persona o no la puedes ver." />;
 
   const estado = estadoDePersona(emp);
@@ -335,6 +338,7 @@ export default function Empleado() {
           {emp.contract_type ? <Dato rotulo="Contrato" valor={emp.contract_type} /> : null}
           {emp.weekly_hours ? <Dato rotulo="Horas por semana" valor={String(emp.weekly_hours)} /> : null}
           <Dato rotulo="Estado" valor={emp.status || '—'} />
+          {lactancia ? <Dato rotulo="Lactancia" valor={`Hasta el ${fechaTexto(lactancia.hasta, { day: 'numeric', month: 'long', year: 'numeric' })}`} /> : null}
         </Seccion>
 
         <Seccion titulo="Personal y contacto">

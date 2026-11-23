@@ -130,7 +130,7 @@ export function minutosDeLaPausa(pausa, regreso) {
  * hora de entrada queda libre. Es la forma exacta que leen el kiosco, la
  * planilla y la grilla.
  */
-export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia }) {
+export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia, lactancia2 = null }) {
     const libreElegido = turno === 'OFF';
     const id = (libreElegido || turno === 'NO_SHIFTS' || turno === HORAS_PROPIAS) ? '' : (turno || '');
     const libre = libreElegido || (!id && !inicio);
@@ -146,12 +146,16 @@ export function datosDelDiaParaGuardar({ turno, inicio, fin, conPausa, pausa, re
             ? { lunchMinutes: minutosDeLaPausa(pausa, regreso) } : {}),
         hasLactation: libre ? false : Boolean(conLactancia),
         lactationStart: (conLactancia && !libre) ? lactancia : null,
+        // Partida en dos (RIT Art. 61): 30 y 30. El día de una sola pausa
+        // conserva la forma de antes.
+        ...((conLactancia && !libre && lactancia && lactancia2)
+            ? { lactationMinutes: MINUTOS_DE_PAUSA / 2, lactation2Start: lactancia2, lactation2Minutes: MINUTOS_DE_PAUSA / 2 } : {}),
         isOff: libre,
     };
 }
 
 /** Lo que el reglamento y la sala no dejan guardar en un día con horas. */
-export function reparosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia }, turnos, limites) {
+export function reparosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia, lactancia2 = null }, turnos, limites) {
     if (turno === 'OFF' || turno === 'NO_SHIFTS') return [];
     if (inicio && fin && aMinutos(inicio) === aMinutos(fin)) return ['La hora de entrada y la de salida no pueden ser la misma.'];
     if (conPausa && pausa && regreso && aMinutos(regreso) <= aMinutos(pausa)) return ['El regreso del almuerzo tiene que ser después de la salida.'];
@@ -159,18 +163,20 @@ export function reparosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso,
         shiftId: turno === HORAS_PROPIAS ? '' : (turno || ''), customStart: inicio, customEnd: fin,
         hasLunch: conPausa, lunchStart: pausa, lunchMinutes: minutosDeLaPausa(pausa, regreso),
         hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
+        ...(lactancia2 ? { lactationMinutes: MINUTOS_DE_PAUSA / 2, lactation2Start: lactancia2, lactation2Minutes: MINUTOS_DE_PAUSA / 2 } : {}),
     }, turnos || []);
     return reparosDelDia(r, limites?.hayHorario && !limites.cerrada
         ? { horaDeApertura: limites.apertura, horaDeCierre: limites.cierre } : {});
 }
 
 /** Lo que conviene saber de una celda y no impide guardarla (horas extra). */
-export function avisosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia }, turnos) {
+export function avisosDeLaCelda({ turno, inicio, fin, conPausa, pausa, regreso, conLactancia, lactancia, lactancia2 = null }, turnos) {
     if (turno === 'OFF' || turno === 'NO_SHIFTS') return [];
     return avisosDelDia(resolverTurnoDelDia({
         shiftId: turno === HORAS_PROPIAS ? '' : (turno || ''), customStart: inicio, customEnd: fin,
         hasLunch: conPausa, lunchStart: pausa, lunchMinutes: minutosDeLaPausa(pausa, regreso),
         hasLactation: conLactancia, lactationStart: lactancia, isOff: false,
+        ...(lactancia2 ? { lactationMinutes: MINUTOS_DE_PAUSA / 2, lactation2Start: lactancia2, lactation2Minutes: MINUTOS_DE_PAUSA / 2 } : {}),
     }, turnos || []));
 }
 

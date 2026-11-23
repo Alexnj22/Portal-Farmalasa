@@ -20,6 +20,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { lactanciaVigente } from '@nucleo/utils/lactancia';
 import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia, HORAS_PROPIAS, regresoDeLaPausa, minutosDeLaPausa } from '@nucleo/utils/edicionDeHorario';
 
 import IconoEnCaja from '../../../components/common/IconoEnCaja';
@@ -116,7 +117,24 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     }, [resuelto, showTimePickers, customStart, customEnd, hasLunch, lunchStart, lunchEnd, branchLimits]);
 
     // Lo que se dice sin frenar: las horas extra (`avisosDelDia`).
-    const avisos = useMemo(() => (showTimePickers ? avisosDelDia(resuelto) : []), [resuelto, showTimePickers]);
+    // La lactancia sale de la maternidad (RIT Art. 61, `lactancia.js`). La
+    // casilla queda como estaba; sólo avisa si no coincide con lo registrado.
+    const empleadoConHistorial = useStaffStore(s => s.employees.find(e => String(e.id) === String(employee?.id)));
+    const lactanciaDelDia = useMemo(
+        () => lactanciaVigente(empleadoConHistorial?.history || employee?.history || [], dateStr),
+        [empleadoConHistorial, employee, dateStr],
+    );
+    // Sin el historial completo (quien sólo ve el suyo) no se puede afirmar
+    // que NO tiene: el aviso callaría mal.
+    const historialCompleto = useStaffStore(s => s.historialCompleto);
+    const avisoDeLactancia = !showTimePickers ? null
+        : (hasLactation && !lactanciaDelDia && historialCompleto !== false) ? 'No tiene lactancia registrada este día.'
+        : (!hasLactation && currentData?.hasLactation && lactanciaDelDia) ? `Tiene lactancia hasta el ${fechaTexto(lactanciaDelDia.hasta, { day: 'numeric', month: 'short' })}.`
+        : null;
+    const avisos = useMemo(() => {
+        const base = showTimePickers ? avisosDelDia(resuelto) : [];
+        return avisoDeLactancia ? [...base, avisoDeLactancia] : base;
+    }, [resuelto, showTimePickers, avisoDeLactancia]);
 
     // Los turnos que caben ese día: núcleo (`turnosQueCabenElDia`), el mismo de la app.
     const filteredShifts = useMemo(() => {

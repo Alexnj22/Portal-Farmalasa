@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1593.0 — La lactancia sale de la maternidad
+
+RIT Cap. X, Arts. 59–61 (aprobado por el usuario el 2026-11-23).
+
+- **La maternidad lleva la fecha del parto.** Al registrar o corregir una
+  incapacidad por maternidad, Talento Humano anota la fecha probable del parto
+  (obligatoria, Art. 60) y la real cuando se conoce. Si el parto real deja la
+  maternidad con menos de 10 semanas después del parto, el formulario lo avisa
+  (Art. 59). Se guarda en `metadata` del evento: sin columnas nuevas.
+- **La lactancia se deriva, no se marca.** Va del día siguiente al fin de la
+  maternidad hasta parto + 6 meses − 1 día (Art. 61). Un juez en la base
+  (`lactancia_periodo`, `lactancia_hasta`, `lactancia_vigente`; INVOKER,
+  migración `20261123223406`) y su gemelo `src/utils/lactancia.js`, enfrentados
+  sobre los mismos 14 casos (`CASOS_DE_LACTANCIA`): 14 de 14 iguales.
+- **El perfil** dice «Lactancia hasta el …» mientras está vigente, y Talento
+  Humano la puede terminar antes (guarda el último día en la maternidad, con
+  `appendAuditLog`).
+- **Horarios**: el editor conserva la casilla de Lactancia y sólo avisa si se
+  marca a alguien sin lactancia registrada ese día, o si se le quita a quien la
+  tiene. El núcleo del día ya admite la lactancia partida en dos (30 y 30,
+  `lactation2Start`); pegada al almuerzo se permite, cruzada no.
+- Regla escrita en `docs/reglas/horario-del-dia.md`.
+
+Gemelo: staff_list — en apps/mobile/app/empleado/accion.js (las fechas del parto) y apps/mobile/app/empleado/[id].js (la lactancia vigente); terminarla antes queda sólo en el portal.
+Gemelo: schedules — el aviso es del editor viejo del portal; el editor de día de la app se rehace con el 2.0.
+
 ## v2.1592.19 — «Cuándo se vende más» ya no se queda cargando ni muestra otra sucursal
 
 - El efecto que lee las ventas por hora del Inicio hacía `fetch().then(...)`

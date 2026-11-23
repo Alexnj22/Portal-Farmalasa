@@ -29,6 +29,7 @@ import { pinDeKiosco } from '@nucleo/utils/pinDeKiosco';
 import { esContratoCivil } from '@nucleo/utils/contrato';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { periodoDeLactancia, avisoDelParto } from '@nucleo/utils/lactancia';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -244,6 +245,26 @@ export default function AccionDePersonal() {
                       <Campo multiline={false} keyboardType="number-pad" placeholder="Días de incapacidad (ej. 3)" value={f.disabilityDays ? String(f.disabilityDays) : ''}
                         onChangeText={(t) => { const n = parseInt(t, 10) || 0; pon({ disabilityDays: n, endDate: finPorDias(f.date, n) }); }} />
                       {f.endDate && f.disabilityDays > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Regresa el ${larga(diaDeRegreso(f.endDate))}`}</Text> : null}
+                    </>
+                  ) : null}
+                  {/* Maternidad: la fecha del parto (RIT Arts. 59–61). De ella sale
+                      la lactancia (`lactancia.js`); el mismo campo que el portal. */}
+                  {r.esIncapacidad && f.disabilityType === 'MATERNIDAD' ? (
+                    <>
+                      <Fila rotulo="Fecha probable del parto">
+                        <Fecha valor={f.fechaPartoProbable || null} onCambiar={(v) => pon({ fechaPartoProbable: v || null })} />
+                      </Fila>
+                      <Fila rotulo="Fecha real del parto">
+                        <Fecha valor={f.fechaPartoReal || null} onCambiar={(v) => pon({ fechaPartoReal: v || null })} />
+                      </Fila>
+                      {avisoDelParto(f) ? (
+                        <Aviso tono="cuidado" texto={`Con el parto real, la maternidad llega al menos al ${larga(avisoDelParto(f).finMinimo)} (10 semanas después del parto).`} />
+                      ) : null}
+                      {periodoDeLactancia(f.date, f) ? (
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Lactancia del ${larga(periodoDeLactancia(f.date, f).desde)} al ${larga(periodoDeLactancia(f.date, f).hasta)}: hasta 1 hora al día.`}</Text>
+                      ) : (
+                        <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>La real se anota cuando se conozca. Con ella se calcula la lactancia.</Text>
+                      )}
                     </>
                   ) : null}
                   {(r.esVacacion || (r.esIncapacidad && f.disabilityType === 'MATERNIDAD')) && f.endDate ? (

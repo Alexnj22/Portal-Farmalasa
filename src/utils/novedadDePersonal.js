@@ -155,6 +155,12 @@ export function validarNovedad({ formData = {}, empleado, empleados = [], roles 
     if (r.esCargo && !formData.newRole) return { ok: false, motivo: null };
     if (r.esSalario && !formData.newSalary) return { ok: false, motivo: null };
     if (r.esIncapacidad && (!formData.disabilityType || !formData.certificateNumber)) return { ok: false, motivo: null };
+    // La maternidad lleva la fecha probable del parto (RIT Art. 60): de ella
+    // sale la lactancia (Art. 61, `lactancia.js`). La real se anota después.
+    if (r.esIncapacidad && formData.disabilityType === 'MATERNIDAD') {
+        if (!formData.fechaPartoProbable) return { ok: false, motivo: 'Anota la fecha probable del parto.', campo: 'fechaPartoProbable' };
+        if (formData.fechaPartoReal && formData.fechaPartoReal > hoySV()) return { ok: false, motivo: 'La fecha real del parto no puede ser futura.', campo: 'fechaPartoReal' };
+    }
     // Una segunda baja sobre quien ya salió pisaba la fecha de salida y dejaba
     // dos «Liquidación/Renuncia» en el historial (2026-11-11). Para volver a
     // tenerlo, es una recontratación. Al CORREGIR la baja que ya tiene, sí pasa.

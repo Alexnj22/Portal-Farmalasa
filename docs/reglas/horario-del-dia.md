@@ -57,3 +57,35 @@ quedaba `disabled`, y como `consolidate-timesheets` sólo lee los `PUBLISHED`,
 El detalle —la copia del sábado, el cron duplicado que dejaba muda a su propia
 alarma, y por qué el catálogo del módulo NO son los turnos del reglamento— en
 `docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md`.
+## REGLA: la lactancia sale de la maternidad (2026-11-23)
+
+RIT Cap. X. La maternidad dura 16 semanas (112 días), 10 de ellas después del
+parto, y se prolonga si el parto llega después de la fecha probable (Art. 59);
+se acredita con la fecha probable del parto (Art. 60). Durante los **6 meses
+posteriores al parto** hay hasta **1 hora diaria de lactancia**, que se puede
+partir en dos pausas, **no puede usarse en la hora de almuerzo** y cuenta como
+hora trabajada y remunerada (Art. 61).
+
+- **No se marca a mano: se DERIVA.** Talento Humano anota en la incapacidad por
+  maternidad (`employee_events`, `metadata.disabilityType = 'MATERNIDAD'`) la
+  `fechaPartoProbable` al registrarla y la `fechaPartoReal` cuando se conoce. La
+  lactancia va del día siguiente al fin de la maternidad hasta parto + 6 meses
+  − 1 día (con el real si existe, si no el probable). Talento Humano la puede
+  dar por terminada antes desde el perfil: `lactanciaTerminadaEl` (último día).
+- **Un solo juez, con gemelo**: `public.lactancia_periodo(date, jsonb)` y
+  `public.lactancia_hasta(uuid, date)` / `lactancia_vigente(uuid, date)` en la
+  base; `src/utils/lactancia.js` en el código. Los casos (`CASOS_DE_LACTANCIA`)
+  valen para los dos y se enfrentaron uno contra otro (14 de 14). Cambiar uno
+  exige volver a enfrentarlos.
+- **«No en la hora de almuerzo» = no se CRUZA con el almuerzo.** Pegada antes o
+  después del almuerzo sí se permite. Lo único que frena es el solapamiento
+  (`reparosDelDia`), también para la segunda pausa.
+- **Partida en dos**: el día guarda `lactationStart` + `lactation2Start`, 30 y
+  30 minutos (`lactationMinutes` / `lactation2Minutes`). El día de una sola
+  pausa conserva la forma de antes (sin las claves nuevas).
+- **Cuenta como trabajada**: `minutosPagados` no la descuenta, y la planilla
+  (`_shared/tiempoTrabajado.ts`) tampoco parte la jornada por ella.
+- **El editor de horarios** no la propone a quien no la tiene vigente. El 1.0
+  conserva su casilla y sólo avisa si se marca a alguien sin lactancia
+  registrada ese día, o si se le quita a quien la tiene. Ese aviso calla cuando
+  quien edita no ve el historial completo: no puede afirmar que NO la tiene.

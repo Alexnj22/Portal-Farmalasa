@@ -216,7 +216,7 @@ export const AREAS = [
             // de personal, el historial con su id real, la sanción y su constancia
             // en HTML, el reingreso y la recontratación, el pin del carné y el
             // carné de papel.
-            'src/utils/novedadDePersonal.js', 'src/utils/bajaLegal.js', 'tests/unit/bajaLegal.test.js', 'src/utils/historialDeFicha.js', 'src/utils/sancion.js',
+            'src/utils/novedadDePersonal.js', 'src/utils/lactancia.js', 'tests/unit/lactancia.test.js', 'src/utils/bajaLegal.js', 'tests/unit/bajaLegal.test.js', 'src/utils/historialDeFicha.js', 'src/utils/sancion.js',
             'src/utils/reingresoYRecontratacion.js', 'src/utils/pinDeKiosco.js', 'src/utils/carneDePapel.js',
             'src/utils/pdfmakeAHtml.js', 'src/utils/marcaDelPapel.js', 'tests/unit/novedadDePersonal.test.js',
             'src/data/nationalities.js',

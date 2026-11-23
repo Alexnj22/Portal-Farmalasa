@@ -97,6 +97,7 @@ const horaDelTurno = (turno, extremo) => {
  *   turnoId: string|null, nombre: string, esManual: boolean,
  *   pausa: {inicio: string, minutos: number}|null,
  *   lactancia: {inicio: string, minutos: number}|null,
+ *   lactancia2: {inicio: string, minutos: number}|null,
  *   minutosBrutos: number, minutosPagados: number,
  *   minutosNocturnos: number, esJornadaNocturna: boolean,
  *   cruzaMedianoche: boolean,
@@ -105,7 +106,7 @@ const horaDelTurno = (turno, extremo) => {
 export function resolverTurnoDelDia(datosDelDia, turnos) {
     const libre = {
         trabaja: false, inicio: null, fin: null, turnoId: null,
-        nombre: '', esManual: false, pausa: null, lactancia: null,
+        nombre: '', esManual: false, pausa: null, lactancia: null, lactancia2: null,
         minutosBrutos: 0, minutosPagados: 0,
         minutosNocturnos: 0, esJornadaNocturna: false, cruzaMedianoche: false,
     };
@@ -166,13 +167,23 @@ export function resolverTurnoDelDia(datosDelDia, turnos) {
     // ── Lactancia ────────────────────────────────────────────────────────────
     // RIT: «serán contadas como hora efectiva de trabajo y remunerada como
     // tal». O sea que NO se descuenta — sólo parte el bloque en la pantalla.
+    // El Art. 61 deja partirla en dos: la segunda pausa es `lactation2Start`
+    // (cada una con sus minutos; el día partido guarda 30 y 30).
     let lactancia = null;
+    let lactancia2 = null;
     if (dia.hasLactation) {
         const hora = dia.lactationStart || dia.lactation_start;
         if (hora) {
             lactancia = {
                 inicio: String(hora).substring(0, 5),
                 minutos: Number(dia.lactationMinutes ?? MINUTOS_DE_PAUSA),
+            };
+        }
+        const hora2 = dia.lactation2Start;
+        if (hora && hora2) {
+            lactancia2 = {
+                inicio: String(hora2).substring(0, 5),
+                minutos: Number(dia.lactation2Minutes ?? MINUTOS_DE_PAUSA / 2),
             };
         }
     }
@@ -187,7 +198,7 @@ export function resolverTurnoDelDia(datosDelDia, turnos) {
         turnoId: turnoId != null && turnoId !== '' ? String(turnoId) : null,
         nombre: turno?.name || 'Manual',
         esManual: !turno,
-        pausa, lactancia,
+        pausa, lactancia, lactancia2,
         minutosBrutos, minutosPagados, minutosNocturnos,
         // RIT Art. 16 · más de cuatro horas nocturnas vuelven nocturna a toda
         // la jornada, y con eso baja el tope de 8 h a 7.
@@ -227,10 +238,11 @@ export function tramosDeLaJornada(resuelto) {
         if (s < inicio) s += 1440;
         cortes.push({ tipo: 'pausa', inicio: s, fin: s + resuelto.pausa.minutos, etiqueta: 'almuerzo' });
     }
-    if (resuelto.lactancia) {
-        let s = aMinutos(resuelto.lactancia.inicio);
+    for (const l of [resuelto.lactancia, resuelto.lactancia2]) {
+        if (!l) continue;
+        let s = aMinutos(l.inicio);
         if (s < inicio) s += 1440;
-        cortes.push({ tipo: 'lactancia', inicio: s, fin: s + resuelto.lactancia.minutos, etiqueta: 'lactancia' });
+        cortes.push({ tipo: 'lactancia', inicio: s, fin: s + l.minutos, etiqueta: 'lactancia' });
     }
     cortes.sort((a, b) => a.inicio - b.inicio);
 
@@ -267,23 +279,33 @@ export function reparosDelDia(resuelto, { horaDeApertura = null, horaDeCierre = 
         if (p < ini || p + resuelto.pausa.minutos > fin) {
             reparos.push('La pausa alimenticia queda fuera de la jornada.');
         }
-        if (resuelto.lactancia) {
-            let l = aMinutos(resuelto.lactancia.inicio); if (l < ini) l += 1440;
-            // RIT: «Las interrupciones en la jornada laboral no podrán ser
-            // utilizadas en la hora de almuerzo». Es solapamiento, no igualdad:
-            // comparar sólo la hora de inicio dejaba pasar 12:00 contra 12:30.
-            if (l < p + resuelto.pausa.minutos && p < l + resuelto.lactancia.minutos) {
-                reparos.push('La lactancia cae dentro de la pausa alimenticia, y el reglamento no lo permite.');
-            }
-        }
+        // RIT Art. 61: «no podrán ser utilizadas en la hora de almuerzo». Es
+        // solapamiento, no igualdad: comparar sólo la hora de inicio dejaba
+        // pasar 12:00 contra 12:30. PEGADA antes o después del almuerzo sí se
+        // permite (2026-11-23): lo único prohibido es que se crucen.
+        const seCruza = [resuelto.lactancia, resuelto.lactancia2].some((lac) => {
+            if (!lac) return false;
+            let l = aMinutos(lac.inicio); if (l < ini) l += 1440;
+            return l < p + resuelto.pausa.minutos && p < l + lac.minutos;
+        });
+        if (seCruza) reparos.push('La lactancia cae dentro de la pausa alimenticia, y el reglamento no lo permite.');
     }
 
     if (resuelto.lactancia) {
         let ini = aMinutos(resuelto.inicio);
         let fin = aMinutos(resuelto.fin); if (fin < ini) fin += 1440;
-        let l   = aMinutos(resuelto.lactancia.inicio); if (l < ini) l += 1440;
-        if (l < ini || l + resuelto.lactancia.minutos > fin) {
-            reparos.push('La lactancia queda fuera de la jornada.');
+        const fuera = [resuelto.lactancia, resuelto.lactancia2].some((lac) => {
+            if (!lac) return false;
+            let l = aMinutos(lac.inicio); if (l < ini) l += 1440;
+            return l < ini || l + lac.minutos > fin;
+        });
+        if (fuera) reparos.push('La lactancia queda fuera de la jornada.');
+        if (resuelto.lactancia2) {
+            let a = aMinutos(resuelto.lactancia.inicio); if (a < ini) a += 1440;
+            let b = aMinutos(resuelto.lactancia2.inicio); if (b < ini) b += 1440;
+            if (a < b + resuelto.lactancia2.minutos && b < a + resuelto.lactancia.minutos) {
+                reparos.push('Las dos pausas de lactancia se cruzan.');
+            }
         }
     }
 

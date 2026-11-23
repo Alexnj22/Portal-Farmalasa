@@ -1135,6 +1135,38 @@ export const createSystemSlice = (set, get) => ({
         }
     },
 
+    /**
+     * Talento Humano da la lactancia por terminada antes de los 6 meses (RIT
+     * Art. 61): guarda en la maternidad el último día con lactancia. La
+     * lactancia sigue siendo derivada (`lactancia.js` / `lactancia_hasta`);
+     * esto sólo la recorta.
+     */
+    terminarLactancia: async (eventId, employeeId, ultimoDia) => {
+        const { data: existing, error: exErr } = await fetchEmployeeEventMetadata(eventId);
+        if (exErr) throw exErr;
+        const meta = typeof existing.metadata === 'string' ? JSON.parse(existing.metadata) : (existing.metadata || {});
+        if (meta.disabilityType !== 'MATERNIDAD') throw usuario('Esa novedad no es una maternidad.');
+        const nueva = { ...meta, lactanciaTerminadaEl: ultimoDia, lactanciaTerminadaRegistradaEl: new Date().toISOString() };
+        const { error } = await updateEmployeeEventMetadata(eventId, nueva);
+        if (error) throw error;
+        const emp = get().employees.find(e => String(e.id) === String(employeeId));
+        await get().appendAuditLog('LACTANCIA_TERMINADA', employeeId, {
+            timeline_title: 'Lactancia terminada',
+            dimension: 'HR',
+            branch_id: emp?.branchId,
+            new_value: ultimoDia,
+            details: { evento: eventId, ultimoDia },
+        });
+        set((state) => ({
+            employees: state.employees.map(e => String(e.id) !== String(employeeId) ? e : {
+                ...e,
+                history: (e.history || []).map(ev => String(ev.id) !== String(eventId) ? ev : { ...ev, metadata: nueva }),
+            }),
+        }));
+        emitir('employee-event-updated', { employeeId });
+        return true;
+    },
+
     editEmployeeEvent: async (eventId, newEventData, employeeId) => {
         try {
             const { data: existing, error: exErr } = await fetchEmployeeEventMetadata(eventId);

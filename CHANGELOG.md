@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.12 — Vender: el traslado llega a la sucursal de la venta
+
+Dos fallas de «Pedir a otras sucursales» (v2.1592.9):
+
+- **El destino era siempre la sucursal de quien vende** (`miErp`), no la de la
+  venta elegida en Vender. Ahora `usePedirTraslado` acepta `destino` y Vender
+  pasa su sucursal: el reparto, las sucursales que lo tienen y el metadata de la
+  solicitud (`branch_id`, `branch_name`, `erp_sucursal_id`) salen de ella. El
+  pedido de traslado de siempre, fuera de Vender, sigue usando la sucursal de
+  quien pide (decisión del 2026-08-06); antes de v2.1592.9 Vender abría la
+  consulta de inventario, que también usaba la de quien pide.
+- **Gerencia y Supervisión veían el pedido vacío** y sin aviso. Con `destino`
+  piden para la sucursal de la venta; sin sucursal que reciba, el modal lo dice
+  y no muestra un formulario vacío.
+
+Pruebas: `tests/unit/pedirTrasladoDestino.test.jsx`.
+
+Gemelo: preventa — en apps/mobile/app/preventa.js y pedir-traslado.js (comparten `usePedirTraslado`).
+
 ## v2.1592.11 — Kiosco: el número de empleado ya no identifica
 
 Tres arreglos de seguridad del kiosco, aprobados por el usuario el 2026-11-23.

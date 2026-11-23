@@ -67,7 +67,7 @@ function AvisoPedido({ aviso }) {
     );
 }
 
-export default function PedirTrasladoModal({ producto: productoInicial = null, onClose, onListo }) {
+export default function PedirTrasladoModal({ producto: productoInicial = null, destino = null, onClose, onListo }) {
     // Todo el estado y las reglas viven en el núcleo (`hooks/usePedirTraslado`),
     // que usa también la app del teléfono: las dos arman la misma solicitud.
     // Acá queda sólo la forma de la pantalla.
@@ -83,7 +83,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         puedeEnviar, faltaEnvio,
         renglones, causa, setCausa, agregar, quitarDelStore, editarRenglon, limpiarStore,
         enviar, enviando, listo, error, resumen, repartoAplicado,
-    } = usePedirTraslado({ productoInicial, alCerrar: onClose, alTerminar: onListo });
+        miErp, nombreDestino, conDestino,
+    } = usePedirTraslado({ productoInicial, destino, alCerrar: onClose, alTerminar: onListo });
 
     /* Abre en «Agregar» cuando viene con un producto, y en la lista cuando no:
      * abrirlo sin producto es lo que hace la consulta al apretar «terminar la
@@ -159,7 +160,8 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                 atrás no es acá»—. Con el compositor sí es acá: soltar el
                 producto es cómo se elige el siguiente, venga de donde venga. */}
             <LiquidModal.Header titulo={producto?.descripcion ?? 'Pedir a otra sucursal'}
-                subtitulo={producto ? 'Solicitar a otra sucursal' : 'Elige el producto'}
+                subtitulo={conDestino && nombreDestino ? `Llega a ${nombreDestino}`
+                    : producto ? 'Solicitar a otra sucursal' : 'Elige el producto'}
                 icono={ArrowLeftRight} tono="brand" onClose={onClose}
                 acciones={producto && !listo && pestana === 'agregar' && (
                     <Button variant="ghost" icon={ArrowLeft} iconOnly
@@ -177,6 +179,16 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                     sin tener que ir a mirarla — y por eso la lista pudo salir de
                     encima del formulario, que es lo que hacía que agregar se
                     sintiera como volver al principio. */}
+                {/* Sin sucursal que reciba no hay pedido posible (2026-11-23).
+                    Antes se abría vacío —sin sucursales y en 1— y no decía por
+                    qué. Desde Vender la que recibe es la de la venta. */}
+                {!listo && !miErp && (
+                    <Notice variant="warning">
+                        {conDestino
+                            ? `${nombreDestino || 'Esta sucursal'} no recibe traslados. Elige otra sucursal en Vender.`
+                            : 'Los traslados los pide una sucursal. No tienes ninguna asignada.'}
+                    </Notice>
+                )}
                 {!listo && (
                     <div className="shrink-0">
                         <SegmentedControl
@@ -336,7 +348,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             el producto sale de ahí.
                         </span>
                     </p>
-                ) : pestana === 'lista' || !producto ? null : (
+                ) : pestana === 'lista' || !producto || !miErp ? null : (
 
                     <>
                         <LiquidSelect

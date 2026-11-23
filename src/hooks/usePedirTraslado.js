@@ -25,9 +25,10 @@ import { avisosDelPedido, claveOrigen, diasHasta, faltaParaEnviar, fmtVence } fr
 // terminar de enviar. Los comentarios de abajo son los del modal original.
 // ═══════════════════════════════════════════════════════════════════════════
 /**
- * @param {{ productoInicial?: any, alCerrar?: () => void, alTerminar?: () => void }} [opciones]
+ * @param {{ productoInicial?: any, alCerrar?: () => void, alTerminar?: () => void,
+ *   destino?: { branch_id: number|string|null, nombre?: string } | null }} [opciones]
  */
-export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar } = {}) {
+export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar, destino = null } = {}) {
     const { user } = useAuth();
     /* Lo elegido en el primer paso, cuando hubo primer paso. La fila del
        catálogo trae `{ id, nombre }` y el resto del archivo habla de
@@ -117,8 +118,20 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
     // Para qué sala se pide: la de quien pide, y no se pregunta. Quien no está
     // asignado a una sala —Supervisión, Administración— no pide traslados;
     // decisión del usuario el 2026-08-06, después de probarlo.
-    const miBranch = user?.branchId ?? user?.branch_id ?? null;
+    //
+    // ── Salvo que quien abre diga cuál recibe (2026-11-23) ──────────────────
+    // Vender abre esto para la sucursal de la VENTA, que no siempre es la de
+    // quien vende: Gerencia y Supervisión venden por cualquier sucursal y no
+    // tienen una propia. Con `destino`, la que recibe es ésa y sólo ésa —sin
+    // caer a la de quien pide, que mandaría el producto a otra sucursal—, y
+    // las salas que lo tienen se miden contra ella. Si esa sucursal no tiene
+    // número de inventario, `miErp` queda en null y la pantalla lo dice.
+    const conDestino = destino != null;
+    const miBranch = conDestino ? (destino.branch_id ?? null) : (user?.branchId ?? user?.branch_id ?? null);
     const miErp    = MI_ERP_POR_BRANCH[miBranch] ?? null;
+    const nombreDestino = conDestino
+        ? (destino.nombre || NOMBRE_SALA[miErp] || '')
+        : (user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '');
 
     useEffect(() => {
         if (producto?.donde || !producto?.erp_product_id || !miErp) return;
@@ -582,7 +595,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
             reason: causaTexto.trim(),
             // Mi sala: la que recibe.
             branch_id: miBranch,
-            branch_name: user?.branchName ?? user?.branch_name ?? NOMBRE_SALA[miErp] ?? '',
+            branch_name: nombreDestino,
             erp_sucursal_id: miErp,
             // La sala de origen: la que tiene el producto.
             origen_erp_sucursal_id: grupo[0].origen.erp_sucursal_id,
@@ -703,7 +716,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
 
     return {
         avisos,
-        user, miBranch, miErp,
+        user, miBranch, miErp, nombreDestino, conDestino,
         producto, setElegido,
         donde, origenId, setOrigenId, sala,
         dondeCargando: !producto?.donde && dondeTraido === null && !dondeError && Boolean(miErp), dondeError,

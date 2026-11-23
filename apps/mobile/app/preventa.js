@@ -348,7 +348,9 @@ export default function Preventa() {
     router.push(linea
       ? { pathname: '/pedir-traslado', params: { producto: String(linea.producto_id), descripcion: filaDe(linea)?.nombre ?? linea.nombre ?? '',
           ...(conReparto ? { origen: String(reparto[0].erp_sucursal_id),
-            reparto: JSON.stringify(reparto.map((r) => ({ erp_sucursal_id: r.erp_sucursal_id, unidades: r.unidades }))) } : {}) } }
+            reparto: JSON.stringify(reparto.map((r) => ({ erp_sucursal_id: r.erp_sucursal_id, unidades: r.unidades }))),
+            // Recibe la sucursal de la venta, no la de quien vende.
+            destino: String(sala ?? ''), destinoNombre: nombreSala } : {}) } }
       : '/pedir-traslado');
   };
   const apartar = () => router.push({ pathname: '/reserva-anticipo', params: { sala: String(sala) } });

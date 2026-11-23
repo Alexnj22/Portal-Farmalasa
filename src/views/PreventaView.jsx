@@ -1043,7 +1043,9 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
             )}
             {pedir && (
                 <Suspense fallback={null}>
-                    <PedirTrasladoModal producto={pedir} onClose={() => { setPedir(null); alBuscador(); }} />
+                    {/* Recibe la sucursal de la venta, no la de quien vende (2026-11-23). */}
+                    <PedirTrasladoModal producto={pedir} destino={{ branch_id: sala, nombre: nombreSala }}
+                        onClose={() => { setPedir(null); alBuscador(); }} />
                 </Suspense>
             )}
             {apartar && sala && (

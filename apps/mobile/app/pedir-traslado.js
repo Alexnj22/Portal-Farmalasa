@@ -73,7 +73,9 @@ export default function PedirTraslado() {
   // estante de origen (`6:V` = el área de vencidos de Bodega), como el
   // «Solicitar» del portal.
   // Desde Vender llega además `reparto` (JSON): cuánto pedirle a cada sucursal.
-  const { producto: idInicial, descripcion: descInicial, origen, reparto: repartoTexto } = useLocalSearchParams();
+  // Y `destino`: la sucursal de la venta, que es la que recibe (2026-11-23).
+  const { producto: idInicial, descripcion: descInicial, origen, reparto: repartoTexto, destino: destinoId, destinoNombre } = useLocalSearchParams();
+  const [destino] = useState(() => (destinoId != null ? { branch_id: Number(destinoId) || null, nombre: destinoNombre || '' } : null));
   const [inicial] = useState(() => {
     if (!idInicial) return null;
     let reparto = null;
@@ -81,10 +83,10 @@ export default function PedirTraslado() {
     return { erp_product_id: Number(idInicial), descripcion: descInicial || '', origen_sugerido: origen || null,
       ...(Array.isArray(reparto) && reparto.length ? { reparto } : {}) };
   });
-  const p = usePedirTraslado({ productoInicial: inicial, alCerrar: () => {}, alTerminar: () => router.back() });
+  const p = usePedirTraslado({ productoInicial: inicial, destino, alCerrar: () => {}, alTerminar: () => router.back() });
   const { producto, setElegido, donde, origenId, setOrigenId, opcionesPres, presIdx, setPresIdx, cantidad, setCantidad,
     esAntibiotico, avisoVence, lotesDeSala, descartados, setDescartados, reparto, hayLotes, avisos,
-    renglones, quitarDelStore, causa, setCausa, agregar, lineaLista, yaEstaEnLaLista, puedeEnviar, enviar, enviando, listo, resumen, error, miErp } = p;
+    renglones, quitarDelStore, causa, setCausa, agregar, lineaLista, yaEstaEnLaLista, puedeEnviar, enviar, enviando, listo, resumen, error, miErp, conDestino, nombreDestino } = p;
   const [buscando, setBuscando] = useState(!producto);
 
   useEffect(() => {
@@ -99,7 +101,9 @@ export default function PedirTraslado() {
       <>
         {pantalla}
         <ScrollView contentContainerStyle={{ padding: 16 }} contentInsetAdjustmentBehavior="automatic">
-          <Aviso tono="cuidado" texto="Los traslados los pide una sucursal. No tienes ninguna asignada." />
+          <Aviso tono="cuidado" texto={conDestino
+            ? `${nombreDestino || 'Esta sucursal'} no recibe traslados. Elige otra sucursal en Vender.`
+            : 'Los traslados los pide una sucursal. No tienes ninguna asignada.'} />
         </ScrollView>
       </>
     );

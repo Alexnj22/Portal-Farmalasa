@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.7 — El token del kiosco se guarda como hash
+
+Arreglo de seguridad del kiosco/marcador, publicado aparte del Portal 2.0
+(aprobado por el usuario).
+
+- **El token del equipo se guarda como hash.** `kiosk_devices.device_token` era
+  un uuid en claro que leían los cargos con permiso sobre sucursales. Ahora se
+  guarda `device_token_hash` (SHA-256) y toda comparación pasa por
+  `kiosco_token_ok`. Los equipos ya vinculados siguen con su mismo token: sólo
+  cambió lo guardado. En dos pasos para no dejar a nadie sin marcar: primero la
+  base aceptó hash y texto plano (`20261123140631`), después se borró el plano
+  (`20261123140803`). No vence: el tope de equipos por sucursal ya lo acota.
+- **Vincular sigue igual.** `kiosco_vincular_con_ticket` genera el token, guarda
+  sólo su hash y lo devuelve una vez. El alta desde el portal no cambió: lee el
+  token del `RETURNING` y un trigger lo borra de la fila al terminar.
+- **El arranque del kiosco no entrega datos de más.** `get_kiosk_boot_payload`
+  ya no manda `email` ni `gender` (el kiosco no los pinta) ni los comunicados
+  que no le tocan a nadie del padrón de ese kiosco. Se queda `birth_date`: el
+  saludo de cumpleaños dice la edad.
+
+Gemelo: kiosco — sólo cambia la base y los tipos; ninguna pantalla del portal ni de la app cambia
+Novedades: no — el gate valoró 0 de 4 (no toca pantallas)
+
 ## v2.1592.6 — Login: tope de intentos y mensajes que no revelan
 
 Arreglo de seguridad, publicado aparte del Portal 2.0 (auditoría del login,

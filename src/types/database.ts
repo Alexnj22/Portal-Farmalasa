@@ -18867,7 +18867,8 @@ export type Database = {
           branch_id: number | null
           created_at: string
           device_name: string
-          device_token: string
+          device_token: string | null
+          device_token_hash: string
           id: string
           last_active_at: string | null
           revoked_at: string | null
@@ -18878,7 +18879,8 @@ export type Database = {
           branch_id?: number | null
           created_at?: string
           device_name: string
-          device_token?: string
+          device_token?: string | null
+          device_token_hash: string
           id?: string
           last_active_at?: string | null
           revoked_at?: string | null
@@ -18889,7 +18891,8 @@ export type Database = {
           branch_id?: number | null
           created_at?: string
           device_name?: string
-          device_token?: string
+          device_token?: string | null
+          device_token_hash?: string
           id?: string
           last_active_at?: string | null
           revoked_at?: string | null
@@ -35564,6 +35567,10 @@ export type Database = {
           similitud: number
         }[]
       }
+      empleado_es_de_administracion: {
+        Args: { p_employee_id: string }
+        Returns: boolean
+      }
       empleado_no_disponible: {
         Args: { p_employee_id: string }
         Returns: boolean
@@ -38296,6 +38303,11 @@ export type Database = {
         Args: { p_branch_id: number; p_nombre?: string; p_tipo: string }
         Returns: Json
       }
+      kiosco_token_hash: { Args: { p_token: string }; Returns: string }
+      kiosco_token_ok: {
+        Args: { p_dado: string; p_hash: string; p_plano: string }
+        Returns: boolean
+      }
       kiosco_vincular_con_ticket: {
         Args: {
           p_codigo: string
@@ -38399,6 +38411,10 @@ export type Database = {
       lock_module: {
         Args: { p_hours?: number; p_module_key: string; p_reason?: string }
         Returns: Json
+      }
+      login_intento_reservar: {
+        Args: { p_ip: string; p_tope_red?: boolean }
+        Returns: number
       }
       lotes_de_renglon_de_traslado: {
         Args: { idx: number; meta: Json }
@@ -40898,6 +40914,10 @@ export type Database = {
       siguiente_folio_de_abono: {
         Args: { p_branch_id: number }
         Returns: string
+      }
+      sincronizar_apoyo_del_horario: {
+        Args: { p_branch_id: number; p_employee_id: string; p_semana: string }
+        Returns: undefined
       }
       sincronizar_bitacora_dispensaciones: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }

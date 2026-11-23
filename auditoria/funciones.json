@@ -4226,6 +4226,16 @@
    "area": "acceso",
    "por": "código"
   },
+  "kiosco_token_hash": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
+  "kiosco_token_ok": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
   "kiosco_vincular_con_ticket": {
    "area": "acceso",
    "por": "código"
@@ -4233,6 +4243,16 @@
   "kiosk_auth_code_for": {
    "area": "plataforma",
    "por": "llamada"
+  },
+  "kiosk_devices_borrar_token_plano": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
+  "kiosk_devices_hash_del_token": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
   },
   "kiosk_devices_tope": {
    "area": "acceso",

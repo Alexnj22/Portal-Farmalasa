@@ -7,6 +7,21 @@ import {
 } from './timeClock.helpers';
 import { getTodayScheduleConfig } from '../utils/helpers';
 import { hora12 } from './hora';
+import { MINUTOS_DE_PAUSA, regresoEsperadoDeLaPausa } from './turnoDelDia';
+
+export { regresoEsperadoDeLaPausa };
+
+/** Minutos de la lactancia cuyo horario está más cerca de `cuando`: con la
+ *  lactancia partida (Art. 61) son dos pausas de 30, no una hora. */
+const minutosDeLactanciaCercana = (cfg, cuando) => {
+  const t = new Date(cuando).getTime();
+  const primera = { inicio: cfg?.lactStartD, minutos: Number(cfg?.lactationMinutes) || MINUTOS_DE_PAUSA };
+  const segunda = cfg?.lact2StartD ? { inicio: cfg.lact2StartD, minutos: Number(cfg?.lact2Minutes) || MINUTOS_DE_PAUSA / 2 } : null;
+  if (!segunda || !primera.inicio) return primera.minutos;
+  const d1 = Math.abs(t - new Date(primera.inicio).getTime());
+  const d2 = Math.abs(t - new Date(segunda.inicio).getTime());
+  return d2 < d1 ? segunda.minutos : primera.minutos;
+};
 
 const OPEN_PUNCH_TYPES = ['IN', 'IN_LUNCH', 'IN_LACTATION', 'IN_RETURN'];
 
@@ -41,11 +56,18 @@ export const buildTimeClockConfig = (employee, config, now = new Date(), lastPun
     shiftEndD.setDate(shiftEndD.getDate() + 1);
   }
 
+  // La duración de cada pausa sale del HORARIO del día (`resolverTurnoDelDia`),
+  // no de una hora fija: la jornada partida tiene una pausa de 4 h y la
+  // lactancia partida, dos de 30 min (2026-11-23).
+  const lunchMinutes = Number(config?.lunchMinutes) || MINUTOS_DE_PAUSA;
+  const lactationMinutes = Number(config?.lactationMinutes) || MINUTOS_DE_PAUSA;
   const lunchStartD = config?.lunchTime ? buildDateFromTime(now, config.lunchTime) : null;
-  const lunchEndD = lunchStartD ? new Date(lunchStartD.getTime() + 60 * 60000) : null;
+  const lunchEndD = lunchStartD ? new Date(lunchStartD.getTime() + lunchMinutes * 60000) : null;
 
   const lactStartD = config?.lactationTime ? buildDateFromTime(now, config.lactationTime) : null;
-  const lactEndD = lactStartD ? new Date(lactStartD.getTime() + 60 * 60000) : null;
+  const lactEndD = lactStartD ? new Date(lactStartD.getTime() + lactationMinutes * 60000) : null;
+  const lact2StartD = config?.lactation2Time ? buildDateFromTime(now, config.lactation2Time) : null;
+  const lact2Minutes = Number(config?.lactation2Minutes) || MINUTOS_DE_PAUSA / 2;
 
   const isGluedToIn = !!(lactStartD && shiftStartD && lactStartD.getTime() === shiftStartD.getTime());
   const isGluedToOut = !!(lactEndD && shiftEndD && lactEndD.getTime() === shiftEndD.getTime());
@@ -66,6 +88,11 @@ export const buildTimeClockConfig = (employee, config, now = new Date(), lastPun
     lunchEndD,
     lactStartD,
     lactEndD,
+    lact2StartD,
+    lunchMinutes,
+    lactationMinutes,
+    lact2Minutes,
+    esJornadaPartida: Boolean(config?.esJornadaPartida),
     isGluedToIn,
     isGluedToOut,
     isGluedToLunch,
@@ -88,6 +115,12 @@ export const buildFinalPunchPresentation = ({
   shifts = [],
 }) => {
   const { config, isGluedToLunch, isGluedToOut, lactEndD, lunchEndD, expectedIn } = customConfig;
+  const minutosDePausa = Number(customConfig?.lunchMinutes) || MINUTOS_DE_PAUSA;
+  const minutosDeLactancia = Number(customConfig?.lactationMinutes) || MINUTOS_DE_PAUSA;
+  // Lo que se espera que dure la salida a la pausa: la pausa del horario, más
+  // la lactancia si va pegada detrás.
+  const minutosFueraEnLaPausa = minutosDePausa + (isGluedToLunch ? minutosDeLactancia : 0);
+  const partida = Boolean(customConfig?.esJornadaPartida);
 
   let lateStatus = { isLate: false };
   let finalType = rawType || type;
@@ -164,9 +197,14 @@ export const buildFinalPunchPresentation = ({
     }
 
     case 'OUT_LUNCH': {
-      const minutesToAdd = isGluedToLunch ? 120 : 60;
-      const expectedReturn = new Date(now.getTime() + minutesToAdd * 60000);
-      presentation.message = 'Buen provecho';
+      // El regreso es el fin de la pausa del horario; si salió tarde, la
+      // pausa completa desde que salió.
+      const finProgramado = lunchEndD
+        ? new Date(lunchEndD.getTime() + (isGluedToLunch ? minutosDeLactancia * 60000 : 0))
+        : null;
+      const desdeQueSalio = new Date(now.getTime() + minutosFueraEnLaPausa * 60000);
+      const expectedReturn = finProgramado && finProgramado > desdeQueSalio ? finProgramado : desdeQueSalio;
+      presentation.message = partida ? 'Pausa registrada' : 'Buen provecho';
       presentation.subtext = `Regreso esperado: ${hora12(expectedReturn)}`;
       presentation.color = isGluedToLunch ? 'pink' : 'orange';
       presentation.iconKey = isGluedToLunch ? 'baby' : 'utensils';
@@ -175,16 +213,19 @@ export const buildFinalPunchPresentation = ({
     }
 
     case 'IN_LUNCH': {
-      let expectedReturn = lunchEndD;
-      const outLunchPunch = [...todayPunches].reverse().find((p) => p.type === 'OUT_LUNCH');
-      if (outLunchPunch) {
-        const plusMinutes = isGluedToLunch ? 120 : 60;
-        expectedReturn = new Date(new Date(outLunchPunch.timestamp).getTime() + plusMinutes * 60000);
-      }
+      // La tardanza se mide contra el FIN DE LA PAUSA PROGRAMADA de ese día
+      // (4 h en la jornada partida), no contra 60 min fijos. Si salió tarde a
+      // la pausa, tiene la pausa completa desde que salió.
+      const expectedReturn = regresoEsperadoDeLaPausa({
+        lunchEndD,
+        extraMinutos: isGluedToLunch ? minutosDeLactancia : 0,
+        salida: [...todayPunches].reverse().find((p) => p.type === 'OUT_LUNCH'),
+        minutosFuera: minutosFueraEnLaPausa,
+      });
 
       presentation.lateStatus = checkLateness(expectedReturn, now);
       presentation.message = 'Bienvenido de vuelta';
-      presentation.subtext = 'Regreso de almuerzo registrado';
+      presentation.subtext = partida ? 'Regreso de la pausa registrado' : 'Regreso de almuerzo registrado';
       presentation.color = 'blue';
       presentation.iconKey = 'check';
       presentation.isLactationAction = isGluedToLunch;
@@ -192,7 +233,7 @@ export const buildFinalPunchPresentation = ({
     }
 
     case 'OUT_LACTATION': {
-      const expectedReturn = new Date(now.getTime() + 60 * 60000);
+      const expectedReturn = new Date(now.getTime() + minutosDeLactanciaCercana(customConfig, now) * 60000);
       presentation.message = 'Hora de lactancia';
       presentation.subtext = `Regreso esperado: ${hora12(expectedReturn)}`;
       presentation.color = 'pink';
@@ -205,7 +246,8 @@ export const buildFinalPunchPresentation = ({
       let expectedReturn = lactEndD;
       const outLactationPunch = [...todayPunches].reverse().find((p) => p.type === 'OUT_LACTATION');
       if (outLactationPunch) {
-        expectedReturn = new Date(new Date(outLactationPunch.timestamp).getTime() + 60 * 60000);
+        const salida = new Date(outLactationPunch.timestamp);
+        expectedReturn = new Date(salida.getTime() + minutosDeLactanciaCercana(customConfig, salida) * 60000);
       }
 
       presentation.lateStatus = checkLateness(expectedReturn, now);

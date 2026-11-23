@@ -178,8 +178,16 @@ export const resolveAttendanceFlow = ({
         pendingOuts.push({ type: 'OUT_LUNCH', targetTime: lunchStartD.getTime() });
       }
 
-      if (needsSeparateLactationPunch && !findLastPunchByType(employee, 'OUT_LACTATION', currentDate)) {
-        pendingOuts.push({ type: 'OUT_LACTATION', targetTime: lactStartD.getTime() });
+      // La lactancia partida (RIT Art. 61) son DOS salidas: 30 min y 30 min.
+      // Antes, con una OUT_LACTATION ya marcada, el kiosco no ofrecía la segunda.
+      if (needsSeparateLactationPunch) {
+        const lact2StartD = customConfig?.lact2StartD ? new Date(customConfig.lact2StartD) : null;
+        const salidasDeLactancia = getTodayPunches(employee, currentDate)
+          .filter((p) => p.type === 'OUT_LACTATION').length;
+        const pendientes = [lactStartD, lact2StartD].filter(Boolean).slice(salidasDeLactancia);
+        if (pendientes.length > 0) {
+          pendingOuts.push({ type: 'OUT_LACTATION', targetTime: pendientes[0].getTime() });
+        }
       }
 
       pendingOuts.push({

@@ -1,7 +1,7 @@
 // La cobertura del día de una sala: cuánta gente hay a cada hora, y quién queda
 // sola. Vivía dentro de `ScheduleCalendar`; se mudó al núcleo el 2026-10-06
 // para que la app (Horarios) avise lo MISMO que la grilla del portal.
-import { resolverTurnoDelDia, aMinutos as timeToMins } from './turnoDelDia';
+import { resolverTurnoDelDia, esJornadaPartida, aMinutos as timeToMins } from './turnoDelDia';
 import { hora12 } from './hora';
 
 const formatMins12h = (mins) => hora12(`${Math.floor(mins / 60) % 24}:${String(mins % 60).padStart(2, '0')}`);
@@ -43,7 +43,7 @@ export const evaluarCoberturaDelDia = (dNum, horarios, turnos, ventasDelDia) => 
         let ini = timeToMins(r.inicio);
         let fin = timeToMins(r.fin);
         if (fin < ini) fin += 1440;
-        const t = { nombre, ini, fin, pausaIni: null, pausaFin: null };
+        const t = { nombre, ini, fin, pausaIni: null, pausaFin: null, partida: esJornadaPartida(r) };
         if (r.pausa) {
             let p = timeToMins(r.pausa.inicio);
             if (p < ini) p += 1440;
@@ -58,16 +58,17 @@ export const evaluarCoberturaDelDia = (dNum, horarios, turnos, ventasDelDia) => 
     // Cuántas personas hay ACTIVAS (dentro del turno y fuera de su pausa) en un
     // minuto dado, y quiénes están comiendo.
     const enElMinuto = (m) => {
-        const activos = [], comiendo = [];
+        const activos = [], comiendo = [], enPausaLarga = [];
         for (const t of tramos) {
             for (const desfase of [0, 1440]) {       // el tramo puede haber cruzado
                 const mm = m + desfase;
                 if (mm < t.ini || mm >= t.fin) continue;
-                if (t.pausaIni !== null && mm >= t.pausaIni && mm < t.pausaFin) comiendo.push(t.nombre);
-                else activos.push(t.nombre);
+                if (t.pausaIni !== null && mm >= t.pausaIni && mm < t.pausaFin) {
+                    (t.partida ? enPausaLarga : comiendo).push(t.nombre);
+                } else activos.push(t.nombre);
             }
         }
-        return { activos, comiendo };
+        return { activos, comiendo, enPausaLarga };
     };
 
     // Los bordes: sólo ahí puede cambiar la cuenta. Con 10 personas son ~40
@@ -101,9 +102,22 @@ export const evaluarCoberturaDelDia = (dNum, horarios, turnos, ventasDelDia) => 
         const desde = instantes[i];
         const hasta = i + 1 < instantes.length ? instantes[i + 1] : 1440;
         if (hasta <= desde) continue;
-        const { activos, comiendo } = enElMinuto(desde);
-        if (comiendo.length === 0) continue;
+        const { activos, comiendo, enPausaLarga } = enElMinuto(desde);
+        if (comiendo.length === 0 && enPausaLarga.length === 0) continue;
         const duracion = hasta - desde;
+
+        // La pausa de una jornada partida (2026-11-23) no es un almuerzo que se
+        // pueda escalonar: es el horario pactado. Si deja la sucursal vacía se
+        // dice igual, pero sin proponer moverla.
+        if (comiendo.length === 0) {
+            if (activos.length === 0) {
+                avisos.push({
+                    tipo: 'danger',
+                    texto: `La pausa de ${formatNames(new Set(enPausaLarga))} a las ${formatMins12h(desde)} deja la sucursal SIN NADIE por ${duracion} min.`,
+                });
+            }
+            continue;
+        }
 
         if (activos.length === 0) {
             avisos.push({

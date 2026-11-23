@@ -1,13 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 import {
-  CST_OFFSET_MS, LUNCH_OUT, LUNCH_IN,
-  toMinutes, calcBreakMinutes, splitNocturnal, getWorkSegments, cstTimeToUTC, mondayOfWeek, minutosDeTardanza,
+  CST_OFFSET_MS, mondayOfWeek,
+  consolidarDia, turnoEnInstantes, type MarcaConDetalle,
 } from "../_shared/tiempoTrabajado.ts";
-
-// Punch types stored in the attendance table
-const ENTRY_TYPES = new Set(['PUNCH_IN', 'IN', 'IN_EARLY', 'IN_EXTRA']);
-const EXIT_TYPES  = new Set(['PUNCH_OUT', 'OUT', 'OUT_LATE', 'OUT_EARLY', 'OUT_BUSINESS', 'OUT_EXTRA']);
 
 // La matemática pura (descansos, reparto nocturno, tramos, tardanza) vive en
 // `_shared/tiempoTrabajado.ts`, con pruebas, y la pantalla de auditoría usa la
@@ -83,19 +79,15 @@ Deno.serve(async (req) => {
           .select('employee_id, schedule_data')
           .eq('week_start_date', weekStart)
           .eq('status', 'PUBLISHED'),
-        supabase.from('shifts').select('id, start_time, end_time'),
+        supabase.from('shifts').select('id, start_time, end_time, lunch_start, lunch_minutes'),
       ]);
     if (rosterErr) throw rosterErr;
     if (shiftErr)  throw shiftErr;
 
-    // Build shift lookup: id → { start: 'HH:MM', end: 'HH:MM' }
-    const shiftMap = new Map<number, { start: string; end: string }>();
-    for (const s of shiftsData || []) {
-      shiftMap.set(s.id, {
-        start: String(s.start_time).substring(0, 5),
-        end:   String(s.end_time).substring(0, 5),
-      });
-    }
+    // El catálogo tal cual, para `turno_del_dia` (lee start_time, end_time,
+    // lunch_start y lunch_minutes del turno).
+    const shiftMap = new Map<number, Record<string, unknown>>();
+    for (const s of shiftsData || []) shiftMap.set(s.id, s as Record<string, unknown>);
 
     // 3. Load per-employee exceptions for workDate.
     const rosterEmpIds = (rosters || []).map(r => String(r.employee_id));
@@ -181,7 +173,7 @@ Deno.serve(async (req) => {
     const ventanaFin  = new Date(new Date(dayEnd).getTime() + 8 * 3600000).toISOString();
     const { data: punches, error: punchErr } = await supabase
       .from('attendance')
-      .select('employee_id, type, timestamp')
+      .select('employee_id, type, timestamp, details')
       .gte('timestamp', dayStart)
       .lte('timestamp', ventanaFin)
       .order('timestamp', { ascending: true });
@@ -189,7 +181,7 @@ Deno.serve(async (req) => {
     const finDelDia = new Date(dayEnd).getTime();
 
     // Index punches by employee_id
-    const punchMap = new Map<string, { type: string; timestamp: string }[]>();
+    const punchMap = new Map<string, MarcaConDetalle[]>();
     for (const p of punches || []) {
       const key = String(p.employee_id);
       if (!punchMap.has(key)) punchMap.set(key, []);
@@ -253,74 +245,51 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Resolve scheduled start/end
-      // `||` y no `??`, como el canónico: un `customStart: ""` le ganaba al
-      // turno del catálogo y dejaba el día sin horario de referencia (ni
-      // tardanza ni horas extra). Las horas propias de un día LIBRE no cuentan.
-      const dayStart = isOffInRoster ? null : (dayData?.customStart || null);
-      const dayEnd   = isOffInRoster ? null : (dayData?.customEnd   || null);
-      let scheduledStart: string | null = exception?.customStart || dayStart;
-      let scheduledEnd:   string | null = exception?.customEnd   || dayEnd;
-
+      // El horario del día lo resuelve EL canónico, `public.turno_del_dia`
+      // (2026-11-23): hasta hoy esto leía customStart/customEnd/shiftId a mano
+      // y nunca leía la pausa, así que el tope era fin − inicio (9 h en un
+      // turno de 8 con almuerzo; 12 h en la jornada partida).
+      // La excepción del día (Talento Humano) manda sobre las horas y la pausa.
       const shiftId = (!isOffInRoster && rawShiftId != null && rawShiftId !== '')
         ? parseInt(String(rawShiftId), 10)
         : null;
-
-      if ((!scheduledStart || !scheduledEnd) && shiftId !== null && !isNaN(shiftId)) {
-        const shift = shiftMap.get(shiftId);
-        if (shift) {
-          scheduledStart = scheduledStart || shift.start;
-          scheduledEnd   = scheduledEnd   || shift.end;
-        }
+      let diaParaResolver: Record<string, unknown> | null = isOffInRoster ? null : { ...(dayData as Record<string, unknown>) };
+      if (exception?.customStart && exception?.customEnd) {
+        diaParaResolver = {
+          ...(diaParaResolver || {}),
+          isOff: false, isOffDay: false,
+          customStart: exception.customStart, customEnd: exception.customEnd,
+          ...(exception.lunchTime ? { hasLunch: true, lunchStart: exception.lunchTime } : (isOffInRoster ? { hasLunch: false } : {})),
+          ...(exception.lactationTime ? { hasLactation: true, lactationStart: exception.lactationTime } : {}),
+        };
       }
-
-      // Entrada igual a salida no es una jornada (canónico): antes daba un
-      // turno de 24 h.
-      if (scheduledStart && scheduledEnd && toMinutes(scheduledStart) === toMinutes(scheduledEnd)) {
-        scheduledStart = null;
-        scheduledEnd   = null;
+      let resuelto: Record<string, unknown> | null = null;
+      if (diaParaResolver) {
+        const { data: r, error: rErr } = await supabase.rpc('turno_del_dia', {
+          p_dia: diaParaResolver,
+          p_turno: shiftId !== null && !isNaN(shiftId) ? (shiftMap.get(shiftId) ?? null) : null,
+        });
+        if (rErr) throw new Error(`turno_del_dia(${empId}): ${rErr.message}`);
+        resuelto = r as Record<string, unknown>;
       }
+      const turno = turnoEnInstantes(workDate, resuelto, diaParaResolver);
+      const scheduledStart = turno ? String(resuelto!.inicio) : null;
+      const scheduledEnd   = turno ? String(resuelto!.fin) : null;
 
       const empPunches = punchMap.get(empId) || [];
+      const ventanaDelDia = { inicioDelDia: new Date(dayStart), finDelDia: new Date(finDelDia) };
 
-      // La ENTRADA sólo puede estar dentro del día; la SALIDA puede caer
-      // después de la medianoche si el turno cruza. Sin esta distinción, la
-      // ventana ampliada tomaría un marcaje de madrugada como la entrada del
-      // día siguiente.
-      const entryPunch = empPunches.find(
-        p => ENTRY_TYPES.has(p.type) && new Date(p.timestamp).getTime() <= finDelDia,
-      );
-      const exitPunch  = entryPunch
-        ? [...empPunches].reverse().find(
-            p => EXIT_TYPES.has(p.type) &&
-                 new Date(p.timestamp).getTime() > new Date(entryPunch.timestamp).getTime(),
-          )
-        : null;
+      let dia = consolidarDia(empPunches, { ...ventanaDelDia, turno });
+      let autoPunched = false;
 
-      const isAbsent  = !entryPunch;
-      let actualStart = entryPunch ? new Date(entryPunch.timestamp) : null;
-      let actualEnd   = exitPunch  ? new Date(exitPunch.timestamp)  : null;
-
-      let regularHours         = 0;
-      let overtimeHours        = 0;
-      let nocturnalHours       = 0;
-      let nocturnalOTHours     = 0;
-      let lateMinutes          = 0;
-      let autoPunched          = false;
-
-      // Auto-punch: employee checked in but never out
+      // Terminó dentro de un tramo: se le genera la salida a la hora de fin del
+      // horario (como siempre), y queda para revisión de Talento Humano.
       // A un suspendido NO se le genera la salida. Marcar no puede —el kiosco lo
       // frena— así que si llegó hasta acá con una entrada es porque marcó ANTES
       // de que se registrara la sanción; fabricarle además una salida
       // convertiría ese resto en una jornada completa que nadie trabajó.
-      if (actualStart && !actualEnd && scheduledEnd && !suspendidos.has(empId)) {
-        let autoEndTime = cstTimeToUTC(workDate, scheduledEnd);
-        // Turno que cruza la medianoche: el fin es del día siguiente. Sin esto
-        // la salida generada quedaba ANTES de la entrada y la jornada daba
-        // negativa.
-        if (scheduledStart && toMinutes(scheduledEnd) <= toMinutes(scheduledStart)) {
-          autoEndTime = new Date(autoEndTime.getTime() + 24 * 3600000);
-        }
+      if (dia.abierta && turno && !suspendidos.has(empId)) {
+        const autoEndTime = turno.fin;
         const punchType   = isOffInRoster ? 'OUT_EXTRA' : 'OUT';
         const { error: autoErr } = await supabase.from('attendance').insert({
           employee_id: empId,
@@ -334,7 +303,7 @@ Deno.serve(async (req) => {
           },
         });
         if (!autoErr) {
-          actualEnd   = autoEndTime;
+          dia = consolidarDia(empPunches, { ...ventanaDelDia, turno, salidaAutomatica: autoEndTime });
           autoPunched = true;
           console.log(`Auto-punch ${punchType} for ${empId} at ${scheduledEnd} CST on ${workDate}${exception ? ' [exception]' : ''}`);
         } else {
@@ -342,64 +311,17 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (actualStart && actualEnd) {
-        const grossMins  = (actualEnd.getTime() - actualStart.getTime()) / 60000;
-        const lunchMins  = calcBreakMinutes(empPunches, LUNCH_OUT,  LUNCH_IN);
-        // La lactancia NO se resta: es tiempo trabajado y pagado (RIT Art. 61).
-        const netMins    = Math.max(0, grossMins - lunchMins);
-
-        // Un turno que cruza la medianoche (22:00→06:00) daba −960 minutos, y
-        // con eso `regularHours` salía NEGATIVA y todo lo trabajado se
-        // contabilizaba como tiempo extra. Hoy ningún turno cruza —el que más
-        // tarde termina es a las 22:00— pero el día que se cree uno, esto lo
-        // resuelve solo en vez de facturar mal una quincena.
-        //
-        // Sin horario de referencia (quien marcó sin horario cargado) el turno
-        // es lo que efectivamente trabajó: se le acreditan sus horas y no se le
-        // inventa tiempo extra.
-        let shiftMins = netMins;
-        if (scheduledStart && scheduledEnd) {
-          shiftMins = toMinutes(scheduledEnd) - toMinutes(scheduledStart);
-          if (shiftMins <= 0) shiftMins += 24 * 60;
-        }
-
-        regularHours  = Math.min(netMins, shiftMins) / 60;
-        overtimeHours = Math.max(0, netMins - shiftMins) / 60;
-
-        if (scheduledStart) {
-          lateMinutes = minutosDeTardanza(actualStart, cstTimeToUTC(workDate, scheduledStart));
-        }
-
-        // ── Nocturnal split (Art. 168 & 169, Código de Trabajo SV) ──────────
-        // Actual nocturnal: sum nocturnal mins across all real work segments
-        const workSegments = getWorkSegments(empPunches, actualStart, actualEnd);
-        let actualNocturnalMins = 0;
-        for (const seg of workSegments) {
-          actualNocturnalMins += splitNocturnal(seg.start, seg.end).nocturnalMins;
-        }
-
-        // Scheduled nocturnal: how many nocturnal mins are in the planned shift
-        let scheduledNocturnalMins = 0;
-        if (scheduledStart && scheduledEnd) {
-          const schedStartUTC = cstTimeToUTC(workDate, scheduledStart);
-          let   schedEndUTC   = cstTimeToUTC(workDate, scheduledEnd);
-          // Mismo cruce de medianoche que arriba: con el fin antes del inicio,
-          // `splitNocturnal` devolvía 0 y la parte nocturna del turno planeado
-          // desaparecía, mandando TODO lo nocturno real a extra nocturna.
-          if (schedEndUTC.getTime() <= schedStartUTC.getTime()) {
-            schedEndUTC = new Date(schedEndUTC.getTime() + 24 * 3600000);
-          }
-          scheduledNocturnalMins = splitNocturnal(schedStartUTC, schedEndUTC).nocturnalMins;
-        }
-
-        // Regular nocturnal = nocturnal hours within the planned shift cap
-        // OT nocturnal = nocturnal hours beyond the planned shift
-        const nocturnalRegularMins = Math.min(actualNocturnalMins, scheduledNocturnalMins);
-        const nocturnalOTMins      = Math.max(0, actualNocturnalMins - scheduledNocturnalMins);
-
-        nocturnalHours   = parseFloat((nocturnalRegularMins / 60).toFixed(2));
-        nocturnalOTHours = parseFloat((nocturnalOTMins      / 60).toFixed(2));
-      }
+      // Ausente = ninguna marca. Quien olvidó la entrada pero marcó otras
+      // cosas NO es ausente (no se le descuenta el día): queda INCOMPLETE.
+      const isAbsent    = dia.sinMarcas;
+      const actualStart = dia.inicioReal;
+      const actualEnd   = dia.finReal;
+      const regularHours     = dia.minutosRegulares / 60;
+      const overtimeHours    = dia.minutosExtra / 60;
+      const nocturnalHours   = parseFloat((dia.minutosNocturnos / 60).toFixed(2));
+      const nocturnalOTHours = parseFloat((dia.minutosNocturnosExtra / 60).toFixed(2));
+      const lateMinutes      = dia.minutosTardanza;
+      if (dia.pausaSinMarcar) console.log(`Pausa sin marcar para ${empId} el ${workDate}: se descontó la del horario`);
 
       // Upsert (id existente resuelto desde el Map pre-cargado)
       const existingId = timesheetIdMap.get(empId);
@@ -425,7 +347,9 @@ Deno.serve(async (req) => {
                                      ? 'SUSPENSION'
                                      : (isAbsent ? (absenceTypeMap.get(empId) || null) : null),
         is_holiday_worked:         !isAbsent && isHoliday,
-        status:                    autoPunched ? 'AUTO_PUNCHED' : 'PENDING',
+        // INCOMPLETE gana: una salida generada sobre un día al que además le
+        // falta la entrada sigue siendo un día por revisar.
+        status:                    dia.incompleta ? 'INCOMPLETE' : (autoPunched ? 'AUTO_PUNCHED' : 'PENDING'),
         updated_at:                new Date().toISOString(),
       };
 

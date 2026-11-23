@@ -3980,6 +3980,11 @@
    "area": "sucursales",
    "por": "llamada"
   },
+  "hora_en_pausa": {
+   "area": "horarios",
+   "por": "a mano",
+   "manual": true
+  },
   "horario_de_sala": {
    "area": "app-clientes",
    "por": "código"

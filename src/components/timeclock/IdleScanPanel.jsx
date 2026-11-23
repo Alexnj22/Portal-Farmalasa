@@ -62,7 +62,8 @@ export default function IdleScanPanel({
             <div className="flex items-center gap-2 mb-2">
               <Bell size={13} className="text-chart-4-text shrink-0" strokeWidth={2.5} />
               <span className="text-caption font-black uppercase tracking-widest text-chart-4-text">
-                Hora de Almuerzo
+                {/* La jornada partida sale a su casa, no a comer (2026-11-23). */}
+                {lunchAlerts.every(a => a.esJornadaPartida) ? 'Hora de la pausa' : 'Hora de almuerzo'}
               </span>
             </div>
             <div className="flex flex-col gap-1.5">

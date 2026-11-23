@@ -1308,7 +1308,7 @@ const submitEarlyExit = useCallback((e) => {
             const diffMins = Math.floor((time - lunchD) / 60000);
             // Alert window: 10 min before until 60 min after scheduled lunch
             if (diffMins >= -10 && diffMins <= 60) {
-                alerts.push({ employee: emp, lunchTime, minsOverdue: Math.max(0, diffMins) });
+                alerts.push({ employee: emp, lunchTime, minsOverdue: Math.max(0, diffMins), esJornadaPartida: Boolean(cfg?.esJornadaPartida) });
             }
         }
         return alerts;

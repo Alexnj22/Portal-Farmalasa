@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1594.0 — La jornada partida: la pausa del día, de cualquier duración
+
+Aprobado por el usuario el 2026-11-23: «debe estar preparado el portal ante
+cualquier [horario] de esos». La jornada partida (7–12 y 16–19) se guarda como
+7–19 con `lunchMinutes` 240; en producción ya hay 8 días publicados así
+(Salud 4, 1 persona, pausas de 180 y 300 min). Nada se cobró mal: `attendance`,
+`timesheets` y `payroll_entries` tienen 0 filas y el cron de consolidación está
+apagado (no se encendió).
+
+- **Kiosco y asistencia**: el regreso de la pausa se mide contra el FIN de la
+  pausa del horario (o la pausa completa desde que salió, si salió tarde), no
+  contra 60 min fijos. `getTodayScheduleConfig` devuelve las duraciones de
+  `resolverTurnoDelDia`; la lactancia partida (30 + 30) ofrece las dos salidas.
+  En la jornada partida el kiosco dice «Pausa», no «Buen provecho».
+- **`empleados_en_turno()`**: durante la pausa la persona está fuera de turno
+  (`hora_en_pausa`). `turno_del_dia` devuelve además `pausa_minutos`
+  (migración `20261123225739`).
+- **`consolidate-timesheets`** resuelve el día con `turno_del_dia` y suma
+  TRAMOS (`consolidarDia` en `_shared/tiempoTrabajado.ts`): una pausa de 4 h
+  marcada como salida y entrada ya no da 12 h. El tope de horas regulares son
+  las horas PAGADAS del horario, nunca más de 8 diurnas ni 7 nocturnas (RIT
+  Art. 16). La lactancia cuenta como trabajada (RIT Art. 61), también la pegada
+  a la entrada, la salida o el almuerzo. Quien olvidó la entrada pero marcó
+  otras cosas queda «Marcación incompleta» (`timesheets.status = 'INCOMPLETE'`),
+  no ausente con el día descontado. Pausa del horario sin marcar: se descuenta
+  la programada (salvo «Omisión de almuerzo»).
+- **Cobertura y Saly**: la pausa de una jornada partida no se propone
+  escalonar; si deja la sucursal sin nadie, se dice «la pausa de …».
+- Pruebas: `tests/unit/jornadaPartida.test.js` (día normal, pausa de 4 h,
+  lactancia 30 + 30, entrada olvidada, nocturno), con la respuesta de
+  `turno_del_dia` medida en el branch de pruebas enfrentada al gemelo de JS.
+
+Gemelo: time_audit — en `apps/mobile/app/auditoria-de-tiempos.js` (la misma marca «Marcación incompleta»). El kiosco corre en la tableta de la sala y no tiene gemelo; la cobertura y el estado de asistencia viven en el núcleo y la app los lee igual.
+
 ## v2.1593.0 — La lactancia sale de la maternidad
 
 RIT Cap. X, Arts. 59–61 (aprobado por el usuario el 2026-11-23).

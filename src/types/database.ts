@@ -37939,6 +37939,10 @@ export type Database = {
       }
       hora_12: { Args: { p_hora: string }; Returns: string }
       hora_del_horario: { Args: { p_texto: string }; Returns: string }
+      hora_en_pausa: {
+        Args: { p_hora: string; p_turno: Json }
+        Returns: boolean
+      }
       horario_de_sala: {
         Args: { p_branch: number; p_fecha: string }
         Returns: {

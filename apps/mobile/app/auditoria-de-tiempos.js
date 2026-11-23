@@ -52,6 +52,8 @@ function senales(a) {
   const s = [];
   if (a.ts?.is_absent && a.ts?.absence_type === 'VACATION') s.push(['Vacación', MARCA.verde]);
   if (a.ts?.is_absent && a.ts?.absence_type === 'DISABILITY') s.push(['Incapacidad', MARCA.rojo]);
+  // Falta una marca pero hay otras: no es ausencia, lo revisa Talento Humano.
+  if (a.ts?.status === 'INCOMPLETE') s.push(['Marcación incompleta', MARCA.ambar]);
   if (!a.isOff && !a.isFuture && a.inconsistencies.length && !a.ts?.absence_type) s.push([`${a.inconsistencies.length} falta${a.inconsistencies.length > 1 ? 'n' : ''}`, MARCA.rojo]);
   if (a.lateMin > 0) s.push([`${a.lateMin} min tarde`, MARCA.ambar]);
   if (a.isAutoDay) s.push(['Auto-marcado', MARCA.violeta]);

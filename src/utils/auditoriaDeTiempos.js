@@ -8,6 +8,7 @@
  */
 import { buildCSTDate, getCSTDateStr, minutosDeTardanza } from '../data/attendanceAudit';
 import { isAutoPunch, isEditedPunch, isPendingPunch } from './quincena';
+import { MINUTOS_DE_PAUSA } from './turnoDelDia';
 
 export const ROTULO_MARCA = {
     IN: 'Entrada', IN_EARLY: 'Entrada Anticipada', IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
@@ -26,11 +27,15 @@ export function marcasEsperadas(dateStr, shift, dayConfig) {
     const shiftStart = buildCSTDate(dateStr, shift.start_time?.substring(0, 5) || shift.start);
     const shiftEnd = buildCSTDate(dateStr, shift.end_time?.substring(0, 5) || shift.end);
     const lunchStart = dayConfig?.lunchStart ? buildCSTDate(dateStr, dayConfig.lunchStart) : null;
-    const lunchEnd = lunchStart ? new Date(lunchStart.getTime() + 3600000) : null;
+    // La duración de la pausa es la del HORARIO del día (4 h en la jornada
+    // partida), no una hora fija (2026-11-23).
+    const minutos = Number(dayConfig?.lunchMinutes ?? shift?.lunch_minutes) || MINUTOS_DE_PAUSA;
+    const lunchEnd = lunchStart ? new Date(lunchStart.getTime() + minutos * 60000) : null;
+    const partida = minutos > MINUTOS_DE_PAUSA;
     const result = [{ type: 'IN', label: 'Entrada', expected: shiftStart }];
     if (lunchStart) {
-        result.push({ type: 'OUT_LUNCH', label: 'Salida almuerzo', expected: lunchStart });
-        result.push({ type: 'IN_LUNCH', label: 'Regreso almuerzo', expected: lunchEnd });
+        result.push({ type: 'OUT_LUNCH', label: partida ? 'Salida a la pausa' : 'Salida almuerzo', expected: lunchStart });
+        result.push({ type: 'IN_LUNCH', label: partida ? 'Regreso de la pausa' : 'Regreso almuerzo', expected: lunchEnd });
     }
     result.push({ type: 'OUT', label: 'Salida', expected: shiftEnd });
     return result;

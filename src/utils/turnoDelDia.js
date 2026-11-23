@@ -76,6 +76,21 @@ export const aHora = (mins) => {
     return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 
+/** La jornada partida («7 a 12 y de 4 a 7») se guarda como UNA jornada con una
+ *  pausa larga: lo que la distingue de un almuerzo es que la pausa pasa de la
+ *  hora. Mismo criterio que el editor del 2.0. */
+export const esJornadaPartida = (resuelto) =>
+    Boolean(resuelto?.pausa && resuelto.pausa.minutos > MINUTOS_DE_PAUSA);
+
+/** Cuándo termina la pausa del día, en minutos desde la medianoche del inicio
+ *  de la jornada (puede pasar de 1440). `null` si el día no tiene pausa. */
+export const finDeLaPausa = (resuelto) => {
+    if (!resuelto?.pausa) return null;
+    let p = aMinutos(resuelto.pausa.inicio);
+    if (p < aMinutos(resuelto.inicio)) p += 1440;
+    return p + resuelto.pausa.minutos;
+};
+
 /** La hora de un turno puede venir como `start_time` ("07:00:00") o `start`
  *  ("07:00"), según por dónde entró a memoria. Las dos formas son la misma. */
 const horaDelTurno = (turno, extremo) => {
@@ -190,7 +205,14 @@ export function resolverTurnoDelDia(datosDelDia, turnos) {
 
     const minutosBrutos  = fMin - iMin;
     const minutosPagados = minutosBrutos - (pausa?.minutos || 0);
-    const minutosNocturnos = minutosNocturnosDe(iMin, fMin);
+    // La pausa no es tiempo trabajado: si cae después de las 7 p. m. (una
+    // jornada partida que vuelve de noche) tampoco cuenta como nocturna.
+    let minutosNocturnos = minutosNocturnosDe(iMin, fMin);
+    if (pausa) {
+        let p = aMinutos(pausa.inicio);
+        if (p < iMin) p += 1440;
+        minutosNocturnos = Math.max(0, minutosNocturnos - minutosNocturnosDe(p, Math.min(p + pausa.minutos, fMin)));
+    }
 
     return {
         trabaja: true,
@@ -206,6 +228,19 @@ export function resolverTurnoDelDia(datosDelDia, turnos) {
         cruzaMedianoche,
     };
 }
+
+/** El regreso esperado de la pausa: el fin de la pausa del horario (más la
+ *    lactancia pegada), o la pausa completa desde que salió si salió más tarde.
+ *    Nunca 60 min fijos (2026-11-23, jornada partida). */
+export const regresoEsperadoDeLaPausa = ({ lunchEndD, extraMinutos = 0, salida, minutosFuera }) => {
+    const finProgramado = lunchEndD ? new Date(new Date(lunchEndD).getTime() + extraMinutos * 60000) : null;
+    const desdeLaSalida = salida
+        ? new Date(new Date(salida.timestamp).getTime() + minutosFuera * 60000)
+        : null;
+    if (finProgramado && desdeLaSalida) return finProgramado > desdeLaSalida ? finProgramado : desdeLaSalida;
+    return finProgramado || desdeLaSalida;
+};
+
 
 /** Minutos de un tramo que caen en la franja nocturna (19:00–06:00).
  *  `fin` puede pasar de 1440 cuando la jornada cruza la medianoche.
@@ -236,7 +271,7 @@ export function tramosDeLaJornada(resuelto) {
     if (resuelto.pausa) {
         let s = aMinutos(resuelto.pausa.inicio);
         if (s < inicio) s += 1440;
-        cortes.push({ tipo: 'pausa', inicio: s, fin: s + resuelto.pausa.minutos, etiqueta: 'almuerzo' });
+        cortes.push({ tipo: 'pausa', inicio: s, fin: s + resuelto.pausa.minutos, etiqueta: esJornadaPartida(resuelto) ? 'pausa' : 'almuerzo' });
     }
     for (const l of [resuelto.lactancia, resuelto.lactancia2]) {
         if (!l) continue;

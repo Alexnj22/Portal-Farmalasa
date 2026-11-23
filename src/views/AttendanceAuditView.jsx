@@ -362,6 +362,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <Badge variant="danger" size="sm">Incapacidad</Badge>}
             {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <Badge variant="success" size="sm">Permiso</Badge>}
             {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <Badge size="sm">Ausente</Badge>}
+            {/* Falta una marca (p. ej. la entrada) pero hay otras: no es ausencia, lo revisa Talento Humano. */}
+            {ts?.status === 'INCOMPLETE' && <Badge variant="warning" size="sm">Marcación incompleta</Badge>}
           </div>
           {!isOff && shift && (
             <p className="text-caption font-bold text-content-3">

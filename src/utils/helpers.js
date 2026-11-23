@@ -1,4 +1,4 @@
-import { claveDeDia, resolverTurnoDelDia } from './turnoDelDia';
+import { claveDeDia, resolverTurnoDelDia, esJornadaPartida } from './turnoDelDia';
 import { hora12 } from './hora';
 import { fechaNumerica, diaSV } from './fecha';
 
@@ -153,6 +153,14 @@ export const getTodayScheduleConfig = (employee, shifts, specificDateObj = new D
         },
         lunchTime:     resuelto.pausa?.inicio ?? null,
         lactationTime: resuelto.lactancia?.inicio ?? null,
+        // 2026-11-23 · cuánto dura cada pausa SEGÚN EL HORARIO. El kiosco y el
+        // estado de asistencia medían el regreso a +60 min fijos: en la jornada
+        // partida (pausa de 4 h) volver a la hora marcaba 3 h de atraso.
+        lunchMinutes:       resuelto.pausa?.minutos ?? null,
+        esJornadaPartida:   esJornadaPartida(resuelto),
+        lactationMinutes:   resuelto.lactancia?.minutos ?? null,
+        lactation2Time:     resuelto.lactancia2?.inicio ?? null,
+        lactation2Minutes:  resuelto.lactancia2?.minutos ?? null,
     };
 };
 

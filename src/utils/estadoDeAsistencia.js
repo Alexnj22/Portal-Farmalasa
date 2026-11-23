@@ -10,6 +10,7 @@
 import { getTodayScheduleConfig } from './helpers';
 import { toLocalISODate } from './timeClock.helpers';
 import { hora12 } from './hora';
+import { MINUTOS_DE_PAUSA, regresoEsperadoDeLaPausa } from './turnoDelDia';
 
 export const COLUMNAS_DE_ASISTENCIA = [
     { id: 'working',  label: 'Trabajando',         estados: ['WORKING', 'EXTRA_WORKING'] },
@@ -57,11 +58,18 @@ export function estadoDeAsistencia(emp, shifts, currentTime, todayStr = toLocalI
 
     const shiftStartD = config?.shift ? buildDateFromTime(config.shift.start, currentTime) : null;
 
+    // Las duraciones salen del horario del día (`getTodayScheduleConfig` →
+    // `resolverTurnoDelDia`), no de 60 min fijos: con la jornada partida, a la
+    // 1:01 la persona salía «tarde» de una pausa que dura hasta las 4.
+    const minutosDePausa = Number(config?.lunchMinutes) || MINUTOS_DE_PAUSA;
+    const minutosDeLactancia = Number(config?.lactationMinutes) || MINUTOS_DE_PAUSA;
     const lunchStartD = config?.lunchTime ? buildDateFromTime(config.lunchTime, currentTime) : null;
-    const lunchEndD = lunchStartD ? new Date(lunchStartD.getTime() + 60 * 60000) : null;
+    const lunchEndD = lunchStartD ? new Date(lunchStartD.getTime() + minutosDePausa * 60000) : null;
 
     const lactStartD = config?.lactationTime ? buildDateFromTime(config.lactationTime, currentTime) : null;
-    const lactEndD = lactStartD ? new Date(lactStartD.getTime() + 60 * 60000) : null;
+    const lactEndD = lactStartD ? new Date(lactStartD.getTime() + minutosDeLactancia * 60000) : null;
+    const lact2StartD = config?.lactation2Time ? buildDateFromTime(config.lactation2Time, currentTime) : null;
+    const minutosDeLactancia2 = Number(config?.lactation2Minutes) || MINUTOS_DE_PAUSA / 2;
 
     const lastPunch = punches.length > 0 ? punches[punches.length - 1] : null;
 
@@ -90,8 +98,10 @@ export function estadoDeAsistencia(emp, shifts, currentTime, todayStr = toLocalI
           if (punchOutLunch) {
             const isGluedToLunch =
               lactStartD && lunchEndD && lactStartD.getTime() === lunchEndD.getTime();
-            const minsAllowed = isGluedToLunch ? 120 : 60;
-            const expectedReturn = new Date(new Date(punchOutLunch.timestamp).getTime() + minsAllowed * 60000);
+            const extra = isGluedToLunch ? minutosDeLactancia : 0;
+            const expectedReturn = regresoEsperadoDeLaPausa({
+              lunchEndD, extraMinutos: extra, salida: punchOutLunch, minutosFuera: minutosDePausa + extra,
+            });
             isLate = checkLateness(new Date(lastPunch.timestamp), expectedReturn);
           }
         }
@@ -99,7 +109,12 @@ export function estadoDeAsistencia(emp, shifts, currentTime, todayStr = toLocalI
         if (lastType === "IN_LACTATION") {
           const punchOutLact = [...punches].reverse().find((p) => p.type === "OUT_LACTATION");
           if (punchOutLact) {
-            const expectedReturn = new Date(new Date(punchOutLact.timestamp).getTime() + 60 * 60000);
+            // Lactancia partida: la que está más cerca de la salida manda.
+            const salida = new Date(punchOutLact.timestamp).getTime();
+            const usaLaSegunda = lact2StartD && lactStartD
+              && Math.abs(salida - lact2StartD.getTime()) < Math.abs(salida - lactStartD.getTime());
+            const minutos = usaLaSegunda ? minutosDeLactancia2 : minutosDeLactancia;
+            const expectedReturn = new Date(salida + minutos * 60000);
             isLate = checkLateness(new Date(lastPunch.timestamp), expectedReturn);
           }
         }

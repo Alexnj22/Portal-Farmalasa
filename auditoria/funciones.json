@@ -2579,6 +2579,11 @@
    "area": "facturacion-dte",
    "por": "código"
   },
+  "empleado_es_de_administracion": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
+  },
   "empleado_no_disponible": {
    "area": "solicitudes",
    "por": "código"
@@ -4343,6 +4348,11 @@
   "lock_module": {
    "area": "permisos",
    "por": "código"
+  },
+  "login_intento_reservar": {
+   "area": "acceso",
+   "por": "manual",
+   "manual": true
   },
   "lotes_de_renglon_de_traslado": {
    "area": "plataforma",

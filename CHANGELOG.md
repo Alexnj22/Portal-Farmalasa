@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.10 — Las cajas de impresión guardan su clave como hash
+
+`impresion_dispositivos.token` era un uuid en claro que nunca vence: con él
+cualquiera reclamaba los tickets de una sucursal y los daba por impresos. Mismo
+arreglo que el kiosco (v2.1592.7), en dos pasos compatibles:
+
+- **Paso 1** (`20261123155525_impresion_token_hash_paso_1`): columna
+  `token_hash` (SHA-256 con `kiosco_token_hash`), llenada en la misma
+  transacción que cambia `reclamar_impresion` y `confirmar_impresion` a
+  `impresion_token_ok`, que todavía aceptaba el plano en una fila sin hash.
+- Verificado en producción antes del paso 2: las 6 cajas activas siguieron
+  latiendo (`ultimo_latido` posterior a la migración, que sólo se escribe con el
+  token aceptado), `reclamar_impresion` sólo con 200 en `edge_logs` y nada en
+  `postgres_logs`.
+- **Paso 2** (`20261123160034_impresion_token_hash_paso_2`): fuera la columna
+  `token`; `impresion_token_ok` compara sólo el hash. Una caja nueva nace con el
+  hash de un token que nadie conoce y el token de verdad nace al vincularla:
+  `canjear_codigo_de_vinculacion` lo genera, guarda el hash y lo entrega una
+  vez al instalador (`registrar_caja_de_impresion` igual).
+- Los agentes de las sucursales siguen con el MISMO token: no se reinstala nada.
+  El portal nunca mostró el token (la policy no publica la columna), así que la
+  pantalla no cambia.
+- Probado antes en el entorno de pruebas con `execute_sql`: una caja creada
+  antes de migrar sigue reclamando y confirmando, un token falso da «Caja no
+  reconocida», y un alta nueva (por código y por registro) reclama con su token.
+
+Gemelo: impresion — sólo base y tipos, sin pantalla en ningún lado.
+
 ## v2.1592.9 — Vender: el aviso de existencia reparte lo que falta y el pedido abre repartido
 
 El aviso de existencia de Vender decía «Deja 1 y pide el resto a Salud 2 (1 u.)

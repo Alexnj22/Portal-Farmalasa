@@ -17587,7 +17587,7 @@ export type Database = {
           id: string
           impresora: string
           nombre: string
-          token: string
+          token_hash: string
           ultimo_latido: string | null
           vinculacion_expira: string | null
           vinculada_at: string | null
@@ -17604,7 +17604,7 @@ export type Database = {
           id?: string
           impresora?: string
           nombre: string
-          token?: string
+          token_hash?: string
           ultimo_latido?: string | null
           vinculacion_expira?: string | null
           vinculada_at?: string | null
@@ -17621,7 +17621,7 @@ export type Database = {
           id?: string
           impresora?: string
           nombre?: string
-          token?: string
+          token_hash?: string
           ultimo_latido?: string | null
           vinculacion_expira?: string | null
           vinculada_at?: string | null
@@ -37961,6 +37961,10 @@ export type Database = {
       ignorar_renglon_pendiente: {
         Args: { p_deshacer?: boolean; p_id: number; p_motivo: string }
         Returns: undefined
+      }
+      impresion_token_ok: {
+        Args: { p_dado: string; p_hash: string }
+        Returns: boolean
       }
       incidentes_datos_destinatarios: { Args: never; Returns: string[] }
       incrementar_reanudacion_traslado: {

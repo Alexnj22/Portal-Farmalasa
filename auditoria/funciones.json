@@ -3991,6 +3991,11 @@
    "area": "compras",
    "por": "código"
   },
+  "impresion_token_ok": {
+   "area": "impresion",
+   "por": "manual",
+   "manual": true
+  },
   "incidentes_datos_al_registrar": {
    "area": "datos-personales",
    "por": "manual",

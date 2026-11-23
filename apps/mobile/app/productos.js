@@ -19,7 +19,8 @@
 // «Pérd. <precio especial>», «cambios», «ND» (no devolutivo) y «Receta» —
 // que salen de `fetchIndicadoresDeCatalogo` (núcleo), lo mismo que el portal.
 import { memo, useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, Image, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ScrollView, Text, View } from 'react-native';
+import Miniatura from '../componentes/producto/Miniatura';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -64,7 +65,7 @@ const FilaProducto = memo(function FilaProducto({ p, marcas = SIN_MARCAS }) {
       <Vidrio radio={20} interactivo>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 }}>
           {p.foto_url
-            ? <Image source={{ uri: p.foto_url }} style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#fff' }} resizeMode="contain" />
+            ? <Miniatura uri={p.foto_url} style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#fff' }} />
             : <Chip icono="Pill" color={MARCA.azulClaro} tamano={48} />}
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={{ color: p.activo ? colorSistema.texto : colorSistema.texto2, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{p.nombre}</Text>

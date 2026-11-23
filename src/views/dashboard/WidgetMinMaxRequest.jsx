@@ -18,6 +18,7 @@ import { fetchMinimoDeDespacho } from '@nucleo/data/dispatchRules';
 import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta, solicitudDeMinMax, mensajeDeMinMax } from '@nucleo/utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import { presentacionDominante, equivalenteEnCajas, presentacionesDelProducto, avisoDeEnvioMinMax } from '@nucleo/utils/minmaxSolicitud';
+import FotoMiniatura from '../../components/common/FotoMiniatura';
 
 // La presentación de referencia y su equivalente: núcleo (`minmaxSolicitud`), lo mismo de la app.
 const dominantPres = presentacionDominante;
@@ -184,7 +185,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
         <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={onBack} />
         <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-surface-card-hover border border-divider flex items-center justify-center">
           {product.foto_url
-            ? <img src={product.foto_url} alt="" className="w-full h-full object-contain" />
+            ? <FotoMiniatura src={product.foto_url} lado={40} className="w-full h-full object-contain" />
             : <Package size={16} className="text-content-3" />}
         </div>
         <div className="flex-1 min-w-0">

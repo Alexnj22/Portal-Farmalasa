@@ -18,7 +18,8 @@
 // recuento» del supervisor —a ciegas, sobre lo que tiene diferencia, en orden
 // de estante—; y la hoja compacta entre los papeles.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, Dimensions, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Dimensions, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import Miniatura from '../../componentes/producto/Miniatura';
 import { Presionable as Pressable } from '../../componentes/Tocable';
 import { useBotonFlotante } from '../../componentes/chat/acompanante';
 import ElegirLaboratorio from '../../componentes/conteos/ElegirLaboratorio';
@@ -862,7 +863,7 @@ export default function Conteo() {
               <View key={p.erp_product_id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={20}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4 }}>
-                    {p.foto_url ? <Image source={{ uri: p.foto_url }} style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#fff' }} resizeMode="contain" />
+                    {p.foto_url ? <Miniatura uri={p.foto_url} style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#fff' }} />
                       : <Chip icono="Package" color={MARCA.azulClaro} tamano={40} />}
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{p.product_nombre}</Text>

@@ -6,6 +6,7 @@ import Badge from './Badge';
 import { SkeletonText } from './StateViews';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';
 import AvisoParecidos from './AvisoParecidos';
+import FotoMiniatura from './FotoMiniatura';
 
 // Elegir un producto del catálogo, para un formulario que empieza por ahí.
 //
@@ -126,7 +127,7 @@ export default function BuscadorDeProducto({
                         disabled={!!yaEsta}
                         trailing={yaEsta ? <Badge variant="neutral" size="sm">{yaEsta}</Badge> : undefined}
                         leading={p.foto_url
-                            ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
+                            ? <FotoMiniatura src={p.foto_url} lado={40} className="w-full h-full object-contain" />
                             : <Package size={14} className="text-content-3" strokeWidth={2} />}
                         iconBoxClass="bg-surface-card-hover border-border-card overflow-hidden"
                         className="border-divider bg-surface-card hover:border-brand/40"

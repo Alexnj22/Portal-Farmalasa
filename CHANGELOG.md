@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.17 — Carga más liviana: entrada sin el motor de animación y miniaturas de fotos chicas
+
+Mejoras de tiempo de carga aprobadas el 2026-11-23 (diagnóstico en el plan de
+tiempos de carga, puntos 3 y 8).
+
+- **Entrada −25 kB gzip (340.0 → 314.9 kB, medido con `npm run build`).**
+  `AvisoNovedades.jsx` usaba `motion` (el motor completo) en vez de `m`, y como
+  `AppLayout` lo importa estático, anulaba el `LazyMotion` de `MotionProvider`.
+  Era el único `motion` del cierre de la entrada; `LayoutGroup` no pesa (medido:
+  quitarlo deja la entrada igual).
+- **Miniaturas de productos con la copia chica.** Las miniaturas de 28–48 px
+  bajaban la foto original. Ahora piden `product-photos/chicas/<ruta>` (400 px),
+  la copia que ya se escribe al subir y que usa la app de clientes; si falta,
+  caen a la original. Sin el servidor de imágenes (cobra por foto). Medido en 5
+  fotos de producción: 210 → 91 kB. 1,581 de 1,588 fotos ya tienen copia.
+  Nuevo `src/utils/fotoChica.js` + `FotoMiniatura` (`width`/`height`, `lazy`,
+  `async`) en Productos, Mín·Máx, el buscador de productos, Preventa, Fotos de
+  productos y el widget de Mín·Máx. En la base se sigue guardando la URL de la
+  original.
+- **App del personal, lo mismo:** `componentes/producto/Miniatura.js` (copia
+  chica con caída a la original) en Productos, el conteo y las líneas de
+  Preventa. Y al cambiar la foto de un producto ahora sube también la copia
+  chica (`componentes/producto/fotoChica.js`): antes, si la foto no se
+  recortaba, la copia chica quedaba la de la foto anterior.
+
+Gemelo: overview — el widget de Mín·Máx del Inicio no existe en la app; sí van Productos, conteo y Preventa.
+Gemelo: conteo_inventario — el conteo del portal no muestra fotos de producto.
+
 ## v2.1592.16 — Vence del lote en Android: el mes ya se puede elegir
 
 Reportado en Bodega (conteo de inventario, «Lote y vence»): en Android, después

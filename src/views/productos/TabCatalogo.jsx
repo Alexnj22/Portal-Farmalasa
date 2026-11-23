@@ -49,6 +49,7 @@ import {
 } from '@nucleo/utils/preciosDeProducto';
 import { subirFotoDeCatalogo } from '@plataforma/fotoConMiniatura';
 import { LoadingState } from '../../components/common/StateViews';
+import FotoMiniatura from '../../components/common/FotoMiniatura';
 
 
 // Los niveles de precio y cuáles ve cada cargo viven en el núcleo
@@ -1728,7 +1729,7 @@ export default function TabCatalogo({
                                     <DataCell>
                                         <div className="flex items-center gap-3.5">
                                             {p.foto_url
-                                                ? <img src={p.foto_url} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
+                                                ? <FotoMiniatura src={p.foto_url} lado={44} className="w-11 h-11 rounded-2xl object-cover shrink-0 shadow-sm" />
                                                 : <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${tk.avatarBg}`}><Package size={16} className={tk.avatarIcon} /></div>
                                             }
                                             <div className="min-w-0">

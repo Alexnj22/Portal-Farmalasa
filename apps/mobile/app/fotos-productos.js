@@ -39,6 +39,7 @@ import { Aviso, BotonGrande, Campo, Ficha as FichaDeOpcion, Seccion, Cargando } 
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { subirFotoChica } from '../componentes/producto/fotoChica';
 
 const FALTAS = [
   { id: 'cualquiera', label: 'Todo' },
@@ -215,6 +216,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
       if (foto) {
         const datos = await (await fetch(foto)).arrayBuffer();
         const publica = await subirArchivo('product-photos', `${producto.id}.jpg`, datos, { upsert: true, contentType: 'image/jpeg' });
+        await subirFotoChica(foto, `${producto.id}.jpg`);
         fotoUrl = `${publica}?t=${Date.now()}`;
       }
       await guardarCarga(producto.id, { fotoUrl, principios: validos }, { producto: producto.nombre, desde: 'app' });

@@ -62,6 +62,7 @@ import { descargarArchivo } from '../../plataforma/descargas';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { HISTORIAL_MINMAX_META } from '@nucleo/constants/minmax';
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
+import FotoMiniatura from '../../components/common/FotoMiniatura';
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
@@ -843,7 +844,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, onR
                                                 title={alert.label}
                                             >
                                                 {row.foto_url
-                                                    ? <img src={row.foto_url} alt="" className="w-full h-full object-contain rounded-md" />
+                                                    ? <FotoMiniatura src={row.foto_url} lado={28} className="w-full h-full object-contain rounded-md" />
                                                     : <Package size={13} className="text-content-3" />}
                                                 {row.alert_status && row.alert_status !== 'ok' && (
                                                     <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border border-border-card shadow-sm shrink-0 ${alert.dot}`} />

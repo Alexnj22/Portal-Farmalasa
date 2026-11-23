@@ -4,7 +4,7 @@
 // problema, qué pasa y qué hacer con sus botones. Las cuentas son del núcleo
 // (`opcionesDePresentacion`, `opcionesDePrecio`, `planDeLotes`).
 import { useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -19,6 +19,7 @@ import { MARCA } from '../inicio/marca';
 import { Eleccion } from '../torogoz/venta/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import IconoFijo from '../IconoFijo';
+import FotoMiniatura from '../producto/Miniatura';
 import { iconoDe } from '../../tema/iconos';
 
 const conMayuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
@@ -30,7 +31,7 @@ export function Miniatura({ src, tamano = 44 }) {
   return (
     <View style={{ width: tamano, height: tamano, borderRadius: 10, overflow: 'hidden', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
       {src && !rota
-        ? <Image source={{ uri: src }} style={{ width: tamano, height: tamano }} resizeMode="contain" onError={() => setRota(true)} />
+        ? <FotoMiniatura uri={src} style={{ width: tamano, height: tamano }} onError={() => setRota(true)} />
         : <IconoFijo name={iconoDe('Package')} size={tamano * 0.45} color={colorSistema.texto2} />}
     </View>
   );

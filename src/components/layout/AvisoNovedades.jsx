@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+// `m` y no `motion`: este archivo viaja en la entrada (AppLayout lo importa
+// estático) y `motion` traía el motor completo de vuelta, anulando LazyMotion
+// de MotionProvider (~40 kB gzip). Con alias para no tocar el JSX. 2026-11-23.
+import { m as motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Megaphone, ArrowRight } from 'lucide-react';
 import useNovedadesVistas from '@nucleo/hooks/useNovedadesVistas';
 import { hoySV } from '@nucleo/utils/fecha';

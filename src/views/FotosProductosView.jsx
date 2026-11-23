@@ -31,6 +31,7 @@ import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enrique
 import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchRecientesDeCarga, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
 import { UNIDADES, corregirConElNombre, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio } from '@nucleo/utils/concentracion';
 import LiquidSelect from '../components/common/LiquidSelect';
+import FotoMiniatura from '../components/common/FotoMiniatura';
 
 const LectorDeCodigo = lazy(() => import('../components/common/LectorDeCodigo'));
 
@@ -316,7 +317,7 @@ function cuandoFue(fecha) {
 
 function Miniatura({ src, size = 40 }) {
     return src ? (
-        <img src={src} alt="" width={size} height={size} className="rounded-lg object-contain bg-surface-card" style={{ width: size, height: size }} />
+        <FotoMiniatura src={src} lado={size} className="rounded-lg object-contain bg-surface-card" />
     ) : (
         <span className="flex items-center justify-center rounded-lg bg-surface-card-hover text-content-3" style={{ width: size, height: size }}>
             <Package size={size / 2} />

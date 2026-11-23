@@ -62,6 +62,7 @@ const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
 const PedirTrasladoModal = lazy(() => import('./dashboard/PedirTrasladoModal'));
 import UsarSaldoAFavor from '../components/caja/UsarSaldoAFavor';
 import { ligarSaldoAPreventa, soltarSaldoAFavor } from '@nucleo/data/reservas';
+import FotoMiniatura from '../components/common/FotoMiniatura';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Preventa — vender desde el portal y que la venta llegue armada a caja.
@@ -1149,7 +1150,7 @@ function Miniatura({ src, tamano = 'w-9 h-9' }) {
     return (
         <span className={`${tamano} shrink-0 rounded-lg bg-surface-card-hover border border-border-card overflow-hidden flex items-center justify-center`}>
             {src && !rota
-                ? <img src={src} alt="" loading="lazy" decoding="async" onError={() => setRota(true)} className="w-full h-full object-contain" />
+                ? <FotoMiniatura src={src} lado={36} onError={() => setRota(true)} className="w-full h-full object-contain" />
                 : <Package size={14} strokeWidth={1.5} className="text-content-3" />}
         </span>
     );

@@ -24,6 +24,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
+import { subirFotoChica } from './fotoChica';
 
 async function elegir(desdeCamara) {
   const permiso = desdeCamara ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -70,6 +71,7 @@ export default function Foto({ productId, url, puedeCambiar, onCambiada }) {
       const hecha = await ref.saveAsync({ compress: 0.85, format: SaveFormat.JPEG });
       const datos = await (await fetch(hecha.uri)).arrayBuffer();
       const publica = await subirArchivo('product-photos', `${productId}.jpg`, datos, { upsert: true, contentType: 'image/jpeg' });
+      await subirFotoChica(hecha.uri, `${productId}.jpg`);
       const conSello = `${publica}?t=${Date.now()}`;
       const { error } = await updateProductFoto(productId, conSello);
       if (error) throw error;

@@ -40,6 +40,18 @@ Pruebas: `tests/unit/pedirTrasladoDestino.test.jsx`.
 
 Gemelo: preventa — en apps/mobile/app/preventa.js y pedir-traslado.js (comparten `usePedirTraslado`).
 
+
+### Sin versión propia — Administración sale de la alerta de horarios por ahora
+
+Pedido del usuario (2026-11-21): Administración todavía no lleva horario, así
+que `notify_missing_roster()` la deja fuera de la alerta de los sábados
+(migración `20261121175024_alerta_de_horarios_sin_administracion`). Queda
+anotado para devolverla cuando se le carguen horarios. (La entrada nació como
+«v2.1592.4» en otra sesión sin commitear; ese número lo tomó otra versión.)
+
+Novedades: no — sólo cambia a quién lista una alerta interna.
+Gemelo: horarios — sólo base de datos, sin pantalla.
+
 ## v2.1592.11 — Kiosco: el número de empleado ya no identifica
 
 Tres arreglos de seguridad del kiosco, aprobados por el usuario el 2026-11-23.

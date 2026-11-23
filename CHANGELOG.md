@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.16 — Vence del lote en Android: el mes ya se puede elegir
+
+Reportado en Bodega (conteo de inventario, «Lote y vence»): en Android, después
+de elegir el año, la hoja del mes no dejaba elegir. Eran dos hojas encadenadas
+(año → mes) que en Android dibuja `HojasAndroid`.
+
+- En Android el «Vence» ahora es UN solo cuadro: el año con flechas y los doce
+  meses en cuadrícula (`componentes/conteos/MesAnio.android.js`), como el
+  `CampoMesAnio` del portal. iPhone sigue con sus dos hojas
+  (`MesAnio.js`, sacado tal cual de `LoteReal.js`).
+
+Gemelo: conteo_inventario — sólo Android de la app; el portal ya usa `CampoMesAnio`.
+
 ## v2.1592.15 — Más formularios que no cargaron ya no se pueden guardar encima
 
 Segunda tanda del arreglo de v2.1592.13: más formularios de edición que, si la

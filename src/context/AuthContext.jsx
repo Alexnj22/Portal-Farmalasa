@@ -1307,6 +1307,12 @@ export const AuthProvider = ({ children }) => {
         supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
       );
       if (isNetworkError(fnErr)) return await fallar({ ok: false, error: NETWORK_ERROR_MSG });
+      // El servidor frena los carnés fallidos por IP y contesta 429
+      // `RATE_LIMITED`. Sin esto se leía «Carné no reconocido» y la persona
+      // seguía probando con un carné bueno.
+      if (fnErr?.context?.status === 429 || ensured?.error === 'RATE_LIMITED') {
+        return await fallar({ ok: false, error: 'Demasiados intentos. Espera un momento.', motivo: 'limite' });
+      }
       if (fnErr || !ensured?.ok || !ensured?.user?.email) return await fallar({ ok: false });
 
       // Se entra con el pase de un solo uso que emite el servidor, no con el PIN

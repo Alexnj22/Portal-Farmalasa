@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.5 — Login: el lector de carné ya no cae en el usuario
+
+Arreglo de seguridad, publicado aparte del Portal 2.0. En `/login` el lector de
+carné (escribe como un teclado) a veces caía en el campo «usuario»: el código se
+enviaba como usuario y el navegador lo guardaba en su autocompletar.
+
+- `src/utils/lectorDeCarne.js` (nuevo, puro y probado): decide por velocidad si
+  una ráfaga es del lector. LoginView lo usa en UNA captura sobre toda la
+  página, con el foco donde sea: el código sale del campo a la tercera tecla, su
+  Enter no envía el formulario y entra como carné.
+- Un «usuario» sólo de dígitos no se envía ni queda escrito: «Eso es un carné.
+  Pásalo por el lector».
+- El login ya no depende de la marca `lector_carne_ok` (se borra): en
+  computadora o terminal de sala arranca listo para el carné; el teléfono sigue
+  arrancando en «usuario».
+- `ensure_user_by_code` con 429 `RATE_LIMITED` ahora dice «Demasiados intentos.
+  Espera un momento.» en vez de «Carné no reconocido».
+
+Gemelo: login — la app nativa no usa lector de carné: en el teléfono se entra sólo con usuario y contraseña o biometría (apps/mobile/app/entrar.js)
+
 ## v2.1592.4 — Baja: «No tenía» se ve al elegirlo
 
 En «¿Devolvió…?» de la baja, la respuesta **«No tenía»** usaba el tono `neutro`

@@ -16,8 +16,17 @@ import { test, expect } from '@playwright/test';
 // El login enfoca «usuario» solo a los 60ms de montar (en un equipo sin
 // lector). Toda prueba que dependa de dónde está el foco tiene que esperar a
 // que eso pase: si no, corre una carrera contra el propio login.
+// Desde 2026-11-22 la computadora arranca lista para el carné, SIN foco en
+// ningún campo (todas las de sucursal tienen lector). La persona que va a
+// escribir hace clic en «usuario»: eso es lo que hace esta ayuda, después de
+// que el login soltó el foco que pudiera haber puesto el navegador.
 const focoAsentado = async (page) => {
+    await expect(page.locator('#username')).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(150);
+    await page.locator('#username').click();
     await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe('username');
+    await page.waitForTimeout(250);
 };
 
 const RAFAGA = 6;    // ms entre teclas — un lector real anda por debajo de 15
@@ -34,11 +43,17 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
         await page.addInitScript(() => localStorage.setItem('lector_carne_ok', '1'));
         await page.goto('/login');
         await expect(page.locator('#username')).toBeVisible();
+        // El teclado de Playwright no trae la hora del hardware: cada tecla
+        // sale cuando la anterior se terminó de atender. Mientras la página
+        // termina de cargar, eso estira los huecos y el «lector» parece una
+        // persona. Un lector real manda su hora (`timeStamp`) y no sufre esto.
+        await page.waitForLoadState('networkidle');
     });
 
     test('un tecleo humano entra tal cual', async ({ page }) => {
         const usuario = page.locator('#username');
         await usuario.click();
+        await page.waitForTimeout(250);   // el clic re-pinta el formulario: que no caiga entre las teclas
         await page.keyboard.type('maria.hernandez', { delay: HUMANO });
         await expect(usuario).toHaveValue('maria.hernandez');
     });
@@ -46,6 +61,7 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     test('una ráfaga de lector no deja el código a la vista', async ({ page }) => {
         const usuario = page.locator('#username');
         await usuario.click();
+        await page.waitForTimeout(250);   // el clic re-pinta el formulario: que no caiga entre las teclas
         await page.keyboard.type('447', { delay: RAFAGA });
         // Ni siquiera antes del Enter: en cuanto se detecta, lo pintado se borra.
         await expect(usuario).toHaveValue('');
@@ -58,6 +74,7 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     test('la ráfaga respeta lo que la persona ya había escrito', async ({ page }) => {
         const usuario = page.locator('#username');
         await usuario.click();
+        await page.waitForTimeout(250);   // el clic re-pinta el formulario: que no caiga entre las teclas
         await page.keyboard.type('ana', { delay: HUMANO });
         await page.keyboard.type('5091', { delay: RAFAGA });
         await page.keyboard.press('Enter');
@@ -67,6 +84,7 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     test('un tecleo veloz de persona se devuelve entero al campo', async ({ page }) => {
         const usuario = page.locator('#username');
         await usuario.click();
+        await page.waitForTimeout(250);   // el clic re-pinta el formulario: que no caiga entre las teclas
         await page.keyboard.type('asd', { delay: 5 });      // dispara la sospecha
         await page.keyboard.type('fghij', { delay: HUMANO }); // el hueco humano la deshace
         await expect(usuario).toHaveValue('asdfghij');
@@ -81,6 +99,7 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
     test('la ráfaga tampoco entra por el campo de contraseña', async ({ page }) => {
         const clave = page.locator('#password');
         await clave.click();
+        await page.waitForTimeout(250);   // el clic re-pinta el formulario: que no caiga entre las teclas
         await page.keyboard.type('447', { delay: RAFAGA });
         await page.keyboard.press('Enter');
         await expect(clave).toHaveValue('');
@@ -88,9 +107,11 @@ test.describe('Login · el carné no se escribe en el campo de usuario', () => {
 
 });
 
-test.describe('Login · en un equipo sin lector no se intercepta nada', () => {
+test.describe('Login · en un equipo sin lector no se pierde nada', () => {
     // Éste es el caso de una computadora personal con gestor de contraseñas:
-    // que escriba rápido no puede costarle el texto a nadie.
+    // que escriba rápido no puede costarle el texto a nadie. Desde el
+    // 2026-11-22 la ráfaga se retiene un momento y, como no tiene forma de
+    // carné, vuelve entera al campo.
     for (const campo of ['username', 'password']) {
         test(`las teclas rápidas llegan enteras a ${campo}`, async ({ page }) => {
             await page.goto('/login');
@@ -146,9 +167,10 @@ test.describe('Login · el primer carné de un equipo sin marca', () => {
         page.on('request', (r) => { if (r.url().includes('ensure_user_by_code')) intentos.push(r.url()); });
 
         await sinMarca(page);
-        // Sin marca no se intercepta nada: el código SÍ se pinta mientras entra.
+        // Desde el 2026-11-22 el detector corre en TODO equipo: el código no
+        // llega a quedar en el campo ni antes del Enter.
         await page.keyboard.type('447', { delay: RAFAGA });
-        await expect(page.locator('#username')).toHaveValue('447');
+        await expect(page.locator('#username')).toHaveValue('');
         await page.keyboard.press('Enter');
 
         // Se fue por el camino del carné, no por el de usuario/contraseña.
@@ -158,17 +180,35 @@ test.describe('Login · el primer carné de un equipo sin marca', () => {
         await expect(page.getByText(/Carné no reconocido|conexión/i).first()).toBeVisible({ timeout: 5000 });
     });
 
-    test('un tecleo humano con la contraseña vacía sigue siendo un login normal', async ({ page }) => {
+    test('un carné tecleado en «usuario» ni se envía ni queda escrito', async ({ page }) => {
+        // «a veces escanean el carné y se pone en usuario, así que se les guarda
+        // el código» (2026-11-22). Un código con forma de carné en «usuario»
+        // no viaja como usuario ni como carné (tecleado no vale) y se borra.
         const intentos = [];
-        page.on('request', (r) => { if (r.url().includes('ensure_user_by_code')) intentos.push(r.url()); });
+        page.on('request', (r) => { if (/ensure_user_by_code|token\?grant_type=password/.test(r.url())) intentos.push(r.url()); });
 
         await sinMarca(page);
         await page.keyboard.type('447', { delay: HUMANO });
+        await page.locator('#password').fill('algo');
+        await page.locator('#username').focus();
         await page.keyboard.press('Enter');
 
-        await expect(page.getByText(/Ingresa usuario y contraseña/i)).toBeVisible();
+        await expect(page.getByText(/Eso es un carné/i)).toBeVisible();
         expect(intentos).toHaveLength(0);
-        await expect(page.locator('#username')).toHaveValue('447');
+        await expect(page.locator('#username')).toHaveValue('');
+        await expect(page.locator('#password')).toHaveValue('');
+    });
+
+    test('un lector lento (más de 40 ms por tecla) tampoco deja el código como usuario', async ({ page }) => {
+        const intentos = [];
+        page.on('request', (r) => { if (/token\?grant_type=password/.test(r.url())) intentos.push(r.url()); });
+        await sinMarca(page);
+        await page.keyboard.type('44712', { delay: 60 });
+        await page.locator('#password').fill('algo');
+        await page.getByRole('button', { name: /Ingresar/i }).click();
+        await expect(page.getByText(/Eso es un carné/i)).toBeVisible();
+        expect(intentos).toHaveLength(0);
+        await expect(page.locator('#username')).toHaveValue('');
     });
 
     test('un usuario del portal escrito a toda velocidad no se toma por carné', async ({ page }) => {
@@ -272,20 +312,25 @@ test.describe('Login · el carné en una computadora sin cámara', () => {
 
     test('el bloque del carné se ve, sin cámara y sin marca de lector', async ({ page }) => {
         await sinCamara(page);
-        await expect(page.getByText('Escanear carné')).toBeVisible();
-        await expect(page.getByText(/Pasa el carné por el lector/i)).toBeVisible();
+        // Lista para el carné desde que abre, en cualquier computadora.
+        await expect(page.getByText('Lector activo')).toBeVisible();
+        await expect(page.getByText(/Escanea tu carné/i)).toBeVisible();
         // El botón de cámara no se ofrece: este equipo no tiene una.
         await expect(page.getByTitle(/Escanear con cámara/i)).toHaveCount(0);
     });
 
-    test('no se pide un escaneo ni se le roba el foco a nadie', async ({ page }) => {
+    test('arranca sin foco, y a quien hace clic en «usuario» no se le quita', async ({ page }) => {
         // Lo que motivó la regla de v2.638.0 («si no hay lector, que no pida
         // escanear») era el estorbo: 30 segundos con el foco fuera de los
         // campos y un cartel de «lector activo» que no se podía cumplir. Eso
         // NO vuelve — se muestra la puerta, no se obliga a usarla.
         await sinCamara(page);
+        await page.waitForTimeout(400);
+        expect(await page.evaluate(() => document.activeElement?.id || '')).not.toBe('username');
         await focoAsentado(page);
-        await expect(page.getByText(/Lector activo/i)).toHaveCount(0);
+        await page.waitForTimeout(1000);
+        expect(await page.evaluate(() => document.activeElement?.id)).toBe('username');
         await expect(page.getByText(/usuario en \d+s/i)).toHaveCount(0);
     });
 });
+

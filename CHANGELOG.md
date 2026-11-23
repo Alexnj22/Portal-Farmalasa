@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.8 — Login: vuelve el lector de carné de antes
+
+Urgente: desde la v2.1592.5 (captura global del lector, `utils/lectorDeCarne.js`)
+Salud 2 y Salud 5 no podían entrar con carné. Los registros de producción del
+2026-11-23 muestran que desde esas computadoras (Linux, Firefox) no llegó ni
+una llamada a `ensure_user_by_code`: el carné no se reconocía en la pantalla.
+Se restaura `LoginView.jsx` (y su e2e) tal como estaba antes de la v2.1592.5.
+`lectorDeCarne.js` queda sin uso hasta reproducir la falla con un lector real.
+El tope de intentos, admin sin carné y el mensaje de RATE_LIMITED siguen.
+
+Gemelo: login — la app nativa entra con usuario y contraseña o biometría.
+Novedades: no — devuelve el comportamiento de ayer; el personal no tiene nada nuevo que saber.
+
 ## v2.1592.7 — El token del kiosco se guarda como hash
 
 Arreglo de seguridad del kiosco/marcador, publicado aparte del Portal 2.0

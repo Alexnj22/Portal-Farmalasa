@@ -25,17 +25,59 @@ describe('problemasDeVenta', () => {
         expect(p.titulo).toBe('LOSARTAN: sólo hay 25 y pides 30.');
         expect(p.acciones.map((a) => a.id)).toEqual(['ajustar', 'otras', 'apartar', 'quitar']);
         expect(p.acciones[0].valor).toBe(2);
-        expect(p.ayuda).toBe('Deja 2 y pide el resto a Salud 1 (40 u.), o apártalo para el cliente.');
+        // Dejando 2 cajas (20 u.) faltan 10 u., y Salud 1 las tiene.
+        expect(p.ayuda).toBe('Deja 2 y pide 10 u. a Salud 1 (10 u.), o apártalo para el cliente.');
+        expect(p.acciones[1]).toEqual({ id: 'otras', label: 'Pedir a otra sucursal',
+            valor: [{ sucursal: 'Salud 1', branch_id: null, erp_sucursal_id: null, unidades: 10 }] });
     });
     it('sin nada aquí dice en qué sucursales hay', () => {
-        const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([linea({ existencia: 0, error: 'Hay 0 unidades y se piden 1.',
+        const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([linea({ cantidad: 1, existencia: 0, error: 'Hay 0 unidades y se piden 1.',
             otras: [{ sucursal: 'Salud 2', disponibles: 2 }, { sucursal: 'Salud 3', disponibles: 1 }] })]) });
         expect(p.titulo).toBe('LOSARTAN: no hay en esta sucursal.');
-        expect(p.ayuda).toBe('Hay en Salud 2 (2 u.) y Salud 3 (1 u.). Pídelo a una de ellas o apártalo para el cliente.');
+        expect(p.ayuda).toBe('Pide 1 a Salud 2 (1 u.), o apártalo para el cliente.');
     });
     it('sin existencia en ninguna parte no ofrece pedir', () => {
         const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([linea({ error: 'Hay 0 unidades y se piden 99.' })]) });
         expect(p.acciones.map((a) => a.id)).toEqual(['apartar', 'quitar']);
+    });
+    describe('reparte lo que falta entre las otras sucursales (2026-11-23)', () => {
+        const otras = [
+            { sucursal: 'Salud 2', branch_id: 25, erp_sucursal_id: 2, disponibles: 6 },
+            { sucursal: 'Bodega', branch_id: 30, erp_sucursal_id: 6, disponibles: 1 },
+            { sucursal: 'Salud 5', branch_id: 29, erp_sucursal_id: 7, disponibles: 4 },
+        ];
+        const betaserc = (extra) => linea({ nombre: 'BETASERC', cantidad: 10, existencia: 1, error: 'Hay 1 unidades y se piden 10.', ...extra });
+        it('alcanza: empieza por la que más tiene y no le pide a nadie más de lo que tiene', () => {
+            const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([betaserc({ otras })]) });
+            expect(p.titulo).toBe('BETASERC: sólo hay 1 y pides 10.');
+            expect(p.ayuda).toBe('Deja 1 y pide 9 a Salud 2 (6 u.) y Salud 5 (3 u.), o apártalo para el cliente.');
+            const otrasAccion = p.acciones.find((a) => a.id === 'otras');
+            expect(otrasAccion.label).toBe('Pedir a otras sucursales');
+            expect(otrasAccion.valor.map((r) => [r.erp_sucursal_id, r.unidades])).toEqual([[2, 6], [7, 3]]);
+        });
+        it('no alcanza: lo dice con cuánto hay y cuánto falta, y el pedido lleva todo lo que hay', () => {
+            const pocas = [{ sucursal: 'Salud 2', disponibles: 1 }, { sucursal: 'Salud 5', disponibles: 1 }, { sucursal: 'Bodega', disponibles: 1 }];
+            const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([betaserc({ otras: pocas })]) });
+            expect(p.ayuda).toBe('Sólo hay 1 aquí y 3 en otras sucursales; faltan 6. Pide lo que hay o apártalo como encargo.');
+            expect(p.acciones.map((a) => a.id)).toEqual(['ajustar', 'otras', 'apartar', 'quitar']);
+            expect(p.acciones[1].valor.map((r) => r.unidades)).toEqual([1, 1, 1]);
+        });
+        it('no alcanza y aquí no hay nada', () => {
+            const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([betaserc({ existencia: 0, otras: [{ sucursal: 'Salud 2', disponibles: 3 }] })]) });
+            expect(p.titulo).toBe('BETASERC: no hay en esta sucursal.');
+            expect(p.ayuda).toBe('No hay aquí y 3 en otras sucursales; faltan 7. Pide lo que hay o apártalo como encargo.');
+        });
+        it('sin otras sucursales: deja lo que hay, sin ofrecer pedir', () => {
+            const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([betaserc({ otras: [] })]) });
+            expect(p.ayuda).toBe('Deja 1, o apártalo para el cliente.');
+            expect(p.acciones.map((a) => a.id)).toEqual(['ajustar', 'apartar', 'quitar']);
+        });
+        it('una sola sucursal que alcanza', () => {
+            const [p] = problemasDeVenta({ lineas: [{}], cotizacion: cot([betaserc({ otras: [{ sucursal: 'Salud 3', erp_sucursal_id: 3, disponibles: 40 }] })]) });
+            expect(p.ayuda).toBe('Deja 1 y pide 9 a Salud 3 (9 u.), o apártalo para el cliente.');
+            expect(p.acciones[1]).toMatchObject({ id: 'otras', label: 'Pedir a otra sucursal' });
+            expect(p.acciones[1].valor).toEqual([{ sucursal: 'Salud 3', branch_id: null, erp_sucursal_id: 3, unidades: 9 }]);
+        });
     });
     it('crédito fiscal con cliente incompleto ofrece completar o cambiar a Factura', () => {
         const [p] = problemasDeVenta({ lineas: [{}], hayCliente: true, documento: 'credito_fiscal', cotizacion: cot([]) });

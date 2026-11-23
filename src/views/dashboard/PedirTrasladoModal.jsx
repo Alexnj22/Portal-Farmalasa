@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import { claveOrigen, diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
@@ -82,7 +82,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         lineaLista, lineaActual, yaEstaEnLaLista, salasDestino,
         puedeEnviar, faltaEnvio,
         renglones, causa, setCausa, agregar, quitarDelStore, editarRenglon, limpiarStore,
-        enviar, enviando, listo, error, resumen,
+        enviar, enviando, listo, error, resumen, repartoAplicado,
     } = usePedirTraslado({ productoInicial, alCerrar: onClose, alTerminar: onListo });
 
     /* Abre en «Agregar» cuando viene con un producto, y en la lista cuando no:
@@ -111,6 +111,19 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
         if (destino === 'lista' && lineaActual && !yaEstaEnLaLista) agregar({ cerrar: false });
         setPestana(destino);
     };
+
+    /* Abierto ya repartido entre varias sucursales (desde Vender): en cuanto
+     * la primera está completa, se suma a la lista y se muestra la lista, que
+     * es donde se ven todas, se corrigen y se mandan juntas. Una vez. */
+    const [fueALaLista, setFueALaLista] = useState(false);
+    const listaParaIr = !fueALaLista && repartoAplicado && renglones.length > 0
+        && Boolean(lineaActual) && !yaEstaEnLaLista && pestana === 'agregar';
+    useEffect(() => {
+        if (!listaParaIr) return undefined;
+        const t = setTimeout(() => { setFueALaLista(true); irA('lista'); }, 0);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `irA` es de este render, y basta
+    }, [listaParaIr]);
 
     const quitar = (i) => { quitarDelStore(i); setEditando(null); };
 

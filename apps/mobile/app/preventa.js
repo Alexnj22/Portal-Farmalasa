@@ -341,9 +341,16 @@ export default function Preventa() {
     const completar = queCompletar(venta.documento, info ?? cotizacion?.cliente);
     router.push({ pathname: '/cliente/[id]', params: { id: String(venta.cliente.id), ...(completar ? { completar: JSON.stringify(completar) } : {}) } });
   };
-  const otrasSucursales = (linea) => router.push(linea
-    ? { pathname: '/pedir-traslado', params: { producto: String(linea.producto_id), descripcion: filaDe(linea)?.nombre ?? linea.nombre ?? '' } }
-    : '/pedir-traslado');
+  // Con el reparto del aviso, el pedido abre con la primera sucursal y su
+  // cantidad puestas y las demás ya en la solicitud (2026-11-23).
+  const otrasSucursales = (linea, reparto = null) => {
+    const conReparto = Array.isArray(reparto) && reparto.length > 0 && reparto[0].erp_sucursal_id != null;
+    router.push(linea
+      ? { pathname: '/pedir-traslado', params: { producto: String(linea.producto_id), descripcion: filaDe(linea)?.nombre ?? linea.nombre ?? '',
+          ...(conReparto ? { origen: String(reparto[0].erp_sucursal_id),
+            reparto: JSON.stringify(reparto.map((r) => ({ erp_sucursal_id: r.erp_sucursal_id, unidades: r.unidades }))) } : {}) } }
+      : '/pedir-traslado');
+  };
   const apartar = () => router.push({ pathname: '/reserva-anticipo', params: { sala: String(sala) } });
 
   const resolver = (p, a) => {
@@ -351,7 +358,7 @@ export default function Preventa() {
     const linea = i >= 0 ? venta.lineas[i] : null;
     switch (a.id) {
       case 'ajustar': if (i >= 0) ponerLinea(i, { cantidad: a.valor }); break;
-      case 'otras': otrasSucursales(linea); break;
+      case 'otras': otrasSucursales(linea, a.valor); break;
       case 'apartar': apartar(); break;
       case 'quitar': if (i >= 0) quitarLinea(i); break;
       case 'editar': editarCliente(); break;

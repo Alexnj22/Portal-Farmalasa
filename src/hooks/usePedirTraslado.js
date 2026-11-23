@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useComposicionTraslado } from '../store/composicionTraslado';
+import { renglonDeTraslado, useComposicionTraslado } from '../store/composicionTraslado';
 import { fetchPresentaciones } from '../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../data/traslados';
 import { fetchInventoryByProductIds } from '../data/inventory';
@@ -526,6 +526,49 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
     /* Corregir un renglón ya agregado. La cuenta la rehace el store: cantidad y
      * presentación pasan por el mismo cálculo porque el factor multiplica, y
      * separadas una de las dos se olvidaría de rehacer el reparto por lote. */
+    /* ── Abierto ya repartido (2026-11-23) ─────────────────────────────────
+     * Vender sabe cuánto falta y quién lo tiene, y abre esto con
+     * `producto.reparto = [{ erp_sucursal_id, unidades }]` (de la que más tiene
+     * a la que menos). La primera queda en el formulario —su sala llega como
+     * `origen_sugerido`— con la cantidad puesta; las demás entran a la lista
+     * como renglones, editables ahí. Se manda todo junto con el mismo
+     * `enviar`, que ya separa una solicitud por sala. Se aplica una vez, cuando
+     * ya se saben las salas, las presentaciones y los lotes. La cantidad va en
+     * la presentación de una unidad si existe. */
+    const [repartoAplicado, setRepartoAplicado] = useState(false);
+    useEffect(() => {
+        const rep = producto?.reparto;
+        if (repartoAplicado || !Array.isArray(rep) || rep.length === 0) return;
+        const mapa = producto?.lotesPorSala ?? lotesTraidos;
+        if (donde.length === 0 || presentaciones.length === 0 || !mapa) return;
+        let cancelado = false;
+        const iUnidad = Math.max(0, presentaciones.findIndex(p => Number(p.factor || 1) === 1));
+        const presU = presentaciones[iUnidad];
+        const cant = (u) => Math.max(1, Math.ceil(Number(u) / (Number(presU.factor) || 1)));
+        const [primero, ...resto] = rep;
+        setPresIdx(String(iUnidad));
+        setCantidad(String(cant(primero.unidades)));
+        (async () => {
+            for (const r of resto) {
+                const d = donde.find(x => !x.vencidos && Number(x.erp_sucursal_id) === Number(r.erp_sucursal_id));
+                if (!d) continue;
+                const clave = claveOrigen(d);
+                if (useComposicionTraslado.getState().yaEsta(clave, producto.erp_product_id)) continue;
+                let minimo = null;
+                if (Number(d.erp_sucursal_id) === ERP_BODEGA) {
+                    // Sin la regla de Bodega no se arma: el formulario tampoco deja pedir sin ella.
+                    try { minimo = await fetchMinimoDeDespacho(producto.erp_product_id); } catch { continue; }
+                }
+                if (cancelado) return;
+                if (useComposicionTraslado.getState().yaEsta(clave, producto.erp_product_id)) continue;
+                agregarAlStore(renglonDeTraslado({ sala: d, clave, lotes: lotesEnUnidades(mapa[clave] ?? []),
+                    presentaciones, minimoBodega: minimo, producto, pres: presU, cantidad: cant(r.unidades) }));
+            }
+            if (!cancelado) setRepartoAplicado(true);
+        })();
+        return () => { cancelado = true; };
+    }, [producto, repartoAplicado, donde, presentaciones, lotesTraidos, agregarAlStore]);
+
     const editarRenglon = (i, cambios) => editarEnStore(i, cambios);
 
     /* Una fila de `approval_requests` por estante de origen. Vivía dentro de
@@ -672,5 +715,6 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
         puedeEnviar, faltaEnvio, faltaElParaQue,
         renglones, causa, setCausa, agregar, quitarDelStore, editarRenglon, limpiarStore,
         enviar, enviarSoloEsta, enviando, listo, error, setError, resumen,
+        repartoAplicado,
     };
 }

@@ -72,8 +72,15 @@ export default function PedirTraslado() {
   // del producto): llega con el producto y, si se apretó sobre una sala, el
   // estante de origen (`6:V` = el área de vencidos de Bodega), como el
   // «Solicitar» del portal.
-  const { producto: idInicial, descripcion: descInicial, origen } = useLocalSearchParams();
-  const [inicial] = useState(() => (idInicial ? { erp_product_id: Number(idInicial), descripcion: descInicial || '', origen_sugerido: origen || null } : null));
+  // Desde Vender llega además `reparto` (JSON): cuánto pedirle a cada sucursal.
+  const { producto: idInicial, descripcion: descInicial, origen, reparto: repartoTexto } = useLocalSearchParams();
+  const [inicial] = useState(() => {
+    if (!idInicial) return null;
+    let reparto = null;
+    try { reparto = repartoTexto ? JSON.parse(String(repartoTexto)) : null; } catch { reparto = null; }
+    return { erp_product_id: Number(idInicial), descripcion: descInicial || '', origen_sugerido: origen || null,
+      ...(Array.isArray(reparto) && reparto.length ? { reparto } : {}) };
+  });
   const p = usePedirTraslado({ productoInicial: inicial, alCerrar: () => {}, alTerminar: () => router.back() });
   const { producto, setElegido, donde, origenId, setOrigenId, opcionesPres, presIdx, setPresIdx, cantidad, setCantidad,
     esAntibiotico, avisoVence, lotesDeSala, descartados, setDescartados, reparto, hayLotes, avisos,

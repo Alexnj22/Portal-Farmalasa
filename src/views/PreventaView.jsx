@@ -58,6 +58,8 @@ const FormularioPedirASala = lazy(() =>
     import('./dashboard/inventario/PanelDeInventario').then((m) => ({ default: m.FormularioPedirASala })));
 import { ModalConRanuras } from './dashboard/LanzadorSolicitud';
 const DialogoApartar = lazy(() => import('../components/caja/DialogoApartar'));
+// El pedido de traslado, ya repartido entre las sucursales que tienen lo que falta.
+const PedirTrasladoModal = lazy(() => import('./dashboard/PedirTrasladoModal'));
 import UsarSaldoAFavor from '../components/caja/UsarSaldoAFavor';
 import { ligarSaldoAPreventa, soltarSaldoAFavor } from '@nucleo/data/reservas';
 
@@ -355,6 +357,7 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
     // ── Otras sucursales y apartar ────────────────────────────────────────
     const [consulta, setConsulta] = useState(null);      // texto con que se abre la consulta de inventario
     const [apartar, setApartar] = useState(null);        // { producto } o {}
+    const [pedir, setPedir] = useState(null);            // { erp_product_id, descripcion, origen_sugerido, reparto }
     const cerrarConsulta = () => { setConsulta(null); alBuscador(); };
     const cerrarApartar = () => { setApartar(null); alBuscador(); };
     const cobrar = async ({ clave, monto, apartado, pago, papel }) => {
@@ -375,7 +378,14 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
         switch (a.id) {
             case 'buscar': enfocar(ID_BUSCAR_PRODUCTO); break;
             case 'ajustar': if (i >= 0) { ponerLinea(i, { cantidad: a.valor }); if (!tactil) setFoco({ cantidad: p.linea }); } break;
-            case 'otras': setConsulta(nombre); break;
+            // Con el reparto del aviso: el pedido abre con las cantidades puestas,
+            // una sucursal por renglón. Sin él, la consulta de siempre.
+            case 'otras':
+                if (linea && Array.isArray(a.valor) && a.valor.length && a.valor[0].erp_sucursal_id != null) {
+                    setPedir({ erp_product_id: Number(linea.producto_id), descripcion: nombre,
+                        origen_sugerido: String(a.valor[0].erp_sucursal_id), reparto: a.valor });
+                } else setConsulta(nombre);
+                break;
             case 'apartar': setApartar({ producto: linea ? { id: linea.producto_id, nombre } : null }); break;
             case 'quitar': if (i >= 0) quitarLinea(i); break;
             case 'editar': editarCliente(); break;
@@ -1030,6 +1040,11 @@ export default function PreventaView({ openModal, enKiosco = false, cobrando = n
                         </div>
                     )}
                 </ModalConRanuras>
+            )}
+            {pedir && (
+                <Suspense fallback={null}>
+                    <PedirTrasladoModal producto={pedir} onClose={() => { setPedir(null); alBuscador(); }} />
+                </Suspense>
             )}
             {apartar && sala && (
                 <Suspense fallback={null}>

@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1592.9 — Vender: el aviso de existencia reparte lo que falta y el pedido abre repartido
+
+El aviso de existencia de Vender decía «Deja 1 y pide el resto a Salud 2 (1 u.)
+y Salud 5 (1 u.)» cuando se pedían 10 de BETASERC y faltaban 9: no comparaba lo
+que falta con lo que tienen las otras sucursales, y `preventa_cotizar` traía
+sólo las 3 con más existencia y nunca Bodega.
+
+- **El aviso dice la verdad.** Reparte lo que falta empezando por la sucursal
+  que más tiene, sin pedirle a ninguna más de lo que tiene: «Deja 1 y pide 9 a
+  Salud 2 (6 u.) y Salud 5 (3 u.)». Si ni sumando todas alcanza: «Sólo hay 1
+  aquí y 3 en otras sucursales; faltan 6». `repartirLoQueFalta` en
+  `utils/preventaDirecta.js`, con pruebas (alcanza, no alcanza, sin otras
+  sucursales, una sola).
+- **`preventa_cotizar` ve todas las sucursales**, Bodega incluida (su estante
+  de operación, misma cuenta de unidades), y cada una con `branch_id` y
+  `erp_sucursal_id`. Migración `20261123155547_preventa_otras_todas_las_sucursales`.
+  `app_existencias_netas` no se toca.
+- **«Pedir a otra(s) sucursal(es)» abre el pedido de traslado ya repartido**:
+  la primera sucursal con su cantidad en el formulario y las demás en «En la
+  solicitud», editables, y se mandan juntas con el mismo envío de siempre (una
+  solicitud por sucursal). `usePedirTraslado` acepta `producto.reparto`;
+  `renglonDeTraslado` arma los renglones con la misma cuenta por lote.
+
+Gemelo: preventa — en apps/mobile/app/preventa.js y pedir-traslado.js (comparten `preventaDirecta.js` y `usePedirTraslado`).
+
 ## v2.1592.8 — Login: vuelve el lector de carné de antes
 
 Urgente: desde la v2.1592.5 (captura global del lector, `utils/lectorDeCarne.js`)

@@ -309,6 +309,34 @@ export function maximoDePuntos(info, total) {
     return Math.max(0, Math.min(p.disponibles, p.tope, porTotal));
 }
 
+/** «A, B y C»: con la «y», se lee como una frase. */
+const enFrase = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} y ${xs.at(-1)}` : xs[0] ?? '');
+
+/**
+ * Reparte lo que falta (en unidades) entre las otras sucursales, empezando por
+ * la que más tiene y sin pedirle a ninguna más de lo que tiene (2026-11-23).
+ * `otras` viene de `preventa_cotizar`, ya ordenada de mayor a menor. Devuelve
+ * `{ reparto: [{ sucursal, branch_id, erp_sucursal_id, unidades }], faltan,
+ * enOtras }`: `faltan` es lo que ni sumando todas se cubre; `enOtras`, lo que
+ * tienen todas juntas. Si no alcanza, el reparto lleva todo lo que hay.
+ */
+export function repartirLoQueFalta(otras, falta) {
+    const lista = [...(otras ?? [])]
+        .map((o) => ({ ...o, disponibles: Math.max(0, Math.floor(Number(o.disponibles) || 0)) }))
+        .filter((o) => o.disponibles > 0)
+        .sort((a, b) => b.disponibles - a.disponibles);
+    const enOtras = lista.reduce((s, o) => s + o.disponibles, 0);
+    let resta = Math.max(0, Math.floor(Number(falta) || 0));
+    const reparto = [];
+    for (const o of lista) {
+        if (resta <= 0) break;
+        const toma = Math.min(o.disponibles, resta);
+        reparto.push({ sucursal: o.sucursal, branch_id: o.branch_id ?? null, erp_sucursal_id: o.erp_sucursal_id ?? null, unidades: toma });
+        resta -= toma;
+    }
+    return { reparto, faltan: resta, enOtras };
+}
+
 /**
  * Todo lo que impide enviar, no sólo lo primero, y cada cosa con cómo
  * resolverla (2026-11-16, usuario: «los avisos deben dar sugerencias de cómo
@@ -332,20 +360,39 @@ export function problemasDeVenta({ lineas, cotizacion, documento, pago, puntos =
         const nombre = l.nombre ?? 'Un producto';
         const pide = Number(l.cantidad ?? 0) * Number(l.factor ?? 1);
         if (/^Hay /.test(l.error)) {
-            const alcanza = Math.floor(Number(l.existencia ?? 0) / Number(l.factor || 1));
-            // «Salud 2 (2 u.) y Salud 3 (1 u.)»: con la «y», se lee como una frase.
-            const sucursales = (l.otras ?? []).map((o) => `${o.sucursal} (${o.disponibles} u.)`);
-            const otras = sucursales.length > 1 ? `${sucursales.slice(0, -1).join(', ')} y ${sucursales.at(-1)}` : sucursales[0] ?? '';
+            const factor = Number(l.factor || 1);
+            const alcanza = Math.floor(Number(l.existencia ?? 0) / factor);
             const hay = Number(l.existencia ?? 0);
+            // Lo que falta después de dejar lo que alcanza, en unidades, y quién
+            // lo cubre (2026-11-23). Antes decía «pide el resto a…» sin mirar si
+            // esas sucursales tenían lo que faltaba: BETASERC, 10 pedidos y 1
+            // aquí, mandaba a dos sucursales con 1 cada una.
+            const falta = pide - alcanza * factor;
+            const { reparto, faltan, enOtras } = repartirLoQueFalta(l.otras, falta);
+            const conOtras = reparto.length > 0;
+            const cubre = conOtras && faltan === 0;
+            const cuanto = factor === 1 ? `${falta}` : `${falta} u.`;
+            const deQuien = enFrase(reparto.map((r) => `${r.sucursal} (${r.unidades} u.)`));
+            let ayuda;
+            if (cubre) {
+                ayuda = alcanza > 0
+                    ? `Deja ${alcanza} y pide ${cuanto} a ${deQuien}, o apártalo para el cliente.`
+                    : `Pide ${cuanto} a ${deQuien}, o apártalo para el cliente.`;
+            } else if (conOtras) {
+                ayuda = `${hay > 0 ? `Sólo hay ${hay} aquí` : 'No hay aquí'} y ${enOtras} en otras sucursales; faltan ${faltan}. `
+                    + 'Pide lo que hay o apártalo como encargo.';
+            } else {
+                ayuda = alcanza > 0 ? `Deja ${alcanza}, o apártalo para el cliente.`
+                    : 'No hay en ninguna sucursal. Apártalo como encargo o quítalo.';
+            }
             out.push({ ...base, tipo: 'existencia',
                 titulo: hay > 0 ? `${nombre}: sólo hay ${hay} y pides ${pide}.` : `${nombre}: no hay en esta sucursal.`,
-                ayuda: alcanza > 0
-                    ? `Deja ${alcanza}${otras ? ` y pide el resto a ${otras}` : ''}, o apártalo para el cliente.`
-                    : otras ? `Hay en ${otras}. Pídelo ${sucursales.length > 1 ? 'a una de ellas' : 'a esa sucursal'} o apártalo para el cliente.`
-                        : 'No hay en ninguna sucursal. Apártalo como encargo o quítalo.',
+                ayuda,
+                reparto,
                 acciones: [
                     ...(alcanza > 0 ? [{ id: 'ajustar', label: `Dejar ${alcanza}`, valor: alcanza }] : []),
-                    ...(otras ? [{ id: 'otras', label: 'Pedir a otra sucursal' }] : []),
+                    // El pedido abre ya repartido: una sucursal por renglón.
+                    ...(conOtras ? [{ id: 'otras', label: reparto.length > 1 ? 'Pedir a otras sucursales' : 'Pedir a otra sucursal', valor: reparto }] : []),
                     { id: 'apartar', label: 'Apartar' },
                     { id: 'quitar', label: 'Quitar' },
                 ] });

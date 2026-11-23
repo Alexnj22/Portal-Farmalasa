@@ -75,6 +75,37 @@ function recalcular(r, cambios) {
 }
 
 /**
+ * Un renglón armado desde afuera del formulario (2026-11-23): Vender abre el
+ * pedido ya repartido entre varias sucursales, y cada sucursal que no es la
+ * primera entra a la lista con esta forma — la misma de `lineaActual` en
+ * `usePedirTraslado` — y pasa por `recalcular`, que reparte por lote y dice
+ * por qué no se puede mandar, si es el caso.
+ */
+export function renglonDeTraslado({ sala, clave, lotes, presentaciones, minimoBodega = null, producto, pres, cantidad }) {
+    return recalcular({
+        clave,
+        origen: {
+            erp_sucursal_id: sala.erp_sucursal_id,
+            sala: sala.sala,
+            vencidos: Boolean(sala.vencidos),
+            unidades: Number(sala.unidades ?? 0),
+        },
+        lotesVivos: lotes,
+        presentaciones,
+        minimoBodega,
+        unidades: 0,
+        item: {
+            erp_product_id: producto.erp_product_id,
+            descripcion: producto.descripcion,
+            presentacion_tipo: pres.tipo,
+            factor: Number(pres.factor) || 1,
+            cantidad: 0,
+            lotes: null,
+        },
+    }, { cantidad });
+}
+
+/**
  * ── La composición sobrevive al CIERRE DE SESIÓN, no sólo al del modal ──────
  *
  * El store ya resolvía que agregar un producto cierre el formulario sin

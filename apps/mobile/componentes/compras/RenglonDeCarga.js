@@ -11,7 +11,7 @@ import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
 import {
   MOTIVOS_VENCIDOS, cantidadSospechosa, cargarAyuda, cargarDe, nombreConTamano, nombrePres, presDelCatalogo, tamanoAprendible,
   unidadesQueEntran, unidadesQueLlegaron, vinetaActual,
-  LOTE_VACIO, decisionDeRenglon, hayVariosLotes, lotesDelRenglon, problemaDeLotes, vencesDeDecision,
+  LOTE_VACIO, decisionDeRenglon, hayVariosLotes, puedeLlevarVariosLotes, lotesDelRenglon, problemaDeLotes, vencesDeDecision,
 } from '@nucleo/utils/cargaDeCompra';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -346,9 +346,9 @@ export default function RenglonDeCarga(props) {
             {!aj.servicio && !r.parte ? <Accion texto={conProducto || r.producto_id ? 'Es otro producto' : 'Elegir producto'} ocupado={guardando} onPress={props.onBuscar} /> : null}
             {conProducto && !aj.erroneo && !aj.servicio && !aj.reparto && salas.length > 0
               ? <Accion texto="Enviar a sucursales" onPress={() => props.onAjustar('reparto', { por: pres.some((x) => x.factor === (Number(aj.factor) || 1)) ? (Number(aj.factor) || 1) : 1 })} /> : null}
-            {!aj.erroneo && !aj.servicio && !aj.vencidos && (aj.otrosLotes?.length ?? 0) < 11
+            {!aj.erroneo && !aj.servicio && !aj.vencidos && puedeLlevarVariosLotes(r) && (aj.otrosLotes?.length ?? 0) < 11
               ? <Accion texto="Otro lote" onPress={() => props.onAjustar('otrosLotes', [...(aj.otrosLotes ?? []), { ...LOTE_VACIO }])} /> : null}
-            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && !hayVariosLotes(aj)
+            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && !(hayVariosLotes(aj) && puedeLlevarVariosLotes(r))
               ? <Accion texto="A vencidos" onPress={() => props.onAjustar('vencidos', { modo: 'todo', unidades: '', motivo: '', detalle: '' })} /> : null}
             {!aj.servicio && !aj.erroneo && (r.parte?.llave || r.llave || r.codigo_proveedor) && (!r.parte || r.parte.indice === 1)
               ? <Accion texto={r.parte ? 'Cambiar separación' : 'Separar en productos'} onPress={props.onPartir} /> : null}

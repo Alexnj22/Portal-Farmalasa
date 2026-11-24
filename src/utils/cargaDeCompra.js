@@ -158,10 +158,13 @@ const mesValido = (v) => /^\d{4}-\d{2}$/.test(v ?? '');
 // Un erróneo o un servicio entra en un solo lote, aunque queden lotes escritos.
 export const hayVariosLotes = (aj) => !aj?.erroneo && !aj?.servicio && Array.isArray(aj?.otrosLotes) && aj.otrosLotes.length > 0;
 export const LOTE_VACIO = { lote: '', vence: '', unidades: '' };
+// Sólo cuando el documento NO trae lote o vence (usuario, 2026-11-24): si el
+// proveedor los manda, la factura ya dice qué lote es y no se parte a mano.
+export const puedeLlevarVariosLotes = (r) => !(r?.lote && r?.vence);
 
 /** Los lotes del renglón con sus unidades, o null si es uno solo. */
 export function lotesDelRenglon(r, aj) {
-    if (!hayVariosLotes(aj)) return null;
+    if (!hayVariosLotes(aj) || !puedeLlevarVariosLotes(r)) return null;
     const otros = aj.otrosLotes.map(l => ({ lote: l.lote ?? '', vence: l.vence ?? '', unidades: Number(l.unidades) || 0 }));
     const resto = unidadesQueEntran(r, aj) - otros.reduce((a, l) => a + l.unidades, 0);
     return [{ lote: aj.lote ?? '', vence: aj.vence ?? '', unidades: resto }, ...otros];
@@ -200,7 +203,7 @@ export const decisionDeRenglon = (aj, productId, r = null) => ({
         detalle: aj.vencidos.motivo === 'otro' ? (aj.vencidos.detalle || '').trim() : null,
     } : null,
     reparto: aRepartir(aj?.reparto),
-    ...(r && hayVariosLotes(aj) ? {
+    ...(r && lotesDelRenglon(r, aj) ? {
         lotes: lotesDelRenglon(r, aj).map(l => ({
             lote: l.lote || null, vence: mesValido(l.vence) ? l.vence : null, unidades: l.unidades,
         })),
@@ -222,7 +225,7 @@ export const productoDelRenglon = (r, elegido) => elegido?.product_id
 /** Qué le falta a un renglón para quedar completo (el aviso de arriba). */
 export const faltaDelRenglon = (r, aj, confirmado) => {
     if (aj?.servicio) return { sin_producto: false, a_confirmar: false, sin_lote: false, sin_vencimiento: false, lotes_sin_cuadrar: false };
-    const otros = hayVariosLotes(aj) ? aj.otrosLotes : [];
+    const otros = lotesDelRenglon(r, aj) ? aj.otrosLotes : [];
     return {
         sin_producto: !r.producto_id && !confirmado,
         a_confirmar: !!r.producto_id && !r.seguro && !confirmado,

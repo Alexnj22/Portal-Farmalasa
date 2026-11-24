@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1599.2 — Otro lote sólo si la factura no trae lote o vence
+
+- «Otro lote» sale sólo en los productos cuyo documento no trae lote o
+  vencimiento (usuario: «esto solo cuando el json / dte no traiga lote /
+  vence»). Si el proveedor los manda, el renglón entra en un solo lote y
+  cualquier lote escrito antes no viaja (`puedeLlevarVariosLotes`).
+- Novedades: no — ajuste de v2.1599.0, que tampoco va.
+
 ## v2.1599.1 — La tarjeta de Google Wallet se avisa una vez y sólo a quien la guardó
 
 - `wallet-pases /avisar` corría los 1,440 minutos del día (medido: 1,436

@@ -26,7 +26,7 @@ import {
     ajusteInicial, conBorrador, vinetaActual, presDelCatalogo, nombrePres, nombreConTamano, tamanoAprendible,
     cargarDe, cargarAyuda, conCarga, nombreDelRenglon, barrasDelRenglon, huellaDe, claveDe, MOTIVOS_VENCIDOS,
     decisionDeRenglon, productoDelRenglon, faltaDelRenglon, costoDeLaRevision, cantidadSospechosa,
-    hayVariosLotes, LOTE_VACIO, vencesDeDecision,
+    hayVariosLotes, LOTE_VACIO, vencesDeDecision, puedeLlevarVariosLotes,
 } from '@nucleo/utils/cargaDeCompra';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -1011,13 +1011,13 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                     Enviar a sucursales
                                                 </Button>
                                             )}
-                                            {!aj.erroneo && !aj.servicio && !aj.vencidos && (aj.otrosLotes?.length ?? 0) < 11 && (
+                                            {!aj.erroneo && !aj.servicio && !aj.vencidos && puedeLlevarVariosLotes(r) && (aj.otrosLotes?.length ?? 0) < 11 && (
                                                 <Button size="xs" variant="ghost" icon={Layers}
                                                     onClick={() => ajustar(i, 'otrosLotes', [...(aj.otrosLotes ?? []), { ...LOTE_VACIO }])}>
                                                     Otro lote
                                                 </Button>
                                             )}
-                                            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && !hayVariosLotes(aj) && (
+                                            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && !(hayVariosLotes(aj) && puedeLlevarVariosLotes(r)) && (
                                                 <Button size="xs" variant="ghost" icon={Archive}
                                                     onClick={() => ajustar(i, 'vencidos', { modo: 'todo', unidades: '', motivo: '', detalle: '' })}>
                                                     A vencidos

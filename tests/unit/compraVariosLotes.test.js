@@ -51,6 +51,13 @@ describe('lotes en pantalla', () => {
         expect('lotes' in decisionDeRenglon({ ...aj, erroneo: true }, 1, r)).toBe(false);
     });
 
+    it('si el documento trae lote y vence, no se parte', () => {
+        const conLote = { cantidad: 6, lote: 'X9', vence: '2027-01-01' };
+        expect(lotesDelRenglon(conLote, aj)).toBeNull();
+        expect('lotes' in decisionDeRenglon(aj, 1, conLote)).toBe(false);
+        expect(lotesDelRenglon({ cantidad: 6, lote: 'X9' }, aj)).not.toBeNull();
+    });
+
     it('un lote sin número o sin vencimiento cuenta como falta', () => {
         const f = faltaDelRenglon({ producto_id: 1, seguro: true, cantidad: 6 }, { ...aj, otrosLotes: [{ lote: '', vence: '', unidades: '20' }] }, true);
         expect(f).toMatchObject({ sin_lote: true, sin_vencimiento: true, lotes_sin_cuadrar: false });

@@ -32,6 +32,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
   `resumen-diario-salas`, para que se presente como Salvi.
 - Los nombres internos (`SalyAvatar`, `saly-ai`, tablas, clases `.saly-*`) se
   quedan: nadie los ve y renombrarlos sólo rompe enlaces y despliegues.
+- Novedades: no — el usuario decidió no anunciarlo.
 
 ## v2.1596.5 — Las marcas ya no se pierden al recargar Auditoría de tiempos
 

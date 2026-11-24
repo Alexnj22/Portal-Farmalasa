@@ -32,8 +32,16 @@ function correr({ registro, desbloqueos = { abiertos: [] }, preparados = [], hoo
     fs.writeFileSync(path.join(tmp, 'desbloqueos.json'), JSON.stringify(desbloqueos));
     // El snapshot se copia del real: estas pruebas son sobre el CANDADO, y sin
     // snapshot el gate emite un aviso que ensucia la lectura de cada caso.
+    // La fecha se pone en hoy: el modo completo falla con una foto de más de
+    // `DIAS_FOTO` días, y copiarla tal cual hacía que estas pruebas cayeran
+    // solas una semana después de cada `auditoria:sincronizar`, sin que el
+    // candado tuviera nada roto (pasó el 2026-11-24 con una foto de 11 días).
     const real = path.join(RAIZ, 'auditoria', 'snapshot-produccion.json');
-    if (fs.existsSync(real)) fs.copyFileSync(real, path.join(tmp, 'snapshot-produccion.json'));
+    if (fs.existsSync(real)) {
+        const foto = JSON.parse(fs.readFileSync(real, 'utf8'));
+        fs.writeFileSync(path.join(tmp, 'snapshot-produccion.json'),
+            JSON.stringify({ ...foto, generado: new Date().toISOString() }));
+    }
     const anon = path.join(RAIZ, 'auditoria', 'superficie-anon.json');
     if (fs.existsSync(anon)) fs.copyFileSync(anon, path.join(tmp, 'superficie-anon.json'));
     if (extra) for (const [nombre, valor] of Object.entries(extra))

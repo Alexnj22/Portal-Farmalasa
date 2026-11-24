@@ -1,7 +1,7 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees, partirPorLlave } from '../utils';
 import { useToastStore } from '../toastStore';
-import { assertHeadcountAvailable } from './employeeSlice';
+import { assertHeadcountAvailable, conservarMarcas } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { fetchAllRows } from '../../utils/supabaseUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
@@ -510,8 +510,13 @@ export const createSystemSlice = (set, get) => ({
                                 console.warn('fetchBoot: no se pudo traer la identidad:', e?.message || e);
                             }
 
-                            set({ employees: mappedEmployees });
-                            persistEmployees(mappedEmployees);
+                            // Las marcas que ya se leyeron no se pisan: ver
+                            // `conservarMarcas` (la carrera con la vista).
+                            set((state) => {
+                                const next = conservarMarcas(mappedEmployees, state);
+                                persistEmployees(next);
+                                return { employees: next };
+                            });
                         }
 
                         set({ employeesStatus: 'ready' });

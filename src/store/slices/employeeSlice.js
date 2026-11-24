@@ -474,10 +474,35 @@ export const assertHeadcountAvailable = (state, roleId, branchId, excludeEmploye
     }
 };
 
+// `fetchBoot` reemplaza el padrón entero, y cada ficha nueva llega con
+// `attendance: []`. Si la lectura de marcas terminó ANTES (la vista la pide al
+// montarse, con el padrón del caché, mientras el boot sigue en vuelo), el
+// reemplazo las borraba y `attendanceLoaded` quedaba en true con 0 marcas:
+// ninguna vista volvía a pedirlas. Medido en pruebas el 2026-11-24 en
+// Auditoría de tiempos al recargar.
+//
+// Con marcas ya cargadas, cada ficha conserva las que tenía en memoria (que
+// incluyen las que se agregaron o corrigieron después de leer) y, si no
+// estaba en el padrón anterior, toma las de la última lectura.
+export function conservarMarcas(nuevas, state) {
+    if (!state?.attendanceLoaded) return nuevas;
+    const previas = new Map((state.employees || []).map((e) => [String(e.id), e]));
+    const cargadas = state.marcasCargadas || {};
+    return nuevas.map((e) => {
+        const k = String(e.id);
+        const prev = previas.get(k);
+        const marcas = prev ? prev.attendance : cargadas[k];
+        return Array.isArray(marcas) ? { ...e, attendance: marcas } : e;
+    });
+}
+
 export const createEmployeeSlice = (set, get) => ({
     employees: safeJsonParse(almacen.leer(CACHE_KEYS.EMPLOYEES), []) || [],
     attendanceLoaded: false,
     attendanceDias: 0,
+    // Las marcas de la última lectura, por empleado. Las usa `fetchBoot` para
+    // no perderlas al reemplazar el padrón (ver `conservarMarcas`).
+    marcasCargadas: {},
 
     setEmployees: (updater) => set((state) => {
         const next = typeof updater === 'function' ? updater(state.employees) : updater;
@@ -1870,14 +1895,20 @@ export const createEmployeeSlice = (set, get) => ({
                 if (!byEmp.has(k)) byEmp.set(k, []);
                 byEmp.get(k).push(a);
             });
+            byEmp.forEach((lista) => lista.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
 
             set((state) => {
                 const next = state.employees.map((e) => ({
                     ...e,
-                    attendance: byEmp.get(String(e.id))?.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)) || e.attendance || [],
+                    attendance: byEmp.get(String(e.id)) || e.attendance || [],
                 }));
                 persistEmployees(next);
-                return { employees: next, attendanceLoaded: true, attendanceDias: days };
+                return {
+                    employees: next,
+                    attendanceLoaded: true,
+                    attendanceDias: days,
+                    marcasCargadas: Object.fromEntries(byEmp),
+                };
             });
             return true;
         } catch { return false; }

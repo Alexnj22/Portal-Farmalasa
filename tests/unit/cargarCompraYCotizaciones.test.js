@@ -82,8 +82,15 @@ describe('el diccionario que hace que el trabajo baje solo', () => {
         // Con el recorte acá, un apartado o un confirmado no entraba nunca en
         // los 500 que trae la consulta.
         await fetchProductosPorConfirmar('apartados');
-        expect(espia.rpc[0].args).toEqual({ p_estado: 'apartados', p_limite: 500 });
+        expect(espia.rpc[0].args).toEqual({ p_estado: 'apartados', p_limite: 500, p_busca: null });
         expect(espia.uso('from')).toBe(false);
+    });
+
+    it('la búsqueda también la decide la BASE, antes del tope de 500', async () => {
+        // Filtrar en el navegador las 500 que llegan dejaba afuera 2,936 de
+        // 3,436 confirmados (v2.1596.2).
+        await fetchProductosPorConfirmar('resueltos', '  griin flex ');
+        expect(espia.rpc[0].args).toEqual({ p_estado: 'resueltos', p_limite: 500, p_busca: 'griin flex' });
     });
 
     it('por defecto pregunta por los pendientes', async () => {

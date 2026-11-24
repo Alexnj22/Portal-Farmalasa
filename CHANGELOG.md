@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1596.5 — Las marcas ya no se pierden al recargar Auditoría de tiempos
+
+- **Auditoría de tiempos, Inicio y Monitor**: al recargar, la vista pide las
+  marcas con el padrón del caché mientras `fetchBoot` sigue en vuelo. Si la
+  lectura terminaba primero, el boot reemplazaba el padrón con fichas de
+  `attendance: []` y `attendanceLoaded` quedaba en true con 0 marcas: ninguna
+  vista las volvía a pedir y cada día salía «Día libre». Ahora el boot conserva
+  las marcas ya leídas (`conservarMarcas`, `employeeSlice.js`), y si la ficha no
+  estaba en el padrón anterior las toma de la última lectura (`marcasCargadas`).
+  Reproducido en pruebas (0 de 10 marcas) y verificado con el arreglo (10 de 10).
+- Pruebas que ya fallaban en `main`, las tres del lado de la prueba:
+  `auditoriaGate` dependía de la fecha de la foto de producción (falla sola a
+  los 7 días de cada `auditoria:sincronizar`); `cargarCompraYCotizaciones` no
+  conocía `p_busca` (v2.1596.2); `botiquinMotorClientes` no se saltaba sin las
+  dependencias de la app porque Vite resolvía la ruta literal de Matter.
+- La app del personal comparte el store (`@nucleo/store/staffStore`): su Auditoría de tiempos, Monitor e Inicio tenían la misma carrera y reciben el arreglo por aire.
+
 ## v2.1596.4 — Traslado: la presentación renombrada ya no traba el envío
 
 - **Traslados (`aplicar-traslado-inventario`)**: si entre pedir y enviar le

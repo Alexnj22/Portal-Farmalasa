@@ -8,14 +8,21 @@ import { describe, expect, it, vi } from 'vitest';
 vi.setConfig({ testTimeout: 30000 });
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // El motor usa Matter.js, que vive en las dependencias de la app de clientes.
 // La CI del portal no las instala: ahí estas pruebas se saltan en vez de
 // fallar por una dependencia ausente. Localmente (y antes de subir la app) corren.
+//
+// La ruta de Matter va en una variable: escrita literal, Vite la resuelve al
+// analizar el archivo —antes de que el `hay ?` decida nada— y sin las
+// dependencias la suite entera caía en vez de saltarse (pasa en cada árbol de
+// `npm run worktree`, que no enlaza las de la app).
 const RAIZ = join(process.cwd(), 'apps/clientes/node_modules/matter-js/package.json');
 const hay = existsSync(RAIZ);
+const RUTA_MATTER = pathToFileURL(join(process.cwd(), 'apps/clientes/node_modules/matter-js/build/matter.js')).href;
 const M = hay ? await import('../../apps/clientes/lib/botiquinMotor.js') : {};
-const Matter = hay ? (await import('../../apps/clientes/node_modules/matter-js/build/matter.js')).default : null;
+const Matter = hay ? (await import(/* @vite-ignore */ RUTA_MATTER)).default : null;
 const {
   AL_AZAR, CAJA = {}, ESPERA_PERDER, FORMAS = [], GERMENES = [], MAX, PAUSA_SOLTAR, PREMIO_CUMBRE,
   agregar, avanzar, crearMundo, destruir, energia, medidas, paso, piezas, puntosDe, soltar,

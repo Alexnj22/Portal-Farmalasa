@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     );
     /* ── EL ANTICIPO CON TARJETA SE ABONA SOLO AL FACTURARSE (2026-11-23) ──
      *
-     * La R-000203 de Salud 3: anticipo de $24.25 con tarjeta, «Enviar a caja»
+     * La R-000203 de Salud 1: anticipo de $24.25 con tarjeta, «Enviar a caja»
      * mandó la preventa AL CONTADO y la caja la cobró otra vez con tarjeta —
      * el mismo voucher contado dos veces y ningún crédito al que abonar.
      * Ahora la preventa de una reserva con anticipo que no fue todo en

@@ -3,7 +3,7 @@ SET lock_timeout = '5s';
 -- ═══════════════════════════════════════════════════════════════════════════
 -- El anticipo con tarjeta va al crédito y se abona solo (2026-11-23).
 --
--- La R-000203 de Salud 3 (sucursal 4): anticipo de $24.25 con tarjeta
+-- La R-000203 de Salud 1 (sucursal 4): anticipo de $24.25 con tarjeta
 -- (voucher 003907, caja del 22-nov). «Enviar a caja» mandó la preventa AL
 -- CONTADO —`preventa_preparar` no decía cómo paga y `armarVenta` caía a
 -- contado— y la caja la cobró con tarjeta: el mismo voucher contado dos

@@ -23,7 +23,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1595.1 — La reserva pagada con tarjeta sale al crédito y se abona sola
 
-La R-000203 de Salud 3: anticipo de $24.25 con tarjeta (voucher 003907, caja
+La R-000203 de Salud 1: anticipo de $24.25 con tarjeta (voucher 003907, caja
 del 22-nov). «Enviar a caja» armó la preventa AL CONTADO —toda preventa de
 reserva salía así— y la caja la cobró con tarjeta: el mismo voucher contado dos
 veces y «Retirar» sin crédito al que abonar. Era el primer anticipo que no fue

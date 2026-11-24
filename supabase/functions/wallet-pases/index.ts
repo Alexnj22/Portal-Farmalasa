@@ -10,7 +10,9 @@
 //   GET    /v1/passes/:tipo/:serial                         la tarjeta nueva
 //   POST   /v1/log                                          errores del iPhone
 //
-// Y una ruta propia, `/avisar`, que llama el cron cada minuto: busca las
+// Y dos rutas propias. `/reconciliar-google` la llama un cron diario: anota
+// quién tiene la tarjeta en Google Wallet (`wallet_google_tarjetas`).
+// `/avisar` la llama el cron cada minuto —sólo si hay algo que avisar—: busca las
 // tarjetas cuyo saldo cambió (`puntos_cuenta.updated_at` > `notificado_at`) y le
 // manda a Apple un aviso vacío por cada teléfono. El iPhone entonces pregunta
 // qué cambió y baja la tarjeta. El aviso va firmado con el MISMO certificado
@@ -21,7 +23,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret } from "../_shared/security.ts";
 import { clienteDelSerial, paseDeCliente, TIPO_PASE, tokenDePase } from "../_shared/pase.ts";
-import { avisarGoogle } from "../_shared/paseGoogle.ts";
+import { avisarGoogle, reconciliarGoogle } from "../_shared/paseGoogle.ts";
 
 const vacio = (status: number) => new Response(null, { status });
 const pem = (b64: string) => new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
@@ -42,6 +44,12 @@ Deno.serve(async (req) => {
       if (google.status === "rejected") console.error("[wallet-pases] Google:", motivo(google));
       if (apple.status === "rejected") throw apple.reason;
       return Response.json({ ...(apple.value as object), google: motivo(google) });
+    }
+
+    // ── El cron diario: quién tiene la tarjeta en Google (ver `reconciliarGoogle`) ──
+    if (ruta === "/reconciliar-google" && req.method === "POST") {
+      if (!checkCronSecret(req)) return vacio(401);
+      return Response.json(await reconciliarGoogle(admin));
     }
 
     if (p[0] === "v1" && p[1] === "log" && req.method === "POST") {

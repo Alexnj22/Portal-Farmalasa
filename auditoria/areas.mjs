@@ -930,7 +930,7 @@ export const AREAS = [
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                  'apartado_aplicaciones', 'saldo_favor_usos', 'app_ajustes', 'app_chat_reacciones', 'app_cliente_aceptaciones', 'app_errores', 'app_tratamientos', 'clientes_mayoristas', 'clientes_mayoristas_historial', 'mayoristas_resumen_mensual', 'producto_insumo', 'puntos_codigo_acceso',
-                 'app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'prorrogas_retiro', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos', 'app_cliente_avisame', 'app_cliente_familiares',
+                 'app_cliente_sesiones', 'app_cliente_preregistros', 'ofertas_clientes', 'app_cliente_muestras', 'app_cliente_referido_codigo', 'app_cliente_referidos', 'app_cliente_avisos', 'app_cliente_correos', 'app_cliente_correo_envios', 'wallet_registros', 'wallet_google_tarjetas', 'app_historias', 'app_historias_vistas', 'app_reservas', 'app_reservas_pagos', 'prorrogas_retiro', 'app_catalogo_destacados', 'app_banners', 'app_catalogo_ocultos', 'app_encargos', 'app_cliente_avisame', 'app_cliente_familiares',
                  // Chat con la farmacia y foto de perfil (2026-10-12). Los archivos
                  // viven en el bucket privado `app-clientes-archivos`.
                  'app_chat_conversaciones', 'app_chat_mensajes', 'app_chat_respuestas', 'app_cliente_fotos',
@@ -964,7 +964,7 @@ export const AREAS = [
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'mayoristas-resumen-diario', 'purge-app-errores-diario',
-                'puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'purge-app-cliente-preregistros', 'purgar-chat-clientes-diario', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'encargos-sugerir-producto', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
+                'puntos-referidos-hora', 'purge-app-cliente-avisos', 'purge-puntos-consulta-intentos', 'purge-app-cliente-sesiones', 'purge-app-cliente-preregistros', 'purgar-chat-clientes-diario', 'avisos-clientes-minuto', 'avisos-clientes-diario', 'wallet-pases-minuto', 'wallet-google-reconciliar-diario', 'reservas-vencer-15min', 'reservas-vigilar-15min', 'encargos-sugerir-producto', 'app-catalogo-destacados', 'app-cantidad-habitual', 'puntos-cupones-diario',
                 // Receta de la app sin revisar a las 4 h → supervisión.
                 'recetas-escalar-15min',
                 // Esperas del chat: 15 min aviso a la sala del asignado, 20 min registro y supervisión.

@@ -19,11 +19,13 @@
 // Sin ellos, `googleWalletListo()` da false y la app no ofrece el botón.
 //
 // Se ACTUALIZA SOLA con el mismo cron de Apple (`wallet-pases` /avisar, cada
-// minuto): `avisarGoogle` toma las cuentas cuyo saldo cambió en los últimos
-// minutos y le hace PATCH a su objeto. Sin tabla de «quién la guardó»: Google
-// contesta 404 si esa persona nunca la guardó, y eso no es un error. La
-// ventana es más larga que la cadencia para que un minuto perdido no deje una
-// tarjeta vieja; repetir el PATCH no cambia nada.
+// minuto). Desde el 2026-11-24 sólo a quien la tiene: `wallet_google_tarjetas`
+// lleva una fila por ficha con tarjeta (entra al pedir el enlace y con el
+// barrido diario `reconciliarGoogle`, que lee la lista de objetos que Google
+// tiene de este emisor) y su `notificado_at`, como Apple: cada cambio se manda
+// UNA vez. Antes era una ventana de 2 minutos sobre todo `puntos_cuenta` con el
+// cron cada minuto: cada cambio salía dos veces, y a todas las cuentas aunque
+// nunca la hubieran guardado (~770 PATCH al día, casi todos para un 404).
 import { claveDeNivel, corto, datosDeCliente, MATERIALES, nivelRotulo, type DatosPase } from "./pase.ts";
 
 interface CuentaDeServicio { client_email: string; private_key: string }
@@ -155,7 +157,7 @@ export async function actualizarObjetoGoogle(admin: any, customerId: number, tok
   const o = objeto(datos);
   const r = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(o.id)}`, {
     method: "PATCH",
-    headers: { Authorization: `Bearer ${token ?? await tokenOAuth(cuenta())}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${token ?? await tokenVigente()}`, "Content-Type": "application/json" },
     // El barcode va también: así las tarjetas guardadas con el QR viejo (y el
     // código escrito debajo) pasan al Code 128 la próxima vez que cambie su saldo.
     body: JSON.stringify({ loyaltyPoints: o.loyaltyPoints, secondaryLoyaltyPoints: o.secondaryLoyaltyPoints, textModulesData: o.textModulesData, hexBackgroundColor: o.hexBackgroundColor, barcode: o.barcode }),
@@ -163,29 +165,108 @@ export async function actualizarObjetoGoogle(admin: any, customerId: number, tok
     signal: AbortSignal.timeout(15_000),
   });
   if (r.status === 404) return false;
+  if (r.status === 401) tokenEnCache = null; // token vencido antes de tiempo: el próximo intento pide otro
   if (!r.ok) throw new Error(`Google Wallet ${r.status}: ${await r.text()}`);
   return true;
 }
 
-// Medido 2026-10-08: ~2 cuentas cambian cada 5 min, pico 41. Cron cada minuto + ventana de 2.
-const VENTANA_MIN = 2;
+// El token dura una hora: se reusa mientras viva la instancia (50 min), en vez
+// de pedir uno nuevo en cada vuelta del cron.
+let tokenEnCache: { valor: string; vence: number } | null = null;
+async function tokenVigente(): Promise<string> {
+  if (tokenEnCache && Date.now() < tokenEnCache.vence) return tokenEnCache.valor;
+  const valor = await tokenOAuth(cuenta());
+  tokenEnCache = { valor, vence: Date.now() + 50 * 60_000 };
+  return valor;
+}
 
-/** Lo que corre el cron: las tarjetas de Google cuyo saldo cambió en los últimos minutos. */
+// Quien pidió el enlace y todavía no aparece en Google: se le da un día para
+// guardarla antes de sacarlo de la lista (un 404 antes de eso no lo borra).
+const GRACIA_MS = 24 * 60 * 60_000;
+
+/**
+ * Lo que corre el cron: las tarjetas de Google cuyo saldo cambió después del
+ * último aviso (`wallet_google_por_avisar`). Una sola vez por cambio.
+ */
 // deno-lint-ignore no-explicit-any
 export async function avisarGoogle(admin: any) {
   if (!googleWalletListo()) return { ok: true, google: "sin_configurar" };
-  const desdeISO = new Date(Date.now() - VENTANA_MIN * 60_000).toISOString();
-  const { data, error } = await admin.from("puntos_cuenta").select("customer_id").gte("updated_at", desdeISO).limit(500);
+  const { data, error } = await admin.rpc("wallet_google_por_avisar");
   if (error) throw error;
   if (!data?.length) return { ok: true, google: 0 };
-  const token = await tokenOAuth(cuenta());
+  const token = await tokenVigente();
   let actualizadas = 0;
   const errores: string[] = [];
-  for (const { customer_id } of data as { customer_id: number }[]) {
-    try { if (await actualizarObjetoGoogle(admin, customer_id, token)) actualizadas++; } catch (e) { errores.push((e as Error)?.message ?? String(e)); }
+  const sinTarjeta: number[] = [];
+  const anotar = async (customer_id: number, cambio_at: string) => {
+    const { error: eU } = await admin.from("wallet_google_tarjetas").update({ notificado_at: cambio_at }).eq("customer_id", customer_id);
+    if (eU) console.error("[wallet-pases] Google: no se anotó el aviso:", eU.message);
+  };
+  for (const f of data as { customer_id: number; cambio_at: string; created_at: string }[]) {
+    try {
+      if (await actualizarObjetoGoogle(admin, f.customer_id, token)) {
+        actualizadas++;
+        await anotar(f.customer_id, f.cambio_at);
+      } else if (Date.now() - Date.parse(f.created_at) > GRACIA_MS) {
+        sinTarjeta.push(f.customer_id); // 404: pidió el enlace hace más de un día y no la guardó
+      } else {
+        await anotar(f.customer_id, f.cambio_at); // 404 reciente: puede guardarla todavía; al guardarla nace al día
+      }
+    } catch (e) {
+      // Sin anotar: el próximo minuto lo reintenta.
+      errores.push((e as Error)?.message ?? String(e));
+    }
+  }
+  if (sinTarjeta.length) {
+    const { error: eD } = await admin.from("wallet_google_tarjetas").delete().in("customer_id", sinTarjeta);
+    if (eD) console.error("[wallet-pases] Google: no se borraron las que no están guardadas:", eD.message);
   }
   if (errores.length) console.error("[wallet-pases] errores Google Wallet:", [...new Set(errores)].slice(0, 5).join(" | "));
-  return { ok: true, google: data.length, actualizadas, errores: errores.length };
+  return { ok: true, google: data.length, actualizadas, sinTarjeta: sinTarjeta.length, errores: errores.length };
+}
+
+/**
+ * El barrido diario: quién tiene la tarjeta según GOOGLE. Lista los objetos de
+ * cada plantilla (una por material) y siembra `wallet_google_tarjetas` con las
+ * fichas que aparecen. Es lo que garantiza que nadie con la tarjeta guardada se
+ * quede sin avisos: también las guardadas antes de que existiera la tabla, o
+ * con un enlace viejo. Si la lista sale completa, saca a quien pidió el enlace
+ * hace más de un día y no está.
+ */
+// deno-lint-ignore no-explicit-any
+export async function reconciliarGoogle(admin: any) {
+  if (!googleWalletListo()) return { ok: true, google: "sin_configurar" };
+  const token = await tokenVigente();
+  const prefijo = `${emisor()}.socio-`;
+  const ids = new Set<number>();
+  let objetos = 0, sinUsuarios = 0, conUsuarios = 0;
+  for (const clave of Object.keys(MATERIALES)) {
+    let pagina: string | undefined;
+    do {
+      const u = new URL("https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject");
+      u.searchParams.set("classId", `${emisor()}.puntos-salud-${clave}`);
+      u.searchParams.set("maxResults", "1000");
+      if (pagina) u.searchParams.set("token", pagina);
+      const r = await fetch(u, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20_000) });
+      if (r.status === 404) break; // esa plantilla nunca se creó: nadie guardó ese material
+      if (!r.ok) throw new Error(`Google Wallet lista ${clave} ${r.status}: ${await r.text()}`);
+      const j = await r.json();
+      for (const o of (j.resources ?? []) as { id?: string; hasUsers?: boolean }[]) {
+        objetos++;
+        const resto = String(o.id ?? "").startsWith(prefijo) ? String(o.id).slice(prefijo.length) : "";
+        if (!/^\d+$/.test(resto)) continue; // las de prueba (`-prueba-…`) no se avisan
+        // `hasUsers: false` = la quitaron de su teléfono. Sin el campo se cuenta
+        // como guardada: sobra un PATCH, pero no se pierde a nadie.
+        if (o.hasUsers === false) { sinUsuarios++; continue; }
+        if (o.hasUsers === true) conUsuarios++;
+        ids.add(Number(resto));
+      }
+      pagina = j.pagination?.nextPageToken || undefined;
+    } while (pagina);
+  }
+  const { data, error } = await admin.rpc("wallet_google_sembrar", { p_ids: [...ids], p_completo: true });
+  if (error) throw error;
+  return { ok: true, objetos, conUsuarios, sinUsuarios, ...(data as object) };
 }
 
 /**
@@ -199,7 +280,7 @@ export async function expirarObjetoGoogle(customerId: number): Promise<boolean> 
   const id = `${emisor()}.socio-${customerId}`;
   const r = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    headers: { Authorization: `Bearer ${await tokenOAuth(cuenta())}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${await tokenVigente()}`, "Content-Type": "application/json" },
     body: JSON.stringify({ state: "EXPIRED" }),
     signal: AbortSignal.timeout(15_000),
   });

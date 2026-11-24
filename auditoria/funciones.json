@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-24T02:04:15.434Z",
+ "generado": "2026-11-24T21:15:59.895Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -6907,6 +6907,14 @@
   "vigilar_servicios": {
    "area": "sistema",
    "por": "cron"
+  },
+  "wallet_google_por_avisar": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "wallet_google_sembrar": {
+   "area": "app-clientes",
+   "por": "tablas"
   },
   "wallet_registros_por_avisar": {
    "area": "app-clientes",

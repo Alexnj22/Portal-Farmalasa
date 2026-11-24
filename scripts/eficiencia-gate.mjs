@@ -242,10 +242,18 @@ const CRONS = [
   {
     job: 'wallet-pases-minuto', via: 'tick-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
-    motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto busca tarjetas cuyo saldo '
-          + 'cambió y le avisa a Apple (APNs). El propio cron sólo dispara si hay ALGÚN teléfono '
-          + 'registrado (`WHERE EXISTS`), y la función sale enseguida si nada cambió. No habla con '
-          + 'el ERP; APNs es gratis.',
+    motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto mira si alguna tarjeta '
+          + 'guardada (Apple `wallet_registros` o Google `wallet_google_tarjetas`) cambió de saldo '
+          + 'después de su último aviso, y SÓLO entonces llama a la función (`WHERE EXISTS` en la '
+          + 'base, 2026-11-24: antes llamaba los 1,440 minutos). No habla con el ERP; APNs y '
+          + 'Google Wallet son gratis.',
+  },
+  {
+    job: 'wallet-google-reconciliar-diario', slug: 'wallet-pases', cadencia: '40 9 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Quién tiene la tarjeta en Google Wallet: lista los objetos del emisor (una página '
+          + 'por material) y siembra `wallet_google_tarjetas`, para que el aviso de cada minuto '
+          + 'llegue a todas las guardadas y a nadie más. No habla con el ERP.',
   },
   {
     job: 'avisos-clientes-minuto', via: 'tick-minuto', slug: 'avisos-clientes', cadencia: '* 13-23,0-3 * * *',

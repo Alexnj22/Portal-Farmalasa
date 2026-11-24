@@ -31947,6 +31947,39 @@ export type Database = {
           },
         ]
       }
+      wallet_google_tarjetas: {
+        Row: {
+          created_at: string
+          customer_id: number
+          notificado_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          notificado_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          notificado_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_google_tarjetas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_google_tarjetas_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       wallet_registros: {
         Row: {
           created_at: string
@@ -41498,6 +41531,18 @@ export type Database = {
       vigilar_reinicio_de_la_base: { Args: never; Returns: undefined }
       vigilar_seguridad: { Args: never; Returns: Json }
       vigilar_servicios: { Args: never; Returns: undefined }
+      wallet_google_por_avisar: {
+        Args: never
+        Returns: {
+          cambio_at: string
+          created_at: string
+          customer_id: number
+        }[]
+      }
+      wallet_google_sembrar: {
+        Args: { p_completo: boolean; p_ids: number[] }
+        Returns: Json
+      }
       wallet_registros_por_avisar: {
         Args: never
         Returns: {

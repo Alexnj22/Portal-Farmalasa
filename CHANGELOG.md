@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1599.1 — La tarjeta de Google Wallet se avisa una vez y sólo a quien la guardó
+
+- `wallet-pases /avisar` corría los 1,440 minutos del día (medido: 1,436
+  llamadas en 24 h, 987 ms de promedio, p95 2.7 s). Cada cambio de saldo salía
+  **dos veces** a Google (ventana de 2 minutos con el cron cada minuto) y a
+  **todas** las cuentas que cambiaron, tuvieran o no la tarjeta: ~770 tarjetas
+  armadas al día para recibir un 404.
+- Ahora hay una lista de quién tiene la tarjeta en Google,
+  `wallet_google_tarjetas`, con su `notificado_at` como la de Apple: cada cambio
+  sale **una** vez. Entra al pedir el enlace en la app y con el barrido diario
+  `wallet-google-reconciliar-diario`, que lee los objetos que Google tiene del
+  emisor. La primera pasada encontró **2** tarjetas guardadas.
+- El cron mira en la base si hay algo que avisar (Apple o Google) antes de
+  llamar: sin cambios no hay llamada. La guarda entra por la llave de
+  `puntos_cuenta` (11 bloques) en vez de barrerla.
+- El token de Google se reusa 50 minutos.
+- Gemelo: app-clientes — sólo edge functions y base, nada cambia en pantalla.
+
 ## v2.1599.0 — Cargar compra: un producto en varios lotes
 
 - Un renglón de la factura que llega en dos o más lotes (VIROGRIP de Vijosa:

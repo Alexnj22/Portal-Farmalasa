@@ -4862,7 +4862,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!googleWalletListo()) return json({ ok: false, motivo: "sin_configurar" });
       const [pedido, extra] = String(body?.nivel_prueba ?? "").split("+");
       const nivelPrueba = NOMBRE_NIVEL[pedido] && await esDePrueba(customerId) ? NOMBRE_NIVEL[pedido] : undefined;
-      return json({ ok: true, url: await enlaceGoogleWallet(admin, customerId, nivelPrueba, !!nivelPrueba && extra === "equipo") });
+      const url = await enlaceGoogleWallet(admin, customerId, nivelPrueba, !!nivelPrueba && extra === "equipo");
+      // Desde aquí `wallet-pases /avisar` le manda sus cambios de saldo (sólo a
+      // quien está en esta tabla). La tarjeta de prueba es otro objeto: no se anota.
+      if (!nivelPrueba) {
+        const { error: eG } = await admin.from("wallet_google_tarjetas")
+          .upsert({ customer_id: customerId }, { onConflict: "customer_id", ignoreDuplicates: true });
+        if (eG) console.error("app-clientes: no se anotó la tarjeta de Google:", eG.message);
+      }
+      return json({ ok: true, url });
     }
 
     if (accion === "wallet_enlace") {

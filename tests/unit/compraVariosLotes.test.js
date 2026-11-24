@@ -1,6 +1,7 @@
 // Varios lotes en un renglón de compra (2026-11-24): VIROGRIP de Vijosa vino
 // en dos lotes y la factura dice uno. La cantidad total siempre cuadra.
 import { describe, it, expect } from 'vitest';
+import { venceCorto } from '@nucleo/utils/venceCorto';
 import { lineaDelSobre, partirEnLotes, totalesDelSobre } from '../../supabase/functions/_shared/compraSobre.ts';
 import { lotesDelRenglon, problemaDeLotes, decisionDeRenglon, faltaDelRenglon, vencesDeDecision } from '@nucleo/utils/cargaDeCompra.js';
 
@@ -61,5 +62,12 @@ describe('lotes en pantalla', () => {
     it('un lote sin número o sin vencimiento cuenta como falta', () => {
         const f = faltaDelRenglon({ producto_id: 1, seguro: true, cantidad: 6 }, { ...aj, otrosLotes: [{ lote: '', vence: '', unidades: '20' }] }, true);
         expect(f).toMatchObject({ sin_lote: true, sin_vencimiento: true, lotes_sin_cuadrar: false });
+    });
+});
+
+describe('venceCorto como callback', () => {
+    it('no se rompe si recibe la posición como segundo argumento', () => {
+        expect(() => ['2026-12', '2030-01'].some(venceCorto)).not.toThrow();
+        expect(['2030-01', '2026-12'].some(v => venceCorto(v))).toBe(true);
     });
 });

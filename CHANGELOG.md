@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1599.3 — Cargar compra ya no se cae al abrir una factura
+
+- v2.1599.0 pasó `venceCorto` como callback (`lista.some(venceCorto)`): el
+  segundo argumento era la posición y no la fecha de hoy, y `hoy.split`
+  tumbaba la pantalla al abrir cualquier factura. Se llama con una flecha y
+  `venceCorto` ahora ignora un `hoy` que no sea texto. Prueba en
+  `compraVariosLotes.test.js`.
+- Novedades: no — arreglo de un error de hoy.
+
 ## v2.1599.2 — Otro lote sólo si la factura no trae lote o vence
 
 - «Otro lote» sale sólo en los productos cuyo documento no trae lote o

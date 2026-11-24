@@ -19,7 +19,9 @@ export function mesesParaVencer(vence, hoy = hoySV()) {
     if (!m) return null;
     const mes = Number(m[2]);
     if (mes < 1 || mes > 12) return null;
-    const [ay, am] = hoy.split('-').map(Number);
+    // Usada como callback (`lista.some(venceCorto)`) el 2º argumento es la
+    // POSICIÓN, no la fecha: tumbó Cargar compra el 2026-11-24.
+    const [ay, am] = (typeof hoy === 'string' ? hoy : hoySV()).split('-').map(Number);
     return (Number(m[1]) - ay) * 12 + (mes - am);
 }
 

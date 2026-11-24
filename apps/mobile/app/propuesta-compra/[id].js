@@ -209,7 +209,7 @@ export default function PropuestaDeCompra() {
     }
     if (r?.enviada === true && !e) {
       // Vence en 6 meses o menos: se avisa a Bodega.
-      const cortos = Object.entries(rev.renglones ?? {}).filter(([, x]) => !x.servicio && !x.erroneo && vencesDeDecision(x).some(venceCorto))
+      const cortos = Object.entries(rev.renglones ?? {}).filter(([, x]) => !x.servicio && !x.erroneo && vencesDeDecision(x).some(v => venceCorto(v)))
         .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: vencesDeDecision(x).sort()[0], cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
       if (cortos.length) {
         notificarVenceCorto({ origen: 'compra', referencia: doc.document_id ?? `papel-${doc.manual_id}`, detalle: doc.emisor_nombre, productos: cortos })
@@ -385,7 +385,7 @@ export default function PropuestaDeCompra() {
                   onFechas={usarFechas} />
               ) : null}
               {uso === 'venta' && (() => {
-                const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && vencesDeDecision(decisionDeRenglon(ajustes[i], null, r)).some(venceCorto)).length;
+                const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && vencesDeDecision(decisionDeRenglon(ajustes[i], null, r)).some(v => venceCorto(v))).length;
                 return n > 0 ? <Aviso tono="cuidado" texto={`${n === 1 ? 'Un producto vence' : `${n} productos vencen`} en 6 meses o menos. Al cargar la compra se le avisa a Bodega.`} /> : null;
               })()}
               {!revision && uso === 'venta' && faltan === 0 ? <Aviso texto={`Los ${resumen.renglones} productos están completos.`} /> : null}

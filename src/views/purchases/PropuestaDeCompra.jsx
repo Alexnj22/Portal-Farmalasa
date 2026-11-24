@@ -446,7 +446,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         if (r?.enviada === true && !e) {
             // Vence en 6 meses o menos: se avisa a Bodega (usuario, 2026-11-17).
             const cortos = Object.entries(rev.renglones ?? {})
-                .filter(([, x]) => !x.servicio && !x.erroneo && vencesDeDecision(x).some(venceCorto))
+                .filter(([, x]) => !x.servicio && !x.erroneo && vencesDeDecision(x).some(v => venceCorto(v)))
                 .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: vencesDeDecision(x).sort()[0], cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
             if (cortos.length) {
                 notificarVenceCorto({
@@ -758,7 +758,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             onFechas={usarFechas} />
                     )}
                     {uso === 'venta' && (() => {
-                        const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && vencesDeDecision(decisionDeRenglon(ajustes[i], null, r)).some(venceCorto)).length;
+                        const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && vencesDeDecision(decisionDeRenglon(ajustes[i], null, r)).some(v => venceCorto(v))).length;
                         return n > 0 && (
                             <Notice variant="warning" icon={AlertTriangle}>
                                 <b>{n === 1 ? 'Un producto vence' : `${n} productos vencen`} en 6 meses o menos.</b>{' '}

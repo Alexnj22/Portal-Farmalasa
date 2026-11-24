@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1597.1 — La prueba del resumen de encuestas espera a Salvi
+
+- `tests/unit/comercialFiscalNucleo.test.js` esperaba el botón «Pedirle el
+  resumen a Saly»; desde v2.1597.0 dice «Salvi». Sólo cambia la prueba: no hay
+  cambio visible. Corrida completa de `tests/unit` en verde (5763 pruebas).
+
 ## v2.1597.0 — Saly ahora se llama Salvi
 
 - **Rebranding de la IA del portal** (decisión del usuario, 2026-11-24): Saly

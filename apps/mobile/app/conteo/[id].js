@@ -883,8 +883,9 @@ export default function Conteo() {
                         // …y ése es el camino: los lotes reales de la caja (`LoteReal`).
                         // En todo conteo por lote, ajuste o no (gemelo de `llevaLotesEnLinea`
                         // de la web): en el cíclico de Salud 4, que no ajusta, no había dónde
-                        // agregar el segundo lote de un producto (2026-11-17).
-                        onLoteReal={editable && !simple && !it.is_vencidos && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
+                        // agregar el segundo lote de un producto (2026-11-17). También en el
+                        // área de vencidos (2026-11-24): el lote nace en el estante del renglón.
+                        onLoteReal={editable && !simple && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
                         ajusta={!!conteo?.aplica_en_caja}
                         onRecontar={puedeAprobar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                   </View>

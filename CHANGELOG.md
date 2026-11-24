@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1600.0 — Conteo: lote y vence también en el área de vencidos
+
+- Pedido del usuario: «se puede cambiar el lote / vence del área de vencidos
+  así como en el normal? tanto en el portal como en la app?». La pestaña
+  «Área de vencidos» del conteo ahora ofrece «Lote y vence» / «+ Lote» igual
+  que la bodega, en el portal y en la app.
+- Estaba apagado a propósito: `agregar_item_conteo` creaba el lote nuevo
+  siempre en el estante bueno (`is_vencidos = false` fijo), así que habría
+  sacado unidades del área de vencidos al estante de venta. Ahora recibe
+  `p_is_vencidos` (migración `20261124222935`) y frena con
+  `CONTEO_SIN_AREA_DE_VENCIDOS` si el conteo no trajo esa área. Probado en el
+  entorno de pruebas: sin área frena, el lote nace en vencidos, el duplicado
+  se mide por área y el mismo lote en bodega sigue entrando en bodega.
+- `planDeLotesReales` y `anotarLoteEnLineaConteo` cruzan sólo lotes del
+  mismo estante (pruebas en `loteRealDelRenglon.test.js`).
+- Al aprobar, la carga a la caja de un lote del área de vencidos acepta un
+  vencimiento pasado (`validarLoteEscrito(…, { aceptarVencido })`, sólo
+  desde `aplicar-conteo-caja`, redesplegada). Lo que va al estante de venta
+  sigue exigiendo fecha futura. Si la caja rechaza la carga, el renglón
+  queda con el error a la vista: la existencia se relee y nada se da por
+  hecho sin verlo.
+
 ## v2.1599.3 — Cargar compra ya no se cae al abrir una factura
 
 - v2.1599.0 pasó `venceCorto` como callback (`lista.some(venceCorto)`): el

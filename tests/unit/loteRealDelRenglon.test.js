@@ -73,3 +73,24 @@ describe('planDeLotesReales · el campo que falta (2026-11-14)', () => {
         expect(planDeLotesReales({ item: sinLote, lotes: [{ lote: 'A1', vence: '2028-01-01', cantidad: '' }], regla: regulado }).campo).toBe('cantidad-0');
     });
 });
+
+describe('planDeLotesReales · el área de vencidos (2026-11-24)', () => {
+    const enVencidos = { ...sinLote, id: 'v1', is_vencidos: true };
+    const hermanoBueno = { id: 'b1', lote: 'A1', fecha_vencimiento: '2025-01-01', is_vencidos: false };
+    const hermanoVencido = { id: 'v2', lote: 'A1', fecha_vencimiento: '2025-01-01', is_vencidos: true };
+    const lotes = [{ lote: 'A1', vence: '2025-01-01', cantidad: 2 }];
+    it('un lote del estante bueno no es hermano de un renglón del área de vencidos', () => {
+        const plan = planDeLotesReales({ item: enVencidos, sinLote: 0, regla: regulado, lotes, hermanos: [hermanoBueno] });
+        expect(plan.aHermanos).toEqual([]);
+        expect(plan.nuevos).toEqual([{ lote: 'A1', vence: '2025-01-01', cantidad: 2 }]);
+    });
+    it('el mismo lote en el área de vencidos sí es hermano', () => {
+        const plan = planDeLotesReales({ item: enVencidos, sinLote: 0, regla: regulado, lotes, hermanos: [hermanoBueno, hermanoVencido] });
+        expect(plan.aHermanos).toEqual([{ id: 'v2', cantidad: 2 }]);
+    });
+    it('y al revés: un renglón del estante bueno no se cruza con el área de vencidos', () => {
+        const plan = planDeLotesReales({ item: sinLote, sinLote: 0, regla: regulado, lotes, hermanos: [hermanoVencido] });
+        expect(plan.aHermanos).toEqual([]);
+        expect(plan.nuevos).toHaveLength(1);
+    });
+});

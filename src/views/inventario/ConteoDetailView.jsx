@@ -69,17 +69,17 @@ const AjustaElInventario = createContext(false);
 // Todo renglón por lote ofrece su lote. En uno que ajusta, el del sistema no
 // se reescribe: el botón abre «Lote y vence» (`LoteRealDelRenglon`), que
 // confirma o mueve las unidades al lote real (2026-11-06).
-// El área de vencidos queda fuera: el alta crea existencia buena, y mover ahí
-// sacaría unidades vencidas al estante.
-const ofreceCorregirLote = (ajusta, item) => !ajusta || !!item?.es_agregado_manual || !item?.is_vencidos;
+// También en el área de vencidos (2026-11-24, pedido del usuario): el lote
+// real nace en el MISMO estante que el renglón (`agregar_item_conteo` recibe
+// el área), así que no saca unidades vencidas al estante de venta.
 const vaPorLoteReal = (ajusta, item) => ajusta && !item?.es_agregado_manual;
-// Las filas de lote en el renglón: todo conteo por lote, ajuste o no, fuera
-// del área de vencidos (el alta crea existencia buena). Antes exigía un conteo
+// Las filas de lote en el renglón: todo conteo por lote, ajuste o no, en
+// los dos estantes (el alta va al estante del renglón). Antes exigía un conteo
 // que ajusta, y en el cíclico de Salud 4 (que no ajusta) no había dónde
 // agregar un segundo lote de Flucodel (2026-11-17). El alta y el guardado son
 // los mismos en los dos casos (`anotarLoteEnLineaConteo`).
 const llevaLotesEnLinea = (ajusta, item, editable, simple, onLoteEnLinea) =>
-    !!onLoteEnLinea && editable && !simple && !item?.is_vencidos;
+    !!onLoteEnLinea && editable && !simple;
 const LoteRealDelRenglon = lazy(() => import('./LoteRealDelRenglon'));
 import { formatMoney, formatQty, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -662,7 +662,7 @@ function ItemRow({
                         {/* Sin lote no hay etiqueta que corregir: el lápiz sale. Lo
                             rechaza también `editar_lote_conteo_item`, porque una
                             restricción que solo vive en el cliente es decorativa. */}
-                        {editable && !simple && ofreceCorregirLote(ajusta, item) && (
+                        {editable && !simple && (
                             vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? null : (
                                 <Button variant="ghost" icon={Pencil} disabled={saving} iconOnly
                                     title={vaPorLoteReal(ajusta, item) ? 'Confirmar o corregir lote/vencimiento' : 'Corregir lote/vencimiento'}
@@ -1030,7 +1030,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         `max(…, var(--tap-min))`, que en un dedo son 44px. Escribirlo
                         acá era pelearle al canónico con una clase que puede perder o
                         ganar según el orden del CSS generado. */}
-                    {editable && onEditLote && !simple && ofreceCorregirLote(ajusta, item) && (
+                    {editable && onEditLote && !simple && (
                         vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? null : (
                             <Button variant="ghost" icon={Pencil} iconOnly disabled={saving}
                                 className="shrink-0"
@@ -1852,8 +1852,10 @@ export default function ConteoDetailView() {
     const anotarLoteEnLineaConteo = useStaffStore((s) => s.anotarLoteEnLineaConteo);
     const anotarLoteEnLinea = useCallback(async (item, linea) => {
         const filas = await anotarLoteEnLineaConteo(id, item, linea);
-        // El producto se relee en las dos áreas; esta lista es sólo la bodega.
-        setItemsByProduct((prev) => ({ ...prev, [item.erp_product_id]: filas.filter((f) => !f.is_vencidos) }));
+        // El producto se relee en las dos áreas; cada lista lleva su estante.
+        const area = !!item.is_vencidos;
+        const setLista = area ? setVencidosItems : setItemsByProduct;
+        setLista((prev) => ({ ...prev, [item.erp_product_id]: filas.filter((f) => !!f.is_vencidos === area) }));
         cargarCabecera().catch((err) => console.error('cabecera del conteo:', err?.message));
     }, [id, anotarLoteEnLineaConteo, cargarCabecera]);
 
@@ -2186,7 +2188,8 @@ export default function ConteoDetailView() {
 
     const handleEditLote = async (itemId, payload, erpProductId) => {
         const result = await editarLoteConteoItem(itemId, payload);
-        setItemsByProduct((prev) => ({
+        const setLista = editLoteItem?.is_vencidos ? setVencidosItems : setItemsByProduct;
+        setLista((prev) => ({
             ...prev,
             [erpProductId]: (prev[erpProductId] || []).map((it) => (it.id === itemId ? { ...it, lote: result.lote, fecha_vencimiento: result.fecha_vencimiento } : it)),
         }));
@@ -2815,6 +2818,7 @@ export default function ConteoDetailView() {
                             onRecount={handleRecountVencido}
                             onShowHistory={abrirHistorial}
                             onEditLote={abrirEditLote}
+                            onLoteEnLinea={anotarLoteEnLinea}
                             currentUser={user}
                             enVivo={conteo?.fuente_sistema === 'VIVO'}
                         />
@@ -2889,8 +2893,9 @@ export default function ConteoDetailView() {
             {loteRealItem && (
                 <Suspense fallback={null}>
                     <LoteRealDelRenglon open conteoId={id} item={loteRealItem}
-                        hermanos={(itemsByProduct[loteRealItem.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteRealItem.presentacion ?? '').trim().toUpperCase())}
-                        onClose={() => setLoteRealItem(null)} onListo={load} />
+                        hermanos={((loteRealItem.is_vencidos ? vencidosItems : itemsByProduct)[loteRealItem.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteRealItem.presentacion ?? '').trim().toUpperCase())}
+                        onClose={() => setLoteRealItem(null)}
+                        onListo={() => { if (loteRealItem.is_vencidos) cargarVencidos(); load(); }} />
                 </Suspense>
             )}
 

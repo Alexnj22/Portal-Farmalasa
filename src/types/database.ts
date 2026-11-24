@@ -32911,6 +32911,7 @@ export type Database = {
           p_conteo_id: string
           p_erp_product_id: number
           p_fecha_vencimiento?: string
+          p_is_vencidos?: boolean
           p_lote: string
           p_presentacion: string
         }

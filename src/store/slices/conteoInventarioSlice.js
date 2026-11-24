@@ -41,6 +41,7 @@ const ERRORES = {
     PRESENTACION_REQUERIDA: 'Elige la presentación antes de agregar.',
     PRODUCTO_NO_ENCONTRADO: 'Ese producto no existe o está inactivo.',
     LINEA_YA_EXISTE: 'Ese producto ya está en el conteo con esa presentación y lote.',
+    CONTEO_SIN_AREA_DE_VENCIDOS: 'Este conteo no tiene área de vencidos.',
     // Un conteo sencillo no tiene lote, así que el motivo del rechazo es otro y
     // el código también — ninguno de los dos es prefijo del otro, que es lo que
     // el traductor por substring necesita para no confundirlos.
@@ -418,20 +419,23 @@ export const createConteoInventarioSlice = (set, get) => ({
         return await signPhotosDeep(data || []);
     },
 
-    agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, lote, fechaVencimiento }) => {
+    // `isVencidos`: el renglón nace en el área de vencidos (2026-11-24). Sin
+    // eso, «Lote y vence» desde esa área sacaba unidades al estante bueno.
+    agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, lote, fechaVencimiento, isVencidos = false }) => {
         const { data, error } = await supabase.rpc('agregar_item_conteo', {
             p_conteo_id: conteoId,
             p_erp_product_id: erpProductId,
             p_presentacion: presentacion,
             p_lote: lote,
             p_fecha_vencimiento: fechaVencimiento || null,
+            p_is_vencidos: !!isVencidos,
         });
         if (error) throw traducirError(error);
 
         await get().appendAuditLog('CONTEO_ITEM_AGREGADO', conteoId, {
             timeline_title: 'Producto agregado a un conteo',
             dimension: 'OPERATIVE',
-            new_value: `Producto ${erpProductId} · ${presentacion} · lote ${lote}`,
+            new_value: `Producto ${erpProductId} · ${presentacion} · lote ${lote}${isVencidos ? ' · área de vencidos' : ''}`,
         });
 
         return data;
@@ -456,6 +460,8 @@ export const createConteoInventarioSlice = (set, get) => ({
                     presentacion: plan.presentacion || item.presentacion,
                     lote: n.lote,
                     fechaVencimiento: n.vence,
+                    // El lote real va al MISMO estante que el renglón.
+                    isVencidos: !!item.is_vencidos,
                 });
                 await guardar(alta.id, { fisicoCantidad: n.cantidad, nota: null, estadoItem: 'CONTADO' });
                 hechos += 1;
@@ -495,12 +501,15 @@ export const createConteoInventarioSlice = (set, get) => ({
         // va a ESA presentación, y lo que baja es su «Sin lote» —si existe—;
         // si no hay, el lote sólo se agrega.
         const destino = linea.presentacion ? pres(linea) : pres(delRenglon);
+        // Todo se busca en el estante del renglón: bodega o área de vencidos.
+        const area = !!delRenglon.is_vencidos;
+        const mismaArea = (r) => !!r.is_vencidos === area;
         let actual = delRenglon;
         if (destino !== pres(delRenglon)) {
-            actual = filas.find((r) => pres(r) === destino && esLoteGenerico(r.lote) && !r.is_vencidos && !r.es_agregado_manual)
-                || { erp_product_id: item.erp_product_id, presentacion: linea.presentacion, lote: '\u0000ninguno', fecha_vencimiento: null, soloAgrega: true };
+            actual = filas.find((r) => pres(r) === destino && esLoteGenerico(r.lote) && mismaArea(r) && !r.es_agregado_manual)
+                || { erp_product_id: item.erp_product_id, presentacion: linea.presentacion, lote: '\u0000ninguno', fecha_vencimiento: null, is_vencidos: area, soloAgrega: true };
         }
-        const hermanos = filas.filter((r) => pres(r) === destino && !r.is_vencidos);
+        const hermanos = filas.filter((r) => pres(r) === destino && mismaArea(r));
         const plan = planDeLotesReales({ item: actual, lotes: [linea], sinLote: 0, hermanos, regla });
         if (plan.error) throw new Error(plan.error);
         plan.presentacion = actual.presentacion;

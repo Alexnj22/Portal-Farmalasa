@@ -172,7 +172,7 @@ export async function aplicarAjusteDeConteo(
         if (f.regulado) {
           const existe = f.lotes.some((x) => norm(x.numero) === c.lote && dia(x.vence) === c.vence);
           if (!existe) {
-            const v = validarLoteEscrito(c.lote, c.vence);
+            const v = validarLoteEscrito(c.lote, c.vence, { aceptarVencido: Boolean(m.is_vencidos) });
             if (!v.ok) { marcar(c.is, { error: v.error }); continue; }
             let choca: string | null = null;
             try { choca = await fechaRegistradaQueChoca(sb, m.erp_product_id, v.lote, v.vence); }

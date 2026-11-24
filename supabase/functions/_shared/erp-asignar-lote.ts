@@ -49,6 +49,11 @@ function hoySV(): string {
  */
 export function validarLoteEscrito(
   lote: unknown, vence: unknown,
+  // El área de vencidos guarda justamente lo vencido (2026-11-24): un conteo
+  // que anota ahí un lote con su fecha real no se puede frenar por la fecha.
+  // Sólo esa carga lo pide; lo que va al estante de venta sigue exigiendo una
+  // fecha futura.
+  { aceptarVencido = false }: { aceptarVencido?: boolean } = {},
 ): { ok: true; lote: string; vence: string } | { ok: false; error: string } {
   const l = String(lote ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
@@ -58,7 +63,7 @@ export function validarLoteEscrito(
   const v = dia(String(vence ?? ""));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(`${v}T12:00:00Z`)))
     return { ok: false, error: "Falta el vencimiento, o no es una fecha." };
-  if (v <= hoySV()) return { ok: false, error: `El vencimiento ${v} ya pasó: esa caja no puede salir.` };
+  if (!aceptarVencido && v <= hoySV()) return { ok: false, error: `El vencimiento ${v} ya pasó: esa caja no puede salir.` };
   return { ok: true, lote: l, vence: v };
 }
 

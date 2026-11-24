@@ -416,7 +416,9 @@ export function planDeLotesReales({ item, lotes = [], sinLote = 0, hermanos = []
         if (vistos.has(clave)) return { error: `Ese lote y vencimiento está dos veces${n}.`, campo: regla.pideLote ? `lote-${i}` : `vence-${i}` };
         vistos.add(clave);
         if (clave === claveOriginal) { enOriginal += cant; continue; }
-        const hermano = hermanos.find((h) => h.id !== item?.id && !h.is_vencidos
+        // Un lote del otro estante no es hermano: bodega y área de vencidos
+        // son existencias distintas en la caja.
+        const hermano = hermanos.find((h) => h.id !== item?.id && !!h.is_vencidos === !!item?.is_vencidos
             && claveDeLote(h.lote, h.fecha_vencimiento || null) === clave);
         if (hermano) aHermanos.push({ id: hermano.id, cantidad: cant });
         else nuevos.push({ lote: regla.pideLote ? lote : null, vence, cantidad: cant });

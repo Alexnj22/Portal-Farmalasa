@@ -180,6 +180,9 @@ export function domingoDe(lunes) {
  * sumando la semana (RIT Art. 26) o una ausencia sin causa justificada
  * (`is_absent` sin tipo: RIT Art. 25, CT Art. 171).
  *
+ * @param {any[]} timesheets
+ * @param {any[]} [decisiones]
+ * @param {{ desde?: string|null, hasta?: string|null }} [quincena]
  * @returns {Array<{ employee_id, semana, minutosTarde, incompleta, motivo, decision }>}
  */
 export function semanasConDescansoEnDuda(timesheets, decisiones = [], { desde, hasta } = {}) {

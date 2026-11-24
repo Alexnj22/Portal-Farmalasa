@@ -28,10 +28,9 @@ const porHora = (filas) => {
 };
 
 /**
- * @param hoy      [{ hora, total }] lo vendido hoy por hora
- * @param tipica   [{ hora, total }] el promedio por hora del mismo día de la semana
- * @param metaDia  la meta del día (la del mes entre sus días) o null
- * @param reloj    { hora, minuto } de ahora
+ * `hoy`: `[{ hora, total }]` lo vendido hoy por hora. `tipica`: `[{ hora, total }]`
+ * el promedio por hora del mismo día de la semana. `metaDia`: la meta del día
+ * (la del mes entre sus días) o null. `reloj`: `{ hora, minuto }` de ahora.
  * @returns null si no hay con qué comparar; si no, la serie de la gráfica
  *   (acumulados por hora) y los tres números: vendido, esperado ahora, base.
  */

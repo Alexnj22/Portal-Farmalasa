@@ -95,5 +95,5 @@ export async function emitirTicketDeVinculacion(branchId, tipo, nombre = null) {
         const sinPermiso = String(error.message || '').includes('SIN_PERMISO');
         return { ok: false, motivo: sinPermiso ? 'No tienes permiso para vincular equipos.' : 'No se pudo emitir el ticket. Intenta de nuevo.' };
     }
-    return { ok: true, ...data };
+    return { ok: true, .../** @type {Record<string, any>} */ (data) };
 }

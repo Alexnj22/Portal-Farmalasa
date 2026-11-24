@@ -168,7 +168,7 @@ export async function asignarDocumentoA(employeeIds, documento) {
         p_documento: documento,
     });
     if (error) return { ok: false, motivo: error.message };
-    return data;
+    return /** @type {{ ok?: boolean, motivo?: string, asignados?: any[], omitidos?: any[] } | null} */ (data);
 }
 
 /** Deja el documento esperando a una ficha que todavía no existe. */

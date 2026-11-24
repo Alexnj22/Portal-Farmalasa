@@ -48,7 +48,7 @@ export async function registrarVisitaDeRegencia({ branchId, fecha, entrada, sali
         p_actividades: actividades,
         p_notas: notas || null,
     });
-    return { id: data?.id ?? null, error };
+    return { id: /** @type {{ id?: number } | null} */ (data)?.id ?? null, error };
 }
 
 /** Anula una visita con su motivo. Nunca se borra. */

@@ -314,6 +314,13 @@ export function fetchSolicitudesPendientes() {
         .order('id', { ascending: true }));
 }
 
+/**
+ * Las columnas viajan como literal para que el cliente las revise contra
+ * `employees` (con `string` a secas cada fila salía como `GenericStringError`).
+ * @template {string} C
+ * @param {string[]} ids
+ * @param {C} columns
+ */
 export function fetchEmployeesByIds(ids, columns) {
     return supabase.from('employees').select(columns).in('id', ids);
 }

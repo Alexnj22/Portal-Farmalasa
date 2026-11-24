@@ -225,7 +225,7 @@ export async function fetchLibroDeInyectables(ids) {
     const out = {};
     for (const r of res) {
         if (r.error) throw r.error;
-        for (const l of r.data || []) out[l.inyeccion_id] = l;
+        for (const l of /** @type {Array<{ inyeccion_id: number } & Record<string, any>>} */ (r.data || [])) out[l.inyeccion_id] = l;
     }
     return out;
 }

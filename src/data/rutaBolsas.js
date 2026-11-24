@@ -15,10 +15,22 @@ import { anotar } from './audit';
 
 const vacio = { llevas: [], sugeridas: [] };
 
+/**
+ * Lo que contestan las funciones de la base de este archivo (todas `json`).
+ * Cada una llena sólo lo suyo; los nombres están verificados contra su
+ * definición en producción (2026-11-24).
+ * @typedef {{ ok?: boolean, error?: string, ya?: boolean, request_id?: string,
+ *   codigo?: string, origen?: string, destino?: string, quien?: string,
+ *   paquetes?: number, encontrada?: boolean, llevas?: any[], sugeridas?: any[] }} RespuestaDeRuta
+ */
+/** @param {unknown} data @returns {RespuestaDeRuta | null} */
+const comoRespuesta = (data) => /** @type {RespuestaDeRuta | null} */ (data);
+
 /** Lo que lleva encima la ruta y lo que puede llevarse de paso. */
 export async function fetchBolsasDeRuta(rutaId) {
     if (!rutaId) return { ...vacio, error: null };
-    const { data, error } = await supabase.rpc('ruta_bolsas', { p_ruta_id: rutaId });
+    const { data: crudo, error } = await supabase.rpc('ruta_bolsas', { p_ruta_id: rutaId });
+    const data = comoRespuesta(crudo);
     if (error) {
         console.error('rutaBolsas: ruta_bolsas failed:', error.message);
         return { ...vacio, error };
@@ -31,7 +43,8 @@ const posicion = (pos) => ({ p_lat: pos?.lat ?? null, p_lng: pos?.lng ?? null })
 
 /** Recoger una bolsa escaneando su ticket. `pos` = `{ lat, lng }` del teléfono, si hay. */
 export async function recogerBolsa(rutaId, codigo, pos = null) {
-    const { data, error } = await supabase.rpc('ruta_recoger_bolsa', { p_ruta_id: rutaId, p_codigo: String(codigo ?? ''), ...posicion(pos) });
+    const { data: crudo, error } = await supabase.rpc('ruta_recoger_bolsa', { p_ruta_id: rutaId, p_codigo: String(codigo ?? ''), ...posicion(pos) });
+    const data = comoRespuesta(crudo);
     if (error) return { ok: false, error: error.message };
     if (data?.ok) anotar('RUTA_BOLSA_RECOGIDA', data.request_id, { ruta: rutaId, codigo: data.codigo, origen: data.origen, destino: data.destino, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
@@ -39,7 +52,8 @@ export async function recogerBolsa(rutaId, codigo, pos = null) {
 
 /** Entregar una bolsa suelta (la que va a una sala que no es parada de la ruta). */
 export async function entregarBolsa(bolsa, pos = null) {
-    const { data, error } = await supabase.rpc('ruta_entregar_bolsa', { p_id: bolsa.id, ...posicion(pos) });
+    const { data: crudo, error } = await supabase.rpc('ruta_entregar_bolsa', { p_id: bolsa.id, ...posicion(pos) });
+    const data = comoRespuesta(crudo);
     if (error) return { ok: false, error: error.message };
     if (data?.ok) anotar('RUTA_BOLSA_ENTREGADA', bolsa.request_id, { codigo: bolsa.codigo, destino: bolsa.destino, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
@@ -47,7 +61,8 @@ export async function entregarBolsa(bolsa, pos = null) {
 
 /** Soltar: la recogió por error o la dejó donde estaba. Queda que la tuvo. */
 export async function soltarBolsa(bolsa) {
-    const { data, error } = await supabase.rpc('ruta_soltar_bolsa', { p_id: bolsa.id });
+    const { data: crudo, error } = await supabase.rpc('ruta_soltar_bolsa', { p_id: bolsa.id });
+    const data = comoRespuesta(crudo);
     if (error) return { ok: false, error: error.message };
     if (data?.ok) anotar('RUTA_BOLSA_SOLTADA', bolsa.request_id, { codigo: bolsa.codigo, destino: bolsa.destino, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
@@ -62,7 +77,8 @@ export async function soltarBolsa(bolsa) {
 
 /** ¿De quién es esta bolsa? `{ encontrada, origen, destino, es_para_esta_sala, ya_reportada_aqui }`. */
 export async function fetchBolsaAjena(codigo, branchId = null) {
-    const { data, error } = await supabase.rpc('bolsa_ajena', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
+    const { data: crudo, error } = await supabase.rpc('bolsa_ajena', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
+    const data = comoRespuesta(crudo);
     if (error) {
         console.error('rutaBolsas: bolsa_ajena failed:', error.message);
         return { bolsa: null, error };
@@ -72,7 +88,8 @@ export async function fetchBolsaAjena(codigo, branchId = null) {
 
 /** «Llegó aquí por error». Nunca lanza. */
 export async function reportarBolsaPorError(codigo, branchId = null) {
-    const { data, error } = await supabase.rpc('bolsa_llego_por_error', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
+    const { data: crudo, error } = await supabase.rpc('bolsa_llego_por_error', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
+    const data = comoRespuesta(crudo);
     if (error) return { ok: false, error: error.message };
     if (data?.ok && !data.ya) anotar('BOLSA_LLEGO_POR_ERROR', null, { codigo: String(codigo ?? ''), destino: data.destino, sala: branchId });
     return data ?? { ok: false, error: 'Sin respuesta.' };
@@ -97,7 +114,8 @@ export async function fetchFirmaSalaExigida() {
 
 /** Firma de la sala con su carné. `{ ok, quien, sala, paquetes }`; nunca lanza. */
 export async function firmarParadaConCarne(parada, codigo) {
-    const { data, error } = await supabase.rpc('ruta_firma_sala_carne', { p_stop_id: parada.id, p_valor: String(codigo ?? '').trim() });
+    const { data: crudo, error } = await supabase.rpc('ruta_firma_sala_carne', { p_stop_id: parada.id, p_valor: String(codigo ?? '').trim() });
+    const data = comoRespuesta(crudo);
     if (error) return { ok: false, error: 'No se pudo confirmar el carné.' };
     if (data?.ok && !data.ya) anotar('RUTA_FIRMA_SALA', parada.ruta_id ?? null, { parada: parada.id, sucursal_id: parada.erp_sucursal_id, quien: data.quien, paquetes: data.paquetes, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
@@ -105,7 +123,8 @@ export async function firmarParadaConCarne(parada, codigo) {
 
 /** Entregar un paquete suelto con la firma (carné) de alguien de su sala destino. Nunca lanza. */
 export async function entregarBolsaConCarne(bolsa, codigo, pos = null) {
-    const { data, error } = await supabase.rpc('ruta_entregar_bolsa_con_carne', { p_id: bolsa.id, p_valor: String(codigo ?? '').trim(), ...posicion(pos) });
+    const { data: crudo, error } = await supabase.rpc('ruta_entregar_bolsa_con_carne', { p_id: bolsa.id, p_valor: String(codigo ?? '').trim(), ...posicion(pos) });
+    const data = comoRespuesta(crudo);
     if (error) return { ok: false, error: 'No se pudo confirmar el carné.' };
     if (data?.ok) anotar('RUTA_BOLSA_ENTREGADA', bolsa.request_id, { codigo: bolsa.codigo, destino: bolsa.destino, firma: data.quien, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };

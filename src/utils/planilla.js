@@ -254,6 +254,7 @@ const eventoAnulado = (ev) => {
  *
  * @param {Array} timesheets  filas de la persona en la quincena
  * @param {{ contratados?: number, desde?: string, hasta?: string,
+ *           huecos?: Array<{desde, hasta}>,
  *           incapacidadesValidadas?: Array<{desde, hasta}>,
  *           incapacidadesPendientes?: Array<{desde, hasta}>,
  *           suspensiones?: Array<{desde, hasta, descuento: boolean|null}> }} [opciones]

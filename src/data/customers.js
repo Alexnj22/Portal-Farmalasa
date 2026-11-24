@@ -72,7 +72,8 @@ export async function fetchNivelesDeClientes(ids) {
     if (!lista.length) return {};
     const { data, error } = await supabase.rpc('clientes_niveles', { p_ids: lista });
     if (error) throw error;
-    return Object.fromEntries((data || []).map((r) => [r.id, r]));
+    const filas = /** @type {Array<{ id: number } & Record<string, any>>} */ (data || []);
+    return Object.fromEntries(filas.map((r) => [r.id, r]));
 }
 
 export async function fetchCustomersStats() {

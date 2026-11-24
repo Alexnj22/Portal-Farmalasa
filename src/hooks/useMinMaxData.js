@@ -305,7 +305,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 else useToastStore.getState().showToast(ERP_NAMES[selectedErp], salto, 'error');
                 return;
             }
-            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString('es-SV')} borradores generados`, 'success');
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(/** @type {{ rows?: number } | null} */ (res)?.rows ?? 0).toLocaleString('es-SV')} borradores generados`, 'success');
             await loadData(selectedErp);
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
         } catch (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], fmtCalcError(e), 'error'); }

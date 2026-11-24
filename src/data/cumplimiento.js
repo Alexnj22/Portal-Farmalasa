@@ -35,7 +35,7 @@ export async function guardarRegistroDeCumplimiento({ id = null, branchId, tipo,
         p_fecha: fecha,
         p_datos: datos,
     });
-    return { id: data?.id ?? null, error };
+    return { id: /** @type {{ id?: number } | null} */ (data)?.id ?? null, error };
 }
 
 /** Cierra un registro agregándole los datos del cierre. */
@@ -53,7 +53,7 @@ export async function anularRegistroDeCumplimiento(id, motivo) {
 /** Un retiro de lote anotado una vez para todas las salas. Devuelve `{ salas, error }`. */
 export async function avisarRetiroATodas(fecha, datos) {
     const { data, error } = await supabase.rpc('cumplimiento_retiro_a_todas', { p_fecha: fecha, p_datos: datos });
-    return { salas: data?.salas ?? 0, error };
+    return { salas: /** @type {{ salas?: number } | null} */ (data)?.salas ?? 0, error };
 }
 
 /** Quién atiende el mostrador de la sala y si tiene su acreditación. */

@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1598.1 — Los tipos del núcleo vuelven a estar revisados
+
+- `npm run gate:tipos` estaba en 501 avisos contra 397 de referencia: lo
+  sumaron commits de main desde el 2026-11-05. Queda en **374** y el baseline
+  baja a ese número.
+- Ninguno era un error de contrato. Las claves que se leen de cada respuesta
+  `json` (`ruta_bolsas`, `ruta_recoger_bolsa`, `cerrar_faltante`,
+  `get_conteo_pagina`, `eliminar_conteo_inventario`, `calculate_stock_params`,
+  `asignar_documento_a_empleados`, `preventa_cliente`, `como_va_la_sala_hoy`,
+  `elegir_sala_activa` y las demás) se cruzaron contra su definición en
+  producción: todas existen. Los tipos de la base están al día (`--remoto`).
+- Lo que faltaba era forma: cada respuesta `json` lleva ahora la forma que
+  devuelve la base; los parámetros desestructurados (`problemaDelPago`,
+  `problemaDeLaFoto`, `leTocaVer`, `lecturaCancelable`…) llevan su JSDoc; las
+  listas que nacían de un literal (`rubros` de la baja, `res` de promociones,
+  `FORMATO` de clientes) llevan su tipo; las restas de fechas van con `+`
+  (mismo resultado); y `fetchEmployeesByIds` recibe las columnas como literal,
+  así el cliente vuelve a revisarlas contra `employees`.
+- Un JSDoc de `comoVaHoy.js` con `{ hora, minuto }` sin tipo rompía el
+  análisis del archivo; quedó en prosa.
+- Sin cambio de comportamiento: sólo comentarios de tipo y la forma de dos
+  expresiones equivalentes (`diasHasta`, restas de `Date`).
+- Gemelo: nucleo — sólo tipos del núcleo, nada que se vea en pantalla.
+
 ## v2.1598.0 — Varios productos nuevos en una sola consulta a Bodega
 
 - **Apartar o encargar** (portal y app del personal): un producto que no está

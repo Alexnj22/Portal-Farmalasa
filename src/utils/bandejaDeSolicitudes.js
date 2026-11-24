@@ -79,6 +79,9 @@ export const ENTRE_SALAS = new Set(['INVENTORY_TRANSFER_PUSH', 'INVENTORY_TRANSF
  * elige en el filtro de Tipo (`tipoElegido === r.type`); las pantallas de
  * Traslados y Envíos siguen mostrando todo. Es un FILTRO, no un corte que
  * esconde: el corte de 2026-08-16 se quitó porque obligaba a contar lo tapado.
+ *
+ * @param {any} r la solicitud
+ * @param {{ miId?: string|number|null, miSala?: string|number|null, tipoElegido?: string|null }} [quien]
  */
 export const leTocaVer = (r, { miId, miSala, tipoElegido } = {}) => {
     if (!ENTRE_SALAS.has(r?.type) || tipoElegido === r.type) return true;

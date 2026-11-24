@@ -214,6 +214,7 @@ export function estadoDeLectura(lectura) {
  */
 export function bloquesDeLectura(texto) {
     const bloques = [];
+    /** @type {{ titulo: any, clave: any, texto: string, puntos: string[] }} */
     let actual = null;
     const nuevo = (titulo) => {
         actual = { titulo, clave: claveDeBloque(titulo), texto: '', puntos: [] };

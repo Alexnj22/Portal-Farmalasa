@@ -37,7 +37,7 @@ function leerLegado(empId) {
 
 export default function useNovedadesVistas(empId) {
     // Ligado al empleado: si cambia, vuelve a «cargando» sin un setState en el efecto.
-    const [estado, setEstado] = useState({ emp: null, set: null });
+    const [estado, setEstado] = useState(/** @type {{ emp: any, set: any, leido?: boolean }} */ ({ emp: null, set: null }));
     const vistas = !empId ? VACIO : estado.emp === empId ? estado.set : null;
     const vivo = useRef(true);
 

@@ -19,7 +19,8 @@ import { reducirAJpeg } from '@plataforma/imagenes';
  * faltan (una base sin la migración), valen lo de antes: documento, varias.
  */
 export async function capturaVigente(secreto) {
-    const { data, error } = await supabase.rpc('captura_de_foto_vigente', { p_secreto: secreto });
+    const { data: crudo, error } = await supabase.rpc('captura_de_foto_vigente', { p_secreto: secreto });
+    const data = /** @type {{ ok?: boolean } & Record<string, any> | null} */ (crudo);
     if (error || !data?.ok) return { ok: false };
     return { clase: 'documento', forma: null, varias: true, ...data };
 }
@@ -48,7 +49,7 @@ export async function capturaVigente(secreto) {
 export async function reducirParaMandar(file, ladoMaximo = 1600) {
     // Una foto que ya es chica NO se agranda (lo garantiza `lienzoReducido`).
     const base64 = await reducirAJpeg(file, { ladoMaximo, calidad: 0.85, mensaje: 'No se pudo abrir la foto.' });
-    return { base64, tipo: 'image/jpeg' };
+    return { base64, tipo: /** @type {const} */ ('image/jpeg') };
 }
 
 /** El mismo reductor, pero devolviendo un archivo — para armar el PDF. */
@@ -71,6 +72,7 @@ export async function hojaReducida(file, nombre = 'hoja.jpg') {
  */
 export async function mandarFoto(secreto, file) {
     const esPdf = file?.type === 'application/pdf';
+    /** @type {{ base64: string, tipo: 'image/jpeg'|'application/pdf' }} */
     let reducida;
     if (esPdf) {
         const b = new Uint8Array(await file.arrayBuffer());

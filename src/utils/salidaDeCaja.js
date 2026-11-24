@@ -93,10 +93,10 @@ export function avisoDeEntidad(leido, entidad) {
  * corrigiendo el dato), no se pudo leer (se arregla reintentando), o todo bien.
  * Decisión del usuario (2026-08-20): sin una boleta que cuadre, no se registra.
  *
- * @param lectura  lo que contestó `leerBoleta` (`{ leido, veredicto, … }` o `{ error }`)
- * @param monto    el monto de la salida (número)
- * @param boleta   el número escrito en el formulario
- * @param entidad  la entidad elegida
+ * @param {any} lectura  lo que contestó `leerBoleta` (`{ leido, veredicto, … }` o `{ error }`)
+ * @param {{ monto?: number|string|null, boleta?: string, entidad?: string }} [salida]
+ *   `monto` el de la salida (número), `boleta` el número escrito en el
+ *   formulario, `entidad` la entidad elegida
  *   → null | { tono: 'warning'|'danger', bloquea, reintentable?, texto }
  */
 export function problemaDeLaFoto(lectura, { monto, boleta = '', entidad = '' } = {}) {
@@ -142,6 +142,8 @@ export function problemaDeLaFoto(lectura, { monto, boleta = '', entidad = '' } =
  * Aparte de `problemaDeLaFoto` a propósito: los dos se pintan igual pero uno
  * detiene el guardado y el otro no. Calla si ya hay un problema que decir.
  *   → null | { tono: 'warning', bloquea: false, texto }
+ * @param {any} lectura
+ * @param {{ monto?: number|string|null, boleta?: string, entidad?: string }} [salida]
  */
 export function avisoDeLaFoto(lectura, { monto, boleta = '', entidad = '' } = {}) {
     if (!lectura || lectura.error || problemaDeLaFoto(lectura, { monto, boleta, entidad })) return null;
@@ -158,7 +160,8 @@ export function avisoDeLaFoto(lectura, { monto, boleta = '', entidad = '' } = {}
  * entidad es otro correlativo que dio el mismo número: se avisa y quien
  * registra decide.
  *
- * @param repetida las operaciones de la sala con ese número
+ * @param {any[]} repetida las operaciones de la sala con ese número
+ * @param {{ tipo?: string, entidad?: string }} [salida]
  *   → null | { tono: 'danger'|'warning', bloquea, texto }
  */
 export function problemaDeLaBoleta(repetida, { tipo, entidad = '' } = {}) {

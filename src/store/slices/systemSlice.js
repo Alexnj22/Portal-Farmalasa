@@ -954,7 +954,7 @@ export const createSystemSlice = (set, get) => ({
                 // store puede no tener lo que otra pantalla guardó.
                 if (eventData.type === 'CONTRACT_EXTENSION') {
                     const { data: fila, error: filaErr } = await fetchEmployeeById(employeeId);
-                    const lista = Array.isArray(fila?.employee_documents) ? fila.employee_documents : null;
+                    const lista = /** @type {Array<{ category?: string } & Record<string, any>> | null} */ (Array.isArray(fila?.employee_documents) ? fila.employee_documents : null);
                     if (filaErr || !lista) {
                         throw usuario('La prórroga quedó registrada pero el contrato no se pudo poner en el expediente. Súbelo en Documentos.');
                     }

@@ -124,7 +124,7 @@ export function aRepartir(reparto) {
     // 2 cajas son 40). Al servidor viaja siempre en unidades.
     const por = Number(reparto.por) || 1;
     const limpio = Object.fromEntries(Object.entries(reparto).filter(([b]) => b !== 'por')
-        .map(([b, v]) => [b, Number(v) * por]).filter(([, n]) => n > 0));
+        .map(([b, v]) => /** @type {[string, number]} */ ([b, Number(v) * por])).filter(([, n]) => n > 0));
     return Object.keys(limpio).length ? limpio : null;
 }
 

@@ -167,7 +167,7 @@ export function documentosDeSucursal(b) {
     const hasControlledBooks = !!legal.controlledBooks;
 
     // `datos`: los datos del registro que acompañan al documento (vacío = «Sin dato»).
-    /** @type {Array<{ id: string, title: string, url: any, expDate: any, hasExpiration?: boolean, modal: string, datos?: Array<{ rotulo: string, valor: string | null }> }>} */
+    /** @type {Array<{ id: string, title: string, url: any, expDate: any, issueDate?: any, hasExpiration?: boolean, modal: string, datos?: Array<{ rotulo: string, valor: string | null }> }>} */
     const permisos = [
         {
             id: 'srs', title: 'Permiso de funcionamiento SRS', url: legal.srsPermitUrl, expDate: legal.srsExpiration, issueDate: legal.srsPermitIssueDate || null, hasExpiration: true, modal: 'editSrsPermit',

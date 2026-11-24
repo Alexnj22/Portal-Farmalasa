@@ -17,8 +17,9 @@ export async function cotizarPreventa(branchId, customerId, lineas) {
 
 /** Datos, tipo, nivel, puntos y última compra del cliente. Lanza si la base falla. */
 export async function fetchClienteDePreventa(branchId, customerId) {
-    const { data, error } = await supabase.rpc('preventa_cliente', { p_branch: Number(branchId), p_customer: Number(customerId) });
+    const { data: crudo, error } = await supabase.rpc('preventa_cliente', { p_branch: Number(branchId), p_customer: Number(customerId) });
     if (error) throw error;
+    const data = /** @type {{ foto_ruta?: string | null } & Record<string, any> | null} */ (crudo);
     if (!data?.foto_ruta) return data ? { ...data, foto: null } : data;
     // La foto que subió desde la app. Si no se puede firmar, va sin foto.
     const firmadas = await firmarRutas([data.foto_ruta]);
@@ -87,7 +88,8 @@ export async function lotesDePreventa(branchId, ids) {
     if (!unicos.length) return new Map();
     const { data, error } = await supabase.rpc('preventa_lotes', { p_branch: Number(branchId), p_ids: unicos });
     if (error) throw error;
-    return new Map((data ?? []).map((p) => [Number(p.producto_id), p.lotes ?? []]));
+    const filas = /** @type {Array<{ producto_id: number, lotes?: any[] }>} */ (data ?? []);
+    return new Map(filas.map((p) => [Number(p.producto_id), p.lotes ?? []]));
 }
 
 /**

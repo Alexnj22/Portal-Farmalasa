@@ -145,7 +145,7 @@ export async function cerrarFaltante(id, estado, nota = '', decision = null) {
         p_nota: nota?.trim() || null,
     });
     if (error) return { ok: false, error: error.message };
-    const data = /** @type {{ ok?: boolean, codigo?: string, request_id?: string } | null} */ (crudo);
+    const data = /** @type {{ ok?: boolean, codigo?: string, familia?: string, request_id?: string } | null} */ (crudo);
     if (data?.codigo === 'RECIBIR_EN_CAJA') return ingresarAparecido({ id, request_id: data.request_id });
     // «No apareció»: la base dijo que quien llama es supervisión y adónde ir.
     // Descontar habla con la caja, así que lo hace la función de esa familia.

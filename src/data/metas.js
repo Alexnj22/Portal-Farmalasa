@@ -305,7 +305,7 @@ export async function fetchMesEnCurso(branchId = null) {
 export async function fetchComoVaLaSalaHoy(branchId) {
     const { data, error } = await supabase.rpc('como_va_la_sala_hoy', { p_branch_id: Number(branchId) });
     if (error) throw error;
-    const dia = data ?? { base_tipo: null };
+    const dia = /** @type {{ base_tipo?: string | null, vendedores?: any[] } & Record<string, any>} */ (data ?? { base_tipo: null });
     await signPhotosDeep(dia.vendedores ?? []);
     return dia;
 }

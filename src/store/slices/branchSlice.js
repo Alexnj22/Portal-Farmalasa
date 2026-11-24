@@ -579,7 +579,7 @@ export const createBranchSlice = (set, get) => ({
     },
 
     // `tipo`: 'marcacion' (hasta 3) o 'caja' (1), plan del kiosco de caja.
-    registerKioskDevice: async (branchId, deviceName, tipo = TIPOS_DE_KIOSCO.MARCACION) => {
+    registerKioskDevice: async (branchId, deviceName, /** @type {'marcacion'|'caja'} */ tipo = TIPOS_DE_KIOSCO.MARCACION) => {
         try {
             // El tope también lo pone la base (`trg_kiosk_devices_tope`): esto
             // es para avisar antes. Si el conteo falla, NO se registra —antes

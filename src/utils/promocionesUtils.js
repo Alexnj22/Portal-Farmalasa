@@ -925,6 +925,8 @@ export function separarDescuentosDePromocion(descuentos = []) {
  *   `activada`: `true`/`false` si se intentó; `null` si no se pidió o la promoción ya existía.
  */
 export async function guardarPromocionNueva(p, datos) {
+    /** @type {{ creada: boolean, id: number|null, errorCrear: any, activada: boolean|null, errorActivar: any,
+     *   descuento: 'ok'|'avisos'|'error'|'ninguno', avisos: any[], errorDescuento: any }} */
     const res = {
         creada: !!p.promoCreada, id: Number(p.promoCreada) || null, errorCrear: null,
         activada: null, errorActivar: null,

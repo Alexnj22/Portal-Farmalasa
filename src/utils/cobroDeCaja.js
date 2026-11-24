@@ -151,7 +151,11 @@ export const CODIGO_DE_PAGO = { contado: '0', credito: '1', tarjeta: '2', cheque
 
 const limpio = (s) => String(s ?? '').trim();
 
-/** Qué le falta a la forma de pago para cobrar, o null. */
+/**
+ * Qué le falta a la forma de pago para cobrar, o null.
+ * @param {{ pago: string, detalle?: { terminal?: string, boleta?: string, banco?: string, referencia?: string, numero?: string },
+ *   total: number|string, efectivo?: number|string, clienteGenerico?: boolean }} cobro
+ */
 export function problemaDelPago({ pago, detalle = {}, total, efectivo, clienteGenerico }) {
     if (!(pago in CODIGO_DE_PAGO)) return 'Elige la forma de pago.';
     if (pago === 'contado' && !(Number(efectivo) >= Number(total))) return 'El efectivo no alcanza para el total.';

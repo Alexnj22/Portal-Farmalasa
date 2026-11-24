@@ -280,8 +280,12 @@ export function semestresRecientes(hoyIso, n = 4) {
 /** Días que faltan (negativo = ya pasó) entre dos fechas ISO. */
 export function diasHasta(fechaIso, hoyIso) {
     if (!fechaIso || !hoyIso) return null;
-    const a = Date.UTC(...String(hoyIso).slice(0, 10).split('-').map((x, i) => Number(x) - (i === 1 ? 1 : 0)));
-    const b = Date.UTC(...String(fechaIso).slice(0, 10).split('-').map((x, i) => Number(x) - (i === 1 ? 1 : 0)));
+    const utc = (iso) => {
+        const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+        return Date.UTC(y, m - 1, d);
+    };
+    const a = utc(hoyIso);
+    const b = utc(fechaIso);
     return Math.round((b - a) / 86400000);
 }
 

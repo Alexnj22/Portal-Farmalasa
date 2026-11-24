@@ -81,7 +81,7 @@ export async function hojasEnPdf(hojas, nombre = 'documento.pdf') {
  * una segunda receta (con `expo-print` habría salido en hoja carta, con bordes).
  *
  * @param {Uint8Array[]} jpegs
- * @returns {Uint8Array}
+ * @returns {Uint8Array<ArrayBuffer>}
  */
 export function pdfDeJpegs(jpegs) {
     if (!Array.isArray(jpegs) || !jpegs.length) throw new Error('No hay hojas que unir.');

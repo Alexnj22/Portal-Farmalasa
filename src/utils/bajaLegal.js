@@ -33,7 +33,7 @@ function fecha(v) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || ''));
     return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 12)) : null;
 }
-const dias = (a, b) => Math.round((fecha(b) - fecha(a)) / DIA);
+const dias = (a, b) => Math.round((+fecha(b) - +fecha(a)) / DIA);
 const redondear = (n) => Math.round(n * 100) / 100;
 
 /** Las 20 causales del Art. 50 CT (Art. 84 del Reglamento Interno), resumidas. */
@@ -382,6 +382,7 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
     const aguinaldo = diasDeAguinaldo(anios) * diario * (Math.min(diasAguinaldo, 365) / 365);
 
     const BASE_FIN_DEL_PLAZO = 'Fin del plazo: termina sin responsabilidad (Art. 48 CT) y la ley no obliga este pago. Confírmalo con el contador.';
+    /** @type {Array<{ clave: string, texto: string, monto: number, aplica: true|false|'revisar', base: string, yaPagado?: true }>} */
     const rubros = finDelPlazo ? [
         { clave: 'vacaciones', texto: 'Vacaciones proporcionales', monto: redondear(vacaciones), aplica: 'revisar', base: BASE_FIN_DEL_PLAZO },
         { clave: 'aguinaldo', texto: 'Aguinaldo proporcional', monto: redondear(aguinaldo), aplica: 'revisar', base: BASE_FIN_DEL_PLAZO },

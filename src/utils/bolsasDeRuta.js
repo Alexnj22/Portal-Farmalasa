@@ -47,6 +47,7 @@ export function rotuloDeSugerida(bolsa, minutos) {
 }
 
 /** Las sugerencias en el orden útil: primero las del camino, después los desvíos más cortos. */
+/** @param {any[]} [sugeridas] @param {(s: any) => number|null} [minutosDe] */
 export function ordenarSugeridas(sugeridas = [], minutosDe = () => null) {
     return [...sugeridas]
         .map(s => ({ ...s, minutos: s.categoria === 'en_ruta' ? 0 : minutosDe(s) }))

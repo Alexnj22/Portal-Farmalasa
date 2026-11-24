@@ -12,6 +12,10 @@
 // la lectura o `alLlegar` lanzan, y siempre `alTerminar()` al final. Devuelve
 // la función que la abandona: es el `return` del `useEffect`. Abandonada, no
 // llama a nada (la que la reemplazó maneja su propia carga).
+/**
+ * @param {() => any} leer
+ * @param {{ alLlegar?: (r: any) => void, alFallar?: (e: any) => void, alTerminar?: () => void }} [avisos]
+ */
 export function lecturaCancelable(leer, { alLlegar, alFallar, alTerminar } = {}) {
     let vigente = true;
     Promise.resolve()

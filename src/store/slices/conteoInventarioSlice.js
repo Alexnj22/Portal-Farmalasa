@@ -137,8 +137,10 @@ export const createConteoInventarioSlice = (set, get) => ({
     // guarda el recuento de lo que se fue — sin él, "se borró un conteo" no dice
     // si eran cuatro renglones o cuatro mil.
     eliminarConteoInventario: async (conteoId) => {
-        const { data, error } = await supabase.rpc('eliminar_conteo_inventario', { p_conteo_id: conteoId });
+        const { data: crudo, error } = await supabase.rpc('eliminar_conteo_inventario', { p_conteo_id: conteoId });
         if (error) throw traducirError(error);
+        const data = /** @type {{ branch_id?: number, total_items?: number, total_contados?: number, status?: string,
+            total_diferencias?: number, uso_permiso_especial?: boolean } | null} */ (crudo);
 
         await get().appendAuditLog('CONTEO_ELIMINADO', conteoId, {
             timeline_title: 'Conteo de inventario eliminado',
@@ -217,12 +219,13 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_lotes_con_busqueda: lotesConBusqueda,
         });
         if (error) throw traducirError(error);
-        const rows = data?.filas || [];
+        const pagina = /** @type {{ filas?: any[], lotes?: any[], total?: number, aproximado?: boolean } | null} */ (data);
+        const rows = pagina?.filas || [];
         const lotes = Object.fromEntries(rows.map((r) => [r.erp_product_id, []]));
         // Las fotos de quién contó vienen crudas: se firman como en
         // `fetchConteoItemsForProducts`.
-        for (const it of await signPhotosDeep(data?.lotes || [])) (lotes[it.erp_product_id] ||= []).push(it);
-        return { rows, total: data?.total || 0, aproximado: !!data?.aproximado, lotes };
+        for (const it of await signPhotosDeep(pagina?.lotes || [])) (lotes[it.erp_product_id] ||= []).push(it);
+        return { rows, total: pagina?.total || 0, aproximado: !!pagina?.aproximado, lotes };
     },
 
     // Solo los laboratorios que están EN ESTE conteo. El catálogo completo son

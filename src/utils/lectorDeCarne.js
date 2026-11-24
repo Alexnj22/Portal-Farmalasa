@@ -86,6 +86,7 @@ export function crearDetectorDeRafaga({ gapMs = RAFAGA_GAP_MS, minTeclas = RAFAG
         if (clase === 'otro' || (esClave && !porEnter && clase !== 'ticket')) {
             return campo != null ? [{ tipo: 'poner', campo, valor: prefijo + buf }] : [];
         }
+        /** @type {Array<{ tipo: string, campo?: any, valor?: string, codigo?: string }>} */
         const ordenes = campo != null ? [{ tipo: 'poner', campo, valor: prefijo }] : [];
         if (porEnter) ordenes.push({ tipo: 'bloquear' });
         ordenes.push({ tipo: clase, codigo: buf.replace(/\s+/g, '').toUpperCase() });

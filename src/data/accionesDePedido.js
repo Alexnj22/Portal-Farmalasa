@@ -55,7 +55,7 @@ export async function anularPedidoConMotivo({ pedidoId, userId = null, motivo = 
 export async function anularSalaDelPedido({ pedidoId, sucId, motivo }) {
     const { data, error } = await anularPedidoDeSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_motivo: motivo });
     if (error) throw error;
-    return data ?? { renglones: 0, pedido_anulado: false };
+    return /** @type {{ renglones: number, pedido_anulado: boolean } | null} */ (data) ?? { renglones: 0, pedido_anulado: false };
 }
 
 /**
@@ -180,7 +180,7 @@ export async function vistaPreviaDePedido({ salas, globalMode = false }) {
     const rpcParams = globalMode ? { p_sucursal_ids: SUCURSALES, p_target_ids: elegidas } : { p_sucursal_ids: elegidas };
     const { data, error } = await fetchVistaPreviaDePedido(rpcParams);
     if (error) throw error;
-    const rows = Array.isArray(data) ? data : [];
+    const rows = /** @type {Array<{ erp_product_id: number } & Record<string, any>>} */ (Array.isArray(data) ? data : []);
     const pendientes = await productosConReglaPendiente(rows.map(r => r.erp_product_id));
     // Un producto con la regla de despacho pendiente frena el pedido entero
     // (decisión del usuario, 2026-11-14). Si la consulta falla, lanza y

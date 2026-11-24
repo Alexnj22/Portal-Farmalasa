@@ -175,6 +175,7 @@ export const ETIQUETA_CAMPO = {
 // [campo, de qué campos depende, prueba, mensaje]. Las dependencias existen
 // porque el NIT se valida contra el DUI: cambiar el DUI tiene que volver a
 // juzgar el NIT aunque el NIT no se haya tocado.
+/** @type {Array<[string, string[], (f: any) => boolean, string]>} */
 const FORMATO = [
     ['name',          ['name'],        (f) => !vacio(f.name),               'No puede quedar vacío'],
     ['name',          ['name'],        (f) => vacio(f.name) || nombreCompleto(f.name), 'Nombre y apellido completos'],

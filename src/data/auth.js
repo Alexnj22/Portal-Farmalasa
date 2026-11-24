@@ -174,7 +174,8 @@ export async function elegirSalaActiva(branchId) {
     const { data, error } = await supabase.rpc('elegir_sala_activa', {
         p_branch_id: branchId == null ? null : Number(branchId),
     });
-    return { branchId: data?.branch_id ?? null, error };
+    const r = /** @type {{ branch_id?: number } | null} */ (data);
+    return { branchId: r?.branch_id ?? null, error };
 }
 
 /** Las salas que cubre una persona además de su sede («Áreas que cubre»). */

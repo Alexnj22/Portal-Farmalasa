@@ -1895,7 +1895,7 @@ export const createEmployeeSlice = (set, get) => ({
                 if (!byEmp.has(k)) byEmp.set(k, []);
                 byEmp.get(k).push(a);
             });
-            byEmp.forEach((lista) => lista.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+            byEmp.forEach((lista) => lista.sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp)));
 
             set((state) => {
                 const next = state.employees.map((e) => ({

@@ -36,6 +36,8 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
     const [error, setError] = useState(null);
     const [resto, setResto] = useState('efectivo');
     const [candidatos, setCandidatos] = useState(null);
+    // La preventa ya se facturó y no al crédito (2026-11-23, R-000203): esperar no sirve.
+    const [facturaContado, setFacturaContado] = useState(null);
     const [buscando, setBuscando] = useState(false);
     const [ocupado, setOcupado] = useState(false);
     const [clave] = useState(() => `retiro-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
@@ -98,6 +100,7 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
             const r = await aplicarAnticipoACredito({ sala, apartado: referencia });
             if (r?.error || r?.ok === false) throw r.error || new Error('No se pudieron leer los créditos.');
             setCandidatos(r.candidatos ?? []);
+            setFacturaContado(r.factura_contado ?? null);
         } catch (e) {
             showToast('No se pudieron leer los créditos', mensajeAmigable(e), 'error');
         } finally {
@@ -201,6 +204,11 @@ export default function DialogoRetirar({ sala, referencia, onClose, onListo }) {
                                             </li>
                                         ))}
                                     </ul>
+                                ) : facturaContado ? (
+                                    <Notice variant="warning" compact>
+                                        La factura {String(facturaContado.correlativo ?? '').replace('_', ' ')} salió al contado{facturaContado.tipo_pago ? ` con ${facturaContado.tipo_pago}` : ''}. Así no se le puede abonar el anticipo.
+                                        Pide su anulación y factura de nuevo al crédito a nombre de {v.cliente}.
+                                    </Notice>
                                 ) : (
                                     <Notice variant="warning" compact>
                                         No hay un crédito de {v.cliente} de estos días que lo pueda recibir. Una factura recién hecha tarda hasta un minuto. Vuelve a buscar.

@@ -90,6 +90,14 @@ Deno.serve(async (req) => {
       if (eFalla) console.error("[preventa-caja] registrar fallida:", eFalla.message);
       return responder({ ok: false, error: (e as Error).message }, 409);
     }
+    // Al crédito (anticipo que no fue en efectivo, 2026-11-23): a un genérico
+    // la caja no le da crédito. Se dice antes de mandar, no en la caja.
+    if (venta.pago === "credito" && venta.cliente.generico) {
+      const m = "El cliente todavía no tiene número y su anticipo va al crédito. Espera unos minutos o revísalo en Clientes.";
+      const { error: eFalla } = await admin.rpc("preventa_registrar", { p_id: preventaId, p_ok: false, p_venta: venta, p_error: m });
+      if (eFalla) console.error("[preventa-caja] registrar fallida:", eFalla.message);
+      return responder({ ok: false, error: m }, 409);
+    }
 
     let resultado;
     try {

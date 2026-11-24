@@ -115,7 +115,10 @@ export function armarVenta(datos) {
     return {
         codigo: String(datos?.codigo ?? ''),
         documento: datos?.documento === 'credito_fiscal' ? 'credito_fiscal' : 'consumidor_final',
-        // Cómo paga (vista Preventa, 2026-11-16). Una reserva no lo dice: contado.
+        // Cómo paga (vista Preventa, 2026-11-16). Una reserva lo dice la base
+        // (`preventa_preparar`): crédito si su anticipo no fue todo en efectivo
+        // —la tarjeta ya se cobró y la caja la contaría dos veces, R-000203—;
+        // si no, contado.
         pago: PAGOS_DE_CAJA[datos?.pago] != null ? datos.pago : 'contado',
         puntos, descuento_puntos: descuentoPuntos,
         cliente, vendedor, renglones, total, falta_pagar: faltaPagar, pagado,

@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1595.1 — La reserva pagada con tarjeta sale al crédito y se abona sola
+
+La R-000203 de Salud 3: anticipo de $24.25 con tarjeta (voucher 003907, caja
+del 22-nov). «Enviar a caja» armó la preventa AL CONTADO —toda preventa de
+reserva salía así— y la caja la cobró con tarjeta: el mismo voucher contado dos
+veces y «Retirar» sin crédito al que abonar. Era el primer anticipo que no fue
+en efectivo en pasar por una preventa (40 días revisados).
+
+- **`preventa_preparar`** dice `pago: credito` cuando el anticipo de la reserva
+  no fue todo efectivo de la caja (`reserva_anticipo_va_al_credito`).
+- **Al facturarse al crédito**, `preventas_cerrar_facturadas` pide el abono
+  (`preventa_pedir_abono_de_anticipo` → `aplicar-anticipo-facturado` modo
+  `credito` → `creditos-erp` `aplicar_anticipo` automático, con el secreto del
+  circuito fiscal). El crédito es el de esa factura; firma quien envió la
+  preventa. Mismos reintentos y aviso que el vale de efectivo.
+- **`preventa-caja`** no manda al crédito con el cliente genérico.
+- **«Retirar»** (portal y app): si la preventa se facturó de contado, dice qué
+  factura es y que hay que anularla, en vez de «vuelve a buscar».
+
+Migración `20261124010139_preventa_anticipo_tarjeta_al_credito`.
+
 ## v2.1595.0 — Las reglas de pago de las horas: Talento Humano decide
 
 Reglas decididas por el usuario el 2026-11-23. Base legal: CT y RIT

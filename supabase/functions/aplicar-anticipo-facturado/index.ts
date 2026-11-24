@@ -30,28 +30,35 @@ Deno.serve(async (req) => {
   const sala = Number(body.sala);
   const monto = Number(body.monto);
   const codigo = String(body.codigo ?? "").slice(0, 20);
-  if (![reserva, preventa, sala].every(Number.isInteger) || !(monto > 0)) {
+  // Anticipo con tarjeta, transferencia o en línea (2026-11-23, R-000203): la
+  // preventa salió al crédito y el anticipo se ABONA a ese crédito en
+  // `creditos-erp`; el monto lo decide esa función, no el pedido.
+  const alCredito = body.modo === "credito";
+  if (![reserva, preventa, sala].every(Number.isInteger) || (!alCredito && !(monto > 0))) {
     return json({ ok: false, error: "Faltan la reserva, la preventa, la sucursal o el monto." }, 400);
   }
+  const destino = alCredito ? "creditos-erp" : "operar-caja";
 
   try {
-    const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/operar-caja`, {
+    const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/${destino}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
         "x-cierre-automatico": secretoDeCircuito("fiscal") ?? "",
       },
-      body: JSON.stringify({
-        accion: "salida", sala, tipo: "APLICA_ANTICIPO", automatico: true, preventa_id: preventa,
-        aplicar: { reserva_id: reserva }, monto, concepto: `Aplica anticipo ${codigo}`,
-      }),
+      body: JSON.stringify(alCredito
+        ? { accion: "aplicar_anticipo", automatico: true, sala, preventa_id: preventa, apartado: { reserva_id: reserva } }
+        : {
+          accion: "salida", sala, tipo: "APLICA_ANTICIPO", automatico: true, preventa_id: preventa,
+          aplicar: { reserva_id: reserva }, monto, concepto: `Aplica anticipo ${codigo}`,
+        }),
       signal: AbortSignal.timeout(110_000),
     });
     const res = await r.json().catch(() => null) as Record<string, unknown> | null;
-    const linea = `[aplicar-anticipo-facturado] reserva=${reserva} preventa=${preventa} sala=${sala}: ${r.status} ${JSON.stringify(res).slice(0, 400)}`;
+    const linea = `[aplicar-anticipo-facturado] ${destino} reserva=${reserva} preventa=${preventa} sala=${sala}: ${r.status} ${JSON.stringify(res).slice(0, 400)}`;
     if (!r.ok || res?.ok !== true) console.error(linea); else console.log(linea);
-    return json(res ?? { ok: false, error: `operar-caja respondió ${r.status}` }, r.ok ? 200 : r.status);
+    return json(res ?? { ok: false, error: `${destino} respondió ${r.status}` }, r.ok ? 200 : r.status);
   } catch (e) {
     console.error(`[aplicar-anticipo-facturado] reserva=${reserva}:`, e);
     return json({ ok: false, error: String((e as Error)?.message ?? e) }, 502);

@@ -1,5 +1,5 @@
 import {
-  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
+  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito,
 } from "../_shared/security.ts";
 import {
   abonosDelCredito, creditosDeLaSala, FORMAS_DEL_PORTAL as FORMAS,
@@ -92,7 +92,59 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const quien = await requireActiveEmployeeUser(req, supabase);
+    /* ── EL ANTICIPO CON TARJETA SE ABONA SOLO AL FACTURARSE (2026-11-23) ──
+     *
+     * La R-000203 de Salud 3: anticipo de $24.25 con tarjeta, «Enviar a caja»
+     * mandó la preventa AL CONTADO y la caja la cobró otra vez con tarjeta —
+     * el mismo voucher contado dos veces y ningún crédito al que abonar.
+     * Ahora la preventa de una reserva con anticipo que no fue todo en
+     * efectivo sale AL CRÉDITO (`preventa_preparar`), y cuando la caja la
+     * factura, `preventas_cerrar_facturadas` pide este abono por el relevo
+     * `aplicar-anticipo-facturado`. Entra con el secreto del circuito
+     * fiscal, igual que el vale de efectivo en `operar-caja`, y SÓLO para una
+     * reserva cuya preventa ya está facturada AL CRÉDITO en esta sucursal.
+     * El crédito no lo elige nadie: es el de ESA factura. Firma quien envió
+     * la preventa. */
+    const anticipoAuto = accion === "aplicar_anticipo" && body.automatico === true;
+    let quienAuto: Awaited<ReturnType<typeof requireActiveEmployeeUser>> = null;
+    let facturaAuto: string | null = null;
+    if (anticipoAuto) {
+      const secreto = secretoDeCircuito("fiscal");
+      if (!secreto || req.headers.get("x-cierre-automatico") !== secreto) {
+        return responder({ ok: false, error: "UNAUTHORIZED" }, 401);
+      }
+      const sala = Number(body.sala);
+      const reservaId = Number((body.apartado as Record<string, unknown> | undefined)?.reserva_id);
+      const preventaId = Number(body.preventa_id);
+      if (!Number.isInteger(reservaId) || !Number.isInteger(preventaId)) {
+        return responder({ ok: false, error: "Falta la reserva o la preventa." }, 400);
+      }
+      const { data: pv, error: errPv } = await supabase.from("preventas")
+        .select("estado, branch_id, enviada_por, reservas_ids, sales_invoice_id").eq("id", preventaId).maybeSingle();
+      if (errPv) return responder({ ok: false, error: errPv.message }, 503);
+      const { data: rv, error: errRv } = await supabase.from("app_reservas")
+        .select("branch_id, preventa_id").eq("id", reservaId).maybeSingle();
+      if (errRv) return responder({ ok: false, error: errRv.message }, 503);
+      if (!pv || pv.estado !== "facturada" || Number(pv.branch_id) !== sala || !rv
+          || Number(rv.preventa_id) !== preventaId || Number(rv.branch_id) !== sala
+          || !(pv.reservas_ids ?? []).map(Number).includes(reservaId) || !pv.sales_invoice_id) {
+        return responder({ ok: false, error: "Esa reserva no tiene una preventa facturada en esta sucursal." }, 409);
+      }
+      const { data: si, error: errSi } = await supabase.from("sales_invoices")
+        .select("erp_invoice_id, tipo_pago, branch_id").eq("id", pv.sales_invoice_id).maybeSingle();
+      if (errSi) return responder({ ok: false, error: errSi.message }, 503);
+      if (!si || Number(si.branch_id) !== sala || si.tipo_pago !== "credito" || !si.erp_invoice_id) {
+        return responder({ ok: false, error: "La factura de esa preventa no salió al crédito." }, 409);
+      }
+      facturaAuto = String(si.erp_invoice_id);
+      const { data: emp, error: errEmp } = await supabase.from("employees")
+        .select("id, status, code, name").eq("id", pv.enviada_por).maybeSingle();
+      if (errEmp) return responder({ ok: false, error: errEmp.message }, 503);
+      if (!emp || emp.status !== "ACTIVO") return responder({ ok: false, error: "Quien envió la preventa ya no está activo." }, 409);
+      quienAuto = emp as NonNullable<typeof quienAuto>;
+      body.apartado = { reserva_id: reservaId };
+    }
+    const quien = quienAuto ?? await requireActiveEmployeeUser(req, supabase);
     if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
 
     /* Módulo propio —`cuentas_por_cobrar`, la vista «Cuentas por cobrar»— y no
@@ -114,7 +166,10 @@ Deno.serve(async (req) => {
       : ESCRIBEN.includes(accion)
       ? ["cuentas_por_cobrar", "can_edit"]
       : ["cuentas_por_cobrar", "can_view"];
-    const permiso = await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
+    // En automático lo autorizó el secreto y la preventa facturada de arriba.
+    const permiso = anticipoAuto
+      ? { puede: true, roto: null, alcanceTodo: true, emp: null } as Awaited<ReturnType<typeof permisoDeModulo>>
+      : await permisoDeModulo(supabase, quien.id, modulo, capacidad as "can_view" | "can_edit");
     if (permiso.roto) return responder({ ok: false, error: permiso.roto }, 503);
     if (!permiso.puede) {
       return responder({ ok: false, error: capacidad === "can_edit"
@@ -1475,7 +1530,7 @@ Deno.serve(async (req) => {
     let anticipoAplicado: { apartado: { reserva_id?: number; encargo_id?: number; saldo_uso_id?: number }; codigo: string; monto: number; reclamo: number } | null = null;
     if (accion === "aplicar_anticipo") {
       const sala = Number(body.sala);
-      const credito = String(body.credito ?? "").trim();
+      let credito = anticipoAuto ? "" : String(body.credito ?? "").trim();
       const ref = body.apartado && typeof body.apartado === "object" ? body.apartado as Record<string, unknown> : null;
       if (!ref || !(ref.reserva_id || ref.encargo_id || ref.saldo_uso_id)) return responder({ ok: false, error: "Falta qué se retira." }, 400);
       if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
@@ -1499,6 +1554,28 @@ Deno.serve(async (req) => {
       if (!credito) {
         const entrada = mapa.find((e) => e.branchId === sala);
         if (!entrada) return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
+        /* La preventa de ESTA reserva ya se facturó, y no al crédito
+         * (2026-11-23, R-000203): ningún crédito va a aparecer por esperar.
+         * Se dice cuál factura es para que se pida su anulación. */
+        let facturaContado: Record<string, unknown> | null = null;
+        if (apartado.reserva_id && !anticipoAuto) {
+          const { data: fc, error: errFc } = await supabase.from("app_reservas")
+            .select("preventas!app_reservas_preventa_id_fkey(estado, sales_invoice_id)")
+            .eq("id", apartado.reserva_id).maybeSingle();
+          if (errFc) console.error(`[creditos-erp] retiro preventa: ${errFc.message}`);
+          const pv = (fc as { preventas?: { estado?: string; sales_invoice_id?: number | null } | null } | null)?.preventas;
+          if (pv?.estado === "facturada" && pv.sales_invoice_id) {
+            const { data: fi, error: errFi } = await supabase.from("sales_invoices")
+              .select("correlativo, tipo_pago, total, estado").eq("id", pv.sales_invoice_id).maybeSingle();
+            if (errFi) console.error(`[creditos-erp] retiro factura de la preventa: ${errFi.message}`);
+            // Ya anulada, deja de estorbar: la nueva al crédito se hace a mano y
+            // se busca como cualquier otra. Sólo se avisa de la que sigue viva
+            // (FINALIZADA es lo único que `venta_valida` cuenta como venta).
+            if (fi && fi.estado === "FINALIZADA" && fi.tipo_pago !== "credito") {
+              facturaContado = { correlativo: fi.correlativo, tipo_pago: fi.tipo_pago, total: fi.total };
+            }
+          }
+        }
         const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
         try {
           const delDia = await creditosDeLaSala(cookie, entrada.erpId, hoy, hoy);
@@ -1511,13 +1588,22 @@ Deno.serve(async (req) => {
         } catch (e) {
           console.error(`[creditos-erp] retiro leer hoy sala=${sala}: ${(e as Error).message}`);
         }
-        const desde = new Date(Date.now() - 6 * 3600_000 - 3 * 86400_000).toISOString().slice(0, 10);
-        const { data: cands, error: errC } = await supabase.from("creditos_de_clientes")
-          .select("credito_erp, factura_erp, numero_doc, fecha, saldo, total")
-          .eq("branch_id", sala).eq("customer_id", Number(v.customer_id)).gte("fecha", desde)
-          .gte("saldo", Number(v.pagado) - 0.004).order("fecha", { ascending: false });
-        if (errC) return responder({ ok: false, error: "No se pudieron leer los créditos." }, 503);
-        return responder({ ok: true, candidatos: cands ?? [], retiro: v });
+        if (anticipoAuto) {
+          // El crédito es el de la factura de la preventa, y nada más.
+          const { data: delaFactura, error: errDf } = await supabase.from("creditos_de_clientes")
+            .select("credito_erp").eq("branch_id", sala).eq("factura_erp", facturaAuto).maybeSingle();
+          if (errDf) return responder({ ok: false, error: "No se pudo leer el crédito." }, 503);
+          if (!delaFactura) return responder({ ok: false, error: "El crédito de esa factura todavía no aparece." }, 404);
+          credito = String(delaFactura.credito_erp);
+        } else {
+          const desde = new Date(Date.now() - 6 * 3600_000 - 3 * 86400_000).toISOString().slice(0, 10);
+          const { data: cands, error: errC } = await supabase.from("creditos_de_clientes")
+            .select("credito_erp, factura_erp, numero_doc, fecha, saldo, total")
+            .eq("branch_id", sala).eq("customer_id", Number(v.customer_id)).gte("fecha", desde)
+            .gte("saldo", Number(v.pagado) - 0.004).order("fecha", { ascending: false });
+          if (errC) return responder({ ok: false, error: "No se pudieron leer los créditos." }, 503);
+          return responder({ ok: true, candidatos: cands ?? [], retiro: v, factura_contado: facturaContado });
+        }
       }
       const { data: cred, error: errCred } = await supabase.from("creditos_de_clientes")
         .select("customer_id, saldo").eq("branch_id", sala).eq("credito_erp", credito).maybeSingle();

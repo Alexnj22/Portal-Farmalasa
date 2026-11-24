@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-21T16:45:05.514Z",
+ "generado": "2026-11-24T02:04:15.434Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -719,6 +719,10 @@
   "avisar_ccf": {
    "area": "ventas",
    "por": "código"
+  },
+  "avisar_cierre_de_quincena": {
+   "area": "asistencia",
+   "por": "cron"
   },
   "avisar_cierre_del_dia": {
    "area": "cortes-efectivo",
@@ -1452,6 +1456,10 @@
   "close_ventas_month": {
    "area": "ventas",
    "por": "cron"
+  },
+  "cobertura_asegura_apoyo": {
+   "area": "horarios",
+   "por": "trigger"
   },
   "cobro_caja_ensayo_comparar": {
    "area": "cortes-efectivo",
@@ -4931,6 +4939,10 @@
    "area": "pedidos",
    "por": "código"
   },
+  "pendientes_de_quincena": {
+   "area": "asistencia",
+   "por": "código"
+  },
   "planificar_traslado_pedido": {
    "area": "plataforma",
    "por": "código"
@@ -4992,6 +5004,10 @@
   "preventa_lotes": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "preventa_pedir_abono_de_anticipo": {
+   "area": "app-clientes",
+   "por": "llamada"
   },
   "preventa_pedir_vale_de_anticipo": {
    "area": "app-clientes",
@@ -5940,6 +5956,10 @@
    "area": "app-clientes",
    "por": "tablas"
   },
+  "reserva_anticipo_va_al_credito": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
   "reserva_avisada_whatsapp": {
    "area": "app-clientes",
    "por": "código"
@@ -6476,6 +6496,10 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
+  "sincronizar_apoyo_del_horario": {
+   "area": "horarios",
+   "por": "tablas"
+  },
   "sincronizar_bitacora_dispensaciones": {
    "area": "bitacoras",
    "por": "cron"
@@ -6594,6 +6618,10 @@
   "texto_de_push": {
    "area": "solicitudes",
    "por": "llamada"
+  },
+  "timesheets_freno_de_cierre": {
+   "area": "asistencia",
+   "por": "trigger"
   },
   "tipo_de_presentacion_de_extra": {
    "area": "productos",

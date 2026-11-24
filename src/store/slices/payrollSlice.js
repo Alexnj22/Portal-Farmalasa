@@ -60,11 +60,21 @@ export const TRAMOS_RENTA_QUINCENAL = [
     { hasta: Infinity,   cuotaFija: 144.28, tasa: 0.30, sobreExceso: 1019.05 },
 ];
 
+// Redondeo a centavos, mitad hacia arriba, como la boleta de la empresa (y
+// como una hoja de cálculo). `toFixed(2)` redondea el número BINARIO: 290 ×
+// 0,0725 = 21,025 en papel, pero en coma flotante es 21,02499… y salía 21,02
+// (un centavo menos de AFP). Se corre la coma con la notación «e» para
+// redondear el decimal escrito (2026-11-23, comparación con la boleta).
+export function aCentavos(n) {
+    const x = parseFloat((Number(n) || 0).toPrecision(12));
+    return Number(Math.round(Number(`${Math.abs(x)}e2`)) + 'e-2') * (x < 0 ? -1 : 1);
+}
+
 export function calcRenta(netQuincena) {
     const base = Number(netQuincena) || 0;
     if (base <= 0) return 0;
     const t = TRAMOS_RENTA_QUINCENAL.find(x => base <= x.hasta);
-    return parseFloat((t.cuotaFija + (base - t.sobreExceso) * t.tasa).toFixed(2));
+    return aCentavos((t.cuotaFija + (base - t.sobreExceso) * t.tasa));
 }
 
 // ─── Core payroll calculator for one employee ────────────────────────────────
@@ -86,33 +96,39 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
     const salaryAdvance     = parseFloat(overrides.salary_advance         || 0);
 
     // Section A — subject to retention
-    const ordinarySalary = parseFloat((daysWorked * dailyRate).toFixed(2));
+    const ordinarySalary = aCentavos((daysWorked * dailyRate));
 
     // Section B — not subject to retention (Labor Code art. 169, 190)
-    const nightOrdinaryAmt  = parseFloat((nightOrdinaryHrs  * hourlyRate * 0.25).toFixed(2)); // Art.168: solo el 25% de recargo sobre tarifa diurna
-    const nightExtraAmt     = parseFloat((nightExtraHrs     * hourlyRate * 0.50).toFixed(2)); // campo legacy — no usado por consolidación automática
-    const extraDiurnalAmt   = parseFloat((extraDiurnalHrs   * hourlyRate * 2.00).toFixed(2)); // Art.169: 100% OT diurna = doble
-    const extraNocturnalAmt = parseFloat((extraNocturnalHrs * hourlyRate * 2.25).toFixed(2)); // Art.169: 100% OT + 25% nocturnal = ×2.25
+    const nightOrdinaryAmt  = aCentavos((nightOrdinaryHrs  * hourlyRate * 0.25)); // Art.168: solo el 25% de recargo sobre tarifa diurna
+    // La hora extra nocturna va en DOS renglones, como en la boleta de pago de
+    // la empresa (2026-11-23): «horas noct. extraordinarias (50%)» con el
+    // recargo nocturno sobre la hora extra (2 × 25 % = 0,5) y «horas extra
+    // nocturnas» con el doble (Art. 169). Juntas: 2 + 0,5 = × 2,5, o sea el
+    // 25 % del Art. 168 calculado sobre el salario extraordinario. Hasta hoy
+    // era × 2,25 en un solo renglón: le faltaba un cuarto de hora por hora.
+    const nightExtraAmt     = aCentavos((nightExtraHrs     * hourlyRate * 0.50)); // Art.168 sobre la hora extra
+    const extraDiurnalAmt   = aCentavos((extraDiurnalHrs   * hourlyRate * 2.00)); // Art.169: 100% OT diurna = doble
+    const extraNocturnalAmt = aCentavos((extraNocturnalHrs * hourlyRate * 2.00)); // Art.169: el doble; el 0,5 va en night_hours_extra
 
     const subtotalA = ordinarySalary;
-    const subtotalB = parseFloat((
+    const subtotalB = aCentavos((
         nightOrdinaryAmt + nightExtraAmt + extraDiurnalAmt + extraNocturnalAmt +
         holidaySurcharge + bonifications + vacationBonus + viaticos
-    ).toFixed(2));
+    ));
 
     // Retenciones
     const isssBase    = Math.min(ordinarySalary, 500);  // ISSS cap: $1,000/mo → $500/quincena
-    const isssDeduct  = parseFloat((isssBase * 0.03).toFixed(2));
-    const afpDeduct   = parseFloat((ordinarySalary * 0.0725).toFixed(2));
-    const rentaBase   = parseFloat((ordinarySalary - isssDeduct - afpDeduct).toFixed(2));
+    const isssDeduct  = aCentavos((isssBase * 0.03));
+    const afpDeduct   = aCentavos((ordinarySalary * 0.0725));
+    const rentaBase   = aCentavos((ordinarySalary - isssDeduct - afpDeduct));
     const rentaDeduct = calcRenta(rentaBase);
 
-    const totalDeductions = parseFloat((
+    const totalDeductions = aCentavos((
         isssDeduct + afpDeduct + rentaDeduct +
         orderDiscount + otherDiscounts + salaryAdvance
-    ).toFixed(2));
+    ));
 
-    const netPay = parseFloat((subtotalA - totalDeductions + subtotalB).toFixed(2));
+    const netPay = aCentavos((subtotalA - totalDeductions + subtotalB));
 
     return {
         days_worked:           daysWorked,
@@ -126,6 +142,7 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
         vacation_bonus:        vacationBonus,
         viaticos,
         viaticos_detail:       overrides.viaticos_detail || null,
+        bonificaciones_detalle: overrides.bonificaciones_detalle || null,
         isss_deduction:        isssDeduct,
         afp_deduction:         afpDeduct,
         renta_deduction:       rentaDeduct,
@@ -498,6 +515,8 @@ export const createPayrollSlice = (set, get) => ({
                     salary_advance:        advance,
                     night_hours_ordinary:  pago.horasNocturnasOrdinarias,
                     extra_hours_diurnal:   pago.horasExtraPagoDiurnas,
+                    // La misma hora en los dos renglones de la boleta (× 0,5 y × 2).
+                    night_hours_extra:     pago.horasExtraPagoNocturnas,
                     extra_hours_nocturnal: pago.horasExtraPagoNocturnas,
                     holiday_surcharge:     pago.montoDiasEspeciales,
                     vacation_bonus:        vacBonus,
@@ -676,6 +695,7 @@ export const createPayrollSlice = (set, get) => ({
         const payload = {
             ...newCalc,
             viaticos_detail: updates.viaticos_detail ?? existing.viaticos_detail,
+            bonificaciones_detalle: updates.bonificaciones_detalle ?? existing.bonificaciones_detalle ?? null,
             other_discounts_concepto: concepto,
             other_discounts_detalle:  concepto === 'otro' ? detalle : null,
             status:       'EDITED',

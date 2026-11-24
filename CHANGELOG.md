@@ -21,6 +21,46 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1596.0 — Cierre de quincena con freno y aviso; boleta de pago contra la de la empresa
+
+«Talento Humano debe confirmar todo eso antes de cada 15 o fin de mes.»
+
+**El freno.** Mientras quede algo por resolver en la quincena (horas de más
+sin decidir, semanas con el descanso en duda o marcaciones incompletas), no se
+cierra ni se aprueba a la persona que lo tiene. La cuenta es una sola, en la
+base (`pendientes_de_quincena`), y la misma base frena la escritura con el
+trigger de sentencia `timesheets_freno_de_cierre`, venga de donde venga.
+Auditoría de tiempos dice cuántos y de qué tipo, con un botón al panel «Por
+decidir», que ahora lista también las marcaciones incompletas. La Quincena de
+la app pregunta lo mismo antes de cerrar o aprobar.
+
+**El aviso.** Cron `avisar-cierre-quincena-8am-sv` (08:00 SV): 3 días antes
+del 15 y del último día del mes, y otra vez el día del cierre, «La quincena
+cierra el 15: quedan N decisiones» a quien edita la auditoría de tiempos. Sin
+pendientes, nada. Probado en el entorno de pruebas con datos que se
+deshicieron.
+
+**La boleta, renglón por renglón contra la de la empresa** (tabla en
+`docs/reglas/reglas-de-pago.md` §5):
+
+- La hora extra nocturna valía × 2,25 en un renglón; la boleta la paga en
+  dos, «noct. extraordinarias (50 %)» × 0,5 y «extra nocturnas» × 2: **× 2,5**.
+  La planilla ahora llena los dos (también al pagar horas del banco, en el
+  portal y en la app) y el día de descanso o asueto usa f × 2 × 1,25.
+- La boleta del portal mostraba la hora con 2 decimales (2,81 por 2,8125):
+  ahora 4, y cada renglón de horas lleva «horas X tarifa».
+- Redondeo a centavos mitad hacia arriba (`aCentavos`): `toFixed` daba 21,02
+  de AFP donde la boleta da 21,03.
+- Bonificaciones con su concepto (`payroll_entries.bonificaciones_detalle`,
+  el bono por venta), impreso junto al de los viáticos.
+- Prueba con datos ficticios y las tasas de la boleta: el líquido da al
+  centavo (`tests/unit/boletaDeLaEmpresa.test.js`).
+
+Novedades: no — la valoración no pidió preguntar (3 de 4); es un freno y un aviso para Talento Humano, que ya decide en «Por decidir».
+
+Gemelo: time_audit — en apps/mobile/componentes/personas/Quincena.js (el freno y el texto); el panel «Por decidir» no existe en la app y el aviso remite al portal.
+Gemelo: payroll — el mismo cambio va del lado del portal en el formulario de la fila (FormEditPayrollEntry) y en la boleta del núcleo (boletaDePapel), que el registro no cuenta como pantallas de payroll.
+
 ## v2.1595.1 — La reserva pagada con tarjeta sale al crédito y se abona sola
 
 La R-000203 de Salud 1: anticipo de $24.25 con tarjeta (voucher 003907, caja

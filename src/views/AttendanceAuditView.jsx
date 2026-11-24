@@ -29,6 +29,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
     closeQuincenaTimesheets, marcarMarcajesRevisados, resolverTurnoExtra,
+    fetchPendientesDeQuincena, textoDePendientes,
     buildCSTDate,
     getCSTDateStr,
 } from '@nucleo/data/attendanceAudit';
@@ -761,6 +762,13 @@ const AttendanceAuditView = () => {
   const [reviewedPunchIds,  setReviewedPunchIds]  = useState(() => new Set());
   const [quincenaTS,        setQuincenaTS]        = useState([]);
   const [isClosingQuincena, setIsClosingQuincena] = useState(false);
+  /* Lo que falta resolver antes de cerrar (horas de más, descanso en duda,
+   * marcaciones incompletas). La cuenta es de la base (`pendientes_de_quincena`)
+   * y la misma base frena la escritura. `versionPendientes` sube cuando el
+   * panel «Por decidir» guarda una decisión. */
+  const [pendientesQ, setPendientesQ] = useState(null);
+  const [versionPendientes, setVersionPendientes] = useState(0);
+  const refrescarPendientes = useCallback(() => setVersionPendientes(v => v + 1), []);
   const [shiftExceptions,   setShiftExceptions]   = useState([]);
   const [processingExId,    setProcessingExId]    = useState(null);
   /* El turno extra que se está rechazando, mientras se escribe por qué. Hasta
@@ -805,6 +813,22 @@ const AttendanceAuditView = () => {
       .then(({ data }) => { if (!cancelled) setQuincenaTS(data || []); });
     return () => { cancelled = true; };
   }, [selectedQuincena, isDemoMode]);
+
+  useEffect(() => {
+    if (isDemoMode) { setPendientesQ(null); return; }
+    let cancelled = false;
+    fetchPendientesDeQuincena(selectedQuincena, getQuincenaEnd(selectedQuincena))
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.error('AttendanceAuditView: pendientes de la quincena falló:', error.message);
+        setPendientesQ(error ? null : data);
+      });
+    return () => { cancelled = true; };
+  }, [selectedQuincena, isDemoMode, versionPendientes, quincenaTS]);
+
+  const irAlPanel = useCallback(() => {
+    document.getElementById('por-decidir')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   // ── Lookup maps ─────────────────────────────────────────────────────────
   const shiftById = useMemo(() => {
@@ -859,28 +883,46 @@ const AttendanceAuditView = () => {
     const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
     if (!pending.length) return;
     const ids = pending.map(ts => ts.id);
+    // Lo pendiente de ESTA persona frena su aprobación (la base frena igual).
+    const { data: pend } = await fetchPendientesDeQuincena(selectedQuincena, quincenaEnd, [emp.id]);
+    if (Number(pend?.total) > 0) {
+      showToast('Falta resolver', `${shortEmployeeName(emp)} tiene ${textoDePendientes(pend)}. Resuélvelo en «Por decidir».`, 'warning');
+      irAlPanel();
+      return;
+    }
     // La firma (`TIMESHEETS_BULK_APPROVED`) la anota `approveTimesheetsBulk`.
     const { error } = await approveTimesheetsBulk(ids, { employeeId: emp.id, quincena: selectedQuincena });
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
       showToast('Aprobado', `${ids.length} día(s) aprobado(s) para ${shortEmployeeName(emp)}.`, 'success');
     } else {
-      showToast('Error', 'No se pudo aprobar.', 'error');
+      showToast('No se pudo aprobar', mensajeAmigable(error), 'error');
     }
-  }, [isDemoMode, quincenaTS, selectedQuincena, showToast]);
+  }, [isDemoMode, quincenaTS, selectedQuincena, quincenaEnd, showToast, irAlPanel]);
 
   const handleCloseQuincena = useCallback(async () => {
     if (isClosingQuincena) return;
     const unapproved = quincenaTS.filter(ts => ts.status !== 'APPROVED');
     if (unapproved.length === 0) { showToast('Sin cambios', 'Todos los registros ya están aprobados.', 'info'); return; }
     setIsClosingQuincena(true);
+    // Se vuelve a preguntar justo antes: lo de la pantalla puede ser viejo.
+    const { data: pend, error: pendErr } = await fetchPendientesDeQuincena(selectedQuincena, quincenaEnd);
+    if (pendErr || Number(pend?.total) > 0) {
+      setIsClosingQuincena(false);
+      if (pend) setPendientesQ(pend);
+      showToast('No se puede cerrar', pendErr ? mensajeAmigable(pendErr) : `Falta resolver ${textoDePendientes(pend)}.`, 'warning');
+      if (!pendErr) irAlPanel();
+      return;
+    }
     const ids = unapproved.map(ts => ts.id);
     const { error } = await closeQuincenaTimesheets(ids, { quincena: selectedQuincena });
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
+    } else {
+      showToast('No se pudo cerrar', mensajeAmigable(error), 'error');
     }
     setIsClosingQuincena(false);
-  }, [isClosingQuincena, quincenaTS, selectedQuincena, showToast]);
+  }, [isClosingQuincena, quincenaTS, selectedQuincena, quincenaEnd, showToast, irAlPanel]);
 
   // ── Export quincena CSV ──────────────────────────────────────────────────
   const handleExportCSVQuincena = useCallback(() => {
@@ -1104,9 +1146,24 @@ const AttendanceAuditView = () => {
         {/* Barra de filtros: cuerpo, a la derecha (§17) */}
         <div className="flex justify-end">{filtrosCuerpo}</div>
 
+        {/* El freno del cierre: mientras quede algo por resolver, la quincena
+            no se cierra (la base también lo frena). */}
+        {hayAccionQuincena && !quincenaCerrada && Number(pendientesQ?.total) > 0 && (
+          <div className="bg-danger/10 border border-danger/30 rounded-2xl px-5 py-3 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-start gap-2 min-w-0">
+              <LockKeyhole size={14} className="text-danger-text mt-0.5 flex-shrink-0" strokeWidth={2.5} />
+              <p className="text-label text-danger-text">
+                <span className="font-black">No puedes cerrar la quincena.</span>{' '}
+                Falta resolver {textoDePendientes(pendientesQ)}.
+              </p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={irAlPanel}>Ver lo pendiente</Button>
+          </div>
+        )}
+
         {/* Horas de más y descanso semanal: lo decide Talento Humano (reglas de pago). */}
         <PorDecidirPanel desde={selectedQuincena} hasta={quincenaEnd} empleados={visiblePorDecidir}
-          canEdit={canEdit} enDemo={isDemoMode} />
+          canEdit={canEdit} enDemo={isDemoMode} onCambio={refrescarPendientes} />
 
         {/* SHIFT_EXCEPTION review panel */}
         {shiftExceptions.length > 0 && (

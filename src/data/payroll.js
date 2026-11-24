@@ -65,7 +65,7 @@ async function todasOError(armar) {
 
 export function fetchTimesheetsForPeriod(startDate, endDate) {
     return todasOError(() => supabase.from('timesheets')
-        .select('id, employee_id, is_absent, absence_type, work_date, regular_hours, nocturnal_hours, nocturnal_overtime_hours, overtime_hours, late_minutes, is_holiday_worked, is_rest_day_worked, extra_decision')
+        .select('id, employee_id, status, is_absent, absence_type, work_date, regular_hours, nocturnal_hours, nocturnal_overtime_hours, overtime_hours, late_minutes, is_holiday_worked, is_rest_day_worked, extra_decision')
         .gte('work_date', startDate)
         .lte('work_date', endDate)
         .order('work_date').order('id'));

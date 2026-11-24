@@ -32,6 +32,21 @@ export const PRINT_CSS = `
 // HTML/script se ejecutaba en la ventana de impresión (misma origin que la app).
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+// «0.00 X $0.7031»: las horas y la tarifa de cada renglón, como en la boleta
+// de la empresa. La hora extra nocturna se paga en DOS renglones —noct.
+// extraordinarias (× 0,5) y extra nocturnas (× 2)—, que suman × 2,5.
+const horasPor = (horas, tarifa) => `${round2(horas).toFixed(2)} X ${formatMoney(tarifa, { decimales: 4 })} =`;
+
+// «Detalle de horas extras y asuetos laborados», sólo si hubo.
+function detalleDeHoras(entry) {
+    const partes = [];
+    if (Number(entry.extra_hours_diurnal) > 0) partes.push(`${round2(entry.extra_hours_diurnal)} H EXTRA DIURNAS`);
+    if (Number(entry.extra_hours_nocturnal) > 0) partes.push(`${round2(entry.extra_hours_nocturnal)} H EXTRA NOCTURNAS`);
+    if (Number(entry.night_hours_ordinary) > 0) partes.push(`${round2(entry.night_hours_ordinary)} H NOCTURNAS ORDINARIAS`);
+    if (Number(entry.holiday_surcharge) > 0) partes.push(`RECARGO DE ASUETOS Y DESCANSOS TRABAJADOS ${formatMoney(round2(entry.holiday_surcharge))}`);
+    return partes.length ? `<div style="font-size:10px;margin:4px 0"><b>DETALLE DE HORAS EXTRAS Y ASUETOS LABORADOS:</b> ${partes.join(', ')}.</div>` : '';
+}
+
 export function buildBoletaHTML(entry, period, branches) {
     const emp    = entry.employee || {};
     const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
@@ -67,10 +82,10 @@ export function buildBoletaHTML(entry, period, branches) {
     </table><br/>
     <div class="sec">OTROS INGRESOS NO SUJETOS A RETENCIONES</div>
     <table>
-      <tr><td>HORAS NOCT. ORDINARIAS (25%):</td><td class="right">${formatMoney(round2(entry.night_hours_ordinary*hourly*0.25))} +</td></tr>
-      <tr><td>HORAS NOCT. EXTRAORDINARIAS (50%):</td><td class="right">${formatMoney(round2(entry.night_hours_extra*hourly*0.50))} +</td></tr>
-      <tr><td>HORAS EXTRA DIURNAS:</td><td class="right">${formatMoney(round2(entry.extra_hours_diurnal*hourly*2))} +</td></tr>
-      <tr><td>HORAS EXTRA NOCTURNAS (×2.25):</td><td class="right">${formatMoney(round2(entry.extra_hours_nocturnal*hourly*2.25))} +</td></tr>
+      <tr><td>HORAS NOCT. ORDINARIAS (25%): ${horasPor(entry.night_hours_ordinary, hourly * 0.25)}</td><td class="right">${formatMoney(round2(entry.night_hours_ordinary*hourly*0.25))} +</td></tr>
+      <tr><td>HORAS NOCT. EXTRAORDINARIAS (50%): ${horasPor(entry.night_hours_extra, hourly * 0.5)}</td><td class="right">${formatMoney(round2(entry.night_hours_extra*hourly*0.50))} +</td></tr>
+      <tr><td>HORAS EXTRA DIURNAS: ${horasPor(entry.extra_hours_diurnal, hourly * 2)}</td><td class="right">${formatMoney(round2(entry.extra_hours_diurnal*hourly*2))} +</td></tr>
+      <tr><td>HORAS EXTRA NOCTURNAS: ${horasPor(entry.extra_hours_nocturnal, hourly * 2)}</td><td class="right">${formatMoney(round2(entry.extra_hours_nocturnal*hourly*2))} +</td></tr>
       <tr><td>RECARGO DE ASUETOS:</td><td class="right">${formatMoney(round2(entry.holiday_surcharge))} +</td></tr>
       <tr><td>BONIFICACIONES:</td><td class="right">${formatMoney(round2(entry.bonifications))} +</td></tr>
       <tr><td>BONO VACACIONAL (30%):</td><td class="right">${formatMoney(round2(entry.vacation_bonus))} +</td></tr>
@@ -101,7 +116,8 @@ export function buildBoletaHTML(entry, period, branches) {
 </div>
 <div style="text-align:center;font-size:10px">CANTIDAD EN LETRAS: ${montoEnLetras(entry.net_pay)}</div>
 <hr/>
-${entry.viaticos_detail?`<div style="font-size:10px;margin:4px 0"><b>CONCEPTO DE VIÁTICOS:</b> ${esc(entry.viaticos_detail)}</div>`:''}
+${detalleDeHoras(entry)}
+${(entry.viaticos_detail || entry.bonificaciones_detalle) ? `<div style="font-size:10px;margin:4px 0"><b>CONCEPTO DE VIÁTICOS Y BONIFICACIÓN:</b>${entry.viaticos_detail ? ` VIÁTICO: ${esc(entry.viaticos_detail)}.` : ''}${entry.bonificaciones_detalle ? ` BONIFICACIÓN: ${esc(entry.bonificaciones_detalle)}.` : ''}</div>` : ''}
 ${(entry.edit_history||[]).length>0?`<div style="font-size:9px;margin-top:4px">Boleta editada. Última edición: ${esc(entry.edit_history[entry.edit_history.length-1]?.by)} — ${esc(entry.edit_history[entry.edit_history.length-1]?.reason)}</div>`:''}
 <div class="sig"><div>F. ____________________<br/>PATRONO</div><div>F. ____________________<br/>EMPLEADO</div></div>`;
 }

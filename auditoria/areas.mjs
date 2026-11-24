@@ -305,7 +305,7 @@ export const AREAS = [
         ],
         tablas: ['attendance', 'timesheets', 'overtime_bank', 'descanso_semanal_decisiones'],
         edge: ['consolidate-timesheets'],
-        crons: ['consolidate-timesheets-daily'],
+        crons: ['consolidate-timesheets-daily', 'avisar-cierre-quincena-8am-sv'],
         docs: ['docs/ASISTENCIA-COMO-SE-CUENTA-EL-TIEMPO-2026-08-24.md', 'docs/reglas/reglas-de-pago.md'],
     },
     {

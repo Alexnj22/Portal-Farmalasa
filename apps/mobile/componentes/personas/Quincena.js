@@ -22,7 +22,7 @@ import { Alert, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';
+import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendientesDeQuincena, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra, textoDePendientes } from '@nucleo/data/attendanceAudit';
 import { getCurrentQuincenaStart, getQuincenaEnd, nextQuincena, prevQuincena } from '@nucleo/utils/quincena';
 import { resumenDeQuincena, RESUMEN_VACIO } from '@nucleo/utils/auditoriaDeTiempos';
 import { ordenDeCargo } from '@nucleo/utils/planilla';
@@ -85,9 +85,13 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
   const nombreSala = (id) => (sucursales || []).find((b) => String(b.id) === String(id))?.name ?? 'Sin sucursal';
   const actual = inicio === getCurrentQuincenaStart();
 
-  const aprobarTodo = (e) => {
+  const aprobarTodo = async (e) => {
     const pendientes = (ts || []).filter((t) => String(t.employee_id) === String(e.id) && t.status !== 'APPROVED');
     if (!pendientes.length) return;
+    // El freno del cierre (2026-11-23): lo pendiente de Talento Humano frena
+    // aprobar. La base frena igual; esto lo dice antes y en palabras.
+    const { data: pend } = await fetchPendientesDeQuincena(inicio, fin, [e.id]);
+    if (Number(pend?.total) > 0) { fallo('Falta resolver', `${shortEmployeeName(e)} tiene ${textoDePendientes(pend)}. Resuélvelo en Auditoría de tiempos del portal.`); return; }
     Alert.alert('Aprobar la quincena', `${pendientes.length} día${pendientes.length === 1 ? '' : 's'} de ${shortEmployeeName(e)} quedan aprobados.`, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Aprobar', onPress: async () => {
@@ -106,8 +110,20 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
   // Lo que falta aprobar de las personas que se ven (no de otras salas).
   const sinAprobar = useMemo(() => (ts || []).filter((t) => ids.has(String(t.employee_id)) && t.status !== 'APPROVED'), [ts, ids]);
   const rotuloQuincena = `${fechaTexto(inicio, { day: 'numeric' })} – ${fechaTexto(fin, { day: 'numeric', month: 'long' })}`;
-  const cerrar = () => {
+  // Lo que falta resolver de las personas que se ven: frena el cierre.
+  const [pendientesQ, setPendientesQ] = useState(null);
+  const idsVisibles = useMemo(() => [...ids], [ids]);
+  useEffect(() => {
+    if (!idsVisibles.length) { setPendientesQ(null); return undefined; }
+    let vivo = true;
+    fetchPendientesDeQuincena(inicio, fin, idsVisibles).then(({ data }) => { if (vivo) setPendientesQ(data); });
+    return () => { vivo = false; };
+  }, [inicio, fin, idsVisibles, ts]);
+  const cerrar = async () => {
     if (!sinAprobar.length) return;
+    const { data: pend, error: pendErr } = await fetchPendientesDeQuincena(inicio, fin, idsVisibles);
+    if (pendErr) { fallo('No se pudo revisar', mensajeAmigable(pendErr, 'Intenta de nuevo.')); return; }
+    if (Number(pend?.total) > 0) { setPendientesQ(pend); fallo('No se puede cerrar', `Falta resolver ${textoDePendientes(pend)}. Resuélvelo en Auditoría de tiempos del portal.`); return; }
     const quien = salaNombre ? `de ${salaNombre}` : 'de todas las sucursales que ves';
     Alert.prompt('Cerrar la quincena',
       `Se aprueban ${sinAprobar.length} día${sinAprobar.length === 1 ? '' : 's'} sin aprobar ${quien} (${rotuloQuincena}). La planilla se arma con esas horas.\n\nEscribe CERRAR para confirmar.`, [
@@ -193,6 +209,11 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
 
           {puedeEditar && total.total ? (
             <View style={{ marginHorizontal: 16 }}>
+              {sinAprobar.length && Number(pendientesQ?.total) > 0 ? (
+                <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600', textAlign: 'center', marginBottom: 8 }}>
+                  No puedes cerrar la quincena. Falta resolver {textoDePendientes(pendientesQ)}.
+                </Text>
+              ) : null}
               {sinAprobar.length
                 ? <BotonGrande texto={ocupado === 'cerrar' ? 'Cerrando…' : `Cerrar quincena · ${sinAprobar.length} día${sinAprobar.length === 1 ? '' : 's'} sin aprobar`} color={MARCA.verde} onPress={cerrar} deshabilitado={!!ocupado} />
                 : <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700', textAlign: 'center' }}>Quincena cerrada: todo aprobado</Text>}

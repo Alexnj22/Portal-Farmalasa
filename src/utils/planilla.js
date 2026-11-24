@@ -80,10 +80,16 @@ export function totalesDePlanilla(entries) {
  * suma no daba. Los subtotales A y B son los de la fila, nunca recalculados:
  * es lo que se pagó. */
 const r2 = (n) => parseFloat((Number(n) || 0).toFixed(2));
+const r4 = (n) => parseFloat((Number(n) || 0).toFixed(4));
+// El sueldo por hora va con CUATRO decimales, como en la boleta de la empresa
+// ($675 → $22.50 diario → $2.8125 la hora; recargos $0.7031, $1.4063 y
+// $5.6250). Con dos (2.81) los montos de las horas no daban lo que calcula
+// `calcPayrollEntry`, que ya usaba cuatro (comparación renglón por renglón,
+// 2026-11-23).
 export function partidasDeBoleta(entry, baseSalary) {
     const e = entry || {};
     const diario = r2((Number(baseSalary) || 0) / 30);
-    const porHora = r2(diario / 8);
+    const porHora = r4((Number(baseSalary) || 0) / 30 / 8);
     // Una partida con horas y sin monto (sueldo desconocido) se queda: esconderla
     // haría desaparecer horas trabajadas sin decir nada.
     const sinCero = (lista) => lista.filter((p) => p.monto || p.horas);
@@ -95,12 +101,13 @@ export function partidasDeBoleta(entry, baseSalary) {
         ],
         subtotalA: r2(e.subtotal_a),
         noSujetos: sinCero([
-            { rotulo: 'Horas nocturnas ordinarias (25%)', horas: r2(e.night_hours_ordinary), monto: r2(e.night_hours_ordinary * porHora * 0.25) },
-            { rotulo: 'Horas nocturnas extra (50%)',      horas: r2(e.night_hours_extra),    monto: r2(e.night_hours_extra * porHora * 0.5) },
-            { rotulo: 'Horas extra diurnas (×2)',         horas: r2(e.extra_hours_diurnal),  monto: r2(e.extra_hours_diurnal * porHora * 2) },
-            { rotulo: 'Horas extra nocturnas (×2.25)',    horas: r2(e.extra_hours_nocturnal), monto: r2(e.extra_hours_nocturnal * porHora * 2.25) },
+            { rotulo: 'Horas nocturnas ordinarias (25%)', horas: r2(e.night_hours_ordinary), tarifa: r4(porHora * 0.25), monto: r2(e.night_hours_ordinary * porHora * 0.25) },
+            { rotulo: 'Horas nocturnas extra (50%)',      horas: r2(e.night_hours_extra),    tarifa: r4(porHora * 0.5),  monto: r2(e.night_hours_extra * porHora * 0.5) },
+            { rotulo: 'Horas extra diurnas (×2)',         horas: r2(e.extra_hours_diurnal),  tarifa: r4(porHora * 2),    monto: r2(e.extra_hours_diurnal * porHora * 2) },
+            // La hora extra nocturna también va en «nocturnas extra (50%)»: ×2 + ×0,5.
+            { rotulo: 'Horas extra nocturnas (×2)',       horas: r2(e.extra_hours_nocturnal), tarifa: r4(porHora * 2),   monto: r2(e.extra_hours_nocturnal * porHora * 2) },
             { rotulo: 'Recargo de asuetos',     monto: r2(e.holiday_surcharge) },
-            { rotulo: 'Bonificaciones',         monto: r2(e.bonifications) },
+            { rotulo: e.bonificaciones_detalle ? `Bonificaciones · ${e.bonificaciones_detalle}` : 'Bonificaciones', monto: r2(e.bonifications) },
             { rotulo: 'Bono vacacional (30%)',  monto: r2(e.vacation_bonus) },
             { rotulo: 'Viáticos',               monto: r2(e.viaticos) },
         ]),

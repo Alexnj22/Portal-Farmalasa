@@ -534,6 +534,7 @@ function MainApp() {
                 vacation_bonus:        entry.vacation_bonus,
                 viaticos:              entry.viaticos,
                 viaticos_detail:       entry.viaticos_detail || '',
+                bonificaciones_detalle: entry.bonificaciones_detalle || '',
                 order_discount:        entry.order_discount,
                 other_discounts:       entry.other_discounts,
                 other_discounts_concepto: entry.other_discounts_concepto || '',

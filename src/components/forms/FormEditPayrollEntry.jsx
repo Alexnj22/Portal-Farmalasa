@@ -77,6 +77,9 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             ...f,
             extra_hours_diurnal:   dPay > 0 ? round2((f.extra_hours_diurnal   || entry.extra_hours_diurnal   || 0) + dPay) : (f.extra_hours_diurnal   ?? entry.extra_hours_diurnal   ?? 0),
             extra_hours_nocturnal: nPay > 0 ? round2((f.extra_hours_nocturnal || entry.extra_hours_nocturnal || 0) + nPay) : (f.extra_hours_nocturnal ?? entry.extra_hours_nocturnal ?? 0),
+            // La hora extra nocturna va también en «Hrs. Noct. Extra (50%)»:
+            // la boleta la paga en dos renglones, × 2 y × 0,5 (= × 2,5).
+            night_hours_extra:     nPay > 0 ? round2((f.night_hours_extra || entry.night_hours_extra || 0) + nPay) : (f.night_hours_extra ?? entry.night_hours_extra ?? 0),
             _otBank: {
                 dPay, dComp, nPay, nComp,
                 diurnal: otBank?.diurnal, nocturnal: otBank?.nocturnal,
@@ -175,7 +178,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     {otBank.nocturnal > 0 && (
                         <div className="bg-chart-3/10 border border-chart-3/30 rounded-xl p-2.5 space-y-2">
                             <div className="flex items-center justify-between">
-                                <p className="text-micro font-black uppercase tracking-widest text-chart-3-text">HE Nocturnas <span className="text-chart-3-text font-bold normal-case">(×2.25 si se pagan)</span></p>
+                                <p className="text-micro font-black uppercase tracking-widest text-chart-3-text">HE Nocturnas <span className="text-chart-3-text font-bold normal-case">(×2.5 si se pagan)</span></p>
                                 <span className="text-body font-black text-chart-3-text">{otBank.nocturnal.toFixed(1)}h</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -212,7 +215,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {otApplied && (
                 <div className="col-span-2 space-y-1.5">
                     {dPay  > 0 && <div className="bg-success/10 border border-success/30 rounded-2xl px-4 py-2.5"><p className="text-label font-black text-success-text">✓ {dPay.toFixed(1)}h diurnas → Hrs. Extra Diurnas (se pagan en esta planilla).</p></div>}
-                    {nPay  > 0 && <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl px-4 py-2.5"><p className="text-label font-black text-chart-3-text">✓ {nPay.toFixed(1)}h nocturnas → Hrs. Extra Nocturnas ×2.25 (se pagan en esta planilla).</p></div>}
+                    {nPay  > 0 && <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl px-4 py-2.5"><p className="text-label font-black text-chart-3-text">✓ {nPay.toFixed(1)}h nocturnas → Hrs. Extra Nocturnas ×2 y Noct. Extra 50% (se pagan en esta planilla).</p></div>}
                     {(dComp > 0 || nComp > 0) && <div className="bg-chart-1/10 border border-chart-1/30 rounded-2xl px-4 py-2.5"><p className="text-label font-black text-chart-1-text">✓ {(dComp + nComp).toFixed(1)}h marcadas como tiempo compensado.</p></div>}
                     {(dLeft > 0 || nLeft > 0) && <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5"><p className="text-label font-black text-warning-text">{(dLeft + nLeft).toFixed(1)}h permanecen en banco para la siguiente quincena.</p></div>}
                 </div>
@@ -257,6 +260,17 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                 value={formData.viaticos_detail ?? entry.viaticos_detail ?? ''}
                 onChange={e => setFormData(f => ({ ...f, viaticos_detail: e.target.value }))}
                 placeholder="Ej: Por 1 visita a otra sucursal $10.00"
+            />
+            {/* El concepto de la bonificación (el bono por venta, p. ej.) sale
+                en la boleta junto al de los viáticos, como en el papel de la
+                empresa. */}
+            <PortalInput
+                colSpan={2}
+                name="bonificaciones_detalle"
+                label="Detalle de Bonificaciones"
+                value={formData.bonificaciones_detalle ?? entry.bonificaciones_detalle ?? ''}
+                onChange={e => setFormData(f => ({ ...f, bonificaciones_detalle: e.target.value }))}
+                placeholder="Ej: Bono por venta"
             />
 
             <div className="col-span-2 pt-2">

@@ -7,6 +7,10 @@
  *    tarde en la semana o una ausencia sin justificar (RIT Arts. 25 y 26,
  *    CT Art. 171). Sin confirmar, no descuenta nada.
  *
+ * Y desde el 2026-11-23, las marcaciones incompletas: no se deciden acá
+ * (se corrigen en la fila de cada persona), pero también frenan el cierre de
+ * la quincena (`pendientes_de_quincena` en la base), así que se listan.
+ *
  * Vive en Auditoría de tiempos, que es donde Talento Humano ya revisa la
  * quincena: no es un módulo nuevo. */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -30,7 +34,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 const horas = (h) => `${Number(h).toFixed(2).replace(/\.?0+$/, '')} h`;
 const CLASE = { ASUETO: 'Asueto', DESCANSO: 'Día de descanso' };
 
-export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDemo = false }) {
+export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDemo = false, onCambio = null }) {
     const appendAuditLog = useStaff(s => s.appendAuditLog);
     const showToast = useToastStore(s => s.showToast);
     const [dias, setDias] = useState([]);
@@ -40,7 +44,7 @@ export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDe
 
     // `version` sube después de cada decisión y vuelve a leer.
     const [version, setVersion] = useState(0);
-    const cargar = useCallback(() => setVersion(v => v + 1), []);
+    const cargar = useCallback(() => { setVersion(v => v + 1); onCambio?.(); }, [onCambio]);
     useEffect(() => {
         if (enDemo) return undefined;
         let cancelado = false;
@@ -61,6 +65,9 @@ export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDe
     // Sólo las personas que la vista está mostrando (filtro de sucursal).
     const extras = useMemo(() => dias
         .filter(d => String(d.work_date).slice(0, 10) >= desde && Number(d.overtime_hours) > 0 && !d.extra_decision)
+        .filter(d => porId.has(String(d.employee_id))), [dias, desde, porId]);
+    const incompletas = useMemo(() => dias
+        .filter(d => String(d.work_date).slice(0, 10) >= desde && d.status === 'INCOMPLETE')
         .filter(d => porId.has(String(d.employee_id))), [dias, desde, porId]);
     const semanas = useMemo(() => semanasConDescansoEnDuda(dias, decisiones, { desde, hasta })
         .filter(s => !s.decision && porId.has(String(s.employee_id))), [dias, decisiones, desde, hasta, porId]);
@@ -93,7 +100,7 @@ export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDe
         cargar();
     };
 
-    if (enDemo || (!error && extras.length === 0 && semanas.length === 0)) return null;
+    if (enDemo || (!error && extras.length === 0 && semanas.length === 0 && incompletas.length === 0)) return null;
 
     const Persona = ({ id }) => {
         const emp = porId.get(String(id));
@@ -106,11 +113,11 @@ export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDe
     };
 
     return (
-        <div className="bg-warning/10 border border-warning/30 rounded-2xl overflow-hidden">
+        <div id="por-decidir" className="bg-warning/10 border border-warning/30 rounded-2xl overflow-hidden scroll-mt-4">
             <div className="px-5 py-3 border-b border-warning/30 flex items-center gap-2">
                 <Scale size={14} className="text-warning-text" strokeWidth={2.5} />
                 <span className="text-label font-black text-warning-text uppercase tracking-widest">Por decidir</span>
-                <Badge variant="warning" tone="solid" size="sm" uppercase={false}>{extras.length + semanas.length}</Badge>
+                <Badge variant="warning" tone="solid" size="sm" uppercase={false}>{extras.length + semanas.length + incompletas.length}</Badge>
             </div>
             {error && <p className="px-5 py-3 text-label text-danger-text">{error}</p>}
 
@@ -176,6 +183,21 @@ export default function PorDecidirPanel({ desde, hasta, empleados, canEdit, enDe
                             </div>
                         );
                     })}
+                </div>
+            )}
+            {incompletas.length > 0 && (
+                <div className="divide-y divide-warning/20 border-t border-warning/20">
+                    <p className="px-5 pt-3 pb-1 text-caption text-content-2">
+                        Marcación incompleta. Corrígela en la fila de la persona: mientras quede una, la quincena no se cierra.
+                    </p>
+                    {incompletas.map(d => (
+                        <div key={d.id} className="px-5 py-3 flex flex-col gap-0.5 min-w-0">
+                            <Persona id={d.employee_id} />
+                            <span className="text-caption text-content-2">
+                                {fechaTexto(d.work_date, { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

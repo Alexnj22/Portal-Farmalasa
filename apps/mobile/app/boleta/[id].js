@@ -94,7 +94,7 @@ export default function Boleta() {
           <Seccion titulo="Base">
             <Dato primero rotulo="Sueldo base mensual" valor={formatMoney(empleado.base_salary)} />
             <Dato rotulo="Sueldo diario" valor={formatMoney(p.diario)} />
-            <Dato rotulo="Sueldo por hora" valor={formatMoney(p.porHora)} />
+            <Dato rotulo="Sueldo por hora" valor={formatMoney(p.porHora, { decimales: 4 })} />
           </Seccion>
         ) : null}
         <Seccion titulo="A · Ingresos sujetos a retención">

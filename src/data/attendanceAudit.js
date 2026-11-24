@@ -194,6 +194,34 @@ async function devolverAPendiente(requestId, causa) {
 }
 
 /**
+ * Lo que falta resolver antes de cerrar la quincena (2026-11-23): días con
+ * horas de más sin decidir, semanas con el descanso en duda y marcaciones
+ * incompletas. La cuenta es UNA, en la base (`pendientes_de_quincena`): la
+ * usan esta pantalla, la app, el freno de la escritura (trigger
+ * `timesheets_freno_de_cierre`) y el aviso a Talento Humano. Devuelve
+ * `{ data: { horas_extra, descanso, incompletas, total }, error }`.
+ * `employeeIds` acota a esas personas (aprobar a una sola).
+ */
+export async function fetchPendientesDeQuincena(desde, hasta, employeeIds = null) {
+    const { data, error } = await supabase.rpc('pendientes_de_quincena', {
+        p_desde: desde, p_hasta: hasta, p_employee_ids: employeeIds,
+    });
+    return { data: error ? null : data, error };
+}
+
+/** En palabras, para la pantalla: «2 días con horas de más, 1 marcación incompleta». */
+export function textoDePendientes(p) {
+    if (!p) return '';
+    const n = (x) => Number(x) || 0;
+    const partes = [];
+    if (n(p.horas_extra)) partes.push(`${n(p.horas_extra)} ${n(p.horas_extra) === 1 ? 'día con horas de más' : 'días con horas de más'}`);
+    if (n(p.descanso)) partes.push(`${n(p.descanso)} ${n(p.descanso) === 1 ? 'semana con el descanso en duda' : 'semanas con el descanso en duda'}`);
+    if (n(p.incompletas)) partes.push(`${n(p.incompletas)} ${n(p.incompletas) === 1 ? 'marcación incompleta' : 'marcaciones incompletas'}`);
+    if (partes.length < 2) return partes[0] || '';
+    return `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}`;
+}
+
+/**
  * Cerrar la quincena: aprobar de una vez los días que quedaban sin aprobar →
  * `CERRAR_QUINCENA` (D3: la anota esta función, así la pantalla del portal y
  * la del teléfono dejan la misma entrada). `contexto.quincena` es el inicio

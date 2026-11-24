@@ -58,7 +58,7 @@ export default function EditarFila() {
   const inicial = () => {
     const b = loadDraft(clave);
     if (b) return b;
-    const f = { days_worked: String(fila?.days_worked ?? 15), viaticos_detail: fila?.viaticos_detail || '', motivo: '',
+    const f = { days_worked: String(fila?.days_worked ?? 15), viaticos_detail: fila?.viaticos_detail || '', bonificaciones_detalle: fila?.bonificaciones_detalle || '', motivo: '',
       other_discounts_concepto: fila?.other_discounts_concepto || '', other_discounts_detalle: fila?.other_discounts_detalle || '', dPay: '', dComp: '', nPay: '', nComp: '' };
     for (const c of CAMPOS_EDITABLES_DE_PLANILLA) f[c.key] = String(fila?.[c.key] ?? 0);
     return f;
@@ -87,8 +87,12 @@ export default function EditarFila() {
   for (const c of CAMPOS_EDITABLES_DE_PLANILLA) datos[c.key] = num(f[c.key]);
   datos.extra_hours_diurnal = r2(datos.extra_hours_diurnal + dPay);
   datos.extra_hours_nocturnal = r2(datos.extra_hours_nocturnal + nPay);
+  // La hora extra nocturna también va en «nocturnas extra (50%)»: la boleta la
+  // paga en dos renglones, × 2 y × 0,5 (= × 2,5), igual que el portal.
+  datos.night_hours_extra = r2(datos.night_hours_extra + nPay);
   datos.days_worked = num(f.days_worked);
   datos.viaticos_detail = f.viaticos_detail;
+  datos.bonificaciones_detalle = f.bonificaciones_detalle ?? '';
   // «Otros descuentos» lleva su motivo (como el portal): sin él podía entrar
   // un faltante de caja, que el Código de Trabajo no deja descontar. Guardar
   // lo frena en el store y en la base; antes la app no lo mandaba y fallaba.
@@ -164,6 +168,7 @@ export default function EditarFila() {
                 <FilaNumero key={c.key} rotulo={c.label} valor={f[c.key]} onCambiar={cambiar(c.key)} />
               ))}
               {g === 'ingresos' ? <Campo value={f.viaticos_detail} onChangeText={cambiar('viaticos_detail')} placeholder="Concepto de los viáticos" /> : null}
+              {g === 'ingresos' ? <Campo value={f.bonificaciones_detalle ?? ''} onChangeText={cambiar('bonificaciones_detalle')} placeholder="Concepto de la bonificación (p. ej. bono por venta)" /> : null}
             </Seccion>
           ))}
 

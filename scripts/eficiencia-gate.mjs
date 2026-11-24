@@ -760,6 +760,14 @@ const CRONS = [
           + '`functions/v1/`, así que si no está escrito no lo vigila nadie.',
   },
   {
+    job: 'avisar-cierre-quincena-8am-sv', slug: null, cadencia: '0 14 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'Asistencia (2026-11-23): a las 08:00 SV le avisa a Talento Humano que la quincena cierra '
+          + 'el 15 o el último día del mes y cuántas decisiones quedan. Corre todos los días pero sólo '
+          + 'avisa 3 días antes y el día del cierre, y sólo si hay pendientes. Tres conteos sobre '
+          + '`timesheets` de una quincena (cientos de filas). Sólo la base propia.',
+  },
+  {
     job: 'encuestas-quejas-del-dia', slug: null, cadencia: '50 3 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Encuestas a clientes (2026-11-14): a las 21:50 SV junta en UN aviso por persona a los '

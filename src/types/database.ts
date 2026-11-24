@@ -21464,6 +21464,7 @@ export type Database = {
       payroll_entries: {
         Row: {
           afp_deduction: number | null
+          bonificaciones_detalle: string | null
           bonifications: number | null
           branch_id: number | null
           created_at: string | null
@@ -21503,6 +21504,7 @@ export type Database = {
         }
         Insert: {
           afp_deduction?: number | null
+          bonificaciones_detalle?: string | null
           bonifications?: number | null
           branch_id?: number | null
           created_at?: string | null
@@ -21542,6 +21544,7 @@ export type Database = {
         }
         Update: {
           afp_deduction?: number | null
+          bonificaciones_detalle?: string | null
           bonifications?: number | null
           branch_id?: number | null
           created_at?: string | null
@@ -33614,6 +33617,7 @@ export type Database = {
         }
         Returns: number
       }
+      avisar_cierre_de_quincena: { Args: { p_hoy?: string }; Returns: number }
       avisar_cierre_del_dia: {
         Args: { p_fecha?: string; p_forzado?: boolean }
         Returns: number
@@ -39038,6 +39042,10 @@ export type Database = {
         }
         Returns: Json
       }
+      pendientes_de_quincena: {
+        Args: { p_desde: string; p_employee_ids?: string[]; p_hasta: string }
+        Returns: Json
+      }
       planificar_traslado_pedido: {
         Args: { p_pedido_id: string; p_run_id: string; p_sucursal_id: number }
         Returns: Json
@@ -39120,6 +39128,15 @@ export type Database = {
       preventa_lotes: {
         Args: { p_branch: number; p_ids: number[] }
         Returns: Json
+      }
+      preventa_pedir_abono_de_anticipo: {
+        Args: {
+          p_branch: number
+          p_codigo: string
+          p_preventa: number
+          p_reserva: number
+        }
+        Returns: number
       }
       preventa_pedir_vale_de_anticipo: {
         Args: {
@@ -40403,6 +40420,10 @@ export type Database = {
       reserva_anticipo_solo_efectivo: {
         Args: { p_id: number }
         Returns: number
+      }
+      reserva_anticipo_va_al_credito: {
+        Args: { p_id: number }
+        Returns: boolean
       }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
       reserva_avisar_sala: {

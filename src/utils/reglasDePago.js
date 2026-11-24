@@ -102,11 +102,12 @@ export function pagoDelDia(ts, tarifaHora) {
         if (decision === DECISION_EXTRA.PAGO) {
             if (clase === 'NORMAL') {
                 out.horasExtraPagoDiurnas = extraDiurna;               // Art. 169: × 2
-                out.horasExtraPagoNocturnas = extraNocturna;           // + Art. 168: × 2,25
+                out.horasExtraPagoNocturnas = extraNocturna;           // + Art. 168: × 2,5 (2 + 0,5)
             } else {
                 // Arts. 175 / 192 inciso 2: sobre el salario extraordinario del día.
                 out.montoDiaEspecial += extraDiurna * tarifaHora * f * (1 + RECARGO_EXTRA);
-                out.montoDiaEspecial += extraNocturna * tarifaHora * f * (1 + RECARGO_EXTRA + RECARGO_NOCTURNO);
+                // El nocturno se calcula sobre la hora extra: 2 × 1,25 = 2,5.
+                out.montoDiaEspecial += extraNocturna * tarifaHora * f * (1 + RECARGO_EXTRA) * (1 + RECARGO_NOCTURNO);
             }
         } else if (decision === DECISION_EXTRA.BANCO) {
             out.bancoDiurnas = extraDiurna;

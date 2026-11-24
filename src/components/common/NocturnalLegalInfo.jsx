@@ -29,7 +29,7 @@ export default function NocturnalLegalInfo({ size = 11 }) {
                         • Hrs. ordinarias nocturnas: <span className="text-chart-3 font-bold">+25% recargo</span> sobre tarifa diurna
                     </p>
                     <p className="text-content-tooltip-2">
-                        • Hrs. extra nocturnas: <span className="text-chart-3 font-bold">×2.25</span> (OT 100% + 25% noct.)
+                        • Hrs. extra nocturnas: <span className="text-chart-3 font-bold">×2.5</span> (doble, más 25% noct. sobre la hora extra: ×2 y ×0.5)
                     </p>
                     <p className="text-content-tooltip-2">• Jornada noct. máx: 7h/día, 39h/sem</p>
                     <p className="text-content-tooltip-2">• Si &gt;4h son nocturnas → turno nocturno</p>

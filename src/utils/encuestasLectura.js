@@ -199,7 +199,7 @@ export function estadoDeLectura(lectura) {
     const puede = respuestas > 0 && (!hay || nuevas >= minimo);
     return {
         hay, nuevas, puede,
-        boton: !hay ? 'Pedirle a Saly que lea los resultados' : puede ? `Actualizar lectura (${nuevas} nuevas)` : 'Lectura al día',
+        boton: !hay ? 'Pedirle a Salvi que lea los resultados' : puede ? `Actualizar lectura (${nuevas} nuevas)` : 'Lectura al día',
         ayuda: hay && !puede ? `Se actualiza cuando entren ${minimo} respuestas nuevas (van ${nuevas}).` : null,
     };
 }

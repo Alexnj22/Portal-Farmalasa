@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1597.0 — Saly ahora se llama Salvi
+
+- **Rebranding de la IA del portal** (decisión del usuario, 2026-11-24): Saly
+  pasa a llamarse **Salvi** (salud + salvadoreño), con el eslogan «Salvi te
+  salva el día». El dibujo —el espíritu de luz— no cambia.
+- Cambia todo texto visible (burbuja de ayuda, `SalyDice`, rótulos
+  accesibles, resumen de sala, lectura de encuestas) en el portal y en la app,
+  y las instrucciones de la IA en `saly-ai`, `saly-ayuda` y
+  `resumen-diario-salas`, para que se presente como Salvi.
+- Los nombres internos (`SalyAvatar`, `saly-ai`, tablas, clases `.saly-*`) se
+  quedan: nadie los ve y renombrarlos sólo rompe enlaces y despliegues.
+
 ## v2.1596.5 — Las marcas ya no se pierden al recargar Auditoría de tiempos
 
 - **Auditoría de tiempos, Inicio y Monitor**: al recargar, la vista pide las

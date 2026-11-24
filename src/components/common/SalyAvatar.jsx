@@ -80,7 +80,7 @@ export default function SalyAvatar({ animo = 'atencion', size = 40, className = 
     const a = ANIMOS_DE_SALY[animo] ? animo : 'atencion';
     const px = Math.max(Number(size) || 0, SALY_TAMANO_MINIMO);
     const id = `saly-${useId().replace(/:/g, '')}`;
-    const rotulo = decorativa ? {} : { role: 'img', 'aria-label': `Saly, ${ANIMOS_DE_SALY[a].frase}` };
+    const rotulo = decorativa ? {} : { role: 'img', 'aria-label': `Salvi, ${ANIMOS_DE_SALY[a].frase}` };
     const [c1, c2, c3] = [1, 2, 3].map(n => `var(--saly-${a}-${n})`);
     const anillo = { fill: 'none', stroke: c1, strokeWidth: 1.2, strokeLinecap: 'round', strokeDasharray: '3 4', className: 'saly-anillo' };
     return (

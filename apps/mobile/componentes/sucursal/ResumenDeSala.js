@@ -38,7 +38,7 @@ export function LineaDeSaly({ resumen, lineas = 2 }) {
       accessibilityLabel={`Resumen del ${fechaTexto(resumen.fecha, { day: 'numeric', month: 'long' })}: ${resumen.texto}`}>
       <View style={{ width: 8, height: 8, borderRadius: 4, marginTop: 6, backgroundColor: colorDeAnimo(resumen) }} />
       <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, lineHeight: 18 }} numberOfLines={lineas}>
-        <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>Saly: </Text>{resumen.texto}
+        <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>Salvi: </Text>{resumen.texto}
       </Text>
     </View>
   );
@@ -110,14 +110,14 @@ export function ResumenDeSala({ branchId }) {
   if (cargando) return <Cargando />;
   if (error) return <Aviso tono="freno" texto={mensajeAmigable(error)} />;
   if (!ultimo) {
-    return <Aviso texto="Saly todavía no ha escrito nada. Cada mañana, a las 5:30, cuenta cómo le fue ayer a esta sucursal." />;
+    return <Aviso texto="Salvi todavía no ha escrito nada. Cada mañana, a las 5:30, cuenta cómo le fue ayer a esta sucursal." />;
   }
   return (<>
     <Seccion titulo={mayuscula(dia(ultimo.fecha, true))}>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ width: 10, height: 10, borderRadius: 5, marginTop: 6, backgroundColor: colorDeAnimo(ultimo) }} />
         <Text selectable style={{ flex: 1, color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>
-          <Text style={{ fontWeight: '700' }}>Saly: </Text>{ultimo.texto}
+          <Text style={{ fontWeight: '700' }}>Salvi: </Text>{ultimo.texto}
         </Text>
       </View>
     </Seccion>

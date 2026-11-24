@@ -441,7 +441,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         const fuentes = [crudo, senalado?.texto, texto];
         const limpias = piezas.filter((p) => !montosInventados([p], fuentes).length);
         if (limpias.length !== piezas.length) {
-            console.warn('Saly: quité una pieza con un monto que no está en pantalla', montosInventados(piezas, fuentes));
+            console.warn('Salvi: quité una pieza con un monto que no está en pantalla', montosInventados(piezas, fuentes));
             piezas = limpias[0]?.tipo === 'titular' ? limpias : [
                 { tipo: 'titular', texto: 'Prefiero no darte un número que no veo', sub: 'Señala la fila o el corte y te lo explico con sus montos' },
                 ...limpias.filter((p) => p.tipo !== 'titular'),
@@ -459,7 +459,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         if (!contenido?.id) return;
         setContenido((c) => ({ ...c, util }));
         const { error } = await calificarAyudaDeSaly(contenido.id, util);
-        if (error) console.error('Saly: no se pudo anotar la calificación', error);
+        if (error) console.error('Salvi: no se pudo anotar la calificación', error);
     }, [contenido]);
 
     // Se cierra con Escape y con un toque FUERA. `pointerdown` y en captura,
@@ -487,7 +487,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
 
     const animo = pensando ? 'pensando' : (abierto ? (contenido?.animo || (senalado ? 'pensando' : 'atencion')) : (aviso?.animo || 'atencion'));
     const ofreciendo = !abierto && !apuntando && !arrastre && aviso;
-    const etiqueta = ofreciendo ? `Saly: ${aviso.oferta?.[0]?.texto || 'tiene algo que contarte'}` : 'Saly: pedir ayuda sobre esta pantalla. Arrástrala sobre algo para preguntar por eso.';
+    const etiqueta = ofreciendo ? `Salvi: ${aviso.oferta?.[0]?.texto || 'tiene algo que contarte'}` : 'Salvi: pedir ayuda sobre esta pantalla. Arrástrala sobre algo para preguntar por eso.';
 
     const lado = sobreDialogo
         ? 'left-[max(16px,var(--sa-left))] z-toast flex-row-reverse'
@@ -520,7 +520,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                     [body:has([data-barra-flotante]):has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+9.5rem)]`}>
 
                 {((abierto && !apuntando) || ofreciendo) && (
-                    <div data-surface="dropdown" role="region" aria-live="polite" aria-label="Ayuda de Saly"
+                    <div data-surface="dropdown" role="region" aria-live="polite" aria-label="Ayuda de Salvi"
                         className={`pointer-events-auto rounded-2xl ${sobreDialogo ? 'rounded-bl-md' : 'rounded-br-md'} overflow-hidden
                             ${abierto ? 'w-[min(22rem,calc(100vw-6.5rem))]' : 'w-[min(16rem,calc(100vw-6.5rem))]'}`}>
                         <div data-animo={animo} className="saly-toque rounded-[inherit] px-4 pb-4 pt-3">
@@ -530,12 +530,12 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                         {(contenido?.volver || semana) && !guia ? (
                                             <button type="button" onClick={() => { setSemana(null); abrirInicio(); }}
                                                 className="-ml-1 min-h-[var(--tap-min)] rounded-lg px-1 text-micro font-black uppercase tracking-widest text-content-3 hover:text-content active:scale-[0.97]">
-                                                ‹ Saly
+                                                ‹ Salvi
                                             </button>
                                         ) : (
-                                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Saly</span>
+                                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Salvi</span>
                                         )}
-                                        <button type="button" onClick={cerrar} aria-label="Cerrar la ayuda de Saly"
+                                        <button type="button" onClick={cerrar} aria-label="Cerrar la ayuda de Salvi"
                                             className="grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-full text-content-3 hover:text-content active:scale-[0.97]">
                                             <X size={16} aria-hidden="true" />
                                         </button>
@@ -677,7 +677,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                     {!guia && <form onSubmit={preguntar} className="mt-4 flex items-center gap-2 border-t border-divider pt-3">
                                         <div className="min-w-0 flex-1" ref={campo}>
                                             <PortalInput name="saly-pregunta" value={pregunta} onChange={(e) => setPregunta(e.target.value)}
-                                                placeholder={senalado ? 'O escribe tu pregunta…' : 'Escribe tu duda…'} readOnly={pensando} aria-label="Pregúntale a Saly"
+                                                placeholder={senalado ? 'O escribe tu pregunta…' : 'Escribe tu duda…'} readOnly={pensando} aria-label="Pregúntale a Salvi"
                                                 inputClassName="!text-body-sm !font-medium"
                                                 maxLength={SALY_MAX_PREGUNTA} autoComplete="off" />
                                         </div>

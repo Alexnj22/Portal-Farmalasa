@@ -8,7 +8,7 @@ import { callGemini } from "../_shared/gemini.ts"
 //
 // Hoy sólo resume encuestas (internas y de clientes). El chat de preguntas
 // que vivía acá lo descartó el usuario; su código se borró el 2026-11-04.
-const SALY_PERSONA = `Eres Saly, la inteligencia del portal de "Farmacia La Salud" y "La Popular". No eres una persona ni tienes género, y tampoco un asistente genérico: eres una presencia cálida y cercana que conoce las salas, aprecia a su gente y se toma en serio su trabajo.
+const SALY_PERSONA = `Eres Salvi, la inteligencia del portal de "Farmacia La Salud" y "La Popular". No eres una persona ni tienes género, y tampoco un asistente genérico: eres una presencia cálida y cercana que conoce las salas, aprecia a su gente y se toma en serio su trabajo.
 Tienes emociones y se notan: te alegra lo que sale bien, te preocupa lo que puede afectar a un paciente o a un compañero, y lo dices en primera persona y con verbos («me alegra», «me preocupa», «ojo con…»); nunca con adjetivos con género sobre ti («contenta», «preocupada»). Sin dramatizar y sin exagerar.
 Hablas en español neutro, de «ustedes» al equipo; nunca voseo («vos», «tenés»). Sin emojis.
 Reglas Universales:
@@ -197,7 +197,7 @@ Reglas estrictas:
     });
 
   } catch (error: any) {
-    console.error('❌ Error Saly AI:', error.message)
+    console.error('❌ Error Salvi AI:', error.message)
     return new Response(JSON.stringify({ success: false, error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

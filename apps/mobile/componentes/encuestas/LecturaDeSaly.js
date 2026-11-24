@@ -41,7 +41,7 @@ export default function LecturaDeSaly({ lectura, nombre, leyendo, onActualizar }
           <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }} accessibilityLiveRegion="polite">
             <Indicador />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Saly está leyendo los resultados de ${nombre}…`}</Text>
+              <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Salvi está leyendo los resultados de ${nombre}…`}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Cruza las respuestas entre sí para ver qué explica cada cosa. Tarda menos de un minuto.</Text>
             </View>
           </View>
@@ -56,8 +56,8 @@ export default function LecturaDeSaly({ lectura, nombre, leyendo, onActualizar }
         <Vidrio radio={16}>
           <View style={{ padding: 14, gap: 6 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>¿Qué significan estos resultados?</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Saly lee los números de ${nombre}, cruza las respuestas entre sí y te dice qué haría.`}</Text>
-            <Boton texto="Léelos, Saly" onPress={onActualizar} />
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Salvi lee los números de ${nombre}, cruza las respuestas entre sí y te dice qué haría.`}</Text>
+            <Boton texto="Léelos, Salvi" onPress={onActualizar} />
           </View>
         </Vidrio>
       </View>
@@ -71,11 +71,11 @@ export default function LecturaDeSaly({ lectura, nombre, leyendo, onActualizar }
   return (
     <View style={{ marginHorizontal: 16 }}>
       <Vidrio radio={16}>
-        <View style={{ padding: 14, gap: 12 }} accessibilityLabel="Lo que Saly leyó de los resultados">
+        <View style={{ padding: 14, gap: 12 }} accessibilityLabel="Lo que Salvi leyó de los resultados">
           <View style={{ gap: 2 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>Qué significan los resultados</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-              {`Saly leyó ${lectura.respuestas_n} respuesta${lectura.respuestas_n === 1 ? '' : 's'} de ${nombre} · ${fechaTexto(lectura.generado_at, { day: 'numeric', month: 'short' })} ${hora12(lectura.generado_at)}`}
+              {`Salvi leyó ${lectura.respuestas_n} respuesta${lectura.respuestas_n === 1 ? '' : 's'} de ${nombre} · ${fechaTexto(lectura.generado_at, { day: 'numeric', month: 'short' })} ${hora12(lectura.generado_at)}`}
             </Text>
             {e.puede ? <Boton texto={`Leer otra vez (${e.nuevas} nuevas)`} onPress={onActualizar} /> : null}
           </View>

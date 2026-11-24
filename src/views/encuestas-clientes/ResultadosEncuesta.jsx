@@ -191,11 +191,11 @@ export default function ResultadosEncuesta({ encuesta }) {
             });
             if (e) throw e;
             const texto = data?.aiSummary;
-            if (!texto) throw new Error('Saly no devolvió la lectura.');
+            if (!texto) throw new Error('Salvi no devolvió la lectura.');
             await guardarLectura(encuesta.id, branchId, texto, filas.length);
             setLecturaSaly(await fetchLectura(encuesta.id, branchId));
         } catch (err) {
-            showToast('Saly no pudo leer los resultados', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+            showToast('Salvi no pudo leer los resultados', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
             setLeyendo(false);
         }
@@ -330,7 +330,7 @@ export default function ResultadosEncuesta({ encuesta }) {
 
                     <div ref={lecturaRef} className="scroll-mt-4">
                         {conFiltros ? (
-                            <Notice variant="info" compact>La lectura de Saly es de {nombreDelFiltro}. Quita los filtros para verla.</Notice>
+                            <Notice variant="info" compact>La lectura de Salvi es de {nombreDelFiltro}. Quita los filtros para verla.</Notice>
                         ) : (
                             <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo}
                                 onActualizar={leerResultados} />

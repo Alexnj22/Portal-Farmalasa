@@ -227,7 +227,7 @@ const BranchCard = memo(({
                     <SalyAvatar animo={animoDeSaly(resumen)} size={32} />
                     <p className="min-w-0 text-body-sm text-content-2 leading-snug line-clamp-2">
                         <span className="sr-only">Resumen del {fechaTexto(resumen.fecha, { day: 'numeric', month: 'long' })}: </span>
-                        <span className="font-bold text-content">Saly: </span>{resumen.texto}
+                        <span className="font-bold text-content">Salvi: </span>{resumen.texto}
                     </p>
                 </div>
             )}

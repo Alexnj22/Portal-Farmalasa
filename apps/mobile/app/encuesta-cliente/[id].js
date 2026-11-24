@@ -203,10 +203,10 @@ export default function EncuestaCliente() {
       });
       const { data, error: e } = await preguntarASaly({ action: 'analyze-customer-survey-results', payload: { datos: paquete } });
       if (e) throw e;
-      if (!data?.aiSummary) throw new Error('Saly no devolvió la lectura.');
+      if (!data?.aiSummary) throw new Error('Salvi no devolvió la lectura.');
       await guardarLectura(encuesta.id, sala, data.aiSummary, filas.length);
       setLecturaSaly(await fetchLectura(encuesta.id, sala));
-    } catch (e) { fallo('Saly no pudo leer los resultados', mensajeAmigable(e, 'Intenta de nuevo.')); }
+    } catch (e) { fallo('Salvi no pudo leer los resultados', mensajeAmigable(e, 'Intenta de nuevo.')); }
     setLeyendo(false);
   };
 
@@ -295,7 +295,7 @@ export default function EncuestaCliente() {
                         apoyo={datos.total ? `${formatPct(((datos.con_texto ?? 0) / datos.total) * 100, { decimales: 0 })} escribió algo` : ''} />
                     </FilaDeKpis>
                     {conFiltros ? (
-                      <View style={{ marginHorizontal: 16 }}><Aviso texto={`La lectura de Saly es de ${nombreDelFiltro}. Quita los filtros para verla.`} /></View>
+                      <View style={{ marginHorizontal: 16 }}><Aviso texto={`La lectura de Salvi es de ${nombreDelFiltro}. Quita los filtros para verla.`} /></View>
                     ) : (
                       <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo} onActualizar={leerResultados} />
                     )}

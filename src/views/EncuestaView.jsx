@@ -1254,7 +1254,7 @@ export default function EncuestaView() {
                                     <div className="flex items-center gap-2.5">
                                         <SalyAvatar animo={isLoading ? 'pensando' : 'atencion'} size={32} />
                                         <span className="text-body-sm font-black text-content-2 tracking-tight">
-                                            Saly <span className="text-content-3 font-normal">·</span> <span className="text-chart-3-text">{seg.label}</span>
+                                            Salvi <span className="text-content-3 font-normal">·</span> <span className="text-chart-3-text">{seg.label}</span>
                                         </span>
                                         <span className="text-caption text-content-3 font-medium">{seg.comments.length} comentarios</span>
                                     </div>

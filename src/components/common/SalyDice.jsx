@@ -18,7 +18,7 @@ export default function SalyDice({ animo = 'atencion', titulo = null, children, 
             <SalyAvatar animo={a} size={grande ? 56 : 40} />
             <div className="min-w-0 flex-1 space-y-1.5">
                 <p className="flex flex-wrap items-baseline gap-x-1.5 text-body-sm">
-                    <span className="font-black text-content">Saly</span>
+                    <span className="font-black text-content">Salvi</span>
                     <span className="text-content-3">{ANIMOS_DE_SALY[a].frase}</span>
                     {titulo && <span className="text-content-3">· {titulo}</span>}
                 </p>

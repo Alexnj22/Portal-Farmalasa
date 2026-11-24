@@ -57,7 +57,7 @@ export default function LecturaDeSaly({ lectura, nombre, leyendo, onActualizar }
                         Leo los números de {nombre}, cruzo las respuestas entre sí y te digo qué haría.
                     </p>
                 </div>
-                <Button variant="primary" size="sm" onClick={onActualizar}>Léelos, Saly</Button>
+                <Button variant="primary" size="sm" onClick={onActualizar}>Léelos, Salvi</Button>
             </section>
         );
     }
@@ -66,13 +66,13 @@ export default function LecturaDeSaly({ lectura, nombre, leyendo, onActualizar }
     const resto = bloques.filter((b) => b !== resumen);
 
     return (
-        <section data-surface="card" className="p-4 sm:p-5 space-y-4" aria-label="Lo que Saly leyó de los resultados">
+        <section data-surface="card" className="p-4 sm:p-5 space-y-4" aria-label="Lo que Salvi leyó de los resultados">
             <div className="flex flex-wrap items-center gap-3">
                 <SalyAvatar animo="atencion" size={48} />
                 <div className="min-w-0 flex-1">
                     <TituloDeSeccion nivel="seccion">Qué significan los resultados</TituloDeSeccion>
                     <p className="text-caption text-content-3">
-                        Saly leyó {lectura.respuestas_n} respuesta{lectura.respuestas_n === 1 ? '' : 's'} de {nombre}
+                        Salvi leyó {lectura.respuestas_n} respuesta{lectura.respuestas_n === 1 ? '' : 's'} de {nombre}
                         {' · '}{fechaTexto(lectura.generado_at, { day: 'numeric', month: 'short' })} {hora12(lectura.generado_at)}
                     </p>
                 </div>

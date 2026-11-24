@@ -33,7 +33,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
+  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
@@ -2745,6 +2745,7 @@ Deno.serve(async (req: Request) => {
     const deLinea: { renglon: number; descripcion: string }[] = [];   // qué renglón es cada línea
     const erroneos: Erroneo[] = [];
     const reparto: LineaReparto[] = [];
+    const partidos: [LineaSobre, LineaSobre][] = [];   // [primer lote, renglón entero]
     const salas = uso === "venta" ? await salasDeReparto(admin) : new Map<number, Sala>();
     // Las fichas de todos los productos elegidos, de a 6 a la vez, ANTES del
     // bucle: leerlas una por una dentro de él era lo que hacía tardar
@@ -2806,6 +2807,21 @@ Deno.serve(async (req: Request) => {
       }
       const res = lineaDelSobre(i, r, dec);
       problemas.push(...res.problemas);
+      // Varios lotes en un renglón (2026-11-24): una línea por lote, mismo
+      // producto y costo; las unidades suman lo que entra (`partirEnLotes`).
+      const pideLotes = (decisiones[String(i)] as any)?.lotes;
+      let delRenglon: LineaSobre[] = res.linea ? [res.linea] : [];
+      if (res.linea && dec.tipo === "producto" && Array.isArray(pideLotes) && pideLotes.length > 1) {
+        if ((decisiones[String(i)] as any)?.erroneo === true) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}» es un producto erróneo: entra en un solo lote.` });
+        } else if ((decisiones[String(i)] as any)?.vencidos) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: con varios lotes no se manda a vencidos al cargar. Hazlo después desde Bodega.` });
+        } else {
+          const partido = partirEnLotes(i, r, dec, res.linea, pideLotes);
+          problemas.push(...partido.problemas);
+          if (partido.lineas) delRenglon = partido.lineas;
+        }
+      }
       // «Llegaron menos»: la factura entra COMPLETA (la cobraron entera y el
       // libro la lleva así) y lo que falta queda «por llegar». Sólo se anota:
       // lo único que cambia acá es que a las salas no se manda lo que no está.
@@ -2874,6 +2890,9 @@ Deno.serve(async (req: Request) => {
           const unidad = Number(res.linea.unidad) || 1;
           const entran = Number(res.linea.cant) * unidad;
           let suma = 0;
+          const cupo = delRenglon.map((l) => Number(l.cant));
+          const ordenDeLotes = delRenglon.map((_, j) => j)
+            .sort((a, b) => (delRenglon[a].vence || "9999").localeCompare(delRenglon[b].vence || "9999") || a - b);
           for (const [b, v] of Object.entries(pedidoReparto)) {
             const u = Number(v);
             if (!(u > 0)) continue;
@@ -2885,12 +2904,21 @@ Deno.serve(async (req: Request) => {
               continue;
             }
             suma += u;
-            reparto.push({
-              linea_idx: lineas.length, renglon: i, descripcion: r.descripcion, branch_id: sala.branch_id, erp_product_id: Number(res.linea.id_producto),
-              id_presentacion: String(res.linea.id_presentacion), unidad, paquetes: Math.round(n),
-              compra: String(res.linea.compra), venta: String(res.linea.venta), vence: res.linea.vence === "NULL" ? "" : String(res.linea.vence ?? ""),
-              vence_pendiente: Boolean((res.detalle as any)?.vence_pendiente), numero_lote: res.linea.numero_lote || null,
-            });
+            // Con varios lotes, a cada sala sale primero el que vence antes.
+            let faltan = Math.round(n);
+            for (const j of ordenDeLotes) {
+              if (faltan <= 0) break;
+              const toma = Math.min(faltan, cupo[j]);
+              if (toma <= 0) continue;
+              cupo[j] -= toma; faltan -= toma;
+              const lj = delRenglon[j];
+              reparto.push({
+                linea_idx: lineas.length + j, renglon: i, descripcion: r.descripcion, branch_id: sala.branch_id, erp_product_id: Number(lj.id_producto),
+                id_presentacion: String(lj.id_presentacion), unidad, paquetes: toma,
+                compra: String(lj.compra), venta: String(lj.venta), vence: lj.vence === "NULL" ? "" : String(lj.vence ?? ""),
+                vence_pendiente: lj.vence === "", numero_lote: lj.numero_lote || null,
+              });
+            }
           }
           const extra = aVencidos ? ` y ${aVencidos} a vencidos` : "";
           if (suma + aVencidos > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: van ${suma} a sucursales${extra}, y entran ${entran}.` });
@@ -2899,7 +2927,18 @@ Deno.serve(async (req: Request) => {
           }
         }
       }
-      if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); deLinea.push({ renglon: i, descripcion: r.descripcion }); }
+      if (delRenglon.length === 1) { lineas.push(delRenglon[0]); cobrado.push(Number(r.subtotal) || 0); deLinea.push({ renglon: i, descripcion: r.descripcion }); }
+      else if (delRenglon.length > 1) {
+        // Lo cobrado se reparte por unidades; el último lote se queda con el redondeo.
+        const total = Number(r.subtotal) || 0, todas = delRenglon.reduce((a, l) => a + Number(l.cant), 0);
+        let queda = total;
+        delRenglon.forEach((l, j) => {
+          const parte = j === delRenglon.length - 1 ? queda : Math.round(total * Number(l.cant) / todas * 100) / 100;
+          queda -= parte;
+          lineas.push(l); cobrado.push(parte); deLinea.push({ renglon: i, descripcion: `${r.descripcion} (lote ${j + 1})` });
+        });
+        partidos.push([delRenglon[0], res.linea!]);
+      }
       // Lo que el registro de compras necesita y la línea del sistema no dice:
       // el precio de lista, los dos descuentos y si el renglón venía de regalo
       // (se mira ANTES de repartirle costo, que es cuando todavía vale $0).
@@ -2913,10 +2952,15 @@ Deno.serve(async (req: Request) => {
         llegaron,
         // El sistema sólo recibe el lote de un regulado; el registro lo guarda siempre.
         lote_leido: dec.tipo === "producto" ? (String(dec.lote ?? "").trim() || null) : null,
+        lotes: delRenglon.length > 1
+          ? delRenglon.map((l, j) => ({ lote: String(pideLotes[j]?.lote ?? "").trim() || null, vence: l.vence === "NULL" || !l.vence ? null : l.vence, unidades: Number(l.cant) * (Number(l.unidad) || 1) }))
+          : null,
       });
     }
 
     const regalos = repartirRegalos(lineas, cobrado);
+    // La línea del renglón entero (la que lee la revisión) lleva el costo de sus lotes.
+    for (const [lote1, entera] of partidos) { entera.compra = lote1.compra; entera.compra_fin = lote1.compra_fin; }
     // El costo que viaja a la sala y el del erróneo, ya con los regalos
     // prorrateados: capturado antes, un promocional iba a $0 y los pagados caros.
     for (const e of erroneos) {

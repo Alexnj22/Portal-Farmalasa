@@ -4,7 +4,7 @@
 // necesitaba (2026-11-06, gate:bundle).
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
-import { PackagePlus, AlertTriangle, CheckCircle2, BookMarked, Search, HelpCircle, CalendarRange, Truck, Archive, Split } from 'lucide-react';
+import { PackagePlus, AlertTriangle, CheckCircle2, BookMarked, Search, HelpCircle, CalendarRange, Truck, Archive, Split, Layers } from 'lucide-react';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -26,11 +26,12 @@ import {
     ajusteInicial, conBorrador, vinetaActual, presDelCatalogo, nombrePres, nombreConTamano, tamanoAprendible,
     cargarDe, cargarAyuda, conCarga, nombreDelRenglon, barrasDelRenglon, huellaDe, claveDe, MOTIVOS_VENCIDOS,
     decisionDeRenglon, productoDelRenglon, faltaDelRenglon, costoDeLaRevision, cantidadSospechosa,
+    hayVariosLotes, LOTE_VACIO, vencesDeDecision,
 } from '@nucleo/utils/cargaDeCompra';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { ORIGEN, OTRA, ESTADO_CARGA, estadoDeCarga, fmtFecha } from './cargarCompraComun';
-import { Llegaron, BuscadorProducto } from './CargarCompraPiezas';
+import { Llegaron, BuscadorProducto, LotesDelRenglon } from './CargarCompraPiezas';
 import PartirRenglon from './PartirRenglon';
 import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
 import { notificarVenceCorto } from '@nucleo/data/venceCorto';
@@ -412,7 +413,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     // (`numeros_distintos`) tampoco viaja solo: hay que confirmarlo.
     const productoDe = (r, i) => productoDelRenglon(r, elegidos[claveDe(r, i)]);
 
-    const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i))]));
+    const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i), r)]));
 
     // Lo que se revisa y lo que se manda es esta MISMA firma.
     const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '' });
@@ -445,8 +446,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         if (r?.enviada === true && !e) {
             // Vence en 6 meses o menos: se avisa a Bodega (usuario, 2026-11-17).
             const cortos = Object.entries(rev.renglones ?? {})
-                .filter(([, x]) => !x.servicio && !x.erroneo && venceCorto(x.vence))
-                .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: x.vence, cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
+                .filter(([, x]) => !x.servicio && !x.erroneo && vencesDeDecision(x).some(venceCorto))
+                .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: vencesDeDecision(x).sort()[0], cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
             if (cortos.length) {
                 notificarVenceCorto({
                     origen: 'compra', referencia: doc.document_id ?? `papel-${doc.manual_id}`,
@@ -490,8 +491,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         renglones: p.renglones.length,
         sin_producto: contar('sin_producto'), a_confirmar: contar('a_confirmar'),
         sin_lote: contar('sin_lote'), sin_vencimiento: contar('sin_vencimiento'),
+        lotes_sin_cuadrar: contar('lotes_sin_cuadrar'),
     };
-    const faltan = estado.filter(e => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento).length;
+    const faltan = estado.filter(e => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento || e.lotes_sin_cuadrar).length;
     const revision = resultado?.revision;
     const revisionVigente = !!(p && resultado?.firma && resultado.firma === firmaActual());
     // Ya se mandó (o no se sabe): no se revisa ni se manda de nuevo desde acá.
@@ -741,6 +743,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                 [resumen.a_confirmar,     'con el producto por confirmar'],
                                 [resumen.sin_lote,        'sin lote'],
                                 [resumen.sin_vencimiento, 'sin vencimiento'],
+                                [resumen.lotes_sin_cuadrar, 'con los lotes sin cuadrar'],
                             ].filter(([n]) => n > 0).map(([n, texto], i, arr) => (
                                 <span key={texto}>
                                     <b>{n}</b> {texto}{i < arr.length - 1 ? ' · ' : '.'}
@@ -755,7 +758,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             onFechas={usarFechas} />
                     )}
                     {uso === 'venta' && (() => {
-                        const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && venceCorto(ajustes[i]?.vence)).length;
+                        const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && vencesDeDecision(decisionDeRenglon(ajustes[i], null, r)).some(venceCorto)).length;
                         return n > 0 && (
                             <Notice variant="warning" icon={AlertTriangle}>
                                 <b>{n === 1 ? 'Un producto vence' : `${n} productos vencen`} en 6 meses o menos.</b>{' '}
@@ -847,11 +850,14 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                     Error del proveedor: entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito.
                                                 </p>
                                             )}
-                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && venceCorto(aj.vence) && (
-                                                <p className="mt-1 text-caption text-warning-text font-bold">
-                                                    Vence en 6 meses o menos ({venceTexto(aj.vence)}).
-                                                </p>
-                                            )}
+                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && (() => {
+                                                const v = vencesDeDecision(decisionDeRenglon(aj, null, r)).sort()[0];
+                                                return venceCorto(v) && (
+                                                    <p className="mt-1 text-caption text-warning-text font-bold">
+                                                        Vence en 6 meses o menos ({venceTexto(v)}).
+                                                    </p>
+                                                );
+                                            })()}
                                         </div>
                                         <div className="text-right shrink-0">
                                             <p className="text-body font-black text-content tabular-nums">
@@ -918,6 +924,10 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                     onChange={v => ajustar(i, 'llegaron', v)} />
                                             )}
                                         </div>
+                                    )}
+                                    {uso === 'venta' && !aj.servicio && !aj.erroneo && (
+                                        <LotesDelRenglon r={r} aj={aj} puedeEditar={puedeEditar}
+                                            onCambiar={l => ajustar(i, 'otrosLotes', l.length ? l : undefined)} />
                                     )}
                                     {uso === 'venta' && conProducto && !aj.erroneo && !aj.servicio && aj.vencidos && (
                                         <AVencidos valor={aj.vencidos} puedeEditar={puedeEditar}
@@ -1001,7 +1011,13 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                     Enviar a sucursales
                                                 </Button>
                                             )}
-                                            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && (
+                                            {!aj.erroneo && !aj.servicio && !aj.vencidos && (aj.otrosLotes?.length ?? 0) < 11 && (
+                                                <Button size="xs" variant="ghost" icon={Layers}
+                                                    onClick={() => ajustar(i, 'otrosLotes', [...(aj.otrosLotes ?? []), { ...LOTE_VACIO }])}>
+                                                    Otro lote
+                                                </Button>
+                                            )}
+                                            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && !hayVariosLotes(aj) && (
                                                 <Button size="xs" variant="ghost" icon={Archive}
                                                     onClick={() => ajustar(i, 'vencidos', { modo: 'todo', unidades: '', motivo: '', detalle: '' })}>
                                                     A vencidos

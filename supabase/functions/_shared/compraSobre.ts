@@ -713,3 +713,58 @@ export function pistasDeDiferencia(x: {
   }
   return pistas;
 }
+
+/**
+ * Un renglón que trae VARIOS lotes (2026-11-24, Bodega: VIROGRIP de Vijosa
+ * vino en dos lotes y la factura no los separa). Se manda una línea por lote,
+ * todas del mismo producto, presentación y costo; sólo cambian la cantidad,
+ * el lote y el vencimiento. El sistema ya lo acepta así: 627 compras cargadas
+ * a mano traen el mismo producto en varias líneas con lote o vence distinto
+ * (UROGESIC en la 6724, lotes 1593670 y 1608920).
+ *
+ * `lotes[k].unidades` son UNIDADES (como «Cantidad a cargar») y tienen que
+ * sumar exactamente lo que entra por el renglón: la cantidad total siempre
+ * cuadra con la factura. Cada lote va en paquetes completos de la
+ * presentación con que entra.
+ *
+ * `linea` es la del renglón entero (`lineaDelSobre` con el primer lote): sus
+ * problemas ya están contados, así que acá sólo se suman los de los demás.
+ */
+export type LotePedido = { lote?: string | null; vence?: string | null; unidades?: number | string | null };
+
+export function partirEnLotes(
+  i: number, r: RenglonDoc, d: Extract<Decision, { tipo: "producto" }>, linea: LineaSobre, lotes: LotePedido[],
+): { lineas: LineaSobre[] | null; problemas: Problema[] } {
+  const problemas: Problema[] = [];
+  const nombre = d.producto.nombre;
+  const unidad = Number(linea.unidad) || 1;
+  const entran = r4(Number(linea.cant) * unidad);
+  if (lotes.length > 12) return { lineas: null, problemas: [{ renglon: i, texto: `«${nombre}»: son ${lotes.length} lotes. Como mucho van 12.` }] };
+  const us = lotes.map((l) => Number(l?.unidades));
+  const malo = us.findIndex((u) => !Number.isInteger(u) || u <= 0);
+  if (malo >= 0) return { lineas: null, problemas: [{ renglon: i, texto: `«${nombre}»: el lote ${malo + 1} tiene que llevar un número entero de unidades.` }] };
+  const suma = us.reduce((a, u) => a + u, 0);
+  if (Math.abs(suma - entran) > 1e-6) {
+    return { lineas: null, problemas: [{ renglon: i, texto: `«${nombre}»: los lotes suman ${suma} unidades y entran ${entran}. Tienen que cuadrar.` }] };
+  }
+  const suelto = us.findIndex((u) => Math.abs(u / unidad - Math.round(u / unidad)) > 1e-9);
+  if (suelto >= 0) {
+    return { lineas: null, problemas: [{ renglon: i, texto: `«${nombre}»: entra en paquetes de ${unidad}. El lote ${suelto + 1} lleva ${us[suelto]} unidades y tienen que ser ${unidad}, ${unidad * 2}…` }] };
+  }
+  const vistos = new Set<string>();
+  const textos = new Set<string>();
+  const lineas: LineaSobre[] = [];
+  for (let k = 0; k < lotes.length; k++) {
+    const sub = lineaDelSobre(i, r, { ...d, lote: lotes[k]?.lote ?? null, vence: lotes[k]?.vence ?? null });
+    if (k > 0) for (const p of sub.problemas) if (!textos.has(p.texto)) { textos.add(p.texto); problemas.push(p); }
+    if (!sub.linea) return { lineas: null, problemas };
+    const clave = `${String(lotes[k]?.lote ?? "").trim().toUpperCase()}|${sub.linea.vence}`;
+    if (vistos.has(clave)) {
+      problemas.push({ renglon: i, texto: `«${nombre}»: el lote ${k + 1} es igual a otro (mismo lote y vencimiento). Súmalos en uno.` });
+      return { lineas: null, problemas };
+    }
+    vistos.add(clave);
+    lineas.push({ ...linea, cant: String(Math.round(us[k] / unidad)), vence: sub.linea.vence, numero_lote: sub.linea.numero_lote });
+  }
+  return { lineas, problemas };
+}

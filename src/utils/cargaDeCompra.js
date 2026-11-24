@@ -148,11 +148,43 @@ export const unidadesQueLlegaron = (r, aj) => (aj.llegaron !== '' && aj.llegaron
     : unidadesQueEntran(r, aj));
 
 /**
+ * Varios lotes en un renglón (2026-11-24, VIROGRIP de Vijosa: dos lotes y la
+ * factura dice uno). El primer lote es el de los campos Lote/Vence de siempre;
+ * los demás viven en `aj.otrosLotes` = [{ lote, vence, unidades }]. El primero
+ * se queda con el RESTO de las unidades, así la cantidad total cuadra por
+ * construcción con la factura.
+ */
+const mesValido = (v) => /^\d{4}-\d{2}$/.test(v ?? '');
+// Un erróneo o un servicio entra en un solo lote, aunque queden lotes escritos.
+export const hayVariosLotes = (aj) => !aj?.erroneo && !aj?.servicio && Array.isArray(aj?.otrosLotes) && aj.otrosLotes.length > 0;
+export const LOTE_VACIO = { lote: '', vence: '', unidades: '' };
+
+/** Los lotes del renglón con sus unidades, o null si es uno solo. */
+export function lotesDelRenglon(r, aj) {
+    if (!hayVariosLotes(aj)) return null;
+    const otros = aj.otrosLotes.map(l => ({ lote: l.lote ?? '', vence: l.vence ?? '', unidades: Number(l.unidades) || 0 }));
+    const resto = unidadesQueEntran(r, aj) - otros.reduce((a, l) => a + l.unidades, 0);
+    return [{ lote: aj.lote ?? '', vence: aj.vence ?? '', unidades: resto }, ...otros];
+}
+
+/** Qué está mal en los lotes, o null. Las unidades de cada lote, enteras y > 0. */
+export function problemaDeLotes(r, aj) {
+    const lotes = lotesDelRenglon(r, aj);
+    if (!lotes) return null;
+    const malo = aj.otrosLotes.findIndex(l => !/^\d+$/.test(String(l.unidades ?? '')) || Number(l.unidades) <= 0);
+    if (malo >= 0) return `Escribe cuántas unidades trae el lote ${malo + 2}.`;
+    const total = unidadesQueEntran(r, aj);
+    if (lotes[0].unidades <= 0) return `Los otros lotes suman ${total - lotes[0].unidades} y entran ${total}. Al primer lote no le queda nada.`;
+    return null;
+}
+
+/**
  * La decisión de UN renglón tal como viaja a la revisión y al envío. Lo que se
  * revisa y lo que se manda es esta misma forma: la función se niega si cambió.
  * `productId`: el producto que se mandaría (nunca un parecido sin confirmar).
+ * `r`: el renglón de la propuesta (hace falta para repartir los lotes).
  */
-export const decisionDeRenglon = (aj, productId) => ({
+export const decisionDeRenglon = (aj, productId, r = null) => ({
     product_id: aj?.servicio ? null : productId,
     servicio: aj?.servicio === true,
     factor: Number(aj?.factor) || 1,
@@ -168,7 +200,15 @@ export const decisionDeRenglon = (aj, productId) => ({
         detalle: aj.vencidos.motivo === 'otro' ? (aj.vencidos.detalle || '').trim() : null,
     } : null,
     reparto: aRepartir(aj?.reparto),
+    ...(r && hayVariosLotes(aj) ? {
+        lotes: lotesDelRenglon(r, aj).map(l => ({
+            lote: l.lote || null, vence: mesValido(l.vence) ? l.vence : null, unidades: l.unidades,
+        })),
+    } : {}),
 });
+
+/** Los vencimientos que viajan en una decisión (uno por lote). */
+export const vencesDeDecision = (x) => (Array.isArray(x?.lotes) ? x.lotes.map(l => l.vence) : [x?.vence]).filter(Boolean);
 
 /**
  * El producto que se mandaría por renglón: lo elegido en pantalla, o lo que
@@ -181,12 +221,14 @@ export const productoDelRenglon = (r, elegido) => elegido?.product_id
 
 /** Qué le falta a un renglón para quedar completo (el aviso de arriba). */
 export const faltaDelRenglon = (r, aj, confirmado) => {
-    if (aj?.servicio) return { sin_producto: false, a_confirmar: false, sin_lote: false, sin_vencimiento: false };
+    if (aj?.servicio) return { sin_producto: false, a_confirmar: false, sin_lote: false, sin_vencimiento: false, lotes_sin_cuadrar: false };
+    const otros = hayVariosLotes(aj) ? aj.otrosLotes : [];
     return {
         sin_producto: !r.producto_id && !confirmado,
         a_confirmar: !!r.producto_id && !r.seguro && !confirmado,
-        sin_lote: !aj?.lote,
-        sin_vencimiento: !/^\d{4}-\d{2}$/.test(aj?.vence ?? ''),
+        sin_lote: !aj?.lote || otros.some(l => !l.lote),
+        sin_vencimiento: !mesValido(aj?.vence) || otros.some(l => !mesValido(l.vence)),
+        lotes_sin_cuadrar: !!problemaDeLotes(r, aj),
     };
 };
 

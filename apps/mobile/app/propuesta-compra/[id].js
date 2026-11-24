@@ -22,7 +22,7 @@ import {
 import { notificarVenceCorto } from '@nucleo/data/venceCorto';
 import {
   ajusteInicial, claveDe, conBorrador, conCarga, costoDeLaRevision, decisionDeRenglon, faltaDelRenglon, huellaDe,
-  productoDelRenglon, tamanoAprendible,
+  productoDelRenglon, tamanoAprendible, vencesDeDecision,
 } from '@nucleo/utils/cargaDeCompra';
 import { juzgarPresentacion } from '@nucleo/utils/presentacionDeCompra';
 import { venceCorto } from '@nucleo/utils/venceCorto';
@@ -177,7 +177,7 @@ export default function PropuestaDeCompra() {
     return !e || e.product_id === r.producto_id ? (r.vinetas ?? []) : [];
   };
   const productoDe = (r, i) => productoDelRenglon(r, elegidos[claveDe(r, i)]);
-  const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i))]));
+  const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i), r)]));
   const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '' });
 
   const revisar = async () => {
@@ -209,8 +209,8 @@ export default function PropuestaDeCompra() {
     }
     if (r?.enviada === true && !e) {
       // Vence en 6 meses o menos: se avisa a Bodega.
-      const cortos = Object.entries(rev.renglones ?? {}).filter(([, x]) => !x.servicio && !x.erroneo && venceCorto(x.vence))
-        .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: x.vence, cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
+      const cortos = Object.entries(rev.renglones ?? {}).filter(([, x]) => !x.servicio && !x.erroneo && vencesDeDecision(x).some(venceCorto))
+        .map(([i, x]) => ({ nombre: p.renglones[Number(i)]?.descripcion ?? `Producto ${Number(i) + 1}`, vence: vencesDeDecision(x).sort()[0], cantidad: p.renglones[Number(i)]?.cantidad ?? null }));
       if (cortos.length) {
         notificarVenceCorto({ origen: 'compra', referencia: doc.document_id ?? `papel-${doc.manual_id}`, detalle: doc.emisor_nombre, productos: cortos })
           .then(({ error: ea }) => { if (ea) avisar('No se pudo avisar a Bodega', 'Hay productos que vencen en 6 meses o menos. Avísales tú.'); });
@@ -261,8 +261,8 @@ export default function PropuestaDeCompra() {
   // El aviso se cuenta con lo que la persona ya resolvió en pantalla.
   const estado = (p?.renglones ?? []).map((r, i) => faltaDelRenglon(r, ajustes[i], !!elegidos[claveDe(r, i)]));
   const contar = (k) => estado.filter((e) => e[k]).length;
-  const resumen = p && { renglones: p.renglones.length, sin_producto: contar('sin_producto'), a_confirmar: contar('a_confirmar'), sin_lote: contar('sin_lote'), sin_vencimiento: contar('sin_vencimiento') };
-  const faltan = estado.filter((e) => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento).length;
+  const resumen = p && { renglones: p.renglones.length, sin_producto: contar('sin_producto'), a_confirmar: contar('a_confirmar'), sin_lote: contar('sin_lote'), sin_vencimiento: contar('sin_vencimiento'), lotes_sin_cuadrar: contar('lotes_sin_cuadrar') };
+  const faltan = estado.filter((e) => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento || e.lotes_sin_cuadrar).length;
   const revision = resultado?.revision;
   const revisionVigente = !!(p && resultado?.firma && resultado.firma === firmaActual());
   const yaMandada = envio?.enviada === true || envio?.enviada === null || ['enviando', 'sin_verificar', 'verificada'].includes(estadoCarga?.estado);
@@ -377,7 +377,7 @@ export default function PropuestaDeCompra() {
               {revision?.totales ? <Totales t={revision.totales} /> : null}
 
               {!revision && uso === 'venta' && faltan > 0 ? (
-                <Aviso tono="cuidado" texto={`${faltan} de ${resumen.renglones} productos necesitan revisión: ${[[resumen.sin_producto, 'sin producto'], [resumen.a_confirmar, 'con el producto por confirmar'], [resumen.sin_lote, 'sin lote'], [resumen.sin_vencimiento, 'sin vencimiento']].filter(([n]) => n > 0).map(([n, t]) => `${n} ${t}`).join(' · ')}.`} />
+                <Aviso tono="cuidado" texto={`${faltan} de ${resumen.renglones} productos necesitan revisión: ${[[resumen.sin_producto, 'sin producto'], [resumen.a_confirmar, 'con el producto por confirmar'], [resumen.sin_lote, 'sin lote'], [resumen.sin_vencimiento, 'sin vencimiento'], [resumen.lotes_sin_cuadrar, 'con los lotes sin cuadrar']].filter(([n]) => n > 0).map(([n, t]) => `${n} ${t}`).join(' · ')}.`} />
               ) : null}
               {uso === 'venta' && !papel ? (
                 <PedirFechas documentId={doc.document_id} salas={salasReparto} puedeEditar={puedeEditar}
@@ -385,7 +385,7 @@ export default function PropuestaDeCompra() {
                   onFechas={usarFechas} />
               ) : null}
               {uso === 'venta' && (() => {
-                const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && venceCorto(ajustes[i]?.vence)).length;
+                const n = p.renglones.filter((r, i) => !ajustes[i]?.servicio && !ajustes[i]?.erroneo && vencesDeDecision(decisionDeRenglon(ajustes[i], null, r)).some(venceCorto)).length;
                 return n > 0 ? <Aviso tono="cuidado" texto={`${n === 1 ? 'Un producto vence' : `${n} productos vencen`} en 6 meses o menos. Al cargar la compra se le avisa a Bodega.`} /> : null;
               })()}
               {!revision && uso === 'venta' && faltan === 0 ? <Aviso texto={`Los ${resumen.renglones} productos están completos.`} /> : null}

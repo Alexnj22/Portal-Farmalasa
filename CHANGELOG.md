@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1599.0 — Cargar compra: un producto en varios lotes
+
+- Un renglón de la factura que llega en dos o más lotes (VIROGRIP de Vijosa:
+  el DTE no trae lote ni vence y vinieron dos) ahora se carga con **«Otro
+  lote»**: cada lote lleva su lote, su vence y sus unidades. El primero se queda
+  con el resto, así el total siempre cuadra con lo facturado.
+- `cargar-compra-erp` manda una línea por lote, mismo producto, presentación y
+  costo (`partirEnLotes` en `_shared/compraSobre.ts`). El sistema ya lo acepta:
+  627 compras cargadas a mano traen el mismo producto en varias líneas (UROGESIC
+  en la 6724). Frena si no cuadra, si un lote no es paquete completo o si dos
+  lotes son iguales.
+- Enviar a sucursales reparte entre los lotes, el que vence antes primero. Con
+  varios lotes no se marca «A vencidos» ni «Producto erróneo» al cargar.
+- `compra_registro` sigue siendo una fila por renglón (lleva el primer lote);
+  el renglón de la compra en el portal guarda uno por lote.
+- Novedades: no — la valoración dio 2 de 4 (no hace falta preguntar).
+
 ## v2.1598.1 — Los tipos del núcleo vuelven a estar revisados
 
 - `npm run gate:tipos` estaba en 501 avisos contra 397 de referencia: lo

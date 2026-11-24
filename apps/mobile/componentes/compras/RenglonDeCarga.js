@@ -11,6 +11,7 @@ import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
 import {
   MOTIVOS_VENCIDOS, cantidadSospechosa, cargarAyuda, cargarDe, nombreConTamano, nombrePres, presDelCatalogo, tamanoAprendible,
   unidadesQueEntran, unidadesQueLlegaron, vinetaActual,
+  LOTE_VACIO, decisionDeRenglon, hayVariosLotes, lotesDelRenglon, problemaDeLotes, vencesDeDecision,
 } from '@nucleo/utils/cargaDeCompra';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -142,6 +143,37 @@ function AVencidos({ valor, total, onChange, puedeEditar }) {
   );
 }
 
+/**
+ * Varios lotes en un renglón (2026-11-24): el primero es el de Lote/Vence de
+ * arriba y se queda con el resto, así el total cuadra con la factura.
+ */
+function OtrosLotes({ r, aj, onChange, puedeEditar }) {
+  const lotes = lotesDelRenglon(r, aj);
+  if (!lotes) return null;
+  const problema = problemaDeLotes(r, aj);
+  const total = lotes.reduce((a, l) => a + l.unidades, 0);
+  const poner = (k, cambio) => onChange(aj.otrosLotes.map((l, j) => (j === k ? { ...l, ...cambio } : l)));
+  return (
+    <View style={{ gap: 8 }}>
+      <Nota fuerte={false}>{`Lote 1${aj.lote ? ` (${aj.lote})` : ''}: ${Math.max(lotes[0].unidades, 0)} unidades, el resto de las ${total}.`}</Nota>
+      {aj.otrosLotes.map((l, k) => (
+        <View key={k} style={{ gap: 6, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Rotulo>{`Lote ${k + 2}`}</Rotulo>
+            {puedeEditar ? <Accion texto="Quitar" color={colorSistema.texto2} onPress={() => { const n = aj.otrosLotes.filter((_, j) => j !== k); onChange(n.length ? n : undefined); }} /> : null}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1.3, gap: 4 }}><Rotulo>Lote</Rotulo><Campo multiline={false} editable={puedeEditar} autoCapitalize="characters" value={l.lote} onChangeText={(v) => poner(k, { lote: v })} /></View>
+            <View style={{ flex: 1, gap: 4 }}><Rotulo>Vence</Rotulo><CampoVence editable={puedeEditar} valor={l.vence} onCambiar={(v) => poner(k, { vence: v })} /></View>
+            <View style={{ flex: 0.8, gap: 4 }}><Rotulo>Unidades</Rotulo><Campo multiline={false} keyboardType="number-pad" editable={puedeEditar} value={l.unidades} onChangeText={(v) => poner(k, { unidades: v.replace(/[^\d]/g, '') })} /></View>
+          </View>
+        </View>
+      ))}
+      {problema ? <Nota color={MARCA.rojo}>{problema}</Nota> : null}
+    </View>
+  );
+}
+
 /** «Enviar a sucursales»: cuánto va a cada farmacia, en la presentación elegida. */
 function RepartoASalas({ salas, total, valor, presentaciones, onChange, puedeEditar }) {
   if (!valor) return null;
@@ -231,6 +263,7 @@ export default function RenglonDeCarga(props) {
   const saldo = elegido && 'saldo' in elegido ? elegido.saldo : (elegido && elegido.product_id !== r.producto_id ? null : r.saldo_sugerido);
   const sospecha = sim?.linea ? cantidadSospechosa(sim, costo) : null;
   const raro = !tamanoAprendible(aj.factor, vinetas, r);
+  const venceProximo = vencesDeDecision(decisionDeRenglon(aj, null, r)).sort()[0];
   return (
     <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 8 }}>
@@ -257,7 +290,7 @@ export default function RenglonDeCarga(props) {
         {venta && aj.servicio ? <Nota>Flete / servicio: suma al costo de la compra y a su total. No entra al inventario.</Nota> : null}
         {venta && !aj.servicio && !aj.erroneo && !conProducto && !r.producto_id ? <Nota color={MARCA.ambar}>No está en Bodega: ¿es nuevo, o es uno que ya tenemos con otro nombre? ¿O vino por error?</Nota> : null}
         {venta && aj.erroneo ? <Nota color={MARCA.rojo}>Error del proveedor: entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito.</Nota> : null}
-        {venta && !aj.servicio && !aj.erroneo && venceCorto(aj.vence) ? <Nota color={MARCA.ambar}>{`Vence en 6 meses o menos (${venceTexto(aj.vence)}).`}</Nota> : null}
+        {venta && !aj.servicio && !aj.erroneo && venceCorto(venceProximo) ? <Nota color={MARCA.ambar}>{`Vence en 6 meses o menos (${venceTexto(venceProximo)}).`}</Nota> : null}
 
         {venta && !aj.servicio ? (
           <View style={{ gap: 10, paddingTop: 4 }}>
@@ -284,6 +317,7 @@ export default function RenglonDeCarga(props) {
                 value={aj.venta ?? ''} onChangeText={(v) => props.onAjustar('venta', v.replace(/[^\d.]/g, ''))} />
               {cambiaVineta ? <Nota color={nueva > actual ? MARCA.ambar : MARCA.verde}>{`${nueva > actual ? 'Sube' : 'Baja'} ${Math.abs((nueva - actual) / actual * 100).toFixed(1)} % · antes ${formatMoney(actual)}`}</Nota> : null}
             </View>
+            {!aj.erroneo ? <OtrosLotes r={r} aj={aj} puedeEditar={puedeEditar} onChange={(v) => props.onAjustar('otrosLotes', v)} /> : null}
             {!aj.erroneo ? <Llegaron puedeEditar={puedeEditar} total={total} valor={aj.llegaron} onChange={(v) => props.onAjustar('llegaron', v)} /> : null}
           </View>
         ) : null}
@@ -312,7 +346,9 @@ export default function RenglonDeCarga(props) {
             {!aj.servicio && !r.parte ? <Accion texto={conProducto || r.producto_id ? 'Es otro producto' : 'Elegir producto'} ocupado={guardando} onPress={props.onBuscar} /> : null}
             {conProducto && !aj.erroneo && !aj.servicio && !aj.reparto && salas.length > 0
               ? <Accion texto="Enviar a sucursales" onPress={() => props.onAjustar('reparto', { por: pres.some((x) => x.factor === (Number(aj.factor) || 1)) ? (Number(aj.factor) || 1) : 1 })} /> : null}
-            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos
+            {!aj.erroneo && !aj.servicio && !aj.vencidos && (aj.otrosLotes?.length ?? 0) < 11
+              ? <Accion texto="Otro lote" onPress={() => props.onAjustar('otrosLotes', [...(aj.otrosLotes ?? []), { ...LOTE_VACIO }])} /> : null}
+            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && !hayVariosLotes(aj)
               ? <Accion texto="A vencidos" onPress={() => props.onAjustar('vencidos', { modo: 'todo', unidades: '', motivo: '', detalle: '' })} /> : null}
             {!aj.servicio && !aj.erroneo && (r.parte?.llave || r.llave || r.codigo_proveedor) && (!r.parte || r.parte.indice === 1)
               ? <Accion texto={r.parte ? 'Cambiar separación' : 'Separar en productos'} onPress={props.onPartir} /> : null}

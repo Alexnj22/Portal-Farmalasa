@@ -6,7 +6,7 @@
 // compra armada (`propuesta-compra/[id]`), donde se revisa y se carga en
 // Bodega. Las consultas y escrituras son las del núcleo (`cargarCompra`), las
 // mismas del portal; con las compras en pausa, la app no carga.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
@@ -207,14 +207,21 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
   const [abierto, setAbierto] = useState(null);
   const [ocupado, setOcupado] = useState(null);
   const [hasta, setHasta] = useState(POR_PAGINA);
+  // La búsqueda va a la base (filtra antes del tope de 500); se espera a que
+  // se deje de escribir, y una respuesta vieja no pisa a la nueva.
+  const [buscaQ, setBuscaQ] = useState(busca.trim());
+  useEffect(() => { const t = setTimeout(() => setBuscaQ(busca.trim()), 300); return () => clearTimeout(t); }, [busca]);
+  const pedido = useRef(0);
   const cargar = useCallback(async () => {
-    const { filas: f, error: e } = await fetchProductosPorConfirmar(estado);
+    const n = ++pedido.current;
+    const { filas: f, error: e } = await fetchProductosPorConfirmar(estado, buscaQ);
+    if (n !== pedido.current) return;
     setError(e?.message ?? '');
     setFilas(f ?? []);
-  }, [estado]);
+  }, [estado, buscaQ]);
   useEffect(() => { setFilas(null); cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga al cambiar el estado
   useEffect(() => { setHasta(POR_PAGINA); }, [busca, estado]); // eslint-disable-line react-hooks/set-state-in-effect -- volver a la primera tanda al cambiar el filtro
-  const visibles = useMemo(() => (busca.trim() ? (filas ?? []).filter((f) => tokenMatch(busca, f.proveedor, f.descripcion, f.codigo_proveedor, f.sugerido_nombre)) : (filas ?? [])), [filas, busca]);
+  const visibles = useMemo(() => filas ?? [], [filas]); // ya vienen filtradas por la base
   const t = useMemo(() => {
     const r = { preguntas: 0, renglones: 0, sinCandidato: 0 };
     for (const f of filas ?? []) {

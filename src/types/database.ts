@@ -37543,7 +37543,7 @@ export type Database = {
         Returns: Json
       }
       get_productos_por_confirmar: {
-        Args: { p_estado: string; p_limite: number }
+        Args: { p_busca?: string; p_estado: string; p_limite: number }
         Returns: {
           codigo_proveedor: string
           descripcion: string

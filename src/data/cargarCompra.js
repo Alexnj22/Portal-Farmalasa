@@ -189,9 +189,12 @@ export async function confirmarProducto(emisorNit, codigoProveedor, productId, c
  *
  * `estado`: `pendientes` · `apartados` · `resueltos` · `todos`.
  */
-export async function fetchProductosPorConfirmar(estado = 'pendientes', limite = 500) {
+export async function fetchProductosPorConfirmar(estado = 'pendientes', busca = '', limite = 500) {
+    // La búsqueda la decide la BASE, antes del tope: filtrar en el navegador
+    // las 500 que llegan dejaba afuera 2,936 de 3,436 confirmados (GRIIN FLEX,
+    // ULTRA FLEX), y lo que no aparece no se puede corregir.
     const { data, error } = await supabase.rpc('get_productos_por_confirmar', {
-        p_estado: estado, p_limite: limite,
+        p_estado: estado, p_limite: limite, p_busca: busca?.trim() || null,
     });
     if (error) return { filas: [], error };
     return { filas: data ?? [], error: null };

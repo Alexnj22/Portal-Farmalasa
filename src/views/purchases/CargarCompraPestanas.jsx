@@ -2,7 +2,7 @@
 // Erróneos, Por llegar, Registro) y el formulario de factura en papel. Viven
 // aparte y se cargan al abrirlas: la pantalla abre en «Facturas» (2026-11-06).
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AlertTriangle, CheckCircle2, BookMarked, HelpCircle, ListChecks, RefreshCw, EyeOff, Layers, FileText, Plus, Trash2, Undo2 } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
@@ -621,11 +621,21 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
     const [pagina, setPagina] = useState(1);
     const [porPagina, setPorPagina] = useState(PAGE_SIZE_OPTIONS[0]);
 
+    // La búsqueda va a la base (filtra antes del tope de 500); se espera a que
+    // se deje de escribir, y una respuesta vieja no pisa a la nueva.
+    const [buscaQ, setBuscaQ] = useState(busca.trim());
+    useEffect(() => {
+        const t = setTimeout(() => setBuscaQ(busca.trim()), 300);
+        return () => clearTimeout(t);
+    }, [busca]);
+    const pedido = useRef(0);
     const cargar = useCallback(async () => {
-        const { filas: f, error: e } = await fetchProductosPorConfirmar(estado);
+        const n = ++pedido.current;
+        const { filas: f, error: e } = await fetchProductosPorConfirmar(estado, buscaQ);
+        if (n !== pedido.current) return;
         setError(e?.message ?? '');
         setFilas(f);
-    }, [estado]);
+    }, [estado, buscaQ]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
@@ -673,11 +683,8 @@ export function TabPorConfirmar({ puedeEditar, busca = '' }) {
         await cargar();
     };
 
-    const visibles = useMemo(() => {
-        if (!busca.trim()) return filas ?? [];
-        return (filas ?? []).filter(f => tokenMatch(busca,
-            f.proveedor, f.descripcion, f.codigo_proveedor, f.sugerido_nombre));
-    }, [filas, busca]);
+    // Ya vienen filtradas por la base.
+    const visibles = useMemo(() => filas ?? [], [filas]);
 
     // El recorte por estado lo hace la base, así que lo que hay en `filas` ES
     // lo que se está mirando: contar otra cosa acá sería contar dos veces con

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1596.2 — Por confirmar busca en todos los confirmados
+
+- **Cargar compra → Por confirmar**: buscar un producto ya confirmado no lo
+  encontraba si tenía pocas facturas (GRIIN FLEX, ULTRA FLEX). La lista traía
+  los 500 renglones con más facturas de 3,436 confirmados y la búsqueda filtraba
+  sólo esos, en el navegador. Ahora la búsqueda va a la base
+  (`get_productos_por_confirmar(…, p_busca)`, regla `busqueda_coincide`) y se
+  aplica antes del tope. Portal y app.
+- Gemelo: cargar_compra — en apps/mobile/app/cargar-compra.js
+
 ## v2.1596.1 — Planilla: el descanso trabajado en su propio renglón
 
 El renglón «Recargo de asuetos» sumaba también el día de descanso trabajado.

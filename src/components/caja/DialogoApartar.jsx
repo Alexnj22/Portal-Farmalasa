@@ -238,7 +238,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
         cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece, errorFoto]);
     const { total, soloEncargo, enPedido, vienen, elegidosIds, vieneSel, restoABodega, origenes, modo, totalApartados,
         totalCobro, mitad, seCobra, sinAnticipo, conAnticipo, montoAnticipo, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar,
-        puedeApartarOtro, renglonActual, renglonesDelPedido, falta } = plan;
+        puedeApartarOtro, renglonActual, renglonesDelPedido, falta, nombreNuevoListo, lineaNuevaActual, puedeAgregarNuevo } = plan;
+    // Lo que va en el encargo de varios: lo agregado más el producto de la pantalla.
+    const renglonDePantalla = sinCatalogo ? lineaNuevaActual : (producto && elegida ? lineaActual : null);
+    const productosDelEncargo = lineas.length + (renglonDePantalla ? 1 : 0);
 
     // El papel del encargo: no se cobró nada, pero el cliente se lleva su código.
     const imprimirEncargo = async (codigo, productoTexto, nuevo, cantidadDelPapel = cant) => {
@@ -248,6 +251,38 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
             if (r && r.ok === false) showToast('No se imprimió la constancia', r.detalle ?? '', 'warning');
         } catch (e) {
             showToast('No se imprimió la constancia', mensajeAmigable(e), 'warning');
+        }
+    };
+
+    // Un papel para todo el encargo (2026-11-24): cada producto con su código y sus barras.
+    const imprimirEncargos = async (creados) => {
+        try {
+            const r = await imprimirConstanciaDeEncargo({ cliente: shortEmployeeName(cliente.name), telefono: cliente.phone ?? null,
+                renglones: creados.map((e) => ({ codigo: e.codigo, producto: e.producto_nombre, cantidad: e.cantidad, nuevo: !!e.nuevo })),
+                sala: nombreSala, atendio: shortEmployeeName(atiende ?? '') }, { sala });
+            if (r && r.ok === false) showToast('No se imprimió la constancia', r.detalle ?? '', 'warning');
+        } catch (e) {
+            showToast('No se imprimió la constancia', mensajeAmigable(e), 'warning');
+        }
+    };
+
+    // El producto nuevo de la pantalla, listo para la base: el SRS como se
+    // guarda, su nota para Bodega y la foto ya subida.
+    const renglonNuevoConFoto = async () => ({
+        ...lineaNuevaActual, srs: srs ? srsParaEncargo(srs) : null, nota,
+        fotoUrl: fotos[0] ? await subirFotoDeEncargo(sala, fotos[0]) : null,
+    });
+    const [agregandoNuevo, setAgregandoNuevo] = useState(false);
+    const agregarNuevo = async () => {
+        setAgregandoNuevo(true);
+        try {
+            const l = await renglonNuevoConFoto();
+            setLineas((ls) => [...ls, l]);
+            setNombreNuevo(''); setSrs(null); setSrsNoAparece(false); setFotos([]); setCantidad('1'); setNota('');
+        } catch (e) {
+            showToast('No se pudo agregar', mensajeAmigable(e), 'error');
+        } finally {
+            setAgregandoNuevo(false);
         }
     };
 
@@ -264,12 +299,12 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
     cuerpo.current = async () => {
         setEnviando(true);
         try {
-            if (sinCatalogo) {
+            if (sinCatalogo && !soloEncargo) {
                 const fotoUrl = fotos[0] ? await subirFotoDeEncargo(sala, fotos[0]) : null;
-                const r = await crearEncargoDeProductoNuevo({ branchId: sala, customerId: cliente.id, nombre: nombreNuevo,
+                const r = await crearEncargoDeProductoNuevo({ branchId: sala, customerId: cliente.id, nombre: nombreNuevoListo,
                     cantidad: cant, nota, srs: srs ? srsParaEncargo(srs) : null, fotoUrl });
                 showToast('Consulta enviada a Bodega', `${r.codigo} · Bodega responde el precio y para cuándo, o si no se puede conseguir.`, 'success');
-                await imprimirEncargo(r.codigo, nombreNuevo.trim(), true);
+                await imprimirEncargo(r.codigo, nombreNuevoListo, true);
                 clearDraft(llave(sala));
                 onClose();
                 return;
@@ -351,10 +386,15 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                 }
                 clearDraft(llave(sala)); onClose();
             } else if (soloEncargo) {
-                const todas = [...lineas, ...(producto && elegida ? [lineaActual] : [])];
-                const r = await crearEncargosEnSucursal({ branchId: sala, customerId: cliente.id, lineas: todas, nota });
-                showToast(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · Compras confirma precios y fechas. Si deja anticipo, cóbralo en «Por cobrar».`, 'success');
-                for (const e of r) await imprimirEncargo(e.codigo, e.producto_nombre, false, e.cantidad);
+                // Con productos nuevos (2026-11-24): cada uno lleva su nota para
+                // Bodega; la nota de la pantalla es la del nuevo, no la del encargo.
+                const actual = sinCatalogo ? (lineaNuevaActual ? [await renglonNuevoConFoto()] : []) : (renglonDePantalla ? [renglonDePantalla] : []);
+                const r = await crearEncargosEnSucursal({ branchId: sala, customerId: cliente.id, lineas: [...lineas, ...actual],
+                    nota: sinCatalogo ? null : nota });
+                const hayNuevos = r.some((e) => e.nuevo);
+                showToast(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · ${hayNuevos
+                    ? 'Bodega responde precio, fecha y si se pueden conseguir.' : 'Compras confirma precios y fechas.'} Si deja anticipo, cóbralo en «Por cobrar».`, 'success');
+                await imprimirEncargos(r);
                 clearDraft(llave(sala));
                 onClose();
             } else {
@@ -376,10 +416,10 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
 
     if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
     const { deja } = plan;
-    const etiquetaBoton = sinCatalogo ? 'Enviar consulta a Bodega'
+    const etiquetaBoton = sinCatalogo && !soloEncargo ? 'Enviar consulta a Bodega'
         : sinAnticipo ? (enPedido ? `Apartar ${renglonesDelPedido.length} productos sin anticipo` : modo === 'traslado' ? 'Pedir y apartar sin anticipo' : 'Apartar sin anticipo')
         : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
-        : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
+        : soloEncargo ? `Registrar encargo · ${productosDelEncargo} productos`
         : modo === 'encargo' ? 'Registrar encargo'
         : conAnticipo && cobroEn === 'enlace' ? `${modo === 'traslado' ? 'Pedir y crear enlace' : 'Crear enlace de pago'} · ${formatMoney(montoAnticipo)}`
         : `${modo === 'traslado' ? 'Pedir y cobrar' : 'Apartar y cobrar'} ${conAnticipo ? formatMoney(montoAnticipo) : ''}`;
@@ -406,9 +446,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
 
             <Seccion campo="producto" titulo={enPedido || soloEncargo ? 'Otro producto (opcional)' : 'Producto'}>
                 {sinCatalogo ? (
-                    <ProductoQueNoTenemos nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
+                    <ProductoQueNoTenemos key={lineas.length} nombre={nombreNuevo}
+                        puedeAgregar={puedeAgregarNuevo} agregando={agregandoNuevo} onAgregar={agregarNuevo}
+                        opcional={soloEncargo} srs={srs} noAparece={srsNoAparece}
                         onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
-                        onSrs={(r) => { setSrs(r); setSrsNoAparece(false); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
+                        onSrs={(r) => { setSrs(r); setSrsNoAparece(false); if (!nombreNuevo.trim()) setNombreNuevo(r.nombre ?? ''); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
                         onVolver={() => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]); }}
                         cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} onErrorFoto={setErrorFoto}
                         nota={nota} onNota={setNota}
@@ -460,7 +502,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                         <BuscadorDeProducto placeholder="Producto a apartar o encargar…"
                             invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
                             onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista(null); }} />
-                        {!soloEncargo && !enPedido && (
+                        {!enPedido && (
                             <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
                                 ¿No lo tenemos? Consultar un producto nuevo a Bodega
                             </Button>
@@ -667,14 +709,14 @@ function LineasDelEncargo({ titulo = 'En el encargo', lineas, total, onQuitar })
     return (
         <div className="space-y-1.5">
             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">
-                {titulo} · {lineas.length} · {formatMoney(total)} con el precio de hoy
+                {titulo} · {lineas.length}{lineas.some((l) => !l.nuevo) ? ` · ${formatMoney(total)} con el precio de hoy` : ''}
             </p>
             <ul className="space-y-1.5">
                 {lineas.map((l, i) => (
                     <li key={`${l.productoId}-${l.factor}-${i}`} className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
                         <div className="min-w-0">
                             <p className="text-body-sm font-semibold text-content truncate">{l.cantidad} × {l.productoNombre}</p>
-                            <p className="text-caption text-content-3">{formatMoney(redondear(l.precio * l.cantidad))}</p>
+                            <p className="text-caption text-content-3">{l.nuevo ? 'Producto nuevo · Bodega responde el precio' : formatMoney(redondear(l.precio * l.cantidad))}</p>
                         </div>
                         <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar" onClick={() => onQuitar(i)} />
                     </li>
@@ -685,7 +727,8 @@ function LineasDelEncargo({ titulo = 'En el encargo', lineas, total, onQuitar })
 }
 
 // ── Producto que no tenemos: nombre, SRS y foto ─────────────────────────────
-function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoAparece, onVolver, cantidad, onCantidad, fotos, onFotos, onErrorFoto, nota, onNota, onUsarCatalogo }) {
+function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoAparece, onVolver, cantidad, onCantidad, fotos, onFotos, onErrorFoto, nota, onNota, onUsarCatalogo,
+    puedeAgregar = false, agregando = false, onAgregar, opcional = false }) {
     const [resultados, setResultados] = useState(null);
     // ¿Ya lo tenemos? Se busca en el catálogo mientras se escribe (2026-10-21:
     // «colestor z» pasaba como producto nuevo y estaba en el catálogo).
@@ -788,7 +831,10 @@ function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoApa
             </div>
             <PortalInput label="Nota para Bodega (opcional)" value={nota} onChange={(e) => onNota(e.target.value)}
                 placeholder="Presentación, laboratorio, para cuándo lo necesita…" />
-            <Button variant="ghost" size="sm" onClick={onVolver}>Volver a buscar en el catálogo</Button>
+            {puedeAgregar && (
+                <Button variant="secondary" size="sm" icon={Plus} loading={agregando} onClick={onAgregar}>Agregar y consultar otro</Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={onVolver}>{opcional ? 'Buscar otro en el catálogo' : 'Volver a buscar en el catálogo'}</Button>
         </div>
     );
 }

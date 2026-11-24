@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1598.0 — Varios productos nuevos en una sola consulta a Bodega
+
+- **Apartar o encargar** (portal y app del personal): un producto que no está
+  en el catálogo ya no va de uno en uno. «Agregar y consultar otro» lo suma al
+  encargo con su nombre, su registro del SRS, su cantidad, su foto y su nota
+  para Bodega, y se puede seguir con otro nuevo o con uno del catálogo que no
+  hay en ninguna parte. Hasta 10 productos, un solo envío y **un solo papel**
+  con el código y las barras de cada uno. El encargo de varios del catálogo
+  también sale ahora en un solo papel (antes, uno por producto). Pedido del
+  usuario: «no es práctico».
+- **Base**: `encargos_en_sucursal_crear` acepta renglones `nuevo: true` y los
+  pasa por `encargo_nuevo_en_sucursal_crear` (mismas validaciones). Todo o
+  nada: probado en el entorno de pruebas con dos nuevos y uno del catálogo, y
+  con un renglón inválido que no dejó ninguno.
+- **Arreglo**: con el registro del SRS elegido y el nombre vacío, el
+  formulario pedía «Escribe el nombre del producto». Ahora vale el nombre del
+  registro, y al elegirlo con el campo vacío se llena solo.
+- Pruebas: `tests/unit/apartar.test.js` (plan con productos nuevos y la
+  constancia de varios).
+
 ## v2.1597.1 — La prueba del resumen de encuestas espera a Salvi
 
 - `tests/unit/comercialFiscalNucleo.test.js` esperaba el botón «Pedirle el

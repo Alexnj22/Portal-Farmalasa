@@ -26,7 +26,8 @@ function Fila({ titulo, detalle, onPress }) {
   );
 }
 
-export default function ProductoNuevo({ nombre, srs, noAparece, onNombre, onSrs, onNoAparece, onVolver, cantidad, onCantidad, fotos, onFotos, nota, onNota, onUsarCatalogo }) {
+export default function ProductoNuevo({ nombre, srs, noAparece, onNombre, onSrs, onNoAparece, onVolver, cantidad, onCantidad, fotos, onFotos, nota, onNota, onUsarCatalogo,
+  puedeAgregar = false, agregando = false, onAgregar, opcional = false }) {
   const [resultados, setResultados] = useState(null);
   const [enCatalogo, setEnCatalogo] = useState([]);
   const [buscando, setBuscando] = useState(false);
@@ -104,7 +105,13 @@ export default function ProductoNuevo({ nombre, srs, noAparece, onNombre, onSrs,
       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Foto (opcional)</Text>
       <Fotos fotos={fotos} onCambiar={onFotos} max={1} />
       <Campo value={nota} onChangeText={onNota} maxLength={300} placeholder="Nota para Bodega: presentación, laboratorio, para cuándo lo necesita…" />
-      <Enlace texto="Volver a buscar en el catálogo" onPress={onVolver} />
+      {/* Varios productos nuevos en el mismo encargo (2026-11-24), como en el portal. */}
+      {puedeAgregar ? (
+        <View style={{ flexDirection: 'row' }}>
+          <Accion texto={agregando ? 'Agregando…' : 'Agregar y consultar otro'} onPress={onAgregar} deshabilitado={agregando} />
+        </View>
+      ) : null}
+      <Enlace texto={opcional ? 'Buscar otro en el catálogo' : 'Volver a buscar en el catálogo'} onPress={onVolver} />
     </View>
   );
 }

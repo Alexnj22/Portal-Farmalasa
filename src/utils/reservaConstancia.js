@@ -80,28 +80,41 @@ export function imprimirConstanciaDeReserva(datos, { sala = null } = {}) {
 
 // La constancia de un ENCARGO (2026-10-21): no se cobró nada, así que no lleva
 // montos; dice qué se pidió, para quién y que se le avisa con precio y fecha.
-export function construirConstanciaDeEncargo({ codigo, cliente, telefono, producto, cantidad, nuevo, sala, atendio, ahora = new Date() }) {
+// `renglones` (2026-11-24): varios productos en un solo papel, cada uno con su
+// código y sus barras —se retira cada uno por su código—; `[{ codigo, producto,
+// cantidad, nuevo }]`. Sin él, el producto único de siempre.
+export function construirConstanciaDeEncargo({ codigo, cliente, telefono, producto, cantidad, nuevo, renglones, sala, atendio, ahora = new Date() }) {
+    const varios = renglones?.length > 1;
+    const lista = renglones?.length ? renglones : [{ codigo, producto, cantidad, nuevo }];
+    const nuevos = lista.filter((r) => r.nuevo).length;
     return {
         titulo: '',
         encabezado: {
-            titulo: `ENCARGO ${codigo}`,
+            titulo: varios ? `ENCARGO · ${lista.length} PRODUCTOS` : `ENCARGO ${lista[0].codigo}`,
             lineas: [sala ? `Retira en ${String(sala).toUpperCase()}` : null].filter(Boolean),
         },
-        bloques: [{ texto: `${cantidad} x ${recortar(producto, 80)}` }],
+        bloques: lista.map((r) => ({ texto: `${varios ? `${r.codigo}  ` : ''}${r.cantidad} x ${recortar(r.producto, 80)}` })),
         datos: [
             ...(cliente ? [['Cliente', cliente]] : []),
             ...(telefono ? [['Telefono', telefono]] : []),
             ['Impreso', fechaHora(ahora)],
             ...(atendio ? [['Atendio', atendio]] : []),
         ],
-        codigos: [{ valor: codigo, simbologia: 'CODE128' }],
-        pie: [
-            nuevo ? 'Lo consultamos y te avisamos si se puede conseguir,' : 'Te avisamos el precio y para cuando llega,',
-            nuevo ? 'el precio y para cuando llega. No has pagado nada.' : 'y ahi se paga completo. No has pagado nada.',
+        // Con varios, la leyenda dice de qué producto es cada barra.
+        codigos: lista.map((r) => ({ valor: r.codigo, simbologia: 'CODE128', ...(varios ? { leyenda: recortar(r.producto, 40) } : {}) })),
+        pie: nuevos === lista.length ? [
+            'Lo consultamos y te avisamos si se puede conseguir,',
+            'el precio y para cuando llega. No has pagado nada.',
+        ] : nuevos > 0 ? [
+            'Te avisamos el precio y para cuando llega cada uno,',
+            'y si se pueden conseguir. No has pagado nada.',
+        ] : [
+            'Te avisamos el precio y para cuando llega,',
+            'y ahi se paga completo. No has pagado nada.',
         ],
     };
 }
 
 export function imprimirConstanciaDeEncargo(datos, { sala = null } = {}) {
-    return imprimirDocumento(construirConstanciaDeEncargo(datos), { sala, tituloDeCola: `Encargo ${datos.codigo}` });
+    return imprimirDocumento(construirConstanciaDeEncargo(datos), { sala, tituloDeCola: `Encargo ${datos.codigo ?? datos.renglones?.[0]?.codigo ?? ''}` });
 }

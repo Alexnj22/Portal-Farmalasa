@@ -52,6 +52,19 @@ export function listaQueLeToca(base, presentacion, presentaciones = []) {
     return CADENA_DE_LISTAS.slice(desde).find((k) => tiene.has(k)) ?? (tiene.size ? null : 'vineta');
 }
 
+/**
+ * Un producto que NO está en el catálogo como renglón del encargo (2026-11-24):
+ * va a Bodega como consulta, sin precio. `srs` es lo que se guarda del registro
+ * (`srsParaEncargo`) y `fotoUrl` la foto ya subida.
+ */
+export const lineaNueva = ({ nombre, cantidad, srs = null, nota = '', fotoUrl = null }) => ({
+    nuevo: true, productoId: null, productoNombre: String(nombre ?? '').trim(), factor: 1,
+    cantidad: Math.trunc(Number(cantidad)) || 0, precio: 0, srs, nota: String(nota ?? '').trim(), fotoUrl,
+});
+
+/** El nombre de un producto nuevo: el escrito, o si quedó vacío, el del registro del SRS elegido. */
+export const nombreDelNuevo = (nombre, srs) => String(nombre ?? '').trim() || String(srs?.nombre ?? '').trim();
+
 /** La clave estable de una presentación (`tipo|factor|precio`). */
 export const clavePresentacion = (p) => (p ? `${p.tipo}|${p.factor}|${p.precio}` : '');
 
@@ -159,8 +172,21 @@ export function planDeApartar({
     const renglonesDelPedido = [...apartados, ...(producto && elegida && seAparta && renglonActual ? [renglonActual] : [])];
 
     const faltaTel = cliente && !telOk ? 'Confirma el teléfono del cliente.' : null;
-    const faltaNuevo = !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel : String(nombreNuevo).trim().length < 3 ? 'Escribe el nombre del producto.'
+    // El nombre del producto nuevo: si se eligió el registro del SRS con el
+    // campo vacío, vale el del registro (2026-11-24: el formulario pedía
+    // «escribe el nombre» con el SRS ya elegido).
+    const nombreNuevoListo = nombreDelNuevo(nombreNuevo, srs);
+    // Con productos ya en el encargo, el nuevo de la pantalla es opcional.
+    const nuevoVacio = !nombreNuevoListo && !srs && !srsNoAparece;
+    const faltaNuevo = !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel
+        : soloEncargo && nuevoVacio ? null
+        : enPedido ? 'Un producto nuevo no va en un pedido con cobro: termina el pedido y consúltalo aparte.'
+        : nombreNuevoListo.length < 3 ? 'Escribe el nombre del producto.'
         : !srs && !srsNoAparece ? 'Búscalo en el SRS, o marca que no aparece.' : cant < 1 || cant > TOPE_ENCARGO ? `Un encargo va de 1 a ${TOPE_ENCARGO} unidades.` : errorFoto || null;
+    // El producto nuevo de la pantalla como renglón del encargo.
+    const lineaNuevaActual = sinCatalogo && !nuevoVacio && faltaNuevo === null
+        ? lineaNueva({ nombre: nombreNuevoListo, cantidad: cant, srs }) : null;
+    const puedeAgregarNuevo = !!lineaNuevaActual && lineas.length < TOPE_RENGLONES;
     const falta = sinCatalogo ? faltaNuevo : !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel
         // Con productos ya agregados, el de la pantalla es opcional.
         : soloEncargo && !producto ? null
@@ -185,6 +211,7 @@ export function planDeApartar({
         cant, total, soloEncargo, enPedido, vienen, sugeridos, elegidosIds, vieneSel, vienenUnidades, restoABodega, origenes,
         modo, seAparta, totalApartados, totalCobro, mitad, seCobra, sinAnticipo, conAnticipo, montoAnticipo, estadoPago, nombreProducto,
         lineaActual, totalLineas, enCamino, puedeAgregar, puedeApartarOtro, renglonActual, renglonesDelPedido, falta,
+        nombreNuevoListo, lineaNuevaActual, puedeAgregarNuevo,
         deja: Math.min(redondear(montoAnticipo || 0), totalCobro),
     };
 }

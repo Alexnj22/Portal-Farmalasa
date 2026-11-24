@@ -44,9 +44,10 @@ export async function cobrarAnticipoEnLaApp({ sala, nombreSala, user, clave, mon
 }
 
 /** El papel del encargo: no se cobró nada, pero el cliente se lleva su código. */
-export function imprimirEncargoEnLaApp({ sala, nombreSala, user, codigo, cliente, producto, cantidad, nuevo }) {
+// `renglones` (2026-11-24): varios productos en un solo papel.
+export function imprimirEncargoEnLaApp({ sala, nombreSala, user, codigo, cliente, producto, cantidad, nuevo, renglones }) {
   return imprimirEnLaSala(construirConstanciaDeEncargo({
-    codigo, cliente: shortEmployeeName(cliente?.name ?? ''), telefono: cliente?.phone ?? null, producto, cantidad, nuevo,
+    codigo, cliente: shortEmployeeName(cliente?.name ?? ''), telefono: cliente?.phone ?? null, producto, cantidad, nuevo, renglones,
     sala: nombreSala, atendio: shortEmployeeName(user?.name ?? ''),
-  }), sala, `Encargo ${codigo}`);
+  }), sala, `Encargo ${codigo ?? renglones?.[0]?.codigo ?? ''}`);
 }

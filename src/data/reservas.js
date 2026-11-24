@@ -343,12 +343,18 @@ export async function crearEncargoEnSucursal({ branchId, customerId, productoId,
 
 /** Varios productos en un mismo encargo (2026-10-22): un encargo por producto,
  *  todos en una sola llamada —se registran todos o ninguno—. `lineas`:
- *  `[{ productoId, productoNombre, factor, cantidad }]`. Devuelve `[{ id, codigo, producto_nombre, cantidad }]`. */
+ *  `[{ productoId, productoNombre, factor, cantidad }]`, y desde el 2026-11-24
+ *  también productos que no están en el catálogo (`lineaNueva` de
+ *  `utils/apartar`: `{ nuevo: true, productoNombre, cantidad, srs, nota, fotoUrl }`).
+ *  Devuelve `[{ id, codigo, producto_nombre, cantidad, nuevo }]`. */
 export async function crearEncargosEnSucursal({ branchId, customerId, lineas, nota }) {
     return sinError(await supabase.rpc('encargos_en_sucursal_crear', {
         p_branch_id: Number(branchId), p_customer_id: Number(customerId), p_nota: nota?.trim() || null,
-        p_lineas: lineas.map((l) => ({ producto_id: Number(l.productoId), producto_nombre: l.productoNombre,
-            factor: Number(l.factor) || 1, cantidad: Number(l.cantidad) })),
+        p_lineas: lineas.map((l) => (l.nuevo
+            ? { nuevo: true, nombre: String(l.productoNombre ?? '').trim(), cantidad: Number(l.cantidad),
+                srs: l.srs ?? null, nota: l.nota?.trim() || null, foto_url: l.fotoUrl ?? null }
+            : { producto_id: Number(l.productoId), producto_nombre: l.productoNombre,
+                factor: Number(l.factor) || 1, cantidad: Number(l.cantidad) })),
     }));
 }
 

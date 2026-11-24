@@ -66,12 +66,13 @@ const llave = (sala) => `app_apartar_${sala ?? 'sin-sala'}`;
 /** Lo ya agregado al pedido o al encargo, con «Quitar». */
 function Renglones({ titulo, lineas, total, onQuitar }) {
   return (
-    <Seccion titulo={`${titulo} · ${lineas.length} · ${formatMoney(total)}`} pie="Con el precio de hoy.">
+    <Seccion titulo={`${titulo} · ${lineas.length}${lineas.some((l) => !l.nuevo) ? ` · ${formatMoney(total)}` : ''}`}
+      pie={lineas.some((l) => !l.nuevo) ? 'Con el precio de hoy.' : 'Bodega responde el precio de cada uno.'}>
       {lineas.map((l, i) => (
         <View key={`${l.productoId}-${l.factor}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`${l.cantidad} × ${l.productoNombre}`}</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatMoney(redondear(l.precio * l.cantidad))}${l.origen ? ` · viene de ${l.origen}` : ''}`}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{l.nuevo ? 'Producto nuevo · Bodega responde el precio' : `${formatMoney(redondear(l.precio * l.cantidad))}${l.origen ? ` · viene de ${l.origen}` : ''}`}</Text>
           </View>
           <Enlace texto="Quitar" color={MARCA.rojo} onPress={() => onQuitar(i)} />
         </View>
@@ -204,7 +205,10 @@ function Nuevo({ sala, nombreSala, user }) {
     cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece]);
   const { total, soloEncargo, enPedido, vienen, elegidosIds, vieneSel, restoABodega, origenes, modo, totalApartados, totalCobro, mitad,
     seCobra, sinAnticipo, conAnticipo, montoAnticipo, estadoPago, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar, puedeApartarOtro,
-    renglonActual, renglonesDelPedido, falta, deja } = plan;
+    renglonActual, renglonesDelPedido, falta, deja, nombreNuevoListo, lineaNuevaActual, puedeAgregarNuevo } = plan;
+  // Lo que va en el encargo de varios: lo agregado más el producto de la pantalla.
+  const renglonDePantalla = sinCatalogo ? lineaNuevaActual : (producto && elegida ? lineaActual : null);
+  const productosDelEncargo = lineas.length + (renglonDePantalla ? 1 : 0);
 
   const limpiarProducto = () => { setProducto(null); setPres(''); setLista(null); setCantidad('1'); setTraslado(null); setVienenElegidos(null); setOpciones(null); };
   const terminar = () => { clearDraft(llave(sala)); router.back(); };
@@ -213,17 +217,43 @@ function Nuevo({ sala, nombreSala, user }) {
     if (!r.ok) fallo('No se imprimió la constancia', r.detalle);
   };
 
+  // Un papel para todo el encargo (2026-11-24): cada producto con su código y sus barras.
+  const papelDeEncargos = async (creados) => {
+    const r = await imprimirEncargoEnLaApp({ sala, nombreSala, user, cliente,
+      renglones: creados.map((e) => ({ codigo: e.codigo, producto: e.producto_nombre, cantidad: e.cantidad, nuevo: !!e.nuevo })) });
+    if (!r.ok) fallo('No se imprimió la constancia', r.detalle);
+  };
+  // El producto nuevo de la pantalla, listo para la base: el SRS como se
+  // guarda, su nota para Bodega y la foto ya subida.
+  const renglonNuevoConFoto = async () => ({
+    ...lineaNuevaActual, srs: srs ? srsParaEncargo(srs) : null, nota,
+    fotoUrl: fotos[0] ? (await subirFotos([fotos[0]], { bucket: 'encargos-fotos', carpeta: String(Number(sala)) }))[0] ?? null : null,
+  });
+  const [agregandoNuevo, setAgregandoNuevo] = useState(false);
+  const agregarNuevo = async () => {
+    setAgregandoNuevo(true);
+    try {
+      const l = await renglonNuevoConFoto();
+      setLineas((ls) => [...ls, l]);
+      setNombreNuevo(''); setSrs(null); setSrsNoAparece(false); setFotos([]); setCantidad('1'); setNota('');
+    } catch (e) {
+      fallo('No se pudo agregar', mensajeAmigable(e, 'Intenta de nuevo.'));
+    } finally {
+      setAgregandoNuevo(false);
+    }
+  };
+
   const hacer = async () => {
     setEnviando(true);
     try {
-      if (sinCatalogo) {
+      if (sinCatalogo && !soloEncargo) {
         trabajando('Enviando la consulta…');
         const fotoUrl = fotos[0] ? (await subirFotos([fotos[0]], { bucket: 'encargos-fotos', carpeta: String(Number(sala)) }))[0] ?? null : null;
-        const r = await crearEncargoDeProductoNuevo({ branchId: sala, customerId: cliente.id, nombre: nombreNuevo, cantidad: cant, nota,
+        const r = await crearEncargoDeProductoNuevo({ branchId: sala, customerId: cliente.id, nombre: nombreNuevoListo, cantidad: cant, nota,
           srs: srs ? srsParaEncargo(srs) : null, fotoUrl });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         listo('Consulta enviada a Bodega', `${r.codigo} · Bodega responde el precio y para cuándo, o si no se puede conseguir.`);
-        await papelDeEncargo(r.codigo, nombreNuevo.trim(), true, cant);
+        await papelDeEncargo(r.codigo, nombreNuevoListo, true, cant);
         terminar();
         return;
       }
@@ -304,11 +334,14 @@ function Nuevo({ sala, nombreSala, user }) {
       }
       if (soloEncargo) {
         trabajando('Registrando el encargo…');
-        const todas = [...lineas, ...(producto && elegida ? [lineaActual] : [])];
-        const r = await crearEncargosEnSucursal({ branchId: sala, customerId: cliente.id, lineas: todas, nota });
+        // Con productos nuevos (2026-11-24): cada uno lleva su nota para
+        // Bodega; la nota de la pantalla es la del nuevo, no la del encargo.
+        const actual = sinCatalogo ? (lineaNuevaActual ? [await renglonNuevoConFoto()] : []) : (renglonDePantalla ? [renglonDePantalla] : []);
+        const r = await crearEncargosEnSucursal({ branchId: sala, customerId: cliente.id, lineas: [...lineas, ...actual], nota: sinCatalogo ? null : nota });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        listo(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · Compras confirma precios y fechas; después se cobra en «Por cobrar».`);
-        for (const e of r) await papelDeEncargo(e.codigo, e.producto_nombre, false, e.cantidad);
+        listo(`Encargo registrado · ${r.length} productos`, `${r.map((e) => e.codigo).join(', ')} · ${r.some((e) => e.nuevo)
+          ? 'Bodega responde precio, fecha y si se pueden conseguir' : 'Compras confirma precios y fechas'}; después se cobra en «Por cobrar».`);
+        await papelDeEncargos(r);
         terminar();
         return;
       }
@@ -326,10 +359,10 @@ function Nuevo({ sala, nombreSala, user }) {
     }
   };
 
-  const etiqueta = sinCatalogo ? 'Enviar consulta a Bodega'
+  const etiqueta = sinCatalogo && !soloEncargo ? 'Enviar consulta a Bodega'
     : sinAnticipo ? (enPedido ? `Apartar ${renglonesDelPedido.length} productos sin anticipo` : modo === 'traslado' ? 'Pedir y apartar sin anticipo' : 'Apartar sin anticipo')
     : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
-      : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
+      : soloEncargo ? `Registrar encargo · ${productosDelEncargo} productos`
         : modo === 'encargo' ? 'Registrar encargo'
           : conAnticipo && cobroEn === 'enlace' ? `${modo === 'traslado' ? 'Pedir y crear enlace' : 'Crear enlace de pago'} · ${formatMoney(montoAnticipo)}`
             : `${modo === 'traslado' ? 'Pedir y cobrar' : 'Apartar y cobrar'}${conAnticipo ? ` ${formatMoney(montoAnticipo)}` : ''}`;
@@ -338,10 +371,10 @@ function Nuevo({ sala, nombreSala, user }) {
     if (falta || enviando) return;
     const metodo = FORMAS_DE_PAGO.find((f) => f.value === pago.forma)?.label ?? 'Efectivo';
     const quien = shortEmployeeName(cliente?.name ?? '');
-    const texto = sinCatalogo ? `${quien} consulta ${cant} × ${nombreNuevo.trim()}. Bodega responde el precio y para cuándo.`
+    const texto = sinCatalogo && !soloEncargo ? `${quien} consulta ${cant} × ${nombreNuevoListo}. Bodega responde el precio y para cuándo.`
       : sinAnticipo ? `${quien} aparta ${enPedido ? `${renglonesDelPedido.length} productos` : `${cant} × ${nombreProducto}`} sin anticipo.\nNo se cobra nada ahora: paga ${formatMoney(totalCobro)} al retirar. Quedas como responsable.${modo === 'traslado' && !enPedido ? ` Se pide a ${traslado.sala}.` : ''}`
       : enPedido ? `${quien} aparta ${renglonesDelPedido.length} productos en un pedido.\nTotal ${formatMoney(totalCobro)} · anticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${estadoPago.noEfectivo ? ' No entra a la caja.' : ` Entra a la caja de ${nombreSala}.`}`
-        : !conAnticipo ? `${quien} encarga ${soloEncargo ? `${lineas.length + (lineaActual ? 1 : 0)} productos` : `${cant} × ${nombreProducto}`}. Compras confirma el precio y la fecha; ahora no se cobra nada.`
+        : !conAnticipo ? `${quien} encarga ${soloEncargo ? `${productosDelEncargo} productos` : `${cant} × ${nombreProducto}`}. ${[...lineas, renglonDePantalla].some((l) => l?.nuevo) ? 'Bodega responde el precio y para cuándo' : 'Compras confirma el precio y la fecha'}; ahora no se cobra nada.`
           : cobroEn === 'enlace' ? `${quien} aparta ${cant} × ${nombreProducto}. Queda separado 3 días mientras paga; al pagar, el plazo pasa a 7.${modo === 'traslado' ? ` Se pide a ${traslado.sala}.` : ''}`
             : `${quien} aparta ${cant} × ${nombreProducto}.\nAnticipo ${formatMoney(montoAnticipo)} (${metodo}) · falta ${formatMoney(Math.max(totalCobro - montoAnticipo, 0))} al retirar.${modo === 'traslado' ? ` Se pide a ${traslado.sala}.` : modo === 'viene' ? ' Queda en camino.' : ' 7 días.'}${estadoPago.noEfectivo ? ' No entra a la caja.' : ` Entra a la caja de ${nombreSala}.`}`;
     Alert.alert(`¿${etiqueta}?`, texto, [{ text: 'Volver', style: 'cancel' }, { text: 'Sí', onPress: hacer }]);
@@ -365,9 +398,10 @@ function Nuevo({ sala, nombreSala, user }) {
 
       <Seccion titulo={enPedido || soloEncargo ? 'Otro producto (opcional)' : 'Producto'}>
         {sinCatalogo ? (
-          <ProductoNuevo nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
+          <ProductoNuevo key={lineas.length} nombre={nombreNuevo} srs={srs} noAparece={srsNoAparece}
+            puedeAgregar={puedeAgregarNuevo} agregando={agregandoNuevo} onAgregar={agregarNuevo} opcional={soloEncargo}
             onNombre={(v) => { setNombreNuevo(v); setSrs(null); setSrsNoAparece(false); }}
-            onSrs={(r) => { setSrs(r); setSrsNoAparece(false); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
+            onSrs={(r) => { setSrs(r); setSrsNoAparece(false); if (!nombreNuevo.trim()) setNombreNuevo(r.nombre ?? ''); }} onNoAparece={() => { setSrs(null); setSrsNoAparece(true); }}
             onVolver={() => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]); }}
             cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} nota={nota} onNota={setNota}
             onUsarCatalogo={(p) => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]); setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
@@ -411,7 +445,7 @@ function Nuevo({ sala, nombreSala, user }) {
         ) : (
           <>
             <Enlace texto="Buscar el producto a apartar o encargar" onPress={() => setBuscandoProducto(true)} />
-            {!soloEncargo && !enPedido ? <Enlace texto="¿No lo tenemos? Consultar un producto nuevo a Bodega" color={MARCA.violetaClaro} onPress={() => setSinCatalogo(true)} /> : null}
+            {!enPedido ? <Enlace texto="¿No lo tenemos? Consultar un producto nuevo a Bodega" color={MARCA.violetaClaro} onPress={() => setSinCatalogo(true)} /> : null}
           </>
         )}
       </Seccion>

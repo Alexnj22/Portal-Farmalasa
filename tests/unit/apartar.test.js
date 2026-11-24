@@ -157,3 +157,63 @@ describe('listaQueLeToca — el precio que viene elegido al apartar (reglamento)
         expect(listaQueLeToca('vip', null, [])).toBe(null);
     });
 });
+
+describe('planDeApartar — varios productos nuevos en un encargo (2026-11-24)', () => {
+    const nuevo = { cliente, telOk: true, sinCatalogo: true, cantidad: '2' };
+
+    it('con el SRS elegido y el nombre vacío, vale el nombre del registro', () => {
+        const p = planDeApartar({ ...nuevo, nombreNuevo: '', srs: { nombre: 'ESCIDALT 20 mg' } });
+        expect(p.falta).toBeNull();
+        expect(p.nombreNuevoListo).toBe('ESCIDALT 20 mg');
+        expect(p.lineaNuevaActual).toMatchObject({ nuevo: true, productoNombre: 'ESCIDALT 20 mg', cantidad: 2, precio: 0 });
+        expect(p.puedeAgregarNuevo).toBe(true);
+    });
+
+    it('sin el SRS ni «no aparece», todavía no se puede agregar', () => {
+        const p = planDeApartar({ ...nuevo, nombreNuevo: 'Escidalt' });
+        expect(p.falta).toBe('Búscalo en el SRS, o marca que no aparece.');
+        expect(p.puedeAgregarNuevo).toBe(false);
+    });
+
+    it('con productos ya en el encargo, el nuevo de la pantalla es opcional', () => {
+        const lineas = [{ nuevo: true, productoNombre: 'ESCIDALT', cantidad: 1, precio: 0, factor: 1 }];
+        const p = planDeApartar({ ...nuevo, nombreNuevo: '', lineas });
+        expect(p.falta).toBeNull();
+        expect(p.lineaNuevaActual).toBeNull();
+        expect(p.soloEncargo).toBe(true);
+    });
+
+    it('a medio llenar con productos en el encargo, frena igual', () => {
+        const lineas = [{ nuevo: true, productoNombre: 'ESCIDALT', cantidad: 1, precio: 0, factor: 1 }];
+        const p = planDeApartar({ ...nuevo, nombreNuevo: 'Otro', lineas });
+        expect(p.falta).toBe('Búscalo en el SRS, o marca que no aparece.');
+    });
+
+    it('hasta 10 productos: con 9 agregados ya no ofrece agregar otro', () => {
+        const lineas = Array.from({ length: 9 }, (_, i) => ({ nuevo: true, productoNombre: `P${i}`, cantidad: 1, precio: 0, factor: 1 }));
+        const p = planDeApartar({ ...nuevo, nombreNuevo: 'Otro', srsNoAparece: true, lineas });
+        expect(p.lineaNuevaActual).not.toBeNull();
+        expect(p.puedeAgregarNuevo).toBe(false);
+    });
+});
+
+describe('constancia del encargo con varios productos (2026-11-24)', () => {
+    it('un papel, cada producto con su código y sus barras', async () => {
+        const { construirConstanciaDeEncargo } = await import('@nucleo/utils/reservaConstancia');
+        const t = construirConstanciaDeEncargo({ cliente: 'Ana Perez', sala: 'Salud 1', renglones: [
+            { codigo: 'E-000001', producto: 'ESCIDALT', cantidad: 1, nuevo: true },
+            { codigo: 'E-000002', producto: 'IBUPROFENO', cantidad: 2, nuevo: false },
+        ] });
+        expect(t.encabezado.titulo).toBe('ENCARGO · 2 PRODUCTOS');
+        expect(t.bloques.map((b) => b.texto)).toEqual(['E-000001  1 x ESCIDALT', 'E-000002  2 x IBUPROFENO']);
+        expect(t.codigos.map((c) => c.valor)).toEqual(['E-000001', 'E-000002']);
+        expect(t.pie[1]).toContain('si se pueden conseguir');
+    });
+
+    it('un solo producto: el papel de siempre', async () => {
+        const { construirConstanciaDeEncargo } = await import('@nucleo/utils/reservaConstancia');
+        const t = construirConstanciaDeEncargo({ codigo: 'E-000003', producto: 'IBUPROFENO', cantidad: 1, nuevo: false });
+        expect(t.encabezado.titulo).toBe('ENCARGO E-000003');
+        expect(t.codigos).toEqual([{ valor: 'E-000003', simbologia: 'CODE128' }]);
+    });
+});

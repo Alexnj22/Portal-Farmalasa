@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1596.3 — Auditoría de tiempos: el día sin horario con marcas ya no es «Día libre»; la boleta de papel igual a la de la app
+
+- **Auditoría de tiempos**: un día sin horario (o libre) con marcas o con
+  planilla se pintaba «Día libre» y escondía las marcas y el «Corregir». Ahora
+  es «Trabajó sin horario», muestra las marcas y deja corregir. Si trabaja o no
+  lo decide `resolverTurnoDelDia` (`turnoDelDia.js`), no una regla a mano: un día
+  con horas propias y sin turno del catálogo trabaja.
+- Cada día de la quincena se juzga con el horario publicado de SU semana
+  (`fetchHorariosDeSemanas` + `horarioDeLaSemana`, por `lunesDe`), no con el de
+  la semana en curso. La cuenta de alertas del encabezado usa la misma regla.
+- El diálogo de corrección lee el turno resuelto: un día con horas propias ya
+  no dice «Sin horario planificado».
+- **Boleta de papel**: el renglón y el detalle del descanso trabajado leen
+  `rotuloDescansoTrabajado`, el mismo de la app («… · 1 día compensatorio»).
+- Gemelo: time_audit — en apps/mobile/app/auditoria-de-tiempos.js
+
 ## v2.1596.2 — Por confirmar busca en todos los confirmados
 
 - **Cargar compra → Por confirmar**: buscar un producto ya confirmado no lo

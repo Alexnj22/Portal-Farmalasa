@@ -142,8 +142,12 @@ describe('descanso y asueto trabajados en la misma quincena', () => {
         expect(p.noSujetos.find(x => x.rotulo === 'Recargo de asuetos').monto).toBe(60);
         expect(p.noSujetos.find(x => x.rotulo === 'Recargo por descanso trabajado · 1 día compensatorio').monto).toBe(36);
         const html = buildBoletaHTML({ ...fila, employee: emp }, { start_date: '2026-11-16', end_date: '2026-11-30' }, []);
-        expect(html).toContain('RECARGO POR DESCANSO TRABAJADO:');
-        expect(html).toContain('RECARGO POR DESCANSO TRABAJADO $36.00 (1 DÍA COMPENSATORIO)');
+        // El papel dice lo mismo que la app: el rótulo sale de `rotuloDescansoTrabajado`.
+        expect(html).toContain('RECARGO POR DESCANSO TRABAJADO · 1 DÍA COMPENSATORIO:');
+        expect(html).toContain('RECARGO POR DESCANSO TRABAJADO · 1 DÍA COMPENSATORIO $36.00');
+        const sinCompensatorio = buildBoletaHTML({ ...fila, descansos_compensatorios: 0, employee: emp }, { start_date: '2026-11-16', end_date: '2026-11-30' }, []);
+        expect(sinCompensatorio).toContain('RECARGO POR DESCANSO TRABAJADO:');
+        expect(sinCompensatorio).not.toContain('COMPENSATORIO');
         expect(html).toContain('RECARGO DE ASUETOS $60.00');
     });
 });

@@ -56,6 +56,21 @@ export function fetchPendingShiftExceptions() {
         .order('id', { ascending: true }));
 }
 
+// Los horarios PUBLICADOS de las semanas que toca un período (los lunes que
+// dé `lunesDe`), para juzgar cada día con el de SU semana y no con el de la
+// semana en curso. Sólo los publicados: es lo mismo que lee la planilla. Va
+// paginada entera: `week_start_date` se repite una vez por persona.
+export async function fetchHorariosDeSemanas(lunes = []) {
+    const semanas = [...new Set((lunes || []).filter(Boolean))];
+    if (!semanas.length) return { data: [], error: null };
+    const data = await fetchAllRows(() => supabase.from('employee_rosters')
+        .select('id, employee_id, week_start_date, schedule_data')
+        .in('week_start_date', semanas)
+        .eq('status', 'PUBLISHED')
+        .order('id', { ascending: true }), { completo: true });
+    return data == null ? { data: null, error: new Error('No se pudieron leer los horarios') } : { data, error: null };
+}
+
 // Una quincena de TODA la plantilla: 48 personas × 16 días ya son 768 filas, y
 // el techo silencioso de PostgREST es 1000. Con la plantilla creciendo, la
 // quincena dejaba gente afuera sin error — por eso va paginada entera.

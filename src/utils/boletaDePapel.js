@@ -4,7 +4,7 @@
 // horas extra como si fueran dólares).
 import { formatMoney } from './formatNumber';
 import { fechaTexto } from './fecha';
-import { montoEnLetras, partidasDeBoleta, rotuloDeOtrosDescuentos, rotuloDePeriodo } from './planilla';
+import { montoEnLetras, partidasDeBoleta, rotuloDeOtrosDescuentos, rotuloDePeriodo, rotuloDescansoTrabajado } from './planilla';
 
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
@@ -35,6 +35,9 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;'
 // «0.00 X $0.7031»: las horas y la tarifa de cada renglón, como en la boleta
 // de la empresa. La hora extra nocturna se paga en DOS renglones —noct.
 // extraordinarias (× 0,5) y extra nocturnas (× 2)—, que suman × 2,5.
+// El rótulo del descanso trabajado (con su día compensatorio) sale de
+// `rotuloDescansoTrabajado`, el mismo que pinta la boleta de la app: el papel
+// no lo escribe por su cuenta (2026-11-24).
 const horasPor = (horas, tarifa) => `${round2(horas).toFixed(2)} X ${formatMoney(tarifa, { decimales: 4 })} =`;
 
 // «Detalle de horas extras y asuetos laborados», sólo si hubo.
@@ -45,8 +48,7 @@ function detalleDeHoras(entry) {
     if (Number(entry.night_hours_ordinary) > 0) partes.push(`${round2(entry.night_hours_ordinary)} H NOCTURNAS ORDINARIAS`);
     if (Number(entry.holiday_surcharge) > 0) partes.push(`RECARGO DE ASUETOS ${formatMoney(round2(entry.holiday_surcharge))}`);
     if (Number(entry.recargo_descanso_trabajado) > 0) {
-        const n = Math.max(0, Math.trunc(Number(entry.descansos_compensatorios) || 0));
-        partes.push(`RECARGO POR DESCANSO TRABAJADO ${formatMoney(round2(entry.recargo_descanso_trabajado))}${n ? ` (${n} ${n === 1 ? 'DÍA COMPENSATORIO' : 'DÍAS COMPENSATORIOS'})` : ''}`);
+        partes.push(`${rotuloDescansoTrabajado(entry.descansos_compensatorios).toUpperCase()} ${formatMoney(round2(entry.recargo_descanso_trabajado))}`);
     }
     return partes.length ? `<div style="font-size:10px;margin:4px 0"><b>DETALLE DE HORAS EXTRAS Y ASUETOS LABORADOS:</b> ${partes.join(', ')}.</div>` : '';
 }
@@ -91,7 +93,7 @@ export function buildBoletaHTML(entry, period, branches) {
       <tr><td>HORAS EXTRA DIURNAS: ${horasPor(entry.extra_hours_diurnal, hourly * 2)}</td><td class="right">${formatMoney(round2(entry.extra_hours_diurnal*hourly*2))} +</td></tr>
       <tr><td>HORAS EXTRA NOCTURNAS: ${horasPor(entry.extra_hours_nocturnal, hourly * 2)}</td><td class="right">${formatMoney(round2(entry.extra_hours_nocturnal*hourly*2))} +</td></tr>
       <tr><td>RECARGO DE ASUETOS:</td><td class="right">${formatMoney(round2(entry.holiday_surcharge))} +</td></tr>
-      <tr><td>RECARGO POR DESCANSO TRABAJADO:</td><td class="right">${formatMoney(round2(entry.recargo_descanso_trabajado))} +</td></tr>
+      <tr><td>${esc(rotuloDescansoTrabajado(entry.descansos_compensatorios).toUpperCase())}:</td><td class="right">${formatMoney(round2(entry.recargo_descanso_trabajado))} +</td></tr>
       <tr><td>BONIFICACIONES:</td><td class="right">${formatMoney(round2(entry.bonifications))} +</td></tr>
       <tr><td>BONO VACACIONAL (30%):</td><td class="right">${formatMoney(round2(entry.vacation_bonus))} +</td></tr>
       <tr><td>VIÁTICOS:</td><td class="right">${formatMoney(round2(entry.viaticos||0))} +</td></tr>

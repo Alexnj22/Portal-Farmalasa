@@ -22,14 +22,14 @@ import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchQuincenaTimesheets, marcarMarcajesRevisados } from '@nucleo/data/attendanceAudit';
+import { fetchHorariosDeSemanas, fetchQuincenaTimesheets, marcarMarcajesRevisados } from '@nucleo/data/attendanceAudit';
 import { isAutoPunch, isEditedPunch, isPendingPunch } from '@nucleo/utils/quincena';
-import { auditarDia, ROTULO_MARCA } from '@nucleo/utils/auditoriaDeTiempos';
+import { auditarDia, horarioDeLaSemana, indexarHorarios, ROTULO_MARCA } from '@nucleo/utils/auditoriaDeTiempos';
 import { fmtTimeCSTStr } from '@nucleo/utils/quincena';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
-import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV, lunesDe, sumarDias } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
@@ -53,6 +53,8 @@ function senales(a) {
   if (a.ts?.is_absent && a.ts?.absence_type === 'VACATION') s.push(['Vacación', MARCA.verde]);
   if (a.ts?.is_absent && a.ts?.absence_type === 'DISABILITY') s.push(['Incapacidad', MARCA.rojo]);
   // Falta una marca pero hay otras: no es ausencia, lo revisa Talento Humano.
+  // Sin horario esa semana (o libre) pero con marcas: no es día libre.
+  if (a.trabajoSinHorario) s.push(['Trabajó sin horario', MARCA.ambar]);
   if (a.ts?.status === 'INCOMPLETE') s.push(['Marcación incompleta', MARCA.ambar]);
   if (!a.isOff && !a.isFuture && a.inconsistencies.length && !a.ts?.absence_type) s.push([`${a.inconsistencies.length} falta${a.inconsistencies.length > 1 ? 'n' : ''}`, MARCA.rojo]);
   if (a.lateMin > 0) s.push([`${a.lateMin} min tarde`, MARCA.ambar]);
@@ -92,6 +94,16 @@ export default function AuditoriaDeTiempos() {
     fetchQuincenaTimesheets(dia, dia).then(({ data }) => { if (vivo) setTs(data || []); });
     return () => { vivo = false; };
   }, [dia]);
+  // El horario publicado de la semana del día elegido: un día de la semana
+  // pasada se juzga con SU horario, no con el de ésta (como el portal).
+  const [horarios, setHorarios] = useState(null);
+  const semana = lunesDe(dia);
+  useEffect(() => {
+    let vivo = true;
+    setHorarios(null);
+    fetchHorariosDeSemanas([semana]).then(({ data, error }) => { if (vivo && !error) setHorarios(indexarHorarios(data)); });
+    return () => { vivo = false; };
+  }, [semana]);
 
   const shiftById = useMemo(() => new Map((turnos || []).map((t) => [String(t.id), t])), [turnos]);
   const branchNameById = useMemo(() => new Map((sucursales || []).map((b) => [String(b.id), b.name])), [sucursales]);
@@ -103,11 +115,11 @@ export default function AuditoriaDeTiempos() {
       .filter((e) => sala === 'ALL' || String(e.branchId ?? e.branch_id) === sala)
       .filter((e) => !texto.trim() || tokenMatch(texto.trim(), e.name, e.code, e.role))
       .map((e) => {
-        const a = auditarDia({ dateStr: dia, emp: e, shiftById, timesheets: ts, homeBranchId: e.branchId ?? e.branch_id, branchNameById, reviewedPunchIds: revisados, now });
+        const a = auditarDia({ dateStr: dia, emp: e, horario: horarioDeLaSemana(horarios, e.id, dia), shiftById, timesheets: ts, homeBranchId: e.branchId ?? e.branch_id, branchNameById, reviewedPunchIds: revisados, now });
         return { e, a, s: senales(a) };
       })
       .sort((x, y) => (y.s.length - x.s.length) || (ordenDeSala(Number(x.e.branchId)) - ordenDeSala(Number(y.e.branchId))) || String(x.e.name).localeCompare(String(y.e.name)));
-  }, [empleados, ts, dia, sala, texto, shiftById, branchNameById, revisados]);
+  }, [empleados, ts, horarios, dia, sala, texto, shiftById, branchNameById, revisados]);
   // Las personas de la sala (para la quincena, sin el cálculo del día).
   const personas = useMemo(() => (empleados || [])
     .filter((e) => (e.status || '').toUpperCase() !== 'INACTIVO')
@@ -169,7 +181,7 @@ export default function AuditoriaDeTiempos() {
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
-                        {[a.isOff ? (a.isNoSchedule ? 'Sin turno' : 'Libre') : a.shiftStart ? `${hora12(a.shiftStart)} – ${hora12(a.shiftEnd)}` : null,
+                        {[a.isOff ? (a.isNoSchedule ? 'Sin turno' : 'Libre') : a.trabajoSinHorario ? 'Sin horario' : a.shiftStart ? `${hora12(a.shiftStart)} – ${hora12(a.shiftEnd)}` : null,
                           a.entryPunch ? `entró ${fmtTimeCSTStr(a.entryPunch.timestamp)}` : null,
                           a.exitPunch ? `salió ${fmtTimeCSTStr(a.exitPunch.timestamp)}` : null].filter(Boolean).join(' · ')}
                       </Text>

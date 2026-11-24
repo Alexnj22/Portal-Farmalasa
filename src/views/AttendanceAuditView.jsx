@@ -29,9 +29,8 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
     closeQuincenaTimesheets, marcarMarcajesRevisados, resolverTurnoExtra,
-    fetchPendientesDeQuincena, textoDePendientes,
+    fetchPendientesDeQuincena, textoDePendientes, fetchHorariosDeSemanas,
     buildCSTDate,
-    getCSTDateStr,
 } from '@nucleo/data/attendanceAudit';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
@@ -42,8 +41,9 @@ import { getMondayOfCurrentWeek, fmtTimeCSTStr, formatTime12h, isEditedPunch, is
          isPendingPunch, getCurrentQuincenaStart, getQuincenaEnd, prevQuincena, nextQuincena }
     from '@nucleo/utils/quincena';
 import { descargarArchivo } from '../plataforma/descargas';
-import { fechaTexto } from '@nucleo/utils/fecha';
-import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, tiposDeMarcaParaCorregir, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
+import { fechaTexto, lunesDe, sumarDias } from '@nucleo/utils/fecha';
+import { auditarDia, horarioDeLaSemana, indexarHorarios, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, tiposDeMarcaParaCorregir } from '@nucleo/utils/auditoriaDeTiempos';
+import { aHora, aMinutos } from '@nucleo/utils/turnoDelDia';
 
 import IconoEnCaja from '../components/common/IconoEnCaja';
 import PorDecidirPanel from '../components/asistencia/PorDecidirPanel';
@@ -60,8 +60,6 @@ const PUNCH_TYPE_OPTIONS = [
   { value: 'OUT_EARLY',     label: 'Salida anticipada' },
   { value: 'OUT_BUSINESS',  label: 'Gestión externa' },
 ];
-const IN_TYPES  = TIPOS_DE_ENTRADA;
-const OUT_TYPES = TIPOS_DE_SALIDA;
 const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES_FULL  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
@@ -176,11 +174,9 @@ function buildMockData() {
   };
 }
 
-// ── Day analysis ──────────────────────────────────────────────────────────────
-const getExpectedPunches = marcasEsperadas;
 
 // ── DayCorrectionModal ────────────────────────────────────────────────────────
-function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, dayConfig, isDemoMode, onSave, user, branchNameById }) {
+function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, turno, dayConfig, isDemoMode, onSave, user, branchNameById }) {
   const [newType, setNewType] = useState('');
   const [newTime, setNewTime] = useState('');
   const [reason,  setReason]  = useState('');
@@ -197,8 +193,10 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   const dow    = new Date(dateStr + 'T12:00:00Z').getUTCDay();
   const fmtDia = `${DAY_NAMES_FULL[dow]} ${new Date(dateStr + 'T12:00:00Z').getUTCDate()} de ${fechaTexto(dateStr, { month: 'long' })}`;
 
-  const shiftStart = shift?.start_time?.substring(0,5) || shift?.start;
-  const shiftEnd   = shift?.end_time?.substring(0,5)   || shift?.end;
+  // El turno del día lo resolvió `resolverTurnoDelDia` (vía `auditarDia`):
+  // las horas propias del día mandan sobre las del catálogo, así que un día con
+  // `customStart` y sin turno del catálogo SÍ tiene horario.
+  const conHorario = !!turno?.trabaja;
 
   const handleAdd = async () => {
     if (!newType || !newTime) return;
@@ -223,20 +221,17 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
         <div className="space-y-4 text-left">
 
           {/* Horario planificado */}
-          {shift ? (
+          {conHorario ? (
             <div className="flex items-start gap-3 bg-brand/[0.07] border border-brand/15 rounded-2xl px-4 py-3.5">
               <Calendar size={15} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
               <div>
                 <p className="text-micro font-black uppercase tracking-widest text-brand-text mb-1">Horario planificado</p>
                 <p className="text-body-lg font-black text-content">
-                  {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
+                  {turno.nombre} · {formatTime12h(turno.inicio)} – {formatTime12h(turno.fin)}
                 </p>
-                {dayConfig?.lunchStart && (
+                {turno.pausa && (
                   <p className="text-label text-content-3 font-bold mt-0.5">
-                    Almuerzo {formatTime12h(dayConfig.lunchStart)} – {(() => {
-                      const [h, m] = dayConfig.lunchStart.split(':');
-                      return formatTime12h(`${String(parseInt(h,10)+1).padStart(2,'0')}:${m}`);
-                    })()}
+                    Almuerzo {formatTime12h(turno.pausa.inicio)} – {formatTime12h(aHora(aMinutos(turno.pausa.inicio) + turno.pausa.minutos))}
                   </p>
                 )}
               </div>
@@ -314,15 +309,15 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 }
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
-function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed, reviewedPunchIds }) {
+function DayCard({ dateStr, emp, horario, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed, reviewedPunchIds }) {
   // Qué pasó ese día: `auditarDia` (núcleo, la misma regla que la app).
   const now = useMemo(() => new Date(), []);
   const {
-    dayD, dow, isFuture, isToday, dayConfig, isNoSchedule, isOff, shift, shiftStart, shiftEnd,
+    dayD, dow, isFuture, isToday, dayConfig, isNoSchedule, isOff, trabajoSinHorario, turno, shiftStart, shiftEnd,
     dayPunches, entryPunch, exitPunch, lunchOut, lunchIn, ts, inconsistencies,
     isAutoDay, isPendDay, isEditedDay, editedInfo, crossBranchName, lateMin,
-  } = useMemo(() => auditarDia({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, reviewedPunchIds, now }),
-    [dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, reviewedPunchIds, now]);
+  } = useMemo(() => auditarDia({ dateStr, emp, horario, shiftById, timesheets, homeBranchId, branchNameById, reviewedPunchIds, now }),
+    [dateStr, emp, horario, shiftById, timesheets, homeBranchId, branchNameById, reviewedPunchIds, now]);
 
   const cardBg = isToday
     ? 'bg-brand/[0.09] border-brand/25 shadow-[var(--shadow-glow-brand-sm)]'
@@ -350,6 +345,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 ? <Badge size="sm">Sin turno</Badge>
                 : <Badge size="sm">Libre</Badge>
             )}
+            {trabajoSinHorario && <Badge variant="warning" size="sm">Trabajó sin horario</Badge>}
             {isFuture && !isOff && <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">Próximo</span>}
             {!isOff && !isFuture && inconsistencies.length > 0 && !ts?.absence_type && (
               <Badge variant="danger" size="sm">{inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}</Badge>
@@ -367,9 +363,9 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {/* Falta una marca (p. ej. la entrada) pero hay otras: no es ausencia, lo revisa Talento Humano. */}
             {ts?.status === 'INCOMPLETE' && <Badge variant="warning" size="sm">Marcación incompleta</Badge>}
           </div>
-          {!isOff && shift && (
+          {turno.trabaja && (
             <p className="text-caption font-bold text-content-3">
-              {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
+              {turno.nombre} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
               {dayConfig?.lunchStart && <span> · Almuerzo {formatTime12h(dayConfig.lunchStart)}</span>}
             </p>
           )}
@@ -378,7 +374,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
         {/* Action buttons */}
         {!isOff && !isFuture && (
           <div className="flex flex-col gap-1.5 shrink-0">
-            <Button icon={Pencil} onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}>Corregir</Button>
+            <Button icon={Pencil} onClick={() => onCorrect(emp, dateStr, dayPunches, turno, dayConfig)}>Corregir</Button>
             {isPendDay && onMarkReviewed && (
               <Button tone="warning" icon={ShieldCheck} onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}>Revisado</Button>
             )}
@@ -514,43 +510,27 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 }
 
 // ── EmployeeAuditRow ──────────────────────────────────────────────────────────
-function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll, onMarkReviewed, reviewedPunchIds }) {
+function EmployeeAuditRow({ emp, quinceaDates, horarios, shiftById, timesheets, branchNameById, onCorrect, onApproveAll, onMarkReviewed, reviewedPunchIds }) {
   const [expanded, setExpanded] = useState(false);
   const now = useMemo(() => new Date(), []);
 
   // Alert counts across the quincena
   const alerts = useMemo(() => {
     let inconsistencies = 0, autoPunched = 0, pendingReview = 0, crossBranch = 0;
+    // Cada día con el horario de SU semana y la misma regla del DayCard
+    // (`auditarDia`): la cuenta del encabezado no puede decir otra cosa que
+    // las tarjetas de abajo.
     quinceaDates.forEach(dateStr => {
-      if (new Date(`${dateStr}T23:59:59-06:00`) > now) return;
-      const punches = (emp.attendance || []).filter(p => getCSTDateStr(p.timestamp) === dateStr);
-      const dow     = new Date(dateStr + 'T12:00:00Z').getUTCDay();
-      const dayKey  = String(dow); // domingo = "0" (ver `claveDeDia`)
-      const dayConfig = emp.weeklySchedule?.[dayKey] || emp.weeklySchedule?.[dow];
-      if (!dayConfig || dayConfig.isOff) return;
-      const shiftId = dayConfig?.shiftId && dayConfig.shiftId !== 'LIBRE' ? String(dayConfig.shiftId) : null;
-      const shift   = shiftId ? shiftById.get(shiftId) : null;
-      if (!shift) return;
-
-      const hasEntry = punches.some(p => IN_TYPES.has(p.type));
-      const hasExit  = punches.some(p => OUT_TYPES.has(p.type));
-      if (!hasEntry) { inconsistencies++; return; }
-
-      const expected = getExpectedPunches(dateStr, shift, dayConfig);
-      const punched  = new Set(punches.map(p => p.type));
-      const missing  = expected.filter(ep => {
-        if (ep.type === 'IN')  return !hasEntry;
-        if (ep.type === 'OUT') return !hasExit;
-        return !punched.has(ep.type);
-      }).filter(ep => ep.expected && ep.expected < now);
-      if (missing.length > 0) inconsistencies++;
-
-      if (punches.some(p => isAutoPunch(p)))   autoPunched++;
-      if (punches.some(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id))) pendingReview++;
-      if (punches.some(p => { const bid = p.details?.audit_info?.branchId ?? p.branch_id; return bid && String(bid) !== String(emp.branchId); })) crossBranch++;
+      const d = auditarDia({ dateStr, emp, horario: horarioDeLaSemana(horarios, emp.id, dateStr), shiftById, timesheets, homeBranchId: emp.branchId, reviewedPunchIds, now });
+      if (d.isFuture || d.isOff) return;
+      if (d.turno.trabaja && !d.entryPunch) { inconsistencies++; return; }
+      if (d.inconsistencies.length > 0) inconsistencies++;
+      if (d.dayPunches.some(p => isAutoPunch(p)))   autoPunched++;
+      if (d.isPendDay) pendingReview++;
+      if (d.crossBranchName) crossBranch++;
     });
     return { inconsistencies, autoPunched, pendingReview, crossBranch, total: inconsistencies + autoPunched + pendingReview };
-  }, [emp, quinceaDates, shiftById, now, reviewedPunchIds]);
+  }, [emp, quinceaDates, horarios, shiftById, timesheets, now, reviewedPunchIds]);
 
   const empTimesheets = timesheets.filter(t => String(t.employee_id) === String(emp.id));
   const allApproved    = empTimesheets.length > 0 && empTimesheets.every(t => t.status === 'APPROVED');
@@ -714,6 +694,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 <DayCard
                   dateStr={dateStr}
                   emp={emp}
+                  horario={horarioDeLaSemana(horarios, emp.id, dateStr)}
                   shiftById={shiftById}
                   timesheets={timesheets}
                   homeBranchId={emp.branchId}
@@ -757,7 +738,7 @@ const AttendanceAuditView = () => {
     getScope('time_audit') !== 'ALL' ? String(user?.branchId || '') : ''
   );
   const [search, setSearch] = useState('');
-  const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
+  const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, turno, dayConfig }
   const [selectedQuincena,  setSelectedQuincena]  = useState(() => getCurrentQuincenaStart());
   const [reviewedPunchIds,  setReviewedPunchIds]  = useState(() => new Set());
   const [quincenaTS,        setQuincenaTS]        = useState([]);
@@ -829,6 +810,25 @@ const AttendanceAuditView = () => {
   const irAlPanel = useCallback(() => {
     document.getElementById('por-decidir')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  // ── El horario de cada semana de la quincena ─────────────────────────────
+  // Cada día se juzga con el horario publicado de SU semana. Antes toda la
+  // quincena se leía con el de la semana en curso (`emp.weeklySchedule`).
+  // Mientras carga (o en demo) queda `null` y `auditarDia` usa el de esta semana.
+  const [horariosQ, setHorariosQ] = useState(null);
+  useEffect(() => {
+    if (isDemoMode) { setHorariosQ(null); return; }
+    let cancelled = false;
+    const lunes = [];
+    for (let d = selectedQuincena; d <= getQuincenaEnd(selectedQuincena); d = sumarDias(d, 7)) lunes.push(lunesDe(d));
+    lunes.push(lunesDe(getQuincenaEnd(selectedQuincena)));
+    fetchHorariosDeSemanas(lunes).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) console.error('AttendanceAuditView: horarios de la quincena falló:', error.message);
+      setHorariosQ(error ? null : indexarHorarios(data));
+    });
+    return () => { cancelled = true; };
+  }, [selectedQuincena, isDemoMode]);
 
   // ── Lookup maps ─────────────────────────────────────────────────────────
   const shiftById = useMemo(() => {
@@ -966,9 +966,9 @@ const AttendanceAuditView = () => {
   }, [employees, filterBranch, search]);
 
   // ── Correction handler ───────────────────────────────────────────────────
-  const handleCorrect = useCallback((emp, dateStr, dayPunches, shift, dayConfig) => {
+  const handleCorrect = useCallback((emp, dateStr, dayPunches, turno, dayConfig) => {
     if (!(canEdit || isDemoMode)) { showToast('Sin permisos','No tienes permiso para corregir marcaciones.','info'); return; }
-    setCorrectionTarget({ emp, dateStr, dayPunches, shift, dayConfig });
+    setCorrectionTarget({ emp, dateStr, dayPunches, turno, dayConfig });
   }, [canEdit, isDemoMode, showToast]);
 
   const handleSaveCorrection = useCallback(async ({ type, time, reason }) => {
@@ -1133,7 +1133,7 @@ const AttendanceAuditView = () => {
         emp={correctionTarget?.emp}
         dateStr={correctionTarget?.dateStr}
         dayPunches={correctionTarget?.dayPunches || []}
-        shift={correctionTarget?.shift}
+        turno={correctionTarget?.turno}
         dayConfig={correctionTarget?.dayConfig}
         isDemoMode={isDemoMode}
         onSave={handleSaveCorrection}
@@ -1296,6 +1296,7 @@ const AttendanceAuditView = () => {
                           key={emp.id}
                           emp={emp}
                           quinceaDates={quinceaDates}
+                          horarios={horariosQ}
                           shiftById={shiftById}
                           timesheets={quincenaTS}
                           branchNameById={branchNameById}

@@ -43,7 +43,11 @@ function detalleDeHoras(entry) {
     if (Number(entry.extra_hours_diurnal) > 0) partes.push(`${round2(entry.extra_hours_diurnal)} H EXTRA DIURNAS`);
     if (Number(entry.extra_hours_nocturnal) > 0) partes.push(`${round2(entry.extra_hours_nocturnal)} H EXTRA NOCTURNAS`);
     if (Number(entry.night_hours_ordinary) > 0) partes.push(`${round2(entry.night_hours_ordinary)} H NOCTURNAS ORDINARIAS`);
-    if (Number(entry.holiday_surcharge) > 0) partes.push(`RECARGO DE ASUETOS Y DESCANSOS TRABAJADOS ${formatMoney(round2(entry.holiday_surcharge))}`);
+    if (Number(entry.holiday_surcharge) > 0) partes.push(`RECARGO DE ASUETOS ${formatMoney(round2(entry.holiday_surcharge))}`);
+    if (Number(entry.recargo_descanso_trabajado) > 0) {
+        const n = Math.max(0, Math.trunc(Number(entry.descansos_compensatorios) || 0));
+        partes.push(`RECARGO POR DESCANSO TRABAJADO ${formatMoney(round2(entry.recargo_descanso_trabajado))}${n ? ` (${n} ${n === 1 ? 'DÍA COMPENSATORIO' : 'DÍAS COMPENSATORIOS'})` : ''}`);
+    }
     return partes.length ? `<div style="font-size:10px;margin:4px 0"><b>DETALLE DE HORAS EXTRAS Y ASUETOS LABORADOS:</b> ${partes.join(', ')}.</div>` : '';
 }
 
@@ -87,6 +91,7 @@ export function buildBoletaHTML(entry, period, branches) {
       <tr><td>HORAS EXTRA DIURNAS: ${horasPor(entry.extra_hours_diurnal, hourly * 2)}</td><td class="right">${formatMoney(round2(entry.extra_hours_diurnal*hourly*2))} +</td></tr>
       <tr><td>HORAS EXTRA NOCTURNAS: ${horasPor(entry.extra_hours_nocturnal, hourly * 2)}</td><td class="right">${formatMoney(round2(entry.extra_hours_nocturnal*hourly*2))} +</td></tr>
       <tr><td>RECARGO DE ASUETOS:</td><td class="right">${formatMoney(round2(entry.holiday_surcharge))} +</td></tr>
+      <tr><td>RECARGO POR DESCANSO TRABAJADO:</td><td class="right">${formatMoney(round2(entry.recargo_descanso_trabajado))} +</td></tr>
       <tr><td>BONIFICACIONES:</td><td class="right">${formatMoney(round2(entry.bonifications))} +</td></tr>
       <tr><td>BONO VACACIONAL (30%):</td><td class="right">${formatMoney(round2(entry.vacation_bonus))} +</td></tr>
       <tr><td>VIÁTICOS:</td><td class="right">${formatMoney(round2(entry.viaticos||0))} +</td></tr>

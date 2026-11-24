@@ -21490,6 +21490,7 @@ export type Database = {
           other_discounts_concepto: string | null
           other_discounts_detalle: string | null
           period_id: string
+          recargo_descanso_trabajado: number
           renta_deduction: number | null
           salary_advance: number | null
           status: string | null
@@ -21530,6 +21531,7 @@ export type Database = {
           other_discounts_concepto?: string | null
           other_discounts_detalle?: string | null
           period_id: string
+          recargo_descanso_trabajado?: number
           renta_deduction?: number | null
           salary_advance?: number | null
           status?: string | null
@@ -21570,6 +21572,7 @@ export type Database = {
           other_discounts_concepto?: string | null
           other_discounts_detalle?: string | null
           period_id?: string
+          recargo_descanso_trabajado?: number
           renta_deduction?: number | null
           salary_advance?: number | null
           status?: string | null

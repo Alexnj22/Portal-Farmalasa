@@ -67,7 +67,11 @@ export function factorDelDia(clase) {
  * Los días normales devuelven HORAS (las nocturnas ordinarias y las extra
  * pagadas), que `calcPayrollEntry` ya convierte con sus factores. Los de
  * descanso o asueto devuelven un MONTO (`montoDiaEspecial`), porque su base es
- * el salario extraordinario de ese día y no la del día normal.
+ * el salario extraordinario de ese día y no la del día normal. El mismo monto
+ * sale también separado por clase —`montoAsueto` (CT Art. 192) o
+ * `montoDescanso` (CT Arts. 175 y 176)—: en la boleta son dos renglones
+ * (2026-11-23). Un día es de una sola clase, así que uno de los dos es cero y
+ * la suma es `montoDiaEspecial`, al centavo.
  */
 export function pagoDelDia(ts, tarifaHora) {
     const clase = claseDeDia(ts);
@@ -85,6 +89,8 @@ export function pagoDelDia(ts, tarifaHora) {
         horasExtraPagoDiurnas: 0,
         horasExtraPagoNocturnas: 0,
         montoDiaEspecial: 0,
+        montoAsueto: 0,
+        montoDescanso: 0,
         bancoDiurnas: 0,
         bancoNocturnas: 0,
         horasPorDecidir: 0,
@@ -117,6 +123,8 @@ export function pagoDelDia(ts, tarifaHora) {
         }
     }
     out.montoDiaEspecial = r2(out.montoDiaEspecial);
+    if (clase === 'ASUETO') out.montoAsueto = out.montoDiaEspecial;
+    if (clase === 'DESCANSO') out.montoDescanso = out.montoDiaEspecial;
     return out;
 }
 
@@ -124,7 +132,7 @@ export function pagoDelDia(ts, tarifaHora) {
 export function pagoDeLosDias(timesheets, tarifaHora) {
     const t = {
         horasNocturnasOrdinarias: 0, horasExtraPagoDiurnas: 0, horasExtraPagoNocturnas: 0,
-        montoDiasEspeciales: 0, bancoDiurnas: 0, bancoNocturnas: 0, horasPorDecidir: 0,
+        montoDiasEspeciales: 0, montoAsuetos: 0, montoDescansos: 0, bancoDiurnas: 0, bancoNocturnas: 0, horasPorDecidir: 0,
         compensatorios: 0,
     };
     for (const ts of timesheets || []) {
@@ -133,6 +141,8 @@ export function pagoDeLosDias(timesheets, tarifaHora) {
         t.horasExtraPagoDiurnas += d.horasExtraPagoDiurnas;
         t.horasExtraPagoNocturnas += d.horasExtraPagoNocturnas;
         t.montoDiasEspeciales += d.montoDiaEspecial;
+        t.montoAsuetos += d.montoAsueto;
+        t.montoDescansos += d.montoDescanso;
         t.bancoDiurnas += d.bancoDiurnas;
         t.bancoNocturnas += d.bancoNocturnas;
         t.horasPorDecidir += d.horasPorDecidir;

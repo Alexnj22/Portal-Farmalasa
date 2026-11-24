@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1596.1 — Planilla: el descanso trabajado en su propio renglón
+
+El renglón «Recargo de asuetos» sumaba también el día de descanso trabajado.
+Ahora son dos:
+
+- **Recargo de asuetos** (CT Art. 192): sólo el asueto, `holiday_surcharge`.
+- **Recargo por descanso trabajado** (CT Arts. 175 y 176): las horas × 1,5 con
+  su extra y nocturno, en la columna nueva
+  `payroll_entries.recargo_descanso_trabajado` (migración `20261124021504`,
+  aditiva). La boleta lo acompaña con los días compensatorios: «· 1 día
+  compensatorio».
+
+Los dos son no sujetos a retención y suman lo mismo que el renglón de antes:
+`pagoDelDia` separa el monto del día por clase (`montoAsueto` /
+`montoDescanso`) y la planilla los guarda por separado. Va en la planilla, el
+formulario de la fila, la boleta impresa o en PDF y la boleta y la fila de la
+app (las dos leen `partidasDeBoleta` y `CAMPOS_EDITABLES_DE_PLANILLA`). El CSV
+del banco lleva sólo el líquido y no cambia. Prueba nueva con descanso y asueto
+en la misma quincena: B, retenciones y líquido iguales al centavo.
+
+Novedades: no — la valoración no pidió preguntar (0 de 4); el pago no cambia, sólo se separa un renglón.
+
+Gemelo: payroll — en apps/mobile/app/boleta/[id].js y apps/mobile/app/nomina/fila/[id].js, que toman los renglones y los campos del núcleo (partidasDeBoleta, CAMPOS_EDITABLES_DE_PLANILLA) sin cambio propio.
+
 ## v2.1596.0 — Cierre de quincena con freno y aviso; boleta de pago contra la de la empresa
 
 «Talento Humano debe confirmar todo eso antes de cada 15 o fin de mes.»

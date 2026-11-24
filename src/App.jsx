@@ -530,6 +530,7 @@ function MainApp() {
                 extra_hours_diurnal:   entry.extra_hours_diurnal,
                 extra_hours_nocturnal: entry.extra_hours_nocturnal,
                 holiday_surcharge:     entry.holiday_surcharge,
+                recargo_descanso_trabajado: entry.recargo_descanso_trabajado,
                 bonifications:         entry.bonifications,
                 vacation_bonus:        entry.vacation_bonus,
                 viaticos:              entry.viaticos,

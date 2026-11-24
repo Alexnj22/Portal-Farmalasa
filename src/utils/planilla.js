@@ -86,6 +86,13 @@ const r4 = (n) => parseFloat((Number(n) || 0).toFixed(4));
 // $5.6250). Con dos (2.81) los montos de las horas no daban lo que calcula
 // `calcPayrollEntry`, que ya usaba cuatro (comparación renglón por renglón,
 // 2026-11-23).
+/** «Recargo por descanso trabajado · 1 día compensatorio». */
+export function rotuloDescansoTrabajado(compensatorios) {
+    const n = Math.max(0, Math.trunc(Number(compensatorios) || 0));
+    const base = 'Recargo por descanso trabajado';
+    return n ? `${base} · ${n} ${n === 1 ? 'día compensatorio' : 'días compensatorios'}` : base;
+}
+
 export function partidasDeBoleta(entry, baseSalary) {
     const e = entry || {};
     const diario = r2((Number(baseSalary) || 0) / 30);
@@ -107,6 +114,9 @@ export function partidasDeBoleta(entry, baseSalary) {
             // La hora extra nocturna también va en «nocturnas extra (50%)»: ×2 + ×0,5.
             { rotulo: 'Horas extra nocturnas (×2)',       horas: r2(e.extra_hours_nocturnal), tarifa: r4(porHora * 2),   monto: r2(e.extra_hours_nocturnal * porHora * 2) },
             { rotulo: 'Recargo de asuetos',     monto: r2(e.holiday_surcharge) },
+            // CT Arts. 175 y 176: las horas del descanso × 1,5 y un día
+            // compensatorio. Renglón propio desde el 2026-11-23 (iba en asuetos).
+            { rotulo: rotuloDescansoTrabajado(e.descansos_compensatorios), monto: r2(e.recargo_descanso_trabajado) },
             { rotulo: e.bonificaciones_detalle ? `Bonificaciones · ${e.bonificaciones_detalle}` : 'Bonificaciones', monto: r2(e.bonifications) },
             { rotulo: 'Bono vacacional (30%)',  monto: r2(e.vacation_bonus) },
             { rotulo: 'Viáticos',               monto: r2(e.viaticos) },
@@ -531,6 +541,7 @@ export const CAMPOS_EDITABLES_DE_PLANILLA = [
     { key: 'extra_hours_diurnal',   label: 'Horas extra diurnas',              grupo: 'horas' },
     { key: 'extra_hours_nocturnal', label: 'Horas extra nocturnas',            grupo: 'horas' },
     { key: 'holiday_surcharge',     label: 'Recargo de asuetos ($)',           grupo: 'ingresos' },
+    { key: 'recargo_descanso_trabajado', label: 'Recargo por descanso trabajado ($)', grupo: 'ingresos' },
     { key: 'bonifications',         label: 'Bonificaciones ($)',               grupo: 'ingresos' },
     { key: 'vacation_bonus',        label: 'Bono vacacional ($)',              grupo: 'ingresos' },
     { key: 'viaticos',              label: 'Viáticos ($)',                     grupo: 'ingresos' },

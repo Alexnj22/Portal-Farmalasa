@@ -88,6 +88,9 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
     const extraDiurnalHrs   = parseFloat(overrides.extra_hours_diurnal    || 0);
     const extraNocturnalHrs = parseFloat(overrides.extra_hours_nocturnal  || 0);
     const holidaySurcharge  = parseFloat(overrides.holiday_surcharge      || 0);
+    // Descanso trabajado (CT Arts. 175 y 176): renglón propio desde el
+    // 2026-11-23; antes iba sumado en «Recargo de asuetos». No sujeto.
+    const restDaySurcharge  = parseFloat(overrides.recargo_descanso_trabajado || 0);
     const bonifications     = parseFloat(overrides.bonifications          || 0);
     const vacationBonus     = parseFloat(overrides.vacation_bonus         || 0);
     const viaticos          = parseFloat(overrides.viaticos               || 0);
@@ -113,7 +116,7 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
     const subtotalA = ordinarySalary;
     const subtotalB = aCentavos((
         nightOrdinaryAmt + nightExtraAmt + extraDiurnalAmt + extraNocturnalAmt +
-        holidaySurcharge + bonifications + vacationBonus + viaticos
+        holidaySurcharge + restDaySurcharge + bonifications + vacationBonus + viaticos
     ));
 
     // Retenciones
@@ -138,6 +141,7 @@ export function calcPayrollEntry(emp, daysWorked, overrides = {}) {
         extra_hours_diurnal:   extraDiurnalHrs,
         extra_hours_nocturnal: extraNocturnalHrs,
         holiday_surcharge:     holidaySurcharge,
+        recargo_descanso_trabajado: restDaySurcharge,
         bonifications,
         vacation_bonus:        vacationBonus,
         viaticos,
@@ -518,7 +522,9 @@ export const createPayrollSlice = (set, get) => ({
                     // La misma hora en los dos renglones de la boleta (× 0,5 y × 2).
                     night_hours_extra:     pago.horasExtraPagoNocturnas,
                     extra_hours_nocturnal: pago.horasExtraPagoNocturnas,
-                    holiday_surcharge:     pago.montoDiasEspeciales,
+                    // Asueto (Art. 192) y descanso (Arts. 175/176) en su renglón cada uno.
+                    holiday_surcharge:     pago.montoAsuetos,
+                    recargo_descanso_trabajado: pago.montoDescansos,
                     vacation_bonus:        vacBonus,
                     order_discount:        ordenMap.get(empId) || 0,
                 });

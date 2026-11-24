@@ -2,7 +2,8 @@
 // orden que el papel del portal (`partidasDeBoleta`, núcleo):
 //   A · ingresos sujetos a retención (el salario ordinario, días × diario)
 //   B · otros ingresos (las horas extra y nocturnas YA en dinero, con sus horas
-//       al lado; asuetos, bonificaciones, bono vacacional, viáticos)
+//       al lado; asuetos, descanso trabajado con sus días compensatorios,
+//       bonificaciones, bono vacacional, viáticos)
 //   C · retenciones (ISSS y AFP con su base) y otros descuentos
 //   líquido = (A − C) + B, también en letras.
 // La fila guarda las horas como HORAS: pintarlas con `formatMoney` decía $3.00

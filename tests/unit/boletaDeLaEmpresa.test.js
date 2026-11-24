@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { calcPayrollEntry } from '@nucleo/store/slices/payrollSlice';
 import { partidasDeBoleta } from '@nucleo/utils/planilla';
-import { pagoDelDia } from '@nucleo/utils/reglasDePago';
+import { pagoDelDia, pagoDeLosDias } from '@nucleo/utils/reglasDePago';
 import { buildBoletaHTML } from '@nucleo/utils/boletaDePapel';
 
 describe('la boleta de la empresa', () => {
@@ -93,5 +93,57 @@ describe('el día de descanso o asueto con extra nocturna', () => {
     it('en un día normal la hora extra nocturna va a los dos renglones de la boleta', () => {
         const d = pagoDelDia({ regular_hours: 8, overtime_hours: 2, nocturnal_overtime_hours: 2, extra_decision: 'PAGO' }, 3);
         expect(d.horasExtraPagoNocturnas).toBe(2);
+    });
+});
+
+// El descanso trabajado en su propio renglón (2026-11-23). Antes iba sumado en
+// «Recargo de asuetos»; ahora cada uno va en el suyo y los totales no cambian.
+describe('descanso y asueto trabajados en la misma quincena', () => {
+    // $720 → $3.0000 la hora. Un domingo de descanso con 8 h (× 1,5 = $36) y
+    // un asueto con 8 h y 1 h extra pagada (× 2 = $48 + 1 × 3 × 2 × 2 = $12).
+    const dias = [
+        { is_rest_day_worked: true, regular_hours: 8 },
+        { is_holiday_worked: true, regular_hours: 8, overtime_hours: 1, extra_decision: 'PAGO' },
+        { regular_hours: 8 },
+    ];
+    const pago = pagoDeLosDias(dias, 3);
+    const emp = { base_salary: 720 };
+    const antes = calcPayrollEntry(emp, 15, { holiday_surcharge: pago.montoDiasEspeciales });
+    const ahora = calcPayrollEntry(emp, 15, {
+        holiday_surcharge: pago.montoAsuetos,
+        recargo_descanso_trabajado: pago.montoDescansos,
+    });
+    const fila = { ...ahora, descansos_compensatorios: pago.compensatorios };
+
+    it('cada clase de día en su monto, y juntos dan el de antes', () => {
+        expect(pago.montoDescansos).toBe(36);
+        expect(pago.montoAsuetos).toBe(60);
+        expect(pago.montoAsuetos + pago.montoDescansos).toBe(pago.montoDiasEspeciales);
+        expect(pago.compensatorios).toBe(1);
+    });
+
+    it('ningún total cambia: B, retenciones y líquido', () => {
+        expect(ahora.subtotal_b).toBe(antes.subtotal_b);
+        expect(ahora.subtotal_b).toBe(96);
+        expect(ahora.total_deductions).toBe(antes.total_deductions);
+        expect(ahora.net_pay).toBe(antes.net_pay);
+        expect(ahora.net_pay).toBe(405.46);   // 360 − 50.54 + 96
+    });
+
+    it('no es sujeto de retención: ISSS, AFP y renta igual que sin él', () => {
+        const sin = calcPayrollEntry(emp, 15, {});
+        expect(ahora.isss_deduction).toBe(sin.isss_deduction);
+        expect(ahora.afp_deduction).toBe(sin.afp_deduction);
+        expect(ahora.renta_deduction).toBe(sin.renta_deduction);
+    });
+
+    it('la boleta trae los dos renglones, con el día compensatorio', () => {
+        const p = partidasDeBoleta(fila, 720);
+        expect(p.noSujetos.find(x => x.rotulo === 'Recargo de asuetos').monto).toBe(60);
+        expect(p.noSujetos.find(x => x.rotulo === 'Recargo por descanso trabajado · 1 día compensatorio').monto).toBe(36);
+        const html = buildBoletaHTML({ ...fila, employee: emp }, { start_date: '2026-11-16', end_date: '2026-11-30' }, []);
+        expect(html).toContain('RECARGO POR DESCANSO TRABAJADO:');
+        expect(html).toContain('RECARGO POR DESCANSO TRABAJADO $36.00 (1 DÍA COMPENSATORIO)');
+        expect(html).toContain('RECARGO DE ASUETOS $60.00');
     });
 });

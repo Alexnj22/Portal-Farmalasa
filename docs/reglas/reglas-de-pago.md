@@ -54,8 +54,11 @@ El código vive en tres sitios y cada regla lleva su artículo al lado:
   recargo se calcula sobre el salario extraordinario de ese día (× 1,5 o × 2).
 - Interpretación escrita (para revisar con el contador): el sueldo es mensual y
   ya incluye el pago del descanso y del asueto (CT Arts. 174 y 190). Trabajarlos
-  agrega encima el salario de esas horas con su recargo; en la planilla va en
-  `holiday_surcharge`.
+  agrega encima el salario de esas horas con su recargo. En la planilla van en
+  dos renglones (2026-11-23): el asueto en `holiday_surcharge` («Recargo de
+  asuetos») y el descanso en `recargo_descanso_trabajado` («Recargo por
+  descanso trabajado · N días compensatorios»). Los dos son no sujetos y suman
+  lo mismo que el renglón único de antes.
 
 ## 3. Tardanza — RIT Arts. 23, 25 y 26; CT Art. 171
 

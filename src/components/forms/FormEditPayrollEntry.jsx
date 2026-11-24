@@ -250,6 +250,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                 <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Otros ingresos</p>
             </div>
             {numField('holiday_surcharge', 'Recargo de Asuetos ($)')}
+            {numField('recargo_descanso_trabajado', 'Recargo por Descanso Trabajado ($)')}
             {numField('bonifications',     'Bonificaciones ($)')}
             {numField('vacation_bonus',    'Bono Vacacional ($)')}
             {numField('viaticos',          'Viáticos ($)')}

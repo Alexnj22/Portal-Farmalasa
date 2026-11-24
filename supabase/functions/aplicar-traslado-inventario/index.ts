@@ -1315,13 +1315,14 @@ Deno.serve(async (req) => {
       // trae el factor que se aprobó. Elegir la primera movería una cantidad
       // distinta de la pedida sin que nada proteste.
       const tipoBuscado = norm(l.presentacion_tipo);
-      const candidatas = f.presentaciones.filter((p) => p.tipo === tipoBuscado);
-      if (candidatas.length === 0)
-        return json({
-          ok: false, codigo: "PRESENTACION_NO_EXISTE",
-          error: `${nombre} ya no tiene la presentación ${l.presentacion_tipo}. `
-               + `Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`,
-        }, 409);
+      let candidatas = f.presentaciones.filter((p) => p.tipo === tipoBuscado);
+      // El nombre ya no existe pero puede que sólo la hayan RENOMBRADO
+      // (2026-11-24: OFTIGEL pasó de GOTAS ×1 a UNIDAD ×1 entre pedirlo y
+      // despacharlo, y la solicitud quedó trabada). Lo que mueve la cantidad es
+      // el factor, no el rótulo: se prueban todas y sólo sirve la que trae el
+      // MISMO factor. Si ninguna, frena igual que antes.
+      const renombrada = candidatas.length === 0;
+      if (renombrada) candidatas = f.presentaciones;
 
       let elegida = "";
       let costo = "0", precio = "0", unidad = "0";
@@ -1338,6 +1339,16 @@ Deno.serve(async (req) => {
           }
         } catch { /* la siguiente candidata */ }
       }
+      if (!elegida && renombrada)
+        return json({
+          ok: false, codigo: "PRESENTACION_NO_EXISTE",
+          error: `${nombre} ya no tiene la presentación ${l.presentacion_tipo}. `
+               + `Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`,
+        }, 409);
+      // Sale con el rótulo de HOY: el renglón del envío y el ticket dicen lo
+      // que de verdad se movió.
+      if (renombrada)
+        l = { ...l, presentacion_tipo: candidatas.find((c) => c.id === elegida)?.tipo ?? l.presentacion_tipo };
       if (!elegida)
         return json({
           ok: false, codigo: "FACTOR_CAMBIO",

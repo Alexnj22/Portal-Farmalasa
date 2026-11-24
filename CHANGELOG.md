@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1596.4 — Traslado: la presentación renombrada ya no traba el envío
+
+- **Traslados (`aplicar-traslado-inventario`)**: si entre pedir y enviar le
+  cambian el nombre a la presentación (OFTIGEL 0.2% pasó de GOTAS ×1 a
+  UNIDAD ×1 y dos solicitudes de Salud 1 quedaron trabadas con «ya no tiene la
+  presentación GOTAS»), ahora se usa la presentación de hoy con el **mismo
+  factor**: se mueve la misma cantidad y el renglón sale con el nombre nuevo. Si
+  ninguna trae ese factor, frena igual que antes.
+
 ## v2.1596.3 — Auditoría de tiempos: el día sin horario con marcas ya no es «Día libre»; la boleta de papel igual a la de la app
 
 - **Auditoría de tiempos**: un día sin horario (o libre) con marcas o con

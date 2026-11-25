@@ -48,7 +48,7 @@ const FILAS_TOTALES = [['gravada', 'Gravado (sin IVA)'], ['exenta', 'Exento / no
 /** Los totales de la factura contra los que se cargan, para confirmarlos a ojo. */
 function Totales({ t }) {
   const filas = FILAS_TOTALES.filter(([k]) => Number(t.documento?.[k]) || Number(t.carga?.[k]) || k === 'total' || k === 'iva');
-  const difiere = filas.some(([k]) => t.documento?.[k] != null && t.carga?.[k] != null && Math.abs(Number(t.documento[k]) - Number(t.carga[k])) > 0.05);
+  const difiere = filas.some(([k]) => t.documento?.[k] != null && t.carga?.[k] != null && Math.round(Math.abs(Number(t.documento[k]) - Number(t.carga[k])) * 100) > 5);
   return (
     <Seccion titulo="Montos · factura y lo que se carga" pie={difiere ? 'Hay montos que no coinciden con la factura: revísalos antes de cargar.' : 'El descuento ya va dentro de cada costo.'}>
       {filas.map(([k, rotulo], i) => {

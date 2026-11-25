@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.1 — Montos de la carga: el aviso compara en centavos
+
+Visto al probar «Descuento de este producto» con la factura de Vijosa del
+24-nov: «Hay montos que no coinciden» en rojo con el gravado $2,212.33 contra
+$2,212.28. Esos 5 centavos salen de redondear el costo a 4 decimales en las
+líneas de 1,100 unidades (Viro-Grip: $0.3423 × 1,100 = $376.53 contra $376.55),
+y el servidor la daba por lista (tolerancia $0.05, en centavos). La tabla
+comparaba en coma flotante y 0.05 le daba 0.0500000001. Ahora compara en
+centavos, igual que el servidor (portal y app).
+
+- Gemelo: cargar_compra — en `apps/mobile/app/propuesta-compra/[id].js`.
+- Novedades: no — corrección de un aviso.
+
 ## v2.1603.0 — Nota de crédito: descuento de un solo producto
 
 Pedido del usuario: la nota de $7.53 de Vijosa (24-nov) no es de regalías sino

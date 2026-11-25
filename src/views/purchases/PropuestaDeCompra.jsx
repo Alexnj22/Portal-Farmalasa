@@ -1227,7 +1227,7 @@ function TotalesLadoALado({ t, conNota = false }) {
             {filas.map(([k, rotulo]) => {
                 const d = t.documento?.[k], c = t.carga?.[k];
                 const comparable = d != null && c != null;
-                const igual = comparable && Math.abs(Number(d) - Number(c)) <= 0.05;
+                const igual = comparable && Math.round(Math.abs(Number(d) - Number(c)) * 100) <= 5;
                 const esTotal = k === 'total';
                 return (
                     <div key={k} className={`${cols} tabular-nums ${esTotal ? 'mt-1.5 pt-2 border-t border-divider' : 'py-1'}`}>
@@ -1250,7 +1250,7 @@ function TotalesLadoALado({ t, conNota = false }) {
                 );
             })}
             {filas.some(([k]) => t.documento?.[k] != null && t.carga?.[k] != null
-                && Math.abs(Number(t.documento[k]) - Number(t.carga[k])) > 0.05) && (
+                && Math.round(Math.abs(Number(t.documento[k]) - Number(t.carga[k])) * 100) > 5) && (
                 <p className="mt-2 text-micro text-danger-text">Hay montos que no coinciden con la factura: revísalos antes de cargar.</p>
             )}
         </div>

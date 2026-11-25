@@ -20,7 +20,9 @@ import { zipSync } from 'fflate';
 import * as Haptics from 'expo-haptics';
 import {
   anotarEntregaDeDte, avisoDeEntregaDeDte, correoDeLaFichaDeLaVenta, correoDelClienteValido, pedirDteParaCliente,
+  PASO_DE_SOLVENTACION, solventarHastaElFinal, solventarVenta,
 } from '@nucleo/data/facturacion';
+import { formatMoney } from '@nucleo/utils/formatNumber';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { colorSistema } from '../Formulario';
 import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
@@ -50,7 +52,12 @@ async function compartirArchivos(archivos, invoiceId) {
   }
 }
 
-export default function DocumentoParaCliente({ invoiceId }) {
+// Venta sin sello de un mes ya declarado (2026-11-25): el servidor contesta
+// `MES_CERRADO` y no la manda. Se ofrece solventarla con una venta nueva de hoy,
+// como en el portal (`solventar-venta`), y el documento sale de la nueva.
+export default function DocumentoParaCliente({ invoiceId: idVenta }) {
+  const [invoiceId, setInvoiceId] = useState(idVenta);
+  const [solv, setSolv] = useState(null);               // { plan } | { paso } | { listo }
   const [porCorreo, setPorCorreo] = useState(false);
   const [correo, setCorreo] = useState('');
   const [trabajando, setTrabajando] = useState(null);   // 'descargar' | 'correo'
@@ -78,6 +85,12 @@ export default function DocumentoParaCliente({ invoiceId }) {
       }
     }
     setTrabajando(null);
+    if (!r.ok && r.codigo === 'MES_CERRADO') {
+      setAviso({ ok: false, texto: r.error });
+      const plan = await solventarVenta({ accion: 'revisar', invoiceId: idVenta });
+      setSolv(plan.ok ? { plan: plan.plan } : { error: plan.error });
+      return;
+    }
     if (!r.ok) { setAviso({ ok: false, texto: r.error }); return; }
     anotarEntregaDeDte(accion, invoiceId, r.se_envio);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -85,6 +98,17 @@ export default function DocumentoParaCliente({ invoiceId }) {
       ? avisoDeEntregaDeDte({ accion, correo, seEnvio: r.se_envio })
       : `Documento listo.${r.se_envio ? ' Se envió al MH en este momento.' : ''}` });
     if (accion === 'correo') setPorCorreo(false);
+  };
+
+  const solventar = async () => {
+    setSolv((s) => ({ ...s, paso: PASO_DE_SOLVENTACION.nueva, error: null }));
+    setAviso(null);
+    const r = await solventarHastaElFinal(idVenta, (estado) => setSolv((s) => ({ ...s, paso: PASO_DE_SOLVENTACION[estado] ?? 'Trabajando…' })));
+    if (!r.ok) { setSolv((s) => ({ ...s, paso: null, error: r.error })); return; }
+    setInvoiceId(r.nueva_invoice_id);
+    setSolv({ listo: true });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setAviso({ ok: true, texto: 'Listo. La venta nueva ya tiene su documento. Compártelo o mándalo por correo.' });
   };
 
   return (
@@ -106,6 +130,24 @@ export default function DocumentoParaCliente({ invoiceId }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Indicador size="small" />
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>Puede tardar hasta un minuto si hay que enviarlo al MH.</Text>
+          </View>
+        ) : null}
+        {solv && !solv.listo ? (
+          <View style={{ gap: 8 }}>
+            {solv.plan ? (
+              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
+                {`Se hace una venta nueva de hoy: ${solv.plan.lineas.length} producto${solv.plan.lineas.length === 1 ? '' : 's'}, ${formatMoney(solv.plan.total)}, ${solv.plan.pago === 'contado' ? 'al contado (con su vale)' : `con ${solv.plan.pago}`}. Los productos vuelven a la existencia antes de venderlos.`}
+              </Text>
+            ) : null}
+            {solv.paso ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Indicador size="small" />
+                <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{solv.paso}</Text>
+              </View>
+            ) : solv.plan ? (
+              <BotonGrande texto="Solventar con venta nueva" color={MARCA.azul} onPress={solventar} />
+            ) : null}
+            {solv.error ? <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>{solv.error}</Text> : null}
           </View>
         ) : null}
         {aviso ? (

@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.2 — Solventar una venta de un mes ya declarado
+
+Desde v2.1602.2 una venta sin sello de un mes anterior no se manda al MH. Si
+el cliente pide su documento, ahora se solventa: una venta NUEVA de hoy con
+los mismos productos, el mismo cliente y el mismo total, y el documento sale
+de ésa. Reglas del usuario (2026-11-25): precio igual al original, mismo
+método de pago sin boleta, la carga se aplica sola.
+
+- `solventar-venta` (nueva, JWT, guarda `alcance`): `revisar` arma el plan sin
+  escribir; `solventar` avanza por tramos y cada paso queda en
+  `solventaciones` antes de seguir:
+  1. carga de los productos (`aplicar-movimiento-inventario`, con la sesión
+     de quien solventa: tiene que poder aprobar inventario);
+  2. la venta en la caja (`preventa-caja` `directa`); si el precio de hoy no
+     es el original, la lista de precio que lo da; si ninguna, no empieza;
+  3. el cobro con el mismo método (tarjeta/transferencia/cheque marcados
+     «SOLVENTACION», sin boleta);
+  4. al contado, un vale `SOLVENTA_VENTA` (una vez: clave `solventa-<id>`);
+  5. al MH aunque sean más de las 6 p. m., y el documento por
+     `dte-para-cliente` sobre la factura nueva.
+  Caja que no contesta al guardar o finalizar → `incierta`, no se reintenta
+  sola. Sin caja abierta, no empieza. Crédito no se solventa (crearía otra
+  deuda).
+- `operar-caja`: el vale `SOLVENTA_VENTA` sólo con la clave de su
+  solventación, en su sala, por su monto y con la venta finalizada.
+- Migración `20261125165705`: tabla `solventaciones`, tipo de vale apagado en
+  el menú y `caja_movimiento_regla` lo acepta como flujo propio. Probada en
+  el entorno de pruebas.
+- Portal y app: al salir el aviso de mes cerrado, «Solventar con venta nueva»
+  con el resumen; al terminar, descargar/compartir sale de la venta nueva.
+
+Novedades: no — lo usa quien aprueba facturación, y el botón aparece sólo en el caso.
 ## v2.1603.1 — Montos de la carga: el aviso compara en centavos
 
 Visto al probar «Descuento de este producto» con la factura de Vijosa del

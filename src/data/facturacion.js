@@ -115,16 +115,72 @@ export async function pedirDteParaCliente({ accion, invoiceId, correo = null }) 
             body: { accion, invoice_id: invoiceId, correo },
         });
         if (error) {
-            let detalle = '';
-            try { detalle = (await error.context?.json())?.error ?? ''; } catch { /* sin cuerpo legible */ }
-            return { ok: false, error: detalle || error.message };
+            let cuerpo = null;
+            try { cuerpo = await error.context?.json(); } catch { /* sin cuerpo legible */ }
+            // `MES_CERRADO`: venta sin sello de un mes ya declarado. No se manda;
+            // la pantalla ofrece solventarla (`solventarVenta`).
+            return { ok: false, error: cuerpo?.error || error.message, codigo: cuerpo?.codigo ?? null };
         }
-        if (!data?.ok) return { ok: false, error: data?.error || 'El servidor no devolvió respuesta.' };
+        if (!data?.ok) return { ok: false, error: data?.error || 'El servidor no devolvió respuesta.', codigo: data?.codigo ?? null };
         return { ok: true, se_envio: !!data.se_envio, archivos: data.archivos || [] };
     } catch (e) {
         return { ok: false, error: e?.message || String(e) };
     }
 }
+
+/**
+ * Solventar una venta de un mes ya declarado (2026-11-25): se repone con una
+ * venta de hoy y el documento sale de la nueva. `accion`: 'revisar' (qué va a
+ * pasar, sin escribir) o 'solventar' (un tramo; devuelve `sigue: true` mientras
+ * falte). Ver `solventar-venta`. Nunca lanza: `{ ok:false, error }`.
+ */
+export async function solventarVenta({ accion, invoiceId }) {
+    try {
+        const { data, error } = await supabase.functions.invoke('solventar-venta', {
+            body: { accion, invoice_id: invoiceId },
+        });
+        if (error) {
+            let cuerpo = null;
+            try { cuerpo = await error.context?.json(); } catch { /* sin cuerpo legible */ }
+            return { ok: false, error: cuerpo?.error || error.message };
+        }
+        if (!data?.ok) return { ok: false, error: data?.error || 'El servidor no devolvió respuesta.' };
+        return data;
+    } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+}
+
+const ESPERA_SOLVENTAR_MS = 15_000;
+const VUELTAS_SOLVENTAR = 12;
+
+/**
+ * Lleva la solventación hasta el final: llama tramo a tramo hasta que la
+ * factura nueva está en el portal. `alAvanzar(estado)` para mostrar por dónde
+ * va. Devuelve `{ ok, nueva_invoice_id }` o `{ ok:false, error }`.
+ */
+export async function solventarHastaElFinal(invoiceId, alAvanzar = () => {}) {
+    for (let i = 0; i < VUELTAS_SOLVENTAR; i++) {
+        const r = await solventarVenta({ accion: 'solventar', invoiceId });
+        if (!r.ok) return r;
+        alAvanzar(r.estado);
+        if (r.listo && r.nueva_invoice_id) return { ok: true, nueva_invoice_id: r.nueva_invoice_id, total: r.total, pago: r.pago };
+        await new Promise(res => setTimeout(res, ESPERA_SOLVENTAR_MS));
+    }
+    return { ok: false, error: 'La venta nueva está hecha, pero todavía no aparece en el portal. Intenta en unos minutos.' };
+}
+
+/** Por dónde va una solventación, dicho para quien la mira. */
+export const PASO_DE_SOLVENTACION = {
+    nueva: 'Cargando los productos…',
+    cargada: 'Haciendo la venta nueva…',
+    en_caja: 'Cobrando la venta nueva…',
+    guardada: 'Cerrando la venta nueva…',
+    finalizada: 'Haciendo el vale…',
+    vale: 'Enviando al MH…',
+    con_sello: 'Esperando la factura nueva…',
+    lista: 'Listo.',
+};
 
 /** La bitácora de una entrega al cliente (correo o descarga). */
 export function anotarEntregaDeDte(accion, invoiceId, seEnvio) {

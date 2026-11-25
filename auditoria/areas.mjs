@@ -782,8 +782,10 @@ export const AREAS = [
                  'cotizaciones', 'cotizacion_items', 'dte_correcciones_ficha', 'dte_excluidas_del_barrido', 'dte_sucursales_en_pausa', 'dte_clientes_siempre_se_envian', 'dte_entregas_cliente',
                  'dte_datos_pedidos',
                  'dte_mh_intentos', 'sales_dte_documents', 'espejo_conflictos',
-                 'puntos_consulta_intentos', 'dte_rechazos_avisados'],
-        edge: ['regularizar-dte', 'dte-para-cliente', 'sincronizar-fichas-clientes', 'push-cliente-erp',
+                 'puntos_consulta_intentos', 'dte_rechazos_avisados',
+                 // Reponer con una venta de hoy una de un mes ya declarado (2026-11-25).
+                 'solventaciones'],
+        edge: ['regularizar-dte', 'dte-para-cliente', 'solventar-venta', 'sincronizar-fichas-clientes', 'push-cliente-erp',
                'alta-cliente-erp',
                // La lista entera de la caja contra el portal (2026-11-15).
                'barrido-clientes-caja',

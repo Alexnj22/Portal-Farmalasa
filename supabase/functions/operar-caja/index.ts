@@ -2051,6 +2051,23 @@ Deno.serve(async (req) => {
       if (String(body.tipo ?? "") === "BONO_PROMOCION" && !claveEnvio?.startsWith("bono-")) {
         return json({ ok: false, error: "El bono se paga desde «Bonos de promoción por pagar»." }, 400);
       }
+      /* El vale de una solventación (2026-11-25): una venta de un mes ya
+       * declarado se repone con una de hoy (`solventar-venta`). Si la original
+       * fue al contado, la nueva vuelve a contar un efectivo que no entró hoy,
+       * y este vale lo saca. Sólo lo pide la solventación: la sala y el monto
+       * los dice SU fila, la clave es la suya (una vez) y la venta nueva tiene
+       * que estar ya finalizada en la caja. */
+      if (String(body.tipo ?? "") === "SOLVENTA_VENTA") {
+        const m = /^solventa-(\d+)$/.exec(claveEnvio ?? "");
+        if (esEntrada || !m) return json({ ok: false, error: "Este vale sólo lo hace la solventación de una venta." }, 400);
+        const { data: sv, error: errSv } = await supabase.from("solventaciones")
+          .select("branch_id, estado, pago, total_caja").eq("id", Number(m[1])).maybeSingle();
+        if (errSv) return json({ ok: false, error: errSv.message }, 503);
+        if (!sv || Number(sv.branch_id) !== sala || sv.estado !== "finalizada" || sv.pago !== "contado"
+            || Math.abs(Number(sv.total_caja ?? -1) - monto) > 0.004) {
+          return json({ ok: false, error: "Ese vale no corresponde a una solventación lista para él." }, 409);
+        }
+      }
       if (claveEnvio) {
         const { data: ya, error: errYa } = await supabase
           .from("caja_movimientos_portal")

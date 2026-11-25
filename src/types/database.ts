@@ -30880,6 +30880,152 @@ export type Database = {
           },
         ]
       }
+      solventaciones: {
+        Row: {
+          branch_id: number
+          carga_request_id: string | null
+          codigo_generacion: string | null
+          created_at: string
+          employee_id: string
+          error: string | null
+          estado: string
+          externo_id: string | null
+          id: number
+          invoice_id: number
+          nueva_invoice_id: number | null
+          numero: string | null
+          pago: string
+          plan: Json
+          referencia: string | null
+          respuestas: Json | null
+          sello: string | null
+          tomada_hasta: string | null
+          total: number
+          total_caja: number | null
+          updated_at: string
+          vale_mov_id: number | null
+        }
+        Insert: {
+          branch_id: number
+          carga_request_id?: string | null
+          codigo_generacion?: string | null
+          created_at?: string
+          employee_id: string
+          error?: string | null
+          estado?: string
+          externo_id?: string | null
+          id?: never
+          invoice_id: number
+          nueva_invoice_id?: number | null
+          numero?: string | null
+          pago: string
+          plan: Json
+          referencia?: string | null
+          respuestas?: Json | null
+          sello?: string | null
+          tomada_hasta?: string | null
+          total: number
+          total_caja?: number | null
+          updated_at?: string
+          vale_mov_id?: number | null
+        }
+        Update: {
+          branch_id?: number
+          carga_request_id?: string | null
+          codigo_generacion?: string | null
+          created_at?: string
+          employee_id?: string
+          error?: string | null
+          estado?: string
+          externo_id?: string | null
+          id?: never
+          invoice_id?: number
+          nueva_invoice_id?: number | null
+          numero?: string | null
+          pago?: string
+          plan?: Json
+          referencia?: string | null
+          respuestas?: Json | null
+          sello?: string | null
+          tomada_hasta?: string | null
+          total?: number
+          total_caja?: number | null
+          updated_at?: string
+          vale_mov_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solventaciones_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_carga_request_id_fkey"
+            columns: ["carga_request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoice_nulls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "ventas_sin_producto"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "solventaciones_nueva_invoice_id_fkey"
+            columns: ["nueva_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoice_nulls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_nueva_invoice_id_fkey"
+            columns: ["nueva_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "sales_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solventaciones_nueva_invoice_id_fkey"
+            columns: ["nueva_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "ventas_sin_producto"
+            referencedColumns: ["invoice_id"]
+          },
+        ]
+      }
       srs_mercado_productos: {
         Row: {
           alternativas: Json

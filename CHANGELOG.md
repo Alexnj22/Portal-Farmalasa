@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.4 — La venta que solventa a otra no vuelve a dar puntos
+
+Regla del usuario: los puntos de una compra se dan una vez. La venta nueva de
+una solventación es la misma compra: si la original ya dio puntos, no da; si
+no dio, da una vez.
+
+- `puntos_acumular` (definición viva + un salto): no da puntos a una factura
+  cuya venta en la caja es la `externo_id` de una solventación viva de esa
+  sucursal, si la venta original ya tiene su lote. Se reconoce por el número
+  de la caja, que la solventación anota antes de cobrar: el motor corre cada
+  minuto y no espera a que se anote la factura nueva. El resultado trae
+  `solventan_otra`.
+- Migración `20261125171255`. Probada en el entorno de pruebas y simulada en
+  producción.
+
+Novedades: no — no cambia nada que el personal vea.
+
 ## v2.1603.3 — Caja confirmada le gana al redondeo por precio
 
 VIROGRIP GELCAPS X 24 SOB (Vijosa, 24-nov) salía «1100 × UNIDAD · 22 por cada

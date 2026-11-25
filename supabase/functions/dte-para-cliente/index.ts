@@ -40,6 +40,7 @@
 // Ni una línea de esto habla del sistema de origen en lo que ve el usuario.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
+import { esDeMesCerrado, MENSAJE_MES_CERRADO } from "../_shared/mesCerrado.ts";
 
 const EMISOR = "https://clientesdte3.oss.com.sv/farma_salud/downloads";
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -113,6 +114,10 @@ Deno.serve(async (req) => {
     const { data: valida, error: eV } = await admin.rpc("venta_valida", { p_estado: f.estado });
     if (eV) throw eV;
     if (!valida) throw new ErrorUsuario("Esta venta está anulada. No tiene factura que entregar.");
+    // Sin sello y de un mes anterior: ese mes ya se declaró sin ella, así que
+    // no se manda (ver `_shared/mesCerrado.ts`). Con sello, se entrega normal.
+    if (!selloValido(f.recibido_mh) && esDeMesCerrado(f.fecha))
+      return json({ ok: false, codigo: "MES_CERRADO", error: MENSAJE_MES_CERRADO }, 409);
 
     let correo: string | null = null;
     if (accion === "correo") {

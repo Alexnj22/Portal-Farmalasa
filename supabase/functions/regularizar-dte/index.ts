@@ -5,6 +5,7 @@ import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmploy
 // falta es el trámite ante Hacienda.
 import { login, formatearDui, enviarDteAlMH, RechazoMH } from "../_shared/erp-dte.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { esDeMesCerrado, MENSAJE_MES_CERRADO } from "../_shared/mesCerrado.ts";
 
 // Termina lo que quedó a medias entre el ERP y Hacienda.
 //
@@ -268,6 +269,11 @@ Deno.serve(async (req) => {
       if (cofNoSeEnvia(data, siempre) && !(esCron && cuerpo.forzar_cof_noche === true))
         return json({ ok: false, no_se_envia: true,
                       error: "Los consumidores finales emitidos desde las 6:00 p. m. no se envían al MH." }, 409);
+      // El pedido del cliente tampoco abre esa puerta para un mes ya declarado
+      // (`_shared/mesCerrado.ts`). `dte-para-cliente` ya lo frena; esto es la
+      // segunda llave por si alguien llama directo.
+      if (cuerpo.forzar_cof_noche === true && cofNoSeEnvia(data, siempre) && esDeMesCerrado(data.fecha))
+        return json({ ok: false, codigo: "MES_CERRADO", error: MENSAJE_MES_CERRADO }, 409);
       if (excluidas.has(Number(invoice_id)))
         return json({ ok: false, excluida: true,
                       error: `Esta factura está excluida del barrido: ${excluidas.get(Number(invoice_id))}` }, 409);

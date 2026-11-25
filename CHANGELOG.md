@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1602.2 — Una venta de un mes ya declarado no se manda al MH
+
+Pedir el documento de un consumidor final de la noche lo manda al MH en ese
+momento. Si la venta era de un mes anterior, ese mes ya estaba declarado sin
+ella: 0000091241_COF (Salud 1, 24-oct) se envió el 24-nov y hubo que
+invalidarla.
+
+- `dte-para-cliente`: venta sin sello de un mes anterior (hora de El Salvador)
+  → 409 `MES_CERRADO` con el aviso «hay que solventarla con una venta nueva de
+  hoy». Con sello se sigue entregando igual.
+- `regularizar-dte`: la misma llave en `forzar_cof_noche`, por si alguien
+  llama directo.
+- La regla vive una vez en `_shared/mesCerrado.ts`.
+- La pantalla no cambia: el portal y la app ya muestran el error del servidor.
+
+Gemelo: ventas — sólo servidor, las dos pantallas muestran el mismo aviso.
+Novedades: no — es un freno; el que lo encuentre lee el aviso en pantalla.
+
 ## v2.1602.1 — Regalías: correcciones de la revisión de código
 
 Revisión de código de v2.1601.3 + v2.1602.0 (7 hallazgos, los 7 reales).

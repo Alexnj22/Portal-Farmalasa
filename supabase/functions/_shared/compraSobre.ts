@@ -277,6 +277,13 @@ export function repartirRegalos(lineas: LineaSobre[], cobrado: number[] = []): n
  *   en proporción a lo cobrado por renglón.
  * - Si las regalías pasan a la nota, se escalan a ella.
  * - Sin ningún nivel anotado, toda la nota va en proporción.
+ * - Ningún renglón lleva más de lo que cobra: lo que pasaría de su gravado se
+ *   reparte entre los que tienen margen. Si la nota pasa al gravado de toda la
+ *   factura, `excede` y no se aplica (lo frena la revisión).
+ *
+ * Los renglones son los de la FACTURA, antes de partirlos por lote o en
+ * productos: el nivel (100+20) es en las cajas del proveedor, y una mitad de
+ * 60 no completa un nivel que la línea de 120 sí completa.
  *
  * Devuelve la rebaja SIN IVA por renglón, a centavos; la suma es la nota.
  */
@@ -285,13 +292,14 @@ export function repartirNotaDeDescuento(
   renglones: { codigo: string; cantidad: number; precio: number; gravada: number }[],
   niveles: Map<string, NivelRegalia>,
   montoNota: number,
-): { rebajas: number[]; regalo: number[]; sinNivel: number[]; modo: "regalias" | "proporcional" | "escalado" } {
+): { rebajas: number[]; regalo: number[]; sinNivel: number[]; modo: "regalias" | "proporcional" | "escalado"; excede: boolean } {
   const n = renglones.length;
   const rebajas: number[] = new Array(n).fill(0), regalo: number[] = new Array(n).fill(0), sinNivel: number[] = [];
   const S = r2(Number(montoNota) || 0);
   const base = renglones.map((r) => Math.max(0, Number(r.gravada) || 0));
   const totalBase = base.reduce((a, b) => a + b, 0);
-  if (!(S > 0) || !(totalBase > 0)) return { rebajas, regalo, sinNivel, modo: "proporcional" };
+  if (!(S > 0) || !(totalBase > 0)) return { rebajas, regalo, sinNivel, modo: "proporcional", excede: S > 0 };
+  const excede = S > r2(totalBase) + 0.005;
 
   const valor = renglones.map((r, i) => {
     if (!(base[i] > 0)) return 0;
@@ -306,12 +314,25 @@ export function repartirNotaDeDescuento(
   if (!(R > 0)) { exacto = base.map((b) => S * b / totalBase); modo = "proporcional"; }
   else if (R > S) { exacto = valor.map((v) => S * v / R); modo = "escalado"; }
   else { exacto = valor.map((v, i) => v + (S - R) * base[i] / totalBase); modo = "regalias"; }
-  // A centavos; el renglón con la rebaja más grande se queda con el redondeo.
+  if (excede) return { rebajas, regalo, sinNivel, modo, excede };
+  // Tope por renglón: lo que sobra va a los que tienen margen, en proporción
+  // a ese margen. Termina: cada vuelta deja al menos un renglón en su tope.
+  for (let vuelta = 0; vuelta < n; vuelta++) {
+    let sobra = 0;
+    exacto = exacto.map((x, i) => { if (x > base[i]) { sobra += x - base[i]; return base[i]; } return x; });
+    if (sobra <= 1e-9) break;
+    const margen = exacto.map((x, i) => base[i] - x);
+    const totalMargen = margen.reduce((a, b) => a + b, 0);
+    if (!(totalMargen > 0)) break;
+    exacto = exacto.map((x, i) => x + sobra * margen[i] / totalMargen);
+  }
+  // A centavos; el renglón con más margen se queda con el redondeo.
   let suma = 0;
   exacto.forEach((x, i) => { rebajas[i] = r2(x); suma += rebajas[i]; });
-  const mayor = exacto.indexOf(Math.max(...exacto));
-  rebajas[mayor] = r2(rebajas[mayor] + S - suma);
-  return { rebajas, regalo, sinNivel, modo };
+  const margenes = exacto.map((x, i) => base[i] - x);
+  const k = margenes.indexOf(Math.max(...margenes));
+  rebajas[k] = r2(rebajas[k] + S - suma);
+  return { rebajas, regalo, sinNivel, modo, excede };
 }
 
 /** La clave de un nivel: el código del proveedor, sin espacios y en mayúsculas. */
@@ -344,7 +365,15 @@ export function resumenMenosNota(ccf: any, nota: any): any {
   }
   if (ccf?.totalIva != null) out.totalIva = r2(num(ccf.totalIva) - ivaNota);
   if (ccf?.ivaPerci1 != null) out.ivaPerci1 = r2(num(ccf.ivaPerci1) - num(nota?.ivaPerci1));
-  if (ccf?.totalPagar != null) out.totalPagar = r2(num(ccf.totalPagar) - (totalDelDocumento(nota) ?? 0));
+  // Lo que la nota descuenta del total, con la percepción adentro como en el
+  // total de Bodega. Una nota no trae `totalPagar`, y hay emisores que dejan la
+  // percepción FUERA de `montoTotalOperacion` (ver `totalDelDocumento`): si el
+  // monto es sólo gravado + IVA, se le suma.
+  let totalNota = totalDelDocumento(nota) ?? 0;
+  if (nota?.totalPagar == null && Math.abs(num(nota?.montoTotalOperacion) - (gravNota + ivaNota)) <= 0.02) {
+    totalNota = r2(totalNota + num(nota?.ivaPerci1));
+  }
+  if (ccf?.totalPagar != null) out.totalPagar = r2(num(ccf.totalPagar) - totalNota);
   return out;
 }
 

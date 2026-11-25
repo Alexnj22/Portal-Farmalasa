@@ -303,12 +303,13 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         const b = guardado?.huella === huellaDe(propuesta.renglones) ? guardado : null;
         setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, conBorrador(ajusteInicial(r), b?.ajustes?.[i])])));
         setUso(b?.uso ?? 'venta');
+        setSinNota(b?.sinNota === true);
         setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
     }, [doc.document_id, doc.manual_id, claveBorrador]);
 
     useEffect(() => {
-        if (p) saveDraft(claveBorrador, { ajustes, uso, dias, huella: huellaDe(p.renglones) });
-    }, [p, ajustes, uso, dias, claveBorrador]);
+        if (p) saveDraft(claveBorrador, { ajustes, uso, dias, sinNota, huella: huellaDe(p.renglones) });
+    }, [p, ajustes, uso, dias, sinNota, claveBorrador]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
@@ -499,6 +500,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     };
     const faltan = estado.filter(e => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento || e.lotes_sin_cuadrar).length;
     const revision = resultado?.revision;
+    const notaVisible = revision?.nota_descuento ?? (revisando ? ultimaRev?.revision?.nota_descuento : null) ?? null;
     const revisionVigente = !!(p && resultado?.firma && resultado.firma === firmaActual());
     // Ya se mandó (o no se sabe): no se revisa ni se manda de nuevo desde acá.
     const yaMandada = envio?.enviada === true || envio?.enviada === null
@@ -734,8 +736,10 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                     ))}
 
                     {revision?.totales && <TotalesLadoALado t={revision.totales} conNota={!!revision.nota_descuento?.aplicada} />}
-                    {revision?.nota_descuento && (
-                        <NotaDeDescuento nota={revision.nota_descuento} emisorNit={p.documento.emisor_nit}
+                    {/* Mientras se vuelve a revisar se queda la nota anterior: el panel no se
+                        desmonta y no se pierden las regalías a medio escribir. */}
+                    {notaVisible && (
+                        <NotaDeDescuento nota={notaVisible} emisorNit={p.documento.emisor_nit}
                             puedeEditar={puedeEditar && !yaMandada} sinNota={sinNota}
                             onSinNota={(v) => revisar(v)} onCambio={() => revisar()} />
                     )}

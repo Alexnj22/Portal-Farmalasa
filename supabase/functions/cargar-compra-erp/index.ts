@@ -1811,13 +1811,15 @@ async function notasDeDescuento(
   const sueltas = cand.filter((n: any) => n.documento_relacionado_id == null);
   const mias = new Set<number>(cand.filter((n: any) => n.documento_relacionado_id === d.id).map((n: any) => n.id));
   if (sueltas.length) {
-    const { data: ccfs, error: eC } = await admin.from("purchase_dte_documents").select("id, received_at")
+    const { data: ccfsTodas, error: eC } = await admin.from("purchase_dte_documents").select("id, received_at, invalidado")
       .eq("tipo_dte", "03").eq("emisor_nit", d.emisor_nit).eq("fecha_emision", d.fecha_emision).limit(200);
     if (eC) throw eC;
+    // Un CCF invalidado no se carga: si el proveedor lo reemplazó, la nota es del nuevo.
+    const ccfs = (ccfsTodas ?? []).filter((c: any) => !c.invalidado);
     for (const n of sueltas) {
       const t = Date.parse(n.received_at);
       let mejor: { id: number; dt: number } | null = null;
-      for (const c of ccfs ?? []) {
+      for (const c of ccfs) {
         const dt = Math.abs(Date.parse(c.received_at) - t);
         if (Number.isFinite(dt) && (!mejor || dt < mejor.dt)) mejor = { id: c.id, dt };
       }
@@ -2788,7 +2790,9 @@ Deno.serve(async (req: Request) => {
     // Los packs partidos (`compra_renglon_particion`). Las decisiones llegan por
     // posición: si la regla cambió después de abrir la factura, cada una caería
     // sobre el renglón equivocado, así que se rechaza antes de armar nada.
-    const { items, firma: particionFirma } = await aplicarParticiones(admin, crudos, d.emisor_nit, manual ? null : documentId);
+    // `_origen`: de qué línea de la factura sale cada renglón ya partido por lote
+    // o en productos. Las regalías se cuentan sobre la línea entera.
+    const { items, firma: particionFirma } = await aplicarParticiones(admin, crudos.map((c, k) => ({ ...c, _origen: k })), d.emisor_nit, manual ? null : documentId);
     if (String(body?.particion_firma ?? "") !== particionFirma) {
       return responder({ error: "Cambió cómo se parte un producto de esta factura. Vuelve a abrirla y revísala." }, 409);
     }
@@ -2848,23 +2852,41 @@ Deno.serve(async (req: Request) => {
         const { data: nv, error: eNv } = await admin.from("compra_regalia").select("codigo_proveedor, compra, regalo").eq("proveedor_nit", d.emisor_nit);
         if (eNv) throw eNv;
         const niveles = new Map((nv ?? []).map((x: any) => [codigoDeRegalia(x.codigo_proveedor), { compra: Number(x.compra), regalo: Number(x.regalo) }]));
-        const reng = items.map((it) => ({
+        // Sobre las líneas de la FACTURA, no sobre los renglones ya partidos.
+        const reng = crudos.map((it) => ({
           codigo: String(it?.codigo ?? ""), cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
           gravada: Number(it?.ventaGravada ?? 0) * dsc.gravada,
         }));
         const rep = repartirNotaDeDescuento(reng, niveles, gravNota);
-        const aplicar = body?.sin_nota_descuento !== true && !exentaNota;
+        const quiere = body?.sin_nota_descuento !== true;
+        const aplicar = quiere && !exentaNota && !rep.excede;
         if (aplicar) {
-          rep.rebajas.forEach((x, i) => { rebajaNota[i] = x; regaloNota[i] = rep.regalo[i]; });
+          // La rebaja de cada línea se reparte entre sus renglones por lo que
+          // cobra cada uno; el último se queda con el redondeo.
+          const deLaLinea = new Map<number, number[]>();
+          items.forEach((it, i) => { const o = Number(it?._origen ?? i); deLaLinea.set(o, [...(deLaLinea.get(o) ?? []), i]); });
+          for (const [o, idx] of deLaLinea) {
+            const total = rep.rebajas[o] ?? 0, regalo = rep.regalo[o] ?? 0;
+            if (!(total > 0) && !(regalo > 0)) continue;
+            const pesos = idx.map((i) => Math.max(0, Number(items[i]?.ventaGravada ?? 0)));
+            const suma = pesos.reduce((a, b) => a + b, 0) || 1;
+            let queda = total;
+            idx.forEach((i, j) => {
+              const parte = j === idx.length - 1 ? Math.round(queda * 100) / 100 : Math.round(total * pesos[j] / suma * 100) / 100;
+              queda -= parte; rebajaNota[i] = parte;
+              regaloNota[i] = Math.round(regalo * pesos[j] / suma * 100) / 100;
+            });
+          }
           resumenCarga = notas.reduce((res, n) => resumenMenosNota(res, n.resumen), dte?.resumen);
         }
-        if (exentaNota) problemas.push({ renglon: null, texto: "La nota de crédito de descuento trae montos exentos y no se sabe repartir. Cárgala aparte." });
+        if (quiere && exentaNota) problemas.push({ renglon: null, texto: "La nota de crédito de descuento trae montos exentos y no se sabe repartir. Si no es de esta factura, márcalo en el panel de la nota." });
+        if (quiere && !exentaNota && rep.excede) problemas.push({ renglon: null, texto: "La nota de crédito de descuento es mayor que lo que cobra la factura. Si no es de esta factura, márcalo en el panel de la nota." });
         notaDescuento = {
           aplicada: aplicar,
           notas: notas.map((n) => ({ document_id: n.id, numero_control: n.numero_control, total: n.monto_total, como: n.como })),
           gravada: gravNota, modo: rep.modo,
           renglones: reng.map((r, i) => ({
-            renglon: i, codigo: codigoDeRegalia(r.codigo), descripcion: String(items[i]?.descripcion ?? ""),
+            renglon: i, codigo: codigoDeRegalia(r.codigo), descripcion: String(crudos[i]?.descripcion ?? ""),
             cantidad: r.cantidad, precio: r.precio, regalo: rep.regalo[i], rebaja: rep.rebajas[i],
             nivel: niveles.get(codigoDeRegalia(r.codigo)) ?? null,
           })),

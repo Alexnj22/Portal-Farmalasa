@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1601.3 — Regalías en nota de crédito: lotes, topes y casos raros
+
+Correcciones de la auditoría de v2.1601.0 (revisión de código + prueba en vivo
+con el CCF de Vijosa del 24-nov: total $1,843.15 = factura − nota, rebajas que
+suman $463.52, Dexa a $3.1537).
+
+- **Lotes y productos partidos**: las regalías se contaban sobre los renglones
+  ya partidos. Una línea de 120 en dos lotes de 60 no completaba el 100+20 y se
+  quedaba sin regalo. Ahora se cuentan sobre la línea de la factura (`_origen`)
+  y la rebaja se reparte entre sus partes por lo que cobra cada una.
+- **Tope por producto**: ninguno lleva más de lo que cobra; lo que sobra va a
+  los demás. Una nota mayor que el gravado de la factura no se aplica y la
+  revisión lo dice.
+- La nota con montos exentos ya no frena la factura si se marca «Esta nota no
+  es de esta factura».
+- Una nota sin factura relacionada ya no se asigna a un CCF invalidado.
+- Nota con la percepción fuera de `montoTotalOperacion`: se descuenta igual
+  (antes daba «no cuadra» por el monto de la percepción).
+- «Esta nota no es de esta factura» se guarda en el borrador (portal y app):
+  al volver a abrir la factura no se aplica de nuevo.
+- Guardar la regalía de un producto ya no borra las que se estaban escribiendo
+  en otros.
+- Corrección: los 5 niveles de Vijosa se escribieron directo en producción, no
+  van en la migración. El entorno de pruebas no los tiene.
+- Gemelo: cargar_compra — en `apps/mobile/app/propuesta-compra/[id].js` (el
+  borrador guarda «Esta nota no es de esta factura»; lo demás es del servidor).
+- Novedades: no — corrección de lo publicado en v2.1601.0 (decisión del usuario para esa versión).
+
 ## v2.1601.2 — La web de Puntos Salud: tarjeta al costado en computadora
 
 - En computadora, `app.farmasalud.lat` muestra una tarjeta fija abajo a la
@@ -69,8 +97,8 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
   notas del mismo día y menores que la factura. Una nota usada en otra compra
   no se vuelve a usar.
 - Tabla nueva `compra_regalia` (proveedor + código del proveedor → compra +
-  regalo), con `compra_guardar_regalia`. Sembrados los 5 niveles de Vijosa que
-  dio el usuario. El registro de compras guarda `descuento_nota` y
+  regalo), con `compra_guardar_regalia`. Los 5 niveles de Vijosa que dio el
+  usuario se escribieron directo en producción (no van en la migración). El registro de compras guarda `descuento_nota` y
   `regalo_nota` por producto. Migración `20261125153841`.
 - En la revisión de la factura: el panel de la nota, con lo que lleva cada
   producto, la regalía editable y «Esta nota no es de esta factura». La columna

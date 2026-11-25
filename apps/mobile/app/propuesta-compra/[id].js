@@ -150,10 +150,11 @@ export default function PropuestaDeCompra() {
     const b = guardado?.huella === huellaDe(propuesta.renglones) ? guardado : null;
     setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, conBorrador(ajusteInicial(r), b?.ajustes?.[i])])));
     setUso(b?.uso ?? 'venta');
+    setSinNota(b?.sinNota === true);
     setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
   }, [doc.document_id, doc.manual_id, claveBorrador]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
-  useEffect(() => { if (p) saveDraft(claveBorrador, { ajustes, uso, dias, huella: huellaDe(p.renglones) }); }, [p, ajustes, uso, dias, claveBorrador]);
+  useEffect(() => { if (p) saveDraft(claveBorrador, { ajustes, uso, dias, sinNota, huella: huellaDe(p.renglones) }); }, [p, ajustes, uso, dias, sinNota, claveBorrador]);
   useEffect(() => {
     fetchPausaDeCompras().then(({ estado }) => setPausa(estado));
     if (papel) return;

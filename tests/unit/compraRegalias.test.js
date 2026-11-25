@@ -59,6 +59,23 @@ describe('repartirNotaDeDescuento', () => {
         expect(r.rebajas).toEqual([10]);
     });
 
+    it('ningún renglón lleva más de lo que cobra: lo que sobra va a los otros', () => {
+        // Regalo valuado a precio de lista sobre un renglón con mucho descuento.
+        const r = repartirNotaDeDescuento([
+            { codigo: 'VIDEX001-02', cantidad: 30, precio: 10, gravada: 30 },
+            { codigo: 'OTRO', cantidad: 10, precio: 10, gravada: 100 },
+        ], NIVELES, 50);
+        expect(r.rebajas[0]).toBeLessThanOrEqual(30);
+        expect(suma(r.rebajas)).toBe(50);
+        expect(r.excede).toBe(false);
+    });
+
+    it('una nota mayor que el gravado de la factura excede y no reparte nada', () => {
+        const r = repartirNotaDeDescuento(NOV, NIVELES, 3000);
+        expect(r.excede).toBe(true);
+        expect(suma(r.rebajas)).toBe(0);
+    });
+
     it('la clave ignora espacios y mayúsculas', () => {
         expect(codigoDeRegalia(' videx001-02 ')).toBe('VIDEX001-02');
     });
@@ -77,5 +94,11 @@ describe('resumenMenosNota', () => {
         expect(neto.tributos[0].valor).toBe(210.18);
         expect(neto.ivaPerci1).toBe(16.16);
         expect(totalDelDocumento(neto)).toBe(1843.15);
+    });
+
+    it('nota con la percepción fuera de montoTotalOperacion: se descuenta igual', () => {
+        const ccf = { totalGravada: 1000, tributos: [{ codigo: '20', valor: 130 }], ivaPerci1: 10, montoTotalOperacion: 1130, totalPagar: 1140 };
+        const nota = { totalGravada: 100, tributos: [{ codigo: '20', valor: 13 }], ivaPerci1: 1, montoTotalOperacion: 113 };
+        expect(totalDelDocumento(resumenMenosNota(ccf, nota))).toBe(1026);
     });
 });

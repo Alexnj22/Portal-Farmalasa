@@ -11,7 +11,7 @@ import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
 import {
   MOTIVOS_VENCIDOS, cantidadSospechosa, cargarAyuda, cargarDe, nombreConTamano, nombrePres, presDelCatalogo, tamanoAprendible,
   unidadesQueEntran, unidadesQueLlegaron, vinetaActual,
-  LOTE_VACIO, decisionDeRenglon, hayVariosLotes, puedeLlevarVariosLotes, lotesDelRenglon, problemaDeLotes, vencesDeDecision,
+  LOTE_VACIO, cambiarOtroLote, decisionDeRenglon, hayVariosLotes, puedeLlevarVariosLotes, lotesDelRenglon, problemaDeLotes, vencesDeDecision,
 } from '@nucleo/utils/cargaDeCompra';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -152,7 +152,7 @@ function OtrosLotes({ r, aj, onChange, puedeEditar }) {
   if (!lotes) return null;
   const problema = problemaDeLotes(r, aj);
   const total = lotes.reduce((a, l) => a + l.unidades, 0);
-  const poner = (k, cambio) => onChange(aj.otrosLotes.map((l, j) => (j === k ? { ...l, ...cambio } : l)));
+  const poner = (k, cambio) => onChange(cambiarOtroLote(aj.otrosLotes, k, cambio));
   return (
     <View style={{ gap: 8 }}>
       <Nota fuerte={false}>{`Lote 1${aj.lote ? ` (${aj.lote})` : ''}: ${Math.max(lotes[0].unidades, 0)} unidades, el resto de las ${total}.`}</Nota>

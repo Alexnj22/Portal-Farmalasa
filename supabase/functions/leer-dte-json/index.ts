@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { cargosYSalaDelDia, requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders, secretoDeCircuito } from "../_shared/security.ts";
-import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
+import { loteYVence, nombreLimpio, variosLotesEnTexto } from "../_shared/loteVencimiento.ts";
 import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
@@ -547,6 +547,12 @@ Deno.serve(async (req: Request) => {
         const renglones = [];
         for (const { it, llave, match } of pares) {
           const lv = loteYVence(txtPdfP, it, undefined, itemsP.map((x: any) => String(x?.descripcion ?? "")));
+          // Varios lotes con su cantidad en la propia descripción (VIJOSA,
+          // COFARSAL): sólo si suman lo que cobra la factura. Un renglón
+          // partido (`_parte`) ya no es el renglón entero: no se aplica.
+          const variosL = it?._parte ? null : variosLotesEnTexto(String(it?.descripcion ?? ""));
+          const lotesFactura = variosL && Math.abs(variosL.reduce((a, l) => a + l.cantidad, 0) - Number(it?.cantidad ?? 0)) < 1e-6
+            ? variosL : null;
           const sim = Number(match?.similitud ?? 0);
           const seguro = match?.origen === "codigo_barras" || match?.origen === "aprendido" || sim >= 0.75;
 
@@ -569,7 +575,10 @@ Deno.serve(async (req: Request) => {
             producto: match?.nombre ?? null,
             match_origen: match?.origen ?? "sin candidato",
             match_similitud: match?.similitud ?? null,
-            lote: lv.lote, vence: lv.vence, lote_origen: lv.de,
+            lote: lotesFactura ? lotesFactura[0].lote : lv.lote,
+            vence: lotesFactura ? (lotesFactura[0].vence ?? lv.vence) : lv.vence,
+            lote_origen: lotesFactura ? "descripcion/varios" : lv.de,
+            lotes_factura: lotesFactura,
             servicio_sugerido: esFleteOServicio(String(it?.descripcion ?? "")) || (llave != null && apartados.has(llave)),
             // `seguro` es sobre el PRODUCTO y nada más. Va aparte de `listo`
             // porque son dos preguntas distintas y confundirlas hacía que el

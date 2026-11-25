@@ -11,7 +11,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { buscarProductos } from '@nucleo/data/cargarCompra';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
-import { lotesDelRenglon, problemaDeLotes } from '@nucleo/utils/cargaDeCompra';
+import { cambiarOtroLote, lotesDelRenglon, problemaDeLotes } from '@nucleo/utils/cargaDeCompra';
 
 /**
  * ¿Llegó todo lo facturado? Lo normal es que sí, así que es un interruptor y
@@ -98,7 +98,7 @@ export function LotesDelRenglon({ r, aj, puedeEditar, onCambiar }) {
     if (!lotes) return null;
     const problema = problemaDeLotes(r, aj);
     const total = lotes.reduce((a, l) => a + l.unidades, 0);
-    const poner = (k, cambio) => onCambiar(aj.otrosLotes.map((l, j) => (j === k ? { ...l, ...cambio } : l)));
+    const poner = (k, cambio) => onCambiar(cambiarOtroLote(aj.otrosLotes, k, cambio));
     return (
         <div className="mt-3 space-y-2" data-campo="lotes">
             <p className="text-caption text-content-2 tabular-nums">

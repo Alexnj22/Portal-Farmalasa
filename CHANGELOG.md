@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.12 — Los lotes que la factura ya desglosa entran solos
+
+Algunos proveedores mandan un producto en dos lotes y escriben en la factura
+cuántas unidades trae cada uno: VIJOSA («LOTE: 2602054A (V-08-29) CANT: 24
+LOTE: 2509184A (V-03-29) CANT: 6») y COFARSAL («Lote: … Cant.: 11 … Lote: …
+Cant.: 31»). Se leía sólo el primero y el segundo había que escribirlo a mano
+con «Otro lote».
+
+Ahora la propuesta trae los lotes (`lotes_factura`) cuando suman lo que cobra
+la factura: el primero va en Lote/Vence y los demás salen escritos en «Otro
+lote» con su vencimiento y sus unidades. Si cambia la cantidad a cargar, esas
+unidades se recalculan; si la persona las escribe a mano, mandan las suyas.
+Medido contra las facturas guardadas: los 7 renglones con ese formato se leen
+completos y cuadran, y ningún otro cambia.
+
+Novedades: no — la valoración da 0 puntos; es el mismo «Otro lote», ya lleno.
+Gemelo: cargar_compra — en apps/mobile/componentes/compras/RenglonDeCarga.js
+
 ## v2.1603.11 — El voucher se enlaza con el ingreso de la aplicación
 
 Primer cobro real en Salud 1 (un crédito de $9.35): el voucher de
@@ -36,6 +54,7 @@ mandó la foto del ticket del ingreso: «mira».
   con `otra_venta_id`); lo que otro voucher ya le atribuyó se descuenta.
 - Migración `20261125212212`. `creditos-erp` desplegada (v55).
 - Portal y app del personal.
+
 
 ## v2.1603.10 — El lote compuesto se une con guion, como en el sistema
 

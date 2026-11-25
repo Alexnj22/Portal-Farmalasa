@@ -191,6 +191,36 @@ export function loteSinRotulo(t: string, anioRef?: number): string | null {
   return null;
 }
 
+/**
+ * Un producto que llegó en VARIOS lotes y la factura dice cuántas unidades
+ * trae cada uno (2026-11-25). Medido en las 3,849 facturas guardadas: 7
+ * renglones, de dos proveedores, cada lote con su propio vencimiento.
+ *
+ *   VIJOSA    `LOTE: 2602054A (V-08-29) CANT: 24 LOTE: 2509184A (V-03-29) CANT: 6`
+ *   COFARSAL  `Lote: 0045895 Cant.: 11. Fecha Exp.: 01/11/2029\rLote: 0045897 Cant.: 31. …`
+ *
+ * Sin esto se leía sólo el primer lote y el segundo había que escribirlo a
+ * mano. Devuelve los lotes con su cantidad EN UNIDADES DE LA FACTURA, o nulo si
+ * hay menos de dos rótulos «Lote:» o a alguno le falta el lote o la cantidad:
+ * un desglose a medias no se adivina.
+ */
+export function variosLotesEnTexto(s: string, anioRef?: number): { lote: string; vence: string | null; cantidad: number }[] | null {
+  const t = norm(s);
+  const marcas = [...t.matchAll(/\blote\s*[:.]\s*/gi)];
+  if (marcas.length < 2) return null;
+  const out: { lote: string; vence: string | null; cantidad: number }[] = [];
+  for (let k = 0; k < marcas.length; k++) {
+    const ini = (marcas[k].index ?? 0) + marcas[k][0].length;
+    const fin = k + 1 < marcas.length ? (marcas[k + 1].index ?? t.length) : t.length;
+    const seg = t.slice(ini, fin);
+    const lote = loteValido(seg.match(/^([A-Za-z0-9][A-Za-z0-9._\-\/]*)/)?.[1] ?? null);
+    const cantidad = Number(seg.match(/\bcant(?:idad)?\.?\s*[:.]?\s*(\d+(?:\.\d+)?)/i)?.[1]);
+    if (!lote || !(cantidad > 0)) return null;
+    out.push({ lote, vence: deTextoLibre(seg, anioRef).vence, cantidad });
+  }
+  return out;
+}
+
 /** Lote y vencimiento escondidos en el texto libre de un renglón. */
 export function deTextoLibre(s: string, anioRef?: number): { lote: string | null; vence: string | null } {
   const t = norm(s);

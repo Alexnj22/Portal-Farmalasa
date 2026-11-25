@@ -14,6 +14,9 @@ export const ajusteInicial = (r) => ({
     factor: String(r.factor_proveedor ?? 1),
     lote: r.lote ?? '',
     vence: r.vence ? r.vence.slice(0, 7) : '',
+    // La factura ya dice los lotes y cuántas trae cada uno (VIJOSA, COFARSAL):
+    // el primero va en Lote/Vence y los demás salen escritos.
+    ...(otrosLotesDeLaFactura(r, r.factor_proveedor ?? 1) ? { otrosLotes: otrosLotesDeLaFactura(r, r.factor_proveedor ?? 1) } : {}),
     venta: '',   // viñeta nueva leída en la caja; vacío = la que ya tiene Bodega
     llegaron: '', // «Llegaron menos»: vacío = llegó todo
     // Flete / servicio: entra en la misma compra como servicio, sin producto
@@ -102,7 +105,14 @@ export const cargarAyuda = (r, aj) => {
 export const conCarga = (aj, r, valor) => {
     const limpio = String(valor).replace(/[^\d]/g, '');
     const n = Number(limpio), cant = Number(r.cantidad);
-    return { ...aj, cargar: limpio, ...(n > 0 && cant > 0 ? { factor: String(n / cant) } : {}) };
+    if (!(n > 0 && cant > 0)) return { ...aj, cargar: limpio };
+    const factor = n / cant;
+    // Los lotes que dictó la factura vienen en unidades de la factura: con otro
+    // factor cambian sus unidades. Los que la persona escribió no se tocan.
+    const otrosLotes = Array.isArray(aj.otrosLotes)
+        ? aj.otrosLotes.map(l => (l.de_factura != null ? { ...l, unidades: String(Math.round(l.de_factura * factor)) } : l))
+        : aj.otrosLotes;
+    return { ...aj, cargar: limpio, factor: String(factor), ...(otrosLotes ? { otrosLotes } : {}) };
 };
 
 // Producto nuevo desde un renglón: el nombre y el código de barras que trae la
@@ -160,7 +170,31 @@ export const hayVariosLotes = (aj) => !aj?.erroneo && !aj?.servicio && Array.isA
 export const LOTE_VACIO = { lote: '', vence: '', unidades: '' };
 // Sólo cuando el documento NO trae lote o vence (usuario, 2026-11-24): si el
 // proveedor los manda, la factura ya dice qué lote es y no se parte a mano.
-export const puedeLlevarVariosLotes = (r) => !(r?.lote && r?.vence);
+export const puedeLlevarVariosLotes = (r) => !(r?.lote && r?.vence) || (r?.lotes_factura?.length ?? 0) > 1;
+
+/**
+ * Los lotes 2.° en adelante que trae escritos la factura, en unidades que
+ * entran (cantidad de la factura × factor), o null. `de_factura` guarda la
+ * cantidad de la factura para recalcular si cambia el factor; se suelta en
+ * cuanto la persona escribe las unidades a mano (`cambiarOtroLote`).
+ */
+export function otrosLotesDeLaFactura(r, factor) {
+    const ls = r?.lotes_factura;
+    if (!Array.isArray(ls) || ls.length < 2) return null;
+    const f = Number(factor) || 1;
+    return ls.slice(1).map(l => ({
+        lote: l.lote ?? '', vence: l.vence ? String(l.vence).slice(0, 7) : '',
+        unidades: String(Math.round(Number(l.cantidad) * f)), de_factura: Number(l.cantidad),
+    }));
+}
+
+/** Cambia el lote `k` de `otrosLotes`. Las unidades escritas a mano mandan. */
+export const cambiarOtroLote = (lotes, k, cambio) => lotes.map((l, j) => {
+    if (j !== k) return l;
+    const n = { ...l, ...cambio };
+    if ('unidades' in cambio) delete n.de_factura;
+    return n;
+});
 
 /** Los lotes del renglón con sus unidades, o null si es uno solo. */
 export function lotesDelRenglon(r, aj) {

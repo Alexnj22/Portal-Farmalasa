@@ -605,6 +605,17 @@ export function elegirFactor(x: {
     const v1 = Number(x.vinetaUno);
     if (porCosto && !x.presentaciones.includes(porCosto) && v1 > 0 && v1 / (x.costoNeto / porCosto) > 5) porCosto = null;
   }
+  // VIROGRIP X 24 SOB de Vijosa (2026-11-25): la caja de 24 está en el
+  // catálogo y una persona la confirmó, pero la factura vino 8.5 % más barata
+  // que el costo de Bodega y el precio daba 22, que nadie vende. Un tamaño
+  // confirmado que el catálogo vende le gana a un redondeo que no existe,
+  // mientras el precio no se aleje más de 25 % (como las pistas de arriba).
+  // Si el precio cae en OTRA presentación del catálogo (ANARA: 200), sigue
+  // mandando el precio.
+  if (x.aprendido && porCosto && razon != null && x.presentaciones.includes(x.aprendido)
+    && !x.presentaciones.includes(porCosto) && Math.abs(razon / x.aprendido - 1) <= 0.25) {
+    return { factor: x.aprendido, origen: "aprendido" };
+  }
   if (x.aprendido && (razon == null || cuadra(x.aprendido) || !porCosto)) return { factor: x.aprendido, origen: "aprendido" };
   if (porCosto) return x.aprendido ? { factor: porCosto, origen: "costo", corrige: x.aprendido } : { factor: porCosto, origen: "costo" };
   return { factor: 1, origen: null };

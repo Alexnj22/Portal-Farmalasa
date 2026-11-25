@@ -123,4 +123,12 @@ describe('tamanoDeCajaEnLaDescripcion — un decimal pegado a la medida no es un
     it('el tamaño de verdad sigue saliendo', () => {
         expect(tamanoDeCajaEnLaDescripcion('VALPAKINE 500 MG x 40 GRAG CAJA')).toBe(40);
     });
+    it('VIROGRIP: la caja de 24 confirmada le gana al 22 del precio (8.5 % más barata)', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: 24, costoNeto: 7.53, costoUnidad: 0.3429, presentaciones: [1, 24] }))
+            .toEqual({ factor: 24, origen: 'aprendido' });
+        // Sin nada aprendido, el precio sigue proponiendo (y la pantalla avisa).
+        expect(elegirFactor({ delDoc: null, aprendido: null, costoNeto: 7.53, costoUnidad: 0.3429, presentaciones: [1, 24] }).factor).toBe(22);
+        // Lo aprendido que el catálogo NO vende no se protege así.
+        expect(elegirFactor({ delDoc: null, aprendido: 26, costoNeto: 7.53, costoUnidad: 0.3429, presentaciones: [1, 24] }).factor).toBe(22);
+    });
 });

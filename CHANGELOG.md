@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.3 — Caja confirmada le gana al redondeo por precio
+
+VIROGRIP GELCAPS X 24 SOB (Vijosa, 24-nov) salía «1100 × UNIDAD · 22 por cada
+una» aunque la caja de 24 está en el catálogo y se confirmó esa mañana. La
+factura vino a $7.53 la caja y Bodega la tiene a $8.23 ($0.3429 el sobre):
+7.53 ÷ 0.3429 = 22, y 24 quedaba 8.5 % afuera de la tolerancia de 8 %.
+
+- `elegirFactor`: lo aprendido le gana al precio cuando es un tamaño que el
+  catálogo vende, el precio da uno que NO vende y la diferencia es ≤ 25 %.
+  ANARA (aprendió 237, el precio da 200 que sí es presentación) no cambia.
+- Desplegada `leer-dte-json` (arma la propuesta).
+- Gemelo: cargar_compra — es del servidor; portal y app leen la misma propuesta.
+
 ## v2.1603.2 — Solventar una venta de un mes ya declarado
 
 Desde v2.1602.2 una venta sin sello de un mes anterior no se manda al MH. Si

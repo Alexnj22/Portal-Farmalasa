@@ -109,6 +109,28 @@ export const loteValido = (s: string | null): string | null =>
     && !/^(vence|venc|vencimiento|fecha|caducidad|exp)$/i.test(s) ? s : null;
 
 /**
+ * Un empaque con DOS lotes (2026-11-25): ampollas que traen dos componentes,
+ * cada uno con su lote. LETERAGO lo escribe en el mismo campo —
+ * `|251077K 251100K|30/11/2028|` (Sertal forte C)— y el campo, por llevar un
+ * espacio, se descartaba como «nombre de producto»: el regulado quedaba sin
+ * lote y frenaba la carga. No se reparte la cantidad (una caja no se parte):
+ * es UN lote compuesto, `251077K/251100K`, que es como ya estaban escritos a
+ * mano en el sistema (`259471/259472`, `0115025/0115125`).
+ *
+ * Exige de 2 a 3 piezas y que CADA una parezca un lote (4+ caracteres, con un
+ * dígito, sin espacios): un nombre como «Sertal compuesto 15mg / 2ml» no pasa.
+ * Una pieza repetida (`4002A/4002A`) cuenta una vez. Devuelve nulo si no es
+ * compuesto.
+ */
+export function loteCompuesto(campo: string | null): string | null {
+  const piezas = String(campo ?? "").trim().split(/\s*[\/,;]\s*|\s+/).filter(Boolean);
+  if (piezas.length < 2 || piezas.length > 3) return null;
+  if (!piezas.every((x) => /^[A-Za-z0-9\-]{4,}$/.test(x) && /\d/.test(x))) return null;
+  const unicas = [...new Set(piezas.map((x) => x.toUpperCase()))];
+  return unicas.length > 1 ? unicas.join("/") : unicas[0];
+}
+
+/**
  * El token pegado ANTES de la fecha, como lote (2026-11-05). Es como lo
  * escriben las columnas sin rótulo de INCOFA (`26F194 05/2029`), DROGUERÍA
  * CENTROAMERICANA (`261813 01/03/2030`) y MEDIDENT, que además lo pega al
@@ -149,6 +171,9 @@ export function loteSinRotulo(t: string, anioRef?: number): string | null {
         // El nombre del producto también va entre `|`, pero lleva espacios;
         // un número de lote no.
         if (cand && !/\s/.test(cand)) return cand;
+        // Salvo el empaque con dos lotes, que van juntos en el mismo campo.
+        const compuesto = loteCompuesto(partes[i - 1]);
+        if (compuesto) return compuesto;
       }
     }
   }

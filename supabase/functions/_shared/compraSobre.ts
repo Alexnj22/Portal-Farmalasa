@@ -1,3 +1,5 @@
+import { loteCompuesto } from "./loteVencimiento.ts";
+
 // ── El formulario de una compra, armado desde el documento (2026-10-29) ─────
 //
 // Es la traducción de `senddata()` + `storeTblValue()` + `totales()` de
@@ -164,7 +166,10 @@ export function lineaDelSobre(
     problemas.push({ renglon: i, texto: `«${p.nombre}»: la viñeta nueva ($${vinetaNueva.toFixed(2)}) está muy lejos de la actual ($${pres.precio.toFixed(2)}). Revisa que sea de la misma presentación.` });
   }
   const venta = vinetaNueva ?? pres.precio;
-  const lote = p.regulado ? String(d.lote ?? "").trim() : "";
+  // Dos lotes tecleados en el campo («251077K 251100K») se escriben como el
+  // lote compuesto que lee la factura: `251077K/251100K`.
+  const tecleado = String(d.lote ?? "").trim();
+  const lote = p.regulado ? (loteCompuesto(tecleado) ?? tecleado) : "";
   if (p.regulado && !lote) problemas.push({ renglon: i, texto: `«${p.nombre}» lleva lote y la factura no lo trae.` });
 
   return {

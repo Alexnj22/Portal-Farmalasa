@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.8 — Un empaque con dos lotes entra como lote compuesto
+
+Sertal forte C de LETERAGO trae dos componentes con su lote cada uno, y la
+factura los manda juntos: `|251077K 251100K|30/11/2028|`. El campo se
+descartaba por llevar un espacio, el producto (regulado) quedaba «sin lote» y
+la factura del 24-nov no se podía cargar. Una caja no se parte en lotes: es UN
+lote compuesto, `251077K/251100K`, como ya se escribían a mano en el sistema.
+
+- `loteCompuesto()` en `_shared/loteVencimiento.ts`: 2 o 3 piezas, cada una con
+  forma de lote (4+ caracteres y un dígito); un nombre o un gramaje no pasa.
+  Medido en las facturas desde jun-2025: el único campo así es éste.
+- Dos lotes tecleados en el campo Lote («251077K 251100K») se mandan igual.
+- Despliegue de `leer-dte-json` y `cargar-compra-erp`.
+
+Novedades: no — no toca pantallas.
+Gemelo: cargar_compra — sólo el servidor; portal y app ya aceptan el lote tecleado.
+
 ## v2.1603.7 — El registro de compras guarda todos los lotes de un producto
 
 Un producto que entraba en varios lotes (v2.1599.0) quedaba en el registro con

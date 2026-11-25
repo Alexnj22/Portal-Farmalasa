@@ -56,6 +56,21 @@ describe('abonoDeCredito', () => {
         }
         expect(estadoDelCobro({ ...base, reparto: { 1: '20' } }).falta.texto).toBe('Faltan $5.00 por aplicar.');
     });
+    it('voucher por más de la deuda: lo que sobra va a otra venta con su número (2026-11-25)', () => {
+        const C = { id: 9, credito: 'C9', saldo: 9.35 };
+        const base = { forma: 'Tarjeta', montoDoc: '12.35', reparto: { 9: '9.35' }, creditos: [C], hayArchivo: true,
+            lectura: { veredicto: 'MONTO_MAYOR_AL_SALDO' }, deuda: 9.35 };
+        const sin = estadoDelCobro(base);
+        expect([sin.bloqueado, sin.puedeOtraVenta, sin.listo, sin.descuadre]).toEqual([false, true, false, null]);
+        expect(sin.falta).toEqual({ texto: 'Sobran $3.00. Escribe el número de la otra venta.', campo: 'abono-otra-venta' });
+        const con = estadoDelCobro({ ...base, otraVenta: ' 95931 ' });
+        expect([con.listo, con.parteOtraVenta, con.numeroOtraVenta, con.falta]).toEqual([true, 3, '95931', null]);
+        // Sin pasar de la deuda no se ofrece: faltar por aplicar sigue siendo faltar.
+        const corto = estadoDelCobro({ ...base, montoDoc: '9.35', reparto: { 9: '5' }, lectura: { veredicto: 'OK' }, otraVenta: '95931' });
+        expect([corto.puedeOtraVenta, corto.parteOtraVenta, corto.listo]).toEqual([false, 0, false]);
+        // El efectivo no lleva otra venta.
+        expect(estadoDelCobro({ forma: 'Efectivo', reparto: { 9: '9.35' }, creditos: [C], deuda: 9.35, otraVenta: '1' }).puedeOtraVenta).toBe(false);
+    });
     it('aplicaciones: sólo las que llevan algo', () => {
         expect(aplicacionesDelPago([A, B], { 1: '20', 2: '' })).toEqual([{ credito: 'C1', monto: 20 }]);
     });

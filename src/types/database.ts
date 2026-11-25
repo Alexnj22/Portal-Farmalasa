@@ -10911,6 +10911,9 @@ export type Database = {
           id: number
           lectura: Json | null
           monto: number
+          otra_venta_documento: string | null
+          otra_venta_id: number | null
+          otra_venta_monto: number | null
           pos_proveedor: string | null
           registrado_por: string
         }
@@ -10926,6 +10929,9 @@ export type Database = {
           id?: never
           lectura?: Json | null
           monto: number
+          otra_venta_documento?: string | null
+          otra_venta_id?: number | null
+          otra_venta_monto?: number | null
           pos_proveedor?: string | null
           registrado_por: string
         }
@@ -10941,6 +10947,9 @@ export type Database = {
           id?: never
           lectura?: Json | null
           monto?: number
+          otra_venta_documento?: string | null
+          otra_venta_id?: number | null
+          otra_venta_monto?: number | null
           pos_proveedor?: string | null
           registrado_por?: string
         }
@@ -41731,6 +41740,10 @@ export type Database = {
       venta_fiscal: {
         Args: { p_estado: string; p_recibido_mh: string }
         Returns: boolean
+      }
+      venta_que_completa_un_voucher: {
+        Args: { p_branch_id: number; p_numero: string }
+        Returns: Json
       }
       venta_valida: { Args: { p_estado: string }; Returns: boolean }
       ventas_busqueda_aproximada: {

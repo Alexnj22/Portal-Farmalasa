@@ -55,6 +55,8 @@ export default function CobrarCredito() {
   const [motivo, setMotivo] = useState('');
   const [montoDoc, setMontoDoc] = useState('');
   const [topeado, setTopeado] = useState(false);
+  // La otra venta que el mismo voucher pagó (2026-11-25). Ver `estadoDelCobro`.
+  const [otraVenta, setOtraVenta] = useState('');
   const [documento, setDocumento] = useState('');
   const [fechaDoc, setFechaDoc] = useState('');
   const [pos, setPos] = useState('');
@@ -104,17 +106,17 @@ export default function CobrarCredito() {
     ? hermanos.filter((h) => String(h.id) === String(credito.id) || !quitados.has(String(h.id)))
     : [credito]), [repartir, hermanos, credito, quitados]);
   const debeTodo = sumaDeSaldos(hermanos, credito);
-  const e = estadoDelCobro({ forma, montoDoc, reparto, creditos: lista, lectura, hayArchivo: fotos.length > 0, motivo });
+  const e = estadoDelCobro({ forma, montoDoc, reparto, creditos: lista, lectura, hayArchivo: fotos.length > 0, motivo, deuda: debeTodo, otraVenta });
 
   const cambiarForma = (v) => {
     setForma(v);
     if (v === 'Efectivo') setRepartir(false);
     setFotos([]); setLectura(null); setErrorLectura(null);
-    setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo(''); setTopeado(false);
+    setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo(''); setTopeado(false); setOtraVenta('');
   };
 
   const alCambiarFotos = useCallback(async (nuevas) => {
-    setFotos(nuevas); setLectura(null); setErrorLectura(null);
+    setFotos(nuevas); setLectura(null); setErrorLectura(null); setOtraVenta('');
     const f = nuevas[0];
     if (!f) return;
     setLeyendo(true);
@@ -134,7 +136,9 @@ export default function CobrarCredito() {
   }, [forma, hermanos, credito, otros]);
 
   const escribirMonto = (v) => {
-    const r = hastaElTope(v.replace(/[^\d.,]/g, '').replace(',', '.'), debeTodo);
+    // Un voucher leído por más de la deuda no se recorta: lo que sobra va a la otra venta.
+    const tope = lectura?.veredicto === 'MONTO_MAYOR_AL_SALDO' ? Infinity : debeTodo;
+    const r = hastaElTope(v.replace(/[^\d.,]/g, '').replace(',', '.'), tope);
     setMontoDoc(r.valor); setTopeado(r.topeado);
   };
   const quitar = (id) => {
@@ -174,6 +178,7 @@ export default function CobrarCredito() {
         montoDocumento: Number(e.totalPago.toFixed(2)), aplicaciones: aplicacionesDelPago(lista, reparto),
         comprobanteUrl, lectura: lectura || null, fechaDocumento: fechaDoc || null, pos: pos || null,
         motivo: motivo.trim() || null, requiereAprobacion: e.iraAprobacion,
+        otraVenta: e.numeroOtraVenta ? { numero: e.numeroOtraVenta } : null,
         claveEnvio: claveCobro.current,
       });
       // Con respuesta, el intento terminó: el próximo es otro cobro.
@@ -308,6 +313,13 @@ export default function CobrarCredito() {
                   {`${formatMoney(e.sumaRepartida)}${e.conPapel && e.totalPago > 0 ? ` de ${formatMoney(e.totalPago)}` : ''}`}
                 </Text>
               </View>
+            </Seccion>
+          ) : null}
+          {e.puedeOtraVenta ? (
+            <Seccion titulo="Otra venta del mismo cobro"
+              pie={e.parteOtraVenta > 0 ? `${formatMoney(e.parteOtraVenta)} van a esa venta.` : 'El número que sale en el ticket.'}>
+              <Aviso tono="nota" texto={`Sobran ${formatMoney(e.totalPago - e.sumaRepartida)} del comprobante. Si son de otra venta del mismo cobro, escribe el número de esa venta.`} />
+              <Campo multiline={false} value={otraVenta} onChangeText={setOtraVenta} maxLength={40} keyboardType="number-pad" placeholder="Número de la otra venta" />
             </Seccion>
           ) : null}
           {e.descuadre ? <Aviso tono="cuidado" texto={e.descuadre.faltan != null ? `Faltan ${formatMoney(e.descuadre.faltan)} por aplicar.` : `Sobran ${formatMoney(e.descuadre.sobran)} sobre el comprobante.`} /> : null}

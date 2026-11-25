@@ -1043,6 +1043,9 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * estados y no junto a `escribirMonto`, que es quien lo escribe: cambiar de
      * forma de pago lo apaga, y eso pasa antes en el archivo. */
     const [topeado, setTopeado] = useState(false);
+    /* El número de la otra venta que el mismo voucher pagó (2026-11-25): «no se
+     * puede cobrar aparte, se hace un solo cobro». Ver `estadoDelCobro`. */
+    const [otraVenta, setOtraVenta] = useState('');
     const [ocupado, setOcupado] = useState(false);
 
     // El papel
@@ -1153,7 +1156,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         if (nueva === 'Efectivo') setRepartir(false);
         setArchivo(null); setLectura(null); setErrorLectura(null);
         setDocumento(''); setFechaDoc(''); setPos(''); setMontoDoc(''); setMotivo('');
-        setTopeado(false);
+        setTopeado(false); setOtraVenta('');
 
     }, []);
 
@@ -1164,7 +1167,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     );
 
     const leer = useCallback(async (f) => {
-        setArchivo(f); setLectura(null); setErrorLectura(null);
+        setArchivo(f); setLectura(null); setErrorLectura(null); setOtraVenta('');
         if (!f) return;
         setLeyendo(true);
         const r = await leerPagoDeCredito(f, { forma, saldo: sumaDeSaldos(hermanos, credito) });
@@ -1229,15 +1232,17 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     const puedeRepartir = forma !== 'Efectivo' && otros.length > 0;
     // La regla entera del cobro —papel, aprobación, cuadre, excesos, listo— es
     // `estadoDelCobro` (núcleo): la app cobra con la misma.
-    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo, falta } = estadoDelCobro({
+    // Antes de `estadoDelCobro`: decide si lo que sobra puede ir a otra venta.
+    const debeTodo = useMemo(() => sumaDeSaldos(hermanos, credito), [hermanos, credito]);
+    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo, falta, puedeOtraVenta, parteOtraVenta, numeroOtraVenta } = estadoDelCobro({
         forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
+        deuda: debeTodo, otraVenta,
     });
 
     /* Contra QUÉ se topea: todo lo que el cliente debe en la sala, que es la
      * misma vara con la que el lector rechaza un comprobante por más de la
      * deuda. Contra el saldo de UN crédito, una transferencia que paga tres se
      * recortaría a la primera — y ese es justo el caso que hay que soportar. */
-    const debeTodo = useMemo(() => sumaDeSaldos(hermanos, credito), [hermanos, credito]);
     /* Y el rótulo TIENE que decir de quién es esa cifra. Decía sólo «Debe
      * $176.06» debajo del campo, dos dedos abajo de un «DEBE $33.36» en el
      * tamaño más grande del diálogo: dos números distintos con la misma
@@ -1252,11 +1257,14 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
      * —o un total en cero— no puede pintar una barra que se sale de su caja ni
      * un «pagados» negativo. */
     const yaPago = Math.max(0, (Number(credito.total) || 0) - (Number(credito.saldo) || 0));
+    /* Un voucher que ya se leyó por más de la deuda no se recorta: lo que sobra
+     * va a la otra venta, y recortarlo borraría justo esa parte. */
+    const excedeAlLeer = lectura?.veredicto === 'MONTO_MAYOR_AL_SALDO';
     const escribirMonto = useCallback((v) => {
-        const r = hastaElTope(v, debeTodo);
+        const r = hastaElTope(v, excedeAlLeer ? Infinity : debeTodo);
         setMontoDoc(r.valor);
         setTopeado(r.topeado);
-    }, [debeTodo, setMontoDoc, setTopeado]);
+    }, [debeTodo, excedeAlLeer, setMontoDoc, setTopeado]);
 
     const cobrar = useCallback(async () => {
         setOcupado(true);
@@ -1268,13 +1276,14 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
             motivo: motivo.trim() || null, requiereAprobacion: iraAprobacion,
+            otraVenta: numeroOtraVenta ? { numero: numeroOtraVenta } : null,
         });
         // El borrador se tira sólo cuando el cobro ENTRÓ. `onCobrar` devuelve
         // `false` cuando el origen lo rechazó y ahí el diálogo queda abierto:
         // borrarlo entonces perdería justo lo que hay que volver a intentar.
         if (entro !== false) descartar();
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, iraAprobacion, formaReal, onCobrar, descartar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, iraAprobacion, formaReal, numeroOtraVenta, onCobrar, descartar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1647,7 +1656,25 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                 </span>
                             </div>
 
-                            {conPapel && totalPago > 0 && !cuadra && (
+                            {/* Lo que sobra del voucher, cuando pasa de la
+                                deuda, va a otra venta del mismo cobro. El
+                                servidor comprueba que esa venta existe hoy en
+                                la sucursal y que le alcanza. */}
+                            {puedeOtraVenta && (
+                                <div className="space-y-2">
+                                    <Notice variant="info">
+                                        Sobran {formatMoney(totalPago - sumaRepartida)} del comprobante. Si son de otra venta del mismo cobro, escribe el número de esa venta.
+                                    </Notice>
+                                    <PortalInput name="abono-otra-venta" label="Número de la otra venta"
+                                        inputMode="numeric" maxLength={40} placeholder="95931"
+                                        value={otraVenta} onChange={(e) => setOtraVenta(e.target.value)}
+                                        helperText={parteOtraVenta > 0
+                                            ? `${formatMoney(parteOtraVenta)} van a esa venta`
+                                            : 'El que sale en el ticket'} />
+                                </div>
+                            )}
+
+                            {conPapel && totalPago > 0 && !cuadra && !puedeOtraVenta && (
                                 /* La suma tiene que dar EXACTO. Aceptar menos
                                    dejaría una diferencia sin dueño: el banco
                                    movió $50 y el portal explicaría $45. */

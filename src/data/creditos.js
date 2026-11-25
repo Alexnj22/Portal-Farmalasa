@@ -235,11 +235,13 @@ export function aplicarAnticipoACredito({ sala, apartado, credito = null }) {
 export function pagarCreditos({
     sala, forma = 'Efectivo', documento = '', montoDocumento, aplicaciones,
     comprobanteUrl = null, lectura = null, fechaDocumento = null, pos = null,
-    motivo = null, requiereAprobacion = false, claveEnvio = null,
+    motivo = null, requiereAprobacion = false, claveEnvio = null, otraVenta = null,
 }) {
     return pedir({
         accion: 'pagar', sala, forma, documento, montoDocumento, aplicaciones,
         comprobanteUrl, lectura, fechaDocumento, pos, motivo, requiereAprobacion,
+        // `{ numero }`: la otra venta que el mismo voucher pagó (2026-11-25).
+        otraVenta: otraVenta?.numero ? { numero: String(otraVenta.numero).trim() } : null,
         clave_envio: claveEnvio,
     });
 }

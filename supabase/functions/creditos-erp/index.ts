@@ -41,6 +41,19 @@ const json = (b: unknown, s = 200, h: HeadersInit = {}) =>
 /** El día de El Salvador (UTC−6, sin horario de verano) de un instante. */
 const diaSV = (ms = Date.now()) => new Date(ms - 6 * 3600_000).toISOString().slice(0, 10);
 
+/** Las columnas de la otra venta que un voucher también pagó, desde la
+ *  `metadata.otra_venta` de una solicitud aprobada (o nada, si no hubo). */
+function otraVentaDelPago(o: unknown) {
+  const v = (o ?? null) as { id?: unknown; documento?: unknown; monto?: unknown } | null;
+  const monto = Number(v?.monto);
+  if (!v || !Number.isFinite(Number(v.id)) || !(monto > 0)) return {};
+  return {
+    otra_venta_id: Number(v.id),
+    otra_venta_documento: v.documento ? String(v.documento) : null,
+    otra_venta_monto: Number(monto.toFixed(2)),
+  };
+}
+
 // ── Un envío = UNA escritura en la caja (2026-10-23) ──────────────────────
 //
 // Un abono en el origen NO se deshace. Antes de escribirlo se RECLAMA el
@@ -883,6 +896,7 @@ Deno.serve(async (req) => {
           cliente: String(meta.cliente ?? entraron[0].cliente),
           forma: formaDelPago,
           monto: aplicado,
+          ...otraVentaDelPago(meta.otra_venta),
           documento: docDelPago || null,
           fecha_documento: (meta.fecha_documento as string | null) || null,
           pos_proveedor: (meta.pos as string | null) || null,
@@ -1058,12 +1072,33 @@ Deno.serve(async (req) => {
       if (!(Number.isFinite(montoDoc) && montoDoc > 0)) {
         return responder({ ok: false, error: "Falta el monto del pago." }, 400);
       }
+
+      /* ── Un voucher que paga el crédito Y otra venta (2026-11-25) ──────
+       *
+       * Pedido del usuario: «la diferencia es porque se cobró una aplicación
+       * de inyección … no se puede cobrar aparte, se hace un solo cobro». Lo
+       * que sobra del papel sobre lo abonado tiene que tener DUEÑO: quien cobra
+       * dice el número de la otra venta y acá se comprueba que existe en la
+       * sucursal, que es válida y que le alcanza. Sin número, la regla de
+       * siempre: la suma tiene que dar exacto. */
+      const numeroOtra = String((body.otraVenta as { numero?: unknown } | null)?.numero ?? "")
+        .trim().slice(0, 40);
+      const parteOtra = numeroOtra ? Number((montoDoc - suma).toFixed(2)) : 0;
+      if (numeroOtra && forma === "Efectivo") {
+        return responder({ ok: false, error: "Un cobro en efectivo no lleva otra venta: se cobra cada una por su lado." }, 400);
+      }
+      if (numeroOtra && !(parteOtra > 0.004)) {
+        return responder({
+          ok: false,
+          error: `Lo repartido suma ${suma.toFixed(2)} y el pago es de ${montoDoc.toFixed(2)}: no sobra nada para otra venta.`,
+        }, 400);
+      }
       /* La suma tiene que dar EXACTO. Aceptar menos dejaría una diferencia sin
        * dueño: el banco movió $50 y el portal explicaría $45, y esos $5 no
        * aparecerían en ninguna cuenta hasta la conciliación del mes. Si el
        * cliente pagó de más, eso es un saldo a favor y el sistema de la caja no
        * sabe qué es — hay que decirlo, no repartirlo. */
-      if (Math.abs(suma - montoDoc) > 0.004) {
+      if (!numeroOtra && Math.abs(suma - montoDoc) > 0.004) {
         return responder({
           ok: false,
           error: suma < montoDoc
@@ -1088,6 +1123,47 @@ Deno.serve(async (req) => {
                  + `para ${yaUsado.cliente}.`,
           }, 409);
         }
+      }
+
+      /* La otra venta, comprobada ANTES de tocar la caja. Hoy o ayer, en esta
+       * sucursal, válida, y con total libre para lo que sobra (lo que otros
+       * vouchers ya le atribuyeron se descuenta). Si la venta se acaba de
+       * hacer puede tardar un minuto en aparecer: el mensaje lo dice. */
+      let ventaOtra: { id: number; correlativo: string } | null = null;
+      if (numeroOtra) {
+        const { data: cands, error: eV } = await supabase.rpc("venta_que_completa_un_voucher", {
+          p_branch_id: sala, p_numero: numeroOtra,
+        });
+        if (eV) throw new Error(`buscando la otra venta: ${eV.message}`);
+        const lista = (Array.isArray(cands) ? cands : []) as {
+          id: number; correlativo: string; total: number; valida: boolean; ya_cubierto: number;
+        }[];
+        const validas = lista.filter((v) => v.valida);
+        if (!validas.length) {
+          return responder({
+            ok: false,
+            error: lista.length
+              ? `La venta ${numeroOtra} está anulada. Revisa el número.`
+              : `No encuentro la venta ${numeroOtra} de hoy en esta sucursal. Revisa el número; `
+                + "si la acabas de hacer, espera un minuto y vuelve a intentarlo.",
+          }, 409);
+        }
+        if (validas.length > 1) {
+          return responder({
+            ok: false,
+            error: `Hay más de una venta con el número ${numeroOtra}. Escribe el número completo del ticket.`,
+          }, 409);
+        }
+        const v = validas[0];
+        const libre = Number((Number(v.total) - Number(v.ya_cubierto || 0)).toFixed(2));
+        if (parteOtra > libre + 0.004) {
+          return responder({
+            ok: false,
+            error: `Del comprobante sobran ${parteOtra.toFixed(2)}, pero a la venta ${numeroOtra} `
+                 + `sólo le quedan ${Math.max(0, libre).toFixed(2)} por pagar. Revisa el número o los montos.`,
+          }, 409);
+        }
+        ventaOtra = { id: Number(v.id), correlativo: String(v.correlativo) };
       }
 
       /* ── Un crédito que espera firma no se cobra por otro lado (HA1) ────
@@ -1126,7 +1202,11 @@ Deno.serve(async (req) => {
        * SUMAR: si pide firma, va a firma. */
       const lecturaFirmada = await verificarLectura(
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, body.lectura, String(quien.id), forma);
-      if (lecturaFirmada.valida && lecturaFirmada.veredicto !== "OK") {
+      /* «Por más de lo que debe» deja de frenar sólo cuando lo que sobra ya
+       * tiene dueño comprobado: la otra venta. */
+      const excesoConDueno = lecturaFirmada.valida
+        && lecturaFirmada.veredicto === "MONTO_MAYOR_AL_SALDO" && ventaOtra !== null;
+      if (lecturaFirmada.valida && lecturaFirmada.veredicto !== "OK" && !excesoConDueno) {
         return responder({
           ok: false,
           error: "El comprobante no pasó la lectura. Vuelve a leerlo o cobra con otra forma.",
@@ -1298,7 +1378,9 @@ Deno.serve(async (req) => {
               formaLeida: (body.lectura as { forma?: string } | null)?.forma ?? null,
               decision, beneficiarioLeido,
               motivo: String(body.motivo ?? ""), documento,
-            }),
+            }) + (ventaOtra
+              ? ` Del comprobante, ${parteOtra.toFixed(2)} son de la venta ${ventaOtra.correlativo}.`
+              : ""),
             metadata: {
               branch_id: sala, cliente: ficha?.cliente ?? renglones[0].cliente,
               customer_id: ficha?.customer_id ?? null,
@@ -1316,6 +1398,11 @@ Deno.serve(async (req) => {
               /* Por qué esta solicitud existe. `dudaDeBeneficiario` distingue el
                * cobro que alguien mandó a firmar del que el portal mandó solo. */
               por_beneficiario: dudaDeBeneficiario,
+              /* La parte del papel que pagó otra venta. Al aprobar se anota en
+               * el pago; no se abona a ningún crédito. */
+              otra_venta: ventaOtra
+                ? { id: ventaOtra.id, documento: ventaOtra.correlativo, monto: parteOtra }
+                : null,
               creditos: renglones,
             },
           }).select("id").single();
@@ -1436,8 +1523,12 @@ Deno.serve(async (req) => {
           forma,
           // El monto del DOCUMENTO cuando entró completo; lo aplicado cuando
           // quedó a medias. Guardar el del papel sobre un pago parcial diría que
-          // entró un dinero que el portal no puede explicar.
-          monto: fallidos.length ? aplicado : Number(montoDoc.toFixed(2)),
+          // entró un dinero que el portal no puede explicar. La parte de otra
+          // venta va en su columna: no se abonó a ningún crédito.
+          monto: fallidos.length ? aplicado : Number((montoDoc - parteOtra).toFixed(2)),
+          otra_venta_id: ventaOtra?.id ?? null,
+          otra_venta_documento: ventaOtra?.correlativo ?? null,
+          otra_venta_monto: ventaOtra ? parteOtra : null,
           documento: documento || null,
           fecha_documento: body.fechaDocumento || null,
           pos_proveedor: body.pos || null,

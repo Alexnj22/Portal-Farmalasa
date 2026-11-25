@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.6 — Un voucher puede pagar el crédito y otra venta del mismo cobro
+
+Pedido del usuario, con un voucher de tarjeta por más de los $9.35 que debía
+la clienta: «la diferencia es porque se cobró una aplicación de inyección …
+no se puede cobrar aparte, se hace un solo cobro». El lector frenaba con «El
+comprobante es por más de lo que este cliente debe» y no había salida.
+
+- Cuando el comprobante pasa de la deuda, Recibir un pago ya no frena: dice
+  cuánto sobra y pide **el número de la otra venta**. Con el número, cobra.
+- `creditos-erp` comprueba la venta antes de tocar la caja
+  (`venta_que_completa_un_voucher`): de hoy o ayer, de esa sucursal, válida y
+  con total libre para lo que sobra (descuenta lo que otros vouchers ya le
+  atribuyeron). Si no aparece, lo dice: revisar el número o esperar un minuto.
+- `creditos_pagos` guarda esa parte aparte (`otra_venta_id`,
+  `otra_venta_documento`, `otra_venta_monto`): `monto` sigue siendo lo abonado
+  a créditos. Si el cobro va a aprobación, la nota lo dice y se anota al aprobar.
+- Migración `20261125203546`. Edge function `creditos-erp` desplegada (v53).
+- Lo mismo en la app del personal (`cobrar-credito.js`).
+
 ## v2.1603.5 — Panel de la nota: más ordenado
 
 Pedido del usuario («mejóralo visualmente, se ve raro») con captura del panel

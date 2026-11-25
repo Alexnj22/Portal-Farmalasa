@@ -71,24 +71,42 @@ export function repartoDesdeElComprobante(monto, credito, otros = []) {
 }
 
 /**
+ * ── Un voucher que paga el crédito Y otra venta (2026-11-25) ──────────────
+ * Pedido del usuario: «la diferencia es porque se cobró una aplicación de
+ * inyección … no se puede cobrar aparte, se hace un solo cobro». Cuando el
+ * comprobante pasa de lo que debe el cliente (`deuda`), lo que sobra sobre lo
+ * aplicado puede ir a OTRA venta del mismo cobro, y quien cobra escribe su
+ * número (`otraVenta`). El servidor comprueba que esa venta existe y le
+ * alcanza (`venta_que_completa_un_voucher`). «Por más de lo que debe» deja de
+ * frenar: ahora pide ese número.
+ *
  * Todo lo que el formulario necesita saber para habilitar el botón, en un solo
  * sitio. La suma repartida tiene que dar EXACTO el comprobante: aceptar menos
  * deja una diferencia sin dueño (el banco movió $50 y el portal explicaría $45).
  * Un comprobante a nombre de otro, o sin beneficiario, va a aprobación solo.
  */
-export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], lectura = null, hayArchivo = false, motivo = '' }) {
+export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], lectura = null, hayArchivo = false, motivo = '', deuda = null, otraVenta = '' }) {
     const pideAprobacion = forma === APROBACION;
     const conPapel = forma !== 'Efectivo' && !pideAprobacion;
     const sumaRepartida = Object.values(reparto).reduce((t, v) => t + (Number(v) || 0), 0);
     const totalPago = conPapel ? Number(montoDoc) : sumaRepartida;
-    const bloqueado = !!lectura && lectura.veredicto !== 'OK';
+    const excedeLaDeuda = lectura?.veredicto === 'MONTO_MAYOR_AL_SALDO'
+        || (deuda != null && Number.isFinite(Number(deuda)) && totalPago > Number(deuda) + 0.004);
+    const bloqueado = !!lectura && lectura.veredicto !== 'OK' && lectura.veredicto !== 'MONTO_MAYOR_AL_SALDO';
     const iraAprobacion = pideAprobacion || !!lectura?.nombreSinReconocer;
-    const cuadra = Number.isFinite(totalPago) && totalPago > 0 && Math.abs(sumaRepartida - totalPago) < 0.005;
+    /* Lo que sobra del papel sobre lo aplicado, cuando el papel pasa de la deuda. */
+    const sobra = Number.isFinite(totalPago) ? Number((totalPago - sumaRepartida).toFixed(2)) : 0;
+    const puedeOtraVenta = conPapel && excedeLaDeuda && sobra > 0.004;
+    const numeroOtraVenta = puedeOtraVenta ? String(otraVenta ?? '').trim() : '';
+    const parteOtraVenta = numeroOtraVenta ? sobra : 0;
+    const cuadra = Number.isFinite(totalPago) && totalPago > 0
+        && Math.abs(sumaRepartida + parteOtraVenta - totalPago) < 0.005;
     const seExcedeAlguno = creditos.some((h) => (Number(reparto[h.id]) || 0) > (Number(h.saldo) || 0) + 0.004);
     const listo = !bloqueado && cuadra && !seExcedeAlguno
         && (!conPapel || (hayArchivo && !!lectura))
         && (!pideAprobacion || String(motivo).trim().length >= 5);
-    const descuadre = conPapel && totalPago > 0 && !cuadra
+    // Con otra venta posible, lo que sobra lo explica su campo, no un «faltan».
+    const descuadre = conPapel && totalPago > 0 && !cuadra && !puedeOtraVenta
         ? (sumaRepartida < totalPago
             ? { faltan: totalPago - sumaRepartida }
             : { sobran: sumaRepartida - totalPago })
@@ -109,6 +127,8 @@ export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], l
             ? (conPapel ? { texto: 'Escribe el monto del comprobante.', campo: 'abono-monto-doc' }
                 : { texto: 'Escribe cuánto se le abona.', campo: abona(creditos[0]) })
         : excedido ? { texto: 'El abono pasa de lo que debe ese crédito.', campo: abona(excedido) }
+        : puedeOtraVenta && !numeroOtraVenta
+            ? { texto: `Sobran ${formatMoney(sobra)}. Escribe el número de la otra venta.`, campo: 'abono-otra-venta' }
         : !cuadra ? {
             texto: sumaRepartida < totalPago
                 ? `Faltan ${formatMoney(totalPago - sumaRepartida)} por aplicar.`
@@ -116,7 +136,7 @@ export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], l
             campo: abona(creditos[0]),
         }
         : null;
-    return { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, seExcedeAlguno, listo, descuadre, falta };
+    return { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, seExcedeAlguno, listo, descuadre, falta, excedeLaDeuda, puedeOtraVenta, parteOtraVenta, numeroOtraVenta };
 }
 
 /** Lo que se le manda a la caja: crédito por crédito, sólo los que llevan algo. */

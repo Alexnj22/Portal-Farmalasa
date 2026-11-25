@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-25T15:47:19.086Z",
+ "generado": "2026-11-25T20:39:30.644Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -1529,18 +1529,6 @@
    "area": "compras",
    "por": "código"
   },
-  "compra_proveedores_para_regalias": {
-   "area": "compras",
-   "por": "código"
-  },
-  "compra_regalia_al_historial": {
-   "area": "compras",
-   "por": "código"
-  },
-  "compra_regalias_de_proveedor": {
-   "area": "compras",
-   "por": "código"
-  },
   "compra_llave_de_renglon": {
    "area": "facturacion-dte",
    "por": "código"
@@ -1570,6 +1558,18 @@
    "por": "código"
   },
   "compra_por_llegar_marcar": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compra_proveedores_para_regalias": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compra_regalia_al_historial": {
+   "area": "compras",
+   "por": "trigger"
+  },
+  "compra_regalias_de_proveedor": {
    "area": "compras",
    "por": "código"
   },
@@ -6864,8 +6864,13 @@
    "area": "fiscal",
    "por": "llamada"
   },
+  "venta_que_completa_un_voucher": {
+   "area": "cortes-efectivo",
+   "por": "manual",
+   "manual": true
+  },
   "venta_valida": {
-   "area": "app-clientes",
+   "area": "facturacion-dte",
    "por": "código"
   },
   "ventas_busqueda_aproximada": {

@@ -75,8 +75,9 @@ export function repartoDesdeElComprobante(monto, credito, otros = []) {
  * Pedido del usuario: «la diferencia es porque se cobró una aplicación de
  * inyección … no se puede cobrar aparte, se hace un solo cobro». Cuando el
  * comprobante pasa de lo que debe el cliente (`deuda`), lo que sobra sobre lo
- * aplicado puede ir a OTRA venta del mismo cobro, y quien cobra escribe su
- * número (`otraVenta`). El servidor comprueba que esa venta existe y le
+ * aplicado puede ir a OTRA venta del mismo cobro: la pantalla la encuentra
+ * sola (`useVentasParaVoucher`) o quien cobra escribe su número. `otraVenta`
+ * es lo que la identifica, sea el id o el número. El servidor comprueba que esa venta existe y le
  * alcanza (`venta_que_completa_un_voucher`). «Por más de lo que debe» deja de
  * frenar: ahora pide ese número.
  *
@@ -128,7 +129,7 @@ export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], l
                 : { texto: 'Escribe cuánto se le abona.', campo: abona(creditos[0]) })
         : excedido ? { texto: 'El abono pasa de lo que debe ese crédito.', campo: abona(excedido) }
         : puedeOtraVenta && !numeroOtraVenta
-            ? { texto: `Sobran ${formatMoney(sobra)}. Escribe el número de la otra venta.`, campo: 'abono-otra-venta' }
+            ? { texto: `Sobran ${formatMoney(sobra)}. Elige la otra venta.`, campo: 'abono-otra-venta' }
         : !cuadra ? {
             texto: sumaRepartida < totalPago
                 ? `Faltan ${formatMoney(totalPago - sumaRepartida)} por aplicar.`
@@ -136,7 +137,7 @@ export function estadoDelCobro({ forma, montoDoc, reparto = {}, creditos = [], l
             campo: abona(creditos[0]),
         }
         : null;
-    return { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, seExcedeAlguno, listo, descuadre, falta, excedeLaDeuda, puedeOtraVenta, parteOtraVenta, numeroOtraVenta };
+    return { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, seExcedeAlguno, listo, descuadre, falta, excedeLaDeuda, puedeOtraVenta, parteOtraVenta, numeroOtraVenta, sobra };
 }
 
 /** Lo que se le manda a la caja: crédito por crédito, sólo los que llevan algo. */

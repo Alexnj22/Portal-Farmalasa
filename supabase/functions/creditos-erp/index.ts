@@ -1020,6 +1020,29 @@ Deno.serve(async (req) => {
     // panel trae la tabla completa con fecha, hora, tipo, número y monto. La
     // conclusión vieja salió de mirar el LISTADO de créditos, que sí da sólo el
     // total, y de no abrir el panel.
+    // ── VENTAS PARA EL VOUCHER — la otra venta que el mismo papel pagó ───
+    //
+    // Pedido del usuario (2026-11-25): «¿no puede enlazar ya la venta y la
+    // inyección pagada con tarjeta? … ese mismo voucher a las 2 cosas». Cuando
+    // el comprobante pasa de la deuda, la pantalla pregunta qué ventas de hoy
+    // o ayer en la sucursal valen EXACTAMENTE lo que sobra.
+    if (accion === "ventas_para_voucher") {
+      const sala = Number(body.sala);
+      const monto = Number(body.monto);
+      if (!mapa.some((e) => e.branchId === sala)) {
+        return responder({ ok: false, error: "Esa sucursal no está configurada." }, 400);
+      }
+      if (!permiso.alcanceTodo && Number(permiso.emp?.branch_id) !== sala) {
+        return responder({ ok: false, error: "Solo puedes ver tu propia sucursal." }, 403);
+      }
+      if (!(Number.isFinite(monto) && monto > 0)) return responder({ ok: true, ventas: [] });
+      const { data, error } = await supabase.rpc("ventas_para_completar_voucher", {
+        p_branch_id: sala, p_monto: Number(monto.toFixed(2)),
+      });
+      if (error) throw new Error(`buscando ventas para el voucher: ${error.message}`);
+      return responder({ ok: true, ventas: Array.isArray(data) ? data : [] });
+    }
+
     if (accion === "historial") {
       const sala = Number(body.sala);
       const credito = String(body.credito ?? "").trim();
@@ -1081,8 +1104,12 @@ Deno.serve(async (req) => {
        * dice el número de la otra venta y acá se comprueba que existe en la
        * sucursal, que es válida y que le alcanza. Sin número, la regla de
        * siempre: la suma tiene que dar exacto. */
-      const numeroOtra = String((body.otraVenta as { numero?: unknown } | null)?.numero ?? "")
-        .trim().slice(0, 40);
+      /* Llega como `{ id }` cuando la pantalla la encontró sola (lo normal) o
+       * como `{ numero }` cuando quien cobra la escribió. */
+      const idOtra = Number((body.otraVenta as { id?: unknown } | null)?.id);
+      const tieneIdOtra = Number.isInteger(idOtra) && idOtra > 0;
+      const numeroOtra = tieneIdOtra ? `#${idOtra}`
+        : String((body.otraVenta as { numero?: unknown } | null)?.numero ?? "").trim().slice(0, 40);
       const parteOtra = numeroOtra ? Number((montoDoc - suma).toFixed(2)) : 0;
       if (numeroOtra && forma === "Efectivo") {
         return responder({ ok: false, error: "Un cobro en efectivo no lleva otra venta: se cobra cada una por su lado." }, 400);
@@ -1131,9 +1158,9 @@ Deno.serve(async (req) => {
        * hacer puede tardar un minuto en aparecer: el mensaje lo dice. */
       let ventaOtra: { id: number; correlativo: string } | null = null;
       if (numeroOtra) {
-        const { data: cands, error: eV } = await supabase.rpc("venta_que_completa_un_voucher", {
-          p_branch_id: sala, p_numero: numeroOtra,
-        });
+        const { data: cands, error: eV } = tieneIdOtra
+          ? await supabase.rpc("ventas_para_completar_voucher", { p_branch_id: sala, p_monto: parteOtra, p_id: idOtra })
+          : await supabase.rpc("venta_que_completa_un_voucher", { p_branch_id: sala, p_numero: numeroOtra });
         if (eV) throw new Error(`buscando la otra venta: ${eV.message}`);
         const lista = (Array.isArray(cands) ? cands : []) as {
           id: number; correlativo: string; total: number; valida: boolean; ya_cubierto: number;
@@ -1142,7 +1169,9 @@ Deno.serve(async (req) => {
         if (!validas.length) {
           return responder({
             ok: false,
-            error: lista.length
+            error: tieneIdOtra
+              ? (lista.length ? "Esa venta está anulada. Elige otra." : "Esa venta ya no está entre las de hoy de esta sucursal. Elige otra.")
+              : lista.length
               ? `La venta ${numeroOtra} está anulada. Revisa el número.`
               : `No encuentro la venta ${numeroOtra} de hoy en esta sucursal. Revisa el número; `
                 + "si la acabas de hacer, espera un minuto y vuelve a intentarlo.",
@@ -1159,7 +1188,7 @@ Deno.serve(async (req) => {
         if (parteOtra > libre + 0.004) {
           return responder({
             ok: false,
-            error: `Del comprobante sobran ${parteOtra.toFixed(2)}, pero a la venta ${numeroOtra} `
+            error: `Del comprobante sobran ${parteOtra.toFixed(2)}, pero a la venta ${tieneIdOtra ? v.correlativo : numeroOtra} `
                  + `sólo le quedan ${Math.max(0, libre).toFixed(2)} por pagar. Revisa el número o los montos.`,
           }, 409);
         }

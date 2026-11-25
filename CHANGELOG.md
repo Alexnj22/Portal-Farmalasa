@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.9 — El voucher encuentra solo la otra venta
+
+Pedido del usuario sobre v2.1603.6: «¿por qué escribiría el número de la
+venta? ¿no puede enlazar ya la venta y la inyección pagada como tarjeta? …
+no podría enlazar ese mismo voucher a las 2 cosas? así evitamos y ahorramos».
+
+- Cuando el voucher pasa de la deuda, Recibir un pago busca sola las ventas
+  de hoy o ayer de la sucursal que valen exactamente lo que sobra
+  (`ventas_para_completar_voucher`, acción `ventas_para_voucher` de
+  `creditos-erp`). Las de tarjeta primero.
+- Una sola: queda enlazada y se cobra sin escribir nada. Varias: se elige
+  con un toque. Ninguna: «Buscar otra vez» y, como último recurso, el número.
+- Si la venta enlazada está registrada en otra forma de pago, lo avisa.
+- `pagar` acepta la venta por id y la vuelve a comprobar antes de cobrar.
+- Hook compartido `useVentasParaVoucher`: portal y app del personal.
+- Migración `20261125205112`. `creditos-erp` desplegada (v54).
+
 ## v2.1603.8 — Un empaque con dos lotes entra como lote compuesto
 
 Sertal forte C de LETERAGO trae dos componentes con su lote cada uno, y la

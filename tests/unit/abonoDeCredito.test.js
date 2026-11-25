@@ -62,7 +62,7 @@ describe('abonoDeCredito', () => {
             lectura: { veredicto: 'MONTO_MAYOR_AL_SALDO' }, deuda: 9.35 };
         const sin = estadoDelCobro(base);
         expect([sin.bloqueado, sin.puedeOtraVenta, sin.listo, sin.descuadre]).toEqual([false, true, false, null]);
-        expect(sin.falta).toEqual({ texto: 'Sobran $3.00. Escribe el número de la otra venta.', campo: 'abono-otra-venta' });
+        expect(sin.falta).toEqual({ texto: 'Sobran $3.00. Elige la otra venta.', campo: 'abono-otra-venta' });
         const con = estadoDelCobro({ ...base, otraVenta: ' 95931 ' });
         expect([con.listo, con.parteOtraVenta, con.numeroOtraVenta, con.falta]).toEqual([true, 3, '95931', null]);
         // Sin pasar de la deuda no se ofrece: faltar por aplicar sigue siendo faltar.

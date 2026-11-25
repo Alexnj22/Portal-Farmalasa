@@ -42,6 +42,7 @@ import { aplicacionesDelPago, APROBACION, estadoDelCobro, FORMAS_DE_COBRO as FOR
 import { abonosDelCredito, carteraFiltrada, desdeLaLectura, ORDEN_CARTERA as ORDEN, pagadoPct, tituloDeDias, VER_CARTERA as VER } from '@nucleo/utils/cartera';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
+import { numeroDeVenta, useVentasParaVoucher } from '@nucleo/hooks/useVentasParaVoucher';
 // La regla de todo campo de dinero con máximo (ver el archivo).
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
@@ -1028,6 +1029,65 @@ function trabajoDeAlguien(b) {
     return Object.values(b.reparto || {}).some((m) => String(m ?? '').trim() !== '');
 }
 
+/**
+ * La otra venta que el mismo voucher pagó (2026-11-25). Lo normal es que el
+ * portal la encuentre sola —una venta de hoy por exactamente lo que sobra— y
+ * quien cobra no tenga que hacer nada. Si hay varias, se elige; si no hay
+ * ninguna, se busca otra vez o se escribe el número.
+ */
+function OtraVentaDelVoucher({ sobra, voucher, numero, onNumero }) {
+    const { ventas, buscando, error, elegida, elegir, buscar } = voucher;
+    const rotulo = (v) => `Venta ${numeroDeVenta(v.correlativo)} · ${formatMoney(v.total)} · ${hora12(v.hora)}`;
+    return (
+        <div className="space-y-2" data-campo="abono-otra-venta">
+            {buscando && !elegida && <LoadingState label={`Buscando la venta de ${formatMoney(sobra)}`} />}
+            {error && <Notice variant="warning" icon={AlertTriangle}>No se pudo buscar la venta: {error}</Notice>}
+
+            {elegida && (
+                <Notice variant="success" icon={ShoppingBag}>
+                    Sobran {formatMoney(sobra)} del comprobante. Van a la <strong>{rotulo(elegida)}</strong>
+                    {elegida.cliente ? `, de ${elegida.cliente}` : ''}.
+                    {elegida.tipo_pago && elegida.tipo_pago !== 'tarjeta' && (
+                        <> Esa venta está registrada en {elegida.tipo_pago}: el corte la va a pedir así.</>
+                    )}
+                </Notice>
+            )}
+            {elegida && ventas.length > 1 && (
+                <Button variant="ghost" size="sm" onClick={() => elegir(null)}>No es ésa, elegir otra</Button>
+            )}
+
+            {!elegida && !buscando && ventas.length > 1 && (
+                <>
+                    <p className="text-body-sm text-content-2">
+                        Sobran {formatMoney(sobra)} del comprobante. Hay {ventas.length} ventas de ese monto. ¿Cuál es?
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                        {ventas.map((v) => (
+                            <Button key={v.id} variant="secondary" size="md" className="justify-start"
+                                onClick={() => elegir(v)}>
+                                {rotulo(v)}{v.cliente ? ` · ${v.cliente}` : ''}
+                            </Button>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {!elegida && !buscando && !error && ventas.length === 0 && (
+                <>
+                    <Notice variant="info">
+                        Sobran {formatMoney(sobra)} del comprobante y no encuentro una venta de ese monto hoy en esta sucursal. Si la acabas de hacer, espera un minuto.
+                    </Notice>
+                    <Button variant="ghost" size="sm" icon={RefreshCw} onClick={buscar}>Buscar otra vez</Button>
+                    <PortalInput name="abono-otra-venta" label="O escribe el número de la venta"
+                        inputMode="numeric" maxLength={40} placeholder="95931"
+                        value={numero} onChange={(e) => onNumero(e.target.value)}
+                        helperText="El que sale en el ticket" />
+                </>
+            )}
+        </div>
+    );
+}
+
 function DialogoAbono({ credito, onClose, onCobrar }) {
     const [forma, setForma] = useState('Efectivo');
     const [documento, setDocumento] = useState('');
@@ -1234,9 +1294,16 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
     // `estadoDelCobro` (núcleo): la app cobra con la misma.
     // Antes de `estadoDelCobro`: decide si lo que sobra puede ir a otra venta.
     const debeTodo = useMemo(() => sumaDeSaldos(hermanos, credito), [hermanos, credito]);
-    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo, falta, puedeOtraVenta, parteOtraVenta, numeroOtraVenta } = estadoDelCobro({
+    /* La otra venta se busca con lo que sobra, y lo que sobra sale del mismo
+     * cuadre: primero se calcula sin elegida, después con ella. */
+    const previo = estadoDelCobro({
         forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
-        deuda: debeTodo, otraVenta,
+        deuda: debeTodo,
+    });
+    const voucher = useVentasParaVoucher({ sala: credito.branch_id, sobra: previo.sobra, activo: previo.puedeOtraVenta });
+    const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo, falta, puedeOtraVenta, numeroOtraVenta, sobra } = estadoDelCobro({
+        forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
+        deuda: debeTodo, otraVenta: voucher.elegida ? String(voucher.elegida.id) : otraVenta,
     });
 
     /* Contra QUÉ se topea: todo lo que el cliente debe en la sala, que es la
@@ -1276,14 +1343,15 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             documento: documento.trim(), montoDocumento: Number(totalPago.toFixed(2)),
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
             motivo: motivo.trim() || null, requiereAprobacion: iraAprobacion,
-            otraVenta: numeroOtraVenta ? { numero: numeroOtraVenta } : null,
+            otraVenta: !numeroOtraVenta ? null
+                : voucher.elegida ? { id: voucher.elegida.id } : { numero: numeroOtraVenta },
         });
         // El borrador se tira sólo cuando el cobro ENTRÓ. `onCobrar` devuelve
         // `false` cuando el origen lo rechazó y ahí el diálogo queda abierto:
         // borrarlo entonces perdería justo lo que hay que volver a intentar.
         if (entro !== false) descartar();
         setOcupado(false);
-    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, iraAprobacion, formaReal, numeroOtraVenta, onCobrar, descartar]);
+    }, [listaDeCreditos, reparto, forma, documento, totalPago, archivo, lectura, fechaDoc, pos, motivo, pideAprobacion, iraAprobacion, formaReal, numeroOtraVenta, voucher.elegida, onCobrar, descartar]);
 
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Cobrar un crédito">
@@ -1661,17 +1729,8 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
                                 servidor comprueba que esa venta existe hoy en
                                 la sucursal y que le alcanza. */}
                             {puedeOtraVenta && (
-                                <div className="space-y-2">
-                                    <Notice variant="info">
-                                        Sobran {formatMoney(totalPago - sumaRepartida)} del comprobante. Si son de otra venta del mismo cobro, escribe el número de esa venta.
-                                    </Notice>
-                                    <PortalInput name="abono-otra-venta" label="Número de la otra venta"
-                                        inputMode="numeric" maxLength={40} placeholder="95931"
-                                        value={otraVenta} onChange={(e) => setOtraVenta(e.target.value)}
-                                        helperText={parteOtraVenta > 0
-                                            ? `${formatMoney(parteOtraVenta)} van a esa venta`
-                                            : 'El que sale en el ticket'} />
-                                </div>
+                                <OtraVentaDelVoucher sobra={sobra} voucher={voucher}
+                                    numero={otraVenta} onNumero={setOtraVenta} />
                             )}
 
                             {conPapel && totalPago > 0 && !cuadra && !puedeOtraVenta && (

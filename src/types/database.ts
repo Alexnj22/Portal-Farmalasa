@@ -41762,6 +41762,10 @@ export type Database = {
         }
         Returns: Json
       }
+      ventas_para_completar_voucher: {
+        Args: { p_branch_id: number; p_id?: number; p_monto: number }
+        Returns: Json
+      }
       ventas_para_puntos: {
         Args: {
           p_desde: string

@@ -26,6 +26,8 @@ import {
   repartoDelMasViejo, repartoDesdeElComprobante, ROTULO_DE_FORMA, sumaDeSaldos,
 } from '@nucleo/utils/abonoDeCredito';
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
+import { numeroDeVenta, useVentasParaVoucher } from '@nucleo/hooks/useVentasParaVoucher';
+import { hora12 } from '@nucleo/utils/hora';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -106,7 +108,11 @@ export default function CobrarCredito() {
     ? hermanos.filter((h) => String(h.id) === String(credito.id) || !quitados.has(String(h.id)))
     : [credito]), [repartir, hermanos, credito, quitados]);
   const debeTodo = sumaDeSaldos(hermanos, credito);
-  const e = estadoDelCobro({ forma, montoDoc, reparto, creditos: lista, lectura, hayArchivo: fotos.length > 0, motivo, deuda: debeTodo, otraVenta });
+  // La otra venta se busca con lo que sobra; después el cuadre la cuenta.
+  const previo = estadoDelCobro({ forma, montoDoc, reparto, creditos: lista, lectura, hayArchivo: fotos.length > 0, motivo, deuda: debeTodo });
+  const voucher = useVentasParaVoucher({ sala, sobra: previo.sobra, activo: previo.puedeOtraVenta });
+  const e = estadoDelCobro({ forma, montoDoc, reparto, creditos: lista, lectura, hayArchivo: fotos.length > 0, motivo, deuda: debeTodo,
+    otraVenta: voucher.elegida ? String(voucher.elegida.id) : otraVenta });
 
   const cambiarForma = (v) => {
     setForma(v);
@@ -178,7 +184,7 @@ export default function CobrarCredito() {
         montoDocumento: Number(e.totalPago.toFixed(2)), aplicaciones: aplicacionesDelPago(lista, reparto),
         comprobanteUrl, lectura: lectura || null, fechaDocumento: fechaDoc || null, pos: pos || null,
         motivo: motivo.trim() || null, requiereAprobacion: e.iraAprobacion,
-        otraVenta: e.numeroOtraVenta ? { numero: e.numeroOtraVenta } : null,
+        otraVenta: !e.numeroOtraVenta ? null : voucher.elegida ? { id: voucher.elegida.id } : { numero: e.numeroOtraVenta },
         claveEnvio: claveCobro.current,
       });
       // Con respuesta, el intento terminó: el próximo es otro cobro.
@@ -316,10 +322,36 @@ export default function CobrarCredito() {
             </Seccion>
           ) : null}
           {e.puedeOtraVenta ? (
-            <Seccion titulo="Otra venta del mismo cobro"
-              pie={e.parteOtraVenta > 0 ? `${formatMoney(e.parteOtraVenta)} van a esa venta.` : 'El número que sale en el ticket.'}>
-              <Aviso tono="nota" texto={`Sobran ${formatMoney(e.totalPago - e.sumaRepartida)} del comprobante. Si son de otra venta del mismo cobro, escribe el número de esa venta.`} />
-              <Campo multiline={false} value={otraVenta} onChangeText={setOtraVenta} maxLength={40} keyboardType="number-pad" placeholder="Número de la otra venta" />
+            <Seccion titulo="Otra venta del mismo cobro">
+              {voucher.buscando && !voucher.elegida ? <Aviso tono="nota" texto={`Buscando la venta de ${formatMoney(e.sobra)}…`} /> : null}
+              {voucher.error ? <Aviso tono="cuidado" texto={`No se pudo buscar la venta: ${voucher.error}`} /> : null}
+              {voucher.elegida ? (
+                <Aviso tono="nota" texto={`Sobran ${formatMoney(e.sobra)} del comprobante. Van a la venta ${numeroDeVenta(voucher.elegida.correlativo)} · ${formatMoney(voucher.elegida.total)} · ${hora12(voucher.elegida.hora)}${voucher.elegida.cliente ? `, de ${voucher.elegida.cliente}` : ''}.${voucher.elegida.tipo_pago && voucher.elegida.tipo_pago !== 'tarjeta' ? ` Esa venta está registrada en ${voucher.elegida.tipo_pago}: el corte la va a pedir así.` : ''}`} />
+              ) : null}
+              {voucher.elegida && voucher.ventas.length > 1 ? (
+                <Pressable onPress={() => voucher.elegir(null)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>No es ésa, elegir otra</Text>
+                </Pressable>
+              ) : null}
+              {!voucher.elegida && !voucher.buscando && voucher.ventas.length > 1 ? (
+                <>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Sobran ${formatMoney(e.sobra)} del comprobante. Hay ${voucher.ventas.length} ventas de ese monto. ¿Cuál es?`}</Text>
+                  {voucher.ventas.map((v) => (
+                    <Pressable key={v.id} onPress={() => voucher.elegir(v)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                      <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`Venta ${numeroDeVenta(v.correlativo)} · ${formatMoney(v.total)} · ${hora12(v.hora)}${v.cliente ? ` · ${v.cliente}` : ''}`}</Text>
+                    </Pressable>
+                  ))}
+                </>
+              ) : null}
+              {!voucher.elegida && !voucher.buscando && !voucher.error && voucher.ventas.length === 0 ? (
+                <>
+                  <Aviso tono="nota" texto={`Sobran ${formatMoney(e.sobra)} del comprobante y no encuentro una venta de ese monto hoy en esta sucursal. Si la acabas de hacer, espera un minuto.`} />
+                  <Pressable onPress={voucher.buscar} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Buscar otra vez</Text>
+                  </Pressable>
+                  <Campo multiline={false} value={otraVenta} onChangeText={setOtraVenta} maxLength={40} keyboardType="number-pad" placeholder="O escribe el número de la venta" />
+                </>
+              ) : null}
             </Seccion>
           ) : null}
           {e.descuadre ? <Aviso tono="cuidado" texto={e.descuadre.faltan != null ? `Faltan ${formatMoney(e.descuadre.faltan)} por aplicar.` : `Sobran ${formatMoney(e.descuadre.sobran)} sobre el comprobante.`} /> : null}

@@ -2871,10 +2871,19 @@ Deno.serve(async (req: Request) => {
             const pesos = idx.map((i) => Math.max(0, Number(items[i]?.ventaGravada ?? 0)));
             const suma = pesos.reduce((a, b) => a + b, 0) || 1;
             let queda = total;
+            // El regalo va en las unidades de cada renglón: un lote se lleva su
+            // parte de las cajas; un producto partido (`_parte`), las cajas por
+            // las unidades de ese producto que trae cada una. Con lotes sin
+            // partir, el último se queda con el redondeo.
+            const cantLinea = Number(crudos[o]?.cantidad ?? 0);
+            const conParte = idx.some((i) => items[i]?._parte);
+            let quedaRegalo = regalo;
             idx.forEach((i, j) => {
               const parte = j === idx.length - 1 ? Math.round(queda * 100) / 100 : Math.round(total * pesos[j] / suma * 100) / 100;
               queda -= parte; rebajaNota[i] = parte;
-              regaloNota[i] = Math.round(regalo * pesos[j] / suma * 100) / 100;
+              const proporcion = cantLinea > 0 ? Number(items[i]?.cantidad ?? 0) / cantLinea : pesos[j] / suma;
+              const r = !conParte && j === idx.length - 1 ? quedaRegalo : Math.round(regalo * proporcion * 10000) / 10000;
+              quedaRegalo = Math.round((quedaRegalo - r) * 10000) / 10000; regaloNota[i] = Math.round(r * 10000) / 10000;
             });
           }
           resumenCarga = notas.reduce((res, n) => resumenMenosNota(res, n.resumen), dte?.resumen);

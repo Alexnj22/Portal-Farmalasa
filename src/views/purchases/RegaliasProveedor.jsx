@@ -13,6 +13,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -64,10 +65,11 @@ export default function RegaliasProveedor({ puedeEditar }) {
     const [busca, setBusca] = useState('');
     const [edit, setEdit] = useState({});
     const [guardando, setGuardando] = useState(null);
+    const [aQuitar, setAQuitar] = useState(null);
 
     useEffect(() => {
         fetchProveedoresParaRegalias().then(({ proveedores: p, error: e }) => {
-            if (e) setError(e);
+            setError(e ?? '');
             setProveedores(p);
             setNit(n => n || p[0]?.nit || '');
         });
@@ -77,7 +79,7 @@ export default function RegaliasProveedor({ puedeEditar }) {
         if (!n) return;
         setDatos(null);
         const r = await fetchRegaliasDeProveedor(n);
-        if (r.error) setError(r.error);
+        setError(r.error ?? '');
         setDatos(r);
     }, []);
     useEffect(() => { cargar(nit); setEdit({}); }, [nit, cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- lee al cambiar de proveedor
@@ -88,9 +90,9 @@ export default function RegaliasProveedor({ puedeEditar }) {
     })), [proveedores]);
 
     const productos = useMemo(() => (datos?.productos ?? [])
-        .filter(x => !busca || tokenMatch(`${x.producto ?? ''} ${x.codigo}`, busca)), [datos, busca]);
+        .filter(x => !busca || tokenMatch(busca, x.producto ?? '', x.codigo)), [datos, busca]);
     const historial = useMemo(() => (datos?.historial ?? [])
-        .filter(x => !busca || tokenMatch(`${x.descripcion ?? ''} ${x.codigo_proveedor}`, busca)), [datos, busca]);
+        .filter(x => !busca || tokenMatch(busca, x.descripcion ?? '', x.codigo_proveedor)), [datos, busca]);
     const conRegalia = (datos?.productos ?? []).filter(x => x.compra != null).length;
 
     const valor = (x, k) => edit[x.codigo]?.[k] ?? (x[k] != null ? String(x[k]) : '');
@@ -105,13 +107,14 @@ export default function RegaliasProveedor({ puedeEditar }) {
         }
         setGuardando(x.codigo);
         const { ok, error: e } = await guardarRegalia({
-            nit, codigo: x.codigo, descripcion: x.producto,
+            nit, codigo: x.codigo, descripcion: x.descripcion ?? x.producto,
             compra: quitar ? null : Number(c), regalo: quitar ? null : Number(g),
         });
         setGuardando(null);
         if (!ok) { useToastStore.getState().showToast('No se guardó la regalía', e, 'danger'); return; }
         useToastStore.getState().showToast(quitar ? 'Regalía quitada' : 'Regalía guardada', x.producto ?? x.codigo, 'success');
         setEdit(s => { const n = { ...s }; delete n[x.codigo]; return n; });
+        setAQuitar(null);
         cargar(nit);
     };
 
@@ -141,7 +144,7 @@ export default function RegaliasProveedor({ puedeEditar }) {
             {vista === 'productos' ? (
                 <DataTable columns={COLS_PRODUCTOS} dense loading={datos === null}
                     empty={{ icon: Gift, message: 'Este proveedor no tiene productos emparejados' }}
-                    movil={{ identidad: 'producto', ancla: 'regalia', apilada: true }}>
+                    movil={{ identidad: 'producto', ancla: 'regalia', apilada: true, acciones: 'mantener' }}>
                     {productos.map((x, i) => (
                         <DataRow key={x.codigo} index={i}>
                             <DataCell>
@@ -163,7 +166,7 @@ export default function RegaliasProveedor({ puedeEditar }) {
                                         <Button size="sm" loading={guardando === x.codigo} onClick={() => guardar(x)}>Guardar</Button>
                                     )}
                                     {puedeEditar && !cambiado(x) && x.compra != null && (
-                                        <Button size="sm" variant="ghost" loading={guardando === x.codigo} onClick={() => guardar(x, true)}>Quitar</Button>
+                                        <Button size="sm" variant="ghost" loading={guardando === x.codigo} onClick={() => setAQuitar(x)}>Quitar</Button>
                                     )}
                                 </div>
                             </DataCell>
@@ -189,6 +192,13 @@ export default function RegaliasProveedor({ puedeEditar }) {
                         </DataRow>
                     ))}
                 </DataTable>
+            )}
+            {aQuitar && (
+                <ConfirmModal isOpen onClose={() => guardando !== aQuitar.codigo && setAQuitar(null)} onConfirm={() => guardar(aQuitar, true)}
+                    isProcessing={guardando === aQuitar.codigo}
+                    title="Quitar regalía"
+                    message={`«${aQuitar.producto ?? aQuitar.codigo}» deja de tener la regalía ${aQuitar.compra} + ${aQuitar.regalo}. Queda en el historial.`}
+                    confirmText="Quitar" />
             )}
         </div>
     );

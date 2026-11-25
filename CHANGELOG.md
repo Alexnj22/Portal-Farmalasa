@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1602.1 — Regalías: correcciones de la revisión de código
+
+Revisión de código de v2.1601.3 + v2.1602.0 (7 hallazgos, los 7 reales).
+
+- El buscador de la pestaña «Regalías» (web) vaciaba la tabla: `tokenMatch`
+  con los argumentos al revés.
+- `regalo_nota` del registro en las unidades de cada renglón: un producto
+  partido se lleva cajas × unidades de ese producto; los lotes, su parte de
+  las cajas, y el último se queda con el redondeo (antes 6.67 × 3 = 20.01).
+- El panel de la nota no se desmonta si la nueva revisión falla, y no se
+  edita mientras revisa.
+- El aviso de error de la pestaña se borra cuando la siguiente lectura sale bien.
+- El historial firma con quien hace el cambio (`auth_employee_id()`), no con
+  el último que guardó.
+- Guardar desde la pestaña conserva la descripción de la factura en vez de
+  pisarla con el nombre del catálogo.
+- En el teléfono, las acciones de la fila van detrás de mantener presionado;
+  «Quitar» pide confirmación (portal y app).
+- Gemelo: cargar_compra — en `apps/mobile/componentes/compras/Regalias.js`
+  (descripción y confirmación al quitar; lo demás es del portal o del servidor).
+- Novedades: no — corrección de lo publicado en v2.1602.0 (decisión del usuario para esa versión).
+
 ## v2.1602.0 — Regalías: pestaña y historial
 
 Pedido del usuario: ver y configurar las regalías sin esperar a que llegue

@@ -4,7 +4,7 @@
 // historial, que no se borra. La carga lo usa para repartir la nota de
 // crédito de descuento.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { fetchProveedoresParaRegalias, fetchRegaliasDeProveedor, guardarRegalia } from '@nucleo/data/cargarCompra';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12 } from '@nucleo/utils/hora';
@@ -46,7 +46,7 @@ function Producto({ x, nit, puedeEditar, onGuardado }) {
   const guardar = async (quitar = false) => {
     if (!quitar && !(Number(compra) > 0 && Number(regalo) > 0)) { fallo('Regalía incompleta', 'Escribe cuántas se compran y cuántas van de regalo.'); return; }
     setG(true);
-    const { ok, error } = await guardarRegalia({ nit, codigo: x.codigo, descripcion: x.producto,
+    const { ok, error } = await guardarRegalia({ nit, codigo: x.codigo, descripcion: x.descripcion ?? x.producto,
       compra: quitar ? null : Number(compra), regalo: quitar ? null : Number(regalo) });
     setG(false);
     if (!ok) { fallo('No se guardó la regalía', error ?? ''); return; }
@@ -67,7 +67,7 @@ function Producto({ x, nit, puedeEditar, onGuardado }) {
         <Text style={{ color: colorSistema.texto, fontSize: 14, fontVariant: ['tabular-nums'] }}>{nivel(x.compra, x.regalo) ?? 'Sin regalía'}</Text>
       )}
       {puedeEditar && cambiado ? <BotonGrande texto="Guardar" deshabilitado={guardando} onPress={() => guardar()} /> : null}
-      {puedeEditar && !cambiado && x.compra != null ? <BotonGrande texto="Quitar regalía" borde deshabilitado={guardando} onPress={() => guardar(true)} /> : null}
+      {puedeEditar && !cambiado && x.compra != null ? <BotonGrande texto="Quitar regalía" borde deshabilitado={guardando} onPress={() => Alert.alert('Quitar regalía', `«${x.producto ?? x.codigo}» deja de tener la regalía ${x.compra} + ${x.regalo}. Queda en el historial.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Quitar', style: 'destructive', onPress: () => guardar(true) }])} /> : null}
       {x.compra != null ? <Quien id={x.actualizado_por} nombre={x.actualizado_por_nombre} cuando={x.updated_at} /> : null}
     </Tarjeta>
   );

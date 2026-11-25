@@ -500,7 +500,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     };
     const faltan = estado.filter(e => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento || e.lotes_sin_cuadrar).length;
     const revision = resultado?.revision;
-    const notaVisible = revision?.nota_descuento ?? (revisando ? ultimaRev?.revision?.nota_descuento : null) ?? null;
+    // Si la nueva revisión falla o todavía no llega, se queda la nota anterior
+    // (sin editar mientras revisa): el panel no se desmonta.
+    const notaVisible = revision?.nota_descuento ?? (!resultado ? ultimaRev?.revision?.nota_descuento : null) ?? null;
     const revisionVigente = !!(p && resultado?.firma && resultado.firma === firmaActual());
     // Ya se mandó (o no se sabe): no se revisa ni se manda de nuevo desde acá.
     const yaMandada = envio?.enviada === true || envio?.enviada === null
@@ -740,7 +742,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         desmonta y no se pierden las regalías a medio escribir. */}
                     {notaVisible && (
                         <NotaDeDescuento nota={notaVisible} emisorNit={p.documento.emisor_nit}
-                            puedeEditar={puedeEditar && !yaMandada} sinNota={sinNota}
+                            puedeEditar={puedeEditar && !yaMandada && !revisando} sinNota={sinNota}
                             onSinNota={(v) => revisar(v)} onCambio={() => revisar()} />
                     )}
 

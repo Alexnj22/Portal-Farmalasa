@@ -101,4 +101,24 @@ describe('resumenMenosNota', () => {
         const nota = { totalGravada: 100, tributos: [{ codigo: '20', valor: 13 }], ivaPerci1: 1, montoTotalOperacion: 113 };
         expect(totalDelDocumento(resumenMenosNota(ccf, nota))).toBe(1026);
     });
+
+    it('nota de UN producto (Ultra-K): todo el monto a esa línea, sin regalías', () => {
+        // CCF de Vijosa del 24-nov con la nota de $7.53: es descuento del Ultra-K.
+        const reng = [
+            { codigo: 'NOAMB001-02', cantidad: 15, precio: 1.28, gravada: 19.2 },
+            { codigo: 'VIULT005-02', cantidad: 72, precio: 5.49, gravada: 395.28 },
+            { codigo: 'VIULT008-02', cantidad: 10, precio: 11.46, gravada: 114.6 },
+        ];
+        const r = repartirNotaDeDescuento(reng, NIVELES, 6.66, 2);
+        expect(r.modo).toBe('producto');
+        expect(r.excede).toBe(false);
+        expect(r.rebajas).toEqual([0, 0, 6.66]);
+        expect(r.regalo).toEqual([0, 0, 0]);
+        // Más de lo que cobra ese producto: no se aplica.
+        const x = repartirNotaDeDescuento(reng, NIVELES, 200, 2);
+        expect(x.excede).toBe(true);
+        expect(x.rebajas).toEqual([0, 0, 0]);
+        // Índice fuera de rango: reparte como siempre.
+        expect(repartirNotaDeDescuento(reng, NIVELES, 6.66, 9).modo).not.toBe('producto');
+    });
 });

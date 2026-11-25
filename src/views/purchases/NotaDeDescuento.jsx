@@ -22,15 +22,17 @@ const MODO = {
     regalias: 'Cada producto lleva sus regalías. El resto del descuento va parejo en todos.',
     proporcional: 'Ningún producto tiene su regalía anotada. El descuento va parejo en todos. Anota la regalía de cada producto para que su costo sea exacto.',
     escalado: 'Las regalías suman más que la nota. Se ajustaron a lo que dice la nota. Revisa las regalías anotadas.',
+    producto: 'Toda la nota es descuento de un solo producto y baja su costo.',
 };
 
-export default function NotaDeDescuento({ nota, emisorNit, puedeEditar, sinNota, onSinNota, onCambio }) {
+export default function NotaDeDescuento({ nota, emisorNit, puedeEditar, sinNota, onSinNota, onCambio, onProducto }) {
     const [edit, setEdit] = useState({});
     const [guardando, setGuardando] = useState(null);
     if (!nota?.notas?.length) return null;
 
     const total = nota.notas.reduce((a, n) => a + Number(n.total || 0), 0);
     const cercana = nota.notas.some(n => n.como === 'cercana');
+    const producto = Number.isInteger(nota.producto) ? nota.renglones.find(r => r.renglon === nota.producto) : null;
     const valor = (r, k) => edit[r.renglon]?.[k] ?? (r.nivel?.[k] != null ? String(r.nivel[k]) : '');
     const poner = (r, k, v) => setEdit(e => ({ ...e, [r.renglon]: { compra: valor(r, 'compra'), regalo: valor(r, 'regalo'), [k]: v.replace(/\D/g, '') } }));
     const cambiado = (r) => edit[r.renglon] && (valor(r, 'compra') !== String(r.nivel?.compra ?? '') || valor(r, 'regalo') !== String(r.nivel?.regalo ?? ''));
@@ -87,6 +89,12 @@ export default function NotaDeDescuento({ nota, emisorNit, puedeEditar, sinNota,
                         onChange={() => onSinNota?.(!sinNota)} />
                 </div>
             )}
+            {producto && (
+                <Notice variant="info" compact className="mt-2"
+                    action={puedeEditar ? <Button size="xs" variant="secondary" onClick={() => onProducto?.(null)}>Repartir entre todos</Button> : null}>
+                    Descuento de {producto.descripcion}: −{formatMoney(producto.rebaja)}.
+                </Notice>
+            )}
 
             {nota.aplicada && (
                 <div className="mt-3 divide-y divide-divider">
@@ -112,6 +120,11 @@ export default function NotaDeDescuento({ nota, emisorNit, puedeEditar, sinNota,
                                 {puedeEditar && cambiado(r) && (
                                     <Button size="sm" variant="primary" loading={guardando === r.renglon} onClick={() => guardar(r)}>
                                         Guardar
+                                    </Button>
+                                )}
+                                {puedeEditar && !cambiado(r) && nota.producto !== r.renglon && (
+                                    <Button size="sm" variant="ghost" onClick={() => onProducto?.(r.renglon)}>
+                                        Descuento de este producto
                                     </Button>
                                 )}
                             </div>

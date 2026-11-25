@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.0 — Nota de crédito: descuento de un solo producto
+
+Pedido del usuario: la nota de $7.53 de Vijosa (24-nov) no es de regalías sino
+descuento del Ultra-K. Hacía falta poder decirlo.
+
+- En el panel de la nota, cada producto tiene **«Descuento de este producto»**.
+  Toda la nota (sin IVA) se descuenta de ese producto y baja su costo; los
+  demás quedan al precio de la factura. «Repartir entre todos» lo deshace.
+- Viaja como `nota_producto` (índice de la línea de la factura) en la revisión
+  y en el envío; `repartirNotaDeDescuento(..., producto)` con modo `producto`.
+  Si la nota es mayor que lo que cobra ese producto, no se aplica y lo dice.
+- La elección se guarda en el borrador (portal y app).
+- Gemelo: cargar_compra — en `apps/mobile/app/propuesta-compra/[id].js`
+  («Es descuento de un producto» → elegir el producto).
+
 ## v2.1602.2 — Una venta de un mes ya declarado no se manda al MH
 
 Pedir el documento de un consumidor final de la noche lo manda al MH en ese

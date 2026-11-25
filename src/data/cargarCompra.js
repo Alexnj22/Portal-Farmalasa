@@ -286,9 +286,9 @@ export async function buscarProductos(texto, limite = 12) {
  * del documento. Devuelve `{ sobre, revision }`; `revision.problemas` vacío
  * significa que se podría mandar.
  */
-export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito, particionFirma = '', sinNotaDescuento = false }) {
+export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito, particionFirma = '', sinNotaDescuento = false, notaProducto = null }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma, sin_nota_descuento: sinNotaDescuento === true },
+        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma, sin_nota_descuento: sinNotaDescuento === true, nota_producto: notaProducto ?? null },
     });
     if (error) {
         let msg = error.message;
@@ -306,9 +306,9 @@ export async function simularCarga({ documentId, manualId = null, uso, renglones
  * `enviada: true` (con `verificada` y `erp_compra_id`), `false` (no entró, se
  * puede corregir y volver a mandar) o `null` (no se sabe: NO mandar de nuevo).
  */
-export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito, particionFirma = '', sinNotaDescuento = false }) {
+export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito, particionFirma = '', sinNotaDescuento = false, notaProducto = null }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma, sin_nota_descuento: sinNotaDescuento === true },
+        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma, sin_nota_descuento: sinNotaDescuento === true, nota_producto: notaProducto ?? null },
     });
     if (error) {
         let msg = error.message;

@@ -292,7 +292,8 @@ export function repartirNotaDeDescuento(
   renglones: { codigo: string; cantidad: number; precio: number; gravada: number }[],
   niveles: Map<string, NivelRegalia>,
   montoNota: number,
-): { rebajas: number[]; regalo: number[]; sinNivel: number[]; modo: "regalias" | "proporcional" | "escalado"; excede: boolean } {
+  producto: number | null = null,
+): { rebajas: number[]; regalo: number[]; sinNivel: number[]; modo: "regalias" | "proporcional" | "escalado" | "producto"; excede: boolean } {
   const n = renglones.length;
   const rebajas: number[] = new Array(n).fill(0), regalo: number[] = new Array(n).fill(0), sinNivel: number[] = [];
   const S = r2(Number(montoNota) || 0);
@@ -300,6 +301,13 @@ export function repartirNotaDeDescuento(
   const totalBase = base.reduce((a, b) => a + b, 0);
   if (!(S > 0) || !(totalBase > 0)) return { rebajas, regalo, sinNivel, modo: "proporcional", excede: S > 0 };
   const excede = S > r2(totalBase) + 0.005;
+  // La nota es descuento de UN producto (lo marca la persona en el panel): todo
+  // el monto va a esa línea. Si es más de lo que cobra, no se aplica.
+  if (producto != null && producto >= 0 && producto < n) {
+    if (S > r2(base[producto]) + 0.005) return { rebajas, regalo, sinNivel, modo: "producto", excede: true };
+    rebajas[producto] = S;
+    return { rebajas, regalo, sinNivel, modo: "producto", excede: false };
+  }
 
   const valor = renglones.map((r, i) => {
     if (!(base[i] > 0)) return 0;

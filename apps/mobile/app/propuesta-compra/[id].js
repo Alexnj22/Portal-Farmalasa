@@ -70,8 +70,10 @@ const MODO_NOTA = {
   regalias: 'Cada producto lleva sus regalías. El resto del descuento va parejo en todos.',
   proporcional: 'Ningún producto tiene su regalía anotada. El descuento va parejo en todos.',
   escalado: 'Las regalías suman más que la nota. Se ajustaron a lo que dice la nota.',
+  producto: 'Toda la nota es descuento de un solo producto y baja su costo.',
 };
-function NotaDeDescuento({ nota, sinNota, puedeEditar, ocupado, onSinNota }) {
+function NotaDeDescuento({ nota, sinNota, puedeEditar, ocupado, onSinNota, onProducto }) {
+  const [eligiendo, setEligiendo] = useState(false);
   const total = (nota.notas ?? []).reduce((a, n) => a + Number(n.total || 0), 0);
   const cercana = (nota.notas ?? []).some((n) => n.como === 'cercana');
   const filas = (nota.renglones ?? []).filter((r) => Number(r.rebaja) > 0);
@@ -82,6 +84,15 @@ function NotaDeDescuento({ nota, sinNota, puedeEditar, ocupado, onSinNota }) {
       {nota.aplicada ? filas.map((r, i) => (
         <Dato key={r.renglon} primero={i === 0} rotulo={`${r.descripcion}${r.nivel ? ` · ${r.nivel.compra}+${r.nivel.regalo}` : ''}${Number(r.regalo) > 0 ? ` · ${r.regalo} de regalo` : ''}`}
           valor={`−${formatMoney(r.rebaja)}`} />
+      )) : null}
+      {puedeEditar && nota.aplicada && Number.isInteger(nota.producto) ? (
+        <BotonGrande borde texto="Repartir entre todos" deshabilitado={ocupado} onPress={() => onProducto(null)} />
+      ) : null}
+      {puedeEditar && nota.aplicada && !Number.isInteger(nota.producto) ? (
+        <BotonGrande borde texto={eligiendo ? 'Cancelar' : 'Es descuento de un producto'} deshabilitado={ocupado} onPress={() => setEligiendo((e) => !e)} />
+      ) : null}
+      {eligiendo && !Number.isInteger(nota.producto) ? (nota.renglones ?? []).filter((r) => Number(r.precio) > 0).map((r) => (
+        <BotonGrande key={`p-${r.renglon}`} borde texto={r.descripcion} deshabilitado={ocupado} onPress={() => { setEligiendo(false); onProducto(r.renglon); }} />
       )) : null}
       {puedeEditar ? (
         <BotonGrande borde texto={sinNota ? 'Aplicar la nota' : 'Esta nota no es de esta factura'} deshabilitado={ocupado}
@@ -107,6 +118,7 @@ export default function PropuestaDeCompra() {
   const [p, setP] = useState(null);
   // La nota de descuento que encontró la revisión NO es de esta factura.
   const [sinNota, setSinNota] = useState(false);
+  const [notaProducto, setNotaProducto] = useState(null);
   const [error, setError] = useState('');
   const [elegidos, setEleg] = useState({});
   const [buscando, setBusc] = useState(null);
@@ -151,10 +163,11 @@ export default function PropuestaDeCompra() {
     setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, conBorrador(ajusteInicial(r), b?.ajustes?.[i])])));
     setUso(b?.uso ?? 'venta');
     setSinNota(b?.sinNota === true);
+    setNotaProducto(Number.isInteger(b?.notaProducto) ? b.notaProducto : null);
     setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
   }, [doc.document_id, doc.manual_id, claveBorrador]);
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
-  useEffect(() => { if (p) saveDraft(claveBorrador, { ajustes, uso, dias, sinNota, huella: huellaDe(p.renglones) }); }, [p, ajustes, uso, dias, sinNota, claveBorrador]);
+  useEffect(() => { if (p) saveDraft(claveBorrador, { ajustes, uso, dias, sinNota, notaProducto, huella: huellaDe(p.renglones) }); }, [p, ajustes, uso, dias, sinNota, notaProducto, claveBorrador]);
   useEffect(() => {
     fetchPausaDeCompras().then(({ estado }) => setPausa(estado));
     if (papel) return;
@@ -211,12 +224,13 @@ export default function PropuestaDeCompra() {
   };
   const productoDe = (r, i) => productoDelRenglon(r, elegidos[claveDe(r, i)]);
   const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i), r)]));
-  const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '', sinNotaDescuento: sinNota });
+  const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '', sinNotaDescuento: sinNota, notaProducto });
 
-  const revisar = async (sinNotaAhora = sinNota) => {
+  const revisar = async (sinNotaAhora = sinNota, productoAhora = notaProducto) => {
     if (sinNotaAhora !== sinNota) setSinNota(sinNotaAhora);
+    if (productoAhora !== notaProducto) setNotaProducto(productoAhora);
     setRev(true); setError(''); setRes(null); setEnvio(null);
-    const firma = JSON.stringify({ ...JSON.parse(firmaActual()), sinNotaDescuento: sinNotaAhora });
+    const firma = JSON.stringify({ ...JSON.parse(firmaActual()), sinNotaDescuento: sinNotaAhora, notaProducto: productoAhora });
     const { resultado: res, error: e } = await simularCarga({ documentId: doc.document_id, manualId: doc.manual_id, ...JSON.parse(firma) });
     setRev(false);
     if (e) { setError(e); return; }
@@ -411,7 +425,7 @@ export default function PropuestaDeCompra() {
               {revision?.totales ? <Totales t={revision.totales} /> : null}
               {revision?.nota_descuento ? (
                 <NotaDeDescuento nota={revision.nota_descuento} sinNota={sinNota} puedeEditar={puedeEditar && !yaMandada}
-                  ocupado={revisando || enviando} onSinNota={(v) => revisar(v)} />
+                  ocupado={revisando || enviando} onSinNota={(v) => revisar(v)} onProducto={(i) => revisar(sinNota, i)} />
               ) : null}
 
               {!revision && uso === 'venta' && faltan > 0 ? (

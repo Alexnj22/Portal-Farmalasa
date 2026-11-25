@@ -2857,7 +2857,11 @@ Deno.serve(async (req: Request) => {
           codigo: String(it?.codigo ?? ""), cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
           gravada: Number(it?.ventaGravada ?? 0) * dsc.gravada,
         }));
-        const rep = repartirNotaDeDescuento(reng, niveles, gravNota);
+        // `nota_producto`: la persona marcó que la nota es descuento de una sola
+        // línea de la factura (no regalías). Índice de la línea, como `renglon`.
+        const np = Number(body?.nota_producto);
+        const notaProducto = body?.nota_producto != null && Number.isInteger(np) && np >= 0 && np < reng.length ? np : null;
+        const rep = repartirNotaDeDescuento(reng, niveles, gravNota, notaProducto);
         const quiere = body?.sin_nota_descuento !== true;
         const aplicar = quiere && !exentaNota && !rep.excede;
         if (aplicar) {
@@ -2889,11 +2893,13 @@ Deno.serve(async (req: Request) => {
           resumenCarga = notas.reduce((res, n) => resumenMenosNota(res, n.resumen), dte?.resumen);
         }
         if (quiere && exentaNota) problemas.push({ renglon: null, texto: "La nota de crédito de descuento trae montos exentos y no se sabe repartir. Si no es de esta factura, márcalo en el panel de la nota." });
-        if (quiere && !exentaNota && rep.excede) problemas.push({ renglon: null, texto: "La nota de crédito de descuento es mayor que lo que cobra la factura. Si no es de esta factura, márcalo en el panel de la nota." });
+        if (quiere && !exentaNota && rep.excede) problemas.push({ renglon: null, texto: notaProducto != null
+          ? "La nota de crédito de descuento es mayor que lo que cobra ese producto. Elige otro o repártela entre todos."
+          : "La nota de crédito de descuento es mayor que lo que cobra la factura. Si no es de esta factura, márcalo en el panel de la nota." });
         notaDescuento = {
           aplicada: aplicar,
           notas: notas.map((n) => ({ document_id: n.id, numero_control: n.numero_control, total: n.monto_total, como: n.como })),
-          gravada: gravNota, modo: rep.modo,
+          gravada: gravNota, modo: rep.modo, producto: notaProducto,
           renglones: reng.map((r, i) => ({
             renglon: i, codigo: codigoDeRegalia(r.codigo), descripcion: String(crudos[i]?.descripcion ?? ""),
             cantidad: r.cantidad, precio: r.precio, regalo: rep.regalo[i], rebaja: rep.rebajas[i],

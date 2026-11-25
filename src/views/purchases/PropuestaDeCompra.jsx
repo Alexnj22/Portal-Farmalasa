@@ -248,6 +248,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [resultado, setRes]   = useState(null);
     // La nota de descuento que la revisión encontró NO es de esta factura.
     const [sinNota, setSinNota] = useState(false);
+    const [notaProducto, setNotaProducto] = useState(null);
     // La última revisión que llegó, aunque después se haya tocado algo: sus
     // costos siguen valiendo para los renglones que NO cambiaron. Sin esto,
     // confirmar un producto borraba el costo de todos los demás.
@@ -304,12 +305,13 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, conBorrador(ajusteInicial(r), b?.ajustes?.[i])])));
         setUso(b?.uso ?? 'venta');
         setSinNota(b?.sinNota === true);
+        setNotaProducto(Number.isInteger(b?.notaProducto) ? b.notaProducto : null);
         setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
     }, [doc.document_id, doc.manual_id, claveBorrador]);
 
     useEffect(() => {
-        if (p) saveDraft(claveBorrador, { ajustes, uso, dias, sinNota, huella: huellaDe(p.renglones) });
-    }, [p, ajustes, uso, dias, sinNota, claveBorrador]);
+        if (p) saveDraft(claveBorrador, { ajustes, uso, dias, sinNota, notaProducto, huella: huellaDe(p.renglones) });
+    }, [p, ajustes, uso, dias, sinNota, notaProducto, claveBorrador]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
@@ -420,7 +422,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i), r)]));
 
     // Lo que se revisa y lo que se manda es esta MISMA firma.
-    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '', sinNotaDescuento: sinNota });
+    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '', sinNotaDescuento: sinNota, notaProducto });
 
     // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
     // algo cambió, así que acá se le pasan las mismas decisiones.
@@ -471,10 +473,11 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         setRes(null);
     };
 
-    const revisar = async (sinNotaAhora = sinNota) => {
+    const revisar = async (sinNotaAhora = sinNota, productoAhora = notaProducto) => {
         if (sinNotaAhora !== sinNota) setSinNota(sinNotaAhora);
+        if (productoAhora !== notaProducto) setNotaProducto(productoAhora);
         setRev(true); setError(''); setRes(null); setEnvio(null);
-        const firma = JSON.stringify({ ...JSON.parse(firmaActual()), sinNotaDescuento: sinNotaAhora });
+        const firma = JSON.stringify({ ...JSON.parse(firmaActual()), sinNotaDescuento: sinNotaAhora, notaProducto: productoAhora });
         const { resultado: res, error: e } = await simularCarga({
             documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, ...JSON.parse(firma),
         });
@@ -743,7 +746,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                     {notaVisible && (
                         <NotaDeDescuento nota={notaVisible} emisorNit={p.documento.emisor_nit}
                             puedeEditar={puedeEditar && !yaMandada && !revisando} sinNota={sinNota}
-                            onSinNota={(v) => revisar(v)} onCambio={() => revisar()} />
+                            onSinNota={(v) => revisar(v)} onCambio={() => revisar()}
+                            onProducto={(i) => revisar(sinNota, i)} />
                     )}
 
                     {/* Lo que hay que mirar antes de nada. */}

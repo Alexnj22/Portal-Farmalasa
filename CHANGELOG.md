@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1601.1 — La web de Puntos Salud invita a bajar la app en Android
+
+- `app.farmasalud.lat` abierta desde un teléfono Android muestra una hoja abajo:
+  «Descarga la app» → Google Play, o «Seguir en la web». Quien la cierra no la
+  vuelve a ver en 3 días. iPhone no la ve hasta que App Store apruebe la app
+  (`apps/clientes/componentes/DescargaAndroid.js`, montada en `app/_layout.js`
+  sólo en la web; en las apps nativas no existe).
+- Motivo: el 2026-11-25 había ~15 sesiones `web` con modelos Android desde el
+  14-nov y ningún cliente real todavía en la app de Android.
+- Verificado con la web compilada (Pixel 7 y Galaxy S8: la hoja entra completa;
+  al cerrarla y recargar no vuelve; iPhone no la ve).
+- Ficha de Play: 4 capturas de Android (1080×1920; el usuario eligió Inicio, Tienda, Tratamientos y Bienestar), gráfico de funciones e ícono
+  de prueba en `apps/clientes/tienda/`.
+- Novedades: no — es la app de clientes, no el portal del personal.
+- Gemelo: app-clientes — sólo existe en la web; en las apps nativas no aplica.
+
 ## v2.1601.0 — Cargar compra: regalías que llegan en nota de crédito
 
 - Vijosa factura todas las unidades al precio lleno y manda las de regalo

@@ -8122,6 +8122,57 @@ export type Database = {
         }
         Relationships: []
       }
+      compra_regalia: {
+        Row: {
+          actualizado_por: string | null
+          codigo_proveedor: string
+          compra: number
+          created_at: string
+          descripcion: string | null
+          id: number
+          proveedor_nit: string
+          regalo: number
+          updated_at: string
+        }
+        Insert: {
+          actualizado_por?: string | null
+          codigo_proveedor: string
+          compra: number
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          proveedor_nit: string
+          regalo: number
+          updated_at?: string
+        }
+        Update: {
+          actualizado_por?: string | null
+          codigo_proveedor?: string
+          compra?: number
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          proveedor_nit?: string
+          regalo?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_regalia_actualizado_por_fkey"
+            columns: ["actualizado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_regalia_actualizado_por_fkey"
+            columns: ["actualizado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_registro: {
         Row: {
           cantidad: number | null
@@ -8134,6 +8185,7 @@ export type Database = {
           costo_unidad: number | null
           created_at: string
           descripcion_proveedor: string | null
+          descuento_nota: number | null
           descuento_pie_pct: number | null
           descuento_renglon: number | null
           document_id: number | null
@@ -8152,6 +8204,7 @@ export type Database = {
           producto: string | null
           proveedor_nit: string | null
           proveedor_nombre: string | null
+          regalo_nota: number | null
           renglon: number
           reparto: Json | null
           tipo: string
@@ -8175,6 +8228,7 @@ export type Database = {
           costo_unidad?: number | null
           created_at?: string
           descripcion_proveedor?: string | null
+          descuento_nota?: number | null
           descuento_pie_pct?: number | null
           descuento_renglon?: number | null
           document_id?: number | null
@@ -8193,6 +8247,7 @@ export type Database = {
           producto?: string | null
           proveedor_nit?: string | null
           proveedor_nombre?: string | null
+          regalo_nota?: number | null
           renglon: number
           reparto?: Json | null
           tipo: string
@@ -8216,6 +8271,7 @@ export type Database = {
           costo_unidad?: number | null
           created_at?: string
           descripcion_proveedor?: string | null
+          descuento_nota?: number | null
           descuento_pie_pct?: number | null
           descuento_renglon?: number | null
           document_id?: number | null
@@ -8234,6 +8290,7 @@ export type Database = {
           producto?: string | null
           proveedor_nit?: string | null
           proveedor_nombre?: string | null
+          regalo_nota?: number | null
           renglon?: number
           reparto?: Json | null
           tipo?: string
@@ -34433,6 +34490,16 @@ export type Database = {
       compra_erroneo_adjuntar_nota_papel: {
         Args: { p_id: number; p_nota: Json }
         Returns: number
+      }
+      compra_guardar_regalia: {
+        Args: {
+          p_codigo: string
+          p_compra: number
+          p_descripcion?: string
+          p_nit: string
+          p_regalo: number
+        }
+        Returns: Json
       }
       compra_llave_de_renglon: {
         Args: { p_codigo: string; p_texto: string }

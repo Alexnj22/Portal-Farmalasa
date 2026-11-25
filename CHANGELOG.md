@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1601.0 — Cargar compra: regalías que llegan en nota de crédito
+
+- Vijosa factura todas las unidades al precio lleno y manda las de regalo
+  (26+4, 100+20…) más un descuento aparte en una nota de crédito del mismo día.
+  Cargada desde el portal, la compra entraba por el CCF: el costo de cada
+  producto quedaba ~22 % alto (24-nov: nota $463.52 sin IVA sobre $2,080.33).
+- Ahora `cargar-compra-erp` busca la nota de descuento de la factura (la que lo
+  dice en `documento_relacionado_id`, o si no, la del mismo proveedor y día que
+  llegó más cerca de ese CCF, dentro de 15 min), carga la compra por la
+  factura MENOS la nota —como lo hace Bodega a mano: 6-oct, $1,531.99 −
+  $276.57 = $1,255.41 en el sistema— y reparte la nota con
+  `repartirNotaDeDescuento`: a cada producto el valor de sus regalías
+  (unidades de regalo × precio de lista), y el resto en proporción. Contra la
+  carga a mano del 6-oct, cada producto queda a menos de $0.30.
+- Las notas por el total (anulaciones) y las rebajas mensuales que llegan días
+  después (COFARSAL, Lancasco, Pharmalat: 10 desde agosto) no entran: sólo
+  notas del mismo día y menores que la factura. Una nota usada en otra compra
+  no se vuelve a usar.
+- Tabla nueva `compra_regalia` (proveedor + código del proveedor → compra +
+  regalo), con `compra_guardar_regalia`. Sembrados los 5 niveles de Vijosa que
+  dio el usuario. El registro de compras guarda `descuento_nota` y
+  `regalo_nota` por producto. Migración `20261125153841`.
+- En la revisión de la factura: el panel de la nota, con lo que lleva cada
+  producto, la regalía editable y «Esta nota no es de esta factura». La columna
+  de totales dice «Factura − nota».
+- Gemelo: cargar_compra — en `apps/mobile/app/propuesta-compra/[id].js` (la
+  nota, lo que lleva cada producto y «Esta nota no es de esta factura»; las
+  regalías se anotan en el portal).
+- Novedades: no — lo usa sólo Bodega y el panel se explica al abrir la factura (decisión del usuario).
+
 ## v2.1600.2 — Metas: un día sin la marca de libre cuenta como trabajado
 
 - `get_metas_mes_en_curso` decidía si un día de venta tenía turno con

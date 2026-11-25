@@ -33,7 +33,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
+  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura, repartirNotaDeDescuento, resumenMenosNota, codigoDeRegalia,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
@@ -1783,6 +1783,74 @@ async function vencidosAEstante(admin: any, traslado: string, quien: string) {
   return { ok: true, traslado: mov.traslado, renglones: ids.length };
 }
 
+/**
+ * Las notas de crédito de DESCUENTO de una factura (Vijosa, 2026-11-25): el
+ * laboratorio manda las regalías en una nota aparte, el mismo día. Es de esta
+ * factura si la nota lo dice (`documento_relacionado_id`); si no dice de cuál,
+ * se la asigna al CCF del mismo proveedor y día que llegó más cerca en el
+ * tiempo, dentro de 15 minutos — el 24-nov llegaron dos CCF y dos notas:
+ * 528.42 a los 68 s del primero y 7.53 a los 3 min del segundo.
+ * Una nota por el total no es descuento (es la anulación, «¿Anulada?»), y una
+ * ya aplicada a otra compra cargada no se vuelve a usar.
+ */
+const VENTANA_NOTA_MS = 15 * 60 * 1000;
+async function notasDeDescuento(
+  admin: any, d: { id: number; emisor_nit: string; fecha_emision: string; received_at?: string | null }, totalCcf: number | null,
+): Promise<{ id: number; numero_control: string | null; monto_total: number; resumen: any; como: "relacionada" | "cercana" }[]> {
+  const { data: notas, error } = await admin.from("purchase_dte_documents")
+    .select("id, numero_control, monto_total, json_path, items_text, documento_relacionado_id, received_at, invalidado")
+    // Un proveedor manda unas pocas notas por día: 50 es un tope deliberado.
+    .eq("tipo_dte", "05").eq("emisor_nit", d.emisor_nit).eq("fecha_emision", d.fecha_emision).limit(50);
+  if (error) throw error;
+  const esDescuento = (n: any) => /descuento|bonifica/i.test(String(n.items_text ?? ""))
+    && !(totalCcf != null && Number(n.monto_total) >= totalCcf - 0.05);
+  const cand = (notas ?? []).filter((n: any) => !n.invalidado && esDescuento(n)
+    && (n.documento_relacionado_id === d.id || n.documento_relacionado_id == null));
+  if (!cand.length) return [];
+  // Las que no dicen de cuál: al CCF del día que llegó más cerca.
+  const sueltas = cand.filter((n: any) => n.documento_relacionado_id == null);
+  const mias = new Set<number>(cand.filter((n: any) => n.documento_relacionado_id === d.id).map((n: any) => n.id));
+  if (sueltas.length) {
+    const { data: ccfs, error: eC } = await admin.from("purchase_dte_documents").select("id, received_at")
+      .eq("tipo_dte", "03").eq("emisor_nit", d.emisor_nit).eq("fecha_emision", d.fecha_emision).limit(200);
+    if (eC) throw eC;
+    for (const n of sueltas) {
+      const t = Date.parse(n.received_at);
+      let mejor: { id: number; dt: number } | null = null;
+      for (const c of ccfs ?? []) {
+        const dt = Math.abs(Date.parse(c.received_at) - t);
+        if (Number.isFinite(dt) && (!mejor || dt < mejor.dt)) mejor = { id: c.id, dt };
+      }
+      if (mejor && mejor.id === d.id && mejor.dt <= VENTANA_NOTA_MS) mias.add(n.id);
+    }
+  }
+  // Ya aplicada a otra compra que se mandó: no se usa dos veces.
+  if (mias.size) {
+    // Sólo la parte de la revisión que importa, y sólo lo cargado desde la
+    // fecha de la factura: una nota no se aplica a una compra anterior.
+    const { data: usadas, error: eU } = await admin.from("compra_carga").select("document_id, nota:revision->nota_descuento")
+      .in("estado", ["enviando", "verificada", "sin_verificar"]).gte("created_at", d.fecha_emision)
+      .contains("revision", { nota_descuento: { aplicada: true } });
+    if (eU) throw eU;
+    for (const u of usadas ?? []) {
+      if (u.document_id === d.id || !(u as any).nota?.aplicada) continue;
+      for (const x of ((u as any).nota?.notas ?? [])) mias.delete(Number(x?.document_id));
+    }
+  }
+  const out = [];
+  for (const n of cand.filter((x: any) => mias.has(x.id))) {
+    const path = pathDeStorage(n.json_path);
+    if (!path) continue;
+    const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
+    if (eB || !blob) throw new Error(`No se pudo leer la nota de crédito: ${eB?.message}`);
+    const resumen = desenvolver(JSON.parse(await blob.text()))?.resumen ?? null;
+    if (!resumen) continue;
+    out.push({ id: n.id, numero_control: n.numero_control ?? null, monto_total: Number(n.monto_total), resumen,
+      como: (n.documento_relacionado_id === d.id ? "relacionada" : "cercana") as "relacionada" | "cercana" });
+  }
+  return out;
+}
+
 const NOTA_CREDITO = `${BASE}/nota_credito_compras.php`;
 
 /**
@@ -2634,7 +2702,7 @@ Deno.serve(async (req: Request) => {
       ({ d, dte } = dteDeManual(m));
     } else {
       const { data: dd, error: eD } = await admin.from("purchase_dte_documents")
-        .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, pdf_path, sello_recibido, invalidado")
+        .select("id, codigo_generacion, numero_control, tipo_dte, emisor_nit, emisor_nombre, fecha_emision, json_path, pdf_path, sello_recibido, invalidado, received_at")
         .eq("id", documentId).maybeSingle();
       if (eD) throw eD;
       if (!dd) return responder({ error: "Esa factura no existe." }, 404);
@@ -2763,6 +2831,47 @@ Deno.serve(async (req: Request) => {
     }
     // El descuento al pie de la factura se reparte en el costo de cada renglón.
     const dsc = factorDescuentoDeFactura(dte?.resumen);
+    // Regalías en nota de crédito (ver `notasDeDescuento`): la compra entra por
+    // el CCF MENOS la nota, como la carga Bodega a mano, y cada producto lleva
+    // sus regalías (`compra_regalia`). `sin_nota_descuento` la deja fuera si la
+    // persona ve que la nota encontrada no es de esta factura.
+    const rebajaNota: number[] = new Array(items.length).fill(0);
+    const regaloNota: number[] = new Array(items.length).fill(0);
+    let resumenCarga = dte?.resumen;
+    let notaDescuento: Record<string, unknown> | null = null;
+    if (!manual && uso !== "consumo") {
+      const notas = await notasDeDescuento(admin, d, totalDelDocumento(dte?.resumen));
+      if (notas.length) {
+        const n2n = (v: unknown) => Number(v) || 0;
+        const gravNota = Math.round(notas.reduce((a, n) => a + n2n(n.resumen?.totalGravada) - n2n(n.resumen?.descuGravada), 0) * 100) / 100;
+        const exentaNota = notas.some((n) => n2n(n.resumen?.totalExenta) + n2n(n.resumen?.totalNoSuj) > 0);
+        const { data: nv, error: eNv } = await admin.from("compra_regalia").select("codigo_proveedor, compra, regalo").eq("proveedor_nit", d.emisor_nit);
+        if (eNv) throw eNv;
+        const niveles = new Map((nv ?? []).map((x: any) => [codigoDeRegalia(x.codigo_proveedor), { compra: Number(x.compra), regalo: Number(x.regalo) }]));
+        const reng = items.map((it) => ({
+          codigo: String(it?.codigo ?? ""), cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
+          gravada: Number(it?.ventaGravada ?? 0) * dsc.gravada,
+        }));
+        const rep = repartirNotaDeDescuento(reng, niveles, gravNota);
+        const aplicar = body?.sin_nota_descuento !== true && !exentaNota;
+        if (aplicar) {
+          rep.rebajas.forEach((x, i) => { rebajaNota[i] = x; regaloNota[i] = rep.regalo[i]; });
+          resumenCarga = notas.reduce((res, n) => resumenMenosNota(res, n.resumen), dte?.resumen);
+        }
+        if (exentaNota) problemas.push({ renglon: null, texto: "La nota de crédito de descuento trae montos exentos y no se sabe repartir. Cárgala aparte." });
+        notaDescuento = {
+          aplicada: aplicar,
+          notas: notas.map((n) => ({ document_id: n.id, numero_control: n.numero_control, total: n.monto_total, como: n.como })),
+          gravada: gravNota, modo: rep.modo,
+          renglones: reng.map((r, i) => ({
+            renglon: i, codigo: codigoDeRegalia(r.codigo), descripcion: String(items[i]?.descripcion ?? ""),
+            cantidad: r.cantidad, precio: r.precio, regalo: rep.regalo[i], rebaja: rep.rebajas[i],
+            nivel: niveles.get(codigoDeRegalia(r.codigo)) ?? null,
+          })),
+          sin_nivel: rep.sinNivel,
+        };
+      }
+    }
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const r: RenglonDoc = {
@@ -2770,7 +2879,7 @@ Deno.serve(async (req: Request) => {
         cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
         descuento: Number(it?.montoDescu ?? 0),
         exento: Number(it?.ventaExenta ?? 0) > 0,
-        subtotal: Number(it?.ventaGravada ?? 0) * dsc.gravada + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
+        subtotal: Number(it?.ventaGravada ?? 0) * dsc.gravada - rebajaNota[i] + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
       };
       let dec: Decision;
       if (uso === "consumo") dec = { tipo: "consumo" };
@@ -2948,6 +3057,7 @@ Deno.serve(async (req: Request) => {
         precio_lista: Number.isFinite(r.precio) ? r.precio : null,
         descuento_renglon: r.descuento || 0,
         descuento_pie_pct: Math.round((1 - (r.exento ? dsc.exenta : dsc.gravada)) * 1e4) / 100,
+        rebaja_nota: rebajaNota[i] || null, regalo_nota: regaloNota[i] || null,
         regalo: !!res.linea && res.linea.bandera === "PRODUCTO" && Number(res.linea.compra) === 0,
         llegaron,
         // El sistema sólo recibe el lote de un regulado; el registro lo guarda siempre.
@@ -2969,13 +3079,13 @@ Deno.serve(async (req: Request) => {
     }
     for (const rp of reparto) rp.compra = String(lineas[rp.linea_idx!].compra);
     const armado = totalesDelSobre(lineas, tipoDoc, tasa);
-    const totalDoc = totalDelDocumento(dte?.resumen);
+    const totalDoc = totalDelDocumento(resumenCarga);
     const diferencia = totalDoc == null ? null : Math.round((Number(armado.total) - totalDoc) * 100) / 100;
     // Lo que viaja en el encabezado: los montos del documento cuando la
     // diferencia es de redondeo y todos los renglones están armados (ver
     // `encabezadoDelDocumento`). Con una diferencia de verdad queda lo armado
     // y la revisión de abajo frena.
-    const tot = lineas.length === items.length ? encabezadoDelDocumento(armado, dte?.resumen, totalDoc, TOLERANCIA) : armado;
+    const tot = lineas.length === items.length ? encabezadoDelDocumento(armado, resumenCarga, totalDoc, TOLERANCIA) : armado;
     if (diferencia == null) problemas.push({ renglon: null, texto: "La factura no trae su total." });
     // Sólo con TODOS los renglones armados: con uno sin producto el total
     // sale corto por construcción, y decirlo repite el problema de arriba.
@@ -2985,7 +3095,7 @@ Deno.serve(async (req: Request) => {
         texto: `El total armado ($${tot.total}) no cuadra con el de la factura ($${totalDoc!.toFixed(2)}): ${diferencia > 0 ? "sobran" : "faltan"} $${Math.abs(diferencia).toFixed(2)}.`,
         // Qué puede ser: la persona no tiene cómo saberlo mirando dos totales.
         pistas: pistasDeDiferencia({
-          diferencia, tasaPercepcion: tasa, tipoDoc, resumen: dte?.resumen,
+          diferencia, tasaPercepcion: tasa, tipoDoc, resumen: resumenCarga,
           hayRegalos: regalos > 0,
           carga: {
             gravada: Number(tot.sumas_sin_iva), exenta: Number(tot.venta_exenta),
@@ -3063,7 +3173,7 @@ Deno.serve(async (req: Request) => {
 
     // Los totales lado a lado, para que la persona los compare con la factura
     // y no sólo vea «cuadra»: lo que dice el documento contra lo que se carga.
-    const res = dte?.resumen ?? {};
+    const res = resumenCarga ?? {};
     const n2 = (v: unknown) => (v == null || v === "" ? null : Math.round(Number(v) * 100) / 100);
     const ivaDoc = Array.isArray(res.tributos)
       ? res.tributos.filter((t: any) => String(t?.codigo) === "20").reduce((a: number, t: any) => a + Number(t?.valor ?? 0), 0)
@@ -3082,7 +3192,7 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const revision = { regalos, totales,
+    const revision = { regalos, totales, nota_descuento: notaDescuento,
       problemas, listo: problemas.length === 0,
       total_documento: totalDoc, total_armado: Number(tot.total),
       diferencia: totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100,

@@ -33,6 +33,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { ORIGEN, OTRA, ESTADO_CARGA, estadoDeCarga, fmtFecha } from './cargarCompraComun';
 import { Llegaron, BuscadorProducto, LotesDelRenglon } from './CargarCompraPiezas';
 import PartirRenglon from './PartirRenglon';
+import NotaDeDescuento from './NotaDeDescuento';
 import { venceCorto, venceTexto } from '@nucleo/utils/venceCorto';
 import { notificarVenceCorto } from '@nucleo/data/venceCorto';
 
@@ -245,6 +246,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [dias, setDias]       = useState('');
     const [revisando, setRev]   = useState(false);
     const [resultado, setRes]   = useState(null);
+    // La nota de descuento que la revisión encontró NO es de esta factura.
+    const [sinNota, setSinNota] = useState(false);
     // La última revisión que llegó, aunque después se haya tocado algo: sus
     // costos siguen valiendo para los renglones que NO cambiaron. Sin esto,
     // confirmar un producto borraba el costo de todos los demás.
@@ -416,7 +419,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i), r)]));
 
     // Lo que se revisa y lo que se manda es esta MISMA firma.
-    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '' });
+    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '', sinNotaDescuento: sinNota });
 
     // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
     // algo cambió, así que acá se le pasan las mismas decisiones.
@@ -467,9 +470,10 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         setRes(null);
     };
 
-    const revisar = async () => {
+    const revisar = async (sinNotaAhora = sinNota) => {
+        if (sinNotaAhora !== sinNota) setSinNota(sinNotaAhora);
         setRev(true); setError(''); setRes(null); setEnvio(null);
-        const firma = firmaActual();
+        const firma = JSON.stringify({ ...JSON.parse(firmaActual()), sinNotaDescuento: sinNotaAhora });
         const { resultado: res, error: e } = await simularCarga({
             documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, ...JSON.parse(firma),
         });
@@ -729,7 +733,12 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                         </Notice>
                     ))}
 
-                    {revision?.totales && <TotalesLadoALado t={revision.totales} />}
+                    {revision?.totales && <TotalesLadoALado t={revision.totales} conNota={!!revision.nota_descuento?.aplicada} />}
+                    {revision?.nota_descuento && (
+                        <NotaDeDescuento nota={revision.nota_descuento} emisorNit={p.documento.emisor_nit}
+                            puedeEditar={puedeEditar && !yaMandada} sinNota={sinNota}
+                            onSinNota={(v) => revisar(v)} onCambio={() => revisar()} />
+                    )}
 
                     {/* Lo que hay que mirar antes de nada. */}
                     {!revision && uso === 'venta' && faltan > 0 && (
@@ -1150,7 +1159,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                     )}
                     {puedeEditar && p && !yaMandada && (
                         <Button size="sm" variant={revision?.listo && revisionVigente ? 'ghost' : 'primary'} loading={revisando}
-                            disabled={enviando} onClick={revisar}>Revisar carga</Button>
+                            disabled={enviando} onClick={() => revisar()}>Revisar carga</Button>
                     )}
                     {puedeEditar && !yaMandada && revision?.listo && revisionVigente && resultado?.carga_id && (
                         <Button size="sm" onClick={() => setConf(true)} disabled={revisando}>Cargar en Bodega</Button>
@@ -1192,7 +1201,7 @@ const FILAS_TOTALES = [
     ['retencion',  'Retención'],
     ['total',      'Total'],
 ];
-function TotalesLadoALado({ t }) {
+function TotalesLadoALado({ t, conNota = false }) {
     const filas = FILAS_TOTALES.filter(([k]) => Number(t.documento?.[k]) || Number(t.carga?.[k]) || k === 'total' || k === 'iva');
     // Cada fila es su propia grilla: así la raya del total cruza de lado a lado
     // en vez de cortarse por columna.
@@ -1201,7 +1210,7 @@ function TotalesLadoALado({ t }) {
         <div data-surface="card" className="mt-3 px-4 py-3">
             <div className={`${cols} pb-1.5`}>
                 <span className="text-caption font-black text-content-3 uppercase tracking-widest">Montos</span>
-                <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">Factura</span>
+                <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">{conNota ? 'Factura − nota' : 'Factura'}</span>
                 <span className="text-caption font-black text-content-3 uppercase tracking-widest text-right">Se carga</span>
                 <span />
             </div>

@@ -261,6 +261,93 @@ export function repartirRegalos(lineas: LineaSobre[], cobrado: number[] = []): n
   return regalos.length;
 }
 
+/**
+ * Regalías que llegan en NOTA DE CRÉDITO (Vijosa, 2026-11-25). El laboratorio
+ * factura todas las unidades al precio lleno —30 Dexa, 120 Mesygest— y el
+ * mismo día manda una nota de «Descuentos comerciales» con el valor de las de
+ * regalo (26+4, 100+20…) más un descuento aparte. Bodega carga la compra por
+ * el CCF MENOS la nota, rebajando a cada producto sus regalías: medido en la
+ * compra del 6-oct (CCF $1,531.99 − nota $276.57 = $1,255.41), Mesygest
+ * −71.29, Nomagest −92.38 y Vermagest −78.94 contra 20×3.55, 20×4.62 y 9×8.80.
+ *
+ * - El regalo de un renglón: `floor(cantidad / (compra + regalo)) × regalo`,
+ *   valuado al precio de lista del renglón (así lo cuenta el laboratorio: el
+ *   «Descuento BV» del 24-nov es 419.31 y las regalías dan 419.36).
+ * - Lo que la nota trae de más que las regalías (el «Descuento P») se reparte
+ *   en proporción a lo cobrado por renglón.
+ * - Si las regalías pasan a la nota, se escalan a ella.
+ * - Sin ningún nivel anotado, toda la nota va en proporción.
+ *
+ * Devuelve la rebaja SIN IVA por renglón, a centavos; la suma es la nota.
+ */
+export type NivelRegalia = { compra: number; regalo: number };
+export function repartirNotaDeDescuento(
+  renglones: { codigo: string; cantidad: number; precio: number; gravada: number }[],
+  niveles: Map<string, NivelRegalia>,
+  montoNota: number,
+): { rebajas: number[]; regalo: number[]; sinNivel: number[]; modo: "regalias" | "proporcional" | "escalado" } {
+  const n = renglones.length;
+  const rebajas: number[] = new Array(n).fill(0), regalo: number[] = new Array(n).fill(0), sinNivel: number[] = [];
+  const S = r2(Number(montoNota) || 0);
+  const base = renglones.map((r) => Math.max(0, Number(r.gravada) || 0));
+  const totalBase = base.reduce((a, b) => a + b, 0);
+  if (!(S > 0) || !(totalBase > 0)) return { rebajas, regalo, sinNivel, modo: "proporcional" };
+
+  const valor = renglones.map((r, i) => {
+    if (!(base[i] > 0)) return 0;
+    const nv = niveles.get(codigoDeRegalia(r.codigo));
+    if (!nv || !(nv.compra > 0) || !(nv.regalo > 0)) { sinNivel.push(i); return 0; }
+    regalo[i] = Math.floor(Number(r.cantidad) / (nv.compra + nv.regalo)) * nv.regalo;
+    return regalo[i] * Number(r.precio);
+  });
+  const R = valor.reduce((a, b) => a + b, 0);
+  let exacto: number[];
+  let modo: "regalias" | "proporcional" | "escalado";
+  if (!(R > 0)) { exacto = base.map((b) => S * b / totalBase); modo = "proporcional"; }
+  else if (R > S) { exacto = valor.map((v) => S * v / R); modo = "escalado"; }
+  else { exacto = valor.map((v, i) => v + (S - R) * base[i] / totalBase); modo = "regalias"; }
+  // A centavos; el renglón con la rebaja más grande se queda con el redondeo.
+  let suma = 0;
+  exacto.forEach((x, i) => { rebajas[i] = r2(x); suma += rebajas[i]; });
+  const mayor = exacto.indexOf(Math.max(...exacto));
+  rebajas[mayor] = r2(rebajas[mayor] + S - suma);
+  return { rebajas, regalo, sinNivel, modo };
+}
+
+/** La clave de un nivel: el código del proveedor, sin espacios y en mayúsculas. */
+export function codigoDeRegalia(codigo: unknown): string {
+  return String(codigo ?? "").trim().toUpperCase();
+}
+
+/**
+ * El resumen del CCF menos el de su nota de crédito: lo que Bodega registra.
+ * Sólo los campos que leen `totalDelDocumento`, `encabezadoDelDocumento`,
+ * `pistasDeDiferencia` y la tabla de totales.
+ */
+export function resumenMenosNota(ccf: any, nota: any): any {
+  const num = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? 0 : Number(v));
+  const ivaDe = (res: any) => Array.isArray(res?.tributos)
+    ? res.tributos.filter((t: any) => String(t?.codigo) === "20").reduce((a: number, t: any) => a + num(t?.valor), 0)
+    : num(res?.totalIva);
+  const gravNota = num(nota?.totalGravada) - num(nota?.descuGravada);
+  const ivaNota = ivaDe(nota);
+  const out: any = { ...ccf };
+  out.totalGravada = r2(num(ccf?.totalGravada) - gravNota);
+  for (const k of ["subTotalVentas", "subTotal"]) if (ccf?.[k] != null) out[k] = r2(num(ccf[k]) - gravNota);
+  if (ccf?.montoTotalOperacion != null) out.montoTotalOperacion = r2(num(ccf.montoTotalOperacion) - num(nota?.montoTotalOperacion));
+  if (Array.isArray(ccf?.tributos)) {
+    let queda = ivaNota;
+    out.tributos = ccf.tributos.map((t: any) => {
+      if (String(t?.codigo) !== "20" || !queda) return t;
+      const v = r2(num(t.valor) - queda); queda = 0; return { ...t, valor: v };
+    });
+  }
+  if (ccf?.totalIva != null) out.totalIva = r2(num(ccf.totalIva) - ivaNota);
+  if (ccf?.ivaPerci1 != null) out.ivaPerci1 = r2(num(ccf.ivaPerci1) - num(nota?.ivaPerci1));
+  if (ccf?.totalPagar != null) out.totalPagar = r2(num(ccf.totalPagar) - (totalDelDocumento(nota) ?? 0));
+  return out;
+}
+
 export function totalesDelSobre(
   lineas: LineaSobre[], tipoDoc: "CCF" | "COF" | "FSE", tasaPercepcion: number,
 ) {

@@ -61,6 +61,36 @@ function Totales({ t }) {
   );
 }
 
+/**
+ * La nota de crédito de descuento que la revisión encontró (Vijosa manda las
+ * regalías aparte): la compra entra por la factura menos la nota, y cada
+ * producto lleva sus regalías. Las regalías se anotan en el portal.
+ */
+const MODO_NOTA = {
+  regalias: 'Cada producto lleva sus regalías. El resto del descuento va parejo en todos.',
+  proporcional: 'Ningún producto tiene su regalía anotada. El descuento va parejo en todos.',
+  escalado: 'Las regalías suman más que la nota. Se ajustaron a lo que dice la nota.',
+};
+function NotaDeDescuento({ nota, sinNota, puedeEditar, ocupado, onSinNota }) {
+  const total = (nota.notas ?? []).reduce((a, n) => a + Number(n.total || 0), 0);
+  const cercana = (nota.notas ?? []).some((n) => n.como === 'cercana');
+  const filas = (nota.renglones ?? []).filter((r) => Number(r.rebaja) > 0);
+  return (
+    <Seccion titulo={`Nota de crédito de descuento · ${formatMoney(total)}`}
+      pie={nota.aplicada ? `La compra entra por la factura menos esta nota. ${MODO_NOTA[nota.modo] ?? ''}` : 'Esta nota no se aplica. La compra entra por el total de la factura.'}>
+      {cercana ? <Aviso texto="La nota no dice a qué factura va. Es la que llegó junto con esta." /> : null}
+      {nota.aplicada ? filas.map((r, i) => (
+        <Dato key={r.renglon} primero={i === 0} rotulo={`${r.descripcion}${r.nivel ? ` · ${r.nivel.compra}+${r.nivel.regalo}` : ''}${Number(r.regalo) > 0 ? ` · ${r.regalo} de regalo` : ''}`}
+          valor={`−${formatMoney(r.rebaja)}`} />
+      )) : null}
+      {puedeEditar ? (
+        <BotonGrande borde texto={sinNota ? 'Aplicar la nota' : 'Esta nota no es de esta factura'} deshabilitado={ocupado}
+          onPress={() => onSinNota(!sinNota)} />
+      ) : null}
+    </Seccion>
+  );
+}
+
 export default function PropuestaDeCompra() {
   const { id, manual, proveedor, nit, fecha, total } = useLocalSearchParams();
   const doc = useMemo(() => ({
@@ -75,6 +105,8 @@ export default function PropuestaDeCompra() {
   const salasReparto = useMemo(() => (salas ?? []).filter((b) => b.type === 'FARMACIA').sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true })), [salas]);
 
   const [p, setP] = useState(null);
+  // La nota de descuento que encontró la revisión NO es de esta factura.
+  const [sinNota, setSinNota] = useState(false);
   const [error, setError] = useState('');
   const [elegidos, setEleg] = useState({});
   const [buscando, setBusc] = useState(null);
@@ -178,11 +210,12 @@ export default function PropuestaDeCompra() {
   };
   const productoDe = (r, i) => productoDelRenglon(r, elegidos[claveDe(r, i)]);
   const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, decisionDeRenglon(ajustes[i], productoDe(r, i), r)]));
-  const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '' });
+  const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '', sinNotaDescuento: sinNota });
 
-  const revisar = async () => {
+  const revisar = async (sinNotaAhora = sinNota) => {
+    if (sinNotaAhora !== sinNota) setSinNota(sinNotaAhora);
     setRev(true); setError(''); setRes(null); setEnvio(null);
-    const firma = firmaActual();
+    const firma = JSON.stringify({ ...JSON.parse(firmaActual()), sinNotaDescuento: sinNotaAhora });
     const { resultado: res, error: e } = await simularCarga({ documentId: doc.document_id, manualId: doc.manual_id, ...JSON.parse(firma) });
     setRev(false);
     if (e) { setError(e); return; }
@@ -375,6 +408,10 @@ export default function PropuestaDeCompra() {
                 </Seccion>
               )) : null}
               {revision?.totales ? <Totales t={revision.totales} /> : null}
+              {revision?.nota_descuento ? (
+                <NotaDeDescuento nota={revision.nota_descuento} sinNota={sinNota} puedeEditar={puedeEditar && !yaMandada}
+                  ocupado={revisando || enviando} onSinNota={(v) => revisar(v)} />
+              ) : null}
 
               {!revision && uso === 'venta' && faltan > 0 ? (
                 <Aviso tono="cuidado" texto={`${faltan} de ${resumen.renglones} productos necesitan revisión: ${[[resumen.sin_producto, 'sin producto'], [resumen.a_confirmar, 'con el producto por confirmar'], [resumen.sin_lote, 'sin lote'], [resumen.sin_vencimiento, 'sin vencimiento'], [resumen.lotes_sin_cuadrar, 'con los lotes sin cuadrar']].filter(([n]) => n > 0).map(([n, t]) => `${n} ${t}`).join(' · ')}.`} />
@@ -424,7 +461,7 @@ export default function PropuestaDeCompra() {
               {puedeEditar && !yaMandada && revision?.listo && revisionVigente && resultado?.carga_id
                 ? <BotonGrande texto={enviando ? 'Cargando…' : 'Cargar en Bodega'} deshabilitado={revisando || enviando || pausada} onPress={preguntarEnviar} /> : null}
               {puedeEditar && !yaMandada
-                ? <BotonGrande texto={revisando ? 'Revisando…' : 'Revisar carga'} borde={!!(revision?.listo && revisionVigente)} deshabilitado={enviando || revisando} onPress={revisar} /> : null}
+                ? <BotonGrande texto={revisando ? 'Revisando…' : 'Revisar carga'} borde={!!(revision?.listo && revisionVigente)} deshabilitado={enviando || revisando} onPress={() => revisar()} /> : null}
               {!yaMandada ? <BotonGrande texto="Actualizar productos" borde deshabilitado={enviando || revisando} onPress={cargar} /> : null}
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 20 }}>
                 {puedeSacar ? <Accion texto="No es mercadería" color={colorSistema.texto2} ocupado={resolviendo} onPress={noEsMercaderia} /> : null}

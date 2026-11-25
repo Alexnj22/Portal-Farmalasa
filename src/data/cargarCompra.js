@@ -286,9 +286,9 @@ export async function buscarProductos(texto, limite = 12) {
  * del documento. Devuelve `{ sobre, revision }`; `revision.problemas` vacío
  * significa que se podría mandar.
  */
-export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito, particionFirma = '' }) {
+export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito, particionFirma = '', sinNotaDescuento = false }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma },
+        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma, sin_nota_descuento: sinNotaDescuento === true },
     });
     if (error) {
         let msg = error.message;
@@ -306,9 +306,9 @@ export async function simularCarga({ documentId, manualId = null, uso, renglones
  * `enviada: true` (con `verificada` y `erp_compra_id`), `false` (no entró, se
  * puede corregir y volver a mandar) o `null` (no se sabe: NO mandar de nuevo).
  */
-export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito, particionFirma = '' }) {
+export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito, particionFirma = '', sinNotaDescuento = false }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma },
+        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma, sin_nota_descuento: sinNotaDescuento === true },
     });
     if (error) {
         let msg = error.message;
@@ -661,3 +661,16 @@ export async function pasarAVencidosEnBodega({ renglones, motivo, detalle, fotos
     return { resultado: msg ? null : data, error: msg };
 }
 
+
+/* ── Regalías por proveedor (2026-11-25) ───────────────────────────────────
+ * Vijosa manda las unidades de regalo (26+4, 100+20…) en una nota de crédito
+ * aparte. Con el nivel anotado por producto, la carga reparte esa nota en el
+ * costo de cada uno. `compra`/`regalo` en null quita el nivel. */
+export async function guardarRegalia({ nit, codigo, compra, regalo, descripcion = null }) {
+    const { error } = await supabase.rpc('compra_guardar_regalia', {
+        p_nit: nit, p_codigo: codigo, p_compra: compra, p_regalo: regalo, p_descripcion: descripcion,
+    });
+    if (error) return { ok: false, error: error.message };
+    anotar('COMPRA_REGALIA_GUARDADA', codigo, { proveedor: nit, compra, regalo });
+    return { ok: true, error: null };
+}

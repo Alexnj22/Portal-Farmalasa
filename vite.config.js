@@ -107,6 +107,19 @@ export default defineConfig({
         // memoria, y un pedazo con el mismo nombre tiene el mismo contenido,
         // o sea que importa justo lo que esa entrada exportaba.
         entryFileNames: 'assets/[name].js',
+        // La hoja de estilos de la entrada, también con nombre fijo
+        // (2026-11-24). El hash de un pedazo NO cuenta el nombre del CSS que
+        // precarga (Vite lo escribe después de calcularlo), así que cuando el
+        // CSS cambiaba, el pedazo seguía llamándose igual con otro contenido.
+        // El navegador tenía guardado el viejo (`immutable`) y ese pedía un
+        // `index-<hash>.css` ya borrado: «Hay una versión nueva» en cada
+        // pantalla, y «Actualizar» no lo quitaba. Medido en producción con
+        // `NotificationBell-1Eal6ADV.js` y `ticketPrint-XHpcPjpj.js`. Va con su
+        // regla en `vercel.json` (se revalida, como `index.js`).
+        assetFileNames: (asset) => {
+            const nombre = asset.names?.[0] || asset.name || '';
+            return /^index\.css$/.test(nombre) ? 'assets/index.css' : 'assets/[name]-[hash][extname]';
+        },
         minifyInternalExports: false,
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;

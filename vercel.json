@@ -34,6 +34,10 @@
       "destination": "/oferta-compartida.html"
     },
     {
+      "source": "/assets/index-:hash([A-Za-z0-9_-]{8}).css",
+      "destination": "/assets/index.css"
+    },
+    {
       "source": "/assets/:path*",
       "destination": "/api/asset-perdido"
     },
@@ -80,6 +84,15 @@
     },
     {
       "source": "/assets/index.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/assets/index(.*).css",
       "headers": [
         {
           "key": "Cache-Control",

@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1600.1 — El aviso de versión nueva ya no se queda pegado
+
+- Con v2.1600.0 recién publicada, el conteo abría con «Hay una versión
+  nueva / esta pantalla no puede abrirse» aunque el portal ya era el último, y
+  «Actualizar» no lo quitaba. Medido: `NotificationBell-1Eal6ADV.js` y
+  `ticketPrint-XHpcPjpj.js` tenían el mismo nombre en el servidor y en el
+  navegador con distinto contenido; la copia guardada (un año, `immutable`)
+  pedía `index-COODm1P4.css` / `index-DJHcjzPn.css`, que ya no existen (404).
+  El hash de un pedazo no cuenta el nombre del CSS que precarga, así que desde
+  los nombres estables (v2.1472.0) cada cambio de CSS dejaba pedazos así.
+- La hoja de la entrada ahora se llama siempre `assets/index.css` y se
+  revalida en cada carga, como `index.js`. Las copias viejas que ya están en
+  los navegadores piden `index-<hash>.css`: una reescritura les sirve la hoja
+  actual, sin guardarla un año.
+- Novedades: no — arreglo interno, sin cambio visible más allá de que el aviso
+  deja de salir.
+- Gemelo: conteo_inventario — sólo publicación del portal; la app no carga
+  estas hojas.
+
 ## v2.1600.0 — Conteo: lote y vence también en el área de vencidos
 
 - Pedido del usuario: «se puede cambiar el lote / vence del área de vencidos

@@ -1529,6 +1529,18 @@
    "area": "compras",
    "por": "código"
   },
+  "compra_proveedores_para_regalias": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compra_regalia_al_historial": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compra_regalias_de_proveedor": {
+   "area": "compras",
+   "por": "código"
+  },
   "compra_llave_de_renglon": {
    "area": "facturacion-dte",
    "por": "código"

@@ -114,8 +114,11 @@ export const loteValido = (s: string | null): string | null =>
  * `|251077K 251100K|30/11/2028|` (Sertal forte C)— y el campo, por llevar un
  * espacio, se descartaba como «nombre de producto»: el regulado quedaba sin
  * lote y frenaba la carga. No se reparte la cantidad (una caja no se parte):
- * es UN lote compuesto, `251077K/251100K`, que es como ya estaban escritos a
- * mano en el sistema (`259471/259472`, `0115025/0115125`).
+ * es UN lote compuesto, `251077K-251100K`, unido con guion porque así lo
+ * escribe Bodega en el sistema: ese mismo Sertal ya existe como
+ * `251077K-251100K` (cargado a mano el 7-nov), y en las existencias los lotes
+ * dobles con guion son 16 contra 3 con barra. Con otra unión el sistema
+ * abriría un SEGUNDO lote para la misma caja.
  *
  * Exige de 2 a 3 piezas y que CADA una parezca un lote (4+ caracteres, con un
  * dígito, sin espacios): un nombre como «Sertal compuesto 15mg / 2ml» no pasa.
@@ -127,7 +130,7 @@ export function loteCompuesto(campo: string | null): string | null {
   if (piezas.length < 2 || piezas.length > 3) return null;
   if (!piezas.every((x) => /^[A-Za-z0-9\-]{4,}$/.test(x) && /\d/.test(x))) return null;
   const unicas = [...new Set(piezas.map((x) => x.toUpperCase()))];
-  return unicas.length > 1 ? unicas.join("/") : unicas[0];
+  return unicas.length > 1 ? unicas.join("-") : unicas[0];
 }
 
 /**

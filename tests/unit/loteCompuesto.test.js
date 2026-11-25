@@ -6,9 +6,14 @@ import { lineaDelSobre } from '../../supabase/functions/_shared/compraSobre.ts';
 
 describe('loteCompuesto', () => {
     it('dos lotes en un campo son un lote compuesto', () => {
-        expect(loteCompuesto('251077K 251100K')).toBe('251077K/251100K');
-        expect(loteCompuesto('259471 / 259472')).toBe('259471/259472');
-        expect(loteCompuesto('0115025,0115125')).toBe('0115025/0115125');
+        expect(loteCompuesto('251077K 251100K')).toBe('251077K-251100K');
+        expect(loteCompuesto('259471 / 259472')).toBe('259471-259472');
+        expect(loteCompuesto('0115025,0115125')).toBe('0115025-0115125');
+    });
+    it('con guion, como ya está en el sistema (no abre otro lote)', () => {
+        expect(loteCompuesto('251077K/251100K')).toBe('251077K-251100K');
+        // Un lote con guion adentro no se parte: es uno solo.
+        expect(loteCompuesto('139H6-0128')).toBeNull();
     });
     it('una pieza repetida cuenta una vez', () => {
         expect(loteCompuesto('4002A/4002A')).toBe('4002A');
@@ -25,7 +30,7 @@ describe('loteCompuesto', () => {
 describe('la factura con dos lotes en el renglón', () => {
     it('LETERAGO: Sertal forte C se lee con los dos lotes', () => {
         expect(deTextoLibre('false|1.00|251077K 251100K|30/11/2028|18.00| | | |Sertal forte C 100mg / 2ml x 3 amp sol iny', 2026))
-            .toEqual({ lote: '251077K/251100K', vence: '2028-11-01' });
+            .toEqual({ lote: '251077K-251100K', vence: '2028-11-01' });
     });
     it('los renglones de un solo lote no cambian', () => {
         expect(deTextoLibre('false|8.00|M12398|01/10/2028|0.00| | | |Sertal compuesto 15mg / 2ml x 3 amp sol iny', 2026))
@@ -43,7 +48,7 @@ describe('dos lotes tecleados', () => {
 
     it('se mandan como lote compuesto y no frenan', () => {
         const r = lineaDelSobre(9, RENGLON, dec('251077K 251100K'));
-        expect(r.linea.numero_lote).toBe('251077K/251100K');
+        expect(r.linea.numero_lote).toBe('251077K-251100K');
         expect(r.problemas.filter(p => /lote/.test(p.texto))).toEqual([]);
     });
     it('un lote tecleado queda como está', () => {

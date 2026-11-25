@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.10 — El lote compuesto se une con guion, como en el sistema
+
+Probado contra las 3,849 facturas guardadas (17,902 de 17,937 renglones): el
+lote compuesto cambia la lectura sólo en los 3 renglones de Sertal forte C de
+LETERAGO, y en ningún otro. Pero ese Sertal ya existe en el sistema como
+`251077K-251100K`, escrito a mano por Bodega el 7-nov, y en las existencias los
+lotes dobles con guion son 16 contra 3 con barra. Unido con barra, la próxima
+carga habría abierto un segundo lote para la misma caja. Ahora se une con guion.
+
+Novedades: no — no toca pantallas.
+Gemelo: cargar_compra — sólo el servidor.
+
 ## v2.1603.9 — El voucher encuentra solo la otra venta
 
 Pedido del usuario sobre v2.1603.6: «¿por qué escribiría el número de la

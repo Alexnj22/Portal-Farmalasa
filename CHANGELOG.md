@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1600.2 — Metas: un día sin la marca de libre cuenta como trabajado
+
+- `get_metas_mes_en_curso` decidía si un día de venta tenía turno con
+  `coalesce(isOff, true) = false`: un día sin la clave `isOff` contaba como
+  LIBRE, al revés de la regla (`docs/reglas/horario-del-dia.md`). En pruebas,
+  con horarios sin la clave, salía «24 días sin turno» en gente con horario
+  completo. Ahora lo decide `turno_del_dia`, el juez único.
+- En producción el resultado no cambia hoy (211 de 211 días con venta y
+  horario traen la clave; 4 libres antes y después): se cierra la trampa
+  antes de que pegue. Migración `20261125024434`, reescrita sobre la
+  definición viva con guarda de md5.
+
 ## v2.1600.1 — El aviso de versión nueva ya no se queda pegado
 
 - Con v2.1600.0 recién publicada, el conteo abría con «Hay una versión

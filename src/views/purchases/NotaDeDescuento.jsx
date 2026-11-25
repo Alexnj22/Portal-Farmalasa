@@ -14,6 +14,8 @@ import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import Checkbox from '../../components/common/Checkbox';
+import Badge from '../../components/common/Badge';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { guardarRegalia } from '@nucleo/data/cargarCompra';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -28,11 +30,14 @@ const MODO = {
 export default function NotaDeDescuento({ nota, emisorNit, puedeEditar, sinNota, onSinNota, onCambio, onProducto }) {
     const [edit, setEdit] = useState({});
     const [guardando, setGuardando] = useState(null);
+    const [eligiendo, setEligiendo] = useState(false);
     if (!nota?.notas?.length) return null;
 
     const total = nota.notas.reduce((a, n) => a + Number(n.total || 0), 0);
     const cercana = nota.notas.some(n => n.como === 'cercana');
     const producto = Number.isInteger(nota.producto) ? nota.renglones.find(r => r.renglon === nota.producto) : null;
+    // «Un solo producto»: elegido, o eligiendo cuál. Ahí la regalía no aplica.
+    const unSolo = !!producto || eligiendo;
     const valor = (r, k) => edit[r.renglon]?.[k] ?? (r.nivel?.[k] != null ? String(r.nivel[k]) : '');
     const poner = (r, k, v) => setEdit(e => ({ ...e, [r.renglon]: { compra: valor(r, 'compra'), regalo: valor(r, 'regalo'), [k]: v.replace(/\D/g, '') } }));
     const cambiado = (r) => edit[r.renglon] && (valor(r, 'compra') !== String(r.nivel?.compra ?? '') || valor(r, 'regalo') !== String(r.nivel?.regalo ?? ''));
@@ -89,50 +94,71 @@ export default function NotaDeDescuento({ nota, emisorNit, puedeEditar, sinNota,
                         onChange={() => onSinNota?.(!sinNota)} />
                 </div>
             )}
-            {producto && (
-                <Notice variant="info" compact className="mt-2"
-                    action={puedeEditar ? <Button size="xs" variant="secondary" onClick={() => onProducto?.(null)}>Repartir entre todos</Button> : null}>
-                    Descuento de {producto.descripcion}: −{formatMoney(producto.rebaja)}.
-                </Notice>
+
+            {nota.aplicada && puedeEditar && (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className="text-label text-content-3">Se reparte</span>
+                    <SegmentedControl size="sm" value={unSolo ? 'producto' : 'regalias'}
+                        options={[{ value: 'regalias', label: 'Por regalías' }, { value: 'producto', label: 'En un solo producto' }]}
+                        onChange={v => {
+                            if (v === 'producto') { setEligiendo(true); return; }
+                            setEligiendo(false);
+                            if (producto) onProducto?.(null);
+                        }} />
+                    {unSolo && !producto && <span className="text-label text-content-2">Elige el producto que lleva el descuento.</span>}
+                </div>
             )}
 
             {nota.aplicada && (
-                <div className="mt-3 divide-y divide-divider">
-                    {nota.renglones.filter(r => Number(r.rebaja) > 0 || r.nivel || Number(r.precio) > 0).map(r => (
-                        <div key={r.renglon} className="py-2 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_7rem] gap-x-4 gap-y-2 items-center">
-                            <div className="min-w-0">
-                                <p className="text-label font-bold text-content truncate">{r.descripcion}</p>
-                                <p className="text-micro text-content-3 tabular-nums">
-                                    {r.codigo} · {r.cantidad} a {formatMoney(r.precio)}
-                                    {Number(r.regalo) > 0 && <> · <b className="text-content-2">{r.regalo} de regalo</b></>}
+                <div className="mt-2 divide-y divide-divider">
+                    {nota.renglones.filter(r => Number(r.rebaja) > 0 || r.nivel || Number(r.precio) > 0).map(r => {
+                        const lleva = producto?.renglon === r.renglon;
+                        const rebaja = Number(r.rebaja) > 0 ? `−${formatMoney(r.rebaja)}` : '—';
+                        return (
+                            <div key={r.renglon}
+                                className={`py-2.5 grid grid-cols-1 gap-x-4 gap-y-2 items-center ${unSolo
+                                    ? 'sm:grid-cols-[minmax(0,1fr)_9rem_6rem]'
+                                    : 'sm:grid-cols-[minmax(0,1fr)_17rem_6rem]'}`}>
+                                <div className="min-w-0">
+                                    <p className={`text-label font-bold truncate ${unSolo && !lleva ? 'text-content-2' : 'text-content'}`}>{r.descripcion}</p>
+                                    <p className="text-micro text-content-3 tabular-nums">
+                                        {r.codigo} · {r.cantidad} a {formatMoney(r.precio)}
+                                        {!unSolo && Number(r.regalo) > 0 && <> · <b className="text-content-2">{r.regalo} de regalo</b></>}
+                                    </p>
+                                </div>
+                                {unSolo ? (
+                                    <div className="sm:justify-self-end">
+                                        {lleva ? <Badge size="sm" variant="success">Lleva la nota</Badge>
+                                            : puedeEditar && (
+                                                <Button size="xs" variant="secondary" onClick={() => { setEligiendo(false); onProducto?.(r.renglon); }}>
+                                                    Elegir
+                                                </Button>
+                                            )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-end gap-2">
+                                        <div className="w-20">
+                                            <PortalInput compact labelDenso label="Compra" inputMode="numeric" readOnly={!puedeEditar}
+                                                value={valor(r, 'compra')} onChange={e => poner(r, 'compra', e.target.value)} />
+                                        </div>
+                                        <span className="pb-2 text-label text-content-3">+</span>
+                                        <div className="w-20">
+                                            <PortalInput compact labelDenso label="Regalo" inputMode="numeric" readOnly={!puedeEditar}
+                                                value={valor(r, 'regalo')} onChange={e => poner(r, 'regalo', e.target.value)} />
+                                        </div>
+                                        {puedeEditar && cambiado(r) && (
+                                            <Button size="sm" variant="primary" loading={guardando === r.renglon} onClick={() => guardar(r)}>
+                                                Guardar
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                                <p className={`text-label tabular-nums sm:text-right ${Number(r.rebaja) > 0 ? 'font-bold text-content' : 'text-content-3'}`}>
+                                    <span className="sm:hidden text-content-3 font-normal">Descuento: </span>{rebaja}
                                 </p>
                             </div>
-                            <div className="flex items-end gap-2">
-                                <div className="w-20">
-                                    <PortalInput compact labelDenso label="Compra" inputMode="numeric" readOnly={!puedeEditar}
-                                        value={valor(r, 'compra')} onChange={e => poner(r, 'compra', e.target.value)} />
-                                </div>
-                                <span className="pb-2 text-label text-content-3">+</span>
-                                <div className="w-20">
-                                    <PortalInput compact labelDenso label="Regalo" inputMode="numeric" readOnly={!puedeEditar}
-                                        value={valor(r, 'regalo')} onChange={e => poner(r, 'regalo', e.target.value)} />
-                                </div>
-                                {puedeEditar && cambiado(r) && (
-                                    <Button size="sm" variant="primary" loading={guardando === r.renglon} onClick={() => guardar(r)}>
-                                        Guardar
-                                    </Button>
-                                )}
-                                {puedeEditar && !cambiado(r) && nota.producto !== r.renglon && (
-                                    <Button size="sm" variant="ghost" onClick={() => onProducto?.(r.renglon)}>
-                                        Descuento de este producto
-                                    </Button>
-                                )}
-                            </div>
-                            <p className="text-label tabular-nums text-content sm:text-right">
-                                <span className="sm:hidden text-content-3">Descuento: </span>−{formatMoney(r.rebaja)}
-                            </p>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

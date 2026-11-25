@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.5 — Panel de la nota: más ordenado
+
+Pedido del usuario («mejóralo visualmente, se ve raro») con captura del panel
+de la nota de crédito de descuento.
+
+- Arriba, **«Se reparte: Por regalías | En un solo producto»**. Con «En un
+  solo producto» desaparecen las casillas de regalía: cada producto tiene
+  «Elegir» y el elegido dice «Lleva la nota».
+- Columnas fijas: antes el botón aparecía en unas filas y no en otras y
+  corría las casillas (la fila elegida quedaba desalineada).
+- Los productos sin descuento muestran «—» en vez de «−$0.00».
+- Sale el aviso azul largo con la descripción completa del producto.
+- Gemelo: cargar_compra — la app ya tiene «Es descuento de un producto» → elegir; no cambia.
+
 ## v2.1603.4 — La venta que solventa a otra no vuelve a dar puntos
 
 Regla del usuario: los puntos de una compra se dan una vez. La venta nueva de

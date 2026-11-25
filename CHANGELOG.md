@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.11 — El voucher se enlaza con el ingreso de la aplicación
+
+Primer cobro real en Salud 1 (un crédito de $9.35): el voucher de
+$10.35 se leyó cinco veces y no se pudo cobrar. La aplicación de la inyección
+no es una venta: se anotó como ingreso con tarjeta en caja (P8855, $1.00,
+voucher 003926, «Fac 95929_COF») y la búsqueda sólo miraba ventas. El usuario
+mandó la foto del ticket del ingreso: «mira».
+
+- `ventas_para_completar_voucher` devuelve ventas e ingresos de caja con
+  tarjeta o transferencia. El ingreso con el mismo total o número del voucher
+  sale primero, marcado «Es el mismo voucher», y queda elegido solo.
+- `creditos_pagos.otro_movimiento_id` guarda el ingreso enlazado (excluyente
+  con `otra_venta_id`); lo que otro voucher ya le atribuyó se descuenta.
+- Migración `20261125212212`. `creditos-erp` desplegada (v55).
+- Portal y app del personal.
+
 ## v2.1603.10 — El lote compuesto se une con guion, como en el sistema
 
 Probado contra las 3,849 facturas guardadas (17,902 de 17,937 renglones): el

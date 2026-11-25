@@ -10917,6 +10917,7 @@ export type Database = {
           otra_venta_documento: string | null
           otra_venta_id: number | null
           otra_venta_monto: number | null
+          otro_movimiento_id: number | null
           pos_proveedor: string | null
           registrado_por: string
         }
@@ -10935,6 +10936,7 @@ export type Database = {
           otra_venta_documento?: string | null
           otra_venta_id?: number | null
           otra_venta_monto?: number | null
+          otro_movimiento_id?: number | null
           pos_proveedor?: string | null
           registrado_por: string
         }
@@ -10953,6 +10955,7 @@ export type Database = {
           otra_venta_documento?: string | null
           otra_venta_id?: number | null
           otra_venta_monto?: number | null
+          otro_movimiento_id?: number | null
           pos_proveedor?: string | null
           registrado_por?: string
         }
@@ -41763,7 +41766,14 @@ export type Database = {
         Returns: Json
       }
       ventas_para_completar_voucher: {
-        Args: { p_branch_id: number; p_id?: number; p_monto: number }
+        Args: {
+          p_branch_id: number
+          p_clase?: string
+          p_documento?: string
+          p_id?: number
+          p_monto: number
+          p_total?: number
+        }
         Returns: Json
       }
       ventas_para_puntos: {

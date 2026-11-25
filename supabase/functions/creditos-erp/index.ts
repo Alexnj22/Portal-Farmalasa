@@ -44,11 +44,13 @@ const diaSV = (ms = Date.now()) => new Date(ms - 6 * 3600_000).toISOString().sli
 /** Las columnas de la otra venta que un voucher también pagó, desde la
  *  `metadata.otra_venta` de una solicitud aprobada (o nada, si no hubo). */
 function otraVentaDelPago(o: unknown) {
-  const v = (o ?? null) as { id?: unknown; documento?: unknown; monto?: unknown } | null;
+  const v = (o ?? null) as { id?: unknown; clase?: unknown; documento?: unknown; monto?: unknown } | null;
   const monto = Number(v?.monto);
   if (!v || !Number.isFinite(Number(v.id)) || !(monto > 0)) return {};
+  const esIngreso = v.clase === "movimiento";
   return {
-    otra_venta_id: Number(v.id),
+    otra_venta_id: esIngreso ? null : Number(v.id),
+    otro_movimiento_id: esIngreso ? Number(v.id) : null,
     otra_venta_documento: v.documento ? String(v.documento) : null,
     otra_venta_monto: Number(monto.toFixed(2)),
   };
@@ -1036,8 +1038,14 @@ Deno.serve(async (req) => {
         return responder({ ok: false, error: "Solo puedes ver tu propia sucursal." }, 403);
       }
       if (!(Number.isFinite(monto) && monto > 0)) return responder({ ok: true, ventas: [] });
+      /* Con el total y el número del voucher, el ingreso de caja que se anotó
+       * con ESE mismo papel (la aplicación de una inyección) sale marcado
+       * `coincide_voucher` y primero. */
+      const total = Number(body.total);
       const { data, error } = await supabase.rpc("ventas_para_completar_voucher", {
         p_branch_id: sala, p_monto: Number(monto.toFixed(2)),
+        p_total: Number.isFinite(total) && total > 0 ? Number(total.toFixed(2)) : null,
+        p_documento: String(body.documento ?? "").trim().slice(0, 40) || null,
       });
       if (error) throw new Error(`buscando ventas para el voucher: ${error.message}`);
       return responder({ ok: true, ventas: Array.isArray(data) ? data : [] });
@@ -1108,6 +1116,8 @@ Deno.serve(async (req) => {
        * como `{ numero }` cuando quien cobra la escribió. */
       const idOtra = Number((body.otraVenta as { id?: unknown } | null)?.id);
       const tieneIdOtra = Number.isInteger(idOtra) && idOtra > 0;
+      // 'movimiento' = un ingreso de caja (la aplicación de una inyección); si no, una venta.
+      const claseOtra = (body.otraVenta as { clase?: unknown } | null)?.clase === "movimiento" ? "movimiento" : "venta";
       const numeroOtra = tieneIdOtra ? `#${idOtra}`
         : String((body.otraVenta as { numero?: unknown } | null)?.numero ?? "").trim().slice(0, 40);
       const parteOtra = numeroOtra ? Number((montoDoc - suma).toFixed(2)) : 0;
@@ -1156,21 +1166,27 @@ Deno.serve(async (req) => {
        * sucursal, válida, y con total libre para lo que sobra (lo que otros
        * vouchers ya le atribuyeron se descuenta). Si la venta se acaba de
        * hacer puede tardar un minuto en aparecer: el mensaje lo dice. */
-      let ventaOtra: { id: number; correlativo: string } | null = null;
+      let ventaOtra: { id: number; correlativo: string; clase: "venta" | "movimiento" } | null = null;
       if (numeroOtra) {
         const { data: cands, error: eV } = tieneIdOtra
-          ? await supabase.rpc("ventas_para_completar_voucher", { p_branch_id: sala, p_monto: parteOtra, p_id: idOtra })
+          ? await supabase.rpc("ventas_para_completar_voucher", {
+            p_branch_id: sala, p_monto: parteOtra, p_id: idOtra, p_clase: claseOtra,
+          })
           : await supabase.rpc("venta_que_completa_un_voucher", { p_branch_id: sala, p_numero: numeroOtra });
         if (eV) throw new Error(`buscando la otra venta: ${eV.message}`);
         const lista = (Array.isArray(cands) ? cands : []) as {
-          id: number; correlativo: string; total: number; valida: boolean; ya_cubierto: number;
+          id: number; correlativo?: string; documento?: string; total: number; valida: boolean; ya_cubierto: number;
         }[];
         const validas = lista.filter((v) => v.valida);
         if (!validas.length) {
           return responder({
             ok: false,
             error: tieneIdOtra
-              ? (lista.length ? "Esa venta está anulada. Elige otra." : "Esa venta ya no está entre las de hoy de esta sucursal. Elige otra.")
+              ? (claseOtra === "movimiento"
+                ? (lista.length ? "Ese ingreso está anulado o no se pagó con tarjeta. Elige otro."
+                  : "Ese ingreso ya no está entre los de hoy de esta sucursal. Elige otro.")
+                : (lista.length ? "Esa venta está anulada. Elige otra."
+                  : "Esa venta ya no está entre las de hoy de esta sucursal. Elige otra."))
               : lista.length
               ? `La venta ${numeroOtra} está anulada. Revisa el número.`
               : `No encuentro la venta ${numeroOtra} de hoy en esta sucursal. Revisa el número; `
@@ -1184,15 +1200,16 @@ Deno.serve(async (req) => {
           }, 409);
         }
         const v = validas[0];
+        const docOtra = String(v.documento ?? v.correlativo ?? "");
         const libre = Number((Number(v.total) - Number(v.ya_cubierto || 0)).toFixed(2));
         if (parteOtra > libre + 0.004) {
           return responder({
             ok: false,
-            error: `Del comprobante sobran ${parteOtra.toFixed(2)}, pero a la venta ${tieneIdOtra ? v.correlativo : numeroOtra} `
+            error: `Del comprobante sobran ${parteOtra.toFixed(2)}, pero a ${claseOtra === "movimiento" ? "el ingreso" : "la venta"} ${tieneIdOtra ? docOtra : numeroOtra} `
                  + `sólo le quedan ${Math.max(0, libre).toFixed(2)} por pagar. Revisa el número o los montos.`,
           }, 409);
         }
-        ventaOtra = { id: Number(v.id), correlativo: String(v.correlativo) };
+        ventaOtra = { id: Number(v.id), correlativo: docOtra, clase: tieneIdOtra ? claseOtra : "venta" };
       }
 
       /* ── Un crédito que espera firma no se cobra por otro lado (HA1) ────
@@ -1408,7 +1425,7 @@ Deno.serve(async (req) => {
               decision, beneficiarioLeido,
               motivo: String(body.motivo ?? ""), documento,
             }) + (ventaOtra
-              ? ` Del comprobante, ${parteOtra.toFixed(2)} son de la venta ${ventaOtra.correlativo}.`
+              ? ` Del comprobante, ${parteOtra.toFixed(2)} son ${ventaOtra.clase === "movimiento" ? "del ingreso" : "de la venta"} ${ventaOtra.correlativo}.`
               : ""),
             metadata: {
               branch_id: sala, cliente: ficha?.cliente ?? renglones[0].cliente,
@@ -1430,7 +1447,7 @@ Deno.serve(async (req) => {
               /* La parte del papel que pagó otra venta. Al aprobar se anota en
                * el pago; no se abona a ningún crédito. */
               otra_venta: ventaOtra
-                ? { id: ventaOtra.id, documento: ventaOtra.correlativo, monto: parteOtra }
+                ? { id: ventaOtra.id, clase: ventaOtra.clase, documento: ventaOtra.correlativo, monto: parteOtra }
                 : null,
               creditos: renglones,
             },
@@ -1555,7 +1572,8 @@ Deno.serve(async (req) => {
           // entró un dinero que el portal no puede explicar. La parte de otra
           // venta va en su columna: no se abonó a ningún crédito.
           monto: fallidos.length ? aplicado : Number((montoDoc - parteOtra).toFixed(2)),
-          otra_venta_id: ventaOtra?.id ?? null,
+          otra_venta_id: ventaOtra?.clase === "venta" ? ventaOtra.id : null,
+          otro_movimiento_id: ventaOtra?.clase === "movimiento" ? ventaOtra.id : null,
           otra_venta_documento: ventaOtra?.correlativo ?? null,
           otra_venta_monto: ventaOtra ? parteOtra : null,
           documento: documento || null,

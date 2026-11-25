@@ -242,7 +242,7 @@ export function pagarCreditos({
         comprobanteUrl, lectura, fechaDocumento, pos, motivo, requiereAprobacion,
         // La otra venta que el mismo voucher pagó (2026-11-25): `{ id }` si la
         // pantalla la encontró, `{ numero }` si quien cobra la escribió.
-        otraVenta: otraVenta?.id ? { id: Number(otraVenta.id) }
+        otraVenta: otraVenta?.id ? { id: Number(otraVenta.id), clase: otraVenta.clase === 'movimiento' ? 'movimiento' : 'venta' }
             : otraVenta?.numero ? { numero: String(otraVenta.numero).trim() } : null,
         clave_envio: claveEnvio,
     });
@@ -379,8 +379,10 @@ export async function subirComprobanteDeAbono(archivo, sala) {
  * de un voucher (2026-11-25): «¿no puede enlazar ya la venta y la inyección
  * pagada con tarjeta?». Las de tarjeta primero. → `{ ok, ventas: [...] }`.
  */
-export async function fetchVentasParaVoucher({ sala, monto }) {
-    return pedir({ accion: 'ventas_para_voucher', sala, monto });
+export async function fetchVentasParaVoucher({ sala, monto, total = null, documento = null }) {
+    // `total` y `documento` del voucher: el ingreso de caja anotado con ese
+    // mismo papel (la aplicación de una inyección) sale primero y marcado.
+    return pedir({ accion: 'ventas_para_voucher', sala, monto, total, documento });
 }
 
 export async function fetchHistorialDelOrigen({ sala, credito }) {

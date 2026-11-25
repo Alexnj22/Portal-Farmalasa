@@ -42,7 +42,7 @@ import { aplicacionesDelPago, APROBACION, estadoDelCobro, FORMAS_DE_COBRO as FOR
 import { abonosDelCredito, carteraFiltrada, desdeLaLectura, ORDEN_CARTERA as ORDEN, pagadoPct, tituloDeDias, VER_CARTERA as VER } from '@nucleo/utils/cartera';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
-import { numeroDeVenta, useVentasParaVoucher } from '@nucleo/hooks/useVentasParaVoucher';
+import { horaDeCandidata, rotuloDeCandidata, useVentasParaVoucher } from '@nucleo/hooks/useVentasParaVoucher';
 // La regla de todo campo de dinero con máximo (ver el archivo).
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
@@ -1037,7 +1037,8 @@ function trabajoDeAlguien(b) {
  */
 function OtraVentaDelVoucher({ sobra, voucher, numero, onNumero }) {
     const { ventas, buscando, error, elegida, elegir, buscar } = voucher;
-    const rotulo = (v) => `Venta ${numeroDeVenta(v.correlativo)} · ${formatMoney(v.total)} · ${hora12(v.hora)}`;
+    const rotulo = (v) => `${rotuloDeCandidata(v)}${formatMoney(v.total)} · ${hora12(horaDeCandidata(v))}`;
+    const deQuien = (v) => (v.clase === 'venta' && v.descripcion ? `, de ${v.descripcion}` : '');
     return (
         <div className="space-y-2" data-campo="abono-otra-venta">
             {buscando && !elegida && <LoadingState label={`Buscando la venta de ${formatMoney(sobra)}`} />}
@@ -1045,8 +1046,8 @@ function OtraVentaDelVoucher({ sobra, voucher, numero, onNumero }) {
 
             {elegida && (
                 <Notice variant="success" icon={ShoppingBag}>
-                    Sobran {formatMoney(sobra)} del comprobante. Van a la <strong>{rotulo(elegida)}</strong>
-                    {elegida.cliente ? `, de ${elegida.cliente}` : ''}.
+                    Sobran {formatMoney(sobra)} del comprobante. Van a: <strong>{rotulo(elegida)}</strong>
+                    {deQuien(elegida)}.{elegida.coincide_voucher ? ' Es el mismo voucher.' : ''}
                     {elegida.tipo_pago && elegida.tipo_pago !== 'tarjeta' && (
                         <> Esa venta está registrada en {elegida.tipo_pago}: el corte la va a pedir así.</>
                     )}
@@ -1059,13 +1060,13 @@ function OtraVentaDelVoucher({ sobra, voucher, numero, onNumero }) {
             {!elegida && !buscando && ventas.length > 1 && (
                 <>
                     <p className="text-body-sm text-content-2">
-                        Sobran {formatMoney(sobra)} del comprobante. Hay {ventas.length} ventas de ese monto. ¿Cuál es?
+                        Sobran {formatMoney(sobra)} del comprobante. Hay {ventas.length} cobros de ese monto. ¿Cuál es?
                     </p>
                     <div className="flex flex-col gap-1.5">
                         {ventas.map((v) => (
-                            <Button key={v.id} variant="secondary" size="md" className="justify-start"
+                            <Button key={`${v.clase}-${v.id}`} variant="secondary" size="md" className="justify-start"
                                 onClick={() => elegir(v)}>
-                                {rotulo(v)}{v.cliente ? ` · ${v.cliente}` : ''}
+                                {rotulo(v)}{v.clase === 'venta' && v.descripcion ? ` · ${v.descripcion}` : ''}
                             </Button>
                         ))}
                     </div>
@@ -1075,7 +1076,7 @@ function OtraVentaDelVoucher({ sobra, voucher, numero, onNumero }) {
             {!elegida && !buscando && !error && ventas.length === 0 && (
                 <>
                     <Notice variant="info">
-                        Sobran {formatMoney(sobra)} del comprobante y no encuentro una venta de ese monto hoy en esta sucursal. Si la acabas de hacer, espera un minuto.
+                        Sobran {formatMoney(sobra)} del comprobante y no encuentro una venta ni un ingreso de ese monto hoy en esta sucursal. Si lo acabas de hacer, espera un minuto.
                     </Notice>
                     <Button variant="ghost" size="sm" icon={RefreshCw} onClick={buscar}>Buscar otra vez</Button>
                     <PortalInput name="abono-otra-venta" label="O escribe el número de la venta"
@@ -1300,10 +1301,13 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
         forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
         deuda: debeTodo,
     });
-    const voucher = useVentasParaVoucher({ sala: credito.branch_id, sobra: previo.sobra, activo: previo.puedeOtraVenta });
+    const voucher = useVentasParaVoucher({
+        sala: credito.branch_id, sobra: previo.sobra, activo: previo.puedeOtraVenta,
+        total: previo.totalPago, documento,
+    });
     const { pideAprobacion, conPapel, sumaRepartida, totalPago, bloqueado, iraAprobacion, cuadra, listo, falta, puedeOtraVenta, numeroOtraVenta, sobra } = estadoDelCobro({
         forma, montoDoc, reparto, creditos: listaDeCreditos, lectura, hayArchivo: !!archivo, motivo,
-        deuda: debeTodo, otraVenta: voucher.elegida ? String(voucher.elegida.id) : otraVenta,
+        deuda: debeTodo, otraVenta: voucher.elegida ? `${voucher.elegida.clase}:${voucher.elegida.id}` : otraVenta,
     });
 
     /* Contra QUÉ se topea: todo lo que el cliente debe en la sala, que es la
@@ -1344,7 +1348,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             aplicaciones, archivo, lectura, fechaDocumento: fechaDoc || null, pos: pos || null,
             motivo: motivo.trim() || null, requiereAprobacion: iraAprobacion,
             otraVenta: !numeroOtraVenta ? null
-                : voucher.elegida ? { id: voucher.elegida.id } : { numero: numeroOtraVenta },
+                : voucher.elegida ? { id: voucher.elegida.id, clase: voucher.elegida.clase } : { numero: numeroOtraVenta },
         });
         // El borrador se tira sólo cuando el cobro ENTRÓ. `onCobrar` devuelve
         // `false` cuando el origen lo rechazó y ahí el diálogo queda abierto:

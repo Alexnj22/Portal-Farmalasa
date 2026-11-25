@@ -75,3 +75,22 @@ describe('abonoDeCredito', () => {
         expect(aplicacionesDelPago([A, B], { 1: '20', 2: '' })).toEqual([{ credito: 'C1', monto: 20 }]);
     });
 });
+
+describe('la otra venta que se elige sola (2026-11-25)', async () => {
+    const { laQueSeElige, rotuloDeCandidata, horaDeCandidata } = await import('@nucleo/hooks/useVentasParaVoucher');
+    const ingreso = { clase: 'movimiento', id: 8855, numero: 'P8855', descripcion: 'Aplicacion de inyeccion', coincide_voucher: true, hora: '11:58:03.33634' };
+    const venta = { clase: 'venta', id: 1, numero: '95804', descripcion: 'CLIENTE FRECUENTE', coincide_voucher: false, hora: '12:52:15' };
+    it('el ingreso del mismo voucher gana aunque haya ventas del mismo monto', () => {
+        expect(laQueSeElige([ingreso, venta, { ...venta, id: 2 }])).toBe(ingreso);
+    });
+    it('sin uno del voucher: sólo si hay una', () => {
+        expect(laQueSeElige([venta])).toBe(venta);
+        expect(laQueSeElige([venta, { ...venta, id: 2 }])).toBe(null);
+        expect(laQueSeElige([ingreso, { ...ingreso, id: 9 }])).toBe(null);
+    });
+    it('rótulo y hora', () => {
+        expect(rotuloDeCandidata(ingreso)).toBe('Ingreso P8855 · Aplicacion de inyeccion · ');
+        expect(rotuloDeCandidata(venta)).toBe('Venta 95804 · ');
+        expect(horaDeCandidata(ingreso)).toBe('11:58:03');
+    });
+});

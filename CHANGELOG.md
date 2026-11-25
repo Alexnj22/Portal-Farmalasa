@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1603.7 — El registro de compras guarda todos los lotes de un producto
+
+Un producto que entraba en varios lotes (v2.1599.0) quedaba en el registro con
+el primer lote y todas las unidades: la compra 6729 decía 240 u. del 2602219
+cuando eran 96 de ése y 144 del 2605034. El sistema sí los recibió bien.
+
+- `compra_registro.lotes` guarda el desglose `[{lote, vence, unidades}]`;
+  `compra_registro_anotar_carga` lo llena desde la carga. Migración
+  `20261125204251`, que además completó la fila de la 6729.
+- «Comprobado» compara la suma del producto cuando la copia trae una fila por lote.
+- Registro de compras (portal y app): cada lote con su vencimiento y unidades;
+  el CSV lo pone en Lote y Vence separados por « / ».
+
+Novedades: no — no toca pantallas (valorado 0 de 4).
+
 ## v2.1603.6 — Un voucher puede pagar el crédito y otra venta del mismo cobro
 
 Pedido del usuario, con un voucher de tarjeta por más de los $9.35 que debía

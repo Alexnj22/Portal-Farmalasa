@@ -15,6 +15,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { lotesDelRegistro, lotesDelRegistroParaCsv } from '@nucleo/utils/cargaDeCompra';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -340,7 +341,7 @@ export function PestanaRegistro({ busca }) {
     return () => { vivo = false; };
   }, [rango]);
   const vista = useMemo(() => (filas ?? []).filter((f) => !busca?.trim()
-    || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? '', f.lote ?? '')), [filas, busca]);
+    || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? '', ...lotesDelRegistro(f).map((l) => l.lote ?? ''))), [filas, busca]);
   const difieren = vista.filter((f) => f.en_sistema === 'difiere').length;
 
   // Las mismas 33 columnas que descarga el portal.
@@ -358,7 +359,7 @@ export function PestanaRegistro({ busca }) {
           n(f.uso), f.tipo, n(f.erp_product_id), n(f.producto), n(f.codigo_proveedor), n(f.descripcion_proveedor), n(f.presentacion),
           n(f.unidades_por_presentacion), n(f.cantidad), n(f.unidades), n(f.precio_lista), n(f.descuento_renglon), n(f.descuento_pie_pct),
           n(f.costo), n(f.costo_unidad), n(f.costo_anterior), n(pct(f.costo_anterior, f.costo)?.toFixed(2)),
-          n(f.vineta), n(f.vineta_anterior), n(f.lote), n(f.vence),
+          n(f.vineta), n(f.vineta_anterior), ...lotesDelRegistroParaCsv(f),
           f.reparto ? Object.values(f.reparto).reduce((a, b) => a + Number(b), 0) : '',
           n(EN_SISTEMA[f.en_sistema]?.[0]), shortEmployeeName(f.cargado_por_nombre ?? ''), n(f.cargado_at), f.carga_id, n(f.erp_compra_id),
         ]),
@@ -394,7 +395,9 @@ export function PestanaRegistro({ busca }) {
               {`Regular ${f.vineta != null ? formatMoney(f.vineta) : '—'}`}
               {dV != null && Math.abs(dV) >= 0.5 ? <Text style={{ color: MARCA.ambar, fontWeight: '700' }}>{` · antes ${formatMoney(f.vineta_anterior)}`}</Text> : null}
             </Linea>
-            <Linea>{`${f.lote ?? 'sin lote'} · ${f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sucursal' : 'sin vencimiento')}`}</Linea>
+            {lotesDelRegistro(f).length > 1
+              ? lotesDelRegistro(f).map((l, k) => <Linea key={k}>{`${l.lote ?? 'sin lote'} · ${l.vence ? l.vence.slice(0, 7) : 'sin vencimiento'} · ${l.unidades} u`}</Linea>)
+              : <Linea>{`${f.lote ?? 'sin lote'} · ${f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sucursal' : 'sin vencimiento')}`}</Linea>}
             {f.cargado_por ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Avatar empleado={{ id: f.cargado_por, name: f.cargado_por_nombre }} tamano={20} />

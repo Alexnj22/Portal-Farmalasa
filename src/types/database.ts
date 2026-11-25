@@ -8253,6 +8253,7 @@ export type Database = {
           id_presentacion: string | null
           llegaron: number | null
           lote: string | null
+          lotes: Json | null
           manual_id: number | null
           numero_control: string | null
           numero_documento: string | null
@@ -8296,6 +8297,7 @@ export type Database = {
           id_presentacion?: string | null
           llegaron?: number | null
           lote?: string | null
+          lotes?: Json | null
           manual_id?: number | null
           numero_control?: string | null
           numero_documento?: string | null
@@ -8339,6 +8341,7 @@ export type Database = {
           id_presentacion?: string | null
           llegaron?: number | null
           lote?: string | null
+          lotes?: Json | null
           manual_id?: number | null
           numero_control?: string | null
           numero_documento?: string | null

@@ -29,7 +29,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { ORIGEN } from './cargarCompraComun';
-import { sumaDeFacturaEnPapel } from '@nucleo/utils/cargaDeCompra';
+import { lotesDelRegistro, lotesDelRegistroParaCsv, sumaDeFacturaEnPapel } from '@nucleo/utils/cargaDeCompra';
 import { Llegaron, BuscadorProducto } from './CargarCompraPiezas';
 
 const ESTADO_POR_LLEGAR = {
@@ -179,7 +179,7 @@ export function TabRegistro({ busca }) {
     }, [desde, hasta]);
 
     const vista = useMemo(() => (filas ?? []).filter(f => !busca
-        || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? '', f.lote ?? '')),
+        || tokenMatch(busca, f.producto ?? '', f.descripcion_proveedor ?? '', f.proveedor_nombre ?? '', f.numero_documento ?? '', ...lotesDelRegistro(f).map(l => l.lote ?? ''))),
     [filas, busca]);
     const difieren = vista.filter(f => f.en_sistema === 'difiere').length;
 
@@ -196,7 +196,8 @@ export function TabRegistro({ busca }) {
                 n(f.uso), f.tipo, n(f.erp_product_id), n(f.producto), n(f.codigo_proveedor), n(f.descripcion_proveedor), n(f.presentacion),
                 n(f.unidades_por_presentacion), n(f.cantidad), n(f.unidades), n(f.precio_lista), n(f.descuento_renglon), n(f.descuento_pie_pct),
                 n(f.costo), n(f.costo_unidad), n(f.costo_anterior), n(pct(f.costo_anterior, f.costo)?.toFixed(2)),
-                n(f.vineta), n(f.vineta_anterior), n(f.lote), n(f.vence),
+                n(f.vineta), n(f.vineta_anterior),
+                ...lotesDelRegistroParaCsv(f),
                 f.reparto ? Object.values(f.reparto).reduce((a, b) => a + Number(b), 0) : '',
                 n(EN_SISTEMA[f.en_sistema]?.label), shortEmployeeName(f.cargado_por_nombre ?? ''), n(f.cargado_at), f.carga_id, n(f.erp_compra_id),
             ]),
@@ -254,8 +255,17 @@ export function TabRegistro({ busca }) {
                                 )}
                             </DataCell>
                             <DataCell>
-                                <p>{f.lote ?? '—'}</p>
-                                <p className="text-micro text-content-3 tabular-nums">{f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sucursal' : '—')}</p>
+                                {lotesDelRegistro(f).length > 1 ? lotesDelRegistro(f).map((l, k) => (
+                                    <div key={k}>
+                                        <p>{l.lote ?? '—'} <span className="text-content-3 tabular-nums">· {l.unidades} u.</span></p>
+                                        <p className="text-micro text-content-3 tabular-nums">{l.vence ? l.vence.slice(0, 7) : '—'}</p>
+                                    </div>
+                                )) : (
+                                    <>
+                                        <p>{f.lote ?? '—'}</p>
+                                        <p className="text-micro text-content-3 tabular-nums">{f.vence ? f.vence.slice(0, 7) : (f.vence_pendiente ? 'la pone la sucursal' : '—')}</p>
+                                    </>
+                                )}
                             </DataCell>
                             <DataCell align="center">{sis ? <Badge size="sm" variant={sis.variant}>{sis.label}</Badge> : '—'}</DataCell>
                             <DataCell>

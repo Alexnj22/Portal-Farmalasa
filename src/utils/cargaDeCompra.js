@@ -293,3 +293,22 @@ export function sumaDeFacturaEnPapel(f) {
     const total = Number(f.total) || 0;
     return { estimado, total, descuadre: total > 0 && estimado > 0 && Math.abs(estimado - total) > 0.05 };
 }
+
+/**
+ * Los lotes de una fila del registro de compras. Un producto que entró en
+ * varios lotes trae el desglose en `lotes` ([{lote, vence, unidades}]); si no,
+ * el lote y el vencimiento de la fila son los únicos (`unidades: null`).
+ */
+export function lotesDelRegistro(f) {
+    if (Array.isArray(f?.lotes) && f.lotes.length > 1) return f.lotes;
+    return [{ lote: f?.lote ?? null, vence: f?.vence ?? null, unidades: null }];
+}
+
+/** Las dos columnas `Lote` y `Vence` del CSV del registro, con el desglose. */
+export function lotesDelRegistroParaCsv(f) {
+    const ls = lotesDelRegistro(f);
+    return [
+        ls.map(l => (l.lote ?? '') + (l.unidades != null ? ` (${l.unidades} u.)` : '')).join(' / '),
+        ls.map(l => l.vence ?? '').join(' / '),
+    ];
+}

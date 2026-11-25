@@ -9,7 +9,7 @@ import { BARRA_DE_JUEGO } from '../componentes/juegos/Escena';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
 import AlertaWeb from '../componentes/AlertaWeb';
-import DescargaAndroid from '../componentes/DescargaAndroid';
+import DescargaApp from '../componentes/DescargaApp';
 import { useAppActiva } from '../lib/visible';
 import { BARRA_NATIVA, barraAndroid } from '../componentes/PilaDePestana';
 import { useBarraWeb } from '../componentes/MargenWeb';
@@ -462,8 +462,8 @@ function Raiz() {
           <AvisoSinConexion />
           {/* Web: `Alert.alert` no existe en el navegador (componentes/AlertaWeb). */}
           {WEB ? <AlertaWeb /> : null}
-          {/* Web en Android: invitación a bajar la app de Play (componentes/DescargaAndroid). */}
-          {WEB ? <DescargaAndroid /> : null}
+          {/* Web: invitación a bajar la app — hoja en Android, tarjeta al costado en computadora (componentes/DescargaApp). */}
+          {WEB ? <DescargaApp /> : null}
           {/* La burbuja del chat (2026-10-12): encima de las pantallas y debajo
               de los avisos y del bloqueo. Dónde se esconde: componentes/BurbujaChat. */}
           <BurbujaChat />

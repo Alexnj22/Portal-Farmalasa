@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1601.2 — La web de Puntos Salud: tarjeta al costado en computadora
+
+- En computadora, `app.farmasalud.lat` muestra una tarjeta fija abajo a la
+  derecha: «Ya disponible en Android», un QR que abre Google Play desde el
+  teléfono, «Ver en Google Play» y «Próximamente en App Store». Se cierra con
+  la × y no vuelve en 7 días; con la ventana angosta (<1000 px) no sale.
+- En Android sigue la hoja de abajo; en iPhone, nada hasta que App Store
+  apruebe la app. `componentes/DescargaAndroid.js` → `DescargaApp.js`.
+- Verificado con la web compilada: computadora la ve y al cerrarla no vuelve;
+  Android ve la hoja y no la tarjeta; iPhone ninguna.
+- Novedades: no — es la app de clientes, no el portal del personal.
+- Gemelo: app-clientes — sólo existe en la web; en las apps nativas no aplica.
+
 ## v2.1601.1 — La web de Puntos Salud invita a bajar la app en Android
 
 - `app.farmasalud.lat` abierta desde un teléfono Android muestra una hoja abajo:

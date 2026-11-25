@@ -8173,6 +8173,63 @@ export type Database = {
           },
         ]
       }
+      compra_regalia_historial: {
+        Row: {
+          accion: string
+          cambiado_por: string | null
+          codigo_proveedor: string
+          compra_antes: number | null
+          compra_despues: number | null
+          created_at: string
+          descripcion: string | null
+          id: number
+          proveedor_nit: string
+          regalo_antes: number | null
+          regalo_despues: number | null
+        }
+        Insert: {
+          accion: string
+          cambiado_por?: string | null
+          codigo_proveedor: string
+          compra_antes?: number | null
+          compra_despues?: number | null
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          proveedor_nit: string
+          regalo_antes?: number | null
+          regalo_despues?: number | null
+        }
+        Update: {
+          accion?: string
+          cambiado_por?: string | null
+          codigo_proveedor?: string
+          compra_antes?: number | null
+          compra_despues?: number | null
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          proveedor_nit?: string
+          regalo_antes?: number | null
+          regalo_despues?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_regalia_historial_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_regalia_historial_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_registro: {
         Row: {
           cantidad: number | null
@@ -34536,6 +34593,8 @@ export type Database = {
         Args: { p_estado: string; p_id: number; p_nota?: string }
         Returns: Json
       }
+      compra_proveedores_para_regalias: { Args: never; Returns: Json }
+      compra_regalias_de_proveedor: { Args: { p_nit: string }; Returns: Json }
       compra_registro_anotar_carga: {
         Args: { p_carga_id: number }
         Returns: number

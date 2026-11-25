@@ -32,6 +32,7 @@ const FacturaEnPapel = lazy(() => import('./CargarCompraPestanas').then((m) => (
 
 // La propuesta (el panel de una factura) se baja al abrirla: ver PropuestaDeCompra.jsx.
 const Propuesta = lazy(() => import('./PropuestaDeCompra'));
+const RegaliasProveedor = lazy(() => import('./RegaliasProveedor'));
 
 
 // Vista «Cargar compra».
@@ -64,6 +65,7 @@ const TABS = [
     { key: 'erroneos',  label: 'Productos erróneos' },
     { key: 'por_llegar', label: 'Por llegar' },
     { key: 'registro',  label: 'Registro' },
+    { key: 'regalias',  label: 'Regalías' },
 ];
 
 const COLS = [
@@ -256,7 +258,8 @@ export default function CargarCompraView() {
             <PausaDeEscrituras estado={pausa} onCambio={setPausa} />
 
             <Suspense fallback={<SkeletonText lines={4} className="w-full" />}>
-            {tab === 'registro' ? <TabRegistro busca={busca} />
+            {tab === 'regalias' ? <RegaliasProveedor puedeEditar={puedeEditar} />
+            : tab === 'registro' ? <TabRegistro busca={busca} />
             : tab === 'por_llegar' ? <TabPorLlegar puedeEditar={puedeEditar} busca={busca} />
             : tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
             : tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} busca={buscaConfirmar} /> : (<>

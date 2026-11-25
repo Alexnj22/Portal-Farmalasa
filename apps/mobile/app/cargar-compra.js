@@ -28,6 +28,7 @@ import { Aviso, BotonGrande, Vacio, Cargando } from '../componentes/formulario/P
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import { PestanaRegalias } from '../componentes/compras/Regalias';
 import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
@@ -311,7 +312,7 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
 }
 
 const PESTANAS = [{ id: 'facturas', label: 'Facturas' }, { id: 'confirmar', label: 'Por confirmar' }, { id: 'erroneos', label: 'Erróneos' },
-  { id: 'por_llegar', label: 'Por llegar' }, { id: 'registro', label: 'Registro' }];
+  { id: 'por_llegar', label: 'Por llegar' }, { id: 'registro', label: 'Registro' }, { id: 'regalias', label: 'Regalías' }];
 
 export default function CargarCompra() {
   const { hasPermission } = useAuth();
@@ -334,7 +335,7 @@ export default function CargarCompra() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_FIJA, title: 'Cargar compra',
-        headerSearchBarOptions: conBuscador ? { placeholder: tab === 'confirmar' ? 'Proveedor, producto o código' : 'Proveedor o número de factura', onChangeText: (e) => setBusca(e.nativeEvent.text) } : undefined }} />
+        headerSearchBarOptions: conBuscador ? { placeholder: tab === 'regalias' ? 'Proveedor, producto o código' : tab === 'confirmar' ? 'Proveedor, producto o código' : 'Proveedor o número de factura', onChangeText: (e) => setBusca(e.nativeEvent.text) } : undefined }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
       <FijoArriba><Segmentos activa={tab} onCambiar={setTab} opciones={PESTANAS} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
@@ -344,6 +345,7 @@ export default function CargarCompra() {
           : tab === 'confirmar' ? <PorConfirmar busca={busca} estado={estado} puedeEditar={puedeEditar} />
           : tab === 'erroneos' ? <PestanaErroneos puedeEditar={puedeEditar} pausada={pausada} />
           : tab === 'por_llegar' ? <PestanaPorLlegar puedeEditar={puedeEditar} pausada={pausada} busca={busca} />
+          : tab === 'regalias' ? <PestanaRegalias busca={busca} puedeEditar={puedeEditar} />
           : <PestanaRegistro busca={busca} />}
       </ScrollView>
     </>

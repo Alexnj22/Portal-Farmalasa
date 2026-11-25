@@ -674,3 +674,17 @@ export async function guardarRegalia({ nit, codigo, compra, regalo, descripcion 
     anotar('COMPRA_REGALIA_GUARDADA', codigo, { proveedor: nit, compra, regalo });
     return { ok: true, error: null };
 }
+
+/** Los proveedores para la pestaña «Regalías»: con productos emparejados o regalías. */
+export async function fetchProveedoresParaRegalias() {
+    const { data, error } = await supabase.rpc('compra_proveedores_para_regalias');
+    if (error) return { proveedores: [], error: error.message };
+    return { proveedores: data ?? [], error: null };
+}
+
+/** Los productos de un proveedor con su regalía, y el historial de cambios. */
+export async function fetchRegaliasDeProveedor(nit) {
+    const { data, error } = await supabase.rpc('compra_regalias_de_proveedor', { p_nit: nit });
+    if (error) return { productos: [], historial: [], error: error.message };
+    return { productos: data?.productos ?? [], historial: data?.historial ?? [], error: null };
+}

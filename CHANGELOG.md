@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1602.0 — Regalías: pestaña y historial
+
+Pedido del usuario: ver y configurar las regalías sin esperar a que llegue
+una factura, y que quede historial.
+
+- **Pestaña «Regalías» en Cargar compra** (portal y app): eliges el proveedor
+  y salen todos sus productos emparejados con su regalía (compra + regalo).
+  Se agrega, cambia o quita ahí mismo; se ve quién la cambió y cuándo.
+- **Historial** (`compra_regalia_historial`): cada alta, cambio o baja queda con
+  el nivel de antes y el de después, quién y cuándo. Lo escribe un disparador
+  sobre `compra_regalia`, así que también queda lo que se toque por SQL. No se
+  purga (historial de negocio). Arranca con las 5 altas de Vijosa.
+- Lecturas `compra_proveedores_para_regalias()` y
+  `compra_regalias_de_proveedor(nit)`, las dos `RETURNS json`.
+- Gemelo: cargar_compra — en `apps/mobile/componentes/compras/Regalias.js`.
+- Novedades: no — la usa sólo Bodega (decisión del usuario).
+
 ## v2.1601.3 — Regalías en nota de crédito: lotes, topes y casos raros
 
 Correcciones de la auditoría de v2.1601.0 (revisión de código + prueba en vivo

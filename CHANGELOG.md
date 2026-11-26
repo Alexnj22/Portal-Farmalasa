@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.6 — El conteo en vivo no agrega lotes a un producto ya contado
+
+En el conteo total de Bodega, Vijosa se contó el 23-nov. El 25-nov entraron
+tres compras de Vijosa y `sincronizar_conteo_en_vivo` agregó 39 lotes como
+pendientes, cinco de ellos de productos que ya estaban contados (Ultra Doceplex
+ampollas 130, Vermagest 60, Ambroxol Nordic 15, Griin Vitamin 4, Fórmula
+Piernas y Venas 2). Cerrados con «pendientes como cero» habrían salido como
+faltante falso.
+
+Ahora un lote nuevo sólo entra si su producto (misma presentación y sección)
+todavía no tiene ningún renglón contado. Los cinco renglones se quitaron del
+conteo de Bodega, con constancia en `audit_logs`
+(`CONTEO_QUITAR_LOTES_LLEGADOS_DESPUES`). Migración `20261126225128`.
+
 ## v2.1604.5 — La app guarda el conteo escrito aunque no se confirme
 
 En el conteo total de Bodega, NOR GEROM FORTE quedó con sus 10 renglones

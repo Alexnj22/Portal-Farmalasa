@@ -127,7 +127,9 @@ for (const v of [...(dinamicos.get(entry) || [])].filter(f => gz.has(f))) {
 
   for (const dep of nuevos) {
     for (const [lib, motivo] of Object.entries(PESADAS)) {
-      if (dep.includes(lib)) {
+      // Sin distinguir mayúsculas: el pedazo de jsbarcode se llama `JsBarcode-….js`
+      // y con `includes` a secas nunca se cazaba (hallado 2026-11-26).
+      if (dep.toLowerCase().includes(lib.toLowerCase())) {
         violaciones.push({ vista: nombre, lib, kb: kb(gz.get(dep)), motivo });
       }
     }

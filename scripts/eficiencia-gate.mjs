@@ -125,7 +125,13 @@ function techoDeclarado(d, filas, horas) {
  * deuda en su propia línea del baseline y se baja midiendo, no estimando.
  *
  * La cadencia se compara contra producción tal cual: si alguien la aprieta, el
- * gate lo dice con el número viejo y el nuevo a la vista. */
+ * gate lo dice con el número viejo y el nuevo a la vista.
+ *
+ * `apagado: { desde: 'AAAA-MM-DD', motivo }` es un cron que el usuario decidió
+ * dejar APAGADO sin sacarlo del manifiesto (2026-11-26). Inactivo en producción
+ * no falla: se imprime como aviso con su fecha y su motivo. Si alguien lo
+ * enciende, falla hasta que se quite la marca en el mismo commit: un cron
+ * apagado a propósito que vuelve a correr también es una decisión. */
 const CRONS = [
   {
     job: 'avisar-bolsas-entregadas-sin-recibir', slug: null, cadencia: '23 12-23,0-3 * * *',
@@ -928,7 +934,8 @@ const CRONS = [
   { job: 'sync-numero-control-inyecciones',     slug: 'sync-numero-control',         cadencia: '4-59/10 12-23,0-5 * * *', corridasDia: 108, sistema: 1, motivo: 'El número de control de las ventas con inyección de los últimos 3 días, para que la caja de otra sala las encuentre por el ticket a los pocos minutos (2026-11-10). Una petición por venta nueva con inyección: ~73 por día (6.571 en 90 días) repartidas en 108 corridas, o sea ≤1 por corrida; sin pendientes no sale a ningún lado. Lo paga la baja de `cortes-caja-5min`.' },
   { job: 'check-purchases-reconciliation-daily', slug: 'check-purchases-reconciliation', cadencia: '20 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de compras.' },
   { job: 'check-sales-reconciliation-daily',    slug: 'check-sales-reconciliation',  cadencia: '30 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de ventas.' },
-  { job: 'consolidate-timesheets-daily',        slug: 'consolidate-timesheets',      cadencia: '0 8 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
+  { job: 'consolidate-timesheets-daily',        slug: 'consolidate-timesheets',      cadencia: '0 8 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.',
+    apagado: { desde: '2026-11-26', motivo: 'Decisión del usuario: «por ahora sigue apagado».' } },
   { job: 'sync-purchase-emails-daily',          slug: 'sync-purchase-emails',        cadencia: '2-59/10 * * * *', corridasDia: 144, sistema: 0, motivo: 'Lee correo, no el sistema. Cada 10 min desde 2026-11-05 (pedido del usuario): Bodega carga las compras el mismo día. El nombre «daily» quedó por compatibilidad.' },
   { job: 'apply-scheduled-employee-events-daily', slug: 'apply-scheduled-employee-events', cadencia: '0 11 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'check-doc-expiry-daily',              slug: 'check-doc-expiry',            cadencia: '0 13 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
@@ -1289,6 +1296,15 @@ if (!SOLO_LOCAL) {
         // ni una vez» se juzgan sobre el despachador, que tiene su propia fila
         // en el manifiesto.
         if (!p.active) continue;
+      }
+      if (d.apagado) {
+        if (p && p.active) {
+          fallos.push(`el cron ${d.job} está marcado apagado a propósito (desde ${d.apagado.desde}) y está ACTIVO en producción. `
+                    + 'Si se encendió a propósito, se quita la marca `apagado` del manifiesto en el mismo commit.');
+        } else {
+          avisos.push(`${d.job}: apagado a propósito desde ${d.apagado.desde} — ${d.apagado.motivo}`);
+        }
+        continue;
       }
       if (!p || !p.active) {
         fallos.push(`el cron ${d.job} está declarado y NO está activo en producción. `

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.4 — gate:eficiencia admite un cron apagado a propósito
+
+El manifiesto `CRONS` de `scripts/eficiencia-gate.mjs` acepta
+`apagado: { desde, motivo }`. Si un cron con esa marca está inactivo en
+producción, el gate da un aviso con la fecha y el motivo, y no falla. Si alguien
+lo enciende, el gate falla hasta que se quite la marca en el mismo commit.
+
+`consolidate-timesheets-daily` queda apagado desde el 2026-11-26 por decisión
+del usuario («por ahora sigue apagado»). Sigue en el manifiesto.
+
+Sin cambios en el portal ni en la app.
+
+Novedades: no — es un gate interno, nadie del personal lo ve.
+
 ## v2.1604.3 — El monitor de asistencia dice «pausa» en la jornada partida
 
 En la jornada partida («7 a 12 y de 4 a 7») el monitor de asistencia, en el

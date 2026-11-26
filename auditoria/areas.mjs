@@ -645,11 +645,14 @@ export const AREAS = [
                  'promocion_pago',
                  // Copia de las campañas de descuento, para separar la rebaja de
                  // campaña del precio cambiado a mano (PENDIENTES 30, 2026-10-29).
-                 'descuentos_espejo'],
+                 'descuentos_espejo',
+                 // Control de promociones (2026-11-26): las reglas de cada
+                 // promoción y las ventas que no las cumplieron.
+                 'promocion_reglas', 'promocion_ventas_observadas'],
         // El EFECTO de `descuentos-erp` es un descuento en la venta, que es lo que
         // esta pantalla configura — aunque el dato viva en el sistema de la caja.
         edge: ['descuentos-erp', 'espejo-descuentos'],
-        crons: ['promociones-ciclo-diario', 'espejo-descuentos'],
+        crons: ['promociones-ciclo-diario', 'espejo-descuentos', 'promocion-control-5min'],
         docs: ['docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md',
                'docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md'],
     },

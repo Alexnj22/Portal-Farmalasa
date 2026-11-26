@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-25T21:25:15.317Z",
+ "generado": "2026-11-26T23:23:49.138Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -531,7 +531,7 @@
   },
   "approve_minmax_requests_bulk": {
    "area": "minmax",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "aprobar_bono_semestral": {
@@ -1089,7 +1089,7 @@
   },
   "busqueda_coincide": {
    "area": "plataforma",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "busqueda_distancia": {
@@ -1110,7 +1110,7 @@
   },
   "busqueda_parecido": {
    "area": "plataforma",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "busqueda_patrones_legados": {
@@ -2052,7 +2052,7 @@
   },
   "decidir_descanso_semanal": {
    "area": "asistencia",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "decidir_descuento_de_suspension": {
@@ -2073,7 +2073,7 @@
   },
   "decidir_horas_extra": {
    "area": "asistencia",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "declarar_faltante_tardio": {
@@ -3038,7 +3038,7 @@
   },
   "extraer_observaciones_mh": {
    "area": "facturacion-dte",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "f_unaccent": {
@@ -3740,7 +3740,7 @@
   },
   "get_product_sales_agg": {
    "area": "ventas",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "get_product_sales_agg_base": {
@@ -3788,6 +3788,10 @@
    "por": "código"
   },
   "get_promocion_laboratorio": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "get_promocion_observadas": {
    "area": "promociones",
    "por": "código"
   },
@@ -3869,7 +3873,7 @@
   },
   "get_stagnant_inventory_jsonb": {
    "area": "inventario",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "get_stock_analysis": {
@@ -4016,7 +4020,7 @@
   },
   "hora_en_pausa": {
    "area": "horarios",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "horario_de_sala": {
@@ -4762,7 +4766,7 @@
   },
   "minmax_effective": {
    "area": "minmax",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "mis_permisos_heredados": {
@@ -4827,12 +4831,12 @@
   },
   "nombre_normalizado": {
    "area": "plataforma",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "nombre_ordenado": {
    "area": "plataforma",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "norm_busqueda": {
@@ -5125,6 +5129,15 @@
    "area": "promociones",
    "por": "llamada"
   },
+  "promocion_control_hallazgos": {
+   "area": "promociones",
+   "por": "manual",
+   "manual": true
+  },
+  "promocion_control_revisar": {
+   "area": "promociones",
+   "por": "cron"
+  },
   "promocion_corte_del_lote": {
    "area": "promociones",
    "por": "código"
@@ -5219,7 +5232,7 @@
   },
   "prorroga_aprobadores": {
    "area": "app-clientes",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "prorroga_de": {
@@ -5408,7 +5421,7 @@
   },
   "puntos_dui_estricto": {
    "area": "ventas",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "puntos_encender": {
@@ -5529,7 +5542,7 @@
   },
   "puntos_premio_al_azar": {
    "area": "ventas",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "puntos_premio_apartar": {
@@ -5929,7 +5942,7 @@
   },
   "regrant_al_cambiar_employees_safe": {
    "area": "permisos",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "regrant_employees_columns": {
@@ -6449,7 +6462,7 @@
   },
   "sello_mh_valido": {
    "area": "facturacion-dte",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "separar_expediente_de_sucursal": {
@@ -6682,7 +6695,7 @@
   },
   "touch_promotions_updated_at": {
    "area": "promociones",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "touch_session": {
@@ -6691,7 +6704,7 @@
   },
   "traslado_avisar_propuesta": {
    "area": "traslados",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "traslado_enviada_del_renglon": {
@@ -6752,7 +6765,7 @@
   },
   "turno_del_dia": {
    "area": "horarios",
-   "por": "a mano",
+   "por": "manual",
    "manual": true
   },
   "una_cuenta_de_pruebas_lo_tiene_todo": {

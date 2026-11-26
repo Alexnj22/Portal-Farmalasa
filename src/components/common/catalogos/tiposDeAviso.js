@@ -11,6 +11,7 @@
 import {
     Palmtree,
     FileText,
+    Gift,
     RefreshCw,
     Coffee,
     DollarSign,
@@ -60,6 +61,7 @@ const ICONOS = {
     DollarSign,
     FileCheck,
     FileText,
+    Gift,
     Info,
     Landmark,
     MessageCircle,

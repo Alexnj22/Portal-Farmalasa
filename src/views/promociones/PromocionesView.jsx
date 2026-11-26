@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent, CalendarClock, CheckCircle2, Package, FileText, Download, BadgePercent } from 'lucide-react';
+import { ShieldAlert, Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent, CalendarClock, CheckCircle2, Package, FileText, Download, BadgePercent } from 'lucide-react';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -32,6 +32,7 @@ const TabExcedentes = lazy(() => import('./TabExcedentes'));
 const TabDescuentos = lazy(() => import('./TabDescuentos'));
 const TabPagos = lazy(() => import('./TabPagos'));
 const TabRebajas = lazy(() => import('./TabRebajas'));
+const TabControl = lazy(() => import('./TabControl'));
 
 // Los diálogos se bajan al abrirse (`dialogoDiferido`), no al entrar.
 const DescuentoModal = dialogoDiferido(() => import('./DescuentoModal'));
@@ -104,6 +105,9 @@ export default function PromocionesView() {
         // Lo que de verdad se rebajó en las ventas: de campaña o a mano
         // (PENDIENTES 30, 2026-10-29).
         { key: 'rebajas',     label: 'Rebajas',     icon: BadgePercent },
+        // Las ventas que no cumplieron las reglas de una promoción: el combo
+        // incompleto, un regalo de más o un precio distinto (2026-11-26).
+        { key: 'control',     label: 'Control',     icon: ShieldAlert },
         { key: 'excedentes',  label: 'Excedentes',  icon: Scale },
         // La «Liquidación» mensual se retiró el 2026-09-22: ningún bono se paga
         // por mes. El de meta es semestral (Metas → Pago semestral) y el de
@@ -275,7 +279,7 @@ export default function PromocionesView() {
     const filtrosPuestos = recortaLaLista
         ? [fTipo, filtraEstado && fEstado, fLab].filter(Boolean).length
         : tab === 'descuentos' ? [fDescSala, fDescEstado].filter(Boolean).length
-            : tab === 'rebajas' ? [fRebSala, periodoReb !== mesDeHoy].filter(Boolean).length : 0;
+            : (tab === 'rebajas' || tab === 'control') ? [fRebSala, periodoReb !== mesDeHoy].filter(Boolean).length : 0;
     const limpiarFiltros = useCallback(() => {
         setFTipo(''); setFEstado(''); setFLab(''); setFDescSala(''); setFDescEstado('');
         setFRebSala(''); setPeriodoReb(mesDeHoy);
@@ -417,7 +421,7 @@ export default function PromocionesView() {
         tone: 'success', variant: 'quiet', soloIcono: true, onClick: exportador,
     }] : [];
 
-    const acciones = [...(!puedeEditar || tab === 'descuentos' || tab === 'rebajas' ? [] : [
+    const acciones = [...(!puedeEditar || tab === 'descuentos' || tab === 'rebajas' || tab === 'control' ? [] : [
             /* SIN `rotuloFijo`: es «opt-in y rara» según el propio canónico
                —hace que el texto no ceda nunca y la píldora se mida siempre
                con él—, y puesta en las DOS dejaba la barra con dos botones
@@ -544,6 +548,12 @@ export default function PromocionesView() {
             return (
                 <TabRebajas periodo={periodoReb} salaId={fRebSala} vista={vistaReb} onVista={setVistaReb}
                     busqueda={busqueda} salas={salasDeVenta}
+                    onResumen={setResumenTab} onExportable={publicarExportador} />
+            );
+        }
+        if (tab === 'control') {
+            return (
+                <TabControl periodo={periodoReb} salaId={fRebSala} busqueda={busqueda}
                     onResumen={setResumenTab} onExportable={publicarExportador} />
             );
         }
@@ -679,7 +689,7 @@ export default function PromocionesView() {
                                     </FilterBar.Section>
                                 )}
 
-                                {tab === 'rebajas' && (
+                                {(tab === 'rebajas' || tab === 'control') && (
                                     <FilterBar.Section label="mes" active={periodoReb !== mesDeHoy}
                                         onClear={() => setPeriodoReb(mesDeHoy)}>
                                         <PeriodStepper
@@ -694,7 +704,7 @@ export default function PromocionesView() {
                                         />
                                     </FilterBar.Section>
                                 )}
-                                {tab === 'rebajas' && (
+                                {(tab === 'rebajas' || tab === 'control') && (
                                     <FilterBar.Section label="sucursal" active={!!fRebSala}
                                         onClear={() => setFRebSala('')}>
                                         <FilterBar.Sucursal value={fRebSala}

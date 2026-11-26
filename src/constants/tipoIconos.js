@@ -67,6 +67,8 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     // mañana lleva el mismo ícono que el corte que vino a recordar: son el
     // mismo trabajo visto dos veces, no dos asuntos.
     CORTE_NUEVO:      'Wallet',
+    // Una venta que no cumplió la promoción: el ícono del módulo Promociones.
+    PROMO_VENTA_ERROR: 'Gift',
     CORTE_PENDIENTE:  'Wallet',
     // El día que nadie cerró: el mismo trabajo de caja, visto a la mañana.
     DIA_SIN_CIERRE:   'Wallet',

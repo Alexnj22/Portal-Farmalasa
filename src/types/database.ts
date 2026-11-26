@@ -24871,6 +24871,59 @@ export type Database = {
           },
         ]
       }
+      promocion_reglas: {
+        Row: {
+          activa: boolean
+          created_at: string
+          fin: string
+          id: number
+          inicio: string
+          por_unidad: number
+          product_id: number
+          producto_texto: string
+          promocion_id: number | null
+          requiere_product_id: number | null
+          requiere_texto: string | null
+          tipo: string
+        }
+        Insert: {
+          activa?: boolean
+          created_at?: string
+          fin: string
+          id?: never
+          inicio: string
+          por_unidad?: number
+          product_id: number
+          producto_texto: string
+          promocion_id?: number | null
+          requiere_product_id?: number | null
+          requiere_texto?: string | null
+          tipo: string
+        }
+        Update: {
+          activa?: boolean
+          created_at?: string
+          fin?: string
+          id?: never
+          inicio?: string
+          por_unidad?: number
+          product_id?: number
+          producto_texto?: string
+          promocion_id?: number | null
+          requiere_product_id?: number | null
+          requiere_texto?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocion_reglas_promocion_id_fkey"
+            columns: ["promocion_id"]
+            isOneToOne: false
+            referencedRelation: "promociones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promocion_renglon: {
         Row: {
           cerrado_at: string | null
@@ -25131,6 +25184,50 @@ export type Database = {
             columns: ["renglon_id"]
             isOneToOne: false
             referencedRelation: "promocion_renglon"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promocion_ventas_observadas: {
+        Row: {
+          avisado_at: string | null
+          branch_id: number
+          created_at: string
+          detalle: Json
+          fecha: string
+          id: number
+          invoice_id: number
+          motivo: string
+          regla_id: number
+        }
+        Insert: {
+          avisado_at?: string | null
+          branch_id: number
+          created_at?: string
+          detalle?: Json
+          fecha: string
+          id?: never
+          invoice_id: number
+          motivo: string
+          regla_id: number
+        }
+        Update: {
+          avisado_at?: string | null
+          branch_id?: number
+          created_at?: string
+          detalle?: Json
+          fecha?: string
+          id?: never
+          invoice_id?: number
+          motivo?: string
+          regla_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promocion_ventas_observadas_regla_id_fkey"
+            columns: ["regla_id"]
+            isOneToOne: false
+            referencedRelation: "promocion_reglas"
             referencedColumns: ["id"]
           },
         ]
@@ -33617,6 +33714,12 @@ export type Database = {
         Args: { p_dia?: string; p_employee_id: string }
         Returns: Json
       }
+      app_android_acceso: { Args: { p_email: string }; Returns: string }
+      app_android_dui: { Args: { p_dui: string }; Returns: string }
+      app_android_registrar: {
+        Args: { p_dui: string; p_email: string }
+        Returns: string
+      }
       app_avisame_por_avisar: { Args: { p_clientes: number[] }; Returns: Json }
       app_borrar_datos_de_cuenta: {
         Args: { p_customer: number }
@@ -37909,6 +38012,10 @@ export type Database = {
         Args: { p_id: number; p_year_month?: string }
         Returns: Json
       }
+      get_promocion_observadas: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
       get_promociones: {
         Args: { p_estado?: string; p_tipo?: string }
         Returns: Json
@@ -39559,6 +39666,18 @@ export type Database = {
           vendido: number
         }[]
       }
+      promocion_control_hallazgos: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: {
+          branch_id: number
+          detalle: Json
+          fecha: string
+          invoice_id: number
+          motivo: string
+          regla_id: number
+        }[]
+      }
+      promocion_control_revisar: { Args: never; Returns: number }
       promocion_corte_del_lote: {
         Args: { p_promocion_id?: number }
         Returns: {

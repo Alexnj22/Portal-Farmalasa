@@ -256,3 +256,18 @@ export async function fetchRebajasEnVentas({ desde, hasta, branchId = null }) {
         aMano: d?.a_mano ?? [],
     };
 }
+
+/**
+ * Las ventas que no cumplieron las reglas de una promoción (control de
+ * promociones, 2026-11-26): el combo sin lo que exige, un regalo de más o un
+ * producto cobrado fuera de su precio. Las marca un cron cada 5 minutos
+ * (`promocion_control_revisar`); acá sólo se leen. `RETURNS json`: sin techo
+ * de 1000 filas.
+ */
+export async function fetchVentasFueraDePromocion({ desde, hasta }) {
+    const { data, error } = await supabase.rpc('get_promocion_observadas', {
+        p_desde: desde, p_hasta: hasta,
+    });
+    if (error) throw error;
+    return /** @type {any[]} */ (data) ?? [];
+}

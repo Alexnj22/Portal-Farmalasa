@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1605.0 — Control de promociones: avisa las ventas que no cumplen la promoción
+
+La caja no sabe de condiciones por cantidad: el descuento de $2.31 de la Iren
+Forte x 15 (descuento #37) le sale a cualquier venta, y el 2x1 y los regalos se
+hacen a mano. El usuario pidió llevar el control desde el 27-nov.
+
+- Tablas `promocion_reglas` y `promocion_ventas_observadas`. Tres tipos de
+  regla: **combo** (cada Iren exige 2 Neurobion 25,000 pagadas en la misma
+  factura), **regalo** (lo gratis no pasa de lo que la promoción alcanza:
+  1 Neurobion por Iren, 1 Gludethon AR por tripack) y **precio_2x1**
+  (Tramafen tab y Dolaco 20 a viñeta, lo gratis no pasa de lo pagado).
+- `promocion_control_hallazgos` es el único juez; `promocion_control_revisar`
+  lo corre el cron `promocion-control-5min` sobre los últimos 3 días, guarda lo
+  nuevo y avisa una vez por factura (`PROMO_VENTA_ERROR`): a la sucursal
+  (quienes ven Ventas, que no ven Promociones) con el error escrito, y al
+  Supervisor/a de Ventas con la lista.
+- Pestaña **Control** en Promociones (`get_promocion_observadas`).
+- Medido antes de encender, sobre 1–25 nov como si las reglas existieran: 61
+  ventas de Tramafen tab y 1 de Dolaco 20 cobradas a preferente; combos y
+  regalos en cero. Reglas vigentes del 27-nov al 3-dic.
+
+Migración `20261126231759`.
+
+Novedades: no — decisión del usuario: el aviso llega solo cuando hay un error.
+
+Gemelo: promociones — la pestaña Control queda sólo en el portal por ahora; el aviso llega a la app por push y abre Ventas o Promociones.
+
 ## v2.1604.6 — El conteo en vivo no agrega lotes a un producto ya contado
 
 En el conteo total de Bodega, Vijosa se contó el 23-nov. El 25-nov entraron

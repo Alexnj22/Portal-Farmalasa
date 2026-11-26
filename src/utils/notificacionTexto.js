@@ -69,6 +69,7 @@ export const ACTION_LABEL = {
     PEDIDO_PROBLEMA: 'Ver detalle',
     PREVENTA_COBRO_DISTINTO: 'Ver la preventa',
     CORTE_NUEVO:     'Revisar el corte',
+    PROMO_VENTA_ERROR: 'Ver la venta',
     DEPOSITO_BANCO:  'Ver el depósito',
     CHAT_CLIENTE:    'Responder',
     RECETA_APP:      'Revisar receta',

@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.1 — En Android, el DUI primero
+
+La pantalla del teléfono Android ya no acepta cualquier correo: primero pide
+el DUI y sólo sigue si es de un empleado ACTIVO (`app_android_dui`). Si ya
+tiene acceso, lo manda a Google Play; si está esperando, se lo dice; si nunca
+dejó correo, se lo pide y lo deja en la lista de Novedades → Android
+(`app_android_registrar`). Sin sesión no se tocan las fichas de empleado ni
+de cliente, y un correo que ya se agregó en Google Play no se cambia desde
+aquí. Nadie que no sea del personal puede mandar un correo.
+
+Migración `20261126152910_app_android_dui_primero`, declarada en
+`auditoria/superficie-anon.json`.
+
+Gemelo: novedades — la pantalla que manda del portal a la app no tiene sentido dentro de la app
+
+Novedades: no — lo decidió el usuario para esta pantalla: quien abre el portal en el teléfono ya la ve
+
 ## v2.1604.0 — El portal solo abre en computadora
 
 En un teléfono, el inicio de sesión y todo el portal muestran una sola

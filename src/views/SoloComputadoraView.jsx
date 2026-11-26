@@ -4,18 +4,20 @@
 // después de iniciar sesión (App.jsx la pone en `/login` y en el comodín).
 //   · iPhone: el enlace de App Store.
 //   · Android: la app vive en la prueba interna de Google Play, que sólo abre
-//     para un correo que administración ya agregó. Se pide el correo y se
-//     pregunta a la base (`app_android_acceso`, sin sesión): si ya está, se
-//     manda directo a la invitación de Google Play.
+//     para un correo que administración ya agregó. Primero el DUI
+//     (`app_android_dui`, sin sesión): sólo un empleado activo sigue. Si ya
+//     está agregado, se manda directo a la invitación de Google Play; si no
+//     dejó correo, lo pide y lo deja en la lista (`app_android_registrar`),
+//     la misma que administración ve en Novedades → Android.
 // Las tablets y las rutas públicas (foto por QR, puntos, encuestas) no pasan
 // por aquí.
 import React, { useState } from 'react';
-import { Mail, Monitor, Play, Smartphone, BellRing, CircleAlert } from 'lucide-react';
+import { Mail, Monitor, Play, Smartphone, BellRing, CircleAlert, Check, IdCard } from 'lucide-react';
 import Button from '../components/common/Button';
 import Notice from '../components/common/Notice';
 import PortalInput from '../components/common/PortalInput';
 import { APP_PERSONAL_IOS, APP_PERSONAL_ANDROID, APP_PERSONAL_NOMBRE } from '@nucleo/constants/novedades';
-import { consultarAccesoAndroid } from '@nucleo/data/novedades';
+import { consultarDuiAndroid, registrarCorreoAndroidConDui } from '@nucleo/data/novedades';
 
 function LogoApple({ size = 16, className = '', ...rest }) {
     return (
@@ -25,37 +27,68 @@ function LogoApple({ size = 16, className = '', ...rest }) {
     );
 }
 
-function Android() {
-    const [correo, setCorreo] = useState('');
-    const [estado, setEstado] = useState(null); // null | 'esperando' | 'no' | 'error' | 'lista'
-    const [ocupado, setOcupado] = useState(false);
-    const valido = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(correo.trim());
+// 012345678 → 01234567-8, mientras se escribe.
+const formatoDui = (v) => {
+    const d = v.replace(/\D/g, '').slice(0, 9);
+    return d.length > 8 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
+};
 
-    const revisar = async (e) => {
+function Android() {
+    const [dui, setDui] = useState('');
+    const [correo, setCorreo] = useState('');
+    // null | 'no_empleado' | 'pedir_correo' | 'esperando' | 'lista' | 'error'
+    const [estado, setEstado] = useState(null);
+    const [ocupado, setOcupado] = useState(false);
+    const duiValido = dui.replace(/\D/g, '').length === 9;
+    const correoValido = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(correo.trim());
+    const pideCorreo = estado === 'pedir_correo' || estado === 'error_correo';
+
+    const alResultado = (r) => {
+        setEstado(r);
+        if (r === 'lista') globalThis.location?.assign(APP_PERSONAL_ANDROID);
+    };
+
+    const enviar = async (e) => {
         e?.preventDefault();
-        if (!valido || ocupado) return;
+        if (ocupado) return;
+        if (pideCorreo ? !correoValido : !duiValido) return;
         setOcupado(true);
         try {
-            const r = await consultarAccesoAndroid(correo.trim());
-            setEstado(r);
-            if (r === 'lista') globalThis.location?.assign(APP_PERSONAL_ANDROID);
+            alResultado(pideCorreo
+                ? await registrarCorreoAndroidConDui(dui, correo.trim())
+                : await consultarDuiAndroid(dui));
         } catch {
-            setEstado('error');
+            setEstado(pideCorreo ? 'error_correo' : 'error');
         } finally { setOcupado(false); }
     };
 
     return (
-        <form onSubmit={revisar} className="flex flex-col gap-4">
-            <p className="text-body-sm text-content-2">
-                Escribe el correo de tu cuenta de Google, el que usas en Play Store.
-            </p>
-            <PortalInput label="Correo de Google" name="correo-android" type="email" icon={Mail} value={correo}
-                placeholder="nombre@gmail.com" autoComplete="email" inputMode="email"
-                onChange={(e) => { setCorreo(e.target.value); setEstado(null); }}
-                hasError={!!correo && !valido} errorMessage="Revisa el correo: debe verse como nombre@gmail.com." />
-            <Button type="submit" icon={Play} loading={ocupado} disabled={!valido} className="w-full">
-                Continuar
+        <form onSubmit={enviar} className="flex flex-col gap-4">
+            {!pideCorreo ? (
+                <>
+                    <p className="text-body-sm text-content-2">Escribe tu DUI para ver si ya puedes descargarla.</p>
+                    <PortalInput label="DUI" name="dui-android" icon={IdCard} value={dui} inputMode="numeric"
+                        placeholder="00000000-0" autoComplete="off"
+                        onChange={(e) => { setDui(formatoDui(e.target.value)); setEstado(null); }} />
+                </>
+            ) : (
+                <>
+                    <p className="text-body-sm text-content-2">
+                        Escribe el correo de tu cuenta de Google, el que usas en Play Store.
+                    </p>
+                    <PortalInput label="Correo de Google" name="correo-android" type="email" icon={Mail} value={correo}
+                        placeholder="nombre@gmail.com" autoComplete="email" inputMode="email"
+                        onChange={(e) => setCorreo(e.target.value)}
+                        hasError={!!correo && !correoValido} errorMessage="Revisa el correo: debe verse como nombre@gmail.com." />
+                </>
+            )}
+            <Button type="submit" icon={pideCorreo ? Check : Play} loading={ocupado}
+                disabled={pideCorreo ? !correoValido : !duiValido} className="w-full">
+                {pideCorreo ? 'Guardar' : 'Continuar'}
             </Button>
+            {pideCorreo && (
+                <Button variant="ghost" size="sm" onClick={() => { setEstado(null); setCorreo(''); }}>Cambiar DUI</Button>
+            )}
 
             {estado === 'lista' && (
                 <Notice variant="success" compact icon={Play}>
@@ -65,16 +98,19 @@ function Android() {
             )}
             {estado === 'esperando' && (
                 <Notice variant="info" compact icon={BellRing}>
-                    Ya tenemos tu correo. Te avisamos cuando puedas descargarla.
+                    Ya tenemos tu correo. Cuando te den acceso, vuelve aquí, escribe tu DUI y te llevamos a Google Play.
                 </Notice>
             )}
-            {estado === 'no' && (
+            {estado === 'no_empleado' && (
                 <Notice variant="warning" compact icon={CircleAlert}>
-                    Ese correo todavía no tiene acceso. Déjalo en Novedades desde una computadora, o pídele a Talento Humano que lo agregue.
+                    Ese DUI no es de nadie del personal. Revísalo, o pídele a Talento Humano que lo revise en tus datos.
                 </Notice>
             )}
             {estado === 'error' && (
                 <Notice variant="error" compact icon={CircleAlert}>No se pudo revisar. Intenta de nuevo.</Notice>
+            )}
+            {estado === 'error_correo' && (
+                <Notice variant="error" compact icon={CircleAlert}>No se pudo guardar. Revisa el correo e intenta de nuevo.</Notice>
             )}
         </form>
     );

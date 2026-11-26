@@ -163,6 +163,20 @@
       "guarda": "ninguna: sólo el estado de un correo exacto",
       "estado": "nueva-2026-11-26",
       "motivo": "Portal sólo en computadora: en un teléfono Android, antes de iniciar sesión, se pide el correo de Google y se dice si ya puede descargar la app (lista/esperando/no). No lista correos ni dice de quién son."
+    },
+    {
+      "nombre": "app_android_dui",
+      "area": "comunicacion",
+      "guarda": "DUI de un empleado ACTIVO",
+      "estado": "nueva-2026-11-26",
+      "motivo": "Portal sólo en computadora: en un teléfono Android, antes de iniciar sesión, se pide el DUI para saber si es del personal y si ya puede descargar la app (no_empleado/pedir_correo/esperando/lista). No devuelve nombres ni correos."
+    },
+    {
+      "nombre": "app_android_registrar",
+      "area": "comunicacion",
+      "guarda": "DUI de un empleado ACTIVO",
+      "estado": "nueva-2026-11-26",
+      "motivo": "Portal sólo en computadora: el empleado que dio su DUI deja su correo de Google en la lista de la prueba de Android. Sólo escribe en app_pruebas_android (no toca fichas) y no cambia un correo que ya se agregó en Google Play."
     }
   ],
   "tablas": [

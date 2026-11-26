@@ -160,11 +160,19 @@ export async function fetchQuienVioNovedades() {
 }
 
 /**
- * Sin sesión (pantalla «sólo en computadora»): ¿este correo de Google ya puede
- * descargar la app en Android? `'lista'` | `'esperando'` | `'no'`.
+ * Sin sesión (pantalla «sólo en computadora», Android). Primero el DUI: sólo
+ * un empleado activo puede dejar su correo.
+ * `'no_empleado'` | `'pedir_correo'` | `'esperando'` | `'lista'`.
  */
-export async function consultarAccesoAndroid(email) {
-    const { data, error } = await supabase.rpc('app_android_acceso', { p_email: email });
+export async function consultarDuiAndroid(dui) {
+    const { data, error } = await supabase.rpc('app_android_dui', { p_dui: dui });
     if (error) throw error;
-    return /** @type {'lista'|'esperando'|'no'} */ (data || 'no');
+    return /** @type {'no_empleado'|'pedir_correo'|'esperando'|'lista'} */ (data || 'no_empleado');
+}
+
+/** Deja el correo de Google del empleado de ese DUI. `'no_empleado'` | `'esperando'` | `'lista'`. */
+export async function registrarCorreoAndroidConDui(dui, email) {
+    const { data, error } = await supabase.rpc('app_android_registrar', { p_dui: dui, p_email: email });
+    if (error) throw error;
+    return /** @type {'no_empleado'|'esperando'|'lista'} */ (data || 'no_empleado');
 }

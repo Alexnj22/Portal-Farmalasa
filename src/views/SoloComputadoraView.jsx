@@ -2,7 +2,8 @@
 //
 // En un teléfono el portal no abre: el personal usa la app. Sale antes y
 // después de iniciar sesión (App.jsx la pone en `/login` y en el comodín).
-//   · iPhone: el enlace de App Store.
+//   · iPhone: primero el DUI (sólo el personal); con un DUI de empleado
+//     activo aparece el botón de App Store.
 //   · Android: la app vive en la prueba interna de Google Play, que sólo abre
 //     para un correo que administración ya agregó. Primero el DUI
 //     (`app_android_dui`, sin sesión): sólo un empleado activo sigue. Si ya
@@ -33,7 +34,8 @@ const formatoDui = (v) => {
     return d.length > 8 ? `${d.slice(0, 8)}-${d.slice(8)}` : d;
 };
 
-function Android() {
+function ConDui({ telefono }) {
+    const iphone = telefono === 'iphone';
     const [dui, setDui] = useState('');
     const [correo, setCorreo] = useState('');
     // null | 'no_empleado' | 'pedir_correo' | 'esperando' | 'lista' | 'error'
@@ -44,6 +46,8 @@ function Android() {
     const pideCorreo = estado === 'pedir_correo' || estado === 'error_correo';
 
     const alResultado = (r) => {
+        // En iPhone el DUI sólo da paso al botón de App Store: no hay lista.
+        if (iphone) { setEstado(r === 'no_empleado' ? r : 'ios_ok'); return; }
         setEstado(r);
         if (r === 'lista') globalThis.location?.assign(APP_PERSONAL_ANDROID);
     };
@@ -64,10 +68,16 @@ function Android() {
 
     return (
         <form onSubmit={enviar} className="flex flex-col gap-4">
-            {!pideCorreo ? (
+            {estado === 'ios_ok' ? (
+                <Button icon={LogoApple} className="w-full" onClick={() => globalThis.location?.assign(APP_PERSONAL_IOS)}>
+                    Descargar en App Store
+                </Button>
+            ) : !pideCorreo ? (
                 <>
-                    <p className="text-body-sm text-content-2">Escribe tu DUI para ver si ya puedes descargarla.</p>
-                    <PortalInput label="DUI" name="dui-android" icon={IdCard} value={dui} inputMode="numeric"
+                    <p className="text-body-sm text-content-2">
+                        {iphone ? 'Escribe tu DUI para descargarla.' : 'Escribe tu DUI para ver si ya puedes descargarla.'}
+                    </p>
+                    <PortalInput label="DUI" name="dui" icon={IdCard} value={dui} inputMode="numeric"
                         placeholder="00000000-0" autoComplete="off"
                         onChange={(e) => { setDui(formatoDui(e.target.value)); setEstado(null); }} />
                 </>
@@ -82,11 +92,13 @@ function Android() {
                         hasError={!!correo && !correoValido} errorMessage="Revisa el correo: debe verse como nombre@gmail.com." />
                 </>
             )}
-            <Button type="submit" icon={pideCorreo ? Check : Play} loading={ocupado}
-                disabled={pideCorreo ? !correoValido : !duiValido} className="w-full">
-                {pideCorreo ? 'Guardar' : 'Continuar'}
-            </Button>
-            {pideCorreo && (
+            {estado !== 'ios_ok' && (
+                <Button type="submit" icon={pideCorreo ? Check : Play} loading={ocupado}
+                    disabled={pideCorreo ? !correoValido : !duiValido} className="w-full">
+                    {pideCorreo ? 'Guardar' : 'Continuar'}
+                </Button>
+            )}
+            {(pideCorreo || estado === 'ios_ok') && (
                 <Button variant="ghost" size="sm" onClick={() => { setEstado(null); setCorreo(''); }}>Cambiar DUI</Button>
             )}
 
@@ -135,18 +147,12 @@ export default function SoloComputadoraView({ telefono }) {
                             El portal solo se usa en computadora. En el teléfono, descarga la app y entra con tu usuario y contraseña del portal.
                         </p>
                     </div>
-                    {telefono === 'iphone' ? (
-                        <Button icon={LogoApple} className="w-full" onClick={() => globalThis.location?.assign(APP_PERSONAL_IOS)}>
-                            Descargar en App Store
-                        </Button>
-                    ) : (
-                        <>
-                            <div className="flex items-center gap-2 text-body-sm font-semibold text-content">
-                                <Smartphone size={16} className="text-success-text" /> Android
-                            </div>
-                            <Android />
-                        </>
-                    )}
+                    <div className="flex items-center gap-2 text-body-sm font-semibold text-content">
+                        {telefono === 'iphone'
+                            ? <><LogoApple size={16} /> iPhone</>
+                            : <><Smartphone size={16} className="text-success-text" /> Android</>}
+                    </div>
+                    <ConDui telefono={telefono} />
                 </div>
             </section>
         </main>

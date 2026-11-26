@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.2 — En iPhone también el DUI primero
+
+En un iPhone la pantalla «sólo en computadora» también pide el DUI primero
+(`app_android_dui`): con el DUI de un empleado activo aparece el botón
+«Descargar en App Store»; si no, el mismo aviso que en Android. Android sigue
+igual: correo ya agregado y avisado → Google Play; correo dejado → espera el
+aviso.
+
+Gemelo: novedades — la pantalla que manda del portal a la app no tiene sentido dentro de la app
+
+Novedades: no — lo decidió el usuario para esta pantalla: quien abre el portal en el teléfono ya la ve
+
 ## v2.1604.1 — En Android, el DUI primero
 
 La pantalla del teléfono Android ya no acepta cualquier correo: primero pide

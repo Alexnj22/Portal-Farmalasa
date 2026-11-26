@@ -160,7 +160,7 @@ export async function fetchQuienVioNovedades() {
 }
 
 /**
- * Sin sesión (pantalla «sólo en computadora», Android). Primero el DUI: sólo
+ * Sin sesión (pantalla «sólo en computadora», iPhone y Android). Primero el DUI: sólo
  * un empleado activo puede dejar su correo.
  * `'no_empleado'` | `'pedir_correo'` | `'esperando'` | `'lista'`.
  */

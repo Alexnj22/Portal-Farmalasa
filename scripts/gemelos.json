@@ -57,7 +57,8 @@
     "modulo:encuesta_admin": "FUERA_DE_LA_APP (apps/mobile/pantallas.js): el usuario la ocultó de la app el 2026-11-12",
     "modulo:entrevistas": "próximamente: no tiene pantalla en ningún lado (EXCEPCIONES de scripts/app-nativa-gate.mjs)",
     "modulo:ios_test": "diagnóstico del dispositivo: el portal prueba el navegador y la app prueba el teléfono; cada lado mide lo suyo",
-    "src/components/asistencia/PorDecidirPanel.jsx": "las decisiones de pago (horas de más a pago o banco, pérdida del descanso semanal) las toma Talento Humano en el portal, junto a la planilla; la app sólo consulta la auditoría"
+    "src/components/asistencia/PorDecidirPanel.jsx": "las decisiones de pago (horas de más a pago o banco, pérdida del descanso semanal) las toma Talento Humano en el portal, junto a la planilla; la app sólo consulta la auditoría",
+    "src/views/SoloComputadoraView.jsx": "la pantalla que en un teléfono manda del portal a la app: en la app no tiene sentido"
   },
   "soloApp": {
     "apps/mobile/app/pestana-rapida.js": "pestañas propias de la app (Menú, Buscar, Rápida, Yo): en el portal eso es la barra lateral y el menú del usuario, que son chasis",

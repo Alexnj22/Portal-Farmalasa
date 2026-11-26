@@ -419,6 +419,8 @@ export const AREAS = [
             // Novedades (2026-11-16): lo nuevo del portal con cómo se hace, y el
             // correo de Android para la prueba de la app del personal.
             'src/views/NovedadesView.jsx', 'src/constants/novedades.js', 'src/data/novedades.js',
+            // En un teléfono el portal no abre y manda a la app (2026-11-26).
+            'src/views/SoloComputadoraView.jsx',
             'public/novedades/',
             // Lo visto, en la base (2026-11-17): sigue a la persona en cualquier dispositivo.
             'src/hooks/useNovedadesVistas.js', 'src/components/layout/AvisoNovedades.jsx',

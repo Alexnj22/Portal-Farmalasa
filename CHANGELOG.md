@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.0 — El portal solo abre en computadora
+
+En un teléfono, el inicio de sesión y todo el portal muestran una sola
+pantalla que manda a la app del personal:
+
+- **iPhone**: botón «Descargar en App Store».
+- **Android**: pide el correo de Google y lo revisa contra la lista de la
+  prueba de Google Play (`app_android_acceso`, sin sesión: sólo responde
+  lista / esperando / no para ese correo exacto). Si ya está agregado, abre
+  directo la invitación de Google Play; si está esperando, se lo dice; si no
+  está, le dice que lo deje en Novedades o se lo pida a Talento Humano.
+
+Las tablets y las rutas públicas (foto por QR, `/e/`, Mis puntos, kiosco,
+Torogoz) siguen abriendo. El navegador automatizado (`navigator.webdriver`)
+no se bloquea, para que las pruebas móviles sigan corriendo.
+
+Migración `20261126150919_app_android_acceso_sin_sesion`, declarada en
+`auditoria/superficie-anon.json`.
+
+Gemelo: novedades — la pantalla que manda del portal a la app no tiene sentido dentro de la app
+
+Novedades: no — lo decidió el usuario: quien abre el portal en el teléfono ya ve la pantalla que lo manda a la app
+
 ## v2.1603.12 — Los lotes que la factura ya desglosa entran solos
 
 Algunos proveedores mandan un producto en dos lotes y escriben en la factura

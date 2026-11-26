@@ -22,6 +22,8 @@ export const IMPORTADORES = {
     AnnouncementsView: () => import("./views/AnnouncementsView"),
     AttendanceAuditView: () => import("./views/AttendanceAuditView"),
     LoginView: () => import("./views/LoginView"),
+    // En un teléfono el portal no abre: manda a la app (2026-11-26).
+    SoloComputadoraView: () => import("./views/SoloComputadoraView"),
     AuditView: () => import("./views/AuditView"),
     IOSTestView: () => import("./views/IOSTestView"),
     ImpresionView: () => import("./views/ImpresionView"),

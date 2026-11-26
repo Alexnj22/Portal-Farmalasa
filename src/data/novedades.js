@@ -158,3 +158,13 @@ export async function fetchQuienVioNovedades() {
     // que aquí no se cuenta.
     return { empleados: emp, vistas, permisos, cargos: roles.data ?? [] };
 }
+
+/**
+ * Sin sesión (pantalla «sólo en computadora»): ¿este correo de Google ya puede
+ * descargar la app en Android? `'lista'` | `'esperando'` | `'no'`.
+ */
+export async function consultarAccesoAndroid(email) {
+    const { data, error } = await supabase.rpc('app_android_acceso', { p_email: email });
+    if (error) throw error;
+    return /** @type {'lista'|'esperando'|'no'} */ (data || 'no');
+}

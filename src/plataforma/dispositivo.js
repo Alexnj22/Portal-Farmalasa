@@ -39,3 +39,18 @@ export function esMovilOApp() {
 
     return isMobile || isTablet || isModernIPad;
 }
+
+/**
+ * Portal sólo en computadora (2026-11-26): ¿es un TELÉFONO? Devuelve
+ * `'android'`, `'iphone'` o `null`. Las tablets no cuentan (un Android sin
+ * «Mobile» en el user-agent es tablet; el iPad no dice iPhone), y tampoco el
+ * navegador automatizado (`navigator.webdriver`): las pruebas móviles del
+ * portal emulan un teléfono y tienen que seguir viendo las pantallas.
+ */
+export function telefonoDelPortal() {
+    if (typeof navigator === 'undefined' || navigator.webdriver) return null;
+    const ua = navigator.userAgent || '';
+    if (/android/i.test(ua) && /mobile/i.test(ua)) return 'android';
+    if (/iphone|ipod/i.test(ua)) return 'iphone';
+    return null;
+}

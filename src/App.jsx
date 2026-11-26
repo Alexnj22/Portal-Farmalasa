@@ -10,6 +10,7 @@ import { useStaffStore as useStaff } from "@nucleo/store/staffStore";
 import { fichaConPasantia } from "@nucleo/utils/practicanteFormulario";
 import { useToastStore } from "@nucleo/store/toastStore";
 import { isMobileOrApp } from '@nucleo/utils/helpers';
+import { telefonoDelPortal } from './plataforma/dispositivo';
 import { MODULE_MAP } from '@nucleo/constants/moduleMap';
 import { pantallaDeArranque, PANTALLA } from '@nucleo/utils/arranqueSesion';
 import AlertModal from "./components/common/AlertModal";
@@ -59,6 +60,7 @@ const TimeClockView = lazy(IMPORTADORES.TimeClockView);
 const AnnouncementsView = lazy(IMPORTADORES.AnnouncementsView);
 const AttendanceAuditView = lazy(IMPORTADORES.AttendanceAuditView);
 const LoginView = lazy(IMPORTADORES.LoginView);
+const SoloComputadoraView = lazy(IMPORTADORES.SoloComputadoraView);
 const AuditView = lazy(IMPORTADORES.AuditView);
 const IOSTestView = lazy(IMPORTADORES.IOSTestView);
 const ImpresionView = lazy(IMPORTADORES.ImpresionView);
@@ -367,6 +369,8 @@ const LANDING_PREFERIDO = [
 
 function MainApp() {
     const { user, logout, isAuthenticated, hasPermission, loading, permsLoading, rolePerms, permsError, refreshPermissions } = useAuth();
+    // El teléfono no cambia en la vida de la pestaña: se mide una vez.
+    const [telefono] = useState(telefonoDelPortal);
 
     // Zustand Actions
     const addEmployee = useStaff((state) => state.addEmployee);
@@ -750,6 +754,13 @@ function MainApp() {
         <ScrollToTop />
         <Suspense fallback={<RouteLoadingFallback />}>
         <Routes>
+            {/* Portal sólo en computadora (2026-11-26): en un teléfono, el
+                inicio de sesión y el portal muestran la pantalla de la app.
+                Las rutas públicas de abajo (foto por QR, `/e/`, puntos,
+                kiosco, Torogoz) siguen abriendo. */}
+            {telefono && ['/login', '/no-access', '/*'].map((p) => (
+                <Route key={p} path={p} element={<SoloComputadoraView telefono={telefono} />} />
+            ))}
             <Route path="/raw-test" element={<RawTestView />} />
             {/* La vista previa del kiosco de caja: a pantalla completa, fuera
                 del marco del portal, como se ve en la sucursal. */}

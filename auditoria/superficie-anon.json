@@ -156,6 +156,13 @@
       "guarda": "token del QR",
       "estado": "abierta-a-proposito",
       "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Única escritura: pasa por encuesta_cliente_registrar, que valida contra el cuestionario aprobado, exige encuesta publicada y vigente, toma el canal del token que entró (QR o tablet, nunca del navegador), frena el envío repetido por dispositivo (20 s y 3 por día en QR; 5 s en la tablet), acepta una respuesta por cliente, encuesta y mes, devuelve la misma respuesta ante un reintento con la misma referencia y sólo guarda el teléfono con consentimiento."
+    },
+    {
+      "nombre": "app_android_acceso",
+      "area": "comunicacion",
+      "guarda": "ninguna: sólo el estado de un correo exacto",
+      "estado": "nueva-2026-11-26",
+      "motivo": "Portal sólo en computadora: en un teléfono Android, antes de iniciar sesión, se pide el correo de Google y se dice si ya puede descargar la app (lista/esperando/no). No lista correos ni dice de quién son."
     }
   ],
   "tablas": [

@@ -153,13 +153,13 @@ export default function Monitor() {
                               <PildoraDeCargo cargo={f.e.role} />
                             </View>
                             <View style={{ alignItems: 'flex-end', gap: 3 }}>
-                              <Pildora texto={ROTULO_ESTADO_ASISTENCIA[f.status] ?? f.status} color={f.status === 'EXTRA_WORKING' ? MARCA.violetaClaro : COLOR[col]} />
+                              <Pildora texto={f.status === 'LUNCH' && d.esJornadaPartida ? 'Pausa' : (ROTULO_ESTADO_ASISTENCIA[f.status] ?? f.status)} color={f.status === 'EXTRA_WORKING' ? MARCA.violetaClaro : COLOR[col]} />
                               {f.isLate && f.status !== 'FINISHED' ? <Text style={{ color: MARCA.rojo, fontSize: 11, fontWeight: '700' }}>{f.lateText}</Text> : null}
                             </View>
                           </View>
                           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                             {[d.start ? `${hora12(d.start)} – ${hora12(d.end)}` : f.shiftName,
-                              d.lunch ? `almuerzo ${hora12(d.lunch)}` : null,
+                              d.lunch ? `${d.esJornadaPartida ? 'pausa' : 'almuerzo'} ${hora12(d.lunch)}` : null,
                               d.lactation ? `lactancia ${hora12(d.lactation)}` : null,
                               !filtro && todas ? salaDe : null].filter(Boolean).join(' · ')}
                           </Text>

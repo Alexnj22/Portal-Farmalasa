@@ -139,6 +139,8 @@ export function estadoDeAsistencia(emp, shifts, currentTime, todayStr = toLocalI
         end: config?.shift?.end,
         lunch: config?.lunchTime,
         lactation: config?.lactationTime,
+        // Jornada partida: entre los dos tramos no se almuerza, es la pausa.
+        esJornadaPartida: Boolean(config?.esJornadaPartida),
       },
     };
 }

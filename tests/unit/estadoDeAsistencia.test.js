@@ -24,4 +24,14 @@ describe('estadoDeAsistencia', () => {
         ];
         expect([...filas].sort(compararAsistencia).map((f) => f.emp.name)).toEqual(['C', 'D', 'A', 'B']);
     });
+    // El monitor (portal y app) dice «pausa» y no «almuerzo» en la jornada
+    // partida: lo lee de `scheduleDetails.esJornadaPartida`.
+    it('la jornada partida viaja en scheduleDetails', () => {
+        const semana = (dia) => Object.fromEntries(['0', '1', '2', '3', '4', '5', '6'].map((k) => [k, dia]));
+        const base = { customStart: '07:00', customEnd: '19:00', hasLunch: true, lunchStart: '12:00', isOff: false };
+        const partida = estadoDeAsistencia({ attendance: [], weekly_roster: semana({ ...base, lunchMinutes: 240 }) }, [], hoy);
+        expect(partida.scheduleDetails).toMatchObject({ lunch: '12:00', esJornadaPartida: true });
+        const comun = estadoDeAsistencia({ attendance: [], weekly_roster: semana(base) }, [], hoy);
+        expect(comun.scheduleDetails).toMatchObject({ lunch: '12:00', esJornadaPartida: false });
+    });
 });

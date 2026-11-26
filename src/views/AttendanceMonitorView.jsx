@@ -224,7 +224,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     { id: "PENDING", label: "Pendientes", count: stats.pending, color: "text-content-2", border: "border-divider", bg: "bg-surface-card-hover/40" },
   ];
 
-  const getStatusBadge = (status, isLate, lateText) => {
+  const getStatusBadge = (status, isLate, lateText, esJornadaPartida = false) => {
     if (isLate && status !== "FINISHED") {
       return (
         <Badge variant="danger" icon={AlertTriangle}>{lateText}</Badge>
@@ -241,7 +241,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "LUNCH":
         return (
-          <Badge variant="chart-4" icon={Utensils}>Almorzando</Badge>
+          <Badge variant="chart-4" icon={Utensils}>{esJornadaPartida ? 'En pausa' : 'Almorzando'}</Badge>
         );
       case "LACTATION":
         return (
@@ -371,7 +371,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         </div>
       </button>
 
-      <div className="mb-2.5">{getStatusBadge(status, isLate, lateText)}</div>
+      <div className="mb-2.5">{getStatusBadge(status, isLate, lateText, scheduleDetails?.esJornadaPartida)}</div>
 
       <div className="flex items-center gap-1.5 text-caption font-semibold text-content-3 mb-2 px-0.5">
         <MapPin size={11} className="shrink-0" />
@@ -389,7 +389,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           {scheduleDetails.lunch && (
             <div className="flex items-center gap-1.5 text-micro font-semibold text-content-3">
               <Utensils size={11} className="text-chart-4-text shrink-0" />
-              <span className="truncate">{formatTime12h(scheduleDetails.lunch)} Almuerzo</span>
+              <span className="truncate">{formatTime12h(scheduleDetails.lunch)} {scheduleDetails.esJornadaPartida ? 'Pausa' : 'Almuerzo'}</span>
             </div>
           )}
           {scheduleDetails.lactation && (

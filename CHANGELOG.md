@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.3 — El monitor de asistencia dice «pausa» en la jornada partida
+
+En la jornada partida («7 a 12 y de 4 a 7») el monitor de asistencia, en el
+portal y en la app del personal, ya no dice «Almorzando» ni «almuerzo»: dice
+«En pausa» / «Pausa». `estadoDeAsistencia` lleva `esJornadaPartida` en
+`scheduleDetails` (el horario del día ya lo calculaba). La fila «Regresa» del
+editor del día y la escritura de `lunchMinutes` ya estaban en main desde
+v2.1592.1; esta versión sale con la actualización por aire de la app.
+
+Gemelo: monitor — en src/views/AttendanceMonitorView.jsx y apps/mobile/app/monitor.js
+
 ## v2.1604.2 — En iPhone también el DUI primero
 
 En un iPhone la pantalla «sólo en computadora» también pide el DUI primero

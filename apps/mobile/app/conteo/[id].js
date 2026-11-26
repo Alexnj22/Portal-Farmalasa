@@ -69,6 +69,11 @@ const TONO = { ok: () => MARCA.verde, sobra: () => MARCA.ambar, falta: () => MAR
 // dar muchísimos toques»): el campo está siempre a la vista, «Siguiente» en el
 // teclado guarda y salta al próximo renglón sin contar —también al del producto
 // de abajo— y lo contado queda cerrado con su diferencia al lado.
+// Cada renglón abierto anota cómo guardar lo que tiene escrito; la pantalla lo
+// recorre al irse la app al fondo y antes de finalizar o escanear.
+const renglonesPorGuardar = new Set();
+const guardarRenglonesPendientes = () => { renglonesPorGuardar.forEach((fn) => fn()); };
+
 function Renglon({ it, producto, editable, aCiegas = false, ajusta = true, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar, onEnCurso }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
@@ -118,6 +123,22 @@ function Renglon({ it, producto, editable, aCiegas = false, ajusta = true, onGua
     onEnCurso?.(promesa);
     return promesa;
   };
+  // Lo escrito sin confirmar se guarda igual al salir del renglón (2026-11-26).
+  // `onEndEditing` no corre si el campo desaparece con el teclado abierto
+  // —volver atrás, cerrar el producto, cambiar de filtro o de página— ni si la
+  // app se va al fondo: así se perdió el conteo de un producto en Bodega, que
+  // quedó pendiente sin rastro en el historial. Sólo una cantidad válida y
+  // distinta de la guardada; la firma de `guardar` evita el doble envío.
+  const guardarPendiente = useRef(null);
+  guardarPendiente.current = () => {
+    if (!puedeEscribir || String(valor) === String(ultimo.current) || !cantidadValida(valor)) return;
+    guardar(guardadoDelRenglon(valor, it.nota));
+  };
+  useEffect(() => {
+    const fn = () => guardarPendiente.current?.();
+    renglonesPorGuardar.add(fn);
+    return () => { renglonesPorGuardar.delete(fn); fn(); };
+  }, []);
   const alTerminar = () => {
     if (String(valor) === String(ultimo.current)) { if (contado) setAbierto(false); return; }
     if (!cantidadValida(valor)) { fallo('Cantidad inválida', 'El conteo físico debe ser un número entero de 0 o más.'); setValor(ultimo.current); return; }
@@ -300,6 +321,7 @@ export default function Conteo() {
     // Tocar un botón no le quita el foco al campo (`keyboardShouldPersistTaps`):
     // sin esto, lo último escrito no se guardaba antes de finalizar.
     Keyboard.dismiss();
+    guardarRenglonesPendientes();
     await new Promise((r) => { setTimeout(r, 150); });
     await Promise.allSettled([...enCurso.current]);
   };
@@ -430,7 +452,10 @@ export default function Conteo() {
       cargarRef.current?.();
     }).catch(() => {});
     traer();
-    const sub = AppState.addEventListener('change', (e) => { if (e === 'active') traer(); });
+    const sub = AppState.addEventListener('change', (e) => {
+      if (e === 'active') traer();
+      else guardarRenglonesPendientes();
+    });
     return () => { vivo = false; sub.remove(); };
   }, [id, abiertoParaContar, sincronizarConteoEnVivo]);
 

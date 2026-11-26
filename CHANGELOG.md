@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1604.5 — La app guarda el conteo escrito aunque no se confirme
+
+En el conteo total de Bodega, NOR GEROM FORTE quedó con sus 10 renglones
+pendientes y sin una sola fila en `conteo_inventario_item_history`: la
+cantidad se escribió y nunca se envió. En la app, el renglón guardaba sólo en
+`onEndEditing`/`onSubmitEditing`, que no corren si el campo desaparece con el
+teclado abierto (volver atrás, cerrar el producto, cambiar filtro o página) ni
+si la app se va al fondo.
+
+Ahora cada renglón abierto guarda lo escrito al desmontarse, la pantalla lo
+fuerza al irse la app al fondo y antes de finalizar o escanear. Sólo si la
+cantidad es válida y distinta de la guardada; la firma de `guardar` evita el
+doble envío cuando `onEndEditing` también corre.
+
+Gemelo: conteo_inventario — en la web el navegador quita el foco al tocar cualquier otra cosa y el renglón guarda en `onBlur`; no tiene este hueco.
+
 ## v2.1604.4 — gate:eficiencia admite un cron apagado a propósito
 
 El manifiesto `CRONS` de `scripts/eficiencia-gate.mjs` acepta

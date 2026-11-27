@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { lineaDelSobre, totalesDelSobre, encabezadoDelDocumento, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura, bonificadosAlPie, repartirBonificados } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, encabezadoDelDocumento, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura, bonificadosAlPie, repartirBonificados, montosDelDocumento } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -272,6 +272,17 @@ describe('bonificados cobrados en el renglón y restados al pie', () => {
         expect(lineas[5].compra).toBe('0.0000');   // sin pagado del mismo producto: lo toma `repartirRegalos`
         const coco = 12 * Number(lineas[0].compra) + 2 * Number(lineas[3].compra);
         expect(Math.abs(coco - 47.68)).toBeLessThanOrEqual(0.005);
+    });
+});
+
+describe('montos de la factura contra la carga', () => {
+    it('gravado después del pie y percepción que Imberton no llena (CCF 17725)', () => {
+        expect(montosDelDocumento({ totalGravada: 650.87, subTotalVentas: 650.87, descuGravada: 15.89, subTotal: 634.98,
+            ivaPerci1: 0, montoTotalOperacion: 717.53, totalPagar: 723.88 })).toEqual({ gravada: 634.98, exenta: 0, percepcion: 6.35 });
+    });
+    it('si el documento no resta el pie, el gravado queda como viene; ivaPerci1 manda si viene', () => {
+        expect(montosDelDocumento({ totalGravada: 281.5, subTotalVentas: 281.5, descuGravada: 98.52, subTotal: 281.5,
+            ivaPerci1: 2.82, montoTotalOperacion: 318.1, totalPagar: 320.92 })).toEqual({ gravada: 281.5, exenta: 0, percepcion: 2.82 });
     });
 });
 

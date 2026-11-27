@@ -409,7 +409,7 @@ export default function PropuestaDeCompra() {
                   <Text style={{ color: MARCA.verde, fontSize: 14, fontWeight: '700' }}>{`${revision.renglones.length} productos · total ${formatMoney(revision.total_armado)}, igual al de la factura.`}</Text>
                   {pendientesDeVence > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${pendientesDeVence === 1 ? 'Un producto va' : `${pendientesDeVence} productos van`} sin vencimiento. Lo pone la sucursal que lo reciba.`}</Text> : null}
                   {subenDeCosto || bajanDeCosto || conMargenMalo ? <Text style={{ color: MARCA.ambar, fontSize: 13 }}>{[subenDeCosto > 0 && `${subenDeCosto} ${subenDeCosto === 1 ? 'sube' : 'suben'} de costo`, bajanDeCosto > 0 && `${bajanDeCosto} ${bajanDeCosto === 1 ? 'baja' : 'bajan'} de costo`, conMargenMalo > 0 && `${conMargenMalo} con margen bajo o en pérdida: revisa el precio de venta`].filter(Boolean).join(' · ')}.</Text> : null}
-                  {revision.regalos > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Trae ${revision.regalos === 1 ? 'un producto' : `${revision.regalos} productos`} de regalo. Su costo se reparte entre todas las unidades.`}</Text> : null}
+                  {revision.regalos > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Trae ${revision.regalos === 1 ? 'un producto' : `${revision.regalos} productos`} de regalo. ${revision.bonificados > 0 ? 'Cada uno entra al costo de su mismo producto.' : 'Su costo se reparte entre todas las unidades.'}`}</Text> : null}
                   <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Todavía no se carga. Esto fue una revisión.</Text>
                 </Seccion>
               ) : (

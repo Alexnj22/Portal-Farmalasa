@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.6 — La revisión de compras compara los montos que de verdad se cargan
+
+- Tabla «Montos»: el gravado de la factura se muestra después del descuento al
+  pie, que es lo que se carga (Imberton CCF 17725 marcaba 650.87 contra 634.98
+  sin diferencia real). La percepción sale de `ivaPerci1` o, si viene vacía, de
+  lo que `totalPagar` lleva sobre la operación (Imberton: 0 contra 6.35).
+  `montosDelDocumento` en `_shared/compraSobre.ts`.
+- Con bonificados, el aviso dice «Cada uno entra al costo de su mismo producto»
+  en vez de «se reparte entre todas las unidades». En el portal y en la app.
+
 ## v2.1606.5 — Los bonificados de Imberton entran al costo de su producto
 
 - Imberton cobra los renglones «BONIF*» a precio lleno y los resta al pie como

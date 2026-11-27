@@ -714,7 +714,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             {revision.regalos > 0 && (
                                 <span className="block mt-1">
                                     Trae {revision.regalos === 1 ? 'un producto' : `${revision.regalos} productos`} de
-                                    regalo. Su costo se reparte entre todas las unidades.
+                                    regalo. {revision.bonificados > 0
+                                        ? 'Cada uno entra al costo de su mismo producto.'
+                                        : 'Su costo se reparte entre todas las unidades.'}
                                 </span>
                             )}
                             <span className="block text-micro mt-1">Todavía no se carga. Esto fue una revisión.</span>

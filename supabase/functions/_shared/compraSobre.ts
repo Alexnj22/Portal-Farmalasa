@@ -292,6 +292,33 @@ export function repartirBonificados(lineas: LineaSobre[], cobrado: number[], bon
   return hechos;
 }
 
+/**
+ * Gravado, exento y percepción de la factura tal como se comparan con la
+ * carga (tabla «Montos» de la revisión):
+ * - gravado y exento DESPUÉS del descuento al pie, si el documento lo resta
+ *   (`subTotal`): la carga ya lo lleva dentro de cada costo, y comparado con
+ *   el `totalGravada` crudo salía una diferencia que no existe (Imberton,
+ *   CCF 17725: 650.87 contra 634.98);
+ * - la percepción, de `ivaPerci1`; si viene vacía, lo que `totalPagar` lleva
+ *   de más sobre la operación (Imberton deja `ivaPerci1` en 0 y cobra 6.35;
+ *   ver `totalDelDocumento`).
+ */
+export function montosDelDocumento(resumen: any): { gravada: number; exenta: number; percepcion: number } {
+  const n = (v: unknown) => Number(v) || 0;
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+  const dG = n(resumen?.descuGravada), dE = n(resumen?.descuExenta), dN = n(resumen?.descuNoSuj);
+  const ventas = n(resumen?.subTotalVentas) || n(resumen?.totalGravada) + n(resumen?.totalExenta) + n(resumen?.totalNoSuj);
+  const lo_resta = (dG > 0 || dE > 0 || dN > 0) && Math.abs(ventas - dG - dE - dN - n(resumen?.subTotal)) <= 0.02;
+  const gravada = n(resumen?.totalGravada) - (lo_resta ? dG : 0);
+  const exenta = n(resumen?.totalExenta) + n(resumen?.totalNoSuj) - (lo_resta ? dE + dN : 0);
+  let percepcion = n(resumen?.ivaPerci1);
+  if (!(percepcion > 0) && resumen?.totalPagar != null && resumen?.montoTotalOperacion != null) {
+    const sobra = n(resumen.totalPagar) + n(resumen?.ivaRete1) + n(resumen?.reteRenta) - n(resumen.montoTotalOperacion);
+    if (sobra > 0.004) percepcion = sobra;
+  }
+  return { gravada: r2(gravada), exenta: r2(exenta), percepcion: r2(percepcion) };
+}
+
 /** Lo que el formulario calcularía con esas líneas (copia de `totales()`). */
 /**
  * Producto de regalo (renglón de producto a $0, como «PROMOCIONAL ELECTROLIT»):

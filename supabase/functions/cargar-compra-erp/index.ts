@@ -33,7 +33,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, repartirBonificados, bonificadosAlPie, factorDescuentoDeFactura, repartirNotaDeDescuento, resumenMenosNota, codigoDeRegalia,
+  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, repartirBonificados, bonificadosAlPie, montosDelDocumento, factorDescuentoDeFactura, repartirNotaDeDescuento, resumenMenosNota, codigoDeRegalia,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
@@ -3114,7 +3114,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const regalos = repartirBonificados(lineas, cobrado, bonifLinea) + repartirRegalos(lineas, cobrado);
+    const bonificados = repartirBonificados(lineas, cobrado, bonifLinea);
+    const regalos = bonificados + repartirRegalos(lineas, cobrado);
     // La línea del renglón entero (la que lee la revisión) lleva el costo de sus lotes.
     for (const [lote1, entera] of partidos) { entera.compra = lote1.compra; entera.compra_fin = lote1.compra_fin; }
     // El costo que viaja a la sala y el del erróneo, ya con los regalos
@@ -3226,9 +3227,9 @@ Deno.serve(async (req: Request) => {
       : null;
     const totales = {
       documento: {
-        gravada: n2(res.totalGravada), exenta: n2(Number(res.totalExenta ?? 0) + Number(res.totalNoSuj ?? 0)),
-        descuento: n2(res.totalDescu), iva: n2(ivaDoc ?? res.totalIva),
-        percepcion: n2(res.ivaPerci1 ?? 0), retencion: n2(Number(res.ivaRete1 ?? 0) + Number(res.reteRenta ?? 0)),
+        // Lo gravado DESPUÉS del descuento al pie, que es lo que se carga.
+        ...montosDelDocumento(res),
+        descuento: n2(res.totalDescu), iva: n2(ivaDoc ?? res.totalIva), retencion: n2(Number(res.ivaRete1 ?? 0) + Number(res.reteRenta ?? 0)),
         total: totalDoc,
       },
       carga: {
@@ -3238,7 +3239,7 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const revision = { regalos, totales, nota_descuento: notaDescuento,
+    const revision = { regalos, bonificados, totales, nota_descuento: notaDescuento,
       problemas, listo: problemas.length === 0,
       total_documento: totalDoc, total_armado: Number(tot.total),
       diferencia: totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100,

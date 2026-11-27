@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1605.4 — Las historias de la app de clientes muestran sólo la foto
+
+Pedido del usuario: al abrir una historia, el título y el texto salían encima
+de la foto y la tapaban. Debe verse sólo la foto.
+
+- `apps/clientes/componentes/Historias.js`: fuera el título y el texto del
+  visor (siguen en la etiqueta de accesibilidad). El degradado de abajo sólo
+  sale si la historia tiene botón, y más suave.
+
+Novedades: no — es la app de clientes, no el personal.
+Gemelo: ofertas-clientes — el portal no pinta la historia, sólo la edita.
+
 ## v2.1605.3 — Avisos de clientes: difusión de una promoción a todos
 
 Pedido del usuario: avisar una vez a quienes tienen la app (Android e iOS) que

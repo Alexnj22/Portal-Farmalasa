@@ -215,7 +215,8 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
             onAccessibilityEscape={cerrar}>
             <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" contentFit="cover" transition={180} style={StyleSheet.absoluteFill} />
             <LinearGradient colors={['rgba(0,0,0,0.55)', 'transparent']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 160 }} />
-            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 320 }} />
+            {/* Abajo sólo se oscurece si hay botón: sin él, la foto se ve limpia. */}
+            {h.oferta_id || h.enlace ? <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 200 }} /> : null}
 
             {/* Barras de progreso y cerrar. */}
             <View style={{ position: 'absolute', top: ins.top + 8, left: 10, right: 10, gap: 10 }}>
@@ -240,13 +241,13 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
               </View>
             </View>
 
-            {/* Texto y botón. */}
+            {/* Sólo el botón (2026-11-27, pedido del usuario): la foto ya
+                trae su arte, y el título y el texto encima la tapaban. Siguen
+                en la etiqueta de accesibilidad de arriba. */}
             <View style={{ position: 'absolute', left: 20, right: 20, bottom: ins.bottom + 28, gap: 10 }}>
-              <Text style={{ color: '#FFF', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{h.titulo}</Text>
-              {h.texto ? <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 17, lineHeight: 23 }}>{h.texto}</Text> : null}
               {/* Con oferta: «Reservar» la abre lista para reservar. Si no, el
                   botón propio de la historia, si tiene. */}
-              <View style={{ marginTop: 8, gap: 10 }}>
+              <View style={{ gap: 10 }}>
                 {h.oferta_id || h.enlace ? (
                   <BotonHistoria principal sf={h.oferta_id ? 'bag.fill' : 'arrow.right'} texto={h.oferta_id ? 'Reservar' : (h.boton || 'Ver más')}
                     alTocar={() => {

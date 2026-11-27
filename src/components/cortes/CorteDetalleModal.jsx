@@ -279,6 +279,9 @@ export default function CorteDetalleModal({
         () => (descartado ? { cifra, explicado: 0 } : cifraSinCausa(cifra, diferencias)),
         [descartado, cifra, diferencias]);
     const conCausa = explicado > 0;
+    // Se mide contra un corte anterior. `encadenado` lo pone `conCausasDelDia`
+    // (el acumulado ya descuenta las causas y dejó de servir para esto).
+    const encadenado = visible?.encadenado ?? (visible?.tramo !== visible?.acumulado);
     const esZ = visible?.tipo === 'Z';
     /* Una LECTURA (tipo X) no contó efectivo: no tiene esperado ni diferencia,
      * así que no hay nada que firmar ni que reabrir. Aparece desde el 31-ago —
@@ -493,7 +496,7 @@ export default function CorteDetalleModal({
                                         ? 'Diferencia que tenía este conteo'
                                         : conCausa
                                             ? (Math.abs(cifraMostrada ?? 0) < 0.005 ? 'Diferencia explicada' : 'Diferencia sin causa')
-                                        : visible.tramo === visible.acumulado
+                                        : !encadenado
                                             ? 'Diferencia de este corte'
                                             : 'Diferencia desde el corte anterior'}
                                 </span>
@@ -512,7 +515,7 @@ export default function CorteDetalleModal({
                                 {conCausa && (
                                     <>
                                         <div className="flex justify-between gap-3">
-                                            <span>{visible.tramo === visible.acumulado ? 'Diferencia del corte' : 'Diferencia desde el corte anterior'}</span>
+                                            <span>{!encadenado ? 'Diferencia del corte' : 'Diferencia desde el corte anterior'}</span>
                                             <span className="tabular-nums">{conSigno(cifra ?? 0)}</span>
                                         </div>
                                         <div className="flex justify-between gap-3">
@@ -564,7 +567,7 @@ export default function CorteDetalleModal({
                                     <span>Se contó</span>
                                     <span className="tabular-nums">{formatMoney(visible.total_declarado)}</span>
                                 </div>
-                                {visible.tramo !== visible.acumulado && (
+                                {encadenado && (
                                     <div className="flex justify-between gap-3">
                                         <span>Acumulado hasta esta hora</span>
                                         <span className="tabular-nums">{conSigno(visible.acumulado ?? 0)}</span>

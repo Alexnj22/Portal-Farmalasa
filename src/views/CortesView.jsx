@@ -70,7 +70,7 @@ import { conTramoPorSalaYDia, diferenciaDelCorte, filtrarCortes, resumenDeCortes
 import { avisoDeFaltante } from '@nucleo/utils/salyAyuda';
 import { useSalyEnPantalla } from '../components/saly/salyAyudaStore';
 import {
-    diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
+    conCausasDelDia, diaEnFiltro, diaEnMes, difsPorCorteDe, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '@nucleo/utils/periodo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -515,12 +515,15 @@ const CortesView = () => {
 
     // El tramo se calcula POR SALA Y POR DÍA — el porqué está en
     // `conTramoPorSalaYDia`, que es el mismo cálculo que usa el Inicio.
+    // Las resoluciones vivas por corte: la cifra, el acumulado y el arrastre
+    // descuentan lo que ya tiene causa (2026-11-27).
+    const difsPorCorte = useMemo(() => difsPorCorteDe(difs), [difs]);
     const conTramoTodos = useMemo(() => {
-        const out = conTramoPorSalaYDia(cortes);
+        const out = conCausasDelDia(conTramoPorSalaYDia(cortes), difsPorCorte);
         out.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
             || String(b.hora).localeCompare(String(a.hora)));
         return out;
-    }, [cortes]);
+    }, [cortes, difsPorCorte]);
 
     // El carril describe el PERÍODO y la sucursal elegida, no lo que las otras
     // ranuras recortan: son recortes de este mismo conjunto, así que si el
@@ -581,17 +584,6 @@ const CortesView = () => {
     // Desde el 2026-09-25 un faltante sin causa no se anota entero: se anotan
     // sus ABONOS, cada uno el día que entró el dinero (`pendientesDeRegistrar`).
     // En «Diferencias» la lista sale de todo el historial, no del período.
-    // Las resoluciones vivas por corte: la tarjeta descuenta lo que ya tiene causa.
-    const difsPorCorte = useMemo(() => {
-        const m = new Map();
-        for (const d of difs || []) {
-            if (!d || d.anulada_at) continue;
-            if (!m.has(d.corte_id)) m.set(d.corte_id, []);
-            m.get(d.corte_id).push(d);
-        }
-        return m;
-    }, [difs]);
-
     const sinAsentar = useMemo(
         () => pendientesDeRegistrar(enDiferencias ? resolucionesDif : difs, { sala }),
         [difs, resolucionesDif, enDiferencias, sala],

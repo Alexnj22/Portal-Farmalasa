@@ -35,7 +35,7 @@ import {
   noContoEfectivo, notaDeCifra, seConfirmaDeUnClic, severidad, sugerenciasDeCorte,
 } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
+import { cifraSinCausa, conCausasDelDia, difsPorCorteDe } from '@nucleo/utils/diferenciasDeCaja';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -84,12 +84,15 @@ export default function Corte() {
 
   const cargar = useCallback(async () => {
     const fecha = String(fechaParam || hoySV());
-    const filas = await fetchCortes({ desde: fecha, hasta: fecha }).catch(() => null);
-    const todos = conTramoPorSalaYDia(filas || []);
-    setCorte(todos.find((c) => String(c.id) === String(id)) ?? null);
-    // Lo que ya tiene causa se descuenta de la cifra (mismo canónico que el portal).
-    const difs = await fetchDiferencias({ desde: fecha, hasta: fecha }).catch(() => []);
+    // Lo que ya tiene causa se descuenta de la cifra, del acumulado y de lo
+    // que viene de antes (mismo canónico que el portal).
+    const [filas, difs] = await Promise.all([
+      fetchCortes({ desde: fecha, hasta: fecha }).catch(() => null),
+      fetchDiferencias({ desde: fecha, hasta: fecha }).catch(() => []),
+    ]);
+    const todos = conCausasDelDia(conTramoPorSalaYDia(filas || []), difsPorCorteDe(difs));
     setResoluciones((difs || []).filter((d) => String(d.corte_id) === String(id) && !d.anulada_at));
+    setCorte(todos.find((c) => String(c.id) === String(id)) ?? null);
   }, [id, fechaParam]);
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -139,6 +142,7 @@ export default function Corte() {
     () => (descartado ? { cifra: dif, explicado: 0 } : cifraSinCausa(dif, resoluciones)),
     [descartado, dif, resoluciones]);
   const conCausa = explicado > 0;
+  const encadenado = corte?.encadenado ?? (corte?.tramo !== corte?.acumulado);
   const sevMostrada = severidad(difMostrada);
   const noEsConteo = esZ || esX || sinConteo;
   const invisibles = useMemo(() => formasFueraDelComprobante(ventas), [ventas]);
@@ -252,7 +256,7 @@ export default function Corte() {
                   <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
                     {descartado ? 'Diferencia que tenía este conteo'
                       : conCausa ? (sevMostrada === 'ok' ? 'Diferencia explicada' : 'Diferencia sin causa')
-                      : corte.tramo === corte.acumulado ? 'Diferencia de este corte' : 'Diferencia desde el corte anterior'}
+                      : !encadenado ? 'Diferencia de este corte' : 'Diferencia desde el corte anterior'}
                   </Text>
                   <Text style={{ color: descartado ? colorSistema.texto2 : TONO[sevMostrada], fontSize: 38, fontWeight: '800', fontVariant: ['tabular-nums'],
                     textDecorationLine: descartado ? 'line-through' : 'none' }}>{conSigno(difMostrada ?? 0)}</Text>
@@ -282,7 +286,7 @@ export default function Corte() {
             <Seccion titulo="La cuenta">
               {conCausa ? (
                 <>
-                  <Dato primero rotulo={corte.tramo === corte.acumulado ? 'Diferencia del corte' : 'Diferencia desde el corte anterior'} valor={conSigno(dif ?? 0)} />
+                  <Dato primero rotulo={!encadenado ? 'Diferencia del corte' : 'Diferencia desde el corte anterior'} valor={conSigno(dif ?? 0)} />
                   <Dato rotulo="Con causa" valor={`${(dif ?? 0) < 0 ? '+' : '−'}${formatMoney(explicado)}`} />
                 </>
               ) : null}
@@ -298,7 +302,7 @@ export default function Corte() {
                 </>
               ) : null}
               <Dato rotulo="Se contó" valor={formatMoney(corte.total_declarado)} fuerte />
-              {corte.tramo !== corte.acumulado ? <Dato rotulo="Acumulado hasta esta hora" valor={conSigno(corte.acumulado ?? 0)} /> : null}
+              {encadenado ? <Dato rotulo="Acumulado hasta esta hora" valor={conSigno(corte.acumulado ?? 0)} /> : null}
             </Seccion>
           )}
 

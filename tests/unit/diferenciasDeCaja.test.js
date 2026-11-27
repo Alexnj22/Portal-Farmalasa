@@ -274,7 +274,7 @@ describe('causa parcial', () => {
     });
 });
 
-import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
+import { cifraSinCausa, conCausasDelDia, difsPorCorteDe } from '@nucleo/utils/diferenciasDeCaja';
 
 describe('cifraSinCausa — la cifra del corte descuenta lo que tiene causa', () => {
     it('Salud 2, 26-nov: +11.85 con 4.95 explicados se lee +6.90', () => {
@@ -292,5 +292,33 @@ describe('cifraSinCausa — la cifra del corte descuenta lo que tiene causa', ()
     });
     it('sin tramo, sin cifra', () => {
         expect(cifraSinCausa(null, [])).toEqual({ cifra: null, explicado: 0 });
+    });
+});
+
+describe('conCausasDelDia — el acumulado y lo que viene de antes descuentan las causas', () => {
+    // Salud 2, 26-nov, como lo deja `conTramoPorSalaYDia`.
+    const dia = [
+        { id: 3633, branch_id: 25, fecha: '2026-11-26', hora: '12:10:12', estado: 'CONFIRMADO', tramo: 11.85, acumulado: 11.85, arrastre: 0, aportes: [] },
+        { id: 3648, branch_id: 25, fecha: '2026-11-26', hora: '19:04:19', estado: 'CONFIRMADO', tramo: 0, acumulado: 11.85, arrastre: 11.85, aportes: [{ hora: '12:10:12', tramo: 11.85 }] },
+    ];
+    const difs = difsPorCorteDe([{ corte_id: 3633, via: 'JUSTIFICA', monto: 4.95 }]);
+    const [m, n] = conCausasDelDia(dia, difs);
+    it('el de las 12:10 acumula 6.90 y sigue sin arrastre', () => {
+        expect(m.acumulado).toBe(6.9);
+        expect(m.arrastre).toBe(0);
+        expect(m.encadenado).toBe(false);
+    });
+    it('el de la noche hereda 6.90, no 11.85, y su aporte también', () => {
+        expect(n.acumulado).toBe(6.9);
+        expect(n.arrastre).toBe(6.9);
+        expect(n.aportes).toEqual([{ hora: '12:10:12', tramo: 6.9 }]);
+        expect(n.encadenado).toBe(true);
+    });
+    it('un pendiente no corre lo que heredan los siguientes', () => {
+        const [, n2] = conCausasDelDia([{ ...dia[0], estado: 'PENDIENTE' }, { ...dia[1], arrastre: 0, acumulado: 11.85, tramo: 11.85 }], difs);
+        expect(n2.acumulado).toBe(11.85);
+    });
+    it('sin resoluciones devuelve lo mismo', () => {
+        expect(conCausasDelDia(dia, new Map())).toBe(dia);
     });
 });

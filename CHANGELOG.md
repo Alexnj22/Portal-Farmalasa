@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.13 — El acumulado del día y lo que viene de antes descuentan las causas
+
+Salud 2, 27-nov: con $4.95 del sobrante de las 12:10 explicados, el corte de la
+noche seguía diciendo «+$11.85 viene de antes» y «Acumulado hasta esta hora
++$11.85». Ahora dice +$6.90 en los dos.
+
+- `conCausasDelDia(cortes, difsPorCorte)` en `src/utils/diferenciasDeCaja.js`,
+  sobre lo que deja `conTramoPorSalaYDia`: descuenta del acumulado, del
+  arrastre y de los aportes lo que las causas explicaron. Como la base, sólo un
+  corte confirmado corre lo que heredan los siguientes.
+- `encadenado` guarda si el corte se mide contra uno anterior, para que el
+  rótulo («de este corte» / «desde el corte anterior») no cambie por una causa.
+- Lo usan la lista y el detalle de Cortes y el detalle en la app.
+
 ## v2.1606.12 — Conteo: recontar también lo propio
 
 Pedido del usuario, 27-nov: la Jefa de Compras y Logística recuenta TODO el

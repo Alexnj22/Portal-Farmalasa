@@ -273,12 +273,28 @@ describe('bonificados cobrados en el renglón y restados al pie', () => {
         const coco = 12 * Number(lineas[0].compra) + 2 * Number(lineas[3].compra);
         expect(Math.abs(coco - 47.68)).toBeLessThanOrEqual(0.005);
     });
+    it('el bonificado a un centavo suma su centavo al producto (Zablah, 26-nov)', () => {
+        const l = (cant, compra) => ({
+            id_producto: '1691', compra: compra.toFixed(4), compra_fin: compra.toFixed(4), venta: '5', cant: String(cant),
+            unidad: '1', vence: '', id_presentacion: '1', exento: 0, bandera: 'PRODUCTO', descripcion_ser: '-', numero_lote: '',
+        });
+        const lineas = [l(1, 0.01), l(12, 3.53)];
+        expect(repartirBonificados(lineas, [0.01, 42.36], [true, false])).toBe(1);
+        for (const x of lineas) expect(['3.2592', '3.2593']).toContain(x.compra);   // 42.37 ÷ 13
+    });
 });
 
 describe('montos de la factura contra la carga', () => {
     it('gravado después del pie y percepción que Imberton no llena (CCF 17725)', () => {
         expect(montosDelDocumento({ totalGravada: 650.87, subTotalVentas: 650.87, descuGravada: 15.89, subTotal: 634.98,
-            ivaPerci1: 0, montoTotalOperacion: 717.53, totalPagar: 723.88 })).toEqual({ gravada: 634.98, exenta: 0, percepcion: 6.35 });
+            ivaPerci1: 0, montoTotalOperacion: 717.53, totalPagar: 723.88 }, 82.55)).toEqual({ gravada: 634.98, exenta: 0, percepcion: 6.35 });
+    });
+    it('percepción metida en la operación sin ivaPerci1 (Montreal, 18-nov)', () => {
+        expect(montosDelDocumento({ totalGravada: 562.05, subTotal: 562.05, montoTotalOperacion: 640.74, totalPagar: 640.74 }, 73.07).percepcion).toBe(5.62);
+    });
+    it('un residuo que no es 1 % no se toma por percepción; en factura no hay residuo', () => {
+        expect(montosDelDocumento({ totalGravada: 30, subTotal: 30, montoTotalOperacion: 36, totalPagar: 36 }, 3.9).percepcion).toBe(0);
+        expect(montosDelDocumento({ totalGravada: 355, subTotal: 355, montoTotalOperacion: 355, totalPagar: 355 }).percepcion).toBe(0);
     });
     it('si el documento no resta el pie, el gravado queda como viene; ivaPerci1 manda si viene', () => {
         expect(montosDelDocumento({ totalGravada: 281.5, subTotalVentas: 281.5, descuGravada: 98.52, subTotal: 281.5,

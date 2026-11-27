@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.7 — Compras: bonificado a un centavo y percepción dentro de la operación
+
+Barrido de las ~300 cargas guardadas buscando la misma familia de error:
+- Zablah factura «BONIF. BOLSA KISSES» a $0.01: entraba una bolsa a un centavo.
+  Ahora un renglón BONIF* de $0.01 o menos también va al costo de su mismo
+  producto (`repartirBonificados` suma su centavo al valor del producto).
+- Tabla «Montos»: la percepción sin `ivaPerci1` metida en la operación
+  (Montreal, GAMMA, Ovidio Vides, Dihare) salía $0.00 contra lo cargado. Se
+  toma el residuo del total sobre gravado + exento + IVA, sólo si es un 1 %.
+- En factura (COF/FSE) la fila de IVA ya no se compara: el IVA va dentro del
+  precio y la carga no lo lleva aparte.
+
 ## v2.1606.6 — La revisión de compras compara los montos que de verdad se cargan
 
 - Tabla «Montos»: el gravado de la factura se muestra después del descuento al

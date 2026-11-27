@@ -2915,13 +2915,16 @@ Deno.serve(async (req: Request) => {
     }
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
-      const esBonif = uso !== "consumo" && bonifDoc.has(Number(it?._origen ?? i));
+      // Bonificado: el que devuelve el pie (Imberton) o el que se cobra a un
+      // centavo (Zablah). Los dos van al costo de su mismo producto.
+      const bonifPie = uso !== "consumo" && bonifDoc.has(Number(it?._origen ?? i));
+      const esBonif = bonifPie || (uso !== "consumo" && /^\s*BONIF/i.test(String(it?.descripcion ?? "")) && Number(it?.precioUni) > 0 && Number(it?.precioUni) <= 0.01);
       const r: RenglonDoc = {
         descripcion: String(it?.descripcion ?? ""),
         cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
         descuento: Number(it?.montoDescu ?? 0),
         exento: Number(it?.ventaExenta ?? 0) > 0,
-        subtotal: esBonif ? 0 : Number(it?.ventaGravada ?? 0) * dsc.gravada - rebajaNota[i] + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
+        subtotal: bonifPie ? 0 : Number(it?.ventaGravada ?? 0) * dsc.gravada - rebajaNota[i] + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
       };
       let dec: Decision;
       if (uso === "consumo") dec = { tipo: "consumo" };
@@ -2960,7 +2963,7 @@ Deno.serve(async (req: Request) => {
       problemas.push(...res.problemas);
       // El bonificado lo cobra el renglón y lo devuelve el pie: entra en $0 y
       // `repartirBonificados` le da el costo de su producto.
-      if (esBonif && res.linea && res.linea.bandera === "PRODUCTO") { res.linea.compra = "0.0000"; res.linea.compra_fin = "0.0000"; }
+      if (bonifPie && res.linea && res.linea.bandera === "PRODUCTO") { res.linea.compra = "0.0000"; res.linea.compra_fin = "0.0000"; }
       // Varios lotes en un renglón (2026-11-24): una línea por lote, mismo
       // producto y costo; las unidades suman lo que entra (`partirEnLotes`).
       const pideLotes = (decisiones[String(i)] as any)?.lotes;
@@ -3089,7 +3092,7 @@ Deno.serve(async (req: Request) => {
         delRenglon.forEach((l, j) => {
           const parte = j === delRenglon.length - 1 ? queda : Math.round(total * Number(l.cant) / todas * 100) / 100;
           queda -= parte;
-          if (esBonif) { l.compra = "0.0000"; l.compra_fin = "0.0000"; }
+          if (bonifPie) { l.compra = "0.0000"; l.compra_fin = "0.0000"; }
           lineas.push(l); cobrado.push(parte); bonifLinea.push(esBonif); deLinea.push({ renglon: i, descripcion: `${r.descripcion} (lote ${j + 1})` });
         });
         partidos.push([delRenglon[0], res.linea!]);
@@ -3228,8 +3231,10 @@ Deno.serve(async (req: Request) => {
     const totales = {
       documento: {
         // Lo gravado DESPUÉS del descuento al pie, que es lo que se carga.
-        ...montosDelDocumento(res),
-        descuento: n2(res.totalDescu), iva: n2(ivaDoc ?? res.totalIva), retencion: n2(Number(res.ivaRete1 ?? 0) + Number(res.reteRenta ?? 0)),
+        // En factura (COF/FSE) el IVA va dentro del precio y la carga no lo
+        // lleva aparte: compararlo daba una diferencia que no existe.
+        ...montosDelDocumento(res, tipoDoc === "CCF" ? Number(ivaDoc ?? res.totalIva ?? 0) : null),
+        descuento: n2(res.totalDescu), iva: tipoDoc === "CCF" ? n2(ivaDoc ?? res.totalIva) : null, retencion: n2(Number(res.ivaRete1 ?? 0) + Number(res.reteRenta ?? 0)),
         total: totalDoc,
       },
       carga: {

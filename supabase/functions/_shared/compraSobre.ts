@@ -269,9 +269,12 @@ export function repartirBonificados(lineas: LineaSobre[], cobrado: number[], bon
   let hechos = 0;
   for (const idx of grupos.values()) {
     const regalos = idx.filter((i) => bonif[i] && Number(lineas[i].cant) > 0);
-    const pagados = idx.filter((i) => !bonif[i] && Number(lineas[i].compra) > 0);
+    const pagados = idx.filter((i) => !bonif[i] && Number(lineas[i].compra) > 0.01);
     if (!regalos.length || !pagados.length) continue;
-    const valor = pagados.reduce((a, i) => a + (Number(cobrado[i]) > 0 ? Number(cobrado[i]) : Number(lineas[i].compra) * Number(lineas[i].cant)), 0);
+    // Lo que costó el producto, con lo poco que cobre el bonificado (Zablah
+    // factura «BONIF. BOLSA KISSES» a $0.01).
+    const valorDe = (i: number) => (Number(cobrado[i]) > 0 ? Number(cobrado[i]) : Number(lineas[i].compra) * Number(lineas[i].cant));
+    const valor = [...pagados, ...regalos].reduce((a, i) => a + valorDe(i), 0);
     const todas = [...pagados, ...regalos].sort((a, b) => a - b);
     const porUnidad = valor / todas.reduce((a, i) => a + exist(lineas[i]), 0);
     // Mismo redondeo que `repartirRegalos`: 4 decimales, sin correr el total.
@@ -299,11 +302,13 @@ export function repartirBonificados(lineas: LineaSobre[], cobrado: number[], bon
  *   (`subTotal`): la carga ya lo lleva dentro de cada costo, y comparado con
  *   el `totalGravada` crudo salía una diferencia que no existe (Imberton,
  *   CCF 17725: 650.87 contra 634.98);
- * - la percepción, de `ivaPerci1`; si viene vacía, lo que `totalPagar` lleva
- *   de más sobre la operación (Imberton deja `ivaPerci1` en 0 y cobra 6.35;
- *   ver `totalDelDocumento`).
+ * - la percepción, de `ivaPerci1`; si viene vacía y el IVA va aparte (CCF), lo
+ *   que el total lleva de más sobre gravado + exento + IVA. Imberton deja
+ *   `ivaPerci1` en 0 y la suma sólo en `totalPagar` (6.35); Montreal, GAMMA,
+ *   Ovidio Vides y Dihare la meten también en la operación. Las dos formas
+ *   caen en el mismo residuo (ver `totalDelDocumento`).
  */
-export function montosDelDocumento(resumen: any): { gravada: number; exenta: number; percepcion: number } {
+export function montosDelDocumento(resumen: any, ivaAparte: number | null = null): { gravada: number; exenta: number; percepcion: number } {
   const n = (v: unknown) => Number(v) || 0;
   const r2 = (v: number) => Math.round(v * 100) / 100;
   const dG = n(resumen?.descuGravada), dE = n(resumen?.descuExenta), dN = n(resumen?.descuNoSuj);
@@ -312,9 +317,11 @@ export function montosDelDocumento(resumen: any): { gravada: number; exenta: num
   const gravada = n(resumen?.totalGravada) - (lo_resta ? dG : 0);
   const exenta = n(resumen?.totalExenta) + n(resumen?.totalNoSuj) - (lo_resta ? dE + dN : 0);
   let percepcion = n(resumen?.ivaPerci1);
-  if (!(percepcion > 0) && resumen?.totalPagar != null && resumen?.montoTotalOperacion != null) {
-    const sobra = n(resumen.totalPagar) + n(resumen?.ivaRete1) + n(resumen?.reteRenta) - n(resumen.montoTotalOperacion);
-    if (sobra > 0.004) percepcion = sobra;
+  const total = totalDelDocumento(resumen);
+  if (!(percepcion > 0) && ivaAparte != null && total != null) {
+    const sobra = total - gravada - exenta - ivaAparte;
+    // Sólo si parece un 1 %: un residuo de otra cosa no se disfraza de percepción.
+    if (sobra > 0.004 && Math.abs(sobra - gravada * 0.01) <= 0.05) percepcion = sobra;
   }
   return { gravada: r2(gravada), exenta: r2(exenta), percepcion: r2(percepcion) };
 }

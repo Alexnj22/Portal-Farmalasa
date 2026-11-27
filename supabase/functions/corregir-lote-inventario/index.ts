@@ -2,7 +2,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { corregirLote, fechaQueChocaAlCorregir } from "../_shared/erp-corregir-lote.ts";
 import { validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
-import { esLoteGenerico, nombreCorto } from "../_shared/erp-traslado.ts";
+import { esLoteGenerico, nombreCorto, sesionEn } from "../_shared/erp-traslado.ts";
+import { corregirVenceSinLote, validarVenceEscrito } from "../_shared/erp-corregir-vence.ts";
+import { login } from "../_shared/erp-dte.ts";
 
 // La sala corrige el lote o el vencimiento de su existencia, directo y sin
 // aprobación (2026-11-16, decisión del usuario). La lógica contra el sistema
@@ -45,8 +47,13 @@ Deno.serve(async (req) => {
     if (!String(lote ?? "").trim()) return json({ ok: false, error: "Falta el lote que se corrige." }, 400);
     if (!Number.isInteger(n) || n <= 0) return json({ ok: false, error: "Indica cuántas unidades se corrigen." }, 400);
     if (causa.length < 4) return json({ ok: false, error: "Escribe por qué se corrige." }, 400);
-    const v = validarLoteEscrito(lote_nuevo, vence_nuevo);
-    if (!v.ok) return json({ ok: false, codigo: "LOTE_NUEVO_INVALIDO", error: v.error }, 422);
+    // Sin lote de origen y sin lote nuevo: un perecedero sin control de lote,
+    // que sólo corrige el vencimiento (2026-11-27, `_shared/erp-corregir-vence.ts`).
+    const soloVence = esLoteGenerico(lote) && !String(lote_nuevo ?? "").trim();
+    const v = soloVence ? null : validarLoteEscrito(lote_nuevo, vence_nuevo);
+    if (v && !v.ok) return json({ ok: false, codigo: "LOTE_NUEVO_INVALIDO", error: v.error }, 422);
+    const vv = soloVence ? validarVenceEscrito(vence_nuevo) : null;
+    if (vv && !vv.ok) return json({ ok: false, codigo: "VENCE_INVALIDO", error: vv.error }, 422);
 
     // ── La sala ─────────────────────────────────────────────────────────
     const { data: mapa, error: mapaErr } = await admin.from("erp_sucursal_map")
@@ -81,38 +88,56 @@ Deno.serve(async (req) => {
       return json({ ok: false, codigo: "EN_CONTEO", error: "Ese producto se está contando: corrígelo cuando se cierre el conteo." }, 409);
 
     const { data: prod, error: prodErr } = await admin.from("products")
-      .select("id, nombre").eq("id", pid).maybeSingle();
+      .select("id, nombre, perecedero").eq("id", pid).maybeSingle();
     if (prodErr) throw prodErr;
     if (!prod) return json({ ok: false, error: "Ese producto no existe." }, 404);
+    const referencia = `${causa} - Hecho por: ${nombreCorto({ ...(permiso.emp ?? {}), name: quien.name })}`;
+
+    if (soloVence) {
+      if (prod.perecedero !== true)
+        return json({ ok: false, codigo: "NO_PERECEDERO", error: `${prod.nombre} no lleva lote ni vencimiento.` }, 422);
+      const r = await corregirVenceSinLote({
+        cookie: await sesionEn(erpSucursal, login),
+        erpSucursal, erpUbicacion: ubicacion, erpProductId: pid,
+        descripcion: String(prod.nombre ?? ""),
+        venceViejo: vence ? String(vence).slice(0, 10) : null,
+        unidades: n, venceNuevo: (vv as { vence: string }).vence, referencia,
+      });
+      if (!r.ok) {
+        if (r.descuadre) console.error(`[corregir-lote-inventario] DESCUADRE ${pid}@${erpSucursal}: ${r.descuadre}`);
+        return json({ ok: false, codigo: r.codigo, error: r.descuadre ? `${r.error} ${r.descuadre}` : r.error }, 409);
+      }
+      return json({ ...r, sala: mapa.nombre, producto: prod.nombre });
+    }
+    const lv = v as { lote: string; vence: string };
 
     // El número nuevo con otra fecha en alguna sala: con OTRO número es un
     // lote distinto (un tecleo que choca) y se frena; con el MISMO número la
     // persona afirma la fecha de ese lote, y las otras salas que lo tengan
     // con otra fecha van como aviso (ver la cabecera de erp-corregir-lote).
-    const mismoNumero = !esLoteGenerico(lote) && String(lote).trim().toUpperCase() === v.lote;
+    const mismoNumero = !esLoteGenerico(lote) && String(lote).trim().toUpperCase() === lv.lote;
     // Para el aviso cuenta también la fecha que se corrige: otra sala que la
     // arrastre tiene el mismo error.
-    const choca = await fechaQueChocaAlCorregir(admin, pid, v.lote, v.vence, null,
+    const choca = await fechaQueChocaAlCorregir(admin, pid, lv.lote, lv.vence, null,
       mismoNumero ? erpSucursal : null);
     if (choca && !mismoNumero)
       return json({
         ok: false, codigo: "LOTE_OTRA_FECHA",
-        error: `El lote ${v.lote} ya está registrado con vencimiento ${choca}. Revisa la caja.`,
+        error: `El lote ${lv.lote} ya está registrado con vencimiento ${choca}. Revisa la caja.`,
       }, 422);
 
     const r = await corregirLote({
       erpSucursal, erpUbicacion: ubicacion, erpProductId: pid,
       descripcion: String(prod.nombre ?? ""),
       loteViejo: String(lote).trim(), venceViejo: vence ? String(vence).slice(0, 10) : null,
-      unidades: n, loteNuevo: v.lote, venceNuevo: v.vence,
-      referencia: `${causa} - Hecho por: ${nombreCorto({ ...(permiso.emp ?? {}), name: quien.name })}`,
+      unidades: n, loteNuevo: lv.lote, venceNuevo: lv.vence, referencia,
     });
     if (!r.ok) {
       if (r.descuadre) console.error(`[corregir-lote-inventario] DESCUADRE ${pid}@${erpSucursal}: ${r.descuadre}`);
       return json({ ok: false, codigo: r.codigo, error: r.descuadre ? `${r.error} ${r.descuadre}` : r.error }, 409);
     }
     const avisos = [...r.avisos];
-    if (choca) avisos.push(`En otra sucursal el lote ${v.lote} figura con vencimiento ${choca}: corrígelo ahí si es el mismo.`);
+    if (choca) avisos.push(`En otra sucursal el lote ${lv.lote} figura con vencimiento ${choca}: corrígelo ahí si es el mismo.`);
     return json({ ...r, avisos, sala: mapa.nombre, producto: prod.nombre });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);

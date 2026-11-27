@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.11 — Corregir el vencimiento de un perecedero sin lote
+
+27-nov, reclamo del usuario: «Corregir lote o vencimiento» no dejaba tocar NUT
+CLUB SUPER MIX (perecedero, sin control de lote, 96 u. en Bodega con 05/2026):
+decía «no lleva control de lote».
+
+- Un perecedero sin control de lote ahora corrige **sólo el vencimiento**
+  (portal y app, misma regla en `src/utils/corregirLote.js`).
+- Medido con permiso en Bodega (1 u., revertido después): el sistema de la caja
+  guarda cada fecha en un renglón aparte y el descargo sin lote sale siempre de
+  la fecha **más próxima**. Por eso sólo se puede corregir esa; las otras se
+  muestran con el motivo. El servidor (`_shared/erp-corregir-vence.ts`)
+  descarga primero, relee que salió de la fecha correcta (si no, devuelve las
+  unidades y no cambia nada) y después carga con la fecha buena.
+- Portal y app en el mismo cambio.
+
 ## v2.1606.10 — Conteo: recontar sin aprobar
 
 Bodega, 27-nov: el usuario quiere que la Jefa de Compras y Logística revise las

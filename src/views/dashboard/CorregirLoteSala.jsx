@@ -12,6 +12,7 @@ import { buscarConExistencia, fetchLotesEnUnidades, corregirLoteEnSala } from '@
 import { fetchExigenciasDe } from '@nucleo/data/traslados';
 import { esLoteGenerico } from '@nucleo/utils/unidadesInventario';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { modoDeCorreccion, filasACorregir } from '@nucleo/utils/corregirLote';
 
 // La sala corrige el lote o el vencimiento de lo que ya tiene, sin sumar ni
 // restar unidades (usuario, 2026-11-16: «sin necesidad de hacer descartes,
@@ -48,7 +49,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
     const [cargando, setCargando] = useState(false);
     const [producto, setProducto] = useState(null);   // { erp_product_id, descripcion }
     const [lotes, setLotes] = useState(null);         // null = cargando
-    const [regulado, setRegulado] = useState(null);
+    const [exige, setExige] = useState(null);         // { regulado, perecedero }
     const [origen, setOrigen] = useState(null);       // el lote que está mal
     const [unidades, setUnidades] = useState(0);
     // El lote correcto, con la MISMA pieza que traslados y ajuste
@@ -84,7 +85,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
     useEffect(() => {
         if (!producto) return undefined;
         let vivo = true;
-        setLotes(null); setRegulado(null);
+        setLotes(null); setExige(null);
         Promise.all([
             fetchLotesEnUnidades({ erpProductId: producto.erp_product_id, erpSucursalId }),
             fetchExigenciasDe([producto.erp_product_id]),
@@ -92,14 +93,16 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
             if (!vivo) return;
             if (r.error) setError(r.error.message ?? String(r.error));
             setLotes(r.lotes);
-            setRegulado(ex.get(Number(producto.erp_product_id))?.regulado ?? false);
+            setExige(ex.get(Number(producto.erp_product_id)) ?? { regulado: false, perecedero: false });
         });
         return () => { vivo = false; };
     }, [producto, erpSucursalId, vuelta]);
 
-    // Lo sin lote asignado sólo se puede «corregir» en un producto con control
-    // de lote: en los demás no hay lote que ponerle.
-    const ofrecidos = useMemo(() => (lotes ?? []).filter(l => !esLoteGenerico(l.lote) || regulado), [lotes, regulado]);
+    // Con control de lote se corrige el lote; un perecedero sin control de lote
+    // sólo corrige el vencimiento, y sólo el más próximo (`corregirLote.js`).
+    const modo = exige ? modoDeCorreccion(exige) : null;
+    const soloVence = modo === 'vence';
+    const ofrecidos = useMemo(() => filasACorregir(lotes, modo), [lotes, modo]);
 
     const elegirLote = (l) => {
         setOrigen(l);
@@ -114,12 +117,12 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
     const loteNuevo = caja.envio?.lote ?? '';
     const venceListo = caja.envio?.vence ?? null;
     const mismoNumero = origen && !esLoteGenerico(origen.lote) && norm(origen.lote) === norm(caja.lote);
-    const sinCambio = mismoNumero && venceListo && String(origen.vence ?? '').slice(0, 10) === venceListo;
+    const sinCambio = (mismoNumero || (soloVence && origen)) && venceListo && String(origen.vence ?? '').slice(0, 10) === venceListo;
     // Si el número se queda, el lote va completo: un lote físico tiene una fecha.
     const loteCompleto = mismoNumero && origen && unidades !== origen.unidades;
     const faltan = !origen ? 'el lote'
         : !(unidades > 0) ? 'cuántas unidades'
-        : !caja.envio ? 'el lote correcto'
+        : !caja.envio ? (soloVence ? 'el vencimiento correcto' : 'el lote correcto')
         : motivo.trim().length < 4 ? 'por qué' : null;
     const puedeEnviar = !faltan && !sinCambio && !loteCompleto && !enviando;
 
@@ -133,13 +136,15 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
         const filas = (lotes ?? []).map(l => ({ ...l, antes: l.unidades }));
         const o = filas.find(l => l.clave === origen.clave);
         if (o) o.unidades -= unidades;
-        const destino = filas.find(l => norm(l.lote) === norm(caja.envio.lote)
+        // Sin control de lote la existencia sigue «sin lote»: sólo cambia la fecha.
+        const loteDestino = soloVence ? origen.lote : caja.envio.lote;
+        const destino = filas.find(l => norm(l.lote) === norm(loteDestino)
             && String(l.vence ?? '').slice(0, 10) === caja.envio.vence);
         if (destino) destino.unidades += unidades;
-        else filas.push({ clave: 'nuevo', lote: caja.envio.lote, vence: caja.envio.vence, unidades, antes: 0, nuevo: true });
+        else filas.push({ clave: 'nuevo', lote: loteDestino, vence: caja.envio.vence, unidades, antes: 0, nuevo: true });
         const total = (lotes ?? []).reduce((n, l) => n + l.unidades, 0);
         return { filas: filas.filter(l => l.unidades > 0 || l.antes > 0), total };
-    }, [origen, caja.envio, sinCambio, loteCompleto, unidades, lotes]);
+    }, [origen, caja.envio, sinCambio, loteCompleto, unidades, lotes, soloVence]);
 
     const enviar = async () => {
         if (!puedeEnviar) return;
@@ -170,10 +175,10 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
         <div className="flex flex-col items-center justify-center gap-3 flex-1 py-8 text-center">
             <CheckCircle2 size={40} className="text-success-text" />
             <div>
-                <p className="text-body-lg font-black text-content">Lote corregido</p>
+                <p className="text-body-lg font-black text-content">{hecho.lote ? 'Lote corregido' : 'Vencimiento corregido'}</p>
                 <p className="text-body-sm text-content-3 mt-1">
                     {hecho.unidades} {hecho.unidades === 1 ? 'unidad' : 'unidades'} de {producto.descripcion} ahora
-                    {' '}son del lote {hecho.lote}, vence {fmtVence(hecho.vence)}.
+                    {hecho.lote ? ` son del lote ${hecho.lote}, vence ${fmtVence(hecho.vence)}.` : ` vencen ${fmtVence(hecho.vence)}.`}
                 </p>
                 <p className="text-caption text-content-3 mt-1">En unos minutos se ve así en el inventario.</p>
             </div>
@@ -183,7 +188,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                     corrige un renglón por vez, y volver a buscar el producto
                     cada vez es lo que hacía pesado el arreglo. */}
                 <Button variant="secondary" onClick={() => { setHecho(null); setOrigen(null); setVuelta(v => v + 1); }}>
-                    Corregir otro lote
+                    {hecho.lote ? 'Corregir otro lote' : 'Corregir otra fecha'}
                 </Button>
                 <Button onClick={onHecho}>Listo</Button>
             </div>
@@ -228,20 +233,26 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                 ) : !origen ? (
                     <>
                         <p className="text-body-sm font-bold text-content px-1">{producto.descripcion}</p>
-                        <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">¿Qué lote está mal?</p>
-                        {lotes === null ? <SkeletonText lines={3} /> :
+                        <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
+                            {soloVence ? '¿Qué vencimiento está mal?' : '¿Qué lote está mal?'}
+                        </p>
+                        {lotes === null || exige === null ? <SkeletonText lines={3} /> :
                          ofrecidos.length === 0 ? (
                             <EmptyState compact title="Sin lotes"
-                                subtitle="Este producto no lleva control de lote en la sucursal." />
+                                subtitle="Este producto no lleva lote ni vencimiento en la sucursal." />
                          ) : ofrecidos.map(l => (
-                            <ListRow key={l.clave} onClick={() => elegirLote(l)}
-                                className="border-divider bg-surface-card hover:border-brand/40"
-                                title={rotulo(l)}
+                            <ListRow key={l.clave} onClick={l.bloqueo ? undefined : () => elegirLote(l)}
+                                className={`border-divider bg-surface-card ${l.bloqueo ? 'opacity-60' : 'hover:border-brand/40'}`}
+                                title={soloVence ? (l.vence ? `${yaVencio(l.vence) ? 'Venció' : 'Vence'} ${fmtVence(l.vence)}` : 'Sin vencimiento') : rotulo(l)}
                                 trailing={<span className="text-caption font-black text-content-3 tabular-nums">{l.unidades} u.</span>}
                             >
-                                <span className={`block text-micro ${yaVencio(l.vence) ? 'text-danger-text font-bold' : 'text-content-3'}`}>
-                                    {l.vence ? `${yaVencio(l.vence) ? 'Venció' : 'Vence'} ${fmtVence(l.vence)}` : 'Sin vencimiento'}
-                                </span>
+                                {soloVence ? (
+                                    l.bloqueo && <span className="block text-micro text-warning-text">{l.bloqueo}</span>
+                                ) : (
+                                    <span className={`block text-micro ${yaVencio(l.vence) ? 'text-danger-text font-bold' : 'text-content-3'}`}>
+                                        {l.vence ? `${yaVencio(l.vence) ? 'Venció' : 'Vence'} ${fmtVence(l.vence)}` : 'Sin vencimiento'}
+                                    </span>
+                                )}
                             </ListRow>
                          ))}
                     </>
@@ -250,7 +261,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                         <div data-surface="card" className="p-3">
                             <p className="text-body-sm font-bold text-content truncate">{producto.descripcion}</p>
                             <p className="text-micro text-content-3">
-                                Ahora: {rotulo(origen)}{origen.vence ? ` · vence ${fmtVence(origen.vence)}` : ''} · {origen.unidades} u.
+                                Ahora: {soloVence ? '' : `${rotulo(origen)} · `}{origen.vence ? `vence ${fmtVence(origen.vence)}` : 'sin vencimiento'} · {origen.unidades} u.
                             </p>
                         </div>
 
@@ -269,7 +280,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
 
                         <LoteDeLaCaja
                             erpProductId={producto.erp_product_id} producto={producto.descripcion}
-                            valor={caja} onChange={setCaja}
+                            valor={caja} onChange={setCaja} soloVence={soloVence}
                             excluir={esLoteGenerico(origen.lote) ? null : { lote: origen.lote, fecha: origen.vence }}
                             permitirOtraFecha={!esLoteGenerico(origen.lote)}
                         />
@@ -277,7 +288,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                         <PortalTextarea value={motivo} onChange={e => setMotivo(e.target.value)} rows={2}
                             placeholder="¿Por qué se corrige? (obligatorio)" />
 
-                        {sinCambio && <Notice variant="warning">Es el mismo lote con el mismo vencimiento. No hay nada que corregir.</Notice>}
+                        {sinCambio && <Notice variant="warning">{soloVence ? 'Es el mismo vencimiento.' : 'Es el mismo lote con el mismo vencimiento.'} No hay nada que corregir.</Notice>}
                         {loteCompleto && (
                             <Notice variant="warning">
                                 Si sólo cambia el vencimiento, se corrige el lote completo ({origen.unidades} u.). Un lote no puede tener dos fechas.
@@ -289,7 +300,7 @@ export default function CorregirLoteSala({ erpSucursalId, branchName, enConteo =
                                 {asiQueda.filas.map(l => (
                                     <div key={l.clave} className="flex items-center gap-2 text-body-sm">
                                         <span className={`flex-1 min-w-0 truncate ${l.unidades === 0 ? 'text-content-3 line-through' : 'text-content'}`}>
-                                            {rotulo(l)}{l.vence ? ` · ${fmtVence(l.vence)}` : ''}
+                                            {soloVence ? (l.vence ? `Vence ${fmtVence(l.vence)}` : 'Sin vencimiento') : `${rotulo(l)}${l.vence ? ` · ${fmtVence(l.vence)}` : ''}`}
                                             {l.nuevo && <span className="text-micro font-bold text-brand-text"> · nuevo</span>}
                                         </span>
                                         <span className="tabular-nums text-content-3">{l.antes} →</span>

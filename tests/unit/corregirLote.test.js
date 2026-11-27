@@ -75,3 +75,56 @@ describe('par: un lote en varios renglones', () => {
         expect(r.renglones.map(x => x.idLote).sort()).toEqual(['1', '2']);
     });
 });
+
+// ── Perecedero SIN control de lote (2026-11-27): NUT CLUB SUPER MIX ───────
+// Medido ese día en Bodega: el descargo sin lote sale de la fecha más
+// próxima, así que sólo esa se puede corregir.
+import { revisarVenceSinLote, bajasEntre } from '../../supabase/functions/_shared/erp-corregir-vence.ts';
+import { filasACorregir, modoDeCorreccion } from '@nucleo/utils/corregirLote';
+
+describe('revisarVenceSinLote', () => {
+    const filas = { '2026-05-01': 96, '2027-11-01': 4 };
+    it('corrige la fecha más próxima, también una parte', () => {
+        expect(revisarVenceSinLote({ filas, venceViejo: '2026-05-01', unidades: 96, venceNuevo: '2027-05-01' }).ok).toBe(true);
+        expect(revisarVenceSinLote({ filas, venceViejo: '2026-05-01', unidades: 10, venceNuevo: '2027-05-01' }).ok).toBe(true);
+    });
+    it('frena una fecha que no es la más próxima', () => {
+        expect(revisarVenceSinLote({ filas, venceViejo: '2027-11-01', unidades: 4, venceNuevo: '2028-01-01' }))
+            .toMatchObject({ ok: false, codigo: 'OTRA_FECHA_PRIMERO' });
+    });
+    it('frena lo que no cambia, no alcanza o ya no existe', () => {
+        expect(revisarVenceSinLote({ filas, venceViejo: '2026-05-01', unidades: 1, venceNuevo: '2026-05-01' }))
+            .toMatchObject({ codigo: 'SIN_CAMBIO' });
+        expect(revisarVenceSinLote({ filas, venceViejo: '2026-05-01', unidades: 97, venceNuevo: '2027-05-01' }))
+            .toMatchObject({ codigo: 'NO_ALCANZA' });
+        expect(revisarVenceSinLote({ filas, venceViejo: '2025-01-01', unidades: 1, venceNuevo: '2027-05-01' }))
+            .toMatchObject({ codigo: 'FECHA_NO_EXISTE' });
+    });
+    it('lo sin fecha se puede corregir', () => {
+        expect(revisarVenceSinLote({ filas: { '': 4 }, venceViejo: null, unidades: 4, venceNuevo: '2027-05-01' }).ok).toBe(true);
+    });
+});
+
+describe('bajasEntre', () => {
+    it('lo que de verdad bajó, por fecha', () => {
+        expect(bajasEntre({ '2026-05-01': 96, '2027-11-01': 1 }, { '2026-05-01': 95, '2027-11-01': 1 })).toEqual({ '2026-05-01': 1 });
+    });
+});
+
+describe('filasACorregir', () => {
+    const lotes = [
+        { clave: 'a', lote: 'GENERICO', vence: '2026-05-01', unidades: 96 },
+        { clave: 'b', lote: 'GENERICO', vence: '2027-11-01', unidades: 4 },
+    ];
+    it('un perecedero sin lote ofrece sus fechas y bloquea las que no van primero', () => {
+        const r = filasACorregir(lotes, modoDeCorreccion({ regulado: false, perecedero: true }));
+        expect(r.map(l => !!l.bloqueo)).toEqual([false, true]);
+        expect(r[1].bloqueo).toContain('05/2026');
+    });
+    it('sin lote ni vencimiento no ofrece lo sin lote asignado', () => {
+        expect(filasACorregir(lotes, modoDeCorreccion({ regulado: false, perecedero: false }))).toEqual([]);
+    });
+    it('con control de lote ofrece todo', () => {
+        expect(filasACorregir(lotes, 'lote')).toHaveLength(2);
+    });
+});

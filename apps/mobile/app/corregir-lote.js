@@ -6,6 +6,8 @@
 //      Lo que un conteo abierto está contando no se ofrece.
 //   2. Elegir el lote que está mal (`fetchLotesEnUnidades`). Lo sin lote
 //      asignado sólo en un producto con control de lote (`fetchExigenciasDe`).
+//      Un perecedero sin control de lote sólo corrige el vencimiento, y sólo
+//      el más próximo (`@nucleo/utils/corregirLote`, 2026-11-27).
 //   3. Cuántas unidades, el lote y el vencimiento correctos, y por qué.
 //      `corregirLoteEnSala` lo manda y deja la bitácora salga bien o mal.
 //
@@ -24,6 +26,7 @@ import { buscarConExistencia, corregirLoteEnSala, fetchLotesEnUnidades, fetchSuc
 import { fetchExigenciasDe } from '@nucleo/data/traslados';
 import { esLoteGenerico } from '@nucleo/utils/unidadesInventario';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { modoDeCorreccion, filasACorregir } from '@nucleo/utils/corregirLote';
 import { BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
@@ -82,7 +85,7 @@ export default function CorregirLote() {
   const [buscando, setBuscando] = useState(false);
   const [producto, setProducto] = useState(null);   // { erp_product_id, descripcion }
   const [lotes, setLotes] = useState(null);         // null = cargando
-  const [regulado, setRegulado] = useState(null);
+  const [exige, setExige] = useState(null);         // { regulado, perecedero }
   const [origen, setOrigen] = useState(null);       // el lote que está mal
   const [unidades, setUnidades] = useState(0);
   const [caja, setCaja] = useState({ lote: '', vence: '' });
@@ -111,7 +114,7 @@ export default function CorregirLote() {
   useEffect(() => {
     if (!producto) return undefined;
     let vivo = true;
-    setLotes(null); setRegulado(null);
+    setLotes(null); setExige(null);
     Promise.all([
       fetchLotesEnUnidades({ erpProductId: producto.erp_product_id, erpSucursalId }),
       fetchExigenciasDe([producto.erp_product_id]),
@@ -119,13 +122,17 @@ export default function CorregirLote() {
       if (!vivo) return;
       if (r.error) fallo('No se pudieron leer los lotes', r.error.message ?? String(r.error));
       setLotes(r.lotes ?? []);
-      setRegulado(ex.get(Number(producto.erp_product_id))?.regulado ?? false);
+      setExige(ex.get(Number(producto.erp_product_id)) ?? { regulado: false, perecedero: false });
     }).catch((e) => { if (vivo) { setLotes([]); fallo('No se pudieron leer los lotes', e?.message); } });
     return () => { vivo = false; };
   }, [producto, erpSucursalId, vuelta]);
 
-  // Lo sin lote asignado sólo se corrige en un producto con control de lote.
-  const ofrecidos = useMemo(() => (lotes ?? []).filter((l) => !esLoteGenerico(l.lote) || regulado), [lotes, regulado]);
+  // Con control de lote se corrige el lote; un perecedero sin control de lote
+  // sólo el vencimiento, y sólo el más próximo.
+  const modo = exige ? modoDeCorreccion(exige) : null;
+  const soloVence = modo === 'vence';
+  const ofrecidos = useMemo(() => filasACorregir(lotes, modo), [lotes, modo]);
+  const venceTexto = (l) => (l.vence ? `${yaVencio(l.vence) ? 'Venció' : 'Vence'} ${fmtVence(l.vence)}` : 'Sin vencimiento');
 
   const elegirLote = (l) => {
     setOrigen(l);
@@ -137,12 +144,12 @@ export default function CorregirLote() {
   const loteNuevo = caja.envio?.lote ?? '';
   const venceListo = caja.envio?.vence ?? null;
   const mismoNumero = origen && !esLoteGenerico(origen.lote) && norm(origen.lote) === norm(caja.lote);
-  const sinCambio = mismoNumero && venceListo && String(origen.vence ?? '').slice(0, 10) === venceListo;
+  const sinCambio = (mismoNumero || (soloVence && origen)) && venceListo && String(origen.vence ?? '').slice(0, 10) === venceListo;
   // Si el número se queda, el lote va completo: un lote físico tiene una fecha.
   const loteCompleto = mismoNumero && origen && unidades !== origen.unidades;
   const faltan = !origen ? 'el lote'
     : !(unidades > 0) ? 'cuántas unidades'
-    : !caja.envio ? 'el lote correcto'
+    : !caja.envio ? (soloVence ? 'el vencimiento correcto' : 'el lote correcto')
     : motivo.trim().length < 4 ? 'por qué' : null;
   const puedeEnviar = !faltan && !sinCambio && !loteCompleto && !enviando;
 
@@ -152,12 +159,14 @@ export default function CorregirLote() {
     const filas = (lotes ?? []).map((l) => ({ ...l, antes: l.unidades }));
     const o = filas.find((l) => l.clave === origen.clave);
     if (o) o.unidades -= unidades;
-    const destino = filas.find((l) => norm(l.lote) === norm(caja.envio.lote) && String(l.vence ?? '').slice(0, 10) === caja.envio.vence);
+    // Sin control de lote la existencia sigue «sin lote»: sólo cambia la fecha.
+    const loteDestino = soloVence ? origen.lote : caja.envio.lote;
+    const destino = filas.find((l) => norm(l.lote) === norm(loteDestino) && String(l.vence ?? '').slice(0, 10) === caja.envio.vence);
     if (destino) destino.unidades += unidades;
-    else filas.push({ clave: 'nuevo', lote: caja.envio.lote, vence: caja.envio.vence, unidades, antes: 0, nuevo: true });
+    else filas.push({ clave: 'nuevo', lote: loteDestino, vence: caja.envio.vence, unidades, antes: 0, nuevo: true });
     const total = (lotes ?? []).reduce((n, l) => n + l.unidades, 0);
     return { filas: filas.filter((l) => l.unidades > 0 || l.antes > 0), total };
-  }, [origen, caja.envio, sinCambio, loteCompleto, unidades, lotes]);
+  }, [origen, caja.envio, sinCambio, loteCompleto, unidades, lotes, soloVence]);
 
   const enviar = async () => {
     if (!puedeEnviar) return;
@@ -171,9 +180,15 @@ export default function CorregirLote() {
       });
       if (error) { fallo('No se pudo corregir', error); return; }
       setHecho(resultado);
-      const texto = `${resultado?.unidades ?? unidades} ${(resultado?.unidades ?? unidades) === 1 ? 'unidad' : 'unidades'} ahora son del lote ${resultado?.lote ?? loteNuevo}, vence ${fmtVence(resultado?.vence ?? venceListo)}.`;
-      if (resultado?.avisos?.length) avisar('Lote corregido', [texto, ...resultado.avisos].join('\n\n'));
-      else listo('Lote corregido', texto);
+      const n = resultado?.unidades ?? unidades;
+      const lote = resultado?.lote ?? loteNuevo;
+      const cuantas = `${n} ${n === 1 ? 'unidad' : 'unidades'}`;
+      const texto = lote
+        ? `${cuantas} ahora son del lote ${lote}, vence ${fmtVence(resultado?.vence ?? venceListo)}.`
+        : `${cuantas} ahora vencen ${fmtVence(resultado?.vence ?? venceListo)}.`;
+      const tituloHecho = lote ? 'Lote corregido' : 'Vencimiento corregido';
+      if (resultado?.avisos?.length) avisar(tituloHecho, [texto, ...resultado.avisos].join('\n\n'));
+      else listo(tituloHecho, texto);
     } catch (e) {
       fallo('No se pudo corregir', e?.message ?? String(e));
     } finally {
@@ -211,15 +226,15 @@ export default function CorregirLote() {
       <>
         <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
-          <Seccion titulo="Lote corregido">
+          <Seccion titulo={hecho.lote ? 'Lote corregido' : 'Vencimiento corregido'}>
             <Text style={{ color: colorSistema.texto, fontSize: 15 }}>
-              {`${hecho.unidades} ${hecho.unidades === 1 ? 'unidad' : 'unidades'} de ${producto.descripcion} ahora son del lote ${hecho.lote}, vence ${fmtVence(hecho.vence)}.`}
+              {`${hecho.unidades} ${hecho.unidades === 1 ? 'unidad' : 'unidades'} de ${producto.descripcion} ahora ${hecho.lote ? `son del lote ${hecho.lote}, vence ${fmtVence(hecho.vence)}` : `vencen ${fmtVence(hecho.vence)}`}.`}
             </Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>En unos minutos se ve así en el inventario.</Text>
             {(hecho.avisos ?? []).map((a) => <Aviso key={a} tono="cuidado" texto={a} />)}
           </Seccion>
           {/* Otro lote del MISMO producto: se corrige un renglón por vez. */}
-          <BotonGrande texto="Corregir otro lote" borde onPress={() => { setHecho(null); setOrigen(null); setMotivo(''); setVuelta((v) => v + 1); }} />
+          <BotonGrande texto={hecho.lote ? 'Corregir otro lote' : 'Corregir otra fecha'} borde onPress={() => { setHecho(null); setOrigen(null); setMotivo(''); setVuelta((v) => v + 1); }} />
           <BotonGrande texto="Listo" onPress={() => router.back()} />
         </ScrollView>
       </>
@@ -255,15 +270,18 @@ export default function CorregirLote() {
           ) : !origen ? (
             <>
               {pasoAtras('Otro producto')}
-              <Seccion titulo="¿Qué lote está mal?">
+              <Seccion titulo={soloVence ? '¿Qué vencimiento está mal?' : '¿Qué lote está mal?'}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{producto.descripcion}</Text>
-                {lotes === null || regulado === null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Leyendo los lotes…</Text>
-                  : !ofrecidos.length ? <Aviso texto="Este producto no lleva control de lote en la sucursal." />
-                    : ofrecidos.map((l, i) => (
+                {lotes === null || exige === null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Leyendo los lotes…</Text>
+                  : !ofrecidos.length ? <Aviso texto="Este producto no lleva lote ni vencimiento en la sucursal." />
+                    : ofrecidos.map((l) => (soloVence ? (
+                      <Fila key={l.clave} primera={false} titulo={venceTexto(l)} derecha={`${l.unidades} u.`}
+                        detalle={l.bloqueo} detalleColor={MARCA.ambar} deshabilitada={!!l.bloqueo} onPress={() => elegirLote(l)} />
+                    ) : (
                       <Fila key={l.clave} primera={false} titulo={rotulo(l)} derecha={`${l.unidades} u.`}
-                        detalle={l.vence ? `${yaVencio(l.vence) ? 'Venció' : 'Vence'} ${fmtVence(l.vence)}` : 'Sin vencimiento'}
+                        detalle={venceTexto(l)}
                         detalleColor={yaVencio(l.vence) ? MARCA.rojo : undefined} onPress={() => elegirLote(l)} />
-                    ))}
+                    )))}
               </Seccion>
             </>
           ) : (
@@ -271,7 +289,7 @@ export default function CorregirLote() {
               {pasoAtras('Otro lote')}
               <Seccion titulo="Lo que está mal">
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{producto.descripcion}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Ahora: ${rotulo(origen)}${origen.vence ? ` · vence ${fmtVence(origen.vence)}` : ''} · ${origen.unidades} u.`}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Ahora: ${soloVence ? '' : `${rotulo(origen)} · `}${origen.vence ? `vence ${fmtVence(origen.vence)}` : 'sin vencimiento'} · ${origen.unidades} u.`}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>Unidades que se corrigen</Text>
                   <Pressable accessibilityLabel="Una menos" onPress={() => { Haptics.selectionAsync().catch(() => {}); setUnidades((u) => Math.max(1, u - 1)); }}
@@ -286,11 +304,11 @@ export default function CorregirLote() {
                 </View>
               </Seccion>
               <Seccion titulo="Lo correcto">
-                <LoteDeLaCaja erpProductId={producto.erp_product_id} producto={producto.descripcion} valor={caja} onChange={setCaja}
+                <LoteDeLaCaja erpProductId={producto.erp_product_id} producto={producto.descripcion} valor={caja} onChange={setCaja} soloVence={soloVence}
                   excluir={esLoteGenerico(origen.lote) ? null : { lote: origen.lote, fecha: origen.vence }}
                   permitirOtraFecha={!esLoteGenerico(origen.lote)} />
                 <Campo value={motivo} onChangeText={setMotivo} placeholder="¿Por qué se corrige? (obligatorio)" />
-                {sinCambio ? <Aviso tono="cuidado" texto="Es el mismo lote con el mismo vencimiento. No hay nada que corregir." /> : null}
+                {sinCambio ? <Aviso tono="cuidado" texto={`${soloVence ? 'Es el mismo vencimiento.' : 'Es el mismo lote con el mismo vencimiento.'} No hay nada que corregir.`} /> : null}
                 {loteCompleto ? <Aviso tono="cuidado" texto={`Si sólo cambia el vencimiento, se corrige el lote completo (${origen.unidades} u.). Un lote no puede tener dos fechas.`} /> : null}
               </Seccion>
               {asiQueda ? (
@@ -298,7 +316,7 @@ export default function CorregirLote() {
                   {asiQueda.filas.map((l) => (
                     <View key={l.clave} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={{ flex: 1, color: l.unidades === 0 ? colorSistema.texto2 : colorSistema.texto, fontSize: 14, textDecorationLine: l.unidades === 0 ? 'line-through' : 'none' }} numberOfLines={1}>
-                        {`${rotulo(l)}${l.vence ? ` · ${fmtVence(l.vence)}` : ''}`}
+                        {soloVence ? (l.vence ? `Vence ${fmtVence(l.vence)}` : 'Sin vencimiento') : `${rotulo(l)}${l.vence ? ` · ${fmtVence(l.vence)}` : ''}`}
                         {l.nuevo ? <Text style={{ color: MARCA.azulClaro, fontWeight: '700' }}> · nuevo</Text> : null}
                       </Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 14, fontVariant: ['tabular-nums'] }}>{`${l.antes} →`}</Text>

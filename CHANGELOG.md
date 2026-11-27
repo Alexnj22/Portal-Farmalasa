@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1605.2 — La bandeja de notificaciones de la app de clientes ya no muestra ejemplos
+
+Pedido del usuario: con la bandeja vacía salían cuatro notificaciones de
+muestra (etiqueta «Ejemplo», agregadas el 2026-11-09) y confundían.
+
+- `apps/clientes/app/notificaciones.js`: fuera `MUESTRAS` y su bloque. La
+  bandeja vacía deja sólo «Estás al día» / «Todo limpio».
+
+Sale por aire (`app:actualizar`), sin compilar.
+
 ## v2.1605.1 — Historias de la app de clientes: en el orden del portal y sin Más información
 
 Pedido del usuario al publicar «La Promotón» (dos historias: la campaña y sus

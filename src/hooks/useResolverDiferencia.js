@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-    abonarDiferencia, anularAbono as anularAbonoRpc, anularDiferencia, ligarAbonoAIngreso,
+    abonarDiferencia, anularAbono as anularAbonoRpc, anularDiferencia, explicarConDocumentos, ligarAbonoAIngreso,
     marcarAbonosImpresos, marcarComprobanteImpreso, resolverDiferencia, salaConCajaAbierta,
 } from '../data/cortes';
 import { anotarIngreso } from '../data/bolsas';
@@ -100,6 +100,25 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         setOcupado(false);
         return data;
     }, [ocupado, nombreSala, showToast, origen, imprimir]);
+
+    /**
+     * Explicar la diferencia con ventas, ingresos o vales anotados después
+     * (2026-11-27). No saca papel: no se mueve dinero, se queda en su bolsa.
+     */
+    const explicar = useCallback(async (corte, { montoVisto, documentos, causa = null }) => {
+        if (!corte || ocupado || !documentos?.length) return null;
+        setOcupado(true);
+        const sala = nombreSala[corte.branch_id] || '';
+        const { data, error } = await explicarConDocumentos(corte.id, { montoVisto, documentos, causa },
+            { sucursal: sala, fecha: corte.fecha, hora: corte.hora, origen });
+        setOcupado(false);
+        if (error) {
+            showToast?.('No se pudo guardar', mensajeAmigable(error, 'Vuelve a abrir el corte e inténtalo de nuevo.'), 'error');
+            return null;
+        }
+        showToast?.('Diferencia explicada', 'El dinero se queda en su bolsa. Nadie lo tiene que mover.', 'success');
+        return data;
+    }, [ocupado, nombreSala, showToast, origen]);
 
     const anular = useCallback(async (corte, dif, motivo) => {
         if (!dif || ocupado) return false;
@@ -254,5 +273,5 @@ export default function useResolverDiferencia({ nombreSala = {}, origen = 'modul
         return true;
     }, [ocupado, showToast, origen]);
 
-    return { resolver, anular, imprimir, abonar, anularAbono, imprimirAbonos, hacerIngreso, ocupado };
+    return { resolver, explicar, anular, imprimir, abonar, anularAbono, imprimirAbonos, hacerIngreso, ocupado };
 }

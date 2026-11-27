@@ -23,12 +23,13 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import useDiasConDiferencia from '@nucleo/hooks/useDiasConDiferencia';
 import useResolverDiferencia from '@nucleo/hooks/useResolverDiferencia';
-import { fetchTurnoDelCorte } from '@nucleo/data/cortes';
+import { fetchDocumentosParaExplicar, fetchTurnoDelCorte } from '@nucleo/data/cortes';
+import { claveDeDocumento, cuandoDeDocumento, filtrarDocumentos, repartirEnDocumentos, rotuloDeDocumento } from '@nucleo/utils/documentosDeDiferencia';
 import { cuentaDeResolucion, pendienteDe, porSigno, propuestaDeResponsables, VIA_LARGO } from '@nucleo/utils/diferenciasDeCaja';
 import { repartirEnPartes, severidad } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
-import { hoySV } from '@nucleo/utils/fecha';
+import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
@@ -178,7 +179,7 @@ export default function DiferenciaCorte() {
   const { dias, cargando, recargar } = useDiasConDiferencia({ activo: true, hasta: hoySV() });
   useFocusEffect(useCallback(() => { recargar(); }, [recargar]));
   const hook = useResolverDiferencia({ nombreSala, origen: 'app', avisar, imprimirTicket });
-  const { resolver, ocupado } = hook;
+  const { resolver, explicar, ocupado } = hook;
 
   const corte = useMemo(() => {
     const dia = porSigno(dias, signo).find((d) => String(d.branch_id) === String(sala) && d.fecha === fecha);
@@ -196,6 +197,11 @@ export default function DiferenciaCorte() {
   const [candidatos, setCandidatos] = useState([]);
   const [marcadas, setMarcadas] = useState([]);
   const [montos, setMontos] = useState({});
+  // Lo anotado después (2026-11-27): ligado, el dinero se queda en su bolsa.
+  const [docs, setDocs] = useState(null);
+  const [errorDocs, setErrorDocs] = useState('');
+  const [buscarDoc, setBuscarDoc] = useState('');
+  const [elegidos, setElegidos] = useState([]);
 
   useEffect(() => {
     if (abriendo && (via || causa.trim() || evidenciaRef.trim() || String(montoCausa).trim())) saveDraft(clave, { via, causa, montoCausa, evidenciaRef });
@@ -223,6 +229,19 @@ export default function DiferenciaCorte() {
     return () => { vivo = false; };
   }, [abriendo, via, corte?.id, user?.id, pendiente]);
 
+  useEffect(() => {
+    if (!abriendo || via !== 'JUSTIFICA' || !corte?.id) return undefined;
+    let vivo = true;
+    fetchDocumentosParaExplicar(corte.id)
+      .then((d) => { if (vivo) { setDocs(d.documentos); setErrorDocs(''); } })
+      .catch((e) => { if (vivo) { setDocs([]); setErrorDocs(e?.message ?? 'No se pudo leer.'); } });
+    return () => { vivo = false; };
+  }, [abriendo, via, corte?.id]);
+  const conDocumentos = via === 'JUSTIFICA' && elegidos.length > 0;
+  const reparto = repartirEnDocumentos(elegidos, pendiente);
+  const alternarDoc = (doc) => setElegidos((prev) => (prev.some((d) => claveDeDocumento(d) === claveDeDocumento(doc))
+    ? prev.filter((d) => claveDeDocumento(d) !== claveDeDocumento(doc)) : [...prev, doc]));
+
   const alternar = (id) => {
     const ids = marcadas.includes(id) ? marcadas.filter((x) => x !== id) : [...marcadas, id];
     const partes = repartirEnPartes(pendiente, ids.length);
@@ -233,7 +252,17 @@ export default function DiferenciaCorte() {
     via, pendiente, montoCausa, causa, evidenciaRef, conFoto: fotos.length > 0,
     aportes: marcadas.map((id) => montos[id] ?? 0),
   });
-  const cerrar = () => { clearDraft(clave); setAbriendo(false); setVia(null); setCausa(''); setEvidenciaRef(''); setFotos([]); setMontoCausa(''); };
+  const cerrar = () => { clearDraft(clave); setAbriendo(false); setVia(null); setCausa(''); setEvidenciaRef(''); setFotos([]); setMontoCausa(''); setElegidos([]); setBuscarDoc(''); };
+
+  const guardarConDocumentos = () => Alert.alert('¿Guardar la causa?',
+    `${reparto.partes.map((p) => `${rotuloDeDocumento(p.doc)}: ${formatMoney(p.explica)}`).join('\n')}\n\nEl dinero se queda en su bolsa. Nadie lo tiene que mover.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Guardar', onPress: async () => {
+        trabajando('Guardando…');
+        const r = await explicar(corte, { montoVisto: tramo, documentos: elegidos.map((d) => ({ tipo: d.tipo, id: d.id })), causa: causa.trim() || null });
+        if (r) { cerrar(); recargar(); }
+      } },
+    ]);
 
   const guardar = () => Alert.alert(via === 'REPONE' ? '¿Asignar responsables?' : '¿Guardar la causa?',
     via === 'REPONE'
@@ -294,13 +323,17 @@ export default function DiferenciaCorte() {
                       <Opciones opciones={[{ id: 'JUSTIFICA', label: 'Se encontró la causa' }, { id: 'REPONE', label: 'No se encontró', detalle: 'Se asignan responsables y después abonan' }]} valor={via} onCambiar={setVia} />
                     </Seccion>
                   ) : null}
+                  {via === 'JUSTIFICA' ? (
+                    <AnotadoDespues docs={docs} error={errorDocs} falta={falta} buscar={buscarDoc} onBuscar={setBuscarDoc}
+                      elegidos={elegidos} onAlternar={alternarDoc} reparto={reparto} fechaDelCorte={corte.fecha} />
+                  ) : null}
                   {via ? (
-                    <Seccion titulo={via === 'JUSTIFICA' ? 'Qué pasó' : 'Qué se revisó'}>
+                    <Seccion titulo={via === 'JUSTIFICA' ? (conDocumentos ? 'Qué pasó (opcional)' : 'Qué pasó') : 'Qué se revisó'}>
                       <Campo value={causa} onChangeText={setCausa}
-                        placeholder={via === 'JUSTIFICA' ? (falta ? 'Ej.: se cobró en efectivo una venta que se registró con tarjeta' : 'De dónde salió el dinero de más') : 'Qué se revisó antes de asignar'} />
+                        placeholder={conDocumentos ? (falta ? 'Ej.: el vale se anotó al día siguiente' : 'Ej.: se vendió y se facturó al día siguiente') : via === 'JUSTIFICA' ? (falta ? 'Ej.: se cobró en efectivo una venta que se registró con tarjeta' : 'De dónde salió el dinero de más') : 'Qué se revisó antes de asignar'} />
                     </Seccion>
                   ) : null}
-                  {via === 'JUSTIFICA' ? (
+                  {via === 'JUSTIFICA' && !conDocumentos ? (
                     <Seccion titulo="El comprobante" pie="Escribe el número del documento que se corrigió o toma una foto.">
                       <Campo multiline={false} value={montoCausa} onChangeText={(v) => setMontoCausa(dinero(v))} keyboardType="decimal-pad"
                         placeholder={`Cuánto explica (vacío = ${formatMoney(pendiente)})`} />
@@ -337,7 +370,7 @@ export default function DiferenciaCorte() {
                   {via === 'REPONE' ? <Aviso texto="Al guardar, cada responsable queda con su saldo. Después se abona por persona o todo junto, en uno o varios días. Cada abono imprime su comprobante." /> : null}
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <View style={{ flex: 1 }}><BotonGrande texto="Volver" borde onPress={cerrar} /></View>
-                    <View style={{ flex: 1 }}><BotonGrande texto={via === 'REPONE' ? 'Asignar' : 'Guardar'} color={MARCA.verde} deshabilitado={ocupado || cuenta.faltaGuardar} onPress={guardar} /></View>
+                    <View style={{ flex: 1 }}><BotonGrande texto={via === 'REPONE' ? 'Asignar' : 'Guardar'} color={MARCA.verde} deshabilitado={ocupado || (conDocumentos ? reparto.sobran.length > 0 : cuenta.faltaGuardar)} onPress={conDocumentos ? guardarConDocumentos : guardar} /></View>
                   </View>
                 </>
               ) : null}
@@ -347,5 +380,47 @@ export default function DiferenciaCorte() {
         </ScrollView>
       </KeyboardAvoidingView>
     </>
+  );
+}
+
+// Lo anotado después (2026-11-27), gemelo de `DocumentosAnotadosDespues` del
+// portal: con sobrante, ventas e ingresos en efectivo de los 7 días que siguen
+// al corte; con faltante, vales. La cuenta es la del núcleo.
+function AnotadoDespues({ docs, error, falta, buscar, onBuscar, elegidos, onAlternar, reparto, fechaDelCorte }) {
+  if (docs == null) return <Indicador />;
+  if (error) return <Aviso tono="cuidado" texto={`No se pudo leer lo anotado después: ${error}`} />;
+  if (!docs.length) return null;
+  const marcadas = new Set(elegidos.map(claveDeDocumento));
+  const { resultados } = filtrarDocumentos(docs, buscar);
+  const resto = resultados.filter((d) => !marcadas.has(claveDeDocumento(d)));
+  const visibles = [...elegidos, ...resto].slice(0, Math.max(25, elegidos.length));
+  const ocultos = elegidos.length + resto.length - visibles.length;
+  const sobra = new Set(reparto.sobran.map(claveDeDocumento));
+  const dia = fechaNumerica(fechaDelCorte, { anio: false });
+  return (
+    <Seccion titulo={falta ? '¿El vale se anotó después?' : '¿Se facturó o se anotó después?'}
+      pie={falta ? 'Marca el vale. El dinero salió de la caja de este corte, y la caja del día en que se anotó no lo va a descontar.' : 'Marca la venta o el ingreso. El dinero se queda en la bolsa de este corte, y la caja del día en que se anotó no lo va a pedir.'}>
+      {docs.length > 6 ? <Campo multiline={false} value={buscar} onChangeText={onBuscar} placeholder="Busca por número o monto" /> : null}
+      {visibles.map((d) => {
+        const k = claveDeDocumento(d);
+        const marcada = marcadas.has(k);
+        return (
+          <Pressable key={k} onPress={() => onAlternar(d)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, opacity: pressed ? 0.55 : 1 })}>
+            <Text style={{ color: marcada ? MARCA.verde : colorSistema.texto2, fontSize: 20 }}>{marcada ? '☑' : '☐'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colorSistema.texto, fontSize: 15, fontVariant: ['tabular-nums'] }}>{`${rotuloDeDocumento(d)} · ${formatMoney(d.monto)}`}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[cuandoDeDocumento(d), d.detalle, marcada && sobra.has(k) ? 'Sobra: ya se explicó todo' : null].filter(Boolean).join(' · ')}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
+      {ocultos > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Hay ${ocultos} más. Busca por número o monto.`}</Text> : null}
+      {elegidos.length ? (
+        <Aviso tono={reparto.sobran.length ? 'cuidado' : undefined}
+          texto={reparto.sobran.length
+            ? `Quita ${reparto.sobran.map(rotuloDeDocumento).join(', ')}: ya se explicó todo.`
+            : `Se explican ${formatMoney(reparto.explica)}${reparto.queda > 0.005 ? ` y quedan ${formatMoney(reparto.queda)}` : ''}. ${falta ? `Ese dinero salió de la caja del ${dia}. Nadie lo tiene que reponer.` : `Ese dinero se queda en la bolsa del ${dia}.`}`} />
+      ) : null}
+    </Seccion>
   );
 }

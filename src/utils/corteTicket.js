@@ -160,6 +160,17 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
                  + ' por ese monto.',
         });
     }
+    /* Lo mismo con lo que se cobro en un corte anterior (2026-11-27). Solo
+     * `null` —la lectura fallo—; `undefined` es una respuesta de antes de que
+     * existiera el dato, y ahi no hay nada que avisar. */
+    if (resultado?.efectivo_otro_corte === null) {
+        bloques.push({
+            titulo: 'Atencion',
+            texto: 'No se pudo comprobar si hoy hay ventas o ingresos que se cobraron en un corte anterior.'
+                 + ' Si los hay, ese dinero no esta en la caja y la diferencia de abajo esta de menos'
+                 + ' por ese monto.',
+        });
+    }
     /* NO va la explicacion de por que la otra cifra es distinta.
      *
      * Estuvo dos renglones y el usuario la saco (31-ago): «esto esta demas,

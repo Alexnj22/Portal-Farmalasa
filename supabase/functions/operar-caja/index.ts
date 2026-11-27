@@ -848,7 +848,7 @@ Deno.serve(async (req) => {
       // `caja_estado` — las dos contestan la misma lista.
       // En UN literal y no concatenado: con `+` el tipo es `string` y supabase-js
       // no puede leer las columnas (las filas salen `GenericStringError`).
-      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado, tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo")
+      .select("id, tipo, hora, total_declarado, esperado, diferencia_erp, estado, tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo, efectivo_otro_corte")
       .eq("branch_id", sala).eq("fecha", diaAbierto)
       .order("hora", { ascending: true });
     // Un error acá NO se puede leer como «no hay cortes»: sería ofrecer el

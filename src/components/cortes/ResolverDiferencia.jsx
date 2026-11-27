@@ -13,7 +13,10 @@ import PhotoLightbox from '../common/PhotoLightbox';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
-import { fetchMapfreDeCorte, fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '@nucleo/data/cortes';
+import { fetchDocumentosParaExplicar, fetchMapfreDeCorte, fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '@nucleo/data/cortes';
+import {
+    claveDeDocumento, cuandoDeDocumento, filtrarDocumentos, repartirEnDocumentos, rotuloDeDocumento,
+} from '@nucleo/utils/documentosDeDiferencia';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -245,7 +248,7 @@ export default function ResolverDiferencia({
     onCambio,              // se llama tras guardar o anular, para recargar
 }) {
     const { user } = useAuth();
-    const { resolver, ocupado } = useResolverDiferencia({ nombreSala, origen });
+    const { resolver, explicar, ocupado } = useResolverDiferencia({ nombreSala, origen });
     // Borrador por corte (`gate:borradores`): la sesión de sala se cierra sola
     // a los 5 minutos, y la causa y el número del comprobante se escriben
     // mientras se busca el papel. La foto no se guarda: es un archivo.
@@ -282,6 +285,14 @@ export default function ResolverDiferencia({
     // del corte— y fabricaba un faltante. Ligado a la causa, la factura queda
     // cobrada en el día en que entró el dinero y ya no se ofrece para cobrar.
     const [mapfreId, setMapfreId] = useState('');
+    // La venta, el ingreso o el vale que se anotó DESPUÉS (2026-11-27, Salud 2:
+    // +$11.85 por una venta que se facturó al día siguiente). Ligado, lo que
+    // explica deja de contar en lo esperado de su día y el dinero se queda en
+    // la bolsa donde está: nadie lo mueve a mano.
+    const [docs, setDocs] = useState(null);
+    const [errorDocs, setErrorDocs] = useState('');
+    const [buscarDoc, setBuscarDoc] = useState('');
+    const [elegidos, setElegidos] = useState([]);
     const [facturasMapfre, setFacturasMapfre] = useState(null);
     const [errorMapfre, setErrorMapfre] = useState('');
 
@@ -353,6 +364,25 @@ export default function ResolverDiferencia({
         return () => { vivo = false; };
     }, [abriendo, corteId, via, falta]);
     const mapfre = (facturasMapfre || []).find((f) => String(f.id) === mapfreId) || null;
+
+    // Los documentos anotados después se piden al abrir la explicación, igual
+    // que las facturas de Mapfre. Sirven para los dos signos: con sobrante
+    // vienen ventas e ingresos; con faltante, vales.
+    useEffect(() => {
+        if (!abriendo || !corteId || via !== 'JUSTIFICA') return;
+        let vivo = true;
+        fetchDocumentosParaExplicar(corteId)
+            .then((d) => { if (vivo) { setDocs(d.documentos); setErrorDocs(''); } })
+            .catch((e) => { if (vivo) { setDocs([]); setErrorDocs(mensajeAmigable(e)); } });
+        return () => { vivo = false; };
+    }, [abriendo, corteId, via]);
+    const conDocumentos = via === 'JUSTIFICA' && elegidos.length > 0;
+    const reparto = repartirEnDocumentos(elegidos, pendiente);
+    const alternarDoc = useCallback((doc) => {
+        setElegidos((prev) => (prev.some((d) => claveDeDocumento(d) === claveDeDocumento(doc))
+            ? prev.filter((d) => claveDeDocumento(d) !== claveDeDocumento(doc))
+            : [...prev, doc]));
+    }, []);
     const numeroDeFactura = (f) => String(f?.correlativo ?? '').split('_')[0].replace(/^0+/, '') || '—';
 
     // La cuenta (objetivo, lo que explica la causa, lo que falta repartir y el
@@ -392,9 +422,24 @@ export default function ResolverDiferencia({
         if (claveBorrador) clearDraft(claveBorrador);
         setAbriendo(false); setVia(null); setCausa(''); setEvidenciaRef(''); setFoto(null); setMontoCausa('');
         setMapfreId('');
+        setElegidos([]); setBuscarDoc('');
     }, [claveBorrador]);
 
     const guardar = useCallback(async () => {
+        // Con documentos elegidos, la causa la escribe el servidor si nadie la
+        // escribió y el comprobante es el propio documento.
+        if (conDocumentos) {
+            const r = await explicar(corte, {
+                montoVisto: tramo,
+                documentos: elegidos.map((d) => ({ tipo: d.tipo, id: d.id })),
+                causa: causa.trim() || null,
+            });
+            if (r) {
+                cerrarFormulario();
+                onCambio?.();
+            }
+            return;
+        }
         const ids = [...marcadas];
         const personas = via === 'REPONE'
             ? ids.map((id) => ({
@@ -436,7 +481,7 @@ export default function ResolverDiferencia({
             onCambio?.();
         }
     }, [marcadas, via, montos, candidatos, resolver, corte, causa, tramo, onCambio, foto, evidenciaRef, user,
-        explica, pendiente, cerrarFormulario, mapfre]);
+        explica, pendiente, cerrarFormulario, mapfre, conDocumentos, explicar, elegidos]);
 
     const hechas = vivas.map((d) => (
         <ResolucionHecha
@@ -528,14 +573,30 @@ export default function ResolverDiferencia({
                     />
                 )}
 
+                {via === 'JUSTIFICA' && (
+                    <DocumentosAnotadosDespues
+                        docs={docs}
+                        error={errorDocs}
+                        falta={falta}
+                        buscar={buscarDoc}
+                        onBuscar={setBuscarDoc}
+                        elegidos={elegidos}
+                        onAlternar={alternarDoc}
+                        reparto={reparto}
+                        fechaDelCorte={corte?.fecha}
+                    />
+                )}
+
                 {via && (
                     <PortalTextarea
-                        label={via === 'JUSTIFICA' ? 'Qué pasó' : via === 'REPONE' ? 'Qué se revisó' : 'Causa'}
+                        label={via === 'JUSTIFICA' ? (conDocumentos ? 'Qué pasó (opcional)' : 'Qué pasó') : via === 'REPONE' ? 'Qué se revisó' : 'Causa'}
                         name="causa"
                         value={causa}
                         onChange={(e) => setCausa(e.target.value)}
                         rows={2}
-                        placeholder={via === 'JUSTIFICA'
+                        placeholder={conDocumentos
+                            ? (falta ? 'Ej.: el vale se anotó al día siguiente' : 'Ej.: se vendió y se facturó al día siguiente')
+                            : via === 'JUSTIFICA'
                             ? (falta ? 'Ej.: se cobró en efectivo una venta que se registró con tarjeta' : 'De dónde salió el dinero de más')
                             : via === 'REPONE'
                                 ? 'Qué se revisó sin encontrar la causa'
@@ -543,7 +604,7 @@ export default function ResolverDiferencia({
                     />
                 )}
 
-                {via === 'JUSTIFICA' && (
+                {via === 'JUSTIFICA' && !conDocumentos && (
                     <div className="space-y-2">
                         {!falta && facturasMapfre?.length > 0 && (
                             <LiquidSelect
@@ -700,14 +761,116 @@ export default function ResolverDiferencia({
                         variant="primary"
                         size="sm"
                         loading={ocupado || subiendo}
-                        disabled={!via || !causa.trim() || faltaComprobante || explicaInvalido
-                            || (via === 'REPONE' && (restan !== 0 || !marcadas.size))}
+                        disabled={conDocumentos
+                            ? reparto.sobran.length > 0
+                            : (!via || !causa.trim() || faltaComprobante || explicaInvalido
+                                || (via === 'REPONE' && (restan !== 0 || !marcadas.size)))}
                         onClick={guardar}
                     >
                         {via === 'REPONE' ? 'Asignar responsables' : 'Guardar'}
                     </Button>
                 </div>
             </div>
+        </div>
+    );
+}
+
+/**
+ * La venta, el ingreso o el vale que se anotó DESPUÉS (2026-11-27).
+ *
+ * Con sobrante la base ofrece ventas e ingresos en efectivo de los 7 días que
+ * siguen al corte; con faltante, vales. Se marcan uno o varios y cada uno
+ * explica lo que trae o lo que queda, en el orden en que se marcaron — la
+ * misma cuenta que va a hacer la base (`repartirEnDocumentos`).
+ */
+const MAX_VISIBLES = 25;
+function DocumentosAnotadosDespues({ docs, error, falta, buscar, onBuscar, elegidos, onAlternar, reparto, fechaDelCorte }) {
+    const marcadas = useMemo(() => new Set(elegidos.map(claveDeDocumento)), [elegidos]);
+    const { resultados } = useMemo(() => filtrarDocumentos(docs || [], buscar), [docs, buscar]);
+    // Lo marcado va siempre arriba: si la búsqueda lo esconde, no se puede
+    // desmarcar.
+    const visibles = useMemo(() => {
+        const resto = resultados.filter((d) => !marcadas.has(claveDeDocumento(d)));
+        return [...elegidos, ...resto].slice(0, Math.max(MAX_VISIBLES, elegidos.length));
+    }, [resultados, elegidos, marcadas]);
+    const ocultos = Math.max(0, elegidos.length + resultados.filter((d) => !marcadas.has(claveDeDocumento(d))).length - visibles.length);
+
+    if (docs == null) {
+        return <p className="text-caption text-content-3">Buscando lo anotado después…</p>;
+    }
+    if (error) {
+        return <Notice variant="warning">No se pudo leer lo anotado después: {error}</Notice>;
+    }
+    if (!docs.length) return null;
+
+    const explicaDe = new Map(reparto.partes.map((p) => [claveDeDocumento(p.doc), p.explica]));
+    const sobra = new Set(reparto.sobran.map(claveDeDocumento));
+    const diaCorte = fechaNumerica(fechaDelCorte, { anio: false });
+
+    return (
+        <div className="space-y-2">
+            <div className="space-y-0.5">
+                <span className="text-caption font-black uppercase tracking-widest text-content-3">
+                    {falta ? '¿El vale se anotó después?' : '¿Se facturó o se anotó después?'}
+                </span>
+                <p className="text-caption text-content-3">
+                    {falta
+                        ? 'Marca el vale. El dinero salió de la caja de este corte, y la caja del día en que se anotó no lo va a descontar.'
+                        : 'Marca la venta o el ingreso. El dinero se queda en la bolsa de este corte, y la caja del día en que se anotó no lo va a pedir.'}
+                </p>
+            </div>
+            {docs.length > 6 && (
+                <PortalInput
+                    name="buscar-documento"
+                    value={buscar}
+                    onChange={(e) => onBuscar(e.target.value)}
+                    placeholder="Busca por número o monto"
+                    aria-label="Buscar venta, ingreso o vale"
+                />
+            )}
+            <div className="space-y-1 max-h-72 overflow-y-auto">
+                {visibles.map((d) => {
+                    const k = claveDeDocumento(d);
+                    const marcada = marcadas.has(k);
+                    const explicaEste = explicaDe.get(k);
+                    return (
+                        <Checkbox
+                            key={k}
+                            name={`doc-${k}`}
+                            checked={marcada}
+                            onChange={() => onAlternar(d)}
+                            label={`${rotuloDeDocumento(d)} · ${formatMoney(d.monto)}`}
+                            description={[
+                                cuandoDeDocumento(d),
+                                d.detalle,
+                                marcada && sobra.has(k) ? 'Sobra: ya se explicó todo' : null,
+                                marcada && explicaEste != null && Math.abs(explicaEste - Number(d.monto)) >= 0.005
+                                    ? `Explica ${formatMoney(explicaEste)}` : null,
+                            ].filter(Boolean).join(' · ')}
+                        />
+                    );
+                })}
+            </div>
+            {ocultos > 0 && (
+                <p className="text-caption text-content-3">Hay {ocultos} más. Busca por número o monto.</p>
+            )}
+            {elegidos.length > 0 && (
+                <Notice variant={reparto.sobran.length ? 'warning' : 'info'}>
+                    <span className="font-bold">
+                        {reparto.sobran.length
+                            ? `Quita ${reparto.sobran.map(rotuloDeDocumento).join(', ')}: ya se explicó todo`
+                            : `Se explican ${formatMoney(reparto.explica)}`
+                              + (reparto.queda > 0.005 ? ` y quedan ${formatMoney(reparto.queda)}` : '')}
+                    </span>
+                    {!reparto.sobran.length && (
+                        <span className="block mt-0.5 font-normal text-content-2">
+                            {falta
+                                ? `Ese dinero salió de la caja del ${diaCorte}. Nadie lo tiene que reponer.`
+                                : `Ese dinero se queda en la bolsa del ${diaCorte}. La caja del día en que se anotó no lo va a pedir.`}
+                        </span>
+                    )}
+                </Notice>
+            )}
         </div>
     );
 }

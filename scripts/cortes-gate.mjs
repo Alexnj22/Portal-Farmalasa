@@ -168,16 +168,27 @@ SELECT b.name AS sala, c.fecha::text AS fecha, c.hora::text AS hora, c.id::text 
    AND abs(c.tk_subtotal - c.tk_vales + coalesce(c.tk_cobros_credito, 0) - c.tk_total_caja) >= 0.005
  ORDER BY c.fecha DESC, b.name`;
 
-/* C. El sello contra lo que la base calcula hoy. */
+/* C. Los dos sellos contra lo que la base calcula hoy: los cobros del portal
+ * y lo cobrado en un corte anterior (2026-11-27). */
 const SQL_SELLO = `
 SELECT b.name AS sala, c.fecha::text AS fecha, c.hora::text AS hora, c.id::text AS id,
+       'cobros' AS cual,
        c.cobros_portal_efectivo::text AS sellado,
        public.cobros_portal_en_efectivo(c.branch_id, c.fecha, c.hora)::text AS de_verdad
   FROM public.cortes_caja c
   JOIN public.branches b ON b.id = c.branch_id
  WHERE c.cobros_portal_efectivo IS DISTINCT FROM
        public.cobros_portal_en_efectivo(c.branch_id, c.fecha, c.hora)
- ORDER BY c.fecha DESC, b.name`;
+UNION ALL
+SELECT b.name, c.fecha::text, c.hora::text, c.id::text,
+       'otro-corte',
+       c.efectivo_otro_corte::text,
+       public.efectivo_de_otro_corte(c.branch_id, c.fecha, c.hora)::text
+  FROM public.cortes_caja c
+  JOIN public.branches b ON b.id = c.branch_id
+ WHERE c.efectivo_otro_corte IS DISTINCT FROM
+       public.efectivo_de_otro_corte(c.branch_id, c.fecha, c.hora)
+ ORDER BY 2 DESC, 1`;
 
 /* D. Días CERRADOS que se llevaron efectivo sin contar.
  *
@@ -349,14 +360,14 @@ const SQL_TRIGGERS = `
 SELECT t.tgname AS nombre
   FROM pg_trigger t
  WHERE NOT t.tgisinternal
-   AND t.tgname IN ('cortes_caja_cobros_portal', 'abonos_portal_resella_cortes')`;
+   AND t.tgname IN ('cortes_caja_cobros_portal', 'abonos_portal_resella_cortes', 'diferencias_resella_cortes')`;
 
 function main() {
   const canal = abrirCanal('cortes-gate');
   const fallas = [];
   try {
     const triggers = canal.consultar(SQL_TRIGGERS).map(r => r.nombre);
-    for (const t of ['cortes_caja_cobros_portal', 'abonos_portal_resella_cortes']) {
+    for (const t of ['cortes_caja_cobros_portal', 'abonos_portal_resella_cortes', 'diferencias_resella_cortes']) {
       if (!triggers.includes(t)) {
         fallas.push({
           clave: `trigger-ausente:${t}`,
@@ -366,7 +377,7 @@ function main() {
         });
       }
     }
-    console.log(`  triggers:    ${triggers.length}/2 puestos`);
+    console.log(`  triggers:    ${triggers.length}/3 puestos`);
 
     const sinContar = canal.consultar(SQL_SIN_CONTAR);
     for (const r of sinContar) {
@@ -395,10 +406,13 @@ function main() {
     const sello = canal.consultar(SQL_SELLO);
     for (const r of sello) {
       fallas.push({
-        clave: `sello-viejo:${r.id}`,
-        detalle: `${r.sala} ${r.fecha} ${r.hora}: dice ${money(r.sellado)} y hoy son ${money(r.de_verdad)}`,
-        porque: 'El sello lo mantienen dos triggers. Uno viejo significa que un abono entró por un '
-              + 'camino que no los dispara.',
+        clave: `sello-viejo:${r.cual}:${r.id}`,
+        detalle: `${r.sala} ${r.fecha} ${r.hora} (${r.cual}): dice ${money(r.sellado)} y hoy son ${money(r.de_verdad)}`,
+        porque: r.cual === 'cobros'
+          ? 'El sello lo mantienen dos triggers. Uno viejo significa que un abono entró por un '
+            + 'camino que no los dispara.'
+          : 'Lo mantienen `cortes_caja_cobros_portal` y `diferencias_resella_cortes`. Uno viejo '
+            + 'significa que una causa con documento cambió por un camino que no los dispara.',
       });
     }
     console.log(`  sello:       ${sello.length === 0 ? 'al día en todos los cortes' : `${sello.length} corte(s) con el número viejo`}`);

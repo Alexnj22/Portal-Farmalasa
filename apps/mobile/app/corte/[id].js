@@ -266,10 +266,14 @@ export default function Corte() {
           ) : (
             <Seccion titulo="La cuenta">
               <Dato primero rotulo="Debía haber en caja" valor={formatMoney(esperado)} />
-              {cobros?.sinContar > 0.005 ? (
+              {cobros?.sinContar > 0.005 || Math.abs(cobros?.deOtroCorte ?? 0) > 0.005 ? (
                 <>
                   <Dato rotulo="   Ventas y movimientos del día" valor={formatMoney(corte.tk_total_caja)} />
-                  <Dato rotulo="   Cobros de crédito en efectivo" valor={`+${formatMoney(cobros.sinContar)}`} />
+                  {cobros.sinContar > 0.005 ? <Dato rotulo="   Cobros de crédito en efectivo" valor={`+${formatMoney(cobros.sinContar)}`} /> : null}
+                  {Math.abs(cobros.deOtroCorte) > 0.005 ? (
+                    <Dato rotulo={cobros.deOtroCorte > 0 ? '   Cobrado en un corte anterior' : '   Vale pagado en un corte anterior'}
+                      valor={`${cobros.deOtroCorte > 0 ? '−' : '+'}${formatMoney(Math.abs(cobros.deOtroCorte))}`} />
+                  ) : null}
                 </>
               ) : null}
               <Dato rotulo="Se contó" valor={formatMoney(corte.total_declarado)} fuerte />

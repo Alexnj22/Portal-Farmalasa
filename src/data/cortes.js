@@ -50,7 +50,7 @@ const CAMPOS = `
     recibido_por, recibe:employees!cortes_caja_recibido_por_fkey(name), entrega,
     total_declarado, diferencia_erp, esperado,
     tk_cobros_credito, tk_subtotal, tk_vales, tk_total_caja, tk_devoluciones,
-    tk_tarjeta, tk_credito, cobros_portal_efectivo,
+    tk_tarjeta, tk_credito, cobros_portal_efectivo, efectivo_otro_corte,
     estado, motivo_descarte, observaciones, resuelto_por, resuelto_at
 `;
 
@@ -87,7 +87,8 @@ export async function contarCortesPorConfirmar(fecha) {
 const CAMPOS_RESUMEN = `
     id, branch_id, tipo, fecha, hora, estado,
     total_declarado, diferencia_erp, esperado,
-    tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo
+    tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo,
+    efectivo_otro_corte
 `;
 
 /**
@@ -168,7 +169,7 @@ export async function fetchCorteParaElPapel(id) {
             empleado_texto, total_declarado, diferencia_erp, esperado,
             tk_saldo_inicial, tk_saldo_caja_chica, tk_ingresos, tk_venta,
             tk_subtotal, tk_vales, tk_cobros_credito, tk_total_caja,
-            tk_retencion, tk_devoluciones, cobros_portal_efectivo, ticket
+            tk_retencion, tk_devoluciones, cobros_portal_efectivo, efectivo_otro_corte, ticket
         `)
         .eq('id', id)
         .maybeSingle();
@@ -592,6 +593,46 @@ export async function fetchMapfreDeCorte(corteId) {
     const { data, error } = await supabase.rpc('mapfre_facturas_de_corte', { p_corte_id: corteId });
     if (error) throw new Error(error.message);
     return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Las ventas, ingresos y vales que pueden explicar la diferencia de un corte
+ * porque se anotaron DESPUÉS (2026-11-27): de su sala, de los 7 días que
+ * siguen al corte, en efectivo y sin ligar a otra diferencia. Con sobrante
+ * vienen ventas e ingresos; con faltante, vales. Un solo JSON: no hay techo de
+ * 1000 filas que cuidar. Lanza: una lista vacía por error diría «no hay» cuando
+ * no se pudo preguntar.
+ */
+export async function fetchDocumentosParaExplicar(corteId) {
+    const { data, error } = await supabase.rpc('documentos_para_explicar_corte', { p_corte_id: corteId });
+    if (error) throw new Error(error.message);
+    return {
+        pendiente: Number(data?.pendiente ?? 0),
+        desde: data?.desde ?? null,
+        hasta: data?.hasta ?? null,
+        documentos: Array.isArray(data?.documentos) ? data.documentos : [],
+    };
+}
+
+/**
+ * Explicar la diferencia con los documentos elegidos. El servidor crea una
+ * causa encontrada por documento, en una sola transacción, y desde ese momento
+ * lo que explican deja de contar en lo esperado de los cortes de su día: el
+ * dinero se queda en la bolsa donde está. `montoVisto` es el tramo que se
+ * mostró: el servidor rechaza si cambió.
+ *
+ * `documentos`: [{ tipo: 'VENTA'|'INGRESO'|'VALE', id }].
+ */
+export function explicarConDocumentos(corteId, { montoVisto, documentos, causa = null }, contexto = {}) {
+    return conBitacora(supabase.rpc('explicar_diferencia_con_documentos', {
+        p_corte_id: corteId,
+        p_monto_esperado: montoVisto,
+        p_documentos: documentos.map((d) => ({ tipo: d.tipo, id: Number(d.id) })),
+        p_causa: causa || null,
+    }), 'CORTE_CAJA_DIFERENCIA_RESUELTA', corteId, {
+        corte_id: corteId, via: 'JUSTIFICA',
+        documentos: documentos.map((d) => `${d.tipo}:${d.id}`), ...contexto,
+    });
 }
 
 export async function fetchTurnoDelCorte(corteId) {

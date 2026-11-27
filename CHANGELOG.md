@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.0 — Una venta, un ingreso o un vale anotado después explica la diferencia de un corte
+
+Salud 2, 26-nov: el corte de las 12:10 cerró con +$11.85 porque se vendió un
+producto y no se facturó. Facturarlo al día siguiente sumaba $11.85 a lo
+esperado de la caja de ESE día —que no los tiene: están en la bolsa del 26—, y
+la única salida era pasar el dinero a mano de una bolsa cerrada a la caja de
+hoy. Decisión del usuario: «mejor que el sistema haga los movimientos de
+efectivo, así no se toca el dinero de los cortes anteriores».
+
+- Al explicar una diferencia («Tiene causa» / «Se encontró la causa») aparecen
+  las ventas e ingresos en efectivo (sobrante) o los vales en efectivo
+  (faltante) de los 7 días siguientes. Se marcan uno o varios; cada uno explica
+  lo que trae o lo que queda. La causa y el comprobante los escribe el portal.
+- Lo que explica deja de contar en lo esperado de los cortes del día del
+  documento: `cortes_caja.efectivo_otro_corte`, sellado por triggers igual que
+  `cobros_portal_efectivo`, octavo argumento de `corte_diferencia` y descontado
+  de `caja_efectivo_piezas` (freno «efectivo sin contar» y Mi caja).
+- Anular la causa libera el documento y lo devuelve a su día.
+- Migración `20261127145618`. Funciones `hacer-corte-caja` y `operar-caja`
+  redesplegadas (JWT). `gate:cortes` vigila el sello nuevo y su trigger.
+
 ## v2.1605.3 — Avisos de clientes: difusión de una promoción a todos
 
 Pedido del usuario: avisar una vez a quienes tienen la app (Android e iOS) que

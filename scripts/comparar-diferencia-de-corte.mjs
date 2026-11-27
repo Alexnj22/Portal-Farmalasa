@@ -38,7 +38,7 @@ import { join } from 'node:path';
 import { diferenciaDelCorte, noContoEfectivo } from '../src/utils/cortesDiagnostico.js';
 
 const COLUMNAS = 'id, total_declarado, diferencia_erp, tk_subtotal, tk_vales,'
-    + ' tk_cobros_credito, tk_total_caja, cobros_portal_efectivo';
+    + ' tk_cobros_credito, tk_total_caja, cobros_portal_efectivo, efectivo_otro_corte';
 
 /* El CLI lee el `.env` del WORKDIR, y el del repo tiene un nombre de variable
  * con guión que lo hace abortar. Un directorio vacío con un enlace a
@@ -56,7 +56,7 @@ function consultar(sql) {
 const datos = consultar(`select ${COLUMNAS}, tipo, estado from public.cortes_caja where tipo='C' order by id`);
 const sql = new Map(consultar(
     'select id, public.corte_diferencia(total_declarado, diferencia_erp, tk_total_caja,'
-    + ' tk_subtotal, tk_vales, tk_cobros_credito, cobros_portal_efectivo) as dif'
+    + ' tk_subtotal, tk_vales, tk_cobros_credito, cobros_portal_efectivo, efectivo_otro_corte) as dif'
     + " from public.cortes_caja where tipo='C' order by id",
 ).map((r) => [r.id, Number(r.dif)]));
 

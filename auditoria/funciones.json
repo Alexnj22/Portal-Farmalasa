@@ -2153,6 +2153,10 @@
    "area": "metas",
    "por": "código"
   },
+  "diferencias_resella_cortes": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
   "discard_stock_drafts": {
    "area": "minmax",
    "por": "código"
@@ -2557,6 +2561,10 @@
    "area": "distribucion",
    "por": "trigger"
   },
+  "documentos_para_explicar_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
   "dui_disponible": {
    "area": "personal",
    "por": "código"
@@ -2587,6 +2595,10 @@
   },
   "editar_tarifa_renglon": {
    "area": "promociones",
+   "por": "código"
+  },
+  "efectivo_de_otro_corte": {
+   "area": "cortes-efectivo",
    "por": "código"
   },
   "elegir_nombre_en_el_portal": {
@@ -3023,6 +3035,10 @@
   "expandir_lineas_envio": {
    "area": "solicitudes",
    "por": "trigger"
+  },
+  "explicar_diferencia_con_documentos": {
+   "area": "cortes-efectivo",
+   "por": "código"
   },
   "explicar_meta_propuesta": {
    "area": "metas",

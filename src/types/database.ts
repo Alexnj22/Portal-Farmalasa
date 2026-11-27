@@ -9577,6 +9577,7 @@ export type Database = {
           created_at: string
           desfase_seg: number | null
           diferencia_erp: number
+          efectivo_otro_corte: number
           empleado_texto: string | null
           employee_id: string | null
           entrega: string | null
@@ -9625,6 +9626,7 @@ export type Database = {
           created_at?: string
           desfase_seg?: number | null
           diferencia_erp: number
+          efectivo_otro_corte?: number
           empleado_texto?: string | null
           employee_id?: string | null
           entrega?: string | null
@@ -9673,6 +9675,7 @@ export type Database = {
           created_at?: string
           desfase_seg?: number | null
           diferencia_erp?: number
+          efectivo_otro_corte?: number
           empleado_texto?: string | null
           employee_id?: string | null
           entrega?: string | null
@@ -10053,6 +10056,11 @@ export type Database = {
           causa: string
           corte_id: number
           created_at: string
+          documento_fecha: string | null
+          documento_hora: string | null
+          documento_invoice_id: number | null
+          documento_movimiento_id: number | null
+          documento_tipo: string | null
           evidencia_foto_url: string | null
           evidencia_ref: string | null
           fecha: string
@@ -10076,6 +10084,11 @@ export type Database = {
           causa: string
           corte_id: number
           created_at?: string
+          documento_fecha?: string | null
+          documento_hora?: string | null
+          documento_invoice_id?: number | null
+          documento_movimiento_id?: number | null
+          documento_tipo?: string | null
           evidencia_foto_url?: string | null
           evidencia_ref?: string | null
           fecha: string
@@ -10099,6 +10112,11 @@ export type Database = {
           causa?: string
           corte_id?: number
           created_at?: string
+          documento_fecha?: string | null
+          documento_hora?: string | null
+          documento_invoice_id?: number | null
+          documento_movimiento_id?: number | null
+          documento_tipo?: string | null
           evidencia_foto_url?: string | null
           evidencia_ref?: string | null
           fecha?: string
@@ -33459,6 +33477,11 @@ export type Database = {
           causa: string
           corte_id: number
           created_at: string
+          documento_fecha: string | null
+          documento_hora: string | null
+          documento_invoice_id: number | null
+          documento_movimiento_id: number | null
+          documento_tipo: string | null
           evidencia_foto_url: string | null
           evidencia_ref: string | null
           fecha: string
@@ -35129,6 +35152,7 @@ export type Database = {
           p_cobros_tk: number
           p_declarado: number
           p_dif_erp: number
+          p_otro_corte?: number
           p_subtotal: number
           p_total_caja: number
           p_vales: number
@@ -36005,6 +36029,10 @@ export type Database = {
       }
       dist_vencer_reservas: { Args: never; Returns: number }
       dist_vendedores: { Args: never; Returns: Json }
+      documentos_para_explicar_corte: {
+        Args: { p_corte_id: number }
+        Returns: Json
+      }
       dui_disponible: {
         Args: { p_dui: string; p_excluir?: string }
         Returns: boolean
@@ -36066,6 +36094,10 @@ export type Database = {
           p_unidades_por_bono?: number
         }
         Returns: Json
+      }
+      efectivo_de_otro_corte: {
+        Args: { p_branch: number; p_fecha: string; p_hasta: string }
+        Returns: number
       }
       elegir_nombre_en_el_portal: {
         Args: { p_apellido: string; p_nombre: string }
@@ -36521,6 +36553,15 @@ export type Database = {
           p_desde: string
           p_producto: number
           p_tipo: string
+        }
+        Returns: Json
+      }
+      explicar_diferencia_con_documentos: {
+        Args: {
+          p_causa?: string
+          p_corte_id: number
+          p_documentos: Json
+          p_monto_esperado: number
         }
         Returns: Json
       }
@@ -38754,6 +38795,11 @@ export type Database = {
           causa: string
           corte_id: number
           created_at: string
+          documento_fecha: string | null
+          documento_hora: string | null
+          documento_invoice_id: number | null
+          documento_movimiento_id: number | null
+          documento_tipo: string | null
           evidencia_foto_url: string | null
           evidencia_ref: string | null
           fecha: string
@@ -39004,6 +39050,11 @@ export type Database = {
           causa: string
           corte_id: number
           created_at: string
+          documento_fecha: string | null
+          documento_hora: string | null
+          documento_invoice_id: number | null
+          documento_movimiento_id: number | null
+          documento_tipo: string | null
           evidencia_foto_url: string | null
           evidencia_ref: string | null
           fecha: string
@@ -40337,6 +40388,7 @@ export type Database = {
           created_at: string
           desfase_seg: number | null
           diferencia_erp: number
+          efectivo_otro_corte: number
           empleado_texto: string | null
           employee_id: string | null
           entrega: string | null
@@ -41046,6 +41098,7 @@ export type Database = {
           created_at: string
           desfase_seg: number | null
           diferencia_erp: number
+          efectivo_otro_corte: number
           empleado_texto: string | null
           employee_id: string | null
           entrega: string | null
@@ -41177,6 +41230,11 @@ export type Database = {
           causa: string
           corte_id: number
           created_at: string
+          documento_fecha: string | null
+          documento_hora: string | null
+          documento_invoice_id: number | null
+          documento_movimiento_id: number | null
+          documento_tipo: string | null
           evidencia_foto_url: string | null
           evidencia_ref: string | null
           fecha: string

@@ -512,16 +512,26 @@ export default function CorteDetalleModal({
                                     leer la corrección como el defecto. Nombra
                                     lo que ese número mide y no su procedencia,
                                     que es la regla de siempre. */}
-                                {cobros?.sinContar > 0.005 && (
+                                {(cobros?.sinContar > 0.005 || Math.abs(cobros?.deOtroCorte ?? 0) > 0.005) && (
                                     <>
                                         <div className="flex justify-between gap-3 pl-3 text-content-3">
                                             <span>Ventas y movimientos del día</span>
                                             <span className="tabular-nums">{formatMoney(visible.tk_total_caja)}</span>
                                         </div>
-                                        <div className="flex justify-between gap-3 pl-3 text-content-3">
-                                            <span>Cobros de crédito en efectivo</span>
-                                            <span className="tabular-nums">+{formatMoney(cobros.sinContar)}</span>
-                                        </div>
+                                        {cobros.sinContar > 0.005 && (
+                                            <div className="flex justify-between gap-3 pl-3 text-content-3">
+                                                <span>Cobros de crédito en efectivo</span>
+                                                <span className="tabular-nums">+{formatMoney(cobros.sinContar)}</span>
+                                            </div>
+                                        )}
+                                        {/* 2026-11-27: lo anotado hoy que se cobró en un
+                                            corte anterior. Su dinero está en aquella bolsa. */}
+                                        {Math.abs(cobros.deOtroCorte) > 0.005 && (
+                                            <div className="flex justify-between gap-3 pl-3 text-content-3">
+                                                <span>{cobros.deOtroCorte > 0 ? 'Cobrado en un corte anterior' : 'Vale pagado en un corte anterior'}</span>
+                                                <span className="tabular-nums">{cobros.deOtroCorte > 0 ? '−' : '+'}{formatMoney(Math.abs(cobros.deOtroCorte))}</span>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                                 <div className="flex justify-between gap-3">

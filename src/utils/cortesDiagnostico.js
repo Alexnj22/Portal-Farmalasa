@@ -632,13 +632,25 @@ export function contraste(corte) {
      * un hallazgo. */
     const enCaja = num(corte?.cobros_portal_efectivo) ?? 0;
     const sinContar = Math.max(0, redondear(enCaja - cobros));
-    const esperado = redondear(totalCaja + sinContar);
+
+    /* ── Lo que el comprobante cuenta y se cobró en un corte ANTERIOR ──────
+     *
+     * Una venta (o un ingreso, o un vale) anotada un día después de que su
+     * efectivo entró, y ligada a la causa de la diferencia de aquel día
+     * (2026-11-27, Salud 2: +$11.85 el 26-nov por una venta que se facturó el
+     * 27). El comprobante de hoy la suma a lo esperado, pero el dinero está en
+     * la bolsa de aquel día: sin restarla, hoy sale un faltante que no existe.
+     * Con signo —un vale va al revés— y sellado en la fila por un trigger
+     * (`efectivo_otro_corte`), igual que los cobros del portal. */
+    const deOtroCorte = num(corte?.efectivo_otro_corte) ?? 0;
+    const esperado = redondear(totalCaja + sinContar - deOtroCorte);
 
     const difTicket = redondear(declarado - esperado);
-    // Lo que NO explica nadie. `sinContar` sale de la resta porque ya está
-    // explicado —es la corrección, no un descuadre—: sin sacarlo, corregir un
-    // corte lo dejaría marcado como «hay plata sin explicar» para siempre.
-    const brecha = redondear(difErp - difTicket - sinContar);
+    // Lo que NO explica nadie. `sinContar` y `deOtroCorte` salen de la resta
+    // porque ya están explicados —son la corrección, no un descuadre—: sin
+    // sacarlos, corregir un corte lo dejaría marcado como «hay plata sin
+    // explicar» para siempre.
+    const brecha = redondear(difErp - difTicket - sinContar + deOtroCorte);
 
     // Cuántas veces el cobro de crédito explica la brecha. Entero → es el
     // defecto conocido del origen y no hay nada que investigar en la sala.
@@ -652,6 +664,9 @@ export function contraste(corte) {
         cobros,
         // Lo que el comprobante dejó fuera y el portal le suma al esperado.
         sinContar,
+        // Lo que el comprobante cuenta y está en un corte anterior: el portal
+        // se lo resta al esperado.
+        deOtroCorte,
         // El esperado que MANDA: el del comprobante más lo que no contó.
         esperado,
         vecesElCobro: porCobrosCredito ? Math.round(veces) : null,
@@ -844,6 +859,9 @@ export function cobrosDeCredito(corte, abonos = []) {
         cobros,
         // Lo que el comprobante dejó fuera y el portal le suma al esperado.
         sinContar: c?.sinContar ?? 0,
+        // Lo que el comprobante cuenta y está en un corte anterior (con signo:
+        // positivo se resta del esperado, negativo —un vale— se suma).
+        deOtroCorte: c?.deOtroCorte ?? 0,
         // Positiva = el portal registró más efectivo del que el comprobante
         // contó (algo entró después de contar, o no se sumó).
         // Negativa = hay cobros que no pasaron por el portal (no es un defecto).
@@ -887,6 +905,20 @@ export function notaDeCifra(corte) {
              * único que hay que entender es que lo que se ve YA viene
              * corregido. */
             detalle: `Entraron ${formatMoney(c.sinContar)} en efectivo y están en la caja, así que se sumaron a lo que debía haber: ${formatMoney(c.esperado)}. La diferencia que se muestra ya los tiene en cuenta.`,
+        };
+    }
+
+    /* Lo mismo con lo que se cobró en un corte anterior (2026-11-27): es la
+     * corrección, no un aviso. Sin la nota, el esperado de la pantalla no
+     * coincide con el del comprobante y nadie sabe por qué. */
+    if (!c.enDisputa && Math.abs(c.deOtroCorte) >= 0.01) {
+        const monto = formatMoney(Math.abs(c.deOtroCorte));
+        return {
+            alerta: false,
+            titulo: 'Hay dinero que está en otro corte',
+            detalle: c.deOtroCorte > 0
+                ? `${monto} de lo anotado hoy se cobró en un corte anterior y está en su bolsa. Se restó de lo que debía haber: ${formatMoney(c.esperado)}.`
+                : `Un vale de ${monto} se pagó con dinero de un corte anterior. Se sumó a lo que debía haber: ${formatMoney(c.esperado)}.`,
         };
     }
 
@@ -1288,6 +1320,7 @@ export function conLaCuentaBuena(r) {
         tk_vales: r.tiquete.vales,
         tk_cobros_credito: r.tiquete.cobros_credito,
         cobros_portal_efectivo: r.cobros_portal_efectivo,
+        efectivo_otro_corte: r.efectivo_otro_corte,
     };
     const d = diferenciaDelCorte(comoCorte);
     return {
@@ -1380,6 +1413,9 @@ export function resultadoDeLaFila(corte) {
         diferencia: d.valor,
         fuente: d.fuente,
         cobros_portal_efectivo: num(corte.cobros_portal_efectivo),
+        // Sin la columna en la consulta queda `undefined` (no se pidió), que no es
+        // `null` (no se pudo leer): el papel sólo avisa del segundo.
+        efectivo_otro_corte: corte.efectivo_otro_corte === undefined ? undefined : num(corte.efectivo_otro_corte),
         tiquete: {
             empleado: corte.empleado_texto || null,
             caja: corte.caja_erp ?? null,

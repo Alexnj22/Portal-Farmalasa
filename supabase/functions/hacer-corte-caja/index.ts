@@ -1708,6 +1708,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    /* ── Lo que el comprobante cuenta y se cobró en un corte ANTERIOR ──────
+     *
+     * Una venta, ingreso o vale de hoy ligado a la causa de la diferencia de
+     * otro día (2026-11-27): su efectivo está en la bolsa de aquel día, así que
+     * se resta de lo esperado. Mismo motivo y mismo camino que los cobros de
+     * arriba: la fila lo sella un trigger, pero el corte recién hecho todavía
+     * no tiene fila. `null` = no se pudo leer, nunca 0. */
+    let efectivoOtroCorte: number | null = null;
+    if (ok) {
+      const ahoraSv = new Date(Date.now() - 6 * 3600_000).toISOString();
+      const { data: otro, error: errOtro } = await supabase
+        .rpc("efectivo_de_otro_corte", {
+          p_branch: sala,
+          p_fecha: ahoraSv.slice(0, 10),
+          p_hasta: ahoraSv.slice(11, 19),
+        });
+      if (errOtro) {
+        console.error("hacer-corte-caja: efectivo de otro corte:", errOtro.message);
+      } else {
+        efectivoOtroCorte = Number(otro ?? 0);
+      }
+    }
+
     /* ── El tipo que SALIÓ se comprueba, no se supone ──────────────────────
      *
      * El formulario trae **X** marcado por defecto y el portal lo reenviaba tal
@@ -1907,6 +1930,7 @@ Deno.serve(async (req) => {
        * efectivo de cobros de crédito hechos desde el portal que el comprobante
        * deja fuera de su esperado. `null` = no se pudo leer, y el papel lo dice. */
       cobros_portal_efectivo: cobrosPortalEfectivo,
+      efectivo_otro_corte: efectivoOtroCorte,
       tipo: tiquete?.tipo ?? null,
       id_corte: idCorte,
       // Lo que necesita el comprobante que imprime el portal, y las piezas con

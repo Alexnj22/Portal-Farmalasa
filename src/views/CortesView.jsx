@@ -70,7 +70,7 @@ import { conTramoPorSalaYDia, diferenciaDelCorte, filtrarCortes, resumenDeCortes
 import { avisoDeFaltante } from '@nucleo/utils/salyAyuda';
 import { useSalyEnPantalla } from '../components/saly/salyAyudaStore';
 import {
-    conCausasDelDia, diaEnFiltro, diaEnMes, difsPorCorteDe, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
+    diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
 import { correrPeriodo, granularidadDePeriodo, periodoAlcanzaHoy } from '@nucleo/utils/periodo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -515,15 +515,12 @@ const CortesView = () => {
 
     // El tramo se calcula POR SALA Y POR DÍA — el porqué está en
     // `conTramoPorSalaYDia`, que es el mismo cálculo que usa el Inicio.
-    // Las resoluciones vivas por corte: la cifra, el acumulado y el arrastre
-    // descuentan lo que ya tiene causa (2026-11-27).
-    const difsPorCorte = useMemo(() => difsPorCorteDe(difs), [difs]);
     const conTramoTodos = useMemo(() => {
-        const out = conCausasDelDia(conTramoPorSalaYDia(cortes), difsPorCorte);
+        const out = conTramoPorSalaYDia(cortes);
         out.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
             || String(b.hora).localeCompare(String(a.hora)));
         return out;
-    }, [cortes, difsPorCorte]);
+    }, [cortes]);
 
     // El carril describe el PERÍODO y la sucursal elegida, no lo que las otras
     // ranuras recortan: son recortes de este mismo conjunto, así que si el
@@ -1167,7 +1164,6 @@ const CortesView = () => {
                                         <div key={c.id} data-saly-ancla={`corte-${c.id}`} className="min-w-0">
                                         <TarjetaCorte
                                             corte={c}
-                                            diferencias={difsPorCorte.get(c.id) || null}
                                             persona={personas.get(c.resuelto_por) || null}
                                             puedeResolver={puedeResolver}
                                             ocupado={ocupadoId === c.id}

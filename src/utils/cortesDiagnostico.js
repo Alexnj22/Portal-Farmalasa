@@ -92,6 +92,15 @@ export const noContoEfectivo = (corte) => corte?.tipo === 'C'
  */
 export function conTramo(cortesDeLaSala) {
     let previa = 0;
+    /* ── Lo que ya tiene causa (2026-11-27) ─────────────────────────────────
+     * `explicado_causa` lo sella la base por corte (suma con signo de sus
+     * causas). `tramo` y `acumulado` siguen siendo el dinero del cajón —sobre
+     * eso se resuelve—, pero lo que se MUESTRA es `cifra` (el tramo sin lo
+     * explicado), y `acumuladoSinCausa` / `arrastre` / `aportes` descuentan lo
+     * explicado en los confirmados anteriores. Salud 2, 26-nov: +$11.85 con
+     * $4.95 explicados se lee +$6.90 en Cortes, el Inicio, Bolsas y la app.
+     * Mismo criterio que `corte_explicado_hasta` en la base. */
+    let explicadoPrevio = 0;
     /* Los cortes confirmados que YA movieron el acumulado del día, con su hora.
      *
      * Existe por un reporte del usuario (2026-09-04): el corte de las 19:02 de
@@ -109,7 +118,7 @@ export function conTramo(cortesDeLaSala) {
         // que no puede desplazar la referencia de los que vienen después. Mismo
         // criterio que un descartado.
         if (c.tipo !== 'C' || c.estado === 'DESCARTADO' || noContoEfectivo(c)) {
-            return { ...c, tramo: null, acumulado: null, fuente: null, arrastre: 0, aportes: [] };
+            return { ...c, tramo: null, cifra: null, explicado: 0, acumulado: null, fuente: null, arrastre: 0, aportes: [], encadenado: false };
         }
         // La acumulada sale de `diferenciaDelCorte`, no de `diferencia_erp`: el
         // corte manda. Las dos son acumulativas del día, así que restarlas sigue
@@ -120,18 +129,29 @@ export function conTramo(cortesDeLaSala) {
         // antes de correr la base, y la lista se copia antes de que este corte
         // se agregue a ella. Con la copia después, una tarjeta se nombraría a
         // sí misma como origen de su propio arrastre.
-        const arrastre = redondear(previa);
+        const arrastreBruto = redondear(previa);
+        const arrastre = redondear(previa - explicadoPrevio);
         const heredados = aportes.slice();
+        // Lo explicado de ESTE corte, con el signo de su tramo y sin pasarse.
+        const sello = Number(c.explicado_causa) || 0;
+        const explicado = Math.abs(sello) < 0.005 || Math.abs(tramo) < 0.005 ? 0
+            : Math.sign(tramo) * Math.min(Math.abs(sello), Math.abs(tramo));
+        const cifra = redondear(tramo - explicado);
         // Sólo una decisión firmada mueve la referencia. Ver el bloque de
         // arriba: con el pendiente corriéndola, un corte rehecho le restaba al
         // bueno la diferencia del que vino a reemplazar.
+        const acumuladoSinCausa = redondear(dif - explicadoPrevio - explicado);
         if (c.estado === 'CONFIRMADO') {
-            if (Math.abs(tramo) >= 0.01) aportes.push({ hora: c.hora, tramo });
+            if (Math.abs(cifra) >= 0.01) aportes.push({ hora: c.hora, tramo: cifra });
             previa = dif;
+            explicadoPrevio = redondear(explicadoPrevio + explicado);
         }
         return {
-            ...c, tramo, acumulado: dif, fuente, esperadoUsado: esperado,
+            ...c, tramo, cifra, explicado, acumulado: dif, acumuladoSinCausa, fuente, esperadoUsado: esperado,
             arrastre, aportes: heredados,
+            // Se mide contra un corte anterior (el rótulo «desde el corte
+            // anterior»): lo decide el arrastre de verdad, no el descontado.
+            encadenado: Math.abs(arrastreBruto) >= 0.005,
         };
     });
 }
@@ -164,8 +184,11 @@ export function acumuladoAntesDe(cortesDelDia, { hora = null, excluirId = null }
         .filter((c) => !hora || String(c.hora) < String(hora))
         .sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
     const ultimo = previos[previos.length - 1];
-    if (!ultimo) return { valor: 0, hora: null };
-    return { valor: diferenciaDelCorte(ultimo).valor ?? 0, hora: ultimo.hora };
+    if (!ultimo) return { valor: 0, hora: null, explicado: 0 };
+    // Lo que ya tiene causa en esos confirmados (2026-11-27): no cambia el
+    // tramo —el dinero es el que es—, sólo la acumulada que se MUESTRA.
+    const explicado = redondear(previos.reduce((a, c) => a + (Number(c.explicado_causa) || 0), 0));
+    return { valor: diferenciaDelCorte(ultimo).valor ?? 0, hora: ultimo.hora, explicado };
 }
 
 /**
@@ -178,6 +201,8 @@ export function conTramoDelCorte(r, previo) {
     return {
         ...r,
         tramo: redondear(r.diferencia - (previo.valor || 0)),
+        // La acumulada del día sin lo que ya tiene causa: la que se muestra.
+        acumuladoSinCausa: redondear(r.diferencia - (previo.explicado || 0)),
         previo,
     };
 }

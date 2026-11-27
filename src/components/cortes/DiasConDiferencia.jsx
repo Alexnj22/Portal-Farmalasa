@@ -12,7 +12,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { ESTADO_DIFERENCIA_ROTULO, desgloseDelDia, resolucionesDe, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
+import { ESTADO_DIFERENCIA_ROTULO, cifraDe, desgloseDelDia, resolucionesDe, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 import PuntoDeEstado from '../common/PuntoDeEstado';
@@ -275,7 +275,8 @@ export default function DiasConDiferencia({
                                             <PuntoDeEstado className={PUNTO_ESTADO[c.estadoDif] || 'bg-success'} aria-hidden="true" />
                                             <span className="text-content-2 shrink-0">{hora12(c.hora)}</span>
                                             <span className="text-content-3 truncate flex-1">{ec.label}</span>
-                                            <span className={`tabular-nums font-bold ${colorDe(c.tramo)}`}>{conSigno(c.tramo)}</span>
+                                            {/* Sin lo que ya tiene causa: el mismo número que Cortes y la app. */}
+                                            <span className={`tabular-nums font-bold ${colorDe(cifraDe(c))}`}>{conSigno(cifraDe(c))}</span>
                                         </li>
                                     );
                                 })}
@@ -350,8 +351,8 @@ export default function DiasConDiferencia({
                                                 <span className="text-label font-bold text-content">
                                                     Corte de las {hora12(c.hora)}
                                                 </span>
-                                                <span className={`ml-2 text-label font-bold tabular-nums ${colorDe(c.tramo)}`}>
-                                                    {conSigno(c.tramo)}
+                                                <span className={`ml-2 text-label font-bold tabular-nums ${colorDe(cifraDe(c))}`}>
+                                                    {conSigno(cifraDe(c))}
                                                 </span>
                                             </div>
                                             <Badge variant={e.variant} size="sm" dot>{e.label}</Badge>

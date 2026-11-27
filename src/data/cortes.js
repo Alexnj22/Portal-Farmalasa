@@ -50,7 +50,7 @@ const CAMPOS = `
     recibido_por, recibe:employees!cortes_caja_recibido_por_fkey(name), entrega,
     total_declarado, diferencia_erp, esperado,
     tk_cobros_credito, tk_subtotal, tk_vales, tk_total_caja, tk_devoluciones,
-    tk_tarjeta, tk_credito, cobros_portal_efectivo, efectivo_otro_corte,
+    tk_tarjeta, tk_credito, cobros_portal_efectivo, efectivo_otro_corte, explicado_causa,
     estado, motivo_descarte, observaciones, resuelto_por, resuelto_at
 `;
 
@@ -88,7 +88,7 @@ const CAMPOS_RESUMEN = `
     id, branch_id, tipo, fecha, hora, estado,
     total_declarado, diferencia_erp, esperado,
     tk_subtotal, tk_vales, tk_total_caja, tk_cobros_credito, cobros_portal_efectivo,
-    efectivo_otro_corte
+    efectivo_otro_corte, explicado_causa
 `;
 
 /**

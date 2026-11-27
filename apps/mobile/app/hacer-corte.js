@@ -148,7 +148,8 @@ export default function HacerCorte() {
   if (estado === undefined) cuerpo = <Cargando />;
   else if (estado?.error) cuerpo = <Aviso tono="freno" texto={`No se pudo leer la caja: ${estado.error}`} />;
   else if (resultado) {
-    const acumulada = Number(resultado.diferencia || 0);
+    // Sin lo que ya tiene causa (2026-11-27), como en el portal.
+    const acumulada = Number(resultado.acumuladoSinCausa ?? resultado.diferencia ?? 0);
     const dif = resultado.tramo != null ? Number(resultado.tramo) : acumulada;
     const cuadro = Math.abs(dif) < 0.005;
     const conAcumulada = resultado.tramo != null && Math.abs(acumulada - dif) >= 0.005;

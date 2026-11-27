@@ -274,51 +274,40 @@ describe('causa parcial', () => {
     });
 });
 
-import { cifraSinCausa, conCausasDelDia, difsPorCorteDe } from '@nucleo/utils/diferenciasDeCaja';
+import { cifraDe } from '@nucleo/utils/diferenciasDeCaja';
+import { conTramoPorSalaYDia } from '@nucleo/utils/cortesDiagnostico';
 
-describe('cifraSinCausa — la cifra del corte descuenta lo que tiene causa', () => {
+describe('cifraDe — Días con diferencia descuenta lo que tiene causa', () => {
     it('Salud 2, 26-nov: +11.85 con 4.95 explicados se lee +6.90', () => {
-        expect(cifraSinCausa(11.85, [{ via: 'JUSTIFICA', monto: 4.95 }])).toEqual({ cifra: 6.9, explicado: 4.95 });
+        expect(cifraDe({ tramo: 11.85, diferencias: [{ via: 'JUSTIFICA', monto: 4.95 }] })).toBe(6.9);
     });
-    it('un faltante conserva el signo', () => {
-        expect(cifraSinCausa(-10, [{ via: 'JUSTIFICA', monto: 3 }]).cifra).toBe(-7);
+    it('un faltante conserva el signo; responsables no se descuentan', () => {
+        expect(cifraDe({ tramo: -10, diferencias: [{ via: 'JUSTIFICA', monto: -3 }] })).toBe(-7);
+        expect(cifraDe({ tramo: -10, diferencias: [{ via: 'REPONE', monto: -10 }] })).toBe(-10);
     });
-    it('responsables o retiro no se descuentan', () => {
-        expect(cifraSinCausa(-10, [{ via: 'REPONE', monto: 10 }])).toEqual({ cifra: -10, explicado: 0 });
-    });
-    it('anuladas no cuentan y todo explicado da cero', () => {
-        expect(cifraSinCausa(5, [{ via: 'JUSTIFICA', monto: 5, anulada_at: 'x' }]).cifra).toBe(5);
-        expect(cifraSinCausa(5, [{ via: 'JUSTIFICA', monto: 5 }]).cifra).toBe(0);
-    });
-    it('sin tramo, sin cifra', () => {
-        expect(cifraSinCausa(null, [])).toEqual({ cifra: null, explicado: 0 });
-    });
+    it('sin tramo, sin cifra', () => { expect(cifraDe({ tramo: null })).toBe(null); });
 });
 
-describe('conCausasDelDia — el acumulado y lo que viene de antes descuentan las causas', () => {
-    // Salud 2, 26-nov, como lo deja `conTramoPorSalaYDia`.
+describe('conTramoPorSalaYDia — la cifra, el acumulado y lo heredado descuentan explicado_causa', () => {
+    const base = { branch_id: 25, fecha: '2026-11-26', tipo: 'C', estado: 'CONFIRMADO', tk_total_caja: null };
+    // Sin las piezas del juez, la diferencia es `diferencia_erp` (acumulada del día).
     const dia = [
-        { id: 3633, branch_id: 25, fecha: '2026-11-26', hora: '12:10:12', estado: 'CONFIRMADO', tramo: 11.85, acumulado: 11.85, arrastre: 0, aportes: [] },
-        { id: 3648, branch_id: 25, fecha: '2026-11-26', hora: '19:04:19', estado: 'CONFIRMADO', tramo: 0, acumulado: 11.85, arrastre: 11.85, aportes: [{ hora: '12:10:12', tramo: 11.85 }] },
+        { ...base, id: 3633, hora: '12:10:12', total_declarado: 478.01, diferencia_erp: 11.85, explicado_causa: 4.95 },
+        { ...base, id: 3648, hora: '19:04:19', total_declarado: 1022.88, diferencia_erp: 11.85, explicado_causa: 0 },
     ];
-    const difs = difsPorCorteDe([{ corte_id: 3633, via: 'JUSTIFICA', monto: 4.95 }]);
-    const [m, n] = conCausasDelDia(dia, difs);
-    it('el de las 12:10 acumula 6.90 y sigue sin arrastre', () => {
-        expect(m.acumulado).toBe(6.9);
-        expect(m.arrastre).toBe(0);
+    const [m, n] = conTramoPorSalaYDia(dia).sort((a, b) => a.id - b.id);
+    it('el de las 12:10: tramo 11.85, cifra 6.90, acumulado sin causa 6.90', () => {
+        expect(m.tramo).toBe(11.85);
+        expect(m.cifra).toBe(6.9);
+        expect(m.explicado).toBe(4.95);
+        expect(m.acumuladoSinCausa).toBe(6.9);
         expect(m.encadenado).toBe(false);
     });
-    it('el de la noche hereda 6.90, no 11.85, y su aporte también', () => {
-        expect(n.acumulado).toBe(6.9);
+    it('el de la noche hereda 6.90, no 11.85', () => {
+        expect(n.cifra).toBe(0);
         expect(n.arrastre).toBe(6.9);
+        expect(n.acumuladoSinCausa).toBe(6.9);
         expect(n.aportes).toEqual([{ hora: '12:10:12', tramo: 6.9 }]);
         expect(n.encadenado).toBe(true);
-    });
-    it('un pendiente no corre lo que heredan los siguientes', () => {
-        const [, n2] = conCausasDelDia([{ ...dia[0], estado: 'PENDIENTE' }, { ...dia[1], arrastre: 0, acumulado: 11.85, tramo: 11.85 }], difs);
-        expect(n2.acumulado).toBe(11.85);
-    });
-    it('sin resoluciones devuelve lo mismo', () => {
-        expect(conCausasDelDia(dia, new Map())).toBe(dia);
     });
 });

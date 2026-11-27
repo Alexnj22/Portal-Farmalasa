@@ -9584,6 +9584,7 @@ export type Database = {
           erp_corte_id: number
           esperado: number | null
           estado: string
+          explicado_causa: number
           fecha: string
           hora: string
           id: number
@@ -9633,6 +9634,7 @@ export type Database = {
           erp_corte_id: number
           esperado?: number | null
           estado?: string
+          explicado_causa?: number
           fecha: string
           hora: string
           id?: never
@@ -9682,6 +9684,7 @@ export type Database = {
           erp_corte_id?: number
           esperado?: number | null
           estado?: string
+          explicado_causa?: number
           fecha?: string
           hora?: string
           id?: never
@@ -35159,6 +35162,8 @@ export type Database = {
         }
         Returns: number
       }
+      corte_explicado_de: { Args: { p_corte_id: number }; Returns: number }
+      corte_explicado_hasta: { Args: { p_corte_id: number }; Returns: number }
       corte_no_conto_efectivo: {
         Args: {
           p_declarado: number
@@ -38402,6 +38407,10 @@ export type Database = {
           total: number
         }[]
       }
+      get_ventas_por_hora_de_la_semana: {
+        Args: { p_branch_id: number }
+        Returns: Json
+      }
       get_ventas_receta_stats: {
         Args: {
           p_anuladas?: string
@@ -40398,6 +40407,7 @@ export type Database = {
           erp_corte_id: number
           esperado: number | null
           estado: string
+          explicado_causa: number
           fecha: string
           hora: string
           id: number
@@ -41108,6 +41118,7 @@ export type Database = {
           erp_corte_id: number
           esperado: number | null
           estado: string
+          explicado_causa: number
           fecha: string
           hora: string
           id: number

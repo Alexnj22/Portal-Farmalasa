@@ -8,7 +8,6 @@ import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '@nucleo/utils/cortesDiagnostico';
 import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
-import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 
 /**
@@ -69,7 +68,6 @@ const TarjetaCorte = memo(function TarjetaCorte({
     onConfirmar,           // (corte) — el camino de un clic, sólo si cuadra
     ocupado = false,
     compacta = false,
-    diferencias = null,    // resoluciones vivas del corte: la cifra descuenta lo que tiene causa
 }) {
     const esZ = corte.tipo === 'Z';
     /* Una LECTURA (tipo X) no cuenta el efectivo: no tiene esperado, ni
@@ -99,9 +97,9 @@ const TarjetaCorte = memo(function TarjetaCorte({
     const noEsConteo = sinDecision || sinConteo;
     const desc = corte.estado === 'DESCARTADO';
     const pendiente = corte.estado === 'PENDIENTE';
-    // Lo que se pinta: el tramo menos lo que ya tiene causa (mismo canónico
-    // que el detalle). Sin resoluciones, el tramo tal cual.
-    const sinCausa = cifraSinCausa(corte.tramo, diferencias);
+    // Lo que se pinta: el tramo menos lo que ya tiene causa. Lo calcula
+    // `conTramoPorSalaYDia` para todas las pantallas (2026-11-27).
+    const sinCausa = { cifra: corte.cifra ?? corte.tramo, explicado: Math.abs(Number(corte.explicado) || 0) };
     const sev = severidad(corte.tramo);
     const sevCifra = desc ? sev : severidad(sinCausa.cifra);
     const ct = contraste(corte);

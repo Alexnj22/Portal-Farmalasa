@@ -25,7 +25,7 @@ const DIA = [
 describe('la diferencia del tramo', () => {
     it('mide contra el último CONFIRMADO; los descartados no corren la base', () => {
         const previo = acumuladoAntesDe(DIA, { hora: '19:07:35', excluirId: 1555 });
-        expect(previo).toEqual({ valor: 0.60, hora: '13:04:23' });
+        expect(previo).toEqual({ valor: 0.60, hora: '13:04:23', explicado: 0 });
         const r = conTramoDelCorte(resultadoDeLaFila(DIA[3]), previo);
         expect(r.diferencia).toBe(0.55);
         expect(r.tramo).toBe(-0.05);
@@ -33,7 +33,7 @@ describe('la diferencia del tramo', () => {
 
     it('el primer corte del día: tramo y acumulada son lo mismo', () => {
         const previo = acumuladoAntesDe(DIA, { hora: '13:04:23', excluirId: 1539 });
-        expect(previo).toEqual({ valor: 0, hora: null });
+        expect(previo).toEqual({ valor: 0, hora: null, explicado: 0 });
         expect(conTramoDelCorte(resultadoDeLaFila(DIA[1]), previo).tramo).toBe(0.60);
     });
 

@@ -80,7 +80,8 @@ export function construirComprobanteDeCorte({ resultado, sala, hechoPor, hechoAt
      * confirmado del día—, no la acumulada (usuario, 2026-10-05: «el
      * importante es la diferencia del turno»). La acumulada va debajo sólo
      * cuando dice otra cosa: el primer corte del día tiene las dos iguales. */
-    const acumulada = Number(resultado?.diferencia ?? 0);
+    // Sin lo que ya tiene causa (2026-11-27), como en Cortes.
+    const acumulada = Number(resultado?.acumuladoSinCausa ?? resultado?.diferencia ?? 0);
     const dif = resultado?.tramo != null ? Number(resultado.tramo) : acumulada;
     const conAcumulada = resultado?.tramo != null && Math.abs(acumulada - dif) >= 0.005;
 

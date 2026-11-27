@@ -21,7 +21,6 @@ import {
     formasFueraDelComprobante, noContoEfectivo, notaDeCifra, severidad, sugerenciasDeCorte,
 } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from './useResolverCorte';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
@@ -275,12 +274,13 @@ export default function CorteDetalleModal({
     // Lo que se PINTA arriba: el tramo menos lo que las causas ya explicaron
     // (Salud 2, 27-nov: +$11.85 con $4.95 explicados se lee +$6.90). `cifra` y
     // `sev` siguen siendo la diferencia del corte para todo lo demás.
-    const { cifra: cifraMostrada, explicado } = useMemo(
-        () => (descartado ? { cifra, explicado: 0 } : cifraSinCausa(cifra, diferencias)),
-        [descartado, cifra, diferencias]);
+    // Lo calcula `conTramoPorSalaYDia` (la base sella `explicado_causa`), el
+    // mismo número que ven el Inicio, Bolsas y la app.
+    const explicado = descartado ? 0 : Math.abs(Number(visible?.explicado) || 0);
+    const cifraMostrada = descartado ? cifra : (visible?.cifra ?? cifra);
     const conCausa = explicado > 0;
-    // Se mide contra un corte anterior. `encadenado` lo pone `conCausasDelDia`
-    // (el acumulado ya descuenta las causas y dejó de servir para esto).
+    // Se mide contra un corte anterior (el acumulado sin causa ya no sirve
+    // para decidirlo).
     const encadenado = visible?.encadenado ?? (visible?.tramo !== visible?.acumulado);
     const esZ = visible?.tipo === 'Z';
     /* Una LECTURA (tipo X) no contó efectivo: no tiene esperado ni diferencia,
@@ -570,7 +570,7 @@ export default function CorteDetalleModal({
                                 {encadenado && (
                                     <div className="flex justify-between gap-3">
                                         <span>Acumulado hasta esta hora</span>
-                                        <span className="tabular-nums">{conSigno(visible.acumulado ?? 0)}</span>
+                                        <span className="tabular-nums">{conSigno(visible.acumuladoSinCausa ?? visible.acumulado ?? 0)}</span>
                                     </div>
                                 )}
                             </div>

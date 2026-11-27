@@ -28,14 +28,13 @@ import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchAbonosDelDia, fetchCortes, fetchDiferencias, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
+import { fetchAbonosDelDia, fetchCortes, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
 import { cerrarElDia } from '@nucleo/data/bolsas';
 import {
   cobrosDeCredito, conTramoPorSalaYDia, desgloseDelCierre, diferenciaDelCorte, entroEnEfectivo, formasFueraDelComprobante,
   noContoEfectivo, notaDeCifra, seConfirmaDeUnClic, severidad, sugerenciasDeCorte,
 } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { cifraSinCausa, conCausasDelDia, difsPorCorteDe } from '@nucleo/utils/diferenciasDeCaja';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -80,18 +79,13 @@ export default function Corte() {
   const [abonos, setAbonos] = useState(null);
   const [movs, setMovs] = useState([]);
   const [firmo, setFirmo] = useState(null);
-  const [resoluciones, setResoluciones] = useState([]);
 
   const cargar = useCallback(async () => {
     const fecha = String(fechaParam || hoySV());
-    // Lo que ya tiene causa se descuenta de la cifra, del acumulado y de lo
-    // que viene de antes (mismo canónico que el portal).
-    const [filas, difs] = await Promise.all([
-      fetchCortes({ desde: fecha, hasta: fecha }).catch(() => null),
-      fetchDiferencias({ desde: fecha, hasta: fecha }).catch(() => []),
-    ]);
-    const todos = conCausasDelDia(conTramoPorSalaYDia(filas || []), difsPorCorteDe(difs));
-    setResoluciones((difs || []).filter((d) => String(d.corte_id) === String(id) && !d.anulada_at));
+    // Lo que ya tiene causa lo descuenta `conTramoPorSalaYDia` (la base sella
+    // `explicado_causa`): el mismo número que en el portal.
+    const filas = await fetchCortes({ desde: fecha, hasta: fecha }).catch(() => null);
+    const todos = conTramoPorSalaYDia(filas || []);
     setCorte(todos.find((c) => String(c.id) === String(id)) ?? null);
   }, [id, fechaParam]);
   useEffect(() => { cargar(); }, [cargar]);
@@ -138,9 +132,8 @@ export default function Corte() {
   // `declarado − diferencia_erp`, la cifra cruda del origen.
   const esperado = descartado ? propia?.esperado : (corte?.esperadoUsado ?? propia?.esperado);
   const sev = severidad(dif);
-  const { cifra: difMostrada, explicado } = useMemo(
-    () => (descartado ? { cifra: dif, explicado: 0 } : cifraSinCausa(dif, resoluciones)),
-    [descartado, dif, resoluciones]);
+  const explicado = descartado ? 0 : Math.abs(Number(corte?.explicado) || 0);
+  const difMostrada = descartado ? dif : (corte?.cifra ?? dif);
   const conCausa = explicado > 0;
   const encadenado = corte?.encadenado ?? (corte?.tramo !== corte?.acumulado);
   const sevMostrada = severidad(difMostrada);
@@ -302,7 +295,7 @@ export default function Corte() {
                 </>
               ) : null}
               <Dato rotulo="Se contó" valor={formatMoney(corte.total_declarado)} fuerte />
-              {encadenado ? <Dato rotulo="Acumulado hasta esta hora" valor={conSigno(corte.acumulado ?? 0)} /> : null}
+              {encadenado ? <Dato rotulo="Acumulado hasta esta hora" valor={conSigno(corte.acumuladoSinCausa ?? corte.acumulado ?? 0)} /> : null}
             </Seccion>
           )}
 

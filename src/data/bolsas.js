@@ -1938,7 +1938,8 @@ export async function fetchFacturasMapfre(sala, buscar = '') {
 export async function fetchDiferenciasDeCortes({ desde, hasta }) {
     const cortes = await fetchCortesResumen({ desde, hasta });
     if (cortes == null) return null;
-    return new Map(conTramoPorSalaYDia(cortes).map((c) => [c.id, c.tramo]));
+    // `cifra`: sin lo que ya tiene causa, el mismo número que Cortes (2026-11-27).
+    return new Map(conTramoPorSalaYDia(cortes).map((c) => [c.id, c.cifra ?? c.tramo]));
 }
 
 /** Lo mismo para UN corte (el detalle de una bolsa). `undefined` si no se pudo leer. */
@@ -1947,7 +1948,7 @@ export async function fetchDiferenciaDeUnCorte({ corteId, branchId, fecha }) {
     const { cortes, error } = await fetchCortesDelDiaDeSala({ branchId, fecha });
     if (error) return undefined;
     const c = conTramoPorSalaYDia(cortes).find((x) => x.id === corteId);
-    return c ? c.tramo : null;
+    return c ? (c.cifra ?? c.tramo) : null;
 }
 
 /**

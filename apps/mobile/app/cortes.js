@@ -75,7 +75,8 @@ function Tarjeta({ c, sala, conSala, conFecha, puedeResolver }) {
   const acciones = puedeResolver && c.estado === 'PENDIENTE' && c.tipo !== 'Z' && c.tipo !== 'X';
   const sinConteo = noContoEfectivo(c);
   const descartado = c.estado === 'DESCARTADO';
-  const dif = descartado ? diferenciaDelCorte(c).valor : c.tramo;
+  // Sin lo que ya tiene causa (`conTramoPorSalaYDia`), como en el portal.
+  const dif = descartado ? diferenciaDelCorte(c).valor : (c.cifra ?? c.tramo);
   const sev = severidad(dif);
   const [estado, color] = ESTADO[c.estado] ?? [c.estado, MARCA.azulClaro];
   const quien = c.hizo?.name ? shortEmployeeName({ name: c.hizo.name }) : (c.empleado_texto || 'Desde la caja');

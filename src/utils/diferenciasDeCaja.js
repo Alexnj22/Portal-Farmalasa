@@ -95,79 +95,17 @@ export function explicadoDe(corte) {
 }
 
 /**
- * La cifra que se MUESTRA de un corte: su tramo menos lo que las causas ya
- * explicaron, con el signo del tramo. Pedido del usuario (Salud 2, 27-nov): un
- * sobrante de +$11.85 con $4.95 explicados se lee +$6.90, no +$11.85. Lo que
- * cubren responsables o un retiro NO se descuenta: esa diferencia sí existió.
- * @returns {{ cifra: number|null, explicado: number }}
+ * La cifra que se MUESTRA de un corte de «Días con diferencia» (la forma de
+ * `get_dias_con_diferencia`): su tramo menos lo que las causas ya explicaron,
+ * con el signo del tramo. El mismo número que `cifra` de
+ * `conTramoPorSalaYDia` (2026-11-27, Salud 2: +$11.85 con $4.95 explicados se
+ * lee +$6.90 en todas partes). Responsables o retiro no se descuentan.
  */
-export function cifraSinCausa(tramo, diferencias) {
-    if (tramo == null) return { cifra: null, explicado: 0 };
-    const explicado = explicadoDe({ tramo, diferencias: diferencias || [] });
-    if (explicado <= 0) return { cifra: Number(tramo), explicado: 0 };
-    const signo = Number(tramo) < 0 ? -1 : 1;
-    const resto = (Math.abs(centavos(tramo)) - Math.round(explicado * 100)) / 100;
-    return { cifra: signo * resto, explicado };
-}
-
-/**
- * El acumulado y el arrastre del día, sin lo que ya tiene causa. Recibe los
- * cortes YA pasados por `conTramoPorSalaYDia` y las resoluciones vivas por
- * corte (`Map<corte_id, resolución[]>`). Pedido del usuario (Salud 2, 27-nov):
- * el corte de la noche decía «+$11.85 viene de antes» cuando $4.95 de eso ya
- * tenían causa en el de las 12:10.
- *
- * Igual que la base de `conTramoPorSalaYDia`, sólo un corte CONFIRMADO corre
- * lo que heredan los siguientes. `encadenado` guarda si el corte se mide
- * contra uno anterior (el arrastre de antes de descontar), para que el rótulo
- * «de este corte» / «desde el corte anterior» no cambie por una causa.
- */
-export function conCausasDelDia(cortes, difsPorCorte) {
-    if (!difsPorCorte || difsPorCorte.size === 0) return cortes;
-    const orden = (cortes || []).map((c, i) => ({ c, i }))
-        .sort((a, b) => String(a.c.branch_id).localeCompare(String(b.c.branch_id))
-            || String(a.c.fecha).localeCompare(String(b.c.fecha))
-            || String(a.c.hora).localeCompare(String(b.c.hora))
-            || (Number(a.c.id) - Number(b.c.id)));
-    const out = new Array(orden.length);
-    let clave = null;
-    let previo = 0;              // centavos con signo ya explicados en confirmados anteriores
-    let porHora = new Map();     // hora → centavos explicados (para los aportes)
-    for (const { c, i } of orden) {
-        const k = `${c.branch_id}|${c.fecha}`;
-        if (k !== clave) { clave = k; previo = 0; porHora = new Map(); }
-        if (c.tramo == null) { out[i] = c; continue; }
-        const signo = Number(c.tramo) < 0 ? -1 : 1;
-        const propio = signo * Math.round(explicadoDe({ tramo: c.tramo, diferencias: difsPorCorte.get(c.id) || [] }) * 100);
-        const encadenado = Math.abs(Number(c.arrastre || 0)) >= 0.005;
-        if (previo === 0 && propio === 0) { out[i] = { ...c, encadenado }; }
-        else {
-            const aportes = (c.aportes || [])
-                .map((a) => ({ ...a, tramo: (Math.round(Number(a.tramo) * 100) - (porHora.get(a.hora) || 0)) / 100 }))
-                .filter((a) => Math.abs(a.tramo) >= 0.01);
-            out[i] = {
-                ...c, encadenado, aportes,
-                arrastre: (Math.round(Number(c.arrastre || 0) * 100) - previo) / 100,
-                acumulado: c.acumulado == null ? null : (Math.round(Number(c.acumulado) * 100) - previo - propio) / 100,
-            };
-        }
-        if (c.estado === 'CONFIRMADO' && propio !== 0) {
-            previo += propio;
-            porHora.set(c.hora, propio);
-        }
-    }
-    return out;
-}
-
-/** Las resoluciones vivas agrupadas por corte. */
-export function difsPorCorteDe(difs) {
-    const m = new Map();
-    for (const d of difs || []) {
-        if (!d || d.anulada_at) continue;
-        if (!m.has(d.corte_id)) m.set(d.corte_id, []);
-        m.get(d.corte_id).push(d);
-    }
-    return m;
+export function cifraDe(corte) {
+    if (corte?.tramo == null) return null;
+    const t = Number(corte.tramo);
+    const e = Math.round(explicadoDe(corte) * 100);
+    return (Math.sign(t) * (Math.abs(Math.round(t * 100)) - e)) / 100;
 }
 
 /** Lo que ninguna resolución cubre todavía, en dólares y sin signo. */

@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import useDiasConDiferencia from '@nucleo/hooks/useDiasConDiferencia';
-import { desgloseDelDia, movimientoDe, pendienteDe, porSigno, resolucionesDe, saldoDeDiferencia } from '@nucleo/utils/diferenciasDeCaja';
+import { cifraDe, desgloseDelDia, movimientoDe, pendienteDe, porSigno, resolucionesDe, saldoDeDiferencia } from '@nucleo/utils/diferenciasDeCaja';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
@@ -93,8 +93,9 @@ export default function CajaDia() {
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>
                           {`${hora12(c.hora)}${c.empleado_texto ? ` · ${c.empleado_texto}` : ''}`}
                         </Text>
+                        {/* Sin lo que ya tiene causa: el mismo número que el portal. */}
                         <Text style={{ color: Number(c.tramo) < 0 ? MARCA.rojo : MARCA.ambar, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                          {`${Number(c.tramo) < 0 ? '−' : '+'}${formatMoney(Math.abs(Number(c.tramo)))}`}
+                          {`${Number(c.tramo) < 0 ? '−' : '+'}${formatMoney(Math.abs(Number(cifraDe(c))))}`}
                         </Text>
                       </View>
                       <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>

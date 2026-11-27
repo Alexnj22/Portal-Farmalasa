@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.14 — Lo que ya tiene causa sale de la diferencia del corte en todas partes
+
+Usuario, 27-nov: «en todos lados. no tiene sentido tener información distinta
+según donde se vea». Cortes ya decía +$6.90 para el sobrante de Salud 2 del
+26-nov (+$11.85 con $4.95 explicados); el Inicio, Bolsas, Mi caja, la app y
+los avisos seguían con +$11.85 porque cada uno calculaba por su cuenta.
+
+- La base sella `cortes_caja.explicado_causa` (suma con signo de las causas
+  vivas, trigger desde `cortes_caja_diferencias`) y
+  `corte_explicado_hasta(id)` da lo que pesa en el acumulado.
+- `conTramoPorSalaYDia` (portal y app, todas las pantallas) devuelve `cifra`
+  (el tramo sin causa), `explicado`, `acumuladoSinCausa`, y descuenta lo
+  explicado de `arrastre` y `aportes`. `tramo` y `acumulado` siguen siendo el
+  dinero del cajón: sobre eso se resuelve. Sale `conCausasDelDia` de v2.1606.13.
+- Lo leen la tarjeta y el detalle de Cortes (también en el Inicio), Bolsas,
+  la app (cortes y detalle), Días con diferencia (`cifraDe`, portal y app) y la
+  acumulada de un corte recién hecho (Mi caja, papel, app).
+- `caja_estado` y `operar-caja` (redesplegada, JWT) mandan la columna.
+  `avisar_cierre_del_dia` y `avisar_diferencia_de_ayer` hablan de lo que queda
+  sin causa.
+- No cambian `corte_tramo` ni `corte_diferencia`, ni los conteos del resumen
+  (cuadró / sobrante / faltante): miden el conteo, no la causa.
+- Migración `20261127210331`.
+
 ## v2.1606.13 — El acumulado del día y lo que viene de antes descuentan las causas
 
 Salud 2, 27-nov: con $4.95 del sobrante de las 12:10 explicados, el corte de la

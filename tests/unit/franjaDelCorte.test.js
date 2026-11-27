@@ -42,7 +42,7 @@ describe('la franja del corte usa el juez canónico, no la cifra del origen', ()
 
 describe('la base del tramo con la lista de `caja_estado`', () => {
     it('con las piezas del tiquete, el acumulado previo es el del juez', () => {
-        expect(acumuladoAntesDe([CORTE_161])).toEqual({ valor: 0.01, hora: '21:00:26' });
+        expect(acumuladoAntesDe([CORTE_161])).toEqual({ valor: 0.01, hora: '21:00:26', explicado: 0 });
     });
 
     it('sin las piezas (la lista vieja) el juez sólo tiene la cifra del origen — por eso viajan', () => {

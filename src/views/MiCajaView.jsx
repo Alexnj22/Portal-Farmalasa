@@ -3281,7 +3281,8 @@ function DialogoCorte({ sala, abierto, ocupado, resultado, pendientes, yaEmbolsa
     if (resultado) {
         /* La cifra grande es la del tramo; la acumulada del día va debajo
          * sólo cuando dice otra cosa. Ver `conTramoDelCorte`. */
-        const acumulada = Number(resultado.diferencia || 0);
+        // Sin lo que ya tiene causa (2026-11-27), como en Cortes.
+        const acumulada = Number(resultado.acumuladoSinCausa ?? resultado.diferencia ?? 0);
         const dif = resultado.tramo != null ? Number(resultado.tramo) : acumulada;
         const cuadro = Math.abs(dif) < 0.005;
         const conAcumulada = resultado.tramo != null && Math.abs(acumulada - dif) >= 0.005;

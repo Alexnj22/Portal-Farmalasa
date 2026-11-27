@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1605.3 — Avisos de clientes: difusión de una promoción a todos
+
+Pedido del usuario: avisar una vez a quienes tienen la app (Android e iOS) que
+hay promoción en las historias.
+
+- `supabase/functions/avisos-clientes`: modo `difusion` (`ref`, `titulo`,
+  `cuerpo`, `url`). Con `customer_id` va sólo a esa ficha, sin anotar (prueba).
+  Sin él, a todos los que aceptaron promociones y tienen avisos encendidos,
+  anotado como `oferta` / `difusion:<ref>`: la UNIQUE impide mandarlo dos veces.
+
+Novedades: no — no cambia ninguna pantalla del personal.
+Gemelo: avisos-clientes — sólo la función, ninguna pantalla.
+
 ## v2.1605.2 — La bandeja de notificaciones de la app de clientes ya no muestra ejemplos
 
 Pedido del usuario: con la bandeja vacía salían cuatro notificaciones de

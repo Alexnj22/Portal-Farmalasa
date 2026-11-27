@@ -47,6 +47,12 @@
 //
 // Prueba: `{ "prueba": "cumpleanos", "customer_id": N }` le manda a esa ficha
 // el aviso de cumpleaños (sin anotarlo), para ver cómo llega.
+//
+// Difusión (2026-11-27): `{ "difusion": { "ref", "titulo", "cuerpo", "url" } }`
+// manda UN aviso de promoción a todos los que aceptaron promociones y tienen
+// los avisos encendidos. Con `"customer_id": N` va sólo a esa ficha y no se
+// anota (para verlo antes). Sin él se anota como tipo `oferta`, ref
+// `difusion:<ref>`: repetir la llamada con el mismo `ref` no vuelve a mandar.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
@@ -116,6 +122,37 @@ Deno.serve(async (req) => {
         url: "/puntos?cumple=1",
       }]);
       return json({ ok: true, prueba: true, ...r });
+    }
+
+    // ── Difusión: un aviso de promoción a todos (o a una ficha de prueba) ──
+    const d = body?.difusion;
+    if (d) {
+      const ref = String(d.ref ?? "").trim(), titulo = String(d.titulo ?? "").trim();
+      const cuerpo = String(d.cuerpo ?? "").trim(), url = String(d.url ?? "/puntos");
+      if (!ref || !titulo || !cuerpo || !url.startsWith("/")) return json({ error: "difusión incompleta: ref, titulo, cuerpo y url (/…)" }, 400);
+      const aviso = (customer_id: number): Aviso => ({ customer_id, tipo: "oferta", ref: `difusion:${ref}`, titulo, cuerpo, url });
+      if (Number(body?.customer_id)) {
+        const id = Number(body.customer_id);
+        if (!tokens.has(id)) return json({ ok: false, motivo: "esa ficha no tiene avisos encendidos" });
+        const r = await enviar(admin, tokens, [aviso(id)]);
+        return json({ ok: true, prueba: true, enviados: r.enviados, errores: r.errores });
+      }
+      const { data: promo, error: eP } = await admin.from("customers")
+        .select("id").in("id", [...tokens.keys()]).eq("acepta_promociones", true);
+      if (eP) throw eP;
+      if (!promo?.length) return json({ ok: true, enviados: 0, motivo: "nadie con promociones y avisos encendidos" });
+      // Anotar primero: lo ya anotado con este ref no vuelve (la UNIQUE lo frena).
+      const { data: nuevos, error: eA } = await admin.from("app_cliente_avisos")
+        .upsert(promo.map((c: any) => aviso(c.id)), { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true })
+        .select("id, customer_id");
+      if (eA) throw eA;
+      const r = await enviar(admin, tokens, (nuevos ?? []).map((n: any) => aviso(Number(n.customer_id))));
+      const listos = (nuevos ?? []).filter((n: any) => r.ok_por.has(Number(n.customer_id))).map((n: any) => n.id);
+      if (listos.length) {
+        const { error } = await admin.from("app_cliente_avisos").update({ enviado: true }).in("id", listos);
+        if (error) console.error("no se pudo marcar la difusión enviada:", error.message);
+      }
+      return json({ ok: true, clientes: nuevos?.length ?? 0, enviados: r.enviados, errores: r.errores });
     }
 
     // `pendientes` (2026-10-12): sólo manda los avisos que escribió la base

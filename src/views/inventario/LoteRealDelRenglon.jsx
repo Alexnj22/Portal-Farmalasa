@@ -31,11 +31,17 @@ import { Campo } from './camposDeConteo';
  *   puede cambiar; una vez cambiado, deja de calcularse.
  *
  * La regla vive en `planDeLotesReales`; los pasos, en `anotarLotesRealesConteo`.
+ *
+ * `recuento` (2026-11-27, Bodega: «debe haber una 3 salida, ajustar ahí
+ * mismo»): el mismo diálogo desde el modo recuento, con el conteo ya
+ * finalizado. Las cantidades se guardan como recuento (`recontar_conteo_item`)
+ * y, como el recuento es ciego, no se muestra ni se precarga lo que había:
+ * quien recuenta escribe todo lo que ve.
  */
 const aMes = (fecha) => (fecha ? String(fecha).slice(0, 7) : '');
 const loteVacio = () => ({ lote: '', vence: '', cantidad: '' });
 
-export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = [], onClose, onListo }) {
+export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = [], recuento = false, onClose, onListo }) {
     const { showToast } = useToastStore();
     const anotar = useStaffStore((s) => s.anotarLotesRealesConteo);
     const [regla, setRegla] = useState({ pideLote: true, pideVence: true });
@@ -53,7 +59,7 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
         if (!open || !item) return;
         setLotes(sinLote
             ? [loteVacio()]
-            : [{ lote: item.lote, vence: aMes(item.fecha_vencimiento), cantidad: String(total) }]);
+            : [{ lote: item.lote, vence: aMes(item.fecha_vencimiento), cantidad: recuento ? '' : String(total) }]);
         setSinLoteEscrito(null);
         let vivo = true;
         fetchReglaDeLoteDelProducto(item.erp_product_id).then(({ data, error }) => {
@@ -62,11 +68,12 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
             if (data) setRegla(reglaDeLoteYVence(data));
         });
         return () => { vivo = false; };
-    }, [open, item, sinLote, total]);
+    }, [open, item, sinLote, total, recuento]);
 
     const anotado = lotes.reduce((t, l) => t + (Number(l.cantidad) || 0), 0);
     const sinLoteAuto = Math.max(0, total - anotado);
-    const sinLoteValor = sinLoteEscrito ?? String(sinLoteAuto);
+    // En el recuento no se calcula: partiría de lo que había, que es lo tapado.
+    const sinLoteValor = sinLoteEscrito ?? (recuento ? '' : String(sinLoteAuto));
 
     const plan = useMemo(() => planDeLotesReales({
         item,
@@ -86,7 +93,7 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
         if (plan.error) { showToast('Falta un dato', plan.error, 'error'); return; }
         setSaving(true);
         try {
-            await anotar(conteoId, item, plan);
+            await anotar(conteoId, item, plan, { recuento });
             const n = plan.nuevos.length + plan.aHermanos.length;
             showToast(n ? 'Lotes anotados' : 'Lote confirmado',
                 n ? `${n} ${n === 1 ? 'lote' : 'lotes'}${sinLote ? `; sin lote impreso: ${plan.original}` : ''}.` : `${plan.original} ${unidad.nombre} en el lote ${item.lote}.`,
@@ -106,7 +113,7 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                 <div className="min-w-0">
                     <TituloDeSeccion nivel="tarjeta">{sinLote ? 'Anotar lote' : 'Confirmar lote'}</TituloDeSeccion>
                     <p className="text-caption text-content-3 truncate max-w-[280px]">
-                        {item.product_nombre} · {unidad.texto} · había {total}
+                        {item.product_nombre} · {unidad.texto}{recuento ? '' : ` · había ${total}`}
                     </p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />
@@ -150,7 +157,12 @@ export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = []
                             value={sinLoteValor} onChange={(e) => setSinLoteEscrito(e.target.value)} inputClassName="text-body-xl tabular-nums" />
                     </Campo>
                 )}
-                {sinLote && (
+                {sinLote && recuento && (
+                    <Notice variant="info">
+                        Escribe todo lo que hay de esta presentación: cada lote y lo que no trae lote. Se guarda como tu recuento.
+                    </Notice>
+                )}
+                {sinLote && !recuento && (
                     <Notice variant="info">
                         Había {total}; anotaste {anotado} con lote. Al aprobar, las que tienen lote salen de «Sin lote» y entran a su lote.
                     </Notice>

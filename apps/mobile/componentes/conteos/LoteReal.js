@@ -25,7 +25,7 @@ import { fallo, listo } from '../Progreso';
 const aMes = (fecha) => (fecha ? String(fecha).slice(0, 7) : '');
 const loteVacio = () => ({ lote: '', vence: '', cantidad: '' });
 
-export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onListo }) {
+export default function LoteReal({ conteoId, item, hermanos = [], recuento = false, onCerrar, onListo }) {
   const anotar = useStaffStore((s) => s.anotarLotesRealesConteo);
   const [regla, setRegla] = useState({ pideLote: true, pideVence: true });
   const [lotes, setLotes] = useState([loteVacio()]);
@@ -36,7 +36,8 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
   // En un conteo ciego la existencia no llega: sin contar todavía, no se sabe
   // cuántas había. Antes se tomaba 0 y la hoja decía «había 0» y precalculaba
   // «Sin lote impreso» con ese 0.
-  const conocido = item?.fisico_cantidad != null || (item?.ver_sistema && item?.sistema_cantidad != null);
+  // En el recuento tampoco: es ciego, quien recuenta escribe todo lo que ve.
+  const conocido = !recuento && (item?.fisico_cantidad != null || (item?.ver_sistema && item?.sistema_cantidad != null));
   const total = conocido ? Number(item.fisico_cantidad ?? item.sistema_cantidad) || 0 : null;
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function LoteReal({ conteoId, item, hermanos = [], onCerrar, onLi
     if (plan.error || guardando) return;
     setGuardando(true);
     try {
-      await anotar(conteoId, item, plan);
+      await anotar(conteoId, item, plan, { recuento });
       const n = plan.nuevos.length + plan.aHermanos.length;
       listo(n ? 'Lotes anotados' : 'Lote confirmado',
         n ? `${n} ${n === 1 ? 'lote' : 'lotes'}${sinLote ? `. Sin lote impreso: ${plan.original}` : ''}.` : `${plan.original} ${unidad.nombre} en el lote ${item.lote}.`);

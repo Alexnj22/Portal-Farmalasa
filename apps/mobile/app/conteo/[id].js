@@ -911,13 +911,15 @@ export default function Conteo() {
                         registrar={registrar} onEnCurso={anotarEnCurso} onSiguiente={siguienteCampo} onEnfocar={enfocar}
                         // En un conteo que ajusta, el lote de un renglón del sistema no se
                         // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.
-                        onLote={editable && !simple && (!conteo?.aplica_en_caja || it.es_agregado_manual) ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
+                        onLote={(editable || recuento) && !simple && (!conteo?.aplica_en_caja || it.es_agregado_manual) ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
                         // …y ése es el camino: los lotes reales de la caja (`LoteReal`).
                         // En todo conteo por lote, ajuste o no (gemelo de `llevaLotesEnLinea`
                         // de la web): en el cíclico de Salud 4, que no ajusta, no había dónde
                         // agregar el segundo lote de un producto (2026-11-17). También en el
                         // área de vencidos (2026-11-24): el lote nace en el estante del renglón.
-                        onLoteReal={editable && !simple && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
+                        // Y en el recuento (2026-11-27, Bodega): quien recuenta es quien
+                        // ve el lote mal anotado; las cantidades entran como recuento.
+                        onLoteReal={(editable || recuento) && !simple && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
                         ajusta={!!conteo?.aplica_en_caja}
                         onRecontar={puedeRecontar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                   </View>
@@ -957,7 +959,7 @@ export default function Conteo() {
       <ElegirLaboratorio visible={eligiendoLab} opciones={opcionesLab} valor={String(laboratorioId)}
         onElegir={(v) => setLaboratorioId(v)} onCerrar={() => setEligiendoLab(false)} />
       <Historial item={historial} simple={conteo?.modo === 'SIMPLE'} onCerrar={() => setHistorial(null)} />
-      <LoteReal conteoId={id} item={loteReal}
+      <LoteReal conteoId={id} item={loteReal} recuento={recuento}
         hermanos={loteReal ? (items[loteReal.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteReal.presentacion ?? '').trim().toUpperCase()) : []}
         onCerrar={() => setLoteReal(null)}
         onListo={() => { if (loteReal) refrescarProducto(loteReal.erp_product_id); }} />

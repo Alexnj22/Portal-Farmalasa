@@ -446,8 +446,13 @@ export const createConteoInventarioSlice = (set, get) => ({
     // nuevos—, y al final el renglón original con lo que le tocó. Así, si algo
     // falla a mitad, el original sigue con su número de antes y no hay
     // unidades que desaparezcan; el error dice qué quedó hecho.
-    anotarLotesRealesConteo: async (conteoId, item, plan) => {
-        const guardar = get().guardarConteoItem;
+    //
+    // `recuento`: con el conteo finalizado, desde el modo recuento (2026-11-27).
+    // Cada cantidad entra como recuento, con su autor y su hora en la bitácora.
+    anotarLotesRealesConteo: async (conteoId, item, plan, { recuento = false } = {}) => {
+        const guardar = recuento
+            ? (id, { fisicoCantidad, nota }) => get().recontarConteoItem(id, { fisicoCantidad, nota })
+            : get().guardarConteoItem;
         let hechos = 0;
         try {
             for (const h of plan.aHermanos) {

@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.15 — En el recuento se corrige el lote y el vencimiento
+
+Bodega, en pleno reconteo: «¿por qué en el reconteo no se puede modificar lote /
+vence? … debe haber una 3 salida, ajustar ahí mismo».
+
+- El recuento sólo existe con el conteo finalizado, y corregir el lote sólo se
+  aceptaba con el conteo abierto. Ahora, en «Modo recuento», cada renglón ofrece
+  su lápiz (también los «Sin lote»): en un conteo que ajusta abre «Lote y vence»
+  y en uno que no ajusta, «Corregir lote/vencimiento».
+- En el recuento el diálogo es ciego: no muestra ni precarga lo que había. Las
+  cantidades entran como recuento (`recontar_conteo_item`), con autor y hora.
+- Base (`20261127211211_conteo_lote_y_vence_en_el_recuento`):
+  `agregar_item_conteo` y `editar_lote_conteo_item` aceptan el conteo
+  FINALIZADO sólo con el permiso del recuento (aprobar o
+  `conteo_inventario_recontar`). Abierto, todo sigue igual.
+- App del personal: lo mismo en el recuento («Lote y vence», «Anotar lote»,
+  «Corregir lote»).
+
 ## v2.1606.14 — Lo que ya tiene causa sale de la diferencia del corte en todas partes
 
 Usuario, 27-nov: «en todos lados. no tiene sentido tener información distinta

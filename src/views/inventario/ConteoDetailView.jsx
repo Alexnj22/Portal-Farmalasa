@@ -662,8 +662,12 @@ function ItemRow({
                         {/* Sin lote no hay etiqueta que corregir: el lápiz sale. Lo
                             rechaza también `editar_lote_conteo_item`, porque una
                             restricción que solo vive en el cliente es decorativa. */}
-                        {editable && !simple && (
-                            vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? null : (
+                        {/* En el recuento también (2026-11-27, Bodega): quien
+                            recuenta ve la caja y es quien encuentra el lote mal
+                            anotado. Ahí sale aunque diga «Sin lote»: no tiene
+                            filas en línea, y el diálogo anota los lotes reales. */}
+                        {(editable || recuento) && !simple && (
+                            vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) && !recuento ? null : (
                                 <Button variant="ghost" icon={Pencil} disabled={saving} iconOnly
                                     title={vaPorLoteReal(ajusta, item) ? 'Confirmar o corregir lote/vencimiento' : 'Corregir lote/vencimiento'}
                                     onClick={() => onEditLote(item)} />
@@ -1030,8 +1034,8 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         `max(…, var(--tap-min))`, que en un dedo son 44px. Escribirlo
                         acá era pelearle al canónico con una clase que puede perder o
                         ganar según el orden del CSS generado. */}
-                    {editable && onEditLote && !simple && (
-                        vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? null : (
+                    {(editable || recuento) && onEditLote && !simple && (
+                        vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) && !recuento ? null : (
                             <Button variant="ghost" icon={Pencil} iconOnly disabled={saving}
                                 className="shrink-0"
                                 title={vaPorLoteReal(ajusta, item) ? 'Confirmar o corregir lote/vencimiento' : 'Corregir lote/vencimiento'}
@@ -2896,7 +2900,7 @@ export default function ConteoDetailView() {
             />
             {loteRealItem && (
                 <Suspense fallback={null}>
-                    <LoteRealDelRenglon open conteoId={id} item={loteRealItem}
+                    <LoteRealDelRenglon open conteoId={id} item={loteRealItem} recuento={recuento}
                         hermanos={((loteRealItem.is_vencidos ? vencidosItems : itemsByProduct)[loteRealItem.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteRealItem.presentacion ?? '').trim().toUpperCase())}
                         onClose={() => setLoteRealItem(null)}
                         onListo={() => { if (loteRealItem.is_vencidos) cargarVencidos(); load(); }} />

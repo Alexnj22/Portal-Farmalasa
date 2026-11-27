@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.8 — La diferencia del corte descuenta lo que ya tiene causa
+
+Pedido del usuario (Salud 2, corte del 26-nov 12:10): con +$11.85 de sobrante
+y $4.95 explicados por la Fac 77149, el corte seguía diciendo +$11.85. Ahora la
+cifra grande es lo que queda sin causa (+$6.90) y debajo va «Diferencia del
+corte +$11.85 · Con causa −$4.95».
+
+- Canónico `cifraSinCausa(tramo, diferencias)` en `src/utils/diferenciasDeCaja.js`:
+  sólo descuenta las causas (`JUSTIFICA`); responsables o retiro no, porque esa
+  diferencia sí existió.
+- Lo usan el detalle del corte, la tarjeta de la lista de Cortes y el detalle
+  en la app del personal (`corte/[id].js`).
+- `cifra` y `sev` del detalle siguen siendo la diferencia del corte para la
+  firma y el diagnóstico; la insignia de la tarjeta (Sobrante/Faltante) también.
+
 ## v2.1606.7 — Compras: bonificado a un centavo y percepción dentro de la operación
 
 Barrido de las ~300 cargas guardadas buscando la misma familia de error:

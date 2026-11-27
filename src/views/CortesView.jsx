@@ -581,6 +581,17 @@ const CortesView = () => {
     // Desde el 2026-09-25 un faltante sin causa no se anota entero: se anotan
     // sus ABONOS, cada uno el día que entró el dinero (`pendientesDeRegistrar`).
     // En «Diferencias» la lista sale de todo el historial, no del período.
+    // Las resoluciones vivas por corte: la tarjeta descuenta lo que ya tiene causa.
+    const difsPorCorte = useMemo(() => {
+        const m = new Map();
+        for (const d of difs || []) {
+            if (!d || d.anulada_at) continue;
+            if (!m.has(d.corte_id)) m.set(d.corte_id, []);
+            m.get(d.corte_id).push(d);
+        }
+        return m;
+    }, [difs]);
+
     const sinAsentar = useMemo(
         () => pendientesDeRegistrar(enDiferencias ? resolucionesDif : difs, { sala }),
         [difs, resolucionesDif, enDiferencias, sala],
@@ -1164,6 +1175,7 @@ const CortesView = () => {
                                         <div key={c.id} data-saly-ancla={`corte-${c.id}`} className="min-w-0">
                                         <TarjetaCorte
                                             corte={c}
+                                            diferencias={difsPorCorte.get(c.id) || null}
                                             persona={personas.get(c.resuelto_por) || null}
                                             puedeResolver={puedeResolver}
                                             ocupado={ocupadoId === c.id}

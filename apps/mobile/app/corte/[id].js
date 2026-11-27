@@ -28,13 +28,14 @@ import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { fetchAbonosDelDia, fetchCortes, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
+import { fetchAbonosDelDia, fetchCortes, fetchDiferencias, fetchMovimientos, fetchPersonas, fetchVentasPorPago, reabrirCorte, resolverCorte, salaConCajaAbierta, salaYaCerro } from '@nucleo/data/cortes';
 import { cerrarElDia } from '@nucleo/data/bolsas';
 import {
   cobrosDeCredito, conTramoPorSalaYDia, desgloseDelCierre, diferenciaDelCorte, entroEnEfectivo, formasFueraDelComprobante,
   noContoEfectivo, notaDeCifra, seConfirmaDeUnClic, severidad, sugerenciasDeCorte,
 } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -78,12 +79,16 @@ export default function Corte() {
   const [abonos, setAbonos] = useState(null);
   const [movs, setMovs] = useState([]);
   const [firmo, setFirmo] = useState(null);
+  const [resoluciones, setResoluciones] = useState([]);
 
   const cargar = useCallback(async () => {
     const fecha = String(fechaParam || hoySV());
     const filas = await fetchCortes({ desde: fecha, hasta: fecha }).catch(() => null);
     const todos = conTramoPorSalaYDia(filas || []);
     setCorte(todos.find((c) => String(c.id) === String(id)) ?? null);
+    // Lo que ya tiene causa se descuenta de la cifra (mismo canónico que el portal).
+    const difs = await fetchDiferencias({ desde: fecha, hasta: fecha }).catch(() => []);
+    setResoluciones((difs || []).filter((d) => String(d.corte_id) === String(id) && !d.anulada_at));
   }, [id, fechaParam]);
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -129,6 +134,11 @@ export default function Corte() {
   // `declarado − diferencia_erp`, la cifra cruda del origen.
   const esperado = descartado ? propia?.esperado : (corte?.esperadoUsado ?? propia?.esperado);
   const sev = severidad(dif);
+  const { cifra: difMostrada, explicado } = useMemo(
+    () => (descartado ? { cifra: dif, explicado: 0 } : cifraSinCausa(dif, resoluciones)),
+    [descartado, dif, resoluciones]);
+  const conCausa = explicado > 0;
+  const sevMostrada = severidad(difMostrada);
   const noEsConteo = esZ || esX || sinConteo;
   const invisibles = useMemo(() => formasFueraDelComprobante(ventas), [ventas]);
   const cobros = useMemo(() => (corte ? cobrosDeCredito(corte, abonos?.filas || []) : null), [corte, abonos]);
@@ -237,11 +247,13 @@ export default function Corte() {
               ) : (
                 <View>
                   <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-                    {descartado ? 'Diferencia que tenía este conteo' : corte.tramo === corte.acumulado ? 'Diferencia de este corte' : 'Diferencia desde el corte anterior'}
+                    {descartado ? 'Diferencia que tenía este conteo'
+                      : conCausa ? (sevMostrada === 'ok' ? 'Diferencia explicada' : 'Diferencia sin causa')
+                      : corte.tramo === corte.acumulado ? 'Diferencia de este corte' : 'Diferencia desde el corte anterior'}
                   </Text>
-                  <Text style={{ color: descartado ? colorSistema.texto2 : TONO[sev], fontSize: 38, fontWeight: '800', fontVariant: ['tabular-nums'],
-                    textDecorationLine: descartado ? 'line-through' : 'none' }}>{conSigno(dif ?? 0)}</Text>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{sev === 'ok' ? 'Cuadra' : sev === 'falta' ? 'Faltante' : 'Sobrante'}</Text>
+                  <Text style={{ color: descartado ? colorSistema.texto2 : TONO[sevMostrada], fontSize: 38, fontWeight: '800', fontVariant: ['tabular-nums'],
+                    textDecorationLine: descartado ? 'line-through' : 'none' }}>{conSigno(difMostrada ?? 0)}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{sevMostrada === 'ok' ? (conCausa ? 'Todo tiene causa' : 'Cuadra') : sevMostrada === 'falta' ? 'Faltante' : 'Sobrante'}</Text>
                 </View>
               )}
               <Pildora texto={corte.estado === 'PENDIENTE' ? 'Por confirmar' : corte.estado === 'CONFIRMADO' ? 'Confirmado' : 'Descartado'}
@@ -265,7 +277,13 @@ export default function Corte() {
             <Aviso tono="cuidado" texto="Este corte quedó con $0.00 de efectivo contado. Pasa cuando se manda sin escribir cuánto se contó. Descártalo y hazlo de nuevo." />
           ) : (
             <Seccion titulo="La cuenta">
-              <Dato primero rotulo="Debía haber en caja" valor={formatMoney(esperado)} />
+              {conCausa ? (
+                <>
+                  <Dato primero rotulo={corte.tramo === corte.acumulado ? 'Diferencia del corte' : 'Diferencia desde el corte anterior'} valor={conSigno(dif ?? 0)} />
+                  <Dato rotulo="Con causa" valor={`${(dif ?? 0) < 0 ? '+' : '−'}${formatMoney(explicado)}`} />
+                </>
+              ) : null}
+              <Dato primero={!conCausa} rotulo="Debía haber en caja" valor={formatMoney(esperado)} />
               {cobros?.sinContar > 0.005 || Math.abs(cobros?.deOtroCorte ?? 0) > 0.005 ? (
                 <>
                   <Dato rotulo="   Ventas y movimientos del día" valor={formatMoney(corte.tk_total_caja)} />

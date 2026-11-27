@@ -94,6 +94,22 @@ export function explicadoDe(corte) {
     return Math.min(tope, c) / 100;
 }
 
+/**
+ * La cifra que se MUESTRA de un corte: su tramo menos lo que las causas ya
+ * explicaron, con el signo del tramo. Pedido del usuario (Salud 2, 27-nov): un
+ * sobrante de +$11.85 con $4.95 explicados se lee +$6.90, no +$11.85. Lo que
+ * cubren responsables o un retiro NO se descuenta: esa diferencia sí existió.
+ * @returns {{ cifra: number|null, explicado: number }}
+ */
+export function cifraSinCausa(tramo, diferencias) {
+    if (tramo == null) return { cifra: null, explicado: 0 };
+    const explicado = explicadoDe({ tramo, diferencias: diferencias || [] });
+    if (explicado <= 0) return { cifra: Number(tramo), explicado: 0 };
+    const signo = Number(tramo) < 0 ? -1 : 1;
+    const resto = (Math.abs(centavos(tramo)) - Math.round(explicado * 100)) / 100;
+    return { cifra: signo * resto, explicado };
+}
+
 /** Lo que ninguna resolución cubre todavía, en dólares y sin signo. */
 export function pendienteDe(corte) {
     const tope = Math.abs(centavos(corte?.tramo));

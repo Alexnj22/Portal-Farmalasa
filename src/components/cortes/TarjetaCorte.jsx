@@ -8,6 +8,7 @@ import OjoDeTarjeta from '../common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import { contraste, diferenciaDelCorte, noContoEfectivo, seConfirmaDeUnClic, severidad } from '@nucleo/utils/cortesDiagnostico';
 import { conSigno, formatMoney } from '@nucleo/utils/formatNumber';
+import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 
 /**
@@ -68,6 +69,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
     onConfirmar,           // (corte) — el camino de un clic, sólo si cuadra
     ocupado = false,
     compacta = false,
+    diferencias = null,    // resoluciones vivas del corte: la cifra descuenta lo que tiene causa
 }) {
     const esZ = corte.tipo === 'Z';
     /* Una LECTURA (tipo X) no cuenta el efectivo: no tiene esperado, ni
@@ -97,7 +99,11 @@ const TarjetaCorte = memo(function TarjetaCorte({
     const noEsConteo = sinDecision || sinConteo;
     const desc = corte.estado === 'DESCARTADO';
     const pendiente = corte.estado === 'PENDIENTE';
+    // Lo que se pinta: el tramo menos lo que ya tiene causa (mismo canónico
+    // que el detalle). Sin resoluciones, el tramo tal cual.
+    const sinCausa = cifraSinCausa(corte.tramo, diferencias);
     const sev = severidad(corte.tramo);
+    const sevCifra = desc ? sev : severidad(sinCausa.cifra);
     const ct = contraste(corte);
     const revisar = !!ct?.enDisputa && !ct.porCobrosCredito;
     const cuadra = seConfirmaDeUnClic(corte);
@@ -235,7 +241,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                     las solicitudes. */}
                 <div className="flex items-start gap-1.5 shrink-0">
                     <div className={`font-bold tabular-nums text-right ${compacta ? 'text-label' : 'text-body'}
-                        ${noEsConteo ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
+                        ${noEsConteo ? 'text-content-2' : desc ? 'text-content-3 line-through' : TONO_TEXTO[sevCifra]}`}>
                         {/* La lectura NO muestra cifra: su total es el número que
                             se le mandó al formulario, no un dinero contado ni
                             unas ventas. Imprimir cualquiera de los dos sería
@@ -248,7 +254,14 @@ const TarjetaCorte = memo(function TarjetaCorte({
                             ? <span className="text-caption font-normal text-content-3">sin conteo</span>
                             : esZ
                                 ? <>{formatMoney(corte.total_declarado)}<span className="block text-caption font-normal text-content-3">en ventas</span></>
-                                : conSigno(desc ? diferenciaDelCorte(corte).valor : (corte.tramo ?? 0))}
+                                : <>
+                                    {conSigno(desc ? diferenciaDelCorte(corte).valor : (sinCausa.cifra ?? 0))}
+                                    {!desc && sinCausa.explicado > 0 && (
+                                        <span className="block text-caption font-normal text-content-3">
+                                            {Math.abs(sinCausa.cifra ?? 0) < 0.005 ? 'explicada' : 'sin causa'}
+                                        </span>
+                                    )}
+                                </>}
                     </div>
                     <OjoDeTarjeta size={13} className="mt-0.5" />
                 </div>

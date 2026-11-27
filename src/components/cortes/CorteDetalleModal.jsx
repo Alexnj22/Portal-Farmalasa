@@ -21,6 +21,7 @@ import {
     formasFueraDelComprobante, noContoEfectivo, notaDeCifra, severidad, sugerenciasDeCorte,
 } from '@nucleo/utils/cortesDiagnostico';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from './useResolverCorte';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
@@ -270,6 +271,13 @@ export default function CorteDetalleModal({
         : (visible?.esperadoUsado ?? propia?.esperado);
 
     const sev = severidad(cifra);
+    // Lo que se PINTA arriba: el tramo menos lo que las causas ya explicaron
+    // (Salud 2, 27-nov: +$11.85 con $4.95 explicados se lee +$6.90). `cifra` y
+    // `sev` siguen siendo la diferencia del corte para todo lo demás.
+    const { cifra: cifraMostrada, explicado } = useMemo(
+        () => (descartado ? { cifra, explicado: 0 } : cifraSinCausa(cifra, diferencias)),
+        [descartado, cifra, diferencias]);
+    const conCausa = explicado > 0;
     const esZ = visible?.tipo === 'Z';
     /* Una LECTURA (tipo X) no contó efectivo: no tiene esperado ni diferencia,
      * así que no hay nada que firmar ni que reabrir. Aparece desde el 31-ago —
@@ -479,6 +487,8 @@ export default function CorteDetalleModal({
                                 <span className="text-caption text-content-2">
                                     {descartado
                                         ? 'Diferencia que tenía este conteo'
+                                        : conCausa
+                                            ? (Math.abs(cifraMostrada ?? 0) < 0.005 ? 'Diferencia explicada' : 'Diferencia sin causa')
                                         : visible.tramo === visible.acumulado
                                             ? 'Diferencia de este corte'
                                             : 'Diferencia desde el corte anterior'}
@@ -490,11 +500,23 @@ export default function CorteDetalleModal({
                                     esconder el número, que es lo que hace falta
                                     para entender por qué se descartó. */}
                                 <span className={`text-2xl font-bold tabular-nums ${
-                                    descartado ? 'text-content-3 line-through' : TONO_TEXTO[sev]}`}>
-                                    {conSigno(cifra ?? 0)}
+                                    descartado ? 'text-content-3 line-through' : TONO_TEXTO[severidad(cifraMostrada)]}`}>
+                                    {conSigno(cifraMostrada ?? 0)}
                                 </span>
                             </div>
                             <div className="mt-2 space-y-1 text-caption text-content-3">
+                                {conCausa && (
+                                    <>
+                                        <div className="flex justify-between gap-3">
+                                            <span>{visible.tramo === visible.acumulado ? 'Diferencia del corte' : 'Diferencia desde el corte anterior'}</span>
+                                            <span className="tabular-nums">{conSigno(cifra ?? 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between gap-3">
+                                            <span>Con causa</span>
+                                            <span className="tabular-nums">{(cifra ?? 0) < 0 ? '+' : '−'}{formatMoney(explicado)}</span>
+                                        </div>
+                                    </>
+                                )}
                                 <div className="flex justify-between gap-3">
                                     <span>Debía haber en caja</span>
                                     <span className="tabular-nums">{formatMoney(esperadoDeLaCifra)}</span>

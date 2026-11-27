@@ -273,3 +273,24 @@ describe('causa parcial', () => {
         expect(d.cortes[0].diferencia.id).toBe(8);
     });
 });
+
+import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
+
+describe('cifraSinCausa — la cifra del corte descuenta lo que tiene causa', () => {
+    it('Salud 2, 26-nov: +11.85 con 4.95 explicados se lee +6.90', () => {
+        expect(cifraSinCausa(11.85, [{ via: 'JUSTIFICA', monto: 4.95 }])).toEqual({ cifra: 6.9, explicado: 4.95 });
+    });
+    it('un faltante conserva el signo', () => {
+        expect(cifraSinCausa(-10, [{ via: 'JUSTIFICA', monto: 3 }]).cifra).toBe(-7);
+    });
+    it('responsables o retiro no se descuentan', () => {
+        expect(cifraSinCausa(-10, [{ via: 'REPONE', monto: 10 }])).toEqual({ cifra: -10, explicado: 0 });
+    });
+    it('anuladas no cuentan y todo explicado da cero', () => {
+        expect(cifraSinCausa(5, [{ via: 'JUSTIFICA', monto: 5, anulada_at: 'x' }]).cifra).toBe(5);
+        expect(cifraSinCausa(5, [{ via: 'JUSTIFICA', monto: 5 }]).cifra).toBe(0);
+    });
+    it('sin tramo, sin cifra', () => {
+        expect(cifraSinCausa(null, [])).toEqual({ cifra: null, explicado: 0 });
+    });
+});

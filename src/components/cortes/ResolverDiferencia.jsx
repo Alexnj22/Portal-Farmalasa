@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Ban, HandCoins, Image as ImageIcon, Printer, ShieldCheck } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Ban, CheckCircle2, HandCoins, Image as ImageIcon, Printer, Receipt, ShieldCheck, X } from 'lucide-react';
 import AbonosDeDiferencia from './AbonosDeDiferencia';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
@@ -12,6 +12,7 @@ import Notice from '../common/Notice';
 import PhotoLightbox from '../common/PhotoLightbox';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
+import SearchInput from '../common/SearchInput';
 import SegmentedControl from '../common/SegmentedControl';
 import { fetchDocumentosParaExplicar, fetchMapfreDeCorte, fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '@nucleo/data/cortes';
 import {
@@ -779,24 +780,28 @@ export default function ResolverDiferencia({
  * La venta, el ingreso o el vale que se anotó DESPUÉS (2026-11-27).
  *
  * Con sobrante la base ofrece ventas e ingresos en efectivo de los 7 días que
- * siguen al corte; con faltante, vales. Se marcan uno o varios y cada uno
- * explica lo que trae o lo que queda, en el orden en que se marcaron — la
- * misma cuenta que va a hacer la base (`repartirEnDocumentos`).
+ * siguen al corte; con faltante, vales. Cada uno explica lo que trae o lo que
+ * queda, en el orden en que se eligieron — la misma cuenta que va a hacer la
+ * base (`repartirEnDocumentos`).
+ *
+ * No se lista nada hasta que se escribe (usuario, 2026-11-27: «no muestres
+ * nada, mejor que se busque»): una sala vende cientos de facturas en una
+ * semana y la lista entera se veía desordenada. Lo elegido queda arriba como
+ * tarjeta, con lo que explica cada uno.
  */
-const MAX_VISIBLES = 25;
+const MAX_RESULTADOS = 8;
+const ICONO_DOC = { VENTA: Receipt, INGRESO: ArrowDownLeft, VALE: ArrowUpRight };
 function DocumentosAnotadosDespues({ docs, error, falta, buscar, onBuscar, elegidos, onAlternar, reparto, fechaDelCorte }) {
     const marcadas = useMemo(() => new Set(elegidos.map(claveDeDocumento)), [elegidos]);
-    const { resultados } = useMemo(() => filtrarDocumentos(docs || [], buscar), [docs, buscar]);
-    // Lo marcado va siempre arriba: si la búsqueda lo esconde, no se puede
-    // desmarcar.
-    const visibles = useMemo(() => {
-        const resto = resultados.filter((d) => !marcadas.has(claveDeDocumento(d)));
-        return [...elegidos, ...resto].slice(0, Math.max(MAX_VISIBLES, elegidos.length));
-    }, [resultados, elegidos, marcadas]);
-    const ocultos = Math.max(0, elegidos.length + resultados.filter((d) => !marcadas.has(claveDeDocumento(d))).length - visibles.length);
+    const consulta = buscar.trim();
+    const resultados = useMemo(() => {
+        if (!consulta) return [];
+        return filtrarDocumentos(docs || [], consulta).resultados
+            .filter((d) => !marcadas.has(claveDeDocumento(d)));
+    }, [docs, consulta, marcadas]);
 
     if (docs == null) {
-        return <p className="text-caption text-content-3">Buscando lo anotado después…</p>;
+        return <p className="text-caption text-content-3">Cargando…</p>;
     }
     if (error) {
         return <Notice variant="warning">No se pudo leer lo anotado después: {error}</Notice>;
@@ -806,71 +811,118 @@ function DocumentosAnotadosDespues({ docs, error, falta, buscar, onBuscar, elegi
     const explicaDe = new Map(reparto.partes.map((p) => [claveDeDocumento(p.doc), p.explica]));
     const sobra = new Set(reparto.sobran.map(claveDeDocumento));
     const diaCorte = fechaNumerica(fechaDelCorte, { anio: false });
+    const queBusca = falta ? 'el vale' : 'la factura o el ingreso';
+    const elegir = (d) => { onAlternar(d); onBuscar(''); };
 
     return (
-        <div className="space-y-2">
+        <section data-surface="card" className="space-y-2.5 p-3">
             <div className="space-y-0.5">
-                <span className="text-caption font-black uppercase tracking-widest text-content-3">
-                    {falta ? '¿El vale se anotó después?' : '¿Se facturó o se anotó después?'}
-                </span>
+                <h4 className="text-body-sm font-bold text-content">
+                    {falta ? '¿El vale se anotó después?' : '¿Se facturó después?'}
+                </h4>
                 <p className="text-caption text-content-3">
-                    {falta
-                        ? 'Marca el vale. El dinero salió de la caja de este corte, y la caja del día en que se anotó no lo va a descontar.'
-                        : 'Marca la venta o el ingreso. El dinero se queda en la bolsa de este corte, y la caja del día en que se anotó no lo va a pedir.'}
+                    Busca {queBusca} por número o monto. El dinero no se mueve de su bolsa.
                 </p>
             </div>
-            {docs.length > 6 && (
-                <PortalInput
-                    name="buscar-documento"
-                    value={buscar}
-                    onChange={(e) => onBuscar(e.target.value)}
-                    placeholder="Busca por número o monto"
-                    aria-label="Buscar venta, ingreso o vale"
-                />
-            )}
-            <div className="space-y-1 max-h-72 overflow-y-auto">
-                {visibles.map((d) => {
-                    const k = claveDeDocumento(d);
-                    const marcada = marcadas.has(k);
-                    const explicaEste = explicaDe.get(k);
-                    return (
-                        <Checkbox
-                            key={k}
-                            name={`doc-${k}`}
-                            checked={marcada}
-                            onChange={() => onAlternar(d)}
-                            label={`${rotuloDeDocumento(d)} · ${formatMoney(d.monto)}`}
-                            description={[
-                                cuandoDeDocumento(d),
-                                d.detalle,
-                                marcada && sobra.has(k) ? 'Sobra: ya se explicó todo' : null,
-                                marcada && explicaEste != null && Math.abs(explicaEste - Number(d.monto)) >= 0.005
-                                    ? `Explica ${formatMoney(explicaEste)}` : null,
-                            ].filter(Boolean).join(' · ')}
-                        />
-                    );
-                })}
-            </div>
-            {ocultos > 0 && (
-                <p className="text-caption text-content-3">Hay {ocultos} más. Busca por número o monto.</p>
-            )}
+
             {elegidos.length > 0 && (
-                <Notice variant={reparto.sobran.length ? 'warning' : 'info'}>
-                    <span className="font-bold">
-                        {reparto.sobran.length
-                            ? `Quita ${reparto.sobran.map(rotuloDeDocumento).join(', ')}: ya se explicó todo`
-                            : `Se explican ${formatMoney(reparto.explica)}`
-                              + (reparto.queda > 0.005 ? ` y quedan ${formatMoney(reparto.queda)}` : '')}
-                    </span>
-                    {!reparto.sobran.length && (
-                        <span className="block mt-0.5 font-normal text-content-2">
-                            {falta
-                                ? `Ese dinero salió de la caja del ${diaCorte}. Nadie lo tiene que reponer.`
-                                : `Ese dinero se queda en la bolsa del ${diaCorte}. La caja del día en que se anotó no lo va a pedir.`}
-                        </span>
-                    )}
-                </Notice>
+                <ul className="space-y-1.5">
+                    {elegidos.map((d) => {
+                        const k = claveDeDocumento(d);
+                        const Icono = ICONO_DOC[d.tipo] || Receipt;
+                        const explica = explicaDe.get(k);
+                        const parcial = explica != null && Math.abs(explica - Number(d.monto)) >= 0.005;
+                        const sobraEste = sobra.has(k);
+                        return (
+                            <li key={k}
+                                className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${sobraEste
+                                    ? 'border-warning/40 bg-warning/10'
+                                    : 'border-success/30 bg-success/10'}`}>
+                                <Icono size={18} aria-hidden="true"
+                                    className={sobraEste ? 'text-warning-text shrink-0' : 'text-success-text shrink-0'} />
+                                <div className="min-w-0 flex-1">
+                                    <span className="block text-body-sm font-semibold text-content truncate">
+                                        {rotuloDeDocumento(d)}
+                                    </span>
+                                    <span className="block text-caption text-content-3 truncate">
+                                        {sobraEste ? 'Ya no hace falta: quítalo' : [cuandoDeDocumento(d), d.detalle].filter(Boolean).join(' · ')}
+                                    </span>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <span className="block text-body-sm font-bold text-content tabular-nums">
+                                        {formatMoney(parcial ? explica : d.monto)}
+                                    </span>
+                                    {parcial && (
+                                        <span className="block text-caption text-content-3 tabular-nums">
+                                            de {formatMoney(d.monto)}
+                                        </span>
+                                    )}
+                                </div>
+                                <button type="button" onClick={() => onAlternar(d)}
+                                    aria-label={`Quitar ${rotuloDeDocumento(d)}`}
+                                    className="-mr-1 grid place-items-center size-[var(--tap-min)] rounded-full text-content-3 hover:text-content hover:bg-surface-card-hover active:scale-[0.97]">
+                                    <X size={16} />
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
             )}
-        </div>
+
+            {reparto.queda > 0.005 && (
+                <div className="space-y-1.5">
+                    <SearchInput value={buscar} onChange={onBuscar}
+                        placeholder={elegidos.length ? 'Agregar otro: número o monto' : 'Número o monto'}
+                        ariaLabel={`Buscar ${queBusca}`} />
+                    {consulta && resultados.length > 0 && (
+                        <ul className="rounded-lg border border-border-card divide-y divide-border-card overflow-hidden">
+                            {resultados.slice(0, MAX_RESULTADOS).map((d) => {
+                                const Icono = ICONO_DOC[d.tipo] || Receipt;
+                                return (
+                                    <li key={claveDeDocumento(d)}>
+                                        <button type="button" onClick={() => elegir(d)}
+                                            className="w-full flex items-center gap-3 text-left px-3 py-2 min-h-[var(--tap-min)] hover:bg-surface-card-hover active:scale-[0.99]">
+                                            <Icono size={16} aria-hidden="true" className="text-content-3 shrink-0" />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block text-body-sm font-semibold text-content truncate">{rotuloDeDocumento(d)}</span>
+                                                <span className="block text-caption text-content-3 truncate">
+                                                    {[cuandoDeDocumento(d), d.detalle].filter(Boolean).join(' · ')}
+                                                </span>
+                                            </span>
+                                            <span className="text-body-sm font-semibold text-content tabular-nums shrink-0">{formatMoney(d.monto)}</span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                    {consulta && resultados.length > MAX_RESULTADOS && (
+                        <p className="text-caption text-content-3">Hay {resultados.length - MAX_RESULTADOS} más. Escribe más del número.</p>
+                    )}
+                    {consulta && resultados.length === 0 && (
+                        <p className="text-caption text-content-3">
+                            Nada con «{consulta}». Escribe el número completo o el monto: se busca en lo cobrado en efectivo en los 7 días después del {diaCorte}.
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {elegidos.length > 0 && !reparto.sobran.length && (
+                <div className="flex items-start gap-2 rounded-lg bg-surface-tab-track px-3 py-2">
+                    <CheckCircle2 size={16} aria-hidden="true"
+                        className={`mt-0.5 shrink-0 ${reparto.queda > 0.005 ? 'text-content-3' : 'text-success-text'}`} />
+                    <p className="text-caption text-content-2">
+                        <span className="font-bold text-content tabular-nums">
+                            {reparto.queda > 0.005
+                                ? `Explica ${formatMoney(reparto.explica)}. Quedan ${formatMoney(reparto.queda)}.`
+                                : `Explica toda la diferencia: ${formatMoney(reparto.explica)}.`}
+                        </span>{' '}
+                        {falta
+                            ? `Ese dinero salió de la caja del ${diaCorte}. Nadie lo tiene que reponer.`
+                            : `Ese dinero se queda en la bolsa del ${diaCorte}.`}
+                    </p>
+                </div>
+            )}
+        </section>
     );
 }

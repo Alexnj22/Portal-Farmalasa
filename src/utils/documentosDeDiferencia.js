@@ -51,6 +51,8 @@ export function filtrarDocumentos(documentos, consulta) {
         rotuloDeDocumento(d),
         String(d.numero ?? ''),
         Number(d.monto || 0).toFixed(2),
+        // «3.5» también es $3.50: quien busca no escribe el cero.
+        String(Number(d.monto || 0)),
         d.detalle || '',
     ], { orden: 'original' });
 }

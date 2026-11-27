@@ -48,6 +48,8 @@ describe('rótulos y búsqueda', () => {
         const docs = [venta(1, 11.85), venta(2, 3.1)];
         expect(filtrarDocumentos(docs, '3502').resultados.map((d) => d.id)).toEqual([2]);
         expect(filtrarDocumentos(docs, '11.85').resultados.map((d) => d.id)).toEqual([1]);
+        expect(filtrarDocumentos(docs, '3.1').resultados.map((d) => d.id)).toEqual([2]);
+        expect(filtrarDocumentos(docs, '3.10').resultados.map((d) => d.id)).toEqual([2]);
     });
 });
 

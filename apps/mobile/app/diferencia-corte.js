@@ -384,42 +384,56 @@ export default function DiferenciaCorte() {
 }
 
 // Lo anotado después (2026-11-27), gemelo de `DocumentosAnotadosDespues` del
-// portal: con sobrante, ventas e ingresos en efectivo de los 7 días que siguen
-// al corte; con faltante, vales. La cuenta es la del núcleo.
+// portal: no se lista nada hasta que se escribe (usuario: «no muestres nada,
+// mejor que se busque»). Con sobrante, ventas e ingresos en efectivo de los 7
+// días que siguen al corte; con faltante, vales. La cuenta es la del núcleo.
 function AnotadoDespues({ docs, error, falta, buscar, onBuscar, elegidos, onAlternar, reparto, fechaDelCorte }) {
   if (docs == null) return <Indicador />;
   if (error) return <Aviso tono="cuidado" texto={`No se pudo leer lo anotado después: ${error}`} />;
   if (!docs.length) return null;
   const marcadas = new Set(elegidos.map(claveDeDocumento));
-  const { resultados } = filtrarDocumentos(docs, buscar);
-  const resto = resultados.filter((d) => !marcadas.has(claveDeDocumento(d)));
-  const visibles = [...elegidos, ...resto].slice(0, Math.max(25, elegidos.length));
-  const ocultos = elegidos.length + resto.length - visibles.length;
+  const consulta = buscar.trim();
+  const resultados = consulta ? filtrarDocumentos(docs, consulta).resultados.filter((d) => !marcadas.has(claveDeDocumento(d))) : [];
+  const explicaDe = new Map(reparto.partes.map((p) => [claveDeDocumento(p.doc), p.explica]));
   const sobra = new Set(reparto.sobran.map(claveDeDocumento));
   const dia = fechaNumerica(fechaDelCorte, { anio: false });
+  const queBusca = falta ? 'el vale' : 'la factura o el ingreso';
+  const Fila = ({ d, elegido }) => {
+    const k = claveDeDocumento(d);
+    const explica = explicaDe.get(k);
+    const parcial = elegido && explica != null && Math.abs(explica - Number(d.monto)) >= 0.005;
+    const sobraEste = elegido && sobra.has(k);
+    return (
+      <Pressable onPress={() => { onAlternar(d); if (!elegido) onBuscar(''); }}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, paddingVertical: 6, opacity: pressed ? 0.55 : 1 })}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>{rotuloDeDocumento(d)}</Text>
+          <Text style={{ color: sobraEste ? MARCA.ambar : colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>
+            {sobraEste ? 'Ya no hace falta: quítalo' : [cuandoDeDocumento(d), d.detalle].filter(Boolean).join(' · ')}
+          </Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{formatMoney(parcial ? explica : d.monto)}</Text>
+          {parcial ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontVariant: ['tabular-nums'] }}>{`de ${formatMoney(d.monto)}`}</Text> : null}
+        </View>
+        {elegido ? <Text style={{ color: colorSistema.texto2, fontSize: 18, paddingLeft: 4 }} accessibilityLabel={`Quitar ${rotuloDeDocumento(d)}`}>✕</Text> : null}
+      </Pressable>
+    );
+  };
   return (
-    <Seccion titulo={falta ? '¿El vale se anotó después?' : '¿Se facturó o se anotó después?'}
-      pie={falta ? 'Marca el vale. El dinero salió de la caja de este corte, y la caja del día en que se anotó no lo va a descontar.' : 'Marca la venta o el ingreso. El dinero se queda en la bolsa de este corte, y la caja del día en que se anotó no lo va a pedir.'}>
-      {docs.length > 6 ? <Campo multiline={false} value={buscar} onChangeText={onBuscar} placeholder="Busca por número o monto" /> : null}
-      {visibles.map((d) => {
-        const k = claveDeDocumento(d);
-        const marcada = marcadas.has(k);
-        return (
-          <Pressable key={k} onPress={() => onAlternar(d)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, opacity: pressed ? 0.55 : 1 })}>
-            <Text style={{ color: marcada ? MARCA.verde : colorSistema.texto2, fontSize: 20 }}>{marcada ? '☑' : '☐'}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 15, fontVariant: ['tabular-nums'] }}>{`${rotuloDeDocumento(d)} · ${formatMoney(d.monto)}`}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[cuandoDeDocumento(d), d.detalle, marcada && sobra.has(k) ? 'Sobra: ya se explicó todo' : null].filter(Boolean).join(' · ')}</Text>
-            </View>
-          </Pressable>
-        );
-      })}
-      {ocultos > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Hay ${ocultos} más. Busca por número o monto.`}</Text> : null}
-      {elegidos.length ? (
-        <Aviso tono={reparto.sobran.length ? 'cuidado' : undefined}
-          texto={reparto.sobran.length
-            ? `Quita ${reparto.sobran.map(rotuloDeDocumento).join(', ')}: ya se explicó todo.`
-            : `Se explican ${formatMoney(reparto.explica)}${reparto.queda > 0.005 ? ` y quedan ${formatMoney(reparto.queda)}` : ''}. ${falta ? `Ese dinero salió de la caja del ${dia}. Nadie lo tiene que reponer.` : `Ese dinero se queda en la bolsa del ${dia}.`}`} />
+    <Seccion titulo={falta ? '¿El vale se anotó después?' : '¿Se facturó después?'}
+      pie={`Busca ${queBusca} por número o monto. El dinero no se mueve de su bolsa.`}>
+      {elegidos.map((d) => <Fila key={claveDeDocumento(d)} d={d} elegido />)}
+      {reparto.queda > 0.005 ? (
+        <Campo multiline={false} value={buscar} onChangeText={onBuscar} keyboardType="decimal-pad"
+          placeholder={elegidos.length ? 'Agregar otro: número o monto' : 'Número o monto'} />
+      ) : null}
+      {consulta ? resultados.slice(0, 8).map((d) => <Fila key={claveDeDocumento(d)} d={d} />) : null}
+      {consulta && resultados.length > 8 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Hay ${resultados.length - 8} más. Escribe más del número.`}</Text> : null}
+      {consulta && !resultados.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Nada con «${consulta}». Escribe el número completo o el monto.`}</Text> : null}
+      {elegidos.length && !reparto.sobran.length ? (
+        <Aviso tono={reparto.queda > 0.005 ? undefined : 'nota'}
+          texto={`${reparto.queda > 0.005 ? `Explica ${formatMoney(reparto.explica)}. Quedan ${formatMoney(reparto.queda)}.` : `Explica toda la diferencia: ${formatMoney(reparto.explica)}.`} ${falta ? `Ese dinero salió de la caja del ${dia}. Nadie lo tiene que reponer.` : `Ese dinero se queda en la bolsa del ${dia}.`}`} />
       ) : null}
     </Seccion>
   );

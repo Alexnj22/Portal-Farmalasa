@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.3 — El cuadro para explicar una diferencia con lo anotado después se busca, no se lista
+
+Pedido del usuario: «no muestres nada, mejor que se busque, y ahí sí filtras.
+Así no se ve desordenado».
+
+- El cuadro muestra sólo el buscador. Las facturas, ingresos o vales aparecen
+  al escribir el número completo o el monto (hasta 8), y al elegir uno se
+  limpia el buscador.
+- Lo elegido queda como tarjeta con su ícono, su monto (o la parte que
+  explica) y una ✕ para quitarlo. Debajo, una línea dice cuánto explica y
+  cuánto queda.
+- El monto se encuentra también sin el cero final («3.5» → $3.50).
+- Corregido el borde de la lista: usaba un token que no existe y salía blanco.
+
 ## v2.1606.2 — La app de clientes invita a activar notificaciones y promociones
 
 Pedido del usuario: de 54 clientes con sesión sólo 10 tenían avisos y 8

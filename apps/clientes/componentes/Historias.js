@@ -7,11 +7,11 @@
 //   · al tocar, pantalla completa con barras de progreso: avanza sola a los
 //     6 s, tocar a la derecha pasa, a la izquierda vuelve, mantener presionado
 //     pausa, deslizar hacia abajo cierra; y si la historia lleva enlace, un
-//     botón para ir (a una oferta, a sucursales…); con oferta, «Reservar»;
-//     y siempre «Más información» por WhatsApp con la empresa.
+//     botón para ir (a una oferta, a sucursales…); con oferta, «Reservar».
+//     Sin «Más información» (usuario, 2026-11-26): la historia es la pieza.
 //   · cada vista se anota en el servidor: el portal cuenta quién la vio.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Presionable from './Presionable';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ImagenCache } from 'expo-image';
@@ -29,10 +29,7 @@ import { llamar } from '../lib/api';
 import { idDispositivo } from '../lib/dispositivo';
 import { useTema } from '../tema/tema';
 import Icono from './Icono';
-import IconoWhatsapp from './IconoWhatsapp';
 import { navegar } from '../lib/navegar';
-import { useOfertas } from '../lib/ofertas';
-import { useCuenta } from '../lib/cuenta';
 
 const CLAVE = 'puntos_salud_historias_vistas';
 const DURACION = 6000;
@@ -80,7 +77,7 @@ export default function Historias({ generacion = 0 }) {
     if (lista.length && pedidasPara === clave && Date.now() - pedidasAt < 60_000) return;
     pedidasPara = clave;
     pedidasAt = Date.now();
-    (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) { setLista(r.historias ?? []); if (r.whatsapp) whatsapp = r.whatsapp; } });
+    (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) { setLista(r.historias ?? []); } });
     leerVistas().then((l) => setVistas(new Set(l.map(String)))).catch(() => {});
   }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
 
@@ -100,8 +97,11 @@ export default function Historias({ generacion = 0 }) {
   });
 
   if (!lista.length) return null;
-  // Las sin ver primero.
-  const orden = [...lista].sort((a, b) => Number(vistas.has(String(a.id))) - Number(vistas.has(String(b.id))));
+  // En el orden del portal (usuario, 2026-11-26): antes las sin ver iban
+  // primero, y una campaña de dos piezas («La Promotón» y sus fechas) salía al
+  // revés en el teléfono que ya había visto la primera. El aro gris ya dice
+  // cuál se vio.
+  const orden = lista;
 
   return (
     <>
@@ -141,10 +141,6 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
   const avance = useSharedValue(0);
   const caida = useSharedValue(0);
   const h = historias[i];
-  // Con cuenta completa, «Más información» va al chat de la app (2026-10-14).
-  const conSesion = useSesion((s) => !!s.token);
-  const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
-  const conChat = conSesion && !preRegistro;
   const siguienteRef = useRef(null);
   // Con VoiceOver no avanza sola: se pasa con las acciones «Siguiente»/«Anterior».
   const lectorRef = useRef(false);
@@ -249,8 +245,7 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
               <Text style={{ color: '#FFF', fontSize: 28, fontWeight: '900', letterSpacing: -0.5 }}>{h.titulo}</Text>
               {h.texto ? <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 17, lineHeight: 23 }}>{h.texto}</Text> : null}
               {/* Con oferta: «Reservar» la abre lista para reservar. Si no, el
-                  botón propio de la historia. Y siempre «Más información», que
-                  abre WhatsApp con la empresa y el nombre de la historia. */}
+                  botón propio de la historia, si tiene. */}
               <View style={{ marginTop: 8, gap: 10 }}>
                 {h.oferta_id || h.enlace ? (
                   <BotonHistoria principal sf={h.oferta_id ? 'bag.fill' : 'arrow.right'} texto={h.oferta_id ? 'Reservar' : (h.boton || 'Ver más')}
@@ -260,26 +255,6 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                       cerrar(); setTimeout(() => navegar(destino), 250);
                     }} />
                 ) : null}
-                {/* Con cuenta (2026-10-14), «Más información» abre el CHAT de
-                    la app con la consulta escrita: si la historia es de una
-                    oferta de un solo producto, el producto va como tarjeta.
-                    Sin cuenta no hay chat: sigue por WhatsApp. */}
-                <BotonHistoria icono={conChat ? undefined : <IconoWhatsapp tam={18} color="#FFFFFF" />} sf="bubble.left.and.bubble.right.fill"
-                  texto="Más información"
-                  alTocar={() => {
-                    alTocarBoton?.(h.id);
-                    if (conChat) {
-                      const oferta = h.oferta_id ? useOfertas.getState().datos?.ofertas?.find((o) => String(o.id) === String(h.oferta_id)) : null;
-                      const unico = oferta?.productos?.length === 1 ? oferta.productos[0].id : null;
-                      const consulta = encodeURIComponent(`Quiero más información sobre: ${h.titulo}`);
-                      cerrar();
-                      setTimeout(() => navegar(`/chat?consulta=${consulta}${unico ? `&producto=${unico}` : ''}`), 250);
-                      return;
-                    }
-                    pausar();
-                    const msg = encodeURIComponent(`Hola, quiero más información sobre «${h.titulo}».`);
-                    Linking.openURL(`https://wa.me/${whatsapp}?text=${msg}`).catch(() => {});
-                  }} />
               </View>
             </View>
           </Animated.View>
@@ -297,10 +272,7 @@ function haceCuanto(iso) {
   return `hace ${Math.floor(min / 60)} h`;
 }
 
-// El WhatsApp de la empresa: lo manda el servidor; éste es el de respaldo.
-let whatsapp = '50323010013';
-
-function BotonHistoria({ principal, sf, icono, texto, alTocar }) {
+function BotonHistoria({ principal, sf, texto, alTocar }) {
   return (
     <Presionable onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar(); }}
       accessibilityRole="button" accessibilityLabel={texto}
@@ -309,7 +281,7 @@ function BotonHistoria({ principal, sf, icono, texto, alTocar }) {
         backgroundColor: principal ? '#FFFFFF' : 'rgba(255,255,255,0.18)',
         borderWidth: principal ? 0 : 1, borderColor: 'rgba(255,255,255,0.45)', transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
-      {icono ?? <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />}
+      <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />
       <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, textAlign: 'center', color: principal ? '#2B0B3A' : '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
     </Presionable>
   );

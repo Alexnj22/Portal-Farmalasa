@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1605.1 — Historias de la app de clientes: en el orden del portal y sin Más información
+
+Pedido del usuario al publicar «La Promotón» (dos historias: la campaña y sus
+fechas). En su teléfono salían al revés: la app ponía primero las que el
+teléfono no había visto, y él ya había abierto la primera. El servidor las
+mandaba bien (`orden` y después `created_at`).
+
+- `apps/clientes/componentes/Historias.js`: la fila respeta el orden del
+  portal; el aro gris sigue diciendo cuál se vio.
+- Fuera el botón «Más información» del visor (chat con cuenta, WhatsApp sin
+  ella). Queda sólo «Reservar» o el botón propio, si la historia tiene.
+
+Sale por aire (`app:actualizar`), sin compilar.
+
 ## v2.1605.0 — Control de promociones: avisa las ventas que no cumplen la promoción
 
 La caja no sabe de condiciones por cantidad: el descuento de $2.31 de la Iren

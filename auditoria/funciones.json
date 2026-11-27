@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-26T23:23:49.138Z",
+ "generado": "2026-11-27T19:59:12.287Z",
  "funciones": {
   "_avisar_bolsa": {
    "area": "traslados",
@@ -276,6 +276,18 @@
   "apoyo_vigente": {
    "area": "personal",
    "por": "tablas"
+  },
+  "app_android_acceso": {
+   "area": "comunicacion",
+   "por": "tablas"
+  },
+  "app_android_dui": {
+   "area": "comunicacion",
+   "por": "código"
+  },
+  "app_android_registrar": {
+   "area": "comunicacion",
+   "por": "código"
   },
   "app_avisame_por_avisar": {
    "area": "app-clientes",
@@ -3947,6 +3959,10 @@
   "get_ventas_por_forma_de_pago": {
    "area": "cortes-efectivo",
    "por": "código"
+  },
+  "get_ventas_por_hora_de_la_semana": {
+   "area": "ventas",
+   "por": "tablas"
   },
   "get_ventas_receta_stats": {
    "area": "ventas",

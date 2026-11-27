@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.4 — Cierre de período y personal de sucursal más rápidos
+
+- **Cierre de período**: `calc_credito_declarable` pasa de ~600 ms a ~14 ms por mes
+  (el `NOT EXISTS … IN (3 expresiones)` caía en Nested Loop Anti Join; partido
+  en tres igualdades → Hash Anti Join). Crédito fiscal ene–nov 2026 idéntico al
+  centavo antes y después (verificado en prod).
+- **Personal de sucursal**: nueva `get_ventas_por_hora_de_la_semana(branch)`
+  (INVOKER, `RETURNS json`): 119 celdas en ~300 ms en vez de 9–16 páginas de la
+  vista `branch_hourly_sales`. La usa el 2.0; el portal actual no cambia.
+- Sólo base (migraciones 20261127195813 y 20261127195819).
+
+Gemelo: base — sin pantalla.
+Novedades: no — sólo velocidad en la base, nada que el personal tenga que hacer.
+
 ## v2.1606.3 — El cuadro para explicar una diferencia con lo anotado después se busca, no se lista
 
 Pedido del usuario: «no muestres nada, mejor que se busque, y ahí sí filtras.

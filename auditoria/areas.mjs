@@ -652,7 +652,7 @@ export const AREAS = [
         // El EFECTO de `descuentos-erp` es un descuento en la venta, que es lo que
         // esta pantalla configura — aunque el dato viva en el sistema de la caja.
         edge: ['descuentos-erp', 'espejo-descuentos'],
-        crons: ['promociones-ciclo-diario', 'espejo-descuentos', 'promocion-control-5min'],
+        crons: ['promociones-ciclo-diario', 'espejo-descuentos', 'promocion-control-hora'],
         docs: ['docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md',
                'docs/DESCUENTOS-EN-LA-VENTA-2026-09-04.md'],
     },

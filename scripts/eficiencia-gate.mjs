@@ -325,11 +325,12 @@ const CRONS = [
           + 'terminadas no se releen. ~6 peticiones por corrida.',
   },
   {
-    job: 'promocion-control-5min', slug: null, cadencia: '*/5 * * * *',
-    corridasDia: 288, sistema: 0,
-    motivo: 'Revisa las facturas de los últimos 3 días contra las reglas de las promociones vigentes '
-          + '(combo, regalo, precio) y avisa a la sucursal y al supervisor (2026-11-26). SQL puro; sin '
-          + 'reglas vigentes sale en la primera línea.',
+    job: 'promocion-control-hora', slug: null, cadencia: '7 * * * *',
+    corridasDia: 24, sistema: 0,
+    motivo: 'Red del control de promociones: el revisor corre al final de cada pasada de '
+          + 'sync-dte-sales con las facturas recién entradas (2026-11-27); esto relee los últimos 3 días '
+          + 'por si alguna pasada se saltó algo y cubre las horas sin sync. SQL puro; sin reglas '
+          + 'vigentes sale en la primera línea.',
   },
   {
     job: 'purge-app-cliente-preregistros', slug: null, cadencia: '55 9 * * *',

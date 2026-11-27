@@ -701,6 +701,18 @@ async function syncBranch(
     if (logErr) console.error(`[changelog] sucursal ${branchId}: se perdieron ${changelogs.length} cambio(s) — ${logErr.message}`);
   }
 
+  // 6b. Control de promociones (2026-11-27). Las facturas nuevas de esta pasada
+  // ya tienen TODOS sus renglones escritos (paso 5), así que el juez las mira
+  // ahora mismo, sin esperar al barrido: el aviso de una venta fuera de la
+  // promoción sale en menos de un minuto. El juez y los avisos viven en la base
+  // (`promocion_control_revisar`); el cron horario queda de red. Un error acá
+  // no aborta el sync — las facturas ya se escribieron — pero queda en el log.
+  if (itemsToInsert.length > 0) {
+    const facturasNuevas = [...new Set(itemsToInsert.map(i => i.invoice_id))];
+    const { error: promoErr } = await supabase.rpc('promocion_control_revisar', { p_invoices: facturasNuevas });
+    if (promoErr) console.error(`[promociones] sucursal ${branchId}: ${promoErr.message}`);
+  }
+
   // 7. Lo que el ERP ya no trae
   //
   // Este sync sólo agrega y actualiza: una factura que el ERP ELIMINA (no la

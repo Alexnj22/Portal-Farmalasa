@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.1 — El control de promociones revisa en la pasada de ventas
+
+El usuario preguntó por qué la revisión iba aparte. El cron cada 5 minutos
+releía 3 días enteros sin saber qué había entrado (~214 ms y ~6,400 bloques,
+288 veces al día).
+
+- `sync-dte-sales`, al terminar de escribir las facturas nuevas de una sucursal
+  con sus renglones, llama a `promocion_control_revisar(p_invoices)` sólo con
+  esas facturas. El aviso sale en menos de un minuto. Un error ahí no aborta el
+  sync: queda en el log.
+- `promocion_control_hallazgos` acepta las facturas a mirar; con ellas no
+  espera los 3 minutos de asiento. Pasa a plpgsql con `force_custom_plan`.
+  Comparado contra el juez anterior sobre 1–25 nov: 62 hallazgos en los dos,
+  ninguno de diferencia.
+- Los avisos pendientes se toman con `SKIP LOCKED`: seis sucursales a la vez no
+  avisan dos veces la misma factura.
+- El cron pasa a `promocion-control-hora` (cada hora, a los :07) como red.
+
+Migración `20261127151432`.
+
+Gemelo: promociones — cambio de base y del sync, sin pantalla.
+
 ## v2.1606.0 — Una venta, un ingreso o un vale anotado después explica la diferencia de un corte
 
 Salud 2, 26-nov: el corte de las 12:10 cerró con +$11.85 porque se vendió un

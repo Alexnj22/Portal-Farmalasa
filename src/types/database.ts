@@ -39718,7 +39718,7 @@ export type Database = {
         }[]
       }
       promocion_control_hallazgos: {
-        Args: { p_desde: string; p_hasta: string }
+        Args: { p_desde: string; p_hasta: string; p_invoices?: number[] }
         Returns: {
           branch_id: number
           detalle: Json
@@ -39728,7 +39728,10 @@ export type Database = {
           regla_id: number
         }[]
       }
-      promocion_control_revisar: { Args: never; Returns: number }
+      promocion_control_revisar: {
+        Args: { p_invoices?: number[] }
+        Returns: number
+      }
       promocion_corte_del_lote: {
         Args: { p_promocion_id?: number }
         Returns: {

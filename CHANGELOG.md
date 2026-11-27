@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.2 — La app de clientes invita a activar notificaciones y promociones
+
+Pedido del usuario: de 54 clientes con sesión sólo 10 tenían avisos y 8
+aceptaban promociones (38 nunca respondieron). La guía de bienvenida los ofrece
+una vez y casi todos la pasan.
+
+- `apps/clientes/componentes/InvitacionAvisos.js` (nuevo), en el Inicio debajo
+  de las historias: tarjeta «No te pierdas nada» con dos interruptores,
+  Notificaciones (si no las tiene y no las apagó a propósito en el teléfono) y
+  Promociones (sólo si nunca respondió). Guarda al momento con las mismas
+  acciones que Cuenta. Como mucho 3 veces, cada 7 días; nunca a la sesión de
+  código. Con el permiso negado en el teléfono, lleva a Ajustes.
+
+Novedades: no — es la app de clientes, no el personal.
+Gemelo: puntos — sólo la app de clientes; el portal no tiene este inicio.
+
 ## v2.1606.1 — El control de promociones revisa en la pasada de ventas
 
 El usuario preguntó por qué la revisión iba aparte. El cron cada 5 minutos

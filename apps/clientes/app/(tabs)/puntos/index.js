@@ -21,6 +21,7 @@ import SubisteDeNivel from '../../../componentes/SubisteDeNivel';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
 import Historias from '../../../componentes/Historias';
+import InvitacionAvisos from '../../../componentes/InvitacionAvisos';
 import Icono from '../../../componentes/Icono';
 import FraseDelDia from '../../../componentes/FraseDelDia';
 import { Regalo } from '../../../componentes/IlustracionesInicio';
@@ -195,6 +196,8 @@ export default function Puntos() {
       <Entrada indice={0}>
         <Historias generacion={generacion} />
       </Entrada>
+      {/* Avisos y promociones para quien no los tiene (2026-11-27): como mucho 3 veces, cada 7 días. */}
+      <InvitacionAvisos resumen={resumen} conCodigo={conCodigo} alGuardar={() => cargar({ forzar: true })} />
 
       {/* Mis créditos (2026-10-15): si alguno pasó su fecha límite, la alerta
           va ARRIBA de todo. Sin créditos pendientes no se muestra nada. */}

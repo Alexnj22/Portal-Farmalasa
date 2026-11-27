@@ -21,6 +21,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+<<<<<<< HEAD
 ## v2.1606.0 — Una venta, un ingreso o un vale anotado después explica la diferencia de un corte
 
 Salud 2, 26-nov: el corte de las 12:10 cerró con +$11.85 porque se vendió un
@@ -41,6 +42,19 @@ efectivo, así no se toca el dinero de los cortes anteriores».
 - Anular la causa libera el documento y lo devuelve a su día.
 - Migración `20261127145618`. Funciones `hacer-corte-caja` y `operar-caja`
   redesplegadas (JWT). `gate:cortes` vigila el sello nuevo y su trigger.
+=======
+## v2.1605.4 — Las historias de la app de clientes muestran sólo la foto
+
+Pedido del usuario: al abrir una historia, el título y el texto salían encima
+de la foto y la tapaban. Debe verse sólo la foto.
+
+- `apps/clientes/componentes/Historias.js`: fuera el título y el texto del
+  visor (siguen en la etiqueta de accesibilidad). El degradado de abajo sólo
+  sale si la historia tiene botón, y más suave.
+
+Novedades: no — es la app de clientes, no el personal.
+Gemelo: ofertas-clientes — el portal no pinta la historia, sólo la edita.
+>>>>>>> origin/main
 
 ## v2.1605.3 — Avisos de clientes: difusión de una promoción a todos
 
